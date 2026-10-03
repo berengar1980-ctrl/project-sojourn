@@ -27,7 +27,7 @@ assert(effects.includes('Math.sin(timeSeconds * 13)'), 'mining laser must pulse 
 assert(effects.includes('drawImpactSparks'), 'mining impact must render sparks');
 assert(effects.includes('drawImpactDust'), 'mining impact must render transparent dust');
 assert(effects.includes('surfaceImpactPoint'), 'mining impact must occur on asteroid surface');
-assert(!effects.includes("arc(target.x, target.y, 4.5"), 'fixed impact point must stay removed');
+assert(!effects.includes('arc(target.x, target.y, 4.5'), 'fixed impact point must stay removed');
 assert(effects.includes('drawTractorFields'), 'mining effects must render tractor collection');
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
 assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
