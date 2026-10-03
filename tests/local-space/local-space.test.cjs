@@ -65,10 +65,7 @@ assert(
   service.includes('shipLateralVelocity'),
   'ship station keeping must use real lateral velocity'
 );
-assert(
-  service.includes('applyStationKeeping'),
-  'idle state must use physical station keeping'
-);
+assert(service.includes('applyStationKeeping'), 'idle state must use physical station keeping');
 assert(
   service.includes('miningHoldOffset'),
   'mining must remember a relative offset to the target asteroid'
