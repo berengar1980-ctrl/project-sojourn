@@ -56,8 +56,7 @@ class MinPriorityQueue {
       const right = left + 1;
       if (left >= this.entries.length) break;
       const smaller =
-        right < this.entries.length &&
-        this.entries[right]!.priority < this.entries[left]!.priority
+        right < this.entries.length && this.entries[right]!.priority < this.entries[left]!.priority
           ? right
           : left;
       if (this.entries[smaller]!.priority >= last.priority) break;
