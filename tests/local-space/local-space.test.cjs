@@ -137,7 +137,9 @@ assert(
   'local-space service must not block the UI with synchronous route planning'
 );
 assert(
-  routeWorkerClient.includes("new Worker(new URL('./local-space-route-worker.ts', import.meta.url)"),
+  routeWorkerClient.includes(
+    "new Worker(new URL('./local-space-route-worker.ts', import.meta.url)"
+  ),
   'mining route planning must run in a web worker'
 );
 assert(
