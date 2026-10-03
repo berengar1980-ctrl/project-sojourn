@@ -71,6 +71,8 @@
     "centerX": 174,
     "centerY": 91,
     "radiusX": 182,
-    "radiusY": 98
+    "radiusY": 98,
+    "maxHp": 100,
+    "modifier": 1
   }
 }
