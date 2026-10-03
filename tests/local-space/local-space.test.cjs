@@ -36,7 +36,10 @@ assert(service.includes('shieldFlash'), 'service must expose shield impact state
 assert(navigation.includes('avoidanceSide'), 'avoidance must choose a stable bypass side');
 assert(navigation.includes('pointToSegmentDistance'), 'avoidance must inspect blocked routes');
 assert(collision.includes('separationVector'), 'shield collision must compute full separation');
-assert(collision.includes('boundaryScale = 1 / metric'), 'collision must move blockers outside shield');
+assert(
+  collision.includes('boundaryScale = 1 / metric'),
+  'collision must move blockers outside shield'
+);
 assert(collision.includes('outwardSpeed = 250'), 'shield impact must impart outward velocity');
 assert(collision.includes('asteroid.velocity'), 'shield impact must push asteroids away');
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
