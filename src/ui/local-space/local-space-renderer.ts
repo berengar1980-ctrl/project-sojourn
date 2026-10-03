@@ -1,3 +1,4 @@
+import type { ShipHardpoint } from '../../core/ship-types';
 import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
@@ -10,6 +11,13 @@ interface AsteroidHitArea {
   readonly radius: number;
 }
 
+interface ShipScreenGeometry {
+  readonly center: ScreenPoint;
+  readonly width: number;
+  readonly height: number;
+  readonly angle: number;
+}
+
 function hashId(id: string): number {
   let hash = 2166136261;
   for (let index = 0; index < id.length; index += 1) {
@@ -17,6 +25,13 @@ function hashId(id: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
+}
+
+function rotatePoint(x: number, y: number, angle: number): ScreenPoint {
+  return {
+    x: x * Math.cos(angle) - y * Math.sin(angle),
+    y: x * Math.sin(angle) + y * Math.cos(angle),
+  };
 }
 
 export class LocalSpaceRenderer {
@@ -173,27 +188,54 @@ export class LocalSpaceRenderer {
     return { id: asteroid.id, point, radius: radius + 10 };
   }
 
-  private drawShip(width: number, height: number): void {
-    const point = this.camera.worldToScreen(this.model.ship.position, width, height);
+  private shipGeometry(width: number, height: number): ShipScreenGeometry {
+    const center = this.camera.worldToScreen(this.model.ship.position, width, height);
     const shipWidth = 144;
     const aspectRatio =
       this.shipImage.complete && this.shipImage.naturalHeight > 0
         ? this.shipImage.naturalWidth / this.shipImage.naturalHeight
         : this.model.ship.spriteAspectRatio;
-    const shipHeight = shipWidth / aspectRatio;
+
+    return {
+      center,
+      width: shipWidth,
+      height: shipWidth / aspectRatio,
+      angle: this.model.ship.headingRadians,
+    };
+  }
+
+  private hardpointScreen(
+    hardpoint: ShipHardpoint,
+    geometry: ShipScreenGeometry
+  ): ScreenPoint {
+    const source = this.model.ship.hardpoints;
+    const localX = (hardpoint.x / source.sourceWidth - 0.5) * geometry.width;
+    const localY = (hardpoint.y / source.sourceHeight - 0.5) * geometry.height;
+    const rotated = rotatePoint(localX, localY, geometry.angle);
+    return {
+      x: geometry.center.x + rotated.x,
+      y: geometry.center.y + rotated.y,
+    };
+  }
+
+  private drawShip(width: number, height: number): void {
+    const geometry = this.shipGeometry(width, height);
 
     this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(this.model.ship.headingRadians);
-    if (this.model.ship.speed > 0) this.drawEngineGlow(shipWidth, shipHeight);
+    this.context.translate(geometry.center.x, geometry.center.y);
+    this.context.rotate(geometry.angle);
+
+    if (this.model.ship.speed > 0) {
+      this.drawEngineGlow(geometry.width, geometry.height);
+    }
 
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
       this.context.drawImage(
         this.shipImage,
-        -shipWidth / 2,
-        -shipHeight / 2,
-        shipWidth,
-        shipHeight
+        -geometry.width / 2,
+        -geometry.height / 2,
+        geometry.width,
+        geometry.height
       );
     }
 
@@ -201,17 +243,19 @@ export class LocalSpaceRenderer {
   }
 
   private drawEngineGlow(shipWidth: number, shipHeight: number): void {
-    for (const anchor of this.model.ship.engineAnchors) {
-      const x = (anchor.x - 0.5) * shipWidth;
-      const y = (anchor.y - 0.5) * shipHeight;
-      const radius = 11;
-      const glow = this.context.createRadialGradient(x, y, 0, x - 4, y, radius);
+    const source = this.model.ship.hardpoints;
+
+    for (const hardpoint of source.engines) {
+      const x = (hardpoint.x / source.sourceWidth - 0.5) * shipWidth;
+      const y = (hardpoint.y / source.sourceHeight - 0.5) * shipHeight;
+      const radius = Math.max(4, (hardpoint.width / source.sourceWidth) * shipWidth * 0.7);
+      const glow = this.context.createRadialGradient(x, y, 0, x - radius * 0.35, y, radius);
       glow.addColorStop(0, 'rgba(235, 252, 255, .88)');
       glow.addColorStop(0.35, 'rgba(78, 190, 255, .5)');
       glow.addColorStop(1, 'rgba(40, 125, 255, 0)');
       this.context.fillStyle = glow;
       this.context.beginPath();
-      this.context.ellipse(x - 4, y, radius, 4, 0, 0, Math.PI * 2);
+      this.context.ellipse(x - radius * 0.3, y, radius, radius * 0.38, 0, 0, Math.PI * 2);
       this.context.fill();
     }
   }
@@ -219,23 +263,22 @@ export class LocalSpaceRenderer {
   private drawMiningLasers(width: number, height: number): void {
     if (!this.model.laserActive || !this.model.miningTarget) return;
 
-    const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
+    const geometry = this.shipGeometry(width, height);
     const target = this.camera.worldToScreen(this.model.miningTarget.position, width, height);
-    const angle = this.model.ship.headingRadians;
-    const noseX = ship.x + Math.cos(angle) * 72;
-    const noseY = ship.y + Math.sin(angle) * 72;
-    const sideX = -Math.sin(angle) * 8;
-    const sideY = Math.cos(angle) * 8;
 
     this.context.save();
     this.context.strokeStyle = 'rgba(237, 92, 63, .92)';
     this.context.shadowColor = 'rgba(255, 82, 44, .75)';
     this.context.shadowBlur = 7;
-    this.context.lineWidth = 1.7;
 
-    for (const side of [-1, 1]) {
+    for (const hardpoint of this.model.ship.hardpoints.miningLasers) {
+      const start = this.hardpointScreen(hardpoint, geometry);
+      this.context.lineWidth = Math.max(
+        1.2,
+        (hardpoint.width / this.model.ship.hardpoints.sourceWidth) * geometry.width * 0.8
+      );
       this.context.beginPath();
-      this.context.moveTo(noseX + sideX * side, noseY + sideY * side);
+      this.context.moveTo(start.x, start.y);
       this.context.lineTo(target.x, target.y);
       this.context.stroke();
     }
