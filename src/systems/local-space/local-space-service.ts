@@ -135,7 +135,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
-    if (!asteroid || asteroid.oreRemaining <= 0) return this.getSnapshot();
+    if (!asteroid) return this.getSnapshot();
 
     this.miningTargetId = asteroid.id;
     this.scanTargetId = null;
