@@ -4,6 +4,7 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
+import { PlayerShipRenderer } from './player-ship-renderer';
 
 interface HitArea {
   readonly id: string;
@@ -15,7 +16,9 @@ interface HitArea {
 export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
+  private readonly shipRenderer: PlayerShipRenderer;
   private model: StarMapViewModel;
+  private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
   constructor(
@@ -28,6 +31,7 @@ export class TopdownMapRenderer {
     this.context = context;
     this.model = model;
     this.camera = new MapCamera(model.width, model.height);
+    this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.resize();
   }
 
@@ -42,6 +46,15 @@ export class TopdownMapRenderer {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    if (!this.hasFitted) {
+      this.camera.fit(rect.width, rect.height);
+      this.hasFitted = true;
+    }
+    this.draw();
+  }
+
+  resetCamera(): void {
+    const rect = this.canvas.getBoundingClientRect();
     this.camera.fit(rect.width, rect.height);
     this.draw();
   }
@@ -51,8 +64,9 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
-  zoomAt(factor: number, x: number, y: number): void {
+  zoomAt(deltaY: number, x: number, y: number): void {
     const rect = this.canvas.getBoundingClientRect();
+    const factor = Math.exp(-deltaY * 0.0015);
     this.camera.zoomAt(factor, { x, y }, rect.width, rect.height);
     this.draw();
   }
@@ -79,6 +93,18 @@ export class TopdownMapRenderer {
     this.drawRoute(width, height);
     this.hitAreas = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
+    );
+    this.drawPlayerShip(width, height);
+  }
+
+  private drawPlayerShip(width: number, height: number): void {
+    const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    this.shipRenderer.draw(
+      this.context,
+      this.model.playerShip,
+      point,
+      this.camera.getZoom(),
+      performance.now() / 1000
     );
   }
 
