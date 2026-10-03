@@ -112,9 +112,12 @@ export class LocalSpaceRenderer {
       timeSeconds,
     });
     this.miningEffects.drawTractorFields(this.model, width, height, timeSeconds);
-    this.hitAreas = this.model.asteroids.map((asteroid) =>
-      this.drawAsteroid(asteroid, width, height)
-    );
+    const hitAreas: AsteroidHitArea[] = [];
+    for (const asteroid of this.model.asteroids) {
+      const hitArea = this.drawAsteroid(asteroid, width, height);
+      if (asteroid.kind === 'resource') hitAreas.push(hitArea);
+    }
+    this.hitAreas = hitAreas;
     this.drawChunks(width, height);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
     this.drawShip(geometry);
@@ -126,7 +129,8 @@ export class LocalSpaceRenderer {
     height: number
   ): AsteroidHitArea {
     const point = this.camera.worldToScreen(asteroid.position, width, height);
-    const radius = Math.max(10, this.camera.scale(asteroid.radius));
+    const minimumRadius = asteroid.kind === 'debris' ? 2 : 10;
+    const radius = Math.max(minimumRadius, this.camera.scale(asteroid.radius));
     const seed = hashId(asteroid.id);
 
     this.context.save();
@@ -152,9 +156,15 @@ export class LocalSpaceRenderer {
       0,
       radius
     );
-    gradient.addColorStop(0, '#9b9186');
-    gradient.addColorStop(0.52, '#625a53');
-    gradient.addColorStop(1, '#2d2926');
+    if (asteroid.kind === 'debris') {
+      gradient.addColorStop(0, '#77716a');
+      gradient.addColorStop(0.55, '#4c4742');
+      gradient.addColorStop(1, '#24211f');
+    } else {
+      gradient.addColorStop(0, '#9b9186');
+      gradient.addColorStop(0.52, '#625a53');
+      gradient.addColorStop(1, '#2d2926');
+    }
     this.context.fillStyle = gradient;
     this.context.fill();
     this.context.strokeStyle = 'rgba(195, 184, 168, .2)';
@@ -162,7 +172,7 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.restore();
 
-    if (asteroid.isSelected || asteroid.isMiningTarget) {
+    if (asteroid.kind === 'resource' && (asteroid.isSelected || asteroid.isMiningTarget)) {
       this.context.strokeStyle = asteroid.isMiningTarget ? '#67d1e8' : '#dfc173';
       this.context.lineWidth = 1.7;
       this.context.beginPath();
