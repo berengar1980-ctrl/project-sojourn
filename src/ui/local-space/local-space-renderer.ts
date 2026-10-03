@@ -236,6 +236,10 @@ export class LocalSpaceRenderer {
       );
     }
 
+    if (this.model.shieldFlash > 0) {
+      this.drawShieldFlash(geometry.width, geometry.height);
+    }
+
     this.context.restore();
   }
 
@@ -255,6 +259,28 @@ export class LocalSpaceRenderer {
       this.context.ellipse(x - radius * 0.3, y, radius, radius * 0.38, 0, 0, Math.PI * 2);
       this.context.fill();
     }
+  }
+
+  private drawShieldFlash(shipWidth: number, shipHeight: number): void {
+    const source = this.model.ship.hardpoints;
+    const shield = source.shield;
+    const x = (shield.centerX / source.sourceWidth - 0.5) * shipWidth;
+    const y = (shield.centerY / source.sourceHeight - 0.5) * shipHeight;
+    const radiusX = (shield.radiusX / source.sourceWidth) * shipWidth;
+    const radiusY = (shield.radiusY / source.sourceHeight) * shipHeight;
+    const intensity = Math.min(1, this.model.shieldFlash);
+
+    this.context.save();
+    this.context.shadowColor = 'rgba(65, 174, 255, .9)';
+    this.context.shadowBlur = 16 * intensity;
+    this.context.lineWidth = 1.5 + intensity * 2.5;
+    this.context.strokeStyle = 'rgba(92, 190, 255, ' + 0.82 * intensity + ')';
+    this.context.fillStyle = 'rgba(64, 148, 255, ' + 0.08 * intensity + ')';
+    this.context.beginPath();
+    this.context.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    this.context.fill();
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawMiningLasers(width: number, height: number): void {
@@ -300,19 +326,31 @@ export class LocalSpaceRenderer {
 
   private drawTractorFields(width: number, height: number): void {
     const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
+    const time = performance.now() / 1000;
     this.context.save();
-    this.context.strokeStyle = 'rgba(84, 178, 214, .18)';
-    this.context.lineWidth = 1.4;
-    this.context.setLineDash([2, 5]);
 
-    for (const chunk of this.model.chunks) {
-      if (!chunk.tractorActive) continue;
+    this.model.chunks.forEach((chunk, index) => {
+      if (!chunk.tractorActive) return;
       const point = this.camera.worldToScreen(chunk.position, width, height);
+      const pulse = 0.55 + Math.sin(time * 9 + index * 0.8) * 0.25;
+
+      this.context.shadowColor = 'rgba(77, 255, 145, .8)';
+      this.context.shadowBlur = 8 + pulse * 7;
+      this.context.strokeStyle = 'rgba(62, 235, 126, ' + 0.22 * pulse + ')';
+      this.context.lineWidth = 5 + pulse * 2;
       this.context.beginPath();
       this.context.moveTo(point.x, point.y);
       this.context.lineTo(ship.x, ship.y);
       this.context.stroke();
-    }
+
+      this.context.shadowBlur = 3;
+      this.context.strokeStyle = 'rgba(156, 255, 190, ' + 0.78 * pulse + ')';
+      this.context.lineWidth = 1.2 + pulse;
+      this.context.beginPath();
+      this.context.moveTo(point.x, point.y);
+      this.context.lineTo(ship.x, ship.y);
+      this.context.stroke();
+    });
 
     this.context.restore();
   }
