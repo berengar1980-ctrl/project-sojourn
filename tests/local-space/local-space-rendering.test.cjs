@@ -64,7 +64,10 @@ assert(input.includes("event.key.toLowerCase() === 'h'"), 'H must toggle hardpoi
 assert(hardpointDebug.includes("label: 'PIVOT'"), 'debug overlay must mark the ship pivot');
 assert(hardpointDebug.includes('source.miningLasers'), 'debug overlay must mark mining lasers');
 assert(hardpointDebug.includes('source.engines'), 'debug overlay must mark main engines');
-assert(shieldImpact.includes('projectShieldGeometry'), 'shield impacts must use shared ship projection');
+assert(
+  shieldImpact.includes('projectShieldGeometry'),
+  'shield impacts must use shared ship projection'
+);
 assert(renderer.includes('spriteDrawOffset'), 'ship sprite must use shared pivot projection');
 assert(renderer.includes("asteroid.kind === 'debris'"), 'renderer must distinguish small debris');
 assert(
@@ -110,12 +113,18 @@ assert(
   panel.includes('selected.isMiningTarget'),
   'selected alternate asteroids must remain mineable'
 );
-assert(renderer.includes('ShieldImpactRenderer'), 'local space must render localized shield impacts');
+assert(
+  renderer.includes('ShieldImpactRenderer'),
+  'local space must render localized shield impacts'
+);
 assert(
   shieldImpact.includes('impactAngle - spread'),
   'shield impact must illuminate only a local ellipse arc'
 );
-assert(shieldImpact.includes('drawLightning'), 'strong shield hits must support local blue-white arcs');
+assert(
+  shieldImpact.includes('drawLightning'),
+  'strong shield hits must support local blue-white arcs'
+);
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');
