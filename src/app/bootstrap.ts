@@ -15,8 +15,7 @@ export function bootstrap(root: HTMLElement | null): void {
     tutorialCluster.startLocationId,
     ship.navigation.cruiseSpeed
   );
-  const buildModel = () =>
-    createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
+  const buildModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
 
   const panel = createStarMapPanel({
     root,
