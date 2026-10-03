@@ -125,11 +125,7 @@ export class TopdownMapRenderer {
 
       this.context.fillStyle = 'rgba(224, 134, 124, 0.65)';
       this.context.font = '11px system-ui';
-      this.context.fillText(
-        region.name.toUpperCase(),
-        center.x - 28,
-        center.y - radius * 0.55
-      );
+      this.context.fillText(region.name.toUpperCase(), center.x - 28, center.y - radius * 0.55);
     }
   }
 
