@@ -26,6 +26,10 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts')
 
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
 assert(
+  renderer.includes('this.camera.zoomAt(3'),
+  'larger local space must preserve the previous initial visual scale'
+);
+assert(
   renderer.includes('SpaceBackgroundRenderer'),
   'local mining must use shared parallax background'
 );
