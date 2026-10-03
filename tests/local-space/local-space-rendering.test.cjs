@@ -16,7 +16,7 @@ assert(renderer.includes('drawMiningLasers'), 'local space must render mining la
 assert(renderer.includes('drawTractorFields'), 'local space must render tractor collection');
 assert(renderer.includes('drawChunks'), 'local space must render broken asteroid chunks');
 assert(renderer.includes('hardpoints.miningLasers'), 'mining lasers must use ship hardpoints');
-assert(renderer.includes('hardpoints.engines'), 'engine glow must use ship hardpoints');
+assert(renderer.includes('source.engines'), 'engine glow must use ship hardpoints');
 assert(panel.includes('ZUR STERNKARTE'), 'local space must provide return to star map');
 assert(panel.includes('MINING'), 'asteroid selection must expose mining action');
 assert(
