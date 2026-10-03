@@ -33,6 +33,7 @@ export interface WorldLocation {
   readonly activities: LocationActivities;
   readonly dangerLevel: 0 | 1 | 2 | 3;
   readonly orbitRadius?: number;
+  readonly spriteUrl?: string;
 }
 
 export interface WorldRegion {
