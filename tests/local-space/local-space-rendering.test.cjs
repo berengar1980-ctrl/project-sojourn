@@ -63,10 +63,7 @@ assert(
 );
 assert(maneuvers.includes('torqueSign'), 'RCS selection must derive from thruster torque');
 assert(maneuvers.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
-assert(
-  maneuvers.includes('rgba(213, 244, 255'),
-  'RCS exhaust must use a white-blue core'
-);
+assert(maneuvers.includes('rgba(213, 244, 255'), 'RCS exhaust must use a white-blue core');
 assert(effects.includes('projectHardpoint'), 'mining lasers must use shared hardpoint projection');
 assert(effects.includes('model.miningImpact'), 'mining VFX must use simulation impact point');
 assert(!effects.includes('surfaceImpactPoint'), 'renderer must not invent its own mining impact');
