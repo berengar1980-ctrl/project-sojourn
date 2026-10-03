@@ -18,9 +18,12 @@ assert(renderer.includes('drawChunks'), 'local space must render broken asteroid
 assert(renderer.includes('hardpoints.miningLasers'), 'mining lasers must use ship hardpoints');
 assert(renderer.includes('source.engines'), 'engine glow must use ship hardpoints');
 assert(renderer.includes('drawShieldFlash'), 'shield impacts must have a visual flash');
-assert(renderer.includes("rgba(62, 235, 126"), 'tractor field must use green pulse rendering');
+assert(renderer.includes('rgba(62, 235, 126'), 'tractor field must use green pulse rendering');
 assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
-assert(panel.includes('selected.isMiningTarget'), 'selected alternate asteroids must remain mineable');
+assert(
+  panel.includes('selected.isMiningTarget'),
+  'selected alternate asteroids must remain mineable'
+);
 assert(panel.includes('ZUR STERNKARTE'), 'local space must provide return to star map');
 assert(panel.includes('MINING'), 'asteroid selection must expose mining action');
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
