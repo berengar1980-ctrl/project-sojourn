@@ -25,6 +25,10 @@ const physics = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-physics.ts'),
   'utf8'
 );
+const miningImpact = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/mining-impact.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
@@ -39,6 +43,11 @@ assert(generator.includes('angularVelocity'), 'asteroids must receive angular mo
 assert(generator.includes('momentOfInertia'), 'asteroids must define rotational inertia');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
+assert(service.includes('currentMiningImpact'), 'service must expose one shared mining impact');
+assert(
+  service.includes('position: {\n        x: impact.point.x'),
+  'mining chunks must spawn from the impact point'
+);
 assert(
   service.includes('planMiningApproachRoute'),
   'mining must plan a route once before approach'
@@ -71,6 +80,14 @@ assert(
   'asteroid pair collisions must be implemented'
 );
 assert(collision.includes('contactPoint'), 'collisions must calculate a contact point');
+assert(
+  miningImpact.includes('hardpoints.miningLasers'),
+  'mining impact must derive from actual laser hardpoints'
+);
+assert(
+  miningImpact.includes('asteroid.position.x - direction.x * asteroid.radius'),
+  'mining impact must lie on the asteroid surface'
+);
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
