@@ -1,21 +1,17 @@
-import type { ShipHardpoint } from '../../core/ship-types';
 import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import {
+  MiningEffectsRenderer,
+  type ShipScreenGeometry,
+} from './mining-effects-renderer';
 
 interface AsteroidHitArea {
   readonly id: string;
   readonly point: ScreenPoint;
   readonly radius: number;
-}
-
-interface ShipScreenGeometry {
-  readonly center: ScreenPoint;
-  readonly width: number;
-  readonly height: number;
-  readonly angle: number;
 }
 
 function hashId(id: string): number {
@@ -27,16 +23,10 @@ function hashId(id: string): number {
   return hash >>> 0;
 }
 
-function rotatePoint(x: number, y: number, angle: number): ScreenPoint {
-  return {
-    x: x * Math.cos(angle) - y * Math.sin(angle),
-    y: x * Math.sin(angle) + y * Math.cos(angle),
-  };
-}
-
 export class LocalSpaceRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
+  private readonly miningEffects: MiningEffectsRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
   private hitAreas: readonly AsteroidHitArea[] = [];
@@ -53,6 +43,7 @@ export class LocalSpaceRenderer {
     this.context = context;
     this.model = model;
     this.camera = new MapCamera(model.width, model.height);
+    this.miningEffects = new MiningEffectsRenderer(context, this.camera);
     this.resize();
   }
 
@@ -110,15 +101,17 @@ export class LocalSpaceRenderer {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
+    const geometry = this.shipGeometry(width, height);
 
     this.drawBackground(width, height);
-    this.drawTractorFields(width, height);
+    this.miningEffects.drawTractorFields(this.model, width, height, timeSeconds);
     this.hitAreas = this.model.asteroids.map((asteroid) =>
       this.drawAsteroid(asteroid, width, height)
     );
     this.drawChunks(width, height);
-    this.drawMiningLasers(width, height);
-    this.drawShip(width, height);
+    this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
+    this.drawShip(geometry);
   }
 
   private drawBackground(width: number, height: number): void {
@@ -204,20 +197,7 @@ export class LocalSpaceRenderer {
     };
   }
 
-  private hardpointScreen(hardpoint: ShipHardpoint, geometry: ShipScreenGeometry): ScreenPoint {
-    const source = this.model.ship.hardpoints;
-    const localX = (hardpoint.x / source.sourceWidth - 0.5) * geometry.width;
-    const localY = (hardpoint.y / source.sourceHeight - 0.5) * geometry.height;
-    const rotated = rotatePoint(localX, localY, geometry.angle);
-    return {
-      x: geometry.center.x + rotated.x,
-      y: geometry.center.y + rotated.y,
-    };
-  }
-
-  private drawShip(width: number, height: number): void {
-    const geometry = this.shipGeometry(width, height);
-
+  private drawShip(geometry: ShipScreenGeometry): void {
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
@@ -271,46 +251,22 @@ export class LocalSpaceRenderer {
     const intensity = Math.min(1, this.model.shieldFlash);
 
     this.context.save();
-    this.context.shadowColor = 'rgba(65, 174, 255, .9)';
-    this.context.shadowBlur = 16 * intensity;
-    this.context.lineWidth = 1.5 + intensity * 2.5;
-    this.context.strokeStyle = 'rgba(92, 190, 255, ' + 0.82 * intensity + ')';
-    this.context.fillStyle = 'rgba(64, 148, 255, ' + 0.08 * intensity + ')';
+    this.context.shadowColor = 'rgba(70, 180, 255, .98)';
+    this.context.shadowBlur = 24 + intensity * 16;
+    this.context.lineWidth = 2.5 + intensity * 3.5;
+    this.context.strokeStyle = 'rgba(104, 202, 255, ' + (0.38 + 0.58 * intensity) + ')';
+    this.context.fillStyle = 'rgba(65, 154, 255, ' + (0.1 + 0.18 * intensity) + ')';
     this.context.beginPath();
     this.context.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2);
     this.context.fill();
     this.context.stroke();
-    this.context.restore();
-  }
 
-  private drawMiningLasers(width: number, height: number): void {
-    if (!this.model.laserActive || !this.model.miningTarget) return;
-
-    const geometry = this.shipGeometry(width, height);
-    const target = this.camera.worldToScreen(this.model.miningTarget.position, width, height);
-
-    this.context.save();
-    this.context.strokeStyle = 'rgba(237, 92, 63, .92)';
-    this.context.shadowColor = 'rgba(255, 82, 44, .75)';
-    this.context.shadowBlur = 7;
-
-    for (const hardpoint of this.model.ship.hardpoints.miningLasers) {
-      const start = this.hardpointScreen(hardpoint, geometry);
-      this.context.lineWidth = Math.max(
-        1.2,
-        (hardpoint.width / this.model.ship.hardpoints.sourceWidth) * geometry.width * 0.8
-      );
-      this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(target.x, target.y);
-      this.context.stroke();
-    }
-
-    this.context.restore();
-    this.context.fillStyle = 'rgba(255, 176, 92, .85)';
+    this.context.lineWidth = 1;
+    this.context.strokeStyle = 'rgba(205, 240, 255, ' + 0.76 * intensity + ')';
     this.context.beginPath();
-    this.context.arc(target.x, target.y, 4.5, 0, Math.PI * 2);
-    this.context.fill();
+    this.context.ellipse(x, y, radiusX * 0.96, radiusY * 0.96, 0, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawChunks(width: number, height: number): void {
@@ -322,36 +278,5 @@ export class LocalSpaceRenderer {
       this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
       this.context.fill();
     }
-  }
-
-  private drawTractorFields(width: number, height: number): void {
-    const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const time = performance.now() / 1000;
-    this.context.save();
-
-    this.model.chunks.forEach((chunk, index) => {
-      if (!chunk.tractorActive) return;
-      const point = this.camera.worldToScreen(chunk.position, width, height);
-      const pulse = 0.55 + Math.sin(time * 9 + index * 0.8) * 0.25;
-
-      this.context.shadowColor = 'rgba(77, 255, 145, .8)';
-      this.context.shadowBlur = 8 + pulse * 7;
-      this.context.strokeStyle = 'rgba(62, 235, 126, ' + 0.22 * pulse + ')';
-      this.context.lineWidth = 5 + pulse * 2;
-      this.context.beginPath();
-      this.context.moveTo(point.x, point.y);
-      this.context.lineTo(ship.x, ship.y);
-      this.context.stroke();
-
-      this.context.shadowBlur = 3;
-      this.context.strokeStyle = 'rgba(156, 255, 190, ' + 0.78 * pulse + ')';
-      this.context.lineWidth = 1.2 + pulse;
-      this.context.beginPath();
-      this.context.moveTo(point.x, point.y);
-      this.context.lineTo(ship.x, ship.y);
-      this.context.stroke();
-    });
-
-    this.context.restore();
   }
 }
