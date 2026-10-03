@@ -33,11 +33,7 @@ assert(
 );
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
 assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
-assert.equal(
-  hardpoints.maneuverThrusters.length,
-  4,
-  'miner must define four maneuver thrusters'
-);
+assert.equal(hardpoints.maneuverThrusters.length, 4, 'miner must define four maneuver thrusters');
 assert.equal(hardpoints.engines[0].x, 23, 'upper engine hardpoint must match calibrated nozzle');
 assert.equal(hardpoints.engines[1].x, 23, 'lower engine hardpoint must match calibrated nozzle');
 assert.equal(hardpoints.miningLasers[0].x, 329, 'upper laser hardpoint must match emitter tip');
