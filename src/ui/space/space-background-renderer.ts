@@ -188,8 +188,10 @@ export class SpaceBackgroundRenderer {
     this.context.globalCompositeOperation = 'screen';
 
     for (const cloud of this.nebulae) {
-      const centerX = wrap(cloud.x * spanX + offsetX + cloud.driftX * view.timeSeconds, spanX) - 350;
-      const centerY = wrap(cloud.y * spanY + offsetY + cloud.driftY * view.timeSeconds, spanY) - 280;
+      const centerX =
+        wrap(cloud.x * spanX + offsetX + cloud.driftX * view.timeSeconds, spanX) - 350;
+      const centerY =
+        wrap(cloud.y * spanY + offsetY + cloud.driftY * view.timeSeconds, spanY) - 280;
 
       for (const lobe of cloud.lobes) {
         this.drawNebulaLobe(centerX + lobe.offsetX, centerY + lobe.offsetY, lobe, cloud.warm);
@@ -199,12 +201,7 @@ export class SpaceBackgroundRenderer {
     this.context.restore();
   }
 
-  private drawNebulaLobe(
-    x: number,
-    y: number,
-    lobe: NebulaLobe,
-    warm: boolean
-  ): void {
+  private drawNebulaLobe(x: number, y: number, lobe: NebulaLobe, warm: boolean): void {
     const gradient = this.context.createRadialGradient(
       x - lobe.radius * 0.18,
       y - lobe.radius * 0.12,
