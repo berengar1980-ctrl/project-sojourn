@@ -10,6 +10,7 @@ interface StarMapPanelOptions {
   readonly root: HTMLElement;
   readonly model: StarMapViewModel;
   readonly onSelectLocation: (id: string) => void;
+  readonly onStartTravel: () => void;
 }
 
 function activityLabels(model: StarMapViewModel): string {
@@ -36,19 +37,25 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       <span>SOJOURN</span>
       <strong>${options.model.title}</strong>
     </div>
-    <div class="map-controls">ZIEHEN · KARTE VERSCHIEBEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
+    <div class="travel-status" hidden></div>
+    <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
       <div class="selection-name"></div>
       <div class="selection-description"></div>
       <div class="selection-meta"></div>
+      <button class="travel-button" type="button">FLUG STARTEN</button>
     </div>
   `;
   options.root.replaceChildren(shell);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.star-map-canvas');
   const card = shell.querySelector<HTMLElement>('.selection-card');
-  if (!canvas || !card) throw new Error('Star map UI is incomplete.');
+  const travelButton = shell.querySelector<HTMLButtonElement>('.travel-button');
+  const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
+  if (!canvas || !card || !travelButton || !travelStatus) {
+    throw new Error('Star map UI is incomplete.');
+  }
 
   let model = options.model;
   const renderer = new TopdownMapRenderer(canvas, model);
@@ -60,6 +67,13 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const updateSelection = (): void => {
     const selected = model.locations.find((location) => location.isSelected);
     card.hidden = !selected;
+    travelStatus.hidden = !model.navigation.isTravelling;
+
+    if (model.navigation.isTravelling) {
+      const percent = Math.round(model.navigation.progress * 100);
+      travelStatus.textContent = 'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
+    }
+
     if (!selected) return;
 
     const kind = card.querySelector<HTMLElement>('.selection-kind');
@@ -103,14 +117,16 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     if (id) options.onSelectLocation(id);
   });
 
+  canvas.addEventListener('dblclick', () => renderer.resetCamera());
   canvas.addEventListener(
     'wheel',
     (event) => {
       event.preventDefault();
-      renderer.zoomAt(event.deltaY < 0 ? 1.12 : 0.89, event.offsetX, event.offsetY);
+      renderer.zoomAt(event.deltaY, event.offsetX, event.offsetY);
     },
     { passive: false }
   );
+  travelButton.addEventListener('click', options.onStartTravel);
 
   updateSelection();
 
