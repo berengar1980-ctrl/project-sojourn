@@ -71,6 +71,7 @@ export function createNavigationService(
   let selectedDestinationId: string | null = null;
   let currentPosition = locationPosition(world, startLocationId);
   let currentHeading = 0;
+  let currentTurnRate = 0;
   let travel: TravelState | null = null;
 
   const snapshot = (): NavigationSnapshot => {
@@ -88,6 +89,8 @@ export function createNavigationService(
       destinationId: travel?.destinationId ?? null,
       currentPosition,
       headingRadians: currentHeading,
+      turnRateRadiansPerSecond: currentTurnRate,
+      lateralThrust: 0,
       isTravelling: travel !== null,
       progress: travel ? Math.min(1, travel.distanceTravelled / travel.route.distance) : 0,
       speed: travel?.currentSpeed ?? 0,
@@ -131,7 +134,9 @@ export function createNavigationService(
     if (!from || !to) return snapshot();
 
     const desiredHeading = heading(from, to);
+    const previousHeading = currentHeading;
     currentHeading = turnToward(currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+    currentTurnRate = angleDelta(previousHeading, currentHeading) / clamped;
     const turnRemaining = Math.abs(angleDelta(currentHeading, desiredHeading));
     const alignment = Math.max(0, Math.cos(turnRemaining));
     const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
@@ -150,6 +155,7 @@ export function createNavigationService(
       currentLocationId = travel.destinationId;
       selectedDestinationId = travel.destinationId;
       currentPosition = to;
+      currentTurnRate = 0;
       travel = null;
     }
 
