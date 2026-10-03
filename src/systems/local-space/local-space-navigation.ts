@@ -58,7 +58,8 @@ export function findApproachWaypoint(
   for (const asteroid of asteroids) {
     if (asteroid.id === targetId) continue;
     const clearance = asteroid.radius + shipClearance + 18;
-    if (pointToSegmentDistance(asteroid.position, ship.position, destination) >= clearance) continue;
+    if (pointToSegmentDistance(asteroid.position, ship.position, destination) >= clearance)
+      continue;
 
     const currentDistance = distance(ship.position, asteroid.position);
     if (currentDistance < blockerDistance) {
