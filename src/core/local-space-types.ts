@@ -1,3 +1,4 @@
+import type { ShieldImpactEffect, ShieldState } from './shield-types';
 import type { WorldPoint } from './world-types';
 
 export type LocalAsteroidKind = 'resource' | 'debris';
@@ -67,5 +68,6 @@ export interface LocalSpaceSnapshot {
   readonly collectedOre: number;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
-  readonly shieldFlash: number;
+  readonly shield: ShieldState;
+  readonly shieldImpacts: readonly ShieldImpactEffect[];
 }
