@@ -17,8 +17,7 @@ export function localShipVelocity(
     y: Math.sin(ship.headingRadians),
   };
   const side = { x: -forward.y, y: forward.x };
-  const forwardSpeed =
-    state.miningPhase === 'extracting' ? state.shipForwardVelocity : ship.speed;
+  const forwardSpeed = state.miningPhase === 'extracting' ? state.shipForwardVelocity : ship.speed;
   const lateralSpeed =
     state.miningPhase === 'idle' ? state.idleLateralVelocity : state.shipLateralVelocity;
 
