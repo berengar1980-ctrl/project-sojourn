@@ -223,6 +223,7 @@ export class LocalSpaceRenderer {
       geometry,
       {
         turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
+        angularThrust: this.model.ship.angularThrust,
         lateralThrust: this.model.ship.lateralThrust,
       },
       timeSeconds
