@@ -6,6 +6,7 @@ import type {
   MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
+import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -24,6 +25,11 @@ import {
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
 import { planMiningApproachRoute } from './local-space-navigation';
+import {
+  advanceShieldImpacts,
+  applyShieldHit,
+  createShieldState,
+} from '../shields';
 
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
@@ -56,7 +62,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private collectedOre = 0;
   private miningAccumulator = 0;
   private chunkCounter = 0;
-  private shieldFlash = 0;
+  private readonly shieldState: ShieldState;
+  private shieldImpacts: ShieldImpactEffect[] = [];
+  private shieldImpactCounter = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
   private shipForwardVelocity = 0;
@@ -69,6 +77,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
+    this.shieldState = createShieldState(
+      options.hardpoints.shield.maxHp,
+      options.hardpoints.shield.modifier
+    );
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
       options.instance.seed,
@@ -85,7 +97,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       collectedOre: this.collectedOre,
       laserActive: this.miningPhase === 'extracting',
       miningImpact: this.currentMiningImpact(),
-      shieldFlash: this.shieldFlash,
+      shield: this.shieldState,
+      shieldImpacts: this.shieldImpacts,
     };
   }
 
@@ -131,7 +144,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
-    this.shieldFlash = Math.max(0, this.shieldFlash - clamped / 0.48);
+    this.shieldImpacts = advanceShieldImpacts(this.shieldImpacts, clamped);
     integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
     resolveAsteroidCollisions(this.instance.asteroids);
 
@@ -146,12 +159,48 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.updateMining(clamped, asteroid);
     }
 
-    if (resolveShieldCollisions(this.instance.ship, this.instance.asteroids, this.shield)) {
-      this.shieldFlash = 1;
+    const collisions = resolveShieldCollisions(
+      this.instance.ship,
+      this.currentShipVelocity(),
+      this.instance.asteroids,
+      this.shield
+    );
+    for (const collision of collisions) {
+      const result = applyShieldHit(
+        this.shieldState,
+        {
+          source: 'asteroid',
+          point: collision.point,
+          normal: collision.normal,
+          impactEnergy: collision.kineticEnergy,
+        },
+        this.shieldImpactCounter
+      );
+      this.shieldImpactCounter += 1;
+      if (result.damage > 0) this.shieldImpacts.push(result.impact);
     }
 
     this.updateChunks(clamped);
     return this.getSnapshot();
+  }
+
+  private currentShipVelocity(): WorldPoint {
+    const ship = this.instance.ship;
+    const forward = {
+      x: Math.cos(ship.headingRadians),
+      y: Math.sin(ship.headingRadians),
+    };
+    const side = { x: -forward.y, y: forward.x };
+    const forwardSpeed = this.miningPhase === 'extracting' ? this.shipForwardVelocity : ship.speed;
+    const lateralSpeed =
+      this.miningPhase === 'idle'
+        ? this.idleStationKeeping.lateralVelocity
+        : this.shipLateralVelocity;
+
+    return {
+      x: forward.x * forwardSpeed + side.x * lateralSpeed,
+      y: forward.y * forwardSpeed + side.y * lateralSpeed,
+    };
   }
 
   private findAsteroid(id: string | null): LocalAsteroid | null {
