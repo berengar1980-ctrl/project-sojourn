@@ -22,7 +22,10 @@ assert(background.includes('parallax'), 'space background must use parallax fact
 assert(background.includes('cameraCenter'), 'background must respond to camera position');
 assert(background.includes('timeSeconds'), 'background must support slow time-based drift');
 assert(starMap.includes('SpaceBackgroundRenderer'), 'star map must use shared space background');
-assert(localSpace.includes('SpaceBackgroundRenderer'), 'local space must use shared space background');
+assert(
+  localSpace.includes('SpaceBackgroundRenderer'),
+  'local space must use shared space background'
+);
 assert(camera.includes('getCenter'), 'camera must expose read-only center for parallax rendering');
 assert(starMap.includes('Math.sin(timeSeconds * 1.25)'), 'star-map sun must pulse slowly');
 assert(starMap.includes('spriteUrl'), 'star map must support optional planet sprites');
