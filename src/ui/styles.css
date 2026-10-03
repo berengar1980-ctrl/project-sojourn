@@ -344,15 +344,7 @@ body {
   max-height: 168px;
   overflow: hidden;
   border: 1px solid rgba(88, 255, 126, 0.28);
-  background:
-    repeating-linear-gradient(
-      0deg,
-      rgba(93, 255, 126, 0.025) 0,
-      rgba(93, 255, 126, 0.025) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
-    rgba(0, 8, 2, 0.9);
+  background: rgba(0, 8, 2, 0.9);
   box-shadow: inset 0 0 20px rgba(70, 255, 106, 0.04), 0 8px 22px rgba(0, 0, 0, 0.34);
   color: #72ff91;
   font-family: 'Courier New', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -360,19 +352,6 @@ body {
   text-shadow: 0 0 6px rgba(93, 255, 126, 0.4);
 }
 
-.local-system-log::after {
-  position: absolute;
-  inset: 0;
-  content: '';
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(91, 255, 120, 0.018),
-    transparent 18%,
-    transparent 82%,
-    rgba(91, 255, 120, 0.018)
-  );
-}
 
 .local-system-log-header {
   padding: 7px 10px 6px;
