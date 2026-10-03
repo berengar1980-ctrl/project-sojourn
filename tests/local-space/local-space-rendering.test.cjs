@@ -25,6 +25,14 @@ const maneuvers = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-maneuver-effects-renderer.ts'),
   'utf8'
 );
+const hardpointDebug = fs.readFileSync(
+  path.join(root, 'src/ui/ships/ship-hardpoint-debug-renderer.ts'),
+  'utf8'
+);
+const input = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/local-space-input.ts'),
+  'utf8'
+);
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
@@ -39,6 +47,18 @@ assert(
 );
 assert(renderer.includes('ShipEngineEffectsRenderer'), 'engine VFX must use shared renderer');
 assert(renderer.includes('ShipManeuverEffectsRenderer'), 'local space must render RCS effects');
+assert(
+  renderer.includes('ShipHardpointDebugRenderer'),
+  'local space must support visible hardpoint calibration'
+);
+assert(
+  renderer.includes('toggleHardpointDebug'),
+  'local renderer must expose hardpoint debug toggling'
+);
+assert(input.includes("event.key.toLowerCase() === 'h'"), 'H must toggle hardpoint calibration');
+assert(hardpointDebug.includes("label: 'PIVOT'"), 'debug overlay must mark the ship pivot');
+assert(hardpointDebug.includes('source.miningLasers'), 'debug overlay must mark mining lasers');
+assert(hardpointDebug.includes('source.engines'), 'debug overlay must mark main engines');
 assert(renderer.includes('projectShieldGeometry'), 'shield must use shared ship projection');
 assert(renderer.includes('spriteDrawOffset'), 'ship sprite must use shared pivot projection');
 assert(renderer.includes("asteroid.kind === 'debris'"), 'renderer must distinguish small debris');
@@ -62,6 +82,10 @@ assert(
   'main engine exhaust must remain compact'
 );
 assert(maneuvers.includes('torqueSign'), 'RCS selection must derive from thruster torque');
+assert(
+  maneuvers.includes('demand.angularThrust'),
+  'RCS turn selection must follow commanded angular thrust'
+);
 assert(maneuvers.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
 assert(maneuvers.includes('rgba(213, 244, 255'), 'RCS exhaust must use a white-blue core');
 assert(effects.includes('projectHardpoint'), 'mining lasers must use shared hardpoint projection');
