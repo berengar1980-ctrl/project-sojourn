@@ -1,3 +1,4 @@
+import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocalAsteroid,
@@ -55,7 +56,8 @@ export interface LocalSpaceViewModel {
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
-  readonly shieldFlash: number;
+  readonly shield: ShieldState;
+  readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly collectedOre: number;
 }
 
@@ -117,7 +119,8 @@ export function createLocalSpaceViewModel(
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,
-    shieldFlash: snapshot.shieldFlash,
+    shield: snapshot.shield,
+    shieldImpacts: snapshot.shieldImpacts,
     collectedOre: snapshot.collectedOre,
   };
 }
