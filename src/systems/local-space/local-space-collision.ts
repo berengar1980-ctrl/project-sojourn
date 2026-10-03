@@ -9,6 +9,15 @@ export interface ShieldWorldGeometry {
   readonly radiusY: number;
 }
 
+export interface ShieldCollisionImpact {
+  readonly asteroidId: string;
+  readonly point: WorldPoint;
+  readonly normal: WorldPoint;
+  readonly mass: number;
+  readonly impactSpeed: number;
+  readonly kineticEnergy: number;
+}
+
 function rotate(point: WorldPoint, angle: number): WorldPoint {
   return {
     x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
@@ -57,10 +66,7 @@ function separationVector(
   const radiusY = shield.radiusY + asteroidRadius;
   const metric = Math.hypot(local.x / radiusX, local.y / radiusY);
   if (metric >= 1) return { x: 0, y: 0 };
-
-  if (metric < 0.0001) {
-    return { x: -(radiusX + 2), y: 0 };
-  }
+  if (metric < 0.0001) return { x: -(radiusX + 2), y: 0 };
 
   const boundaryScale = 1 / metric;
   return {
@@ -76,11 +82,12 @@ function shieldPushSpeed(asteroid: LocalAsteroid): number {
 
 export function resolveShieldCollisions(
   ship: LocalShipState,
+  shipVelocity: WorldPoint,
   asteroids: readonly LocalAsteroid[],
   shield: ShieldWorldGeometry
-): boolean {
+): ShieldCollisionImpact[] {
   const center = shieldCenter(ship, shield);
-  let collided = false;
+  const impacts: ShieldCollisionImpact[] = [];
 
   for (const asteroid of asteroids) {
     const relative = {
@@ -94,8 +101,8 @@ export function resolveShieldCollisions(
     const separationWorld = rotate(separationLocal, ship.headingRadians);
     const normal = normalized(separationWorld);
     asteroid.position = {
-      x: asteroid.position.x + separationWorld.x + normal.x * 2,
-      y: asteroid.position.y + separationWorld.y + normal.y * 2,
+      x: asteroid.position.x + separationWorld.x,
+      y: asteroid.position.y + separationWorld.y,
     };
 
     const contactPoint = {
@@ -103,6 +110,29 @@ export function resolveShieldCollisions(
       y: asteroid.position.y - normal.y * asteroid.radius,
     };
     const velocityAtContact = pointVelocity(asteroid, contactPoint);
+    const relativeVelocity = {
+      x: velocityAtContact.x - shipVelocity.x,
+      y: velocityAtContact.y - shipVelocity.y,
+    };
+    const normalVelocity = dot(relativeVelocity, normal);
+    const impactSpeed = Math.max(0, -normalVelocity);
+
+    if (impactSpeed > 0.01) {
+      impacts.push({
+        asteroidId: asteroid.id,
+        point: contactPoint,
+        normal,
+        mass: asteroid.physics.mass,
+        impactSpeed,
+        kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed,
+      });
+    }
+
+    asteroid.position = {
+      x: asteroid.position.x + normal.x * 2,
+      y: asteroid.position.y + normal.y * 2,
+    };
+
     const outwardVelocity = dot(velocityAtContact, normal);
     const requiredDelta = Math.max(0, shieldPushSpeed(asteroid) - outwardVelocity);
     const impulseMagnitude = requiredDelta * asteroid.physics.mass;
@@ -111,10 +141,9 @@ export function resolveShieldCollisions(
       { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
       contactPoint
     );
-    collided = true;
   }
 
-  return collided;
+  return impacts;
 }
 
 function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
