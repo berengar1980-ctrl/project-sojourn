@@ -63,6 +63,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private approachRoute: readonly WorldPoint[] = [];
   private approachIndex = 0;
   private collectedOre = 0;
+  private readonly collectedResources = new Map<string, number>();
   private miningAccumulator = 0;
   private chunkCounter = 0;
   private readonly shieldState: ShieldState;
@@ -99,6 +100,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
       scanTargetId: this.scanTargetId,
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
+      collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
+        resourceId,
+        amount,
+      })),
       laserActive: this.miningPhase === 'extracting',
       miningImpact: this.currentMiningImpact(),
       shield: this.shieldState,
@@ -498,8 +503,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     };
     const directionLength = Math.max(0.001, Math.hypot(direction.x, direction.y));
 
+    if (!asteroid.resourceId) return;
+
     this.instance.chunks.push({
       id: 'chunk-' + this.instance.seed + '-' + this.chunkCounter,
+      resourceId: asteroid.resourceId,
       position: {
         x: impact.point.x + impact.normal.x * 2,
         y: impact.point.y + impact.normal.y * 2,
@@ -522,6 +530,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.updateChunk(chunk, deltaSeconds);
       if (distance(chunk.position, this.instance.ship.position) < 24) {
         this.collectedOre += chunk.amount;
+        const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
+        this.collectedResources.set(chunk.resourceId, collected + chunk.amount);
       } else {
         remaining.push(chunk);
       }
