@@ -38,7 +38,7 @@ function shieldCenter(ship: LocalShipState, shield: ShieldWorldGeometry): WorldP
   };
 }
 
-function collisionMetric(
+function expandedMetric(
   local: WorldPoint,
   asteroidRadius: number,
   shield: ShieldWorldGeometry
@@ -46,6 +46,30 @@ function collisionMetric(
   const radiusX = shield.radiusX + asteroidRadius;
   const radiusY = shield.radiusY + asteroidRadius;
   return Math.hypot(local.x / radiusX, local.y / radiusY);
+}
+
+function separationVector(
+  local: WorldPoint,
+  asteroidRadius: number,
+  shield: ShieldWorldGeometry
+): WorldPoint {
+  const metric = expandedMetric(local, asteroidRadius, shield);
+  if (metric >= 1) return { x: 0, y: 0 };
+
+  if (metric < 0.0001) {
+    return { x: -(shield.radiusX + asteroidRadius + 2), y: 0 };
+  }
+
+  const boundaryScale = 1 / metric;
+  return {
+    x: local.x * (boundaryScale - 1),
+    y: local.y * (boundaryScale - 1),
+  };
+}
+
+function normalized(point: WorldPoint): WorldPoint {
+  const length = Math.max(0.001, Math.hypot(point.x, point.y));
+  return { x: point.x / length, y: point.y / length };
 }
 
 export function resolveShieldCollisions(
@@ -62,19 +86,23 @@ export function resolveShieldCollisions(
       y: asteroid.position.y - center.y,
     };
     const local = rotate(relative, -ship.headingRadians);
-    const metric = collisionMetric(local, asteroid.radius, shield);
-    if (metric > 1) continue;
+    const separationLocal = separationVector(local, asteroid.radius, shield);
+    if (separationLocal.x === 0 && separationLocal.y === 0) continue;
 
-    const length = Math.max(0.001, Math.hypot(relative.x, relative.y));
-    const normal = { x: relative.x / length, y: relative.y / length };
-    const penetration = Math.max(2, (1 - metric) * (asteroid.radius + shield.radiusY));
+    const separationWorld = rotate(separationLocal, ship.headingRadians);
+    const normal = normalized(separationWorld);
     asteroid.position = {
-      x: asteroid.position.x + normal.x * penetration,
-      y: asteroid.position.y + normal.y * penetration,
+      x: asteroid.position.x + separationWorld.x + normal.x * 3,
+      y: asteroid.position.y + separationWorld.y + normal.y * 3,
     };
+
+    const outwardSpeed = 250;
+    const outwardVelocity =
+      asteroid.velocity.x * normal.x + asteroid.velocity.y * normal.y;
+    const requiredImpulse = Math.max(0, outwardSpeed - outwardVelocity);
     asteroid.velocity = {
-      x: asteroid.velocity.x + normal.x * 165,
-      y: asteroid.velocity.y + normal.y * 165,
+      x: asteroid.velocity.x + normal.x * requiredImpulse,
+      y: asteroid.velocity.y + normal.y * requiredImpulse,
     };
     collided = true;
   }
@@ -88,7 +116,7 @@ export function updateAsteroidMotion(
   width: number,
   height: number
 ): void {
-  const damping = Math.pow(0.18, deltaSeconds);
+  const damping = Math.pow(0.28, deltaSeconds);
 
   for (const asteroid of asteroids) {
     asteroid.position = {
