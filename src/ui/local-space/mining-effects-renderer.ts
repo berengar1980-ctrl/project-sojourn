@@ -1,48 +1,17 @@
-import type { ShipHardpoint } from '../../core/ship-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
-
-export interface ShipScreenGeometry {
-  readonly center: ScreenPoint;
-  readonly width: number;
-  readonly height: number;
-  readonly angle: number;
-}
-
-function rotatePoint(x: number, y: number, angle: number): ScreenPoint {
-  return {
-    x: x * Math.cos(angle) - y * Math.sin(angle),
-    y: x * Math.sin(angle) + y * Math.cos(angle),
-  };
-}
-
-function hardpointScreen(
-  hardpoint: ShipHardpoint,
-  geometry: ShipScreenGeometry,
-  model: LocalSpaceViewModel
-): ScreenPoint {
-  const source = model.ship.hardpoints;
-  const localX = ((hardpoint.x - source.pivot.x) / source.sourceWidth) * geometry.width;
-  const localY = ((hardpoint.y - source.pivot.y) / source.sourceHeight) * geometry.height;
-  const rotated = rotatePoint(localX, localY, geometry.angle);
-  return {
-    x: geometry.center.x + rotated.x,
-    y: geometry.center.y + rotated.y,
-  };
-}
+import {
+  projectHardpoint,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
 
 function fractional(value: number): number {
   return value - Math.floor(value);
 }
 
-function surfaceImpactPoint(center: ScreenPoint, ship: ScreenPoint, radius: number): ScreenPoint {
-  const dx = ship.x - center.x;
-  const dy = ship.y - center.y;
-  const length = Math.max(0.001, Math.hypot(dx, dy));
-  return {
-    x: center.x + (dx / length) * radius,
-    y: center.y + (dy / length) * radius,
-  };
+function normalized(point: ScreenPoint): ScreenPoint {
+  const length = Math.max(0.001, Math.hypot(point.x, point.y));
+  return { x: point.x / length, y: point.y / length };
 }
 
 export class MiningEffectsRenderer {
@@ -58,15 +27,14 @@ export class MiningEffectsRenderer {
     viewportHeight: number,
     timeSeconds: number
   ): void {
-    if (!model.laserActive || !model.miningTarget) return;
+    if (!model.laserActive || !model.miningImpact) return;
 
-    const targetCenter = this.camera.worldToScreen(
-      model.miningTarget.position,
+    const target = this.camera.worldToScreen(
+      model.miningImpact.point,
       viewportWidth,
       viewportHeight
     );
-    const impactRadius = Math.max(4, this.camera.scale(model.miningTarget.radius) * 0.82);
-    const target = surfaceImpactPoint(targetCenter, geometry.center, impactRadius);
+    const normal = normalized(model.miningImpact.normal);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
 
     this.context.save();
@@ -75,7 +43,7 @@ export class MiningEffectsRenderer {
     this.context.strokeStyle = 'rgba(238, 62, 40, ' + (0.62 + pulse * 0.3) + ')';
 
     for (const hardpoint of model.ship.hardpoints.miningLasers) {
-      const start = hardpointScreen(hardpoint, geometry, model);
+      const start = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
       const baseWidth = Math.max(
         1.1,
         (hardpoint.width / model.ship.hardpoints.sourceWidth) * geometry.width * 0.72
@@ -88,8 +56,8 @@ export class MiningEffectsRenderer {
     }
 
     this.context.restore();
-    this.drawImpactSparks(target, model.miningTarget.radius, timeSeconds);
-    this.drawImpactDust(target, model.miningTarget.radius, timeSeconds);
+    this.drawImpactSparks(target, normal, timeSeconds);
+    this.drawImpactDust(target, normal, timeSeconds);
   }
 
   drawTractorFields(
@@ -127,16 +95,25 @@ export class MiningEffectsRenderer {
     this.context.restore();
   }
 
-  private drawImpactSparks(target: ScreenPoint, radius: number, timeSeconds: number): void {
+  private drawImpactSparks(
+    target: ScreenPoint,
+    normal: ScreenPoint,
+    timeSeconds: number
+  ): void {
+    const tangent = { x: -normal.y, y: normal.x };
     this.context.save();
     this.context.lineCap = 'round';
 
     for (let index = 0; index < 8; index += 1) {
       const phase = fractional(timeSeconds * 2.7 + index * 0.173);
-      const angle = index * 2.399 + Math.sin(timeSeconds * 1.8 + index) * 0.32;
-      const travel = (8 + Math.min(18, radius * 0.18)) * phase;
-      const x = target.x + Math.cos(angle) * travel;
-      const y = target.y + Math.sin(angle) * travel;
+      const spread = Math.sin(index * 2.31 + timeSeconds * 0.8) * 0.72;
+      const direction = normalized({
+        x: normal.x + tangent.x * spread,
+        y: normal.y + tangent.y * spread,
+      });
+      const travel = (8 + index * 1.25) * phase;
+      const x = target.x + direction.x * travel;
+      const y = target.y + direction.y * travel;
       const tail = 3 + phase * 6;
       const alpha = Math.max(0, 1 - phase) * 0.88;
 
@@ -146,24 +123,33 @@ export class MiningEffectsRenderer {
       this.context.lineWidth = 1 + (1 - phase) * 1.2;
       this.context.beginPath();
       this.context.moveTo(x, y);
-      this.context.lineTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+      this.context.lineTo(x - direction.x * tail, y - direction.y * tail);
       this.context.stroke();
     }
 
     this.context.restore();
   }
 
-  private drawImpactDust(target: ScreenPoint, radius: number, timeSeconds: number): void {
+  private drawImpactDust(
+    target: ScreenPoint,
+    normal: ScreenPoint,
+    timeSeconds: number
+  ): void {
+    const tangent = { x: -normal.y, y: normal.x };
     this.context.save();
 
     for (let index = 0; index < 6; index += 1) {
       const phase = fractional(timeSeconds * 0.72 + index * 0.161);
-      const angle = index * 1.73 + 0.6;
-      const drift = (5 + Math.min(16, radius * 0.14)) * phase;
-      const x = target.x + Math.cos(angle) * drift;
-      const y = target.y + Math.sin(angle) * drift;
-      const size = 4 + phase * 10;
-      const alpha = Math.max(0, 1 - phase) * 0.16;
+      const spread = Math.sin(index * 1.73 + 0.6) * 0.85;
+      const direction = normalized({
+        x: normal.x * 0.9 + tangent.x * spread,
+        y: normal.y * 0.9 + tangent.y * spread,
+      });
+      const drift = (5 + index * 2.1) * phase;
+      const x = target.x + direction.x * drift;
+      const y = target.y + direction.y * drift;
+      const size = 3 + phase * 8;
+      const alpha = Math.max(0, 1 - phase) * 0.14;
 
       this.context.fillStyle = 'rgba(150, 136, 119, ' + alpha + ')';
       this.context.beginPath();
