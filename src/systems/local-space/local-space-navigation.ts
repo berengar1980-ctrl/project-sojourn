@@ -190,18 +190,18 @@ function simplifyRoute(
 ): readonly WorldPoint[] {
   if (route.length <= 2) return route;
 
-  const result: WorldPoint[] = [route[0]];
+  const result: WorldPoint[] = [route[0]!];
   let anchor = 0;
 
   while (anchor < route.length - 1) {
     let candidate = route.length - 1;
     while (
       candidate > anchor + 1 &&
-      !segmentClear(route[anchor], route[candidate], obstacles, clearance)
+      !segmentClear(route[anchor]!, route[candidate]!, obstacles, clearance)
     ) {
       candidate -= 1;
     }
-    result.push(route[candidate]);
+    result.push(route[candidate]!);
     anchor = candidate;
   }
 
@@ -226,12 +226,12 @@ function quadratic(a: WorldPoint, b: WorldPoint, c: WorldPoint, t: number): Worl
 function roundRoute(route: readonly WorldPoint[]): readonly WorldPoint[] {
   if (route.length <= 2) return route;
 
-  const result: WorldPoint[] = [route[0]];
+  const result: WorldPoint[] = [route[0]!];
 
   for (let index = 1; index < route.length - 1; index += 1) {
-    const previous = route[index - 1];
-    const corner = route[index];
-    const next = route[index + 1];
+    const previous = route[index - 1]!;
+    const corner = route[index]!;
+    const next = route[index + 1]!;
     const incomingRatio = Math.min(0.42, CORNER_RADIUS / Math.max(1, distance(previous, corner)));
     const outgoingRatio = Math.min(0.42, CORNER_RADIUS / Math.max(1, distance(corner, next)));
     const entry = interpolate(corner, previous, incomingRatio);
@@ -244,7 +244,7 @@ function roundRoute(route: readonly WorldPoint[]): readonly WorldPoint[] {
     result.push(exit);
   }
 
-  result.push(route[route.length - 1]);
+  result.push(route[route.length - 1]!);
   return result;
 }
 
@@ -254,7 +254,7 @@ function routeSegmentsClear(
   clearance: number
 ): boolean {
   for (let index = 1; index < points.length; index += 1) {
-    if (!segmentClear(points[index - 1], points[index], obstacles, clearance)) return false;
+    if (!segmentClear(points[index - 1]!, points[index]!, obstacles, clearance)) return false;
   }
   return true;
 }
@@ -262,7 +262,7 @@ function routeSegmentsClear(
 function routeCost(points: readonly WorldPoint[]): number {
   let total = 0;
   for (let index = 1; index < points.length; index += 1) {
-    total += distance(points[index - 1], points[index]);
+    total += distance(points[index - 1]!, points[index]!);
   }
   return total;
 }
