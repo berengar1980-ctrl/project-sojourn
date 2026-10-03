@@ -78,15 +78,7 @@ export class PlayerShipRenderer {
 
       context.fillStyle = 'rgba(224, 248, 255, ' + 0.72 * pulse + ')';
       context.beginPath();
-      context.ellipse(
-        nozzleX,
-        offsetY,
-        width * 0.014,
-        height * 0.045,
-        0,
-        0,
-        Math.PI * 2
-      );
+      context.ellipse(nozzleX, offsetY, width * 0.014, height * 0.045, 0, 0, Math.PI * 2);
       context.fill();
     }
   }
