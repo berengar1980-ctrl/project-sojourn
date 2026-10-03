@@ -97,8 +97,7 @@ export function resolveShieldCollisions(
     };
 
     const outwardSpeed = 250;
-    const outwardVelocity =
-      asteroid.velocity.x * normal.x + asteroid.velocity.y * normal.y;
+    const outwardVelocity = asteroid.velocity.x * normal.x + asteroid.velocity.y * normal.y;
     const requiredImpulse = Math.max(0, outwardSpeed - outwardVelocity);
     asteroid.velocity = {
       x: asteroid.velocity.x + normal.x * requiredImpulse,
