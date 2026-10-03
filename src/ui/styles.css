@@ -1,0 +1,132 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #dfe8f3;
+  background: #070b11;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(38, 59, 83, 0.22), transparent 32%),
+    #070b11;
+}
+
+button,
+canvas {
+  font: inherit;
+}
+
+.star-map-shell {
+  width: min(1500px, calc(100vw - 32px));
+  margin: 16px auto;
+  border: 1px solid rgba(142, 166, 194, 0.2);
+  background: rgba(10, 16, 25, 0.96);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.star-map-header {
+  min-height: 82px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(142, 166, 194, 0.16);
+}
+
+.star-map-header h1,
+.map-inspector h2 {
+  margin: 0;
+  font-weight: 580;
+  letter-spacing: 0.02em;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #7893ad;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+.map-help {
+  color: #718396;
+  font-size: 12px;
+}
+
+.star-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  min-height: min(760px, calc(100vh - 132px));
+}
+
+.map-stage {
+  min-height: 600px;
+  position: relative;
+  overflow: hidden;
+}
+
+.star-map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.map-inspector {
+  padding: 24px;
+  border-left: 1px solid rgba(142, 166, 194, 0.16);
+  background: linear-gradient(180deg, rgba(16, 24, 35, 0.96), rgba(8, 13, 20, 0.98));
+}
+
+.inspector-description {
+  min-height: 72px;
+  color: #9aabba;
+  line-height: 1.55;
+}
+
+.inspector-meta {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(142, 166, 194, 0.14);
+  color: #bdd0df;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.route-card {
+  margin-top: 20px;
+  padding: 13px 14px;
+  border: 1px solid rgba(122, 207, 224, 0.32);
+  background: rgba(67, 119, 136, 0.14);
+  color: #a8e3ed;
+  font-size: 13px;
+}
+
+@media (max-width: 850px) {
+  .star-map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-inspector {
+    border-top: 1px solid rgba(142, 166, 194, 0.16);
+    border-left: 0;
+  }
+
+  .map-stage,
+  .star-map-canvas {
+    min-height: 520px;
+  }
+}

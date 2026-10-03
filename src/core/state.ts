@@ -1,5 +1,6 @@
 export interface PlayerState {
-  locationId: string | null;
+  locationId: string;
+  selectedLocationId: string | null;
 }
 
 export interface GameState {
@@ -11,7 +12,8 @@ export function createInitialState(): GameState {
   return {
     version: 1,
     player: {
-      locationId: null,
+      locationId: 'haven',
+      selectedLocationId: null,
     },
   };
 }
