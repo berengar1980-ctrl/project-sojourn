@@ -9,6 +9,7 @@ import {
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 
@@ -32,6 +33,7 @@ export class LocalSpaceRenderer {
   private readonly camera: MapCamera;
   private readonly miningEffects: MiningEffectsRenderer;
   private readonly engineEffects = new ShipEngineEffectsRenderer();
+  private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
@@ -215,6 +217,16 @@ export class LocalSpaceRenderer {
     const source = this.model.ship.hardpoints;
     const engineIntensity = Math.min(1, this.model.ship.speed / 240);
     this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds);
+    this.maneuverEffects.draw(
+      this.context,
+      source,
+      geometry,
+      {
+        turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
+        lateralThrust: this.model.ship.lateralThrust,
+      },
+      timeSeconds
+    );
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
