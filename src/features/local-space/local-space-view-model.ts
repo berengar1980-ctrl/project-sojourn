@@ -16,11 +16,14 @@ export interface LocalAsteroidView {
   readonly position: WorldPoint;
   readonly radius: number;
   readonly rotation: number;
-  readonly oreType: string;
-  readonly oreRemaining: number;
-  readonly oreCapacity: number;
+  readonly scanLevel: LocalAsteroid['scanLevel'];
+  readonly surveyResult: 'unknown' | 'empty' | 'deposit';
+  readonly resourceName: string | null;
+  readonly resourceAmount: number | null;
+  readonly resourceCapacity: number | null;
   readonly isSelected: boolean;
   readonly isMiningTarget: boolean;
+  readonly isScanTarget: boolean;
 }
 
 export interface LocalChunkView {
@@ -53,6 +56,7 @@ export interface LocalSpaceViewModel {
   readonly chunks: readonly LocalChunkView[];
   readonly selectedAsteroid: LocalAsteroidView | null;
   readonly miningTarget: LocalAsteroidView | null;
+  readonly scanTarget: LocalAsteroidView | null;
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
@@ -62,6 +66,9 @@ export interface LocalSpaceViewModel {
 }
 
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
+  const surveyed = asteroid.scanLevel !== 'unscanned';
+  const analyzed = asteroid.scanLevel === 'analyzed';
+
   return {
     id: asteroid.id,
     kind: asteroid.kind,
@@ -69,11 +76,14 @@ function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): Loc
     position: asteroid.position,
     radius: asteroid.radius,
     rotation: asteroid.rotation,
-    oreType: asteroid.oreType,
-    oreRemaining: asteroid.oreRemaining,
-    oreCapacity: asteroid.oreCapacity,
+    scanLevel: asteroid.scanLevel,
+    surveyResult: !surveyed ? 'unknown' : asteroid.resourceId ? 'deposit' : 'empty',
+    resourceName: analyzed && asteroid.resourceId ? asteroid.oreType : null,
+    resourceAmount: analyzed ? asteroid.oreRemaining : null,
+    resourceCapacity: analyzed ? asteroid.oreCapacity : null,
     isSelected: asteroid.id === snapshot.selectedAsteroidId,
     isMiningTarget: asteroid.id === snapshot.miningTargetId,
+    isScanTarget: asteroid.id === snapshot.scanTargetId,
   };
 }
 
@@ -94,6 +104,7 @@ export function createLocalSpaceViewModel(
   const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
   const miningTarget = asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null;
+  const scanTarget = asteroids.find((asteroid) => asteroid.isScanTarget) ?? null;
 
   return {
     title,
@@ -116,6 +127,7 @@ export function createLocalSpaceViewModel(
     chunks: snapshot.instance.chunks.map(mapChunk),
     selectedAsteroid,
     miningTarget,
+    scanTarget,
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,
