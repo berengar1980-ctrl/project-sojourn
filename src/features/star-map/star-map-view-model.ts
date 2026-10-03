@@ -33,6 +33,7 @@ export interface PlayerShipMapView {
   readonly lateralThrust: number;
   readonly isTravelling: boolean;
   readonly speed: number;
+  readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
@@ -74,6 +75,7 @@ export function createStarMapViewModel(
       lateralThrust: navigation.lateralThrust,
       isTravelling: navigation.isTravelling,
       speed: navigation.speed,
+      nominalLengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,

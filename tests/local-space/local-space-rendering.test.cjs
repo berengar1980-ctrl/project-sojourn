@@ -90,7 +90,7 @@ assert(
       path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
       'utf8'
     )
-    .includes('Math.max(-0.65, Math.min(0.65, state.lateralVelocity))'),
+    .includes('Math.max(-0.8, Math.min(0.8, state.lateralVelocity))'),
   'idle station keeping must allow visible low-speed drift before correcting'
 );
 assert(maneuvers.includes('rgba(213, 244, 255'), 'RCS exhaust must use a white-blue core');

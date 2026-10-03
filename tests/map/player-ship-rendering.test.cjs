@@ -19,11 +19,18 @@ assert(
   'star-map sprite must use shared pivot projection'
 );
 assert(shipRenderer.includes('drawImage'), 'ship renderer must draw the actual ship sprite');
-assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 44;'), 'star-map ship must stay compact');
-assert(shipRenderer.includes('idleShipMotion'), 'stationary star-map ship must have visual drift');
+assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
 assert(
-  shipRenderer.includes('const idle = ship.isTravelling ? null : idleShipMotion(timeSeconds);'),
+  shipRenderer.includes('updateIdleStationKeeping'),
+  'stationary star-map ship must reuse local-space station keeping'
+);
+assert(
+  shipRenderer.includes('const idle = ship.isTravelling ? null : this.updateIdleShip(ship, timeSeconds);'),
   'star-map idle drift must remain presentation-only'
+);
+assert(
+  shipRenderer.includes('createIdleStationKeepingState'),
+  'star map must share the exact idle state initializer with local space'
 );
 assert(
   shipRenderer.includes('ShipHardpointDebugRenderer'),
