@@ -1,6 +1,7 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
+import { createLocalSpaceSystemLog } from './local-space-system-log';
 
 export interface LocalSpacePanel {
   update(model: LocalSpaceViewModel): void;
@@ -64,7 +65,12 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   }
 
   let model = options.model;
+  let lastShieldPercent = Math.round((model.shield.currentHp / model.shield.maxHp) * 100);
+  let routePlanning = false;
   const renderer = new LocalSpaceRenderer(canvas, model);
+  const systemLog = createLocalSpaceSystemLog(shell);
+  systemLog.write('SYSTEM ONLINE');
+  systemLog.write('SCHILD-INTEGRITÄT ' + lastShieldPercent + ' %');
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
@@ -72,6 +78,15 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     oreCounter.textContent = Math.round(model.collectedOre).toString();
+
+    const shieldPercent = Math.max(
+      0,
+      Math.round((model.shield.currentHp / model.shield.maxHp) * 100)
+    );
+    if (shieldPercent !== lastShieldPercent) {
+      systemLog.write('SCHILD-INTEGRITÄT ' + shieldPercent + ' %');
+      lastShieldPercent = shieldPercent;
+    }
 
     const statusText = miningStatus(model);
     status.hidden = statusText.length === 0;
@@ -93,7 +108,18 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     onSelectAsteroid: options.onSelectAsteroid,
   });
 
-  mineButton.addEventListener('click', options.onStartMining);
+  mineButton.addEventListener('click', () => {
+    if (routePlanning) return;
+    routePlanning = true;
+    mineButton.disabled = true;
+    systemLog.write('NAV > ROUTENBERECHNUNG...');
+    requestAnimationFrame(() => {
+      options.onStartMining();
+      routePlanning = false;
+      systemLog.write('NAV > ANFLUGROUTE BEREIT');
+      updateOverlay();
+    });
+  });
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
@@ -107,6 +133,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     destroy(): void {
       unbindInput();
       observer.disconnect();
+      systemLog.destroy();
       shell.remove();
     },
   };
