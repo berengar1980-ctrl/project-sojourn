@@ -175,7 +175,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     const ship = this.instance.ship;
-    const waypoint = this.approachRoute[this.approachIndex];
+    const waypoint = this.approachRoute[this.approachIndex]!;
     const desiredHeading = heading(ship.position, waypoint);
     const turnLimit = MAX_TURN_RATE * deltaSeconds;
     ship.headingRadians = turnToward(ship.headingRadians, desiredHeading, turnLimit);
