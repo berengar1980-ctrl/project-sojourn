@@ -1,5 +1,5 @@
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
-import hardpointsJson from '../../../resources/ships/mining/miner-80m-standard.hardpoints.json';
+import hardpointsJson from './miner-80m-standard.hardpoints.json';
 
 const miner80mSpriteUrl = new URL(
   '../../../resources/ships/mining/miner-80m-standard.png',
