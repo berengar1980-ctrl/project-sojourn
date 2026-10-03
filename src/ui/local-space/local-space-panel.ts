@@ -1,10 +1,7 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
-import {
-  createLocalSpaceSystemLog,
-  type LocalSpaceSystemLog,
-} from './local-space-system-log';
+import { createLocalSpaceSystemLog, type LocalSpaceSystemLog } from './local-space-system-log';
 
 export interface LocalSpacePanel {
   update(model: LocalSpaceViewModel): void;
