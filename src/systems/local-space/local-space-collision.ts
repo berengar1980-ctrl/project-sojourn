@@ -1,11 +1,7 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import {
-  applyImpulseAtPoint,
-  pointVelocity,
-  rotationalMassTerm,
-} from './local-space-physics';
+import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
 
 export interface ShieldWorldGeometry {
   readonly centerOffset: WorldPoint;
@@ -131,10 +127,7 @@ function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
 }
 
 function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
-  const currentDistance = Math.hypot(
-    b.position.x - a.position.x,
-    b.position.y - a.position.y
-  );
+  const currentDistance = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y);
   const overlap = a.radius + b.radius - currentDistance;
   if (overlap <= 0) return;
 
