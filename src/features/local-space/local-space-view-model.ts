@@ -46,6 +46,7 @@ export interface LocalSpaceViewModel {
   readonly miningTarget: LocalAsteroidView | null;
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
+  readonly shieldFlash: number;
   readonly collectedOre: number;
 }
 
@@ -99,6 +100,7 @@ export function createLocalSpaceViewModel(
     miningTarget,
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
+    shieldFlash: snapshot.shieldFlash,
     collectedOre: snapshot.collectedOre,
   };
 }

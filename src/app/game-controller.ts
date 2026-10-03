@@ -69,6 +69,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     localSpace = createLocalSpaceService({
       instance: generateMiningSpace('greyrock-belt', localSeed(visitCounter)),
       approachSpeed: 240,
+      hardpoints: ship.sprite.hardpoints,
+      nominalLengthMeters: ship.nominalLengthMeters,
     });
 
     localPanel = createLocalSpacePanel({
@@ -80,6 +82,10 @@ export function createGameController(options: GameControllerOptions): GameContro
       },
       onStartMining: () => {
         localSpace?.startMining();
+        localPanel?.update(localModel());
+      },
+      onCancelMining: () => {
+        localSpace?.cancelMining();
         localPanel?.update(localModel());
       },
       onReturnToStarMap: () => {
