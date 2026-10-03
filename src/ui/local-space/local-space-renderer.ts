@@ -213,13 +213,7 @@ export class LocalSpaceRenderer {
   private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
     const engineIntensity = Math.min(1, this.model.ship.speed / 240);
-    this.engineEffects.draw(
-      this.context,
-      source,
-      geometry,
-      engineIntensity,
-      timeSeconds
-    );
+    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds);
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
@@ -227,13 +221,7 @@ export class LocalSpaceRenderer {
 
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
       const offset = spriteDrawOffset(source, geometry);
-      this.context.drawImage(
-        this.shipImage,
-        offset.x,
-        offset.y,
-        geometry.width,
-        geometry.height
-      );
+      this.context.drawImage(this.shipImage, offset.x, offset.y, geometry.width, geometry.height);
     }
 
     this.context.restore();
@@ -264,15 +252,7 @@ export class LocalSpaceRenderer {
     this.context.lineWidth = 1;
     this.context.strokeStyle = 'rgba(205, 240, 255, ' + 0.76 * intensity + ')';
     this.context.beginPath();
-    this.context.ellipse(
-      0,
-      0,
-      shield.radiusX * 0.96,
-      shield.radiusY * 0.96,
-      0,
-      0,
-      Math.PI * 2
-    );
+    this.context.ellipse(0, 0, shield.radiusX * 0.96, shield.radiusY * 0.96, 0, 0, Math.PI * 2);
     this.context.stroke();
     this.context.restore();
   }
