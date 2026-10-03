@@ -22,8 +22,8 @@ export function createIdleStationKeepingState(
 ): IdleStationKeepingState {
   return {
     targetHeading: ship.headingRadians,
-    lateralVelocity: ((seed % 2001) / 2000 - 0.5) * 0.45,
-    angularVelocity: ((seed % 997) / 996 - 0.5) * 0.018,
+    lateralVelocity: ((seed % 2001) / 2000 - 0.5) * 0.55,
+    angularVelocity: ((seed % 997) / 996 - 0.5) * 0.022,
     disturbanceTimer: 1.8 + (seed % 2400) / 1000,
     disturbanceIndex: 0,
   };
@@ -60,8 +60,8 @@ function applyDisturbance(
   if (state.disturbanceTimer > 0) return;
 
   const phase = seed * 0.00017 + state.disturbanceIndex * 1.618;
-  state.lateralVelocity += Math.sin(phase * 7.31) * 0.16;
-  state.angularVelocity += Math.sin(phase * 11.73 + 0.8) * 0.018;
+  state.lateralVelocity += Math.sin(phase * 7.31) * 0.19;
+  state.angularVelocity += Math.sin(phase * 11.73 + 0.8) * 0.021;
   state.disturbanceIndex += 1;
   state.disturbanceTimer = 2.2 + Math.abs(Math.sin(phase * 3.17)) * 3.2;
 }
@@ -78,13 +78,13 @@ function applyPositionKeeping(
   const offsetY = ship.position.y - hold.y;
   const lateralOffset = offsetX * sideX + offsetY * sideY;
 
-  let thrust = -lateralOffset * 0.12 - state.lateralVelocity * 0.68;
-  thrust = Math.max(-0.24, Math.min(0.24, thrust));
+  let thrust = -lateralOffset * 0.11 - state.lateralVelocity * 0.62;
+  thrust = Math.max(-0.27, Math.min(0.27, thrust));
   if (Math.abs(thrust) < 0.045) thrust = 0;
 
   ship.lateralThrust = thrust;
   state.lateralVelocity += thrust * 1.8 * deltaSeconds;
-  state.lateralVelocity = Math.max(-0.55, Math.min(0.55, state.lateralVelocity));
+  state.lateralVelocity = Math.max(-0.65, Math.min(0.65, state.lateralVelocity));
   ship.position = {
     x: ship.position.x + sideX * state.lateralVelocity * deltaSeconds,
     y: ship.position.y + sideY * state.lateralVelocity * deltaSeconds,
@@ -98,7 +98,7 @@ function applyHeadingKeeping(
   deltaSeconds: number
 ): void {
   const headingError = angleDelta(ship.headingRadians, state.targetHeading);
-  let angularThrust = headingError * 0.9 - state.angularVelocity * 1.35;
+  let angularThrust = headingError * 0.82 - state.angularVelocity * 1.22;
   angularThrust = Math.max(-0.34, Math.min(0.34, angularThrust));
 
   if (Math.abs(headingError) < 0.004 && Math.abs(state.angularVelocity) < 0.003) {
@@ -106,7 +106,7 @@ function applyHeadingKeeping(
   }
 
   state.angularVelocity += angularThrust * 0.32 * deltaSeconds;
-  state.angularVelocity = Math.max(-0.035, Math.min(0.035, state.angularVelocity));
+  state.angularVelocity = Math.max(-0.042, Math.min(0.042, state.angularVelocity));
   ship.headingRadians += state.angularVelocity * deltaSeconds;
   ship.turnRateRadiansPerSecond = state.angularVelocity;
   ship.angularThrust = angularThrust / 0.34;

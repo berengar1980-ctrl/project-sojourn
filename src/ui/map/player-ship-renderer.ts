@@ -6,7 +6,25 @@ import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoi
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
-const BASE_SHIP_WIDTH = 72;
+const BASE_SHIP_WIDTH = 44;
+
+function idleShipMotion(timeSeconds: number): {
+  offsetX: number;
+  offsetY: number;
+  headingOffset: number;
+  angularThrust: number;
+  lateralThrust: number;
+} {
+  const slow = timeSeconds * 0.52;
+  const secondary = timeSeconds * 0.21 + 1.3;
+  return {
+    offsetX: Math.sin(secondary) * 1.2,
+    offsetY: Math.sin(slow) * 2.4 + Math.sin(secondary * 1.7) * 0.9,
+    headingOffset: Math.sin(slow * 0.78) * 0.022 + Math.sin(secondary) * 0.008,
+    angularThrust: Math.sin(slow * 0.78 + Math.PI / 2) * 0.22,
+    lateralThrust: Math.sin(slow + Math.PI / 2) * 0.2,
+  };
+}
 
 export class PlayerShipRenderer {
   private readonly image = new Image();
@@ -35,31 +53,43 @@ export class PlayerShipRenderer {
     const scale = shipSymbolScale(relativeZoom);
     const width = BASE_SHIP_WIDTH * scale;
     const aspectRatio = this.imageAspectRatio(ship.spriteAspectRatio);
+    const idle = ship.isTravelling ? null : idleShipMotion(timeSeconds);
+    const center = idle
+      ? { x: point.x + idle.offsetX * scale, y: point.y + idle.offsetY * scale }
+      : point;
+    const angle = ship.headingRadians + (idle?.headingOffset ?? 0);
     const geometry: ShipScreenGeometry = {
-      center: point,
+      center,
       width,
       height: width / aspectRatio,
-      angle: ship.headingRadians,
+      angle,
     };
 
     if (ship.isTravelling) {
       this.engineEffects.draw(context, ship.hardpoints, geometry, 0.82, timeSeconds);
-      this.maneuverEffects.draw(
-        context,
-        ship.hardpoints,
-        geometry,
-        {
-          turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
-          angularThrust: ship.angularThrust,
-          lateralThrust: ship.lateralThrust,
-        },
-        timeSeconds
-      );
     }
 
+    this.maneuverEffects.draw(
+      context,
+      ship.hardpoints,
+      geometry,
+      idle
+        ? {
+            turnRateRadiansPerSecond: idle.angularThrust * 0.035,
+            angularThrust: idle.angularThrust,
+            lateralThrust: idle.lateralThrust,
+          }
+        : {
+            turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+            angularThrust: ship.angularThrust,
+            lateralThrust: ship.lateralThrust,
+          },
+      timeSeconds
+    );
+
     context.save();
-    context.translate(point.x, point.y);
-    context.rotate(ship.headingRadians);
+    context.translate(center.x, center.y);
+    context.rotate(angle);
 
     if (this.image.complete && this.image.naturalWidth > 0) {
       const offset = spriteDrawOffset(ship.hardpoints, geometry);
