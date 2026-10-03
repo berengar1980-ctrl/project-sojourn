@@ -42,6 +42,7 @@ export class PlayerShipRenderer {
         geometry,
         {
           turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+          angularThrust: ship.angularThrust,
           lateralThrust: ship.lateralThrust,
         },
         timeSeconds
