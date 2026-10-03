@@ -115,9 +115,7 @@ export class LocalSpaceRenderer {
       const y = (index * 131 + 17) % Math.max(1, Math.floor(height));
       const size = index % 13 === 0 ? 1.4 : 0.65;
       this.context.fillStyle =
-        index % 10 === 0
-          ? 'rgba(160, 194, 235, .55)'
-          : 'rgba(220, 228, 237, .28)';
+        index % 10 === 0 ? 'rgba(160, 194, 235, .55)' : 'rgba(220, 228, 237, .28)';
       this.context.fillRect(x, y, size, size);
     }
   }
@@ -138,7 +136,7 @@ export class LocalSpaceRenderer {
 
     for (let vertex = 0; vertex < 10; vertex += 1) {
       const angle = (vertex / 10) * Math.PI * 2;
-      const wobble = 0.76 + (((seed >>> (vertex % 8)) & 7) / 28);
+      const wobble = 0.76 + ((seed >>> (vertex % 8)) & 7) / 28;
       const x = Math.cos(angle) * radius * wobble;
       const y = Math.sin(angle) * radius * wobble;
       if (vertex === 0) this.context.moveTo(x, y);
@@ -222,11 +220,7 @@ export class LocalSpaceRenderer {
     if (!this.model.laserActive || !this.model.miningTarget) return;
 
     const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const target = this.camera.worldToScreen(
-      this.model.miningTarget.position,
-      width,
-      height
-    );
+    const target = this.camera.worldToScreen(this.model.miningTarget.position, width, height);
     const angle = this.model.ship.headingRadians;
     const noseX = ship.x + Math.cos(angle) * 72;
     const noseY = ship.y + Math.sin(angle) * 72;
