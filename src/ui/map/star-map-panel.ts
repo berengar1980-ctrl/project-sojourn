@@ -1,4 +1,5 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
+import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer } from './topdown-map-renderer';
 
 export interface StarMapPanel {
@@ -59,10 +60,6 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   let model = options.model;
   const renderer = new TopdownMapRenderer(canvas, model);
-  let dragging = false;
-  let moved = false;
-  let lastX = 0;
-  let lastY = 0;
 
   const updateSelection = (): void => {
     const selected = model.locations.find((location) => location.isSelected);
@@ -95,40 +92,11 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
 
-  canvas.addEventListener('pointerdown', (event) => {
-    dragging = true;
-    moved = false;
-    lastX = event.offsetX;
-    lastY = event.offsetY;
-    canvas.setPointerCapture(event.pointerId);
+  const unbindInput = bindStarMapInput({
+    canvas,
+    renderer,
+    onSelectLocation: options.onSelectLocation,
   });
-
-  canvas.addEventListener('pointermove', (event) => {
-    if (!dragging) return;
-    const dx = event.offsetX - lastX;
-    const dy = event.offsetY - lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
-    renderer.pan(dx, dy);
-    lastX = event.offsetX;
-    lastY = event.offsetY;
-  });
-
-  canvas.addEventListener('pointerup', (event) => {
-    dragging = false;
-    if (moved) return;
-    const id = renderer.pickLocation(event.offsetX, event.offsetY);
-    if (id) options.onSelectLocation(id);
-  });
-
-  canvas.addEventListener('dblclick', () => renderer.resetCamera());
-  canvas.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault();
-      renderer.zoomAt(event.deltaY, event.offsetX, event.offsetY);
-    },
-    { passive: false }
-  );
   travelButton.addEventListener('click', options.onStartTravel);
 
   updateSelection();
@@ -140,6 +108,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       updateSelection();
     },
     destroy(): void {
+      unbindInput();
       observer.disconnect();
       shell.remove();
     },
