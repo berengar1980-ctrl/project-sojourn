@@ -42,15 +42,21 @@ export function bindLocalSpaceInput(options: LocalSpaceInputOptions): () => void
     renderer.zoomAt(event.deltaY, event.offsetX, event.offsetY);
   };
 
+  const keyDown = (event: KeyboardEvent): void => {
+    if (event.key.toLowerCase() === 'h') renderer.toggleHardpointDebug();
+  };
+
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointermove', pointerMove);
   canvas.addEventListener('pointerup', pointerUp);
   canvas.addEventListener('wheel', wheel, { passive: false });
+  window.addEventListener('keydown', keyDown);
 
   return () => {
     canvas.removeEventListener('pointerdown', pointerDown);
     canvas.removeEventListener('pointermove', pointerMove);
     canvas.removeEventListener('pointerup', pointerUp);
     canvas.removeEventListener('wheel', wheel);
+    window.removeEventListener('keydown', keyDown);
   };
 }
