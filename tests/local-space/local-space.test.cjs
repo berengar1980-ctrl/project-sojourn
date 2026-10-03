@@ -67,7 +67,23 @@ assert(
 );
 assert(
   service.includes('applyStationKeeping'),
-  'idle and mining states must share physical station keeping'
+  'idle state must use physical station keeping'
+);
+assert(
+  service.includes('miningHoldOffset'),
+  'mining must remember a relative offset to the target asteroid'
+);
+assert(
+  service.includes('asteroid.position.x + offset.x'),
+  'mining formation must move its desired point with the target asteroid'
+);
+assert(
+  service.includes('shipForwardVelocity'),
+  'mining formation must follow or back away along the ship axis'
+);
+assert(
+  service.includes('updateMiningFormation'),
+  'mining must actively maintain formation with a drifting target'
 );
 assert(
   service.includes('closestClosingDebris'),
