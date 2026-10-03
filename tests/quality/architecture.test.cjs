@@ -18,7 +18,13 @@ assert(files.length > 0, 'runtime contains no TypeScript modules');
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
   const name = rel(file);
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
 
   if (sourceFile.parseDiagnostics.length) {
     parseFailures.push(
@@ -38,7 +44,11 @@ for (const file of files) {
   }
 }
 
-assert.deepEqual(parseFailures, [], `all runtime files must be valid TypeScript ES modules:\n${parseFailures.join('\n')}`);
+assert.deepEqual(
+  parseFailures,
+  [],
+  `all runtime files must be valid TypeScript ES modules:\n${parseFailures.join('\n')}`
+);
 assert.deepEqual(forbidden, [], `forbidden architecture patterns:\n${forbidden.join('\n')}`);
 assert.deepEqual(oversized, [], `split oversized modules:\n${oversized.join('\n')}`);
 

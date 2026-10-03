@@ -13,7 +13,13 @@ const rel = (file) => path.relative(root, file).replaceAll('\\', '/');
 
 function importsFor(file) {
   const source = fs.readFileSync(file, 'utf8');
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
   const imports = [];
 
   for (const node of sourceFile.statements) {
