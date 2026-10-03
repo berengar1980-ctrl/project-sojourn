@@ -9,6 +9,7 @@ import {
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
@@ -33,6 +34,7 @@ export class LocalSpaceRenderer {
   private readonly camera: MapCamera;
   private readonly miningEffects: MiningEffectsRenderer;
   private readonly engineEffects = new ShipEngineEffectsRenderer();
+  private readonly hardpointDebug = new ShipHardpointDebugRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly shipImage = new Image();
@@ -40,6 +42,7 @@ export class LocalSpaceRenderer {
   private hitAreas: readonly AsteroidHitArea[] = [];
   private loadedShipUrl = '';
   private hasFitted = false;
+  private debugHardpoints = false;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -91,6 +94,11 @@ export class LocalSpaceRenderer {
     this.draw();
   }
 
+  toggleHardpointDebug(): void {
+    this.debugHardpoints = !this.debugHardpoints;
+    this.draw();
+  }
+
   pickAsteroid(x: number, y: number): string | null {
     let best: AsteroidHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -133,6 +141,9 @@ export class LocalSpaceRenderer {
     this.drawChunks(width, height);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
     this.drawShip(geometry, timeSeconds);
+    if (this.debugHardpoints) {
+      this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
+    }
   }
 
   private drawAsteroid(
