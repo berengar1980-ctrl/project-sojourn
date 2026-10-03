@@ -248,14 +248,32 @@ export class LocalSpaceRenderer {
     for (const hardpoint of source.engines) {
       const x = (hardpoint.x / source.sourceWidth - 0.5) * shipWidth;
       const y = (hardpoint.y / source.sourceHeight - 0.5) * shipHeight;
-      const radius = Math.max(4, (hardpoint.width / source.sourceWidth) * shipWidth * 0.7);
-      const glow = this.context.createRadialGradient(x, y, 0, x - radius * 0.35, y, radius);
+      const radius = Math.max(
+        4,
+        (hardpoint.width / source.sourceWidth) * shipWidth * 0.7
+      );
+      const glow = this.context.createRadialGradient(
+        x,
+        y,
+        0,
+        x - radius * 0.35,
+        y,
+        radius
+      );
       glow.addColorStop(0, 'rgba(235, 252, 255, .88)');
       glow.addColorStop(0.35, 'rgba(78, 190, 255, .5)');
       glow.addColorStop(1, 'rgba(40, 125, 255, 0)');
       this.context.fillStyle = glow;
       this.context.beginPath();
-      this.context.ellipse(x - radius * 0.3, y, radius, radius * 0.38, 0, 0, Math.PI * 2);
+      this.context.ellipse(
+        x - radius * 0.3,
+        y,
+        radius,
+        radius * 0.38,
+        0,
+        0,
+        Math.PI * 2
+      );
       this.context.fill();
     }
   }
@@ -264,7 +282,11 @@ export class LocalSpaceRenderer {
     if (!this.model.laserActive || !this.model.miningTarget) return;
 
     const geometry = this.shipGeometry(width, height);
-    const target = this.camera.worldToScreen(this.model.miningTarget.position, width, height);
+    const target = this.camera.worldToScreen(
+      this.model.miningTarget.position,
+      width,
+      height
+    );
 
     this.context.save();
     this.context.strokeStyle = 'rgba(237, 92, 63, .92)';
