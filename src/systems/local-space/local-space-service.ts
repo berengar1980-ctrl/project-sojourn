@@ -371,38 +371,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return threat ? { dx: threat.dx, dy: threat.dy } : null;
   }
 
-  private applyStationKeeping(
-    deltaSeconds: number,
-    hold: WorldPoint,
-    threat: { dx: number; dy: number } | null,
-    maximumThrust: number
-  ): void {
-    const ship = this.instance.ship;
-    const sideX = -Math.sin(ship.headingRadians);
-    const sideY = Math.cos(ship.headingRadians);
-    const offsetX = ship.position.x - hold.x;
-    const offsetY = ship.position.y - hold.y;
-    const lateralOffset = offsetX * sideX + offsetY * sideY;
-
-    let thrust = -lateralOffset * 0.14 - this.shipLateralVelocity * 0.72;
-    thrust = Math.max(-maximumThrust, Math.min(maximumThrust, thrust));
-
-    if (threat) {
-      const threatSide = threat.dx * sideX + threat.dy * sideY;
-      thrust = threatSide >= 0 ? -1 : 1;
-    }
-
-    if (Math.abs(thrust) < 0.045) thrust = 0;
-    ship.lateralThrust = thrust;
-
-    const lateralAcceleration = thrust * 2.2;
-    this.shipLateralVelocity += lateralAcceleration * deltaSeconds;
-    ship.position = {
-      x: ship.position.x + sideX * this.shipLateralVelocity * deltaSeconds,
-      y: ship.position.y + sideY * this.shipLateralVelocity * deltaSeconds,
-    };
-  }
-
   private spawnChunk(asteroid: LocalAsteroid): void {
     const impact = calculateMiningImpact(
       this.instance.ship,
