@@ -1,5 +1,6 @@
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
@@ -10,10 +11,17 @@ const BASE_SHIP_WIDTH = 72;
 export class PlayerShipRenderer {
   private readonly image = new Image();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
+  private readonly hardpointDebug = new ShipHardpointDebugRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private loadedUrl = '';
+  private debugHardpoints = false;
 
   constructor(private readonly requestRedraw: () => void) {}
+
+  toggleHardpointDebug(): void {
+    this.debugHardpoints = !this.debugHardpoints;
+    this.requestRedraw();
+  }
 
   draw(
     context: CanvasRenderingContext2D,
@@ -61,6 +69,10 @@ export class PlayerShipRenderer {
     }
 
     context.restore();
+
+    if (this.debugHardpoints) {
+      this.hardpointDebug.draw(context, ship.hardpoints, geometry);
+    }
   }
 
   private imageAspectRatio(fallback: number): number {
