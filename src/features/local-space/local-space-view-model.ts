@@ -3,6 +3,7 @@ import type {
   LocalAsteroid,
   LocalSpaceSnapshot,
   MiningChunk,
+  MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -50,6 +51,7 @@ export interface LocalSpaceViewModel {
   readonly miningTarget: LocalAsteroidView | null;
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
+  readonly miningImpact: MiningImpact | null;
   readonly shieldFlash: number;
   readonly collectedOre: number;
 }
@@ -108,6 +110,7 @@ export function createLocalSpaceViewModel(
     miningTarget,
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
+    miningImpact: snapshot.miningImpact,
     shieldFlash: snapshot.shieldFlash,
     collectedOre: snapshot.collectedOre,
   };
