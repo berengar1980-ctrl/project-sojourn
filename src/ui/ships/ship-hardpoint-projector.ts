@@ -1,8 +1,4 @@
-import type {
-  ShipHardpoint,
-  ShipHardpoints,
-  ShipShieldGeometry,
-} from '../../core/ship-types';
+import type { ShipHardpoint, ShipHardpoints, ShipShieldGeometry } from '../../core/ship-types';
 import type { ScreenPoint } from '../map/map-camera';
 
 export interface ShipScreenGeometry {
@@ -57,11 +53,7 @@ export function projectShieldGeometry(
   geometry: ShipScreenGeometry
 ): ShieldScreenGeometry {
   return {
-    center: projectShipPoint(
-      { x: shield.centerX, y: shield.centerY },
-      source,
-      geometry
-    ),
+    center: projectShipPoint({ x: shield.centerX, y: shield.centerY }, source, geometry),
     radiusX: (shield.radiusX / source.sourceWidth) * geometry.width,
     radiusY: (shield.radiusY / source.sourceHeight) * geometry.height,
     angle: geometry.angle,
