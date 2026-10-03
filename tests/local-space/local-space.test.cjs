@@ -30,19 +30,43 @@ assert(
 assert(generator.includes('velocity'), 'asteroids must support collision motion');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
-assert(service.includes('findApproachWaypoint'), 'approach must use obstacle avoidance');
-assert(service.includes('resolveShieldCollisions'), 'service must resolve shield collisions');
-assert(service.includes('shieldFlash'), 'service must expose shield impact state');
-assert(navigation.includes('avoidanceSide'), 'avoidance must choose a stable bypass side');
-assert(navigation.includes('pointToSegmentDistance'), 'avoidance must inspect blocked routes');
-assert(collision.includes('separationVector'), 'shield collision must compute full separation');
 assert(
-  collision.includes('boundaryScale = 1 / metric'),
-  'collision must move blockers outside shield'
+  service.includes('planMiningApproachRoute'),
+  'mining must plan a route once before approach'
 );
+assert(
+  service.includes('approachRoute'),
+  'approach must persist a fixed precomputed route'
+);
+assert(
+  !service.includes('findApproachWaypoint'),
+  'approach must not live-replan around obstacles'
+);
+assert(
+  service.includes('MAX_TURN_RATE'),
+  'route following must limit ship turning speed'
+);
+assert(
+  navigation.includes('findGridRoute'),
+  'route planner must search a navigable path'
+);
+assert(
+  navigation.includes('simplifyRoute'),
+  'planned routes must remove unnecessary detours'
+);
+assert(navigation.includes('roundRoute'), 'planned routes must support curved corners');
+assert(
+  navigation.includes('routeSegmentsClear'),
+  'curved routes must be collision-checked before use'
+);
+assert(
+  navigation.includes('APPROACH_SAMPLES'),
+  'planner must compare multiple target approach positions'
+);
+assert(service.includes('resolveShieldCollisions'), 'service must resolve shield collisions');
+assert(collision.includes('separationVector'), 'shield collision must compute full separation');
 assert(collision.includes('outwardSpeed = 250'), 'shield impact must impart outward velocity');
-assert(collision.includes('asteroid.velocity'), 'shield impact must push asteroids away');
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
-console.log('PASS local-space cancellation, avoidance and hard shield separation');
+console.log('PASS fixed curved route planning, mining and shield collision ownership');
