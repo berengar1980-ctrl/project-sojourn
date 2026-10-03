@@ -34,11 +34,17 @@ export interface MiningImpact {
 
 export interface MiningChunk {
   readonly id: string;
+  readonly resourceId: string;
   position: WorldPoint;
   velocity: WorldPoint;
   amount: number;
   ageSeconds: number;
   tractorActive: boolean;
+}
+
+export interface ResourceCargoEntry {
+  readonly resourceId: string;
+  readonly amount: number;
 }
 
 export interface LocalShipState {
@@ -70,6 +76,7 @@ export interface LocalSpaceSnapshot {
   readonly scanTargetId: string | null;
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
+  readonly collectedResources: readonly ResourceCargoEntry[];
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
   readonly shield: ShieldState;
