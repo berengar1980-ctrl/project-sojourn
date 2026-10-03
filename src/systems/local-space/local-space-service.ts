@@ -84,8 +84,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private shieldFlash = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
+  private stationKeepingHeading: number;
   private shipForwardVelocity = 0;
   private shipLateralVelocity: number;
+  private shipAngularVelocity = 0;
+  private disturbanceTimer: number;
+  private disturbanceIndex = 0;
 
   constructor(options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
@@ -94,7 +98,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.stationKeepingPosition = { ...options.instance.ship.position };
-    this.shipLateralVelocity = ((options.instance.seed % 2001) / 2000 - 0.5) * 0.7;
+    this.stationKeepingHeading = options.instance.ship.headingRadians;
+    this.shipLateralVelocity = ((options.instance.seed % 2001) / 2000 - 0.5) * 0.45;
+    this.shipAngularVelocity = ((options.instance.seed % 997) / 996 - 0.5) * 0.018;
+    this.disturbanceTimer = 1.8 + (options.instance.seed % 2400) / 1000;
   }
 
   getSnapshot(): LocalSpaceSnapshot {
@@ -128,6 +135,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningAccumulator = 0;
     this.instance.ship.speed = 0;
     this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.angularThrust = 0;
     this.instance.ship.lateralThrust = 0;
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
@@ -199,9 +207,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachIndex = 0;
     this.instance.ship.speed = 0;
     this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.angularThrust = 0;
     this.instance.ship.lateralThrust = 0;
     this.miningHoldOffset = null;
     this.stationKeepingPosition = { ...this.instance.ship.position };
+    this.stationKeepingHeading = this.instance.ship.headingRadians;
     this.shipForwardVelocity *= 0.25;
     this.shipLateralVelocity *= 0.35;
   }
@@ -219,6 +229,14 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const previousHeading = ship.headingRadians;
     ship.headingRadians = turnToward(ship.headingRadians, desiredHeading, turnLimit);
     ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.angularThrust = Math.max(
+      -1,
+      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 8))
+    );
+    ship.angularThrust = Math.max(
+      -1,
+      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 5))
+    );
     ship.lateralThrust = 0;
 
     const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
@@ -243,17 +261,23 @@ class LocalSpaceRuntime implements LocalSpaceService {
       MAX_TURN_RATE * deltaSeconds
     );
     ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.angularThrust = Math.max(
+      -1,
+      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 6))
+    );
     ship.lateralThrust = 0;
     ship.speed = 0;
 
     if (Math.abs(angleDelta(ship.headingRadians, desiredHeading)) <= 0.04) {
       ship.headingRadians = desiredHeading;
       ship.turnRateRadiansPerSecond = 0;
+      ship.angularThrust = 0;
       this.miningHoldOffset = {
         x: ship.position.x - asteroid.position.x,
         y: ship.position.y - asteroid.position.y,
       };
       this.stationKeepingPosition = { ...ship.position };
+      this.stationKeepingHeading = ship.headingRadians;
       this.shipForwardVelocity = 0;
       this.shipLateralVelocity = 0;
       this.miningPhase = 'extracting';
@@ -275,7 +299,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updatePassiveStationKeeping(deltaSeconds: number): void {
-    this.applyStationKeeping(deltaSeconds, this.stationKeepingPosition, null, 0.32);
+    this.updateIdleDisturbance(deltaSeconds);
+    this.applyStationKeeping(deltaSeconds, this.stationKeepingPosition, null, 0.24);
+    this.applyHeadingKeeping(deltaSeconds);
   }
 
   private updateMiningFormation(deltaSeconds: number, asteroid: LocalAsteroid): void {
@@ -284,6 +310,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.instance.ship.speed = 0;
       this.instance.ship.lateralThrust = 0;
       this.instance.ship.turnRateRadiansPerSecond = 0;
+      this.instance.ship.angularThrust = 0;
       return;
     }
 
@@ -342,6 +369,36 @@ class LocalSpaceRuntime implements LocalSpaceService {
         (forwardY * this.shipForwardVelocity + sideY * this.shipLateralVelocity) * deltaSeconds,
     };
     ship.speed = Math.max(0, this.shipForwardVelocity);
+  }
+
+  private updateIdleDisturbance(deltaSeconds: number): void {
+    this.disturbanceTimer -= deltaSeconds;
+    if (this.disturbanceTimer > 0) return;
+
+    const phase = this.instance.seed * 0.00017 + this.disturbanceIndex * 1.618;
+    const lateralKick = Math.sin(phase * 7.31) * 0.16;
+    const angularKick = Math.sin(phase * 11.73 + 0.8) * 0.018;
+    this.shipLateralVelocity += lateralKick;
+    this.shipAngularVelocity += angularKick;
+    this.disturbanceIndex += 1;
+    this.disturbanceTimer = 2.2 + Math.abs(Math.sin(phase * 3.17)) * 3.2;
+  }
+
+  private applyHeadingKeeping(deltaSeconds: number): void {
+    const ship = this.instance.ship;
+    const headingError = angleDelta(ship.headingRadians, this.stationKeepingHeading);
+    let angularThrust = headingError * 0.9 - this.shipAngularVelocity * 1.35;
+    angularThrust = Math.max(-0.34, Math.min(0.34, angularThrust));
+
+    if (Math.abs(headingError) < 0.004 && Math.abs(this.shipAngularVelocity) < 0.003) {
+      angularThrust = 0;
+    }
+
+    this.shipAngularVelocity += angularThrust * 0.32 * deltaSeconds;
+    this.shipAngularVelocity = Math.max(-0.035, Math.min(0.035, this.shipAngularVelocity));
+    ship.headingRadians += this.shipAngularVelocity * deltaSeconds;
+    ship.turnRateRadiansPerSecond = this.shipAngularVelocity;
+    ship.angularThrust = angularThrust / 0.34;
   }
 
   private closestClosingDebris(): { dx: number; dy: number } | null {
