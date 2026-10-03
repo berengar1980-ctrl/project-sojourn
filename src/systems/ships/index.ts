@@ -4,6 +4,7 @@ export type {
   ShipDefinition,
   ShipHardpoint,
   ShipHardpoints,
+  ShipManeuverThruster,
   ShipPivot,
   ShipRole,
   ShipSprite,
