@@ -38,6 +38,7 @@ export interface LocalShipView {
 
 export interface LocalSpaceViewModel {
   readonly title: string;
+  readonly backgroundSeed: number;
   readonly width: number;
   readonly height: number;
   readonly ship: LocalShipView;
@@ -85,6 +86,7 @@ export function createLocalSpaceViewModel(
 
   return {
     title,
+    backgroundSeed: snapshot.instance.seed,
     width: snapshot.instance.width,
     height: snapshot.instance.height,
     ship: {
