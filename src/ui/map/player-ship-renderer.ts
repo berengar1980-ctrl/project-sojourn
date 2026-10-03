@@ -1,6 +1,11 @@
-import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
+import type {
+  PlayerShipMapView,
+  StarMapLocationView,
+} from '../../features/star-map/star-map-view-model';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
+
+const BASE_SHIP_WIDTH = 72;
 
 export class PlayerShipRenderer {
   private readonly image = new Image();
@@ -17,7 +22,8 @@ export class PlayerShipRenderer {
   ): void {
     this.ensureImage(ship.spriteUrl);
 
-    const width = 118 * shipSymbolScale(relativeZoom);
+    const scale = shipSymbolScale(relativeZoom);
+    const width = BASE_SHIP_WIDTH * scale;
     const aspectRatio = this.imageAspectRatio(ship.spriteAspectRatio);
     const height = width / aspectRatio;
 
@@ -25,7 +31,9 @@ export class PlayerShipRenderer {
     context.translate(point.x, point.y);
     context.rotate(ship.headingRadians);
 
-    if (ship.isTravelling) this.drawEngineGlow(context, width, height, timeSeconds);
+    if (ship.isTravelling) {
+      this.drawEngineGlow(context, ship, width, height, scale, timeSeconds);
+    }
 
     if (this.image.complete && this.image.naturalWidth > 0) {
       context.drawImage(this.image, -width / 2, -height / 2, width, height);
@@ -53,34 +61,38 @@ export class PlayerShipRenderer {
 
   private drawEngineGlow(
     context: CanvasRenderingContext2D,
+    ship: PlayerShipMapView,
     width: number,
     height: number,
+    scale: number,
     timeSeconds: number
   ): void {
-    const pulse = 0.92 + Math.sin(timeSeconds * 12) * 0.05;
-    const nozzleX = -width * 0.47;
-    const nozzleOffsets = [-height * 0.26, height * 0.26];
+    const pulse = 0.94 + Math.sin(timeSeconds * 12) * 0.04;
+    const glowRadiusX = 5.4 * scale;
+    const glowRadiusY = 2.8 * scale;
 
-    for (const offsetY of nozzleOffsets) {
+    for (const anchor of ship.engineAnchors) {
+      const nozzleX = (anchor.x - 0.5) * width;
+      const nozzleY = (anchor.y - 0.5) * height;
       const glow = context.createRadialGradient(
         nozzleX,
-        offsetY,
+        nozzleY,
         0,
-        nozzleX - width * 0.025,
-        offsetY,
-        width * 0.065
+        nozzleX - glowRadiusX * 0.3,
+        nozzleY,
+        glowRadiusX
       );
-      glow.addColorStop(0, 'rgba(238, 252, 255, ' + 0.9 * pulse + ')');
-      glow.addColorStop(0.36, 'rgba(96, 202, 255, ' + 0.48 * pulse + ')');
+      glow.addColorStop(0, 'rgba(240, 253, 255, ' + 0.92 * pulse + ')');
+      glow.addColorStop(0.35, 'rgba(88, 197, 255, ' + 0.5 * pulse + ')');
       glow.addColorStop(1, 'rgba(36, 129, 255, 0)');
 
       context.fillStyle = glow;
       context.beginPath();
       context.ellipse(
-        nozzleX - width * 0.02,
-        offsetY,
-        width * 0.065,
-        height * 0.055,
+        nozzleX - glowRadiusX * 0.28,
+        nozzleY,
+        glowRadiusX,
+        glowRadiusY,
         0,
         0,
         Math.PI * 2

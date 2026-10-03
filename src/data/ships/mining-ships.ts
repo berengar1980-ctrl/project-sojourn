@@ -15,6 +15,10 @@ export const miner80mStandard: ShipDefinition = {
     widthPx: 346,
     heightPx: 182,
     facing: 'right',
+    engineAnchors: [
+      { x: 0.055, y: 0.335 },
+      { x: 0.055, y: 0.665 },
+    ],
   },
   navigation: {
     cruiseSpeed: 82,

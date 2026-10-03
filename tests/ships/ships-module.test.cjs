@@ -15,6 +15,7 @@ assert(registry.includes('miningShips'), 'ship registry must consume ship data')
 assert(data.includes("id: 'miner-80m-standard'"), 'first mining ship missing');
 assert(data.includes('widthPx: 346'), 'sprite width metadata must match source asset');
 assert(data.includes('heightPx: 182'), 'sprite height metadata must match source asset');
+assert(data.includes('engineAnchors'), 'ship sprite must define engine anchors');
 assert(fs.existsSync(asset), 'mining ship sprite asset missing');
 
 console.log('PASS ships module and first mining ship');
