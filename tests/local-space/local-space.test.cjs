@@ -17,6 +17,14 @@ const navigation = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-navigation.ts'),
   'utf8'
 );
+const routeWorkerClient = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-route-worker-client.ts'),
+  'utf8'
+);
+const routeWorker = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-route-worker.ts'),
+  'utf8'
+);
 const collision = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-collision.ts'),
   'utf8'
@@ -121,8 +129,24 @@ assert(
   'mining chunks must spawn from the impact point'
 );
 assert(
-  service.includes('planMiningApproachRoute'),
-  'mining must plan a route once before approach'
+  service.includes('getMiningRouteOptions'),
+  'local-space service must expose immutable route-planning input'
+);
+assert(
+  !service.includes('planMiningApproachRoute('),
+  'local-space service must not block the UI with synchronous route planning'
+);
+assert(
+  routeWorkerClient.includes("new Worker(new URL('./local-space-route-worker.ts', import.meta.url)"),
+  'mining route planning must run in a web worker'
+);
+assert(
+  routeWorker.includes('planMiningApproachRoute(event.data.options)'),
+  'route worker must own the expensive route calculation'
+);
+assert(
+  controller.includes('planMiningApproachRouteAsync'),
+  'game controller must await asynchronous mining route calculation'
 );
 assert(service.includes('approachRoute'), 'approach must persist a fixed precomputed route');
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
@@ -133,6 +157,14 @@ assert(
   'service must resolve asteroid-to-asteroid collisions'
 );
 assert(navigation.includes('findGridRoute'), 'route planner must search a navigable path');
+assert(
+  navigation.includes('class MinPriorityQueue'),
+  'A-star open nodes must use a priority queue instead of linear scans'
+);
+assert(
+  navigation.includes('MAX_ROUTE_CANDIDATES = 4'),
+  'route planner must bound expensive approach candidate searches'
+);
 assert(navigation.includes('routeBlocking'), 'route planner must ignore non-blocking debris');
 assert(
   physics.includes('applyImpulseAtPoint'),
