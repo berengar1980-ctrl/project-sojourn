@@ -35,6 +35,20 @@ function fractional(value: number): number {
   return value - Math.floor(value);
 }
 
+function surfaceImpactPoint(
+  center: ScreenPoint,
+  ship: ScreenPoint,
+  radius: number
+): ScreenPoint {
+  const dx = ship.x - center.x;
+  const dy = ship.y - center.y;
+  const length = Math.max(0.001, Math.hypot(dx, dy));
+  return {
+    x: center.x + (dx / length) * radius,
+    y: center.y + (dy / length) * radius,
+  };
+}
+
 export class MiningEffectsRenderer {
   constructor(
     private readonly context: CanvasRenderingContext2D,
@@ -50,11 +64,13 @@ export class MiningEffectsRenderer {
   ): void {
     if (!model.laserActive || !model.miningTarget) return;
 
-    const target = this.camera.worldToScreen(
+    const targetCenter = this.camera.worldToScreen(
       model.miningTarget.position,
       viewportWidth,
       viewportHeight
     );
+    const impactRadius = Math.max(4, this.camera.scale(model.miningTarget.radius) * 0.82);
+    const target = surfaceImpactPoint(targetCenter, geometry.center, impactRadius);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
 
     this.context.save();
