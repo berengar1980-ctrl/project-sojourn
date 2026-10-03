@@ -10,6 +10,10 @@ const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-rend
 
 assert(shipRenderer.includes('ShipEngineEffectsRenderer'), 'star map must share engine VFX');
 assert(
+  shipRenderer.includes('ShipManeuverEffectsRenderer'),
+  'star map must render maneuver thrusters from navigation state'
+);
+assert(
   shipRenderer.includes('spriteDrawOffset'),
   'star-map sprite must use shared pivot projection'
 );
