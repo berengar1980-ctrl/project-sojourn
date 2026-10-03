@@ -32,8 +32,12 @@ const hardpointDebug = fs.readFileSync(
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const systemLog = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-system-log.ts'),
+const systemLogPanel = fs.readFileSync(
+  path.join(root, 'src/ui/system-log/system-log-panel.ts'),
+  'utf8'
+);
+const systemLogService = fs.readFileSync(
+  path.join(root, 'src/systems/system-log/system-log-service.ts'),
   'utf8'
 );
 const stationKeeping = fs.readFileSync(
@@ -129,7 +133,7 @@ assert(
   shieldImpact.includes('drawLightning'),
   'strong shield hits must support local blue-white arcs'
 );
-assert(panel.includes('createLocalSpaceSystemLog'), 'local space must expose a retro system log');
+assert(panel.includes('createSystemLogPanel'), 'local space must use the shared retro system log');
 assert(
   panel.includes("systemLog.write('NAV > ROUTENBERECHNUNG...')"),
   'route calculation must be visible in the system log'
@@ -138,10 +142,14 @@ assert(
   panel.includes("'SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %'"),
   'shield integrity changes must be logged'
 );
-assert(systemLog.includes('MAX_LOG_LINES = 8'), 'system log must keep a bounded history');
+assert(systemLogPanel.includes('VISIBLE_LOG_LINES = 8'), 'system log must keep a bounded view');
 assert(
-  systemLog.includes('local-system-log-line'),
-  'system log must render individual terminal lines'
+  systemLogPanel.includes('system-log-line'),
+  'shared system log must render individual terminal lines'
+);
+assert(
+  systemLogService.includes('MAX_LOG_ENTRIES = 40'),
+  'shared system log service must keep bounded cross-scene history'
 );
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 
