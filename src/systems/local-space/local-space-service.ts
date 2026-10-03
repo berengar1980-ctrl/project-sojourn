@@ -7,7 +7,6 @@ import type {
   MiningPhase,
 } from '../../core/local-space-types';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
-import { longRangeScanRadius } from '../scanning/scanner-service';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -19,6 +18,12 @@ import {
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
+import { advanceMiningChunk, createMiningChunk } from './mining-chunk-service';
+import {
+  runLongRangeAsteroidScan,
+  selectedAsteroid,
+  selectedRouteOptions,
+} from './local-space-scanning';
 import {
   createIdleStationKeepingState,
   resetIdleStationKeeping,
@@ -129,12 +134,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   runLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
-    const radius = longRangeScanRadius({ sensorModifier, crewSkill });
-    for (const asteroid of this.instance.asteroids) {
-      if (asteroid.kind !== 'resource') continue;
-      if (distance(this.instance.ship.position, asteroid.position) > radius) continue;
-      if (asteroid.scanLevel === 'unscanned') asteroid.scanLevel = 'surveyed';
-    }
+    runLongRangeAsteroidScan(this.instance, sensorModifier, crewSkill);
     return this.getSnapshot();
   }
 
@@ -229,17 +229,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private getSelectedRouteOptions(): RoutePlanningOptions | null {
-    const asteroid = this.findAsteroid(this.selectedAsteroidId);
-    if (!asteroid) return null;
-
-    return {
-      start: this.instance.ship.position,
-      target: asteroid,
-      asteroids: this.instance.asteroids,
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
-      width: this.instance.width,
-      height: this.instance.height,
-    };
+    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   private prepareApproach(route: readonly WorldPoint[]): void {
@@ -260,8 +250,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private findAsteroid(id: string | null): LocalAsteroid | null {
-    if (!id) return null;
-    return this.instance.asteroids.find((asteroid) => asteroid.id === id) ?? null;
+    return selectedAsteroid(this.instance, id);
   }
 
   private currentMiningImpact(): MiningImpact | null {
@@ -485,41 +474,16 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private spawnChunk(asteroid: LocalAsteroid): void {
-    const impact = calculateMiningImpact(
-      this.instance.ship,
+    const chunk = createMiningChunk(
       asteroid,
+      this.instance.ship,
       this.hardpoints,
-      this.nominalLengthMeters
+      this.nominalLengthMeters,
+      this.instance.seed,
+      this.chunkCounter
     );
-    const amount = Math.min(6, asteroid.oreRemaining);
-    asteroid.oreRemaining -= amount;
-
-    const tangent = { x: -impact.normal.y, y: impact.normal.x };
-    const spread = Math.sin(this.chunkCounter * 2.17) * 0.42;
-    const speed = 24 + (this.chunkCounter % 4) * 4;
-    const direction = {
-      x: impact.normal.x + tangent.x * spread,
-      y: impact.normal.y + tangent.y * spread,
-    };
-    const directionLength = Math.max(0.001, Math.hypot(direction.x, direction.y));
-
-    if (!asteroid.resourceId) return;
-
-    this.instance.chunks.push({
-      id: 'chunk-' + this.instance.seed + '-' + this.chunkCounter,
-      resourceId: asteroid.resourceId,
-      position: {
-        x: impact.point.x + impact.normal.x * 2,
-        y: impact.point.y + impact.normal.y * 2,
-      },
-      velocity: {
-        x: (direction.x / directionLength) * speed,
-        y: (direction.y / directionLength) * speed,
-      },
-      amount,
-      ageSeconds: 0,
-      tractorActive: false,
-    });
+    if (!chunk) return;
+    this.instance.chunks.push(chunk);
     this.chunkCounter += 1;
   }
 
@@ -527,7 +491,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const remaining: MiningChunk[] = [];
 
     for (const chunk of this.instance.chunks) {
-      this.updateChunk(chunk, deltaSeconds);
+      advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
       if (distance(chunk.position, this.instance.ship.position) < 24) {
         this.collectedOre += chunk.amount;
         const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
@@ -540,23 +504,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.instance.chunks.splice(0, this.instance.chunks.length, ...remaining);
   }
 
-  private updateChunk(chunk: MiningChunk, deltaSeconds: number): void {
-    chunk.ageSeconds += deltaSeconds;
-    if (chunk.ageSeconds > 0.42) chunk.tractorActive = true;
 
-    if (chunk.tractorActive) {
-      const angle = heading(chunk.position, this.instance.ship.position);
-      chunk.velocity = {
-        x: Math.cos(angle) * 190,
-        y: Math.sin(angle) * 190,
-      };
-    }
-
-    chunk.position = {
-      x: chunk.position.x + chunk.velocity.x * deltaSeconds,
-      y: chunk.position.y + chunk.velocity.y * deltaSeconds,
-    };
-  }
 }
 
 export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
