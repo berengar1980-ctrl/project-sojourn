@@ -7,13 +7,20 @@ interface BackgroundStar {
   readonly alpha: number;
 }
 
-interface NebulaBlob {
+interface NebulaLobe {
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly radius: number;
+  readonly alpha: number;
+}
+
+interface NebulaCloud {
   readonly x: number;
   readonly y: number;
-  readonly radius: number;
   readonly driftX: number;
   readonly driftY: number;
-  readonly alpha: number;
+  readonly warm: boolean;
+  readonly lobes: readonly NebulaLobe[];
 }
 
 export interface SpaceBackgroundView {
@@ -43,15 +50,15 @@ function wrap(value: number, extent: number): number {
 export class SpaceBackgroundRenderer {
   private readonly farStars: readonly BackgroundStar[];
   private readonly midStars: readonly BackgroundStar[];
-  private readonly nebulae: readonly NebulaBlob[];
+  private readonly nebulae: readonly NebulaCloud[];
 
   constructor(
     private readonly context: CanvasRenderingContext2D,
     seed: number
   ) {
     const random = createRandom(seed);
-    this.farStars = this.createStars(random, 120, 0.3, 0.75);
-    this.midStars = this.createStars(random, 55, 0.55, 1.35);
+    this.farStars = this.createStars(random, 170, 0.35, 0.9, 0.24, 0.72);
+    this.midStars = this.createStars(random, 95, 0.8, 1.8, 0.42, 0.9);
     this.nebulae = this.createNebulae(random);
   }
 
@@ -59,15 +66,17 @@ export class SpaceBackgroundRenderer {
     this.drawBase(view.width, view.height);
     this.drawMilkyWay(view);
     this.drawNebulae(view);
-    this.drawStars(this.farStars, view, 0.06);
-    this.drawStars(this.midStars, view, 0.14);
+    this.drawStars(this.farStars, view, 0.075);
+    this.drawStars(this.midStars, view, 0.24);
   }
 
   private createStars(
     random: () => number,
     count: number,
     minimumSize: number,
-    maximumSize: number
+    maximumSize: number,
+    minimumAlpha: number,
+    maximumAlpha: number
   ): readonly BackgroundStar[] {
     const stars: BackgroundStar[] = [];
     for (let index = 0; index < count; index += 1) {
@@ -75,22 +84,37 @@ export class SpaceBackgroundRenderer {
         x: random(),
         y: random(),
         size: minimumSize + random() * (maximumSize - minimumSize),
-        alpha: 0.18 + random() * 0.55,
+        alpha: minimumAlpha + random() * (maximumAlpha - minimumAlpha),
       });
     }
     return stars;
   }
 
-  private createNebulae(random: () => number): readonly NebulaBlob[] {
-    const result: NebulaBlob[] = [];
-    for (let index = 0; index < 5; index += 1) {
+  private createNebulae(random: () => number): readonly NebulaCloud[] {
+    const result: NebulaCloud[] = [];
+    for (let cloudIndex = 0; cloudIndex < 5; cloudIndex += 1) {
+      const lobes: NebulaLobe[] = [];
+      const lobeCount = 8 + Math.floor(random() * 6);
+      const baseRadius = 110 + random() * 170;
+
+      for (let lobeIndex = 0; lobeIndex < lobeCount; lobeIndex += 1) {
+        const angle = random() * Math.PI * 2;
+        const spread = baseRadius * (0.18 + random() * 0.72);
+        lobes.push({
+          offsetX: Math.cos(angle) * spread,
+          offsetY: Math.sin(angle) * spread * 0.58,
+          radius: baseRadius * (0.36 + random() * 0.48),
+          alpha: 0.035 + random() * 0.045,
+        });
+      }
+
       result.push({
         x: random(),
         y: random(),
-        radius: 180 + random() * 260,
-        driftX: -4 + random() * 8,
-        driftY: -2 + random() * 4,
-        alpha: 0.045 + random() * 0.055,
+        driftX: -3 + random() * 6,
+        driftY: -1.4 + random() * 2.8,
+        warm: cloudIndex % 2 === 0,
+        lobes,
       });
     }
     return result;
@@ -125,26 +149,27 @@ export class SpaceBackgroundRenderer {
     for (const star of stars) {
       const x = wrap(star.x * spanX + offsetX, spanX) - 90;
       const y = wrap(star.y * spanY + offsetY, spanY) - 90;
-      this.context.fillStyle = 'rgba(220, 231, 247, ' + star.alpha + ')';
+      this.context.fillStyle = 'rgba(224, 235, 250, ' + star.alpha + ')';
       this.context.fillRect(x, y, star.size, star.size);
     }
   }
 
   private drawMilkyWay(view: SpaceBackgroundView): void {
-    const offsetX = -view.cameraCenter.x * view.cameraZoom * 0.035;
-    const offsetY = -view.cameraCenter.y * view.cameraZoom * 0.035;
+    const offsetX = -view.cameraCenter.x * view.cameraZoom * 0.045;
+    const offsetY = -view.cameraCenter.y * view.cameraZoom * 0.045;
 
     this.context.save();
     this.context.translate(view.width * 0.54 + offsetX, view.height * 0.5 + offsetY);
     this.context.rotate(-0.32);
 
-    const bandWidth = Math.max(view.width, view.height) * 1.8;
-    const bandHeight = Math.max(180, view.height * 0.36);
+    const bandWidth = Math.max(view.width, view.height) * 1.9;
+    const bandHeight = Math.max(220, view.height * 0.42);
     const gradient = this.context.createLinearGradient(0, -bandHeight / 2, 0, bandHeight / 2);
     gradient.addColorStop(0, 'rgba(90, 106, 124, 0)');
-    gradient.addColorStop(0.28, 'rgba(106, 119, 137, 0.045)');
-    gradient.addColorStop(0.5, 'rgba(174, 161, 143, 0.075)');
-    gradient.addColorStop(0.72, 'rgba(84, 104, 128, 0.04)');
+    gradient.addColorStop(0.22, 'rgba(104, 123, 148, 0.055)');
+    gradient.addColorStop(0.44, 'rgba(177, 164, 145, 0.105)');
+    gradient.addColorStop(0.58, 'rgba(126, 136, 158, 0.09)');
+    gradient.addColorStop(0.78, 'rgba(74, 101, 132, 0.05)');
     gradient.addColorStop(1, 'rgba(72, 86, 104, 0)');
     this.context.fillStyle = gradient;
     this.context.fillRect(-bandWidth / 2, -bandHeight / 2, bandWidth, bandHeight);
@@ -153,45 +178,55 @@ export class SpaceBackgroundRenderer {
   }
 
   private drawNebulae(view: SpaceBackgroundView): void {
-    const parallax = 0.095;
+    const parallax = 0.13;
     const offsetX = -view.cameraCenter.x * view.cameraZoom * parallax;
     const offsetY = -view.cameraCenter.y * view.cameraZoom * parallax;
+    const spanX = view.width + 700;
+    const spanY = view.height + 560;
 
-    for (let index = 0; index < this.nebulae.length; index += 1) {
-      const nebula = this.nebulae[index]!;
-      const driftX = nebula.driftX * view.timeSeconds;
-      const driftY = nebula.driftY * view.timeSeconds;
-      const x = wrap(nebula.x * (view.width + 500) + offsetX + driftX, view.width + 500) - 250;
-      const y = wrap(nebula.y * (view.height + 400) + offsetY + driftY, view.height + 400) - 200;
-      const radius = nebula.radius;
+    this.context.save();
+    this.context.globalCompositeOperation = 'screen';
 
-      const gradient = this.context.createRadialGradient(
-        x - radius * 0.12,
-        y - radius * 0.08,
-        radius * 0.05,
-        x,
-        y,
-        radius
-      );
-      const warm = index % 2 === 0;
-      gradient.addColorStop(
-        0,
-        warm
-          ? 'rgba(112, 105, 122, ' + nebula.alpha + ')'
-          : 'rgba(72, 98, 126, ' + nebula.alpha + ')'
-      );
-      gradient.addColorStop(
-        0.55,
-        warm
-          ? 'rgba(78, 71, 88, ' + nebula.alpha * 0.55 + ')'
-          : 'rgba(54, 76, 104, ' + nebula.alpha * 0.5 + ')'
-      );
-      gradient.addColorStop(1, 'rgba(20, 28, 38, 0)');
+    for (const cloud of this.nebulae) {
+      const centerX = wrap(cloud.x * spanX + offsetX + cloud.driftX * view.timeSeconds, spanX) - 350;
+      const centerY = wrap(cloud.y * spanY + offsetY + cloud.driftY * view.timeSeconds, spanY) - 280;
 
-      this.context.fillStyle = gradient;
-      this.context.beginPath();
-      this.context.ellipse(x, y, radius, radius * 0.55, index * 0.37, 0, Math.PI * 2);
-      this.context.fill();
+      for (const lobe of cloud.lobes) {
+        this.drawNebulaLobe(centerX + lobe.offsetX, centerY + lobe.offsetY, lobe, cloud.warm);
+      }
     }
+
+    this.context.restore();
+  }
+
+  private drawNebulaLobe(
+    x: number,
+    y: number,
+    lobe: NebulaLobe,
+    warm: boolean
+  ): void {
+    const gradient = this.context.createRadialGradient(
+      x - lobe.radius * 0.18,
+      y - lobe.radius * 0.12,
+      lobe.radius * 0.04,
+      x,
+      y,
+      lobe.radius
+    );
+
+    if (warm) {
+      gradient.addColorStop(0, 'rgba(132, 103, 122, ' + lobe.alpha + ')');
+      gradient.addColorStop(0.42, 'rgba(94, 75, 103, ' + lobe.alpha * 0.7 + ')');
+      gradient.addColorStop(1, 'rgba(37, 28, 45, 0)');
+    } else {
+      gradient.addColorStop(0, 'rgba(76, 116, 151, ' + lobe.alpha + ')');
+      gradient.addColorStop(0.42, 'rgba(55, 84, 122, ' + lobe.alpha * 0.68 + ')');
+      gradient.addColorStop(1, 'rgba(24, 38, 55, 0)');
+    }
+
+    this.context.fillStyle = gradient;
+    this.context.beginPath();
+    this.context.arc(x, y, lobe.radius, 0, Math.PI * 2);
+    this.context.fill();
   }
 }
