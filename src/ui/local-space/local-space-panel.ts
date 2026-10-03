@@ -79,15 +79,28 @@ function bindRoutePlanning(
   });
 }
 
-export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
+interface LocalSpaceControls {
+  readonly canvas: HTMLCanvasElement;
+  readonly card: HTMLElement;
+  readonly name: HTMLElement;
+  readonly meta: HTMLElement;
+  readonly oreBar: HTMLElement;
+  readonly mineButton: HTMLButtonElement;
+  readonly shortScanButton: HTMLButtonElement;
+  readonly longScanButton: HTMLButtonElement;
+  readonly cancelButton: HTMLButtonElement;
+  readonly backButton: HTMLButtonElement;
+  readonly status: HTMLElement;
+  readonly oreCounter: HTMLElement;
+}
+
+function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
   const shell = document.createElement('section');
   shell.className = 'local-space-shell';
   shell.innerHTML = [
     '<canvas class="local-space-canvas" aria-label="Lokales Abbaugebiet"></canvas>',
-    '<div class="local-space-title">',
-    '<span>GREYROCK BELT</span>',
-    '<strong>' + options.model.title + '</strong>',
-    '</div>',
+    '<div class="local-space-title"><span>GREYROCK BELT</span>',
+    '<strong>' + options.model.title + '</strong></div>',
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<button class="long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
     '<div class="local-mining-status" hidden></div>',
@@ -95,34 +108,55 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     '<div class="local-ore-counter">ERZ · <strong>0</strong></div>',
     '<div class="local-selection-card" hidden>',
     '<div class="local-selection-kind">ASTEROID</div>',
-    '<div class="local-selection-name"></div>',
-    '<div class="local-selection-meta"></div>',
+    '<div class="local-selection-name"></div><div class="local-selection-meta"></div>',
     '<div class="local-ore-bar"><div></div></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
-    '<button class="mine-button" type="button">MINING</button>',
-    '</div>',
+    '<button class="mine-button" type="button">MINING</button></div>',
   ].join('');
   options.root.replaceChildren(shell);
+  return shell;
+}
 
-  const canvas = shell.querySelector<HTMLCanvasElement>('.local-space-canvas');
-  const card = shell.querySelector<HTMLElement>('.local-selection-card');
-  const name = shell.querySelector<HTMLElement>('.local-selection-name');
-  const meta = shell.querySelector<HTMLElement>('.local-selection-meta');
-  const oreBar = shell.querySelector<HTMLElement>('.local-ore-bar > div');
-  const mineButton = shell.querySelector<HTMLButtonElement>('.mine-button');
-  const shortScanButton = shell.querySelector<HTMLButtonElement>('.short-scan-button');
-  const longScanButton = shell.querySelector<HTMLButtonElement>('.long-scan-button');
-  const cancelButton = shell.querySelector<HTMLButtonElement>('.cancel-mining-button');
-  const backButton = shell.querySelector<HTMLButtonElement>('.return-map-button');
-  const status = shell.querySelector<HTMLElement>('.local-mining-status');
-  const oreCounter = shell.querySelector<HTMLElement>('.local-ore-counter strong');
+function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
+  const query = <T extends Element>(selector: string): T => {
+    const element = shell.querySelector<T>(selector);
+    if (!element) throw new Error('Local-space UI is incomplete: ' + selector);
+    return element;
+  };
 
-  if (!canvas || !card || !name || !meta || !oreBar || !mineButton || !shortScanButton) {
-    throw new Error('Local-space selection UI is incomplete.');
-  }
-  if (!longScanButton || !cancelButton || !backButton || !status || !oreCounter) {
-    throw new Error('Local-space controls are incomplete.');
-  }
+  return {
+    canvas: query<HTMLCanvasElement>('.local-space-canvas'),
+    card: query<HTMLElement>('.local-selection-card'),
+    name: query<HTMLElement>('.local-selection-name'),
+    meta: query<HTMLElement>('.local-selection-meta'),
+    oreBar: query<HTMLElement>('.local-ore-bar > div'),
+    mineButton: query<HTMLButtonElement>('.mine-button'),
+    shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
+    longScanButton: query<HTMLButtonElement>('.long-scan-button'),
+    cancelButton: query<HTMLButtonElement>('.cancel-mining-button'),
+    backButton: query<HTMLButtonElement>('.return-map-button'),
+    status: query<HTMLElement>('.local-mining-status'),
+    oreCounter: query<HTMLElement>('.local-ore-counter strong'),
+  };
+}
+
+export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
+  const shell = createLocalSpaceShell(options);
+  const controls = localSpaceControls(shell);
+  const {
+    canvas,
+    card,
+    name,
+    meta,
+    oreBar,
+    mineButton,
+    shortScanButton,
+    longScanButton,
+    cancelButton,
+    backButton,
+    status,
+    oreCounter,
+  } = controls;
 
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
