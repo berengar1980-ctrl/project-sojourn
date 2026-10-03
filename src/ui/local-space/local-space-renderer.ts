@@ -3,10 +3,7 @@ import type {
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
-import {
-  MiningEffectsRenderer,
-  type ShipScreenGeometry,
-} from './mining-effects-renderer';
+import { MiningEffectsRenderer, type ShipScreenGeometry } from './mining-effects-renderer';
 
 interface AsteroidHitArea {
   readonly id: string;
