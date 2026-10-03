@@ -32,6 +32,10 @@ const hardpointDebug = fs.readFileSync(
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const systemLog = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/local-space-system-log.ts'),
+  'utf8'
+);
 const stationKeeping = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
   'utf8'
@@ -124,6 +128,20 @@ assert(
 assert(
   shieldImpact.includes('drawLightning'),
   'strong shield hits must support local blue-white arcs'
+);
+assert(panel.includes('createLocalSpaceSystemLog'), 'local space must expose a retro system log');
+assert(
+  panel.includes("systemLog.write('NAV > ROUTENBERECHNUNG...')"),
+  'route calculation must be visible in the system log'
+);
+assert(
+  panel.includes("'SCHILD-INTEGRITÄT ' + shieldPercent + ' %'"),
+  'shield integrity changes must be logged'
+);
+assert(systemLog.includes('MAX_LOG_LINES = 8'), 'system log must keep a bounded history');
+assert(
+  systemLog.includes("local-system-log-line"),
+  'system log must render individual terminal lines'
 );
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 
