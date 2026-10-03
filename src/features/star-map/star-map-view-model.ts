@@ -29,6 +29,7 @@ export interface PlayerShipMapView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly turnRateRadiansPerSecond: number;
+  readonly angularThrust: number;
   readonly lateralThrust: number;
   readonly isTravelling: boolean;
   readonly speed: number;
@@ -69,6 +70,7 @@ export function createStarMapViewModel(
       position: navigation.currentPosition,
       headingRadians: navigation.headingRadians,
       turnRateRadiansPerSecond: navigation.turnRateRadiansPerSecond,
+      angularThrust: navigation.angularThrust,
       lateralThrust: navigation.lateralThrust,
       isTravelling: navigation.isTravelling,
       speed: navigation.speed,
