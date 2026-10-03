@@ -68,7 +68,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     visitCounter += 1;
     localSpace = createLocalSpaceService({
       instance: generateMiningSpace('greyrock-belt', localSeed(visitCounter)),
-      approachSpeed: 240,
+      approachSpeed: 85,
       hardpoints: ship.sprite.hardpoints,
       nominalLengthMeters: ship.nominalLengthMeters,
     });
