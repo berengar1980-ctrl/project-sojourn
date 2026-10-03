@@ -1,5 +1,5 @@
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
-import type { ShipHardpoint } from '../../core/ship-types';
+import type { ShipHardpoint, ShipHardpoints } from '../../core/ship-types';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
@@ -7,14 +7,13 @@ const BASE_SHIP_WIDTH = 72;
 
 function localPoint(
   hardpoint: ShipHardpoint,
-  sourceWidth: number,
-  sourceHeight: number,
+  source: ShipHardpoints,
   width: number,
   height: number
 ): { x: number; y: number } {
   return {
-    x: (hardpoint.x / sourceWidth - 0.5) * width,
-    y: (hardpoint.y / sourceHeight - 0.5) * height,
+    x: ((hardpoint.x - source.pivot.x) / source.sourceWidth) * width,
+    y: ((hardpoint.y - source.pivot.y) / source.sourceHeight) * height,
   };
 }
 
@@ -47,7 +46,14 @@ export class PlayerShipRenderer {
     }
 
     if (this.image.complete && this.image.naturalWidth > 0) {
-      context.drawImage(this.image, -width / 2, -height / 2, width, height);
+      const source = ship.hardpoints;
+      context.drawImage(
+        this.image,
+        -(source.pivot.x / source.sourceWidth) * width,
+        -(source.pivot.y / source.sourceHeight) * height,
+        width,
+        height
+      );
     } else {
       this.drawFallback(context, width, height);
     }
@@ -81,7 +87,7 @@ export class PlayerShipRenderer {
     const source = ship.hardpoints;
 
     for (const hardpoint of source.engines) {
-      const nozzle = localPoint(hardpoint, source.sourceWidth, source.sourceHeight, width, height);
+      const nozzle = localPoint(hardpoint, source, width, height);
       const radiusX = Math.max(2, (hardpoint.width / source.sourceWidth) * width * 0.6);
       const radiusY = Math.max(1.2, radiusX * 0.45);
       const glow = context.createRadialGradient(
