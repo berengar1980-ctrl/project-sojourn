@@ -18,6 +18,7 @@ import {
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
+import { localShipVelocity } from './local-space-ship-velocity';
 import { advanceMiningChunk, createMiningChunk } from './mining-chunk-service';
 import {
   runLongRangeAsteroidScan,
@@ -186,7 +187,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     const collisions = resolveShieldCollisions(
       this.instance.ship,
-      this.currentShipVelocity(),
+      localShipVelocity(this.instance.ship, {
+        miningPhase: this.miningPhase,
+        shipForwardVelocity: this.shipForwardVelocity,
+        shipLateralVelocity: this.shipLateralVelocity,
+        idleLateralVelocity: this.idleStationKeeping.lateralVelocity,
+      }),
       this.instance.asteroids,
       this.shield
     );
@@ -207,25 +213,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     this.updateChunks(clamped);
     return this.getSnapshot();
-  }
-
-  private currentShipVelocity(): WorldPoint {
-    const ship = this.instance.ship;
-    const forward = {
-      x: Math.cos(ship.headingRadians),
-      y: Math.sin(ship.headingRadians),
-    };
-    const side = { x: -forward.y, y: forward.x };
-    const forwardSpeed = this.miningPhase === 'extracting' ? this.shipForwardVelocity : ship.speed;
-    const lateralSpeed =
-      this.miningPhase === 'idle'
-        ? this.idleStationKeeping.lateralVelocity
-        : this.shipLateralVelocity;
-
-    return {
-      x: forward.x * forwardSpeed + side.x * lateralSpeed,
-      y: forward.y * forwardSpeed + side.y * lateralSpeed,
-    };
   }
 
   private getSelectedRouteOptions(): RoutePlanningOptions | null {
