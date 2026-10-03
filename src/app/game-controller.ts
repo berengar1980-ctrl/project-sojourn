@@ -52,7 +52,11 @@ function createMiningLocalSpace(ship: ShipDefinition, visit: number): LocalSpace
   });
 }
 
-function enteredGreyrock(mode: SceneMode, previousId: string, currentId: string): boolean {
+function enteredGreyrock(
+  mode: SceneMode,
+  previousId: string | null,
+  currentId: string | null
+): boolean {
   return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
 }
 
