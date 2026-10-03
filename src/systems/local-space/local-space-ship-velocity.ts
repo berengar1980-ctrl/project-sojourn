@@ -8,10 +8,7 @@ export interface LocalShipVelocityState {
   readonly idleLateralVelocity: number;
 }
 
-export function localShipVelocity(
-  ship: LocalShipState,
-  state: LocalShipVelocityState
-): WorldPoint {
+export function localShipVelocity(ship: LocalShipState, state: LocalShipVelocityState): WorldPoint {
   const forward = {
     x: Math.cos(ship.headingRadians),
     y: Math.sin(ship.headingRadians),
