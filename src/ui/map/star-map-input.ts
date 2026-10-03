@@ -1,4 +1,4 @@
-import { TopdownMapRenderer } from './topdown-map-renderer';
+import type { TopdownMapRenderer } from './topdown-map-renderer';
 
 interface StarMapInputOptions {
   readonly canvas: HTMLCanvasElement;
