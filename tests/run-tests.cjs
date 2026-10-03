@@ -24,7 +24,12 @@ const tests = walk(__dirname)
 let failed = 0;
 for (const file of tests) {
   const label = path.relative(root, file).replaceAll('\\', '/');
-  const result = spawnSync(process.execPath, [file], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  const result = spawnSync(process.execPath, [file], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+
   if (result.status === 0) {
     console.log(`PASS ${label}`);
   } else {
@@ -35,5 +40,7 @@ for (const file of tests) {
   }
 }
 
-console.log(`TEST GATE: ${failed ? 'FAILED' : 'PASSED'} · ${tests.length - failed} passed · ${failed} failed`);
+console.log(
+  `TEST GATE: ${failed ? 'FAILED' : 'PASSED'} · ${tests.length - failed} passed · ${failed} failed`
+);
 process.exitCode = failed ? 1 : 0;

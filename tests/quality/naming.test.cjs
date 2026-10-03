@@ -9,5 +9,9 @@ const invalid = runtimeFiles(root)
   .map((file) => path.relative(root, file).replaceAll('\\', '/'))
   .filter((file) => !/^[a-z0-9/-]+\.js$/.test(file));
 
-assert.deepEqual(invalid, [], `runtime filenames must use lowercase kebab-case:\n${invalid.join('\n')}`);
+assert.deepEqual(
+  invalid,
+  [],
+  `runtime filenames must use lowercase kebab-case:\n${invalid.join('\n')}`
+);
 console.log('PASS runtime naming convention');

@@ -13,7 +13,10 @@ const qualityRules = {
   'prefer-const': 'error',
   'max-depth': ['error', 4],
   complexity: ['error', 20],
-  'max-lines-per-function': ['error', { max: 100, skipBlankLines: true, skipComments: true }]
+  'max-lines-per-function': [
+    'error',
+    { max: 100, skipBlankLines: true, skipComments: true },
+  ],
 };
 
 export default [
@@ -21,12 +24,20 @@ export default [
   js.configs.recommended,
   {
     files: ['src/**/*.js'],
-    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
-    rules: qualityRules
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: globals.browser,
+    },
+    rules: qualityRules,
   },
   {
     files: ['scripts/**/*.cjs', 'tests/**/*.cjs'],
-    languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: globals.node },
-    rules: { ...qualityRules, 'no-console': 'off' }
-  }
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: globals.node,
+    },
+    rules: { ...qualityRules, 'no-console': 'off' },
+  },
 ];
