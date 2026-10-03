@@ -1,9 +1,6 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
-import {
-  projectHardpoint,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
 function fractional(value: number): number {
   return value - Math.floor(value);
@@ -95,11 +92,7 @@ export class MiningEffectsRenderer {
     this.context.restore();
   }
 
-  private drawImpactSparks(
-    target: ScreenPoint,
-    normal: ScreenPoint,
-    timeSeconds: number
-  ): void {
+  private drawImpactSparks(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
     const tangent = { x: -normal.y, y: normal.x };
     this.context.save();
     this.context.lineCap = 'round';
@@ -130,11 +123,7 @@ export class MiningEffectsRenderer {
     this.context.restore();
   }
 
-  private drawImpactDust(
-    target: ScreenPoint,
-    normal: ScreenPoint,
-    timeSeconds: number
-  ): void {
+  private drawImpactDust(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
     const tangent = { x: -normal.y, y: normal.x };
     this.context.save();
 
