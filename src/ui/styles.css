@@ -176,7 +176,6 @@ body {
   }
 }
 
-
 .local-space-shell {
   position: relative;
   width: 100vw;
@@ -271,7 +270,11 @@ body {
   width: min(340px, calc(100vw - 48px));
   padding: 15px 17px 16px;
   border-left: 2px solid rgba(103, 209, 232, 0.72);
-  background: linear-gradient(90deg, rgba(7, 13, 19, 0.94), rgba(7, 13, 19, 0.72));
+  background: linear-gradient(
+    90deg,
+    rgba(7, 13, 19, 0.94),
+    rgba(7, 13, 19, 0.72)
+  );
   backdrop-filter: blur(7px);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.26);
 }
@@ -328,8 +331,12 @@ body {
   z-index: 100;
   pointer-events: none;
   opacity: 0;
-  background:
-    radial-gradient(circle at center, transparent 0%, rgba(3, 8, 13, 0.2) 32%, #020407 72%);
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    rgba(3, 8, 13, 0.2) 32%,
+    #020407 72%
+  );
   transform: scale(0.94);
   transition:
     opacity 220ms ease,
