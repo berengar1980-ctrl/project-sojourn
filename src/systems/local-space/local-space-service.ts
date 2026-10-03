@@ -7,6 +7,7 @@ import type {
   MiningPhase,
 } from '../../core/local-space-types';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
+import { longRangeScanRadius } from '../scanning/scanner-service';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -38,7 +39,10 @@ export interface LocalSpaceService {
   getSnapshot(): LocalSpaceSnapshot;
   selectAsteroid(id: string | null): LocalSpaceSnapshot;
   getMiningRouteOptions(): RoutePlanningOptions | null;
+  getShortRangeScanRouteOptions(): RoutePlanningOptions | null;
+  runLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
+  startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   cancelMining(): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
@@ -53,6 +57,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly nominalLengthMeters: number;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
+  private scanTargetId: string | null = null;
+  private approachPurpose: 'mining' | 'scan' | null = null;
   private miningPhase: MiningPhase = 'idle';
   private approachRoute: readonly WorldPoint[] = [];
   private approachIndex = 0;
@@ -90,6 +96,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       instance: this.instance,
       selectedAsteroidId: this.selectedAsteroidId,
       miningTargetId: this.miningTargetId,
+      scanTargetId: this.scanTargetId,
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
       laserActive: this.miningPhase === 'extracting',
@@ -109,17 +116,21 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    const asteroid = this.findAsteroid(this.selectedAsteroidId);
-    if (!asteroid || asteroid.oreRemaining <= 0) return null;
+    return this.getSelectedRouteOptions();
+  }
 
-    return {
-      start: this.instance.ship.position,
-      target: asteroid,
-      asteroids: this.instance.asteroids,
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
-      width: this.instance.width,
-      height: this.instance.height,
-    };
+  getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
+    return this.getSelectedRouteOptions();
+  }
+
+  runLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
+    const radius = longRangeScanRadius({ sensorModifier, crewSkill });
+    for (const asteroid of this.instance.asteroids) {
+      if (asteroid.kind !== 'resource') continue;
+      if (distance(this.instance.ship.position, asteroid.position) > radius) continue;
+      if (asteroid.scanLevel === 'unscanned') asteroid.scanLevel = 'surveyed';
+    }
+    return this.getSnapshot();
   }
 
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
@@ -127,17 +138,22 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (!asteroid || asteroid.oreRemaining <= 0) return this.getSnapshot();
 
     this.miningTargetId = asteroid.id;
+    this.scanTargetId = null;
+    this.approachPurpose = 'mining';
     this.miningPhase = 'approaching';
-    this.miningAccumulator = 0;
-    this.instance.ship.speed = 0;
-    this.instance.ship.turnRateRadiansPerSecond = 0;
-    this.instance.ship.angularThrust = 0;
-    this.instance.ship.lateralThrust = 0;
-    this.shipForwardVelocity = 0;
-    this.shipLateralVelocity = 0;
-    this.miningHoldOffset = null;
-    this.approachRoute = route;
-    this.approachIndex = this.approachRoute.length > 1 ? 1 : 0;
+    this.prepareApproach(route);
+    return this.getSnapshot();
+  }
+
+  startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot {
+    const asteroid = this.findAsteroid(this.selectedAsteroidId);
+    if (!asteroid) return this.getSnapshot();
+
+    this.scanTargetId = asteroid.id;
+    this.miningTargetId = null;
+    this.approachPurpose = 'scan';
+    this.miningPhase = 'approaching';
+    this.prepareApproach(route);
     return this.getSnapshot();
   }
 
@@ -152,7 +168,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
     resolveAsteroidCollisions(this.instance.asteroids);
 
-    const asteroid = this.findAsteroid(this.miningTargetId);
+    const asteroid = this.findAsteroid(this.activeTargetId());
     if (!asteroid && this.miningPhase !== 'idle') {
       this.finishMining();
     } else if (this.miningPhase === 'idle') {
@@ -207,6 +223,37 @@ class LocalSpaceRuntime implements LocalSpaceService {
     };
   }
 
+  private getSelectedRouteOptions(): RoutePlanningOptions | null {
+    const asteroid = this.findAsteroid(this.selectedAsteroidId);
+    if (!asteroid) return null;
+
+    return {
+      start: this.instance.ship.position,
+      target: asteroid,
+      asteroids: this.instance.asteroids,
+      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
+      width: this.instance.width,
+      height: this.instance.height,
+    };
+  }
+
+  private prepareApproach(route: readonly WorldPoint[]): void {
+    this.miningAccumulator = 0;
+    this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.angularThrust = 0;
+    this.instance.ship.lateralThrust = 0;
+    this.shipForwardVelocity = 0;
+    this.shipLateralVelocity = 0;
+    this.miningHoldOffset = null;
+    this.approachRoute = route;
+    this.approachIndex = this.approachRoute.length > 1 ? 1 : 0;
+  }
+
+  private activeTargetId(): string | null {
+    return this.approachPurpose === 'scan' ? this.scanTargetId : this.miningTargetId;
+  }
+
   private findAsteroid(id: string | null): LocalAsteroid | null {
     if (!id) return null;
     return this.instance.asteroids.find((asteroid) => asteroid.id === id) ?? null;
@@ -227,6 +274,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private finishMining(): void {
     this.miningPhase = 'idle';
     this.miningTargetId = null;
+    this.scanTargetId = null;
+    this.approachPurpose = null;
     this.miningAccumulator = 0;
     this.approachRoute = [];
     this.approachIndex = 0;
@@ -293,6 +342,18 @@ class LocalSpaceRuntime implements LocalSpaceService {
       ship.headingRadians = desiredHeading;
       ship.turnRateRadiansPerSecond = 0;
       ship.angularThrust = 0;
+      if (this.approachPurpose === 'scan') {
+        asteroid.scanLevel = 'analyzed';
+        this.finishMining();
+        return;
+      }
+
+      asteroid.scanLevel = 'analyzed';
+      if (asteroid.oreRemaining <= 0) {
+        this.finishMining();
+        return;
+      }
+
       this.miningHoldOffset = {
         x: ship.position.x - asteroid.position.x,
         y: ship.position.y - asteroid.position.y,
