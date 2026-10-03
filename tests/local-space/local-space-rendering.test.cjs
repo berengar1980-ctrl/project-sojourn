@@ -135,7 +135,7 @@ assert(
   'route calculation must be visible in the system log'
 );
 assert(
-  panel.includes("'SCHILD-INTEGRITÄT ' + shieldPercent + ' %'"),
+  panel.includes("'SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %'"),
   'shield integrity changes must be logged'
 );
 assert(systemLog.includes('MAX_LOG_LINES = 8'), 'system log must keep a bounded history');
