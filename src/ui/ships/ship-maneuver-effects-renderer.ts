@@ -1,8 +1,5 @@
 import type { ShipHardpoints, ShipManeuverThruster } from '../../core/ship-types';
-import {
-  projectHardpoint,
-  type ShipScreenGeometry,
-} from './ship-hardpoint-projector';
+import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
 
 interface ManeuverDemand {
   readonly turnRateRadiansPerSecond: number;
@@ -83,18 +80,11 @@ export class ShipManeuverEffectsRenderer {
       y: -thruster.forceY,
     };
     const exhaustWorld = {
-      x:
-        exhaustLocal.x * Math.cos(geometry.angle) -
-        exhaustLocal.y * Math.sin(geometry.angle),
-      y:
-        exhaustLocal.x * Math.sin(geometry.angle) +
-        exhaustLocal.y * Math.cos(geometry.angle),
+      x: exhaustLocal.x * Math.cos(geometry.angle) - exhaustLocal.y * Math.sin(geometry.angle),
+      y: exhaustLocal.x * Math.sin(geometry.angle) + exhaustLocal.y * Math.cos(geometry.angle),
     };
     const flicker = 0.9 + Math.sin(timeSeconds * 31 + (hashId(thruster.id) % 11)) * 0.1;
-    const nozzleWidth = Math.max(
-      1.5,
-      (thruster.width / source.sourceWidth) * geometry.width
-    );
+    const nozzleWidth = Math.max(1.5, (thruster.width / source.sourceWidth) * geometry.width);
     const length = nozzleWidth * (1.5 + intensity * 1.8) * flicker;
     const tail = {
       x: nozzle.x + exhaustWorld.x * length,
