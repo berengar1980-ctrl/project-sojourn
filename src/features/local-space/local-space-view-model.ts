@@ -49,10 +49,7 @@ export interface LocalSpaceViewModel {
   readonly collectedOre: number;
 }
 
-function mapAsteroid(
-  asteroid: LocalAsteroid,
-  snapshot: LocalSpaceSnapshot
-): LocalAsteroidView {
+function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
   return {
     id: asteroid.id,
     position: asteroid.position,
@@ -80,9 +77,7 @@ export function createLocalSpaceViewModel(
   ship: ShipDefinition,
   title: string
 ): LocalSpaceViewModel {
-  const asteroids = snapshot.instance.asteroids.map((asteroid) =>
-    mapAsteroid(asteroid, snapshot)
-  );
+  const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
   const miningTarget = asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null;
 
