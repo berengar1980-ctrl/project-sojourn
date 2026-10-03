@@ -52,7 +52,9 @@ function obstacleList(
   asteroids: readonly LocalAsteroid[],
   targetId: string
 ): readonly LocalAsteroid[] {
-  return asteroids.filter((asteroid) => asteroid.id !== targetId);
+  return asteroids.filter(
+    (asteroid) => asteroid.id !== targetId && asteroid.routeBlocking
+  );
 }
 
 function pointClear(
