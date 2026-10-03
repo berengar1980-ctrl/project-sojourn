@@ -3,6 +3,7 @@ import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-proj
 
 interface ManeuverDemand {
   readonly turnRateRadiansPerSecond: number;
+  readonly angularThrust: number;
   readonly lateralThrust: number;
 }
 
@@ -18,12 +19,16 @@ function demandForThruster(
   source: ShipHardpoints,
   demand: ManeuverDemand
 ): number {
-  const turnSign = Math.sign(demand.turnRateRadiansPerSecond);
+  const turnCommand =
+    Math.abs(demand.angularThrust) > 0.02
+      ? demand.angularThrust
+      : demand.turnRateRadiansPerSecond / 1.15;
+  const turnSign = Math.sign(turnCommand);
   const lateralSign = Math.sign(demand.lateralThrust);
   let intensity = 0;
 
   if (turnSign !== 0 && torqueSign(thruster, source) === turnSign) {
-    intensity = Math.max(intensity, Math.min(1, Math.abs(demand.turnRateRadiansPerSecond) / 1.15));
+    intensity = Math.max(intensity, Math.min(1, Math.abs(turnCommand)));
   }
 
   if (lateralSign !== 0 && Math.sign(thruster.forceY) === lateralSign) {
