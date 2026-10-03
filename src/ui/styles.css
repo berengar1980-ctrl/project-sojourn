@@ -175,3 +175,196 @@ body {
     width: calc(100vw - 32px);
   }
 }
+
+
+.local-space-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #020407;
+}
+
+.local-space-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.local-space-title {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  display: grid;
+  gap: 2px;
+  pointer-events: none;
+  text-shadow: 0 2px 10px #000;
+}
+
+.local-space-title span,
+.local-selection-kind,
+.local-selection-meta,
+.local-mining-status,
+.local-ore-counter {
+  color: #74899a;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.local-space-title strong {
+  color: #dce6ee;
+  font-size: 18px;
+  font-weight: 560;
+}
+
+.return-map-button {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  padding: 9px 12px;
+  border: 1px solid rgba(115, 145, 166, 0.28);
+  background: rgba(7, 13, 19, 0.76);
+  color: #aebfca;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.return-map-button:hover,
+.mine-button:hover {
+  background: rgba(58, 118, 136, 0.3);
+}
+
+.local-mining-status {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  padding: 8px 10px;
+  border: 1px solid rgba(81, 184, 212, 0.26);
+  background: rgba(5, 13, 20, 0.78);
+  color: #83d4e8;
+}
+
+.local-mining-status[hidden] {
+  display: none;
+}
+
+.local-ore-counter {
+  position: absolute;
+  right: 24px;
+  bottom: 20px;
+  color: #859bab;
+  pointer-events: none;
+}
+
+.local-ore-counter strong {
+  color: #b8d7e3;
+  font-weight: 600;
+}
+
+.local-selection-card {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: min(340px, calc(100vw - 48px));
+  padding: 15px 17px 16px;
+  border-left: 2px solid rgba(103, 209, 232, 0.72);
+  background: linear-gradient(90deg, rgba(7, 13, 19, 0.94), rgba(7, 13, 19, 0.72));
+  backdrop-filter: blur(7px);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.26);
+}
+
+.local-selection-card[hidden] {
+  display: none;
+}
+
+.local-selection-name {
+  margin-top: 5px;
+  color: #edf2f5;
+  font-size: 18px;
+  font-weight: 570;
+}
+
+.local-selection-meta {
+  margin-top: 8px;
+  color: #8ea8ba;
+}
+
+.local-ore-bar {
+  height: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: rgba(121, 143, 158, 0.16);
+}
+
+.local-ore-bar > div {
+  width: 100%;
+  height: 100%;
+  background: #78c9dc;
+  transition: width 120ms linear;
+}
+
+.mine-button {
+  margin-top: 14px;
+  padding: 9px 12px;
+  border: 1px solid rgba(113, 202, 224, 0.42);
+  background: rgba(45, 101, 118, 0.22);
+  color: #b9eaf3;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.mine-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.scene-zoom-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at center, transparent 0%, rgba(3, 8, 13, 0.2) 32%, #020407 72%);
+  transform: scale(0.94);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.scene-zoom-transition.is-active {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+@media (max-width: 650px) {
+  .local-space-title {
+    top: 16px;
+    left: 16px;
+  }
+
+  .return-map-button {
+    top: 16px;
+    right: 16px;
+  }
+
+  .local-mining-status {
+    top: 62px;
+    right: 16px;
+  }
+
+  .local-selection-card {
+    left: 16px;
+    bottom: 16px;
+    width: calc(100vw - 32px);
+  }
+
+  .local-ore-counter {
+    right: 16px;
+    bottom: 16px;
+  }
+}
