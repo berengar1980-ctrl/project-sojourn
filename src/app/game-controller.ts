@@ -5,7 +5,10 @@ import { createStarMapViewModel } from '../features/star-map/star-map-view-model
 import { createLocalSpaceService, generateMiningSpace } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
+import {
+  createLocalSpacePanel,
+  type LocalSpacePanel,
+} from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
