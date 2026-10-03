@@ -32,6 +32,8 @@ export interface LocalChunkView {
 export interface LocalShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
+  readonly turnRateRadiansPerSecond: number;
+  readonly lateralThrust: number;
   readonly speed: number;
   readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
@@ -98,6 +100,8 @@ export function createLocalSpaceViewModel(
     ship: {
       position: snapshot.instance.ship.position,
       headingRadians: snapshot.instance.ship.headingRadians,
+      turnRateRadiansPerSecond: snapshot.instance.ship.turnRateRadiansPerSecond,
+      lateralThrust: snapshot.instance.ship.lateralThrust,
       speed: snapshot.instance.ship.speed,
       nominalLengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
