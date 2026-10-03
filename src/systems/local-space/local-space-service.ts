@@ -9,10 +9,11 @@ import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
   createShieldWorldGeometry,
+  resolveAsteroidCollisions,
   resolveShieldCollisions,
   type ShieldWorldGeometry,
-  updateAsteroidMotion,
 } from './local-space-collision';
+import { integrateAsteroids } from './local-space-physics';
 import { planMiningApproachRoute } from './local-space-navigation';
 
 export interface LocalSpaceServiceOptions {
@@ -97,7 +98,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   selectAsteroid(id: string | null): LocalSpaceSnapshot {
-    if (id && !this.findAsteroid(id)) throw new Error('Unknown asteroid: ' + id);
+    const asteroid = this.findAsteroid(id);
+    if (id && (!asteroid || asteroid.kind !== 'resource')) {
+      throw new Error('Unknown mineable asteroid: ' + id);
+    }
     this.selectedAsteroidId = id;
     return this.getSnapshot();
   }
@@ -130,12 +134,13 @@ class LocalSpaceRuntime implements LocalSpaceService {
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shieldFlash = Math.max(0, this.shieldFlash - clamped / 0.48);
-    updateAsteroidMotion(
+    integrateAsteroids(
       this.instance.asteroids,
       clamped,
       this.instance.width,
       this.instance.height
     );
+    resolveAsteroidCollisions(this.instance.asteroids);
 
     const asteroid = this.findAsteroid(this.miningTargetId);
     if (!asteroid && this.miningPhase !== 'idle') {
