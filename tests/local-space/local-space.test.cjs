@@ -23,7 +23,10 @@ assert(service.includes('startMining'), 'local-space service must expose mining 
 assert(service.includes('updateApproach'), 'mining must include ship approach');
 assert(service.includes('spawnChunk'), 'mining must break resource chunks from asteroids');
 assert(service.includes('tractorActive'), 'mining chunks must enter tractor collection');
+assert(service.includes('miningRange + 1'), 'mining approach must tolerate arrival precision');
+assert(service.includes('finishMining'), 'mining completion must reset movement and phase');
+assert(service.includes('this.instance.ship.speed = 0'), 'mining reset must stop engine state');
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
-console.log('PASS local-space generation and mining ownership');
+console.log('PASS local-space generation, mining ownership and arrival reset');
