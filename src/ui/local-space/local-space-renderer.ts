@@ -214,11 +214,7 @@ export class LocalSpaceRenderer {
     return { id: asteroid.id, point, radius: radius + 10 };
   }
 
-  private drawScanMarker(
-    asteroid: LocalAsteroidView,
-    point: ScreenPoint,
-    radius: number
-  ): void {
+  private drawScanMarker(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
     if (asteroid.scanLevel === 'unscanned') return;
 
     this.context.save();
