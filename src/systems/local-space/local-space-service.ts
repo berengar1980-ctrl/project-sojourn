@@ -24,7 +24,7 @@ import {
   updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
-import { planMiningApproachRoute } from './local-space-navigation';
+import type { RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
 export interface LocalSpaceServiceOptions {
@@ -37,7 +37,8 @@ export interface LocalSpaceServiceOptions {
 export interface LocalSpaceService {
   getSnapshot(): LocalSpaceSnapshot;
   selectAsteroid(id: string | null): LocalSpaceSnapshot;
-  startMining(): LocalSpaceSnapshot;
+  getMiningRouteOptions(): RoutePlanningOptions | null;
+  startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   cancelMining(): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
@@ -107,7 +108,21 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  startMining(): LocalSpaceSnapshot {
+  getMiningRouteOptions(): RoutePlanningOptions | null {
+    const asteroid = this.findAsteroid(this.selectedAsteroidId);
+    if (!asteroid || asteroid.oreRemaining <= 0) return null;
+
+    return {
+      start: this.instance.ship.position,
+      target: asteroid,
+      asteroids: this.instance.asteroids,
+      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
+      width: this.instance.width,
+      height: this.instance.height,
+    };
+  }
+
+  startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
     if (!asteroid || asteroid.oreRemaining <= 0) return this.getSnapshot();
 
@@ -121,14 +136,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
     this.miningHoldOffset = null;
-    this.approachRoute = planMiningApproachRoute({
-      start: this.instance.ship.position,
-      target: asteroid,
-      asteroids: this.instance.asteroids,
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
-      width: this.instance.width,
-      height: this.instance.height,
-    });
+    this.approachRoute = route;
     this.approachIndex = this.approachRoute.length > 1 ? 1 : 0;
     return this.getSnapshot();
   }
