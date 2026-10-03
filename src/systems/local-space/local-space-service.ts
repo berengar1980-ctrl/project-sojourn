@@ -271,14 +271,14 @@ class LocalSpaceRuntime implements LocalSpaceService {
       .map((asteroid) => {
         const dx = asteroid.position.x - ship.position.x;
         const dy = asteroid.position.y - ship.position.y;
-        return { asteroid, dx, dy, distance: Math.hypot(dx, dy) };
+        return { asteroid, dx, dy, range: Math.hypot(dx, dy) };
       })
-      .filter(({ asteroid, dx, dy, distance }) => {
-        if (distance > this.shield.radiusX + asteroid.radius + 32) return false;
+      .filter(({ asteroid, dx, dy, range }) => {
+        if (range > this.shield.radiusX + asteroid.radius + 32) return false;
         const closing = dx * asteroid.physics.velocity.x + dy * asteroid.physics.velocity.y;
         return closing < 0;
       })
-      .sort((a, b) => a.distance - b.distance)[0];
+      .sort((a, b) => a.range - b.range)[0];
 
     const sideX = -Math.sin(ship.headingRadians);
     const sideY = Math.cos(ship.headingRadians);
