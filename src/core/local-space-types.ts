@@ -28,6 +28,11 @@ export interface MiningImpact {
   readonly normal: WorldPoint;
 }
 
+export interface MiningImpact {
+  readonly point: WorldPoint;
+  readonly normal: WorldPoint;
+}
+
 export interface MiningChunk {
   readonly id: string;
   position: WorldPoint;
