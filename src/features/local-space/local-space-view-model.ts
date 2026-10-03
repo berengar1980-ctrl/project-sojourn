@@ -83,10 +83,8 @@ export function createLocalSpaceViewModel(
   const asteroids = snapshot.instance.asteroids.map((asteroid) =>
     mapAsteroid(asteroid, snapshot)
   );
-  const selectedAsteroid =
-    asteroids.find((asteroid) => asteroid.isSelected) ?? null;
-  const miningTarget =
-    asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null;
+  const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
+  const miningTarget = asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null;
 
   return {
     title,
