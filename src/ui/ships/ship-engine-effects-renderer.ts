@@ -1,8 +1,5 @@
 import type { ShipHardpoints } from '../../core/ship-types';
-import {
-  projectHardpoint,
-  type ShipScreenGeometry,
-} from './ship-hardpoint-projector';
+import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
 
 export class ShipEngineEffectsRenderer {
   draw(
@@ -21,10 +18,7 @@ export class ShipEngineEffectsRenderer {
       const slowPulse = Math.sin(timeSeconds * 10.5 + index * 0.8) * 0.055;
       const fastPulse = Math.sin(timeSeconds * 24 + index * 1.6) * 0.025;
       const flicker = 0.93 + slowPulse + fastPulse;
-      const baseWidth = Math.max(
-        2,
-        (hardpoint.width / source.sourceWidth) * geometry.width
-      );
+      const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
       const length = baseWidth * (0.95 + normalizedIntensity * 1.55) * flicker;
       const thickness = baseWidth * (0.34 + normalizedIntensity * 0.13);
       const backwards = {
@@ -41,9 +35,7 @@ export class ShipEngineEffectsRenderer {
       context.shadowColor = 'rgba(77, 181, 255, .9)';
       context.shadowBlur = 7 + normalizedIntensity * 8;
       context.strokeStyle =
-        'rgba(69, 161, 255, ' +
-        (0.22 + normalizedIntensity * 0.32) * flicker +
-        ')';
+        'rgba(69, 161, 255, ' + (0.22 + normalizedIntensity * 0.32) * flicker + ')';
       context.lineWidth = thickness * 2.2;
       context.beginPath();
       context.moveTo(nozzle.x, nozzle.y);
@@ -52,9 +44,7 @@ export class ShipEngineEffectsRenderer {
 
       context.shadowBlur = 4;
       context.strokeStyle =
-        'rgba(224, 249, 255, ' +
-        (0.58 + normalizedIntensity * 0.28) * flicker +
-        ')';
+        'rgba(224, 249, 255, ' + (0.58 + normalizedIntensity * 0.28) * flicker + ')';
       context.lineWidth = Math.max(1, thickness * 0.72);
       context.beginPath();
       context.moveTo(nozzle.x, nozzle.y);
