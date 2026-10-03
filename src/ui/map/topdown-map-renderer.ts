@@ -6,6 +6,7 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { PlayerShipRenderer } from './player-ship-renderer';
+import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 
 interface HitArea {
   readonly id: string;
@@ -18,6 +19,8 @@ export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
   private readonly shipRenderer: PlayerShipRenderer;
+  private readonly backgroundRenderer: SpaceBackgroundRenderer;
+  private readonly planetImages = new Map<string, HTMLImageElement>();
   private model: StarMapViewModel;
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
@@ -33,6 +36,7 @@ export class TopdownMapRenderer {
     this.model = model;
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
+    this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
     this.resize();
   }
 
@@ -87,7 +91,14 @@ export class TopdownMapRenderer {
     const height = rect.height;
     this.context.clearRect(0, 0, width, height);
 
-    this.drawBackground(width, height);
+    const timeSeconds = performance.now() / 1000;
+    this.backgroundRenderer.draw({
+      width,
+      height,
+      cameraCenter: this.camera.getCenter(),
+      cameraZoom: this.camera.getZoom(),
+      timeSeconds,
+    });
     this.drawRegions(width, height);
     this.drawOrbits(width, height);
     this.drawStar(width, height);
@@ -109,32 +120,12 @@ export class TopdownMapRenderer {
     );
   }
 
-  private drawBackground(width: number, height: number): void {
-    const gradient = this.context.createRadialGradient(
-      width * 0.52,
-      height * 0.48,
-      20,
-      width * 0.52,
-      height * 0.48,
-      Math.max(width, height) * 0.8
-    );
-    gradient.addColorStop(0, '#0a111b');
-    gradient.addColorStop(1, '#020408');
-    this.context.fillStyle = gradient;
-    this.context.fillRect(0, 0, width, height);
-
-    this.context.fillStyle = 'rgba(210, 226, 255, 0.55)';
-    for (let index = 0; index < 90; index += 1) {
-      const x = (index * 193 + 71) % Math.max(1, Math.floor(width));
-      const y = (index * 97 + 29) % Math.max(1, Math.floor(height));
-      const size = index % 7 === 0 ? 1.5 : 0.8;
-      this.context.fillRect(x, y, size, size);
-    }
-  }
-
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
-    const radius = 54 * mapSymbolScale(this.camera.getRelativeZoom());
+    const timeSeconds = performance.now() / 1000;
+    const breathe = 1 + Math.sin(timeSeconds * 1.25) * 0.045;
+    const shimmer = 0.92 + Math.sin(timeSeconds * 2.1 + 0.7) * 0.08;
+    const radius = 54 * mapSymbolScale(this.camera.getRelativeZoom()) * breathe;
     const corona = this.context.createRadialGradient(
       point.x,
       point.y,
@@ -143,8 +134,9 @@ export class TopdownMapRenderer {
       point.y,
       radius * 2.1
     );
-    corona.addColorStop(0, 'rgba(255, 210, 112, .48)');
-    corona.addColorStop(0.4, 'rgba(240, 150, 56, .18)');
+    corona.addColorStop(0, 'rgba(255, 246, 206, ' + 0.5 * shimmer + ')');
+    corona.addColorStop(0.28, 'rgba(255, 214, 117, ' + 0.3 * shimmer + ')');
+    corona.addColorStop(0.62, 'rgba(244, 164, 64, ' + 0.13 * shimmer + ')');
     corona.addColorStop(1, 'rgba(240, 150, 56, 0)');
     this.context.fillStyle = corona;
     this.context.beginPath();
@@ -159,14 +151,24 @@ export class TopdownMapRenderer {
       point.y,
       radius
     );
-    body.addColorStop(0, '#fffbea');
-    body.addColorStop(0.32, this.model.star.colorCore);
-    body.addColorStop(0.75, this.model.star.colorCorona);
-    body.addColorStop(1, '#a74920');
+    body.addColorStop(0, '#ffffff');
+    body.addColorStop(0.18, '#fffdf1');
+    body.addColorStop(0.5, this.model.star.colorCore);
+    body.addColorStop(0.82, this.model.star.colorCorona);
+    body.addColorStop(1, '#c66a25');
     this.context.fillStyle = body;
     this.context.beginPath();
     this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     this.context.fill();
+
+    this.context.save();
+    this.context.globalAlpha = 0.16 + shimmer * 0.1;
+    this.context.strokeStyle = '#fff4ba';
+    this.context.lineWidth = 2;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius * 1.16, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.restore();
 
     this.context.fillStyle = 'rgba(255,244,215,.86)';
     this.context.font = '600 12px system-ui';
@@ -276,6 +278,14 @@ export class TopdownMapRenderer {
   }
 
   private drawPlanet(location: StarMapLocationView, point: WorldPoint, radius: number): void {
+    if (location.spriteUrl) {
+      const image = this.ensurePlanetImage(location.spriteUrl);
+      if (image.complete && image.naturalWidth > 0) {
+        this.context.drawImage(image, point.x - radius, point.y - radius, radius * 2, radius * 2);
+        return;
+      }
+    }
+
     const gradient = this.context.createRadialGradient(
       point.x - radius * 0.35,
       point.y - radius * 0.35,
@@ -322,6 +332,26 @@ export class TopdownMapRenderer {
       );
       this.context.fill();
     }
+  }
+
+  private ensurePlanetImage(url: string): HTMLImageElement {
+    const existing = this.planetImages.get(url);
+    if (existing) return existing;
+
+    const image = new Image();
+    image.onload = () => this.draw();
+    image.src = url;
+    this.planetImages.set(url, image);
+    return image;
+  }
+
+  private hashSeed(value: string): number {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
   }
 
   private drawWreck(point: WorldPoint, radius: number): void {
