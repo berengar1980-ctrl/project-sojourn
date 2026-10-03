@@ -61,10 +61,7 @@ assert(
   physics.includes('centerOfMassWorld'),
   'impulse torque must reference the asteroid center of mass'
 );
-assert(
-  physics.includes('momentOfInertia'),
-  'angular response must use moment of inertia'
-);
+assert(physics.includes('momentOfInertia'), 'angular response must use moment of inertia');
 assert(
   collision.includes('rotationalMassTerm'),
   'asteroid collisions must include rotational collision response'
