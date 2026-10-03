@@ -30,6 +30,7 @@ export interface LocalShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly speed: number;
+  readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
@@ -90,6 +91,7 @@ export function createLocalSpaceViewModel(
       position: snapshot.instance.ship.position,
       headingRadians: snapshot.instance.ship.headingRadians,
       speed: snapshot.instance.ship.speed,
+      nominalLengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
