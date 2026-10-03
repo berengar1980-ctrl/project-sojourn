@@ -27,11 +27,7 @@ function heading(a: WorldPoint, b: WorldPoint): number {
   return Math.atan2(b.y - a.y, b.x - a.x);
 }
 
-function moveToward(
-  current: WorldPoint,
-  target: WorldPoint,
-  maximumDistance: number
-): WorldPoint {
+function moveToward(current: WorldPoint, target: WorldPoint, maximumDistance: number): WorldPoint {
   const total = distance(current, target);
   if (total <= maximumDistance || total === 0) return { ...target };
 
@@ -119,20 +115,13 @@ class LocalSpaceRuntime implements LocalSpaceService {
       x: asteroid.position.x - Math.cos(ship.headingRadians) * miningRange,
       y: asteroid.position.y - Math.sin(ship.headingRadians) * miningRange,
     };
-    ship.position = moveToward(
-      ship.position,
-      stopPoint,
-      this.approachSpeed * deltaSeconds
-    );
+    ship.position = moveToward(ship.position, stopPoint, this.approachSpeed * deltaSeconds);
     ship.speed = this.approachSpeed;
   }
 
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {
     this.instance.ship.speed = 0;
-    this.instance.ship.headingRadians = heading(
-      this.instance.ship.position,
-      asteroid.position
-    );
+    this.instance.ship.headingRadians = heading(this.instance.ship.position, asteroid.position);
     this.miningAccumulator += deltaSeconds;
 
     while (this.miningAccumulator >= 0.42 && asteroid.oreRemaining > 0) {
@@ -199,8 +188,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 }
 
-export function createLocalSpaceService(
-  options: LocalSpaceServiceOptions
-): LocalSpaceService {
+export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
   return new LocalSpaceRuntime(options);
 }
