@@ -82,8 +82,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     meta.textContent =
       Math.round(selected.oreRemaining) + ' / ' + Math.round(selected.oreCapacity) + ' ERZ';
     oreBar.style.width = Math.max(0, (selected.oreRemaining / selected.oreCapacity) * 100) + '%';
-    mineButton.disabled =
-      selected.oreRemaining <= 0 || (selected.isMiningTarget && miningActive);
+    mineButton.disabled = selected.oreRemaining <= 0 || (selected.isMiningTarget && miningActive);
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
