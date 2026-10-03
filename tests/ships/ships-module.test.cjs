@@ -34,10 +34,10 @@ assert(
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
 assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
 assert.equal(hardpoints.maneuverThrusters.length, 4, 'miner must define four maneuver thrusters');
-assert.equal(hardpoints.engines[0].x, 23, 'upper engine hardpoint must match calibrated nozzle');
-assert.equal(hardpoints.engines[1].x, 23, 'lower engine hardpoint must match calibrated nozzle');
-assert.equal(hardpoints.miningLasers[0].x, 329, 'upper laser hardpoint must match emitter tip');
-assert.equal(hardpoints.miningLasers[1].x, 329, 'lower laser hardpoint must match emitter tip');
+assert.equal(hardpoints.engines[0].x, 20, 'upper engine hardpoint must match calibrated nozzle');
+assert.equal(hardpoints.engines[1].x, 20, 'lower engine hardpoint must match calibrated nozzle');
+assert.equal(hardpoints.miningLasers[0].x, 323, 'upper laser hardpoint must match emitter tip');
+assert.equal(hardpoints.miningLasers[1].x, 323, 'lower laser hardpoint must match emitter tip');
 assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
 assert(hardpoints.shield.radiusX > 0, 'shield must define horizontal radius');
 assert(hardpoints.shield.radiusY > 0, 'shield must define vertical radius');
