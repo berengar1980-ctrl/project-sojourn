@@ -103,7 +103,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
-    this.shieldFlash = Math.max(0, this.shieldFlash - clamped / 0.22);
+    this.shieldFlash = Math.max(0, this.shieldFlash - clamped / 0.48);
     updateAsteroidMotion(
       this.instance.asteroids,
       clamped,
