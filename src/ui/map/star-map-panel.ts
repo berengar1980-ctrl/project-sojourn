@@ -1,5 +1,5 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
-import type { SystemLogService } from '../../systems/system-log/system-log-service';
+import type { SystemLogService } from '../../core/system-log-types';
 import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
