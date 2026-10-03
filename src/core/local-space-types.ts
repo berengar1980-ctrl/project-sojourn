@@ -1,3 +1,4 @@
+import type { AsteroidScanLevel } from './resource-types';
 import type { ShieldImpactEffect, ShieldState } from './shield-types';
 import type { WorldPoint } from './world-types';
 
@@ -19,9 +20,11 @@ export interface LocalAsteroid {
   radius: number;
   rotation: number;
   physics: AsteroidPhysics;
+  resourceId: string | null;
   oreType: string;
   oreRemaining: number;
   oreCapacity: number;
+  scanLevel: AsteroidScanLevel;
 }
 
 export interface MiningImpact {
@@ -64,6 +67,7 @@ export interface LocalSpaceSnapshot {
   readonly instance: LocalSpaceInstance;
   readonly selectedAsteroidId: string | null;
   readonly miningTargetId: string | null;
+  readonly scanTargetId: string | null;
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
   readonly laserActive: boolean;
