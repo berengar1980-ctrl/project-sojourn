@@ -7,10 +7,15 @@ export interface ShipSprite {
   readonly facing: 'right';
 }
 
+export interface ShipNavigationStats {
+  readonly cruiseSpeed: number;
+}
+
 export interface ShipDefinition {
   readonly id: string;
   readonly name: string;
   readonly role: ShipRole;
   readonly nominalLengthMeters: number;
   readonly sprite: ShipSprite;
+  readonly navigation: ShipNavigationStats;
 }
