@@ -166,6 +166,18 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.instance.asteroids.find((asteroid) => asteroid.id === id) ?? null;
   }
 
+  private currentMiningImpact(): MiningImpact | null {
+    if (this.miningPhase !== 'extracting') return null;
+    const asteroid = this.findAsteroid(this.miningTargetId);
+    if (!asteroid) return null;
+    return calculateMiningImpact(
+      this.instance.ship,
+      asteroid,
+      this.hardpoints,
+      this.nominalLengthMeters
+    );
+  }
+
   private finishMining(): void {
     this.miningPhase = 'idle';
     this.miningTargetId = null;
@@ -230,17 +242,34 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private spawnChunk(asteroid: LocalAsteroid): void {
-    const angle = asteroid.rotation + this.chunkCounter * 1.7;
+    const impact = calculateMiningImpact(
+      this.instance.ship,
+      asteroid,
+      this.hardpoints,
+      this.nominalLengthMeters
+    );
     const amount = Math.min(6, asteroid.oreRemaining);
     asteroid.oreRemaining -= amount;
+
+    const tangent = { x: -impact.normal.y, y: impact.normal.x };
+    const spread = Math.sin(this.chunkCounter * 2.17) * 0.42;
+    const speed = 24 + (this.chunkCounter % 4) * 4;
+    const direction = {
+      x: impact.normal.x + tangent.x * spread,
+      y: impact.normal.y + tangent.y * spread,
+    };
+    const directionLength = Math.max(0.001, Math.hypot(direction.x, direction.y));
 
     this.instance.chunks.push({
       id: 'chunk-' + this.instance.seed + '-' + this.chunkCounter,
       position: {
-        x: asteroid.position.x + Math.cos(angle) * asteroid.radius * 0.65,
-        y: asteroid.position.y + Math.sin(angle) * asteroid.radius * 0.65,
+        x: impact.point.x + impact.normal.x * 2,
+        y: impact.point.y + impact.normal.y * 2,
       },
-      velocity: { x: Math.cos(angle) * 34, y: Math.sin(angle) * 34 },
+      velocity: {
+        x: (direction.x / directionLength) * speed,
+        y: (direction.y / directionLength) * speed,
+      },
       amount,
       ageSeconds: 0,
       tractorActive: false,
