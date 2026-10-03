@@ -3,6 +3,7 @@ import type {
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { MiningEffectsRenderer, type ShipScreenGeometry } from './mining-effects-renderer';
 
 interface AsteroidHitArea {
@@ -24,6 +25,7 @@ export class LocalSpaceRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
   private readonly miningEffects: MiningEffectsRenderer;
+  private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
   private hitAreas: readonly AsteroidHitArea[] = [];
@@ -41,6 +43,7 @@ export class LocalSpaceRenderer {
     this.model = model;
     this.camera = new MapCamera(model.width, model.height);
     this.miningEffects = new MiningEffectsRenderer(context, this.camera);
+    this.backgroundRenderer = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.resize();
   }
 
@@ -101,7 +104,13 @@ export class LocalSpaceRenderer {
     const timeSeconds = performance.now() / 1000;
     const geometry = this.shipGeometry(width, height);
 
-    this.drawBackground(width, height);
+    this.backgroundRenderer.draw({
+      width,
+      height,
+      cameraCenter: this.camera.getCenter(),
+      cameraZoom: this.camera.getZoom(),
+      timeSeconds,
+    });
     this.miningEffects.drawTractorFields(this.model, width, height, timeSeconds);
     this.hitAreas = this.model.asteroids.map((asteroid) =>
       this.drawAsteroid(asteroid, width, height)
@@ -109,20 +118,6 @@ export class LocalSpaceRenderer {
     this.drawChunks(width, height);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
     this.drawShip(geometry);
-  }
-
-  private drawBackground(width: number, height: number): void {
-    this.context.fillStyle = '#020407';
-    this.context.fillRect(0, 0, width, height);
-
-    for (let index = 0; index < 130; index += 1) {
-      const x = (index * 241 + 53) % Math.max(1, Math.floor(width));
-      const y = (index * 131 + 17) % Math.max(1, Math.floor(height));
-      const size = index % 13 === 0 ? 1.4 : 0.65;
-      this.context.fillStyle =
-        index % 10 === 0 ? 'rgba(160, 194, 235, .55)' : 'rgba(220, 228, 237, .28)';
-      this.context.fillRect(x, y, size, size);
-    }
   }
 
   private drawAsteroid(
