@@ -1,7 +1,8 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
-import { createLocalSpaceSystemLog, type LocalSpaceSystemLog } from './local-space-system-log';
+import type { SystemLogService } from '../../systems/system-log/system-log-service';
+import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 export interface LocalSpacePanel {
   update(model: LocalSpaceViewModel): void;
@@ -12,7 +13,8 @@ interface LocalSpacePanelOptions {
   readonly root: HTMLElement;
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
-  readonly onStartMining: () => void;
+  readonly log: SystemLogService;
+  readonly onStartMining: () => Promise<void>;
   readonly onCancelMining: () => void;
   readonly onReturnToStarMap: () => void;
 }
@@ -29,22 +31,29 @@ function shieldPercent(model: LocalSpaceViewModel): number {
 
 function bindRoutePlanning(
   button: HTMLButtonElement,
-  systemLog: LocalSpaceSystemLog,
-  startMining: () => void,
+  systemLog: SystemLogService,
+  logPanel: SystemLogPanel,
+  startMining: () => Promise<void>,
   updateOverlay: () => void
 ): void {
   let planning = false;
-  button.addEventListener('click', () => {
+  button.addEventListener('click', async () => {
     if (planning) return;
     planning = true;
     button.disabled = true;
     systemLog.write('NAV > ROUTENBERECHNUNG...');
-    requestAnimationFrame(() => {
-      startMining();
-      planning = false;
+    logPanel.update();
+
+    try {
+      await startMining();
       systemLog.write('NAV > ANFLUGROUTE BEREIT');
+    } catch {
+      systemLog.write('NAV > ROUTENBERECHNUNG FEHLER');
+    } finally {
+      planning = false;
+      logPanel.update();
       updateOverlay();
-    });
+    }
   });
 }
 
@@ -92,9 +101,14 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
-  const systemLog = createLocalSpaceSystemLog(shell);
-  systemLog.write('SYSTEM ONLINE');
-  systemLog.write('SCHILD-INTEGRITÄT ' + lastShieldPercent + ' %');
+  const systemLog = createSystemLogPanel({
+    root: shell,
+    log: options.log,
+    header: 'SYS // LOCAL OPS',
+    placementClass: 'local-system-log',
+  });
+  options.log.write('SCHILD-INTEGRITÄT ' + lastShieldPercent + ' %');
+  systemLog.update();
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
@@ -105,7 +119,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
     const currentShieldPercent = shieldPercent(model);
     if (currentShieldPercent !== lastShieldPercent) {
-      systemLog.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
+      options.log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
+      systemLog.update();
       lastShieldPercent = currentShieldPercent;
     }
 
@@ -129,7 +144,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     onSelectAsteroid: options.onSelectAsteroid,
   });
 
-  bindRoutePlanning(mineButton, systemLog, options.onStartMining, updateOverlay);
+  bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
