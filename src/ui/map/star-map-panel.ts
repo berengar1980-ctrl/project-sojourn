@@ -71,7 +71,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
     if (model.navigation.isTravelling) {
       const percent = Math.round(model.navigation.progress * 100);
-      travelStatus.textContent = 'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
+      travelStatus.textContent =
+        'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
     }
 
     if (!selected) return;
