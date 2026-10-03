@@ -23,7 +23,10 @@ assert(fs.existsSync(asset), 'mining ship sprite asset missing');
 assert.equal(hardpoints.sourceWidth, 346, 'hardpoint source width must match sprite');
 assert.equal(hardpoints.sourceHeight, 182, 'hardpoint source height must match sprite');
 assert(hardpoints.pivot, 'ship hardpoint data must define a pivot');
-assert(hardpoints.pivot.x >= 0 && hardpoints.pivot.x <= hardpoints.sourceWidth, 'pivot x out of bounds');
+assert(
+  hardpoints.pivot.x >= 0 && hardpoints.pivot.x <= hardpoints.sourceWidth,
+  'pivot x out of bounds'
+);
 assert(
   hardpoints.pivot.y >= 0 && hardpoints.pivot.y <= hardpoints.sourceHeight,
   'pivot y out of bounds'
