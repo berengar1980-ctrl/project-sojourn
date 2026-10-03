@@ -18,6 +18,8 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts')
 
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
 assert(renderer.includes('drawShieldFlash'), 'shield impacts must have a visual flash');
+assert(renderer.includes('source.pivot.x'), 'local ship renderer must use JSON pivot');
+assert(effects.includes('source.pivot.x'), 'mining hardpoints must rotate around JSON pivot');
 assert(
   renderer.includes('camera.scale(this.model.ship.nominalLengthMeters)'),
   'local ship visuals must use world scale'
