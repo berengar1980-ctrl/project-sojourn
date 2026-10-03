@@ -183,7 +183,7 @@ export class LocalSpaceRenderer {
 
   private shipGeometry(width: number, height: number): ShipScreenGeometry {
     const center = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const shipWidth = 144;
+    const shipWidth = this.camera.scale(this.model.ship.nominalLengthMeters);
     const aspectRatio =
       this.shipImage.complete && this.shipImage.naturalHeight > 0
         ? this.shipImage.naturalWidth / this.shipImage.naturalHeight
