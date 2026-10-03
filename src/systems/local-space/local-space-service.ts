@@ -14,13 +14,7 @@ import {
   resolveShieldCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
-import {
-  angleDelta,
-  distance,
-  heading,
-  moveToward,
-  turnToward,
-} from './local-space-motion';
+import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import {
