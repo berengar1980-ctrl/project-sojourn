@@ -1,5 +1,6 @@
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
@@ -9,6 +10,7 @@ const BASE_SHIP_WIDTH = 72;
 export class PlayerShipRenderer {
   private readonly image = new Image();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
+  private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private loadedUrl = '';
 
   constructor(private readonly requestRedraw: () => void) {}
@@ -34,6 +36,16 @@ export class PlayerShipRenderer {
 
     if (ship.isTravelling) {
       this.engineEffects.draw(context, ship.hardpoints, geometry, 0.82, timeSeconds);
+      this.maneuverEffects.draw(
+        context,
+        ship.hardpoints,
+        geometry,
+        {
+          turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+          lateralThrust: ship.lateralThrust,
+        },
+        timeSeconds
+      );
     }
 
     context.save();
