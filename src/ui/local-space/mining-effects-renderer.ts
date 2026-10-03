@@ -35,11 +35,7 @@ function fractional(value: number): number {
   return value - Math.floor(value);
 }
 
-function surfaceImpactPoint(
-  center: ScreenPoint,
-  ship: ScreenPoint,
-  radius: number
-): ScreenPoint {
+function surfaceImpactPoint(center: ScreenPoint, ship: ScreenPoint, radius: number): ScreenPoint {
   const dx = ship.x - center.x;
   const dy = ship.y - center.y;
   const length = Math.max(0.001, Math.hypot(dx, dy));
