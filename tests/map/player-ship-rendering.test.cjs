@@ -9,7 +9,10 @@ const shipRenderer = fs.readFileSync(path.join(root, 'src/ui/map/player-ship-ren
 const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 
 assert(shipRenderer.includes('ShipEngineEffectsRenderer'), 'star map must share engine VFX');
-assert(shipRenderer.includes('spriteDrawOffset'), 'star-map sprite must use shared pivot projection');
+assert(
+  shipRenderer.includes('spriteDrawOffset'),
+  'star-map sprite must use shared pivot projection'
+);
 assert(shipRenderer.includes('drawImage'), 'ship renderer must draw the actual ship sprite');
 assert(mapRenderer.includes('drawPlayerShip'), 'star map must render the player ship');
 assert(!shipRenderer.includes('currentLocationId ='), 'ship renderer must not mutate navigation');
