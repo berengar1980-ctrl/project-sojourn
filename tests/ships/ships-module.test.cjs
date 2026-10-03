@@ -13,6 +13,7 @@ const hardpointsPath = path.join(root, 'src/data/ships/miner-80m-standard.hardpo
 const hardpoints = JSON.parse(fs.readFileSync(hardpointsPath, 'utf8'));
 
 assert(index.includes('getShipDefinition'), 'ships public API missing');
+assert(index.includes('ShipPivot'), 'ships public API must expose pivot type');
 assert(registry.includes('miningShips'), 'ship registry must consume ship data');
 assert(data.includes("id: 'miner-80m-standard'"), 'first mining ship missing');
 assert(data.includes('widthPx: 346'), 'sprite width metadata must match source asset');
@@ -21,6 +22,12 @@ assert(data.includes('hardpointsJson'), 'ship definition must load hardpoints fr
 assert(fs.existsSync(asset), 'mining ship sprite asset missing');
 assert.equal(hardpoints.sourceWidth, 346, 'hardpoint source width must match sprite');
 assert.equal(hardpoints.sourceHeight, 182, 'hardpoint source height must match sprite');
+assert(hardpoints.pivot, 'ship hardpoint data must define a pivot');
+assert(hardpoints.pivot.x >= 0 && hardpoints.pivot.x <= hardpoints.sourceWidth, 'pivot x out of bounds');
+assert(
+  hardpoints.pivot.y >= 0 && hardpoints.pivot.y <= hardpoints.sourceHeight,
+  'pivot y out of bounds'
+);
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
 assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
 assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
@@ -30,4 +37,4 @@ for (const hardpoint of [...hardpoints.engines, ...hardpoints.miningLasers]) {
   assert(hardpoint.width > 0, 'every hardpoint must define a positive width');
 }
 
-console.log('PASS ships module, sprite, JSON hardpoints and shield geometry');
+console.log('PASS ships module, sprite, JSON pivot, hardpoints and shield geometry');
