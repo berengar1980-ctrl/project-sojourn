@@ -232,14 +232,29 @@ body {
 }
 
 .return-map-button:hover,
+.long-scan-button:hover,
+.short-scan-button:hover,
 .mine-button:hover,
 .cancel-mining-button:hover {
   background: rgba(58, 118, 136, 0.3);
 }
 
-.local-mining-status {
+.long-scan-button {
   position: absolute;
   top: 72px;
+  right: 24px;
+  padding: 8px 10px;
+  border: 1px solid rgba(94, 178, 133, 0.42);
+  background: rgba(18, 62, 40, 0.64);
+  color: #a9e8c0;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.local-mining-status {
+  position: absolute;
+  top: 112px;
   right: 24px;
   padding: 8px 10px;
   border: 1px solid rgba(81, 184, 212, 0.26);
@@ -254,7 +269,7 @@ body {
 
 .cancel-mining-button {
   position: absolute;
-  top: 108px;
+  top: 148px;
   right: 24px;
   padding: 7px 10px;
   border: 1px solid rgba(185, 108, 108, 0.34);
@@ -320,6 +335,7 @@ body {
   transition: width 120ms linear;
 }
 
+.short-scan-button,
 .mine-button {
   margin-top: 14px;
   padding: 9px 12px;
@@ -331,6 +347,18 @@ body {
   letter-spacing: 0.14em;
 }
 
+.short-scan-button {
+  margin-right: 7px;
+  padding: 9px 12px;
+  border: 1px solid rgba(105, 196, 151, 0.38);
+  background: rgba(29, 88, 57, 0.2);
+  color: #afe5c4;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.11em;
+}
+
+.short-scan-button:disabled,
 .mine-button:disabled {
   opacity: 0.42;
   cursor: default;
@@ -415,13 +443,18 @@ body {
     right: 16px;
   }
 
-  .local-mining-status {
+  .long-scan-button {
     top: 62px;
     right: 16px;
   }
 
+  .local-mining-status {
+    top: 100px;
+    right: 16px;
+  }
+
   .cancel-mining-button {
-    top: 98px;
+    top: 136px;
     right: 16px;
   }
 
