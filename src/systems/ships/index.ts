@@ -7,5 +7,6 @@ export type {
   ShipManeuverThruster,
   ShipPivot,
   ShipRole,
+  ShipShieldGeometry,
   ShipSprite,
 } from '../../core/ship-types';
