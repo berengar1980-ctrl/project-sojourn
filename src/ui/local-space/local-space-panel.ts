@@ -75,12 +75,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     if (!selected) return;
     name.textContent = selected.oreType;
     meta.textContent =
-      Math.round(selected.oreRemaining) +
-      ' / ' +
-      Math.round(selected.oreCapacity) +
-      ' ERZ';
-    oreBar.style.width =
-      Math.max(0, (selected.oreRemaining / selected.oreCapacity) * 100) + '%';
+      Math.round(selected.oreRemaining) + ' / ' + Math.round(selected.oreCapacity) + ' ERZ';
+    oreBar.style.width = Math.max(0, (selected.oreRemaining / selected.oreCapacity) * 100) + '%';
     mineButton.disabled =
       selected.oreRemaining <= 0 ||
       model.miningPhase === 'approaching' ||
