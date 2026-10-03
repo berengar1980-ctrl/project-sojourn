@@ -17,8 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Show Prettier diff
-        run: |
-          npm run format
-          git diff -- src/ui/local-space/local-space-renderer.ts tests/ships/ships-module.test.cjs
-          exit 1
+      - name: Quality gate
+        run: npm run check
