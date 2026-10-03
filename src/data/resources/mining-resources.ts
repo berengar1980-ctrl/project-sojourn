@@ -28,3 +28,8 @@ export function pickMiningResource(random: () => number): MiningResourceDefiniti
 
   return miningResources[0]!;
 }
+
+export function resourceReferenceValue(resource: MiningResourceDefinition): number {
+  const rarityMultiplier = 0.75 + resource.rarity * 0.25;
+  return Math.round(resource.baseValue * rarityMultiplier);
+}
