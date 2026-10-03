@@ -8,6 +8,7 @@ export interface NavigationSnapshot {
   readonly currentPosition: WorldPoint;
   readonly headingRadians: number;
   readonly turnRateRadiansPerSecond: number;
+  readonly angularThrust: number;
   readonly lateralThrust: number;
   readonly isTravelling: boolean;
   readonly progress: number;
