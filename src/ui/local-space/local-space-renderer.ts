@@ -195,8 +195,16 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.restore();
 
-    if (asteroid.kind === 'resource' && (asteroid.isSelected || asteroid.isMiningTarget)) {
-      this.context.strokeStyle = asteroid.isMiningTarget ? '#67d1e8' : '#dfc173';
+    if (asteroid.kind === 'resource') {
+      this.drawScanMarker(asteroid, point, radius);
+    }
+
+    if (
+      asteroid.kind === 'resource' &&
+      (asteroid.isSelected || asteroid.isMiningTarget || asteroid.isScanTarget)
+    ) {
+      this.context.strokeStyle =
+        asteroid.isMiningTarget || asteroid.isScanTarget ? '#67d1e8' : '#dfc173';
       this.context.lineWidth = 1.7;
       this.context.beginPath();
       this.context.arc(point.x, point.y, radius + 8, 0, Math.PI * 2);
@@ -204,6 +212,31 @@ export class LocalSpaceRenderer {
     }
 
     return { id: asteroid.id, point, radius: radius + 10 };
+  }
+
+  private drawScanMarker(
+    asteroid: LocalAsteroidView,
+    point: ScreenPoint,
+    radius: number
+  ): void {
+    if (asteroid.scanLevel === 'unscanned') return;
+
+    this.context.save();
+    this.context.setLineDash(asteroid.scanLevel === 'surveyed' ? [3, 4] : []);
+    this.context.lineWidth = asteroid.scanLevel === 'analyzed' ? 1.8 : 1.2;
+
+    if (asteroid.surveyResult === 'empty') {
+      this.context.strokeStyle = 'rgba(126, 137, 145, .72)';
+    } else if (asteroid.scanLevel === 'analyzed') {
+      this.context.strokeStyle = 'rgba(103, 209, 232, .9)';
+    } else {
+      this.context.strokeStyle = 'rgba(126, 220, 151, .82)';
+    }
+
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius + 4, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private shipGeometry(width: number, height: number): ShipScreenGeometry {
