@@ -3,6 +3,7 @@ import type {
   LocalSpaceInstance,
   LocalSpaceSnapshot,
   MiningChunk,
+  MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
@@ -14,6 +15,7 @@ import {
   type ShieldWorldGeometry,
 } from './local-space-collision';
 import { integrateAsteroids } from './local-space-physics';
+import { calculateMiningImpact } from './mining-impact';
 import { planMiningApproachRoute } from './local-space-navigation';
 
 export interface LocalSpaceServiceOptions {
@@ -69,6 +71,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
   private readonly approachSpeed: number;
   private readonly shield: ShieldWorldGeometry;
+  private readonly hardpoints: ShipHardpoints;
+  private readonly nominalLengthMeters: number;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private miningPhase: MiningPhase = 'idle';
@@ -82,6 +86,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   constructor(options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
     this.approachSpeed = options.approachSpeed;
+    this.hardpoints = options.hardpoints;
+    this.nominalLengthMeters = options.nominalLengthMeters;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
   }
 
@@ -93,6 +99,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
       laserActive: this.miningPhase === 'extracting',
+      miningImpact: this.currentMiningImpact(),
       shieldFlash: this.shieldFlash,
     };
   }
