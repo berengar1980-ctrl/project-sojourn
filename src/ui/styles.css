@@ -336,7 +336,7 @@ body {
   cursor: default;
 }
 
-.local-system-log {
+.system-log {
   position: absolute;
   top: 84px;
   left: 24px;
@@ -353,7 +353,7 @@ body {
   text-shadow: 0 0 6px #245c30;
 }
 
-.local-system-log-header {
+.system-log-header {
   padding: 7px 10px 6px;
   border-bottom: 1px solid #1e4425;
   color: #72c985;
@@ -362,13 +362,13 @@ body {
   letter-spacing: 0.16em;
 }
 
-.local-system-log-lines {
+.system-log-lines {
   max-height: 132px;
   overflow: hidden;
   padding: 7px 10px 9px;
 }
 
-.local-system-log-line {
+.system-log-line {
   min-height: 16px;
   color: #65d97e;
   font-size: 10px;
@@ -377,7 +377,7 @@ body {
   white-space: nowrap;
 }
 
-.local-system-log-line:last-child {
+.system-log-line:last-child {
   color: #9affad;
 }
 
@@ -431,18 +431,18 @@ body {
     width: calc(100vw - 32px);
   }
 
-  .local-system-log {
+  .system-log {
     top: 68px;
     left: 16px;
     width: min(360px, calc(100vw - 32px));
     max-height: 128px;
   }
 
-  .local-system-log-lines {
+  .system-log-lines {
     max-height: 92px;
   }
 
-  .local-system-log-line {
+  .system-log-line {
     font-size: 9px;
   }
 
