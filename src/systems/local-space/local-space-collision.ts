@@ -22,8 +22,8 @@ export function createShieldWorldGeometry(
   const scale = nominalLengthMeters / hardpoints.sourceWidth;
   return {
     centerOffset: {
-      x: (hardpoints.shield.centerX - hardpoints.sourceWidth / 2) * scale,
-      y: (hardpoints.shield.centerY - hardpoints.sourceHeight / 2) * scale,
+      x: (hardpoints.shield.centerX - hardpoints.pivot.x) * scale,
+      y: (hardpoints.shield.centerY - hardpoints.pivot.y) * scale,
     },
     radiusX: hardpoints.shield.radiusX * scale,
     radiusY: hardpoints.shield.radiusY * scale,

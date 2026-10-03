@@ -7,6 +7,11 @@ export interface ShipHardpoint {
   readonly width: number;
 }
 
+export interface ShipPivot {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface ShipShieldGeometry {
   readonly centerX: number;
   readonly centerY: number;
@@ -17,6 +22,7 @@ export interface ShipShieldGeometry {
 export interface ShipHardpoints {
   readonly sourceWidth: number;
   readonly sourceHeight: number;
+  readonly pivot: ShipPivot;
   readonly engines: readonly ShipHardpoint[];
   readonly miningLasers: readonly ShipHardpoint[];
   readonly shield: ShipShieldGeometry;

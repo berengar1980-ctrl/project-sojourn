@@ -1,6 +1,10 @@
 {
   "sourceWidth": 346,
   "sourceHeight": 182,
+  "pivot": {
+    "x": 158,
+    "y": 91
+  },
   "engines": [
     { "id": "engine-upper", "x": 18, "y": 54, "width": 34 },
     { "id": "engine-lower", "x": 18, "y": 128, "width": 34 }
