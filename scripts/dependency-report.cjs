@@ -26,9 +26,7 @@ function importsFor(file) {
   return imports;
 }
 
-const graph = Object.fromEntries(
-  files.map((file) => [rel(file), importsFor(file).map(rel)])
-);
+const graph = Object.fromEntries(files.map((file) => [rel(file), importsFor(file).map(rel)]));
 
 function findCycles() {
   const cycles = [];
@@ -107,11 +105,7 @@ if (write) {
     [],
     `circular imports found:\n${cycles.map((cycle) => cycle.join(' -> ')).join('\n')}`
   );
-  assert.deepEqual(
-    violations,
-    [],
-    `layer violations found:\n${violations.join('\n')}`
-  );
+  assert.deepEqual(violations, [], `layer violations found:\n${violations.join('\n')}`);
   console.log(
     `PASS dependency architecture: ${files.length} ES modules, no cycles, no layer violations`
   );
