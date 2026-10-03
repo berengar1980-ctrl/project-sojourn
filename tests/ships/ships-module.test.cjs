@@ -41,6 +41,8 @@ assert.equal(hardpoints.miningLasers[1].x, 323, 'lower laser hardpoint must matc
 assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
 assert(hardpoints.shield.radiusX > 0, 'shield must define horizontal radius');
 assert(hardpoints.shield.radiusY > 0, 'shield must define vertical radius');
+assert.equal(hardpoints.shield.maxHp, 100, 'starter shield must have 100 HP');
+assert.equal(hardpoints.shield.modifier, 1, 'starter shield modifier must be 1');
 for (const hardpoint of [
   ...hardpoints.engines,
   ...hardpoints.miningLasers,
