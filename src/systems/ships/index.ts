@@ -1,3 +1,9 @@
 export { getAllShipDefinitions, getShipDefinition, getShipsByRole } from './ship-registry';
 
-export type { ShipDefinition, ShipRole, ShipSprite } from '../../core/ship-types';
+export type {
+  ShipDefinition,
+  ShipHardpoint,
+  ShipHardpoints,
+  ShipRole,
+  ShipSprite,
+} from '../../core/ship-types';
