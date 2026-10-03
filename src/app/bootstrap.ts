@@ -1,8 +1,7 @@
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
-import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import { createNavigationService } from '../systems/navigation';
 import { getShipDefinition } from '../systems/ships';
-import { createStarMapPanel } from '../ui/map/star-map-panel';
+import { createGameController } from './game-controller';
 
 export function bootstrap(root: HTMLElement | null): void {
   if (!root) throw new Error('SOJOURN app root is missing.');
@@ -15,27 +14,13 @@ export function bootstrap(root: HTMLElement | null): void {
     tutorialCluster.startLocationId,
     ship.navigation.cruiseSpeed
   );
-  const buildModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
-
-  const panel = createStarMapPanel({
-    root,
-    model: buildModel(),
-    onSelectLocation: (id) => {
-      navigation.selectDestination(id);
-      panel.update(buildModel());
-    },
-    onStartTravel: () => {
-      navigation.startTravel();
-      panel.update(buildModel());
-    },
-  });
+  const game = createGameController({ root, ship, navigation });
 
   let previousTime = performance.now();
   const frame = (time: number): void => {
     const deltaSeconds = (time - previousTime) / 1000;
     previousTime = time;
-    navigation.tick(deltaSeconds);
-    panel.update(buildModel());
+    game.tick(deltaSeconds);
     requestAnimationFrame(frame);
   };
 
