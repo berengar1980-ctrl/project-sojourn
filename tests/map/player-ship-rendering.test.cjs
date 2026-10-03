@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '../..');
 const shipRenderer = fs.readFileSync(path.join(root, 'src/ui/map/player-ship-renderer.ts'), 'utf8');
 const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 const mapInput = fs.readFileSync(path.join(root, 'src/ui/map/star-map-input.ts'), 'utf8');
+const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 
 assert(shipRenderer.includes('ShipEngineEffectsRenderer'), 'star map must share engine VFX');
 assert(
@@ -44,6 +45,14 @@ assert(
 );
 assert(mapInput.includes("event.key.toLowerCase() === 'h'"), 'H must toggle star-map hardpoints');
 assert(mapRenderer.includes('drawPlayerShip'), 'star map must render the player ship');
+assert(
+  mapPanel.includes('createSystemLogPanel'),
+  'star map must render the shared system log'
+);
+assert(
+  mapPanel.includes("placementClass: 'star-system-log'"),
+  'star map must use its own shared-log placement'
+);
 assert(!shipRenderer.includes('currentLocationId ='), 'ship renderer must not mutate navigation');
 
 console.log('PASS player ship shared projection and engine rendering boundary');
