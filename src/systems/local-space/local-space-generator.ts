@@ -3,6 +3,7 @@ import type {
   LocalAsteroid,
   LocalSpaceInstance,
 } from '../../core/local-space-types';
+import { pickMiningResource } from '../../data/resources/mining-resources';
 
 function createRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -57,7 +58,12 @@ function createResourceAsteroids(
     const sideBias = index % 2 === 0 ? 0.22 : 0.78;
     const x = width * (sideBias + (random() - 0.5) * 0.42);
     const y = height * (0.12 + random() * 0.76);
-    const oreCapacity = Math.round(70 + random() * 180);
+    const containsResource = random() < 0.68;
+    const resource = containsResource ? pickMiningResource(random) : null;
+    const rarityAmountFactor = resource ? Math.max(0.35, 1.15 - resource.rarity * 0.055) : 0;
+    const oreCapacity = resource
+      ? Math.round((70 + random() * 180) * rarityAmountFactor)
+      : 0;
 
     asteroids.push({
       id: `asteroid-${seed}-${index}`,
@@ -67,9 +73,11 @@ function createResourceAsteroids(
       radius,
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 5.8, 0.1, 1.9),
-      oreType: random() > 0.82 ? 'Rich Ore' : 'Industrial Ore',
+      resourceId: resource?.id ?? null,
+      oreType: resource?.name ?? '',
       oreRemaining: oreCapacity,
       oreCapacity,
+      scanLevel: 'unscanned',
     });
   }
 
@@ -98,9 +106,11 @@ function createDebris(
       radius,
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 16.5, 0.36, 1.15),
+      resourceId: null,
       oreType: '',
       oreRemaining: 0,
       oreCapacity: 0,
+      scanLevel: 'analyzed',
     });
   }
 
