@@ -127,6 +127,8 @@ export function generateMiningSpace(sourceLocationId: string, seed: number): Loc
       position: { x: width * 0.5, y: height * 0.5 },
       headingRadians: 0,
       speed: 0,
+      turnRateRadiansPerSecond: 0,
+      lateralThrust: 0,
     },
   };
 }
