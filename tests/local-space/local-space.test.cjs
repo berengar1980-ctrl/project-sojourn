@@ -38,6 +38,7 @@ const shieldService = fs.readFileSync(
   path.join(root, 'src/systems/shields/shield-service.ts'),
   'utf8'
 );
+const shieldTypes = fs.readFileSync(path.join(root, 'src/core/shield-types.ts'), 'utf8');
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
@@ -177,7 +178,7 @@ assert(
   'better shield modifiers must reduce incoming damage'
 );
 assert(
-  shieldService.includes('ShieldDamageSource'),
+  shieldTypes.includes('ShieldDamageSource'),
   'shield damage model must be reusable by future weapon sources'
 );
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
