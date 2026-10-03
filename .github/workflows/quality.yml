@@ -17,5 +17,8 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Quality gate
-        run: npm run check
+      - name: Show Prettier diff
+        run: |
+          npm run format
+          git diff -- src/systems/local-space/local-space-service.ts
+          exit 1
