@@ -1,4 +1,4 @@
-import type { ShipDefinition, ShipEngineAnchor } from '../../core/ship-types';
+import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocationActivities,
   LocationKind,
@@ -31,7 +31,7 @@ export interface PlayerShipMapView {
   readonly speed: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
-  readonly engineAnchors: readonly ShipEngineAnchor[];
+  readonly hardpoints: ShipHardpoints;
 }
 
 export interface StarMapViewModel {
@@ -69,7 +69,7 @@ export function createStarMapViewModel(
       speed: navigation.speed,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
-      engineAnchors: ship.sprite.engineAnchors,
+      hardpoints: ship.sprite.hardpoints,
     },
     locations: world.locations.map((location) => ({
       ...location,

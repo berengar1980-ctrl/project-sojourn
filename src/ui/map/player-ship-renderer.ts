@@ -1,8 +1,22 @@
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
+import type { ShipHardpoint } from '../../core/ship-types';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
 const BASE_SHIP_WIDTH = 72;
+
+function localPoint(
+  hardpoint: ShipHardpoint,
+  sourceWidth: number,
+  sourceHeight: number,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  return {
+    x: (hardpoint.x / sourceWidth - 0.5) * width,
+    y: (hardpoint.y / sourceHeight - 0.5) * height,
+  };
+}
 
 export class PlayerShipRenderer {
   private readonly image = new Image();
@@ -29,7 +43,7 @@ export class PlayerShipRenderer {
     context.rotate(ship.headingRadians);
 
     if (ship.isTravelling) {
-      this.drawEngineGlow(context, ship, width, height, scale, timeSeconds);
+      this.drawEngineGlow(context, ship, width, height, timeSeconds);
     }
 
     if (this.image.complete && this.image.naturalWidth > 0) {
@@ -61,39 +75,30 @@ export class PlayerShipRenderer {
     ship: PlayerShipMapView,
     width: number,
     height: number,
-    scale: number,
     timeSeconds: number
   ): void {
     const pulse = 0.94 + Math.sin(timeSeconds * 12) * 0.04;
-    const glowRadiusX = 5.4 * scale;
-    const glowRadiusY = 2.8 * scale;
+    const source = ship.hardpoints;
 
-    for (const anchor of ship.engineAnchors) {
-      const nozzleX = (anchor.x - 0.5) * width;
-      const nozzleY = (anchor.y - 0.5) * height;
+    for (const hardpoint of source.engines) {
+      const nozzle = localPoint(hardpoint, source.sourceWidth, source.sourceHeight, width, height);
+      const radiusX = Math.max(2, (hardpoint.width / source.sourceWidth) * width * 0.6);
+      const radiusY = Math.max(1.2, radiusX * 0.45);
       const glow = context.createRadialGradient(
-        nozzleX,
-        nozzleY,
+        nozzle.x,
+        nozzle.y,
         0,
-        nozzleX - glowRadiusX * 0.3,
-        nozzleY,
-        glowRadiusX
+        nozzle.x - radiusX * 0.35,
+        nozzle.y,
+        radiusX
       );
+
       glow.addColorStop(0, 'rgba(240, 253, 255, ' + 0.92 * pulse + ')');
       glow.addColorStop(0.35, 'rgba(88, 197, 255, ' + 0.5 * pulse + ')');
       glow.addColorStop(1, 'rgba(36, 129, 255, 0)');
-
       context.fillStyle = glow;
       context.beginPath();
-      context.ellipse(
-        nozzleX - glowRadiusX * 0.28,
-        nozzleY,
-        glowRadiusX,
-        glowRadiusY,
-        0,
-        0,
-        Math.PI * 2
-      );
+      context.ellipse(nozzle.x - radiusX * 0.3, nozzle.y, radiusX, radiusY, 0, 0, Math.PI * 2);
       context.fill();
     }
   }

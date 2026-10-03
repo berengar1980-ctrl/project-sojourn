@@ -1,4 +1,4 @@
-import type { ShipDefinition, ShipEngineAnchor } from '../../core/ship-types';
+import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocalAsteroid,
   LocalSpaceSnapshot,
@@ -32,7 +32,7 @@ export interface LocalShipView {
   readonly speed: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
-  readonly engineAnchors: readonly ShipEngineAnchor[];
+  readonly hardpoints: ShipHardpoints;
 }
 
 export interface LocalSpaceViewModel {
@@ -91,7 +91,7 @@ export function createLocalSpaceViewModel(
       speed: snapshot.instance.ship.speed,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
-      engineAnchors: ship.sprite.engineAnchors,
+      hardpoints: ship.sprite.hardpoints,
     },
     asteroids,
     chunks: snapshot.instance.chunks.map(mapChunk),

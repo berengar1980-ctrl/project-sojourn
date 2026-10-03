@@ -77,6 +77,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningTargetId = asteroid.id;
     this.miningPhase = 'approaching';
     this.miningAccumulator = 0;
+    this.instance.ship.speed = 0;
     return this.getSnapshot();
   }
 
@@ -84,7 +85,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     const asteroid = this.findAsteroid(this.miningTargetId);
 
-    if (asteroid && this.miningPhase === 'approaching') {
+    if (!asteroid && this.miningPhase !== 'idle') {
+      this.finishMining();
+    } else if (asteroid && this.miningPhase === 'approaching') {
       this.updateApproach(clamped, asteroid);
     } else if (asteroid && this.miningPhase === 'extracting') {
       this.updateMining(clamped, asteroid);
@@ -99,13 +102,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.instance.asteroids.find((asteroid) => asteroid.id === id) ?? null;
   }
 
+  private finishMining(): void {
+    this.miningPhase = 'idle';
+    this.miningTargetId = null;
+    this.miningAccumulator = 0;
+    this.instance.ship.speed = 0;
+  }
+
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
     const miningRange = asteroid.radius + 145;
     ship.headingRadians = heading(ship.position, asteroid.position);
     const currentDistance = distance(ship.position, asteroid.position);
 
-    if (currentDistance <= miningRange) {
+    if (currentDistance <= miningRange + 1) {
       ship.speed = 0;
       this.miningPhase = 'extracting';
       return;
@@ -115,7 +125,16 @@ class LocalSpaceRuntime implements LocalSpaceService {
       x: asteroid.position.x - Math.cos(ship.headingRadians) * miningRange,
       y: asteroid.position.y - Math.sin(ship.headingRadians) * miningRange,
     };
-    ship.position = moveToward(ship.position, stopPoint, this.approachSpeed * deltaSeconds);
+    const nextPosition = moveToward(ship.position, stopPoint, this.approachSpeed * deltaSeconds);
+    ship.position = nextPosition;
+
+    if (distance(nextPosition, stopPoint) <= 0.75) {
+      ship.position = stopPoint;
+      ship.speed = 0;
+      this.miningPhase = 'extracting';
+      return;
+    }
+
     ship.speed = this.approachSpeed;
   }
 
@@ -130,8 +149,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     if (asteroid.oreRemaining <= 0) {
-      this.miningPhase = 'idle';
-      this.miningTargetId = null;
+      this.finishMining();
     }
   }
 

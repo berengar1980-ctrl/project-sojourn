@@ -1,9 +1,12 @@
-import type { ShipDefinition } from '../../core/ship-types';
+import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
+import hardpointsJson from '../../../resources/ships/mining/miner-80m-standard.hardpoints.json';
 
 const miner80mSpriteUrl = new URL(
   '../../../resources/ships/mining/miner-80m-standard.png',
   import.meta.url
 ).href;
+
+const miner80mHardpoints: ShipHardpoints = hardpointsJson;
 
 export const miner80mStandard: ShipDefinition = {
   id: 'miner-80m-standard',
@@ -15,10 +18,7 @@ export const miner80mStandard: ShipDefinition = {
     widthPx: 346,
     heightPx: 182,
     facing: 'right',
-    engineAnchors: [
-      { x: 0.055, y: 0.335 },
-      { x: 0.055, y: 0.665 },
-    ],
+    hardpoints: miner80mHardpoints,
   },
   navigation: {
     cruiseSpeed: 82,

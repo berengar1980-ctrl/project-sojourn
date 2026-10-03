@@ -1,8 +1,17 @@
 export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 
-export interface ShipEngineAnchor {
+export interface ShipHardpoint {
+  readonly id: string;
   readonly x: number;
   readonly y: number;
+  readonly width: number;
+}
+
+export interface ShipHardpoints {
+  readonly sourceWidth: number;
+  readonly sourceHeight: number;
+  readonly engines: readonly ShipHardpoint[];
+  readonly miningLasers: readonly ShipHardpoint[];
 }
 
 export interface ShipSprite {
@@ -10,7 +19,7 @@ export interface ShipSprite {
   readonly widthPx: number;
   readonly heightPx: number;
   readonly facing: 'right';
-  readonly engineAnchors: readonly ShipEngineAnchor[];
+  readonly hardpoints: ShipHardpoints;
 }
 
 export interface ShipNavigationStats {
