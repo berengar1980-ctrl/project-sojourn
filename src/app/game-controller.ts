@@ -37,6 +37,12 @@ async function calculateMiningRoute(service: LocalSpaceService): Promise<readonl
   return planMiningApproachRouteAsync(options);
 }
 
+async function calculateScanRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
+  const options = service.getShortRangeScanRouteOptions();
+  if (!options) return [];
+  return planMiningApproachRouteAsync(options);
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, ship, navigation } = options;
   let mode: SceneMode = 'star-map';
@@ -104,6 +110,19 @@ export function createGameController(options: GameControllerOptions): GameContro
         const route = await calculateMiningRoute(activeSpace);
         if (localSpace !== activeSpace || route.length === 0) return;
         activeSpace.startMining(route);
+        localPanel?.update(localModel());
+      },
+      onLongRangeScan: () => {
+        localSpace?.runLongRangeScan();
+        systemLog.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
+        localPanel?.update(localModel());
+      },
+      onShortRangeScan: async () => {
+        const activeSpace = localSpace;
+        if (!activeSpace) return;
+        const route = await calculateScanRoute(activeSpace);
+        if (localSpace !== activeSpace || route.length === 0) return;
+        activeSpace.startShortRangeScan(route);
         localPanel?.update(localModel());
       },
       onCancelMining: () => {
