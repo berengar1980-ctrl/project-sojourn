@@ -23,7 +23,10 @@ assert(
 );
 assert(renderer.includes('drawShieldFlash'), 'shield impacts must have a visual flash');
 assert(renderer.includes("asteroid.kind === 'debris'"), 'renderer must distinguish small debris');
-assert(renderer.includes("asteroid.kind === 'resource'"), 'only resource asteroids should be selectable');
+assert(
+  renderer.includes("asteroid.kind === 'resource'"),
+  'only resource asteroids should be selectable'
+);
 assert(renderer.includes('source.pivot.x'), 'local ship renderer must use JSON pivot');
 assert(effects.includes('source.pivot.x'), 'mining hardpoints must rotate around JSON pivot');
 assert(
