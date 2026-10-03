@@ -232,7 +232,8 @@ body {
 }
 
 .return-map-button:hover,
-.mine-button:hover {
+.mine-button:hover,
+.cancel-mining-button:hover {
   background: rgba(58, 118, 136, 0.3);
 }
 
@@ -246,8 +247,22 @@ body {
   color: #83d4e8;
 }
 
-.local-mining-status[hidden] {
+.local-mining-status[hidden],
+.cancel-mining-button[hidden] {
   display: none;
+}
+
+.cancel-mining-button {
+  position: absolute;
+  top: 108px;
+  right: 24px;
+  padding: 7px 10px;
+  border: 1px solid rgba(185, 108, 108, 0.34);
+  background: rgba(55, 22, 22, 0.62);
+  color: #d9a3a3;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.14em;
 }
 
 .local-ore-counter {
@@ -357,6 +372,11 @@ body {
 
   .local-mining-status {
     top: 62px;
+    right: 16px;
+  }
+
+  .cancel-mining-button {
+    top: 98px;
     right: 16px;
   }
 
