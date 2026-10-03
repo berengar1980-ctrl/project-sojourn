@@ -34,26 +34,11 @@ assert(
   service.includes('planMiningApproachRoute'),
   'mining must plan a route once before approach'
 );
-assert(
-  service.includes('approachRoute'),
-  'approach must persist a fixed precomputed route'
-);
-assert(
-  !service.includes('findApproachWaypoint'),
-  'approach must not live-replan around obstacles'
-);
-assert(
-  service.includes('MAX_TURN_RATE'),
-  'route following must limit ship turning speed'
-);
-assert(
-  navigation.includes('findGridRoute'),
-  'route planner must search a navigable path'
-);
-assert(
-  navigation.includes('simplifyRoute'),
-  'planned routes must remove unnecessary detours'
-);
+assert(service.includes('approachRoute'), 'approach must persist a fixed precomputed route');
+assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
+assert(service.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
+assert(navigation.includes('findGridRoute'), 'route planner must search a navigable path');
+assert(navigation.includes('simplifyRoute'), 'planned routes must remove unnecessary detours');
 assert(navigation.includes('roundRoute'), 'planned routes must support curved corners');
 assert(
   navigation.includes('routeSegmentsClear'),
