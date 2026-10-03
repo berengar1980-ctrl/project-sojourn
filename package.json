@@ -5,6 +5,7 @@
   "type": "module",
   "description": "SOJOURN top-down space game",
   "scripts": {
+    "start": "vite --open",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

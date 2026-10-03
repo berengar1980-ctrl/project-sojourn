@@ -10,10 +10,7 @@ const registry = fs.readFileSync(
   path.join(root, 'src/systems/ships/ship-registry.ts'),
   'utf8'
 );
-const data = fs.readFileSync(
-  path.join(root, 'src/data/ships/mining-ships.ts'),
-  'utf8'
-);
+const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 'utf8');
 const asset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
 
 assert(index.includes('getShipDefinition'), 'ships public API missing');

@@ -5,10 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
-const index = fs.readFileSync(
-  path.join(root, 'src/systems/navigation/index.ts'),
-  'utf8'
-);
+const index = fs.readFileSync(path.join(root, 'src/systems/navigation/index.ts'), 'utf8');
 const service = fs.readFileSync(
   path.join(root, 'src/systems/navigation/navigation-service.ts'),
   'utf8'
