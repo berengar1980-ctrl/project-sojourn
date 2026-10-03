@@ -28,11 +28,6 @@ export interface MiningImpact {
   readonly normal: WorldPoint;
 }
 
-export interface MiningImpact {
-  readonly point: WorldPoint;
-  readonly normal: WorldPoint;
-}
-
 export interface MiningChunk {
   readonly id: string;
   position: WorldPoint;
@@ -46,6 +41,8 @@ export interface LocalShipState {
   position: WorldPoint;
   headingRadians: number;
   speed: number;
+  turnRateRadiansPerSecond: number;
+  lateralThrust: number;
 }
 
 export interface LocalSpaceInstance {
