@@ -52,6 +52,14 @@ const resources = fs.readFileSync(
   'utf8'
 );
 const scanner = fs.readFileSync(path.join(root, 'src/systems/scanning/scanner-service.ts'), 'utf8');
+const localScanning = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-scanning.ts'),
+  'utf8'
+);
+const miningChunks = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
@@ -113,7 +121,7 @@ assert(service.includes('cancelMining'), 'local-space service must expose mining
 assert(service.includes('runLongRangeScan'), 'service must expose long-range scanning');
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
 assert(
-  service.includes("asteroid.scanLevel = 'surveyed'"),
+  localScanning.includes("asteroid.scanLevel = 'surveyed'"),
   'long-range scan must reveal only deposit presence'
 );
 assert(
@@ -121,7 +129,7 @@ assert(
   'close scan or mining must reveal exact asteroid contents'
 );
 assert(
-  service.includes('resourceId: asteroid.resourceId'),
+  miningChunks.includes('resourceId: asteroid.resourceId'),
   'mined chunks must retain their actual resource identity'
 );
 assert(
