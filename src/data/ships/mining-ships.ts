@@ -16,6 +16,9 @@ export const miner80mStandard: ShipDefinition = {
     heightPx: 182,
     facing: 'right',
   },
+  navigation: {
+    cruiseSpeed: 82,
+  },
 };
 
 export const miningShips: readonly ShipDefinition[] = [miner80mStandard];
