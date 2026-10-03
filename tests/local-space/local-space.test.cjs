@@ -172,7 +172,10 @@ assert(
   shieldService.includes('REFERENCE_IMPACT_ENERGY'),
   'shield service must normalize kinetic impact energy'
 );
-assert(shieldService.includes('/ state.modifier'), 'better shield modifiers must reduce incoming damage');
+assert(
+  shieldService.includes('/ state.modifier'),
+  'better shield modifiers must reduce incoming damage'
+);
 assert(
   shieldService.includes("ShieldDamageSource"),
   'shield damage model must be reusable by future weapon sources'
