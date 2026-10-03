@@ -15,7 +15,10 @@ const service = fs.readFileSync(
 );
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
-assert(generator.includes('createAsteroids'), 'local-space generator must create asteroid entities');
+assert(
+  generator.includes('createAsteroids'),
+  'local-space generator must create asteroid entities'
+);
 assert(service.includes('startMining'), 'local-space service must expose mining start');
 assert(service.includes('updateApproach'), 'mining must include ship approach');
 assert(service.includes('spawnChunk'), 'mining must break resource chunks from asteroids');
