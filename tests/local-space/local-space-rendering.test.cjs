@@ -21,6 +21,10 @@ const engines = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-engine-effects-renderer.ts'),
   'utf8'
 );
+const maneuvers = fs.readFileSync(
+  path.join(root, 'src/ui/ships/ship-maneuver-effects-renderer.ts'),
+  'utf8'
+);
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
@@ -34,6 +38,7 @@ assert(
   'local mining must use shared parallax background'
 );
 assert(renderer.includes('ShipEngineEffectsRenderer'), 'engine VFX must use shared renderer');
+assert(renderer.includes('ShipManeuverEffectsRenderer'), 'local space must render RCS effects');
 assert(renderer.includes('projectShieldGeometry'), 'shield must use shared ship projection');
 assert(renderer.includes('spriteDrawOffset'), 'ship sprite must use shared pivot projection');
 assert(renderer.includes("asteroid.kind === 'debris'"), 'renderer must distinguish small debris');
@@ -52,6 +57,16 @@ assert(
 );
 assert(engines.includes('projectHardpoint'), 'engine effects must use shared hardpoint projection');
 assert(engines.includes('fastPulse'), 'engine thrust must include subtle flicker');
+assert(
+  engines.includes('0.58 + normalizedIntensity * 0.92'),
+  'main engine exhaust must remain compact'
+);
+assert(maneuvers.includes('torqueSign'), 'RCS selection must derive from thruster torque');
+assert(maneuvers.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
+assert(
+  maneuvers.includes('rgba(213, 244, 255'),
+  'RCS exhaust must use a white-blue core'
+);
 assert(effects.includes('projectHardpoint'), 'mining lasers must use shared hardpoint projection');
 assert(effects.includes('model.miningImpact'), 'mining VFX must use simulation impact point');
 assert(!effects.includes('surfaceImpactPoint'), 'renderer must not invent its own mining impact');
