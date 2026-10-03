@@ -137,12 +137,7 @@ export function createNavigationService(
     const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
     const acceleration = Math.max(12, cruiseSpeed * 0.72);
     const desiredSpeed = targetSpeed(remainingDistance, alignment, cruiseSpeed, acceleration);
-    travel.currentSpeed = approachSpeed(
-      travel.currentSpeed,
-      desiredSpeed,
-      acceleration,
-      clamped
-    );
+    travel.currentSpeed = approachSpeed(travel.currentSpeed, desiredSpeed, acceleration, clamped);
     travel.distanceTravelled = Math.min(
       travel.route.distance,
       travel.distanceTravelled + travel.currentSpeed * clamped
