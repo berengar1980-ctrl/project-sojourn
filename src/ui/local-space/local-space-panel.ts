@@ -22,7 +22,9 @@ interface LocalSpacePanelOptions {
 }
 
 function miningStatus(model: LocalSpaceViewModel): string {
-  if (model.scanTarget && model.miningPhase === 'approaching') return 'ANFLUG FÜR NAHBEREICHSSCAN';
+  if (model.scanTarget && model.miningPhase === 'approaching') {
+    return 'ANFLUG FÜR NAHBEREICHSSCAN';
+  }
   if (model.miningPhase === 'approaching') return 'ANFLUG AUF ABBAUPOSITION';
   if (model.miningPhase === 'extracting') return 'MINING AKTIV';
   return '';
@@ -153,7 +155,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     status.textContent = statusText;
 
     if (!selected) return;
-    name.textContent = selected.scanLevel === 'analyzed' ? selected.resourceName ?? 'LEER' : 'ASTEROID';
+    name.textContent =
+      selected.scanLevel === 'analyzed' ? (selected.resourceName ?? 'LEER') : 'ASTEROID';
     meta.textContent = asteroidStatus(model);
     const remaining =
       selected.resourceCapacity && selected.resourceAmount != null
@@ -162,8 +165,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     oreBar.style.width = Math.max(0, remaining) + '%';
     shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
     const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
-    const depleted =
-      selected.scanLevel === 'analyzed' && (selected.resourceAmount ?? 0) <= 0;
+    const depleted = selected.scanLevel === 'analyzed' && (selected.resourceAmount ?? 0) <= 0;
     mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
