@@ -17,8 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Show Prettier diff
-        run: |
-          npm run format
-          git diff -- src/systems/local-space/mining-impact.ts src/ui/local-space/local-space-renderer.ts src/ui/local-space/mining-effects-renderer.ts src/ui/map/player-ship-renderer.ts src/ui/ships/ship-engine-effects-renderer.ts src/ui/ships/ship-hardpoint-projector.ts tests/map/player-ship-rendering.test.cjs
-          exit 1
+      - name: Quality gate
+        run: npm run check
