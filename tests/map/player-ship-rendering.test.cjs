@@ -25,7 +25,9 @@ assert(
   'stationary star-map ship must reuse local-space station keeping'
 );
 assert(
-  shipRenderer.includes('const idle = ship.isTravelling ? null : this.updateIdleShip(ship, timeSeconds);'),
+  shipRenderer.includes(
+    'const idle = ship.isTravelling ? null : this.updateIdleShip(ship, timeSeconds);'
+  ),
   'star-map idle drift must remain presentation-only'
 );
 assert(
