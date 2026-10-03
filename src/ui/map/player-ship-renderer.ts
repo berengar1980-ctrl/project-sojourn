@@ -1,9 +1,6 @@
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
