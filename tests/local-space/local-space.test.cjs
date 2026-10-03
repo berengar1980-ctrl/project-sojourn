@@ -29,6 +29,11 @@ const miningImpact = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-impact.ts'),
   'utf8'
 );
+const stationKeeping = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
+  'utf8'
+);
+const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
@@ -47,11 +52,11 @@ assert(
   'mining field must contain dense small debris'
 );
 assert(
-  generator.includes('createPhysics(radius, random, 3.2, 0.06, 1.9)'),
+  generator.includes('createPhysics(radius, random, 5.8, 0.1, 1.9)'),
   'resource asteroids must have slightly stronger drift'
 );
 assert(
-  generator.includes('createPhysics(radius, random, 14, 0.28, 1.15)'),
+  generator.includes('createPhysics(radius, random, 16.5, 0.36, 1.15)'),
   'debris must remain more mobile than resource asteroids'
 );
 assert(generator.includes("kind: 'debris'"), 'small debris kind must be explicit');
@@ -65,7 +70,23 @@ assert(
   service.includes('shipLateralVelocity'),
   'ship station keeping must use real lateral velocity'
 );
-assert(service.includes('applyStationKeeping'), 'idle state must use physical station keeping');
+assert(
+  service.includes('updateIdleStationKeeping'),
+  'idle state must use extracted physical station keeping'
+);
+assert(
+  stationKeeping.includes('applyDisturbance'),
+  'idle station keeping must receive recurring small disturbances'
+);
+assert(
+  stationKeeping.includes('applyHeadingKeeping'),
+  'idle station keeping must correct residual rotation'
+);
+assert(
+  stationKeeping.includes('angularThrust'),
+  'idle attitude correction must drive RCS turn commands'
+);
+assert(controller.includes('approachSpeed: 85'), 'local-space travel must remain deliberately slow');
 assert(
   service.includes('miningHoldOffset'),
   'mining must remember a relative offset to the target asteroid'
