@@ -75,6 +75,7 @@ export default [
       'no-shadow': 'error',
       'no-redeclare': 'error',
       'no-console': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];
