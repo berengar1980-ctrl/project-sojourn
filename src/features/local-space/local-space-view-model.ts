@@ -33,6 +33,7 @@ export interface LocalShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly turnRateRadiansPerSecond: number;
+  readonly angularThrust: number;
   readonly lateralThrust: number;
   readonly speed: number;
   readonly nominalLengthMeters: number;
@@ -101,6 +102,7 @@ export function createLocalSpaceViewModel(
       position: snapshot.instance.ship.position,
       headingRadians: snapshot.instance.ship.headingRadians,
       turnRateRadiansPerSecond: snapshot.instance.ship.turnRateRadiansPerSecond,
+      angularThrust: snapshot.instance.ship.angularThrust,
       lateralThrust: snapshot.instance.ship.lateralThrust,
       speed: snapshot.instance.ship.speed,
       nominalLengthMeters: ship.nominalLengthMeters,
