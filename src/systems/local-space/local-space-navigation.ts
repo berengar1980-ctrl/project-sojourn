@@ -325,12 +325,7 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
   if (candidates[0]) return candidates[0].points;
 
   const fallbackEnd =
-    approachPoints(
-      options.start,
-      options.target,
-      miningRange,
-      options.width,
-      options.height
-    )[0] ?? options.start;
+    approachPoints(options.start, options.target, miningRange, options.width, options.height)[0] ??
+    options.start;
   return [options.start, fallbackEnd];
 }
