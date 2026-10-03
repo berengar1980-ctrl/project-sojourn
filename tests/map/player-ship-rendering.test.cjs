@@ -45,10 +45,7 @@ assert(
 );
 assert(mapInput.includes("event.key.toLowerCase() === 'h'"), 'H must toggle star-map hardpoints');
 assert(mapRenderer.includes('drawPlayerShip'), 'star map must render the player ship');
-assert(
-  mapPanel.includes('createSystemLogPanel'),
-  'star map must render the shared system log'
-);
+assert(mapPanel.includes('createSystemLogPanel'), 'star map must render the shared system log');
 assert(
   mapPanel.includes("placementClass: 'star-system-log'"),
   'star map must use its own shared-log placement'
