@@ -22,8 +22,8 @@ function hardpointScreen(
   model: LocalSpaceViewModel
 ): ScreenPoint {
   const source = model.ship.hardpoints;
-  const localX = (hardpoint.x / source.sourceWidth - 0.5) * geometry.width;
-  const localY = (hardpoint.y / source.sourceHeight - 0.5) * geometry.height;
+  const localX = ((hardpoint.x - source.pivot.x) / source.sourceWidth) * geometry.width;
+  const localY = ((hardpoint.y - source.pivot.y) / source.sourceHeight) * geometry.height;
   const rotated = rotatePoint(localX, localY, geometry.angle);
   return {
     x: geometry.center.x + rotated.x,
