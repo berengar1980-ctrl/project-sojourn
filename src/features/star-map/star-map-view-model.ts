@@ -16,6 +16,7 @@ export interface StarMapLocationView {
   readonly position: WorldPoint;
   readonly radius: number;
   readonly orbitRadius?: number;
+  readonly spriteUrl?: string;
   readonly description: string;
   readonly activities: LocationActivities;
   readonly dangerLevel: 0 | 1 | 2 | 3;
