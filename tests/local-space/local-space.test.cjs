@@ -177,7 +177,7 @@ assert(
   'better shield modifiers must reduce incoming damage'
 );
 assert(
-  shieldService.includes("ShieldDamageSource"),
+  shieldService.includes('ShieldDamageSource'),
   'shield damage model must be reusable by future weapon sources'
 );
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
