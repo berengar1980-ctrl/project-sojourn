@@ -86,7 +86,10 @@ assert(
   stationKeeping.includes('angularThrust'),
   'idle attitude correction must drive RCS turn commands'
 );
-assert(controller.includes('approachSpeed: 85'), 'local-space travel must remain deliberately slow');
+assert(
+  controller.includes('approachSpeed: 85'),
+  'local-space travel must remain deliberately slow'
+);
 assert(
   service.includes('miningHoldOffset'),
   'mining must remember a relative offset to the target asteroid'
