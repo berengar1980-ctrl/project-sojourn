@@ -29,10 +29,7 @@ const hardpointDebug = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-hardpoint-debug-renderer.ts'),
   'utf8'
 );
-const input = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-input.ts'),
-  'utf8'
-);
+const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
