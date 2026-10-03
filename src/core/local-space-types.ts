@@ -1,11 +1,23 @@
 import type { WorldPoint } from './world-types';
 
+export type LocalAsteroidKind = 'resource' | 'debris';
+
+export interface AsteroidPhysics {
+  readonly mass: number;
+  readonly centerOfMassOffset: WorldPoint;
+  velocity: WorldPoint;
+  angularVelocity: number;
+  readonly momentOfInertia: number;
+}
+
 export interface LocalAsteroid {
   readonly id: string;
+  readonly kind: LocalAsteroidKind;
+  readonly routeBlocking: boolean;
   position: WorldPoint;
-  velocity: WorldPoint;
   radius: number;
   rotation: number;
+  physics: AsteroidPhysics;
   oreType: string;
   oreRemaining: number;
   oreCapacity: number;

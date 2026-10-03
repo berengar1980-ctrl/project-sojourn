@@ -1,4 +1,8 @@
-import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
+import type {
+  AsteroidPhysics,
+  LocalAsteroid,
+  LocalSpaceInstance,
+} from '../../core/local-space-types';
 
 function createRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -11,8 +15,40 @@ function createRandom(seed: number): () => number {
   };
 }
 
-function createAsteroids(seed: number, width: number, height: number): LocalAsteroid[] {
-  const random = createRandom(seed);
+function createPhysics(
+  radius: number,
+  random: () => number,
+  maximumDrift: number,
+  maximumAngularVelocity: number,
+  density: number
+): AsteroidPhysics {
+  const mass = Math.max(1, Math.PI * radius * radius * density);
+  const speed = random() * maximumDrift;
+  const direction = random() * Math.PI * 2;
+  const centerOffsetRadius = radius * random() * 0.12;
+  const centerOffsetAngle = random() * Math.PI * 2;
+
+  return {
+    mass,
+    centerOfMassOffset: {
+      x: Math.cos(centerOffsetAngle) * centerOffsetRadius,
+      y: Math.sin(centerOffsetAngle) * centerOffsetRadius,
+    },
+    velocity: {
+      x: Math.cos(direction) * speed,
+      y: Math.sin(direction) * speed,
+    },
+    angularVelocity: (random() * 2 - 1) * maximumAngularVelocity,
+    momentOfInertia: Math.max(1, 0.5 * mass * radius * radius),
+  };
+}
+
+function createResourceAsteroids(
+  seed: number,
+  random: () => number,
+  width: number,
+  height: number
+): LocalAsteroid[] {
   const count = 22 + Math.floor(random() * 9);
   const asteroids: LocalAsteroid[] = [];
 
@@ -25,10 +61,12 @@ function createAsteroids(seed: number, width: number, height: number): LocalAste
 
     asteroids.push({
       id: `asteroid-${seed}-${index}`,
+      kind: 'resource',
+      routeBlocking: true,
       position: { x, y },
-      velocity: { x: 0, y: 0 },
       radius,
       rotation: random() * Math.PI * 2,
+      physics: createPhysics(radius, random, 2.2, 0.045, 1.9),
       oreType: random() > 0.82 ? 'Rich Ore' : 'Industrial Ore',
       oreRemaining: oreCapacity,
       oreCapacity,
@@ -38,9 +76,41 @@ function createAsteroids(seed: number, width: number, height: number): LocalAste
   return asteroids;
 }
 
+function createDebris(
+  seed: number,
+  random: () => number,
+  width: number,
+  height: number
+): LocalAsteroid[] {
+  const count = 46 + Math.floor(random() * 20);
+  const debris: LocalAsteroid[] = [];
+
+  for (let index = 0; index < count; index += 1) {
+    const radius = 4 + random() * 9;
+    debris.push({
+      id: `debris-${seed}-${index}`,
+      kind: 'debris',
+      routeBlocking: false,
+      position: {
+        x: radius + random() * (width - radius * 2),
+        y: radius + random() * (height - radius * 2),
+      },
+      radius,
+      rotation: random() * Math.PI * 2,
+      physics: createPhysics(radius, random, 11, 0.22, 1.15),
+      oreType: '',
+      oreRemaining: 0,
+      oreCapacity: 0,
+    });
+  }
+
+  return debris;
+}
+
 export function generateMiningSpace(sourceLocationId: string, seed: number): LocalSpaceInstance {
   const width = 1800;
   const height = 1050;
+  const random = createRandom(seed);
 
   return {
     id: `${sourceLocationId}-${seed}`,
@@ -48,7 +118,10 @@ export function generateMiningSpace(sourceLocationId: string, seed: number): Loc
     seed,
     width,
     height,
-    asteroids: createAsteroids(seed, width, height),
+    asteroids: [
+      ...createResourceAsteroids(seed, random, width, height),
+      ...createDebris(seed, random, width, height),
+    ],
     chunks: [],
     ship: {
       position: { x: width * 0.5, y: height * 0.5 },
