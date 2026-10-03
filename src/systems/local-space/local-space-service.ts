@@ -14,6 +14,13 @@ import {
   resolveShieldCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
+import {
+  angleDelta,
+  distance,
+  heading,
+  moveToward,
+  turnToward,
+} from './local-space-motion';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import {
@@ -40,38 +47,6 @@ export interface LocalSpaceService {
 }
 
 const MAX_TURN_RATE = 1.15;
-
-function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
-function heading(a: WorldPoint, b: WorldPoint): number {
-  return Math.atan2(b.y - a.y, b.x - a.x);
-}
-
-function angleDelta(current: number, target: number): number {
-  let delta = target - current;
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return delta;
-}
-
-function turnToward(current: number, target: number, maximumDelta: number): number {
-  const delta = angleDelta(current, target);
-  if (Math.abs(delta) <= maximumDelta) return target;
-  return current + Math.sign(delta) * maximumDelta;
-}
-
-function moveToward(current: WorldPoint, target: WorldPoint, maximumDistance: number): WorldPoint {
-  const total = distance(current, target);
-  if (total <= maximumDistance || total === 0) return { ...target };
-
-  const ratio = maximumDistance / total;
-  return {
-    x: current.x + (target.x - current.x) * ratio,
-    y: current.y + (target.y - current.y) * ratio,
-  };
-}
 
 class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
