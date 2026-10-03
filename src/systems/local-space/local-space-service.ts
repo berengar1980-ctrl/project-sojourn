@@ -134,12 +134,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shieldFlash = Math.max(0, this.shieldFlash - clamped / 0.48);
-    integrateAsteroids(
-      this.instance.asteroids,
-      clamped,
-      this.instance.width,
-      this.instance.height
-    );
+    integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
     resolveAsteroidCollisions(this.instance.asteroids);
 
     const asteroid = this.findAsteroid(this.miningTargetId);
