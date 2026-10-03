@@ -22,6 +22,8 @@ export interface ShipShieldGeometry {
   readonly centerY: number;
   readonly radiusX: number;
   readonly radiusY: number;
+  readonly maxHp: number;
+  readonly modifier: number;
 }
 
 export interface ShipHardpoints {
