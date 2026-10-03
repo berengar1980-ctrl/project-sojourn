@@ -45,11 +45,16 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
 
   const reset = (): void => renderer.resetCamera();
 
+  const keyDown = (event: KeyboardEvent): void => {
+    if (event.key.toLowerCase() === 'h') renderer.toggleHardpointDebug();
+  };
+
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointermove', pointerMove);
   canvas.addEventListener('pointerup', pointerUp);
   canvas.addEventListener('dblclick', reset);
   canvas.addEventListener('wheel', wheel, { passive: false });
+  window.addEventListener('keydown', keyDown);
 
   return () => {
     canvas.removeEventListener('pointerdown', pointerDown);
@@ -57,5 +62,6 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
     canvas.removeEventListener('pointerup', pointerUp);
     canvas.removeEventListener('dblclick', reset);
     canvas.removeEventListener('wheel', wheel);
+    window.removeEventListener('keydown', keyDown);
   };
 }
