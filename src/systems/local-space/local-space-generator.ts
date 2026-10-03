@@ -49,7 +49,7 @@ function createResourceAsteroids(
   width: number,
   height: number
 ): LocalAsteroid[] {
-  const count = 54 + Math.floor(random() * 13);
+  const count = 96 + Math.floor(random() * 25);
   const asteroids: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -66,7 +66,7 @@ function createResourceAsteroids(
       position: { x, y },
       radius,
       rotation: random() * Math.PI * 2,
-      physics: createPhysics(radius, random, 2.2, 0.045, 1.9),
+      physics: createPhysics(radius, random, 3.2, 0.06, 1.9),
       oreType: random() > 0.82 ? 'Rich Ore' : 'Industrial Ore',
       oreRemaining: oreCapacity,
       oreCapacity,
@@ -82,7 +82,7 @@ function createDebris(
   width: number,
   height: number
 ): LocalAsteroid[] {
-  const count = 110 + Math.floor(random() * 31);
+  const count = 190 + Math.floor(random() * 51);
   const debris: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -97,7 +97,7 @@ function createDebris(
       },
       radius,
       rotation: random() * Math.PI * 2,
-      physics: createPhysics(radius, random, 11, 0.22, 1.15),
+      physics: createPhysics(radius, random, 14, 0.28, 1.15),
       oreType: '',
       oreRemaining: 0,
       oreCapacity: 0,
