@@ -220,9 +220,7 @@ export class TopdownMapRenderer {
     const [from, to] = this.model.route.points;
     if (!from || !to) return;
 
-    const routeStart = this.model.navigation.isTravelling
-      ? this.model.playerShip.position
-      : from;
+    const routeStart = this.model.navigation.isTravelling ? this.model.playerShip.position : from;
     const a = this.camera.worldToScreen(routeStart, width, height);
     const b = this.camera.worldToScreen(to, width, height);
 
