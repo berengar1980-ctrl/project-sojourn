@@ -47,8 +47,42 @@ const shieldService = fs.readFileSync(
   'utf8'
 );
 const shieldTypes = fs.readFileSync(path.join(root, 'src/core/shield-types.ts'), 'utf8');
+const resources = fs.readFileSync(
+  path.join(root, 'src/data/resources/mining-resources.ts'),
+  'utf8'
+);
+const scanner = fs.readFileSync(
+  path.join(root, 'src/systems/scanning/scanner-service.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
+assert(
+  generator.includes('pickMiningResource'),
+  'asteroid deposits must be selected from the resource catalog'
+);
+assert(
+  generator.includes("scanLevel: 'unscanned'"),
+  'resource asteroids must start with hidden scan data'
+);
+assert(
+  generator.includes('const containsResource = random() < 0.68'),
+  'some generated asteroids must be empty'
+);
+assert(
+  (resources.match(/id: '/g) ?? []).length === 10,
+  'resource catalog must define exactly ten mining resources'
+);
+assert(resources.includes('rarity:'), 'resources must define rarity factors');
+assert(resources.includes('spawnWeight:'), 'rarity data must influence discovery weights');
+assert(
+  resources.includes('resourceReferenceValue'),
+  'resource rarity must contribute to reference value calculation'
+);
+assert(
+  scanner.includes('sensorModifier') && scanner.includes('crewSkill'),
+  'long-range scanner radius must be ready for sensors and crew skill'
+);
 assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
 assert(generator.includes('const height = 3150'), 'mining field height must be tripled');
 assert(
@@ -79,6 +113,20 @@ assert(generator.includes('angularVelocity'), 'asteroids must receive angular mo
 assert(generator.includes('momentOfInertia'), 'asteroids must define rotational inertia');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
+assert(service.includes('runLongRangeScan'), 'service must expose long-range scanning');
+assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
+assert(
+  service.includes("asteroid.scanLevel = 'surveyed'"),
+  'long-range scan must reveal only deposit presence'
+);
+assert(
+  service.includes("asteroid.scanLevel = 'analyzed'"),
+  'close scan or mining must reveal exact asteroid contents'
+);
+assert(
+  service.includes('resourceId: asteroid.resourceId'),
+  'mined chunks must retain their actual resource identity'
+);
 assert(
   service.includes('shipLateralVelocity'),
   'ship station keeping must use real lateral velocity'
