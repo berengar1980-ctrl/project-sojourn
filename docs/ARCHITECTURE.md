@@ -1,6 +1,6 @@
 # SOJOURN Architecture Rules
 
-SOJOURN is an ES-module project. The rules below are executable through `npm run check`.
+SOJOURN is a strict TypeScript ES-module project built with Vite. The rules below are executable through `npm run check`.
 
 ## Layers
 
@@ -22,10 +22,18 @@ A subsystem that owns state also owns its mutations. Other modules use explicit 
 
 Rendering never owns gameplay rules. Map, UI and effects consume snapshots/view models and invoke explicit domain commands. Route planning, travel, encounters and persistence remain independent of Canvas/DOM code.
 
+## TypeScript rules
+
+The compiler runs in strict mode with additional guards including `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noFallthroughCasesInSwitch`, and `noUncheckedSideEffectImports`.
+
+Do not use `any` as an escape hatch. Prefer explicit domain types, discriminated unions, readonly data where practical, and narrow public interfaces.
+
 ## Enforced quality gates
 
 - Prettier.
 - ESLint with zero warnings.
+- TypeScript strict type checking.
+- Vite production build.
 - ES modules for all runtime code.
 - no `eval`, `new Function`, `document.write`.
 - no writable global exports.

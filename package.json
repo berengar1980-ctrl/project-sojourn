@@ -5,6 +5,10 @@
   "type": "module",
   "description": "SOJOURN top-down space game",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "test": "node tests/run-tests.cjs",
     "test:quick": "node tests/run-tests.cjs",
     "test:full": "node tests/run-tests.cjs full",
@@ -13,16 +17,18 @@
     "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
-    "check": "npm run format:check && npm run lint && npm run deps:check && npm test"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "acorn": "^8.18.0",
     "eslint": "^10.11.0",
     "globals": "^17.13.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vite": "^7.1.7"
   }
 }

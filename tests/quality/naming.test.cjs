@@ -7,11 +7,11 @@ const { runtimeFiles } = require('../../scripts/source-files.cjs');
 const root = path.resolve(__dirname, '../..');
 const invalid = runtimeFiles(root)
   .map((file) => path.relative(root, file).replaceAll('\\', '/'))
-  .filter((file) => !/^[a-z0-9/-]+\.js$/.test(file));
+  .filter((file) => !/^[a-z0-9/-]+\.ts$/.test(file));
 
 assert.deepEqual(
   invalid,
   [],
-  `runtime filenames must use lowercase kebab-case:\n${invalid.join('\n')}`
+  `runtime filenames must use lowercase kebab-case TypeScript names:\n${invalid.join('\n')}`
 );
-console.log('PASS runtime naming convention');
+console.log('PASS runtime TypeScript naming convention');

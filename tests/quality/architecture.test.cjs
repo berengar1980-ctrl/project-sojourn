@@ -3,7 +3,7 @@
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { parse } = require('acorn');
+const ts = require('typescript');
 const { runtimeFiles } = require('../../scripts/source-files.cjs');
 
 const root = path.resolve(__dirname, '../..');
@@ -11,20 +11,21 @@ const files = runtimeFiles(root);
 const rel = (file) => path.relative(root, file).replaceAll('\\', '/');
 const forbidden = [];
 const oversized = [];
-const nonModules = [];
+const parseFailures = [];
 
-assert(files.length > 0, 'runtime contains no modules');
+assert(files.length > 0, 'runtime contains no TypeScript modules');
 
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
   const name = rel(file);
-  let ast;
-  try {
-    ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
-  } catch (error) {
-    nonModules.push(`${name}: ${error.message}`);
-    continue;
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+
+  if (sourceFile.parseDiagnostics.length) {
+    parseFailures.push(
+      `${name}: ${sourceFile.parseDiagnostics.map((diag) => String(diag.messageText)).join('; ')}`
+    );
   }
+
   if (/\beval\s*\(|\bnew\s+Function\s*\(|document\.write\s*\(/.test(source)) {
     forbidden.push(`${name}: dynamic code/document.write`);
   }
@@ -32,12 +33,12 @@ for (const file of files) {
     forbidden.push(`${name}: writable global export`);
   }
   if (source.split('\n').length > 500) oversized.push(`${name}: more than 500 lines`);
-  if (!ast.body.some((node) => node.type.startsWith('Import') || node.type.startsWith('Export'))) {
-    nonModules.push(`${name}: no import/export declaration`);
+  if (!/\b(?:import|export)\b/.test(source)) {
+    parseFailures.push(`${name}: no ES module import/export declaration`);
   }
 }
 
-assert.deepEqual(nonModules, [], `all runtime files must be ES modules:\n${nonModules.join('\n')}`);
+assert.deepEqual(parseFailures, [], `all runtime files must be valid TypeScript ES modules:\n${parseFailures.join('\n')}`);
 assert.deepEqual(forbidden, [], `forbidden architecture patterns:\n${forbidden.join('\n')}`);
 assert.deepEqual(oversized, [], `split oversized modules:\n${oversized.join('\n')}`);
 
@@ -45,6 +46,6 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const runtimeScripts = [...html.matchAll(/<script[^>]+src="([^"]+)"[^>]*>/g)];
 assert.equal(runtimeScripts.length, 1, 'index.html must have one runtime entry point');
 assert.match(runtimeScripts[0][0], /type="module"/);
-assert.equal(runtimeScripts[0][1], './src/main.js');
+assert.equal(runtimeScripts[0][1], '/src/main.ts');
 
-console.log(`PASS architecture contract: ${files.length} ES modules`);
+console.log(`PASS architecture contract: ${files.length} TypeScript ES modules`);

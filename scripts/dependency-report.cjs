@@ -3,7 +3,7 @@
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { parse } = require('acorn');
+const ts = require('typescript');
 const { runtimeFiles } = require('./source-files.cjs');
 
 const root = path.resolve(__dirname, '..');
@@ -13,13 +13,17 @@ const rel = (file) => path.relative(root, file).replaceAll('\\', '/');
 
 function importsFor(file) {
   const source = fs.readFileSync(file, 'utf8');
-  const ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const imports = [];
 
-  for (const node of ast.body) {
-    if (node.type !== 'ImportDeclaration' || !node.source.value.startsWith('.')) continue;
-    let target = path.resolve(path.dirname(file), node.source.value);
-    if (!path.extname(target)) target += '.js';
+  for (const node of sourceFile.statements) {
+    if (!ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) continue;
+
+    const specifier = node.moduleSpecifier.text;
+    if (!specifier.startsWith('.')) continue;
+
+    let target = path.resolve(path.dirname(file), specifier);
+    if (!path.extname(target)) target += '.ts';
     if (fs.existsSync(target)) imports.push(target);
   }
 
@@ -107,6 +111,6 @@ if (write) {
   );
   assert.deepEqual(violations, [], `layer violations found:\n${violations.join('\n')}`);
   console.log(
-    `PASS dependency architecture: ${files.length} ES modules, no cycles, no layer violations`
+    `PASS dependency architecture: ${files.length} TypeScript modules, no cycles, no layer violations`
   );
 }
