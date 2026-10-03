@@ -23,10 +23,7 @@ assert(service.includes('targetSpeed'), 'strategic travel must calculate braking
 assert(service.includes('approachSpeed'), 'strategic travel must accelerate and decelerate');
 assert(service.includes('currentSpeed'), 'travel must keep dynamic ship speed');
 assert(service.includes('currentTurnRate'), 'travel must expose actual turn rate for RCS');
-assert(
-  types.includes('turnRateRadiansPerSecond'),
-  'navigation snapshot must expose turn rate'
-);
+assert(types.includes('turnRateRadiansPerSecond'), 'navigation snapshot must expose turn rate');
 assert(types.includes('lateralThrust'), 'navigation snapshot must expose lateral thrust');
 assert(
   !service.includes('currentHeading = heading(from, to);'),
