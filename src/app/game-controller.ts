@@ -1,4 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
+import type { WorldPoint } from '../core/world-types';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
@@ -30,7 +31,7 @@ function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
 
-async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly import('../core/world-types').WorldPoint[]> {
+async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
   const options = service.getMiningRouteOptions();
   if (!options) return [];
   return planMiningApproachRouteAsync(options);
