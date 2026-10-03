@@ -33,11 +33,28 @@ assert(
 );
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
 assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
+assert.equal(
+  hardpoints.maneuverThrusters.length,
+  4,
+  'miner must define four maneuver thrusters'
+);
+assert.equal(hardpoints.engines[0].x, 23, 'upper engine hardpoint must match calibrated nozzle');
+assert.equal(hardpoints.engines[1].x, 23, 'lower engine hardpoint must match calibrated nozzle');
+assert.equal(hardpoints.miningLasers[0].x, 329, 'upper laser hardpoint must match emitter tip');
+assert.equal(hardpoints.miningLasers[1].x, 329, 'lower laser hardpoint must match emitter tip');
 assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
 assert(hardpoints.shield.radiusX > 0, 'shield must define horizontal radius');
 assert(hardpoints.shield.radiusY > 0, 'shield must define vertical radius');
-for (const hardpoint of [...hardpoints.engines, ...hardpoints.miningLasers]) {
+for (const hardpoint of [
+  ...hardpoints.engines,
+  ...hardpoints.miningLasers,
+  ...hardpoints.maneuverThrusters,
+]) {
   assert(hardpoint.width > 0, 'every hardpoint must define a positive width');
+}
+for (const thruster of hardpoints.maneuverThrusters) {
+  assert(Number.isFinite(thruster.forceX), 'maneuver thruster must define forceX');
+  assert(Number.isFinite(thruster.forceY), 'maneuver thruster must define forceY');
 }
 
 console.log('PASS ships module, sprite, JSON pivot, hardpoints and shield geometry');
