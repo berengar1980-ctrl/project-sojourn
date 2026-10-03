@@ -161,7 +161,10 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
     shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
-    mineButton.disabled = selected.isMiningTarget && miningActive;
+    const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
+    const depleted =
+      selected.scanLevel === 'analyzed' && (selected.resourceAmount ?? 0) <= 0;
+    mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
