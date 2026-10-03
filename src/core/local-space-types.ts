@@ -23,6 +23,11 @@ export interface LocalAsteroid {
   oreCapacity: number;
 }
 
+export interface MiningImpact {
+  readonly point: WorldPoint;
+  readonly normal: WorldPoint;
+}
+
 export interface MiningChunk {
   readonly id: string;
   position: WorldPoint;
@@ -58,5 +63,6 @@ export interface LocalSpaceSnapshot {
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
   readonly laserActive: boolean;
+  readonly miningImpact: MiningImpact | null;
   readonly shieldFlash: number;
 }
