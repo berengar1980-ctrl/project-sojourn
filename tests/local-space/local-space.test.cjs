@@ -178,7 +178,7 @@ assert(
 );
 assert(service.includes('currentMiningImpact'), 'service must expose one shared mining impact');
 assert(
-  service.includes('position: {\n        x: impact.point.x'),
+  miningChunks.includes('position: {\n      x: impact.point.x'),
   'mining chunks must spawn from the impact point'
 );
 assert(
