@@ -39,8 +39,20 @@ assert(
 );
 assert(generator.includes('createDebris'), 'local-space generator must create small debris');
 assert(
-  generator.includes('const count = 54 + Math.floor(random() * 13)'),
-  'larger mining field must contain more resource asteroids'
+  generator.includes('const count = 96 + Math.floor(random() * 25)'),
+  'mining field must contain dense resource asteroids'
+);
+assert(
+  generator.includes('const count = 190 + Math.floor(random() * 51)'),
+  'mining field must contain dense small debris'
+);
+assert(
+  generator.includes('createPhysics(radius, random, 3.2, 0.06, 1.9)'),
+  'resource asteroids must have slightly stronger drift'
+);
+assert(
+  generator.includes('createPhysics(radius, random, 14, 0.28, 1.15)'),
+  'debris must remain more mobile than resource asteroids'
 );
 assert(generator.includes("kind: 'debris'"), 'small debris kind must be explicit');
 assert(generator.includes('routeBlocking: false'), 'debris must not block route planning');
@@ -49,6 +61,18 @@ assert(generator.includes('angularVelocity'), 'asteroids must receive angular mo
 assert(generator.includes('momentOfInertia'), 'asteroids must define rotational inertia');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
+assert(
+  service.includes('shipLateralVelocity'),
+  'ship station keeping must use real lateral velocity'
+);
+assert(
+  service.includes('applyStationKeeping'),
+  'idle and mining states must share physical station keeping'
+);
+assert(
+  service.includes('closestClosingDebris'),
+  'mining station keeping must react to incoming debris'
+);
 assert(service.includes('currentMiningImpact'), 'service must expose one shared mining impact');
 assert(
   service.includes('position: {\n        x: impact.point.x'),
