@@ -31,11 +31,17 @@ const miningImpact = fs.readFileSync(
 );
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
+assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
+assert(generator.includes('const height = 3150'), 'mining field height must be tripled');
 assert(
   generator.includes('createResourceAsteroids'),
   'local-space generator must create resource asteroids'
 );
 assert(generator.includes('createDebris'), 'local-space generator must create small debris');
+assert(
+  generator.includes('const count = 54 + Math.floor(random() * 13)'),
+  'larger mining field must contain more resource asteroids'
+);
 assert(generator.includes("kind: 'debris'"), 'small debris kind must be explicit');
 assert(generator.includes('routeBlocking: false'), 'debris must not block route planning');
 assert(generator.includes('centerOfMassOffset'), 'asteroids must define a center of mass');
