@@ -49,8 +49,7 @@ export function applyImpulseAtPoint(
     x: point.x - centerOfMass.x,
     y: point.y - centerOfMass.y,
   };
-  asteroid.physics.angularVelocity +=
-    cross(lever, impulse) / asteroid.physics.momentOfInertia;
+  asteroid.physics.angularVelocity += cross(lever, impulse) / asteroid.physics.momentOfInertia;
 }
 
 function integrateAxis(
