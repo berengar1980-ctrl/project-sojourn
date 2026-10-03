@@ -22,10 +22,7 @@ export function createNavigationService(
   return {
     getSnapshot: snapshot,
     selectDestination(locationId) {
-      if (
-        locationId !== null &&
-        !world.locations.some((location) => location.id === locationId)
-      ) {
+      if (locationId !== null && !world.locations.some((location) => location.id === locationId)) {
         throw new Error(`Unknown navigation destination: ${locationId}`);
       }
 
