@@ -63,6 +63,7 @@ export interface LocalSpaceViewModel {
   readonly shield: ShieldState;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly collectedOre: number;
+  readonly collectedResources: LocalSpaceSnapshot['collectedResources'];
 }
 
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
@@ -134,5 +135,6 @@ export function createLocalSpaceViewModel(
     shield: snapshot.shield,
     shieldImpacts: snapshot.shieldImpacts,
     collectedOre: snapshot.collectedOre,
+    collectedResources: snapshot.collectedResources,
   };
 }
