@@ -1,4 +1,4 @@
-import type { SystemLogEntry, SystemLogService } from '../../systems/system-log/system-log-service';
+import type { SystemLogEntry, SystemLogService } from '../../core/system-log-types';
 
 export interface SystemLogPanel {
   update(): void;
