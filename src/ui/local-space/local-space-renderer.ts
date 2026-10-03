@@ -3,8 +3,14 @@ import type {
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import {
+  projectShieldGeometry,
+  spriteDrawOffset,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
+import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
-import { MiningEffectsRenderer, type ShipScreenGeometry } from './mining-effects-renderer';
+import { MiningEffectsRenderer } from './mining-effects-renderer';
 
 interface AsteroidHitArea {
   readonly id: string;
@@ -25,6 +31,7 @@ export class LocalSpaceRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
   private readonly miningEffects: MiningEffectsRenderer;
+  private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
@@ -112,15 +119,17 @@ export class LocalSpaceRenderer {
       timeSeconds,
     });
     this.miningEffects.drawTractorFields(this.model, width, height, timeSeconds);
+
     const hitAreas: AsteroidHitArea[] = [];
     for (const asteroid of this.model.asteroids) {
       const hitArea = this.drawAsteroid(asteroid, width, height);
       if (asteroid.kind === 'resource') hitAreas.push(hitArea);
     }
     this.hitAreas = hitAreas;
+
     this.drawChunks(width, height);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
-    this.drawShip(geometry);
+    this.drawShip(geometry, timeSeconds);
   }
 
   private drawAsteroid(
@@ -156,6 +165,7 @@ export class LocalSpaceRenderer {
       0,
       radius
     );
+
     if (asteroid.kind === 'debris') {
       gradient.addColorStop(0, '#77716a');
       gradient.addColorStop(0.55, '#4c4742');
@@ -165,6 +175,7 @@ export class LocalSpaceRenderer {
       gradient.addColorStop(0.52, '#625a53');
       gradient.addColorStop(1, '#2d2926');
     }
+
     this.context.fillStyle = gradient;
     this.context.fill();
     this.context.strokeStyle = 'rgba(195, 184, 168, .2)';
@@ -199,75 +210,69 @@ export class LocalSpaceRenderer {
     };
   }
 
-  private drawShip(geometry: ShipScreenGeometry): void {
+  private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
+    const source = this.model.ship.hardpoints;
+    const engineIntensity = Math.min(1, this.model.ship.speed / 240);
+    this.engineEffects.draw(
+      this.context,
+      source,
+      geometry,
+      engineIntensity,
+      timeSeconds
+    );
+
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
 
-    if (this.model.ship.speed > 0) {
-      this.drawEngineGlow(geometry.width, geometry.height);
-    }
-
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
-      const source = this.model.ship.hardpoints;
+      const offset = spriteDrawOffset(source, geometry);
       this.context.drawImage(
         this.shipImage,
-        -(source.pivot.x / source.sourceWidth) * geometry.width,
-        -(source.pivot.y / source.sourceHeight) * geometry.height,
+        offset.x,
+        offset.y,
         geometry.width,
         geometry.height
       );
     }
 
-    if (this.model.shieldFlash > 0) {
-      this.drawShieldFlash(geometry.width, geometry.height);
-    }
-
     this.context.restore();
-  }
 
-  private drawEngineGlow(shipWidth: number, shipHeight: number): void {
-    const source = this.model.ship.hardpoints;
-
-    for (const hardpoint of source.engines) {
-      const x = ((hardpoint.x - source.pivot.x) / source.sourceWidth) * shipWidth;
-      const y = ((hardpoint.y - source.pivot.y) / source.sourceHeight) * shipHeight;
-      const radius = Math.max(4, (hardpoint.width / source.sourceWidth) * shipWidth * 0.7);
-      const glow = this.context.createRadialGradient(x, y, 0, x - radius * 0.35, y, radius);
-      glow.addColorStop(0, 'rgba(235, 252, 255, .88)');
-      glow.addColorStop(0.35, 'rgba(78, 190, 255, .5)');
-      glow.addColorStop(1, 'rgba(40, 125, 255, 0)');
-      this.context.fillStyle = glow;
-      this.context.beginPath();
-      this.context.ellipse(x - radius * 0.3, y, radius, radius * 0.38, 0, 0, Math.PI * 2);
-      this.context.fill();
+    if (this.model.shieldFlash > 0) {
+      this.drawShieldFlash(geometry);
     }
   }
 
-  private drawShieldFlash(shipWidth: number, shipHeight: number): void {
+  private drawShieldFlash(geometry: ShipScreenGeometry): void {
     const source = this.model.ship.hardpoints;
-    const shield = source.shield;
-    const x = ((shield.centerX - source.pivot.x) / source.sourceWidth) * shipWidth;
-    const y = ((shield.centerY - source.pivot.y) / source.sourceHeight) * shipHeight;
-    const radiusX = (shield.radiusX / source.sourceWidth) * shipWidth;
-    const radiusY = (shield.radiusY / source.sourceHeight) * shipHeight;
+    const shield = projectShieldGeometry(source.shield, source, geometry);
     const intensity = Math.min(1, this.model.shieldFlash);
 
     this.context.save();
+    this.context.translate(shield.center.x, shield.center.y);
+    this.context.rotate(shield.angle);
     this.context.shadowColor = 'rgba(70, 180, 255, .98)';
     this.context.shadowBlur = 24 + intensity * 16;
     this.context.lineWidth = 2.5 + intensity * 3.5;
     this.context.strokeStyle = 'rgba(104, 202, 255, ' + (0.38 + 0.58 * intensity) + ')';
     this.context.fillStyle = 'rgba(65, 154, 255, ' + (0.1 + 0.18 * intensity) + ')';
     this.context.beginPath();
-    this.context.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    this.context.ellipse(0, 0, shield.radiusX, shield.radiusY, 0, 0, Math.PI * 2);
     this.context.fill();
     this.context.stroke();
 
     this.context.lineWidth = 1;
     this.context.strokeStyle = 'rgba(205, 240, 255, ' + 0.76 * intensity + ')';
     this.context.beginPath();
-    this.context.ellipse(x, y, radiusX * 0.96, radiusY * 0.96, 0, 0, Math.PI * 2);
+    this.context.ellipse(
+      0,
+      0,
+      shield.radiusX * 0.96,
+      shield.radiusY * 0.96,
+      0,
+      0,
+      Math.PI * 2
+    );
     this.context.stroke();
     this.context.restore();
   }
@@ -275,7 +280,8 @@ export class LocalSpaceRenderer {
   private drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {
       const point = this.camera.worldToScreen(chunk.position, width, height);
-      const radius = 3 + Math.min(4, chunk.amount * 0.35);
+      const variation = (hashId(chunk.id) % 100) / 100;
+      const radius = 1.5 + variation * 2.2;
       this.context.fillStyle = '#a88f73';
       this.context.beginPath();
       this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
