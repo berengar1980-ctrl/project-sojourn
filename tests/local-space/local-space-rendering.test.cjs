@@ -140,7 +140,7 @@ assert(
 );
 assert(systemLog.includes('MAX_LOG_LINES = 8'), 'system log must keep a bounded history');
 assert(
-  systemLog.includes("local-system-log-line"),
+  systemLog.includes('local-system-log-line'),
   'system log must render individual terminal lines'
 );
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
