@@ -128,6 +128,7 @@ export function generateMiningSpace(sourceLocationId: string, seed: number): Loc
       headingRadians: 0,
       speed: 0,
       turnRateRadiansPerSecond: 0,
+      angularThrust: 0,
       lateralThrust: 0,
     },
   };
