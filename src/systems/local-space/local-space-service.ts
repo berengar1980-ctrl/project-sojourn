@@ -82,6 +82,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private miningAccumulator = 0;
   private chunkCounter = 0;
   private shieldFlash = 0;
+  private miningHoldPosition: WorldPoint | null = null;
 
   constructor(options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
@@ -121,6 +122,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningPhase = 'approaching';
     this.miningAccumulator = 0;
     this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.lateralThrust = 0;
+    this.miningHoldPosition = null;
     this.approachRoute = planMiningApproachRoute({
       start: this.instance.ship.position,
       target: asteroid,
@@ -185,6 +189,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachRoute = [];
     this.approachIndex = 0;
     this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.lateralThrust = 0;
+    this.miningHoldPosition = null;
   }
 
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
@@ -197,7 +204,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const waypoint = this.approachRoute[this.approachIndex]!;
     const desiredHeading = heading(ship.position, waypoint);
     const turnLimit = MAX_TURN_RATE * deltaSeconds;
+    const previousHeading = ship.headingRadians;
     ship.headingRadians = turnToward(ship.headingRadians, desiredHeading, turnLimit);
+    ship.turnRateRadiansPerSecond =
+      angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.lateralThrust = 0;
 
     const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
     const alignment = Math.max(0.18, 1 - remainingTurn / (Math.PI / 2));
@@ -214,21 +225,29 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private finishApproachFacing(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
     const desiredHeading = heading(ship.position, asteroid.position);
+    const previousHeading = ship.headingRadians;
     ship.headingRadians = turnToward(
       ship.headingRadians,
       desiredHeading,
       MAX_TURN_RATE * deltaSeconds
     );
+    ship.turnRateRadiansPerSecond =
+      angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.lateralThrust = 0;
     ship.speed = 0;
 
     if (Math.abs(angleDelta(ship.headingRadians, desiredHeading)) <= 0.04) {
       ship.headingRadians = desiredHeading;
+      ship.turnRateRadiansPerSecond = 0;
+      this.miningHoldPosition = { ...ship.position };
       this.miningPhase = 'extracting';
     }
   }
 
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {
     this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.updateMiningStationKeeping(deltaSeconds);
     this.miningAccumulator += deltaSeconds;
 
     while (this.miningAccumulator >= 0.42 && asteroid.oreRemaining > 0) {
@@ -239,6 +258,53 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (asteroid.oreRemaining <= 0) {
       this.finishMining();
     }
+  }
+
+  private updateMiningStationKeeping(deltaSeconds: number): void {
+    const ship = this.instance.ship;
+    const hold = this.miningHoldPosition;
+    if (!hold) {
+      ship.lateralThrust = 0;
+      return;
+    }
+
+    const threat = this.instance.asteroids
+      .filter((asteroid) => asteroid.kind === 'debris')
+      .map((asteroid) => {
+        const dx = asteroid.position.x - ship.position.x;
+        const dy = asteroid.position.y - ship.position.y;
+        return { asteroid, dx, dy, distance: Math.hypot(dx, dy) };
+      })
+      .filter(({ asteroid, dx, dy, distance }) => {
+        if (distance > this.shield.radiusX + asteroid.radius + 32) return false;
+        const closing =
+          dx * asteroid.physics.velocity.x + dy * asteroid.physics.velocity.y;
+        return closing < 0;
+      })
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    const sideX = -Math.sin(ship.headingRadians);
+    const sideY = Math.cos(ship.headingRadians);
+    let lateral = 0;
+
+    if (threat) {
+      const localSide = threat.dx * sideX + threat.dy * sideY;
+      lateral = localSide >= 0 ? -1 : 1;
+    } else {
+      const offsetX = ship.position.x - hold.x;
+      const offsetY = ship.position.y - hold.y;
+      const lateralOffset = offsetX * sideX + offsetY * sideY;
+      if (Math.abs(lateralOffset) > 1.2) {
+        lateral = lateralOffset > 0 ? -0.45 : 0.45;
+      }
+    }
+
+    ship.lateralThrust = lateral;
+    const lateralSpeed = 10 * lateral;
+    ship.position = {
+      x: ship.position.x + sideX * lateralSpeed * deltaSeconds,
+      y: ship.position.y + sideY * lateralSpeed * deltaSeconds,
+    };
   }
 
   private spawnChunk(asteroid: LocalAsteroid): void {
