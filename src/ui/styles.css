@@ -59,7 +59,8 @@ body {
 .map-title span,
 .map-controls,
 .selection-kind,
-.selection-meta {
+.selection-meta,
+.travel-status {
   color: #74899a;
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -80,6 +81,21 @@ body {
   pointer-events: none;
 }
 
+.travel-status {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  padding: 9px 11px;
+  border: 1px solid rgba(98, 188, 214, 0.2);
+  background: rgba(6, 14, 21, 0.72);
+  color: #88cfe0;
+  pointer-events: none;
+}
+
+.travel-status[hidden] {
+  display: none;
+}
+
 .selection-card {
   position: absolute;
   left: 24px;
@@ -90,10 +106,10 @@ body {
   background: linear-gradient(90deg, rgba(7, 13, 19, 0.92), rgba(7, 13, 19, 0.68));
   backdrop-filter: blur(7px);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.26);
-  pointer-events: none;
 }
 
-.selection-card[hidden] {
+.selection-card[hidden],
+.travel-button[hidden] {
   display: none;
 }
 
@@ -123,6 +139,21 @@ body {
   line-height: 1.55;
 }
 
+.travel-button {
+  margin-top: 14px;
+  padding: 9px 12px;
+  border: 1px solid rgba(113, 202, 224, 0.42);
+  background: rgba(45, 101, 118, 0.22);
+  color: #b9eaf3;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.travel-button:hover {
+  background: rgba(62, 132, 151, 0.3);
+}
+
 @media (max-width: 650px) {
   .map-controls {
     display: none;
@@ -131,6 +162,11 @@ body {
   .map-title {
     top: 16px;
     left: 16px;
+  }
+
+  .travel-status {
+    top: 16px;
+    right: 16px;
   }
 
   .selection-card {
