@@ -204,10 +204,11 @@ export class LocalSpaceRenderer {
     }
 
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
+      const source = this.model.ship.hardpoints;
       this.context.drawImage(
         this.shipImage,
-        -geometry.width / 2,
-        -geometry.height / 2,
+        -(source.pivot.x / source.sourceWidth) * geometry.width,
+        -(source.pivot.y / source.sourceHeight) * geometry.height,
         geometry.width,
         geometry.height
       );
@@ -224,8 +225,8 @@ export class LocalSpaceRenderer {
     const source = this.model.ship.hardpoints;
 
     for (const hardpoint of source.engines) {
-      const x = (hardpoint.x / source.sourceWidth - 0.5) * shipWidth;
-      const y = (hardpoint.y / source.sourceHeight - 0.5) * shipHeight;
+      const x = ((hardpoint.x - source.pivot.x) / source.sourceWidth) * shipWidth;
+      const y = ((hardpoint.y - source.pivot.y) / source.sourceHeight) * shipHeight;
       const radius = Math.max(4, (hardpoint.width / source.sourceWidth) * shipWidth * 0.7);
       const glow = this.context.createRadialGradient(x, y, 0, x - radius * 0.35, y, radius);
       glow.addColorStop(0, 'rgba(235, 252, 255, .88)');
@@ -241,8 +242,8 @@ export class LocalSpaceRenderer {
   private drawShieldFlash(shipWidth: number, shipHeight: number): void {
     const source = this.model.ship.hardpoints;
     const shield = source.shield;
-    const x = (shield.centerX / source.sourceWidth - 0.5) * shipWidth;
-    const y = (shield.centerY / source.sourceHeight - 0.5) * shipHeight;
+    const x = ((shield.centerX - source.pivot.x) / source.sourceWidth) * shipWidth;
+    const y = ((shield.centerY - source.pivot.y) / source.sourceHeight) * shipHeight;
     const radiusX = (shield.radiusX / source.sourceWidth) * shipWidth;
     const radiusY = (shield.radiusY / source.sourceHeight) * shipHeight;
     const intensity = Math.min(1, this.model.shieldFlash);
