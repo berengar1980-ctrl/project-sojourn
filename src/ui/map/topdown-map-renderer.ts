@@ -103,7 +103,6 @@ export class TopdownMapRenderer {
       this.context,
       this.model.playerShip,
       point,
-      this.camera.getZoom(),
       performance.now() / 1000
     );
   }
@@ -117,8 +116,8 @@ export class TopdownMapRenderer {
       height * 0.48,
       Math.max(width, height) * 0.8
     );
-    gradient.addColorStop(0, '#132033');
-    gradient.addColorStop(1, '#04070d');
+    gradient.addColorStop(0, '#0a111b');
+    gradient.addColorStop(1, '#020408');
     this.context.fillStyle = gradient;
     this.context.fillRect(0, 0, width, height);
 
@@ -133,7 +132,7 @@ export class TopdownMapRenderer {
 
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
-    const radius = Math.max(28, this.camera.scale(this.model.star.radius));
+    const radius = 54;
     const corona = this.context.createRadialGradient(
       point.x,
       point.y,
@@ -226,13 +225,14 @@ export class TopdownMapRenderer {
     const [from, to] = this.model.route.points;
     if (!from || !to) return;
 
-    const a = this.camera.worldToScreen(from, width, height);
+    const routeStart = this.model.navigation.isTravelling ? this.model.playerShip.position : from;
+    const a = this.camera.worldToScreen(routeStart, width, height);
     const b = this.camera.worldToScreen(to, width, height);
 
     this.context.save();
-    this.context.strokeStyle = 'rgba(122, 207, 224, 0.9)';
-    this.context.lineWidth = 2;
-    this.context.setLineDash([8, 8]);
+    this.context.strokeStyle = 'rgba(111, 190, 210, 0.72)';
+    this.context.lineWidth = 1.4;
+    this.context.setLineDash([6, 7]);
     this.context.beginPath();
     this.context.moveTo(a.x, a.y);
     this.context.lineTo(b.x, b.y);
@@ -242,7 +242,7 @@ export class TopdownMapRenderer {
 
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
-    const radius = Math.max(7, this.camera.scale(location.radius));
+    const radius = this.locationVisualRadius(location);
 
     if (location.kind === 'asteroid-field') this.drawAsteroidField(point, radius);
     else if (location.kind === 'station') this.drawStation(point, radius);
@@ -263,6 +263,13 @@ export class TopdownMapRenderer {
     this.context.fillText(location.name, point.x, point.y + radius + 22);
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
+  }
+
+  private locationVisualRadius(location: StarMapLocationView): number {
+    if (location.kind === 'asteroid-field') return 34;
+    if (location.kind === 'station') return 13;
+    if (location.kind === 'wreck') return 12;
+    return Math.min(30, Math.max(20, location.radius * 0.72));
   }
 
   private drawPlanet(location: StarMapLocationView, point: WorldPoint, radius: number): void {
