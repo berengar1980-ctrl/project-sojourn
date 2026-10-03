@@ -1,8 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
-import {
-  planMiningApproachRoute,
-  type RoutePlanningOptions,
-} from './local-space-navigation';
+import { planMiningApproachRoute, type RoutePlanningOptions } from './local-space-navigation';
 
 interface RouteWorkerRequest {
   readonly id: number;
