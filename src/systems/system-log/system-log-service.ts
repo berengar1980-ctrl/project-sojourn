@@ -1,13 +1,4 @@
-export interface SystemLogEntry {
-  readonly id: number;
-  readonly timestamp: Date;
-  readonly message: string;
-}
-
-export interface SystemLogService {
-  write(message: string): void;
-  entries(): readonly SystemLogEntry[];
-}
+import type { SystemLogEntry, SystemLogService } from '../../core/system-log-types';
 
 const MAX_LOG_ENTRIES = 40;
 
