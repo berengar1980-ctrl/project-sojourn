@@ -69,6 +69,7 @@ export class LocalSpaceRenderer {
 
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
+      this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
       this.hasFitted = true;
     }
 
