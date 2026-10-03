@@ -1,7 +1,7 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
-import type { SystemLogService } from '../../systems/system-log/system-log-service';
+import type { SystemLogService } from '../../core/system-log-types';
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 export interface LocalSpacePanel {
