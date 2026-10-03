@@ -1,6 +1,8 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
+import type { SystemLogService } from '../../systems/system-log/system-log-service';
 import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer } from './topdown-map-renderer';
+import { createSystemLogPanel } from '../system-log/system-log-panel';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
@@ -10,6 +12,7 @@ export interface StarMapPanel {
 interface StarMapPanelOptions {
   readonly root: HTMLElement;
   readonly model: StarMapViewModel;
+  readonly log: SystemLogService;
   readonly onSelectLocation: (id: string) => void;
   readonly onStartTravel: () => void;
 }
@@ -60,6 +63,12 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   let model = options.model;
   const renderer = new TopdownMapRenderer(canvas, model);
+  const systemLog = createSystemLogPanel({
+    root: shell,
+    log: options.log,
+    header: 'SYS // NAVIGATION',
+    placementClass: 'star-system-log',
+  });
 
   const updateSelection = (): void => {
     const selected = model.locations.find((location) => location.isSelected);
@@ -106,10 +115,12 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       model = nextModel;
       renderer.update(model);
       updateSelection();
+      systemLog.update();
     },
     destroy(): void {
       unbindInput();
       observer.disconnect();
+      systemLog.destroy();
       shell.remove();
     },
   };
