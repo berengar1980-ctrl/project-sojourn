@@ -34,6 +34,10 @@ const stationKeeping = fs.readFileSync(
   'utf8'
 );
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const shieldService = fs.readFileSync(
+  path.join(root, 'src/systems/shields/shield-service.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
@@ -156,6 +160,23 @@ assert(
   'mining impact must lie on the asteroid surface'
 );
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
+assert(service.includes('applyShieldHit'), 'asteroid impacts must damage the shield through shield service');
+assert(
+  collision.includes('kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed'),
+  'asteroid shield damage must derive from mass and normal impact speed'
+);
+assert(
+  shieldService.includes('REFERENCE_IMPACT_ENERGY'),
+  'shield service must normalize kinetic impact energy'
+);
+assert(
+  shieldService.includes('/ state.modifier'),
+  'better shield modifiers must reduce incoming damage'
+);
+assert(
+  shieldService.includes("ShieldDamageSource"),
+  'shield damage model must be reusable by future weapon sources'
+);
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
 console.log('PASS local-space route, rigid asteroid physics, debris and collision ownership');
