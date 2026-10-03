@@ -5,9 +5,11 @@ import type { NavigationService, NavigationSnapshot } from './navigation-types';
 interface TravelState {
   destinationId: string;
   route: RoutePlan;
-  elapsedSeconds: number;
-  durationSeconds: number;
+  distanceTravelled: number;
+  currentSpeed: number;
 }
+
+const MAX_TURN_RATE = 0.9;
 
 function locationPosition(world: WorldMap, id: string): WorldPoint {
   const location = world.locations.find((candidate) => candidate.id === id);
@@ -24,6 +26,40 @@ function interpolate(from: WorldPoint, to: WorldPoint, progress: number): WorldP
 
 function heading(from: WorldPoint, to: WorldPoint): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
+}
+
+function angleDelta(current: number, target: number): number {
+  let delta = target - current;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  return delta;
+}
+
+function turnToward(current: number, target: number, maximumDelta: number): number {
+  const delta = angleDelta(current, target);
+  if (Math.abs(delta) <= maximumDelta) return target;
+  return current + Math.sign(delta) * maximumDelta;
+}
+
+function targetSpeed(
+  remainingDistance: number,
+  alignment: number,
+  cruiseSpeed: number,
+  acceleration: number
+): number {
+  const brakingSpeed = Math.sqrt(Math.max(0, 2 * acceleration * remainingDistance));
+  return Math.min(cruiseSpeed * alignment, brakingSpeed);
+}
+
+function approachSpeed(
+  current: number,
+  target: number,
+  acceleration: number,
+  deltaSeconds: number
+): number {
+  const maximumChange = acceleration * deltaSeconds;
+  if (Math.abs(target - current) <= maximumChange) return target;
+  return current + Math.sign(target - current) * maximumChange;
 }
 
 export function createNavigationService(
@@ -53,8 +89,8 @@ export function createNavigationService(
       currentPosition,
       headingRadians: currentHeading,
       isTravelling: travel !== null,
-      progress: travel ? Math.min(1, travel.elapsedSeconds / travel.durationSeconds) : 0,
-      speed: travel ? cruiseSpeed : 0,
+      progress: travel ? Math.min(1, travel.distanceTravelled / travel.route.distance) : 0,
+      speed: travel?.currentSpeed ?? 0,
       previewRoute,
       activeRoute: travel?.route ?? null,
     };
@@ -77,12 +113,11 @@ export function createNavigationService(
     const [from, to] = route.points;
     if (!from || !to) return snapshot();
 
-    currentHeading = heading(from, to);
     travel = {
       destinationId: selectedDestinationId,
       route,
-      elapsedSeconds: 0,
-      durationSeconds: Math.max(0.1, route.distance / cruiseSpeed),
+      distanceTravelled: 0,
+      currentSpeed: 0,
     };
     currentLocationId = null;
     return snapshot();
@@ -91,18 +126,32 @@ export function createNavigationService(
   const tick = (deltaSeconds: number): NavigationSnapshot => {
     if (!travel || deltaSeconds <= 0) return snapshot();
 
-    travel.elapsedSeconds = Math.min(
-      travel.durationSeconds,
-      travel.elapsedSeconds + Math.min(deltaSeconds, 0.1)
-    );
+    const clamped = Math.min(deltaSeconds, 0.1);
     const [from, to] = travel.route.points;
     if (!from || !to) return snapshot();
 
-    const progress = travel.elapsedSeconds / travel.durationSeconds;
-    currentPosition = interpolate(from, to, progress);
-    currentHeading = heading(from, to);
+    const desiredHeading = heading(from, to);
+    currentHeading = turnToward(currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+    const turnRemaining = Math.abs(angleDelta(currentHeading, desiredHeading));
+    const alignment = Math.max(0, Math.cos(turnRemaining));
+    const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
+    const acceleration = Math.max(12, cruiseSpeed * 0.72);
+    const desiredSpeed = targetSpeed(remainingDistance, alignment, cruiseSpeed, acceleration);
+    travel.currentSpeed = approachSpeed(
+      travel.currentSpeed,
+      desiredSpeed,
+      acceleration,
+      clamped
+    );
+    travel.distanceTravelled = Math.min(
+      travel.route.distance,
+      travel.distanceTravelled + travel.currentSpeed * clamped
+    );
 
-    if (progress >= 1) {
+    const progress = travel.distanceTravelled / travel.route.distance;
+    currentPosition = interpolate(from, to, progress);
+
+    if (remainingDistance <= 0.5 || progress >= 1) {
       currentLocationId = travel.destinationId;
       selectedDestinationId = travel.destinationId;
       currentPosition = to;
