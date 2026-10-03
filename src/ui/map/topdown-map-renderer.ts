@@ -4,6 +4,7 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
+import { mapSymbolScale } from './map-visual-scale';
 import { PlayerShipRenderer } from './player-ship-renderer';
 
 interface HitArea {
@@ -99,7 +100,13 @@ export class TopdownMapRenderer {
 
   private drawPlayerShip(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
-    this.shipRenderer.draw(this.context, this.model.playerShip, point, performance.now() / 1000);
+    this.shipRenderer.draw(
+      this.context,
+      this.model.playerShip,
+      point,
+      this.camera.getRelativeZoom(),
+      performance.now() / 1000
+    );
   }
 
   private drawBackground(width: number, height: number): void {
@@ -127,7 +134,7 @@ export class TopdownMapRenderer {
 
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
-    const radius = 54;
+    const radius = 54 * mapSymbolScale(this.camera.getRelativeZoom());
     const corona = this.context.createRadialGradient(
       point.x,
       point.y,
@@ -237,7 +244,7 @@ export class TopdownMapRenderer {
 
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
-    const radius = this.locationVisualRadius(location);
+    const radius = this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
 
     if (location.kind === 'asteroid-field') this.drawAsteroidField(point, radius);
     else if (location.kind === 'station') this.drawStation(point, radius);
