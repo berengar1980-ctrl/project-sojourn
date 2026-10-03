@@ -2,9 +2,14 @@ import type { ShipDefinition } from '../core/ship-types';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
-import { createLocalSpaceService, generateMiningSpace } from '../systems/local-space';
+import {
+  createLocalSpaceService,
+  generateMiningSpace,
+  planMiningApproachRouteAsync,
+} from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
+import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -25,6 +30,12 @@ function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
 
+async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly import('../core/world-types').WorldPoint[]> {
+  const options = service.getMiningRouteOptions();
+  if (!options) return [];
+  return planMiningApproachRouteAsync(options);
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, ship, navigation } = options;
   let mode: SceneMode = 'star-map';
@@ -33,6 +44,8 @@ export function createGameController(options: GameControllerOptions): GameContro
   let localSpace: LocalSpaceService | null = null;
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
+  const systemLog = createSystemLogService();
+  systemLog.write('SYSTEM ONLINE');
 
   const starModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
 
@@ -50,12 +63,14 @@ export function createGameController(options: GameControllerOptions): GameContro
     starPanel = createStarMapPanel({
       root,
       model: starModel(),
+      log: systemLog,
       onSelectLocation: (id) => {
         navigation.selectDestination(id);
         starPanel?.update(starModel());
       },
       onStartTravel: () => {
         navigation.startTravel();
+        systemLog.write('NAV > FLUG GESTARTET');
         starPanel?.update(starModel());
       },
     });
@@ -73,15 +88,21 @@ export function createGameController(options: GameControllerOptions): GameContro
       nominalLengthMeters: ship.nominalLengthMeters,
     });
 
+    systemLog.write('LOCAL OPS > GREYROCK BELT');
     localPanel = createLocalSpacePanel({
       root,
       model: localModel(),
+      log: systemLog,
       onSelectAsteroid: (id) => {
         localSpace?.selectAsteroid(id);
         localPanel?.update(localModel());
       },
-      onStartMining: () => {
-        localSpace?.startMining();
+      onStartMining: async () => {
+        const activeSpace = localSpace;
+        if (!activeSpace) return;
+        const route = await calculateMiningRoute(activeSpace);
+        if (localSpace !== activeSpace || route.length === 0) return;
+        activeSpace.startMining(route);
         localPanel?.update(localModel());
       },
       onCancelMining: () => {
@@ -89,6 +110,7 @@ export function createGameController(options: GameControllerOptions): GameContro
         localPanel?.update(localModel());
       },
       onReturnToStarMap: () => {
+        systemLog.write('NAV > STERNKARTE');
         runSceneZoomTransition(root, mountStarMap);
       },
     });
