@@ -12,6 +12,7 @@ interface LocalSpacePanelOptions {
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
   readonly onStartMining: () => void;
+  readonly onCancelMining: () => void;
   readonly onReturnToStarMap: () => void;
 }
 
@@ -32,6 +33,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     '</div>',
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<div class="local-mining-status" hidden></div>',
+    '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
     '<div class="local-ore-counter">ERZ · <strong>0</strong></div>',
     '<div class="local-selection-card" hidden>',
     '<div class="local-selection-kind">ASTEROID</div>',
@@ -49,6 +51,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const meta = shell.querySelector<HTMLElement>('.local-selection-meta');
   const oreBar = shell.querySelector<HTMLElement>('.local-ore-bar > div');
   const mineButton = shell.querySelector<HTMLButtonElement>('.mine-button');
+  const cancelButton = shell.querySelector<HTMLButtonElement>('.cancel-mining-button');
   const backButton = shell.querySelector<HTMLButtonElement>('.return-map-button');
   const status = shell.querySelector<HTMLElement>('.local-mining-status');
   const oreCounter = shell.querySelector<HTMLElement>('.local-ore-counter strong');
@@ -56,7 +59,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   if (!canvas || !card || !name || !meta || !oreBar || !mineButton) {
     throw new Error('Local-space selection UI is incomplete.');
   }
-  if (!backButton || !status || !oreCounter) {
+  if (!cancelButton || !backButton || !status || !oreCounter) {
     throw new Error('Local-space controls are incomplete.');
   }
 
@@ -65,7 +68,9 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
+    const miningActive = model.miningPhase !== 'idle';
     card.hidden = !selected;
+    cancelButton.hidden = !miningActive;
     oreCounter.textContent = Math.round(model.collectedOre).toString();
 
     const statusText = miningStatus(model);
@@ -78,9 +83,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       Math.round(selected.oreRemaining) + ' / ' + Math.round(selected.oreCapacity) + ' ERZ';
     oreBar.style.width = Math.max(0, (selected.oreRemaining / selected.oreCapacity) * 100) + '%';
     mineButton.disabled =
-      selected.oreRemaining <= 0 ||
-      model.miningPhase === 'approaching' ||
-      model.miningPhase === 'extracting';
+      selected.oreRemaining <= 0 || (selected.isMiningTarget && miningActive);
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
@@ -92,6 +95,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   });
 
   mineButton.addEventListener('click', options.onStartMining);
+  cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
 
