@@ -42,6 +42,7 @@ export interface LocalShipState {
   headingRadians: number;
   speed: number;
   turnRateRadiansPerSecond: number;
+  angularThrust: number;
   lateralThrust: number;
 }
 
