@@ -7,6 +7,8 @@ export interface NavigationSnapshot {
   readonly destinationId: string | null;
   readonly currentPosition: WorldPoint;
   readonly headingRadians: number;
+  readonly turnRateRadiansPerSecond: number;
+  readonly lateralThrust: number;
   readonly isTravelling: boolean;
   readonly progress: number;
   readonly speed: number;
