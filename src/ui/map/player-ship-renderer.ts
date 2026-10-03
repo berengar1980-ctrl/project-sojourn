@@ -16,10 +16,7 @@ export class PlayerShipRenderer {
   ): void {
     this.ensureImage(ship.spriteUrl);
 
-    const width = Math.min(
-      128,
-      Math.max(62, 82 * Math.sqrt(Math.max(0.5, mapZoom)))
-    );
+    const width = Math.min(128, Math.max(62, 82 * Math.sqrt(Math.max(0.5, mapZoom))));
     const height = width / ship.spriteAspectRatio;
 
     context.save();
