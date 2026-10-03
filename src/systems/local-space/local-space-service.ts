@@ -231,10 +231,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
     ship.angularThrust = Math.max(
       -1,
-      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 8))
-    );
-    ship.angularThrust = Math.max(
-      -1,
       Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 5))
     );
     ship.lateralThrust = 0;
@@ -327,6 +323,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
       MAX_TURN_RATE * 0.35 * deltaSeconds
     );
     ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.angularThrust = Math.max(
+      -1,
+      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 8))
+    );
 
     const forwardX = Math.cos(ship.headingRadians);
     const forwardY = Math.sin(ship.headingRadians);
