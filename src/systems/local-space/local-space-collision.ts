@@ -1,6 +1,11 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
+import {
+  applyImpulseAtPoint,
+  pointVelocity,
+  rotationalMassTerm,
+} from './local-space-physics';
 
 export interface ShieldWorldGeometry {
   readonly centerOffset: WorldPoint;
@@ -13,6 +18,15 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
     x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
     y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
   };
+}
+
+function dot(a: WorldPoint, b: WorldPoint): number {
+  return a.x * b.x + a.y * b.y;
+}
+
+function normalized(point: WorldPoint): WorldPoint {
+  const length = Math.max(0.001, Math.hypot(point.x, point.y));
+  return { x: point.x / length, y: point.y / length };
 }
 
 export function createShieldWorldGeometry(
@@ -38,26 +52,18 @@ function shieldCenter(ship: LocalShipState, shield: ShieldWorldGeometry): WorldP
   };
 }
 
-function expandedMetric(
-  local: WorldPoint,
-  asteroidRadius: number,
-  shield: ShieldWorldGeometry
-): number {
-  const radiusX = shield.radiusX + asteroidRadius;
-  const radiusY = shield.radiusY + asteroidRadius;
-  return Math.hypot(local.x / radiusX, local.y / radiusY);
-}
-
 function separationVector(
   local: WorldPoint,
   asteroidRadius: number,
   shield: ShieldWorldGeometry
 ): WorldPoint {
-  const metric = expandedMetric(local, asteroidRadius, shield);
+  const radiusX = shield.radiusX + asteroidRadius;
+  const radiusY = shield.radiusY + asteroidRadius;
+  const metric = Math.hypot(local.x / radiusX, local.y / radiusY);
   if (metric >= 1) return { x: 0, y: 0 };
 
   if (metric < 0.0001) {
-    return { x: -(shield.radiusX + asteroidRadius + 2), y: 0 };
+    return { x: -(radiusX + 2), y: 0 };
   }
 
   const boundaryScale = 1 / metric;
@@ -67,9 +73,9 @@ function separationVector(
   };
 }
 
-function normalized(point: WorldPoint): WorldPoint {
-  const length = Math.max(0.001, Math.hypot(point.x, point.y));
-  return { x: point.x / length, y: point.y / length };
+function shieldPushSpeed(asteroid: LocalAsteroid): number {
+  if (asteroid.kind === 'debris') return 180;
+  return Math.max(18, 42 - asteroid.radius * 0.34);
 }
 
 export function resolveShieldCollisions(
@@ -92,45 +98,106 @@ export function resolveShieldCollisions(
     const separationWorld = rotate(separationLocal, ship.headingRadians);
     const normal = normalized(separationWorld);
     asteroid.position = {
-      x: asteroid.position.x + separationWorld.x + normal.x * 3,
-      y: asteroid.position.y + separationWorld.y + normal.y * 3,
+      x: asteroid.position.x + separationWorld.x + normal.x * 2,
+      y: asteroid.position.y + separationWorld.y + normal.y * 2,
     };
 
-    const outwardSpeed = 250;
-    const outwardVelocity = asteroid.velocity.x * normal.x + asteroid.velocity.y * normal.y;
-    const requiredImpulse = Math.max(0, outwardSpeed - outwardVelocity);
-    asteroid.velocity = {
-      x: asteroid.velocity.x + normal.x * requiredImpulse,
-      y: asteroid.velocity.y + normal.y * requiredImpulse,
+    const contactPoint = {
+      x: asteroid.position.x - normal.x * asteroid.radius,
+      y: asteroid.position.y - normal.y * asteroid.radius,
     };
+    const velocityAtContact = pointVelocity(asteroid, contactPoint);
+    const outwardVelocity = dot(velocityAtContact, normal);
+    const requiredDelta = Math.max(0, shieldPushSpeed(asteroid) - outwardVelocity);
+    const impulseMagnitude = requiredDelta * asteroid.physics.mass;
+    applyImpulseAtPoint(
+      asteroid,
+      { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
+      contactPoint
+    );
     collided = true;
   }
 
   return collided;
 }
 
-export function updateAsteroidMotion(
-  asteroids: readonly LocalAsteroid[],
-  deltaSeconds: number,
-  width: number,
-  height: number
-): void {
-  const damping = Math.pow(0.28, deltaSeconds);
+function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
+  const delta = {
+    x: b.position.x - a.position.x,
+    y: b.position.y - a.position.y,
+  };
+  if (Math.hypot(delta.x, delta.y) < 0.001) return { x: 1, y: 0 };
+  return normalized(delta);
+}
 
-  for (const asteroid of asteroids) {
-    asteroid.position = {
-      x: Math.min(
-        width - asteroid.radius,
-        Math.max(asteroid.radius, asteroid.position.x + asteroid.velocity.x * deltaSeconds)
-      ),
-      y: Math.min(
-        height - asteroid.radius,
-        Math.max(asteroid.radius, asteroid.position.y + asteroid.velocity.y * deltaSeconds)
-      ),
-    };
-    asteroid.velocity = {
-      x: asteroid.velocity.x * damping,
-      y: asteroid.velocity.y * damping,
-    };
+function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
+  const currentDistance = Math.hypot(
+    b.position.x - a.position.x,
+    b.position.y - a.position.y
+  );
+  const overlap = a.radius + b.radius - currentDistance;
+  if (overlap <= 0) return;
+
+  const inverseA = 1 / a.physics.mass;
+  const inverseB = 1 / b.physics.mass;
+  const inverseTotal = inverseA + inverseB;
+  const moveA = overlap * (inverseA / inverseTotal);
+  const moveB = overlap * (inverseB / inverseTotal);
+
+  a.position = {
+    x: a.position.x - normal.x * moveA,
+    y: a.position.y - normal.y * moveA,
+  };
+  b.position = {
+    x: b.position.x + normal.x * moveB,
+    y: b.position.y + normal.y * moveB,
+  };
+}
+
+function resolvePairImpulse(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
+  const contactPoint = {
+    x: a.position.x + normal.x * a.radius,
+    y: a.position.y + normal.y * a.radius,
+  };
+  const velocityA = pointVelocity(a, contactPoint);
+  const velocityB = pointVelocity(b, contactPoint);
+  const relativeVelocity = {
+    x: velocityB.x - velocityA.x,
+    y: velocityB.y - velocityA.y,
+  };
+  const closingSpeed = dot(relativeVelocity, normal);
+  if (closingSpeed >= 0) return;
+
+  const inverseMass =
+    1 / a.physics.mass +
+    1 / b.physics.mass +
+    rotationalMassTerm(a, contactPoint, normal) +
+    rotationalMassTerm(b, contactPoint, normal);
+  const restitution = a.kind === 'debris' || b.kind === 'debris' ? 0.42 : 0.24;
+  const impulseMagnitude = (-(1 + restitution) * closingSpeed) / inverseMass;
+  const impulse = {
+    x: normal.x * impulseMagnitude,
+    y: normal.y * impulseMagnitude,
+  };
+
+  applyImpulseAtPoint(a, { x: -impulse.x, y: -impulse.y }, contactPoint);
+  applyImpulseAtPoint(b, impulse, contactPoint);
+}
+
+export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): void {
+  for (let first = 0; first < asteroids.length - 1; first += 1) {
+    const a = asteroids[first]!;
+
+    for (let second = first + 1; second < asteroids.length; second += 1) {
+      const b = asteroids[second]!;
+      const maximumDistance = a.radius + b.radius;
+      const dx = b.position.x - a.position.x;
+      const dy = b.position.y - a.position.y;
+      if (dx * dx + dy * dy >= maximumDistance * maximumDistance) continue;
+
+      const normal = collisionNormal(a, b);
+      separatePair(a, b, normal);
+      resolvePairImpulse(a, b, normal);
+    }
   }
 }
