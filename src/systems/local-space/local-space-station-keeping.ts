@@ -1,0 +1,113 @@
+import type { LocalShipState } from '../../core/local-space-types';
+import type { WorldPoint } from '../../core/world-types';
+
+export interface IdleStationKeepingState {
+  targetHeading: number;
+  lateralVelocity: number;
+  angularVelocity: number;
+  disturbanceTimer: number;
+  disturbanceIndex: number;
+}
+
+function angleDelta(current: number, target: number): number {
+  let delta = target - current;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  return delta;
+}
+
+export function createIdleStationKeepingState(
+  seed: number,
+  ship: LocalShipState
+): IdleStationKeepingState {
+  return {
+    targetHeading: ship.headingRadians,
+    lateralVelocity: ((seed % 2001) / 2000 - 0.5) * 0.45,
+    angularVelocity: ((seed % 997) / 996 - 0.5) * 0.018,
+    disturbanceTimer: 1.8 + (seed % 2400) / 1000,
+    disturbanceIndex: 0,
+  };
+}
+
+export function resetIdleStationKeeping(
+  state: IdleStationKeepingState,
+  ship: LocalShipState
+): void {
+  state.targetHeading = ship.headingRadians;
+  state.lateralVelocity *= 0.35;
+  state.angularVelocity *= 0.35;
+  state.disturbanceTimer = Math.max(1.2, state.disturbanceTimer);
+}
+
+export function updateIdleStationKeeping(
+  state: IdleStationKeepingState,
+  ship: LocalShipState,
+  hold: WorldPoint,
+  seed: number,
+  deltaSeconds: number
+): void {
+  applyDisturbance(state, seed, deltaSeconds);
+  applyPositionKeeping(state, ship, hold, deltaSeconds);
+  applyHeadingKeeping(state, ship, deltaSeconds);
+}
+
+function applyDisturbance(
+  state: IdleStationKeepingState,
+  seed: number,
+  deltaSeconds: number
+): void {
+  state.disturbanceTimer -= deltaSeconds;
+  if (state.disturbanceTimer > 0) return;
+
+  const phase = seed * 0.00017 + state.disturbanceIndex * 1.618;
+  state.lateralVelocity += Math.sin(phase * 7.31) * 0.16;
+  state.angularVelocity += Math.sin(phase * 11.73 + 0.8) * 0.018;
+  state.disturbanceIndex += 1;
+  state.disturbanceTimer = 2.2 + Math.abs(Math.sin(phase * 3.17)) * 3.2;
+}
+
+function applyPositionKeeping(
+  state: IdleStationKeepingState,
+  ship: LocalShipState,
+  hold: WorldPoint,
+  deltaSeconds: number
+): void {
+  const sideX = -Math.sin(ship.headingRadians);
+  const sideY = Math.cos(ship.headingRadians);
+  const offsetX = ship.position.x - hold.x;
+  const offsetY = ship.position.y - hold.y;
+  const lateralOffset = offsetX * sideX + offsetY * sideY;
+
+  let thrust = -lateralOffset * 0.12 - state.lateralVelocity * 0.68;
+  thrust = Math.max(-0.24, Math.min(0.24, thrust));
+  if (Math.abs(thrust) < 0.045) thrust = 0;
+
+  ship.lateralThrust = thrust;
+  state.lateralVelocity += thrust * 1.8 * deltaSeconds;
+  state.lateralVelocity = Math.max(-0.55, Math.min(0.55, state.lateralVelocity));
+  ship.position = {
+    x: ship.position.x + sideX * state.lateralVelocity * deltaSeconds,
+    y: ship.position.y + sideY * state.lateralVelocity * deltaSeconds,
+  };
+  ship.speed = 0;
+}
+
+function applyHeadingKeeping(
+  state: IdleStationKeepingState,
+  ship: LocalShipState,
+  deltaSeconds: number
+): void {
+  const headingError = angleDelta(ship.headingRadians, state.targetHeading);
+  let angularThrust = headingError * 0.9 - state.angularVelocity * 1.35;
+  angularThrust = Math.max(-0.34, Math.min(0.34, angularThrust));
+
+  if (Math.abs(headingError) < 0.004 && Math.abs(state.angularVelocity) < 0.003) {
+    angularThrust = 0;
+  }
+
+  state.angularVelocity += angularThrust * 0.32 * deltaSeconds;
+  state.angularVelocity = Math.max(-0.035, Math.min(0.035, state.angularVelocity));
+  ship.headingRadians += state.angularVelocity * deltaSeconds;
+  ship.turnRateRadiansPerSecond = state.angularVelocity;
+  ship.angularThrust = angularThrust / 0.34;
+}
