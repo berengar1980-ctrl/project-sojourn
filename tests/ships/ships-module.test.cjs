@@ -9,10 +9,7 @@ const index = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'ut
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
 const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 'utf8');
 const asset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
-const hardpointsPath = path.join(
-  root,
-  'resources/ships/mining/miner-80m-standard.hardpoints.json'
-);
+const hardpointsPath = path.join(root, 'resources/ships/mining/miner-80m-standard.hardpoints.json');
 const hardpoints = JSON.parse(fs.readFileSync(hardpointsPath, 'utf8'));
 
 assert(index.includes('getShipDefinition'), 'ships public API missing');
@@ -22,22 +19,10 @@ assert(data.includes('widthPx: 346'), 'sprite width metadata must match source a
 assert(data.includes('heightPx: 182'), 'sprite height metadata must match source asset');
 assert(data.includes('hardpointsJson'), 'ship definition must load hardpoints from JSON');
 assert(fs.existsSync(asset), 'mining ship sprite asset missing');
-assert.equal(
-  hardpoints.sourceWidth,
-  346,
-  'hardpoint source width must match sprite'
-);
-assert.equal(
-  hardpoints.sourceHeight,
-  182,
-  'hardpoint source height must match sprite'
-);
+assert.equal(hardpoints.sourceWidth, 346, 'hardpoint source width must match sprite');
+assert.equal(hardpoints.sourceHeight, 182, 'hardpoint source height must match sprite');
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
-assert.equal(
-  hardpoints.miningLasers.length,
-  2,
-  'miner must define two mining laser hardpoints'
-);
+assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
 for (const hardpoint of [...hardpoints.engines, ...hardpoints.miningLasers]) {
   assert(hardpoint.width > 0, 'every hardpoint must define a positive width');
 }
