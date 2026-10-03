@@ -244,7 +244,8 @@ export class TopdownMapRenderer {
 
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
-    const radius = this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
+    const radius =
+      this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
 
     if (location.kind === 'asteroid-field') this.drawAsteroidField(point, radius);
     else if (location.kind === 'station') this.drawStation(point, radius);
