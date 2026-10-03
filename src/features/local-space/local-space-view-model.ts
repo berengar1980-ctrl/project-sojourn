@@ -9,6 +9,8 @@ import type { WorldPoint } from '../../core/world-types';
 
 export interface LocalAsteroidView {
   readonly id: string;
+  readonly kind: LocalAsteroid['kind'];
+  readonly routeBlocking: boolean;
   readonly position: WorldPoint;
   readonly radius: number;
   readonly rotation: number;
@@ -55,6 +57,8 @@ export interface LocalSpaceViewModel {
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
   return {
     id: asteroid.id,
+    kind: asteroid.kind,
+    routeBlocking: asteroid.routeBlocking,
     position: asteroid.position,
     radius: asteroid.radius,
     rotation: asteroid.rotation,
