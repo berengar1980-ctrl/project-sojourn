@@ -17,6 +17,7 @@ const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-pa
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
+assert(renderer.includes('SpaceBackgroundRenderer'), 'local mining must use shared parallax background');
 assert(renderer.includes('drawShieldFlash'), 'shield impacts must have a visual flash');
 assert(renderer.includes('source.pivot.x'), 'local ship renderer must use JSON pivot');
 assert(effects.includes('source.pivot.x'), 'mining hardpoints must rotate around JSON pivot');
