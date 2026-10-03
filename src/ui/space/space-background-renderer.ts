@@ -158,7 +158,7 @@ export class SpaceBackgroundRenderer {
     const offsetY = -view.cameraCenter.y * view.cameraZoom * parallax;
 
     for (let index = 0; index < this.nebulae.length; index += 1) {
-      const nebula = this.nebulae[index];
+      const nebula = this.nebulae[index]!;
       const driftX = nebula.driftX * view.timeSeconds;
       const driftY = nebula.driftY * view.timeSeconds;
       const x = wrap(nebula.x * (view.width + 500) + offsetX + driftX, view.width + 500) - 250;
