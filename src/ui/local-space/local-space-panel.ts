@@ -1,7 +1,10 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
-import { createLocalSpaceSystemLog } from './local-space-system-log';
+import {
+  createLocalSpaceSystemLog,
+  type LocalSpaceSystemLog,
+} from './local-space-system-log';
 
 export interface LocalSpacePanel {
   update(model: LocalSpaceViewModel): void;
@@ -21,6 +24,31 @@ function miningStatus(model: LocalSpaceViewModel): string {
   if (model.miningPhase === 'approaching') return 'ANFLUG AUF ABBAUPOSITION';
   if (model.miningPhase === 'extracting') return 'MINING AKTIV';
   return '';
+}
+
+function shieldPercent(model: LocalSpaceViewModel): number {
+  return Math.max(0, Math.round((model.shield.currentHp / model.shield.maxHp) * 100));
+}
+
+function bindRoutePlanning(
+  button: HTMLButtonElement,
+  systemLog: LocalSpaceSystemLog,
+  startMining: () => void,
+  updateOverlay: () => void
+): void {
+  let planning = false;
+  button.addEventListener('click', () => {
+    if (planning) return;
+    planning = true;
+    button.disabled = true;
+    systemLog.write('NAV > ROUTENBERECHNUNG...');
+    requestAnimationFrame(() => {
+      startMining();
+      planning = false;
+      systemLog.write('NAV > ANFLUGROUTE BEREIT');
+      updateOverlay();
+    });
+  });
 }
 
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
@@ -65,8 +93,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   }
 
   let model = options.model;
-  let lastShieldPercent = Math.round((model.shield.currentHp / model.shield.maxHp) * 100);
-  let routePlanning = false;
+  let lastShieldPercent = shieldPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createLocalSpaceSystemLog(shell);
   systemLog.write('SYSTEM ONLINE');
@@ -79,13 +106,10 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     cancelButton.hidden = !miningActive;
     oreCounter.textContent = Math.round(model.collectedOre).toString();
 
-    const shieldPercent = Math.max(
-      0,
-      Math.round((model.shield.currentHp / model.shield.maxHp) * 100)
-    );
-    if (shieldPercent !== lastShieldPercent) {
-      systemLog.write('SCHILD-INTEGRITÄT ' + shieldPercent + ' %');
-      lastShieldPercent = shieldPercent;
+    const currentShieldPercent = shieldPercent(model);
+    if (currentShieldPercent !== lastShieldPercent) {
+      systemLog.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
+      lastShieldPercent = currentShieldPercent;
     }
 
     const statusText = miningStatus(model);
@@ -108,18 +132,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     onSelectAsteroid: options.onSelectAsteroid,
   });
 
-  mineButton.addEventListener('click', () => {
-    if (routePlanning) return;
-    routePlanning = true;
-    mineButton.disabled = true;
-    systemLog.write('NAV > ROUTENBERECHNUNG...');
-    requestAnimationFrame(() => {
-      options.onStartMining();
-      routePlanning = false;
-      systemLog.write('NAV > ANFLUGROUTE BEREIT');
-      updateOverlay();
-    });
-  });
+  bindRoutePlanning(mineButton, systemLog, options.onStartMining, updateOverlay);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
