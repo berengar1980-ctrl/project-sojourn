@@ -19,7 +19,7 @@ export class ShipEngineEffectsRenderer {
       const fastPulse = Math.sin(timeSeconds * 24 + index * 1.6) * 0.025;
       const flicker = 0.93 + slowPulse + fastPulse;
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
-      const length = baseWidth * (0.95 + normalizedIntensity * 1.55) * flicker;
+      const length = baseWidth * (0.58 + normalizedIntensity * 0.92) * flicker;
       const thickness = baseWidth * (0.34 + normalizedIntensity * 0.13);
       const backwards = {
         x: -Math.cos(geometry.angle),
