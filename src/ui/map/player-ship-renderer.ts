@@ -1,7 +1,4 @@
-import type {
-  PlayerShipMapView,
-  StarMapLocationView,
-} from '../../features/star-map/star-map-view-model';
+import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
