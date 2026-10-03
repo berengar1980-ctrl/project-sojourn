@@ -11,12 +11,11 @@ export class PlayerShipRenderer {
     context: CanvasRenderingContext2D,
     ship: PlayerShipMapView,
     point: ScreenPoint,
-    mapZoom: number,
     timeSeconds: number
   ): void {
     this.ensureImage(ship.spriteUrl);
 
-    const width = Math.min(128, Math.max(62, 82 * Math.sqrt(Math.max(0.5, mapZoom))));
+    const width = 112;
     const height = width / ship.spriteAspectRatio;
 
     context.save();
@@ -47,29 +46,43 @@ export class PlayerShipRenderer {
     height: number,
     timeSeconds: number
   ): void {
-    const pulse = 0.9 + Math.sin(timeSeconds * 13) * 0.08;
-    const engineX = -width * 0.48;
-    const spread = height * 0.19;
+    const pulse = 0.92 + Math.sin(timeSeconds * 12) * 0.05;
+    const nozzleX = -width * 0.49;
+    const nozzleOffsets = [-height * 0.28, height * 0.28];
 
-    for (const offset of [-spread, spread]) {
+    for (const offsetY of nozzleOffsets) {
       const glow = context.createRadialGradient(
-        engineX,
-        offset,
-        1,
-        engineX - width * 0.16,
-        offset,
-        width * 0.34
+        nozzleX - width * 0.015,
+        offsetY,
+        0,
+        nozzleX - width * 0.035,
+        offsetY,
+        width * 0.095
       );
-      glow.addColorStop(0, 'rgba(215, 248, 255, ' + 0.9 * pulse + ')');
-      glow.addColorStop(0.25, 'rgba(88, 202, 255, ' + 0.62 * pulse + ')');
-      glow.addColorStop(1, 'rgba(50, 133, 255, 0)');
+      glow.addColorStop(0, 'rgba(235, 252, 255, ' + 0.95 * pulse + ')');
+      glow.addColorStop(0.28, 'rgba(92, 205, 255, ' + 0.56 * pulse + ')');
+      glow.addColorStop(1, 'rgba(36, 129, 255, 0)');
+
       context.fillStyle = glow;
       context.beginPath();
       context.ellipse(
-        engineX - width * 0.12,
-        offset,
-        width * 0.34,
-        height * 0.16,
+        nozzleX - width * 0.035,
+        offsetY,
+        width * 0.095,
+        height * 0.07,
+        0,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+
+      context.fillStyle = 'rgba(224, 248, 255, ' + 0.72 * pulse + ')';
+      context.beginPath();
+      context.ellipse(
+        nozzleX,
+        offsetY,
+        width * 0.014,
+        height * 0.045,
         0,
         0,
         Math.PI * 2
