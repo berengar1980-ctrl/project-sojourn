@@ -9,6 +9,8 @@ export class MapCamera {
   private x = 0;
   private y = 0;
   private zoom = 1;
+  private minimumZoom = 0.25;
+  private maximumZoom = 4;
 
   constructor(
     private readonly worldWidth: number,
@@ -16,12 +18,15 @@ export class MapCamera {
   ) {}
 
   fit(viewWidth: number, viewHeight: number): void {
-    const padding = 80;
-    this.zoom = Math.min(
+    const padding = 90;
+    const fitZoom = Math.min(
       (viewWidth - padding) / this.worldWidth,
       (viewHeight - padding) / this.worldHeight
     );
-    this.zoom = Math.max(0.25, this.zoom);
+
+    this.zoom = Math.max(0.25, fitZoom);
+    this.minimumZoom = Math.max(0.18, this.zoom * 0.58);
+    this.maximumZoom = Math.max(4.5, this.zoom * 9);
     this.x = this.worldWidth / 2;
     this.y = this.worldHeight / 2;
   }
@@ -33,7 +38,7 @@ export class MapCamera {
 
   zoomAt(factor: number, screen: ScreenPoint, viewWidth: number, viewHeight: number): void {
     const before = this.screenToWorld(screen, viewWidth, viewHeight);
-    this.zoom = Math.min(2.5, Math.max(0.35, this.zoom * factor));
+    this.zoom = Math.min(this.maximumZoom, Math.max(this.minimumZoom, this.zoom * factor));
     const after = this.screenToWorld(screen, viewWidth, viewHeight);
     this.x += before.x - after.x;
     this.y += before.y - after.y;
@@ -55,5 +60,9 @@ export class MapCamera {
 
   scale(value: number): number {
     return value * this.zoom;
+  }
+
+  getZoom(): number {
+    return this.zoom;
   }
 }
