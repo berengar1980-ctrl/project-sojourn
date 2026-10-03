@@ -3,14 +3,11 @@ import type {
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
-import {
-  projectShieldGeometry,
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 
@@ -36,6 +33,7 @@ export class LocalSpaceRenderer {
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly hardpointDebug = new ShipHardpointDebugRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
@@ -251,35 +249,16 @@ export class LocalSpaceRenderer {
 
     this.context.restore();
 
-    if (this.model.shieldFlash > 0) {
-      this.drawShieldFlash(geometry);
-    }
-  }
-
-  private drawShieldFlash(geometry: ShipScreenGeometry): void {
-    const source = this.model.ship.hardpoints;
-    const shield = projectShieldGeometry(source.shield, source, geometry);
-    const intensity = Math.min(1, this.model.shieldFlash);
-
-    this.context.save();
-    this.context.translate(shield.center.x, shield.center.y);
-    this.context.rotate(shield.angle);
-    this.context.shadowColor = 'rgba(70, 180, 255, .98)';
-    this.context.shadowBlur = 24 + intensity * 16;
-    this.context.lineWidth = 2.5 + intensity * 3.5;
-    this.context.strokeStyle = 'rgba(104, 202, 255, ' + (0.38 + 0.58 * intensity) + ')';
-    this.context.fillStyle = 'rgba(65, 154, 255, ' + (0.1 + 0.18 * intensity) + ')';
-    this.context.beginPath();
-    this.context.ellipse(0, 0, shield.radiusX, shield.radiusY, 0, 0, Math.PI * 2);
-    this.context.fill();
-    this.context.stroke();
-
-    this.context.lineWidth = 1;
-    this.context.strokeStyle = 'rgba(205, 240, 255, ' + 0.76 * intensity + ')';
-    this.context.beginPath();
-    this.context.ellipse(0, 0, shield.radiusX * 0.96, shield.radiusY * 0.96, 0, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
+    const rect = this.canvas.getBoundingClientRect();
+    this.shieldImpacts.draw(
+      this.context,
+      this.camera,
+      this.model.shieldImpacts,
+      source,
+      geometry,
+      rect.width,
+      rect.height
+    );
   }
 
   private drawChunks(width: number, height: number): void {
