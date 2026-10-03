@@ -51,10 +51,7 @@ const resources = fs.readFileSync(
   path.join(root, 'src/data/resources/mining-resources.ts'),
   'utf8'
 );
-const scanner = fs.readFileSync(
-  path.join(root, 'src/systems/scanning/scanner-service.ts'),
-  'utf8'
-);
+const scanner = fs.readFileSync(path.join(root, 'src/systems/scanning/scanner-service.ts'), 'utf8');
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
