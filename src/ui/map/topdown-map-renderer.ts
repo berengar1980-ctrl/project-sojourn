@@ -64,6 +64,10 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
+  toggleHardpointDebug(): void {
+    this.shipRenderer.toggleHardpointDebug();
+  }
+
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
