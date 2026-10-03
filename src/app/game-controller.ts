@@ -43,6 +43,19 @@ async function calculateScanRoute(service: LocalSpaceService): Promise<readonly 
   return planMiningApproachRouteAsync(options);
 }
 
+function createMiningLocalSpace(ship: ShipDefinition, visit: number): LocalSpaceService {
+  return createLocalSpaceService({
+    instance: generateMiningSpace('greyrock-belt', localSeed(visit)),
+    approachSpeed: 85,
+    hardpoints: ship.sprite.hardpoints,
+    nominalLengthMeters: ship.nominalLengthMeters,
+  });
+}
+
+function enteredGreyrock(mode: SceneMode, previousId: string, currentId: string): boolean {
+  return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, ship, navigation } = options;
   let mode: SceneMode = 'star-map';
@@ -88,12 +101,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     starPanel = null;
     mode = 'local-space';
     visitCounter += 1;
-    localSpace = createLocalSpaceService({
-      instance: generateMiningSpace('greyrock-belt', localSeed(visitCounter)),
-      approachSpeed: 85,
-      hardpoints: ship.sprite.hardpoints,
-      nominalLengthMeters: ship.nominalLengthMeters,
-    });
+    localSpace = createMiningLocalSpace(ship, visitCounter);
 
     systemLog.write('LOCAL OPS > GREYROCK BELT');
     localPanel = createLocalSpacePanel({
@@ -143,11 +151,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       const navigationSnapshot = navigation.tick(deltaSeconds);
       const currentLocationId = navigationSnapshot.currentLocationId;
 
-      if (
-        mode === 'star-map' &&
-        previousLocationId !== currentLocationId &&
-        currentLocationId === 'greyrock-belt'
-      ) {
+      if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
 
