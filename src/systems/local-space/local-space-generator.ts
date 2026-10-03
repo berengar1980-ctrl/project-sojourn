@@ -61,9 +61,7 @@ function createResourceAsteroids(
     const containsResource = random() < 0.68;
     const resource = containsResource ? pickMiningResource(random) : null;
     const rarityAmountFactor = resource ? Math.max(0.35, 1.15 - resource.rarity * 0.055) : 0;
-    const oreCapacity = resource
-      ? Math.round((70 + random() * 180) * rarityAmountFactor)
-      : 0;
+    const oreCapacity = resource ? Math.round((70 + random() * 180) * rarityAmountFactor) : 0;
 
     asteroids.push({
       id: `asteroid-${seed}-${index}`,
