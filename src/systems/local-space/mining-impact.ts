@@ -9,10 +9,7 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
   };
 }
 
-function averageEmitterOffset(
-  hardpoints: ShipHardpoints,
-  nominalLengthMeters: number
-): WorldPoint {
+function averageEmitterOffset(hardpoints: ShipHardpoints, nominalLengthMeters: number): WorldPoint {
   if (hardpoints.miningLasers.length === 0) return { x: 0, y: 0 };
 
   const scale = nominalLengthMeters / hardpoints.sourceWidth;
