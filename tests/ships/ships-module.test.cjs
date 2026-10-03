@@ -23,8 +23,11 @@ assert.equal(hardpoints.sourceWidth, 346, 'hardpoint source width must match spr
 assert.equal(hardpoints.sourceHeight, 182, 'hardpoint source height must match sprite');
 assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
 assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
+assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
+assert(hardpoints.shield.radiusX > 0, 'shield must define horizontal radius');
+assert(hardpoints.shield.radiusY > 0, 'shield must define vertical radius');
 for (const hardpoint of [...hardpoints.engines, ...hardpoints.miningLasers]) {
   assert(hardpoint.width > 0, 'every hardpoint must define a positive width');
 }
 
-console.log('PASS ships module, sprite and JSON hardpoints');
+console.log('PASS ships module, sprite, JSON hardpoints and shield geometry');
