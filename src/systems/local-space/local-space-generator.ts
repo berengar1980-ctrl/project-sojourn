@@ -26,6 +26,7 @@ function createAsteroids(seed: number, width: number, height: number): LocalAste
     asteroids.push({
       id: `asteroid-${seed}-${index}`,
       position: { x, y },
+      velocity: { x: 0, y: 0 },
       radius,
       rotation: random() * Math.PI * 2,
       oreType: random() > 0.82 ? 'Rich Ore' : 'Industrial Ore',

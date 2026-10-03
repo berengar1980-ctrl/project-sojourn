@@ -3,6 +3,7 @@ import type { WorldPoint } from './world-types';
 export interface LocalAsteroid {
   readonly id: string;
   position: WorldPoint;
+  velocity: WorldPoint;
   radius: number;
   rotation: number;
   oreType: string;
@@ -45,4 +46,5 @@ export interface LocalSpaceSnapshot {
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
   readonly laserActive: boolean;
+  readonly shieldFlash: number;
 }

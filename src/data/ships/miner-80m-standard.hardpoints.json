@@ -8,5 +8,11 @@
   "miningLasers": [
     { "id": "laser-upper", "x": 320, "y": 50, "width": 7 },
     { "id": "laser-lower", "x": 320, "y": 132, "width": 7 }
-  ]
+  ],
+  "shield": {
+    "centerX": 174,
+    "centerY": 91,
+    "radiusX": 171,
+    "radiusY": 88
+  }
 }
