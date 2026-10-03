@@ -248,6 +248,17 @@ function roundRoute(route: readonly WorldPoint[]): readonly WorldPoint[] {
   return result;
 }
 
+function routeSegmentsClear(
+  points: readonly WorldPoint[],
+  obstacles: readonly LocalAsteroid[],
+  clearance: number
+): boolean {
+  for (let index = 1; index < points.length; index += 1) {
+    if (!segmentClear(points[index - 1], points[index], obstacles, clearance)) return false;
+  }
+  return true;
+}
+
 function routeCost(points: readonly WorldPoint[]): number {
   let total = 0;
   for (let index = 1; index < points.length; index += 1) {
@@ -304,9 +315,22 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
 
     const simplified = simplifyRoute(raw, obstacles, options.clearance);
     const rounded = roundRoute(simplified);
-    candidates.push({ points: rounded, cost: routeCost(rounded) });
+    const route = routeSegmentsClear(rounded, obstacles, options.clearance * 0.82)
+      ? rounded
+      : simplified;
+    candidates.push({ points: route, cost: routeCost(route) });
   }
 
   candidates.sort((a, b) => a.cost - b.cost);
-  return candidates[0]?.points ?? [options.start];
+  if (candidates[0]) return candidates[0].points;
+
+  const fallbackEnd =
+    approachPoints(
+      options.start,
+      options.target,
+      miningRange,
+      options.width,
+      options.height
+    )[0] ?? options.start;
+  return [options.start, fallbackEnd];
 }
