@@ -1,6 +1,7 @@
 import type {
   LocationActivities,
   LocationKind,
+  StarBody,
   WorldMap,
   WorldPoint,
 } from '../../core/world-types';
@@ -12,6 +13,7 @@ export interface StarMapLocationView {
   readonly kind: LocationKind;
   readonly position: WorldPoint;
   readonly radius: number;
+  readonly orbitRadius?: number;
   readonly description: string;
   readonly activities: LocationActivities;
   readonly dangerLevel: 0 | 1 | 2 | 3;
@@ -24,6 +26,7 @@ export interface StarMapViewModel {
   readonly title: string;
   readonly width: number;
   readonly height: number;
+  readonly star: StarBody;
   readonly locations: readonly StarMapLocationView[];
   readonly regions: WorldMap['regions'];
   readonly route: RoutePlan | null;
@@ -44,6 +47,7 @@ export function createStarMapViewModel(
     title: world.name,
     width: world.width,
     height: world.height,
+    star: world.star,
     regions: world.regions,
     route,
     locations: world.locations.map((location) => ({

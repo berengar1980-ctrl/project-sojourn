@@ -7,8 +7,8 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #dfe8f3;
-  background: #070b11;
+  color: #dce6ee;
+  background: #03060a;
   font-synthesis: none;
 }
 
@@ -19,119 +19,123 @@
 html,
 body,
 #app {
+  width: 100%;
   min-height: 100%;
   margin: 0;
 }
 
 body {
   min-height: 100vh;
-  background: radial-gradient(circle at 20% 20%, rgba(38, 59, 83, 0.22), transparent 32%), #070b11;
-}
-
-button,
-canvas {
-  font: inherit;
+  overflow: hidden;
+  background: #03060a;
 }
 
 .star-map-shell {
-  width: min(1500px, calc(100vw - 32px));
-  margin: 16px auto;
-  border: 1px solid rgba(142, 166, 194, 0.2);
-  background: rgba(10, 16, 25, 0.96);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-}
-
-.star-map-header {
-  min-height: 82px;
-  padding: 18px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(142, 166, 194, 0.16);
-}
-
-.star-map-header h1,
-.map-inspector h2 {
-  margin: 0;
-  font-weight: 580;
-  letter-spacing: 0.02em;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  color: #7893ad;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-}
-
-.map-help {
-  color: #718396;
-  font-size: 12px;
-}
-
-.star-map-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  min-height: min(760px, calc(100vh - 132px));
-}
-
-.map-stage {
-  min-height: 600px;
   position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
+  background: #03060a;
 }
 
 .star-map-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 600px;
   cursor: crosshair;
   touch-action: none;
 }
 
-.map-inspector {
-  padding: 24px;
-  border-left: 1px solid rgba(142, 166, 194, 0.16);
-  background: linear-gradient(180deg, rgba(16, 24, 35, 0.96), rgba(8, 13, 20, 0.98));
+.map-title {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  display: grid;
+  gap: 2px;
+  pointer-events: none;
+  text-shadow: 0 2px 10px #000;
 }
 
-.inspector-description {
-  min-height: 72px;
-  color: #9aabba;
+.map-title span,
+.map-controls,
+.selection-kind,
+.selection-meta {
+  color: #74899a;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.map-title strong {
+  color: #dce6ee;
+  font-size: 18px;
+  font-weight: 560;
+  letter-spacing: 0.04em;
+}
+
+.map-controls {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  color: rgba(133, 151, 166, 0.62);
+  pointer-events: none;
+}
+
+.selection-card {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: min(390px, calc(100vw - 48px));
+  padding: 15px 17px 16px;
+  border-left: 2px solid rgba(112, 196, 218, 0.66);
+  background: linear-gradient(90deg, rgba(7, 13, 19, 0.92), rgba(7, 13, 19, 0.68));
+  backdrop-filter: blur(7px);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.26);
+  pointer-events: none;
+}
+
+.selection-card[hidden] {
+  display: none;
+}
+
+.selection-kind {
+  margin-bottom: 5px;
+}
+
+.selection-name {
+  margin-bottom: 7px;
+  color: #ecf2f6;
+  font-size: 19px;
+  font-weight: 570;
+}
+
+.selection-description {
+  color: #9aaab7;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.selection-meta {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(120, 143, 160, 0.13);
+  color: #8ea8ba;
+  font-size: 9px;
   line-height: 1.55;
 }
 
-.inspector-meta {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(142, 166, 194, 0.14);
-  color: #bdd0df;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.route-card {
-  margin-top: 20px;
-  padding: 13px 14px;
-  border: 1px solid rgba(122, 207, 224, 0.32);
-  background: rgba(67, 119, 136, 0.14);
-  color: #a8e3ed;
-  font-size: 13px;
-}
-
-@media (max-width: 850px) {
-  .star-map-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 650px) {
+  .map-controls {
+    display: none;
   }
 
-  .map-inspector {
-    border-top: 1px solid rgba(142, 166, 194, 0.16);
-    border-left: 0;
+  .map-title {
+    top: 16px;
+    left: 16px;
   }
 
-  .map-stage,
-  .star-map-canvas {
-    min-height: 520px;
+  .selection-card {
+    left: 16px;
+    bottom: 16px;
+    width: calc(100vw - 32px);
   }
 }

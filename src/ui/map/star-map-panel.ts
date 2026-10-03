@@ -12,47 +12,43 @@ interface StarMapPanelOptions {
   readonly onSelectLocation: (id: string) => void;
 }
 
-function activitiesLabel(model: StarMapViewModel): string {
+function activityLabels(model: StarMapViewModel): string {
   const selected = model.locations.find((location) => location.isSelected);
-  if (!selected) return 'Wähle ein Ziel auf der Karte.';
+  if (!selected) return '';
 
-  const labels = [
-    selected.activities.trade ? 'Handel' : null,
-    selected.activities.mine ? 'Mining' : null,
-    selected.activities.salvage ? 'Bergung' : null,
-    selected.activities.refuel ? 'Treibstoff' : null,
-    selected.activities.missions ? 'Missionen' : null,
-  ].filter((label): label is string => Boolean(label));
-
-  return labels.length ? labels.join(' · ') : 'Keine Dienste';
+  return [
+    selected.activities.trade ? 'HANDEL' : null,
+    selected.activities.mine ? 'MINING' : null,
+    selected.activities.salvage ? 'BERGUNG' : null,
+    selected.activities.refuel ? 'TREIBSTOFF' : null,
+    selected.activities.missions ? 'MISSIONEN' : null,
+  ]
+    .filter((label): label is string => Boolean(label))
+    .join(' · ');
 }
 
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const shell = document.createElement('section');
   shell.className = 'star-map-shell';
   shell.innerHTML = `
-    <header class="star-map-header">
-      <div>
-        <p class="eyebrow">TUTORIAL SECTOR</p>
-        <h1>${options.model.title}</h1>
-      </div>
-      <div class="map-help">Ziehen: verschieben · Mausrad: zoomen</div>
-    </header>
-    <div class="star-map-layout">
-      <div class="map-stage"><canvas class="star-map-canvas"></canvas></div>
-      <aside class="map-inspector">
-        <p class="eyebrow">NAVIGATION</p>
-        <h2 class="inspector-title">Kein Ziel gewählt</h2>
-        <p class="inspector-description">Wähle einen Ort auf der Sternkarte.</p>
-        <div class="inspector-meta"></div>
-        <div class="inspector-actions"></div>
-      </aside>
+    <canvas class="star-map-canvas" aria-label="Sternkarte"></canvas>
+    <div class="map-title">
+      <span>SOJOURN</span>
+      <strong>${options.model.title}</strong>
+    </div>
+    <div class="map-controls">ZIEHEN · KARTE VERSCHIEBEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
+    <div class="selection-card" hidden>
+      <div class="selection-kind"></div>
+      <div class="selection-name"></div>
+      <div class="selection-description"></div>
+      <div class="selection-meta"></div>
     </div>
   `;
   options.root.replaceChildren(shell);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.star-map-canvas');
-  if (!canvas) throw new Error('Star map canvas missing.');
+  const card = shell.querySelector<HTMLElement>('.selection-card');
+  if (!canvas || !card) throw new Error('Star map UI is incomplete.');
 
   let model = options.model;
   const renderer = new TopdownMapRenderer(canvas, model);
@@ -61,31 +57,25 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   let lastX = 0;
   let lastY = 0;
 
-  const updateInspector = (): void => {
+  const updateSelection = (): void => {
     const selected = model.locations.find((location) => location.isSelected);
-    const title = shell.querySelector<HTMLElement>('.inspector-title');
-    const description = shell.querySelector<HTMLElement>('.inspector-description');
-    const meta = shell.querySelector<HTMLElement>('.inspector-meta');
-    const actions = shell.querySelector<HTMLElement>('.inspector-actions');
-    if (!title || !description || !meta || !actions) return;
+    card.hidden = !selected;
+    if (!selected) return;
 
-    title.textContent = selected?.name ?? 'Kein Ziel gewählt';
-    description.textContent = selected?.description ?? 'Wähle einen Ort auf der Sternkarte.';
-    meta.textContent = selected
-      ? `${selected.kind} · Gefahr ${selected.dangerLevel}/3 · ${activitiesLabel(model)}`
-      : '';
+    const kind = card.querySelector<HTMLElement>('.selection-kind');
+    const name = card.querySelector<HTMLElement>('.selection-name');
+    const description = card.querySelector<HTMLElement>('.selection-description');
+    const meta = card.querySelector<HTMLElement>('.selection-meta');
+    if (!kind || !name || !description || !meta) return;
 
-    actions.textContent = '';
-    if (model.route) {
-      const route = document.createElement('div');
-      route.className = 'route-card';
-      route.textContent = `Route · ${Math.round(model.route.distance)} Einheiten`;
-      actions.append(route);
-    }
+    kind.textContent = selected.kind.replace('-', ' ').toUpperCase();
+    name.textContent = selected.name;
+    description.textContent = selected.description;
+    const route = model.route ? ` · ROUTE ${Math.round(model.route.distance)}` : '';
+    meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
   };
 
-  const resize = (): void => renderer.resize();
-  const observer = new ResizeObserver(resize);
+  const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
 
   canvas.addEventListener('pointerdown', (event) => {
@@ -109,7 +99,6 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   canvas.addEventListener('pointerup', (event) => {
     dragging = false;
     if (moved) return;
-
     const id = renderer.pickLocation(event.offsetX, event.offsetY);
     if (id) options.onSelectLocation(id);
   });
@@ -123,13 +112,13 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     { passive: false }
   );
 
-  updateInspector();
+  updateSelection();
 
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
-      updateInspector();
+      updateSelection();
     },
     destroy(): void {
       observer.disconnect();

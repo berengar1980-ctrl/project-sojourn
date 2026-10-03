@@ -14,7 +14,7 @@ interface HitArea {
 
 export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
-  private camera: MapCamera;
+  private readonly camera: MapCamera;
   private model: StarMapViewModel;
   private hitAreas: readonly HitArea[] = [];
 
@@ -74,6 +74,8 @@ export class TopdownMapRenderer {
 
     this.drawBackground(width, height);
     this.drawRegions(width, height);
+    this.drawOrbits(width, height);
+    this.drawStar(width, height);
     this.drawRoute(width, height);
     this.hitAreas = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
@@ -101,6 +103,69 @@ export class TopdownMapRenderer {
       const size = index % 7 === 0 ? 1.5 : 0.8;
       this.context.fillRect(x, y, size, size);
     }
+  }
+
+  private drawStar(width: number, height: number): void {
+    const point = this.camera.worldToScreen(this.model.star.position, width, height);
+    const radius = Math.max(28, this.camera.scale(this.model.star.radius));
+    const corona = this.context.createRadialGradient(
+      point.x,
+      point.y,
+      radius * 0.65,
+      point.x,
+      point.y,
+      radius * 2.1
+    );
+    corona.addColorStop(0, 'rgba(255, 210, 112, .48)');
+    corona.addColorStop(0.4, 'rgba(240, 150, 56, .18)');
+    corona.addColorStop(1, 'rgba(240, 150, 56, 0)');
+    this.context.fillStyle = corona;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius * 2.1, 0, Math.PI * 2);
+    this.context.fill();
+
+    const body = this.context.createRadialGradient(
+      point.x - radius * 0.25,
+      point.y - radius * 0.3,
+      radius * 0.12,
+      point.x,
+      point.y,
+      radius
+    );
+    body.addColorStop(0, '#fffbea');
+    body.addColorStop(0.32, this.model.star.colorCore);
+    body.addColorStop(0.75, this.model.star.colorCorona);
+    body.addColorStop(1, '#a74920');
+    this.context.fillStyle = body;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+    this.context.fill();
+
+    this.context.fillStyle = 'rgba(255,244,215,.86)';
+    this.context.font = '600 12px system-ui';
+    this.context.textAlign = 'center';
+    this.context.fillText(this.model.star.name.toUpperCase(), point.x, point.y + radius + 22);
+  }
+
+  private drawOrbits(width: number, height: number): void {
+    const star = this.camera.worldToScreen(this.model.star.position, width, height);
+    const radii = [
+      ...new Set(
+        this.model.locations
+          .map((location) => location.orbitRadius)
+          .filter((radius): radius is number => radius != null)
+      ),
+    ].sort((a, b) => a - b);
+
+    this.context.save();
+    this.context.strokeStyle = 'rgba(129, 151, 174, .10)';
+    this.context.lineWidth = 1;
+    for (const orbit of radii) {
+      this.context.beginPath();
+      this.context.arc(star.x, star.y, this.camera.scale(orbit), 0, Math.PI * 2);
+      this.context.stroke();
+    }
+    this.context.restore();
   }
 
   private drawRegions(width: number, height: number): void {
