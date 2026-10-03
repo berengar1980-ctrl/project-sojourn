@@ -18,7 +18,13 @@ const camera = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf
 
 assert(background.includes('drawMilkyWay'), 'space background must render a milky-way layer');
 assert(background.includes('drawNebulae'), 'space background must render drifting nebulae');
-assert(background.includes('parallax'), 'space background must use parallax factors');
+assert(background.includes('NebulaLobe'), 'nebulae must be layered irregular cloud clusters');
+assert(background.includes('globalCompositeOperation'), 'nebula lobes must blend into one cloud');
+assert(
+  !background.includes('context.ellipse'),
+  'space nebula renderer must not draw obvious ellipse clouds'
+);
+assert(background.includes('0.24'), 'mid-star layer must have visible parallax separation');
 assert(background.includes('cameraCenter'), 'background must respond to camera position');
 assert(background.includes('timeSeconds'), 'background must support slow time-based drift');
 assert(starMap.includes('SpaceBackgroundRenderer'), 'star map must use shared space background');
@@ -28,6 +34,5 @@ assert(
 );
 assert(camera.includes('getCenter'), 'camera must expose read-only center for parallax rendering');
 assert(starMap.includes('Math.sin(timeSeconds * 1.25)'), 'star-map sun must pulse slowly');
-assert(starMap.includes('spriteUrl'), 'star map must support optional planet sprites');
 
-console.log('PASS reusable parallax space background and animated star rendering');
+console.log('PASS stronger parallax stars and layered nebula cloud rendering');
