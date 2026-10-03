@@ -338,25 +338,25 @@ body {
 
 .local-system-log {
   position: absolute;
-  left: 24px;
   top: 84px;
-  width: min(420px, calc(100vw - 48px));
+  left: 24px;
+  width: 420px;
+  max-width: calc(100vw - 48px);
   max-height: 168px;
   overflow: hidden;
-  border: 1px solid rgba(88, 255, 126, 0.28);
-  background: rgba(0, 8, 2, 0.9);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
+  border: 1px solid #285c32;
+  background: #000802;
+  box-shadow: 0 8px 22px #000;
   color: #72ff91;
   font-family: monospace;
   pointer-events: none;
-  text-shadow: 0 0 6px rgba(93, 255, 126, 0.4);
+  text-shadow: 0 0 6px #245c30;
 }
-
 
 .local-system-log-header {
   padding: 7px 10px 6px;
-  border-bottom: 1px solid rgba(88, 255, 126, 0.18);
-  color: rgba(140, 255, 164, 0.72);
+  border-bottom: 1px solid #1e4425;
+  color: #72c985;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -370,7 +370,7 @@ body {
 
 .local-system-log-line {
   min-height: 16px;
-  color: rgba(112, 255, 144, 0.88);
+  color: #65d97e;
   font-size: 10px;
   line-height: 1.55;
   letter-spacing: 0.035em;
