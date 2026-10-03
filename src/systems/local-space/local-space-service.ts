@@ -25,11 +25,7 @@ import {
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
 import { planMiningApproachRoute } from './local-space-navigation';
-import {
-  advanceShieldImpacts,
-  applyShieldHit,
-  createShieldState,
-} from '../shields';
+import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
