@@ -4,6 +4,7 @@ export type {
   ShipDefinition,
   ShipHardpoint,
   ShipHardpoints,
+  ShipPivot,
   ShipRole,
   ShipSprite,
 } from '../../core/ship-types';
