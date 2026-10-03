@@ -490,8 +490,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     this.instance.chunks.splice(0, this.instance.chunks.length, ...remaining);
   }
-
-
 }
 
 export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
