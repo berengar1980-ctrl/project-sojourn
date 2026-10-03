@@ -117,6 +117,16 @@ assert(effects.includes('drawImpactDust'), 'mining impact must render transparen
 assert(effects.includes('drawTractorFields'), 'mining effects must render tractor collection');
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
 assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
+assert(panel.includes('LANGREICHWEITENSCAN'), 'local UI must expose long-range scanning');
+assert(panel.includes('NAHBEREICHSSCAN'), 'selected asteroids must expose close scanning');
+assert(
+  renderer.includes('drawScanMarker'),
+  'surveyed asteroids must be visibly distinguishable in local space'
+);
+assert(
+  renderer.includes("asteroid.surveyResult === 'empty'"),
+  'scan markers must distinguish empty asteroids from deposits'
+);
 assert(
   panel.includes('selected.isMiningTarget'),
   'selected alternate asteroids must remain mineable'
