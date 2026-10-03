@@ -26,7 +26,9 @@ function importsFor(file) {
   return imports;
 }
 
-const graph = Object.fromEntries(files.map((file) => [rel(file), importsFor(file).map(rel)]));
+const graph = Object.fromEntries(
+  files.map((file) => [rel(file), importsFor(file).map(rel)])
+);
 
 function findCycles() {
   const cycles = [];
@@ -53,7 +55,14 @@ function findCycles() {
   return cycles;
 }
 
-const rank = { core: 0, data: 0, systems: 1, features: 2, ui: 3, app: 4 };
+const rank = {
+  core: 0,
+  data: 0,
+  systems: 1,
+  features: 2,
+  ui: 3,
+  app: 4,
+};
 const layerOf = (file) => /^src\/([^/]+)\//.exec(file)?.[1] || null;
 const violations = [];
 
@@ -96,7 +105,7 @@ if (write) {
   assert.deepEqual(
     cycles,
     [],
-    `circular imports found:\n${cycles.map((c) => c.join(' -> ')).join('\n')}`
+    `circular imports found:\n${cycles.map((cycle) => cycle.join(' -> ')).join('\n')}`
   );
   assert.deepEqual(
     violations,

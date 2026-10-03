@@ -15,12 +15,18 @@ const qualityRules = {
   complexity: ['error', 20],
   'max-lines-per-function': [
     'error',
-    { max: 100, skipBlankLines: true, skipComments: true },
+    {
+      max: 100,
+      skipBlankLines: true,
+      skipComments: true,
+    },
   ],
 };
 
 export default [
-  { ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'docs/generated/**'] },
+  {
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'docs/generated/**'],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.js'],
@@ -38,6 +44,9 @@ export default [
       sourceType: 'commonjs',
       globals: globals.node,
     },
-    rules: { ...qualityRules, 'no-console': 'off' },
+    rules: {
+      ...qualityRules,
+      'no-console': 'off',
+    },
   },
 ];
