@@ -12,6 +12,11 @@ export interface ShipPivot {
   readonly y: number;
 }
 
+export interface ShipManeuverThruster extends ShipHardpoint {
+  readonly forceX: number;
+  readonly forceY: number;
+}
+
 export interface ShipShieldGeometry {
   readonly centerX: number;
   readonly centerY: number;
@@ -25,6 +30,7 @@ export interface ShipHardpoints {
   readonly pivot: ShipPivot;
   readonly engines: readonly ShipHardpoint[];
   readonly miningLasers: readonly ShipHardpoint[];
+  readonly maneuverThrusters: readonly ShipManeuverThruster[];
   readonly shield: ShipShieldGeometry;
 }
 
