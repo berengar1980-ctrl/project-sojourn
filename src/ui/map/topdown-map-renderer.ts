@@ -99,12 +99,7 @@ export class TopdownMapRenderer {
 
   private drawPlayerShip(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
-    this.shipRenderer.draw(
-      this.context,
-      this.model.playerShip,
-      point,
-      performance.now() / 1000
-    );
+    this.shipRenderer.draw(this.context, this.model.playerShip, point, performance.now() / 1000);
   }
 
   private drawBackground(width: number, height: number): void {
@@ -225,7 +220,9 @@ export class TopdownMapRenderer {
     const [from, to] = this.model.route.points;
     if (!from || !to) return;
 
-    const routeStart = this.model.navigation.isTravelling ? this.model.playerShip.position : from;
+    const routeStart = this.model.navigation.isTravelling
+      ? this.model.playerShip.position
+      : from;
     const a = this.camera.worldToScreen(routeStart, width, height);
     const b = this.camera.worldToScreen(to, width, height);
 
