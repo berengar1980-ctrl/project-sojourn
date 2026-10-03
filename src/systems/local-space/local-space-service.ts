@@ -206,8 +206,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const turnLimit = MAX_TURN_RATE * deltaSeconds;
     const previousHeading = ship.headingRadians;
     ship.headingRadians = turnToward(ship.headingRadians, desiredHeading, turnLimit);
-    ship.turnRateRadiansPerSecond =
-      angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
     ship.lateralThrust = 0;
 
     const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
@@ -231,8 +230,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       desiredHeading,
       MAX_TURN_RATE * deltaSeconds
     );
-    ship.turnRateRadiansPerSecond =
-      angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
     ship.lateralThrust = 0;
     ship.speed = 0;
 
@@ -277,8 +275,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       })
       .filter(({ asteroid, dx, dy, distance }) => {
         if (distance > this.shield.radiusX + asteroid.radius + 32) return false;
-        const closing =
-          dx * asteroid.physics.velocity.x + dy * asteroid.physics.velocity.y;
+        const closing = dx * asteroid.physics.velocity.x + dy * asteroid.physics.velocity.y;
         return closing < 0;
       })
       .sort((a, b) => a.distance - b.distance)[0];
