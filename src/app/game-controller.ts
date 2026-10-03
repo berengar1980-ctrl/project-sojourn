@@ -5,10 +5,7 @@ import { createStarMapViewModel } from '../features/star-map/star-map-view-model
 import { createLocalSpaceService, generateMiningSpace } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import {
-  createLocalSpacePanel,
-  type LocalSpacePanel,
-} from '../ui/local-space/local-space-panel';
+import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
@@ -37,8 +34,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
 
-  const starModel = () =>
-    createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
+  const starModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
 
   const localModel = () => {
     if (!localSpace) throw new Error('Local space is not active.');
