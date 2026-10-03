@@ -11,7 +11,7 @@ interface RouteCandidate {
   readonly cost: number;
 }
 
-interface RoutePlanningOptions {
+export interface RoutePlanningOptions {
   readonly start: WorldPoint;
   readonly target: LocalAsteroid;
   readonly asteroids: readonly LocalAsteroid[];
@@ -20,9 +20,59 @@ interface RoutePlanningOptions {
   readonly height: number;
 }
 
+interface QueueEntry {
+  readonly key: string;
+  readonly priority: number;
+}
+
+class MinPriorityQueue {
+  private readonly entries: QueueEntry[] = [];
+
+  get size(): number {
+    return this.entries.length;
+  }
+
+  push(entry: QueueEntry): void {
+    this.entries.push(entry);
+    let index = this.entries.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (this.entries[parent]!.priority <= entry.priority) break;
+      this.entries[index] = this.entries[parent]!;
+      index = parent;
+    }
+    this.entries[index] = entry;
+  }
+
+  pop(): QueueEntry | null {
+    const first = this.entries[0];
+    const last = this.entries.pop();
+    if (!first || !last) return first ?? null;
+    if (this.entries.length === 0) return first;
+
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      const right = left + 1;
+      if (left >= this.entries.length) break;
+      const smaller =
+        right < this.entries.length &&
+        this.entries[right]!.priority < this.entries[left]!.priority
+          ? right
+          : left;
+      if (this.entries[smaller]!.priority >= last.priority) break;
+      this.entries[index] = this.entries[smaller]!;
+      index = smaller;
+    }
+    this.entries[index] = last;
+    return first;
+  }
+}
+
 const GRID_SIZE = 44;
 const APPROACH_SAMPLES = 16;
 const CORNER_RADIUS = 34;
+const MAX_ROUTE_CANDIDATES = 4;
 
 function distance(a: WorldPoint, b: WorldPoint): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
@@ -140,43 +190,49 @@ function findGridRoute(
   const rows = Math.max(1, Math.ceil(height / GRID_SIZE));
   const startNode = closestGridNode(start, columns, rows);
   const endNode = closestGridNode(end, columns, rows);
-  const open = new Set<string>([key(startNode.column, startNode.row)]);
+  const open = new MinPriorityQueue();
   const nodes = new Map<string, GridNode>();
   const cameFrom = new Map<string, string>();
   const cost = new Map<string, number>();
   const estimate = new Map<string, number>();
+  const closed = new Set<string>();
   const startKey = key(startNode.column, startNode.row);
   const endKey = key(endNode.column, endNode.row);
+  const startEstimate = distance(startNode, endNode);
 
   nodes.set(startKey, startNode);
   cost.set(startKey, 0);
-  estimate.set(startKey, distance(startNode, endNode));
+  estimate.set(startKey, startEstimate);
+  open.push({ key: startKey, priority: startEstimate });
 
   while (open.size > 0) {
-    const currentKey = [...open].reduce((best, candidate) =>
-      (estimate.get(candidate) ?? Infinity) < (estimate.get(best) ?? Infinity) ? candidate : best
-    );
-    const current = nodes.get(currentKey);
-    if (!current) break;
-    if (currentKey === endKey) {
+    const entry = open.pop();
+    if (!entry || closed.has(entry.key)) continue;
+    if (entry.priority > (estimate.get(entry.key) ?? Infinity)) continue;
+
+    const current = nodes.get(entry.key);
+    if (!current) continue;
+    if (entry.key === endKey) {
       const middle = reconstructRoute(cameFrom, nodes, endKey);
       return [start, ...middle.slice(1, -1), end];
     }
 
-    open.delete(currentKey);
+    closed.add(entry.key);
     for (const neighbor of neighbors(current, columns, rows)) {
       if (!pointClear(neighbor, obstacles, clearance)) continue;
       if (!segmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
 
       const neighborKey = key(neighbor.column, neighbor.row);
-      const tentative = (cost.get(currentKey) ?? Infinity) + distance(current, neighbor);
+      if (closed.has(neighborKey)) continue;
+      const tentative = (cost.get(entry.key) ?? Infinity) + distance(current, neighbor);
       if (tentative >= (cost.get(neighborKey) ?? Infinity)) continue;
 
-      cameFrom.set(neighborKey, currentKey);
+      const priority = tentative + distance(neighbor, endNode);
+      cameFrom.set(neighborKey, entry.key);
       nodes.set(neighborKey, neighbor);
       cost.set(neighborKey, tentative);
-      estimate.set(neighborKey, tentative + distance(neighbor, endNode));
-      open.add(neighborKey);
+      estimate.set(neighborKey, priority);
+      open.push({ key: neighborKey, priority });
     }
   }
 
@@ -319,6 +375,7 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
       ? rounded
       : simplified;
     candidates.push({ points: route, cost: routeCost(route) });
+    if (candidates.length >= MAX_ROUTE_CANDIDATES) break;
   }
 
   candidates.sort((a, b) => a.cost - b.cost);
