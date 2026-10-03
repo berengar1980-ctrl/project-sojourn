@@ -71,4 +71,8 @@ export class MapCamera {
   getRelativeZoom(): number {
     return this.zoom / this.fitZoom;
   }
+
+  getCenter(): WorldPoint {
+    return { x: this.x, y: this.y };
+  }
 }
