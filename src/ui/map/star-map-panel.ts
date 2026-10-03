@@ -87,6 +87,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     description.textContent = selected.description;
     const route = model.route ? ` · ROUTE ${Math.round(model.route.distance)}` : '';
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
+    travelButton.hidden =
+      model.navigation.isTravelling || selected.id === model.navigation.currentLocationId;
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
