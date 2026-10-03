@@ -21,6 +21,23 @@ function pointToSegmentDistance(point: WorldPoint, start: WorldPoint, end: World
   });
 }
 
+function avoidanceSide(
+  ship: LocalShipState,
+  destination: WorldPoint,
+  obstacle: LocalAsteroid
+): number {
+  const routeX = destination.x - ship.position.x;
+  const routeY = destination.y - ship.position.y;
+  const obstacleX = obstacle.position.x - ship.position.x;
+  const obstacleY = obstacle.position.y - ship.position.y;
+  const cross = routeX * obstacleY - routeY * obstacleX;
+
+  if (Math.abs(cross) > 0.001) return cross > 0 ? -1 : 1;
+  let hash = 0;
+  for (const character of obstacle.id) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return hash % 2 === 0 ? 1 : -1;
+}
+
 function obstacleWaypoint(
   ship: LocalShipState,
   destination: WorldPoint,
@@ -32,17 +49,12 @@ function obstacleWaypoint(
   const length = Math.max(1, Math.hypot(dx, dy));
   const perpendicular = { x: -dy / length, y: dx / length };
   const offset = obstacle.radius + clearance;
-  const left = {
-    x: obstacle.position.x + perpendicular.x * offset,
-    y: obstacle.position.y + perpendicular.y * offset,
+  const side = avoidanceSide(ship, destination, obstacle);
+
+  return {
+    x: obstacle.position.x + perpendicular.x * offset * side,
+    y: obstacle.position.y + perpendicular.y * offset * side,
   };
-  const right = {
-    x: obstacle.position.x - perpendicular.x * offset,
-    y: obstacle.position.y - perpendicular.y * offset,
-  };
-  const leftCost = distance(ship.position, left) + distance(left, destination);
-  const rightCost = distance(ship.position, right) + distance(right, destination);
-  return leftCost <= rightCost ? left : right;
 }
 
 export function findApproachWaypoint(
@@ -69,5 +81,5 @@ export function findApproachWaypoint(
   }
 
   if (!blocker) return destination;
-  return obstacleWaypoint(ship, destination, blocker, shipClearance + 28);
+  return obstacleWaypoint(ship, destination, blocker, shipClearance + 36);
 }
