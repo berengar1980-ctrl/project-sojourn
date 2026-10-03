@@ -125,7 +125,11 @@ export class TopdownMapRenderer {
 
       this.context.fillStyle = 'rgba(224, 134, 124, 0.65)';
       this.context.font = '11px system-ui';
-      this.context.fillText(region.name.toUpperCase(), center.x - 28, center.y - radius * 0.55);
+      this.context.fillText(
+        region.name.toUpperCase(),
+        center.x - 28,
+        center.y - radius * 0.55
+      );
     }
   }
 
@@ -174,11 +178,7 @@ export class TopdownMapRenderer {
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
   }
 
-  private drawPlanet(
-    location: StarMapLocationView,
-    point: WorldPoint,
-    radius: number
-  ): void {
+  private drawPlanet(location: StarMapLocationView, point: WorldPoint, radius: number): void {
     const gradient = this.context.createRadialGradient(
       point.x - radius * 0.35,
       point.y - radius * 0.35,
