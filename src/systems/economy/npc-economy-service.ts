@@ -67,7 +67,8 @@ function sellToMarket(
 ): number {
   const entry = markets.getEntry(locationId, resourceId);
   const aboard = quantity(npc.cargo[resourceId] ?? 0);
-  const moved = Math.min(aboard, quantity(requested));
+  const requestedQuantity = Number.isFinite(requested) ? quantity(requested) : aboard;
+  const moved = Math.min(aboard, requestedQuantity);
   if (!entry || moved <= 0) return 0;
 
   const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
