@@ -1,3 +1,4 @@
+import type { WorldPoint } from '../../core/world-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
@@ -13,6 +14,7 @@ interface LocalSpacePanelOptions {
   readonly root: HTMLElement;
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
+  readonly onNavigate: (target: WorldPoint) => Promise<boolean>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
   readonly onLongRangeScan: () => void;
@@ -22,6 +24,7 @@ interface LocalSpacePanelOptions {
 }
 
 function miningStatus(model: LocalSpaceViewModel): string {
+  if (model.navigationTarget) return 'NAVIGATION ZUM ZIELPUNKT';
   if (model.scanTarget && model.miningPhase === 'approaching') {
     return 'ANFLUG FÜR NAHBEREICHSSCAN';
   }
@@ -209,6 +212,21 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     canvas,
     renderer,
     onSelectAsteroid: options.onSelectAsteroid,
+    onNavigate: (x, y) => {
+      options.log.write('NAV > PUNKTRoute WIRD BERECHNET...');
+      systemLog.update();
+      void options
+        .onNavigate({ x, y })
+        .then((started) => {
+          options.log.write(started ? 'NAV > ZIELROUTE BEREIT' : 'NAV > ZIEL NICHT ERREICHBAR');
+          systemLog.update();
+          updateOverlay();
+        })
+        .catch(() => {
+          options.log.write('NAV > ROUTENBERECHNUNG FEHLER');
+          systemLog.update();
+        });
+    },
   });
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
