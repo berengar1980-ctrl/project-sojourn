@@ -47,6 +47,7 @@ function initialPools(
     pools[resource.id] = {
       target,
       reserve: 0,
+      allocated: 0,
       externalImports: 0,
       recordedLosses: 0,
     };
@@ -60,7 +61,7 @@ function totalResource(
   player: PlayerEconomyState,
   pool: EconomyResourcePool
 ): number {
-  let total = quantity(pool.reserve) + playerQuantity(player, resourceId);
+  let total = quantity(pool.reserve) + quantity(pool.allocated) + playerQuantity(player, resourceId);
   for (const market of markets) total += marketQuantity(market, resourceId);
   return total;
 }
@@ -196,6 +197,14 @@ function driftDemand(
 export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
+  allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  claimAllocatedToPlayer(
+    resourceId: EconomyResourceId,
+    amount: number,
+    cargoCapacityTons: number,
+    originId: string
+  ): number;
+  releaseAllocatedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
   advanceNextDay(): void;
 }
@@ -209,6 +218,7 @@ export function createEconomySimulationService(
   const markets = marketsService.snapshot();
   const pools = initialPools(resources, markets, player);
   let lastDay = -1;
+  let allocationCounter = 0;
 
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
@@ -253,6 +263,51 @@ export function createEconomySimulationService(
     getResourceTotal(resourceId) {
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, pool) : 0;
+    },
+    allocatePhysicalResource(resourceId, amount) {
+      const pool = pools[resourceId];
+      const requested = quantity(amount);
+      if (!pool || requested === 0) return 0;
+
+      let allocated = Math.min(requested, quantity(pool.reserve));
+      pool.reserve -= allocated;
+      if (allocated < requested) {
+        allocationCounter += 1;
+        const random = seededRandom(seed + allocationCounter * 104729);
+        consumeToReserve(resourceId, requested - allocated, markets, pool, random);
+        const additional = Math.min(requested - allocated, quantity(pool.reserve));
+        pool.reserve -= additional;
+        allocated += additional;
+      }
+
+      pool.allocated += allocated;
+      return allocated;
+    },
+    claimAllocatedToPlayer(resourceId, amount, cargoCapacityTons, originId) {
+      const pool = pools[resourceId];
+      if (!pool) return 0;
+
+      const cargoUsed = Object.values(player.cargo).reduce((sum, lot) => sum + quantity(lot.qty), 0);
+      const free = Math.max(0, quantity(cargoCapacityTons) - cargoUsed);
+      const claimed = Math.min(quantity(amount), quantity(pool.allocated), free);
+      if (claimed <= 0) return 0;
+
+      const lot = player.cargo[resourceId];
+      pool.allocated -= claimed;
+      player.cargo[resourceId] = {
+        qty: (lot?.qty ?? 0) + claimed,
+        totalCost: lot?.totalCost ?? 0,
+        lastOriginId: originId,
+      };
+      return claimed;
+    },
+    releaseAllocatedResource(resourceId, amount) {
+      const pool = pools[resourceId];
+      if (!pool) return 0;
+      const released = Math.min(quantity(amount), quantity(pool.allocated));
+      pool.allocated -= released;
+      pool.reserve += released;
+      return released;
     },
     advanceDay,
     advanceNextDay() {
