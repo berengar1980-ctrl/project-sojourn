@@ -1,7 +1,7 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
-import { economyResources } from '../data/economy/economy-resources';
+import { economyResourceById, economyResources } from '../data/economy/economy-resources';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
@@ -11,6 +11,10 @@ import {
   createEconomyMarketService,
   type EconomyMarketService,
 } from '../systems/economy/market-service';
+import {
+  createPlayerTradeService,
+  type PlayerTradeService,
+} from '../systems/economy/player-trade-service';
 import {
   createLocalSpaceService,
   generateMiningSpace,
@@ -225,8 +229,11 @@ function createActivePortPanel(
   root: HTMLElement,
   navigation: NavigationService,
   markets: EconomyMarketService,
+  trade: PlayerTradeService,
   ship: ShipDefinition,
-  onReturnToStarMap: () => void
+  onReturnToStarMap: () => void,
+  onRefresh: () => void,
+  log: SystemLogService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = tutorialCluster.locations.find((entry) => entry.id === locationId);
@@ -236,8 +243,24 @@ function createActivePortPanel(
 
   return createPortPanel({
     root,
-    model: createPortViewModel(port, market, location, ship),
+    model: createPortViewModel(port, market, trade.player, location, ship),
     onReturnToStarMap,
+    onBuy: (resourceId) => {
+      const result = trade.buy(location.id, resourceId, 1, ship.cargoCapacityTons);
+      if (!result) return;
+      const name = economyResourceById(resourceId)?.name ?? resourceId;
+      log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);
+      onRefresh();
+    },
+    onSell: (resourceId) => {
+      const result = trade.sell(location.id, resourceId, 1);
+      if (!result) return;
+      const name = economyResourceById(resourceId)?.name ?? resourceId;
+      log.write(
+        `HANDEL > -${result.quantity} ${name.toUpperCase()} · +${result.creditsDelta} CR · P/L ${result.realizedProfit}`
+      );
+      onRefresh();
+    },
   });
 }
 
@@ -253,6 +276,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
+  const trade = createPlayerTradeService(markets);
   systemLog.write('SYSTEM ONLINE');
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
@@ -282,15 +306,22 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
     mountTestSwitcher();
   };
-  const mountPort = (): void => {
+  const mountPort = (announce = true): void => {
     const locationId = navigation.getSnapshot().currentLocationId;
     destroyScenePanels(panels);
-    panels.port = createActivePortPanel(root, navigation, markets, activeShip, () =>
-      runSceneZoomTransition(root, mountStarMap)
+    panels.port = createActivePortPanel(
+      root,
+      navigation,
+      markets,
+      trade,
+      activeShip,
+      () => runSceneZoomTransition(root, mountStarMap),
+      () => mountPort(false),
+      systemLog
     );
     if (!panels.port) return;
     mode = 'port';
-    systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
+    if (announce) systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
     mountTestSwitcher();
   };
   const localActions = createLocalPanelActions({
