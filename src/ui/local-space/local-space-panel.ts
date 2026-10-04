@@ -46,10 +46,8 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
   if (!asteroid.resourceName) return 'ANALYSE · KEINE RESSOURCE';
   return (
     asteroid.resourceName +
-    ' · ' +
-    Math.round(asteroid.resourceAmount ?? 0) +
-    ' / ' +
-    Math.round(asteroid.resourceCapacity ?? 0)
+    ' · GESCHÄTZT ~' +
+    Math.round(asteroid.estimatedResourceAmount ?? 0)
   );
 }
 
