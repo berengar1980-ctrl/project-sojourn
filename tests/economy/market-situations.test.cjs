@@ -51,17 +51,6 @@ function port(locationId) {
 
 {
   const situations = situationModule.createMarketSituationService([], resources, 7);
-  situations.add({
-    id: 'local-medical',
-    name: 'Medicae-Notstand',
-    description: 'Test',
-    scope: 'local',
-    locationId: 'destination',
-    resourceModifiers: { medical: 0.5 },
-    startDay: -1,
-    endDay: 1,
-  });
-
   const markets = marketModule.createEconomyMarketService(
     [port('source'), port('destination')],
     resources,
@@ -72,6 +61,17 @@ function port(locationId) {
 
   const sourceBefore = markets.getEntry('source', 'medical').price;
   const destinationBefore = markets.getEntry('destination', 'medical').price;
+
+  situations.add({
+    id: 'local-medical',
+    name: 'Medicae-Notstand',
+    description: 'Test',
+    scope: 'local',
+    locationId: 'destination',
+    resourceModifiers: { medical: 0.5 },
+    startDay: -1,
+    endDay: 1,
+  });
 
   markets.recalculate('source', 'medical');
   markets.recalculate('destination', 'medical');
