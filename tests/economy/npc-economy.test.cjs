@@ -32,7 +32,7 @@ function createMarkets() {
       produces: new Set(),
       needs: new Set(['steel', 'ferrite']),
       entries: {
-        steel: { resourceId: 'steel', stock: 20, demand: 0.9, production: 0, price: 100 },
+        steel: { resourceId: 'steel', stock: 20, demand: 0.9, production: 0, price: 110 },
         ferrite: { resourceId: 'ferrite', stock: 10, demand: 0.9, production: 0, price: 90 },
         obscura: { resourceId: 'obscura', stock: 1, demand: 0.9, production: 0, price: 400 },
       },
