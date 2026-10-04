@@ -5,7 +5,7 @@ import {
   createPlanetTexture,
   createRandom,
   hashSeed,
-  type AsteroidSurface
+  type AsteroidSurface,
 } from './procedural-surface-textures';
 
 export interface SpaceLight {
