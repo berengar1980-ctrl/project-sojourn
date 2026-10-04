@@ -2,10 +2,7 @@ import type { EconomyMarketState, ResourceLegality } from '../../core/economy-ty
 import type { PortDefinition, PortTab } from '../../core/port-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
-import {
-  economyResourceById,
-  resourceLegalityLabel,
-} from '../../data/economy/economy-resources';
+import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
 
 export interface PortMarketRowView {
   readonly id: string;
