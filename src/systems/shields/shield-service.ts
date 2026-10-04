@@ -43,7 +43,7 @@ export function applyShieldHit(
     id: impactId,
     source: hit.source,
     point: hit.point,
-    surfacePoint: hit.surfacePoint,
+    ...(hit.surfacePoint ? { surfacePoint: hit.surfacePoint } : {}),
     normal: hit.normal,
     damage,
     strength: visualStrength,
