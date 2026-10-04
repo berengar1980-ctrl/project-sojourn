@@ -13,6 +13,7 @@ interface SystemLogPanelOptions {
 }
 
 const VISIBLE_LOG_LINES = 8;
+const ACTIVITY_PULSE_MS = 170;
 
 function formatTimestamp(date: Date): string {
   return date.toLocaleTimeString('de-DE', {
@@ -22,9 +23,9 @@ function formatTimestamp(date: Date): string {
   });
 }
 
-function renderEntry(entry: SystemLogEntry): HTMLElement {
+function renderEntry(entry: SystemLogEntry, isFresh: boolean): HTMLElement {
   const row = document.createElement('div');
-  row.className = 'system-log-line';
+  row.className = 'system-log-line' + (isFresh ? ' system-log-line--fresh' : '');
   row.textContent = '[' + formatTimestamp(entry.timestamp) + '] ' + entry.message;
   return row;
 }
@@ -43,13 +44,30 @@ export function createSystemLogPanel(options: SystemLogPanelOptions): SystemLogP
   if (!lines) throw new Error('System log panel is incomplete.');
 
   let lastRenderedId = -1;
+  let activityTimer: number | null = null;
+
+  const pulseActivity = (): void => {
+    panel.classList.remove('system-log--activity');
+    void panel.offsetWidth;
+    panel.classList.add('system-log--activity');
+    if (activityTimer !== null) window.clearTimeout(activityTimer);
+    activityTimer = window.setTimeout(() => {
+      panel.classList.remove('system-log--activity');
+      activityTimer = null;
+    }, ACTIVITY_PULSE_MS);
+  };
 
   const update = (): void => {
     const entries = options.log.entries().slice(-VISIBLE_LOG_LINES);
     const newestId = entries.at(-1)?.id ?? -1;
     if (newestId === lastRenderedId) return;
-    lines.replaceChildren(...entries.map(renderEntry));
+
+    const hadRenderedEntry = lastRenderedId >= 0;
+    lines.replaceChildren(
+      ...entries.map((entry) => renderEntry(entry, hadRenderedEntry && entry.id === newestId))
+    );
     lastRenderedId = newestId;
+    if (hadRenderedEntry) pulseActivity();
   };
 
   update();
@@ -57,6 +75,7 @@ export function createSystemLogPanel(options: SystemLogPanelOptions): SystemLogP
   return {
     update,
     destroy(): void {
+      if (activityTimer !== null) window.clearTimeout(activityTimer);
       panel.remove();
     },
   };
