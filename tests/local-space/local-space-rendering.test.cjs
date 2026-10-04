@@ -86,6 +86,10 @@ assert(
   'local renderer must expose hardpoint debug toggling'
 );
 assert(input.includes("event.key.toLowerCase() === 'h'"), 'H must toggle hardpoint calibration');
+assert(input.includes('renderer.worldPointAt'), 'empty-space clicks must convert to world navigation targets');
+assert(input.includes('if (asteroidId)'), 'asteroid clicks must remain selection instead of navigation');
+assert(panel.includes('onNavigate'), 'local-space panel must forward click-navigation requests');
+assert(renderer.includes('drawNavigationRoute'), 'local-space renderer must show the active click route');
 assert(hardpointDebug.includes("label: 'PIVOT'"), 'debug overlay must mark the ship pivot');
 assert(hardpointDebug.includes('source.miningLasers'), 'debug overlay must mark mining lasers');
 assert(hardpointDebug.includes('source.engines'), 'debug overlay must mark main engines');
