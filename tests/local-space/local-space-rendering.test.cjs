@@ -195,7 +195,11 @@ assert(
   renderer.includes('ShieldImpactRenderer'),
   'local space must render localized shield impacts'
 );
-assert(shieldImpact.includes('projectToEllipse'), 'shield impact must start on the shield surface');
+assert(shieldImpact.includes('projectToEllipse'), 'shield impact must keep a world-point fallback');
+assert(
+  shieldImpact.includes('impact.surfacePoint.x * shield.radiusX'),
+  'moving ships must render impacts from ship-local shield coordinates'
+);
 assert(
   shieldImpact.includes('context.arc(point.x, point.y, radius, 0, Math.PI * 2)'),
   'shield ripple must expand radially across the visible shield surface'
@@ -207,6 +211,10 @@ assert(
 assert(
   shieldImpact.includes('0.28 + impact.strength * 0.38'),
   'shield lightning must use thin lines'
+);
+assert(
+  shieldImpact.includes('1.02 + impact.strength * 0.62'),
+  'shield ripple must be able to spread across a large part of the shield'
 );
 assert(
   shieldImpact.includes('drawLightning'),
