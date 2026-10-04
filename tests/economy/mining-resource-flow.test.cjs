@@ -141,7 +141,7 @@ const controllerSource = require('fs').readFileSync(
 );
 assert(
   controllerSource.includes(
-    "mining.collect(resourceId, amount, activeShip.cargoCapacityTons, 'greyrock-belt')"
+    "mining.collect(resourceId, amount, ship.cargoCapacityTons, 'greyrock-belt')"
   ),
   'local-space collection must route through the shared mining economy bridge'
 );
