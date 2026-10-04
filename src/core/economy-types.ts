@@ -2,12 +2,7 @@ export type EconomyResourceId = string;
 export type EconomyLocationId = string;
 export type ResourceLegality = 'legal' | 'restricted' | 'illegal';
 export type ResourceCategoryId =
-  | 'raw'
-  | 'industry'
-  | 'energy-chemistry'
-  | 'supplies'
-  | 'military-luxury'
-  | 'contraband';
+  'raw' | 'industry' | 'energy-chemistry' | 'supplies' | 'military-luxury' | 'contraband';
 
 export interface EconomyResourceDefinition {
   readonly id: EconomyResourceId;
