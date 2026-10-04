@@ -5,10 +5,7 @@ import type {
   NpcEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
-import {
-  findNpcResourceSideTrade,
-  type EconomyPoint,
-} from './npc-resource-side-trade';
+import { findNpcResourceSideTrade, type EconomyPoint } from './npc-resource-side-trade';
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
