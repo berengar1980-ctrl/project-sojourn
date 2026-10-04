@@ -83,6 +83,7 @@ const resources = [
   const illegalBefore = economy.getResourceTotal('obscura');
 
   economy.advanceDay(30);
+  economy.advanceNextDay();
 
   assert.equal(
     economy.getResourceTotal('steel'),
@@ -164,5 +165,14 @@ const resources = [
     'black-market replacement must respect the 110 percent ceiling'
   );
 }
+
+const controllerSource = require('fs').readFileSync(
+  path.join(root, 'src/app/game-controller.ts'),
+  'utf8'
+);
+assert(
+  controllerSource.includes('simulation.advanceNextDay()'),
+  'completed inter-location travel must advance the demo economy by one day'
+);
 
 console.log('PASS deterministic daily economy and 1000-day stability');
