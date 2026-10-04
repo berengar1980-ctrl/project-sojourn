@@ -2,7 +2,6 @@ import type {
   LocalAsteroid,
   LocalSpaceInstance,
   LocalSpaceSnapshot,
-  MiningChunk,
   MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
