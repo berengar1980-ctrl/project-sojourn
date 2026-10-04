@@ -75,6 +75,12 @@ export interface GameController {
   tick(deltaSeconds: number): void;
 }
 
+function createControllerLog(): SystemLogService {
+  const log = createSystemLogService();
+  log.write('SYSTEM ONLINE');
+  return log;
+}
+
 function createControllerShipSwitcher(
   root: HTMLElement,
   activeShip: ShipDefinition,
@@ -271,12 +277,12 @@ export function createGameController(options: GameControllerOptions): GameContro
   const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
-  let localSpaceSeed = 0, visitCounter = 0;
+  let localSpaceSeed = 0;
+  let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
-  const systemLog = createSystemLogService();
+  const systemLog = createControllerLog();
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
   const trade = createPlayerTradeService(markets);
-  systemLog.write('SYSTEM ONLINE');
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
