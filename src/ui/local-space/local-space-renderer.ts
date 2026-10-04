@@ -137,7 +137,7 @@ export class LocalSpaceRenderer {
     const hitAreas: AsteroidHitArea[] = [];
     for (const asteroid of this.model.asteroids) {
       const hitArea = this.drawAsteroid(asteroid, width, height);
-      if (asteroid.kind === 'resource') hitAreas.push(hitArea);
+      if (hitArea && asteroid.kind === 'resource') hitAreas.push(hitArea);
     }
     this.hitAreas = hitAreas;
 
@@ -153,10 +153,19 @@ export class LocalSpaceRenderer {
     asteroid: LocalAsteroidView,
     width: number,
     height: number
-  ): AsteroidHitArea {
+  ): AsteroidHitArea | null {
     const point = this.camera.worldToScreen(asteroid.position, width, height);
     const minimumRadius = asteroid.kind === 'debris' ? 2 : 10;
     const radius = Math.max(minimumRadius, this.camera.scale(asteroid.radius));
+    const cullPadding = radius + 20;
+    if (
+      point.x < -cullPadding ||
+      point.y < -cullPadding ||
+      point.x > width + cullPadding ||
+      point.y > height + cullPadding
+    ) {
+      return null;
+    }
 
     this.spaceBodies.drawAsteroid({
       id: asteroid.id,
@@ -274,6 +283,7 @@ export class LocalSpaceRenderer {
   private drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {
       const point = this.camera.worldToScreen(chunk.position, width, height);
+      if (point.x < -8 || point.y < -8 || point.x > width + 8 || point.y > height + 8) continue;
       const variation = (hashId(chunk.id) % 100) / 100;
       const radius = 1.5 + variation * 2.2;
       this.context.fillStyle = '#a88f73';
