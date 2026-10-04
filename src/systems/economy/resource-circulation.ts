@@ -24,7 +24,8 @@ export function resourceTotal(
   state: ResourceCirculationState,
   resourceId: EconomyResourceId
 ): number {
-  let total = finiteQuantity(state.pools[resourceId]?.reserve ?? 0);
+  const pool = state.pools[resourceId];
+  let total = finiteQuantity(pool?.reserve ?? 0) + finiteQuantity(pool?.allocated ?? 0);
   for (const market of state.markets) total += marketQuantity(market, resourceId);
   total += cargoQuantity(state.player.cargo, resourceId);
   for (const npc of state.npcs) total += cargoQuantity(npc.cargo, resourceId);
@@ -45,6 +46,7 @@ export function initializeResourcePools(
     pools[resourceId] = {
       target,
       reserve: 0,
+      allocated: 0,
       externalImports: 0,
       recordedLosses: 0,
     };
@@ -132,11 +134,38 @@ export function allocatePhysicalResource(
   if (requested === 0) return 0;
 
   let allocated = drawResourceReserve(state, resourceId, requested);
-  if (allocated >= requested) return allocated;
+  if (allocated < requested) {
+    consumeResourceToReserve(state, resourceId, requested - allocated, random);
+    allocated += drawResourceReserve(state, resourceId, requested - allocated);
+  }
 
-  consumeResourceToReserve(state, resourceId, requested - allocated, random);
-  allocated += drawResourceReserve(state, resourceId, requested - allocated);
+  state.pools[resourceId]!.allocated += allocated;
   return allocated;
+}
+
+export function claimAllocatedResource(
+  state: ResourceCirculationState,
+  resourceId: EconomyResourceId,
+  amount: number
+): number {
+  const pool = state.pools[resourceId];
+  if (!pool) return 0;
+  const claimed = Math.min(finiteQuantity(amount), finiteQuantity(pool.allocated));
+  pool.allocated -= claimed;
+  return claimed;
+}
+
+export function releaseAllocatedResource(
+  state: ResourceCirculationState,
+  resourceId: EconomyResourceId,
+  amount: number
+): number {
+  const pool = state.pools[resourceId];
+  if (!pool) return 0;
+  const released = Math.min(finiteQuantity(amount), finiteQuantity(pool.allocated));
+  pool.allocated -= released;
+  pool.reserve += released;
+  return released;
 }
 
 export function recordResourceLoss(
