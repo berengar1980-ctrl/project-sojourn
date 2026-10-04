@@ -97,7 +97,10 @@ function crewPane(model: PortViewModel): string {
         <div class="port-panel-heading"><span>SCHIFFSSTATIONEN</span><small>CREW ZUWEISEN</small></div>
         <div class="port-station-grid">
           ${['Brücke', 'Sensorik', 'Maschinenraum', 'Waffen', 'Medizin', 'Fracht']
-            .map((station, index) => `<button type="button"><span>${station}</span><strong>0 / ${index === 2 || index === 3 ? 2 : 1}</strong><i>＋</i></button>`)
+            .map(
+              (station, index) =>
+                `<button type="button"><span>${station}</span><strong>0 / ${index === 2 || index === 3 ? 2 : 1}</strong><i>＋</i></button>`
+            )
             .join('')}
         </div>
         <div class="port-info-box">Crew-Skills wirken später direkt auf Sensorik, Navigation, Reaktor, Waffen und Boarding. Kampfwerte und Ausrüstung bleiben Teil derselben Figur.</div>
@@ -120,7 +123,10 @@ function equipmentPane(): string {
             ['Werkzeugsatz', 'Technik', '520 CR'],
             ['Scanner', 'Sensorik', '860 CR'],
           ]
-            .map(([name, type, price]) => `<article><div class="port-equipment-icon">▣</div><span>${type}</span><strong>${name}</strong><b>${price}</b><button type="button">KAUFEN</button></article>`)
+            .map(
+              ([name, type, price]) =>
+                `<article><div class="port-equipment-icon">▣</div><span>${type}</span><strong>${name}</strong><b>${price}</b><button type="button">KAUFEN</button></article>`
+            )
             .join('')}
         </div>
       </div>
@@ -150,7 +156,10 @@ function shipyardPane(model: PortViewModel): string {
             ['Schildgenerator', 'T2', '78%'],
             ['Waffenhalterung', 'T1', '64%'],
           ]
-            .map(([name, tier, condition]) => `<button type="button"><span>${name}</span><strong>${tier}</strong><i>${condition}</i><b>UPGRADE ›</b></button>`)
+            .map(
+              ([name, tier, condition]) =>
+                `<button type="button"><span>${name}</span><strong>${tier}</strong><i>${condition}</i><b>UPGRADE ›</b></button>`
+            )
             .join('')}
         </div>
       </div>
