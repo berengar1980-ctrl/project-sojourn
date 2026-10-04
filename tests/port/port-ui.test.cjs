@@ -35,10 +35,10 @@ assert(
   'market prices must reflect stock, demand and production'
 );
 assert(
-  portPanel.includes("data-port-tab="trade"") &&
-    portPanel.includes("data-port-tab="crew"") &&
-    portPanel.includes("data-port-tab="equipment"") &&
-    portPanel.includes("data-port-tab="shipyard""),
+  portPanel.includes('data-port-tab="trade"') &&
+    portPanel.includes('data-port-tab="crew"') &&
+    portPanel.includes('data-port-tab="equipment"') &&
+    portPanel.includes('data-port-tab="shipyard"'),
   'port UI must expose trade, crew, equipment and shipyard navigation'
 );
 assert(
