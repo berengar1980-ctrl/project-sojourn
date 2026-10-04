@@ -2,6 +2,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
 import { economyResourceById, economyResources } from '../data/economy/economy-resources';
+import { createTutorialNpcEconomyStates } from '../data/economy/tutorial-npc-economy';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
