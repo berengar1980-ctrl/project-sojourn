@@ -3,6 +3,8 @@ import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { calculateMiningImpact } from './mining-impact';
 
+export type MiningChunkCollector = (resourceId: string, amount: number) => number;
+
 function heading(from: WorldPoint, to: WorldPoint): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
 }
@@ -69,4 +71,17 @@ export function advanceMiningChunk(
     x: chunk.position.x + chunk.velocity.x * deltaSeconds,
     y: chunk.position.y + chunk.velocity.y * deltaSeconds,
   };
+}
+
+
+export function collectMiningChunk(
+  chunk: MiningChunk,
+  collector?: MiningChunkCollector
+): number {
+  const accepted = Math.max(
+    0,
+    Math.min(chunk.amount, Math.floor(collector?.(chunk.resourceId, chunk.amount) ?? chunk.amount))
+  );
+  chunk.amount -= accepted;
+  return accepted;
 }
