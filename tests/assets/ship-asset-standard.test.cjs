@@ -16,6 +16,15 @@ const MARGIN_TOLERANCE_PX = 2;
 const LENGTH_TOLERANCE_PX = 2;
 const ALPHA_THRESHOLD = 8;
 
+const STANDARD_LENGTH_METERS = {
+  patrol: 60,
+  miner: 80,
+  salvage: 100,
+  freighter: 120,
+};
+
+const LARGE_MK4_LENGTH_METERS = 160;
+
 const ROLE_BY_FOLDER = {
   mining: 'miner',
   freight: 'freighter',
@@ -177,10 +186,14 @@ function inferSpec(file) {
           ? 'salvage'
           : null;
 
+  const type = filenameRole || folderRole || null;
+  const isMk4 = /(?:^|-)mk4(?:-|$)/i.test(base);
+
   return {
     relative,
     base,
-    type: filenameRole || folderRole || null,
+    type,
+    isMk4,
     lengthMeters: lengthMatch ? Number(lengthMatch[1]) : null,
   };
 }
@@ -298,6 +311,16 @@ for (const file of assets) {
       `${spec.relative}: physical ship length is missing from filename; expected e.g. miner-80m-standard.png`
     );
     continue;
+  }
+
+  const expectedClassLength = spec.isMk4
+    ? LARGE_MK4_LENGTH_METERS
+    : STANDARD_LENGTH_METERS[spec.type];
+
+  if (spec.lengthMeters !== expectedClassLength) {
+    failures.push(
+      `${spec.relative}: ${spec.type} length is ${spec.lengthMeters}m; Project Sojourn standard requires ${expectedClassLength}m${spec.isMk4 ? ' for Mk IV' : ''}`
+    );
   }
 
   let metrics;
