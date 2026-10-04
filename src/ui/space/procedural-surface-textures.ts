@@ -96,12 +96,8 @@ function paintPixel(
   alpha = 255
 ): void {
   data[index] = clampByte(mixChannel(first[0] ?? 0, second[0] ?? 0, mix) * brightness);
-  data[index + 1] = clampByte(
-    mixChannel(first[1] ?? 0, second[1] ?? 0, mix) * brightness
-  );
-  data[index + 2] = clampByte(
-    mixChannel(first[2] ?? 0, second[2] ?? 0, mix) * brightness
-  );
+  data[index + 1] = clampByte(mixChannel(first[1] ?? 0, second[1] ?? 0, mix) * brightness);
+  data[index + 2] = clampByte(mixChannel(first[2] ?? 0, second[2] ?? 0, mix) * brightness);
   data[index + 3] = alpha;
 }
 
