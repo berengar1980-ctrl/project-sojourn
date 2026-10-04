@@ -215,10 +215,7 @@ assert(
   renderer.includes('startX + 10') && renderer.includes('startY - 10'),
   'scan callout leader must use a short diagonal offset'
 );
-assert(
-  renderer.includes('setScanLabelsVisible'),
-  'scan callouts must support visibility toggling'
-);
+assert(renderer.includes('setScanLabelsVisible'), 'scan callouts must support visibility toggling');
 assert(
   renderer.includes('asteroid.estimatedResourceAmount'),
   'analyzed scan callouts must show the current estimated resource quantity'
