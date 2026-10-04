@@ -20,6 +20,10 @@ import {
   type MiningEconomyService,
 } from '../systems/economy/mining-economy-service';
 import {
+  createNpcEconomyService,
+  type NpcEconomyService,
+} from '../systems/economy/npc-economy-service';
+import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
@@ -75,17 +79,26 @@ interface ControllerEconomy {
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
+  readonly npcs: NpcEconomyService;
 }
 
 function createControllerEconomy(): ControllerEconomy {
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
   const trade = createPlayerTradeService(markets);
-  const simulation = createEconomySimulationService(markets, trade.player, economyResources, 41);
+  const npcStates = createTutorialNpcEconomyStates();
+  const simulation = createEconomySimulationService(
+    markets,
+    trade.player,
+    economyResources,
+    41,
+    npcStates
+  );
   return {
     markets,
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
+    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates),
   };
 }
 
@@ -314,7 +327,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const { markets, trade, simulation, mining } = createControllerEconomy();
+  const { markets, trade, simulation, mining, npcs } = createControllerEconomy();
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -392,7 +405,10 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
-      if (previousLocationId === null && currentLocationId !== null) simulation.advanceNextDay();
+      if (previousLocationId === null && currentLocationId !== null) {
+        simulation.advanceNextDay();
+        npcs.advanceNextDay();
+      }
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
       if (mode === 'star-map') panels.star?.update(starModel());
