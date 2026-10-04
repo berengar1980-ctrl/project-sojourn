@@ -74,6 +74,8 @@ function marketRows(market: EconomyMarketState): readonly PortMarketRowView[] {
       const resource = economyResourceById(entry.resourceId);
       if (!resource) throw new Error(`Unknown market resource: ${entry.resourceId}`);
       const referenceDelta = (entry.price - resource.basePrice) / resource.basePrice;
+      const trend: PortMarketRowView['trend'] =
+        referenceDelta > 0.06 ? 'up' : referenceDelta < -0.06 ? 'down' : 'flat';
 
       return {
         id: resource.id,
@@ -86,7 +88,7 @@ function marketRows(market: EconomyMarketState): readonly PortMarketRowView[] {
         stock: Math.round(entry.stock),
         demandLabel: demandLabel(entry.demand),
         productionLabel: productionLabel(entry.production),
-        trend: referenceDelta > 0.06 ? 'up' : referenceDelta < -0.06 ? 'down' : 'flat',
+        trend,
         pressurePercent: Math.round(referenceDelta * 100),
       };
     })
