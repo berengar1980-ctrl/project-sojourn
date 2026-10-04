@@ -199,7 +199,11 @@ export function createGameController(options: GameControllerOptions): GameContro
       log: systemLog,
       onSelectLocation: (id) => {
         const snapshot = navigation.getSnapshot();
-        if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
+        if (
+          id === 'greyrock-belt' &&
+          snapshot.currentLocationId === id &&
+          !snapshot.isTravelling
+        ) {
           runSceneZoomTransition(root, mountLocalSpace);
           return;
         }
