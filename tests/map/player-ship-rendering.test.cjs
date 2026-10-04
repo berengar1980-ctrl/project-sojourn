@@ -15,6 +15,8 @@ const shipLighting = fs.readFileSync(
 );
 
 assert(shipRenderer.includes('ShipEngineEffectsRenderer'), 'star map must share engine VFX');
+assert(shipRenderer.includes('engineEffects.drawExhaust'), 'star-map exhaust must render behind the sprite');
+assert(shipRenderer.includes('engineEffects.drawGlow'), 'star-map nozzle glow must render above the sprite');
 assert(
   shipRenderer.includes('ShipManeuverEffectsRenderer'),
   'star map must share maneuver-thruster VFX'
