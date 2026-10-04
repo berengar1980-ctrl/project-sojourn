@@ -5,10 +5,7 @@ const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const economy = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/economy/resource-circulation.ts'
-);
+const economy = loadStandaloneTypeScriptModule(root, 'src/systems/economy/resource-circulation.ts');
 
 function market(locationId, stock, { produces = [], needs = [] } = {}) {
   return {
