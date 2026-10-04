@@ -99,7 +99,11 @@ function createControllerEconomy(): ControllerEconomy {
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
-    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates),
+    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
+      positions: Object.fromEntries(
+        tutorialCluster.locations.map((location) => [location.id, location.position])
+      ),
+    }),
   };
 }
 
