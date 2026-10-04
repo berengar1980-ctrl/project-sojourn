@@ -238,7 +238,8 @@ function initializeSystemLog(
 }
 
 function observeCanvas(canvas: HTMLCanvasElement, renderer: LocalSpaceRenderer): ResizeObserver {
-  const observer = observeCanvas(canvas, renderer);
+  const observer = new ResizeObserver(() => renderer.resize());
+  observer.observe(canvas);
   return observer;
 }
 
@@ -332,8 +333,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
-  const observer = new ResizeObserver(() => renderer.resize());
-  observer.observe(canvas);
+  const observer = observeCanvas(canvas, renderer);
   const unbindInput = bindNavigationInput(canvas, renderer, options, systemLog, updateOverlay);
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
