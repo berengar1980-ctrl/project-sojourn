@@ -27,7 +27,7 @@ assert(shared.includes('drawSphereLight'), 'world-fixed volume lighting pass mus
 assert(textures.includes('function fbm('), 'surface generation must use layered coherent noise');
 assert(textures.includes('createPlanetTexture'), 'planets must use generated terrain textures');
 assert(
-  shared.includes('Math.pow(1 - progress, 1.25)'),
+  shared.includes('Math.pow(1 - progress, 1.35)'),
   'fractures must taper instead of ending hard'
 );
 assert(shared.includes('traceCraterShape'), 'craters must use irregular relief outlines');
