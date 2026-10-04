@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build",
+    "test:ships": "node tests/assets/ship-asset-standard.test.cjs"
   },
   "engines": {
     "node": ">=20"
