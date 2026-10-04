@@ -44,7 +44,9 @@ function createMarkets() {
       return markets;
     },
     getEntry(locationId, resourceId) {
-      return markets.find((market) => market.locationId === locationId)?.entries[resourceId] ?? null;
+      return (
+        markets.find((market) => market.locationId === locationId)?.entries[resourceId] ?? null
+      );
     },
     recalculate(locationId, resourceId) {
       return this.getEntry(locationId, resourceId)?.price ?? null;
@@ -79,7 +81,11 @@ const resources = [
 
   assert.equal(received, 6);
   assert.equal(trade.player.cargo.ferrite.qty, 6);
-  assert.equal(trade.player.cargo.ferrite.totalCost, 0, 'mined cargo must enter at zero purchase cost');
+  assert.equal(
+    trade.player.cargo.ferrite.totalCost,
+    0,
+    'mined cargo must enter at zero purchase cost'
+  );
   assert.equal(trade.player.cargo.ferrite.lastOriginId, 'greyrock-belt');
   assert.equal(
     simulation.getResourceTotal('ferrite'),
