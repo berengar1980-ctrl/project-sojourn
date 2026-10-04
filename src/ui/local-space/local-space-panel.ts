@@ -206,6 +206,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
+  let longScanWasActive = model.longRangeScanProgress != null;
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -220,6 +221,11 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
     const longScanActive = model.longRangeScanProgress != null;
+    if (longScanWasActive && !longScanActive) {
+      options.log.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
+      systemLog.update();
+    }
+    longScanWasActive = longScanActive;
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     oreCounter.textContent = Math.round(model.collectedOre).toString();
