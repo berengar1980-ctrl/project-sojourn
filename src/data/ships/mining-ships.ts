@@ -19,6 +19,7 @@ export const miner80mStandard: ShipDefinition = {
   name: '80 m Standard Miner',
   role: 'mining',
   nominalLengthMeters: 80,
+  cargoCapacityTons: 280,
   sprite: {
     assetUrl: miner80mStandardSpriteUrl,
     widthPx: 346,
@@ -36,6 +37,7 @@ export const miner80mIndustrialHeavy: ShipDefinition = {
   name: '80 m Industrial Heavy Miner',
   role: 'mining',
   nominalLengthMeters: 80,
+  cargoCapacityTons: 360,
   sprite: {
     assetUrl: miner80mIndustrialHeavySpriteUrl,
     widthPx: 346,
