@@ -2,7 +2,9 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
+import { tutorialPortByLocationId } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
+import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import {
   createLocalSpaceService,
@@ -17,9 +19,10 @@ import { createSystemLogService } from '../systems/system-log/system-log-service
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
+import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
-type SceneMode = 'star-map' | 'local-space';
+type SceneMode = 'star-map' | 'local-space' | 'port';
 
 interface GameControllerOptions {
   readonly root: HTMLElement;
@@ -172,6 +175,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let mode: SceneMode = 'star-map';
   let starPanel: StarMapPanel | null = null;
   let localPanel: LocalSpacePanel | null = null;
+  let portPanel: PortPanel | null = null;
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
   let localSpaceSeed = 0;
@@ -191,6 +195,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       activeShip = nextShip;
       systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (mode === 'local-space') mountLocalSpace(true);
+      else if (mode === 'port') mountPort();
       else mountStarMap();
     });
   };
@@ -198,6 +203,8 @@ export function createGameController(options: GameControllerOptions): GameContro
   const mountStarMap = (): void => {
     localPanel?.destroy();
     localPanel = null;
+    portPanel?.destroy();
+    portPanel = null;
     localSpace = null;
     mode = 'star-map';
     starPanel = createStarMapPanel({
@@ -218,6 +225,30 @@ export function createGameController(options: GameControllerOptions): GameContro
         systemLog.write('NAV > FLUG GESTARTET');
         starPanel?.update(starModel());
       },
+      onDock: () => runSceneZoomTransition(root, mountPort),
+    });
+    mountTestSwitcher();
+  };
+
+  const mountPort = (): void => {
+    const locationId = navigation.getSnapshot().currentLocationId;
+    const location = tutorialCluster.locations.find((entry) => entry.id === locationId);
+    const port = locationId ? tutorialPortByLocationId(locationId) : null;
+    if (!location || !port) return;
+
+    starPanel?.destroy();
+    starPanel = null;
+    portPanel?.destroy();
+    portPanel = null;
+    localPanel?.destroy();
+    localPanel = null;
+    portPanel?.destroy();
+    mode = 'port';
+    systemLog.write('DOCK > ' + location.name.toUpperCase());
+    portPanel = createPortPanel({
+      root,
+      model: createPortViewModel(port, location, activeShip),
+      onReturnToStarMap: () => runSceneZoomTransition(root, mountStarMap),
     });
     mountTestSwitcher();
   };
@@ -269,7 +300,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
 
       if (mode === 'star-map') starPanel?.update(starModel());
-      else if (localSpace) {
+      else if (mode === 'local-space' && localSpace) {
         localSpace.tick(deltaSeconds);
         localPanel?.update(localModel());
       }
