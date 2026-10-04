@@ -143,6 +143,42 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
   };
 }
 
+function bindNavigationInput(
+  canvas: HTMLCanvasElement,
+  renderer: LocalSpaceRenderer,
+  options: LocalSpacePanelOptions,
+  systemLog: SystemLogPanel,
+  updateOverlay: () => void
+): () => void {
+  let navigationRequest = 0;
+
+  return bindLocalSpaceInput({
+    canvas,
+    renderer,
+    onSelectAsteroid: options.onSelectAsteroid,
+    onNavigate: (x, y) => {
+      navigationRequest += 1;
+      const request = navigationRequest;
+      options.log.write('NAV > PUNKTROUTE WIRD BERECHNET...');
+      systemLog.update();
+
+      void options
+        .onNavigate({ x, y })
+        .then((started) => {
+          if (request !== navigationRequest) return;
+          options.log.write(started ? 'NAV > ZIELROUTE BEREIT' : 'NAV > ZIEL NICHT ERREICHBAR');
+          systemLog.update();
+          updateOverlay();
+        })
+        .catch(() => {
+          if (request !== navigationRequest) return;
+          options.log.write('NAV > ROUTENBERECHNUNG FEHLER');
+          systemLog.update();
+        });
+    },
+  });
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const controls = localSpaceControls(shell);
@@ -206,33 +242,9 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
-  let navigationRequest = 0;
   const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
-  const unbindInput = bindLocalSpaceInput({
-    canvas,
-    renderer,
-    onSelectAsteroid: options.onSelectAsteroid,
-    onNavigate: (x, y) => {
-      navigationRequest += 1;
-      const request = navigationRequest;
-      options.log.write('NAV > PUNKTROUTE WIRD BERECHNET...');
-      systemLog.update();
-      void options
-        .onNavigate({ x, y })
-        .then((started) => {
-          if (request !== navigationRequest) return;
-          options.log.write(started ? 'NAV > ZIELROUTE BEREIT' : 'NAV > ZIEL NICHT ERREICHBAR');
-          systemLog.update();
-          updateOverlay();
-        })
-        .catch(() => {
-          if (request !== navigationRequest) return;
-          options.log.write('NAV > ROUTENBERECHNUNG FEHLER');
-          systemLog.update();
-        });
-    },
-  });
+  const unbindInput = bindNavigationInput(canvas, renderer, options, systemLog, updateOverlay);
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
   bindRoutePlanning(
