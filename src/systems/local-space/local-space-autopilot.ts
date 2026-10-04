@@ -22,7 +22,8 @@ export function advanceAutopilotRoute(
   index: number,
   cruiseSpeed: number,
   deltaSeconds: number,
-  brakeAtFinalWaypoint: boolean
+  brakeAtFinalWaypoint: boolean,
+  allowShortReverse = false
 ): RouteAdvanceResult {
   if (index >= route.length) return { nextIndex: index, completed: true };
 
@@ -42,9 +43,32 @@ export function advanceAutopilotRoute(
   ship.lateralThrust = 0;
 
   const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
-  const alignment = Math.max(brakeAtFinalWaypoint ? 0.16 : 0.18, 1 - remainingTurn / (Math.PI / 2));
   const remainingDistance = distance(ship.position, waypoint);
   const finalWaypoint = index === route.length - 1;
+  const reverseCorrection =
+    allowShortReverse &&
+    finalWaypoint &&
+    remainingDistance <= 190 &&
+    remainingTurn >= Math.PI * 0.72;
+
+  if (reverseCorrection) {
+    const reverseSpeed = Math.min(26, Math.max(6, remainingDistance * 0.38));
+    ship.turnRateRadiansPerSecond = 0;
+    ship.angularThrust = 0;
+    ship.lateralThrust = 0;
+    ship.position = moveToward(ship.position, waypoint, reverseSpeed * deltaSeconds);
+    ship.speed = -reverseSpeed;
+
+    if (distance(ship.position, waypoint) > 1) {
+      return { nextIndex: index, completed: false };
+    }
+
+    ship.position = { ...waypoint };
+    const nextIndex = index + 1;
+    return { nextIndex, completed: nextIndex >= route.length };
+  }
+
+  const alignment = Math.max(brakeAtFinalWaypoint ? 0.16 : 0.18, 1 - remainingTurn / (Math.PI / 2));
   const desiredSpeed =
     brakeAtFinalWaypoint && finalWaypoint
       ? Math.min(cruiseSpeed, Math.max(12, remainingDistance * 0.72))
