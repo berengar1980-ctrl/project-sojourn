@@ -64,9 +64,15 @@ assert(
 );
 assert(renderer.includes('ShipEngineEffectsRenderer'), 'engine VFX must use shared renderer');
 assert(renderer.includes('ShipManeuverEffectsRenderer'), 'local space must render RCS effects');
-assert(renderer.includes('ShipLightingRenderer'), 'local-space ship must use shared world lighting');
-assert(renderer.includes("light: { x: -0.72, y: -0.56 }"), 'ship and asteroids must share the same local light vector');
-assert(shipLighting.includes("rgba(0,0,0,.32)"), 'ship shadow pass must remain subtle');
+assert(
+  renderer.includes('ShipLightingRenderer'),
+  'local-space ship must use shared world lighting'
+);
+assert(
+  renderer.includes('light: { x: -0.72, y: -0.56 }'),
+  'ship and asteroids must share the same local light vector'
+);
+assert(shipLighting.includes('rgba(0,0,0,.32)'), 'ship shadow pass must remain subtle');
 assert(
   renderer.includes('ShipHardpointDebugRenderer'),
   'local space must support visible hardpoint calibration'
