@@ -44,6 +44,7 @@ export function applyShieldHit(
     source: hit.source,
     point: hit.point,
     normal: hit.normal,
+    surfaceAnchor: hit.surfaceAnchor,
     damage,
     strength: visualStrength,
     lifetimeSeconds: 0.4 + visualStrength * 0.45,
