@@ -27,6 +27,9 @@ function miningStatus(model: LocalSpaceViewModel): string {
   if (model.longRangeScanProgress != null) {
     return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
   }
+  if (model.shortRangeScanProgress != null) {
+    return 'NAHBEREICHSSCAN · ' + Math.round(model.shortRangeScanProgress * 100) + ' %';
+  }
   if (model.navigationTarget) return 'NAVIGATION ZUM ZIELPUNKT';
   if (model.scanTarget && model.miningPhase === 'approaching') {
     return 'ANFLUG FÜR NAHBEREICHSSCAN';
@@ -282,6 +285,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
   let longScanWasActive = model.longRangeScanProgress != null;
+  let shortScanWasActive = model.shortRangeScanProgress != null;
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -300,6 +304,12 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       systemLog.update();
     }
     longScanWasActive = longScanActive;
+    const shortScanActive = model.shortRangeScanProgress != null;
+    if (shortScanWasActive && !shortScanActive) {
+      options.log.write('SCAN > NAHBEREICHSANALYSE ABGESCHLOSSEN');
+      systemLog.update();
+    }
+    shortScanWasActive = shortScanActive;
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     renderCargo(model, cargoTotal, cargoList);
