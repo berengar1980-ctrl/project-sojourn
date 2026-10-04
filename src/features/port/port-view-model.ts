@@ -1,10 +1,18 @@
+import type { EconomyMarketState, ResourceLegality } from '../../core/economy-types';
 import type { PortDefinition, PortTab } from '../../core/port-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
+import {
+  economyResourceById,
+  resourceLegalityLabel,
+} from '../../data/economy/economy-resources';
 
 export interface PortMarketRowView {
   readonly id: string;
   readonly name: string;
+  readonly category: string;
+  readonly legality: ResourceLegality;
+  readonly legalityLabel: string;
   readonly buyPrice: number;
   readonly sellPrice: number;
   readonly stock: number;
@@ -63,37 +71,32 @@ function productionLabel(value: number): string {
   return 'keine';
 }
 
-function marketPrice(basePrice: number, stock: number, demand: number, production: number): number {
-  const stockPressure = Math.max(-0.38, Math.min(0.45, (2600 - stock) / 8200));
-  const demandPressure = (demand - 0.5) * 0.72;
-  const productionPressure = (production - 0.5) * -0.38;
-  return Math.max(
-    1,
-    Math.round(basePrice * (1 + stockPressure + demandPressure + productionPressure))
-  );
-}
+function marketRows(market: EconomyMarketState): readonly PortMarketRowView[] {
+  return Object.values(market.entries)
+    .map((entry) => {
+      const resource = economyResourceById(entry.resourceId);
+      if (!resource) throw new Error(`Unknown market resource: ${entry.resourceId}`);
+      const referenceDelta = (entry.price - resource.basePrice) / resource.basePrice;
 
-function marketRows(port: PortDefinition): readonly PortMarketRowView[] {
-  return port.commodities.map((commodity) => {
-    const buyPrice = marketPrice(
-      commodity.basePrice,
-      commodity.stock,
-      commodity.demand,
-      commodity.production
-    );
-    const referenceDelta = (buyPrice - commodity.basePrice) / commodity.basePrice;
-    return {
-      id: commodity.id,
-      name: commodity.name,
-      buyPrice,
-      sellPrice: Math.max(1, Math.round(buyPrice * 0.94)),
-      stock: commodity.stock,
-      demandLabel: demandLabel(commodity.demand),
-      productionLabel: productionLabel(commodity.production),
-      trend: referenceDelta > 0.06 ? 'up' : referenceDelta < -0.06 ? 'down' : 'flat',
-      pressurePercent: Math.round(referenceDelta * 100),
-    };
-  });
+      return {
+        id: resource.id,
+        name: resource.name,
+        category: resource.category,
+        legality: resource.legality,
+        legalityLabel: resourceLegalityLabel(resource.id),
+        buyPrice: entry.price,
+        sellPrice: Math.max(1, Math.round(entry.price * 0.94)),
+        stock: Math.round(entry.stock),
+        demandLabel: demandLabel(entry.demand),
+        productionLabel: productionLabel(entry.production),
+        trend: referenceDelta > 0.06 ? 'up' : referenceDelta < -0.06 ? 'down' : 'flat',
+        pressurePercent: Math.round(referenceDelta * 100),
+      };
+    })
+    .sort((first, second) => {
+      const category = first.category.localeCompare(second.category);
+      return category !== 0 ? category : first.name.localeCompare(second.name);
+    });
 }
 
 function crewInitials(name: string): string {
@@ -104,14 +107,16 @@ function crewInitials(name: string): string {
     .join('');
 }
 
+function resourceName(id: string): string {
+  return economyResourceById(id)?.name ?? id;
+}
+
 export function createPortViewModel(
   port: PortDefinition,
+  market: EconomyMarketState,
   location: WorldLocation,
   ship: ShipDefinition
 ): PortViewModel {
-  const market = marketRows(port);
-  const commodityName = (id: string) => market.find((row) => row.id === id)?.name ?? id;
-
   return {
     locationId: location.id,
     locationName: location.name,
@@ -128,9 +133,9 @@ export function createPortViewModel(
       { id: 'equipment', label: 'AUSRÜSTUNG', enabled: true },
       { id: 'shipyard', label: 'WERFT', enabled: port.shipyard },
     ],
-    market,
-    producedNames: port.producedCommodityIds.map(commodityName),
-    neededNames: port.neededCommodityIds.map(commodityName),
+    market: marketRows(market),
+    producedNames: port.producedCommodityIds.map(resourceName),
+    neededNames: port.neededCommodityIds.map(resourceName),
     crew: port.crew.map((candidate) => ({
       ...candidate,
       initials: crewInitials(candidate.name),
