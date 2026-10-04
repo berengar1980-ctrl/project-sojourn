@@ -43,8 +43,7 @@ assert(
   'ports must declare stable produced and required resource ids'
 );
 assert(
-  portsSource.includes("commodity('obscura'") &&
-    portsSource.includes("commodity('xeno-artifacts'"),
+  portsSource.includes("commodity('obscura'") && portsSource.includes("commodity('xeno-artifacts'"),
   'at least some demo ports must expose contraband markets'
 );
 assert(
