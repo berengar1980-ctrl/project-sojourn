@@ -97,7 +97,9 @@ interface LocalSpaceControls {
   readonly cancelButton: HTMLButtonElement;
   readonly backButton: HTMLButtonElement;
   readonly status: HTMLElement;
-  readonly oreCounter: HTMLElement;
+  readonly scanLabelsButton: HTMLButtonElement;
+  readonly cargoTotal: HTMLElement;
+  readonly cargoList: HTMLElement;
 }
 
 function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
@@ -109,9 +111,13 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<strong>' + options.model.title + '</strong></div>',
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<button class="long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
+    '<button class="scan-label-toggle is-active" type="button">SCAN-DATEN AN</button>',
     '<div class="local-mining-status" hidden></div>',
     '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
-    '<div class="local-ore-counter">ERZ · <strong>0</strong></div>',
+    '<div class="local-cargo-panel">',
+    '<div class="local-cargo-title">FRACHT // CONTAINER</div>',
+    '<div class="local-cargo-total">GESAMT · <strong>0</strong></div>',
+    '<div class="local-cargo-list"></div></div>',
     '<div class="local-selection-card" hidden>',
     '<div class="local-selection-kind">ASTEROID</div>',
     '<div class="local-selection-name"></div><div class="local-selection-meta"></div>',
@@ -142,7 +148,9 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     cancelButton: query<HTMLButtonElement>('.cancel-mining-button'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
     status: query<HTMLElement>('.local-mining-status'),
-    oreCounter: query<HTMLElement>('.local-ore-counter strong'),
+    scanLabelsButton: query<HTMLButtonElement>('.scan-label-toggle'),
+    cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
+    cargoList: query<HTMLElement>('.local-cargo-list'),
   };
 }
 
@@ -186,6 +194,43 @@ function bindNavigationInput(
   });
 }
 
+function renderCargo(model: LocalSpaceViewModel, total: HTMLElement, list: HTMLElement): void {
+  total.textContent = Math.round(model.collectedOre).toString();
+  list.replaceChildren();
+
+  if (model.cargoResources.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'local-cargo-empty';
+    empty.textContent = 'LEER';
+    list.append(empty);
+    return;
+  }
+
+  for (const resource of model.cargoResources) {
+    const row = document.createElement('div');
+    row.className = 'local-cargo-row';
+    const name = document.createElement('span');
+    const amount = document.createElement('strong');
+    name.textContent = resource.name.toUpperCase();
+    amount.textContent = Math.round(resource.amount).toString();
+    row.append(name, amount);
+    list.append(row);
+  }
+}
+
+function bindScanLabelButton(
+  button: HTMLButtonElement,
+  renderer: LocalSpaceRenderer
+): void {
+  let visible = true;
+  button.addEventListener('click', () => {
+    visible = !visible;
+    renderer.setScanLabelsVisible(visible);
+    button.classList.toggle('is-active', visible);
+    button.textContent = visible ? 'SCAN-DATEN AN' : 'SCAN-DATEN AUS';
+  });
+}
+
 function bindLongScanButton(
   button: HTMLButtonElement,
   getModel: () => LocalSpaceViewModel,
@@ -217,7 +262,9 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     cancelButton,
     backButton,
     status,
-    oreCounter,
+    scanLabelsButton,
+    cargoTotal,
+    cargoList,
   } = controls;
 
   let model = options.model;
@@ -244,7 +291,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     longScanWasActive = longScanActive;
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
-    oreCounter.textContent = Math.round(model.collectedOre).toString();
+    renderCargo(model, cargoTotal, cargoList);
     longScanButton.disabled = longScanActive;
 
     const currentShieldPercent = shieldPercent(model);
@@ -289,6 +336,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     updateOverlay
   );
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
+  bindScanLabelButton(scanLabelsButton, renderer);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
