@@ -29,8 +29,14 @@ assert(textures.includes('function fbm('), 'surface generation must use layered 
 assert(textures.includes('createPlanetTexture'), 'planets must use generated terrain textures');
 assert(textures.includes('polarNoise'), 'planetary polar caps must use noise-distorted boundaries');
 assert(textures.includes('polarEdge'), 'polar cap edge must not be a straight latitude cutoff');
-assert(shared.includes('drawStaticCraterRelief'), 'crater relief must be pre-rendered into cached sprites');
-assert(shared.includes('drawStaticFractures'), 'fractures must be pre-rendered into cached sprites');
+assert(
+  shared.includes('drawStaticCraterRelief'),
+  'crater relief must be pre-rendered into cached sprites'
+);
+assert(
+  shared.includes('drawStaticFractures'),
+  'fractures must be pre-rendered into cached sprites'
+);
 assert(
   shared.includes('context.drawImage(\n      sprite'),
   'per-frame asteroid drawing must reuse cached surface sprites'
