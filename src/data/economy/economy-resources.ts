@@ -79,7 +79,14 @@ export const economyResources: readonly EconomyResourceDefinition[] = [
   resource('spices', 'Gewürze', 'military-luxury', 'Militär/Luxus', 295),
   resource('art', 'Kunstgegenstände', 'military-luxury', 'Militär/Luxus', 680),
   resource('relics', 'Sakrale Relikte', 'military-luxury', 'Militär/Luxus', 1200),
-  resource('rare-tech', 'Seltene Technologie', 'military-luxury', 'Militär/Luxus', 1800, 'restricted'),
+  resource(
+    'rare-tech',
+    'Seltene Technologie',
+    'military-luxury',
+    'Militär/Luxus',
+    1800,
+    'restricted'
+  ),
   resource('gems', 'Edelsteine', 'military-luxury', 'Militär/Luxus', 760),
 
   resource('obscura', 'Obscura', 'contraband', 'Schmuggel', 560, 'illegal'),
