@@ -237,7 +237,7 @@ assert(
   'manual navigation must decelerate near the clicked target'
 );
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
-assert(service.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
+assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');
 assert(
   service.includes('resolveAsteroidCollisions'),
