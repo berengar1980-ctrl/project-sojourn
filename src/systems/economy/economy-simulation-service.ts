@@ -149,6 +149,7 @@ function legalStabilization(
   resourceId: EconomyResourceId,
   markets: readonly EconomyMarketState[],
   player: PlayerEconomyState,
+  npcs: readonly EconomyCargoHold[],
   pool: EconomyResourcePool
 ): number {
   if (pool.target <= 0) return 0;
@@ -169,6 +170,7 @@ function illegalStabilization(
   resourceId: EconomyResourceId,
   markets: readonly EconomyMarketState[],
   player: PlayerEconomyState,
+  npcs: readonly EconomyCargoHold[],
   pool: EconomyResourcePool
 ): number {
   if (pool.target <= 0) return 0;
@@ -278,9 +280,9 @@ export function createEconomySimulationService(
         }
 
         if (resource.legality === 'illegal') {
-          illegalStabilization(resource.id, markets, player, pool);
+          illegalStabilization(resource.id, markets, player, npcs, pool);
         } else {
-          legalStabilization(resource.id, markets, player, pool);
+          legalStabilization(resource.id, markets, player, npcs, pool);
         }
       }
     }
