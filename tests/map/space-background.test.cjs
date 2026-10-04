@@ -24,7 +24,14 @@ assert(
   !background.includes('context.ellipse'),
   'space nebula renderer must not draw obvious ellipse clouds'
 );
-assert(background.includes('0.24'), 'mid-star layer must have visible parallax separation');
+assert(
+  background.includes('nearStars') && background.includes('view, 0.62'),
+  'shared background must include a strongly separated near-star parallax layer'
+);
+assert(
+  background.includes('view, 0.36') && background.includes('const parallax = 0.24'),
+  'mid stars and nebulae must move visibly during camera panning'
+);
 assert(background.includes('cameraCenter'), 'background must respond to camera position');
 assert(background.includes('timeSeconds'), 'background must support slow time-based drift');
 assert(starMap.includes('SpaceBackgroundRenderer'), 'star map must use shared space background');
