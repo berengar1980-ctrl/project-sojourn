@@ -10,7 +10,9 @@ function resolveLocalTypeScriptModule(parentFilename, request) {
 
   const base = path.resolve(path.dirname(parentFilename), request);
   const candidates = [base, base + '.ts', path.join(base, 'index.ts')];
-  return candidates.find((candidate) => candidate.endsWith('.ts') && fs.existsSync(candidate)) ?? null;
+  return (
+    candidates.find((candidate) => candidate.endsWith('.ts') && fs.existsSync(candidate)) ?? null
+  );
 }
 
 function loadTypeScriptFile(filename, cache) {
