@@ -810,7 +810,6 @@ body {
   }
 }
 
-
 .selection-actions {
   display: flex;
   gap: 8px;
@@ -1172,8 +1171,7 @@ body {
   place-items: center;
   border: 1px solid rgba(128, 219, 236, 0.36);
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 28%, #7fc2cf, #24576a 42%, #0b202a 72%);
+  background: radial-gradient(circle at 35% 28%, #7fc2cf, #24576a 42%, #0b202a 72%);
   box-shadow:
     0 0 36px rgba(78, 184, 207, 0.16),
     inset -16px -12px 24px rgba(0, 0, 0, 0.45);
@@ -1273,7 +1271,10 @@ body {
 
 .port-crew-row {
   display: grid;
-  grid-template-columns: 48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(130px, 1fr) 100px 96px;
+  grid-template-columns: 48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(
+      130px,
+      1fr
+    ) 100px 96px;
   align-items: center;
   gap: 10px;
   min-height: 72px;
