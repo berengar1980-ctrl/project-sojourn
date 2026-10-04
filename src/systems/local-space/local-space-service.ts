@@ -40,12 +40,14 @@ import {
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
+type MiningChunkCollector = (resourceId: string, amount: number) => number;
+
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
   readonly approachSpeed: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
-  readonly onMiningChunkCollected?: (resourceId: string, amount: number) => number;
+  readonly onMiningChunkCollected?: MiningChunkCollector;
 }
 
 function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
@@ -72,9 +74,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
-  private readonly onMiningChunkCollected:
-    | ((resourceId: string, amount: number) => number)
-    | undefined;
+  private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
