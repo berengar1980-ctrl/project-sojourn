@@ -61,7 +61,6 @@ export interface LocalSpaceService {
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
 
-
 class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
   private readonly approachSpeed: number;
