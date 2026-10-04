@@ -246,10 +246,21 @@ export function createPlanetTexture(id: string, dangerLevel: number): HTMLCanvas
       const terrain = fbm(seed, nx * 2.1 + warpX * 1.15, ny * 2.1 + warpY * 1.15, 6);
       const detail = fbm(seed + 401, nx * 8.4, ny * 8.4, 3);
       const elevation = terrain * 0.83 + detail * 0.17;
-      const polarNoise = fbm(seed + 811, nx * 4.6 + 3, ny * 3.1 - 9, 4);
-      const polarEdge = 0.68 + (polarNoise - 0.5) * 0.2 + (terrain - 0.5) * 0.08;
-      const polarBand = Math.max(0, Math.min(1, (latitude - polarEdge) / 0.18));
-      const polarMass = Math.max(0, Math.min(1, (polarNoise - 0.28) / 0.58));
+      const poleSeed = ny < 0 ? seed + 811 : seed + 977;
+      const polarCoast = fbm(
+        poleSeed,
+        nx * 2.9 + warpX * 1.7 + 3,
+        ny * 4.2 + warpY * 1.3 - 9,
+        5
+      );
+      const polarFjords = fbm(poleSeed + 431, nx * 10.5, ny * 6.8, 3);
+      const polarEdge =
+        0.6 +
+        (polarCoast - 0.5) * 0.38 +
+        (polarFjords - 0.5) * 0.16 +
+        (terrain - 0.5) * 0.12;
+      const polarBand = Math.max(0, Math.min(1, (latitude - polarEdge) / 0.2));
+      const polarMass = Math.max(0, Math.min(1, (polarCoast + polarFjords * 0.35 - 0.36) / 0.66));
       const polar = polarBand * polarMass;
 
       if (polar > 0.08 && elevation > 0.38) {
