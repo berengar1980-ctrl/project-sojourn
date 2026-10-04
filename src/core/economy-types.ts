@@ -27,6 +27,7 @@ export interface EconomyCargoHold {
 export interface EconomyResourcePool {
   readonly target: number;
   reserve: number;
+  allocated: number;
   externalImports: number;
   recordedLosses: number;
 }
