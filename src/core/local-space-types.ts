@@ -76,6 +76,7 @@ export interface LocalSpaceSnapshot {
   readonly scanTargetId: string | null;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
+  readonly longRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
   readonly collectedResources: readonly ResourceCargoEntry[];
