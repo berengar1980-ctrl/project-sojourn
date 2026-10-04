@@ -158,14 +158,15 @@ async function calculatePointRoute(service: LocalSpaceService, target: WorldPoin
 function createMiningLocalSpace(
   ship: ShipDefinition,
   seed: number,
-  onMiningChunkCollected: (resourceId: string, amount: number) => number
+  mining: MiningEconomyService
 ): LocalSpaceService {
   return createLocalSpaceService({
     instance: generateMiningSpace('greyrock-belt', seed),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
-    onMiningChunkCollected,
+    onMiningChunkCollected: (resourceId, amount) =>
+      mining.collect(resourceId, amount, ship.cargoCapacityTons, 'greyrock-belt'),
   });
 }
 
@@ -373,9 +374,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     destroyScenePanels(panels);
     mode = 'local-space';
     if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
-    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, (resourceId, amount) =>
-      mining.collect(resourceId, amount, activeShip.cargoCapacityTons, 'greyrock-belt')
-    );
+    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
     panels.local = createLocalSpacePanel({
       root,
