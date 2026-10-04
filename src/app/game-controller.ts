@@ -165,6 +165,11 @@ export function createGameController(options: GameControllerOptions): GameContro
       model: starModel(),
       log: systemLog,
       onSelectLocation: (id) => {
+        const snapshot = navigation.getSnapshot();
+        if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
+          runSceneZoomTransition(root, mountLocalSpace);
+          return;
+        }
         navigation.selectDestination(id);
         starPanel?.update(starModel());
       },
