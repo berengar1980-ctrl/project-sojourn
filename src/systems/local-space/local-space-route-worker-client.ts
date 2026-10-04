@@ -1,5 +1,8 @@
 import type { WorldPoint } from '../../core/world-types';
-import type { RoutePlanningOptions } from './local-space-navigation';
+import type {
+  PointRoutePlanningOptions,
+  RoutePlanningOptions,
+} from './local-space-navigation';
 
 interface RouteWorkerResponse {
   readonly id: number;
@@ -8,8 +11,9 @@ interface RouteWorkerResponse {
 
 let nextRequestId = 0;
 
-export function planMiningApproachRouteAsync(
-  options: RoutePlanningOptions
+function requestRoute(
+  kind: 'mining' | 'point',
+  options: RoutePlanningOptions | PointRoutePlanningOptions
 ): Promise<readonly WorldPoint[]> {
   return new Promise((resolve, reject) => {
     const requestId = nextRequestId;
@@ -29,6 +33,18 @@ export function planMiningApproachRouteAsync(
       reject(new Error(event.message || 'Route worker failed.'));
     });
 
-    worker.postMessage({ id: requestId, options });
+    worker.postMessage({ id: requestId, kind, options });
   });
+}
+
+export function planMiningApproachRouteAsync(
+  options: RoutePlanningOptions
+): Promise<readonly WorldPoint[]> {
+  return requestRoute('mining', options);
+}
+
+export function planPointRouteAsync(
+  options: PointRoutePlanningOptions
+): Promise<readonly WorldPoint[]> {
+  return requestRoute('point', options);
 }
