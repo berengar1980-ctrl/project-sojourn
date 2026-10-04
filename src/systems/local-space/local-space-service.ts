@@ -72,7 +72,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
-  private readonly onMiningChunkCollected?: (resourceId: string, amount: number) => number;
+  private readonly onMiningChunkCollected:
+    | ((resourceId: string, amount: number) => number)
+    | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
