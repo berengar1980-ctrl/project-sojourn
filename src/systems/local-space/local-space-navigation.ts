@@ -395,7 +395,6 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
   return [options.start, fallbackEnd];
 }
 
-
 export function planPointRoute(options: PointRoutePlanningOptions): readonly WorldPoint[] {
   const target = {
     x: Math.max(0, Math.min(options.width, options.target.x)),
