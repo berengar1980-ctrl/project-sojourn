@@ -21,10 +21,11 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function ellipsePoint(shield: ShieldEllipse, angle: number): ScreenPoint {
+function projectToEllipse(point: ScreenPoint, shield: ShieldEllipse): ScreenPoint {
+  const normalized = Math.hypot(point.x / shield.radiusX, point.y / shield.radiusY) || 1;
   return {
-    x: Math.cos(angle) * shield.radiusX,
-    y: Math.sin(angle) * shield.radiusY,
+    x: point.x / normalized,
+    y: point.y / normalized,
   };
 }
 
@@ -43,7 +44,7 @@ export class ShieldImpactRenderer {
 
     for (const impact of impacts) {
       const progress = clamp01(impact.ageSeconds / impact.lifetimeSeconds);
-      const fade = Math.pow(1 - progress, 1.65);
+      const fade = Math.pow(1 - progress, 1.7);
       if (fade <= 0.001) continue;
 
       const worldPoint = camera.worldToScreen(impact.point, viewWidth, viewHeight);
@@ -51,9 +52,8 @@ export class ShieldImpactRenderer {
         { x: worldPoint.x - shield.center.x, y: worldPoint.y - shield.center.y },
         -shield.angle
       );
-      const impactAngle = Math.atan2(relative.y / shield.radiusY, relative.x / shield.radiusX);
-
-      this.drawSurfaceImpact(context, shield, impact, impactAngle, fade, progress);
+      const impactPoint = projectToEllipse(relative, shield);
+      this.drawSurfaceImpact(context, shield, impact, impactPoint, fade, progress);
     }
   }
 
@@ -61,67 +61,90 @@ export class ShieldImpactRenderer {
     context: CanvasRenderingContext2D,
     shield: ShieldEllipse,
     impact: ShieldImpactEffect,
-    impactAngle: number,
+    impactPoint: ScreenPoint,
     fade: number,
     progress: number
   ): void {
     context.save();
     context.translate(shield.center.x, shield.center.y);
     context.rotate(shield.angle);
+    context.beginPath();
+    context.ellipse(0, 0, shield.radiusX, shield.radiusY, 0, 0, Math.PI * 2);
+    context.clip();
 
-    this.drawRipple(context, shield, impact, impactAngle, fade, progress);
-    this.drawCore(context, shield, impact, impactAngle, fade, progress);
-    this.drawLightning(context, shield, impact, impactAngle, fade, progress);
+    this.drawSurfaceFlash(context, shield, impactPoint, impact, fade, progress);
+    this.drawRipple(context, shield, impactPoint, impact, fade, progress);
+    this.drawLightning(context, shield, impactPoint, impact, fade, progress);
+    this.drawCore(context, impactPoint, impact, fade, progress);
 
     context.restore();
+  }
+
+  private drawSurfaceFlash(
+    context: CanvasRenderingContext2D,
+    shield: ShieldEllipse,
+    point: ScreenPoint,
+    impact: ShieldImpactEffect,
+    fade: number,
+    progress: number
+  ): void {
+    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (0.45 + impact.strength * 0.24);
+    const radius = maxRadius * (0.3 + progress * 0.7);
+    const gradient = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
+    gradient.addColorStop(0, `rgba(166, 228, 255, ${fade * 0.24})`);
+    gradient.addColorStop(0.45, `rgba(97, 190, 255, ${fade * 0.11})`);
+    gradient.addColorStop(1, 'rgba(70, 150, 255, 0)');
+    context.fillStyle = gradient;
+    context.fillRect(
+      -shield.radiusX,
+      -shield.radiusY,
+      shield.radiusX * 2,
+      shield.radiusY * 2
+    );
   }
 
   private drawRipple(
     context: CanvasRenderingContext2D,
     shield: ShieldEllipse,
+    point: ScreenPoint,
     impact: ShieldImpactEffect,
-    impactAngle: number,
     fade: number,
     progress: number
   ): void {
-    const expansion = 1 - Math.pow(1 - progress, 2.4);
-    const halfSpan = 0.035 + expansion * (0.13 + impact.strength * 0.16);
-    const alpha = fade * (0.36 + impact.strength * 0.36);
+    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (0.7 + impact.strength * 0.3);
+    const radius = 3 + maxRadius * (1 - Math.pow(1 - progress, 2.2));
+    const alpha = fade * (0.45 + impact.strength * 0.35);
 
     context.save();
-    context.strokeStyle = `rgba(112, 205, 255, ${alpha})`;
-    context.lineWidth = 0.75 + impact.strength * 0.8;
-    context.shadowColor = 'rgba(150, 220, 255, .62)';
-    context.shadowBlur = 2.5 + impact.strength * 3.5;
+    context.strokeStyle = `rgba(138, 220, 255, ${alpha})`;
+    context.lineWidth = 0.65 + impact.strength * 0.7;
+    context.shadowColor = 'rgba(154, 225, 255, .7)';
+    context.shadowBlur = 2.2 + impact.strength * 2.8;
     context.beginPath();
-    context.ellipse(
-      0,
-      0,
-      shield.radiusX,
-      shield.radiusY,
-      0,
-      impactAngle - halfSpan,
-      impactAngle + halfSpan
-    );
+    context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     context.stroke();
+
+    if (progress > 0.12) {
+      context.globalAlpha = 0.45;
+      context.beginPath();
+      context.arc(point.x, point.y, radius * 0.64, 0, Math.PI * 2);
+      context.stroke();
+    }
     context.restore();
   }
 
   private drawCore(
     context: CanvasRenderingContext2D,
-    shield: ShieldEllipse,
+    point: ScreenPoint,
     impact: ShieldImpactEffect,
-    impactAngle: number,
     fade: number,
     progress: number
   ): void {
-    const point = ellipsePoint(shield, impactAngle);
-    const radius = 2.5 + impact.strength * 5.5 + progress * 1.5;
+    const radius = 2.4 + impact.strength * 4.8 + progress;
     const gradient = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-    gradient.addColorStop(0, `rgba(238, 252, 255, ${0.94 * fade})`);
-    gradient.addColorStop(0.3, `rgba(142, 222, 255, ${0.62 * fade})`);
+    gradient.addColorStop(0, `rgba(244, 253, 255, ${0.98 * fade})`);
+    gradient.addColorStop(0.28, `rgba(151, 228, 255, ${0.68 * fade})`);
     gradient.addColorStop(1, 'rgba(68, 151, 255, 0)');
-
     context.fillStyle = gradient;
     context.beginPath();
     context.arc(point.x, point.y, radius, 0, Math.PI * 2);
@@ -131,51 +154,57 @@ export class ShieldImpactRenderer {
   private drawLightning(
     context: CanvasRenderingContext2D,
     shield: ShieldEllipse,
+    point: ScreenPoint,
     impact: ShieldImpactEffect,
-    impactAngle: number,
     fade: number,
     progress: number
   ): void {
-    if (progress > 0.5 || impact.strength < 0.16) return;
+    if (progress > 0.52 || impact.strength < 0.14) return;
 
-    const branchCount = Math.max(1, Math.round(1 + impact.strength * 3));
-    const alpha = fade * (0.48 + impact.strength * 0.34);
+    const branchCount = Math.max(2, Math.round(2 + impact.strength * 3));
     context.save();
-    context.strokeStyle = `rgba(224, 248, 255, ${alpha})`;
-    context.lineWidth = 0.35 + impact.strength * 0.45;
-    context.shadowColor = 'rgba(180, 232, 255, .72)';
-    context.shadowBlur = 2.2;
+    context.strokeStyle = `rgba(226, 249, 255, ${fade * (0.5 + impact.strength * 0.3)})`;
+    context.lineWidth = 0.28 + impact.strength * 0.38;
+    context.shadowColor = 'rgba(180, 232, 255, .68)';
+    context.shadowBlur = 1.8;
 
     for (let branch = 0; branch < branchCount; branch += 1) {
-      this.drawLightningBranch(context, shield, impact, impactAngle, branch, progress);
+      this.drawLightningBranch(context, shield, point, impact, branch, progress);
     }
-
     context.restore();
   }
 
   private drawLightningBranch(
     context: CanvasRenderingContext2D,
     shield: ShieldEllipse,
+    start: ScreenPoint,
     impact: ShieldImpactEffect,
-    impactAngle: number,
     branch: number,
     progress: number
   ): void {
-    const phase = impact.id * 1.71 + branch * 2.37 + Math.floor(progress * 16) * 0.53;
-    const direction = branch % 2 === 0 ? 1 : -1;
-    const totalSpan = 0.08 + impact.strength * 0.13;
-    const segments = 5;
-    const start = ellipsePoint(shield, impactAngle);
+    const phase = impact.id * 1.73 + branch * 2.31 + Math.floor(progress * 18) * 0.47;
+    const tangent = { x: -start.y / shield.radiusY, y: start.x / shield.radiusX };
+    const tangentLength = Math.hypot(tangent.x, tangent.y) || 1;
+    const tangentUnit = { x: tangent.x / tangentLength, y: tangent.y / tangentLength };
+    const side = (branch % 2 === 0 ? 1 : -1) * (0.18 + branch * 0.035);
+    const inward = 0.42 + impact.strength * 0.2;
+    const segments = 6;
 
     context.beginPath();
     context.moveTo(start.x, start.y);
 
     for (let segment = 1; segment <= segments; segment += 1) {
       const t = segment / segments;
-      const jitter = Math.sin(phase + segment * 2.41) * 0.018 * (1 - t);
-      const angle = impactAngle + direction * totalSpan * t + jitter;
-      const point = ellipsePoint(shield, angle);
-      context.lineTo(point.x, point.y);
+      const zig = Math.sin(phase + segment * 2.7) * (1 - t) * 3.2;
+      const x =
+        start.x * (1 - inward * t) +
+        tangentUnit.x * shield.radiusX * side * t +
+        tangentUnit.x * zig;
+      const y =
+        start.y * (1 - inward * t) +
+        tangentUnit.y * shield.radiusY * side * t +
+        tangentUnit.y * zig;
+      context.lineTo(x, y);
     }
 
     context.stroke();
