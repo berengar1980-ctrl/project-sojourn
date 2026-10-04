@@ -15,7 +15,7 @@
     "test:full": "node tests/run-tests.cjs full",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/systems/economy/economy-simulation-service.ts tests/economy/daily-simulation.test.cjs && git diff -- src/systems/economy/economy-simulation-service.ts tests/economy/daily-simulation.test.cjs && exit 1",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build",
