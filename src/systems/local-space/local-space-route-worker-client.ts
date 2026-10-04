@@ -1,8 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
-import type {
-  PointRoutePlanningOptions,
-  RoutePlanningOptions,
-} from './local-space-navigation';
+import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 
 interface RouteWorkerResponse {
   readonly id: number;
