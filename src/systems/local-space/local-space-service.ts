@@ -358,7 +358,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachIndex,
       this.approachSpeed,
       deltaSeconds,
-      false
+      false,
+      this.approachPurpose === 'mining'
     );
     this.approachIndex = result.nextIndex;
     if (result.completed) this.finishApproachFacing(deltaSeconds, asteroid);
