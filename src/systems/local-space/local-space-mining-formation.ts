@@ -42,9 +42,7 @@ function closestClosingDebris(
   return threat ? { dx: threat.dx, dy: threat.dy } : null;
 }
 
-export function advanceMiningFormation(
-  options: MiningFormationOptions
-): MiningFormationVelocity {
+export function advanceMiningFormation(options: MiningFormationOptions): MiningFormationVelocity {
   const { ship, asteroid, holdOffset, deltaSeconds } = options;
   if (!holdOffset) {
     ship.speed = 0;
