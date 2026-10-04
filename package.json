@@ -15,7 +15,7 @@
     "test:full": "node tests/run-tests.cjs full",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/data/ports/tutorial-ports.ts src/features/port/port-view-model.ts src/ui/map/star-map-panel.ts src/ui/port/port-panel.ts src/ui/styles.css tests/port/port-ui.test.cjs && git diff -- src/data/ports/tutorial-ports.ts src/features/port/port-view-model.ts src/ui/map/star-map-panel.ts src/ui/port/port-panel.ts src/ui/styles.css tests/port/port-ui.test.cjs && exit 1",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build",
