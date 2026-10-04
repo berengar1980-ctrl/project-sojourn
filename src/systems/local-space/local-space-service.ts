@@ -15,7 +15,12 @@ import {
   resolveShieldCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
-import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
+import { distance } from './local-space-motion';
+import {
+  advanceAutopilotRoute,
+  faceAutopilotTarget,
+  resetAutopilotMotion,
+} from './local-space-autopilot';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
@@ -55,7 +60,6 @@ export interface LocalSpaceService {
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
 
-const MAX_TURN_RATE = 1.15;
 
 class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
@@ -159,10 +163,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.navigationTarget = { ...target };
     this.navigationRoute = route;
     this.navigationIndex = 1;
-    this.instance.ship.speed = 0;
-    this.instance.ship.turnRateRadiansPerSecond = 0;
-    this.instance.ship.angularThrust = 0;
-    this.instance.ship.lateralThrust = 0;
+    resetAutopilotMotion(this.instance.ship);
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
@@ -259,10 +260,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private prepareApproach(route: readonly WorldPoint[]): void {
     this.finishManualNavigation();
     this.miningAccumulator = 0;
-    this.instance.ship.speed = 0;
-    this.instance.ship.turnRateRadiansPerSecond = 0;
-    this.instance.ship.angularThrust = 0;
-    this.instance.ship.lateralThrust = 0;
+    resetAutopilotMotion(this.instance.ship);
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
     this.miningHoldOffset = null;
@@ -298,10 +296,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningAccumulator = 0;
     this.approachRoute = [];
     this.approachIndex = 0;
-    this.instance.ship.speed = 0;
-    this.instance.ship.turnRateRadiansPerSecond = 0;
-    this.instance.ship.angularThrust = 0;
-    this.instance.ship.lateralThrust = 0;
+    resetAutopilotMotion(this.instance.ship);
     this.miningHoldOffset = null;
     this.stationKeepingPosition = { ...this.instance.ship.position };
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
@@ -310,53 +305,23 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateManualNavigation(deltaSeconds: number): void {
-    if (!this.navigationTarget || this.navigationIndex >= this.navigationRoute.length) {
-      this.finishManualNavigation();
-      return;
-    }
-
-    const ship = this.instance.ship;
-    const waypoint = this.navigationRoute[this.navigationIndex]!;
-    const desiredHeading = heading(ship.position, waypoint);
-    const previousHeading = ship.headingRadians;
-    ship.headingRadians = turnToward(
-      ship.headingRadians,
-      desiredHeading,
-      MAX_TURN_RATE * deltaSeconds
+    const result = advanceAutopilotRoute(
+      this.instance.ship,
+      this.navigationRoute,
+      this.navigationIndex,
+      this.approachSpeed,
+      deltaSeconds,
+      true
     );
-    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
-    ship.angularThrust = Math.max(
-      -1,
-      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 5))
-    );
-    ship.lateralThrust = 0;
-
-    const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
-    const alignment = Math.max(0.16, 1 - remainingTurn / (Math.PI / 2));
-    const remainingDistance = distance(ship.position, waypoint);
-    const isFinalWaypoint = this.navigationIndex === this.navigationRoute.length - 1;
-    const brakingSpeed = isFinalWaypoint
-      ? Math.min(this.approachSpeed, Math.max(12, remainingDistance * 0.72))
-      : this.approachSpeed;
-    const travelSpeed = brakingSpeed * alignment;
-    ship.position = moveToward(ship.position, waypoint, travelSpeed * deltaSeconds);
-    ship.speed = travelSpeed;
-
-    if (distance(ship.position, waypoint) <= (isFinalWaypoint ? 2 : 1)) {
-      ship.position = { ...waypoint };
-      this.navigationIndex += 1;
-      if (this.navigationIndex >= this.navigationRoute.length) this.finishManualNavigation();
-    }
+    this.navigationIndex = result.nextIndex;
+    if (result.completed) this.finishManualNavigation();
   }
 
   private finishManualNavigation(): void {
     this.navigationTarget = null;
     this.navigationRoute = [];
     this.navigationIndex = 0;
-    this.instance.ship.speed = 0;
-    this.instance.ship.turnRateRadiansPerSecond = 0;
-    this.instance.ship.angularThrust = 0;
-    this.instance.ship.lateralThrust = 0;
+    resetAutopilotMotion(this.instance.ship);
     this.stationKeepingPosition = { ...this.instance.ship.position };
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
@@ -364,78 +329,42 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    if (this.approachIndex >= this.approachRoute.length) {
-      this.finishApproachFacing(deltaSeconds, asteroid);
-      return;
-    }
-
-    const ship = this.instance.ship;
-    const waypoint = this.approachRoute[this.approachIndex]!;
-    const desiredHeading = heading(ship.position, waypoint);
-    const turnLimit = MAX_TURN_RATE * deltaSeconds;
-    const previousHeading = ship.headingRadians;
-    ship.headingRadians = turnToward(ship.headingRadians, desiredHeading, turnLimit);
-    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
-    ship.angularThrust = Math.max(
-      -1,
-      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 5))
+    const result = advanceAutopilotRoute(
+      this.instance.ship,
+      this.approachRoute,
+      this.approachIndex,
+      this.approachSpeed,
+      deltaSeconds,
+      false
     );
-    ship.lateralThrust = 0;
-
-    const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
-    const alignment = Math.max(0.18, 1 - remainingTurn / (Math.PI / 2));
-    const step = this.approachSpeed * alignment * deltaSeconds;
-    ship.position = moveToward(ship.position, waypoint, step);
-    ship.speed = this.approachSpeed * alignment;
-
-    if (distance(ship.position, waypoint) <= 1) {
-      ship.position = { ...waypoint };
-      this.approachIndex += 1;
-    }
+    this.approachIndex = result.nextIndex;
+    if (result.completed) this.finishApproachFacing(deltaSeconds, asteroid);
   }
 
   private finishApproachFacing(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
-    const desiredHeading = heading(ship.position, asteroid.position);
-    const previousHeading = ship.headingRadians;
-    ship.headingRadians = turnToward(
-      ship.headingRadians,
-      desiredHeading,
-      MAX_TURN_RATE * deltaSeconds
-    );
-    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
-    ship.angularThrust = Math.max(
-      -1,
-      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 6))
-    );
-    ship.lateralThrust = 0;
-    ship.speed = 0;
+    if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds)) return;
 
-    if (Math.abs(angleDelta(ship.headingRadians, desiredHeading)) <= 0.04) {
-      ship.headingRadians = desiredHeading;
-      ship.turnRateRadiansPerSecond = 0;
-      ship.angularThrust = 0;
-      if (this.approachPurpose === 'scan') {
-        asteroid.scanLevel = 'analyzed';
-        this.finishMining();
-        return;
-      }
-
+    if (this.approachPurpose === 'scan') {
       asteroid.scanLevel = 'analyzed';
-      if (asteroid.oreRemaining <= 0) {
-        this.finishMining();
-        return;
-      }
-
-      this.miningHoldOffset = {
-        x: ship.position.x - asteroid.position.x,
-        y: ship.position.y - asteroid.position.y,
-      };
-      this.stationKeepingPosition = { ...ship.position };
-      this.shipForwardVelocity = 0;
-      this.shipLateralVelocity = 0;
-      this.miningPhase = 'extracting';
+      this.finishMining();
+      return;
     }
+
+    asteroid.scanLevel = 'analyzed';
+    if (asteroid.oreRemaining <= 0) {
+      this.finishMining();
+      return;
+    }
+
+    this.miningHoldOffset = {
+      x: ship.position.x - asteroid.position.x,
+      y: ship.position.y - asteroid.position.y,
+    };
+    this.stationKeepingPosition = { ...ship.position };
+    this.shipForwardVelocity = 0;
+    this.shipLateralVelocity = 0;
+    this.miningPhase = 'extracting';
   }
 
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {
