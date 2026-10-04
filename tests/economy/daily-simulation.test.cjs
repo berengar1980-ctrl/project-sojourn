@@ -133,12 +133,18 @@ const resources = [
 
   for (const market of marketService.markets) {
     for (const entry of Object.values(market.entries)) {
-      assert(Number.isFinite(entry.stock) && entry.stock >= 0, 'stock must stay finite and nonnegative');
+      assert(
+        Number.isFinite(entry.stock) && entry.stock >= 0,
+        'stock must stay finite and nonnegative'
+      );
       assert(
         Number.isFinite(entry.demand) && entry.demand >= 0 && entry.demand <= 1,
         'demand must stay finite and bounded'
       );
-      assert(Number.isFinite(entry.price) && entry.price > 0, 'price must stay finite and positive');
+      assert(
+        Number.isFinite(entry.price) && entry.price > 0,
+        'price must stay finite and positive'
+      );
     }
   }
   for (const pool of Object.values(economy.pools)) {
