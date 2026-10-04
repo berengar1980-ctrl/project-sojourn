@@ -31,7 +31,7 @@ import {
   updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
-import type { RoutePlanningOptions } from './local-space-navigation';
+import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
 export interface LocalSpaceServiceOptions {
@@ -46,7 +46,9 @@ export interface LocalSpaceService {
   selectAsteroid(id: string | null): LocalSpaceSnapshot;
   getMiningRouteOptions(): RoutePlanningOptions | null;
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null;
+  getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions;
   runLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
+  startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   cancelMining(): LocalSpaceSnapshot;
@@ -68,6 +70,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private miningPhase: MiningPhase = 'idle';
   private approachRoute: readonly WorldPoint[] = [];
   private approachIndex = 0;
+  private navigationTarget: WorldPoint | null = null;
+  private navigationRoute: readonly WorldPoint[] = [];
+  private navigationIndex = 0;
   private collectedOre = 0;
   private readonly collectedResources = new Map<string, number>();
   private miningAccumulator = 0;
@@ -104,6 +109,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       selectedAsteroidId: this.selectedAsteroidId,
       miningTargetId: this.miningTargetId,
       scanTargetId: this.scanTargetId,
+      navigationTarget: this.navigationTarget,
+      navigationRoute: this.navigationRoute,
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
@@ -132,6 +139,34 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
     return this.getSelectedRouteOptions();
+  }
+
+  getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
+    return {
+      start: this.instance.ship.position,
+      target,
+      asteroids: this.instance.asteroids,
+      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
+      width: this.instance.width,
+      height: this.instance.height,
+    };
+  }
+
+  startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot {
+    if (route.length < 2) return this.getSnapshot();
+    if (this.miningPhase !== 'idle') this.finishMining();
+
+    this.navigationTarget = { ...target };
+    this.navigationRoute = route;
+    this.navigationIndex = 1;
+    this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.angularThrust = 0;
+    this.instance.ship.lateralThrust = 0;
+    this.shipForwardVelocity = 0;
+    this.shipLateralVelocity = 0;
+    resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
+    return this.getSnapshot();
   }
 
   runLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
@@ -177,6 +212,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const asteroid = this.findAsteroid(this.activeTargetId());
     if (!asteroid && this.miningPhase !== 'idle') {
       this.finishMining();
+    } else if (this.miningPhase === 'idle' && this.navigationTarget) {
+      this.updateManualNavigation(clamped);
     } else if (this.miningPhase === 'idle') {
       this.updatePassiveStationKeeping(clamped);
     } else if (asteroid && this.miningPhase === 'approaching') {
@@ -220,6 +257,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private prepareApproach(route: readonly WorldPoint[]): void {
+    this.finishManualNavigation();
     this.miningAccumulator = 0;
     this.instance.ship.speed = 0;
     this.instance.ship.turnRateRadiansPerSecond = 0;
@@ -269,6 +307,60 @@ class LocalSpaceRuntime implements LocalSpaceService {
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
     this.shipForwardVelocity *= 0.25;
     this.shipLateralVelocity *= 0.35;
+  }
+
+  private updateManualNavigation(deltaSeconds: number): void {
+    if (!this.navigationTarget || this.navigationIndex >= this.navigationRoute.length) {
+      this.finishManualNavigation();
+      return;
+    }
+
+    const ship = this.instance.ship;
+    const waypoint = this.navigationRoute[this.navigationIndex]!;
+    const desiredHeading = heading(ship.position, waypoint);
+    const previousHeading = ship.headingRadians;
+    ship.headingRadians = turnToward(
+      ship.headingRadians,
+      desiredHeading,
+      MAX_TURN_RATE * deltaSeconds
+    );
+    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
+    ship.angularThrust = Math.max(
+      -1,
+      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 5))
+    );
+    ship.lateralThrust = 0;
+
+    const remainingTurn = Math.abs(angleDelta(ship.headingRadians, desiredHeading));
+    const alignment = Math.max(0.16, 1 - remainingTurn / (Math.PI / 2));
+    const remainingDistance = distance(ship.position, waypoint);
+    const isFinalWaypoint = this.navigationIndex === this.navigationRoute.length - 1;
+    const brakingSpeed = isFinalWaypoint
+      ? Math.min(this.approachSpeed, Math.max(12, remainingDistance * 0.72))
+      : this.approachSpeed;
+    const travelSpeed = brakingSpeed * alignment;
+    ship.position = moveToward(ship.position, waypoint, travelSpeed * deltaSeconds);
+    ship.speed = travelSpeed;
+
+    if (distance(ship.position, waypoint) <= (isFinalWaypoint ? 2 : 1)) {
+      ship.position = { ...waypoint };
+      this.navigationIndex += 1;
+      if (this.navigationIndex >= this.navigationRoute.length) this.finishManualNavigation();
+    }
+  }
+
+  private finishManualNavigation(): void {
+    this.navigationTarget = null;
+    this.navigationRoute = [];
+    this.navigationIndex = 0;
+    this.instance.ship.speed = 0;
+    this.instance.ship.turnRateRadiansPerSecond = 0;
+    this.instance.ship.angularThrust = 0;
+    this.instance.ship.lateralThrust = 0;
+    this.stationKeepingPosition = { ...this.instance.ship.position };
+    this.shipForwardVelocity = 0;
+    this.shipLateralVelocity = 0;
+    resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
   }
 
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
