@@ -18,16 +18,43 @@ const map = fs.readFileSync(
   'utf8'
 );
 
-assert(shared.includes('class ProceduralSpaceBodyRenderer'), 'shared body renderer must exist');
+assert(
+  shared.includes('class ProceduralSpaceBodyRenderer'),
+  'shared body renderer must exist'
+);
 assert(shared.includes('asteroidCache'), 'asteroid surfaces must be cached by seed');
 assert(shared.includes('planetTextureCache'), 'planet textures must be cached');
-assert(shared.includes('drawWorldLight'), 'world-fixed lighting pass must be shared');
-assert(shared.includes('Math.pow(1 - progress, 1.25)'), 'fractures must taper instead of ending hard');
-assert(shared.includes('5 + Math.floor(random() * 4)'), 'resource asteroids need several craters');
-assert(local.includes('ProceduralSpaceBodyRenderer'), 'local space must use shared body renderer');
-assert(local.includes("light: { x: -0.72, y: -0.56 }"), 'local asteroid light must stay world-fixed');
-assert(map.includes('starPoint.x - point.x'), 'map bodies must be lit from the actual star direction');
-assert(map.includes('drawAsteroidField(location.id'), 'map asteroid fields must use procedural bodies');
-assert(map.includes('this.spaceBodies.drawPlanet'), 'map planets must use procedural rendering');
+assert(
+  shared.includes('drawWorldLight'),
+  'world-fixed lighting pass must be shared'
+);
+assert(
+  shared.includes('Math.pow(1 - progress, 1.25)'),
+  'fractures must taper instead of ending hard'
+);
+assert(
+  shared.includes('5 + Math.floor(random() * 4)'),
+  'resource asteroids need several craters'
+);
+assert(
+  local.includes('ProceduralSpaceBodyRenderer'),
+  'local space must use shared body renderer'
+);
+assert(
+  local.includes("light: { x: -0.72, y: -0.56 }"),
+  'local asteroid light must stay world-fixed'
+);
+assert(
+  map.includes('starPoint.x - point.x'),
+  'map bodies must be lit from the actual star direction'
+);
+assert(
+  map.includes('drawAsteroidField(location.id'),
+  'map asteroid fields must use procedural bodies'
+);
+assert(
+  map.includes('this.spaceBodies.drawPlanet'),
+  'map planets must use procedural rendering'
+);
 
 console.log('PASS procedural planet and asteroid rendering contract');
