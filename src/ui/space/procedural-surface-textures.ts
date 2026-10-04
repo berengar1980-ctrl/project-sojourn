@@ -246,10 +246,21 @@ export function createPlanetTexture(id: string, dangerLevel: number): HTMLCanvas
       const terrain = fbm(seed, nx * 2.1 + warpX * 1.15, ny * 2.1 + warpY * 1.15, 6);
       const detail = fbm(seed + 401, nx * 8.4, ny * 8.4, 3);
       const elevation = terrain * 0.83 + detail * 0.17;
-      const polar = Math.max(0, (latitude - 0.72) / 0.28);
+      const polarNoise = fbm(seed + 811, nx * 4.6 + 3, ny * 3.1 - 9, 4);
+      const polarEdge = 0.68 + (polarNoise - 0.5) * 0.2 + (terrain - 0.5) * 0.08;
+      const polarBand = Math.max(0, Math.min(1, (latitude - polarEdge) / 0.18));
+      const polarMass = Math.max(0, Math.min(1, (polarNoise - 0.28) / 0.58));
+      const polar = polarBand * polarMass;
 
-      if (polar > 0.15 && elevation > 0.4) {
-        paintPixel(image.data, index, palette.highland, palette.ice, polar, 0.96);
+      if (polar > 0.08 && elevation > 0.38) {
+        paintPixel(
+          image.data,
+          index,
+          palette.highland,
+          palette.ice,
+          Math.min(1, polar * 1.15),
+          0.96
+        );
       } else if (elevation < 0.48) {
         const depth = Math.max(0, Math.min(1, (0.48 - elevation) / 0.22));
         paintPixel(image.data, index, palette.water, palette.lowland, 0.08, 0.72 + depth * 0.12);
