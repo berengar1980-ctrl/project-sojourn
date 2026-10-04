@@ -1,0 +1,27 @@
+name: Format ship asset test
+
+on:
+  push:
+    branches:
+      - test/ship-asset-standard
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Format target
+        run: npx prettier --write tests/assets/ship-asset-standard.test.cjs
+      - name: Print formatted target
+        run: |
+          echo '===FORMATTED_SHIP_TEST_START==='
+          cat tests/assets/ship-asset-standard.test.cjs
+          echo '===FORMATTED_SHIP_TEST_END==='
