@@ -115,22 +115,13 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
     Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
   );
   const previousHeading = state.currentHeading;
-  state.currentHeading = turnToward(
-    state.currentHeading,
-    desiredHeading,
-    MAX_TURN_RATE * clamped
-  );
+  state.currentHeading = turnToward(state.currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
   state.currentTurnRate = angleDelta(previousHeading, state.currentHeading) / clamped;
   const turnRemaining = Math.abs(angleDelta(state.currentHeading, desiredHeading));
   const alignment = Math.max(0, Math.cos(turnRemaining));
   const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
   const acceleration = Math.max(12, state.cruiseSpeed * 0.72);
-  const desiredSpeed = targetSpeed(
-    remainingDistance,
-    alignment,
-    state.cruiseSpeed,
-    acceleration
-  );
+  const desiredSpeed = targetSpeed(remainingDistance, alignment, state.cruiseSpeed, acceleration);
   travel.currentSpeed = approachSpeed(travel.currentSpeed, desiredSpeed, acceleration, clamped);
   travel.distanceTravelled = Math.min(
     travel.route.distance,
