@@ -7,6 +7,7 @@ import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
+import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 
 interface HitArea {
   readonly id: string;
@@ -20,7 +21,7 @@ export class TopdownMapRenderer {
   private readonly camera: MapCamera;
   private readonly shipRenderer: PlayerShipRenderer;
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
-  private readonly planetImages = new Map<string, HTMLImageElement>();
+  private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private model: StarMapViewModel;
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
@@ -37,6 +38,7 @@ export class TopdownMapRenderer {
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
+    this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.resize();
   }
 
@@ -253,10 +255,14 @@ export class TopdownMapRenderer {
     const radius =
       this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
 
-    if (location.kind === 'asteroid-field') this.drawAsteroidField(point, radius);
-    else if (location.kind === 'station') this.drawStation(point, radius);
+    const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
+    const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
+
+    if (location.kind === 'asteroid-field') {
+      this.spaceBodies.drawAsteroidField(location.id, point.x, point.y, radius, light);
+    } else if (location.kind === 'station') this.drawStation(point, radius);
     else if (location.kind === 'wreck') this.drawWreck(point, radius);
-    else this.drawPlanet(location, point, radius);
+    else this.drawPlanet(location, point, radius, light);
 
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
@@ -281,31 +287,20 @@ export class TopdownMapRenderer {
     return Math.min(30, Math.max(20, location.radius * 0.72));
   }
 
-  private drawPlanet(location: StarMapLocationView, point: WorldPoint, radius: number): void {
-    if (location.spriteUrl) {
-      const image = this.ensurePlanetImage(location.spriteUrl);
-      if (image.complete && image.naturalWidth > 0) {
-        this.context.drawImage(image, point.x - radius, point.y - radius, radius * 2, radius * 2);
-        return;
-      }
-    }
-
-    const gradient = this.context.createRadialGradient(
-      point.x - radius * 0.35,
-      point.y - radius * 0.35,
-      radius * 0.1,
-      point.x,
-      point.y,
-      radius
-    );
-    const base = location.dangerLevel >= 2 ? '#8c5b52' : '#597ca3';
-    gradient.addColorStop(0, '#d6dde3');
-    gradient.addColorStop(0.35, base);
-    gradient.addColorStop(1, '#162334');
-    this.context.fillStyle = gradient;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    this.context.fill();
+  private drawPlanet(
+    location: StarMapLocationView,
+    point: WorldPoint,
+    radius: number,
+    light: WorldPoint
+  ): void {
+    this.spaceBodies.drawPlanet({
+      id: location.id,
+      x: point.x,
+      y: point.y,
+      radius,
+      dangerLevel: location.dangerLevel,
+      light,
+    });
   }
 
   private drawStation(point: WorldPoint, radius: number): void {
@@ -318,35 +313,6 @@ export class TopdownMapRenderer {
     this.context.fillRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
     this.context.strokeRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
     this.context.restore();
-  }
-
-  private drawAsteroidField(point: WorldPoint, radius: number): void {
-    this.context.fillStyle = '#8b8176';
-    for (let index = 0; index < 16; index += 1) {
-      const angle = index * 2.399;
-      const spread = radius * (0.25 + ((index * 37) % 70) / 100);
-      const size = 2 + (index % 4);
-      this.context.beginPath();
-      this.context.arc(
-        point.x + Math.cos(angle) * spread,
-        point.y + Math.sin(angle) * spread,
-        size,
-        0,
-        Math.PI * 2
-      );
-      this.context.fill();
-    }
-  }
-
-  private ensurePlanetImage(url: string): HTMLImageElement {
-    const existing = this.planetImages.get(url);
-    if (existing) return existing;
-
-    const image = new Image();
-    image.onload = () => this.draw();
-    image.src = url;
-    this.planetImages.set(url, image);
-    return image;
   }
 
   private hashSeed(value: string): number {
