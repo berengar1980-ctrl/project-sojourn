@@ -74,20 +74,29 @@ export class PlayerShipRenderer {
       angle,
     };
 
+    const maneuverDemand = idle ?? {
+      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+      angularThrust: ship.angularThrust,
+      lateralThrust: ship.lateralThrust,
+    };
+    const engineIntensity = ship.isTravelling ? 0.82 : 0;
+
     if (ship.isTravelling) {
       this.resetIdleShip();
-      this.engineEffects.draw(context, ship.hardpoints, geometry, 0.82, timeSeconds);
+      this.engineEffects.drawExhaust(
+        context,
+        ship.hardpoints,
+        geometry,
+        engineIntensity,
+        timeSeconds
+      );
     }
 
-    this.maneuverEffects.draw(
+    this.maneuverEffects.drawExhaust(
       context,
       ship.hardpoints,
       geometry,
-      idle ?? {
-        turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
-        angularThrust: ship.angularThrust,
-        lateralThrust: ship.lateralThrust,
-      },
+      maneuverDemand,
       timeSeconds
     );
 
@@ -111,6 +120,9 @@ export class PlayerShipRenderer {
     }
 
     context.restore();
+
+    this.engineEffects.drawGlow(context, ship.hardpoints, geometry, engineIntensity, timeSeconds);
+    this.maneuverEffects.drawGlow(context, ship.hardpoints, geometry, maneuverDemand, timeSeconds);
 
     if (this.debugHardpoints) {
       this.hardpointDebug.draw(context, ship.hardpoints, geometry);

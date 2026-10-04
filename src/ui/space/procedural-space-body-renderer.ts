@@ -6,7 +6,6 @@ import {
   createRandom,
   hashSeed,
   type AsteroidSurface,
-  type SurfaceCrater,
 } from './procedural-surface-textures';
 
 export interface SpaceLight {
@@ -50,6 +49,7 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
 export class ProceduralSpaceBodyRenderer {
   private readonly asteroidSurfaceCache = new Map<string, AsteroidSurface>();
   private readonly asteroidTextureCache = new Map<string, HTMLCanvasElement>();
+  private readonly asteroidSpriteCache = new Map<string, HTMLCanvasElement>();
   private readonly planetTextureCache = new Map<string, HTMLCanvasElement>();
 
   constructor(private readonly context: CanvasRenderingContext2D) {}
@@ -57,18 +57,14 @@ export class ProceduralSpaceBodyRenderer {
   drawAsteroid(options: DrawAsteroidOptions): void {
     const light = normalize(options.light);
     const surface = this.asteroidSurface(options.id, options.kind);
-    const texture = this.asteroidTexture(options.id, options.kind);
+    const sprite = this.asteroidSprite(options.id, options.kind);
     const context = this.context;
 
     context.save();
     context.translate(options.x, options.y);
-    this.traceOutline(surface.outline, options.radius, options.rotation);
-    context.clip();
-
-    context.save();
     context.rotate(options.rotation);
     context.drawImage(
-      texture,
+      sprite,
       -options.radius,
       -options.radius,
       options.radius * 2,
@@ -76,25 +72,22 @@ export class ProceduralSpaceBodyRenderer {
     );
     context.restore();
 
-    if (options.kind === 'resource' && options.radius >= 14) {
-      this.drawCraterRelief(surface, options.radius, options.rotation, light);
-      if (options.radius >= 24) {
-        this.drawFractures(surface, options.radius, options.rotation, light);
-      }
-    }
-
-    this.drawSphereLight(options.radius, light, options.kind === 'debris' ? 0.72 : 0.84);
-    context.restore();
-
     context.save();
     context.translate(options.x, options.y);
     this.traceOutline(surface.outline, options.radius, options.rotation);
+    context.clip();
+    this.drawSphereLight(options.radius, light, options.kind === 'debris' ? 0.72 : 0.84);
+    context.restore();
+
     if (options.radius >= 5) {
+      context.save();
+      context.translate(options.x, options.y);
+      this.traceOutline(surface.outline, options.radius, options.rotation);
       context.strokeStyle = 'rgba(205, 198, 188, .12)';
       context.lineWidth = Math.max(0.7, Math.min(1.15, options.radius * 0.025));
       context.stroke();
+      context.restore();
     }
-    context.restore();
   }
 
   drawPlanet(options: DrawPlanetOptions): void {
@@ -158,6 +151,138 @@ export class ProceduralSpaceBodyRenderer {
     return texture;
   }
 
+  private asteroidSprite(id: string, kind: 'resource' | 'debris'): HTMLCanvasElement {
+    const key = id + ':' + kind;
+    const cached = this.asteroidSpriteCache.get(key);
+    if (cached) return cached;
+
+    const size = kind === 'debris' ? 64 : 160;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Asteroid sprite canvas unavailable.');
+
+    const surface = this.asteroidSurface(id, kind);
+    const texture = this.asteroidTexture(id, kind);
+    const radius = size * 0.5;
+    context.save();
+    context.translate(radius, radius);
+    this.traceStaticOutline(context, surface.outline, radius);
+    context.clip();
+    context.drawImage(texture, -radius, -radius, size, size);
+
+    if (kind === 'resource') {
+      this.drawStaticCraterRelief(context, surface, radius);
+      this.drawStaticFractures(context, surface, radius);
+    }
+
+    context.restore();
+    this.asteroidSpriteCache.set(key, canvas);
+    return canvas;
+  }
+
+  private traceStaticOutline(
+    context: CanvasRenderingContext2D,
+    outline: readonly WorldPoint[],
+    radius: number
+  ): void {
+    if (outline.length < 3) return;
+    const first = outline[0]!;
+    const last = outline[outline.length - 1]!;
+    context.beginPath();
+    context.moveTo((first.x + last.x) * 0.5 * radius, (first.y + last.y) * 0.5 * radius);
+
+    for (let index = 0; index < outline.length; index += 1) {
+      const point = outline[index]!;
+      const next = outline[(index + 1) % outline.length]!;
+      context.quadraticCurveTo(
+        point.x * radius,
+        point.y * radius,
+        (point.x + next.x) * 0.5 * radius,
+        (point.y + next.y) * 0.5 * radius
+      );
+    }
+
+    context.closePath();
+  }
+
+  private drawStaticCraterRelief(
+    context: CanvasRenderingContext2D,
+    surface: AsteroidSurface,
+    radius: number
+  ): void {
+    for (const crater of surface.craters) {
+      const craterRadius = crater.radius * radius;
+      context.save();
+      context.translate(crater.x * radius, crater.y * radius);
+      context.rotate(crater.phase);
+      context.scale(1, crater.squash);
+      this.traceStaticCrater(context, craterRadius, crater.phase);
+
+      const bowl = context.createRadialGradient(0, 0, craterRadius * 0.08, 0, 0, craterRadius);
+      bowl.addColorStop(0, 'rgba(2, 2, 2, .76)');
+      bowl.addColorStop(0.58, 'rgba(12, 11, 10, .48)');
+      bowl.addColorStop(0.82, 'rgba(40, 37, 33, .15)');
+      bowl.addColorStop(1, 'rgba(185, 178, 166, .1)');
+      context.fillStyle = bowl;
+      context.fill();
+      context.restore();
+    }
+  }
+
+  private traceStaticCrater(
+    context: CanvasRenderingContext2D,
+    radius: number,
+    phase: number
+  ): void {
+    const vertices = 14;
+    context.beginPath();
+    for (let index = 0; index < vertices; index += 1) {
+      const angle = (index / vertices) * Math.PI * 2;
+      const wobble =
+        0.84 + Math.sin(angle * 5 + phase) * 0.07 + Math.sin(angle * 9 - phase) * 0.035;
+      const x = Math.cos(angle) * radius * wobble;
+      const y = Math.sin(angle) * radius * wobble;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.closePath();
+  }
+
+  private drawStaticFractures(
+    context: CanvasRenderingContext2D,
+    surface: AsteroidSurface,
+    radius: number
+  ): void {
+    context.fillStyle = 'rgba(2, 3, 4, .52)';
+    for (const fracture of surface.fractures) {
+      for (let index = 0; index < fracture.points.length - 1; index += 1) {
+        const start = fracture.points[index]!;
+        const end = fracture.points[index + 1]!;
+        const progress = index / (fracture.points.length - 1);
+        const width = radius * 0.018 * Math.pow(1 - progress, 1.35) + 0.2;
+        const dx = (end.x - start.x) * radius;
+        const dy = (end.y - start.y) * radius;
+        const length = Math.hypot(dx, dy) || 1;
+        const nx = (-dy / length) * width;
+        const ny = (dx / length) * width;
+        const sx = start.x * radius;
+        const sy = start.y * radius;
+        const ex = end.x * radius;
+        const ey = end.y * radius;
+
+        context.beginPath();
+        context.moveTo(sx + nx, sy + ny);
+        context.lineTo(ex + nx * 0.32, ey + ny * 0.32);
+        context.lineTo(ex - nx * 0.32, ey - ny * 0.32);
+        context.lineTo(sx - nx, sy - ny);
+        context.closePath();
+        context.fill();
+      }
+    }
+  }
+
   private planetTexture(id: string, dangerLevel: number): HTMLCanvasElement {
     const key = id + ':' + dangerLevel;
     const cached = this.planetTextureCache.get(key);
@@ -189,124 +314,6 @@ export class ProceduralSpaceBodyRenderer {
     }
 
     this.context.closePath();
-  }
-
-  private drawCraterRelief(
-    surface: AsteroidSurface,
-    radius: number,
-    rotation: number,
-    light: SpaceLight
-  ): void {
-    for (const crater of surface.craters) {
-      this.drawCrater(crater, radius, rotation, light);
-    }
-  }
-
-  private drawCrater(
-    crater: SurfaceCrater,
-    radius: number,
-    rotation: number,
-    light: SpaceLight
-  ): void {
-    const point = rotate(crater, rotation);
-    const craterRadius = crater.radius * radius;
-    const centerX = point.x * radius;
-    const centerY = point.y * radius;
-
-    this.context.save();
-    this.context.translate(centerX, centerY);
-    this.context.rotate(rotation * 0.37 + crater.phase);
-    this.context.scale(1, crater.squash);
-    this.traceCraterShape(craterRadius, crater.phase);
-
-    const bowl = this.context.createRadialGradient(
-      -light.x * craterRadius * 0.24,
-      -light.y * craterRadius * 0.24,
-      craterRadius * 0.04,
-      0,
-      0,
-      craterRadius
-    );
-    bowl.addColorStop(0, 'rgba(0, 0, 0, .8)');
-    bowl.addColorStop(0.52, 'rgba(8, 8, 8, .56)');
-    bowl.addColorStop(0.78, 'rgba(23, 22, 20, .18)');
-    bowl.addColorStop(1, 'rgba(210, 205, 195, .12)');
-    this.context.fillStyle = bowl;
-    this.context.fill();
-
-    this.context.strokeStyle = 'rgba(224, 218, 205, .08)';
-    this.context.lineWidth = Math.max(0.45, craterRadius * 0.08);
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private traceCraterShape(radius: number, phase: number): void {
-    const vertices = 14;
-    this.context.beginPath();
-
-    for (let index = 0; index < vertices; index += 1) {
-      const angle = (index / vertices) * Math.PI * 2;
-      const wobble =
-        0.84 + Math.sin(angle * 5 + phase) * 0.07 + Math.sin(angle * 9 - phase) * 0.035;
-      const x = Math.cos(angle) * radius * wobble;
-      const y = Math.sin(angle) * radius * wobble;
-      if (index === 0) this.context.moveTo(x, y);
-      else this.context.lineTo(x, y);
-    }
-
-    this.context.closePath();
-  }
-
-  private drawFractures(
-    surface: AsteroidSurface,
-    radius: number,
-    rotation: number,
-    light: SpaceLight
-  ): void {
-    for (const fracture of surface.fractures) {
-      for (let index = 0; index < fracture.points.length - 1; index += 1) {
-        const start = rotate(fracture.points[index]!, rotation);
-        const end = rotate(fracture.points[index + 1]!, rotation);
-        const progress = index / (fracture.points.length - 1);
-        const width = radius * 0.02 * Math.pow(1 - progress, 1.35) + 0.12;
-        this.drawFractureSegment(start, end, width, radius, light, progress);
-      }
-    }
-  }
-
-  private drawFractureSegment(
-    start: WorldPoint,
-    end: WorldPoint,
-    width: number,
-    radius: number,
-    light: SpaceLight,
-    progress: number
-  ): void {
-    const dx = (end.x - start.x) * radius;
-    const dy = (end.y - start.y) * radius;
-    const length = Math.hypot(dx, dy) || 1;
-    const nx = (-dy / length) * width;
-    const ny = (dx / length) * width;
-    const sx = start.x * radius;
-    const sy = start.y * radius;
-    const ex = end.x * radius;
-    const ey = end.y * radius;
-
-    this.context.fillStyle = 'rgba(2, 3, 4, ' + (0.58 - progress * 0.38) + ')';
-    this.context.beginPath();
-    this.context.moveTo(sx + nx, sy + ny);
-    this.context.lineTo(ex + nx * 0.35, ey + ny * 0.35);
-    this.context.lineTo(ex - nx * 0.35, ey - ny * 0.35);
-    this.context.lineTo(sx - nx, sy - ny);
-    this.context.closePath();
-    this.context.fill();
-
-    this.context.strokeStyle = 'rgba(220, 215, 204, ' + (0.07 - progress * 0.04) + ')';
-    this.context.lineWidth = Math.max(0.25, width * 0.28);
-    this.context.beginPath();
-    this.context.moveTo(sx + light.x * width, sy + light.y * width);
-    this.context.lineTo(ex + light.x * width * 0.3, ey + light.y * width * 0.3);
-    this.context.stroke();
   }
 
   private drawSphereLight(radius: number, light: SpaceLight, darkness: number): void {

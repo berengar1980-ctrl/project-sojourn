@@ -60,7 +60,7 @@ function shouldBurst(id: string, intensity: number, timeSeconds: number): boolea
 export class ShipManeuverEffectsRenderer {
   private readonly glow = new ThrusterGlowRenderer();
 
-  draw(
+  drawExhaust(
     context: CanvasRenderingContext2D,
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
@@ -72,6 +72,45 @@ export class ShipManeuverEffectsRenderer {
       if (intensity <= 0.03 || !shouldBurst(thruster.id, intensity, timeSeconds)) continue;
       this.drawThruster(context, source, geometry, thruster, intensity, timeSeconds);
     }
+  }
+
+  drawGlow(
+    context: CanvasRenderingContext2D,
+    source: ShipHardpoints,
+    geometry: ShipScreenGeometry,
+    demand: ManeuverDemand,
+    timeSeconds: number
+  ): void {
+    for (const thruster of source.maneuverThrusters) {
+      const intensity = demandForThruster(thruster, source, demand);
+      if (intensity <= 0.03 || !shouldBurst(thruster.id, intensity, timeSeconds)) continue;
+
+      const nozzle = projectHardpoint(thruster, source, geometry);
+      const flicker =
+        0.84 +
+        Math.sin(timeSeconds * 31 + (hashId(thruster.id) % 11)) * 0.12 +
+        Math.sin(timeSeconds * 53 + (hashId(thruster.id) % 7)) * 0.04;
+      const nozzleWidth = Math.max(1.5, (thruster.width / source.sourceWidth) * geometry.width);
+
+      this.glow.draw(context, {
+        center: nozzle,
+        radius: nozzleWidth * 2.7,
+        intensity: 0.4 + intensity * 0.6,
+        flicker,
+        warmth: 0.08,
+      });
+    }
+  }
+
+  draw(
+    context: CanvasRenderingContext2D,
+    source: ShipHardpoints,
+    geometry: ShipScreenGeometry,
+    demand: ManeuverDemand,
+    timeSeconds: number
+  ): void {
+    this.drawExhaust(context, source, geometry, demand, timeSeconds);
+    this.drawGlow(context, source, geometry, demand, timeSeconds);
   }
 
   private drawThruster(
@@ -91,21 +130,16 @@ export class ShipManeuverEffectsRenderer {
       x: exhaustLocal.x * Math.cos(geometry.angle) - exhaustLocal.y * Math.sin(geometry.angle),
       y: exhaustLocal.x * Math.sin(geometry.angle) + exhaustLocal.y * Math.cos(geometry.angle),
     };
-    const flicker = 0.9 + Math.sin(timeSeconds * 31 + (hashId(thruster.id) % 11)) * 0.1;
+    const flicker =
+      0.84 +
+      Math.sin(timeSeconds * 31 + (hashId(thruster.id) % 11)) * 0.12 +
+      Math.sin(timeSeconds * 53 + (hashId(thruster.id) % 7)) * 0.04;
     const nozzleWidth = Math.max(1.5, (thruster.width / source.sourceWidth) * geometry.width);
     const length = nozzleWidth * (1.5 + intensity * 1.8) * flicker;
     const tail = {
       x: nozzle.x + exhaustWorld.x * length,
       y: nozzle.y + exhaustWorld.y * length,
     };
-
-    this.glow.draw(context, {
-      center: nozzle,
-      radius: nozzleWidth * 1.9,
-      intensity: 0.32 + intensity * 0.68,
-      flicker,
-      warmth: 0.08,
-    });
 
     context.save();
     context.lineCap = 'round';

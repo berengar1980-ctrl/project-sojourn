@@ -236,18 +236,14 @@ export class LocalSpaceRenderer {
   private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
     const engineIntensity = Math.min(1, this.model.ship.speed / 240);
-    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.draw(
-      this.context,
-      source,
-      geometry,
-      {
-        turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
-        angularThrust: this.model.ship.angularThrust,
-        lateralThrust: this.model.ship.lateralThrust,
-      },
-      timeSeconds
-    );
+    const maneuverDemand = {
+      turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
+      angularThrust: this.model.ship.angularThrust,
+      lateralThrust: this.model.ship.lateralThrust,
+    };
+
+    this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
+    this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
@@ -267,6 +263,9 @@ export class LocalSpaceRenderer {
     }
 
     this.context.restore();
+
+    this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
+    this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
 
     const rect = this.canvas.getBoundingClientRect();
     this.shieldImpacts.draw(
