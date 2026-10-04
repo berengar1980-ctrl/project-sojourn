@@ -1271,10 +1271,9 @@ body {
 
 .port-crew-row {
   display: grid;
-  grid-template-columns: 48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(
-      130px,
-      1fr
-    ) 100px 96px;
+  grid-template-columns:
+    48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(130px, 1fr)
+    100px 96px;
   align-items: center;
   gap: 10px;
   min-height: 72px;
