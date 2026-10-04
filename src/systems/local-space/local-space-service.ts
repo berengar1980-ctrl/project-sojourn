@@ -25,6 +25,7 @@ import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
 import { advanceMiningChunk, createMiningChunk } from './mining-chunk-service';
+import { advanceMiningFormation } from './local-space-mining-formation';
 import {
   runLongRangeAsteroidScan,
   selectedAsteroid,
@@ -392,93 +393,18 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateMiningFormation(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    const offset = this.miningHoldOffset;
-    if (!offset) {
-      this.instance.ship.speed = 0;
-      this.instance.ship.lateralThrust = 0;
-      this.instance.ship.turnRateRadiansPerSecond = 0;
-      this.instance.ship.angularThrust = 0;
-      return;
-    }
-
-    const ship = this.instance.ship;
-    const desiredPosition = {
-      x: asteroid.position.x + offset.x,
-      y: asteroid.position.y + offset.y,
-    };
-    const desiredHeading = heading(ship.position, asteroid.position);
-    const previousHeading = ship.headingRadians;
-    ship.headingRadians = turnToward(
-      ship.headingRadians,
-      desiredHeading,
-      MAX_TURN_RATE * 0.35 * deltaSeconds
-    );
-    ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
-    ship.angularThrust = Math.max(
-      -1,
-      Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 8))
-    );
-
-    const forwardX = Math.cos(ship.headingRadians);
-    const forwardY = Math.sin(ship.headingRadians);
-    const sideX = -forwardY;
-    const sideY = forwardX;
-    const errorX = desiredPosition.x - ship.position.x;
-    const errorY = desiredPosition.y - ship.position.y;
-    const forwardError = errorX * forwardX + errorY * forwardY;
-    const lateralError = errorX * sideX + errorY * sideY;
-
-    const threat = this.closestClosingDebris();
-    let lateralThrust = -this.shipLateralVelocity * 0.68 + lateralError * 0.13;
-    lateralThrust = Math.max(-0.62, Math.min(0.62, lateralThrust));
-    if (threat) {
-      const threatSide = threat.dx * sideX + threat.dy * sideY;
-      lateralThrust = threatSide >= 0 ? -1 : 1;
-    }
-    if (Math.abs(lateralError) < 1.5 && Math.abs(this.shipLateralVelocity) < 0.18) {
-      lateralThrust = 0;
-    }
-
-    let forwardThrust = -this.shipForwardVelocity * 0.62 + forwardError * 0.11;
-    forwardThrust = Math.max(-0.52, Math.min(0.72, forwardThrust));
-    if (Math.abs(forwardError) < 1.5 && Math.abs(this.shipForwardVelocity) < 0.2) {
-      forwardThrust = 0;
-    }
-
-    ship.lateralThrust = lateralThrust;
-    this.shipLateralVelocity += lateralThrust * 2.2 * deltaSeconds;
-    this.shipForwardVelocity += forwardThrust * 2.8 * deltaSeconds;
-    this.shipForwardVelocity = Math.max(-3.2, Math.min(4.5, this.shipForwardVelocity));
-    this.shipLateralVelocity = Math.max(-3.5, Math.min(3.5, this.shipLateralVelocity));
-
-    ship.position = {
-      x:
-        ship.position.x +
-        (forwardX * this.shipForwardVelocity + sideX * this.shipLateralVelocity) * deltaSeconds,
-      y:
-        ship.position.y +
-        (forwardY * this.shipForwardVelocity + sideY * this.shipLateralVelocity) * deltaSeconds,
-    };
-    ship.speed = Math.max(0, this.shipForwardVelocity);
-  }
-
-  private closestClosingDebris(): { dx: number; dy: number } | null {
-    const ship = this.instance.ship;
-    const threat = this.instance.asteroids
-      .filter((asteroid) => asteroid.kind === 'debris')
-      .map((asteroid) => {
-        const dx = asteroid.position.x - ship.position.x;
-        const dy = asteroid.position.y - ship.position.y;
-        return { asteroid, dx, dy, range: Math.hypot(dx, dy) };
-      })
-      .filter(({ asteroid, dx, dy, range }) => {
-        if (range > this.shield.radiusX + asteroid.radius + 32) return false;
-        const closing = dx * asteroid.physics.velocity.x + dy * asteroid.physics.velocity.y;
-        return closing < 0;
-      })
-      .sort((a, b) => a.range - b.range)[0];
-
-    return threat ? { dx: threat.dx, dy: threat.dy } : null;
+    const velocity = advanceMiningFormation({
+      ship: this.instance.ship,
+      asteroid,
+      asteroids: this.instance.asteroids,
+      holdOffset: this.miningHoldOffset,
+      shieldRadiusX: this.shield.radiusX,
+      forwardVelocity: this.shipForwardVelocity,
+      lateralVelocity: this.shipLateralVelocity,
+      deltaSeconds,
+    });
+    this.shipForwardVelocity = velocity.forward;
+    this.shipLateralVelocity = velocity.lateral;
   }
 
   private spawnChunk(asteroid: LocalAsteroid): void {
