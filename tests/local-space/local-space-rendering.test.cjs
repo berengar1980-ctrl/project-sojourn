@@ -36,6 +36,10 @@ const hardpointDebug = fs.readFileSync(
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const viewModel = fs.readFileSync(
+  path.join(root, 'src/features/local-space/local-space-view-model.ts'),
+  'utf8'
+);
 const systemLogPanel = fs.readFileSync(
   path.join(root, 'src/ui/system-log/system-log-panel.ts'),
   'utf8'
@@ -180,8 +184,44 @@ assert(
 assert(panel.includes('REDUZIERTER SICHERHEIT'), 'risky click routes must show a warning');
 assert(panel.includes('NAHBEREICHSSCAN'), 'selected asteroids must expose close scanning');
 assert(
+  panel.includes('SCAN-DATEN AN') && panel.includes('SCAN-DATEN AUS'),
+  'local UI must expose a scan-callout visibility toggle'
+);
+assert(
+  panel.includes('FRACHT // CONTAINER') && panel.includes('renderCargo'),
+  'local UI must show a per-resource cargo manifest'
+);
+assert(
+  panel.includes('GESCHÄTZT ~'),
+  'close scan details must report estimated rather than exact resource quantity'
+);
+assert(
+  viewModel.includes('miningResourceById(entry.resourceId)'),
+  'cargo labels must resolve stable resource ids through the resource catalog'
+);
+assert(
+  viewModel.includes('estimatedResourceAmount'),
+  'view model must expose a live estimated remaining resource quantity'
+);
+assert(
   renderer.includes('drawScanMarker'),
   'surveyed asteroids must be visibly distinguishable in local space'
+);
+assert(
+  renderer.includes('drawScanCallout') && renderer.includes("return '???'"),
+  'surveyed deposits must render attached unknown-resource callouts'
+);
+assert(
+  renderer.includes('startX + 10') && renderer.includes('startY - 10'),
+  'scan callout leader must use a short diagonal offset'
+);
+assert(
+  renderer.includes('setScanLabelsVisible'),
+  'scan callouts must support visibility toggling'
+);
+assert(
+  renderer.includes('asteroid.estimatedResourceAmount'),
+  'analyzed scan callouts must show the current estimated resource quantity'
 );
 assert(
   renderer.includes("asteroid.surveyResult === 'empty'"),
