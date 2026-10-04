@@ -7,7 +7,10 @@ import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
-import { createEconomyMarketService, type EconomyMarketService } from '../systems/economy/market-service';
+import {
+  createEconomyMarketService,
+  type EconomyMarketService,
+} from '../systems/economy/market-service';
 import {
   createLocalSpaceService,
   generateMiningSpace,
