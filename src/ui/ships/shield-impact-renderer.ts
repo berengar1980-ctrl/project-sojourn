@@ -101,12 +101,7 @@ export class ShieldImpactRenderer {
     context.fillStyle = gradient;
     context.shadowColor = 'rgba(99, 201, 255, .55)';
     context.shadowBlur = 4 + impact.strength * 5;
-    context.fillRect(
-      point.x - radius,
-      point.y - radius,
-      radius * 2,
-      radius * 2
-    );
+    context.fillRect(point.x - radius, point.y - radius, radius * 2, radius * 2);
     context.restore();
   }
 
