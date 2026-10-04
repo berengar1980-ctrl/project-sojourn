@@ -41,12 +41,16 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
   if (!asteroid) return '';
   if (asteroid.scanLevel === 'unscanned') return 'NICHT GESCANNT';
   if (asteroid.scanLevel === 'surveyed') {
-    return asteroid.surveyResult === 'deposit' ? 'RESSOURCE ERKANNT' : 'KEINE RESSOURCE ERKANNT';
+    if (asteroid.surveyResult === 'empty') return 'KEINE RESSOURCE ERKANNT';
+    return asteroid.deposits.length + ' VORKOMMEN ERKANNT';
   }
-  if (!asteroid.resourceName) return 'ANALYSE · KEINE RESSOURCE';
-  return (
-    asteroid.resourceName + ' · GESCHÄTZT ~' + Math.round(asteroid.estimatedResourceAmount ?? 0)
-  );
+  if (asteroid.deposits.length === 0) return 'ANALYSE · KEINE RESSOURCE';
+  return asteroid.deposits
+    .map((deposit) => {
+      const name = deposit.resourceName ?? '???';
+      return name + ' · GESCHÄTZT ~' + Math.round(deposit.estimatedAmount ?? 0);
+    })
+    .join(' / ');
 }
 
 function shieldPercent(model: LocalSpaceViewModel): number {
@@ -300,16 +304,18 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
     if (!selected) return;
     name.textContent =
-      selected.scanLevel === 'analyzed' ? (selected.resourceName ?? 'LEER') : 'ASTEROID';
+      selected.scanLevel === 'analyzed' && selected.deposits.length > 0
+        ? 'ASTEROID · ' + selected.deposits.length + ' VORKOMMEN'
+        : 'ASTEROID';
     meta.textContent = asteroidStatus(model);
     const remaining =
-      selected.resourceCapacity && selected.resourceAmount != null
-        ? (selected.resourceAmount / selected.resourceCapacity) * 100
+      selected.totalCapacity && selected.totalRemaining != null
+        ? (selected.totalRemaining / selected.totalCapacity) * 100
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
     shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
     const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
-    const depleted = selected.scanLevel === 'analyzed' && (selected.resourceAmount ?? 0) <= 0;
+    const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
     mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
