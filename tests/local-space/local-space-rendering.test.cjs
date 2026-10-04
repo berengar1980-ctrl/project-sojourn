@@ -187,4 +187,3 @@ assert(
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');
-
