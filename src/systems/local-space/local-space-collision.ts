@@ -206,20 +206,51 @@ function resolvePairImpulse(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoi
   applyImpulseAtPoint(b, impulse, contactPoint);
 }
 
+const COLLISION_CELL_SIZE = 160;
+
+function cellKey(column: number, row: number): string {
+  return column + ':' + row;
+}
+
+function collisionBuckets(asteroids: readonly LocalAsteroid[]): Map<string, number[]> {
+  const buckets = new Map<string, number[]>();
+  asteroids.forEach((asteroid, index) => {
+    const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
+    const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
+    const key = cellKey(column, row);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(index);
+    else buckets.set(key, [index]);
+  });
+  return buckets;
+}
+
+function resolveCollisionPair(a: LocalAsteroid, b: LocalAsteroid): void {
+  const maximumDistance = a.radius + b.radius;
+  const dx = b.position.x - a.position.x;
+  const dy = b.position.y - a.position.y;
+  if (dx * dx + dy * dy >= maximumDistance * maximumDistance) return;
+
+  const normal = collisionNormal(a, b);
+  separatePair(a, b, normal);
+  resolvePairImpulse(a, b, normal);
+}
+
 export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): void {
-  for (let first = 0; first < asteroids.length - 1; first += 1) {
-    const a = asteroids[first]!;
+  const buckets = collisionBuckets(asteroids);
 
-    for (let second = first + 1; second < asteroids.length; second += 1) {
-      const b = asteroids[second]!;
-      const maximumDistance = a.radius + b.radius;
-      const dx = b.position.x - a.position.x;
-      const dy = b.position.y - a.position.y;
-      if (dx * dx + dy * dy >= maximumDistance * maximumDistance) continue;
+  asteroids.forEach((asteroid, first) => {
+    const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
+    const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
 
-      const normal = collisionNormal(a, b);
-      separatePair(a, b, normal);
-      resolvePairImpulse(a, b, normal);
+    for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
+      for (let columnOffset = -1; columnOffset <= 1; columnOffset += 1) {
+        const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];
+        for (const second of candidates) {
+          if (second <= first) continue;
+          resolveCollisionPair(asteroid, asteroids[second]!);
+        }
+      }
     }
-  }
+  });
 }
