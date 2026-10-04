@@ -9,22 +9,24 @@ interface PortPanelOptions {
   readonly root: HTMLElement;
   readonly model: PortViewModel;
   readonly onReturnToStarMap: () => void;
+  readonly onBuy: (resourceId: string) => void;
+  readonly onSell: (resourceId: string) => void;
 }
 
 function marketRows(model: PortViewModel): string {
   return model.market
     .map(
       (row) => `
-        <button class="port-market-row" type="button" data-market-id="${row.id}">
-          <span class="port-market-name">${row.name}<small class="port-legality port-legality--${row.legality}">${row.legalityLabel}</small></span>
+        <div class="port-market-row" data-market-id="${row.id}">
+          <span class="port-market-name">${row.name}<small class="port-legality port-legality--${row.legality}">${row.legalityLabel}</small><small class="port-owned">FRACHT ${row.owned}</small></span>
           <strong>${row.buyPrice.toLocaleString('de-DE')} CR</strong>
           <span>${row.stock.toLocaleString('de-DE')}</span>
           <span class="port-demand port-demand--${row.demandLabel.replace(' ', '-')}">${row.demandLabel}</span>
           <span>${row.productionLabel}</span>
           <span class="port-trend port-trend--${row.trend}">${row.trend === 'up' ? '▲' : row.trend === 'down' ? '▼' : '—'} ${Math.abs(row.pressurePercent)}%</span>
-          <span class="port-buy">${row.buyPrice}</span>
-          <span class="port-sell">${row.sellPrice}</span>
-        </button>
+          <button class="port-buy" type="button" data-buy-id="${row.id}">+1</button>
+          <button class="port-sell" type="button" data-sell-id="${row.id}" ${row.owned > 0 ? '' : 'disabled'}>-1</button>
+        </div>
       `
     )
     .join('');
@@ -178,7 +180,7 @@ function shellMarkup(model: PortViewModel): string {
     <header class="port-header">
       <div class="port-brand"><span>PROJECT SOJOURN</span><small>DOCKED OPERATIONS</small></div>
       <div class="port-title"><span>${model.locationKind}</span><strong>${model.locationName}</strong><small>${model.subtitle}</small></div>
-      <div class="port-summary"><div><span>CREDITS</span><strong>238.450</strong></div><div><span>FRACHT</span><strong>0 / 280 t</strong></div><div><span>SCHIFF</span><strong>${model.ship.name}</strong></div></div>
+      <div class="port-summary"><div><span>CREDITS</span><strong>${model.player.credits.toLocaleString('de-DE')}</strong></div><div><span>FRACHT</span><strong>${model.player.cargoUsed} / ${model.player.cargoCapacity} t</strong></div><div><span>SCHIFF</span><strong>${model.ship.name}</strong></div></div>
       <button class="port-return-button" type="button">ZUR STERNKARTE</button>
     </header>
     <nav class="port-tabs">
@@ -215,6 +217,12 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       if (button.disabled) return;
       activate(button.dataset.portTab as PortTab);
     });
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-id]')) {
+    button.addEventListener('click', () => options.onBuy(button.dataset.buyId ?? ''));
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-id]')) {
+    button.addEventListener('click', () => options.onSell(button.dataset.sellId ?? ''));
   }
   returnButton.addEventListener('click', options.onReturnToStarMap);
   activate('trade');
