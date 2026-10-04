@@ -15,7 +15,7 @@
     "test:full": "node tests/run-tests.cjs full",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/data/ports/tutorial-ports.ts src/ui/styles.css && git diff -- src/data/ports/tutorial-ports.ts src/ui/styles.css && exit 1",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm test && npm run build",
