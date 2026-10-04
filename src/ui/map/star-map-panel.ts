@@ -101,8 +101,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
     const isCurrent = selected.id === model.navigation.currentLocationId;
     travelButton.hidden = model.navigation.isTravelling || isCurrent;
-    dockButton.hidden =
-      model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
+    dockButton.hidden = model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
