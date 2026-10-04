@@ -64,6 +64,10 @@ const miningFormation = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-mining-formation.ts'),
   'utf8'
 );
+const autopilot = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-autopilot.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
@@ -229,7 +233,7 @@ assert(
   'manual navigation must persist a fixed precomputed route'
 );
 assert(
-  service.includes('brakingSpeed'),
+  autopilot.includes('desiredSpeed') && autopilot.includes('remainingDistance * 0.72'),
   'manual navigation must decelerate near the clicked target'
 );
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
