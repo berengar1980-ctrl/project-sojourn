@@ -58,9 +58,7 @@ function weightedConsumerMarkets(
   resourceId: EconomyResourceId
 ): Array<{ market: EconomyMarketStock; weight: number }> {
   return state.markets
-    .filter(
-      (market) => !market.produces.has(resourceId) && marketQuantity(market, resourceId) > 0
-    )
+    .filter((market) => !market.produces.has(resourceId) && marketQuantity(market, resourceId) > 0)
     .map((market) => ({
       market,
       weight:
