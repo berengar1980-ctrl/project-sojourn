@@ -231,20 +231,24 @@ export class LocalSpaceRenderer {
     this.context.restore();
   }
 
-  private scanCalloutText(asteroid: LocalAsteroidView): string | null {
-    if (asteroid.scanLevel === 'unscanned') return null;
-    if (asteroid.surveyResult === 'empty') return 'LEER';
-    if (asteroid.scanLevel === 'surveyed') return '???';
-    if (!asteroid.resourceName) return 'LEER';
+  private scanCalloutLines(asteroid: LocalAsteroidView): readonly string[] {
+    if (asteroid.scanLevel === 'unscanned') return [];
+    if (asteroid.surveyResult === 'empty') return ['LEER'];
+    if (asteroid.scanLevel === 'surveyed') {
+      return asteroid.deposits.map(() => '???');
+    }
 
-    const amount = asteroid.estimatedResourceAmount ?? 0;
-    return asteroid.resourceName.toUpperCase() + ' · ~' + Math.round(amount);
+    return asteroid.deposits.map((deposit) => {
+      const name = deposit.resourceName?.toUpperCase() ?? '???';
+      const amount = Math.round(deposit.estimatedAmount ?? 0);
+      return name + ' · ~' + amount;
+    });
   }
 
   private drawScanCallout(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
     if (!this.scanLabelsVisible) return;
-    const text = this.scanCalloutText(asteroid);
-    if (!text) return;
+    const lines = this.scanCalloutLines(asteroid);
+    if (lines.length === 0) return;
 
     const startX = point.x + radius * 0.72;
     const startY = point.y - radius * 0.72;
@@ -265,7 +269,9 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.font = '9px ui-monospace, SFMono-Regular, Consolas, monospace';
     this.context.textBaseline = 'middle';
-    this.context.fillText(text, endX + 4, bendY);
+    lines.forEach((line, index) => {
+      this.context.fillText(line, endX + 4, bendY + index * 12);
+    });
     this.context.restore();
   }
 

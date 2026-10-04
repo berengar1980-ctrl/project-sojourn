@@ -15,11 +15,13 @@ export function createMiningChunk(
   seed: number,
   chunkCounter: number
 ): MiningChunk | null {
-  if (!asteroid.resourceId || asteroid.oreRemaining <= 0) return null;
+  const activeDeposits = asteroid.deposits.filter((deposit) => deposit.oreRemaining > 0);
+  if (activeDeposits.length === 0) return null;
 
+  const deposit = activeDeposits[chunkCounter % activeDeposits.length]!;
   const impact = calculateMiningImpact(ship, asteroid, hardpoints, nominalLengthMeters);
-  const amount = Math.min(6, asteroid.oreRemaining);
-  asteroid.oreRemaining -= amount;
+  const amount = Math.min(6, deposit.oreRemaining);
+  deposit.oreRemaining -= amount;
 
   const tangent = { x: -impact.normal.y, y: impact.normal.x };
   const spread = Math.sin(chunkCounter * 2.17) * 0.42;
@@ -32,7 +34,7 @@ export function createMiningChunk(
 
   return {
     id: 'chunk-' + seed + '-' + chunkCounter,
-    resourceId: asteroid.resourceId,
+    resourceId: deposit.resourceId,
     position: {
       x: impact.point.x + impact.normal.x * 2,
       y: impact.point.y + impact.normal.y * 2,

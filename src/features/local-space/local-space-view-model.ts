@@ -10,6 +10,13 @@ import type {
 import type { WorldPoint } from '../../core/world-types';
 import { miningResourceById } from '../../data/resources/mining-resources';
 
+export interface LocalAsteroidDepositView {
+  readonly resourceId: string | null;
+  readonly resourceName: string | null;
+  readonly estimatedAmount: number | null;
+  readonly capacity: number | null;
+}
+
 export interface LocalAsteroidView {
   readonly id: string;
   readonly kind: LocalAsteroid['kind'];
@@ -19,10 +26,9 @@ export interface LocalAsteroidView {
   readonly rotation: number;
   readonly scanLevel: LocalAsteroid['scanLevel'];
   readonly surveyResult: 'unknown' | 'empty' | 'deposit';
-  readonly resourceName: string | null;
-  readonly resourceAmount: number | null;
-  readonly resourceCapacity: number | null;
-  readonly estimatedResourceAmount: number | null;
+  readonly deposits: readonly LocalAsteroidDepositView[];
+  readonly totalRemaining: number | null;
+  readonly totalCapacity: number | null;
   readonly isSelected: boolean;
   readonly isMiningTarget: boolean;
   readonly isScanTarget: boolean;
@@ -86,6 +92,12 @@ function estimateResourceAmount(amount: number): number {
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
   const surveyed = asteroid.scanLevel !== 'unscanned';
   const analyzed = asteroid.scanLevel === 'analyzed';
+  const deposits = asteroid.deposits.map((deposit) => ({
+    resourceId: analyzed ? deposit.resourceId : null,
+    resourceName: analyzed ? deposit.oreType : null,
+    estimatedAmount: analyzed ? estimateResourceAmount(deposit.oreRemaining) : null,
+    capacity: analyzed ? deposit.oreCapacity : null,
+  }));
 
   return {
     id: asteroid.id,
@@ -95,11 +107,14 @@ function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): Loc
     radius: asteroid.radius,
     rotation: asteroid.rotation,
     scanLevel: asteroid.scanLevel,
-    surveyResult: !surveyed ? 'unknown' : asteroid.resourceId ? 'deposit' : 'empty',
-    resourceName: analyzed && asteroid.resourceId ? asteroid.oreType : null,
-    resourceAmount: analyzed ? asteroid.oreRemaining : null,
-    resourceCapacity: analyzed ? asteroid.oreCapacity : null,
-    estimatedResourceAmount: analyzed ? estimateResourceAmount(asteroid.oreRemaining) : null,
+    surveyResult: !surveyed ? 'unknown' : deposits.length > 0 ? 'deposit' : 'empty',
+    deposits,
+    totalRemaining: analyzed
+      ? asteroid.deposits.reduce((sum, deposit) => sum + deposit.oreRemaining, 0)
+      : null,
+    totalCapacity: analyzed
+      ? asteroid.deposits.reduce((sum, deposit) => sum + deposit.oreCapacity, 0)
+      : null,
     isSelected: asteroid.id === snapshot.selectedAsteroidId,
     isMiningTarget: asteroid.id === snapshot.miningTargetId,
     isScanTarget: asteroid.id === snapshot.scanTargetId,

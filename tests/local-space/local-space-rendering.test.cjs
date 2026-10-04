@@ -48,6 +48,7 @@ const systemLogService = fs.readFileSync(
   path.join(root, 'src/systems/system-log/system-log-service.ts'),
   'utf8'
 );
+const styles = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
 const stationKeeping = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
   'utf8'
@@ -200,16 +201,20 @@ assert(
   'cargo labels must resolve stable resource ids through the resource catalog'
 );
 assert(
-  viewModel.includes('estimatedResourceAmount'),
-  'view model must expose a live estimated remaining resource quantity'
+  viewModel.includes('deposits: readonly LocalAsteroidDepositView[]'),
+  'view model must expose multiple asteroid deposits'
+);
+assert(
+  viewModel.includes('estimatedAmount'),
+  'view model must expose live estimated remaining quantity per deposit'
 );
 assert(
   renderer.includes('drawScanMarker'),
   'surveyed asteroids must be visibly distinguishable in local space'
 );
 assert(
-  renderer.includes('drawScanCallout') && renderer.includes("return '???'"),
-  'surveyed deposits must render attached unknown-resource callouts'
+  renderer.includes('drawScanCallout') && renderer.includes("map(() => '???')"),
+  'surveyed asteroids must render one unknown callout line per deposit'
 );
 assert(
   renderer.includes('startX + 10') && renderer.includes('startY - 10'),
@@ -217,8 +222,8 @@ assert(
 );
 assert(renderer.includes('setScanLabelsVisible'), 'scan callouts must support visibility toggling');
 assert(
-  renderer.includes('asteroid.estimatedResourceAmount'),
-  'analyzed scan callouts must show the current estimated resource quantity'
+  renderer.includes('deposit.estimatedAmount'),
+  'analyzed scan callouts must show the current estimated quantity for each deposit'
 );
 assert(
   renderer.includes("asteroid.surveyResult === 'empty'"),
@@ -277,6 +282,12 @@ assert(
 assert(
   systemLogService.includes('MAX_LOG_ENTRIES = 40'),
   'shared system log service must keep bounded cross-scene history'
+);
+assert(
+  styles.includes('system-log-crt-flicker') &&
+    styles.includes('system-log-text-jitter') &&
+    styles.includes('system-log-glitch-band'),
+  'system log must visibly flicker, jitter and glitch continuously'
 );
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 

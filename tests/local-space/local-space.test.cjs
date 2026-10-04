@@ -79,8 +79,12 @@ assert(
   'resource asteroids must start with hidden scan data'
 );
 assert(
-  generator.includes('const containsResource = random() < 0.68'),
+  generator.includes('if (random() >= 0.68) return []'),
   'some generated asteroids must be empty'
+);
+assert(
+  generator.includes('depositCount') && generator.includes('usedResourceIds'),
+  'resource asteroids must support multiple unique ore deposits'
 );
 assert(
   (resources.match(/id: '/g) ?? []).length === 10,
@@ -159,16 +163,24 @@ assert(
   'close scan or mining must reveal exact asteroid contents'
 );
 assert(
-  miningChunks.includes('resourceId: asteroid.resourceId'),
-  'mined chunks must retain their actual resource identity'
+  miningChunks.includes('resourceId: deposit.resourceId'),
+  'mined chunks must retain the selected deposit resource identity'
 );
 assert(
-  miningChunks.includes('asteroid.oreRemaining -= amount'),
-  'extracted chunks must reduce the asteroid resource amount immediately'
+  miningChunks.includes('deposit.oreRemaining -= amount'),
+  'extracted chunks must reduce only the selected deposit amount'
+);
+assert(
+  miningChunks.includes('activeDeposits[chunkCounter % activeDeposits.length]'),
+  'mining must rotate deterministically across remaining deposits'
 );
 assert(
   service.includes('this.collectedResources.set(chunk.resourceId, collected + chunk.amount)'),
   'recovered chunks must increase cargo by stable resource id'
+);
+assert(
+  service.includes('hasMineableDeposits'),
+  'mining must continue until all asteroid deposits are depleted'
 );
 assert(
   service.includes('shipLateralVelocity'),

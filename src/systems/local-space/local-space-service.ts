@@ -47,6 +47,10 @@ export interface LocalSpaceServiceOptions {
   readonly nominalLengthMeters: number;
 }
 
+function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
+  return asteroid.deposits.some((deposit) => deposit.oreRemaining > 0);
+}
+
 export interface LocalSpaceService {
   getSnapshot(): LocalSpaceSnapshot;
   selectAsteroid(id: string | null): LocalSpaceSnapshot;
@@ -378,7 +382,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     asteroid.scanLevel = 'analyzed';
-    if (asteroid.oreRemaining <= 0) {
+    if (!hasMineableDeposits(asteroid)) {
       this.finishMining();
       return;
     }
@@ -397,12 +401,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.updateMiningFormation(deltaSeconds, asteroid);
     this.miningAccumulator += deltaSeconds;
 
-    while (this.miningAccumulator >= 0.42 && asteroid.oreRemaining > 0) {
+    while (this.miningAccumulator >= 0.42 && hasMineableDeposits(asteroid)) {
       this.miningAccumulator -= 0.42;
       this.spawnChunk(asteroid);
     }
 
-    if (asteroid.oreRemaining <= 0) {
+    if (!hasMineableDeposits(asteroid)) {
       this.finishMining();
     }
   }

@@ -12,6 +12,13 @@ export interface AsteroidPhysics {
   readonly momentOfInertia: number;
 }
 
+export interface AsteroidResourceDeposit {
+  readonly resourceId: string;
+  readonly oreType: string;
+  oreRemaining: number;
+  readonly oreCapacity: number;
+}
+
 export interface LocalAsteroid {
   readonly id: string;
   readonly kind: LocalAsteroidKind;
@@ -20,10 +27,7 @@ export interface LocalAsteroid {
   radius: number;
   rotation: number;
   physics: AsteroidPhysics;
-  resourceId: string | null;
-  oreType: string;
-  oreRemaining: number;
-  oreCapacity: number;
+  readonly deposits: AsteroidResourceDeposit[];
   scanLevel: AsteroidScanLevel;
 }
 
