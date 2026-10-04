@@ -36,10 +36,7 @@ function marketQuantity(market: EconomyMarketState, resourceId: EconomyResourceI
   return quantity(market.entries[resourceId]?.stock ?? 0);
 }
 
-function npcQuantity(
-  npcs: readonly EconomyCargoHold[],
-  resourceId: EconomyResourceId
-): number {
+function npcQuantity(npcs: readonly EconomyCargoHold[], resourceId: EconomyResourceId): number {
   return npcs.reduce((sum, npc) => sum + quantity(npc.cargo[resourceId] ?? 0), 0);
 }
 
