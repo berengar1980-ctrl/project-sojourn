@@ -25,6 +25,7 @@ import { localShipVelocity } from './local-space-ship-velocity';
 import {
   advanceAndCollectMiningChunks,
   createMiningChunk,
+  hasMineableDeposits,
   type MiningChunkCollector,
 } from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
@@ -48,10 +49,6 @@ export interface LocalSpaceServiceOptions {
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
   readonly onMiningChunkCollected?: MiningChunkCollector;
-}
-
-function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
-  return asteroid.deposits.some((deposit) => deposit.oreRemaining > 0);
 }
 
 export interface LocalSpaceService {
@@ -155,11 +152,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    return this.getSelectedRouteOptions();
+    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
-    return this.getSelectedRouteOptions();
+    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
@@ -290,10 +287,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     this.longRangeScanElapsed = 0;
     this.longRangeScanParameters = null;
-  }
-
-  private getSelectedRouteOptions(): RoutePlanningOptions | null {
-    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   private prepareApproach(route: readonly WorldPoint[]): void {
