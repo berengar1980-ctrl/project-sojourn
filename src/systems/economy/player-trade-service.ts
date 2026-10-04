@@ -95,11 +95,13 @@ export function createPlayerTradeService(
       if (quantity <= 0) return 0;
 
       const lot = player.cargo[resourceId];
-      player.cargo[resourceId] = {
+      const receivedLot: PlayerCargoLot = {
         qty: (lot?.qty ?? 0) + quantity,
         totalCost: Math.max(0, lot?.totalCost ?? 0),
-        lastOriginId: originId ?? lot?.lastOriginId,
       };
+      const receivedOriginId = originId ?? lot?.lastOriginId;
+      if (receivedOriginId) receivedLot.lastOriginId = receivedOriginId;
+      player.cargo[resourceId] = receivedLot;
       return quantity;
     },
 
