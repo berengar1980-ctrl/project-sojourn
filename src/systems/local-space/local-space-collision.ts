@@ -13,6 +13,7 @@ export interface ShieldCollisionImpact {
   readonly asteroidId: string;
   readonly point: WorldPoint;
   readonly normal: WorldPoint;
+  readonly surfaceAnchor: WorldPoint;
   readonly mass: number;
   readonly impactSpeed: number;
   readonly kineticEnergy: number;
@@ -109,6 +110,16 @@ export function resolveShieldCollisions(
       x: asteroid.position.x - normal.x * asteroid.radius,
       y: asteroid.position.y - normal.y * asteroid.radius,
     };
+    const localContact = rotate(
+      { x: contactPoint.x - center.x, y: contactPoint.y - center.y },
+      -ship.headingRadians
+    );
+    const surfaceMetric =
+      Math.hypot(localContact.x / shield.radiusX, localContact.y / shield.radiusY) || 1;
+    const surfaceAnchor = {
+      x: localContact.x / (surfaceMetric * shield.radiusX),
+      y: localContact.y / (surfaceMetric * shield.radiusY),
+    };
     const velocityAtContact = pointVelocity(asteroid, contactPoint);
     const relativeVelocity = {
       x: velocityAtContact.x - shipVelocity.x,
@@ -122,6 +133,7 @@ export function resolveShieldCollisions(
         asteroidId: asteroid.id,
         point: contactPoint,
         normal,
+        surfaceAnchor,
         mass: asteroid.physics.mass,
         impactSpeed,
         kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed,
