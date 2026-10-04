@@ -96,20 +96,20 @@ assert(
   scanner.includes('sensorModifier') && scanner.includes('crewSkill'),
   'long-range scanner radius must be ready for sensors and crew skill'
 );
-assert(generator.includes('const width = 5400'), 'mining field width must be tripled');
-assert(generator.includes('const height = 3150'), 'mining field height must be tripled');
+assert(generator.includes('const width = 4400'), 'mining field width must use the compact density-preserving size');
+assert(generator.includes('const height = 2570'), 'mining field height must use the compact density-preserving size');
 assert(
   generator.includes('createResourceAsteroids'),
   'local-space generator must create resource asteroids'
 );
 assert(generator.includes('createDebris'), 'local-space generator must create small debris');
 assert(
-  generator.includes('const count = 96 + Math.floor(random() * 25)'),
-  'mining field must contain dense resource asteroids'
+  generator.includes('const count = 64 + Math.floor(random() * 17)'),
+  'resource asteroid count must be reduced by about one third'
 );
 assert(
-  generator.includes('const count = 190 + Math.floor(random() * 51)'),
-  'mining field must contain dense small debris'
+  generator.includes('const count = 127 + Math.floor(random() * 34)'),
+  'small debris count must be reduced by about one third'
 );
 assert(
   generator.includes('createPhysics(radius, random, 5.8, 0.1, 1.9)'),
@@ -134,7 +134,9 @@ assert(
   'manual navigation must reuse route-planning input'
 );
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
-assert(service.includes('runLongRangeScan'), 'service must expose long-range scanning');
+assert(service.includes('startLongRangeScan'), 'service must expose timed long-range scanning');
+assert(service.includes('longRangeScanElapsed / 5'), 'long-range scan must expose five-second progress');
+assert(service.includes('this.longRangeScanElapsed < 5'), 'long-range scan must not finish before five seconds');
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
 assert(
   localScanning.includes("asteroid.scanLevel = 'surveyed'"),
@@ -249,6 +251,16 @@ assert(
   'route planner must support arbitrary clicked destinations'
 );
 assert(
+  navigation.includes('options.clearance * 0.72') &&
+    navigation.includes('options.clearance * 0.45') &&
+    navigation.includes('options.clearance * 0.2'),
+  'point navigation must progressively relax clearance before giving up'
+);
+assert(
+  navigation.includes('compromised: true'),
+  'best-effort navigation must flag routes with reduced safety'
+);
+assert(
   navigation.includes('class MinPriorityQueue'),
   'A-star open nodes must use a priority queue instead of linear scans'
 );
@@ -273,6 +285,10 @@ assert(
 assert(
   collision.includes('resolveAsteroidCollisions'),
   'asteroid pair collisions must be implemented'
+);
+assert(
+  collision.includes('COLLISION_CELL_SIZE') && collision.includes('collisionBuckets'),
+  'asteroid collisions must use a spatial-grid broadphase'
 );
 assert(collision.includes('contactPoint'), 'collisions must calculate a contact point');
 assert(
@@ -304,6 +320,7 @@ assert(
   shieldTypes.includes('ShieldDamageSource'),
   'shield damage model must be reusable by future weapon sources'
 );
+assert(controller.includes("id === 'greyrock-belt'"), 'current asteroid field must support direct re-entry');
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
 console.log('PASS local-space route, rigid asteroid physics, debris and collision ownership');
