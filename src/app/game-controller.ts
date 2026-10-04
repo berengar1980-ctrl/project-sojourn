@@ -2,6 +2,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
 import { economyResourceById, economyResources } from '../data/economy/economy-resources';
+import { createTutorialNpcEconomyStates } from '../data/economy/tutorial-npc-economy';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
@@ -19,6 +20,10 @@ import {
   createMiningEconomyService,
   type MiningEconomyService,
 } from '../systems/economy/mining-economy-service';
+import {
+  createNpcEconomyService,
+  type NpcEconomyService,
+} from '../systems/economy/npc-economy-service';
 import {
   createPlayerTradeService,
   type PlayerTradeService,
@@ -75,17 +80,26 @@ interface ControllerEconomy {
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
+  readonly npcs: NpcEconomyService;
 }
 
 function createControllerEconomy(): ControllerEconomy {
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
   const trade = createPlayerTradeService(markets);
-  const simulation = createEconomySimulationService(markets, trade.player, economyResources, 41);
+  const npcStates = createTutorialNpcEconomyStates();
+  const simulation = createEconomySimulationService(
+    markets,
+    trade.player,
+    economyResources,
+    41,
+    npcStates
+  );
   return {
     markets,
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
+    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates),
   };
 }
 
@@ -176,6 +190,18 @@ function enteredGreyrock(
   currentId: string | null
 ): boolean {
   return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
+}
+
+function advanceEconomyDay(
+  previousId: string | null,
+  currentId: string | null,
+  simulation: EconomySimulationService,
+  npcs: NpcEconomyService
+): void {
+  if (previousId === null && currentId !== null) {
+    simulation.advanceNextDay();
+    npcs.advanceNextDay();
+  }
 }
 
 function createLocalPanelActions(context: LocalActionContext): LocalPanelActions {
@@ -314,7 +340,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const { markets, trade, simulation, mining } = createControllerEconomy();
+  const { markets, trade, simulation, mining, npcs } = createControllerEconomy();
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -392,7 +418,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
-      if (previousLocationId === null && currentLocationId !== null) simulation.advanceNextDay();
+      advanceEconomyDay(previousLocationId, currentLocationId, simulation, npcs);
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
       if (mode === 'star-map') panels.star?.update(starModel());
