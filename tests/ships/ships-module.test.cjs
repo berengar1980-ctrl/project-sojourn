@@ -50,10 +50,7 @@ function assertHardpoints(hardpoints, width, height) {
 }
 
 const standardAsset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
-const industrialAsset = path.join(
-  root,
-  'resources/ships/mining/miner-80m-industrial-heavy.png'
-);
+const industrialAsset = path.join(root, 'resources/ships/mining/miner-80m-industrial-heavy.png');
 const standardHardpoints = loadHardpoints('miner-80m-standard');
 const industrialHardpoints = loadHardpoints('miner-80m-industrial-heavy');
 
