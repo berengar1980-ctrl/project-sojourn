@@ -9,6 +9,10 @@ const shared = fs.readFileSync(
   path.join(root, 'src/ui/space/procedural-space-body-renderer.ts'),
   'utf8'
 );
+const textures = fs.readFileSync(
+  path.join(root, 'src/ui/space/procedural-surface-textures.ts'),
+  'utf8'
+);
 const local = fs.readFileSync(
   path.join(root, 'src/ui/local-space/local-space-renderer.ts'),
   'utf8'
@@ -16,14 +20,18 @@ const local = fs.readFileSync(
 const map = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 
 assert(shared.includes('class ProceduralSpaceBodyRenderer'), 'shared body renderer must exist');
-assert(shared.includes('asteroidCache'), 'asteroid surfaces must be cached by seed');
+assert(shared.includes('asteroidSurfaceCache'), 'asteroid surfaces must be cached by seed');
+assert(shared.includes('asteroidTextureCache'), 'asteroid textures must be cached');
 assert(shared.includes('planetTextureCache'), 'planet textures must be cached');
-assert(shared.includes('drawWorldLight'), 'world-fixed lighting pass must be shared');
+assert(shared.includes('drawSphereLight'), 'world-fixed volume lighting pass must be shared');
+assert(textures.includes('function fbm('), 'surface generation must use layered coherent noise');
+assert(textures.includes('createPlanetTexture'), 'planets must use generated terrain textures');
 assert(
-  shared.includes('Math.pow(1 - progress, 1.25)'),
+  shared.includes('Math.pow(1 - progress, 1.35)'),
   'fractures must taper instead of ending hard'
 );
-assert(shared.includes('5 + Math.floor(random() * 4)'), 'resource asteroids need several craters');
+assert(shared.includes('traceCraterShape'), 'craters must use irregular relief outlines');
+assert(shared.includes('drawFractureSegment'), 'fractures must use tapered filled geometry');
 assert(local.includes('ProceduralSpaceBodyRenderer'), 'local space must use shared body renderer');
 assert(
   local.includes('light: { x: -0.72, y: -0.56 }'),
