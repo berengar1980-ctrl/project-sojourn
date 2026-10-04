@@ -17,5 +17,14 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Format debug
+        run: |
+          npx prettier --write src/ui/space/procedural-space-body-renderer.ts tests/map/procedural-space-bodies.test.cjs
+          echo '---BEGIN_SPACE_BODY_TS---'
+          cat src/ui/space/procedural-space-body-renderer.ts
+          echo '---END_SPACE_BODY_TS---'
+          echo '---BEGIN_SPACE_BODY_TEST---'
+          cat tests/map/procedural-space-bodies.test.cjs
+          echo '---END_SPACE_BODY_TEST---'
       - name: Quality gate
         run: npm run check
