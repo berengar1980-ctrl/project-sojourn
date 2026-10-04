@@ -79,7 +79,7 @@ function port(locationId) {
   assert.equal(markets.getEntry('source', 'medical').price, sourceBefore);
   assert(
     markets.getEntry('destination', 'medical').price > destinationBefore,
-    'local market situation must raise only the affected market price'
+    'local market situation must raise the affected market price only'
   );
   assert.equal(situations.modifier('source', 'medical'), 0);
   assert.equal(situations.modifier('destination', 'medical'), 0.5);
