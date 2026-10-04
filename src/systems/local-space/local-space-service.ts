@@ -15,7 +15,6 @@ import {
   resolveShieldCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
-import { distance } from './local-space-motion';
 import {
   advanceAutopilotRoute,
   faceAutopilotTarget,
@@ -25,8 +24,7 @@ import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
 import {
-  advanceMiningChunk,
-  collectMiningChunk,
+  advanceAndCollectMiningChunks,
   createMiningChunk,
   type MiningChunkCollector,
 } from './mining-chunk-service';
@@ -485,23 +483,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateChunks(deltaSeconds: number): void {
-    const remaining: MiningChunk[] = [];
-
-    for (const chunk of this.instance.chunks) {
-      advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
-      if (distance(chunk.position, this.instance.ship.position) < 24) {
-        const accepted = collectMiningChunk(chunk, this.onMiningChunkCollected);
-        if (accepted > 0) {
-          this.collectedOre += accepted;
-          const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
-          this.collectedResources.set(chunk.resourceId, collected + accepted);
-        }
-      }
-
-      if (chunk.amount > 0) remaining.push(chunk);
+    const result = advanceAndCollectMiningChunks(
+      this.instance.chunks,
+      this.instance.ship.position,
+      deltaSeconds,
+      this.onMiningChunkCollected
+    );
+    for (const [resourceId, amount] of result.collected) {
+      this.collectedOre += amount;
+      this.collectedResources.set(
+        resourceId,
+        (this.collectedResources.get(resourceId) ?? 0) + amount
+      );
     }
-
-    this.instance.chunks.splice(0, this.instance.chunks.length, ...remaining);
+    this.instance.chunks.splice(0, this.instance.chunks.length, ...result.remaining);
   }
 }
 
