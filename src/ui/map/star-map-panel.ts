@@ -15,6 +15,7 @@ interface StarMapPanelOptions {
   readonly log: SystemLogService;
   readonly onSelectLocation: (id: string) => void;
   readonly onStartTravel: () => void;
+  readonly onDock: () => void;
 }
 
 function activityLabels(model: StarMapViewModel): string {
@@ -48,7 +49,10 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       <div class="selection-name"></div>
       <div class="selection-description"></div>
       <div class="selection-meta"></div>
-      <button class="travel-button" type="button">FLUG STARTEN</button>
+      <div class="selection-actions">
+        <button class="travel-button" type="button">FLUG STARTEN</button>
+        <button class="dock-button" type="button" hidden>ANDOCKEN</button>
+      </div>
     </div>
   `;
   options.root.replaceChildren(shell);
@@ -56,8 +60,9 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const canvas = shell.querySelector<HTMLCanvasElement>('.star-map-canvas');
   const card = shell.querySelector<HTMLElement>('.selection-card');
   const travelButton = shell.querySelector<HTMLButtonElement>('.travel-button');
+  const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
-  if (!canvas || !card || !travelButton || !travelStatus) {
+  if (!canvas || !card || !travelButton || !dockButton || !travelStatus) {
     throw new Error('Star map UI is incomplete.');
   }
 
@@ -94,8 +99,10 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     description.textContent = selected.description;
     const route = model.route ? ` · ROUTE ${Math.round(model.route.distance)}` : '';
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
-    travelButton.hidden =
-      model.navigation.isTravelling || selected.id === model.navigation.currentLocationId;
+    const isCurrent = selected.id === model.navigation.currentLocationId;
+    travelButton.hidden = model.navigation.isTravelling || isCurrent;
+    dockButton.hidden =
+      model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
@@ -107,6 +114,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     onSelectLocation: options.onSelectLocation,
   });
   travelButton.addEventListener('click', options.onStartTravel);
+  dockButton.addEventListener('click', options.onDock);
 
   updateSelection();
 
