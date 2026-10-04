@@ -71,15 +71,11 @@ function weightedPick(
   random: () => number
 ): EconomyMarketState | null {
   const candidates = markets
-    .filter(
-      (market) =>
-        !market.produces.has(resourceId) && marketQuantity(market, resourceId) > 0
-    )
+    .filter((market) => !market.produces.has(resourceId) && marketQuantity(market, resourceId) > 0)
     .map((market) => ({
       market,
       weight:
-        (market.needs.has(resourceId) ? 4 : 1) *
-        Math.max(1, marketQuantity(market, resourceId)),
+        (market.needs.has(resourceId) ? 4 : 1) * Math.max(1, marketQuantity(market, resourceId)),
     }));
   if (candidates.length === 0) return null;
 
@@ -177,18 +173,22 @@ function illegalStabilization(
   const sources = markets.filter((market) => market.entries[resourceId]);
   if (sources.length === 0) return 0;
   const market = [...sources].sort(
-    (first, second) =>
-      marketQuantity(first, resourceId) - marketQuantity(second, resourceId)
+    (first, second) => marketQuantity(first, resourceId) - marketQuantity(second, resourceId)
   )[0]!;
   market.entries[resourceId]!.stock += wanted;
   pool.externalImports += wanted;
   return wanted;
 }
 
-function driftDemand(market: EconomyMarketState, resourceId: EconomyResourceId, random: () => number) {
+function driftDemand(
+  market: EconomyMarketState,
+  resourceId: EconomyResourceId,
+  random: () => number
+) {
   const entry = market.entries[resourceId];
   if (!entry) return;
-  const role = (market.needs.has(resourceId) ? 0.018 : 0) - (market.produces.has(resourceId) ? 0.01 : 0);
+  const role =
+    (market.needs.has(resourceId) ? 0.018 : 0) - (market.produces.has(resourceId) ? 0.01 : 0);
   const noise = (random() - 0.5) * 0.024;
   entry.demand = clamp(entry.demand + role + noise, 0.05, 1);
 }
