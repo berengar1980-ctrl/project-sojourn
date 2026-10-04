@@ -74,6 +74,7 @@ export interface LocalSpaceViewModel {
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
   readonly longRangeScanProgress: number | null;
+  readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
@@ -176,6 +177,7 @@ export function createLocalSpaceViewModel(
     navigationTarget: snapshot.navigationTarget,
     navigationRoute: snapshot.navigationRoute,
     longRangeScanProgress: snapshot.longRangeScanProgress,
+    shortRangeScanProgress: snapshot.shortRangeScanProgress,
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,

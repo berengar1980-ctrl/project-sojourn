@@ -155,6 +155,15 @@ assert(
 );
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
 assert(
+  service.includes("this.miningPhase === 'scanning'") &&
+    service.includes('this.shortRangeScanElapsed / 5'),
+  'close-range scan must expose a dedicated five-second scanning phase'
+);
+assert(
+  service.includes('this.shortRangeScanElapsed < 5'),
+  'close-range scan must not reveal asteroid contents before five seconds'
+);
+assert(
   localScanning.includes("asteroid.scanLevel = 'surveyed'"),
   'long-range scan must reveal only deposit presence'
 );

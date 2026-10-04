@@ -94,6 +94,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private shipLateralVelocity = 0;
   private readonly idleStationKeeping: IdleStationKeepingState;
   private longRangeScanElapsed = 0;
+  private shortRangeScanElapsed = 0;
   private longRangeScanParameters: { sensorModifier: number; crewSkill: number } | null = null;
 
   constructor(options: LocalSpaceServiceOptions) {
@@ -124,6 +125,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       longRangeScanProgress: this.longRangeScanParameters
         ? Math.min(1, this.longRangeScanElapsed / 5)
         : null,
+      shortRangeScanProgress:
+        this.miningPhase === 'scanning' ? Math.min(1, this.shortRangeScanElapsed / 5) : null,
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
@@ -206,6 +209,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.scanTargetId = asteroid.id;
     this.miningTargetId = null;
     this.approachPurpose = 'scan';
+    this.shortRangeScanElapsed = 0;
     this.miningPhase = 'approaching';
     this.prepareApproach(route);
     return this.getSnapshot();
@@ -232,6 +236,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.updatePassiveStationKeeping(clamped);
     } else if (asteroid && this.miningPhase === 'approaching') {
       this.updateApproach(clamped, asteroid);
+    } else if (asteroid && this.miningPhase === 'scanning') {
+      this.updateShortRangeScan(clamped, asteroid);
     } else if (asteroid && this.miningPhase === 'extracting') {
       this.updateMining(clamped, asteroid);
     }
@@ -322,6 +328,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.scanTargetId = null;
     this.approachPurpose = null;
     this.miningAccumulator = 0;
+    this.shortRangeScanElapsed = 0;
     this.approachRoute = [];
     this.approachIndex = 0;
     resetAutopilotMotion(this.instance.ship);
@@ -376,8 +383,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds)) return;
 
     if (this.approachPurpose === 'scan') {
-      asteroid.scanLevel = 'analyzed';
-      this.finishMining();
+      resetAutopilotMotion(ship);
+      this.stationKeepingPosition = { ...ship.position };
+      this.shipForwardVelocity = 0;
+      this.shipLateralVelocity = 0;
+      this.shortRangeScanElapsed = 0;
+      this.miningPhase = 'scanning';
       return;
     }
 
@@ -395,6 +406,21 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
     this.miningPhase = 'extracting';
+  }
+
+  private updateShortRangeScan(deltaSeconds: number, asteroid: LocalAsteroid): void {
+    this.shortRangeScanElapsed += deltaSeconds;
+    updateIdleStationKeeping(
+      this.idleStationKeeping,
+      this.instance.ship,
+      this.stationKeepingPosition,
+      this.instance.seed,
+      deltaSeconds
+    );
+    if (this.shortRangeScanElapsed < 5) return;
+
+    asteroid.scanLevel = 'analyzed';
+    this.finishMining();
   }
 
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {

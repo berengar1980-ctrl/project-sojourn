@@ -71,7 +71,7 @@ export interface LocalSpaceInstance {
   readonly ship: LocalShipState;
 }
 
-export type MiningPhase = 'idle' | 'approaching' | 'extracting';
+export type MiningPhase = 'idle' | 'approaching' | 'scanning' | 'extracting';
 
 export interface LocalSpaceSnapshot {
   readonly instance: LocalSpaceInstance;
@@ -81,6 +81,7 @@ export interface LocalSpaceSnapshot {
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
   readonly longRangeScanProgress: number | null;
+  readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly collectedOre: number;
   readonly collectedResources: readonly ResourceCargoEntry[];

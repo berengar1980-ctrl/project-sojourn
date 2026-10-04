@@ -50,6 +50,7 @@ function wrap(value: number, extent: number): number {
 export class SpaceBackgroundRenderer {
   private readonly farStars: readonly BackgroundStar[];
   private readonly midStars: readonly BackgroundStar[];
+  private readonly nearStars: readonly BackgroundStar[];
   private readonly nebulae: readonly NebulaCloud[];
 
   constructor(
@@ -58,7 +59,8 @@ export class SpaceBackgroundRenderer {
   ) {
     const random = createRandom(seed);
     this.farStars = this.createStars(random, 170, 0.35, 0.9, 0.24, 0.72);
-    this.midStars = this.createStars(random, 95, 0.8, 1.8, 0.42, 0.9);
+    this.midStars = this.createStars(random, 110, 0.8, 1.8, 0.42, 0.9);
+    this.nearStars = this.createStars(random, 48, 1.1, 2.4, 0.52, 0.96);
     this.nebulae = this.createNebulae(random);
   }
 
@@ -66,8 +68,9 @@ export class SpaceBackgroundRenderer {
     this.drawBase(view.width, view.height);
     this.drawMilkyWay(view);
     this.drawNebulae(view);
-    this.drawStars(this.farStars, view, 0.075);
-    this.drawStars(this.midStars, view, 0.24);
+    this.drawStars(this.farStars, view, 0.13);
+    this.drawStars(this.midStars, view, 0.36);
+    this.drawStars(this.nearStars, view, 0.62);
   }
 
   private createStars(
@@ -155,8 +158,8 @@ export class SpaceBackgroundRenderer {
   }
 
   private drawMilkyWay(view: SpaceBackgroundView): void {
-    const offsetX = -view.cameraCenter.x * view.cameraZoom * 0.045;
-    const offsetY = -view.cameraCenter.y * view.cameraZoom * 0.045;
+    const offsetX = -view.cameraCenter.x * view.cameraZoom * 0.09;
+    const offsetY = -view.cameraCenter.y * view.cameraZoom * 0.09;
 
     this.context.save();
     this.context.translate(view.width * 0.54 + offsetX, view.height * 0.5 + offsetY);
@@ -178,7 +181,7 @@ export class SpaceBackgroundRenderer {
   }
 
   private drawNebulae(view: SpaceBackgroundView): void {
-    const parallax = 0.13;
+    const parallax = 0.24;
     const offsetX = -view.cameraCenter.x * view.cameraZoom * parallax;
     const offsetY = -view.cameraCenter.y * view.cameraZoom * parallax;
     const spanX = view.width + 700;
