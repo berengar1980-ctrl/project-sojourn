@@ -11,6 +11,7 @@ export interface ShieldState {
 export interface ShieldHit {
   readonly source: ShieldDamageSource;
   readonly point: WorldPoint;
+  readonly surfacePoint?: WorldPoint;
   readonly normal: WorldPoint;
   readonly impactEnergy?: number;
   readonly directDamage?: number;
@@ -20,6 +21,7 @@ export interface ShieldImpactEffect {
   readonly id: number;
   readonly source: ShieldDamageSource;
   readonly point: WorldPoint;
+  readonly surfacePoint?: WorldPoint;
   readonly normal: WorldPoint;
   readonly damage: number;
   readonly strength: number;
