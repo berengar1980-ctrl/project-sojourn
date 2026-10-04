@@ -169,6 +169,9 @@ assert(effects.includes('drawTractorFields'), 'mining effects must render tracto
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
 assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
 assert(panel.includes('LANGREICHWEITENSCAN'), 'local UI must expose long-range scanning');
+assert(renderer.includes('drawLongRangeScan'), 'long-range scan must have a visible expanding wave');
+assert(panel.includes('longRangeScanProgress'), 'long-range scan progress must be visible in local UI');
+assert(panel.includes('REDUZIERTER SICHERHEIT'), 'risky click routes must show a warning');
 assert(panel.includes('NAHBEREICHSSCAN'), 'selected asteroids must expose close scanning');
 assert(
   renderer.includes('drawScanMarker'),
