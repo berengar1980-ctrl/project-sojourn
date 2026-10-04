@@ -36,6 +36,12 @@ export interface PlayerTradeService {
     resourceId: EconomyResourceId,
     requestedQuantity: number
   ): TradeResult | null;
+  receiveCargo(
+    resourceId: EconomyResourceId,
+    requestedQuantity: number,
+    cargoCapacityTons: number,
+    originId?: string
+  ): number;
 }
 
 export function createPlayerTradeService(
@@ -80,6 +86,21 @@ export function createPlayerTradeService(
         creditsDelta: -cost,
         realizedProfit: 0,
       };
+    },
+
+    receiveCargo(resourceId, requestedQuantity, cargoCapacityTons, originId) {
+      const requested = finiteInteger(requestedQuantity);
+      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - playerCargoUsed(player));
+      const quantity = Math.min(requested, cargoFree);
+      if (quantity <= 0) return 0;
+
+      const lot = player.cargo[resourceId];
+      player.cargo[resourceId] = {
+        qty: (lot?.qty ?? 0) + quantity,
+        totalCost: Math.max(0, lot?.totalCost ?? 0),
+        lastOriginId: originId ?? lot?.lastOriginId,
+      };
+      return quantity;
     },
 
     sell(locationId, resourceId, requestedQuantity) {
