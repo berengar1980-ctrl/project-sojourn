@@ -72,7 +72,6 @@ export interface TradeResult {
   readonly realizedProfit: number;
 }
 
-
 export type NpcEconomyRole = 'trader' | 'miner' | 'salvager';
 
 export interface NpcEconomyState {
