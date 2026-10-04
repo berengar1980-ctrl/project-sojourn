@@ -252,6 +252,12 @@ assert(
 );
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
 assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
+assert(
+  autopilot.includes('allowShortReverse') &&
+    autopilot.includes('ship.speed = -reverseSpeed') &&
+    autopilot.includes('remainingDistance <= 190'),
+  'mining approach must allow short low-speed reverse corrections without turning around'
+);
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');
 assert(
   service.includes('resolveAsteroidCollisions'),
@@ -319,6 +325,14 @@ assert(
 assert(
   collision.includes('kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed'),
   'asteroid shield damage must derive from mass and normal impact speed'
+);
+assert(
+  collision.includes('surfacePoint: normalizedShieldSurfacePoint'),
+  'shield collisions must capture a ship-local surface anchor'
+);
+assert(
+  service.includes('surfacePoint: collision.surfacePoint'),
+  'shield damage must preserve the local impact anchor'
 );
 assert(
   shieldService.includes('REFERENCE_IMPACT_ENERGY'),
