@@ -76,9 +76,13 @@ function separationVector(
   };
 }
 
-function shieldPushSpeed(asteroid: LocalAsteroid): number {
-  if (asteroid.kind === 'debris') return 180;
-  return Math.max(18, 42 - asteroid.radius * 0.34);
+function shieldRestitution(asteroid: LocalAsteroid): number {
+  return asteroid.kind === 'debris' ? 0.72 : 0.5;
+}
+
+function shieldEnergyBoost(impactSpeed: number, asteroid: LocalAsteroid): number {
+  const baseBoost = asteroid.kind === 'debris' ? 1.4 : 0.8;
+  return Math.min(4, baseBoost + impactSpeed * 0.05);
 }
 
 export function resolveShieldCollisions(
@@ -145,14 +149,20 @@ export function resolveShieldCollisions(
       y: asteroid.position.y + normal.y * 2,
     };
 
-    const outwardVelocity = dot(velocityAtContact, normal);
-    const requiredDelta = Math.max(0, shieldPushSpeed(asteroid) - outwardVelocity);
-    const impulseMagnitude = requiredDelta * asteroid.physics.mass;
-    applyImpulseAtPoint(
-      asteroid,
-      { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
-      contactPoint
-    );
+    if (impactSpeed > 0.01) {
+      const shipNormalVelocity = dot(shipVelocity, normal);
+      const outwardVelocity = dot(velocityAtContact, normal);
+      const targetRelativeOutwardSpeed =
+        impactSpeed * shieldRestitution(asteroid) + shieldEnergyBoost(impactSpeed, asteroid);
+      const targetWorldOutwardSpeed = shipNormalVelocity + targetRelativeOutwardSpeed;
+      const requiredDelta = Math.max(0, targetWorldOutwardSpeed - outwardVelocity);
+      const impulseMagnitude = requiredDelta * asteroid.physics.mass;
+      applyImpulseAtPoint(
+        asteroid,
+        { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
+        contactPoint
+      );
+    }
   }
 
   return impacts;
@@ -207,7 +217,7 @@ function resolvePairImpulse(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoi
     1 / b.physics.mass +
     rotationalMassTerm(a, contactPoint, normal) +
     rotationalMassTerm(b, contactPoint, normal);
-  const restitution = a.kind === 'debris' || b.kind === 'debris' ? 0.42 : 0.24;
+  const restitution = a.kind === 'debris' || b.kind === 'debris' ? 0.32 : 0.22;
   const impulseMagnitude = (-(1 + restitution) * closingSpeed) / inverseMass;
   const impulse = {
     x: normal.x * impulseMagnitude,

@@ -294,10 +294,16 @@ assert(
   'shared system log service must keep bounded cross-scene history'
 );
 assert(
-  styles.includes('system-log-crt-flicker') &&
-    styles.includes('system-log-text-jitter') &&
-    styles.includes('system-log-glitch-band'),
-  'system log must visibly flicker, jitter and glitch continuously'
+  styles.includes('system-log-text-jitter') && styles.includes('system-log-glitch-band'),
+  'system log content must visibly jitter and glitch continuously'
+);
+assert(
+  !styles.includes('animation: system-log-crt-flicker'),
+  'system log frame itself must remain stationary'
+);
+assert(
+  styles.includes('.system-log--activity .system-log-lines'),
+  'fresh log activity must jolt only the log content'
 );
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 

@@ -451,7 +451,6 @@ body {
   text-shadow:
     0 0 4px rgba(88, 255, 119, 0.38),
     0 0 10px rgba(45, 166, 67, 0.16);
-  animation: system-log-crt-flicker 2.8s infinite steps(1, end);
 }
 
 .system-log::before,
@@ -484,8 +483,10 @@ body {
   animation: system-log-glitch-band 2.15s infinite steps(1, end);
 }
 
-.system-log--activity {
-  animation: system-log-jolt 220ms steps(3, end);
+.system-log--activity .system-log-lines {
+  animation:
+    system-log-text-jitter 1.7s infinite steps(1, end),
+    system-log-jolt 220ms steps(3, end);
 }
 
 .system-log-header {
@@ -589,46 +590,6 @@ body {
 
 .ship-test-switcher.is-disabled {
   opacity: 0.48;
-}
-
-@keyframes system-log-crt-flicker {
-  0%,
-  18%,
-  22%,
-  63%,
-  68%,
-  100% {
-    transform: translate(0, 0);
-    filter: brightness(1);
-    opacity: 1;
-  }
-  19% {
-    transform: translateX(0.8px);
-    filter: brightness(0.86) contrast(1.08);
-    opacity: 0.94;
-  }
-  20% {
-    transform: translateX(-1.2px);
-    filter: brightness(1.18) contrast(1.12);
-    opacity: 1;
-  }
-  21% {
-    transform: translateX(0.4px);
-    filter: brightness(0.92);
-  }
-  64% {
-    transform: translate(1.1px, -0.35px);
-    filter: brightness(1.13);
-  }
-  65% {
-    transform: translate(-0.7px, 0.25px);
-    filter: brightness(0.9);
-    opacity: 0.96;
-  }
-  66% {
-    transform: translateX(0.35px);
-    filter: brightness(1.07);
-  }
 }
 
 @keyframes system-log-scan-roll {
@@ -757,9 +718,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .system-log,
+  .system-log::before,
   .system-log::after,
-  .system-log--activity,
+  .system-log-lines,
+  .system-log--activity .system-log-lines,
   .system-log-header::after,
   .system-log-line--fresh {
     animation: none;
