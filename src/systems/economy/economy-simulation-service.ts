@@ -197,6 +197,7 @@ export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
   advanceDay(day: number): void;
+  advanceNextDay(): void;
 }
 
 export function createEconomySimulationService(
@@ -209,48 +210,53 @@ export function createEconomySimulationService(
   const pools = initialPools(resources, markets, player);
   let lastDay = -1;
 
+  const advanceDay = (day: number): void => {
+    const targetDay = Math.max(0, Math.floor(day));
+    if (targetDay <= lastDay) return;
+
+    for (let currentDay = lastDay + 1; currentDay <= targetDay; currentDay += 1) {
+      const random = seededRandom(seed + currentDay * 7919);
+      for (const resource of resources) {
+        const pool = pools[resource.id]!;
+        let desiredConsumption = 0;
+        for (const market of markets) {
+          const entry = market.entries[resource.id];
+          if (!entry || market.produces.has(resource.id)) continue;
+          const base = market.needs.has(resource.id) ? 2.2 : 0.35;
+          desiredConsumption += Math.min(
+            quantity(entry.stock),
+            Math.max(0, Math.floor(base + random() * base))
+          );
+        }
+
+        consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
+        produceFromReserve(resource.id, markets, pool, random);
+
+        for (const market of markets) {
+          driftDemand(market, resource.id, random);
+          marketsService.recalculate(market.locationId, resource.id);
+        }
+
+        if (resource.legality === 'illegal') {
+          illegalStabilization(resource.id, markets, player, pool);
+        } else {
+          legalStabilization(resource.id, markets, player, pool);
+        }
+      }
+    }
+
+    lastDay = targetDay;
+  };
+
   return {
     pools,
     getResourceTotal(resourceId) {
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, pool) : 0;
     },
-    advanceDay(day) {
-      const targetDay = Math.max(0, Math.floor(day));
-      if (targetDay <= lastDay) return;
-
-      for (let currentDay = lastDay + 1; currentDay <= targetDay; currentDay += 1) {
-        const random = seededRandom(seed + currentDay * 7919);
-        for (const resource of resources) {
-          const pool = pools[resource.id]!;
-          let desiredConsumption = 0;
-          for (const market of markets) {
-            const entry = market.entries[resource.id];
-            if (!entry || market.produces.has(resource.id)) continue;
-            const base = market.needs.has(resource.id) ? 2.2 : 0.35;
-            desiredConsumption += Math.min(
-              quantity(entry.stock),
-              Math.max(0, Math.floor(base + random() * base))
-            );
-          }
-
-          consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
-          produceFromReserve(resource.id, markets, pool, random);
-
-          for (const market of markets) {
-            driftDemand(market, resource.id, random);
-            marketsService.recalculate(market.locationId, resource.id);
-          }
-
-          if (resource.legality === 'illegal') {
-            illegalStabilization(resource.id, markets, player, pool);
-          } else {
-            legalStabilization(resource.id, markets, player, pool);
-          }
-        }
-      }
-
-      lastDay = targetDay;
+    advanceDay,
+    advanceNextDay() {
+      advanceDay(lastDay + 1);
     },
   };
 }
