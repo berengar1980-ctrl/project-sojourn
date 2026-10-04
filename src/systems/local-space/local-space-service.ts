@@ -249,6 +249,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
         {
           source: 'asteroid',
           point: collision.point,
+          surfacePoint: collision.surfacePoint,
           normal: collision.normal,
           impactEnergy: collision.kineticEnergy,
         },
