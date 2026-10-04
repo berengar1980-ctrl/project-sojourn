@@ -57,6 +57,8 @@ export interface LocalSpaceViewModel {
   readonly selectedAsteroid: LocalAsteroidView | null;
   readonly miningTarget: LocalAsteroidView | null;
   readonly scanTarget: LocalAsteroidView | null;
+  readonly navigationTarget: WorldPoint | null;
+  readonly navigationRoute: readonly WorldPoint[];
   readonly miningPhase: MiningPhase;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
@@ -129,6 +131,8 @@ export function createLocalSpaceViewModel(
     selectedAsteroid,
     miningTarget,
     scanTarget,
+    navigationTarget: snapshot.navigationTarget,
+    navigationRoute: snapshot.navigationRoute,
     miningPhase: snapshot.miningPhase,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,
