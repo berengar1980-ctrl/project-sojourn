@@ -139,6 +139,7 @@ function createMiner() {
 {
   const markets = createMarkets();
   markets.markets[1].entries.steel.price = 42;
+  markets.markets[1].entries.ferrite.price = 31;
   const plan = sideTradeModule.findNpcResourceSideTrade(createMiner(), 'work', {
     markets: markets.markets,
     resources,
