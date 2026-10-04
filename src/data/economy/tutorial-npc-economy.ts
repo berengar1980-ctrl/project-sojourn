@@ -8,6 +8,7 @@ export function createTutorialNpcEconomyStates(): NpcEconomyState[] {
       locationId: 'haven',
       credits: 18000,
       cargoCapacity: 48,
+      normalCargoCapacity: 48,
       cargo: {},
       workResourceIds: [],
     },
@@ -17,8 +18,10 @@ export function createTutorialNpcEconomyStates(): NpcEconomyState[] {
       locationId: 'karth-forge',
       credits: 9500,
       cargoCapacity: 56,
+      normalCargoCapacity: 20,
       cargo: {},
       workResourceIds: ['ferrite', 'cuprium', 'cobaltite', 'rare-metals'],
+      workLocationId: 'greyrock-belt',
     },
     {
       id: 'npc-salvager-varda',
@@ -26,8 +29,10 @@ export function createTutorialNpcEconomyStates(): NpcEconomyState[] {
       locationId: 'coldwater-station',
       credits: 7200,
       cargoCapacity: 42,
+      normalCargoCapacity: 18,
       cargo: {},
       workResourceIds: ['spare-parts', 'ship-parts', 'ferrite'],
+      workLocationId: 'drift-wreck',
     },
   ];
 }
