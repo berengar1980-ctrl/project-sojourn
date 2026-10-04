@@ -74,12 +74,27 @@ export interface TradeResult {
 
 export type NpcEconomyRole = 'trader' | 'miner' | 'salvager';
 
+export interface NpcResourceSideTradePlan {
+  readonly resourceId: EconomyResourceId;
+  readonly sourceLocationId: EconomyLocationId;
+  readonly tradeLocationId: EconomyLocationId;
+  readonly workLocationId: EconomyLocationId;
+  readonly quantity: number;
+  readonly costBasis: number;
+  readonly expectedProfit: number;
+  readonly extraDistance: number;
+  readonly allowedExtraDistance: number;
+}
+
 export interface NpcEconomyState {
   readonly id: string;
   readonly role: NpcEconomyRole;
   locationId: EconomyLocationId;
   credits: number;
   readonly cargoCapacity: number;
+  readonly normalCargoCapacity: number;
   readonly cargo: Record<EconomyResourceId, number>;
   readonly workResourceIds: readonly EconomyResourceId[];
+  readonly workLocationId?: EconomyLocationId;
+  sideTradePlan?: NpcResourceSideTradePlan;
 }
