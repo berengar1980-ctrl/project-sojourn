@@ -17,15 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Format debug
-        run: |
-          npx prettier --write src/ui/ships/ship-lighting-renderer.ts tests/local-space/local-space-rendering.test.cjs tests/map/player-ship-rendering.test.cjs
-          echo '---SHIP---'
-          cat src/ui/ships/ship-lighting-renderer.ts
-          echo '---LOCALTEST---'
-          cat tests/local-space/local-space-rendering.test.cjs
-          echo '---MAPTEST---'
-          cat tests/map/player-ship-rendering.test.cjs
-          echo '---END---'
       - name: Quality gate
         run: npm run check
