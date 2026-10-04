@@ -83,7 +83,6 @@ export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCo
   return accepted;
 }
 
-
 export interface MiningChunkCollectionResult {
   readonly remaining: MiningChunk[];
   readonly collected: ReadonlyMap<string, number>;
