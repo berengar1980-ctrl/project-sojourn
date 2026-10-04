@@ -186,6 +186,22 @@ function bindNavigationInput(
   });
 }
 
+function bindLongScanButton(
+  button: HTMLButtonElement,
+  getModel: () => LocalSpaceViewModel,
+  options: LocalSpacePanelOptions,
+  systemLog: SystemLogPanel,
+  updateOverlay: () => void
+): void {
+  button.addEventListener('click', () => {
+    if (getModel().longRangeScanProgress != null) return;
+    options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
+    options.onLongRangeScan();
+    systemLog.update();
+    updateOverlay();
+  });
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const controls = localSpaceControls(shell);
@@ -272,13 +288,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     },
     updateOverlay
   );
-  longScanButton.addEventListener('click', () => {
-    if (model.longRangeScanProgress != null) return;
-    options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
-    options.onLongRangeScan();
-    systemLog.update();
-    updateOverlay();
-  });
+  bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
