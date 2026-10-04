@@ -40,4 +40,3 @@ assert(
 assert(map.includes('this.spaceBodies.drawPlanet'), 'map planets must use procedural rendering');
 
 console.log('PASS procedural planet and asteroid rendering contract');
-
