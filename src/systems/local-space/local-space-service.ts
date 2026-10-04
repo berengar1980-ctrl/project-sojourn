@@ -45,6 +45,7 @@ export interface LocalSpaceServiceOptions {
   readonly approachSpeed: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
+  readonly onMiningChunkCollected?: (resourceId: string, amount: number) => number;
 }
 
 function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
@@ -71,6 +72,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
+  private readonly onMiningChunkCollected?: (resourceId: string, amount: number) => number;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
@@ -102,6 +104,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachSpeed = options.approachSpeed;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
+    this.onMiningChunkCollected = options.onMiningChunkCollected;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.shieldState = createShieldState(
       options.hardpoints.shield.maxHp,
@@ -482,12 +485,24 @@ class LocalSpaceRuntime implements LocalSpaceService {
     for (const chunk of this.instance.chunks) {
       advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
       if (distance(chunk.position, this.instance.ship.position) < 24) {
-        this.collectedOre += chunk.amount;
-        const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
-        this.collectedResources.set(chunk.resourceId, collected + chunk.amount);
-      } else {
-        remaining.push(chunk);
+        const accepted = Math.max(
+          0,
+          Math.min(
+            chunk.amount,
+            Math.floor(
+              this.onMiningChunkCollected?.(chunk.resourceId, chunk.amount) ?? chunk.amount
+            )
+          )
+        );
+        if (accepted > 0) {
+          this.collectedOre += accepted;
+          const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
+          this.collectedResources.set(chunk.resourceId, collected + accepted);
+          chunk.amount -= accepted;
+        }
       }
+
+      if (chunk.amount > 0) remaining.push(chunk);
     }
 
     this.instance.chunks.splice(0, this.instance.chunks.length, ...remaining);
