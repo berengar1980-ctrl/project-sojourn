@@ -47,14 +47,29 @@ export class ShieldImpactRenderer {
       const fade = Math.pow(1 - progress, 1.7);
       if (fade <= 0.001) continue;
 
-      const worldPoint = camera.worldToScreen(impact.point, viewWidth, viewHeight);
-      const relative = rotate(
-        { x: worldPoint.x - shield.center.x, y: worldPoint.y - shield.center.y },
-        -shield.angle
-      );
-      const impactPoint = projectToEllipse(relative, shield);
+      const impactPoint = impact.surfacePoint
+        ? {
+            x: impact.surfacePoint.x * shield.radiusX,
+            y: impact.surfacePoint.y * shield.radiusY,
+          }
+        : this.projectWorldImpact(camera, impact, shield, viewWidth, viewHeight);
       this.drawSurfaceImpact(context, shield, impact, impactPoint, fade, progress);
     }
+  }
+
+  private projectWorldImpact(
+    camera: MapCamera,
+    impact: ShieldImpactEffect,
+    shield: ShieldEllipse,
+    viewWidth: number,
+    viewHeight: number
+  ): ScreenPoint {
+    const worldPoint = camera.worldToScreen(impact.point, viewWidth, viewHeight);
+    const relative = rotate(
+      { x: worldPoint.x - shield.center.x, y: worldPoint.y - shield.center.y },
+      -shield.angle
+    );
+    return projectToEllipse(relative, shield);
   }
 
   private drawSurfaceImpact(
@@ -88,11 +103,11 @@ export class ShieldImpactRenderer {
     fade: number,
     progress: number
   ): void {
-    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (0.45 + impact.strength * 0.24);
-    const radius = maxRadius * (0.3 + progress * 0.7);
+    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (0.72 + impact.strength * 0.48);
+    const radius = maxRadius * (0.34 + progress * 0.66);
     const gradient = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-    gradient.addColorStop(0, `rgba(166, 228, 255, ${fade * 0.24})`);
-    gradient.addColorStop(0.45, `rgba(97, 190, 255, ${fade * 0.11})`);
+    gradient.addColorStop(0, `rgba(202, 244, 255, ${fade * 0.42})`);
+    gradient.addColorStop(0.42, `rgba(105, 203, 255, ${fade * 0.2})`);
     gradient.addColorStop(1, 'rgba(70, 150, 255, 0)');
     context.fillStyle = gradient;
     context.fillRect(-shield.radiusX, -shield.radiusY, shield.radiusX * 2, shield.radiusY * 2);
@@ -106,15 +121,15 @@ export class ShieldImpactRenderer {
     fade: number,
     progress: number
   ): void {
-    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (0.7 + impact.strength * 0.3);
+    const maxRadius = Math.min(shield.radiusX, shield.radiusY) * (1.02 + impact.strength * 0.62);
     const radius = 3 + maxRadius * (1 - Math.pow(1 - progress, 2.2));
-    const alpha = fade * (0.45 + impact.strength * 0.35);
+    const alpha = fade * (0.58 + impact.strength * 0.38);
 
     context.save();
     context.strokeStyle = `rgba(138, 220, 255, ${alpha})`;
     context.lineWidth = 0.65 + impact.strength * 0.7;
     context.shadowColor = 'rgba(154, 225, 255, .7)';
-    context.shadowBlur = 2.2 + impact.strength * 2.8;
+    context.shadowBlur = 3.5 + impact.strength * 4.8;
     context.beginPath();
     context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     context.stroke();
@@ -135,7 +150,7 @@ export class ShieldImpactRenderer {
     fade: number,
     progress: number
   ): void {
-    const radius = 2.4 + impact.strength * 4.8 + progress;
+    const radius = 3.2 + impact.strength * 7.2 + progress * 1.6;
     const gradient = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
     gradient.addColorStop(0, `rgba(244, 253, 255, ${0.98 * fade})`);
     gradient.addColorStop(0.28, `rgba(151, 228, 255, ${0.68 * fade})`);
