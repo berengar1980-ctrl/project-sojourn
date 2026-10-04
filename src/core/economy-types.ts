@@ -99,7 +99,6 @@ export interface NpcEconomyState {
   sideTradePlan?: NpcResourceSideTradePlan;
 }
 
-
 export type MarketSituationScope = 'local' | 'sector';
 
 export interface MarketSituation {
