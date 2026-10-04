@@ -95,10 +95,7 @@ assert(
   renderer.includes('point.x < -cullPadding'),
   'offscreen asteroids must be culled before rendering'
 );
-assert(
-  renderer.includes('point.x < -8 || point.y < -8'),
-  'offscreen mining chunks must be culled'
-);
+assert(renderer.includes('point.x < -8 || point.y < -8'), 'offscreen mining chunks must be culled');
 assert(
   renderer.includes("asteroid.kind === 'resource'"),
   'only resource asteroids should be selectable'
@@ -156,10 +153,7 @@ assert(
   renderer.includes('ShieldImpactRenderer'),
   'local space must render localized shield impacts'
 );
-assert(
-  shieldImpact.includes('ellipsePoint'),
-  'shield lightning must stay on the shield ellipse'
-);
+assert(shieldImpact.includes('ellipsePoint'), 'shield lightning must stay on the shield ellipse');
 assert(
   shieldImpact.includes('impactAngle - halfSpan'),
   'shield impact ripple must remain a local ellipse arc'
@@ -193,3 +187,4 @@ assert(
 assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');
+
