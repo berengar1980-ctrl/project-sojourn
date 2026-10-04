@@ -196,6 +196,7 @@ function driftDemand(
 export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
+  createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
   advanceNextDay(): void;
 }
@@ -209,6 +210,31 @@ export function createEconomySimulationService(
   const markets = marketsService.snapshot();
   const pools = initialPools(resources, markets, player);
   let lastDay = -1;
+  let physicalAllocationCounter = 0;
+
+  const createMinedResource = (resourceId: EconomyResourceId, amount: number): number => {
+    const pool = pools[resourceId];
+    const requested = quantity(amount);
+    if (!pool || requested <= 0) return 0;
+
+    let allocated = Math.min(requested, quantity(pool.reserve));
+    pool.reserve -= allocated;
+
+    if (allocated < requested) {
+      const random = seededRandom(seed + 0x45d9f3b + physicalAllocationCounter * 104729);
+      physicalAllocationCounter += 1;
+      consumeToReserve(resourceId, requested - allocated, markets, pool, random);
+      const fromReserve = Math.min(requested - allocated, quantity(pool.reserve));
+      pool.reserve -= fromReserve;
+      allocated += fromReserve;
+
+      for (const market of markets) {
+        if (market.entries[resourceId]) marketsService.recalculate(market.locationId, resourceId);
+      }
+    }
+
+    return allocated;
+  };
 
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
@@ -254,6 +280,7 @@ export function createEconomySimulationService(
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, pool) : 0;
     },
+    createMinedResource,
     advanceDay,
     advanceNextDay() {
       advanceDay(lastDay + 1);
