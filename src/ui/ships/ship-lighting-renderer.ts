@@ -51,13 +51,7 @@ export class ShipLightingRenderer {
     const localLight = toShipLocal(worldLight, options.angle);
     this.applyDirectionalLight(pixelWidth, pixelHeight, localLight);
 
-    context.drawImage(
-      this.canvas,
-      options.offsetX,
-      options.offsetY,
-      options.width,
-      options.height
-    );
+    context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
   }
 
   private resize(width: number, height: number): void {
