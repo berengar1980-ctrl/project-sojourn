@@ -27,7 +27,7 @@ interface GameControllerOptions {
 
 interface LocalPanelActions {
   readonly onSelectAsteroid: (id: string | null) => void;
-  readonly onNavigate: (target: WorldPoint) => Promise<boolean>;
+  readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly onStartMining: () => Promise<void>;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
@@ -60,10 +60,7 @@ async function calculateScanRoute(service: LocalSpaceService): Promise<readonly 
   return options ? planMiningApproachRouteAsync(options) : [];
 }
 
-async function calculatePointRoute(
-  service: LocalSpaceService,
-  target: WorldPoint
-): Promise<readonly WorldPoint[]> {
+async function calculatePointRoute(service: LocalSpaceService, target: WorldPoint) {
   return planPointRouteAsync(service.getPointRouteOptions(target));
 }
 
@@ -97,14 +94,18 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
       if (!activeSpace) return false;
       navigationRequest += 1;
       const request = navigationRequest;
-      const route = await calculatePointRoute(activeSpace, target);
-      if (context.getSpace() !== activeSpace || request !== navigationRequest || route.length < 2) {
+      const plan = await calculatePointRoute(activeSpace, target);
+      if (
+        context.getSpace() !== activeSpace ||
+        request !== navigationRequest ||
+        plan.route.length < 2
+      ) {
         return false;
       }
 
-      activeSpace.startNavigation(route[route.length - 1]!, route);
+      activeSpace.startNavigation(plan.route[plan.route.length - 1]!, plan.route);
       context.refresh();
-      return true;
+      return plan.compromised ? 'risk' : 'safe';
     },
     async onStartMining() {
       const activeSpace = context.getSpace();
@@ -115,8 +116,7 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
       context.refresh();
     },
     onLongRangeScan() {
-      context.getSpace()?.runLongRangeScan();
-      context.systemLog.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
+      context.getSpace()?.startLongRangeScan();
       context.refresh();
     },
     async onShortRangeScan() {
