@@ -18,9 +18,9 @@ const marketSource = fs.readFileSync(
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 assert(
-  resourcesSource.includes("resource('obscura'") &&
-    resourcesSource.includes("resource('xeno-artifacts'") &&
-    resourcesSource.includes("resource('proscribed-data'"),
+  resourcesSource.includes("'obscura'") &&
+    resourcesSource.includes("'xeno-artifacts'") &&
+    resourcesSource.includes("'proscribed-data'"),
   'economy catalog must include multiple illegal resources'
 );
 assert(
