@@ -50,36 +50,21 @@ export const tutorialPorts: readonly PortDefinition[] = [
       commodity('ferrite', 'Ferrit', 12, 4300, 0.62, 0.2),
     ],
     crew: [
-      crew(
-        'crew-elara-voss',
-        'Elara Voss',
-        'Sensorik',
-        ['Scharfsinnig', 'Umsichtig'],
-        2,
-        1800,
-        ['Scanner', 'Pistole']
-      ),
-      crew(
-        'crew-joran-kade',
-        'Joran Kade',
-        'Techniker',
-        ['Diszipliniert', 'Loyal'],
-        3,
-        1500,
-        ['Werkzeug', 'Karabiner']
-      ),
+      crew('crew-elara-voss', 'Elara Voss', 'Sensorik', ['Scharfsinnig', 'Umsichtig'], 2, 1800, [
+        'Scanner',
+        'Pistole',
+      ]),
+      crew('crew-joran-kade', 'Joran Kade', 'Techniker', ['Diszipliniert', 'Loyal'], 3, 1500, [
+        'Werkzeug',
+        'Karabiner',
+      ]),
       crew('crew-mira-solen', 'Mira Solen', 'Steuermann', ['Ruhig', 'Präzise'], 2, 1600, [
         'Pistole',
       ]),
-      crew(
-        'crew-sila-renn',
-        'Sila Renn',
-        'Quartiermeister',
-        ['Skrupellos', 'Effizient'],
-        3,
-        1400,
-        ['Pistole', 'Panzerweste']
-      ),
+      crew('crew-sila-renn', 'Sila Renn', 'Quartiermeister', ['Skrupellos', 'Effizient'], 3, 1400, [
+        'Pistole',
+        'Panzerweste',
+      ]),
     ],
   },
   {
@@ -103,15 +88,10 @@ export const tutorialPorts: readonly PortDefinition[] = [
       commodity('ferrite', 'Ferrit', 12, 780, 0.98, 0.04),
     ],
     crew: [
-      crew(
-        'crew-darek-ibn',
-        'Darek Ibn',
-        'Navigator',
-        ['Umsichtig', 'Loyal'],
-        2,
-        1900,
-        ['Nav-Deck', 'Pistole']
-      ),
+      crew('crew-darek-ibn', 'Darek Ibn', 'Navigator', ['Umsichtig', 'Loyal'], 2, 1900, [
+        'Nav-Deck',
+        'Pistole',
+      ]),
       crew(
         'crew-tomas-reik',
         'Tomas Reik',
@@ -121,15 +101,9 @@ export const tutorialPorts: readonly PortDefinition[] = [
         1700,
         ['Karabiner', 'Panzerweste']
       ),
-      crew(
-        'crew-lysa-orn',
-        'Lysa Orn',
-        'Reaktortechnik',
-        ['Hartnäckig', 'Effizient'],
-        2,
-        1650,
-        ['Werkzeug']
-      ),
+      crew('crew-lysa-orn', 'Lysa Orn', 'Reaktortechnik', ['Hartnäckig', 'Effizient'], 2, 1650, [
+        'Werkzeug',
+      ]),
     ],
   },
   {
@@ -153,24 +127,11 @@ export const tutorialPorts: readonly PortDefinition[] = [
       commodity('ferrite', 'Ferrit', 12, 1600, 0.71, 0.08),
     ],
     crew: [
-      crew(
-        'crew-ivar-denn',
-        'Ivar Denn',
-        'Maschinenraum',
-        ['Pragmatisch', 'Robust'],
-        3,
-        1250,
-        ['Werkzeug', 'Pistole']
-      ),
-      crew(
-        'crew-naia-vex',
-        'Naia Vex',
-        'Medizin',
-        ['Ruhig', 'Gewissenhaft'],
-        1,
-        1450,
-        ['Medkit']
-      ),
+      crew('crew-ivar-denn', 'Ivar Denn', 'Maschinenraum', ['Pragmatisch', 'Robust'], 3, 1250, [
+        'Werkzeug',
+        'Pistole',
+      ]),
+      crew('crew-naia-vex', 'Naia Vex', 'Medizin', ['Ruhig', 'Gewissenhaft'], 1, 1450, ['Medkit']),
     ],
   },
 ];
