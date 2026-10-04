@@ -60,6 +60,10 @@ const miningChunks = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
   'utf8'
 );
+const miningFormation = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-mining-formation.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
@@ -163,7 +167,7 @@ assert(
   'mining must remember a relative offset to the target asteroid'
 );
 assert(
-  service.includes('asteroid.position.x + offset.x'),
+  miningFormation.includes('asteroid.position.x + holdOffset.x'),
   'mining formation must move its desired point with the target asteroid'
 );
 assert(
@@ -175,7 +179,7 @@ assert(
   'mining must actively maintain formation with a drifting target'
 );
 assert(
-  service.includes('closestClosingDebris'),
+  miningFormation.includes('closestClosingDebris'),
   'mining station keeping must react to incoming debris'
 );
 assert(service.includes('currentMiningImpact'), 'service must expose one shared mining impact');
