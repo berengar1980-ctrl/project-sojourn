@@ -98,11 +98,7 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
       navigationRequest += 1;
       const request = navigationRequest;
       const route = await calculatePointRoute(activeSpace, target);
-      if (
-        context.getSpace() !== activeSpace ||
-        request !== navigationRequest ||
-        route.length < 2
-      ) {
+      if (context.getSpace() !== activeSpace || request !== navigationRequest || route.length < 2) {
         return false;
       }
 
