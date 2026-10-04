@@ -1,6 +1,7 @@
 import type { LocalAsteroid, LocalShipState, MiningChunk } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
+import { distance } from './local-space-motion';
 import { calculateMiningImpact } from './mining-impact';
 
 export type MiningChunkCollector = (resourceId: string, amount: number) => number;
@@ -80,4 +81,33 @@ export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCo
   );
   chunk.amount -= accepted;
   return accepted;
+}
+
+
+export interface MiningChunkCollectionResult {
+  readonly remaining: MiningChunk[];
+  readonly collected: ReadonlyMap<string, number>;
+}
+
+export function advanceAndCollectMiningChunks(
+  chunks: readonly MiningChunk[],
+  shipPosition: WorldPoint,
+  deltaSeconds: number,
+  collector?: MiningChunkCollector
+): MiningChunkCollectionResult {
+  const remaining: MiningChunk[] = [];
+  const collected = new Map<string, number>();
+
+  for (const chunk of chunks) {
+    advanceMiningChunk(chunk, shipPosition, deltaSeconds);
+    if (distance(chunk.position, shipPosition) < 24) {
+      const accepted = collectMiningChunk(chunk, collector);
+      if (accepted > 0) {
+        collected.set(chunk.resourceId, (collected.get(chunk.resourceId) ?? 0) + accepted);
+      }
+    }
+    if (chunk.amount > 0) remaining.push(chunk);
+  }
+
+  return { remaining, collected };
 }
