@@ -26,10 +26,7 @@ assert(shared.includes('planetTextureCache'), 'planet textures must be cached');
 assert(shared.includes('drawSphereLight'), 'world-fixed volume lighting pass must be shared');
 assert(textures.includes('function fbm('), 'surface generation must use layered coherent noise');
 assert(textures.includes('createPlanetTexture'), 'planets must use generated terrain textures');
-assert(
-  textures.includes('polarNoise'),
-  'planetary polar caps must use noise-distorted boundaries'
-);
+assert(textures.includes('polarNoise'), 'planetary polar caps must use noise-distorted boundaries');
 assert(textures.includes('polarEdge'), 'polar cap edge must not be a straight latitude cutoff');
 assert(
   shared.includes('Math.pow(1 - progress, 1.35)'),
@@ -41,10 +38,7 @@ assert(
   shared.includes('options.radius >= 14'),
   'small asteroids must skip expensive crater detail'
 );
-assert(
-  shared.includes('options.radius >= 24'),
-  'fractures must use a higher-detail LOD threshold'
-);
+assert(shared.includes('options.radius >= 24'), 'fractures must use a higher-detail LOD threshold');
 assert(local.includes('ProceduralSpaceBodyRenderer'), 'local space must use shared body renderer');
 assert(
   local.includes('light: { x: -0.72, y: -0.56 }'),
@@ -61,3 +55,4 @@ assert(
 assert(map.includes('this.spaceBodies.drawPlanet'), 'map planets must use procedural rendering');
 
 console.log('PASS procedural planet and asteroid rendering contract');
+
