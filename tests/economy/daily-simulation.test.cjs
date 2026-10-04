@@ -181,4 +181,27 @@ assert(
   'completed inter-location travel must advance the demo economy by one day'
 );
 
-console.log('PASS deterministic daily economy and 1000-day stability');
+{
+  const marketService = createMarketService();
+  const player = { credits: 0, cargo: {} };
+  const economy = simulation.createEconomySimulationService(marketService, player, resources, 12);
+  const before = economy.getResourceTotal('steel');
+  const allocated = economy.allocatePhysicalResource('steel', 12);
+
+  assert.equal(allocated, 12);
+  assert.equal(economy.pools.steel.allocated, 12);
+  assert.equal(economy.getResourceTotal('steel'), before);
+
+  const claimed = economy.claimAllocatedToPlayer('steel', 12, 8, 'greyrock-belt');
+  assert.equal(claimed, 8, 'ship cargo capacity must cap mined collection');
+  assert.equal(player.cargo.steel.qty, 8);
+  assert.equal(economy.pools.steel.allocated, 4);
+  assert.equal(economy.getResourceTotal('steel'), before);
+
+  const released = economy.releaseAllocatedResource('steel', 4);
+  assert.equal(released, 4);
+  assert.equal(economy.pools.steel.allocated, 0);
+  assert.equal(economy.getResourceTotal('steel'), before);
+}
+
+console.log('PASS deterministic daily economy, physical allocation and 1000-day stability');
