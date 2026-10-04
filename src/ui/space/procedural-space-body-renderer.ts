@@ -139,13 +139,7 @@ export class ProceduralSpaceBodyRenderer {
     context.restore();
   }
 
-  drawAsteroidField(
-    id: string,
-    x: number,
-    y: number,
-    radius: number,
-    light: SpaceLight
-  ): void {
+  drawAsteroidField(id: string, x: number, y: number, radius: number, light: SpaceLight): void {
     const random = createRandom(hashSeed(id));
     for (let index = 0; index < 18; index += 1) {
       const angle = index * 2.399 + random() * 0.35;
@@ -163,10 +157,7 @@ export class ProceduralSpaceBodyRenderer {
     }
   }
 
-  private asteroidSurface(
-    id: string,
-    kind: 'resource' | 'debris'
-  ): AsteroidSurface {
+  private asteroidSurface(id: string, kind: 'resource' | 'debris'): AsteroidSurface {
     const key = id + ':' + kind;
     const cached = this.asteroidCache.get(key);
     if (cached) return cached;
@@ -237,11 +228,7 @@ export class ProceduralSpaceBodyRenderer {
     this.context.closePath();
   }
 
-  private drawAsteroidBase(
-    radius: number,
-    kind: 'resource' | 'debris',
-    light: SpaceLight
-  ): void {
+  private drawAsteroidBase(radius: number, kind: 'resource' | 'debris', light: SpaceLight): void {
     const context = this.context;
     const gradient = context.createRadialGradient(
       light.x * radius * 0.2,
@@ -317,15 +304,11 @@ export class ProceduralSpaceBodyRenderer {
     const context = this.context;
     for (const fracture of surface.fractures) {
       for (let index = 0; index < fracture.points.length - 1; index += 1) {
-        const start = rotate(fracture.points[index], rotation);
-        const end = rotate(fracture.points[index + 1], rotation);
+        const start = rotate(fracture.points[index]!, rotation);
+        const end = rotate(fracture.points[index + 1]!, rotation);
         const progress = index / (fracture.points.length - 1);
-        context.strokeStyle =
-          'rgba(3, 4, 5, ' + (0.34 * (1 - progress) + 0.05) + ')';
-        context.lineWidth = Math.max(
-          0.35,
-          radius * 0.018 * Math.pow(1 - progress, 1.25)
-        );
+        context.strokeStyle = 'rgba(3, 4, 5, ' + (0.34 * (1 - progress) + 0.05) + ')';
+        context.lineWidth = Math.max(0.35, radius * 0.018 * Math.pow(1 - progress, 1.25));
         context.beginPath();
         context.moveTo(start.x * radius, start.y * radius);
         context.lineTo(end.x * radius, end.y * radius);
@@ -334,21 +317,14 @@ export class ProceduralSpaceBodyRenderer {
         context.strokeStyle = 'rgba(225, 221, 213, ' + 0.055 * (1 - progress) + ')';
         context.lineWidth = Math.max(0.25, context.lineWidth * 0.35);
         context.beginPath();
-        context.moveTo(
-          start.x * radius + light.x * 0.8,
-          start.y * radius + light.y * 0.8
-        );
+        context.moveTo(start.x * radius + light.x * 0.8, start.y * radius + light.y * 0.8);
         context.lineTo(end.x * radius + light.x * 0.8, end.y * radius + light.y * 0.8);
         context.stroke();
       }
     }
   }
 
-  private drawWorldLight(
-    radius: number,
-    light: SpaceLight,
-    darkness: number
-  ): void {
+  private drawWorldLight(radius: number, light: SpaceLight, darkness: number): void {
     const context = this.context;
     const gradient = context.createLinearGradient(
       light.x * radius,
@@ -377,8 +353,7 @@ export class ProceduralSpaceBodyRenderer {
     if (!context) throw new Error('Planet texture canvas unavailable.');
 
     const random = createRandom(hashSeed(key));
-    const base =
-      dangerLevel >= 2 ? '#745448' : dangerLevel === 1 ? '#68705f' : '#536d86';
+    const base = dangerLevel >= 2 ? '#745448' : dangerLevel === 1 ? '#68705f' : '#536d86';
     context.fillStyle = base;
     context.beginPath();
     context.arc(64, 64, 63, 0, Math.PI * 2);
@@ -393,8 +368,7 @@ export class ProceduralSpaceBodyRenderer {
       const y = 18 + random() * 92;
       const width = 8 + random() * 24;
       const height = 4 + random() * 14;
-      context.fillStyle =
-        index % 3 === 0 ? 'rgba(205, 194, 158, .14)' : 'rgba(22, 31, 37, .16)';
+      context.fillStyle = index % 3 === 0 ? 'rgba(205, 194, 158, .14)' : 'rgba(22, 31, 37, .16)';
       context.beginPath();
       context.ellipse(x, y, width, height, random() * Math.PI, 0, Math.PI * 2);
       context.fill();
@@ -405,3 +379,4 @@ export class ProceduralSpaceBodyRenderer {
     return canvas;
   }
 }
+
