@@ -80,11 +80,7 @@ function parsePng(file) {
   }
 
   assert(width && height, `${file}: PNG has no IHDR dimensions`);
-  assert.strictEqual(
-    bitDepth,
-    8,
-    `${file}: ship validator supports 8-bit PNG assets only`
-  );
+  assert.strictEqual(bitDepth, 8, `${file}: ship validator supports 8-bit PNG assets only`);
   assert.strictEqual(interlace, 0, `${file}: interlaced PNG assets are not allowed`);
 
   const channelsByType = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
@@ -171,16 +167,15 @@ function inferSpec(file) {
   const folderRole = ROLE_BY_FOLDER[parts[0]];
   const base = path.basename(file, path.extname(file));
   const lengthMatch = base.match(/(?:^|-)(\d+(?:\.\d+)?)m(?:-|$)/i);
-  const filenameRole =
-    /^miner(?:-|$)/i.test(base)
-      ? 'miner'
-      : /^freighter(?:-|$)|^trader(?:-|$)/i.test(base)
-        ? 'freighter'
-        : /^patrol(?:-|$)|^cutter(?:-|$)/i.test(base)
-          ? 'patrol'
-          : /^salvag(?:e|er)(?:-|$)|^boarding(?:-|$)/i.test(base)
-            ? 'salvage'
-            : null;
+  const filenameRole = /^miner(?:-|$)/i.test(base)
+    ? 'miner'
+    : /^freighter(?:-|$)|^trader(?:-|$)/i.test(base)
+      ? 'freighter'
+      : /^patrol(?:-|$)|^cutter(?:-|$)/i.test(base)
+        ? 'patrol'
+        : /^salvag(?:e|er)(?:-|$)|^boarding(?:-|$)/i.test(base)
+          ? 'salvage'
+          : null;
 
   return {
     relative,
@@ -236,11 +231,7 @@ function measureAlpha(file) {
 }
 
 function expectedMargin(lengthMeters) {
-  return clamp(
-    Math.round(lengthMeters * PIXELS_PER_METER * 0.04),
-    MIN_MARGIN_PX,
-    MAX_MARGIN_PX
-  );
+  return clamp(Math.round(lengthMeters * PIXELS_PER_METER * 0.04), MIN_MARGIN_PX, MAX_MARGIN_PX);
 }
 
 function allowedMarginRange(target) {
@@ -263,17 +254,12 @@ function validateTypeSpecific(spec, metrics) {
 
     const hardpoints = JSON.parse(fs.readFileSync(hardpointsFile, 'utf8'));
     if (!Array.isArray(hardpoints.miningLasers) || hardpoints.miningLasers.length === 0) {
-      failures.push(
-        `${spec.relative}: miner requires at least one mining-laser hardpoint`
-      );
+      failures.push(`${spec.relative}: miner requires at least one mining-laser hardpoint`);
     }
     if (!Array.isArray(hardpoints.engines) || hardpoints.engines.length === 0) {
       failures.push(`${spec.relative}: miner requires at least one engine hardpoint`);
     }
-    if (
-      hardpoints.sourceWidth !== metrics.width ||
-      hardpoints.sourceHeight !== metrics.height
-    ) {
+    if (hardpoints.sourceWidth !== metrics.width || hardpoints.sourceHeight !== metrics.height) {
       failures.push(
         `${spec.relative}: hardpoint source canvas ${hardpoints.sourceWidth}x${hardpoints.sourceHeight}px does not match sprite ${metrics.width}x${metrics.height}px`
       );
@@ -282,9 +268,7 @@ function validateTypeSpecific(spec, metrics) {
     const sternLimit = metrics.width * 0.45;
     const bowLimit = metrics.width * 0.55;
     if (hardpoints.engines.some((hp) => hp.x >= sternLimit)) {
-      failures.push(
-        `${spec.relative}: miner engine hardpoints must remain on the left/stern side`
-      );
+      failures.push(`${spec.relative}: miner engine hardpoints must remain on the left/stern side`);
     }
     if (hardpoints.miningLasers.some((hp) => hp.x <= bowLimit)) {
       failures.push(
