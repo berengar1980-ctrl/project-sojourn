@@ -271,8 +271,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
-  let localSpaceSeed = 0;
-  let visitCounter = 0;
+  let localSpaceSeed = 0, visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
