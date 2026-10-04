@@ -381,7 +381,7 @@ body {
     inset 0 0 28px rgba(43, 175, 67, 0.06),
     0 0 12px rgba(69, 213, 92, 0.08);
   color: #72ff91;
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: 'Courier New', ui-monospace, SFMono-Regular, Consolas, monospace;
   pointer-events: none;
   text-shadow:
     0 0 4px rgba(88, 255, 119, 0.38),
@@ -394,7 +394,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 2;
-  content: "";
+  content: '';
   pointer-events: none;
 }
 
@@ -412,12 +412,7 @@ body {
 .system-log::after {
   opacity: 0.2;
   background:
-    linear-gradient(
-      90deg,
-      transparent 0 49.6%,
-      rgba(118, 255, 139, 0.04) 50%,
-      transparent 50.4%
-    ),
+    linear-gradient(90deg, transparent 0 49.6%, rgba(118, 255, 139, 0.04) 50%, transparent 50.4%),
     radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.22) 100%);
   animation: system-log-noise 0.18s infinite alternate steps(2, end);
 }
@@ -443,7 +438,7 @@ body {
 .system-log-header::after {
   margin-left: 8px;
   color: rgba(119, 255, 141, 0.42);
-  content: "▮";
+  content: '▮';
   animation: system-log-cursor 1.05s infinite steps(1, end);
 }
 
