@@ -1,5 +1,6 @@
 import type { ShipHardpoints, ShipManeuverThruster } from '../../core/ship-types';
 import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
+import { ThrusterGlowRenderer } from './thruster-glow-renderer';
 
 interface ManeuverDemand {
   readonly turnRateRadiansPerSecond: number;
@@ -57,6 +58,8 @@ function shouldBurst(id: string, intensity: number, timeSeconds: number): boolea
 }
 
 export class ShipManeuverEffectsRenderer {
+  private readonly glow = new ThrusterGlowRenderer();
+
   draw(
     context: CanvasRenderingContext2D,
     source: ShipHardpoints,
@@ -95,6 +98,14 @@ export class ShipManeuverEffectsRenderer {
       x: nozzle.x + exhaustWorld.x * length,
       y: nozzle.y + exhaustWorld.y * length,
     };
+
+    this.glow.draw(context, {
+      center: nozzle,
+      radius: nozzleWidth * 1.9,
+      intensity: 0.32 + intensity * 0.68,
+      flicker,
+      warmth: 0.08,
+    });
 
     context.save();
     context.lineCap = 'round';
