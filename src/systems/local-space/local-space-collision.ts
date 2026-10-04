@@ -76,10 +76,7 @@ function separationVector(
   };
 }
 
-function normalizedShieldSurfacePoint(
-  local: WorldPoint,
-  shield: ShieldWorldGeometry
-): WorldPoint {
+function normalizedShieldSurfacePoint(local: WorldPoint, shield: ShieldWorldGeometry): WorldPoint {
   const metric = Math.hypot(local.x / shield.radiusX, local.y / shield.radiusY);
   if (metric < 0.0001) return { x: -1, y: 0 };
   return {
