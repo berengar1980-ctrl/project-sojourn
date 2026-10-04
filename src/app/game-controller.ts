@@ -233,12 +233,10 @@ export function createGameController(options: GameControllerOptions): GameContro
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
   systemLog.write('SYSTEM ONLINE');
-
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
   const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
-
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
     shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
@@ -249,7 +247,6 @@ export function createGameController(options: GameControllerOptions): GameContro
       else mountStarMap();
     });
   };
-
   const mountStarMap = (): void => {
     localPanel?.destroy();
     localPanel = null;
@@ -267,7 +264,6 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
     mountTestSwitcher();
   };
-
   const mountPort = (): void => {
     const locationId = navigation.getSnapshot().currentLocationId;
     starPanel?.destroy();
@@ -283,7 +279,6 @@ export function createGameController(options: GameControllerOptions): GameContro
     systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
     mountTestSwitcher();
   };
-
   const localActions = createLocalPanelActions({
     getSpace: () => localSpace,
     refresh: refreshLocalPanel,
@@ -293,19 +288,16 @@ export function createGameController(options: GameControllerOptions): GameContro
       runSceneZoomTransition(root, mountStarMap);
     },
   });
-
   const mountLocalSpace = (reuseSeed = false): void => {
     starPanel?.destroy();
     starPanel = null;
     localPanel?.destroy();
     localPanel = null;
     mode = 'local-space';
-
     if (!reuseSeed || localSpaceSeed === 0) {
       visitCounter += 1;
       localSpaceSeed = localSeed(visitCounter);
     }
-
     localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
     localPanel = createLocalSpacePanel({
@@ -316,9 +308,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
     mountTestSwitcher();
   };
-
   mountStarMap();
-
   return {
     tick(deltaSeconds) {
       const navigationSnapshot = navigation.tick(deltaSeconds);
@@ -327,9 +317,7 @@ export function createGameController(options: GameControllerOptions): GameContro
         runSceneZoomTransition(root, mountLocalSpace);
       }
       previousLocationId = currentLocationId;
-
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
-
       if (mode === 'star-map') starPanel?.update(starModel());
       else if (mode === 'local-space' && localSpace) {
         localSpace.tick(deltaSeconds);
