@@ -1,6 +1,7 @@
 import type { ShipDefinition } from '../../core/ship-types';
 
 export interface ShipTestSwitcher {
+  update(activeShipId: string, disabled: boolean): void;
   destroy(): void;
 }
 
@@ -28,16 +29,21 @@ export function createShipTestSwitcher(options: ShipTestSwitcherOptions): ShipTe
     const option = document.createElement('option');
     option.value = ship.id;
     option.textContent = ship.name;
-    option.selected = ship.id === options.activeShipId;
     select.append(option);
   }
 
-  select.disabled = options.disabled === true || options.ships.length < 2;
-  select.addEventListener('change', () => options.onSelect(select.value));
+  const update = (activeShipId: string, disabled: boolean): void => {
+    select.value = activeShipId;
+    select.disabled = disabled || options.ships.length < 2;
+    wrapper.classList.toggle('is-disabled', select.disabled);
+  };
 
+  select.addEventListener('change', () => options.onSelect(select.value));
+  update(options.activeShipId, options.disabled === true);
   options.root.append(wrapper);
 
   return {
+    update,
     destroy(): void {
       wrapper.remove();
     },
