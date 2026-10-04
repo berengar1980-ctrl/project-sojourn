@@ -53,7 +53,7 @@ export interface LocalSpaceService {
   getMiningRouteOptions(): RoutePlanningOptions | null;
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null;
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions;
-  runLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
+  startLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
@@ -89,6 +89,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private shipForwardVelocity = 0;
   private shipLateralVelocity = 0;
   private readonly idleStationKeeping: IdleStationKeepingState;
+  private longRangeScanElapsed = 0;
+  private longRangeScanParameters: { sensorModifier: number; crewSkill: number } | null = null;
 
   constructor(options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
@@ -115,6 +117,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
       scanTargetId: this.scanTargetId,
       navigationTarget: this.navigationTarget,
       navigationRoute: this.navigationRoute,
+      longRangeScanProgress: this.longRangeScanParameters
+        ? Math.min(1, this.longRangeScanElapsed / 5)
+        : null,
       miningPhase: this.miningPhase,
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
@@ -170,8 +175,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  runLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
-    runLongRangeAsteroidScan(this.instance, sensorModifier, crewSkill);
+  startLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
+    if (!this.longRangeScanParameters) {
+      this.longRangeScanElapsed = 0;
+      this.longRangeScanParameters = { sensorModifier, crewSkill };
+    }
     return this.getSnapshot();
   }
 
@@ -207,6 +215,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shieldImpacts = advanceShieldImpacts(this.shieldImpacts, clamped);
+    this.updateLongRangeScan(clamped);
     integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
     resolveAsteroidCollisions(this.instance.asteroids);
 
@@ -251,6 +260,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     this.updateChunks(clamped);
     return this.getSnapshot();
+  }
+
+  private updateLongRangeScan(deltaSeconds: number): void {
+    if (!this.longRangeScanParameters) return;
+    this.longRangeScanElapsed += deltaSeconds;
+    if (this.longRangeScanElapsed < 5) return;
+
+    runLongRangeAsteroidScan(
+      this.instance,
+      this.longRangeScanParameters.sensorModifier,
+      this.longRangeScanParameters.crewSkill
+    );
+    this.longRangeScanElapsed = 0;
+    this.longRangeScanParameters = null;
   }
 
   private getSelectedRouteOptions(): RoutePlanningOptions | null {
