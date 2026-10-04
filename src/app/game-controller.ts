@@ -12,6 +12,10 @@ import {
   type EconomyMarketService,
 } from '../systems/economy/market-service';
 import {
+  createEconomySimulationService,
+  type EconomySimulationService,
+} from '../systems/economy/economy-simulation-service';
+import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
@@ -60,6 +64,22 @@ interface ControllerPanels {
   star: StarMapPanel | null;
   local: LocalSpacePanel | null;
   port: PortPanel | null;
+}
+
+interface ControllerEconomy {
+  readonly markets: EconomyMarketService;
+  readonly trade: PlayerTradeService;
+  readonly simulation: EconomySimulationService;
+}
+
+function createControllerEconomy(): ControllerEconomy {
+  const markets = createEconomyMarketService(tutorialPorts, economyResources);
+  const trade = createPlayerTradeService(markets);
+  return {
+    markets,
+    trade,
+    simulation: createEconomySimulationService(markets, trade.player, economyResources, 41),
+  };
 }
 
 function destroyScenePanels(panels: ControllerPanels): void {
@@ -281,8 +301,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const markets = createEconomyMarketService(tutorialPorts, economyResources);
-  const trade = createPlayerTradeService(markets);
+  const { markets, trade, simulation } = createControllerEconomy();
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -360,6 +379,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
+      if (previousLocationId === null && currentLocationId !== null) simulation.advanceNextDay();
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
       if (mode === 'star-map') panels.star?.update(starModel());
