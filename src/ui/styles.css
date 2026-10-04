@@ -252,9 +252,27 @@ body {
   letter-spacing: 0.12em;
 }
 
+.scan-label-toggle {
+  position: absolute;
+  top: 108px;
+  right: 24px;
+  padding: 7px 9px;
+  border: 1px solid rgba(92, 136, 151, 0.34);
+  background: rgba(7, 18, 24, 0.72);
+  color: #7f9cab;
+  cursor: pointer;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.scan-label-toggle.is-active {
+  border-color: rgba(103, 209, 232, 0.44);
+  color: #a4dce8;
+}
+
 .local-mining-status {
   position: absolute;
-  top: 112px;
+  top: 146px;
   right: 24px;
   padding: 8px 10px;
   border: 1px solid rgba(81, 184, 212, 0.26);
@@ -269,7 +287,7 @@ body {
 
 .cancel-mining-button {
   position: absolute;
-  top: 148px;
+  top: 182px;
   right: 24px;
   padding: 7px 10px;
   border: 1px solid rgba(185, 108, 108, 0.34);
@@ -280,17 +298,64 @@ body {
   letter-spacing: 0.14em;
 }
 
-.local-ore-counter {
+.local-cargo-panel {
   position: absolute;
   right: 24px;
   bottom: 20px;
-  color: #859bab;
+  width: 218px;
+  padding: 10px 11px 11px;
+  border: 1px solid rgba(100, 146, 164, 0.28);
+  border-left: 2px solid rgba(103, 209, 232, 0.54);
+  background: rgba(5, 12, 17, 0.82);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
   pointer-events: none;
+  backdrop-filter: blur(5px);
 }
 
-.local-ore-counter strong {
+.local-cargo-title,
+.local-cargo-total,
+.local-cargo-row,
+.local-cargo-empty {
+  font-size: 9px;
+  letter-spacing: 0.11em;
+}
+
+.local-cargo-title {
+  margin-bottom: 7px;
+  color: #8eb2c0;
+}
+
+.local-cargo-total {
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(112, 151, 166, 0.16);
+  color: #6f8792;
+}
+
+.local-cargo-total strong {
   color: #b8d7e3;
   font-weight: 600;
+}
+
+.local-cargo-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.local-cargo-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #8ba5b1;
+}
+
+.local-cargo-row strong {
+  color: #c1e1e9;
+  font-weight: 600;
+}
+
+.local-cargo-empty {
+  color: rgba(126, 145, 154, 0.54);
 }
 
 .local-selection-card {
@@ -644,13 +709,18 @@ body {
     right: 16px;
   }
 
+  .scan-label-toggle {
+    top: 98px;
+    right: 16px;
+  }
+
   .local-mining-status {
-    top: 100px;
+    top: 134px;
     right: 16px;
   }
 
   .cancel-mining-button {
-    top: 136px;
+    top: 170px;
     right: 16px;
   }
 
@@ -675,8 +745,9 @@ body {
     font-size: 9px;
   }
 
-  .local-ore-counter {
+  .local-cargo-panel {
     right: 16px;
     bottom: 16px;
+    width: min(210px, calc(100vw - 32px));
   }
 }

@@ -45,6 +45,7 @@ export class LocalSpaceRenderer {
   private loadedShipUrl = '';
   private hasFitted = false;
   private debugHardpoints = false;
+  private scanLabelsVisible = true;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -99,6 +100,11 @@ export class LocalSpaceRenderer {
 
   toggleHardpointDebug(): void {
     this.debugHardpoints = !this.debugHardpoints;
+    this.draw();
+  }
+
+  setScanLabelsVisible(visible: boolean): void {
+    this.scanLabelsVisible = visible;
     this.draw();
   }
 
@@ -186,6 +192,7 @@ export class LocalSpaceRenderer {
 
     if (asteroid.kind === 'resource') {
       this.drawScanMarker(asteroid, point, radius);
+      this.drawScanCallout(asteroid, point, radius);
     }
 
     if (
@@ -221,6 +228,44 @@ export class LocalSpaceRenderer {
     this.context.beginPath();
     this.context.arc(point.x, point.y, radius + 4, 0, Math.PI * 2);
     this.context.stroke();
+    this.context.restore();
+  }
+
+  private scanCalloutText(asteroid: LocalAsteroidView): string | null {
+    if (asteroid.scanLevel === 'unscanned') return null;
+    if (asteroid.surveyResult === 'empty') return 'LEER';
+    if (asteroid.scanLevel === 'surveyed') return '???';
+    if (!asteroid.resourceName) return 'LEER';
+
+    const amount = asteroid.estimatedResourceAmount ?? 0;
+    return asteroid.resourceName.toUpperCase() + ' · ~' + Math.round(amount);
+  }
+
+  private drawScanCallout(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
+    if (!this.scanLabelsVisible) return;
+    const text = this.scanCalloutText(asteroid);
+    if (!text) return;
+
+    const startX = point.x + radius * 0.72;
+    const startY = point.y - radius * 0.72;
+    const bendX = startX + 10;
+    const bendY = startY - 10;
+    const endX = bendX + 8;
+
+    this.context.save();
+    this.context.strokeStyle =
+      asteroid.scanLevel === 'analyzed' ? 'rgba(121, 220, 237, .82)' : 'rgba(139, 192, 153, .72)';
+    this.context.fillStyle =
+      asteroid.scanLevel === 'analyzed' ? 'rgba(179, 235, 244, .92)' : 'rgba(168, 205, 178, .84)';
+    this.context.lineWidth = 1;
+    this.context.beginPath();
+    this.context.moveTo(startX, startY);
+    this.context.lineTo(bendX, bendY);
+    this.context.lineTo(endX, bendY);
+    this.context.stroke();
+    this.context.font = '9px ui-monospace, SFMono-Regular, Consolas, monospace';
+    this.context.textBaseline = 'middle';
+    this.context.fillText(text, endX + 4, bendY);
     this.context.restore();
   }
 

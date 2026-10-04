@@ -8,6 +8,7 @@ import type {
   MiningPhase,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { miningResourceById } from '../../data/resources/mining-resources';
 
 export interface LocalAsteroidView {
   readonly id: string;
@@ -21,6 +22,7 @@ export interface LocalAsteroidView {
   readonly resourceName: string | null;
   readonly resourceAmount: number | null;
   readonly resourceCapacity: number | null;
+  readonly estimatedResourceAmount: number | null;
   readonly isSelected: boolean;
   readonly isMiningTarget: boolean;
   readonly isScanTarget: boolean;
@@ -31,6 +33,12 @@ export interface LocalChunkView {
   readonly position: WorldPoint;
   readonly amount: number;
   readonly tractorActive: boolean;
+}
+
+export interface LocalCargoResourceView {
+  readonly resourceId: string;
+  readonly name: string;
+  readonly amount: number;
 }
 
 export interface LocalShipView {
@@ -66,7 +74,13 @@ export interface LocalSpaceViewModel {
   readonly shield: ShieldState;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly collectedOre: number;
-  readonly collectedResources: LocalSpaceSnapshot['collectedResources'];
+  readonly cargoResources: readonly LocalCargoResourceView[];
+}
+
+function estimateResourceAmount(amount: number): number {
+  if (amount <= 0) return 0;
+  const step = amount >= 250 ? 25 : amount >= 100 ? 10 : 5;
+  return Math.max(step, Math.round(amount / step) * step);
 }
 
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
@@ -85,6 +99,7 @@ function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): Loc
     resourceName: analyzed && asteroid.resourceId ? asteroid.oreType : null,
     resourceAmount: analyzed ? asteroid.oreRemaining : null,
     resourceCapacity: analyzed ? asteroid.oreCapacity : null,
+    estimatedResourceAmount: analyzed ? estimateResourceAmount(asteroid.oreRemaining) : null,
     isSelected: asteroid.id === snapshot.selectedAsteroidId,
     isMiningTarget: asteroid.id === snapshot.miningTargetId,
     isScanTarget: asteroid.id === snapshot.scanTargetId,
@@ -98,6 +113,17 @@ function mapChunk(chunk: MiningChunk): LocalChunkView {
     amount: chunk.amount,
     tractorActive: chunk.tractorActive,
   };
+}
+
+function mapCargo(snapshot: LocalSpaceSnapshot): LocalCargoResourceView[] {
+  return snapshot.collectedResources
+    .filter((entry) => entry.amount > 0)
+    .map((entry) => ({
+      resourceId: entry.resourceId,
+      name: miningResourceById(entry.resourceId)?.name ?? entry.resourceId,
+      amount: entry.amount,
+    }))
+    .sort((first, second) => first.name.localeCompare(second.name));
 }
 
 export function createLocalSpaceViewModel(
@@ -141,6 +167,6 @@ export function createLocalSpaceViewModel(
     shield: snapshot.shield,
     shieldImpacts: snapshot.shieldImpacts,
     collectedOre: snapshot.collectedOre,
-    collectedResources: snapshot.collectedResources,
+    cargoResources: mapCargo(snapshot),
   };
 }
