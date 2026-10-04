@@ -8,14 +8,8 @@ const root = path.resolve(__dirname, '../..');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
-const portModel = fs.readFileSync(
-  path.join(root, 'src/features/port/port-view-model.ts'),
-  'utf8'
-);
-const portData = fs.readFileSync(
-  path.join(root, 'src/data/ports/tutorial-ports.ts'),
-  'utf8'
-);
+const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
+const portData = fs.readFileSync(path.join(root, 'src/data/ports/tutorial-ports.ts'), 'utf8');
 const portTypes = fs.readFileSync(path.join(root, 'src/core/port-types.ts'), 'utf8');
 
 assert(portTypes.includes('CommodityId'), 'port commodities must use stable internal ids');
@@ -46,13 +40,11 @@ assert(
   'crew UI must expose ship station assignment slots'
 );
 assert(
-  portPanel.includes('WERFT // KOMPONENTEN') &&
-    portPanel.includes('SCHIFFSKAUF'),
+  portPanel.includes('WERFT // KOMPONENTEN') && portPanel.includes('SCHIFFSKAUF'),
   'shipyard UI must separate components from ship purchases'
 );
 assert(
-  portPanel.includes('STANDARDISIERTE PREISE') &&
-    portPanel.includes('KEINE HANDELSWARE'),
+  portPanel.includes('STANDARDISIERTE PREISE') && portPanel.includes('KEINE HANDELSWARE'),
   'equipment UI must communicate non-arbitrage standardized pricing'
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');
