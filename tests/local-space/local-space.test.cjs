@@ -96,8 +96,14 @@ assert(
   scanner.includes('sensorModifier') && scanner.includes('crewSkill'),
   'long-range scanner radius must be ready for sensors and crew skill'
 );
-assert(generator.includes('const width = 4400'), 'mining field width must use the compact density-preserving size');
-assert(generator.includes('const height = 2570'), 'mining field height must use the compact density-preserving size');
+assert(
+  generator.includes('const width = 4400'),
+  'mining field width must use the compact density-preserving size'
+);
+assert(
+  generator.includes('const height = 2570'),
+  'mining field height must use the compact density-preserving size'
+);
 assert(
   generator.includes('createResourceAsteroids'),
   'local-space generator must create resource asteroids'
@@ -135,8 +141,14 @@ assert(
 );
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
 assert(service.includes('startLongRangeScan'), 'service must expose timed long-range scanning');
-assert(service.includes('longRangeScanElapsed / 5'), 'long-range scan must expose five-second progress');
-assert(service.includes('this.longRangeScanElapsed < 5'), 'long-range scan must not finish before five seconds');
+assert(
+  service.includes('longRangeScanElapsed / 5'),
+  'long-range scan must expose five-second progress'
+);
+assert(
+  service.includes('this.longRangeScanElapsed < 5'),
+  'long-range scan must not finish before five seconds'
+);
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
 assert(
   localScanning.includes("asteroid.scanLevel = 'surveyed'"),
@@ -320,7 +332,10 @@ assert(
   shieldTypes.includes('ShieldDamageSource'),
   'shield damage model must be reusable by future weapon sources'
 );
-assert(controller.includes("id === 'greyrock-belt'"), 'current asteroid field must support direct re-entry');
+assert(
+  controller.includes("id === 'greyrock-belt'"),
+  'current asteroid field must support direct re-entry'
+);
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 
 console.log('PASS local-space route, rigid asteroid physics, debris and collision ownership');
