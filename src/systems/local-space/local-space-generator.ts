@@ -50,7 +50,7 @@ function createResourceAsteroids(
   width: number,
   height: number
 ): LocalAsteroid[] {
-  const count = 96 + Math.floor(random() * 25);
+  const count = 64 + Math.floor(random() * 17);
   const asteroids: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -88,7 +88,7 @@ function createDebris(
   width: number,
   height: number
 ): LocalAsteroid[] {
-  const count = 190 + Math.floor(random() * 51);
+  const count = 127 + Math.floor(random() * 34);
   const debris: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -116,8 +116,8 @@ function createDebris(
 }
 
 export function generateMiningSpace(sourceLocationId: string, seed: number): LocalSpaceInstance {
-  const width = 5400;
-  const height = 3150;
+  const width = 4400;
+  const height = 2570;
   const random = createRandom(seed);
 
   return {

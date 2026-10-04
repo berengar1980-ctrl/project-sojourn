@@ -148,6 +148,7 @@ export class LocalSpaceRenderer {
 
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
+    this.drawLongRangeScan(width, height, timeSeconds);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
     this.drawShip(geometry, timeSeconds);
     if (this.debugHardpoints) {
@@ -283,6 +284,31 @@ export class LocalSpaceRenderer {
       rect.width,
       rect.height
     );
+  }
+
+  private drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
+    const progress = this.model.longRangeScanProgress;
+    if (progress == null) return;
+
+    const center = this.camera.worldToScreen(this.model.ship.position, width, height);
+    const maximumRadius = Math.max(width, height) * 0.68;
+    const radius = Math.max(8, maximumRadius * (0.08 + progress * 0.92));
+    const pulse = 0.72 + Math.sin(timeSeconds * 9) * 0.18;
+
+    this.context.save();
+    this.context.strokeStyle = `rgba(97, 222, 242, ${0.48 * (1 - progress * 0.42)})`;
+    this.context.lineWidth = 1.4;
+    this.context.shadowColor = 'rgba(84, 207, 238, .55)';
+    this.context.shadowBlur = 5;
+    this.context.beginPath();
+    this.context.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    this.context.stroke();
+
+    this.context.globalAlpha = pulse * 0.45;
+    this.context.beginPath();
+    this.context.arc(center.x, center.y, radius * 0.72, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawNavigationRoute(width: number, height: number): void {

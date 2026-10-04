@@ -21,13 +21,14 @@ type RouteWorkerRequest =
 interface RouteWorkerResponse {
   readonly id: number;
   readonly route: readonly WorldPoint[];
+  readonly compromised: boolean;
 }
 
 self.addEventListener('message', (event: MessageEvent<RouteWorkerRequest>) => {
-  const route =
+  const plan =
     event.data.kind === 'point'
       ? planPointRoute(event.data.options)
-      : planMiningApproachRoute(event.data.options);
-  const response: RouteWorkerResponse = { id: event.data.id, route };
+      : { route: planMiningApproachRoute(event.data.options), compromised: false };
+  const response: RouteWorkerResponse = { id: event.data.id, ...plan };
   self.postMessage(response);
 });

@@ -29,6 +29,11 @@ export interface PointRoutePlanningOptions {
   readonly height: number;
 }
 
+export interface PointRoutePlan {
+  readonly route: readonly WorldPoint[];
+  readonly compromised: boolean;
+}
+
 interface QueueEntry {
   readonly key: string;
   readonly priority: number;
@@ -395,25 +400,37 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
   return [options.start, fallbackEnd];
 }
 
-export function planPointRoute(options: PointRoutePlanningOptions): readonly WorldPoint[] {
+export function planPointRoute(options: PointRoutePlanningOptions): PointRoutePlan {
   const target = {
     x: Math.max(0, Math.min(options.width, options.target.x)),
     y: Math.max(0, Math.min(options.height, options.target.y)),
   };
   const obstacles = options.asteroids.filter((asteroid) => asteroid.routeBlocking);
-  if (!pointClear(target, obstacles, options.clearance)) return [];
-
-  const raw = findGridRoute(
-    options.start,
-    target,
-    obstacles,
+  const clearances = [
     options.clearance,
-    options.width,
-    options.height
-  );
-  if (!raw) return [];
+    options.clearance * 0.72,
+    options.clearance * 0.45,
+    options.clearance * 0.2,
+    0,
+  ];
 
-  const simplified = simplifyRoute(raw, obstacles, options.clearance);
-  const rounded = roundRoute(simplified);
-  return routeSegmentsClear(rounded, obstacles, options.clearance * 0.82) ? rounded : simplified;
+  for (const clearance of clearances) {
+    if (!pointClear(target, obstacles, clearance)) continue;
+    const raw = findGridRoute(
+      options.start,
+      target,
+      obstacles,
+      clearance,
+      options.width,
+      options.height
+    );
+    if (!raw) continue;
+
+    const simplified = simplifyRoute(raw, obstacles, clearance);
+    const rounded = roundRoute(simplified);
+    const route = routeSegmentsClear(rounded, obstacles, clearance * 0.82) ? rounded : simplified;
+    return { route, compromised: clearance < options.clearance * 0.99 };
+  }
+
+  return { route: [options.start, target], compromised: true };
 }

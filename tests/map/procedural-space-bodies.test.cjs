@@ -27,7 +27,11 @@ assert(shared.includes('planetTextureCache'), 'planet textures must be cached');
 assert(shared.includes('drawSphereLight'), 'world-fixed volume lighting pass must be shared');
 assert(textures.includes('function fbm('), 'surface generation must use layered coherent noise');
 assert(textures.includes('createPlanetTexture'), 'planets must use generated terrain textures');
-assert(textures.includes('polarNoise'), 'planetary polar caps must use noise-distorted boundaries');
+assert(
+  textures.includes('polarCoast'),
+  'planetary polar caps must use broad irregular coast noise'
+);
+assert(textures.includes('polarFjords'), 'planetary polar caps must add smaller coastline breakup');
 assert(textures.includes('polarEdge'), 'polar cap edge must not be a straight latitude cutoff');
 assert(
   shared.includes('drawStaticCraterRelief'),
