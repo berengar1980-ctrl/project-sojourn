@@ -155,4 +155,4 @@ assert(
   'completed travel must advance market situations before daily price simulation'
 );
 
-console.log('PASS deterministic market situations, scoped pricing and expiry');
+console.log('PASS deterministic market situations, scoped pricing, and expiry');
