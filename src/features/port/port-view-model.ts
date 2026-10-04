@@ -67,7 +67,10 @@ function marketPrice(basePrice: number, stock: number, demand: number, productio
   const stockPressure = Math.max(-0.38, Math.min(0.45, (2600 - stock) / 8200));
   const demandPressure = (demand - 0.5) * 0.72;
   const productionPressure = (production - 0.5) * -0.38;
-  return Math.max(1, Math.round(basePrice * (1 + stockPressure + demandPressure + productionPressure)));
+  return Math.max(
+    1,
+    Math.round(basePrice * (1 + stockPressure + demandPressure + productionPressure))
+  );
 }
 
 function marketRows(port: PortDefinition): readonly PortMarketRowView[] {
