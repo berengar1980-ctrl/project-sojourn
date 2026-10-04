@@ -184,8 +184,25 @@ assert(
   'mining must rotate deterministically across remaining deposits'
 );
 assert(
-  service.includes('this.collectedResources.set(chunk.resourceId, collected + chunk.amount)'),
-  'recovered chunks must increase cargo by stable resource id'
+  service.includes('this.collectedResources.set(chunk.resourceId, collected + accepted)'),
+  'recovered chunks must increase local mining totals by the actually accepted quantity'
+);
+assert(
+  service.includes('this.resourceEconomy.allocate(chunk.resourceId, chunk.amount)'),
+  'mining chunks must reserve their physical resource from the shared economy pool'
+);
+assert(
+  service.includes('this.resourceEconomy.collect(chunk.resourceId, chunk.amount)'),
+  'recovered mining chunks must enter persistent ship cargo through the economy layer'
+);
+assert(
+  service.includes('this.resourceEconomy.release(chunk.resourceId, chunk.amount)'),
+  'uncollected mining chunks must return their allocation when local space is disposed'
+);
+assert(
+  controller.includes('economy.claimAllocatedToPlayer') &&
+    controller.includes('ship.cargoCapacityTons'),
+  'mined cargo must respect the active ship cargo capacity'
 );
 assert(
   service.includes('hasMineableDeposits'),
