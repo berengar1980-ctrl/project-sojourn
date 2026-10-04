@@ -68,6 +68,11 @@ function createControllerShipSwitcher(
   });
 }
 
+function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService {
+  if (!service) throw new Error('Local space is not active.');
+  return service;
+}
+
 function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
@@ -173,13 +178,9 @@ export function createGameController(options: GameControllerOptions): GameContro
 
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
-  const localModel = () => {
-    if (!localSpace) throw new Error('Local space is not active.');
-    return createLocalSpaceViewModel(localSpace.getSnapshot(), activeShip, 'Mining Zone');
-  };
-  const refreshLocalPanel = () => {
-    if (localSpace) localPanel?.update(localModel());
-  };
+  const localModel = () =>
+    createLocalSpaceViewModel(requireLocalSpace(localSpace).getSnapshot(), activeShip, 'Mining Zone');
+  const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
 
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
