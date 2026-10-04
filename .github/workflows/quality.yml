@@ -17,23 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Format debug
-        run: |
-          npx prettier --write src/ui/local-space/local-space-renderer.ts src/ui/map/player-ship-renderer.ts src/ui/ships/shield-impact-renderer.ts src/ui/space/procedural-space-body-renderer.ts tests/local-space/local-space-rendering.test.cjs tests/map/player-ship-rendering.test.cjs tests/map/procedural-space-bodies.test.cjs
-          echo '---LOCAL---'
-          cat src/ui/local-space/local-space-renderer.ts
-          echo '---MAPSHIP---'
-          cat src/ui/map/player-ship-renderer.ts
-          echo '---SHIELD---'
-          cat src/ui/ships/shield-impact-renderer.ts
-          echo '---SPACEBODY---'
-          cat src/ui/space/procedural-space-body-renderer.ts
-          echo '---LOCALTEST---'
-          cat tests/local-space/local-space-rendering.test.cjs
-          echo '---MAPSHIPTEST---'
-          cat tests/map/player-ship-rendering.test.cjs
-          echo '---SPACEBODYTEST---'
-          cat tests/map/procedural-space-bodies.test.cjs
-          echo '---END---'
       - name: Quality gate
         run: npm run check
