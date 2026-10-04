@@ -11,6 +11,7 @@ import {
   createEconomyMarketService,
   type EconomyMarketService,
 } from '../systems/economy/market-service';
+import { createEconomySimulationService } from '../systems/economy/economy-simulation-service';
 import {
   createPlayerTradeService,
   type PlayerTradeService,
@@ -283,6 +284,8 @@ export function createGameController(options: GameControllerOptions): GameContro
   const systemLog = createControllerLog();
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
   const trade = createPlayerTradeService(markets);
+  const economy = createEconomySimulationService(markets, trade.player, economyResources, 41);
+  let economyDay = 0;
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -359,6 +362,9 @@ export function createGameController(options: GameControllerOptions): GameContro
       const currentLocationId = navigationSnapshot.currentLocationId;
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
+      }
+      if (previousLocationId === null && currentLocationId !== null) {
+        economy.advanceDay((economyDay += 1));
       }
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
