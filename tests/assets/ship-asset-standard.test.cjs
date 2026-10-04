@@ -80,7 +80,11 @@ function parsePng(file) {
   }
 
   assert(width && height, `${file}: PNG has no IHDR dimensions`);
-  assert.strictEqual(bitDepth, 8, `${file}: ship validator supports 8-bit PNG assets only`);
+  assert.strictEqual(
+    bitDepth,
+    8,
+    `${file}: ship validator supports 8-bit PNG assets only`
+  );
   assert.strictEqual(interlace, 0, `${file}: interlaced PNG assets are not allowed`);
 
   const channelsByType = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
@@ -132,7 +136,8 @@ function parsePng(file) {
     if (colorType === 4) return row[i + 1];
     if (colorType === 3) {
       const paletteIndex = row[i];
-      return transparency && paletteIndex < transparency.length ? transparency[paletteIndex] : 255;
+      if (transparency && paletteIndex < transparency.length) return transparency[paletteIndex];
+      return 255;
     }
     if (colorType === 2 && transparency && transparency.length >= 6) {
       const tr = transparency.readUInt16BE(0) & 255;
@@ -207,7 +212,8 @@ function measureAlpha(file) {
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x);
       maxY = Math.max(maxY, y);
-      if (x === 0 || y === 0 || x === png.width - 1 || y === png.height - 1) edgePixels++;
+      const onEdge = x === 0 || y === 0 || x === png.width - 1 || y === png.height - 1;
+      if (onEdge) edgePixels++;
     }
   }
 
@@ -250,13 +256,16 @@ function validateTypeSpecific(spec, metrics) {
 
   if (spec.type === 'miner') {
     if (!fs.existsSync(hardpointsFile)) {
-      failures.push(`${spec.relative}: miner requires ${path.relative(root, hardpointsFile)}`);
+      const relHardpoints = path.relative(root, hardpointsFile);
+      failures.push(`${spec.relative}: miner requires ${relHardpoints}`);
       return failures;
     }
 
     const hardpoints = JSON.parse(fs.readFileSync(hardpointsFile, 'utf8'));
     if (!Array.isArray(hardpoints.miningLasers) || hardpoints.miningLasers.length === 0) {
-      failures.push(`${spec.relative}: miner requires at least one mining-laser hardpoint`);
+      failures.push(
+        `${spec.relative}: miner requires at least one mining-laser hardpoint`
+      );
     }
     if (!Array.isArray(hardpoints.engines) || hardpoints.engines.length === 0) {
       failures.push(`${spec.relative}: miner requires at least one engine hardpoint`);
@@ -273,7 +282,9 @@ function validateTypeSpecific(spec, metrics) {
     const sternLimit = metrics.width * 0.45;
     const bowLimit = metrics.width * 0.55;
     if (hardpoints.engines.some((hp) => hp.x >= sternLimit)) {
-      failures.push(`${spec.relative}: miner engine hardpoints must remain on the left/stern side`);
+      failures.push(
+        `${spec.relative}: miner engine hardpoints must remain on the left/stern side`
+      );
     }
     if (hardpoints.miningLasers.some((hp) => hp.x <= bowLimit)) {
       failures.push(
