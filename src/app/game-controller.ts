@@ -73,6 +73,10 @@ function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService
   return service;
 }
 
+function createActiveLocalModel(service: LocalSpaceService | null, ship: ShipDefinition) {
+  return createLocalSpaceViewModel(requireLocalSpace(service).getSnapshot(), ship, 'Mining Zone');
+}
+
 function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
@@ -178,8 +182,7 @@ export function createGameController(options: GameControllerOptions): GameContro
 
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
-  const localModel = () =>
-    createLocalSpaceViewModel(requireLocalSpace(localSpace).getSnapshot(), activeShip, 'Mining Zone');
+  const localModel = () => createActiveLocalModel(localSpace, activeShip);
   const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
 
   const mountTestSwitcher = (): void => {
