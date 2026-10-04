@@ -73,6 +73,10 @@ assert(
 assert(data.includes("id: 'miner-80m-standard'"), 'standard mining ship missing');
 assert(data.includes("id: 'miner-80m-industrial-heavy'"), 'industrial mining ship missing');
 assert(
+  data.includes('cargoCapacityTons: 280') && data.includes('cargoCapacityTons: 360'),
+  'registered miners must define explicit cargo capacity'
+);
+assert(
   data.includes("import standardHardpointsJson from './miner-80m-standard.hardpoints.json'"),
   'standard miner must load its own hardpoint JSON'
 );
