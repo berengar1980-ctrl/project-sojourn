@@ -176,6 +176,7 @@ export function createGameController(options: GameControllerOptions): GameContro
         const nextShip = getShipDefinition(shipId);
         if (!nextShip || nextShip.id === activeShip.id) return;
         activeShip = nextShip;
+        navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
         systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
 
         if (mode === 'local-space') {
