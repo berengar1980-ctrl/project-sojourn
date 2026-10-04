@@ -7,6 +7,7 @@ import {
   createLocalSpaceService,
   generateMiningSpace,
   planMiningApproachRouteAsync,
+  planPointRouteAsync,
 } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
@@ -43,6 +44,13 @@ async function calculateScanRoute(service: LocalSpaceService): Promise<readonly 
   return planMiningApproachRouteAsync(options);
 }
 
+async function calculatePointRoute(
+  service: LocalSpaceService,
+  target: WorldPoint
+): Promise<readonly WorldPoint[]> {
+  return planPointRouteAsync(service.getPointRouteOptions(target));
+}
+
 function createMiningLocalSpace(ship: ShipDefinition, visit: number): LocalSpaceService {
   return createLocalSpaceService({
     instance: generateMiningSpace('greyrock-belt', localSeed(visit)),
@@ -68,6 +76,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let localSpace: LocalSpaceService | null = null;
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
+  let localNavigationRequest = 0;
   const systemLog = createSystemLogService();
   systemLog.write('SYSTEM ONLINE');
 
@@ -115,6 +124,21 @@ export function createGameController(options: GameControllerOptions): GameContro
       onSelectAsteroid: (id) => {
         localSpace?.selectAsteroid(id);
         localPanel?.update(localModel());
+      },
+      onNavigate: async (target) => {
+        const activeSpace = localSpace;
+        if (!activeSpace) return false;
+        localNavigationRequest += 1;
+        const request = localNavigationRequest;
+        const route = await calculatePointRoute(activeSpace, target);
+        if (localSpace !== activeSpace || request !== localNavigationRequest || route.length < 2) {
+          return false;
+        }
+
+        const destination = route[route.length - 1]!;
+        activeSpace.startNavigation(destination, route);
+        localPanel?.update(localModel());
+        return true;
       },
       onStartMining: async () => {
         const activeSpace = localSpace;
