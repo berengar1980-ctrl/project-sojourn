@@ -242,7 +242,7 @@ export class LocalSpaceRenderer {
 
   private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
-    const engineIntensity = Math.min(1, this.model.ship.speed / 240);
+    const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 240));
     const maneuverDemand = {
       turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
       angularThrust: this.model.ship.angularThrust,
@@ -274,16 +274,7 @@ export class LocalSpaceRenderer {
     this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
     this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
 
-    const rect = this.canvas.getBoundingClientRect();
-    this.shieldImpacts.draw(
-      this.context,
-      this.camera,
-      this.model.shieldImpacts,
-      source,
-      geometry,
-      rect.width,
-      rect.height
-    );
+    this.shieldImpacts.draw(this.context, this.model.shieldImpacts, source, geometry);
   }
 
   private drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
