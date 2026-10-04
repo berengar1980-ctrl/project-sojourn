@@ -14,7 +14,7 @@ interface LocalSpacePanelOptions {
   readonly root: HTMLElement;
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
-  readonly onNavigate: (target: WorldPoint) => Promise<boolean>;
+  readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
   readonly onLongRangeScan: () => void;
@@ -24,6 +24,9 @@ interface LocalSpacePanelOptions {
 }
 
 function miningStatus(model: LocalSpaceViewModel): string {
+  if (model.longRangeScanProgress != null) {
+    return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
+  }
   if (model.navigationTarget) return 'NAVIGATION ZUM ZIELPUNKT';
   if (model.scanTarget && model.miningPhase === 'approaching') {
     return 'ANFLUG FÜR NAHBEREICHSSCAN';
@@ -164,9 +167,13 @@ function bindNavigationInput(
 
       void options
         .onNavigate({ x, y })
-        .then((started) => {
+        .then((result) => {
           if (request !== navigationRequest) return;
-          options.log.write(started ? 'NAV > ZIELROUTE BEREIT' : 'NAV > ZIEL NICHT ERREICHBAR');
+          if (result === 'risk') {
+            options.log.write('NAV > WARNUNG: ROUTE MIT REDUZIERTER SICHERHEIT');
+          } else {
+            options.log.write(result ? 'NAV > ZIELROUTE BEREIT' : 'NAV > ROUTE FEHLGESCHLAGEN');
+          }
           systemLog.update();
           updateOverlay();
         })
@@ -212,9 +219,11 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
+    const longScanActive = model.longRangeScanProgress != null;
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     oreCounter.textContent = Math.round(model.collectedOre).toString();
+    longScanButton.disabled = longScanActive;
 
     const currentShieldPercent = shieldPercent(model);
     if (currentShieldPercent !== lastShieldPercent) {
@@ -258,7 +267,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     updateOverlay
   );
   longScanButton.addEventListener('click', () => {
-    options.log.write('SCAN > LANGREICHWEITENSCAN');
+    if (model.longRangeScanProgress != null) return;
+    options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
     options.onLongRangeScan();
     systemLog.update();
     updateOverlay();
