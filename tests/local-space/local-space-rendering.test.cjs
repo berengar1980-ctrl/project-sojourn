@@ -76,7 +76,7 @@ assert(
   renderer.includes('light: { x: -0.72, y: -0.56 }'),
   'ship and asteroids must share the same local light vector'
 );
-assert(shipLighting.includes("rgba(0,0,0,.58)"), 'ship shadow pass must be visibly directional');
+assert(shipLighting.includes('rgba(0,0,0,.58)'), 'ship shadow pass must be visibly directional');
 assert(
   renderer.includes('ShipHardpointDebugRenderer'),
   'local space must support visible hardpoint calibration'
@@ -121,8 +121,14 @@ assert(
   'thruster light must use additive glow'
 );
 assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
-assert(renderer.includes('engineEffects.drawExhaust'), 'engine exhaust must render behind the ship');
-assert(renderer.includes('engineEffects.drawGlow'), 'engine glow must render after the ship sprite');
+assert(
+  renderer.includes('engineEffects.drawExhaust'),
+  'engine exhaust must render behind the ship'
+);
+assert(
+  renderer.includes('engineEffects.drawGlow'),
+  'engine glow must render after the ship sprite'
+);
 assert(renderer.includes('maneuverEffects.drawGlow'), 'RCS glow must render after the ship sprite');
 assert(engines.includes('engineFlicker'), 'engine thrust must use shared visible flicker');
 assert(
