@@ -1,7 +1,4 @@
-import type {
-  EconomyResourceId,
-  PlayerEconomyState,
-} from '../../core/economy-types';
+import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-types';
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
