@@ -169,7 +169,6 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
   };
 }
 
-
 function createControllerStarPanel(options: {
   root: HTMLElement;
   navigation: NavigationService;
