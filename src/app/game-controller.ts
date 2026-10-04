@@ -47,6 +47,21 @@ interface LocalActionContext {
   readonly returnToStarMap: () => void;
 }
 
+interface ControllerPanels {
+  star: StarMapPanel | null;
+  local: LocalSpacePanel | null;
+  port: PortPanel | null;
+}
+
+function destroyScenePanels(panels: ControllerPanels): void {
+  panels.star?.destroy();
+  panels.local?.destroy();
+  panels.port?.destroy();
+  panels.star = null;
+  panels.local = null;
+  panels.port = null;
+}
+
 export interface GameController {
   tick(deltaSeconds: number): void;
 }
@@ -223,9 +238,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const { root, navigation } = options;
   let activeShip = options.ship;
   let mode: SceneMode = 'star-map';
-  let starPanel: StarMapPanel | null = null;
-  let localPanel: LocalSpacePanel | null = null;
-  let portPanel: PortPanel | null = null;
+  const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
   let localSpaceSeed = 0;
@@ -236,7 +249,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
-  const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
+  const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
     shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
@@ -248,13 +261,10 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
   };
   const mountStarMap = (): void => {
-    localPanel?.destroy();
-    localPanel = null;
-    portPanel?.destroy();
-    portPanel = null;
+    destroyScenePanels(panels);
     localSpace = null;
     mode = 'star-map';
-    starPanel = createControllerStarPanel({
+    panels.star = createControllerStarPanel({
       root,
       navigation,
       log: systemLog,
@@ -266,15 +276,11 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   const mountPort = (): void => {
     const locationId = navigation.getSnapshot().currentLocationId;
-    starPanel?.destroy();
-    starPanel = null;
-    localPanel?.destroy();
-    localPanel = null;
-    portPanel?.destroy();
-    portPanel = createActivePortPanel(root, navigation, activeShip, () =>
+    destroyScenePanels(panels);
+    panels.port = createActivePortPanel(root, navigation, activeShip, () =>
       runSceneZoomTransition(root, mountStarMap)
     );
-    if (!portPanel) return;
+    if (!panels.port) return;
     mode = 'port';
     systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
     mountTestSwitcher();
@@ -289,10 +295,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     },
   });
   const mountLocalSpace = (reuseSeed = false): void => {
-    starPanel?.destroy();
-    starPanel = null;
-    localPanel?.destroy();
-    localPanel = null;
+    destroyScenePanels(panels);
     mode = 'local-space';
     if (!reuseSeed || localSpaceSeed === 0) {
       visitCounter += 1;
@@ -300,7 +303,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     }
     localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
-    localPanel = createLocalSpacePanel({
+    panels.local = createLocalSpacePanel({
       root,
       model: localModel(),
       log: systemLog,
@@ -318,10 +321,10 @@ export function createGameController(options: GameControllerOptions): GameContro
       }
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
-      if (mode === 'star-map') starPanel?.update(starModel());
+      if (mode === 'star-map') panels.star?.update(starModel());
       else if (mode === 'local-space' && localSpace) {
         localSpace.tick(deltaSeconds);
-        localPanel?.update(localModel());
+        panels.local?.update(localModel());
       }
     },
   };
