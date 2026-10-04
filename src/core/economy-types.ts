@@ -52,3 +52,22 @@ export interface EconomyMarketState {
   readonly needs: ReadonlySet<EconomyResourceId>;
   readonly entries: Record<EconomyResourceId, EconomyMarketEntry>;
 }
+
+export interface PlayerCargoLot {
+  qty: number;
+  totalCost: number;
+  lastOriginId?: EconomyLocationId;
+}
+
+export interface PlayerEconomyState {
+  credits: number;
+  readonly cargo: Record<EconomyResourceId, PlayerCargoLot>;
+}
+
+export interface TradeResult {
+  readonly resourceId: EconomyResourceId;
+  readonly quantity: number;
+  readonly unitPrice: number;
+  readonly creditsDelta: number;
+  readonly realizedProfit: number;
+}
