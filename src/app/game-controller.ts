@@ -12,7 +12,9 @@ import {
 } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
+import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
+import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -46,6 +48,35 @@ export interface GameController {
   tick(deltaSeconds: number): void;
 }
 
+function createControllerShipSwitcher(
+  root: HTMLElement,
+  activeShip: ShipDefinition,
+  navigation: NavigationService,
+  onSwitch: (ship: ShipDefinition) => void
+): ShipTestSwitcher {
+  return createShipTestSwitcher({
+    root,
+    ships: getAllShipDefinitions(),
+    activeShipId: activeShip.id,
+    disabled: navigation.getSnapshot().isTravelling,
+    onSelect: (shipId) => {
+      const nextShip = getShipDefinition(shipId);
+      if (!nextShip || nextShip.id === activeShip.id) return;
+      navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
+      onSwitch(nextShip);
+    },
+  });
+}
+
+function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService {
+  if (!service) throw new Error('Local space is not active.');
+  return service;
+}
+
+function createActiveLocalModel(service: LocalSpaceService | null, ship: ShipDefinition) {
+  return createLocalSpaceViewModel(requireLocalSpace(service).getSnapshot(), ship, 'Mining Zone');
+}
+
 function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
@@ -64,9 +95,9 @@ async function calculatePointRoute(service: LocalSpaceService, target: WorldPoin
   return planPointRouteAsync(service.getPointRouteOptions(target));
 }
 
-function createMiningLocalSpace(ship: ShipDefinition, visit: number): LocalSpaceService {
+function createMiningLocalSpace(ship: ShipDefinition, seed: number): LocalSpaceService {
   return createLocalSpaceService({
-    instance: generateMiningSpace('greyrock-belt', localSeed(visit)),
+    instance: generateMiningSpace('greyrock-belt', seed),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
@@ -136,23 +167,32 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
-  const { root, ship, navigation } = options;
+  const { root, navigation } = options;
+  let activeShip = options.ship;
   let mode: SceneMode = 'star-map';
   let starPanel: StarMapPanel | null = null;
   let localPanel: LocalSpacePanel | null = null;
+  let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
+  let localSpaceSeed = 0;
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
   systemLog.write('SYSTEM ONLINE');
 
-  const starModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
-  const localModel = () => {
-    if (!localSpace) throw new Error('Local space is not active.');
-    return createLocalSpaceViewModel(localSpace.getSnapshot(), ship, 'Mining Zone');
-  };
-  const refreshLocalPanel = () => {
-    if (localSpace) localPanel?.update(localModel());
+  const starModel = () =>
+    createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
+  const localModel = () => createActiveLocalModel(localSpace, activeShip);
+  const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
+
+  const mountTestSwitcher = (): void => {
+    shipSwitcher?.destroy();
+    shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
+      activeShip = nextShip;
+      systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
+      if (mode === 'local-space') mountLocalSpace(true);
+      else mountStarMap();
+    });
   };
 
   const mountStarMap = (): void => {
@@ -179,6 +219,7 @@ export function createGameController(options: GameControllerOptions): GameContro
         starPanel?.update(starModel());
       },
     });
+    mountTestSwitcher();
   };
 
   const localActions = createLocalPanelActions({
@@ -191,19 +232,27 @@ export function createGameController(options: GameControllerOptions): GameContro
     },
   });
 
-  const mountLocalSpace = (): void => {
+  const mountLocalSpace = (reuseSeed = false): void => {
     starPanel?.destroy();
     starPanel = null;
+    localPanel?.destroy();
+    localPanel = null;
     mode = 'local-space';
-    visitCounter += 1;
-    localSpace = createMiningLocalSpace(ship, visitCounter);
-    systemLog.write('LOCAL OPS > GREYROCK BELT');
+
+    if (!reuseSeed || localSpaceSeed === 0) {
+      visitCounter += 1;
+      localSpaceSeed = localSeed(visitCounter);
+    }
+
+    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
+    systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
     localPanel = createLocalSpacePanel({
       root,
       model: localModel(),
       log: systemLog,
       ...localActions,
     });
+    mountTestSwitcher();
   };
 
   mountStarMap();
@@ -216,6 +265,8 @@ export function createGameController(options: GameControllerOptions): GameContro
         runSceneZoomTransition(root, mountLocalSpace);
       }
       previousLocationId = currentLocationId;
+
+      shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
 
       if (mode === 'star-map') starPanel?.update(starModel());
       else if (localSpace) {

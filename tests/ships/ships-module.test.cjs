@@ -11,10 +11,23 @@ const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 
 const asset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
 const hardpointsPath = path.join(root, 'src/data/ships/miner-80m-standard.hardpoints.json');
 const hardpoints = JSON.parse(fs.readFileSync(hardpointsPath, 'utf8'));
+const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 assert(index.includes('getShipDefinition'), 'ships public API missing');
 assert(index.includes('ShipPivot'), 'ships public API must expose pivot type');
 assert(registry.includes('miningShips'), 'ship registry must consume ship data');
+assert(
+  controller.includes('getShipDefinition(shipId)') && controller.includes('activeShip = nextShip'),
+  'test ship switcher must resolve a complete ship definition by stable id'
+);
+assert(
+  controller.includes('hardpoints: ship.sprite.hardpoints'),
+  'local-space creation must consume the selected ship hardpoint JSON'
+);
+assert(
+  controller.includes('navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed)'),
+  'ship switching must apply navigation stats from the selected definition'
+);
 assert(data.includes("id: 'miner-80m-standard'"), 'first mining ship missing');
 assert(data.includes('widthPx: 346'), 'sprite width metadata must match source asset');
 assert(data.includes('heightPx: 182'), 'sprite height metadata must match source asset');

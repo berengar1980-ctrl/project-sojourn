@@ -21,5 +21,6 @@ export interface NavigationService {
   getSnapshot(): NavigationSnapshot;
   selectDestination(locationId: string | null): NavigationSnapshot;
   startTravel(): NavigationSnapshot;
+  setCruiseSpeed(cruiseSpeed: number): NavigationSnapshot;
   tick(deltaSeconds: number): NavigationSnapshot;
 }

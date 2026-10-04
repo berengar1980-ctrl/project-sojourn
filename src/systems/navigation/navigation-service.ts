@@ -9,6 +9,17 @@ interface TravelState {
   currentSpeed: number;
 }
 
+interface NavigationRuntimeState {
+  currentLocationId: string | null;
+  selectedDestinationId: string | null;
+  currentPosition: WorldPoint;
+  currentHeading: number;
+  currentTurnRate: number;
+  currentAngularThrust: number;
+  travel: TravelState | null;
+  cruiseSpeed: number;
+}
+
 const MAX_TURN_RATE = 0.9;
 
 function locationPosition(world: WorldMap, id: string): WorldPoint {
@@ -62,110 +73,122 @@ function approachSpeed(
   return current + Math.sign(target - current) * maximumChange;
 }
 
+function createSnapshot(world: WorldMap, state: NavigationRuntimeState): NavigationSnapshot {
+  const previewRoute =
+    !state.travel &&
+    state.currentLocationId &&
+    state.selectedDestinationId &&
+    state.selectedDestinationId !== state.currentLocationId
+      ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
+      : null;
+
+  return {
+    currentLocationId: state.currentLocationId,
+    selectedDestinationId: state.selectedDestinationId,
+    destinationId: state.travel?.destinationId ?? null,
+    currentPosition: state.currentPosition,
+    headingRadians: state.currentHeading,
+    turnRateRadiansPerSecond: state.currentTurnRate,
+    angularThrust: state.currentAngularThrust,
+    lateralThrust: 0,
+    isTravelling: state.travel !== null,
+    progress: state.travel
+      ? Math.min(1, state.travel.distanceTravelled / state.travel.route.distance)
+      : 0,
+    speed: state.travel?.currentSpeed ?? 0,
+    previewRoute,
+    activeRoute: state.travel?.route ?? null,
+  };
+}
+
+function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): void {
+  const travel = state.travel;
+  if (!travel || deltaSeconds <= 0) return;
+
+  const clamped = Math.min(deltaSeconds, 0.1);
+  const [from, to] = travel.route.points;
+  if (!from || !to) return;
+
+  const desiredHeading = heading(from, to);
+  state.currentAngularThrust = Math.max(
+    -1,
+    Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
+  );
+  const previousHeading = state.currentHeading;
+  state.currentHeading = turnToward(state.currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+  state.currentTurnRate = angleDelta(previousHeading, state.currentHeading) / clamped;
+  const turnRemaining = Math.abs(angleDelta(state.currentHeading, desiredHeading));
+  const alignment = Math.max(0, Math.cos(turnRemaining));
+  const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
+  const acceleration = Math.max(12, state.cruiseSpeed * 0.72);
+  const desiredSpeed = targetSpeed(remainingDistance, alignment, state.cruiseSpeed, acceleration);
+  travel.currentSpeed = approachSpeed(travel.currentSpeed, desiredSpeed, acceleration, clamped);
+  travel.distanceTravelled = Math.min(
+    travel.route.distance,
+    travel.distanceTravelled + travel.currentSpeed * clamped
+  );
+
+  const progress = travel.distanceTravelled / travel.route.distance;
+  state.currentPosition = interpolate(from, to, progress);
+
+  if (remainingDistance <= 0.5 || progress >= 1) {
+    state.currentLocationId = travel.destinationId;
+    state.selectedDestinationId = travel.destinationId;
+    state.currentPosition = to;
+    state.currentTurnRate = 0;
+    state.currentAngularThrust = 0;
+    state.travel = null;
+  }
+}
+
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
-  cruiseSpeed: number
+  initialCruiseSpeed: number
 ): NavigationService {
-  let currentLocationId: string | null = startLocationId;
-  let selectedDestinationId: string | null = null;
-  let currentPosition = locationPosition(world, startLocationId);
-  let currentHeading = 0;
-  let currentTurnRate = 0;
-  let currentAngularThrust = 0;
-  let travel: TravelState | null = null;
-
-  const snapshot = (): NavigationSnapshot => {
-    const previewRoute =
-      !travel &&
-      currentLocationId &&
-      selectedDestinationId &&
-      selectedDestinationId !== currentLocationId
-        ? planRoute(world, currentLocationId, selectedDestinationId)
-        : null;
-
-    return {
-      currentLocationId,
-      selectedDestinationId,
-      destinationId: travel?.destinationId ?? null,
-      currentPosition,
-      headingRadians: currentHeading,
-      turnRateRadiansPerSecond: currentTurnRate,
-      angularThrust: currentAngularThrust,
-      lateralThrust: 0,
-      isTravelling: travel !== null,
-      progress: travel ? Math.min(1, travel.distanceTravelled / travel.route.distance) : 0,
-      speed: travel?.currentSpeed ?? 0,
-      previewRoute,
-      activeRoute: travel?.route ?? null,
-    };
+  const state: NavigationRuntimeState = {
+    currentLocationId: startLocationId,
+    selectedDestinationId: null,
+    currentPosition: locationPosition(world, startLocationId),
+    currentHeading: 0,
+    currentTurnRate: 0,
+    currentAngularThrust: 0,
+    travel: null,
+    cruiseSpeed: initialCruiseSpeed,
   };
+  const snapshot = (): NavigationSnapshot => createSnapshot(world, state);
 
   const selectDestination = (locationId: string | null): NavigationSnapshot => {
     if (locationId !== null && !world.locations.some((location) => location.id === locationId)) {
       throw new Error('Unknown navigation destination: ' + locationId);
     }
+    state.selectedDestinationId = locationId;
+    return snapshot();
+  };
 
-    selectedDestinationId = locationId;
+  const setCruiseSpeed = (nextCruiseSpeed: number): NavigationSnapshot => {
+    if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0) {
+      throw new Error('Navigation cruise speed must be positive.');
+    }
+    state.cruiseSpeed = nextCruiseSpeed;
     return snapshot();
   };
 
   const startTravel = (): NavigationSnapshot => {
-    if (travel || !currentLocationId || !selectedDestinationId) return snapshot();
-    if (selectedDestinationId === currentLocationId) return snapshot();
+    if (state.travel || !state.currentLocationId || !state.selectedDestinationId) return snapshot();
+    if (state.selectedDestinationId === state.currentLocationId) return snapshot();
 
-    const route = planRoute(world, currentLocationId, selectedDestinationId);
+    const route = planRoute(world, state.currentLocationId, state.selectedDestinationId);
     const [from, to] = route.points;
     if (!from || !to) return snapshot();
 
-    travel = {
-      destinationId: selectedDestinationId,
+    state.travel = {
+      destinationId: state.selectedDestinationId,
       route,
       distanceTravelled: 0,
       currentSpeed: 0,
     };
-    currentLocationId = null;
-    return snapshot();
-  };
-
-  const tick = (deltaSeconds: number): NavigationSnapshot => {
-    if (!travel || deltaSeconds <= 0) return snapshot();
-
-    const clamped = Math.min(deltaSeconds, 0.1);
-    const [from, to] = travel.route.points;
-    if (!from || !to) return snapshot();
-
-    const desiredHeading = heading(from, to);
-    currentAngularThrust = Math.max(
-      -1,
-      Math.min(1, angleDelta(currentHeading, desiredHeading) / (Math.PI / 4))
-    );
-    const previousHeading = currentHeading;
-    currentHeading = turnToward(currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
-    currentTurnRate = angleDelta(previousHeading, currentHeading) / clamped;
-    const turnRemaining = Math.abs(angleDelta(currentHeading, desiredHeading));
-    const alignment = Math.max(0, Math.cos(turnRemaining));
-    const remainingDistance = Math.max(0, travel.route.distance - travel.distanceTravelled);
-    const acceleration = Math.max(12, cruiseSpeed * 0.72);
-    const desiredSpeed = targetSpeed(remainingDistance, alignment, cruiseSpeed, acceleration);
-    travel.currentSpeed = approachSpeed(travel.currentSpeed, desiredSpeed, acceleration, clamped);
-    travel.distanceTravelled = Math.min(
-      travel.route.distance,
-      travel.distanceTravelled + travel.currentSpeed * clamped
-    );
-
-    const progress = travel.distanceTravelled / travel.route.distance;
-    currentPosition = interpolate(from, to, progress);
-
-    if (remainingDistance <= 0.5 || progress >= 1) {
-      currentLocationId = travel.destinationId;
-      selectedDestinationId = travel.destinationId;
-      currentPosition = to;
-      currentTurnRate = 0;
-      currentAngularThrust = 0;
-      travel = null;
-    }
-
+    state.currentLocationId = null;
     return snapshot();
   };
 
@@ -173,6 +196,10 @@ export function createNavigationService(
     getSnapshot: snapshot,
     selectDestination,
     startTravel,
-    tick,
+    setCruiseSpeed,
+    tick(deltaSeconds) {
+      advanceTravel(state, deltaSeconds);
+      return snapshot();
+    },
   };
 }

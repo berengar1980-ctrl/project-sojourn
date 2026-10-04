@@ -13,6 +13,7 @@ const service = fs.readFileSync(
 
 assert(index.includes('createNavigationService'), 'navigation public API missing');
 assert(index.includes('planRoute'), 'route planner must remain part of navigation');
+assert(service.includes('setCruiseSpeed'), 'navigation must support switching ship cruise stats');
 assert(!service.includes('document.'), 'navigation must not depend on DOM');
 assert(!service.includes('Canvas'), 'navigation must not depend on renderer');
 
