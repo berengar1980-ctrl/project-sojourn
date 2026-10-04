@@ -19,9 +19,7 @@ function loadStandaloneTypeScriptModule(root, relativePath) {
 
   const module = { exports: {} };
   const wrapper = new vm.Script(
-    '(function (exports, module, require, __filename, __dirname) {' +
-      transpiled +
-      '\n})',
+    '(function (exports, module, require, __filename, __dirname) {' + transpiled + '\n})',
     { filename }
   ).runInThisContext();
 
