@@ -20,6 +20,15 @@ export interface RoutePlanningOptions {
   readonly height: number;
 }
 
+export interface PointRoutePlanningOptions {
+  readonly start: WorldPoint;
+  readonly target: WorldPoint;
+  readonly asteroids: readonly LocalAsteroid[];
+  readonly clearance: number;
+  readonly width: number;
+  readonly height: number;
+}
+
 interface QueueEntry {
   readonly key: string;
   readonly priority: number;
@@ -384,4 +393,28 @@ export function planMiningApproachRoute(options: RoutePlanningOptions): readonly
     approachPoints(options.start, options.target, miningRange, options.width, options.height)[0] ??
     options.start;
   return [options.start, fallbackEnd];
+}
+
+
+export function planPointRoute(options: PointRoutePlanningOptions): readonly WorldPoint[] {
+  const target = {
+    x: Math.max(0, Math.min(options.width, options.target.x)),
+    y: Math.max(0, Math.min(options.height, options.target.y)),
+  };
+  const obstacles = options.asteroids.filter((asteroid) => asteroid.routeBlocking);
+  if (!pointClear(target, obstacles, options.clearance)) return [];
+
+  const raw = findGridRoute(
+    options.start,
+    target,
+    obstacles,
+    options.clearance,
+    options.width,
+    options.height
+  );
+  if (!raw) return [];
+
+  const simplified = simplifyRoute(raw, obstacles, options.clearance);
+  const rounded = roundRoute(simplified);
+  return routeSegmentsClear(rounded, obstacles, options.clearance * 0.82) ? rounded : simplified;
 }
