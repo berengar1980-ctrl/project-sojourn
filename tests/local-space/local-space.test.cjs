@@ -117,6 +117,8 @@ assert(generator.includes('centerOfMassOffset'), 'asteroids must define a center
 assert(generator.includes('angularVelocity'), 'asteroids must receive angular motion');
 assert(generator.includes('momentOfInertia'), 'asteroids must define rotational inertia');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
+assert(service.includes('startNavigation'), 'local-space service must expose manual point navigation');
+assert(service.includes('getPointRouteOptions'), 'manual navigation must reuse route-planning input');
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
 assert(service.includes('runLongRangeScan'), 'service must expose long-range scanning');
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
@@ -199,11 +201,15 @@ assert(
   routeWorker.includes('planMiningApproachRoute(event.data.options)'),
   'route worker must own the expensive route calculation'
 );
+assert(routeWorker.includes("event.data.kind === 'point'"), 'route worker must handle point routes');
+assert(routeWorkerClient.includes("requestRoute('point'"), 'point route planning must stay off the UI thread');
 assert(
   controller.includes('planMiningApproachRouteAsync'),
   'game controller must await asynchronous mining route calculation'
 );
 assert(service.includes('approachRoute'), 'approach must persist a fixed precomputed route');
+assert(service.includes('navigationRoute'), 'manual navigation must persist a fixed precomputed route');
+assert(service.includes('brakingSpeed'), 'manual navigation must decelerate near the clicked target');
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
 assert(service.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');
@@ -212,6 +218,7 @@ assert(
   'service must resolve asteroid-to-asteroid collisions'
 );
 assert(navigation.includes('findGridRoute'), 'route planner must search a navigable path');
+assert(navigation.includes('planPointRoute'), 'route planner must support arbitrary clicked destinations');
 assert(
   navigation.includes('class MinPriorityQueue'),
   'A-star open nodes must use a priority queue instead of linear scans'
