@@ -24,8 +24,14 @@ assert(
   'star-map sprite must use shared pivot projection'
 );
 assert(shipRenderer.includes('ShipLightingRenderer'), 'star-map ship must use shared lighting');
-assert(shipLighting.includes("globalCompositeOperation = 'source-atop'"), 'lighting must respect sprite alpha');
-assert(shipLighting.includes('toShipLocal'), 'world light must be transformed into ship-local space');
+assert(
+  shipLighting.includes("globalCompositeOperation = 'source-atop'"),
+  'lighting must respect sprite alpha'
+);
+assert(
+  shipLighting.includes('toShipLocal'),
+  'world light must be transformed into ship-local space'
+);
 assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
 assert(
   shipRenderer.includes('updateIdleStationKeeping'),
@@ -51,7 +57,10 @@ assert(
 );
 assert(mapInput.includes("event.key.toLowerCase() === 'h'"), 'H must toggle star-map hardpoints');
 assert(mapRenderer.includes('drawPlayerShip'), 'star map must render the player ship');
-assert(mapRenderer.includes('starPoint.x - point.x'), 'ship light must come from the star direction');
+assert(
+  mapRenderer.includes('starPoint.x - point.x'),
+  'ship light must come from the star direction'
+);
 assert(!mapRenderer.includes("strokeStyle = '#fff4ba'"), 'sun must not have a white outline ring');
 assert(mapPanel.includes('createSystemLogPanel'), 'star map must render the shared system log');
 assert(
