@@ -17,9 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Format diff
-        run: |
-          npx prettier --write tests/local-space/local-space-rendering.test.cjs tests/map/procedural-space-bodies.test.cjs
-          git diff -- tests/local-space/local-space-rendering.test.cjs tests/map/procedural-space-bodies.test.cjs
       - name: Quality gate
         run: npm run check
