@@ -40,11 +40,18 @@ import {
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
+export interface LocalSpaceResourceEconomy {
+  allocate(resourceId: string, amount: number): number;
+  collect(resourceId: string, amount: number): number;
+  release(resourceId: string, amount: number): number;
+}
+
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
   readonly approachSpeed: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
+  readonly resourceEconomy?: LocalSpaceResourceEconomy;
 }
 
 function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
@@ -62,6 +69,7 @@ export interface LocalSpaceService {
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   cancelMining(): LocalSpaceSnapshot;
+  dispose(): void;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
 
@@ -71,6 +79,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
+  private readonly resourceEconomy: LocalSpaceResourceEconomy | null;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
@@ -102,6 +111,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachSpeed = options.approachSpeed;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
+    this.resourceEconomy = options.resourceEconomy ?? null;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.shieldState = createShieldState(
       options.hardpoints.shield.maxHp,
@@ -218,6 +228,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
   cancelMining(): LocalSpaceSnapshot {
     this.finishMining();
     return this.getSnapshot();
+  }
+
+  dispose(): void {
+    if (this.resourceEconomy) {
+      for (const chunk of this.instance.chunks) {
+        this.resourceEconomy.release(chunk.resourceId, chunk.amount);
+      }
+    }
+    this.instance.chunks.splice(0, this.instance.chunks.length);
   }
 
   tick(deltaSeconds: number): LocalSpaceSnapshot {
@@ -472,6 +491,18 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.chunkCounter
     );
     if (!chunk) return;
+
+    if (this.resourceEconomy) {
+      const allocated = this.resourceEconomy.allocate(chunk.resourceId, chunk.amount);
+      const rejected = chunk.amount - allocated;
+      if (rejected > 0) {
+        const deposit = asteroid.deposits.find((entry) => entry.resourceId === chunk.resourceId);
+        if (deposit) deposit.oreRemaining += rejected;
+      }
+      if (allocated <= 0) return;
+      chunk.amount = allocated;
+    }
+
     this.instance.chunks.push(chunk);
     this.chunkCounter += 1;
   }
@@ -482,9 +513,16 @@ class LocalSpaceRuntime implements LocalSpaceService {
     for (const chunk of this.instance.chunks) {
       advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
       if (distance(chunk.position, this.instance.ship.position) < 24) {
-        this.collectedOre += chunk.amount;
-        const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
-        this.collectedResources.set(chunk.resourceId, collected + chunk.amount);
+        const accepted = this.resourceEconomy
+          ? this.resourceEconomy.collect(chunk.resourceId, chunk.amount)
+          : chunk.amount;
+        if (accepted > 0) {
+          this.collectedOre += accepted;
+          const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
+          this.collectedResources.set(chunk.resourceId, collected + accepted);
+          chunk.amount -= accepted;
+        }
+        if (chunk.amount > 0) remaining.push(chunk);
       } else {
         remaining.push(chunk);
       }
