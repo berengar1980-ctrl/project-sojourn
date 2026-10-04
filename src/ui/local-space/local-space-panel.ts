@@ -228,6 +228,20 @@ function bindScanLabelButton(button: HTMLButtonElement, renderer: LocalSpaceRend
   });
 }
 
+function initializeSystemLog(
+  log: SystemLogService,
+  panel: SystemLogPanel,
+  shieldValue: number
+): void {
+  log.write('SCHILD-INTEGRITÄT ' + shieldValue + ' %');
+  panel.update();
+}
+
+function observeCanvas(canvas: HTMLCanvasElement, renderer: LocalSpaceRenderer): ResizeObserver {
+  const observer = observeCanvas(canvas, renderer);
+  return observer;
+}
+
 function bindLongScanButton(
   button: HTMLButtonElement,
   getModel: () => LocalSpaceViewModel,
@@ -274,8 +288,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     header: 'SYS // LOCAL OPS',
     placementClass: 'local-system-log',
   });
-  options.log.write('SCHILD-INTEGRITÄT ' + lastShieldPercent + ' %');
-  systemLog.update();
+  initializeSystemLog(options.log, systemLog, lastShieldPercent);
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
