@@ -250,6 +250,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
           source: 'asteroid',
           point: collision.point,
           normal: collision.normal,
+          surfaceAnchor: collision.surfaceAnchor,
           impactEnergy: collision.kineticEnergy,
         },
         this.shieldImpactCounter
