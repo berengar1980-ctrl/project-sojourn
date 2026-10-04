@@ -2,7 +2,9 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
+import { tutorialPortByLocationId } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
+import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import {
   createLocalSpaceService,
@@ -17,9 +19,10 @@ import { createSystemLogService } from '../systems/system-log/system-log-service
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
+import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
-type SceneMode = 'star-map' | 'local-space';
+type SceneMode = 'star-map' | 'local-space' | 'port';
 
 interface GameControllerOptions {
   readonly root: HTMLElement;
@@ -42,6 +45,21 @@ interface LocalActionContext {
   readonly refresh: () => void;
   readonly systemLog: SystemLogService;
   readonly returnToStarMap: () => void;
+}
+
+interface ControllerPanels {
+  star: StarMapPanel | null;
+  local: LocalSpacePanel | null;
+  port: PortPanel | null;
+}
+
+function destroyScenePanels(panels: ControllerPanels): void {
+  panels.star?.destroy();
+  panels.local?.destroy();
+  panels.port?.destroy();
+  panels.star = null;
+  panels.local = null;
+  panels.port = null;
 }
 
 export interface GameController {
@@ -166,12 +184,61 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
   };
 }
 
+function createControllerStarPanel(options: {
+  root: HTMLElement;
+  navigation: NavigationService;
+  log: SystemLogService;
+  getModel: () => ReturnType<typeof createStarMapViewModel>;
+  onEnterLocalSpace: () => void;
+  onDock: () => void;
+}): StarMapPanel {
+  let panel: StarMapPanel | null = null;
+  panel = createStarMapPanel({
+    root: options.root,
+    model: options.getModel(),
+    log: options.log,
+    onSelectLocation: (id) => {
+      const snapshot = options.navigation.getSnapshot();
+      if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
+        options.onEnterLocalSpace();
+        return;
+      }
+      options.navigation.selectDestination(id);
+      panel?.update(options.getModel());
+    },
+    onStartTravel: () => {
+      options.navigation.startTravel();
+      options.log.write('NAV > FLUG GESTARTET');
+      panel?.update(options.getModel());
+    },
+    onDock: options.onDock,
+  });
+  return panel;
+}
+
+function createActivePortPanel(
+  root: HTMLElement,
+  navigation: NavigationService,
+  ship: ShipDefinition,
+  onReturnToStarMap: () => void
+): PortPanel | null {
+  const locationId = navigation.getSnapshot().currentLocationId;
+  const location = tutorialCluster.locations.find((entry) => entry.id === locationId);
+  const port = locationId ? tutorialPortByLocationId(locationId) : null;
+  if (!location || !port) return null;
+
+  return createPortPanel({
+    root,
+    model: createPortViewModel(port, location, ship),
+    onReturnToStarMap,
+  });
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, navigation } = options;
   let activeShip = options.ship;
   let mode: SceneMode = 'star-map';
-  let starPanel: StarMapPanel | null = null;
-  let localPanel: LocalSpacePanel | null = null;
+  const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
   let localSpaceSeed = 0;
@@ -179,49 +246,45 @@ export function createGameController(options: GameControllerOptions): GameContro
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
   systemLog.write('SYSTEM ONLINE');
-
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
-  const refreshLocalPanel = () => localSpace && localPanel?.update(localModel());
-
+  const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
     shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
       activeShip = nextShip;
       systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (mode === 'local-space') mountLocalSpace(true);
+      else if (mode === 'port') mountPort();
       else mountStarMap();
     });
   };
-
   const mountStarMap = (): void => {
-    localPanel?.destroy();
-    localPanel = null;
+    destroyScenePanels(panels);
     localSpace = null;
     mode = 'star-map';
-    starPanel = createStarMapPanel({
+    panels.star = createControllerStarPanel({
       root,
-      model: starModel(),
+      navigation,
       log: systemLog,
-      onSelectLocation: (id) => {
-        const snapshot = navigation.getSnapshot();
-        if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
-          runSceneZoomTransition(root, mountLocalSpace);
-          return;
-        }
-        navigation.selectDestination(id);
-        starPanel?.update(starModel());
-      },
-      onStartTravel: () => {
-        navigation.startTravel();
-        systemLog.write('NAV > FLUG GESTARTET');
-        starPanel?.update(starModel());
-      },
+      getModel: starModel,
+      onEnterLocalSpace: () => runSceneZoomTransition(root, mountLocalSpace),
+      onDock: () => runSceneZoomTransition(root, mountPort),
     });
     mountTestSwitcher();
   };
-
+  const mountPort = (): void => {
+    const locationId = navigation.getSnapshot().currentLocationId;
+    destroyScenePanels(panels);
+    panels.port = createActivePortPanel(root, navigation, activeShip, () =>
+      runSceneZoomTransition(root, mountStarMap)
+    );
+    if (!panels.port) return;
+    mode = 'port';
+    systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
+    mountTestSwitcher();
+  };
   const localActions = createLocalPanelActions({
     getSpace: () => localSpace,
     refresh: refreshLocalPanel,
@@ -231,22 +294,16 @@ export function createGameController(options: GameControllerOptions): GameContro
       runSceneZoomTransition(root, mountStarMap);
     },
   });
-
   const mountLocalSpace = (reuseSeed = false): void => {
-    starPanel?.destroy();
-    starPanel = null;
-    localPanel?.destroy();
-    localPanel = null;
+    destroyScenePanels(panels);
     mode = 'local-space';
-
     if (!reuseSeed || localSpaceSeed === 0) {
       visitCounter += 1;
       localSpaceSeed = localSeed(visitCounter);
     }
-
     localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
-    localPanel = createLocalSpacePanel({
+    panels.local = createLocalSpacePanel({
       root,
       model: localModel(),
       log: systemLog,
@@ -254,9 +311,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
     mountTestSwitcher();
   };
-
   mountStarMap();
-
   return {
     tick(deltaSeconds) {
       const navigationSnapshot = navigation.tick(deltaSeconds);
@@ -265,13 +320,11 @@ export function createGameController(options: GameControllerOptions): GameContro
         runSceneZoomTransition(root, mountLocalSpace);
       }
       previousLocationId = currentLocationId;
-
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
-
-      if (mode === 'star-map') starPanel?.update(starModel());
-      else if (localSpace) {
+      if (mode === 'star-map') panels.star?.update(starModel());
+      else if (mode === 'local-space' && localSpace) {
         localSpace.tick(deltaSeconds);
-        localPanel?.update(localModel());
+        panels.local?.update(localModel());
       }
     },
   };

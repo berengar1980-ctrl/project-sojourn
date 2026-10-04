@@ -809,3 +809,766 @@ body {
     width: min(210px, calc(100vw - 32px));
   }
 }
+
+.selection-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.selection-actions .travel-button {
+  margin-top: 0;
+}
+
+.dock-button {
+  padding: 9px 12px;
+  border: 1px solid rgba(100, 210, 186, 0.46);
+  background: rgba(28, 92, 77, 0.24);
+  color: #b9f2e4;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.dock-button:hover {
+  background: rgba(42, 128, 104, 0.34);
+}
+
+.port-shell {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 58% 12%, rgba(25, 77, 92, 0.22), transparent 32%),
+    linear-gradient(180deg, #071016 0%, #02070b 100%);
+  color: #d8e6ec;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.port-header {
+  display: grid;
+  grid-template-columns: 230px minmax(320px, 1fr) auto auto;
+  align-items: stretch;
+  min-height: 78px;
+  border-bottom: 1px solid rgba(99, 164, 184, 0.24);
+  background: rgba(4, 12, 17, 0.9);
+}
+
+.port-brand,
+.port-title,
+.port-summary,
+.port-return-button {
+  border-right: 1px solid rgba(111, 153, 168, 0.16);
+}
+
+.port-brand,
+.port-title {
+  display: grid;
+  align-content: center;
+  padding: 12px 18px;
+}
+
+.port-brand span,
+.port-title strong {
+  color: #a8e8f3;
+  letter-spacing: 0.12em;
+}
+
+.port-brand span {
+  font-size: 16px;
+}
+
+.port-brand small,
+.port-title span,
+.port-title small {
+  color: #66818d;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+
+.port-title strong {
+  margin: 2px 0;
+  font-size: 20px;
+}
+
+.port-summary {
+  display: flex;
+  align-items: stretch;
+}
+
+.port-summary > div {
+  display: grid;
+  min-width: 120px;
+  align-content: center;
+  padding: 10px 14px;
+  border-left: 1px solid rgba(111, 153, 168, 0.12);
+}
+
+.port-summary span,
+.port-panel-heading small,
+.port-market-head,
+.port-market-row > span:not(.port-market-name),
+.port-location-facts span,
+.port-flow-title,
+.port-route-card span,
+.port-crew-identity span,
+.port-equipment-grid article > span,
+.port-ship-overview span,
+.port-ship-overview small,
+.port-component-grid span,
+.port-footer,
+.port-station-grid span,
+.port-station-grid strong {
+  color: #718d99;
+  font-size: 9px;
+  letter-spacing: 0.11em;
+}
+
+.port-summary strong {
+  margin-top: 3px;
+  color: #d9edf1;
+  font-size: 12px;
+}
+
+.port-return-button {
+  min-width: 150px;
+  border: 0;
+  background: rgba(19, 48, 58, 0.42);
+  color: #9fc6d0;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+}
+
+.port-return-button:hover {
+  background: rgba(33, 75, 88, 0.52);
+}
+
+.port-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: 48px;
+  border-bottom: 1px solid rgba(94, 161, 182, 0.25);
+  background: rgba(4, 10, 14, 0.86);
+}
+
+.port-tabs button {
+  position: relative;
+  border: 0;
+  border-right: 1px solid rgba(102, 148, 164, 0.12);
+  background: transparent;
+  color: #77929e;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+
+.port-tabs button.is-active {
+  color: #a9ecf5;
+  background: linear-gradient(180deg, rgba(25, 104, 126, 0.2), rgba(16, 58, 71, 0.08));
+}
+
+.port-tabs button.is-active::after {
+  position: absolute;
+  right: 18%;
+  bottom: 0;
+  left: 18%;
+  height: 2px;
+  background: #70d7e8;
+  box-shadow: 0 0 8px rgba(112, 215, 232, 0.6);
+  content: '';
+}
+
+.port-tabs button:disabled {
+  color: #3f5058;
+  cursor: default;
+}
+
+.port-content {
+  min-height: 0;
+  padding: 12px;
+}
+
+.port-pane {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(310px, 0.9fr);
+  gap: 12px;
+  height: 100%;
+}
+
+.port-pane[hidden] {
+  display: none;
+}
+
+.port-market-panel,
+.port-location-panel,
+.port-wide-panel,
+.port-stations-panel,
+.port-shipyard-main {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(90, 144, 163, 0.28);
+  background: linear-gradient(180deg, rgba(5, 15, 21, 0.91), rgba(3, 9, 13, 0.94));
+  box-shadow: inset 0 0 36px rgba(55, 139, 160, 0.025);
+}
+
+.port-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(92, 148, 166, 0.2);
+}
+
+.port-panel-heading > span {
+  color: #9fe4ee;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+}
+
+.port-market-head,
+.port-market-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) 92px 90px 96px 96px 82px 70px 78px;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.port-market-head {
+  min-height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(95, 138, 151, 0.14);
+}
+
+.port-market-list {
+  overflow: auto;
+}
+
+.port-market-row {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(89, 126, 139, 0.11);
+  background: transparent;
+  color: #a8bac2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.port-market-row:hover {
+  background: rgba(43, 101, 117, 0.14);
+}
+
+.port-market-name {
+  color: #d7e5ea;
+  font-size: 11px;
+}
+
+.port-market-row > strong {
+  color: #f2f5f5;
+  font-size: 11px;
+}
+
+.port-demand--hoch,
+.port-demand--sehr-hoch,
+.port-trend--up {
+  color: #e3a77f !important;
+}
+
+.port-demand--gering,
+.port-trend--down {
+  color: #72d49a !important;
+}
+
+.port-trend--flat {
+  color: #b9b07d !important;
+}
+
+.port-buy,
+.port-sell {
+  padding: 5px 6px;
+  border: 1px solid rgba(93, 170, 191, 0.3);
+  background: rgba(37, 104, 124, 0.18);
+  color: #a9dfeb !important;
+  text-align: center;
+}
+
+.port-sell {
+  border-color: rgba(188, 105, 87, 0.3);
+  background: rgba(119, 54, 43, 0.15);
+  color: #e2a999 !important;
+}
+
+.port-market-detail {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  padding: 14px;
+  border-top: 1px solid rgba(94, 143, 158, 0.18);
+  background: rgba(7, 20, 27, 0.7);
+}
+
+.port-market-detail div {
+  display: grid;
+}
+
+.port-market-detail span {
+  color: #6c8996;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.port-market-detail strong {
+  margin-top: 5px;
+  color: #b7d8df;
+  font-size: 12px;
+}
+
+.port-market-detail p,
+.port-route-card p,
+.port-info-box {
+  margin: 0;
+  color: #8299a3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.port-location-panel {
+  display: grid;
+  grid-template-rows: 210px auto auto 1fr;
+}
+
+.port-location-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 28%, rgba(71, 149, 170, 0.18), transparent 32%),
+    linear-gradient(150deg, #061018, #081d27 52%, #02070a);
+}
+
+.port-location-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 92px;
+  border: 1px solid rgba(112, 205, 224, 0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+}
+
+.port-location-body {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 92px;
+  height: 92px;
+  place-items: center;
+  border: 1px solid rgba(128, 219, 236, 0.36);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #7fc2cf, #24576a 42%, #0b202a 72%);
+  box-shadow:
+    0 0 36px rgba(78, 184, 207, 0.16),
+    inset -16px -12px 24px rgba(0, 0, 0, 0.45);
+  color: rgba(219, 250, 255, 0.72);
+  font-size: 28px;
+  transform: translate(-50%, -56%);
+}
+
+.port-location-copy {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
+  display: grid;
+}
+
+.port-location-copy span,
+.port-location-copy small {
+  color: #718d99;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.port-location-copy strong {
+  color: #bdebf3;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+}
+
+.port-location-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid rgba(91, 143, 159, 0.18);
+  border-bottom: 1px solid rgba(91, 143, 159, 0.18);
+}
+
+.port-location-facts div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border-right: 1px solid rgba(91, 143, 159, 0.12);
+}
+
+.port-location-facts strong {
+  color: #b7cfd6;
+  font-size: 10px;
+}
+
+.port-flow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.port-flow-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-right: 1px solid rgba(91, 143, 159, 0.12);
+}
+
+.port-flow-grid b {
+  color: #9fb2ba;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.port-flow-title--good {
+  color: #70d995;
+}
+
+.port-flow-title--need {
+  color: #dc8c76;
+}
+
+.port-route-card {
+  align-self: end;
+  margin: 12px;
+  padding: 12px;
+  border-left: 2px solid rgba(105, 206, 224, 0.52);
+  background: rgba(18, 52, 63, 0.24);
+}
+
+.port-route-card strong {
+  display: block;
+  margin: 4px 0 5px;
+  color: #c2e5eb;
+  font-size: 12px;
+}
+
+.port-wide-panel {
+  overflow: auto;
+}
+
+.port-crew-list {
+  display: grid;
+}
+
+.port-crew-row {
+  display: grid;
+  grid-template-columns:
+    48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(130px, 1fr)
+    100px 96px;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(90, 132, 146, 0.13);
+}
+
+.port-crew-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(101, 183, 202, 0.34);
+  background: linear-gradient(135deg, rgba(70, 129, 145, 0.28), rgba(24, 58, 69, 0.16));
+  color: #a4dce7;
+  font-size: 12px;
+}
+
+.port-crew-identity {
+  display: grid;
+}
+
+.port-crew-identity strong {
+  color: #d3e4e9;
+  font-size: 12px;
+}
+
+.port-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.port-traits span {
+  padding: 3px 5px;
+  border: 1px solid rgba(91, 164, 181, 0.28);
+  background: rgba(37, 83, 94, 0.18);
+  color: #91c4cf;
+  font-size: 9px;
+}
+
+.port-combat {
+  display: flex;
+  gap: 3px;
+}
+
+.port-combat i {
+  width: 8px;
+  height: 12px;
+  border: 1px solid rgba(101, 139, 151, 0.3);
+  background: rgba(25, 44, 52, 0.6);
+}
+
+.port-combat i.is-active {
+  background: #65cfe2;
+  box-shadow: 0 0 5px rgba(101, 207, 226, 0.34);
+}
+
+.port-crew-equipment {
+  color: #778e99;
+  font-size: 9px;
+}
+
+.port-salary {
+  color: #b8ccd3;
+  font-size: 10px;
+}
+
+.port-action-button,
+.port-equipment-grid button {
+  padding: 7px 8px;
+  border: 1px solid rgba(95, 177, 196, 0.36);
+  background: rgba(30, 85, 99, 0.18);
+  color: #a8dce6;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.port-stations-panel {
+  padding-bottom: 12px;
+}
+
+.port-station-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.port-station-grid button {
+  display: grid;
+  min-height: 92px;
+  padding: 10px;
+  border: 1px solid rgba(91, 142, 158, 0.22);
+  background: rgba(7, 20, 27, 0.62);
+  color: #8fa9b3;
+  text-align: left;
+}
+
+.port-station-grid i {
+  align-self: end;
+  color: #67cfe1;
+  font-size: 18px;
+  font-style: normal;
+}
+
+.port-info-box {
+  margin: 0 12px;
+  padding: 12px;
+  border-left: 2px solid rgba(115, 183, 198, 0.38);
+  background: rgba(20, 48, 57, 0.26);
+}
+
+.port-info-box--large {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.port-equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 12px;
+}
+
+.port-equipment-grid article {
+  display: grid;
+  min-height: 160px;
+  align-content: start;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid rgba(89, 145, 162, 0.22);
+  background: rgba(8, 21, 28, 0.68);
+}
+
+.port-equipment-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-bottom: 8px;
+  border: 1px solid rgba(100, 196, 215, 0.28);
+  color: #73cedf;
+}
+
+.port-equipment-grid strong {
+  color: #d2e4e8;
+}
+
+.port-equipment-grid b {
+  margin-bottom: 8px;
+  color: #9ec0c8;
+  font-size: 11px;
+}
+
+.port-shipyard-main {
+  padding-bottom: 12px;
+}
+
+.port-ship-overview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 190px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(92, 145, 162, 0.18);
+  background: radial-gradient(circle at 20% 50%, rgba(54, 130, 147, 0.14), transparent 35%);
+}
+
+.port-ship-overview img {
+  width: min(330px, 42%);
+  max-height: 150px;
+  object-fit: contain;
+}
+
+.port-ship-overview div {
+  display: grid;
+}
+
+.port-ship-overview strong {
+  margin: 4px 0;
+  color: #d5edf2;
+  font-size: 18px;
+}
+
+.port-component-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.port-component-grid button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  min-height: 78px;
+  padding: 10px;
+  border: 1px solid rgba(90, 147, 164, 0.22);
+  background: rgba(6, 18, 24, 0.7);
+  color: #94aeb8;
+  text-align: left;
+  cursor: pointer;
+}
+
+.port-component-grid strong {
+  color: #b9dce3;
+}
+
+.port-component-grid i {
+  color: #78909a;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.port-component-grid b {
+  grid-column: 1 / -1;
+  color: #72cfe0;
+  font-size: 9px;
+}
+
+.port-ship-class-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.port-ship-class-list button {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1px solid rgba(92, 145, 162, 0.2);
+  background: rgba(7, 18, 24, 0.66);
+  color: #90a9b2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.port-ship-class-list i {
+  color: #71cfdf;
+  font-style: normal;
+}
+
+.port-ship-class-list span {
+  color: #c0dbe1;
+}
+
+.port-ship-class-list strong {
+  color: #72adba;
+  font-size: 9px;
+}
+
+.port-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 14px;
+  border-top: 1px solid rgba(92, 143, 159, 0.18);
+  background: rgba(2, 8, 11, 0.92);
+}
+
+.port-footer strong {
+  color: #6f929d;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+
+@media (max-width: 1100px) {
+  .port-header {
+    grid-template-columns: 180px 1fr auto;
+  }
+
+  .port-summary {
+    display: none;
+  }
+
+  .port-pane {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .port-location-panel,
+  .port-stations-panel {
+    min-height: 430px;
+  }
+
+  .port-market-head,
+  .port-market-row {
+    grid-template-columns: minmax(110px, 1.2fr) 82px 70px 84px 84px 70px 60px 68px;
+    column-gap: 5px;
+  }
+}
