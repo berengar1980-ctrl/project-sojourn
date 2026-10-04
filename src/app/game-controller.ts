@@ -191,6 +191,18 @@ function enteredGreyrock(
   return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
 }
 
+function advanceEconomyDay(
+  previousId: string | null,
+  currentId: string | null,
+  simulation: EconomySimulationService,
+  npcs: NpcEconomyService
+): void {
+  if (previousId === null && currentId !== null) {
+    simulation.advanceNextDay();
+    npcs.advanceNextDay();
+  }
+}
+
 function createLocalPanelActions(context: LocalActionContext): LocalPanelActions {
   let navigationRequest = 0;
 
@@ -405,10 +417,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
-      if (previousLocationId === null && currentLocationId !== null) {
-        simulation.advanceNextDay();
-        npcs.advanceNextDay();
-      }
+      advanceEconomyDay(previousLocationId, currentLocationId, simulation, npcs);
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
       if (mode === 'star-map') panels.star?.update(starModel());
