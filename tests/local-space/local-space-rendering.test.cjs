@@ -25,6 +25,10 @@ const maneuvers = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-maneuver-effects-renderer.ts'),
   'utf8'
 );
+const thrusterGlow = fs.readFileSync(
+  path.join(root, 'src/ui/ships/thruster-glow-renderer.ts'),
+  'utf8'
+);
 const hardpointDebug = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-hardpoint-debug-renderer.ts'),
   'utf8'
@@ -110,6 +114,13 @@ assert(
   'shared projector must expose shield projection'
 );
 assert(engines.includes('projectHardpoint'), 'engine effects must use shared hardpoint projection');
+assert(engines.includes('ThrusterGlowRenderer'), 'main engines must use shared nozzle glow');
+assert(maneuvers.includes('ThrusterGlowRenderer'), 'RCS thrusters must use shared nozzle glow');
+assert(
+  thrusterGlow.includes("globalCompositeOperation = 'lighter'"),
+  'thruster light must use additive glow'
+);
+assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
 assert(engines.includes('fastPulse'), 'engine thrust must include subtle flicker');
 assert(
   engines.includes('0.58 + normalizedIntensity * 0.92'),

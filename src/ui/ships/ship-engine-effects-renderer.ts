@@ -1,7 +1,10 @@
 import type { ShipHardpoints } from '../../core/ship-types';
 import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
+import { ThrusterGlowRenderer } from './thruster-glow-renderer';
 
 export class ShipEngineEffectsRenderer {
+  private readonly glow = new ThrusterGlowRenderer();
+
   draw(
     context: CanvasRenderingContext2D,
     source: ShipHardpoints,
@@ -29,6 +32,13 @@ export class ShipEngineEffectsRenderer {
         x: nozzle.x + backwards.x * length,
         y: nozzle.y + backwards.y * length,
       };
+
+      this.glow.draw(context, {
+        center: nozzle,
+        radius: baseWidth * 1.65,
+        intensity: 0.24 + normalizedIntensity * 0.76,
+        flicker,
+      });
 
       context.save();
       context.lineCap = 'round';
