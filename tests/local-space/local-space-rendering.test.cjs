@@ -185,6 +185,16 @@ assert(
 assert(panel.includes('REDUZIERTER SICHERHEIT'), 'risky click routes must show a warning');
 assert(panel.includes('NAHBEREICHSSCAN'), 'selected asteroids must expose close scanning');
 assert(
+  panel.includes('shortRangeScanProgress'),
+  'close-range scan progress must be visible in the local status UI'
+);
+assert(
+  renderer.includes('drawShortRangeScan') &&
+    renderer.includes('const sweepY') &&
+    renderer.includes('this.context.clip()'),
+  'close-range scan must visibly sweep across the moving target asteroid'
+);
+assert(
   panel.includes('SCAN-DATEN AN') && panel.includes('SCAN-DATEN AUS'),
   'local UI must expose a scan-callout visibility toggle'
 );
