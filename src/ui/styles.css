@@ -412,7 +412,12 @@ body {
 .system-log::after {
   opacity: 0.2;
   background:
-    linear-gradient(90deg, transparent 0 49.6%, rgba(118, 255, 139, 0.04) 50%, transparent 50.4%),
+    linear-gradient(
+      90deg,
+      transparent 0 49.6%,
+      rgba(118, 255, 139, 0.04) 50%,
+      transparent 50.4%
+    ),
     radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.22) 100%);
   animation: system-log-noise 0.18s infinite alternate steps(2, end);
 }
