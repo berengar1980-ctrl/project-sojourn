@@ -1,4 +1,5 @@
 import type {
+  EconomyCargoHold,
   EconomyMarketState,
   EconomyResourceDefinition,
   EconomyResourceId,
@@ -35,14 +36,22 @@ function marketQuantity(market: EconomyMarketState, resourceId: EconomyResourceI
   return quantity(market.entries[resourceId]?.stock ?? 0);
 }
 
+function npcQuantity(
+  npcs: readonly EconomyCargoHold[],
+  resourceId: EconomyResourceId
+): number {
+  return npcs.reduce((sum, npc) => sum + quantity(npc.cargo[resourceId] ?? 0), 0);
+}
+
 function initialPools(
   resources: readonly EconomyResourceDefinition[],
   markets: readonly EconomyMarketState[],
-  player: PlayerEconomyState
+  player: PlayerEconomyState,
+  npcs: readonly EconomyCargoHold[]
 ): Record<EconomyResourceId, EconomyResourcePool> {
   const pools: Record<EconomyResourceId, EconomyResourcePool> = {};
   for (const resource of resources) {
-    let target = playerQuantity(player, resource.id);
+    let target = playerQuantity(player, resource.id) + npcQuantity(npcs, resource.id);
     for (const market of markets) target += marketQuantity(market, resource.id);
     pools[resource.id] = {
       target,
@@ -58,9 +67,13 @@ function totalResource(
   resourceId: EconomyResourceId,
   markets: readonly EconomyMarketState[],
   player: PlayerEconomyState,
+  npcs: readonly EconomyCargoHold[],
   pool: EconomyResourcePool
 ): number {
-  let total = quantity(pool.reserve) + playerQuantity(player, resourceId);
+  let total =
+    quantity(pool.reserve) +
+    playerQuantity(player, resourceId) +
+    npcQuantity(npcs, resourceId);
   for (const market of markets) total += marketQuantity(market, resourceId);
   return total;
 }
@@ -139,7 +152,7 @@ function legalStabilization(
   pool: EconomyResourcePool
 ): number {
   if (pool.target <= 0) return 0;
-  const current = totalResource(resourceId, markets, player, pool);
+  const current = totalResource(resourceId, markets, player, npcs, pool);
   const deficit = Math.max(0, Math.floor(pool.target - current));
   if (deficit < Math.max(2, Math.floor(pool.target * 0.01))) return 0;
 
@@ -159,7 +172,7 @@ function illegalStabilization(
   pool: EconomyResourcePool
 ): number {
   if (pool.target <= 0) return 0;
-  const current = totalResource(resourceId, markets, player, pool);
+  const current = totalResource(resourceId, markets, player, npcs, pool);
   const ratio = current / pool.target;
   if (ratio > 0.9) return 0;
 
@@ -205,10 +218,11 @@ export function createEconomySimulationService(
   marketsService: EconomyMarketService,
   player: PlayerEconomyState,
   resources: readonly EconomyResourceDefinition[],
-  seed = 1
+  seed = 1,
+  npcs: readonly EconomyCargoHold[] = []
 ): EconomySimulationService {
   const markets = marketsService.snapshot();
-  const pools = initialPools(resources, markets, player);
+  const pools = initialPools(resources, markets, player, npcs);
   let lastDay = -1;
   let physicalAllocationCounter = 0;
 
@@ -278,7 +292,7 @@ export function createEconomySimulationService(
     pools,
     getResourceTotal(resourceId) {
       const pool = pools[resourceId];
-      return pool ? totalResource(resourceId, markets, player, pool) : 0;
+      return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
     },
     createMinedResource,
     advanceDay,
