@@ -246,6 +246,25 @@ function observeCanvas(canvas: HTMLCanvasElement, renderer: LocalSpaceRenderer):
   return observer;
 }
 
+function createScanCompletionTracker(
+  log: SystemLogService,
+  panel: SystemLogPanel,
+  initialModel: LocalSpaceViewModel
+): (model: LocalSpaceViewModel) => void {
+  let longActive = initialModel.longRangeScanProgress != null;
+  let shortActive = initialModel.shortRangeScanProgress != null;
+
+  return (model) => {
+    const nextLong = model.longRangeScanProgress != null;
+    const nextShort = model.shortRangeScanProgress != null;
+    if (longActive && !nextLong) log.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
+    if (shortActive && !nextShort) log.write('SCAN > NAHBEREICHSANALYSE ABGESCHLOSSEN');
+    if ((longActive && !nextLong) || (shortActive && !nextShort)) panel.update();
+    longActive = nextLong;
+    shortActive = nextShort;
+  };
+}
+
 function bindLongScanButton(
   button: HTMLButtonElement,
   getModel: () => LocalSpaceViewModel,
@@ -284,8 +303,6 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
-  let longScanWasActive = model.longRangeScanProgress != null;
-  let shortScanWasActive = model.shortRangeScanProgress != null;
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -294,22 +311,13 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     placementClass: 'local-system-log',
   });
   initializeSystemLog(options.log, systemLog, lastShieldPercent);
+  const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
     const longScanActive = model.longRangeScanProgress != null;
-    if (longScanWasActive && !longScanActive) {
-      options.log.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
-      systemLog.update();
-    }
-    longScanWasActive = longScanActive;
-    const shortScanActive = model.shortRangeScanProgress != null;
-    if (shortScanWasActive && !shortScanActive) {
-      options.log.write('SCAN > NAHBEREICHSANALYSE ABGESCHLOSSEN');
-      systemLog.update();
-    }
-    shortScanWasActive = shortScanActive;
+    trackScanCompletion(model);
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     renderCargo(model, cargoTotal, cargoList);
