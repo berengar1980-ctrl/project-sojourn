@@ -17,9 +17,5 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Format diff
-        run: |
-          npx prettier --write src/systems/local-space/local-space-mining-formation.ts src/systems/local-space/local-space-service.ts
-          git diff -- src/systems/local-space/local-space-mining-formation.ts src/systems/local-space/local-space-service.ts
       - name: Quality gate
         run: npm run check
