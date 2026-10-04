@@ -1062,7 +1062,6 @@ body {
 .port-market-row:hover {
   background: rgba(43, 101, 117, 0.14);
 }
-
 .port-market-name {
   color: #d7e5ea;
   font-size: 11px;
@@ -1571,4 +1570,29 @@ body {
     grid-template-columns: minmax(110px, 1.2fr) 82px 70px 84px 84px 70px 60px 68px;
     column-gap: 5px;
   }
+}
+
+.port-market-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.port-legality {
+  padding: 2px 4px;
+  border: 1px solid rgba(107, 149, 163, 0.2);
+  color: #667d86;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+.port-legality--restricted {
+  border-color: rgba(207, 167, 82, 0.36);
+  color: #d6b76d;
+}
+
+.port-legality--illegal {
+  border-color: rgba(209, 83, 83, 0.46);
+  background: rgba(107, 32, 32, 0.18);
+  color: #e58d84;
 }

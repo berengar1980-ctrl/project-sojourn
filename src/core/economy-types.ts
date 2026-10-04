@@ -1,5 +1,17 @@
 export type EconomyResourceId = string;
 export type EconomyLocationId = string;
+export type ResourceLegality = 'legal' | 'restricted' | 'illegal';
+export type ResourceCategoryId =
+  'raw' | 'industry' | 'energy-chemistry' | 'supplies' | 'military-luxury' | 'contraband';
+
+export interface EconomyResourceDefinition {
+  readonly id: EconomyResourceId;
+  readonly name: string;
+  readonly categoryId: ResourceCategoryId;
+  readonly category: string;
+  readonly basePrice: number;
+  readonly legality: ResourceLegality;
+}
 
 export interface EconomyMarketStock {
   readonly locationId: EconomyLocationId;
@@ -24,4 +36,19 @@ export interface ResourceCirculationState {
   readonly markets: readonly EconomyMarketStock[];
   readonly player: EconomyCargoHold;
   readonly npcs: readonly EconomyCargoHold[];
+}
+
+export interface EconomyMarketEntry {
+  readonly resourceId: EconomyResourceId;
+  stock: number;
+  demand: number;
+  production: number;
+  price: number;
+}
+
+export interface EconomyMarketState {
+  readonly locationId: EconomyLocationId;
+  readonly produces: ReadonlySet<EconomyResourceId>;
+  readonly needs: ReadonlySet<EconomyResourceId>;
+  readonly entries: Record<EconomyResourceId, EconomyMarketEntry>;
 }

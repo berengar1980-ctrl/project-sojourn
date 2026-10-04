@@ -1,20 +1,9 @@
+import type { EconomyResourceId } from './economy-types';
+
 export type PortTab = 'trade' | 'crew' | 'equipment' | 'shipyard';
 
-export type CommodityId =
-  | 'steel'
-  | 'fuel'
-  | 'food'
-  | 'machine-parts'
-  | 'electronics'
-  | 'medicine'
-  | 'promethium'
-  | 'water'
-  | 'ferrite';
-
 export interface PortCommodityDefinition {
-  readonly id: CommodityId;
-  readonly name: string;
-  readonly basePrice: number;
+  readonly id: EconomyResourceId;
   readonly stock: number;
   readonly demand: number;
   readonly production: number;
@@ -39,6 +28,6 @@ export interface PortDefinition {
   readonly shipyard: boolean;
   readonly commodities: readonly PortCommodityDefinition[];
   readonly crew: readonly PortCrewCandidate[];
-  readonly producedCommodityIds: readonly CommodityId[];
-  readonly neededCommodityIds: readonly CommodityId[];
+  readonly producedCommodityIds: readonly EconomyResourceId[];
+  readonly neededCommodityIds: readonly EconomyResourceId[];
 }

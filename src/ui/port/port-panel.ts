@@ -16,7 +16,7 @@ function marketRows(model: PortViewModel): string {
     .map(
       (row) => `
         <button class="port-market-row" type="button" data-market-id="${row.id}">
-          <span class="port-market-name">${row.name}</span>
+          <span class="port-market-name">${row.name}<small class="port-legality port-legality--${row.legality}">${row.legalityLabel}</small></span>
           <strong>${row.buyPrice.toLocaleString('de-DE')} CR</strong>
           <span>${row.stock.toLocaleString('de-DE')}</span>
           <span class="port-demand port-demand--${row.demandLabel.replace(' ', '-')}">${row.demandLabel}</span>

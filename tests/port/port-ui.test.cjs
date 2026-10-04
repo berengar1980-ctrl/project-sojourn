@@ -9,6 +9,10 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts')
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
 const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
+const marketService = fs.readFileSync(
+  path.join(root, 'src/systems/economy/market-service.ts'),
+  'utf8'
+);
 const portData = fs.readFileSync(path.join(root, 'src/data/ports/tutorial-ports.ts'), 'utf8');
 const portTypes = fs.readFileSync(path.join(root, 'src/core/port-types.ts'), 'utf8');
 
@@ -23,9 +27,9 @@ assert(
   'ports without a shipyard must keep shipyard services unavailable'
 );
 assert(
-  portModel.includes('stockPressure') &&
-    portModel.includes('demandPressure') &&
-    portModel.includes('productionPressure'),
+  marketService.includes('scarcity') &&
+    marketService.includes('demandPressure') &&
+    marketService.includes('productionPressure'),
   'market prices must reflect stock, demand and production'
 );
 assert(

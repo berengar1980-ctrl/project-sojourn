@@ -1,11 +1,16 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
+import { economyResources } from '../data/economy/economy-resources';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
-import { tutorialPortByLocationId } from '../data/ports/tutorial-ports';
+import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
+import {
+  createEconomyMarketService,
+  type EconomyMarketService,
+} from '../systems/economy/market-service';
 import {
   createLocalSpaceService,
   generateMiningSpace,
@@ -219,17 +224,19 @@ function createControllerStarPanel(options: {
 function createActivePortPanel(
   root: HTMLElement,
   navigation: NavigationService,
+  markets: EconomyMarketService,
   ship: ShipDefinition,
   onReturnToStarMap: () => void
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = tutorialCluster.locations.find((entry) => entry.id === locationId);
   const port = locationId ? tutorialPortByLocationId(locationId) : null;
-  if (!location || !port) return null;
+  const market = locationId ? markets.getMarket(locationId) : null;
+  if (!location || !port || !market) return null;
 
   return createPortPanel({
     root,
-    model: createPortViewModel(port, location, ship),
+    model: createPortViewModel(port, market, location, ship),
     onReturnToStarMap,
   });
 }
@@ -245,6 +252,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createSystemLogService();
+  const markets = createEconomyMarketService(tutorialPorts, economyResources);
   systemLog.write('SYSTEM ONLINE');
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
@@ -277,7 +285,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const mountPort = (): void => {
     const locationId = navigation.getSnapshot().currentLocationId;
     destroyScenePanels(panels);
-    panels.port = createActivePortPanel(root, navigation, activeShip, () =>
+    panels.port = createActivePortPanel(root, navigation, markets, activeShip, () =>
       runSceneZoomTransition(root, mountStarMap)
     );
     if (!panels.port) return;
