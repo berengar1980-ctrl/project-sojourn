@@ -73,14 +73,19 @@ function totalState() {
   const state = totalState();
   const before = economy.resourceTotal(state, 'ferrite');
   const allocated = economy.allocatePhysicalResource(state, 'ferrite', 12, () => 0);
-  state.player.cargo.ferrite = (state.player.cargo.ferrite ?? 0) + allocated;
 
   assert.equal(allocated, 12);
+  assert.equal(state.pools.ferrite.allocated, 12);
   assert.equal(
     economy.resourceTotal(state, 'ferrite'),
     before,
-    'mining/generated loot allocation followed by cargo receipt must conserve total resources'
+    'allocated physical resources must remain part of the circulation total'
   );
+
+  const claimed = economy.claimAllocatedResource(state, 'ferrite', allocated);
+  state.player.cargo.ferrite = (state.player.cargo.ferrite ?? 0) + claimed;
+  assert.equal(state.pools.ferrite.allocated, 0);
+  assert.equal(economy.resourceTotal(state, 'ferrite'), before);
 }
 
 {
@@ -125,6 +130,16 @@ function totalState() {
   economy.recordResourceLoss(state, 'steel', Number.POSITIVE_INFINITY);
   assert.equal(economy.resourceTotal(state, 'steel'), totalBefore);
   assert.equal(state.pools.steel.recordedLosses, 0);
+}
+
+{
+  const state = totalState();
+  const before = economy.resourceTotal(state, 'ferrite');
+  const allocated = economy.allocatePhysicalResource(state, 'ferrite', 8, () => 0);
+  const released = economy.releaseAllocatedResource(state, 'ferrite', allocated);
+  assert.equal(released, 8);
+  assert.equal(state.pools.ferrite.allocated, 0);
+  assert.equal(economy.resourceTotal(state, 'ferrite'), before);
 }
 
 console.log('PASS economy resource-circulation invariants');
