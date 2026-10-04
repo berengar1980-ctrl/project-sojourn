@@ -16,7 +16,10 @@ const marketService = fs.readFileSync(
 const portData = fs.readFileSync(path.join(root, 'src/data/ports/tutorial-ports.ts'), 'utf8');
 const portTypes = fs.readFileSync(path.join(root, 'src/core/port-types.ts'), 'utf8');
 
-assert(portTypes.includes('CommodityId'), 'port commodities must use stable internal ids');
+assert(
+  portTypes.includes('EconomyResourceId'),
+  'port commodities must use shared stable economy resource ids'
+);
 assert(portTypes.includes('PortCrewCandidate'), 'port crew candidates must have domain data');
 assert(
   portData.includes("locationId: 'karth-forge'") && portData.includes('shipyard: true'),
@@ -60,6 +63,14 @@ assert(
 assert(
   controller.includes('tutorialPortByLocationId') && controller.includes('createPortViewModel'),
   'controller must resolve docked UI by stable location id'
+);
+assert(
+  portPanel.includes('data-buy-id') && portPanel.includes('data-sell-id'),
+  'market UI must expose real buy and sell transaction controls'
+);
+assert(
+  portModel.includes('player.credits') && portModel.includes('cargoCapacity'),
+  'port view must show persistent player credits and cargo capacity'
 );
 
 console.log('PASS docked port UI architecture and market presentation');
