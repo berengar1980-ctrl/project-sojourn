@@ -39,7 +39,7 @@ const resourceCount = (resourcesSource.match(/resource\('/g) ?? []).length;
 assert(resourceCount >= 50, 'economy catalog should expose a broad resource set');
 
 assert(
-  portsSource.includes("producedCommodityIds: [") && portsSource.includes("neededCommodityIds: ["),
+  portsSource.includes('producedCommodityIds: [') && portsSource.includes('neededCommodityIds: ['),
   'ports must declare stable produced and required resource ids'
 );
 assert(
