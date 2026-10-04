@@ -60,6 +60,14 @@ const miningChunks = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
   'utf8'
 );
+const miningFormation = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-mining-formation.ts'),
+  'utf8'
+);
+const autopilot = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-autopilot.ts'),
+  'utf8'
+);
 
 assert(generator.includes('seed'), 'local-space generator must be seed-driven');
 assert(
@@ -117,6 +125,14 @@ assert(generator.includes('centerOfMassOffset'), 'asteroids must define a center
 assert(generator.includes('angularVelocity'), 'asteroids must receive angular motion');
 assert(generator.includes('momentOfInertia'), 'asteroids must define rotational inertia');
 assert(service.includes('startMining'), 'local-space service must expose mining start');
+assert(
+  service.includes('startNavigation'),
+  'local-space service must expose manual point navigation'
+);
+assert(
+  service.includes('getPointRouteOptions'),
+  'manual navigation must reuse route-planning input'
+);
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
 assert(service.includes('runLongRangeScan'), 'service must expose long-range scanning');
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
@@ -161,7 +177,7 @@ assert(
   'mining must remember a relative offset to the target asteroid'
 );
 assert(
-  service.includes('asteroid.position.x + offset.x'),
+  miningFormation.includes('asteroid.position.x + holdOffset.x'),
   'mining formation must move its desired point with the target asteroid'
 );
 assert(
@@ -173,7 +189,7 @@ assert(
   'mining must actively maintain formation with a drifting target'
 );
 assert(
-  service.includes('closestClosingDebris'),
+  miningFormation.includes('closestClosingDebris'),
   'mining station keeping must react to incoming debris'
 );
 assert(service.includes('currentMiningImpact'), 'service must expose one shared mining impact');
@@ -200,18 +216,38 @@ assert(
   'route worker must own the expensive route calculation'
 );
 assert(
+  routeWorker.includes("event.data.kind === 'point'"),
+  'route worker must handle point routes'
+);
+assert(
+  routeWorkerClient.includes("requestRoute('point'"),
+  'point route planning must stay off the UI thread'
+);
+assert(
   controller.includes('planMiningApproachRouteAsync'),
   'game controller must await asynchronous mining route calculation'
 );
 assert(service.includes('approachRoute'), 'approach must persist a fixed precomputed route');
+assert(
+  service.includes('navigationRoute'),
+  'manual navigation must persist a fixed precomputed route'
+);
+assert(
+  autopilot.includes('desiredSpeed') && autopilot.includes('remainingDistance * 0.72'),
+  'manual navigation must decelerate near the clicked target'
+);
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
-assert(service.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
+assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');
 assert(
   service.includes('resolveAsteroidCollisions'),
   'service must resolve asteroid-to-asteroid collisions'
 );
 assert(navigation.includes('findGridRoute'), 'route planner must search a navigable path');
+assert(
+  navigation.includes('planPointRoute'),
+  'route planner must support arbitrary clicked destinations'
+);
 assert(
   navigation.includes('class MinPriorityQueue'),
   'A-star open nodes must use a priority queue instead of linear scans'

@@ -1,10 +1,22 @@
 import type { WorldPoint } from '../../core/world-types';
-import { planMiningApproachRoute, type RoutePlanningOptions } from './local-space-navigation';
+import {
+  planMiningApproachRoute,
+  planPointRoute,
+  type PointRoutePlanningOptions,
+  type RoutePlanningOptions,
+} from './local-space-navigation';
 
-interface RouteWorkerRequest {
-  readonly id: number;
-  readonly options: RoutePlanningOptions;
-}
+type RouteWorkerRequest =
+  | {
+      readonly id: number;
+      readonly kind: 'mining';
+      readonly options: RoutePlanningOptions;
+    }
+  | {
+      readonly id: number;
+      readonly kind: 'point';
+      readonly options: PointRoutePlanningOptions;
+    };
 
 interface RouteWorkerResponse {
   readonly id: number;
@@ -12,9 +24,10 @@ interface RouteWorkerResponse {
 }
 
 self.addEventListener('message', (event: MessageEvent<RouteWorkerRequest>) => {
-  const response: RouteWorkerResponse = {
-    id: event.data.id,
-    route: planMiningApproachRoute(event.data.options),
-  };
+  const route =
+    event.data.kind === 'point'
+      ? planPointRoute(event.data.options)
+      : planMiningApproachRoute(event.data.options);
+  const response: RouteWorkerResponse = { id: event.data.id, route };
   self.postMessage(response);
 });
