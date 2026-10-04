@@ -24,7 +24,12 @@ import {
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
-import { advanceMiningChunk, createMiningChunk } from './mining-chunk-service';
+import {
+  advanceMiningChunk,
+  collectMiningChunk,
+  createMiningChunk,
+  type MiningChunkCollector,
+} from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
 import {
   runLongRangeAsteroidScan,
@@ -39,8 +44,6 @@ import {
 } from './local-space-station-keeping';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
-
-type MiningChunkCollector = (resourceId: string, amount: number) => number;
 
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
@@ -487,20 +490,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     for (const chunk of this.instance.chunks) {
       advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
       if (distance(chunk.position, this.instance.ship.position) < 24) {
-        const accepted = Math.max(
-          0,
-          Math.min(
-            chunk.amount,
-            Math.floor(
-              this.onMiningChunkCollected?.(chunk.resourceId, chunk.amount) ?? chunk.amount
-            )
-          )
-        );
+        const accepted = collectMiningChunk(chunk, this.onMiningChunkCollected);
         if (accepted > 0) {
           this.collectedOre += accepted;
           const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
           this.collectedResources.set(chunk.resourceId, collected + accepted);
-          chunk.amount -= accepted;
         }
       }
 
