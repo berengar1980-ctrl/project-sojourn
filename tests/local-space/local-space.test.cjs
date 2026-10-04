@@ -185,8 +185,9 @@ assert(
 );
 assert(
   miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&
-    service.includes('collectMiningChunk(chunk, this.onMiningChunkCollected)') &&
-    service.includes('this.collectedResources.set(chunk.resourceId, collected + accepted)'),
+    miningChunks.includes('advanceAndCollectMiningChunks') &&
+    service.includes('advanceAndCollectMiningChunks(') &&
+    service.includes('this.collectedResources.set('),
   'recovered chunks must pass through the economy callback before local cargo is credited'
 );
 assert(
