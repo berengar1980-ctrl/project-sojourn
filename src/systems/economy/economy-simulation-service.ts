@@ -68,9 +68,7 @@ function totalResource(
   pool: EconomyResourcePool
 ): number {
   let total =
-    quantity(pool.reserve) +
-    playerQuantity(player, resourceId) +
-    npcQuantity(npcs, resourceId);
+    quantity(pool.reserve) + playerQuantity(player, resourceId) + npcQuantity(npcs, resourceId);
   for (const market of markets) total += marketQuantity(market, resourceId);
   return total;
 }
