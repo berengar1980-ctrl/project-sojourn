@@ -364,6 +364,23 @@ assert(
   'asteroid shield damage must derive from mass and normal impact speed'
 );
 assert(
+  collision.includes('targetWorldOutwardSpeed = shipNormalVelocity + targetRelativeOutwardSpeed'),
+  'shield rebound must include the moving ship velocity frame'
+);
+assert(
+  collision.includes('impactSpeed * shieldRestitution(asteroid)') &&
+    collision.includes('shieldEnergyBoost(impactSpeed, asteroid)'),
+  'shield rebound must scale from actual impact speed with only a small shield boost'
+);
+assert(
+  !collision.includes('return 180'),
+  'small debris must not receive a fixed high-speed shield kick'
+);
+assert(
+  collision.includes("a.kind === 'debris' || b.kind === 'debris' ? 0.32 : 0.22"),
+  'asteroid-to-asteroid collisions must transfer momentum with restrained restitution'
+);
+assert(
   shieldService.includes('REFERENCE_IMPACT_ENERGY'),
   'shield service must normalize kinetic impact energy'
 );
