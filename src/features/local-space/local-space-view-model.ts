@@ -1,3 +1,4 @@
+import type { PlayerEconomyState } from '../../core/economy-types';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
@@ -8,7 +9,7 @@ import type {
   MiningPhase,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
-import { miningResourceById } from '../../data/resources/mining-resources';
+import { economyResourceById } from '../../data/economy/economy-resources';
 
 export interface LocalAsteroidDepositView {
   readonly resourceId: string | null;
@@ -131,12 +132,19 @@ function mapChunk(chunk: MiningChunk): LocalChunkView {
   };
 }
 
-function mapCargo(snapshot: LocalSpaceSnapshot): LocalCargoResourceView[] {
-  return snapshot.collectedResources
+function mapCargo(
+  snapshot: LocalSpaceSnapshot,
+  player: PlayerEconomyState | null
+): LocalCargoResourceView[] {
+  const entries = player
+    ? Object.entries(player.cargo).map(([resourceId, lot]) => ({ resourceId, amount: lot.qty }))
+    : snapshot.collectedResources;
+
+  return entries
     .filter((entry) => entry.amount > 0)
     .map((entry) => ({
       resourceId: entry.resourceId,
-      name: miningResourceById(entry.resourceId)?.name ?? entry.resourceId,
+      name: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
       amount: entry.amount,
     }))
     .sort((first, second) => first.name.localeCompare(second.name));
@@ -145,7 +153,8 @@ function mapCargo(snapshot: LocalSpaceSnapshot): LocalCargoResourceView[] {
 export function createLocalSpaceViewModel(
   snapshot: LocalSpaceSnapshot,
   ship: ShipDefinition,
-  title: string
+  title: string,
+  player: PlayerEconomyState | null = null
 ): LocalSpaceViewModel {
   const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
@@ -183,7 +192,9 @@ export function createLocalSpaceViewModel(
     miningImpact: snapshot.miningImpact,
     shield: snapshot.shield,
     shieldImpacts: snapshot.shieldImpacts,
-    collectedOre: snapshot.collectedOre,
-    cargoResources: mapCargo(snapshot),
+    collectedOre: player
+      ? Object.values(player.cargo).reduce((sum, lot) => sum + lot.qty, 0)
+      : snapshot.collectedOre,
+    cargoResources: mapCargo(snapshot, player),
   };
 }
