@@ -252,6 +252,16 @@ assert(
 );
 assert(!service.includes('findApproachWaypoint'), 'approach must not live-replan around obstacles');
 assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship turning speed');
+assert(
+  autopilot.includes('REVERSE_CORRECTION_DISTANCE') &&
+    autopilot.includes('advanceReverseCorrection') &&
+    autopilot.includes('ship.speed = -reverseSpeed'),
+  'short final corrections behind the ship must use reverse thrust without turning around'
+);
+assert(
+  service.includes('false,\n      true') && service.includes('true,\n      true'),
+  'manual navigation and mining approach must allow short reverse corrections'
+);
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');
 assert(
   service.includes('resolveAsteroidCollisions'),
@@ -303,6 +313,10 @@ assert(
   'asteroid collisions must use a spatial-grid broadphase'
 );
 assert(collision.includes('contactPoint'), 'collisions must calculate a contact point');
+assert(
+  collision.includes('surfaceAnchor') && collision.includes('surfaceMetric'),
+  'shield collisions must capture a ship-local normalized surface anchor'
+);
 assert(
   miningImpact.includes('hardpoints.miningLasers'),
   'mining impact must derive from actual laser hardpoints'

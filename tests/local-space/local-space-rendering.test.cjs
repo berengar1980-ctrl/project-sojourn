@@ -195,10 +195,21 @@ assert(
   renderer.includes('ShieldImpactRenderer'),
   'local space must render localized shield impacts'
 );
-assert(shieldImpact.includes('projectToEllipse'), 'shield impact must start on the shield surface');
 assert(
-  shieldImpact.includes('context.arc(point.x, point.y, radius, 0, Math.PI * 2)'),
-  'shield ripple must expand radially across the visible shield surface'
+  shieldImpact.includes('impact.surfaceAnchor.x * shield.radiusX'),
+  'shield impact must stay anchored to ship-local shield coordinates'
+);
+assert(
+  shieldImpact.includes('traceIrregularPatch'),
+  'shield impact must spread as an irregular filled surface patch'
+);
+assert(
+  shieldImpact.includes('clearRadius'),
+  'shield impact transparency must recede outward from the impact point'
+);
+assert(
+  !shieldImpact.includes('drawRipple'),
+  'shield impact must not be rendered as a circular ripple line'
 );
 assert(
   shieldImpact.includes('context.clip()'),

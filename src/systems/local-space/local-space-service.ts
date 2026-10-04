@@ -250,6 +250,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
           source: 'asteroid',
           point: collision.point,
           normal: collision.normal,
+          surfaceAnchor: collision.surfaceAnchor,
           impactEnergy: collision.kineticEnergy,
         },
         this.shieldImpactCounter
@@ -334,6 +335,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.navigationIndex,
       this.approachSpeed,
       deltaSeconds,
+      true,
       true
     );
     this.navigationIndex = result.nextIndex;
@@ -358,7 +360,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachIndex,
       this.approachSpeed,
       deltaSeconds,
-      false
+      false,
+      true
     );
     this.approachIndex = result.nextIndex;
     if (result.completed) this.finishApproachFacing(deltaSeconds, asteroid);
