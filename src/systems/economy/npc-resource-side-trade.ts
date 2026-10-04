@@ -61,7 +61,8 @@ export function findNpcResourceSideTrade(
   const workPosition = context.positions[workLocationId];
   if (!source || !sourcePosition || !workPosition) return null;
 
-  const free = Math.max(0, quantity(npc.normalCargoCapacity) - cargoUsed(npc));
+  const normalCapacity = quantity(npc.normalCargoCapacity ?? npc.cargoCapacity);
+  const free = Math.max(0, normalCapacity - cargoUsed(npc));
   if (free <= 0 || npc.credits <= 0) return null;
 
   const directDistance = Math.max(1, distance(sourcePosition, workPosition));
