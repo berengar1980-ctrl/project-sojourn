@@ -428,9 +428,7 @@ export function planPointRoute(options: PointRoutePlanningOptions): PointRoutePl
 
     const simplified = simplifyRoute(raw, obstacles, clearance);
     const rounded = roundRoute(simplified);
-    const route = routeSegmentsClear(rounded, obstacles, clearance * 0.82)
-      ? rounded
-      : simplified;
+    const route = routeSegmentsClear(rounded, obstacles, clearance * 0.82) ? rounded : simplified;
     return { route, compromised: clearance < options.clearance * 0.99 };
   }
 
