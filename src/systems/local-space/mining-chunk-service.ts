@@ -6,6 +6,10 @@ import { calculateMiningImpact } from './mining-impact';
 
 export type MiningChunkCollector = (resourceId: string, amount: number) => number;
 
+export function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
+  return asteroid.deposits.some((deposit) => deposit.oreRemaining > 0);
+}
+
 function heading(from: WorldPoint, to: WorldPoint): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
 }
