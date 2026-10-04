@@ -43,10 +43,11 @@ export function applyShieldHit(
     id: impactId,
     source: hit.source,
     point: hit.point,
+    surfacePoint: hit.surfacePoint,
     normal: hit.normal,
     damage,
     strength: visualStrength,
-    lifetimeSeconds: 0.4 + visualStrength * 0.45,
+    lifetimeSeconds: 0.55 + visualStrength * 0.65,
     ageSeconds: 0,
   };
 
