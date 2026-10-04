@@ -45,9 +45,7 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
   }
   if (!asteroid.resourceName) return 'ANALYSE · KEINE RESSOURCE';
   return (
-    asteroid.resourceName +
-    ' · GESCHÄTZT ~' +
-    Math.round(asteroid.estimatedResourceAmount ?? 0)
+    asteroid.resourceName + ' · GESCHÄTZT ~' + Math.round(asteroid.estimatedResourceAmount ?? 0)
   );
 }
 
@@ -216,10 +214,7 @@ function renderCargo(model: LocalSpaceViewModel, total: HTMLElement, list: HTMLE
   }
 }
 
-function bindScanLabelButton(
-  button: HTMLButtonElement,
-  renderer: LocalSpaceRenderer
-): void {
+function bindScanLabelButton(button: HTMLButtonElement, renderer: LocalSpaceRenderer): void {
   let visible = true;
   button.addEventListener('click', () => {
     visible = !visible;
