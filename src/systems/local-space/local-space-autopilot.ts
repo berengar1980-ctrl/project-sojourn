@@ -26,7 +26,11 @@ function canReverseToFinalWaypoint(
   finalWaypoint: boolean,
   allowReverseCorrection: boolean
 ): boolean {
-  if (!allowReverseCorrection || !finalWaypoint || remainingDistance > REVERSE_CORRECTION_DISTANCE) {
+  if (
+    !allowReverseCorrection ||
+    !finalWaypoint ||
+    remainingDistance > REVERSE_CORRECTION_DISTANCE
+  ) {
     return false;
   }
 
