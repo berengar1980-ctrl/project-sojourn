@@ -73,7 +73,6 @@ export function advanceMiningChunk(
   };
 }
 
-
 export function collectMiningChunk(
   chunk: MiningChunk,
   collector?: MiningChunkCollector
