@@ -15,7 +15,11 @@ export function playerCargoUsed(player: PlayerEconomyState): number {
   return Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
 }
 
-function weightedCostAfterPurchase(lot: PlayerCargoLot | undefined, quantity: number, cost: number): number {
+function weightedCostAfterPurchase(
+  lot: PlayerCargoLot | undefined,
+  quantity: number,
+  cost: number
+): number {
   return Math.max(0, (lot?.totalCost ?? 0) + quantity * cost);
 }
 
