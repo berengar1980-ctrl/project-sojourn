@@ -9,6 +9,7 @@ import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-render
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
+import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 
 interface AsteroidHitArea {
@@ -35,6 +36,7 @@ export class LocalSpaceRenderer {
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
+  private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly shipImage = new Image();
   private model: LocalSpaceViewModel;
   private hitAreas: readonly AsteroidHitArea[] = [];
@@ -54,6 +56,7 @@ export class LocalSpaceRenderer {
     this.camera = new MapCamera(model.width, model.height);
     this.miningEffects = new MiningEffectsRenderer(context, this.camera);
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, model.backgroundSeed);
+    this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.resize();
   }
 
@@ -152,48 +155,16 @@ export class LocalSpaceRenderer {
     const point = this.camera.worldToScreen(asteroid.position, width, height);
     const minimumRadius = asteroid.kind === 'debris' ? 2 : 10;
     const radius = Math.max(minimumRadius, this.camera.scale(asteroid.radius));
-    const seed = hashId(asteroid.id);
 
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(asteroid.rotation);
-    this.context.beginPath();
-
-    for (let vertex = 0; vertex < 10; vertex += 1) {
-      const angle = (vertex / 10) * Math.PI * 2;
-      const wobble = 0.76 + ((seed >>> (vertex % 8)) & 7) / 28;
-      const x = Math.cos(angle) * radius * wobble;
-      const y = Math.sin(angle) * radius * wobble;
-      if (vertex === 0) this.context.moveTo(x, y);
-      else this.context.lineTo(x, y);
-    }
-
-    this.context.closePath();
-    const gradient = this.context.createRadialGradient(
-      -radius * 0.3,
-      -radius * 0.35,
-      2,
-      0,
-      0,
-      radius
-    );
-
-    if (asteroid.kind === 'debris') {
-      gradient.addColorStop(0, '#77716a');
-      gradient.addColorStop(0.55, '#4c4742');
-      gradient.addColorStop(1, '#24211f');
-    } else {
-      gradient.addColorStop(0, '#9b9186');
-      gradient.addColorStop(0.52, '#625a53');
-      gradient.addColorStop(1, '#2d2926');
-    }
-
-    this.context.fillStyle = gradient;
-    this.context.fill();
-    this.context.strokeStyle = 'rgba(195, 184, 168, .2)';
-    this.context.lineWidth = 1;
-    this.context.stroke();
-    this.context.restore();
+    this.spaceBodies.drawAsteroid({
+      id: asteroid.id,
+      x: point.x,
+      y: point.y,
+      radius,
+      rotation: asteroid.rotation,
+      kind: asteroid.kind,
+      light: { x: -0.72, y: -0.56 },
+    });
 
     if (asteroid.kind === 'resource') {
       this.drawScanMarker(asteroid, point, radius);
