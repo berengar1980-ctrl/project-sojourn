@@ -65,7 +65,7 @@ function approachSpeed(
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
-  cruiseSpeed: number
+  initialCruiseSpeed: number
 ): NavigationService {
   let currentLocationId: string | null = startLocationId;
   let selectedDestinationId: string | null = null;
@@ -74,6 +74,7 @@ export function createNavigationService(
   let currentTurnRate = 0;
   let currentAngularThrust = 0;
   let travel: TravelState | null = null;
+  let cruiseSpeed = initialCruiseSpeed;
 
   const snapshot = (): NavigationSnapshot => {
     const previewRoute =
@@ -107,6 +108,14 @@ export function createNavigationService(
     }
 
     selectedDestinationId = locationId;
+    return snapshot();
+  };
+
+  const setCruiseSpeed = (nextCruiseSpeed: number): NavigationSnapshot => {
+    if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0) {
+      throw new Error('Navigation cruise speed must be positive.');
+    }
+    cruiseSpeed = nextCruiseSpeed;
     return snapshot();
   };
 
@@ -173,6 +182,7 @@ export function createNavigationService(
     getSnapshot: snapshot,
     selectDestination,
     startTravel,
+    setCruiseSpeed,
     tick,
   };
 }
