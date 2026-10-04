@@ -60,7 +60,8 @@ assert(
   'market pricing must account for legality risk'
 );
 assert(
-  controllerSource.includes('createEconomyMarketService(tutorialPorts, economyResources)'),
+  controllerSource.includes('const markets = createEconomyMarketService(') &&
+    controllerSource.includes('tutorialPorts, economyResources'),
   'game controller must own persistent market state instead of rebuilding prices per view'
 );
 
