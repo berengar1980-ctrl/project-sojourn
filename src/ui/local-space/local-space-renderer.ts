@@ -155,6 +155,7 @@ export class LocalSpaceRenderer {
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
+    this.drawShortRangeScan(width, height, timeSeconds);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
     this.drawShip(geometry, timeSeconds);
     if (this.debugHardpoints) {
@@ -326,6 +327,66 @@ export class LocalSpaceRenderer {
     this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
 
     this.shieldImpacts.draw(this.context, this.model.shieldImpacts, source, geometry);
+  }
+
+  private drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
+    const progress = this.model.shortRangeScanProgress;
+    const target = this.model.scanTarget;
+    if (progress == null || !target) return;
+
+    const point = this.camera.worldToScreen(target.position, width, height);
+    const radius = Math.max(14, this.camera.scale(target.radius) + 9);
+    const sweepY = point.y - radius + radius * 2 * progress;
+    const pulse = 0.72 + Math.sin(timeSeconds * 18) * 0.2;
+
+    this.context.save();
+    this.context.strokeStyle = `rgba(116, 235, 248, ${0.68 + pulse * 0.2})`;
+    this.context.lineWidth = 1.4;
+    this.context.shadowColor = 'rgba(91, 223, 244, .78)';
+    this.context.shadowBlur = 7;
+
+    this.context.beginPath();
+    this.context.arc(
+      point.x,
+      point.y,
+      radius + 5,
+      timeSeconds * 1.8,
+      timeSeconds * 1.8 + Math.PI * 1.35
+    );
+    this.context.stroke();
+
+    this.context.beginPath();
+    this.context.arc(
+      point.x,
+      point.y,
+      radius + 10,
+      -timeSeconds * 1.25,
+      -timeSeconds * 1.25 + Math.PI * 0.72
+    );
+    this.context.stroke();
+
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+    this.context.clip();
+
+    const scannedHeight = Math.max(0, sweepY - (point.y - radius));
+    this.context.fillStyle = 'rgba(79, 211, 233, .075)';
+    this.context.fillRect(point.x - radius, point.y - radius, radius * 2, scannedHeight);
+
+    this.context.strokeStyle = 'rgba(205, 253, 255, .96)';
+    this.context.lineWidth = 1.2;
+    this.context.beginPath();
+    this.context.moveTo(point.x - radius, sweepY);
+    this.context.lineTo(point.x + radius, sweepY);
+    this.context.stroke();
+
+    this.context.strokeStyle = 'rgba(93, 224, 244, .26)';
+    this.context.lineWidth = 4;
+    this.context.beginPath();
+    this.context.moveTo(point.x - radius, sweepY - 3);
+    this.context.lineTo(point.x + radius, sweepY - 3);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
