@@ -48,6 +48,26 @@ export interface GameController {
   tick(deltaSeconds: number): void;
 }
 
+function createControllerShipSwitcher(
+  root: HTMLElement,
+  activeShip: ShipDefinition,
+  navigation: NavigationService,
+  onSwitch: (ship: ShipDefinition) => void
+): ShipTestSwitcher {
+  return createShipTestSwitcher({
+    root,
+    ships: getAllShipDefinitions(),
+    activeShipId: activeShip.id,
+    disabled: navigation.getSnapshot().isTravelling,
+    onSelect: (shipId) => {
+      const nextShip = getShipDefinition(shipId);
+      if (!nextShip || nextShip.id === activeShip.id) return;
+      navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
+      onSwitch(nextShip);
+    },
+  });
+}
+
 function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
@@ -139,7 +159,6 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
 
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, navigation } = options;
-  const testShips = getAllShipDefinitions();
   let activeShip = options.ship;
   let mode: SceneMode = 'star-map';
   let starPanel: StarMapPanel | null = null;
@@ -164,24 +183,11 @@ export function createGameController(options: GameControllerOptions): GameContro
 
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
-    shipSwitcher = createShipTestSwitcher({
-      root,
-      ships: testShips,
-      activeShipId: activeShip.id,
-      disabled: navigation.getSnapshot().isTravelling,
-      onSelect: (shipId) => {
-        const nextShip = getShipDefinition(shipId);
-        if (!nextShip || nextShip.id === activeShip.id) return;
-        activeShip = nextShip;
-        navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
-        systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
-
-        if (mode === 'local-space') {
-          mountLocalSpace(true);
-        } else {
-          mountStarMap();
-        }
-      },
+    shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
+      activeShip = nextShip;
+      systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
+      if (mode === 'local-space') mountLocalSpace(true);
+      else mountStarMap();
     });
   };
 
