@@ -48,7 +48,4 @@ export const miner80mIndustrialHeavy: ShipDefinition = {
   },
 };
 
-export const miningShips: readonly ShipDefinition[] = [
-  miner80mStandard,
-  miner80mIndustrialHeavy,
-];
+export const miningShips: readonly ShipDefinition[] = [miner80mStandard, miner80mIndustrialHeavy];
