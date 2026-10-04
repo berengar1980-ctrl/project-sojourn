@@ -16,6 +16,10 @@ import {
   type EconomySimulationService,
 } from '../systems/economy/economy-simulation-service';
 import {
+  createMiningEconomyService,
+  type MiningEconomyService,
+} from '../systems/economy/mining-economy-service';
+import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
@@ -70,15 +74,18 @@ interface ControllerEconomy {
   readonly markets: EconomyMarketService;
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
+  readonly mining: MiningEconomyService;
 }
 
 function createControllerEconomy(): ControllerEconomy {
   const markets = createEconomyMarketService(tutorialPorts, economyResources);
   const trade = createPlayerTradeService(markets);
+  const simulation = createEconomySimulationService(markets, trade.player, economyResources, 41);
   return {
     markets,
     trade,
-    simulation: createEconomySimulationService(markets, trade.player, economyResources, 41),
+    simulation,
+    mining: createMiningEconomyService(simulation, trade),
   };
 }
 
@@ -148,12 +155,18 @@ async function calculatePointRoute(service: LocalSpaceService, target: WorldPoin
   return planPointRouteAsync(service.getPointRouteOptions(target));
 }
 
-function createMiningLocalSpace(ship: ShipDefinition, seed: number): LocalSpaceService {
+function createMiningLocalSpace(
+  ship: ShipDefinition,
+  seed: number,
+  mining: MiningEconomyService
+): LocalSpaceService {
   return createLocalSpaceService({
     instance: generateMiningSpace('greyrock-belt', seed),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
+    onMiningChunkCollected: (resourceId, amount) =>
+      mining.collect(resourceId, amount, ship.cargoCapacityTons, 'greyrock-belt'),
   });
 }
 
@@ -301,7 +314,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const { markets, trade, simulation } = createControllerEconomy();
+  const { markets, trade, simulation, mining } = createControllerEconomy();
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -361,7 +374,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     destroyScenePanels(panels);
     mode = 'local-space';
     if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
-    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
+    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
     panels.local = createLocalSpacePanel({
       root,

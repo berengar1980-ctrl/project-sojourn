@@ -184,8 +184,11 @@ assert(
   'mining must rotate deterministically across remaining deposits'
 );
 assert(
-  service.includes('this.collectedResources.set(chunk.resourceId, collected + chunk.amount)'),
-  'recovered chunks must increase cargo by stable resource id'
+  miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&
+    miningChunks.includes('advanceAndCollectMiningChunks') &&
+    service.includes('advanceAndCollectMiningChunks(') &&
+    service.includes('this.collectedResources.set('),
+  'recovered chunks must pass through the economy callback before local cargo is credited'
 );
 assert(
   service.includes('hasMineableDeposits'),

@@ -2,7 +2,6 @@ import type {
   LocalAsteroid,
   LocalSpaceInstance,
   LocalSpaceSnapshot,
-  MiningChunk,
   MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
@@ -15,7 +14,6 @@ import {
   resolveShieldCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
-import { distance } from './local-space-motion';
 import {
   advanceAutopilotRoute,
   faceAutopilotTarget,
@@ -24,7 +22,12 @@ import {
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
-import { advanceMiningChunk, createMiningChunk } from './mining-chunk-service';
+import {
+  advanceAndCollectMiningChunks,
+  createMiningChunk,
+  hasMineableDeposits,
+  type MiningChunkCollector,
+} from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
 import {
   runLongRangeAsteroidScan,
@@ -45,10 +48,7 @@ export interface LocalSpaceServiceOptions {
   readonly approachSpeed: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
-}
-
-function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
-  return asteroid.deposits.some((deposit) => deposit.oreRemaining > 0);
+  readonly onMiningChunkCollected?: MiningChunkCollector;
 }
 
 export interface LocalSpaceService {
@@ -71,6 +71,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
+  private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
@@ -102,6 +103,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachSpeed = options.approachSpeed;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
+    this.onMiningChunkCollected = options.onMiningChunkCollected;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.shieldState = createShieldState(
       options.hardpoints.shield.maxHp,
@@ -150,11 +152,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    return this.getSelectedRouteOptions();
+    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
-    return this.getSelectedRouteOptions();
+    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
@@ -285,10 +287,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     this.longRangeScanElapsed = 0;
     this.longRangeScanParameters = null;
-  }
-
-  private getSelectedRouteOptions(): RoutePlanningOptions | null {
-    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
   }
 
   private prepareApproach(route: readonly WorldPoint[]): void {
@@ -477,20 +475,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateChunks(deltaSeconds: number): void {
-    const remaining: MiningChunk[] = [];
-
-    for (const chunk of this.instance.chunks) {
-      advanceMiningChunk(chunk, this.instance.ship.position, deltaSeconds);
-      if (distance(chunk.position, this.instance.ship.position) < 24) {
-        this.collectedOre += chunk.amount;
-        const collected = this.collectedResources.get(chunk.resourceId) ?? 0;
-        this.collectedResources.set(chunk.resourceId, collected + chunk.amount);
-      } else {
-        remaining.push(chunk);
-      }
+    const result = advanceAndCollectMiningChunks(
+      this.instance.chunks,
+      this.instance.ship.position,
+      deltaSeconds,
+      this.onMiningChunkCollected
+    );
+    for (const [resourceId, amount] of result.collected) {
+      this.collectedOre += amount;
+      this.collectedResources.set(
+        resourceId,
+        (this.collectedResources.get(resourceId) ?? 0) + amount
+      );
     }
-
-    this.instance.chunks.splice(0, this.instance.chunks.length, ...remaining);
+    this.instance.chunks.splice(0, this.instance.chunks.length, ...result.remaining);
   }
 }
 
