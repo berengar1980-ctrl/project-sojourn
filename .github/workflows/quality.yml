@@ -17,5 +17,19 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Format debug
+        run: |
+          npx prettier --write src/systems/local-space/local-space-navigation.ts src/ui/space/procedural-surface-textures.ts tests/local-space/local-space-rendering.test.cjs tests/local-space/local-space.test.cjs tests/map/procedural-space-bodies.test.cjs
+          echo '---NAV---'
+          cat src/systems/local-space/local-space-navigation.ts
+          echo '---TEXTURES---'
+          cat src/ui/space/procedural-surface-textures.ts
+          echo '---RENDERTEST---'
+          cat tests/local-space/local-space-rendering.test.cjs
+          echo '---LOCALTEST---'
+          cat tests/local-space/local-space.test.cjs
+          echo '---MAPTEST---'
+          cat tests/map/procedural-space-bodies.test.cjs
+          echo '---END---'
       - name: Quality gate
         run: npm run check
