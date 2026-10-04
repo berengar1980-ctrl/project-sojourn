@@ -1,9 +1,14 @@
 import type { WorldPoint } from '../../core/world-types';
-import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
+import type {
+  PointRoutePlan,
+  PointRoutePlanningOptions,
+  RoutePlanningOptions,
+} from './local-space-navigation';
 
 interface RouteWorkerResponse {
   readonly id: number;
   readonly route: readonly WorldPoint[];
+  readonly compromised: boolean;
 }
 
 let nextRequestId = 0;
@@ -11,7 +16,7 @@ let nextRequestId = 0;
 function requestRoute(
   kind: 'mining' | 'point',
   options: RoutePlanningOptions | PointRoutePlanningOptions
-): Promise<readonly WorldPoint[]> {
+): Promise<RouteWorkerResponse> {
   return new Promise((resolve, reject) => {
     const requestId = nextRequestId;
     nextRequestId += 1;
@@ -22,7 +27,7 @@ function requestRoute(
     worker.addEventListener('message', (event: MessageEvent<RouteWorkerResponse>) => {
       if (event.data.id !== requestId) return;
       worker.terminate();
-      resolve(event.data.route);
+      resolve(event.data);
     });
 
     worker.addEventListener('error', (event) => {
@@ -37,11 +42,12 @@ function requestRoute(
 export function planMiningApproachRouteAsync(
   options: RoutePlanningOptions
 ): Promise<readonly WorldPoint[]> {
-  return requestRoute('mining', options);
+  return requestRoute('mining', options).then((response) => response.route);
 }
 
-export function planPointRouteAsync(
-  options: PointRoutePlanningOptions
-): Promise<readonly WorldPoint[]> {
-  return requestRoute('point', options);
+export function planPointRouteAsync(options: PointRoutePlanningOptions): Promise<PointRoutePlan> {
+  return requestRoute('point', options).then((response) => ({
+    route: response.route,
+    compromised: response.compromised,
+  }));
 }
