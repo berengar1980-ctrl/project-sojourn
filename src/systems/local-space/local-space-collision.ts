@@ -12,6 +12,7 @@ export interface ShieldWorldGeometry {
 export interface ShieldCollisionImpact {
   readonly asteroidId: string;
   readonly point: WorldPoint;
+  readonly surfacePoint: WorldPoint;
   readonly normal: WorldPoint;
   readonly mass: number;
   readonly impactSpeed: number;
@@ -75,6 +76,18 @@ function separationVector(
   };
 }
 
+function normalizedShieldSurfacePoint(
+  local: WorldPoint,
+  shield: ShieldWorldGeometry
+): WorldPoint {
+  const metric = Math.hypot(local.x / shield.radiusX, local.y / shield.radiusY);
+  if (metric < 0.0001) return { x: -1, y: 0 };
+  return {
+    x: local.x / (metric * shield.radiusX),
+    y: local.y / (metric * shield.radiusY),
+  };
+}
+
 function shieldPushSpeed(asteroid: LocalAsteroid): number {
   if (asteroid.kind === 'debris') return 180;
   return Math.max(18, 42 - asteroid.radius * 0.34);
@@ -121,6 +134,7 @@ export function resolveShieldCollisions(
       impacts.push({
         asteroidId: asteroid.id,
         point: contactPoint,
+        surfacePoint: normalizedShieldSurfacePoint(local, shield),
         normal,
         mass: asteroid.physics.mass,
         impactSpeed,
