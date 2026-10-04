@@ -1,4 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
+import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
 import { tutorialCluster } from '../data/maps/tutorial-cluster';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
@@ -24,6 +25,23 @@ interface GameControllerOptions {
   readonly navigation: NavigationService;
 }
 
+interface LocalPanelActions {
+  readonly onSelectAsteroid: (id: string | null) => void;
+  readonly onNavigate: (target: WorldPoint) => Promise<boolean>;
+  readonly onStartMining: () => Promise<void>;
+  readonly onLongRangeScan: () => void;
+  readonly onShortRangeScan: () => Promise<void>;
+  readonly onCancelMining: () => void;
+  readonly onReturnToStarMap: () => void;
+}
+
+interface LocalActionContext {
+  readonly getSpace: () => LocalSpaceService | null;
+  readonly refresh: () => void;
+  readonly systemLog: SystemLogService;
+  readonly returnToStarMap: () => void;
+}
+
 export interface GameController {
   tick(deltaSeconds: number): void;
 }
@@ -34,14 +52,12 @@ function localSeed(visit: number): number {
 
 async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
   const options = service.getMiningRouteOptions();
-  if (!options) return [];
-  return planMiningApproachRouteAsync(options);
+  return options ? planMiningApproachRouteAsync(options) : [];
 }
 
 async function calculateScanRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
   const options = service.getShortRangeScanRouteOptions();
-  if (!options) return [];
-  return planMiningApproachRouteAsync(options);
+  return options ? planMiningApproachRouteAsync(options) : [];
 }
 
 async function calculatePointRoute(
@@ -68,6 +84,61 @@ function enteredGreyrock(
   return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
 }
 
+function createLocalPanelActions(context: LocalActionContext): LocalPanelActions {
+  let navigationRequest = 0;
+
+  return {
+    onSelectAsteroid(id) {
+      context.getSpace()?.selectAsteroid(id);
+      context.refresh();
+    },
+    async onNavigate(target) {
+      const activeSpace = context.getSpace();
+      if (!activeSpace) return false;
+      navigationRequest += 1;
+      const request = navigationRequest;
+      const route = await calculatePointRoute(activeSpace, target);
+      if (
+        context.getSpace() !== activeSpace ||
+        request !== navigationRequest ||
+        route.length < 2
+      ) {
+        return false;
+      }
+
+      activeSpace.startNavigation(route[route.length - 1]!, route);
+      context.refresh();
+      return true;
+    },
+    async onStartMining() {
+      const activeSpace = context.getSpace();
+      if (!activeSpace) return;
+      const route = await calculateMiningRoute(activeSpace);
+      if (context.getSpace() !== activeSpace || route.length === 0) return;
+      activeSpace.startMining(route);
+      context.refresh();
+    },
+    onLongRangeScan() {
+      context.getSpace()?.runLongRangeScan();
+      context.systemLog.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
+      context.refresh();
+    },
+    async onShortRangeScan() {
+      const activeSpace = context.getSpace();
+      if (!activeSpace) return;
+      const route = await calculateScanRoute(activeSpace);
+      if (context.getSpace() !== activeSpace || route.length === 0) return;
+      activeSpace.startShortRangeScan(route);
+      context.refresh();
+    },
+    onCancelMining() {
+      context.getSpace()?.cancelMining();
+      context.refresh();
+    },
+    onReturnToStarMap: context.returnToStarMap,
+  };
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, ship, navigation } = options;
   let mode: SceneMode = 'star-map';
@@ -76,15 +147,16 @@ export function createGameController(options: GameControllerOptions): GameContro
   let localSpace: LocalSpaceService | null = null;
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
-  let localNavigationRequest = 0;
   const systemLog = createSystemLogService();
   systemLog.write('SYSTEM ONLINE');
 
   const starModel = () => createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), ship);
-
   const localModel = () => {
     if (!localSpace) throw new Error('Local space is not active.');
     return createLocalSpaceViewModel(localSpace.getSnapshot(), ship, 'Mining Zone');
+  };
+  const refreshLocalPanel = () => {
+    if (localSpace) localPanel?.update(localModel());
   };
 
   const mountStarMap = (): void => {
@@ -92,7 +164,6 @@ export function createGameController(options: GameControllerOptions): GameContro
     localPanel = null;
     localSpace = null;
     mode = 'star-map';
-
     starPanel = createStarMapPanel({
       root,
       model: starModel(),
@@ -109,66 +180,28 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
   };
 
+  const localActions = createLocalPanelActions({
+    getSpace: () => localSpace,
+    refresh: refreshLocalPanel,
+    systemLog,
+    returnToStarMap: () => {
+      systemLog.write('NAV > STERNKARTE');
+      runSceneZoomTransition(root, mountStarMap);
+    },
+  });
+
   const mountLocalSpace = (): void => {
     starPanel?.destroy();
     starPanel = null;
     mode = 'local-space';
     visitCounter += 1;
     localSpace = createMiningLocalSpace(ship, visitCounter);
-
     systemLog.write('LOCAL OPS > GREYROCK BELT');
     localPanel = createLocalSpacePanel({
       root,
       model: localModel(),
       log: systemLog,
-      onSelectAsteroid: (id) => {
-        localSpace?.selectAsteroid(id);
-        localPanel?.update(localModel());
-      },
-      onNavigate: async (target) => {
-        const activeSpace = localSpace;
-        if (!activeSpace) return false;
-        localNavigationRequest += 1;
-        const request = localNavigationRequest;
-        const route = await calculatePointRoute(activeSpace, target);
-        if (localSpace !== activeSpace || request !== localNavigationRequest || route.length < 2) {
-          return false;
-        }
-
-        const destination = route[route.length - 1]!;
-        activeSpace.startNavigation(destination, route);
-        localPanel?.update(localModel());
-        return true;
-      },
-      onStartMining: async () => {
-        const activeSpace = localSpace;
-        if (!activeSpace) return;
-        const route = await calculateMiningRoute(activeSpace);
-        if (localSpace !== activeSpace || route.length === 0) return;
-        activeSpace.startMining(route);
-        localPanel?.update(localModel());
-      },
-      onLongRangeScan: () => {
-        localSpace?.runLongRangeScan();
-        systemLog.write('SCAN > LANGREICHWEITE ABGESCHLOSSEN');
-        localPanel?.update(localModel());
-      },
-      onShortRangeScan: async () => {
-        const activeSpace = localSpace;
-        if (!activeSpace) return;
-        const route = await calculateScanRoute(activeSpace);
-        if (localSpace !== activeSpace || route.length === 0) return;
-        activeSpace.startShortRangeScan(route);
-        localPanel?.update(localModel());
-      },
-      onCancelMining: () => {
-        localSpace?.cancelMining();
-        localPanel?.update(localModel());
-      },
-      onReturnToStarMap: () => {
-        systemLog.write('NAV > STERNKARTE');
-        runSceneZoomTransition(root, mountStarMap);
-      },
+      ...localActions,
     });
   };
 
@@ -178,16 +211,13 @@ export function createGameController(options: GameControllerOptions): GameContro
     tick(deltaSeconds) {
       const navigationSnapshot = navigation.tick(deltaSeconds);
       const currentLocationId = navigationSnapshot.currentLocationId;
-
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
-
       previousLocationId = currentLocationId;
 
-      if (mode === 'star-map') {
-        starPanel?.update(starModel());
-      } else if (localSpace) {
+      if (mode === 'star-map') starPanel?.update(starModel());
+      else if (localSpace) {
         localSpace.tick(deltaSeconds);
         localPanel?.update(localModel());
       }
