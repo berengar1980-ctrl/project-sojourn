@@ -14,10 +14,7 @@ import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
 import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
-import {
-  createShipTestSwitcher,
-  type ShipTestSwitcher,
-} from '../ui/dev/ship-test-switcher';
+import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -199,11 +196,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       log: systemLog,
       onSelectLocation: (id) => {
         const snapshot = navigation.getSnapshot();
-        if (
-          id === 'greyrock-belt' &&
-          snapshot.currentLocationId === id &&
-          !snapshot.isTravelling
-        ) {
+        if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
           runSceneZoomTransition(root, mountLocalSpace);
           return;
         }
