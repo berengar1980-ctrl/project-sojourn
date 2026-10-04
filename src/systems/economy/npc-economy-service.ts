@@ -5,6 +5,10 @@ import type {
   NpcEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import {
+  findNpcResourceSideTrade,
+  type EconomyPoint,
+} from './npc-resource-side-trade';
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
@@ -19,8 +23,12 @@ export function npcCargoUsed(npc: NpcEconomyState): number {
   return Object.values(npc.cargo).reduce((sum, value) => sum + quantity(value), 0);
 }
 
+function cargoFreeFor(npc: NpcEconomyState, capacity: number): number {
+  return Math.max(0, quantity(capacity) - npcCargoUsed(npc));
+}
+
 function cargoFree(npc: NpcEconomyState): number {
-  return Math.max(0, quantity(npc.cargoCapacity) - npcCargoUsed(npc));
+  return cargoFreeFor(npc, npc.cargoCapacity);
 }
 
 function buyFromMarket(
@@ -28,7 +36,8 @@ function buyFromMarket(
   markets: EconomyMarketService,
   locationId: string,
   resourceId: EconomyResourceId,
-  requested: number
+  requested: number,
+  cargoCapacity = npc.cargoCapacity
 ): number {
   const entry = markets.getEntry(locationId, resourceId);
   if (!entry) return 0;
@@ -36,7 +45,7 @@ function buyFromMarket(
   const moved = Math.min(
     quantity(requested),
     quantity(entry.stock),
-    cargoFree(npc),
+    cargoFreeFor(npc, cargoCapacity),
     Math.max(0, affordable)
   );
   if (moved <= 0) return 0;
@@ -53,19 +62,23 @@ function sellToMarket(
   npc: NpcEconomyState,
   markets: EconomyMarketService,
   locationId: string,
-  resourceId: EconomyResourceId
+  resourceId: EconomyResourceId,
+  requested = Number.POSITIVE_INFINITY
 ): number {
   const entry = markets.getEntry(locationId, resourceId);
   const aboard = quantity(npc.cargo[resourceId] ?? 0);
-  if (!entry || aboard <= 0) return 0;
+  const moved = Math.min(aboard, quantity(requested));
+  if (!entry || moved <= 0) return 0;
 
   const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
-  npc.credits += aboard * unitPrice;
-  entry.stock += aboard;
-  entry.demand = Math.max(0, entry.demand - aboard / 5000);
-  delete npc.cargo[resourceId];
+  npc.credits += moved * unitPrice;
+  entry.stock += moved;
+  entry.demand = Math.max(0, entry.demand - moved / 5000);
+  const remaining = aboard - moved;
+  if (remaining > 0) npc.cargo[resourceId] = remaining;
+  else delete npc.cargo[resourceId];
   markets.recalculate(locationId, resourceId);
-  return aboard;
+  return moved;
 }
 
 interface TradeRoute {
@@ -152,8 +165,23 @@ function runResourceWorkerDay(
   npc: NpcEconomyState,
   markets: EconomyMarketService,
   allocator: PhysicalResourceAllocator,
+  resources: readonly EconomyResourceDefinition[],
+  positions: Readonly<Record<string, EconomyPoint>>,
   day: number
 ): void {
+  if (npc.sideTradePlan) {
+    const plan = npc.sideTradePlan;
+    if (npc.locationId !== plan.tradeLocationId) {
+      npc.locationId = plan.tradeLocationId;
+      return;
+    }
+
+    sellToMarket(npc, markets, plan.tradeLocationId, plan.resourceId, plan.quantity);
+    npc.locationId = plan.workLocationId;
+    delete npc.sideTradePlan;
+    return;
+  }
+
   const used = npcCargoUsed(npc);
   const threshold = Math.max(1, Math.floor(npc.cargoCapacity * 0.82));
 
@@ -167,6 +195,39 @@ function runResourceWorkerDay(
       npc.locationId = destination.locationId;
       sellToMarket(npc, markets, destination.locationId, resourceId);
     }
+    return;
+  }
+
+  if (npc.workLocationId && npc.locationId !== npc.workLocationId) {
+    const plan = findNpcResourceSideTrade(npc, npc.workLocationId, {
+      markets: markets.snapshot(),
+      resources,
+      positions,
+    });
+    if (plan) {
+      const normalCapacity = npc.normalCargoCapacity ?? npc.cargoCapacity;
+      const moved = buyFromMarket(
+        npc,
+        markets,
+        npc.locationId,
+        plan.resourceId,
+        plan.quantity,
+        normalCapacity
+      );
+      if (moved > 0) {
+        const scale = moved / plan.quantity;
+        npc.sideTradePlan = {
+          ...plan,
+          quantity: moved,
+          costBasis: Math.round(plan.costBasis * scale),
+          expectedProfit: Math.round(plan.expectedProfit * scale),
+        };
+        npc.locationId = plan.tradeLocationId;
+        return;
+      }
+    }
+
+    npc.locationId = npc.workLocationId;
     return;
   }
 
@@ -186,13 +247,19 @@ export interface NpcEconomyService {
   advanceNextDay(): void;
 }
 
+export interface NpcEconomyServiceOptions {
+  readonly positions?: Readonly<Record<string, EconomyPoint>>;
+}
+
 export function createNpcEconomyService(
   markets: EconomyMarketService,
   allocator: PhysicalResourceAllocator,
   resources: readonly EconomyResourceDefinition[],
-  npcs: readonly NpcEconomyState[]
+  npcs: readonly NpcEconomyState[],
+  options: NpcEconomyServiceOptions = {}
 ): NpcEconomyService {
   let lastDay = -1;
+  const positions = options.positions ?? {};
 
   const advanceDay = (day: number): void => {
     const target = Math.max(0, Math.floor(day));
@@ -201,7 +268,7 @@ export function createNpcEconomyService(
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
         if (npc.role === 'trader') runTraderDay(npc, markets, resources);
-        else runResourceWorkerDay(npc, markets, allocator, current);
+        else runResourceWorkerDay(npc, markets, allocator, resources, positions, current);
       }
     }
     lastDay = target;
