@@ -53,6 +53,7 @@ export interface ShipDefinition {
   readonly name: string;
   readonly role: ShipRole;
   readonly nominalLengthMeters: number;
+  readonly cargoCapacityTons: number;
   readonly sprite: ShipSprite;
   readonly navigation: ShipNavigationStats;
 }

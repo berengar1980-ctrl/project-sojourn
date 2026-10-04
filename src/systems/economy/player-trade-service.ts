@@ -1,0 +1,115 @@
+import type {
+  EconomyResourceId,
+  PlayerCargoLot,
+  PlayerEconomyState,
+  TradeResult,
+} from '../../core/economy-types';
+import type { EconomyMarketService } from './market-service';
+
+function finiteInteger(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+}
+
+export function playerCargoUsed(player: PlayerEconomyState): number {
+  return Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
+}
+
+function weightedCostAfterPurchase(
+  lot: PlayerCargoLot | undefined,
+  quantity: number,
+  cost: number
+): number {
+  return Math.max(0, (lot?.totalCost ?? 0) + quantity * cost);
+}
+
+export interface PlayerTradeService {
+  readonly player: PlayerEconomyState;
+  buy(
+    locationId: string,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number,
+    cargoCapacityTons: number
+  ): TradeResult | null;
+  sell(
+    locationId: string,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number
+  ): TradeResult | null;
+}
+
+export function createPlayerTradeService(
+  markets: EconomyMarketService,
+  initialCredits = 238450
+): PlayerTradeService {
+  const player: PlayerEconomyState = {
+    credits: Math.max(0, Math.floor(initialCredits)),
+    cargo: {},
+  };
+
+  return {
+    player,
+
+    buy(locationId, resourceId, requestedQuantity, cargoCapacityTons) {
+      const entry = markets.getEntry(locationId, resourceId);
+      if (!entry) return null;
+
+      const requested = finiteInteger(requestedQuantity);
+      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - playerCargoUsed(player));
+      const affordable = Math.floor(player.credits / Math.max(1, entry.price));
+      const quantity = Math.min(requested, finiteInteger(entry.stock), cargoFree, affordable);
+      if (quantity <= 0) return null;
+
+      const cost = quantity * entry.price;
+      const lot = player.cargo[resourceId];
+      player.credits -= cost;
+      entry.stock -= quantity;
+      entry.demand = Math.min(1, entry.demand + quantity / 5000);
+      player.cargo[resourceId] = {
+        qty: (lot?.qty ?? 0) + quantity,
+        totalCost: weightedCostAfterPurchase(lot, quantity, entry.price),
+        lastOriginId: locationId,
+      };
+      const unitPrice = entry.price;
+      markets.recalculate(locationId, resourceId);
+
+      return {
+        resourceId,
+        quantity,
+        unitPrice,
+        creditsDelta: -cost,
+        realizedProfit: 0,
+      };
+    },
+
+    sell(locationId, resourceId, requestedQuantity) {
+      const entry = markets.getEntry(locationId, resourceId);
+      const lot = player.cargo[resourceId];
+      if (!entry || !lot) return null;
+
+      const quantity = Math.min(finiteInteger(requestedQuantity), finiteInteger(lot.qty));
+      if (quantity <= 0) return null;
+
+      const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
+      const averageCost = lot.qty > 0 ? lot.totalCost / lot.qty : 0;
+      const revenue = quantity * unitPrice;
+      const realizedProfit = Math.round(revenue - averageCost * quantity);
+
+      player.credits += revenue;
+      entry.stock += quantity;
+      entry.demand = Math.max(0, entry.demand - quantity / 5000);
+      lot.qty -= quantity;
+      lot.totalCost = Math.max(0, lot.totalCost - averageCost * quantity);
+      if (lot.qty <= 0) delete player.cargo[resourceId];
+
+      markets.recalculate(locationId, resourceId);
+      return {
+        resourceId,
+        quantity,
+        unitPrice,
+        creditsDelta: revenue,
+        realizedProfit,
+      };
+    },
+  };
+}

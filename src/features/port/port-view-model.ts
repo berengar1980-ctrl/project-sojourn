@@ -1,4 +1,8 @@
-import type { EconomyMarketState, ResourceLegality } from '../../core/economy-types';
+import type {
+  EconomyMarketState,
+  PlayerEconomyState,
+  ResourceLegality,
+} from '../../core/economy-types';
 import type { PortDefinition, PortTab } from '../../core/port-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
@@ -17,6 +21,7 @@ export interface PortMarketRowView {
   readonly productionLabel: string;
   readonly trend: 'up' | 'flat' | 'down';
   readonly pressurePercent: number;
+  readonly owned: number;
 }
 
 export interface PortCrewView {
@@ -45,6 +50,11 @@ export interface PortViewModel {
   readonly producedNames: readonly string[];
   readonly neededNames: readonly string[];
   readonly crew: readonly PortCrewView[];
+  readonly player: {
+    readonly credits: number;
+    readonly cargoUsed: number;
+    readonly cargoCapacity: number;
+  };
   readonly ship: {
     readonly id: string;
     readonly name: string;
@@ -68,7 +78,10 @@ function productionLabel(value: number): string {
   return 'keine';
 }
 
-function marketRows(market: EconomyMarketState): readonly PortMarketRowView[] {
+function marketRows(
+  market: EconomyMarketState,
+  player: PlayerEconomyState
+): readonly PortMarketRowView[] {
   return Object.values(market.entries)
     .map((entry) => {
       const resource = economyResourceById(entry.resourceId);
@@ -90,6 +103,7 @@ function marketRows(market: EconomyMarketState): readonly PortMarketRowView[] {
         productionLabel: productionLabel(entry.production),
         trend,
         pressurePercent: Math.round(referenceDelta * 100),
+        owned: player.cargo[resource.id]?.qty ?? 0,
       };
     })
     .sort((first, second) => {
@@ -113,6 +127,7 @@ function resourceName(id: string): string {
 export function createPortViewModel(
   port: PortDefinition,
   market: EconomyMarketState,
+  player: PlayerEconomyState,
   location: WorldLocation,
   ship: ShipDefinition
 ): PortViewModel {
@@ -132,13 +147,18 @@ export function createPortViewModel(
       { id: 'equipment', label: 'AUSRÜSTUNG', enabled: true },
       { id: 'shipyard', label: 'WERFT', enabled: port.shipyard },
     ],
-    market: marketRows(market),
+    market: marketRows(market, player),
     producedNames: port.producedCommodityIds.map(resourceName),
     neededNames: port.neededCommodityIds.map(resourceName),
     crew: port.crew.map((candidate) => ({
       ...candidate,
       initials: crewInitials(candidate.name),
     })),
+    player: {
+      credits: player.credits,
+      cargoUsed: Object.values(player.cargo).reduce((sum, lot) => sum + lot.qty, 0),
+      cargoCapacity: ship.cargoCapacityTons,
+    },
     ship: {
       id: ship.id,
       name: ship.name,
