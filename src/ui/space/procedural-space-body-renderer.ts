@@ -139,7 +139,13 @@ export class ProceduralSpaceBodyRenderer {
     context.restore();
   }
 
-  drawAsteroidField(id: string, x: number, y: number, radius: number, light: SpaceLight): void {
+  drawAsteroidField(
+    id: string,
+    x: number,
+    y: number,
+    radius: number,
+    light: SpaceLight
+  ): void {
     const random = createRandom(hashSeed(id));
     for (let index = 0; index < 18; index += 1) {
       const angle = index * 2.399 + random() * 0.35;
@@ -157,7 +163,10 @@ export class ProceduralSpaceBodyRenderer {
     }
   }
 
-  private asteroidSurface(id: string, kind: 'resource' | 'debris'): AsteroidSurface {
+  private asteroidSurface(
+    id: string,
+    kind: 'resource' | 'debris'
+  ): AsteroidSurface {
     const key = id + ':' + kind;
     const cached = this.asteroidCache.get(key);
     if (cached) return cached;
@@ -311,8 +320,12 @@ export class ProceduralSpaceBodyRenderer {
         const start = rotate(fracture.points[index], rotation);
         const end = rotate(fracture.points[index + 1], rotation);
         const progress = index / (fracture.points.length - 1);
-        context.strokeStyle = 'rgba(3, 4, 5, ' + (0.34 * (1 - progress) + 0.05) + ')';
-        context.lineWidth = Math.max(0.35, radius * 0.018 * Math.pow(1 - progress, 1.25));
+        context.strokeStyle =
+          'rgba(3, 4, 5, ' + (0.34 * (1 - progress) + 0.05) + ')';
+        context.lineWidth = Math.max(
+          0.35,
+          radius * 0.018 * Math.pow(1 - progress, 1.25)
+        );
         context.beginPath();
         context.moveTo(start.x * radius, start.y * radius);
         context.lineTo(end.x * radius, end.y * radius);
@@ -331,7 +344,11 @@ export class ProceduralSpaceBodyRenderer {
     }
   }
 
-  private drawWorldLight(radius: number, light: SpaceLight, darkness: number): void {
+  private drawWorldLight(
+    radius: number,
+    light: SpaceLight,
+    darkness: number
+  ): void {
     const context = this.context;
     const gradient = context.createLinearGradient(
       light.x * radius,
@@ -360,7 +377,8 @@ export class ProceduralSpaceBodyRenderer {
     if (!context) throw new Error('Planet texture canvas unavailable.');
 
     const random = createRandom(hashSeed(key));
-    const base = dangerLevel >= 2 ? '#745448' : dangerLevel === 1 ? '#68705f' : '#536d86';
+    const base =
+      dangerLevel >= 2 ? '#745448' : dangerLevel === 1 ? '#68705f' : '#536d86';
     context.fillStyle = base;
     context.beginPath();
     context.arc(64, 64, 63, 0, Math.PI * 2);
