@@ -76,9 +76,9 @@ export class ProceduralSpaceBodyRenderer {
     );
     context.restore();
 
-    if (options.kind === 'resource' && options.radius >= 9) {
+    if (options.kind === 'resource' && options.radius >= 14) {
       this.drawCraterRelief(surface, options.radius, options.rotation, light);
-      if (options.radius >= 14) {
+      if (options.radius >= 24) {
         this.drawFractures(surface, options.radius, options.rotation, light);
       }
     }
@@ -89,9 +89,11 @@ export class ProceduralSpaceBodyRenderer {
     context.save();
     context.translate(options.x, options.y);
     this.traceOutline(surface.outline, options.radius, options.rotation);
-    context.strokeStyle = 'rgba(205, 198, 188, .12)';
-    context.lineWidth = Math.max(0.7, Math.min(1.15, options.radius * 0.025));
-    context.stroke();
+    if (options.radius >= 5) {
+      context.strokeStyle = 'rgba(205, 198, 188, .12)';
+      context.lineWidth = Math.max(0.7, Math.min(1.15, options.radius * 0.025));
+      context.stroke();
+    }
     context.restore();
   }
 
