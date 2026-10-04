@@ -163,6 +163,14 @@ assert(
   'mined chunks must retain their actual resource identity'
 );
 assert(
+  miningChunks.includes('asteroid.oreRemaining -= amount'),
+  'extracted chunks must reduce the asteroid resource amount immediately'
+);
+assert(
+  service.includes('this.collectedResources.set(chunk.resourceId, collected + chunk.amount)'),
+  'recovered chunks must increase cargo by stable resource id'
+);
+assert(
   service.includes('shipLateralVelocity'),
   'ship station keeping must use real lateral velocity'
 );
