@@ -336,10 +336,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const mountLocalSpace = (reuseSeed = false): void => {
     destroyScenePanels(panels);
     mode = 'local-space';
-    if (!reuseSeed || localSpaceSeed === 0) {
-      visitCounter += 1;
-      localSpaceSeed = localSeed(visitCounter);
-    }
+    if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
     localSpace = createMiningLocalSpace(activeShip, localSpaceSeed);
     systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
     panels.local = createLocalSpacePanel({
