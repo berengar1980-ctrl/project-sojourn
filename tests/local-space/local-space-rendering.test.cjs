@@ -116,7 +116,10 @@ assert(
 assert(engines.includes('projectHardpoint'), 'engine effects must use shared hardpoint projection');
 assert(engines.includes('ThrusterGlowRenderer'), 'main engines must use shared nozzle glow');
 assert(maneuvers.includes('ThrusterGlowRenderer'), 'RCS thrusters must use shared nozzle glow');
-assert(thrusterGlow.includes("globalCompositeOperation = 'lighter'"), 'thruster light must use additive glow');
+assert(
+  thrusterGlow.includes("globalCompositeOperation = 'lighter'"),
+  'thruster light must use additive glow'
+);
 assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
 assert(engines.includes('fastPulse'), 'engine thrust must include subtle flicker');
 assert(
