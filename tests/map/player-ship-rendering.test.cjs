@@ -9,6 +9,10 @@ const shipRenderer = fs.readFileSync(path.join(root, 'src/ui/map/player-ship-ren
 const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 const mapInput = fs.readFileSync(path.join(root, 'src/ui/map/star-map-input.ts'), 'utf8');
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
+const shipLighting = fs.readFileSync(
+  path.join(root, 'src/ui/ships/ship-lighting-renderer.ts'),
+  'utf8'
+);
 
 assert(shipRenderer.includes('ShipEngineEffectsRenderer'), 'star map must share engine VFX');
 assert(
@@ -19,7 +23,15 @@ assert(
   shipRenderer.includes('spriteDrawOffset'),
   'star-map sprite must use shared pivot projection'
 );
-assert(shipRenderer.includes('drawImage'), 'ship renderer must draw the actual ship sprite');
+assert(shipRenderer.includes('ShipLightingRenderer'), 'star-map ship must use shared lighting');
+assert(
+  shipLighting.includes("globalCompositeOperation = 'source-atop'"),
+  'lighting must respect sprite alpha'
+);
+assert(
+  shipLighting.includes('toShipLocal'),
+  'world light must be transformed into ship-local space'
+);
 assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
 assert(
   shipRenderer.includes('updateIdleStationKeeping'),
@@ -45,6 +57,11 @@ assert(
 );
 assert(mapInput.includes("event.key.toLowerCase() === 'h'"), 'H must toggle star-map hardpoints');
 assert(mapRenderer.includes('drawPlayerShip'), 'star map must render the player ship');
+assert(
+  mapRenderer.includes('starPoint.x - point.x'),
+  'ship light must come from the star direction'
+);
+assert(!mapRenderer.includes("strokeStyle = '#fff4ba'"), 'sun must not have a white outline ring');
 assert(mapPanel.includes('createSystemLogPanel'), 'star map must render the shared system log');
 assert(
   mapPanel.includes("placementClass: 'star-system-log'"),

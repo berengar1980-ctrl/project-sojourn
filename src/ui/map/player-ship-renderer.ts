@@ -8,6 +8,7 @@ import {
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { ShipLightingRenderer, type ShipLightVector } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
@@ -28,6 +29,7 @@ export class PlayerShipRenderer {
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly hardpointDebug = new ShipHardpointDebugRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  private readonly lighting = new ShipLightingRenderer();
   private loadedUrl = '';
   private debugHardpoints = false;
   private idleShip: LocalShipState | null = null;
@@ -48,7 +50,8 @@ export class PlayerShipRenderer {
     ship: PlayerShipMapView,
     point: ScreenPoint,
     relativeZoom: number,
-    timeSeconds: number
+    timeSeconds: number,
+    light: ShipLightVector
   ): void {
     this.ensureImage(ship.spriteUrl);
 
@@ -94,7 +97,15 @@ export class PlayerShipRenderer {
 
     if (this.image.complete && this.image.naturalWidth > 0) {
       const offset = spriteDrawOffset(ship.hardpoints, geometry);
-      context.drawImage(this.image, offset.x, offset.y, geometry.width, geometry.height);
+      this.lighting.draw(context, {
+        image: this.image,
+        width: geometry.width,
+        height: geometry.height,
+        angle,
+        light,
+        offsetX: offset.x,
+        offsetY: offset.y,
+      });
     } else {
       this.drawFallback(context, geometry.width, geometry.height);
     }

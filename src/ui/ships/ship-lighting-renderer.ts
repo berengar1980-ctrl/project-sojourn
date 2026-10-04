@@ -1,0 +1,85 @@
+export interface ShipLightVector {
+  readonly x: number;
+  readonly y: number;
+}
+
+interface LitShipDrawOptions {
+  readonly image: HTMLImageElement;
+  readonly width: number;
+  readonly height: number;
+  readonly angle: number;
+  readonly light: ShipLightVector;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
+function normalize(light: ShipLightVector): ShipLightVector {
+  const length = Math.hypot(light.x, light.y) || 1;
+  return { x: light.x / length, y: light.y / length };
+}
+
+function toShipLocal(light: ShipLightVector, angle: number): ShipLightVector {
+  const cosine = Math.cos(-angle);
+  const sine = Math.sin(-angle);
+  return {
+    x: light.x * cosine - light.y * sine,
+    y: light.x * sine + light.y * cosine,
+  };
+}
+
+export class ShipLightingRenderer {
+  private readonly canvas = document.createElement('canvas');
+  private readonly context: CanvasRenderingContext2D;
+
+  constructor() {
+    const context = this.canvas.getContext('2d');
+    if (!context) throw new Error('Ship lighting canvas unavailable.');
+    this.context = context;
+  }
+
+  draw(context: CanvasRenderingContext2D, options: LitShipDrawOptions): void {
+    const pixelWidth = Math.max(1, Math.ceil(options.width));
+    const pixelHeight = Math.max(1, Math.ceil(options.height));
+    this.resize(pixelWidth, pixelHeight);
+
+    const offscreen = this.context;
+    offscreen.clearRect(0, 0, pixelWidth, pixelHeight);
+    offscreen.globalCompositeOperation = 'source-over';
+    offscreen.drawImage(options.image, 0, 0, pixelWidth, pixelHeight);
+
+    const worldLight = normalize(options.light);
+    const localLight = toShipLocal(worldLight, options.angle);
+    this.applyDirectionalLight(pixelWidth, pixelHeight, localLight);
+
+    context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
+  }
+
+  private resize(width: number, height: number): void {
+    if (this.canvas.width === width && this.canvas.height === height) return;
+    this.canvas.width = width;
+    this.canvas.height = height;
+  }
+
+  private applyDirectionalLight(width: number, height: number, light: ShipLightVector): void {
+    const context = this.context;
+    const halfWidth = width * 0.5;
+    const halfHeight = height * 0.5;
+    const reach = Math.max(width, height) * 0.65;
+    const gradient = context.createLinearGradient(
+      halfWidth + light.x * reach,
+      halfHeight + light.y * reach,
+      halfWidth - light.x * reach,
+      halfHeight - light.y * reach
+    );
+
+    gradient.addColorStop(0, 'rgba(255,255,240,.09)');
+    gradient.addColorStop(0.38, 'rgba(255,255,255,.015)');
+    gradient.addColorStop(0.58, 'rgba(0,0,0,.05)');
+    gradient.addColorStop(1, 'rgba(0,0,0,.32)');
+
+    context.globalCompositeOperation = 'source-atop';
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+    context.globalCompositeOperation = 'source-over';
+  }
+}

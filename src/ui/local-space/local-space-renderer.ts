@@ -7,6 +7,7 @@ import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoi
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
@@ -34,6 +35,7 @@ export class LocalSpaceRenderer {
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly hardpointDebug = new ShipHardpointDebugRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  private readonly shipLighting = new ShipLightingRenderer();
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
@@ -244,7 +246,15 @@ export class LocalSpaceRenderer {
 
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
       const offset = spriteDrawOffset(source, geometry);
-      this.context.drawImage(this.shipImage, offset.x, offset.y, geometry.width, geometry.height);
+      this.shipLighting.draw(this.context, {
+        image: this.shipImage,
+        width: geometry.width,
+        height: geometry.height,
+        angle: geometry.angle,
+        light: { x: -0.72, y: -0.56 },
+        offsetX: offset.x,
+        offsetY: offset.y,
+      });
     }
 
     this.context.restore();

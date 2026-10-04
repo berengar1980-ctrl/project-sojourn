@@ -117,12 +117,14 @@ export class TopdownMapRenderer {
 
   private drawPlayerShip(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     this.shipRenderer.draw(
       this.context,
       this.model.playerShip,
       point,
       this.camera.getRelativeZoom(),
-      performance.now() / 1000
+      performance.now() / 1000,
+      { x: starPoint.x - point.x, y: starPoint.y - point.y }
     );
   }
 
@@ -166,15 +168,6 @@ export class TopdownMapRenderer {
     this.context.beginPath();
     this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     this.context.fill();
-
-    this.context.save();
-    this.context.globalAlpha = 0.16 + shimmer * 0.1;
-    this.context.strokeStyle = '#fff4ba';
-    this.context.lineWidth = 2;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius * 1.16, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
 
     this.context.fillStyle = 'rgba(255,244,215,.86)';
     this.context.font = '600 12px system-ui';
