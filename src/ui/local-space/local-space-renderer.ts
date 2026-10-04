@@ -241,11 +241,7 @@ export class LocalSpaceRenderer {
     return asteroid.resourceName.toUpperCase() + ' · ~' + Math.round(amount);
   }
 
-  private drawScanCallout(
-    asteroid: LocalAsteroidView,
-    point: ScreenPoint,
-    radius: number
-  ): void {
+  private drawScanCallout(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
     if (!this.scanLabelsVisible) return;
     const text = this.scanCalloutText(asteroid);
     if (!text) return;
@@ -258,13 +254,9 @@ export class LocalSpaceRenderer {
 
     this.context.save();
     this.context.strokeStyle =
-      asteroid.scanLevel === 'analyzed'
-        ? 'rgba(121, 220, 237, .82)'
-        : 'rgba(139, 192, 153, .72)';
+      asteroid.scanLevel === 'analyzed' ? 'rgba(121, 220, 237, .82)' : 'rgba(139, 192, 153, .72)';
     this.context.fillStyle =
-      asteroid.scanLevel === 'analyzed'
-        ? 'rgba(179, 235, 244, .92)'
-        : 'rgba(168, 205, 178, .84)';
+      asteroid.scanLevel === 'analyzed' ? 'rgba(179, 235, 244, .92)' : 'rgba(168, 205, 178, .84)';
     this.context.lineWidth = 1;
     this.context.beginPath();
     this.context.moveTo(startX, startY);
