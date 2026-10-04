@@ -243,13 +243,7 @@ export class LocalSpaceRenderer {
     };
 
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.drawExhaust(
-      this.context,
-      source,
-      geometry,
-      maneuverDemand,
-      timeSeconds
-    );
+    this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
