@@ -95,12 +95,7 @@ export class ShieldImpactRenderer {
     gradient.addColorStop(0.45, `rgba(97, 190, 255, ${fade * 0.11})`);
     gradient.addColorStop(1, 'rgba(70, 150, 255, 0)');
     context.fillStyle = gradient;
-    context.fillRect(
-      -shield.radiusX,
-      -shield.radiusY,
-      shield.radiusX * 2,
-      shield.radiusY * 2
-    );
+    context.fillRect(-shield.radiusX, -shield.radiusY, shield.radiusX * 2, shield.radiusY * 2);
   }
 
   private drawRipple(
