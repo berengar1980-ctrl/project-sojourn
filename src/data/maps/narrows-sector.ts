@@ -1,5 +1,6 @@
 import type { WorldMap } from '../../core/world-types';
 
+// prettier-ignore
 export const narrowsSector: WorldMap = {
   id: 'narrows-sector',
   name: 'The Narrows',
