@@ -375,6 +375,21 @@ function createActivePortPanel(
   });
 }
 
+function createControllerStarModel(
+  navigation: NavigationService,
+  ship: ShipDefinition
+) {
+  return createStarMapViewModel(narrowsSector, navigation.getSnapshot(), ship);
+}
+
+function createControllerLocalModel(
+  service: LocalSpaceService | null,
+  ship: ShipDefinition,
+  navigation: NavigationService
+) {
+  return createActiveLocalModel(service, ship, currentMiningLocationName(navigation));
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const { root, navigation } = options;
   let activeShip = options.ship;
@@ -387,10 +402,8 @@ export function createGameController(options: GameControllerOptions): GameContro
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
   const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
-  const starModel = () =>
-    createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
-  const localModel = () =>
-    createActiveLocalModel(localSpace, activeShip, currentMiningLocationName(navigation));
+  const starModel = () => createControllerStarModel(navigation, activeShip);
+  const localModel = () => createControllerLocalModel(localSpace, activeShip, navigation);
   const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
