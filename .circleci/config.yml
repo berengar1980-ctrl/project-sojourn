@@ -13,46 +13,56 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-player-ship:
+  fmt-src:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map/player-ship-rendering.test.cjs
+      - run: npx prettier --check src
 
-  fmt-space-bodies:
+  fmt-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map/procedural-space-bodies.test.cjs
+      - run: npx prettier --check tests
 
-  fmt-route:
+  fmt-docs:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map/route-planner.test.cjs
+      - run: npx prettier --check docs README.md
 
-  fmt-background:
+  fmt-root:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map/space-background.test.cjs
+      - run: npx prettier --check package.json tsconfig.json vite.config.ts eslint.config.mjs index.html start-sojourn.cmd scripts
+
+  fmt-ci:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check .circleci .github
 
 workflows:
-  legacy-map-format-diagnostics:
+  top-level-format-diagnostics:
     jobs:
-      - fmt-player-ship:
+      - fmt-src:
           filters: { branches: { only: ci-gate } }
-      - fmt-space-bodies:
+      - fmt-tests:
           filters: { branches: { only: ci-gate } }
-      - fmt-route:
+      - fmt-docs:
           filters: { branches: { only: ci-gate } }
-      - fmt-background:
+      - fmt-root:
+          filters: { branches: { only: ci-gate } }
+      - fmt-ci:
           filters: { branches: { only: ci-gate } }
