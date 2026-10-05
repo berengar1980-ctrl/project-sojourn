@@ -1,4 +1,4 @@
-import type { WorldPoint } from '../../core/world-types';
+import type { PlanetBiome, WorldPoint } from '../../core/world-types';
 
 export interface SurfaceCrater {
   readonly x: number;
@@ -184,39 +184,68 @@ export function createAsteroidTexture(id: string, kind: 'resource' | 'debris'): 
   return canvas;
 }
 
-function planetPalette(dangerLevel: number): {
-  water: readonly number[];
-  lowland: readonly number[];
-  highland: readonly number[];
-  ice: readonly number[];
-} {
-  if (dangerLevel >= 2) {
-    return {
-      water: [40, 39, 42],
-      lowland: [101, 68, 54],
-      highland: [145, 103, 74],
-      ice: [190, 177, 157],
-    };
-  }
-
-  if (dangerLevel === 1) {
-    return {
-      water: [39, 57, 65],
-      lowland: [78, 91, 67],
-      highland: [126, 112, 82],
-      ice: [197, 204, 196],
-    };
-  }
-
-  return {
-    water: [35, 66, 92],
-    lowland: [59, 92, 79],
-    highland: [116, 112, 82],
-    ice: [211, 220, 220],
-  };
+interface PlanetPalette {
+  readonly water: readonly number[];
+  readonly lowland: readonly number[];
+  readonly highland: readonly number[];
+  readonly ice: readonly number[];
 }
 
-export function createPlanetTexture(id: string, dangerLevel: number): HTMLCanvasElement {
+function planetPalette(biome: PlanetBiome): PlanetPalette {
+  if (biome === 'scorched') return { water: [48, 34, 31], lowland: [102, 61, 43], highland: [164, 104, 61], ice: [190, 151, 112] };
+  if (biome === 'desert') return { water: [91, 72, 55], lowland: [169, 130, 78], highland: [116, 91, 65], ice: [213, 194, 164] };
+  if (biome === 'ice') return { water: [31, 56, 72], lowland: [123, 153, 166], highland: [177, 201, 209], ice: [224, 238, 241] };
+  if (biome === 'barren') return { water: [58, 57, 54], lowland: [101, 99, 94], highland: [151, 147, 137], ice: [189, 187, 181] };
+  return { water: [35, 66, 92], lowland: [59, 92, 79], highland: [116, 112, 82], ice: [211, 220, 220] };
+}
+
+function paintPlanetTerrain(
+  data: Uint8ClampedArray,
+  index: number,
+  palette: PlanetPalette,
+  biome: PlanetBiome,
+  elevation: number,
+  detail: number,
+  polar: number
+): void {
+  if (biome === 'temperate') {
+    if (polar > 0.08 && elevation > 0.38) {
+      paintPixel(data, index, palette.highland, palette.ice, Math.min(1, polar * 1.15), 0.96);
+      return;
+    }
+    if (elevation < 0.48) {
+      const depth = Math.max(0, Math.min(1, (0.48 - elevation) / 0.22));
+      paintPixel(data, index, palette.water, palette.lowland, 0.08, 0.72 + depth * 0.12);
+      return;
+    }
+  }
+
+  if (biome === 'ice') {
+    if (elevation < 0.43) {
+      paintPixel(data, index, palette.water, palette.lowland, 0.18, 0.78 + detail * 0.1);
+      return;
+    }
+    const frost = Math.max(0.38, Math.min(1, polar * 0.72 + (elevation - 0.43) * 1.25));
+    paintPixel(data, index, palette.lowland, palette.ice, frost, 0.88 + detail * 0.12);
+    return;
+  }
+
+  const mountain = Math.max(0, Math.min(1, (elevation - 0.4) / 0.42));
+  paintPixel(
+    data,
+    index,
+    elevation < 0.34 ? palette.water : palette.lowland,
+    palette.highland,
+    mountain,
+    0.8 + detail * 0.2
+  );
+}
+
+export function createPlanetTexture(
+  id: string,
+  dangerLevel: number,
+  biome: PlanetBiome = 'temperate'
+): HTMLCanvasElement {
   const size = 192;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -225,8 +254,8 @@ export function createPlanetTexture(id: string, dangerLevel: number): HTMLCanvas
   if (!context) throw new Error('Planet texture canvas unavailable.');
 
   const image = context.createImageData(size, size);
-  const seed = hashSeed(id + ':planet');
-  const palette = planetPalette(dangerLevel);
+  const seed = hashSeed(id + ':planet:' + biome);
+  const palette = planetPalette(biome);
 
   for (let y = 0; y < size; y += 1) {
     const latitude = Math.abs((y / (size - 1)) * 2 - 1);
@@ -249,35 +278,10 @@ export function createPlanetTexture(id: string, dangerLevel: number): HTMLCanvas
       const poleSeed = ny < 0 ? seed + 811 : seed + 977;
       const polarCoast = fbm(poleSeed, nx * 2.9 + warpX * 1.7 + 3, ny * 4.2 + warpY * 1.3 - 9, 5);
       const polarFjords = fbm(poleSeed + 431, nx * 10.5, ny * 6.8, 3);
-      const polarEdge =
-        0.6 + (polarCoast - 0.5) * 0.38 + (polarFjords - 0.5) * 0.16 + (terrain - 0.5) * 0.12;
+      const polarEdge = 0.6 + (polarCoast - 0.5) * 0.38 + (polarFjords - 0.5) * 0.16 + (terrain - 0.5) * 0.12;
       const polarBand = Math.max(0, Math.min(1, (latitude - polarEdge) / 0.2));
       const polarMass = Math.max(0, Math.min(1, (polarCoast + polarFjords * 0.35 - 0.36) / 0.66));
-      const polar = polarBand * polarMass;
-
-      if (polar > 0.08 && elevation > 0.38) {
-        paintPixel(
-          image.data,
-          index,
-          palette.highland,
-          palette.ice,
-          Math.min(1, polar * 1.15),
-          0.96
-        );
-      } else if (elevation < 0.48) {
-        const depth = Math.max(0, Math.min(1, (0.48 - elevation) / 0.22));
-        paintPixel(image.data, index, palette.water, palette.lowland, 0.08, 0.72 + depth * 0.12);
-      } else {
-        const mountain = Math.max(0, Math.min(1, (elevation - 0.48) / 0.32));
-        paintPixel(
-          image.data,
-          index,
-          palette.lowland,
-          palette.highland,
-          mountain,
-          0.82 + detail * 0.22
-        );
-      }
+      paintPlanetTerrain(image.data, index, palette, biome, elevation, detail, polarBand * polarMass);
     }
   }
 
