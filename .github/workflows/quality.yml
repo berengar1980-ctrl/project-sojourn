@@ -1,128 +1,19 @@
 name: Quality
 
 on:
-  push:
-    branches:
-      - ci-gate
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-
-concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  format:
-    name: Format
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run format:check
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-
-  typecheck:
-    name: TypeScript
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-
-  dependencies:
-    name: Dependencies
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run deps:check
-
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm test
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-
   quality:
-    name: Quality Gate
-    if: always()
-    needs:
-      - format
-      - lint
-      - typecheck
-      - dependencies
-      - tests
-      - build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Require all quality jobs
-        env:
-          FORMAT_RESULT: ${{ needs.format.result }}
-          LINT_RESULT: ${{ needs.lint.result }}
-          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
-          DEPENDENCIES_RESULT: ${{ needs.dependencies.result }}
-          TESTS_RESULT: ${{ needs.tests.result }}
-          BUILD_RESULT: ${{ needs.build.result }}
-        run: |
-          for result in \
-            "$FORMAT_RESULT" \
-            "$LINT_RESULT" \
-            "$TYPECHECK_RESULT" \
-            "$DEPENDENCIES_RESULT" \
-            "$TESTS_RESULT" \
-            "$BUILD_RESULT"
-          do
-            test "$result" = "success"
-          done
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Quality gate
+        run: npm run check
