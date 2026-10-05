@@ -187,8 +187,18 @@ async function run() {
   process.exitCode = exitCode;
 }
 
+async function smoke() {
+  const success = await postStatus(
+    'success',
+    'smoke',
+    'CircleCI can write readable GitHub diagnostics'
+  );
+  if (!success) process.exitCode = 1;
+}
+
 if (require.main === module) {
-  run().catch((error) => {
+  const entry = process.argv[2] === '--smoke' ? smoke : run;
+  entry().catch((error) => {
     console.error(error);
     process.exitCode = 1;
   });
