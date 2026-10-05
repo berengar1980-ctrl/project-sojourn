@@ -38,13 +38,16 @@ export class ShipLightingRenderer {
   }
 
   draw(context: CanvasRenderingContext2D, options: LitShipDrawOptions): void {
-    const pixelWidth = Math.max(1, Math.ceil(options.width));
-    const pixelHeight = Math.max(1, Math.ceil(options.height));
+    const renderScale = this.detailRenderScale(options.width);
+    const pixelWidth = Math.max(1, Math.ceil(options.width * renderScale));
+    const pixelHeight = Math.max(1, Math.ceil(options.height * renderScale));
     this.resize(pixelWidth, pixelHeight);
 
     const offscreen = this.context;
     offscreen.clearRect(0, 0, pixelWidth, pixelHeight);
     offscreen.globalCompositeOperation = 'source-over';
+    offscreen.imageSmoothingEnabled = true;
+    offscreen.imageSmoothingQuality = 'high';
     offscreen.drawImage(options.image, 0, 0, pixelWidth, pixelHeight);
 
     const worldLight = normalize(options.light);
@@ -53,9 +56,23 @@ export class ShipLightingRenderer {
 
     context.save();
     context.globalAlpha = 0.97;
-    context.filter = 'saturate(.92) contrast(.94)';
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.filter = this.appearanceFilter(options.width);
     context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
     context.restore();
+  }
+
+  private detailRenderScale(width: number): number {
+    if (width < 42) return 0.68;
+    if (width < 72) return 0.84;
+    return 1;
+  }
+
+  private appearanceFilter(width: number): string {
+    if (width < 42) return 'saturate(.72) contrast(.8)';
+    if (width < 72) return 'saturate(.84) contrast(.88)';
+    return 'saturate(.92) contrast(.94)';
   }
 
   private resize(width: number, height: number): void {
