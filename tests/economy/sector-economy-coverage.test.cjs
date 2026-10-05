@@ -31,7 +31,10 @@ assert(narrowsSector.locations.length >= 30, 'expanded sector needs meaningful t
 for (const resource of economyResources) {
   assert(needed.has(resource.id), resource.id + ' must be required by at least one economy');
   if (resource.categoryId === 'raw') {
-    assert(!produced.has(resource.id), resource.id + ' is ore and must not be industrially produced');
+    assert(
+      !produced.has(resource.id),
+      resource.id + ' is ore and must not be industrially produced'
+    );
     assert(mined.has(resource.id), resource.id + ' must exist at a mining location');
   } else {
     assert(produced.has(resource.id), resource.id + ' must be produced by at least one economy');
@@ -39,7 +42,10 @@ for (const resource of economyResources) {
 }
 
 for (const resourceId of mined) {
-  assert(resourceIds.has(resourceId), resourceId + ' mining deposit must reference a real resource');
+  assert(
+    resourceIds.has(resourceId),
+    resourceId + ' mining deposit must reference a real resource'
+  );
   assert(rawIds.has(resourceId), resourceId + ' mining deposit must be a raw resource');
 }
 
