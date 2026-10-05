@@ -312,6 +312,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     needs: [
       'machine-parts',
       'industry-parts',
+      'explosives',
       'tools',
       'spare-parts',
       'reactor-fuel',
