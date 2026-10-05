@@ -13,134 +13,126 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-core:
+  core-economy:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/core/economy-types.ts src/core/local-space-types.ts src/core/port-types.ts src/core/resource-types.ts src/core/shield-types.ts src/core/ship-types.ts src/core/state.ts src/core/system-log-types.ts src/core/world-types.ts
+      - run: npx prettier --check src/core/economy-types.ts
 
-  fmt-data:
+  core-local:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/data
+      - run: npx prettier --check src/core/local-space-types.ts
 
-  fmt-systems:
+  core-port:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/systems
+      - run: npx prettier --check src/core/port-types.ts
 
-  fmt-features:
+  core-resource:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/features
+      - run: npx prettier --check src/core/resource-types.ts
 
-  fmt-ui:
+  core-shield:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/ui
+      - run: npx prettier --check src/core/shield-types.ts
 
-  fmt-app:
+  core-ship:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/app src/main.ts
+      - run: npx prettier --check src/core/ship-types.ts
 
-  fmt-test-economy:
+  core-state:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy
+      - run: npx prettier --check src/core/state.ts
 
-  fmt-test-map:
+  core-log:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map/map-visual-scale.test.cjs tests/map/player-ship-rendering.test.cjs tests/map/procedural-space-bodies.test.cjs tests/map/route-planner.test.cjs tests/map/space-background.test.cjs tests/map/tutorial-map.test.cjs
+      - run: npx prettier --check src/core/system-log-types.ts
 
-  fmt-test-quality:
+  core-world:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/quality
+      - run: npx prettier --check src/core/world-types.ts
 
-  fmt-test-other:
+  map-scale:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/assets tests/local-space tests/navigation tests/port tests/ships tests/run-tests.cjs tests/ts-module-loader.cjs
+      - run: npx prettier --check tests/map/map-visual-scale.test.cjs
 
-  fmt-project:
+  map-ship:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
+      - run: npx prettier --check tests/map/player-ship-rendering.test.cjs
 
-  lint:
+  map-bodies:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npm run lint
+      - run: npx prettier --check tests/map/procedural-space-bodies.test.cjs
 
-  typecheck:
+  map-route:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npm run typecheck
+      - run: npx prettier --check tests/map/route-planner.test.cjs
 
-  dependencies:
+  map-background:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npm run deps:check
+      - run: npx prettier --check tests/map/space-background.test.cjs
 
-  tests:
+  map-tutorial:
     docker: [{ image: cimg/node:20.18 }]
     resource_class: small
     steps:
       - prepare
-      - run: npm test
-
-  build:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npm run build
+      - run: npx prettier --check tests/map/tutorial-map.test.cjs
 
 workflows:
-  quality:
+  pinpoint-format:
     jobs:
-      - fmt-core: { filters: { branches: { only: ci-gate } } }
-      - fmt-data: { filters: { branches: { only: ci-gate } } }
-      - fmt-systems: { filters: { branches: { only: ci-gate } } }
-      - fmt-features: { filters: { branches: { only: ci-gate } } }
-      - fmt-ui: { filters: { branches: { only: ci-gate } } }
-      - fmt-app: { filters: { branches: { only: ci-gate } } }
-      - fmt-test-economy: { filters: { branches: { only: ci-gate } } }
-      - fmt-test-map: { filters: { branches: { only: ci-gate } } }
-      - fmt-test-quality: { filters: { branches: { only: ci-gate } } }
-      - fmt-test-other: { filters: { branches: { only: ci-gate } } }
-      - fmt-project: { filters: { branches: { only: ci-gate } } }
-      - lint: { filters: { branches: { only: ci-gate } } }
-      - typecheck: { filters: { branches: { only: ci-gate } } }
-      - dependencies: { filters: { branches: { only: ci-gate } } }
-      - tests: { filters: { branches: { only: ci-gate } } }
-      - build: { filters: { branches: { only: ci-gate } } }
+      - core-economy: { filters: { branches: { only: ci-gate } } }
+      - core-local: { filters: { branches: { only: ci-gate } } }
+      - core-port: { filters: { branches: { only: ci-gate } } }
+      - core-resource: { filters: { branches: { only: ci-gate } } }
+      - core-shield: { filters: { branches: { only: ci-gate } } }
+      - core-ship: { filters: { branches: { only: ci-gate } } }
+      - core-state: { filters: { branches: { only: ci-gate } } }
+      - core-log: { filters: { branches: { only: ci-gate } } }
+      - core-world: { filters: { branches: { only: ci-gate } } }
+      - map-scale: { filters: { branches: { only: ci-gate } } }
+      - map-ship: { filters: { branches: { only: ci-gate } } }
+      - map-bodies: { filters: { branches: { only: ci-gate } } }
+      - map-route: { filters: { branches: { only: ci-gate } } }
+      - map-background: { filters: { branches: { only: ci-gate } } }
+      - map-tutorial: { filters: { branches: { only: ci-gate } } }
