@@ -20,14 +20,14 @@ assert(data.includes("ringStyle: 'broad'"), 'sector needs a prominent ringed pla
 assert(data.includes("ringStyle: 'asteroid'"), 'sector needs a rocky planetary ring');
 assert(data.includes("kind: 'moon'"), 'sector must contain moons');
 assert(
-  data.includes("parentLocationId: 'karth-industrial'"),
-  'moons and orbital sites need parent bodies'
+  data.includes("parentLocationId: 'pale-reach'"),
+  'the remaining moon must orbit Pale Reach'
 );
 assert(data.includes('mine: true'), 'sector needs mining locations');
 assert(data.includes('salvage: true'), 'sector needs salvage locations');
 assert(data.includes("id: 'blackjaw-outpost'"), 'sector needs a pirate port');
 assert(data.includes("id: 'gallows-anchor'"), 'sector needs more than one pirate port');
-assert(data.includes("id: 'red-gap'"), 'sector needs a danger region');
+assert(data.includes('regions: []'), 'decorative danger regions must stay off the sector map');
 assert(renderer.includes('drawStar'), 'renderer must draw the system star');
 assert(renderer.includes('drawOrbits'), 'renderer must support orbital structure');
 assert(
