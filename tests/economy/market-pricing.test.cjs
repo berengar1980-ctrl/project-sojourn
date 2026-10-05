@@ -11,6 +11,10 @@ const resourcesSource = fs.readFileSync(
   'utf8'
 );
 const portsSource = fs.readFileSync(path.join(root, 'src/data/ports/sector-ports.ts'), 'utf8');
+const portProfilesSource = fs.readFileSync(
+  path.join(root, 'src/data/ports/sector-port-profiles.ts'),
+  'utf8'
+);
 const marketSource = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
@@ -44,8 +48,8 @@ assert(
   'ports must declare stable produced and required resource ids'
 );
 assert(
-  portsSource.includes("produces: ['narcotics', 'stolen-data']") &&
-    portsSource.includes("produces: ['alien-artifacts']"),
+  portProfilesSource.includes("produces: ['narcotics', 'stolen-data']") &&
+    portProfilesSource.includes("produces: ['alien-artifacts']"),
   'at least some demo ports must expose contraband markets'
 );
 assert(
