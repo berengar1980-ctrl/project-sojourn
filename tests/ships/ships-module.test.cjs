@@ -8,6 +8,10 @@ const root = path.resolve(__dirname, '../..');
 const index = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'utf8');
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
 const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 'utf8');
+const freighterData = fs.readFileSync(
+  path.join(root, 'src/data/ships/freighter-ships.ts'),
+  'utf8'
+);
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 function loadHardpoints(baseName) {
@@ -51,12 +55,18 @@ function assertHardpoints(hardpoints, width, height) {
 
 const standardAsset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
 const industrialAsset = path.join(root, 'resources/ships/mining/miner-80m-industrial-heavy.png');
+const freighterAsset = path.join(
+  root,
+  'resources/ships/freighter/freighter-120m-industrial-heavy.png'
+);
 const standardHardpoints = loadHardpoints('miner-80m-standard');
 const industrialHardpoints = loadHardpoints('miner-80m-industrial-heavy');
+const freighterHardpoints = loadHardpoints('freighter-120m-industrial-heavy');
 
 assert(index.includes('getShipDefinition'), 'ships public API missing');
 assert(index.includes('ShipPivot'), 'ships public API must expose pivot type');
-assert(registry.includes('miningShips'), 'ship registry must consume ship data');
+assert(registry.includes('miningShips'), 'ship registry must consume mining ship data');
+assert(registry.includes('freighterShips'), 'ship registry must consume freighter ship data');
 assert(
   controller.includes('getShipDefinition(shipId)') && controller.includes('activeShip = nextShip'),
   'test ship switcher must resolve a complete ship definition by stable id'
@@ -93,9 +103,30 @@ assert(
 );
 assert(fs.existsSync(standardAsset), 'standard mining ship sprite asset missing');
 assert(fs.existsSync(industrialAsset), 'industrial mining ship sprite asset missing');
+assert(fs.existsSync(freighterAsset), 'industrial freighter sprite asset missing');
+assert(
+  freighterData.includes("id: 'freighter-120m-industrial-heavy'") &&
+    freighterData.includes("role: 'freighter'") &&
+    freighterData.includes('nominalLengthMeters: 120') &&
+    freighterData.includes('cargoCapacityTons: 900'),
+  '120 m industrial freighter must be a registered selectable ship'
+);
 
 assertHardpoints(standardHardpoints, 346, 182);
 assertHardpoints(industrialHardpoints, 346, 207);
+assert.equal(freighterHardpoints.sourceWidth, 518, 'freighter hardpoint width must match asset');
+assert.equal(freighterHardpoints.sourceHeight, 167, 'freighter hardpoint height must match asset');
+assert.equal(freighterHardpoints.engines.length, 3, 'freighter must define three engine hardpoints');
+assert.equal(
+  freighterHardpoints.miningLasers.length,
+  0,
+  'freighter must not expose mining laser hardpoints'
+);
+assert.equal(
+  freighterHardpoints.maneuverThrusters.length,
+  4,
+  'freighter must define four maneuver thrusters'
+);
 
 assert.equal(
   standardHardpoints.engines[0].x,
