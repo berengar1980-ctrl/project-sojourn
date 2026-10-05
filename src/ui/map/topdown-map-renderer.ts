@@ -200,7 +200,9 @@ export class TopdownMapRenderer {
       if (!location.parentLocationId || location.orbitRadius == null) continue;
       const key = location.parentLocationId + ':' + location.orbitRadius;
       if (drawnChildOrbits.has(key)) continue;
-      const parent = this.model.locations.find((candidate) => candidate.id === location.parentLocationId);
+      const parent = this.model.locations.find(
+        (candidate) => candidate.id === location.parentLocationId
+      );
       if (!parent) continue;
       drawnChildOrbits.add(key);
       const center = this.camera.worldToScreen(parent.position, width, height);
