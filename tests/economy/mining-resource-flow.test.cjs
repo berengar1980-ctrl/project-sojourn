@@ -139,13 +139,14 @@ const controllerSource = require('fs').readFileSync(
   path.join(root, 'src/app/game-controller.ts'),
   'utf8'
 );
+const usesLocationEconomy = controllerSource.includes(
+  'mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id)'
+);
+const usesLocationDeposits = controllerSource.includes(
+  'generateMiningSpace(location.id, seed, location.minedResourceIds)'
+);
 assert(
-  controllerSource.includes(
-    'mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id)'
-  ) &&
-    controllerSource.includes(
-      'generateMiningSpace(location.id, seed, location.minedResourceIds)'
-    ),
+  usesLocationEconomy && usesLocationDeposits,
   'every mining location must route local deposits through the shared economy bridge'
 );
 
