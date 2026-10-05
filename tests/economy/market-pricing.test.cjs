@@ -39,11 +39,13 @@ const resourceCount = (resourcesSource.match(/resource\('/g) ?? []).length;
 assert(resourceCount >= 50, 'economy catalog should expose a broad resource set');
 
 assert(
-  portsSource.includes('producedCommodityIds: [...profile.produces]') && portsSource.includes('neededCommodityIds: [...profile.needs]'),
+  portsSource.includes('producedCommodityIds: [...profile.produces]') &&
+    portsSource.includes('neededCommodityIds: [...profile.needs]'),
   'ports must declare stable produced and required resource ids'
 );
 assert(
-  portsSource.includes("produces: ['obscura', 'proscribed-data']") && portsSource.includes("produces: ['xeno-artifacts']"),
+  portsSource.includes("produces: ['obscura', 'proscribed-data']") &&
+    portsSource.includes("produces: ['xeno-artifacts']"),
   'at least some demo ports must expose contraband markets'
 );
 assert(
