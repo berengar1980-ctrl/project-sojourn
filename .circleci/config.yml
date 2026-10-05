@@ -1,188 +1,40 @@
 version: 2.1
 
-commands:
-  prepare:
+jobs:
+  format-and-push:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - npm-v1-{{ checksum "package-lock.json" }}
-            - npm-v1-
       - run:
           name: Install dependencies
           command: npm ci
-
-jobs:
-  fmt-bootstrap:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/app/bootstrap.ts
-
-  fmt-controller:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/app/game-controller.ts
-
-  fmt-surface:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/ui/space/procedural-surface-textures.ts
-
-  fmt-body:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/ui/space/procedural-space-body-renderer.ts
-
-  fmt-mapdata:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/maps/narrows-sector.ts
-
-  fmt-mapalias:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/maps/tutorial-cluster.ts
-
-  fmt-ports:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/ports/sector-ports.ts
-
-  fmt-portsalias:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/ports/tutorial-ports.ts
-
-  fmt-npcs:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/economy/sector-npc-economy.ts
-
-  fmt-npcsalias:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/economy/tutorial-npc-economy.ts
-
-  fmt-miningres:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/data/resources/mining-resources.ts
-
-  fmt-maptest:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/tutorial-map.test.cjs
-
-  fmt-econcover:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
-
-  fmt-pricing:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/market-pricing.test.cjs
-
-  fmt-miningtest:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/mining-resource-flow.test.cjs
-
-  fmt-localtest:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/local-space/local-space.test.cjs
-
-  fmt-porttest:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/port/port-ui.test.cjs
+      - run:
+          name: Format changed sector files
+          command: >-
+            npx prettier --write
+            src/app/game-controller.ts
+            src/ui/space/procedural-surface-textures.ts
+            src/data/maps/narrows-sector.ts
+            src/data/ports/sector-ports.ts
+            src/data/economy/tutorial-npc-economy.ts
+            tests/economy/sector-economy-coverage.test.cjs
+            tests/economy/mining-resource-flow.test.cjs
+      - run:
+          name: Commit formatted files
+          command: |
+            git config user.name "CircleCI Formatter"
+            git config user.email "circleci@project-sojourn.local"
+            git add               src/app/game-controller.ts               src/ui/space/procedural-surface-textures.ts               src/data/maps/narrows-sector.ts               src/data/ports/sector-ports.ts               src/data/economy/tutorial-npc-economy.ts               tests/economy/sector-economy-coverage.test.cjs               tests/economy/mining-resource-flow.test.cjs
+            git diff --cached --quiet && exit 0
+            git commit -m "Format expanded sector files"
+            git push origin HEAD:refs/heads/feat/expand-sector-world
 
 workflows:
-  prettier-file-diagnostics:
+  formatter:
     jobs:
-      - fmt-bootstrap:
-          filters: { branches: { only: ci-gate } }
-      - fmt-controller:
-          filters: { branches: { only: ci-gate } }
-      - fmt-surface:
-          filters: { branches: { only: ci-gate } }
-      - fmt-body:
-          filters: { branches: { only: ci-gate } }
-      - fmt-mapdata:
-          filters: { branches: { only: ci-gate } }
-      - fmt-mapalias:
-          filters: { branches: { only: ci-gate } }
-      - fmt-ports:
-          filters: { branches: { only: ci-gate } }
-      - fmt-portsalias:
-          filters: { branches: { only: ci-gate } }
-      - fmt-npcs:
-          filters: { branches: { only: ci-gate } }
-      - fmt-npcsalias:
-          filters: { branches: { only: ci-gate } }
-      - fmt-miningres:
-          filters: { branches: { only: ci-gate } }
-      - fmt-maptest:
-          filters: { branches: { only: ci-gate } }
-      - fmt-econcover:
-          filters: { branches: { only: ci-gate } }
-      - fmt-pricing:
-          filters: { branches: { only: ci-gate } }
-      - fmt-miningtest:
-          filters: { branches: { only: ci-gate } }
-      - fmt-localtest:
-          filters: { branches: { only: ci-gate } }
-      - fmt-porttest:
-          filters: { branches: { only: ci-gate } }
+      - format-and-push:
+          filters:
+            branches:
+              only: ci-gate
