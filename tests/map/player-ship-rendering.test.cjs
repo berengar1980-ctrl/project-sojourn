@@ -45,8 +45,13 @@ assert(
   'world light must be transformed into ship-local space'
 );
 assert(
-  shipLighting.includes("context.filter = 'saturate(.92) contrast(.94)';"),
+  shipLighting.includes("return 'saturate(.92) contrast(.94)';"),
   'shared ship rendering must reduce baked-in sprite contrast'
+);
+assert(
+  shipLighting.includes('if (width < 42) return 0.68;') &&
+    shipLighting.includes('if (width < 72) return 0.84;'),
+  'shared ship rendering must reduce internal resolution only at small screen sizes'
 );
 assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
 assert(
