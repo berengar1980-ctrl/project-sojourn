@@ -20,7 +20,9 @@ const { sectorPorts } = loadStandaloneTypeScriptModule(
 
 const resourceIds = new Set(economyResources.map((resource) => resource.id));
 const rawIds = new Set(
-  economyResources.filter((resource) => resource.categoryId === 'raw').map((resource) => resource.id)
+  economyResources
+    .filter((resource) => resource.categoryId === 'raw')
+    .map((resource) => resource.id)
 );
 const produced = new Set(sectorPorts.flatMap((port) => port.producedCommodityIds));
 const needed = new Set(sectorPorts.flatMap((port) => port.neededCommodityIds));
@@ -35,7 +37,10 @@ assert(narrowsSector.locations.length >= 30, 'expanded sector needs meaningful t
 for (const resource of economyResources) {
   assert(needed.has(resource.id), resource.id + ' must be required by at least one economy');
   if (resource.categoryId === 'raw') {
-    assert(!produced.has(resource.id), resource.id + ' is ore and must not be industrially produced');
+    assert(
+      !produced.has(resource.id),
+      resource.id + ' is ore and must not be industrially produced'
+    );
     assert(mined.has(resource.id), resource.id + ' must exist at a mining location');
   } else {
     assert(produced.has(resource.id), resource.id + ' must be produced by at least one economy');
@@ -43,7 +48,10 @@ for (const resource of economyResources) {
 }
 
 for (const resourceId of mined) {
-  assert(resourceIds.has(resourceId), resourceId + ' mining deposit must reference a real resource');
+  assert(
+    resourceIds.has(resourceId),
+    resourceId + ' mining deposit must reference a real resource'
+  );
   assert(rawIds.has(resourceId), resourceId + ' mining deposit must be a raw resource');
 }
 
@@ -57,7 +65,10 @@ for (const port of sectorPorts) {
   }
   const location = narrowsSector.locations.find((entry) => entry.id === port.locationId);
   assert(location, port.locationId + ' port needs a world location');
-  assert(location.activities.dock && location.activities.trade, port.locationId + ' must be dockable');
+  assert(
+    location.activities.dock && location.activities.trade,
+    port.locationId + ' must be dockable'
+  );
 }
 
 const planets = narrowsSector.locations.filter((location) => location.kind === 'planet');
@@ -93,7 +104,10 @@ assert(
 );
 
 const varras = sectorPorts.find((port) => port.locationId === 'varras-prime');
-assert(varras?.neededCommodityIds.includes('water'), 'desert world must strongly need imported water');
+assert(
+  varras?.neededCommodityIds.includes('water'),
+  'desert world must strongly need imported water'
+);
 const waterSources = sectorPorts.filter((port) => port.producedCommodityIds.includes('water'));
 assert(
   waterSources.some((port) => ['niveus', 'skadi'].includes(port.locationId)),
