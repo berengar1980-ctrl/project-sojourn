@@ -25,9 +25,9 @@ export class MapCamera {
       (viewHeight - padding) / this.worldHeight
     );
 
-    this.fitZoom = Math.max(0.25, fitZoom);
+    this.fitZoom = Math.max(0.12, fitZoom);
     this.zoom = this.fitZoom;
-    this.minimumZoom = Math.max(0.18, this.zoom * 0.58);
+    this.minimumZoom = Math.max(0.08, this.zoom * 0.58);
     this.maximumZoom = Math.max(4.5, this.zoom * 9);
     this.x = this.worldWidth / 2;
     this.y = this.worldHeight / 2;
