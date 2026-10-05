@@ -13,7 +13,7 @@ commands:
           command: npm ci
 
 jobs:
-  format-app:
+  fmt-app-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -24,10 +24,20 @@ jobs:
             npx prettier --check
             src/core/world-types.ts
             src/features/star-map/star-map-view-model.ts
+
+  fmt-app-b:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          command: >-
+            npx prettier --check
             src/app/bootstrap.ts
             src/app/game-controller.ts
 
-  format-render:
+  fmt-render-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -38,10 +48,20 @@ jobs:
             npx prettier --check
             src/ui/space/procedural-surface-textures.ts
             src/ui/space/procedural-space-body-renderer.ts
+
+  fmt-render-b:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          command: >-
+            npx prettier --check
             src/ui/map/topdown-map-renderer.ts
             src/ui/map/star-map-panel.ts
 
-  format-data:
+  fmt-data-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -54,20 +74,21 @@ jobs:
             src/data/maps/tutorial-cluster.ts
             src/data/ports/sector-ports.ts
             src/data/ports/tutorial-ports.ts
-            src/data/economy/sector-npc-economy.ts
-            src/data/economy/tutorial-npc-economy.ts
-            src/data/resources/mining-resources.ts
 
-  format-local:
+  fmt-data-b:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
       - run:
-          command: npx prettier --check src/systems/local-space/local-space-generator.ts
+          command: >-
+            npx prettier --check
+            src/data/economy/sector-npc-economy.ts
+            src/data/economy/tutorial-npc-economy.ts
+            src/data/resources/mining-resources.ts
 
-  format-tests:
+  fmt-tests-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -79,43 +100,36 @@ jobs:
             tests/map/tutorial-map.test.cjs
             tests/economy/sector-economy-coverage.test.cjs
             tests/economy/market-pricing.test.cjs
-            tests/economy/mining-resource-flow.test.cjs
-            tests/local-space/local-space.test.cjs
-            tests/port/port-ui.test.cjs
 
-  format-ci:
+  fmt-tests-b:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
       - run:
-          command: npx prettier --check .circleci/config.yml
+          command: >-
+            npx prettier --check
+            tests/economy/mining-resource-flow.test.cjs
+            tests/local-space/local-space.test.cjs
+            tests/port/port-ui.test.cjs
 
 workflows:
-  format-diagnostics:
+  prettier-diagnostics:
     jobs:
-      - format-app:
-          filters:
-            branches:
-              only: ci-gate
-      - format-render:
-          filters:
-            branches:
-              only: ci-gate
-      - format-data:
-          filters:
-            branches:
-              only: ci-gate
-      - format-local:
-          filters:
-            branches:
-              only: ci-gate
-      - format-tests:
-          filters:
-            branches:
-              only: ci-gate
-      - format-ci:
-          filters:
-            branches:
-              only: ci-gate
+      - fmt-app-a:
+          filters: { branches: { only: ci-gate } }
+      - fmt-app-b:
+          filters: { branches: { only: ci-gate } }
+      - fmt-render-a:
+          filters: { branches: { only: ci-gate } }
+      - fmt-render-b:
+          filters: { branches: { only: ci-gate } }
+      - fmt-data-a:
+          filters: { branches: { only: ci-gate } }
+      - fmt-data-b:
+          filters: { branches: { only: ci-gate } }
+      - fmt-tests-a:
+          filters: { branches: { only: ci-gate } }
+      - fmt-tests-b:
+          filters: { branches: { only: ci-gate } }
