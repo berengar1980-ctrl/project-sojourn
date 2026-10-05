@@ -1,13 +1,7 @@
 import type { EconomyResourceId } from './economy-types';
 
 export type LocationKind = 'planet' | 'moon' | 'station' | 'asteroid-field' | 'wreck';
-export type PlanetBiome =
-  | 'scorched'
-  | 'desert'
-  | 'temperate'
-  | 'ice'
-  | 'barren'
-  | 'gas-giant';
+export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';
 export type PlanetRingStyle = 'thin' | 'broad' | 'asteroid';
 export type StationType =
   | 'trade'
