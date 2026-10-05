@@ -25,7 +25,7 @@ export function createSectorNpcEconomyStates(): NpcEconomyState[] {
     {
       id: 'npc-miner-rusk',
       role: 'miner',
-      locationId: 'karth-forge',
+      locationId: 'karth-industrial',
       credits: 9500,
       cargoCapacity: 56,
       normalCargoCapacity: 20,
