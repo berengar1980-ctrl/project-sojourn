@@ -8,10 +8,7 @@ const root = path.resolve(__dirname, '../..');
 const index = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'utf8');
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
 const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 'utf8');
-const freighterData = fs.readFileSync(
-  path.join(root, 'src/data/ships/freighter-ships.ts'),
-  'utf8'
-);
+const freighterData = fs.readFileSync(path.join(root, 'src/data/ships/freighter-ships.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 function loadHardpoints(baseName) {
