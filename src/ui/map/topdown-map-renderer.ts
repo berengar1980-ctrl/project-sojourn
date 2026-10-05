@@ -5,11 +5,14 @@ import type {
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
+import { NavMapRenderer } from './nav-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { PlanetRingRenderer } from './planet-ring-renderer';
 import { StationSymbolRenderer } from './station-symbol-renderer';
+
+export type StarMapDisplayMode = 'physical' | 'nav';
 
 interface HitArea {
   readonly id: string;
@@ -22,11 +25,13 @@ export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
   private readonly shipRenderer: PlayerShipRenderer;
+  private readonly navRenderer: NavMapRenderer;
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
   private readonly stationSymbols: StationSymbolRenderer;
   private model: StarMapViewModel;
+  private displayMode: StarMapDisplayMode = 'physical';
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
@@ -41,6 +46,7 @@ export class TopdownMapRenderer {
     this.model = model;
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
+    this.navRenderer = new NavMapRenderer(context);
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
@@ -76,6 +82,12 @@ export class TopdownMapRenderer {
     this.shipRenderer.toggleHardpointDebug();
   }
 
+  setDisplayMode(mode: StarMapDisplayMode): void {
+    if (this.displayMode === mode) return;
+    this.displayMode = mode;
+    this.draw();
+  }
+
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
@@ -104,13 +116,16 @@ export class TopdownMapRenderer {
     this.context.clearRect(0, 0, width, height);
 
     const timeSeconds = performance.now() / 1000;
-    this.backgroundRenderer.draw({
-      width,
-      height,
-      cameraCenter: this.camera.getCenter(),
-      cameraZoom: this.camera.getZoom(),
-      timeSeconds,
-    });
+    if (this.displayMode === 'nav') this.navRenderer.drawBackground(width, height, timeSeconds);
+    else {
+      this.backgroundRenderer.draw({
+        width,
+        height,
+        cameraCenter: this.camera.getCenter(),
+        cameraZoom: this.camera.getZoom(),
+        timeSeconds,
+      });
+    }
     this.drawRegions(width, height);
     this.drawOrbits(width, height);
     this.drawStar(width, height);
@@ -123,6 +138,15 @@ export class TopdownMapRenderer {
 
   private drawPlayerShip(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    if (this.displayMode === 'nav') {
+      this.navRenderer.drawShip(
+        point,
+        this.model.playerShip.headingRadians,
+        this.camera.getRelativeZoom()
+      );
+      return;
+    }
+
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     this.shipRenderer.draw(
       this.context,
@@ -136,6 +160,11 @@ export class TopdownMapRenderer {
 
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
+    if (this.displayMode === 'nav') {
+      this.navRenderer.drawStar(point, this.camera.getRelativeZoom());
+      return;
+    }
+
     const timeSeconds = performance.now() / 1000;
     const breathe = 1 + Math.sin(timeSeconds * 1.25) * 0.045;
     const shimmer = 0.92 + Math.sin(timeSeconds * 2.1 + 0.7) * 0.08;
@@ -280,7 +309,8 @@ export class TopdownMapRenderer {
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
 
-    if (location.kind === 'asteroid-field') {
+    if (this.displayMode === 'nav') this.navRenderer.drawLocation(location, point, radius);
+    else if (location.kind === 'asteroid-field') {
       this.spaceBodies.drawAsteroidField(location.id, point.x, point.y, radius, light);
     } else if (location.kind === 'station') {
       this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
@@ -296,8 +326,13 @@ export class TopdownMapRenderer {
     }
 
     if (this.shouldDrawLabel(location)) {
-      this.context.fillStyle = '#dfe8f3';
-      this.context.font = location.kind === 'planet' ? '12px system-ui' : '11px system-ui';
+      this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
+      this.context.font =
+        this.displayMode === 'nav'
+          ? '10px ui-monospace, monospace'
+          : location.kind === 'planet'
+            ? '12px system-ui'
+            : '11px system-ui';
       this.context.textAlign = 'center';
       this.context.fillText(location.name, point.x, point.y + radius + 20);
     }

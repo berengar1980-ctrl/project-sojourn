@@ -258,6 +258,27 @@ function validateTypeSpecific(spec, metrics) {
   const failures = [];
   const hardpointsFile = path.join(hardpointsRoot, `${spec.base}.hardpoints.json`);
 
+  if (spec.type === 'freighter') {
+    if (!fs.existsSync(hardpointsFile)) {
+      const relHardpoints = path.relative(root, hardpointsFile);
+      failures.push(`${spec.relative}: freighter requires ${relHardpoints}`);
+      return failures;
+    }
+
+    const hardpoints = JSON.parse(fs.readFileSync(hardpointsFile, 'utf8'));
+    if (!Array.isArray(hardpoints.engines) || hardpoints.engines.length === 0) {
+      failures.push(`${spec.relative}: freighter requires at least one engine hardpoint`);
+    }
+    if (hardpoints.sourceWidth !== metrics.width || hardpoints.sourceHeight !== metrics.height) {
+      failures.push(
+        `${spec.relative}: hardpoint source canvas ${hardpoints.sourceWidth}x${hardpoints.sourceHeight}px does not match sprite ${metrics.width}x${metrics.height}px`
+      );
+    }
+    if (Array.isArray(hardpoints.miningLasers) && hardpoints.miningLasers.length > 0) {
+      failures.push(`${spec.relative}: freighter must not declare mining-laser hardpoints`);
+    }
+  }
+
   if (spec.type === 'miner') {
     if (!fs.existsSync(hardpointsFile)) {
       const relHardpoints = path.relative(root, hardpointsFile);

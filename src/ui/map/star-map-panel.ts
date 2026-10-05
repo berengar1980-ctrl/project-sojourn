@@ -1,13 +1,15 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
 import { bindStarMapInput } from './star-map-input';
-import { TopdownMapRenderer } from './topdown-map-renderer';
+import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
   destroy(): void;
 }
+
+let preferredDisplayMode: StarMapDisplayMode = 'physical';
 
 interface StarMapPanelOptions {
   readonly root: HTMLElement;
@@ -44,6 +46,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       <strong>${options.model.title}</strong>
     </div>
     <div class="travel-status" hidden></div>
+    <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
@@ -63,12 +66,23 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const travelButton = shell.querySelector<HTMLButtonElement>('.travel-button');
   const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
-  if (!canvas || !card || !travelButton || !dockButton || !travelStatus) {
+  const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
+  if (!canvas || !card || !travelButton || !dockButton || !travelStatus || !modeToggle) {
     throw new Error('Star map UI is incomplete.');
   }
 
   let model = options.model;
   const renderer = new TopdownMapRenderer(canvas, model);
+  const applyDisplayMode = (mode: StarMapDisplayMode): void => {
+    preferredDisplayMode = mode;
+    shell.classList.toggle('is-nav-mode', mode === 'nav');
+    modeToggle.textContent = mode === 'nav' ? 'ANSICHT // NAV' : 'ANSICHT // PHYSISCH';
+    renderer.setDisplayMode(mode);
+  };
+  modeToggle.addEventListener('click', () =>
+    applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
+  );
+  applyDisplayMode(preferredDisplayMode);
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,

@@ -7,6 +7,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '../..');
 const data = fs.readFileSync(path.join(root, 'src/data/maps/narrows-sector.ts'), 'utf8');
 const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const navRenderer = fs.readFileSync(path.join(root, 'src/ui/map/nav-map-renderer.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 
 assert(data.includes("id: 'solis'"), 'sector needs a central star');
@@ -36,6 +37,22 @@ assert(renderer.includes('shouldDrawLabel'), 'renderer must reduce minor labels 
 assert(renderer.includes('stationSymbols.draw'), 'stations must use typed visual symbols');
 assert(!renderer.includes('locationId ='), 'renderer must not mutate player navigation state');
 assert(panel.includes("'WERFT'"), 'star map must identify shipyard locations');
+assert(
+  panel.includes('map-mode-toggle') &&
+    panel.includes("preferredDisplayMode === 'physical' ? 'nav' : 'physical'"),
+  'star map must expose a live physical/NAV comparison toggle'
+);
+assert(
+  renderer.includes("export type StarMapDisplayMode = 'physical' | 'nav'") &&
+    renderer.includes('NavMapRenderer'),
+  'star map must delegate NAV mode to a separate renderer'
+);
+assert(
+  navRenderer.includes('drawBackground') &&
+    navRenderer.includes('drawLocation') &&
+    navRenderer.includes('drawShip'),
+  'NAV mode must use a distinct sensor rendering path'
+);
 assert(!panel.includes('<aside'), 'star map must not contain a permanent sidebar');
 
 console.log('PASS expanded sector star-map contract');
