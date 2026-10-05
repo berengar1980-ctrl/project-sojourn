@@ -13,7 +13,7 @@ commands:
           command: npm ci
 
 jobs:
-  hunk-000-099:
+  hunk-200-224:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -22,9 +22,9 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          grep '^@@' /tmp/renderer.diff | grep -Eq '\+[1-9][0-9]?(,| )'
+          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 200 && a[1] <= 224) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
 
-  hunk-100-199:
+  hunk-225-249:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -33,9 +33,9 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          grep '^@@' /tmp/renderer.diff | grep -Eq '\+1[0-9][0-9](,| )'
+          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 225 && a[1] <= 249) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
 
-  hunk-200-299:
+  hunk-250-274:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -44,9 +44,9 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          grep '^@@' /tmp/renderer.diff | grep -Eq '\+2[0-9][0-9](,| )'
+          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 250 && a[1] <= 274) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
 
-  hunk-300-399:
+  hunk-275-299:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -55,56 +55,17 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          grep '^@@' /tmp/renderer.diff | grep -Eq '\+3[0-9][0-9](,| )'
-
-  hunk-count-1:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          test "$(grep -c '^@@' /tmp/renderer.diff)" -eq 1
-
-  hunk-count-2:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          test "$(grep -c '^@@' /tmp/renderer.diff)" -eq 2
-
-  hunk-count-3:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          test "$(grep -c '^@@' /tmp/renderer.diff)" -eq 3
+          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 275 && a[1] <= 299) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
 
 
 workflows:
-  renderer-diff-locator:
+  renderer-diff-narrow:
     jobs:
-      - hunk-000-099:
+      - hunk-200-224:
           filters: { branches: { only: ci-gate } }
-      - hunk-100-199:
+      - hunk-225-249:
           filters: { branches: { only: ci-gate } }
-      - hunk-200-299:
+      - hunk-250-274:
           filters: { branches: { only: ci-gate } }
-      - hunk-300-399:
-          filters: { branches: { only: ci-gate } }
-      - hunk-count-1:
-          filters: { branches: { only: ci-gate } }
-      - hunk-count-2:
-          filters: { branches: { only: ci-gate } }
-      - hunk-count-3:
+      - hunk-275-299:
           filters: { branches: { only: ci-gate } }
