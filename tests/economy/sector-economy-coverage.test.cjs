@@ -133,6 +133,19 @@ assert.equal(
   'pale-reach',
   'the single moon should remain attached to Pale Reach'
 );
+const paleReach = planets.find((planet) => planet.id === 'pale-reach');
+assert(paleReach && moons[0], 'Pale Reach and Glass must remain in the sector');
+assert(
+  (moons[0].orbitRadius ?? 0) >= 280,
+  'Glass must keep a clearly readable orbit around Pale Reach'
+);
+assert(
+  Math.hypot(
+    moons[0].position.x - paleReach.position.x,
+    moons[0].position.y - paleReach.position.y
+  ) >= 280,
+  'Glass must not visually stick to Pale Reach'
+);
 assert(
   planets.some((planet) => planet.ringStyle === 'broad') &&
     planets.some((planet) => planet.ringStyle === 'asteroid'),
