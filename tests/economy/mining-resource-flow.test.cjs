@@ -141,9 +141,12 @@ const controllerSource = require('fs').readFileSync(
 );
 assert(
   controllerSource.includes(
-    "mining.collect(resourceId, amount, ship.cargoCapacityTons, 'greyrock-belt')"
-  ),
-  'local-space collection must route through the shared mining economy bridge'
+    'mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id)'
+  ) &&
+    controllerSource.includes(
+      'generateMiningSpace(location.id, seed, location.minedResourceIds)'
+    ),
+  'every mining location must route local deposits through the shared economy bridge'
 );
 
 console.log('PASS reserve-backed mining, cargo capacity and physical conservation');
