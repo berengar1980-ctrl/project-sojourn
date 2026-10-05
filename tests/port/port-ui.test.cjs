@@ -26,8 +26,15 @@ assert(
 );
 assert(portTypes.includes('PortCrewCandidate'), 'port crew candidates must have domain data');
 assert(karth?.shipyard, 'Karth Forge must expose shipyard services');
-assert.equal(haven?.shipyard, false, 'ports without a shipyard must keep shipyard services unavailable');
-assert(portData.includes('makePort'), 'sector port data must use the shared market profile builder');
+assert.equal(
+  haven?.shipyard,
+  false,
+  'ports without a shipyard must keep shipyard services unavailable'
+);
+assert(
+  portData.includes('makePort'),
+  'sector port data must use the shared market profile builder'
+);
 assert(
   marketService.includes('scarcity') &&
     marketService.includes('demandPressure') &&
