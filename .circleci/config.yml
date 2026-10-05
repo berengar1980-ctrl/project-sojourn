@@ -25,4 +25,7 @@ jobs:
 workflows:
   quality:
     jobs:
-      - quality
+      - quality:
+          filters:
+            branches:
+              only: ci-gate
