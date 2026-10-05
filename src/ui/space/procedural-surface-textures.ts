@@ -191,12 +191,33 @@ interface PlanetPalette {
   readonly ice: readonly number[];
 }
 
-function planetPalette(biome: PlanetBiome): PlanetPalette {
+function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
   if (biome === 'scorched') return { water: [48, 34, 31], lowland: [102, 61, 43], highland: [164, 104, 61], ice: [190, 151, 112] };
   if (biome === 'desert') return { water: [91, 72, 55], lowland: [169, 130, 78], highland: [116, 91, 65], ice: [213, 194, 164] };
   if (biome === 'ice') return { water: [31, 56, 72], lowland: [123, 153, 166], highland: [177, 201, 209], ice: [224, 238, 241] };
   if (biome === 'barren') return { water: [58, 57, 54], lowland: [101, 99, 94], highland: [151, 147, 137], ice: [189, 187, 181] };
-  return { water: [35, 66, 92], lowland: [59, 92, 79], highland: [116, 112, 82], ice: [211, 220, 220] };
+  if (dangerLevel >= 2) {
+    return {
+      water: [40, 39, 42],
+      lowland: [101, 68, 54],
+      highland: [145, 103, 74],
+      ice: [190, 177, 157],
+    };
+  }
+  if (dangerLevel === 1) {
+    return {
+      water: [39, 57, 65],
+      lowland: [78, 91, 67],
+      highland: [126, 112, 82],
+      ice: [197, 204, 196],
+    };
+  }
+  return {
+    water: [35, 66, 92],
+    lowland: [59, 92, 79],
+    highland: [116, 112, 82],
+    ice: [211, 220, 220],
+  };
 }
 
 function paintPlanetTerrain(
@@ -255,7 +276,7 @@ export function createPlanetTexture(
 
   const image = context.createImageData(size, size);
   const seed = hashSeed(id + ':planet:' + biome);
-  const palette = planetPalette(biome);
+  const palette = planetPalette(biome, dangerLevel);
 
   for (let y = 0; y < size; y += 1) {
     const latitude = Math.abs((y / (size - 1)) * 2 - 1);
