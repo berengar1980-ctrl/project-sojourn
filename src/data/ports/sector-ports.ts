@@ -170,14 +170,17 @@ const profiles: readonly PortProfile[] = [
         ['Diszipliniert', 'Aggressiv'],
         5,
         1700,
-        [
-        'Karabiner',
-        'Panzerweste',
-        ]
+        ['Karabiner', 'Panzerweste']
       ),
-      crew('crew-lysa-orn', 'Lysa Orn', 'Reaktortechnik', ['Hartnäckig', 'Effizient'], 2, 1650, [
-        'Werkzeug',
-      ]),
+      crew(
+        'crew-lysa-orn',
+        'Lysa Orn',
+        'Reaktortechnik',
+        ['Hartnäckig', 'Effizient'],
+        2,
+        1650,
+        ['Werkzeug']
+      ),
     ],
   },
   {
