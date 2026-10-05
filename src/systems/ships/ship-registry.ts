@@ -1,8 +1,15 @@
 import type { ShipDefinition, ShipRole } from '../../core/ship-types';
-import { freighterShips } from '../../data/ships/freighter-ships';
-import { miningShips } from '../../data/ships/mining-ships';
+import { freighterVariantShips } from '../../data/ships/freighter-variant-ships';
+import { minerVariantShips } from '../../data/ships/miner-variant-ships';
+import { patrolVariantShips } from '../../data/ships/patrol-variant-ships';
+import { salvageVariantShips } from '../../data/ships/salvage-variant-ships';
 
-const definitions: readonly ShipDefinition[] = [...miningShips, ...freighterShips];
+const definitions: readonly ShipDefinition[] = [
+  ...patrolVariantShips,
+  ...minerVariantShips,
+  ...salvageVariantShips,
+  ...freighterVariantShips,
+];
 
 export function getShipDefinition(id: string): ShipDefinition | null {
   return definitions.find((definition) => definition.id === id) ?? null;

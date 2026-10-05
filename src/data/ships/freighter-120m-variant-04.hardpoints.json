@@ -1,0 +1,71 @@
+{
+  "sourceWidth": 518,
+  "sourceHeight": 330,
+  "pivot": {
+    "x": 259,
+    "y": 165
+  },
+  "engines": [
+    {
+      "id": "engine-upper",
+      "x": 22,
+      "y": 92,
+      "width": 22
+    },
+    {
+      "id": "engine-center",
+      "x": 22,
+      "y": 165,
+      "width": 22
+    },
+    {
+      "id": "engine-lower",
+      "x": 22,
+      "y": 238,
+      "width": 22
+    }
+  ],
+  "miningLasers": [],
+  "maneuverThrusters": [
+    {
+      "id": "rcs-bow-upper",
+      "x": 404,
+      "y": 73,
+      "width": 7,
+      "forceX": 0,
+      "forceY": 1
+    },
+    {
+      "id": "rcs-bow-lower",
+      "x": 404,
+      "y": 257,
+      "width": 7,
+      "forceX": 0,
+      "forceY": -1
+    },
+    {
+      "id": "rcs-stern-upper",
+      "x": 124,
+      "y": 59,
+      "width": 7,
+      "forceX": 0,
+      "forceY": 1
+    },
+    {
+      "id": "rcs-stern-lower",
+      "x": 124,
+      "y": 271,
+      "width": 7,
+      "forceX": 0,
+      "forceY": -1
+    }
+  ],
+  "shield": {
+    "centerX": 259,
+    "centerY": 165,
+    "radiusX": 275,
+    "radiusY": 188,
+    "maxHp": 100,
+    "modifier": 1
+  }
+}

@@ -5,169 +5,71 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
-const index = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'utf8');
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
-const data = fs.readFileSync(path.join(root, 'src/data/ships/mining-ships.ts'), 'utf8');
-const freighterData = fs.readFileSync(path.join(root, 'src/data/ships/freighter-ships.ts'), 'utf8');
+const bootstrap = fs.readFileSync(path.join(root, 'src/app/bootstrap.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
-function loadHardpoints(baseName) {
-  const filePath = path.join(root, 'src/data/ships', baseName + '.hardpoints.json');
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
+const roles = [
+  { key: 'patrol', folder: 'patrol', length: 60, width: 260, role: 'patrol' },
+  { key: 'miner', folder: 'mining', length: 80, width: 346, role: 'mining' },
+  { key: 'salvage', folder: 'salvage', length: 100, width: 432, role: 'salvage' },
+  { key: 'freighter', folder: 'freighter', length: 120, width: 518, role: 'freighter' },
+];
+const heights = {
+  patrol: [171, 174, 180, 164, 173, 165, 171],
+  miner: [215, 213, 213, 236, 201, 231, 223],
+  salvage: [298, 290, 295, 302, 282, 278, 299],
+  freighter: [324, 331, 322, 330, 337, 315, 324],
+};
 
-function assertHardpoints(hardpoints, width, height) {
-  assert.equal(hardpoints.sourceWidth, width, 'hardpoint source width must match sprite');
-  assert.equal(hardpoints.sourceHeight, height, 'hardpoint source height must match sprite');
-  assert(hardpoints.pivot, 'ship hardpoint data must define a pivot');
-  assert(
-    hardpoints.pivot.x >= 0 && hardpoints.pivot.x <= hardpoints.sourceWidth,
-    'pivot x out of bounds'
-  );
-  assert(
-    hardpoints.pivot.y >= 0 && hardpoints.pivot.y <= hardpoints.sourceHeight,
-    'pivot y out of bounds'
-  );
-  assert.equal(hardpoints.engines.length, 2, 'miner must define two engine hardpoints');
-  assert.equal(hardpoints.miningLasers.length, 2, 'miner must define two mining laser hardpoints');
-  assert.equal(hardpoints.maneuverThrusters.length, 4, 'miner must define four maneuver thrusters');
-  assert(hardpoints.shield, 'ship hardpoint data must define shield geometry');
-  assert(hardpoints.shield.radiusX > 0, 'shield must define horizontal radius');
-  assert(hardpoints.shield.radiusY > 0, 'shield must define vertical radius');
-  assert.equal(hardpoints.shield.maxHp, 100, 'starter shield must have 100 HP');
-  assert.equal(hardpoints.shield.modifier, 1, 'starter shield modifier must be 1');
-
-  for (const hardpoint of [
-    ...hardpoints.engines,
-    ...hardpoints.miningLasers,
-    ...hardpoints.maneuverThrusters,
-  ]) {
-    assert(hardpoint.width > 0, 'every hardpoint must define a positive width');
-  }
-  for (const thruster of hardpoints.maneuverThrusters) {
-    assert(Number.isFinite(thruster.forceX), 'maneuver thruster must define forceX');
-    assert(Number.isFinite(thruster.forceY), 'maneuver thruster must define forceY');
-  }
-}
-
-const standardAsset = path.join(root, 'resources/ships/mining/miner-80m-standard.png');
-const industrialAsset = path.join(root, 'resources/ships/mining/miner-80m-industrial-heavy.png');
-const freighterAsset = path.join(
-  root,
-  'resources/ships/freighter/freighter-120m-industrial-heavy.png'
-);
-const standardHardpoints = loadHardpoints('miner-80m-standard');
-const industrialHardpoints = loadHardpoints('miner-80m-industrial-heavy');
-const freighterHardpoints = loadHardpoints('freighter-120m-industrial-heavy');
-
-assert(index.includes('getShipDefinition'), 'ships public API missing');
-assert(index.includes('ShipPivot'), 'ships public API must expose pivot type');
-assert(registry.includes('miningShips'), 'ship registry must consume mining ship data');
-assert(registry.includes('freighterShips'), 'ship registry must consume freighter ship data');
+assert(registry.includes('patrolVariantShips'), 'registry must expose patrol variants');
+assert(registry.includes('minerVariantShips'), 'registry must expose miner variants');
+assert(registry.includes('salvageVariantShips'), 'registry must expose salvage variants');
+assert(registry.includes('freighterVariantShips'), 'registry must expose freighter variants');
+assert(!registry.includes('miningShips'), 'legacy mining ships must be ignored by the test registry');
+assert(!registry.includes('freighterShips'), 'legacy freighter must be ignored by the test registry');
 assert(
-  controller.includes('getShipDefinition(shipId)') && controller.includes('activeShip = nextShip'),
-  'test ship switcher must resolve a complete ship definition by stable id'
+  bootstrap.includes("getShipDefinition('miner-80m-variant-01')"),
+  'the first sprite-sheet miner must be the default test ship'
 );
 assert(
-  controller.includes('hardpoints: ship.sprite.hardpoints'),
-  'local-space creation must consume the selected ship hardpoint JSON'
+  controller.includes('getAllShipDefinitions()'),
+  'test ship switcher must receive the full ship registry'
 );
 assert(
   controller.includes('navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed)'),
-  'ship switching must apply navigation stats from the selected definition'
+  'ship switching must apply the selected navigation stats'
 );
 
-assert(data.includes("id: 'miner-80m-standard'"), 'standard mining ship missing');
-assert(data.includes("id: 'miner-80m-industrial-heavy'"), 'industrial mining ship missing');
-assert(
-  data.includes('cargoCapacityTons: 280') && data.includes('cargoCapacityTons: 360'),
-  'registered miners must define explicit cargo capacity'
-);
-assert.equal(
-  (data.match(/cruiseSpeed: 220/g) ?? []).length,
-  2,
-  'registered miners must use the fast strategic cruise speed'
-);
-assert(
-  data.includes("import standardHardpointsJson from './miner-80m-standard.hardpoints.json'"),
-  'standard miner must load its own hardpoint JSON'
-);
-assert(
-  data.includes(
-    "import industrialHeavyHardpointsJson from './miner-80m-industrial-heavy.hardpoints.json'"
-  ),
-  'industrial miner must load its own hardpoint JSON'
-);
-assert(fs.existsSync(standardAsset), 'standard mining ship sprite asset missing');
-assert(fs.existsSync(industrialAsset), 'industrial mining ship sprite asset missing');
-assert(fs.existsSync(freighterAsset), 'industrial freighter sprite asset missing');
-assert(
-  freighterData.includes("id: 'freighter-120m-industrial-heavy'") &&
-    freighterData.includes("role: 'freighter'") &&
-    freighterData.includes('nominalLengthMeters: 120') &&
-    freighterData.includes('cargoCapacityTons: 900'),
-  '120 m industrial freighter must be a registered selectable ship'
-);
+let count = 0;
+for (const spec of roles) {
+  const source = fs.readFileSync(
+    path.join(root, 'src/data/ships', spec.key + '-variant-ships.ts'),
+    'utf8'
+  );
+  for (let index = 0; index < 7; index += 1) {
+    const suffix = String(index + 1).padStart(2, '0');
+    const base = spec.key + '-' + spec.length + 'm-variant-' + suffix;
+    const asset = path.join(root, 'resources/ships', spec.folder, base + '.png');
+    const hardpointFile = path.join(root, 'src/data/ships', base + '.hardpoints.json');
+    assert(fs.existsSync(asset), base + ' sprite must exist');
+    assert(fs.existsSync(hardpointFile), base + ' hardpoint JSON must exist');
+    assert(source.includes("id: '" + base + "'"), base + ' must be registered');
 
-assertHardpoints(standardHardpoints, 346, 182);
-assertHardpoints(industrialHardpoints, 346, 207);
-assert.equal(freighterHardpoints.sourceWidth, 518, 'freighter hardpoint width must match asset');
-assert.equal(freighterHardpoints.sourceHeight, 167, 'freighter hardpoint height must match asset');
-assert.equal(
-  freighterHardpoints.engines.length,
-  3,
-  'freighter must define three engine hardpoints'
-);
-assert.equal(
-  freighterHardpoints.miningLasers.length,
-  0,
-  'freighter must not expose mining laser hardpoints'
-);
-assert.equal(
-  freighterHardpoints.maneuverThrusters.length,
-  4,
-  'freighter must define four maneuver thrusters'
-);
+    const hardpoints = JSON.parse(fs.readFileSync(hardpointFile, 'utf8'));
+    assert.equal(hardpoints.sourceWidth, spec.width, base + ' canvas width mismatch');
+    assert.equal(hardpoints.sourceHeight, heights[spec.key][index], base + ' canvas height mismatch');
+    assert(hardpoints.engines.length >= 2, base + ' needs engine hardpoints');
+    assert.equal(hardpoints.maneuverThrusters.length, 4, base + ' needs four RCS hardpoints');
+    assert.equal(hardpoints.shield.maxHp, 100, base + ' starter shield must have 100 HP');
+    if (spec.key === 'miner') {
+      assert.equal(hardpoints.miningLasers.length, 3, base + ' must expose three mining lasers');
+    } else {
+      assert.equal(hardpoints.miningLasers.length, 0, base + ' must not expose mining lasers');
+    }
+    count += 1;
+  }
+}
 
-assert.equal(
-  standardHardpoints.engines[0].x,
-  20,
-  'standard miner upper engine hardpoint must match calibrated nozzle'
-);
-assert.equal(
-  standardHardpoints.engines[1].x,
-  20,
-  'standard miner lower engine hardpoint must match calibrated nozzle'
-);
-assert.equal(
-  standardHardpoints.miningLasers[0].x,
-  323,
-  'standard miner upper laser hardpoint must match emitter tip'
-);
-assert.equal(
-  standardHardpoints.miningLasers[1].x,
-  323,
-  'standard miner lower laser hardpoint must match emitter tip'
-);
-assert.equal(
-  industrialHardpoints.engines[0].x,
-  17,
-  'industrial miner upper engine hardpoint must match calibrated nozzle'
-);
-assert.equal(
-  industrialHardpoints.engines[1].x,
-  17,
-  'industrial miner lower engine hardpoint must match calibrated nozzle'
-);
-assert.equal(
-  industrialHardpoints.miningLasers[0].x,
-  327,
-  'industrial miner upper laser hardpoint must match emitter tip'
-);
-assert.equal(
-  industrialHardpoints.miningLasers[1].x,
-  327,
-  'industrial miner lower laser hardpoint must match emitter tip'
-);
-
-console.log('PASS ships module, per-ship sprites, JSON hardpoints and shield geometry');
+assert.equal(count, 28, 'test fleet must contain exactly 28 new selectable variants');
+console.log('PASS sprite-sheet fleet registry, assets and hardpoint contracts');

@@ -6,7 +6,7 @@ import { createGameController } from './game-controller';
 export function bootstrap(root: HTMLElement | null): void {
   if (!root) throw new Error('SOJOURN app root is missing.');
 
-  const ship = getShipDefinition('miner-80m-standard');
+  const ship = getShipDefinition('miner-80m-variant-01');
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
   const navigation = createNavigationService(
