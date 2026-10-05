@@ -28,7 +28,8 @@ export class PlanetRingRenderer {
     context.save();
     context.translate(point.x, point.y);
     context.rotate(-0.22);
-    context.strokeStyle = style === 'broad' ? 'rgba(191, 179, 154, .62)' : 'rgba(194, 206, 211, .5)';
+    context.strokeStyle =
+      style === 'broad' ? 'rgba(191, 179, 154, .62)' : 'rgba(194, 206, 211, .5)';
     context.lineWidth = width;
     context.beginPath();
     context.ellipse(
