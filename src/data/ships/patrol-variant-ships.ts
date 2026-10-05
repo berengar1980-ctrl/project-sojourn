@@ -15,7 +15,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-01.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-01.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 171,
       facing: 'right',
@@ -30,7 +33,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-02.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-02.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 174,
       facing: 'right',
@@ -45,7 +51,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-03.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-03.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 180,
       facing: 'right',
@@ -60,7 +69,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-04.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-04.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 164,
       facing: 'right',
@@ -75,7 +87,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-05.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-05.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 173,
       facing: 'right',
@@ -90,7 +105,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-06.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-06.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 165,
       facing: 'right',
@@ -105,7 +123,10 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/patrol/patrol-60m-variant-07.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/patrol/patrol-60m-variant-07.png',
+        import.meta.url
+      ).href,
       widthPx: 260,
       heightPx: 171,
       facing: 'right',
