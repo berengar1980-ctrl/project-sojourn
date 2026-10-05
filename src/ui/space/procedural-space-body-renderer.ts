@@ -356,7 +356,9 @@ export class ProceduralSpaceBodyRenderer {
         ? '195, 145, 93'
         : biome === 'ice'
           ? '151, 205, 226'
-          : '140, 184, 211';
+          : biome === 'gas-giant'
+            ? '183, 201, 204'
+            : '140, 184, 211';
     const glow = context.createRadialGradient(
       x + light.x * radius * 0.1,
       y + light.y * radius * 0.1,
