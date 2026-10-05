@@ -169,10 +169,7 @@ assert(
   Math.min(...planetDistances) >= 1200,
   'planets must have enough separation to keep the sector map readable'
 );
-assert(
-  (cinderPlanet.orbitRadius ?? 0) >= 700,
-  'Cinder must not sit directly on top of Solis'
-);
+assert((cinderPlanet.orbitRadius ?? 0) >= 700, 'Cinder must not sit directly on top of Solis');
 
 const varras = sectorPorts.find((port) => port.locationId === 'varras-prime');
 assert(
