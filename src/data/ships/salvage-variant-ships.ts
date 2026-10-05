@@ -15,7 +15,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-01.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-01.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 298,
       facing: 'right',
@@ -30,7 +33,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-02.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-02.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 290,
       facing: 'right',
@@ -45,7 +51,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-03.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-03.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 295,
       facing: 'right',
@@ -60,7 +69,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-04.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-04.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 302,
       facing: 'right',
@@ -75,7 +87,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-05.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-05.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 282,
       facing: 'right',
@@ -90,7 +105,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-06.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-06.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 278,
       facing: 'right',
@@ -105,7 +123,10 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/salvage/salvage-100m-variant-07.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/salvage/salvage-100m-variant-07.png',
+        import.meta.url
+      ).href,
       widthPx: 432,
       heightPx: 299,
       facing: 'right',
