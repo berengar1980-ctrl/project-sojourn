@@ -45,7 +45,10 @@ function createPhysics(
   };
 }
 
-function createDeposits(random: () => number, resourceIds?: readonly string[]): AsteroidResourceDeposit[] {
+function createDeposits(
+  random: () => number,
+  resourceIds?: readonly string[]
+): AsteroidResourceDeposit[] {
   if (random() >= 0.68) return [];
 
   const roll = random();
@@ -134,7 +137,11 @@ function createDebris(
   return debris;
 }
 
-export function generateMiningSpace(sourceLocationId: string, seed: number, resourceIds?: readonly string[]): LocalSpaceInstance {
+export function generateMiningSpace(
+  sourceLocationId: string,
+  seed: number,
+  resourceIds?: readonly string[]
+): LocalSpaceInstance {
   const width = 4400;
   const height = 2570;
   const random = createRandom(seed);
