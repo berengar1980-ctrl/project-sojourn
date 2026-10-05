@@ -4,11 +4,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
-const {
-  extractDiagnostic,
-  extractDetail,
-  truncate,
-} = require(path.join(root, 'scripts/ci-run-and-report.cjs'));
+const { extractDiagnostic, extractDetail, truncate } = require(
+  path.join(root, 'scripts/ci-run-and-report.cjs')
+);
 
 assert.equal(
   extractDiagnostic('PASS a\nFAIL tests/map/tutorial-map.test.cjs\n', 'tests'),
@@ -17,7 +15,10 @@ assert.equal(
 );
 
 assert.equal(
-  extractDiagnostic('[warn] src/ui/map/topdown-map-renderer.ts\n[warn] Code style issues found.\n', 'format'),
+  extractDiagnostic(
+    '[warn] src/ui/map/topdown-map-renderer.ts\n[warn] Code style issues found.\n',
+    'format'
+  ),
   'format: src/ui/map/topdown-map-renderer.ts',
   'format failures must identify the first affected file'
 );
@@ -41,6 +42,10 @@ assert.equal(
   'assertion details must be surfaced separately'
 );
 
-assert.equal(truncate('x'.repeat(200)).length, 140, 'GitHub status descriptions must fit the API limit');
+assert.equal(
+  truncate('x'.repeat(200)).length,
+  140,
+  'GitHub status descriptions must fit the API limit'
+);
 
 console.log('PASS readable CI diagnostic extraction');
