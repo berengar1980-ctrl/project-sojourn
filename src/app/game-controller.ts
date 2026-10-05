@@ -322,7 +322,11 @@ function createControllerStarPanel(options: {
     log: options.log,
     onSelectLocation: (id) => {
       const snapshot = options.navigation.getSnapshot();
-      if (miningLocationById(id) && snapshot.currentLocationId === id && !snapshot.isTravelling) {
+      if (
+        miningLocationById(id) &&
+        snapshot.currentLocationId === id &&
+        !snapshot.isTravelling
+      ) {
         options.onEnterLocalSpace();
         return;
       }
@@ -363,7 +367,9 @@ function createActivePortPanel(
       const result = trade.buy(location.id, resourceId, 1, ship.cargoCapacityTons);
       if (!result) return;
       const name = economyResourceById(resourceId)?.name ?? resourceId;
-      log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);
+      log.write(
+        `HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`
+      );
       onRefresh();
     },
     onSell: (resourceId) => {
@@ -385,11 +391,13 @@ export function createGameController(options: GameControllerOptions): GameContro
   const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
-  let localSpaceSeed = 0, visitCounter = 0;
+  let localSpaceSeed = 0;
+  let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
   const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
-  const starModel = () => createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
+  const starModel = () =>
+    createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
   const localModel = () =>
     createActiveLocalModel(localSpace, activeShip, currentMiningLocationName(navigation));
   const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
