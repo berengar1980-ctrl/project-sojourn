@@ -40,10 +40,7 @@ function extractDiagnostic(output, label) {
   );
   if (prettierFile) return truncate(label + ': ' + prettierFile.replace(/^\[warn\]\s+/, ''));
 
-  const typeScriptError = firstMatchingLine(
-    lines,
-    /\.(?:ts|tsx)\(\d+,\d+\):\s+error\s+TS\d+:/
-  );
+  const typeScriptError = firstMatchingLine(lines, /\.(?:ts|tsx)\(\d+,\d+\):\s+error\s+TS\d+:/);
   if (typeScriptError) return truncate(label + ': ' + normalizeFile(typeScriptError));
 
   for (let index = 0; index < lines.length; index += 1) {
