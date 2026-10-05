@@ -70,7 +70,9 @@ function crew(
 function makePort(profile: PortProfile): PortDefinition {
   const produced = new Set(profile.produces);
   const needed = new Set(profile.needs);
-  const commodityIds = [...new Set([...profile.produces, ...profile.needs, ...(profile.trades ?? [])])];
+  const commodityIds = [
+    ...new Set([...profile.produces, ...profile.needs, ...(profile.trades ?? [])]),
+  ];
   return {
     locationId: profile.locationId,
     subtitle: profile.subtitle,
@@ -116,7 +118,16 @@ const profiles: readonly PortProfile[] = [
     population: '118.000',
     security: 'medium',
     produces: ['promethium', 'refinery-gas', 'chemicals', 'lubricants', 'polymers', 'explosives'],
-    needs: ['sulfur', 'carbon', 'water', 'machine-parts', 'electronics', 'coolant', 'tools', 'spare-parts'],
+    needs: [
+      'sulfur',
+      'carbon',
+      'water',
+      'machine-parts',
+      'electronics',
+      'coolant',
+      'tools',
+      'spare-parts',
+    ],
   },
   {
     locationId: 'karth-forge',
@@ -152,10 +163,18 @@ const profiles: readonly PortProfile[] = [
       'refinery-gas',
     ],
     crew: [
-      crew('crew-tomas-reik', 'Tomas Reik', 'Waffenoffizier', ['Diszipliniert', 'Aggressiv'], 5, 1700, [
+      crew(
+        'crew-tomas-reik',
+        'Tomas Reik',
+        'Waffenoffizier',
+        ['Diszipliniert', 'Aggressiv'],
+        5,
+        1700,
+        [
         'Karabiner',
         'Panzerweste',
-      ]),
+        ]
+      ),
       crew('crew-lysa-orn', 'Lysa Orn', 'Reaktortechnik', ['Hartnäckig', 'Effizient'], 2, 1650, [
         'Werkzeug',
       ]),
@@ -168,7 +187,16 @@ const profiles: readonly PortProfile[] = [
     population: '340.000',
     security: 'medium',
     produces: [],
-    needs: ['water', 'nutrient-paste', 'medical', 'tools', 'spare-parts', 'explosives', 'batteries', 'promethium'],
+    needs: [
+      'water',
+      'nutrient-paste',
+      'medical',
+      'tools',
+      'spare-parts',
+      'explosives',
+      'batteries',
+      'promethium',
+    ],
     trades: ['ferrite', 'cuprium', 'cobaltite', 'rare-metals'],
   },
   {
@@ -271,7 +299,17 @@ const profiles: readonly PortProfile[] = [
     population: '2.2 Mio.',
     security: 'medium',
     produces: ['amasec', 'art', 'relics'],
-    needs: ['water', 'grain', 'protein', 'medical', 'clothing', 'luxury-food', 'spices', 'reactor-fuel', 'batteries'],
+    needs: [
+      'water',
+      'grain',
+      'protein',
+      'medical',
+      'clothing',
+      'luxury-food',
+      'spices',
+      'reactor-fuel',
+      'batteries',
+    ],
   },
   {
     locationId: 'saint-tear',
@@ -351,7 +389,15 @@ const profiles: readonly PortProfile[] = [
     population: '97.000',
     security: 'medium',
     produces: ['water', 'coolant'],
-    needs: ['tools', 'machine-parts', 'spare-parts', 'reactor-fuel', 'nutrient-paste', 'medical', 'batteries'],
+    needs: [
+      'tools',
+      'machine-parts',
+      'spare-parts',
+      'reactor-fuel',
+      'nutrient-paste',
+      'medical',
+      'batteries',
+    ],
     trades: ['silicite', 'rare-metals'],
   },
   {
@@ -361,7 +407,16 @@ const profiles: readonly PortProfile[] = [
     population: '84.000',
     security: 'medium',
     produces: ['promethium', 'reactor-fuel', 'refinery-gas', 'lubricants'],
-    needs: ['machine-parts', 'spare-parts', 'electronics', 'water', 'grain', 'medical', 'tools', 'coolant'],
+    needs: [
+      'machine-parts',
+      'spare-parts',
+      'electronics',
+      'water',
+      'grain',
+      'medical',
+      'tools',
+      'coolant',
+    ],
     crew: [
       crew('crew-ivar-denn', 'Ivar Denn', 'Maschinenraum', ['Pragmatisch', 'Robust'], 3, 1250, [
         'Werkzeug',
@@ -376,7 +431,16 @@ const profiles: readonly PortProfile[] = [
     population: '420.000',
     security: 'medium',
     produces: ['plasma-fuel', 'batteries'],
-    needs: ['water', 'nutrient-paste', 'medical', 'tools', 'spare-parts', 'reactor-parts', 'electronics', 'coolant'],
+    needs: [
+      'water',
+      'nutrient-paste',
+      'medical',
+      'tools',
+      'spare-parts',
+      'reactor-parts',
+      'electronics',
+      'coolant',
+    ],
   },
   {
     locationId: 'blackjaw-outpost',
