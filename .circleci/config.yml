@@ -1,40 +1,83 @@
 version: 2.1
 
 jobs:
-  format-and-push:
+  fmt-controller:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm ci
-      - run:
-          name: Format changed sector files
-          command: >-
-            npx prettier --write
-            src/app/game-controller.ts
-            src/ui/space/procedural-surface-textures.ts
-            src/data/maps/narrows-sector.ts
-            src/data/ports/sector-ports.ts
-            src/data/economy/tutorial-npc-economy.ts
-            tests/economy/sector-economy-coverage.test.cjs
-            tests/economy/mining-resource-flow.test.cjs
-      - run:
-          name: Commit formatted files
-          command: |
-            git config user.name "CircleCI Formatter"
-            git config user.email "circleci@project-sojourn.local"
-            git add               src/app/game-controller.ts               src/ui/space/procedural-surface-textures.ts               src/data/maps/narrows-sector.ts               src/data/ports/sector-ports.ts               src/data/economy/tutorial-npc-economy.ts               tests/economy/sector-economy-coverage.test.cjs               tests/economy/mining-resource-flow.test.cjs
-            git diff --cached --quiet && exit 0
-            git commit -m "Format expanded sector files"
-            git push origin HEAD:refs/heads/feat/expand-sector-world
+      - run: npm ci
+      - run: npx prettier --check src/app/game-controller.ts
+
+  fmt-surface:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/ui/space/procedural-surface-textures.ts
+
+  fmt-mapdata:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/maps/narrows-sector.ts
+
+  fmt-ports:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/ports/sector-ports.ts
+
+  fmt-npcsalias:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/economy/tutorial-npc-economy.ts
+
+  fmt-econcover:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
+
+  fmt-miningtest:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check tests/economy/mining-resource-flow.test.cjs
 
 workflows:
-  formatter:
+  prettier-recheck:
     jobs:
-      - format-and-push:
-          filters:
-            branches:
-              only: ci-gate
+      - fmt-controller:
+          filters: { branches: { only: ci-gate } }
+      - fmt-surface:
+          filters: { branches: { only: ci-gate } }
+      - fmt-mapdata:
+          filters: { branches: { only: ci-gate } }
+      - fmt-ports:
+          filters: { branches: { only: ci-gate } }
+      - fmt-npcsalias:
+          filters: { branches: { only: ci-gate } }
+      - fmt-econcover:
+          filters: { branches: { only: ci-gate } }
+      - fmt-miningtest:
+          filters: { branches: { only: ci-gate } }
