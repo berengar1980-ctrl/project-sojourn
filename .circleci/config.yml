@@ -1,7 +1,10 @@
 version: 2.1
 
-commands:
-  prepare:
+jobs:
+  quality:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
     steps:
       - checkout
       - restore_cache:
@@ -11,93 +14,18 @@ commands:
       - run:
           name: Install dependencies
           command: npm ci
-
-jobs:
-  fmt-renderer:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/ui/map/topdown-map-renderer.ts
-
-  fmt-scale:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/ui/map/map-visual-scale.ts
-
-  fmt-new-tests:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/map-visual-scale.test.cjs tests/quality/no-warhammer-references.test.cjs
-
-  fmt-existing:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src tests --ignore-path /tmp/no-ignore
-    environment:
-      PRETTIER_IGNORE_PATH: /dev/null
-
-  test-economy:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: for file in tests/economy/*.test.cjs; do node "$file" || exit 1; done
-
-  test-map:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: for file in tests/map/*.test.cjs; do node "$file" || exit 1; done
-
-  test-quality:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: for file in tests/quality/*.test.cjs; do node "$file" || exit 1; done
-
-  test-rest:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          for dir in tests/assets tests/local-space tests/navigation tests/port tests/ships; do
-            for file in "$dir"/*.test.cjs; do
-              node "$file" || exit 1
-            done
-          done
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Quality gate
+          command: npm run check
 
 workflows:
-  targeted-diagnostics:
+  quality:
     jobs:
-      - fmt-renderer:
-          filters: { branches: { only: ci-gate } }
-      - fmt-scale:
-          filters: { branches: { only: ci-gate } }
-      - fmt-new-tests:
-          filters: { branches: { only: ci-gate } }
-      - test-economy:
-          filters: { branches: { only: ci-gate } }
-      - test-map:
-          filters: { branches: { only: ci-gate } }
-      - test-quality:
-          filters: { branches: { only: ci-gate } }
-      - test-rest:
-          filters: { branches: { only: ci-gate } }
+      - quality:
+          filters:
+            branches:
+              only: ci-gate
