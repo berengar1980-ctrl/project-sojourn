@@ -13,86 +13,36 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-daily:
+  fmt-economy-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy/daily-simulation.test.cjs
+      - run: npx prettier --check tests/economy
 
-  fmt-pricing:
+  fmt-map-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy/market-pricing.test.cjs
+      - run: npx prettier --check tests/map
 
-  fmt-situations:
+  fmt-port-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy/market-situations.test.cjs
-
-  fmt-npc:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/npc-economy.test.cjs
-
-  fmt-side-trade:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/npc-resource-side-trade.test.cjs
-
-  fmt-coverage:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
-
-  fmt-map-test:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/tutorial-map.test.cjs
-
-  fmt-port-test:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/port/port-ui.test.cjs
+      - run: npx prettier --check tests/port
 
 workflows:
-  test-format-diagnostics:
+  test-directory-format-diagnostics:
     jobs:
-      - fmt-daily:
+      - fmt-economy-tests:
           filters: { branches: { only: ci-gate } }
-      - fmt-pricing:
+      - fmt-map-tests:
           filters: { branches: { only: ci-gate } }
-      - fmt-situations:
-          filters: { branches: { only: ci-gate } }
-      - fmt-npc:
-          filters: { branches: { only: ci-gate } }
-      - fmt-side-trade:
-          filters: { branches: { only: ci-gate } }
-      - fmt-coverage:
-          filters: { branches: { only: ci-gate } }
-      - fmt-map-test:
-          filters: { branches: { only: ci-gate } }
-      - fmt-port-test:
+      - fmt-port-tests:
           filters: { branches: { only: ci-gate } }
