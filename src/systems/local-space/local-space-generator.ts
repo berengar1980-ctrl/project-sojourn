@@ -45,7 +45,7 @@ function createPhysics(
   };
 }
 
-function createDeposits(random: () => number): AsteroidResourceDeposit[] {
+function createDeposits(random: () => number, resourceIds?: readonly string[]): AsteroidResourceDeposit[] {
   if (random() >= 0.68) return [];
 
   const roll = random();
@@ -54,7 +54,7 @@ function createDeposits(random: () => number): AsteroidResourceDeposit[] {
   const usedResourceIds = new Set<string>();
 
   while (deposits.length < depositCount) {
-    const resource = pickMiningResource(random);
+    const resource = pickMiningResource(random, resourceIds);
     if (usedResourceIds.has(resource.id)) continue;
     usedResourceIds.add(resource.id);
 
@@ -75,7 +75,8 @@ function createResourceAsteroids(
   seed: number,
   random: () => number,
   width: number,
-  height: number
+  height: number,
+  resourceIds?: readonly string[]
 ): LocalAsteroid[] {
   const count = 64 + Math.floor(random() * 17);
   const asteroids: LocalAsteroid[] = [];
@@ -85,7 +86,7 @@ function createResourceAsteroids(
     const sideBias = index % 2 === 0 ? 0.22 : 0.78;
     const x = width * (sideBias + (random() - 0.5) * 0.42);
     const y = height * (0.12 + random() * 0.76);
-    const deposits = createDeposits(random);
+    const deposits = createDeposits(random, resourceIds);
 
     asteroids.push({
       id: `asteroid-${seed}-${index}`,
@@ -133,7 +134,7 @@ function createDebris(
   return debris;
 }
 
-export function generateMiningSpace(sourceLocationId: string, seed: number): LocalSpaceInstance {
+export function generateMiningSpace(sourceLocationId: string, seed: number, resourceIds?: readonly string[]): LocalSpaceInstance {
   const width = 4400;
   const height = 2570;
   const random = createRandom(seed);
@@ -145,7 +146,7 @@ export function generateMiningSpace(sourceLocationId: string, seed: number): Loc
     width,
     height,
     asteroids: [
-      ...createResourceAsteroids(seed, random, width, height),
+      ...createResourceAsteroids(seed, random, width, height, resourceIds),
       ...createDebris(seed, random, width, height),
     ],
     chunks: [],
