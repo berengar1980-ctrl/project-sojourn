@@ -36,6 +36,18 @@ assert(renderer.includes('shouldDrawLabel'), 'renderer must reduce minor labels 
 assert(renderer.includes('stationSymbols.draw'), 'stations must use typed visual symbols');
 assert(!renderer.includes('locationId ='), 'renderer must not mutate player navigation state');
 assert(panel.includes("'WERFT'"), 'star map must identify shipyard locations');
+assert(
+  panel.includes('map-mode-toggle') &&
+    panel.includes("preferredDisplayMode === 'physical' ? 'nav' : 'physical'"),
+  'star map must expose a live physical/NAV comparison toggle'
+);
+assert(
+  renderer.includes("export type StarMapDisplayMode = 'physical' | 'nav'") &&
+    renderer.includes('drawNavBackground') &&
+    renderer.includes('drawNavLocation') &&
+    renderer.includes('drawNavShip'),
+  'NAV mode must use a distinct sensor rendering path'
+);
 assert(!panel.includes('<aside'), 'star map must not contain a permanent sidebar');
 
 console.log('PASS expanded sector star-map contract');
