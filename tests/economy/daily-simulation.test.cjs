@@ -15,10 +15,10 @@ function createMarketService() {
     {
       locationId: 'consumer',
       produces: new Set(),
-      needs: new Set(['steel', 'obscura']),
+      needs: new Set(['steel', 'narcotics']),
       entries: {
         steel: { resourceId: 'steel', stock: 900, demand: 0.9, production: 0, price: 100 },
-        obscura: { resourceId: 'obscura', stock: 80, demand: 0.8, production: 0, price: 500 },
+        narcotics: { resourceId: 'narcotics', stock: 80, demand: 0.8, production: 0, price: 500 },
       },
     },
     {
@@ -61,8 +61,8 @@ const resources = [
     legality: 'legal',
   },
   {
-    id: 'obscura',
-    name: 'Obscura',
+    id: 'narcotics',
+    name: 'Narcotics',
     categoryId: 'contraband',
     category: 'Schmuggel',
     basePrice: 500,
@@ -80,7 +80,7 @@ const resources = [
     12345
   );
   const steelBefore = economy.getResourceTotal('steel');
-  const illegalBefore = economy.getResourceTotal('obscura');
+  const illegalBefore = economy.getResourceTotal('narcotics');
 
   economy.advanceDay(30);
   economy.advanceNextDay();
@@ -91,7 +91,7 @@ const resources = [
     'normal consumption and production must conserve legal resources'
   );
   assert.equal(
-    economy.getResourceTotal('obscura'),
+    economy.getResourceTotal('narcotics'),
     illegalBefore,
     'contraband must remain conserved while no real losses occur'
   );
@@ -157,8 +157,8 @@ const resources = [
   const marketService = createMarketService();
   const player = { credits: 0, cargo: {} };
   const economy = simulation.createEconomySimulationService(marketService, player, resources, 3);
-  const pool = economy.pools.obscura;
-  marketService.markets[0].entries.obscura.stock = 1;
+  const pool = economy.pools.narcotics;
+  marketService.markets[0].entries.narcotics.stock = 1;
 
   economy.advanceDay(1);
 
@@ -167,7 +167,7 @@ const resources = [
     'severe contraband depletion must trigger explicit black-market replacement supply'
   );
   assert(
-    economy.getResourceTotal('obscura') <= pool.target * 1.1,
+    economy.getResourceTotal('narcotics') <= pool.target * 1.1,
     'black-market replacement must respect the 110 percent ceiling'
   );
 }
