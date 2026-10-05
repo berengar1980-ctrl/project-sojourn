@@ -1,10 +1,7 @@
 version: 2.1
 
-jobs:
-  quality:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
+commands:
+  prepare:
     steps:
       - checkout
       - restore_cache:
@@ -14,18 +11,136 @@ jobs:
       - run:
           name: Install dependencies
           command: npm ci
-      - save_cache:
-          key: npm-v1-{{ checksum "package-lock.json" }}
-          paths:
-            - ~/.npm
-      - run:
-          name: Quality gate
-          command: npm run check
+
+jobs:
+  fmt-core:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/core
+
+  fmt-data:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/data
+
+  fmt-systems:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/systems
+
+  fmt-features:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/features
+
+  fmt-ui:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/ui
+
+  fmt-app:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/app src/main.ts
+
+  fmt-test-economy:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/economy
+
+  fmt-test-map:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/map
+
+  fmt-test-quality:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/quality
+
+  fmt-test-other:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/assets tests/local-space tests/navigation tests/port tests/ships tests/run-tests.cjs tests/ts-module-loader.cjs
+
+  fmt-project:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
+
+  lint:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run lint
+
+  typecheck:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run typecheck
+
+  dependencies:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run deps:check
+
+  tests:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm test
+
+  build:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run build
 
 workflows:
   quality:
     jobs:
-      - quality:
-          filters:
-            branches:
-              only: ci-gate
+      - fmt-core: { filters: { branches: { only: ci-gate } } }
+      - fmt-data: { filters: { branches: { only: ci-gate } } }
+      - fmt-systems: { filters: { branches: { only: ci-gate } } }
+      - fmt-features: { filters: { branches: { only: ci-gate } } }
+      - fmt-ui: { filters: { branches: { only: ci-gate } } }
+      - fmt-app: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-economy: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-map: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-quality: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-other: { filters: { branches: { only: ci-gate } } }
+      - fmt-project: { filters: { branches: { only: ci-gate } } }
+      - lint: { filters: { branches: { only: ci-gate } } }
+      - typecheck: { filters: { branches: { only: ci-gate } } }
+      - dependencies: { filters: { branches: { only: ci-gate } } }
+      - tests: { filters: { branches: { only: ci-gate } } }
+      - build: { filters: { branches: { only: ci-gate } } }

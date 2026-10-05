@@ -15,8 +15,8 @@ interface SituationTemplate {
 
 const TEMPLATES: readonly SituationTemplate[] = [
   {
-    id: 'medicae-shortage',
-    name: 'Medicae-Notstand',
+    id: 'medical-shortage',
+    name: 'Medizinischer Engpass',
     description: 'Versorgungsengpässe treiben die Nachfrage nach medizinischen Gütern.',
     resourceIds: ['medical'],
     modifiers: [0.48],
@@ -25,7 +25,7 @@ const TEMPLATES: readonly SituationTemplate[] = [
     id: 'refinery-outage',
     name: 'Raffinerieausfall',
     description: 'Ausfälle in der Verarbeitung verknappen Treibstoffe und Kühlmittel.',
-    resourceIds: ['promethium', 'coolant'],
+    resourceIds: ['synthetic-fuel', 'coolant'],
     modifiers: [0.38, 0.22],
   },
   {
@@ -46,7 +46,7 @@ const TEMPLATES: readonly SituationTemplate[] = [
     id: 'luxury-demand',
     name: 'Festwoche',
     description: 'Lokale Feierlichkeiten erhöhen kurzfristig die Nachfrage nach Luxusgütern.',
-    resourceIds: ['luxury-food', 'amasec'],
+    resourceIds: ['luxury-food', 'aged-spirits'],
     modifiers: [0.26, 0.22],
   },
 ];

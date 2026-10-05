@@ -15,7 +15,7 @@ const marketModule = loadStandaloneTypeScriptModule(root, 'src/systems/economy/m
 const resources = [
   {
     id: 'medical',
-    name: 'Medicae',
+    name: 'Medical',
     categoryId: 'supplies',
     category: 'Versorgung',
     basePrice: 100,
@@ -64,7 +64,7 @@ function port(locationId) {
 
   situations.add({
     id: 'local-medical',
-    name: 'Medicae-Notstand',
+    name: 'Medical-Notstand',
     description: 'Test',
     scope: 'local',
     locationId: 'destination',

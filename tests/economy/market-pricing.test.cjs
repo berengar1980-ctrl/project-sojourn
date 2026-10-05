@@ -11,6 +11,10 @@ const resourcesSource = fs.readFileSync(
   'utf8'
 );
 const portsSource = fs.readFileSync(path.join(root, 'src/data/ports/sector-ports.ts'), 'utf8');
+const portProfilesSource = fs.readFileSync(
+  path.join(root, 'src/data/ports/sector-port-profiles.ts'),
+  'utf8'
+);
 const marketSource = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
@@ -18,9 +22,9 @@ const marketSource = fs.readFileSync(
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 
 assert(
-  resourcesSource.includes("'obscura'") &&
-    resourcesSource.includes("'xeno-artifacts'") &&
-    resourcesSource.includes("'proscribed-data'"),
+  resourcesSource.includes("'narcotics'") &&
+    resourcesSource.includes("'alien-artifacts'") &&
+    resourcesSource.includes("'stolen-data'"),
   'economy catalog must include multiple illegal resources'
 );
 assert(
@@ -31,7 +35,7 @@ assert(
   resourcesSource.includes("resource('steel'") &&
     resourcesSource.includes("resource('reactor-parts'") &&
     resourcesSource.includes("resource('medical'") &&
-    resourcesSource.includes("resource('amasec'"),
+    resourcesSource.includes("resource('aged-spirits'"),
   'economy catalog must cover produced industry, supplies and luxury goods'
 );
 
@@ -44,8 +48,8 @@ assert(
   'ports must declare stable produced and required resource ids'
 );
 assert(
-  portsSource.includes("produces: ['obscura', 'proscribed-data']") &&
-    portsSource.includes("produces: ['xeno-artifacts']"),
+  portProfilesSource.includes("produces: ['narcotics', 'stolen-data']") &&
+    portProfilesSource.includes("produces: ['alien-artifacts']"),
   'at least some demo ports must expose contraband markets'
 );
 assert(

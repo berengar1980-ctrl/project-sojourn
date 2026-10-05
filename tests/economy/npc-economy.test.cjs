@@ -24,7 +24,7 @@ function createMarkets() {
       entries: {
         steel: { resourceId: 'steel', stock: 50, demand: 0.3, production: 0, price: 40 },
         ferrite: { resourceId: 'ferrite', stock: 60, demand: 0.3, production: 0, price: 30 },
-        obscura: { resourceId: 'obscura', stock: 30, demand: 0.3, production: 0, price: 20 },
+        narcotics: { resourceId: 'narcotics', stock: 30, demand: 0.3, production: 0, price: 20 },
       },
     },
     {
@@ -34,7 +34,7 @@ function createMarkets() {
       entries: {
         steel: { resourceId: 'steel', stock: 20, demand: 0.9, production: 0, price: 110 },
         ferrite: { resourceId: 'ferrite', stock: 10, demand: 0.9, production: 0, price: 90 },
-        obscura: { resourceId: 'obscura', stock: 1, demand: 0.9, production: 0, price: 400 },
+        narcotics: { resourceId: 'narcotics', stock: 1, demand: 0.9, production: 0, price: 400 },
       },
     },
   ];
@@ -74,8 +74,8 @@ const resources = [
     legality: 'legal',
   },
   {
-    id: 'obscura',
-    name: 'Obscura',
+    id: 'narcotics',
+    name: 'Narcotics',
     categoryId: 'contraband',
     category: 'Schmuggel',
     basePrice: 20,
@@ -109,7 +109,7 @@ const resources = [
   assert.equal(trader.locationId, 'destination');
   assert.equal(trader.cargo.steel, 10, 'trader must buy the profitable legal route');
   assert.equal(markets.markets[0].entries.steel.stock, 40);
-  assert.equal(trader.cargo.obscura, undefined, 'ordinary NPC trade must not buy illegal cargo');
+  assert.equal(trader.cargo.narcotics, undefined, 'ordinary NPC trade must not buy illegal cargo');
   assert.equal(
     simulation.getResourceTotal('steel'),
     steelBefore,

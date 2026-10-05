@@ -3,6 +3,8 @@ import type {
   LocationActivities,
   LocationKind,
   PlanetBiome,
+  PlanetRingStyle,
+  StationType,
   StarBody,
   WorldMap,
   WorldPoint,
@@ -19,6 +21,9 @@ export interface StarMapLocationView {
   readonly orbitRadius?: number;
   readonly parentLocationId?: string;
   readonly planetBiome?: PlanetBiome;
+  readonly ringStyle?: PlanetRingStyle;
+  readonly stationType?: StationType;
+  readonly showOrbit?: boolean;
   readonly spriteUrl?: string;
   readonly description: string;
   readonly activities: LocationActivities;

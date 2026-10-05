@@ -15,9 +15,12 @@ assert(data.includes("planetBiome: 'scorched'"), 'inner system needs scorched ro
 assert(data.includes("planetBiome: 'desert'"), 'inner system needs desert worlds');
 assert(data.includes("planetBiome: 'temperate'"), 'habitable band needs temperate worlds');
 assert(data.includes("planetBiome: 'ice'"), 'outer system needs ice worlds');
+assert(data.includes("planetBiome: 'gas-giant'"), 'outer system needs a gas giant');
+assert(data.includes("ringStyle: 'broad'"), 'sector needs a prominent ringed planet');
+assert(data.includes("ringStyle: 'asteroid'"), 'sector needs a rocky planetary ring');
 assert(data.includes("kind: 'moon'"), 'sector must contain moons');
 assert(
-  data.includes("parentLocationId: 'karth-forge'"),
+  data.includes("parentLocationId: 'karth-industrial'"),
   'moons and orbital sites need parent bodies'
 );
 assert(data.includes('mine: true'), 'sector needs mining locations');
@@ -32,6 +35,8 @@ assert(
   'renderer must draw moon and station orbits around parent bodies'
 );
 assert(renderer.includes('class TopdownMapRenderer'), 'top-down renderer missing');
+assert(renderer.includes('shouldDrawLabel'), 'renderer must reduce minor labels at overview zoom');
+assert(renderer.includes('stationSymbols.draw'), 'stations must use typed visual symbols');
 assert(!renderer.includes('locationId ='), 'renderer must not mutate player navigation state');
 assert(panel.includes("'WERFT'"), 'star map must identify shipyard locations');
 assert(!panel.includes('<aside'), 'star map must not contain a permanent sidebar');

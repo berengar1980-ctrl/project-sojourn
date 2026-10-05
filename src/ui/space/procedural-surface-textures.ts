@@ -225,6 +225,14 @@ function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
       ice: [189, 187, 181],
     };
   }
+  if (biome === 'gas-giant') {
+    return {
+      water: [65, 91, 111],
+      lowland: [126, 152, 157],
+      highland: [191, 174, 137],
+      ice: [218, 211, 188],
+    };
+  }
   if (dangerLevel >= 2) {
     return {
       water: [40, 39, 42],
@@ -247,6 +255,23 @@ function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
     highland: [116, 112, 82],
     ice: [211, 220, 220],
   };
+}
+
+function paintGasGiantPixel(
+  data: Uint8ClampedArray,
+  index: number,
+  seed: number,
+  nx: number,
+  ny: number,
+  palette: PlanetPalette
+): void {
+  const turbulence = fbm(seed + 1901, nx * 3.2, ny * 9.5, 4);
+  const fine = fbm(seed + 2903, nx * 8.5, ny * 18, 3);
+  const wave = Math.sin((ny + turbulence * 0.22) * 34 + fine * 2.8) * 0.5 + 0.5;
+  const broad = Math.sin((ny + turbulence * 0.08) * 11) * 0.5 + 0.5;
+  const first = broad > 0.55 ? palette.water : palette.lowland;
+  const second = wave > 0.58 ? palette.highland : palette.ice;
+  paintPixel(data, index, first, second, wave * 0.64, 0.86 + turbulence * 0.16);
 }
 
 // prettier-ignore
@@ -319,6 +344,11 @@ export function createPlanetTexture(
 
       if (radiusSquared > 1) {
         image.data[index + 3] = 0;
+        continue;
+      }
+
+      if (biome === 'gas-giant') {
+        paintGasGiantPixel(image.data, index, seed, nx, ny, palette);
         continue;
       }
 

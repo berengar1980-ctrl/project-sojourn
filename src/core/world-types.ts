@@ -1,7 +1,10 @@
 import type { EconomyResourceId } from './economy-types';
 
 export type LocationKind = 'planet' | 'moon' | 'station' | 'asteroid-field' | 'wreck';
-export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren';
+export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';
+export type PlanetRingStyle = 'thin' | 'broad' | 'asteroid';
+export type StationType =
+  'trade' | 'shipyard' | 'military' | 'refinery' | 'research' | 'pirate' | 'utility';
 
 export interface WorldPoint {
   readonly x: number;
@@ -39,6 +42,9 @@ export interface WorldLocation {
   readonly orbitRadius?: number;
   readonly parentLocationId?: string;
   readonly planetBiome?: PlanetBiome;
+  readonly ringStyle?: PlanetRingStyle;
+  readonly stationType?: StationType;
+  readonly showOrbit?: boolean;
   readonly minedResourceIds?: readonly EconomyResourceId[];
   readonly spriteUrl?: string;
 }
