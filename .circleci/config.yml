@@ -4,91 +4,143 @@ commands:
   prepare:
     steps:
       - checkout
-      - run: npm ci
-
-  format-world:
-    steps:
-      - run: npx prettier --write src/core/world-types.ts
-
-  format-map:
-    steps:
-      - run: npx prettier --write tests/map/map-visual-scale.test.cjs
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "package-lock.json" }}
+            - npm-v1-
+      - run:
+          name: Install dependencies
+          command: npm ci
 
 jobs:
-  world-planet-single:
+  fmt-core:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-world
-      - run: grep -Fq "export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';" src/core/world-types.ts
+      - run: npx prettier --check src/core
 
-  world-planet-squeezed:
+  fmt-data:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-world
-      - run: |
-          grep -Fq "export type PlanetBiome =" src/core/world-types.ts
-          grep -Fq "  'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';" src/core/world-types.ts
+      - run: npx prettier --check src/data
 
-  world-planet-vertical:
+  fmt-systems:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-world
-      - run: grep -Fq "  | 'scorched'" src/core/world-types.ts
+      - run: npx prettier --check src/systems
 
-  world-station-squeezed:
+  fmt-features:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-world
-      - run: grep -Fq "  'trade' | 'shipyard' | 'military' | 'refinery' | 'research' | 'pirate' | 'utility';" src/core/world-types.ts
+      - run: npx prettier --check src/features
 
-  world-station-vertical:
+  fmt-ui:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-world
-      - run: grep -Fq "  | 'trade'" src/core/world-types.ts
+      - run: npx prettier --check src/ui
 
-  map-assignment-single:
+  fmt-app:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-map
-      - run: grep -Fq "const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');" tests/map/map-visual-scale.test.cjs
+      - run: npx prettier --check src/app src/main.ts
 
-  map-assignment-multi:
+  fmt-test-economy:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-map
-      - run: grep -Fq "const renderer = fs.readFileSync(" tests/map/map-visual-scale.test.cjs
+      - run: npx prettier --check tests/economy
 
-  map-include-multi:
+  fmt-test-map:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-map
-      - run: grep -Fq "  renderer.includes(" tests/map/map-visual-scale.test.cjs
+      - run: npx prettier --check tests/map
 
-  map-double-quote:
+  fmt-test-quality:
     docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
     steps:
       - prepare
-      - format-map
-      - run: grep -Fq "\"if (location.kind === 'moon') return Math.min(20, Math.max(5, location.radius * 0.9));\"" tests/map/map-visual-scale.test.cjs
+      - run: npx prettier --check tests/quality
+
+  fmt-test-other:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/assets tests/local-space tests/navigation tests/port tests/ships tests/run-tests.cjs tests/ts-module-loader.cjs
+
+  fmt-project:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
+
+  lint:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run lint
+
+  typecheck:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run typecheck
+
+  dependencies:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run deps:check
+
+  tests:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm test
+
+  build:
+    docker: [{ image: cimg/node:20.18 }]
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run build
 
 workflows:
-  prettier-oracle:
+  quality:
     jobs:
-      - world-planet-single: { filters: { branches: { only: ci-gate } } }
-      - world-planet-squeezed: { filters: { branches: { only: ci-gate } } }
-      - world-planet-vertical: { filters: { branches: { only: ci-gate } } }
-      - world-station-squeezed: { filters: { branches: { only: ci-gate } } }
-      - world-station-vertical: { filters: { branches: { only: ci-gate } } }
-      - map-assignment-single: { filters: { branches: { only: ci-gate } } }
-      - map-assignment-multi: { filters: { branches: { only: ci-gate } } }
-      - map-include-multi: { filters: { branches: { only: ci-gate } } }
-      - map-double-quote: { filters: { branches: { only: ci-gate } } }
+      - fmt-core: { filters: { branches: { only: ci-gate } } }
+      - fmt-data: { filters: { branches: { only: ci-gate } } }
+      - fmt-systems: { filters: { branches: { only: ci-gate } } }
+      - fmt-features: { filters: { branches: { only: ci-gate } } }
+      - fmt-ui: { filters: { branches: { only: ci-gate } } }
+      - fmt-app: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-economy: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-map: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-quality: { filters: { branches: { only: ci-gate } } }
+      - fmt-test-other: { filters: { branches: { only: ci-gate } } }
+      - fmt-project: { filters: { branches: { only: ci-gate } } }
+      - lint: { filters: { branches: { only: ci-gate } } }
+      - typecheck: { filters: { branches: { only: ci-gate } } }
+      - dependencies: { filters: { branches: { only: ci-gate } } }
+      - tests: { filters: { branches: { only: ci-gate } } }
+      - build: { filters: { branches: { only: ci-gate } } }
