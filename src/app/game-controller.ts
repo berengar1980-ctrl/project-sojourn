@@ -375,10 +375,7 @@ function createActivePortPanel(
   });
 }
 
-function createControllerStarModel(
-  navigation: NavigationService,
-  ship: ShipDefinition
-) {
+function createControllerStarModel(navigation: NavigationService, ship: ShipDefinition) {
   return createStarMapViewModel(narrowsSector, navigation.getSnapshot(), ship);
 }
 
