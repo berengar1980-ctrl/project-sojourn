@@ -215,13 +215,7 @@ export class TopdownMapRenderer {
       drawn.add(key);
       const center = this.camera.worldToScreen(parent.position, width, height);
       this.context.beginPath();
-      this.context.arc(
-        center.x,
-        center.y,
-        this.camera.scale(location.orbitRadius),
-        0,
-        Math.PI * 2
-      );
+      this.context.arc(center.x, center.y, this.camera.scale(location.orbitRadius), 0, Math.PI * 2);
       this.context.stroke();
     }
   }
