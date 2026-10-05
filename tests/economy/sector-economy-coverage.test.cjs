@@ -26,7 +26,7 @@ const mined = new Set(
 
 assert.equal(economyResources.length, 56, 'sector economy must retain the full resource catalog');
 assert(sectorPorts.length >= 18, 'expanded sector needs enough distinct trade economies');
-assert(narrowsSector.locations.length >= 30, 'expanded sector needs meaningful travel scale');
+assert(narrowsSector.locations.length >= 27, 'sector needs meaningful travel scale without map clutter');
 
 for (const resource of economyResources) {
   assert(needed.has(resource.id), resource.id + ' must be required by at least one economy');
@@ -72,40 +72,54 @@ const miningSites = narrowsSector.locations.filter((location) => location.activi
 const salvageSites = narrowsSector.locations.filter((location) => location.activities.salvage);
 
 assert(planets.length >= 11, 'planets must dominate the sector hierarchy');
-assert.equal(moons.length, 4, 'moons must stay selective instead of crowding the map');
+assert.equal(moons.length, 1, 'the sector map must keep moons exceptional instead of crowding planets');
 assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
 assert(sectorPorts.filter((port) => port.shipyard).length >= 2, 'sector needs multiple shipyards');
 
-const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 900);
+const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 1400);
 assert(
   innerPlanets.every((planet) => ['scorched', 'desert'].includes(planet.planetBiome)),
   'inner planets must be rocky or desert worlds'
 );
 const middlePlanets = planets.filter((planet) => {
   const orbit = planet.orbitRadius ?? 0;
-  return orbit >= 1100 && orbit <= 2050;
+  return orbit >= 1800 && orbit <= 3150;
 });
 assert(
   middlePlanets.every((planet) => planet.planetBiome === 'temperate'),
   'middle system planets must use temperate Earth-like biomes'
 );
-const outerPlanets = planets.filter((planet) => (planet.orbitRadius ?? 0) >= 2200);
+const outerPlanets = planets.filter((planet) => (planet.orbitRadius ?? 0) >= 3400);
 assert(
   outerPlanets.every((planet) => ['ice', 'gas-giant'].includes(planet.planetBiome)),
   'outer planets must be ice worlds or gas giants'
 );
 
 const planetRadii = planets.map((planet) => planet.radius);
-assert(
-  Math.max(...planetRadii) / Math.min(...planetRadii) >= 4,
-  'planet sizes must vary strongly across the sector'
+const cinderPlanet = planets.find((planet) => planet.id === 'cinder');
+const havenPlanet = planets.find((planet) => planet.id === 'haven');
+assert(cinderPlanet && havenPlanet, 'Cinder and Haven must remain sector size anchors');
+assert.equal(
+  cinderPlanet.radius,
+  Math.min(...planetRadii),
+  'Cinder must remain the smallest normal planet'
 );
-const moonRadii = moons.map((moon) => moon.radius);
-assert(
-  Math.max(...moonRadii) / Math.min(...moonRadii) >= 2,
-  'moon sizes must include clearly small and large examples'
+assert.equal(
+  havenPlanet.radius,
+  Math.max(...planetRadii),
+  'Haven must remain the largest normal planet'
+);
+assert(havenPlanet.radius <= 40, 'planet symbols must stay compact on the sector map');
+assert(cinderPlanet.radius >= 16, 'small planets must remain readable on the sector map');
+
+const onlyMoon = moons[0];
+assert.equal(onlyMoon?.id, 'glass-moon', 'Glass must remain the only moon on the sector map');
+assert.equal(
+  onlyMoon?.parentLocationId,
+  'pale-reach',
+  'the remaining moon must stay attached to Pale Reach'
 );
 assert(
   planets.some((planet) => planet.ringStyle === 'broad') &&
@@ -117,6 +131,42 @@ assert(
   'stations need multiple visual roles'
 );
 
+assert.equal(
+  narrowsSector.regions.length,
+  0,
+  'non-gameplay danger regions must not clutter the sector map'
+);
+
+const orbitalStations = stations.filter((station) => station.parentLocationId);
+assert(
+  orbitalStations.length <= 1,
+  'planet clusters must not stack multiple stations around inhabited worlds'
+);
+for (const stationId of ['helix-shipyards', 'coldwater-station']) {
+  const station = stations.find((entry) => entry.id === stationId);
+  assert(station, stationId + ' must remain in the sector');
+  assert.equal(station.parentLocationId, undefined, stationId + ' must operate in free space');
+}
+
+const planetDistances = [];
+for (let index = 0; index < planets.length; index += 1) {
+  for (let other = index + 1; other < planets.length; other += 1) {
+    const first = planets[index];
+    const second = planets[other];
+    planetDistances.push(
+      Math.hypot(first.position.x - second.position.x, first.position.y - second.position.y)
+    );
+  }
+}
+assert(
+  Math.min(...planetDistances) >= 1200,
+  'planets must have enough separation to keep the sector map readable'
+);
+assert(
+  (cinderPlanet.orbitRadius ?? 0) >= 700,
+  'Cinder must not sit directly on top of Solis'
+);
+
 const varras = sectorPorts.find((port) => port.locationId === 'varras-prime');
 assert(
   varras?.neededCommodityIds.includes('water'),
@@ -124,8 +174,8 @@ assert(
 );
 const waterSources = sectorPorts.filter((port) => port.producedCommodityIds.includes('water'));
 assert(
-  waterSources.some((port) => ['niveus', 'skadi'].includes(port.locationId)),
-  'outer ice economies should supply water to dry inner worlds'
+  waterSources.some((port) => port.locationId === 'niveus'),
+  'Niveus should supply water to dry inner worlds'
 );
 
 console.log('PASS sector scale, climate zones and complete resource economy coverage');
