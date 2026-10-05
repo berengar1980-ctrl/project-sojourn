@@ -178,6 +178,21 @@ function miningLocationById(locationId: string | null): WorldLocation | null {
   return location?.activities.mine ? location : null;
 }
 
+function currentMiningLocationName(navigation: NavigationService): string {
+  return miningLocationById(navigation.getSnapshot().currentLocationId)?.name ?? 'Mining Zone';
+}
+
+function createStarMapReturnAction(
+  root: HTMLElement,
+  systemLog: SystemLogService,
+  mountStarMap: () => void
+): () => void {
+  return () => {
+    systemLog.write('NAV > STERNKARTE');
+    runSceneZoomTransition(root, mountStarMap);
+  };
+}
+
 function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
@@ -370,17 +385,14 @@ export function createGameController(options: GameControllerOptions): GameContro
   const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
-  let localSpaceSeed = 0;
-  let visitCounter = 0;
+  let localSpaceSeed = 0,
+    visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
   const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
-  const starModel = () =>
-    createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
-  const localModel = () => {
-    const location = miningLocationById(navigation.getSnapshot().currentLocationId);
-    return createActiveLocalModel(localSpace, activeShip, location?.name ?? 'Mining Zone');
-  };
+  const starModel = () => createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
+  const localModel = () =>
+    createActiveLocalModel(localSpace, activeShip, currentMiningLocationName(navigation));
   const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
@@ -428,19 +440,13 @@ export function createGameController(options: GameControllerOptions): GameContro
     getSpace: () => localSpace,
     refresh: refreshLocalPanel,
     systemLog,
-    returnToStarMap: () => {
-      systemLog.write('NAV > STERNKARTE');
-      runSceneZoomTransition(root, mountStarMap);
-    },
+    returnToStarMap: createStarMapReturnAction(root, systemLog, mountStarMap),
   });
   const mountLocalSpace = (reuseSeed = false): void => {
     destroyScenePanels(panels);
     mode = 'local-space';
     const location = miningLocationById(navigation.getSnapshot().currentLocationId);
-    if (!location) {
-      mountStarMap();
-      return;
-    }
+    if (!location) return mountStarMap();
     if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
     localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining, location);
     systemLog.write(
