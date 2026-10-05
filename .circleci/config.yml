@@ -13,123 +13,86 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-app-a:
+  format-file:
+    parameters:
+      file:
+        type: string
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
       - run:
-          command: >-
-            npx prettier --check
-            src/core/world-types.ts
-            src/features/star-map/star-map-view-model.ts
-
-  fmt-app-b:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            src/app/bootstrap.ts
-            src/app/game-controller.ts
-
-  fmt-render-a:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            src/ui/space/procedural-surface-textures.ts
-            src/ui/space/procedural-space-body-renderer.ts
-
-  fmt-render-b:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            src/ui/map/topdown-map-renderer.ts
-            src/ui/map/star-map-panel.ts
-
-  fmt-data-a:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            src/data/maps/narrows-sector.ts
-            src/data/maps/tutorial-cluster.ts
-            src/data/ports/sector-ports.ts
-            src/data/ports/tutorial-ports.ts
-
-  fmt-data-b:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            src/data/economy/sector-npc-economy.ts
-            src/data/economy/tutorial-npc-economy.ts
-            src/data/resources/mining-resources.ts
-
-  fmt-tests-a:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            tests/map/tutorial-map.test.cjs
-            tests/economy/sector-economy-coverage.test.cjs
-            tests/economy/market-pricing.test.cjs
-
-  fmt-tests-b:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run:
-          command: >-
-            npx prettier --check
-            tests/economy/mining-resource-flow.test.cjs
-            tests/local-space/local-space.test.cjs
-            tests/port/port-ui.test.cjs
+          command: npx prettier --check << parameters.file >>
 
 workflows:
-  prettier-diagnostics:
+  prettier-file-diagnostics:
     jobs:
-      - fmt-app-a:
+      - format-file:
+          name: fmt-bootstrap
+          file: src/app/bootstrap.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-app-b:
+      - format-file:
+          name: fmt-game-controller
+          file: src/app/game-controller.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-render-a:
+      - format-file:
+          name: fmt-surface-textures
+          file: src/ui/space/procedural-surface-textures.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-render-b:
+      - format-file:
+          name: fmt-body-renderer
+          file: src/ui/space/procedural-space-body-renderer.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-data-a:
+      - format-file:
+          name: fmt-sector-map
+          file: src/data/maps/narrows-sector.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-data-b:
+      - format-file:
+          name: fmt-map-alias
+          file: src/data/maps/tutorial-cluster.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-tests-a:
+      - format-file:
+          name: fmt-sector-ports
+          file: src/data/ports/sector-ports.ts
           filters: { branches: { only: ci-gate } }
-      - fmt-tests-b:
+      - format-file:
+          name: fmt-port-alias
+          file: src/data/ports/tutorial-ports.ts
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-sector-npcs
+          file: src/data/economy/sector-npc-economy.ts
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-npc-alias
+          file: src/data/economy/tutorial-npc-economy.ts
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-mining-resources
+          file: src/data/resources/mining-resources.ts
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-map-test
+          file: tests/map/tutorial-map.test.cjs
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-sector-test
+          file: tests/economy/sector-economy-coverage.test.cjs
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-pricing-test
+          file: tests/economy/market-pricing.test.cjs
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-mining-test
+          file: tests/economy/mining-resource-flow.test.cjs
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-local-test
+          file: tests/local-space/local-space.test.cjs
+          filters: { branches: { only: ci-gate } }
+      - format-file:
+          name: fmt-port-test
+          file: tests/port/port-ui.test.cjs
           filters: { branches: { only: ci-gate } }
