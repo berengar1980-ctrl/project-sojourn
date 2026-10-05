@@ -20,7 +20,7 @@ assert(data.includes("ringStyle: 'broad'"), 'sector needs a prominent ringed pla
 assert(data.includes("ringStyle: 'asteroid'"), 'sector needs a rocky planetary ring');
 assert(data.includes("kind: 'moon'"), 'sector must contain moons');
 assert(
-  data.includes("parentLocationId: 'karth-forge'"),
+  data.includes("parentLocationId: 'karth-industrial'"),
   'moons and orbital sites need parent bodies'
 );
 assert(data.includes('mine: true'), 'sector needs mining locations');
