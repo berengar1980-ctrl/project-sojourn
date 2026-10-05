@@ -1,10 +1,7 @@
 version: 2.1
 
-jobs:
-  quality:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
+commands:
+  prepare:
     steps:
       - checkout
       - restore_cache:
@@ -14,18 +11,60 @@ jobs:
       - run:
           name: Install dependencies
           command: npm ci
-      - save_cache:
-          key: npm-v1-{{ checksum "package-lock.json" }}
-          paths:
-            - ~/.npm
-      - run:
-          name: Quality gate
-          command: npm run check
+
+jobs:
+  format:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run format:check
+
+  lint:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run lint
+
+  typecheck:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npm run typecheck
+
+  architecture:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: node tests/quality/architecture.test.cjs
+
+  ports:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: |
+          node tests/economy/sector-economy-coverage.test.cjs
+          node tests/port/port-ui.test.cjs
 
 workflows:
-  quality:
+  split-final-checks:
     jobs:
-      - quality:
-          filters:
-            branches:
-              only: ci-gate
+      - format:
+          filters: { branches: { only: ci-gate } }
+      - lint:
+          filters: { branches: { only: ci-gate } }
+      - typecheck:
+          filters: { branches: { only: ci-gate } }
+      - architecture:
+          filters: { branches: { only: ci-gate } }
+      - ports:
+          filters: { branches: { only: ci-gate } }
