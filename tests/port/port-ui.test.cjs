@@ -25,7 +25,7 @@ assert(
   'port commodities must use shared stable economy resource ids'
 );
 assert(portTypes.includes('PortCrewCandidate'), 'port crew candidates must have domain data');
-assert(karth?.shipyard, 'Karth Forge must expose shipyard services');
+assert(karth?.shipyard, 'Karth Industrial must expose shipyard services');
 assert.equal(
   haven?.shipyard,
   false,
