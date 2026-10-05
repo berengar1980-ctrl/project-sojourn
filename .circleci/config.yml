@@ -34,7 +34,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Write diagnostic status
+          name: Write diagnostic status after permission update
           command: node scripts/ci-run-and-report.cjs --smoke
 
 workflows:
