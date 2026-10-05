@@ -16,7 +16,7 @@ const marketService = fs.readFileSync(
 );
 const portData = fs.readFileSync(path.join(root, 'src/data/ports/sector-ports.ts'), 'utf8');
 const { sectorPorts } = loadStandaloneTypeScriptModule(root, 'src/data/ports/sector-ports.ts');
-const karth = sectorPorts.find((port) => port.locationId === 'karth-forge');
+const karth = sectorPorts.find((port) => port.locationId === 'karth-industrial');
 const haven = sectorPorts.find((port) => port.locationId === 'haven');
 const portTypes = fs.readFileSync(path.join(root, 'src/core/port-types.ts'), 'utf8');
 
