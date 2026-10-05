@@ -1,35 +1,94 @@
 version: 2.1
 
-jobs:
-  autoformat:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
+commands:
+  prepare:
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm ci
-      - run:
-          name: Apply exact Prettier formatting
-          command: npx prettier --write src/core/world-types.ts tests/map/map-visual-scale.test.cjs
-      - run:
-          name: Commit formatted files
-          command: |
-            git config user.name "Project Sojourn CI"
-            git config user.email "ci@project-sojourn.invalid"
-            git add src/core/world-types.ts tests/map/map-visual-scale.test.cjs
-            if git diff --cached --quiet; then
-              echo "No formatting changes required"
-              exit 0
-            fi
-            git commit -m "Apply Prettier to remaining files"
-            git push origin HEAD:feat/rework-sector-visuals
+      - run: npm ci
+
+  format-world:
+    steps:
+      - run: npx prettier --write src/core/world-types.ts
+
+  format-map:
+    steps:
+      - run: npx prettier --write tests/map/map-visual-scale.test.cjs
+
+jobs:
+  world-planet-single:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-world
+      - run: grep -Fq "export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';" src/core/world-types.ts
+
+  world-planet-squeezed:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-world
+      - run: |
+          grep -Fq "export type PlanetBiome =" src/core/world-types.ts
+          grep -Fq "  'scorched' | 'desert' | 'temperate' | 'ice' | 'barren' | 'gas-giant';" src/core/world-types.ts
+
+  world-planet-vertical:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-world
+      - run: grep -Fq "  | 'scorched'" src/core/world-types.ts
+
+  world-station-squeezed:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-world
+      - run: grep -Fq "  'trade' | 'shipyard' | 'military' | 'refinery' | 'research' | 'pirate' | 'utility';" src/core/world-types.ts
+
+  world-station-vertical:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-world
+      - run: grep -Fq "  | 'trade'" src/core/world-types.ts
+
+  map-assignment-single:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-map
+      - run: grep -Fq "const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');" tests/map/map-visual-scale.test.cjs
+
+  map-assignment-multi:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-map
+      - run: grep -Fq "const renderer = fs.readFileSync(" tests/map/map-visual-scale.test.cjs
+
+  map-include-multi:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-map
+      - run: grep -Fq "  renderer.includes(" tests/map/map-visual-scale.test.cjs
+
+  map-double-quote:
+    docker: [{ image: cimg/node:20.18 }]
+    steps:
+      - prepare
+      - format-map
+      - run: grep -Fq "\"if (location.kind === 'moon') return Math.min(20, Math.max(5, location.radius * 0.9));\"" tests/map/map-visual-scale.test.cjs
 
 workflows:
-  autoformat:
+  prettier-oracle:
     jobs:
-      - autoformat:
-          filters:
-            branches:
-              only: ci-gate
+      - world-planet-single: { filters: { branches: { only: ci-gate } } }
+      - world-planet-squeezed: { filters: { branches: { only: ci-gate } } }
+      - world-planet-vertical: { filters: { branches: { only: ci-gate } } }
+      - world-station-squeezed: { filters: { branches: { only: ci-gate } } }
+      - world-station-vertical: { filters: { branches: { only: ci-gate } } }
+      - map-assignment-single: { filters: { branches: { only: ci-gate } } }
+      - map-assignment-multi: { filters: { branches: { only: ci-gate } } }
+      - map-include-multi: { filters: { branches: { only: ci-gate } } }
+      - map-double-quote: { filters: { branches: { only: ci-gate } } }
