@@ -98,7 +98,9 @@ async function postStatus(state, label, description) {
   const sha = process.env.CIRCLE_SHA1;
 
   if (!token || !owner || !repository || !sha) {
-    console.warn('CI DIAGNOSTIC: GitHub status reporting unavailable; required environment is missing.');
+    console.warn(
+      'CI DIAGNOSTIC: GitHub status reporting unavailable; required environment is missing.'
+    );
     return false;
   }
 
@@ -154,7 +156,7 @@ async function run() {
   const exitCode = await new Promise((resolve) => {
     const child = spawn(command, commandArgs, {
       cwd: process.cwd(),
-      env: process.env,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
       stdio: ['inherit', 'pipe', 'pipe'],
     });
 
