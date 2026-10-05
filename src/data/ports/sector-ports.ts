@@ -118,7 +118,14 @@ const profiles: readonly PortProfile[] = [
     economy: 'Treibstoffe, Raffineriegas, Chemikalien',
     population: '118.000',
     security: 'medium',
-    produces: ['synthetic-fuel', 'refinery-gas', 'chemicals', 'lubricants', 'polymers', 'explosives'],
+    produces: [
+      'synthetic-fuel',
+      'refinery-gas',
+      'chemicals',
+      'lubricants',
+      'polymers',
+      'explosives',
+    ],
     needs: [
       'sulfur',
       'carbon',
@@ -232,7 +239,15 @@ const profiles: readonly PortProfile[] = [
     population: '5.6 Mio.',
     security: 'high',
     produces: ['grain', 'protein', 'meat', 'vegetables', 'luxury-food', 'spices', 'clothing'],
-    needs: ['machine-parts', 'tools', 'batteries', 'synthetic-fuel', 'medical', 'spare-parts', 'water'],
+    needs: [
+      'machine-parts',
+      'tools',
+      'batteries',
+      'synthetic-fuel',
+      'medical',
+      'spare-parts',
+      'water',
+    ],
   },
   {
     locationId: 'haven',
