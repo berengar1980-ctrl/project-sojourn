@@ -16,7 +16,10 @@ assert(data.includes("planetBiome: 'desert'"), 'inner system needs desert worlds
 assert(data.includes("planetBiome: 'temperate'"), 'habitable band needs temperate worlds');
 assert(data.includes("planetBiome: 'ice'"), 'outer system needs ice worlds');
 assert(data.includes("kind: 'moon'"), 'sector must contain moons');
-assert(data.includes("parentLocationId: 'karth-forge'"), 'moons and orbital sites need parent bodies');
+assert(
+  data.includes("parentLocationId: 'karth-forge'"),
+  'moons and orbital sites need parent bodies'
+);
 assert(data.includes('mine: true'), 'sector needs mining locations');
 assert(data.includes('salvage: true'), 'sector needs salvage locations');
 assert(data.includes("id: 'blackjaw-outpost'"), 'sector needs a pirate port');
