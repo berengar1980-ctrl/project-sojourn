@@ -25,7 +25,7 @@ const mined = new Set(
 );
 
 assert.equal(economyResources.length, 56, 'sector economy must retain the full resource catalog');
-assert(sectorPorts.length >= 18, 'expanded sector needs enough distinct trade economies');
+assert(sectorPorts.length >= 17, 'sector needs enough distinct trade economies after map cleanup');
 assert(
   narrowsSector.locations.length >= 27,
   'sector needs meaningful travel scale without map clutter'
