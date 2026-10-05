@@ -1,3 +1,1 @@
-export {
-  createSectorNpcEconomyStates as createTutorialNpcEconomyStates,
-} from './sector-npc-economy';
+export { createSectorNpcEconomyStates as createTutorialNpcEconomyStates } from './sector-npc-economy';
