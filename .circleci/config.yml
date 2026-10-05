@@ -1,182 +1,31 @@
 version: 2.1
 
 jobs:
-  ctl-1:
+  quality:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 4200 src/app/game-controller.ts
-
-  ctl-2:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 4200 --range-end 8400 src/app/game-controller.ts
-
-  ctl-3:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 8400 --range-end 12600 src/app/game-controller.ts
-
-  ctl-4:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 12600 --range-end 17000 src/app/game-controller.ts
-
-  surf-3:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 5400 --range-end 8100 src/ui/space/procedural-surface-textures.ts
-
-  surf-4:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 8100 --range-end 11000 src/ui/space/procedural-surface-textures.ts
-
-  map-1:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 3100 src/data/maps/narrows-sector.ts
-
-  map-2:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 3100 --range-end 6200 src/data/maps/narrows-sector.ts
-
-  map-3:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 6200 --range-end 9300 src/data/maps/narrows-sector.ts
-
-  map-4:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 9300 --range-end 12500 src/data/maps/narrows-sector.ts
-
-  ports-1:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 3100 src/data/ports/sector-ports.ts
-
-  ports-2:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 3100 --range-end 6200 src/data/ports/sector-ports.ts
-
-  ports-3:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 6200 --range-end 9300 src/data/ports/sector-ports.ts
-
-  ports-4:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 9300 --range-end 12500 src/data/ports/sector-ports.ts
-
-  econ-1:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 1250 tests/economy/sector-economy-coverage.test.cjs
-
-  econ-2:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check --range-start 1250 --range-end 2500 tests/economy/sector-economy-coverage.test.cjs
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "package-lock.json" }}
+            - npm-v1-
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Quality gate
+          command: npm run check
 
 workflows:
-  prettier-quarter-diagnostics:
+  quality:
     jobs:
-      - ctl-1:
-          filters: { branches: { only: ci-gate } }
-      - ctl-2:
-          filters: { branches: { only: ci-gate } }
-      - ctl-3:
-          filters: { branches: { only: ci-gate } }
-      - ctl-4:
-          filters: { branches: { only: ci-gate } }
-      - surf-3:
-          filters: { branches: { only: ci-gate } }
-      - surf-4:
-          filters: { branches: { only: ci-gate } }
-      - map-1:
-          filters: { branches: { only: ci-gate } }
-      - map-2:
-          filters: { branches: { only: ci-gate } }
-      - map-3:
-          filters: { branches: { only: ci-gate } }
-      - map-4:
-          filters: { branches: { only: ci-gate } }
-      - ports-1:
-          filters: { branches: { only: ci-gate } }
-      - ports-2:
-          filters: { branches: { only: ci-gate } }
-      - ports-3:
-          filters: { branches: { only: ci-gate } }
-      - ports-4:
-          filters: { branches: { only: ci-gate } }
-      - econ-1:
-          filters: { branches: { only: ci-gate } }
-      - econ-2:
-          filters: { branches: { only: ci-gate } }
+      - quality:
+          filters:
+            branches:
+              only: ci-gate
