@@ -30,8 +30,8 @@ export function createSectorNpcEconomyStates(): NpcEconomyState[] {
       cargoCapacity: 56,
       normalCargoCapacity: 20,
       cargo: {},
-      workResourceIds: ['ferrite', 'cuprium', 'cobaltite', 'rare-metals'],
-      workLocationId: 'brass-moon',
+      workResourceIds: ['cuprium', 'cobaltite'],
+      workLocationId: 'copper-crown-field',
     },
     {
       id: 'npc-miner-orin',

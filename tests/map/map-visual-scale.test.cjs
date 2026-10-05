@@ -9,13 +9,13 @@ const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-rendere
 
 assert(
   renderer.includes(
-    "if (location.kind === 'moon') return Math.min(20, Math.max(5, location.radius * 0.9));"
+    "if (location.kind === 'moon') return Math.min(12, Math.max(4, location.radius * 0.65));"
   ),
-  'moon symbols must preserve visibly different body sizes'
+  'moon symbols must stay subordinate to planets'
 );
 assert(
-  renderer.includes('return Math.min(70, Math.max(12, location.radius * 0.75));'),
-  'planet symbols must preserve strong visual size differences'
+  renderer.includes('return Math.min(30, Math.max(8, location.radius * 0.55));'),
+  'planet symbols must stay compact while preserving size differences'
 );
 
 console.log('PASS star-map body size hierarchy');

@@ -76,6 +76,11 @@ assert(
   data.includes('cargoCapacityTons: 280') && data.includes('cargoCapacityTons: 360'),
   'registered miners must define explicit cargo capacity'
 );
+assert.equal(
+  (data.match(/cruiseSpeed: 140/g) ?? []).length,
+  2,
+  'registered miners must use the faster strategic cruise speed'
+);
 assert(
   data.includes("import standardHardpointsJson from './miner-80m-standard.hardpoints.json'"),
   'standard miner must load its own hardpoint JSON'

@@ -301,11 +301,11 @@ export class TopdownMapRenderer {
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {
-    if (location.kind === 'asteroid-field') return 30;
-    if (location.kind === 'station') return Math.min(17, Math.max(9, location.radius * 0.72));
-    if (location.kind === 'wreck') return 11;
-    if (location.kind === 'moon') return Math.min(20, Math.max(5, location.radius * 0.9));
-    return Math.min(70, Math.max(12, location.radius * 0.75));
+    if (location.kind === 'asteroid-field') return 24;
+    if (location.kind === 'station') return Math.min(13, Math.max(7, location.radius * 0.6));
+    if (location.kind === 'wreck') return 9;
+    if (location.kind === 'moon') return Math.min(12, Math.max(4, location.radius * 0.65));
+    return Math.min(30, Math.max(8, location.radius * 0.55));
   }
 
   private shouldDrawLabel(location: StarMapLocationView): boolean {

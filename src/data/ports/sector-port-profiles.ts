@@ -108,6 +108,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'chemicals',
       'lubricants',
       'refinery-gas',
+      'explosives',
     ],
     crew: [
       crew(
@@ -129,25 +130,6 @@ export const sectorPortProfiles: readonly PortProfile[] = [
         ['Werkzeug']
       ),
     ],
-  },
-  {
-    locationId: 'brass-moon',
-    subtitle: 'Bergbaumond // Erzumschlag',
-    economy: 'Bergbau, Erzhandel, Minenversorgung',
-    population: '340.000',
-    security: 'medium',
-    produces: [],
-    needs: [
-      'water',
-      'nutrient-paste',
-      'medical',
-      'tools',
-      'spare-parts',
-      'explosives',
-      'batteries',
-      'synthetic-fuel',
-    ],
-    trades: ['ferrite', 'cuprium', 'cobaltite', 'rare-metals'],
   },
   {
     locationId: 'helix-shipyards',
@@ -339,24 +321,6 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'medical',
       'clothing',
     ],
-  },
-  {
-    locationId: 'skadi',
-    subtitle: 'Eismond // Extraktionshafen',
-    economy: 'Wassergewinnung, Kühlmittel, Bergbau',
-    population: '97.000',
-    security: 'medium',
-    produces: ['water', 'coolant'],
-    needs: [
-      'tools',
-      'machine-parts',
-      'spare-parts',
-      'reactor-fuel',
-      'nutrient-paste',
-      'medical',
-      'batteries',
-    ],
-    trades: ['silicite', 'rare-metals'],
   },
   {
     locationId: 'coldwater-station',
