@@ -1,7 +1,7 @@
 version: 2.1
 
 commands:
-  use-dependencies:
+  use-prepared-dependencies:
     steps:
       - checkout
       - attach_workspace:
@@ -9,7 +9,8 @@ commands:
 
 jobs:
   prepare:
-    docker: [{ image: cimg/node:20.18 }]
+    docker:
+      - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
@@ -17,43 +18,98 @@ jobs:
           keys:
             - npm-v1-{{ checksum "package-lock.json" }}
             - npm-v1-
-      - run: npm ci
+      - run:
+          name: Install dependencies once
+          command: npm ci
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
       - persist_to_workspace:
           root: .
-          paths: [node_modules]
+          paths:
+            - node_modules
 
-  fmt-economy-test:
-    docker: [{ image: cimg/node:20.18 }]
+  format-src:
+    docker:
+      - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
-      - run: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
+      - use-prepared-dependencies
+      - run:
+          name: Format source
+          command: npx prettier --check src
 
-  fmt-map-test:
-    docker: [{ image: cimg/node:20.18 }]
+  format-tests:
+    docker:
+      - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
-      - run: npx prettier --check tests/map/map-visual-scale.test.cjs
+      - use-prepared-dependencies
+      - run:
+          name: Format tests
+          command: npx prettier --check tests
 
-  fmt-ship-test:
-    docker: [{ image: cimg/node:20.18 }]
+  format-project:
+    docker:
+      - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
-      - run: npx prettier --check tests/ships/ships-module.test.cjs
+      - use-prepared-dependencies
+      - run:
+          name: Format project files
+          command: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
+
+  static-quality:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - use-prepared-dependencies
+      - run:
+          name: Lint
+          command: npm run lint
+      - run:
+          name: TypeScript
+          command: npm run typecheck
+      - run:
+          name: Dependency architecture
+          command: npm run deps:check
+
+  verify:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - use-prepared-dependencies
+      - run:
+          name: Tests
+          command: npm test
+      - run:
+          name: Production bundle
+          command: npx vite build
 
 workflows:
-  pinpoint-test-format:
+  quality:
     jobs:
       - prepare:
           filters: { branches: { only: ci-gate } }
-      - fmt-economy-test:
+      - format-src:
           requires: [prepare]
           filters: { branches: { only: ci-gate } }
-      - fmt-map-test:
+      - format-tests:
           requires: [prepare]
           filters: { branches: { only: ci-gate } }
-      - fmt-ship-test:
+      - format-project:
           requires: [prepare]
+          filters: { branches: { only: ci-gate } }
+      - static-quality:
+          requires: [prepare]
+          filters: { branches: { only: ci-gate } }
+      - verify:
+          requires:
+            - format-src
+            - format-tests
+            - format-project
+            - static-quality
           filters: { branches: { only: ci-gate } }
