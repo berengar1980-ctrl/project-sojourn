@@ -233,11 +233,7 @@ function enteredMiningLocation(
   previousId: string | null,
   currentId: string | null
 ): boolean {
-  return (
-    mode === 'star-map' &&
-    previousId !== currentId &&
-    miningLocationById(currentId) !== null
-  );
+  return mode === 'star-map' && previousId !== currentId && miningLocationById(currentId) !== null;
 }
 
 function advanceEconomyDay(
@@ -323,11 +319,7 @@ function createControllerStarPanel(options: {
     log: options.log,
     onSelectLocation: (id) => {
       const snapshot = options.navigation.getSnapshot();
-      if (
-        miningLocationById(id) &&
-        snapshot.currentLocationId === id &&
-        !snapshot.isTravelling
-      ) {
+      if (miningLocationById(id) && snapshot.currentLocationId === id && !snapshot.isTravelling) {
         options.onEnterLocalSpace();
         return;
       }
@@ -368,9 +360,7 @@ function createActivePortPanel(
       const result = trade.buy(location.id, resourceId, 1, ship.cargoCapacityTons);
       if (!result) return;
       const name = economyResourceById(resourceId)?.name ?? resourceId;
-      log.write(
-        `HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`
-      );
+      log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);
       onRefresh();
     },
     onSell: (resourceId) => {
