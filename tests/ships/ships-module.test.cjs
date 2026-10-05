@@ -77,7 +77,7 @@ assert(
   'registered miners must define explicit cargo capacity'
 );
 assert.equal(
-  (data.match(/cruiseSpeed: 130/g) || []).length,
+  (data.match(/cruiseSpeed: 180/g) || []).length,
   2,
   'registered miners must use the faster strategic-map cruise speed'
 );
