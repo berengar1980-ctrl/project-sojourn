@@ -26,7 +26,10 @@ const mined = new Set(
 
 assert.equal(economyResources.length, 56, 'sector economy must retain the full resource catalog');
 assert(sectorPorts.length >= 18, 'expanded sector needs enough distinct trade economies');
-assert(narrowsSector.locations.length >= 27, 'sector needs meaningful travel scale without map clutter');
+assert(
+  narrowsSector.locations.length >= 27,
+  'sector needs meaningful travel scale without map clutter'
+);
 
 for (const resource of economyResources) {
   assert(needed.has(resource.id), resource.id + ' must be required by at least one economy');
@@ -72,7 +75,11 @@ const miningSites = narrowsSector.locations.filter((location) => location.activi
 const salvageSites = narrowsSector.locations.filter((location) => location.activities.salvage);
 
 assert(planets.length >= 11, 'planets must dominate the sector hierarchy');
-assert.equal(moons.length, 1, 'the sector map must keep moons exceptional instead of crowding planets');
+assert.equal(
+  moons.length,
+  1,
+  'the sector map must keep moons exceptional instead of crowding planets'
+);
 assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
