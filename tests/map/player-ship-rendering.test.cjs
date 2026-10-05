@@ -44,6 +44,10 @@ assert(
   shipLighting.includes('toShipLocal'),
   'world light must be transformed into ship-local space'
 );
+assert(
+  shipLighting.includes("context.filter = 'saturate(.92) contrast(.94)';"),
+  'shared ship rendering must reduce baked-in sprite contrast'
+);
 assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
 assert(
   shipRenderer.includes('updateIdleStationKeeping'),
