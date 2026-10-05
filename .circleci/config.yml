@@ -1,0 +1,114 @@
+version: 2.1
+
+commands:
+  prepare:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "package-lock.json" }}
+            - npm-v1-
+      - run:
+          name: Install dependencies
+          command: npm ci
+
+jobs:
+  format-src:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Check source formatting
+          command: npx prettier --check src
+
+  format-tests:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Check test formatting
+          command: npx prettier --check tests
+
+  format-config:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Check project formatting
+          command: npx prettier --check . --ignore-path .prettierignore
+
+  lint:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: ESLint
+          command: npm run lint
+
+  typecheck:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: TypeScript
+          command: npm run typecheck
+
+  dependencies:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Dependency architecture
+          command: npm run deps:check
+
+  tests:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Tests
+          command: npm test
+
+  build:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run:
+          name: Production build
+          command: npm run build
+
+workflows:
+  quality:
+    jobs:
+      - format-src:
+          filters: { branches: { only: ci-gate } }
+      - format-tests:
+          filters: { branches: { only: ci-gate } }
+      - format-config:
+          filters: { branches: { only: ci-gate } }
+      - lint:
+          filters: { branches: { only: ci-gate } }
+      - typecheck:
+          filters: { branches: { only: ci-gate } }
+      - dependencies:
+          filters: { branches: { only: ci-gate } }
+      - tests:
+          filters: { branches: { only: ci-gate } }
+      - build:
+          filters: { branches: { only: ci-gate } }
