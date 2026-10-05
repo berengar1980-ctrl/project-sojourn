@@ -5,7 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
-const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const renderer = fs.readFileSync(
+  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
+  'utf8'
+);
 
 assert(
   renderer.includes(
