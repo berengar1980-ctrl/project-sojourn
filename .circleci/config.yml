@@ -22,7 +22,7 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 200 && a[1] <= 224) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
+          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=200&&x<=224)?0:1)"
 
   hunk-225-249:
     docker:
@@ -33,7 +33,7 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 225 && a[1] <= 249) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
+          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=225&&x<=249)?0:1)"
 
   hunk-250-274:
     docker:
@@ -44,7 +44,7 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 250 && a[1] <= 274) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
+          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=250&&x<=274)?0:1)"
 
   hunk-275-299:
     docker:
@@ -55,7 +55,7 @@ jobs:
       - run: |
           npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
           git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          awk '/^@@/ { split($3,a,","); gsub("+","",a[1]); if (a[1] >= 275 && a[1] <= 299) found=1 } END { exit found ? 0 : 1 }' /tmp/renderer.diff
+          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=275&&x<=299)?0:1)"
 
 
 workflows:
