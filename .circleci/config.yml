@@ -1,7 +1,10 @@
 version: 2.1
 
-commands:
-  prepare:
+jobs:
+  quality:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
     steps:
       - checkout
       - restore_cache:
@@ -11,61 +14,18 @@ commands:
       - run:
           name: Install dependencies
           command: npm ci
-
-jobs:
-  hunk-200-224:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=200&&x<=224)?0:1)"
-
-  hunk-225-249:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=225&&x<=249)?0:1)"
-
-  hunk-250-274:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=250&&x<=274)?0:1)"
-
-  hunk-275-299:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: |
-          npx prettier --write src/ui/map/topdown-map-renderer.ts >/dev/null
-          git diff --unified=0 -- src/ui/map/topdown-map-renderer.ts > /tmp/renderer.diff
-          node -e "const s=require('fs').readFileSync('/tmp/renderer.diff','utf8'); const n=[...s.matchAll(/^@@ .* \\+(\\d+)/gm)].map(m=>Number(m[1])); process.exit(n.some(x=>x>=275&&x<=299)?0:1)"
-
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Quality gate
+          command: npm run check
 
 workflows:
-  renderer-diff-narrow:
+  quality:
     jobs:
-      - hunk-200-224:
-          filters: { branches: { only: ci-gate } }
-      - hunk-225-249:
-          filters: { branches: { only: ci-gate } }
-      - hunk-250-274:
-          filters: { branches: { only: ci-gate } }
-      - hunk-275-299:
-          filters: { branches: { only: ci-gate } }
+      - quality:
+          filters:
+            branches:
+              only: ci-gate
