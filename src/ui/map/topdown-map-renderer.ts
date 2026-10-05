@@ -4,7 +4,7 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
-import { mapSymbolScale } from './map-visual-scale';
+import { mapLocationVisualRadius, mapSymbolScale } from './map-visual-scale';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
@@ -276,7 +276,7 @@ export class TopdownMapRenderer {
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius =
-      this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
+      mapLocationVisualRadius(location.kind, location.radius) *\n      mapSymbolScale(this.camera.getRelativeZoom());
 
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
@@ -304,14 +304,6 @@ export class TopdownMapRenderer {
     }
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
-  }
-
-  private locationVisualRadius(location: StarMapLocationView): number {
-    if (location.kind === 'asteroid-field') return 30;
-    if (location.kind === 'station') return Math.min(17, Math.max(9, location.radius * 0.72));
-    if (location.kind === 'wreck') return 11;
-    if (location.kind === 'moon') return Math.min(20, Math.max(6, location.radius * 0.72));
-    return Math.min(54, Math.max(14, location.radius * 0.72));
   }
 
   private shouldDrawLabel(location: StarMapLocationView): boolean {
