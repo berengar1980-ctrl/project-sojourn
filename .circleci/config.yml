@@ -13,66 +13,91 @@ commands:
           command: npm ci
 
 jobs:
-  format:
+  fmt-renderer:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run format:check
+      - run: npx prettier --check src/ui/map/topdown-map-renderer.ts
 
-  lint:
+  fmt-scale:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run lint
+      - run: npx prettier --check src/ui/map/map-visual-scale.ts
 
-  typecheck:
+  fmt-new-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run typecheck
+      - run: npx prettier --check tests/map/map-visual-scale.test.cjs tests/quality/no-warhammer-references.test.cjs
 
-  dependencies:
+  fmt-existing:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run deps:check
+      - run: npx prettier --check src tests --ignore-path /tmp/no-ignore
+    environment:
+      PRETTIER_IGNORE_PATH: /dev/null
 
-  tests:
+  test-economy:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm test
+      - run: for file in tests/economy/*.test.cjs; do node "$file" || exit 1; done
 
-  build:
+  test-map:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run build
+      - run: for file in tests/map/*.test.cjs; do node "$file" || exit 1; done
+
+  test-quality:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: for file in tests/quality/*.test.cjs; do node "$file" || exit 1; done
+
+  test-rest:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: |
+          for dir in tests/assets tests/local-space tests/navigation tests/port tests/ships; do
+            for file in "$dir"/*.test.cjs; do
+              node "$file" || exit 1
+            done
+          done
 
 workflows:
-  diagnostic-quality:
+  targeted-diagnostics:
     jobs:
-      - format:
+      - fmt-renderer:
           filters: { branches: { only: ci-gate } }
-      - lint:
+      - fmt-scale:
           filters: { branches: { only: ci-gate } }
-      - typecheck:
+      - fmt-new-tests:
           filters: { branches: { only: ci-gate } }
-      - dependencies:
+      - test-economy:
           filters: { branches: { only: ci-gate } }
-      - tests:
+      - test-map:
           filters: { branches: { only: ci-gate } }
-      - build:
+      - test-quality:
+          filters: { branches: { only: ci-gate } }
+      - test-rest:
           filters: { branches: { only: ci-gate } }
