@@ -308,7 +308,7 @@ export class TopdownMapRenderer {
       y: point.y,
       radius,
       dangerLevel: location.dangerLevel,
-      biome: location.planetBiome,
+      biome: location.planetBiome ?? 'temperate',
       light,
     });
   }
