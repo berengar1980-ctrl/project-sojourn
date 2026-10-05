@@ -13,36 +13,46 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-economy-tests:
+  fmt-player-ship:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy
+      - run: npx prettier --check tests/map/player-ship-rendering.test.cjs
 
-  fmt-map-tests:
+  fmt-space-bodies:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map
+      - run: npx prettier --check tests/map/procedural-space-bodies.test.cjs
 
-  fmt-port-tests:
+  fmt-route:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/port
+      - run: npx prettier --check tests/map/route-planner.test.cjs
+
+  fmt-background:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/map/space-background.test.cjs
 
 workflows:
-  test-directory-format-diagnostics:
+  legacy-map-format-diagnostics:
     jobs:
-      - fmt-economy-tests:
+      - fmt-player-ship:
           filters: { branches: { only: ci-gate } }
-      - fmt-map-tests:
+      - fmt-space-bodies:
           filters: { branches: { only: ci-gate } }
-      - fmt-port-tests:
+      - fmt-route:
+          filters: { branches: { only: ci-gate } }
+      - fmt-background:
           filters: { branches: { only: ci-gate } }
