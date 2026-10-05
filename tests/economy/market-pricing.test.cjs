@@ -10,7 +10,7 @@ const resourcesSource = fs.readFileSync(
   path.join(root, 'src/data/economy/economy-resources.ts'),
   'utf8'
 );
-const portsSource = fs.readFileSync(path.join(root, 'src/data/ports/tutorial-ports.ts'), 'utf8');
+const portsSource = fs.readFileSync(path.join(root, 'src/data/ports/sector-ports.ts'), 'utf8');
 const marketSource = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
@@ -39,11 +39,11 @@ const resourceCount = (resourcesSource.match(/resource\('/g) ?? []).length;
 assert(resourceCount >= 50, 'economy catalog should expose a broad resource set');
 
 assert(
-  portsSource.includes('producedCommodityIds: [') && portsSource.includes('neededCommodityIds: ['),
+  portsSource.includes('producedCommodityIds: [...profile.produces]') && portsSource.includes('neededCommodityIds: [...profile.needs]'),
   'ports must declare stable produced and required resource ids'
 );
 assert(
-  portsSource.includes("commodity('obscura'") && portsSource.includes("commodity('xeno-artifacts'"),
+  portsSource.includes("produces: ['obscura', 'proscribed-data']") && portsSource.includes("produces: ['xeno-artifacts']"),
   'at least some demo ports must expose contraband markets'
 );
 assert(
@@ -61,7 +61,7 @@ assert(
 );
 assert(
   controllerSource.includes('const markets = createEconomyMarketService(') &&
-    controllerSource.includes('tutorialPorts, economyResources'),
+    controllerSource.includes('sectorPorts, economyResources'),
   'game controller must own persistent market state instead of rebuilding prices per view'
 );
 
