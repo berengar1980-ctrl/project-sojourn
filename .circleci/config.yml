@@ -1,127 +1,31 @@
 version: 2.1
 
 jobs:
-  core-world:
+  quality:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
-      - run: npm ci
-      - run: npx prettier --check src/core/world-types.ts
-
-  core-view:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/features/star-map/star-map-view-model.ts
-
-  core-camera:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/ui/map/map-camera.ts
-
-  map-station:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/ui/map/station-symbol-renderer.ts
-
-  map-rings:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/ui/map/planet-ring-renderer.ts
-
-  map-main:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/ui/map/topdown-map-renderer.ts
-
-  data-world:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/data/maps/narrows-sector.ts
-
-  data-ports:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/data/ports/sector-ports.ts
-
-  data-resources:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/data/economy/economy-resources.ts
-
-  data-npcs:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/data/economy/sector-npc-economy.ts
-
-  data-situations:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npx prettier --check src/systems/economy/market-situation-service.ts
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "package-lock.json" }}
+            - npm-v1-
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Quality gate
+          command: npm run check
 
 workflows:
-  prettier-file-diagnostics:
+  quality:
     jobs:
-      - core-world:
-          filters: { branches: { only: ci-gate } }
-      - core-view:
-          filters: { branches: { only: ci-gate } }
-      - core-camera:
-          filters: { branches: { only: ci-gate } }
-      - map-station:
-          filters: { branches: { only: ci-gate } }
-      - map-rings:
-          filters: { branches: { only: ci-gate } }
-      - map-main:
-          filters: { branches: { only: ci-gate } }
-      - data-world:
-          filters: { branches: { only: ci-gate } }
-      - data-ports:
-          filters: { branches: { only: ci-gate } }
-      - data-resources:
-          filters: { branches: { only: ci-gate } }
-      - data-npcs:
-          filters: { branches: { only: ci-gate } }
-      - data-situations:
-          filters: { branches: { only: ci-gate } }
+      - quality:
+          filters:
+            branches:
+              only: ci-gate
