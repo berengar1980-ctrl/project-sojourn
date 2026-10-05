@@ -26,8 +26,14 @@ assert(registry.includes('patrolVariantShips'), 'registry must expose patrol var
 assert(registry.includes('minerVariantShips'), 'registry must expose miner variants');
 assert(registry.includes('salvageVariantShips'), 'registry must expose salvage variants');
 assert(registry.includes('freighterVariantShips'), 'registry must expose freighter variants');
-assert(!registry.includes('miningShips'), 'legacy mining ships must be ignored by the test registry');
-assert(!registry.includes('freighterShips'), 'legacy freighter must be ignored by the test registry');
+assert(
+  !registry.includes('miningShips'),
+  'legacy mining ships must be ignored by the test registry'
+);
+assert(
+  !registry.includes('freighterShips'),
+  'legacy freighter must be ignored by the test registry'
+);
 assert(
   bootstrap.includes("getShipDefinition('miner-80m-variant-01')"),
   'the first sprite-sheet miner must be the default test ship'
@@ -58,7 +64,11 @@ for (const spec of roles) {
 
     const hardpoints = JSON.parse(fs.readFileSync(hardpointFile, 'utf8'));
     assert.equal(hardpoints.sourceWidth, spec.width, base + ' canvas width mismatch');
-    assert.equal(hardpoints.sourceHeight, heights[spec.key][index], base + ' canvas height mismatch');
+    assert.equal(
+      hardpoints.sourceHeight,
+      heights[spec.key][index],
+      base + ' canvas height mismatch'
+    );
     assert(hardpoints.engines.length >= 2, base + ' needs engine hardpoints');
     assert.equal(hardpoints.maneuverThrusters.length, 4, base + ' needs four RCS hardpoints');
     assert.equal(hardpoints.shield.maxHp, 100, base + ' starter shield must have 100 HP');
