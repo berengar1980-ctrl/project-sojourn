@@ -15,7 +15,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-01.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-01.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 324,
       facing: 'right',
@@ -30,7 +33,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-02.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-02.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 331,
       facing: 'right',
@@ -45,7 +51,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-03.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-03.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 322,
       facing: 'right',
@@ -60,7 +69,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-04.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-04.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 330,
       facing: 'right',
@@ -75,7 +87,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-05.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-05.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 337,
       facing: 'right',
@@ -90,7 +105,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-06.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-06.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 315,
       facing: 'right',
@@ -105,7 +123,10 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
-      assetUrl: new URL('../../../resources/ships/freighter/freighter-120m-variant-07.png', import.meta.url).href,
+      assetUrl: new URL(
+        '../../../resources/ships/freighter/freighter-120m-variant-07.png',
+        import.meta.url
+      ).href,
       widthPx: 518,
       heightPx: 324,
       facing: 'right',
