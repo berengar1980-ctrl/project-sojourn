@@ -77,24 +77,12 @@ assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
 assert(sectorPorts.filter((port) => port.shipyard).length >= 2, 'sector needs multiple shipyards');
-assert.equal(
-  narrowsSector.regions.length,
-  0,
-  'decorative danger regions must not clutter the map'
-);
+assert.equal(narrowsSector.regions.length, 0, 'decorative danger regions must not clutter the map');
 for (const stationId of ['helix-shipyards', 'coldwater-station']) {
   const station = stations.find((entry) => entry.id === stationId);
   assert(station, stationId + ' must remain in the sector');
-  assert.equal(
-    station.parentLocationId,
-    undefined,
-    stationId + ' must be a free-space station'
-  );
-  assert.equal(
-    station.orbitRadius,
-    undefined,
-    stationId + ' must not render as a planetary orbit'
-  );
+  assert.equal(station.parentLocationId, undefined, stationId + ' must be a free-space station');
+  assert.equal(station.orbitRadius, undefined, stationId + ' must not render as a planetary orbit');
 }
 
 const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 900);
@@ -125,11 +113,7 @@ assert.equal(
   cinderPlanet.radius,
   'Cinder must remain the smallest planet'
 );
-assert.equal(
-  Math.max(...planetRadii),
-  havenPlanet.radius,
-  'Haven must remain the largest planet'
-);
+assert.equal(Math.max(...planetRadii), havenPlanet.radius, 'Haven must remain the largest planet');
 let minimumPlanetSpacing = Infinity;
 for (let index = 0; index < planets.length; index += 1) {
   for (let otherIndex = index + 1; otherIndex < planets.length; otherIndex += 1) {
