@@ -394,11 +394,7 @@ export class TopdownMapRenderer {
     context.restore();
   }
 
-  private drawNavLocation(
-    location: StarMapLocationView,
-    point: WorldPoint,
-    radius: number
-  ): void {
+  private drawNavLocation(location: StarMapLocationView, point: WorldPoint, radius: number): void {
     const context = this.context;
     if (location.kind === 'station') {
       this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
