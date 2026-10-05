@@ -13,71 +13,115 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-src:
+  fmt-core:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src
+      - run: npx prettier --check src/core
 
-  fmt-tests:
+  fmt-data:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests
+      - run: npx prettier --check src/data
 
-  test-economy:
+  fmt-features:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: for file in tests/economy/*.test.cjs; do node "$file" || exit 1; done
+      - run: npx prettier --check src/features
 
-  test-map:
+  fmt-systems:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: for file in tests/map/*.test.cjs; do node "$file" || exit 1; done
+      - run: npx prettier --check src/systems
 
-  test-quality:
+  fmt-ui-map:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: for file in tests/quality/*.test.cjs; do node "$file" || exit 1; done
+      - run: npx prettier --check src/ui/map
 
-  test-rest:
+  fmt-ui-space:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: |
-          for dir in tests/assets tests/local-space tests/navigation tests/port tests/ships; do
-            for file in "$dir"/*.test.cjs; do
-              node "$file" || exit 1
-            done
-          done
+      - run: npx prettier --check src/ui/space
+
+  fmt-ui-other:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/ui --ignore-path /tmp/no-prettier-ignore
+
+  fmt-test-economy:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/economy
+
+  fmt-test-map:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/map
+
+  fmt-test-quality:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/quality
+
+  fmt-test-rest:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check tests/assets tests/local-space tests/navigation tests/port tests/ships tests/run-tests.cjs tests/ts-module-loader.cjs
+
 
 workflows:
-  remaining-diagnostics:
+  format-directory-diagnostics:
     jobs:
-      - fmt-src:
+      - fmt-core:
           filters: { branches: { only: ci-gate } }
-      - fmt-tests:
+      - fmt-data:
           filters: { branches: { only: ci-gate } }
-      - test-economy:
+      - fmt-features:
           filters: { branches: { only: ci-gate } }
-      - test-map:
+      - fmt-systems:
           filters: { branches: { only: ci-gate } }
-      - test-quality:
+      - fmt-ui-map:
           filters: { branches: { only: ci-gate } }
-      - test-rest:
+      - fmt-ui-space:
+          filters: { branches: { only: ci-gate } }
+      - fmt-test-economy:
+          filters: { branches: { only: ci-gate } }
+      - fmt-test-map:
+          filters: { branches: { only: ci-gate } }
+      - fmt-test-quality:
+          filters: { branches: { only: ci-gate } }
+      - fmt-test-rest:
           filters: { branches: { only: ci-gate } }
