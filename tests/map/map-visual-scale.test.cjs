@@ -14,7 +14,7 @@ assert(
   'moon symbols must preserve visibly different body sizes'
 );
 assert(
-  renderer.includes("return Math.min(70, Math.max(12, location.radius * 0.75));"),
+  renderer.includes('return Math.min(70, Math.max(12, location.radius * 0.75));'),
   'planet symbols must preserve strong visual size differences'
 );
 
