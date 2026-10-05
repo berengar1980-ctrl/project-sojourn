@@ -1,83 +1,116 @@
 version: 2.1
 
 jobs:
-  fmt-controller:
+  ctl-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check src/app/game-controller.ts
+      - run: npx prettier --check --range-start 0 --range-end 8300 src/app/game-controller.ts
 
-  fmt-surface:
+  ctl-b:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check src/ui/space/procedural-surface-textures.ts
+      - run: npx prettier --check --range-start 8300 --range-end 17000 src/app/game-controller.ts
 
-  fmt-mapdata:
+  surf-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check src/data/maps/narrows-sector.ts
+      - run: npx prettier --check --range-start 0 --range-end 5400 src/ui/space/procedural-surface-textures.ts
 
-  fmt-ports:
+  surf-b:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check src/data/ports/sector-ports.ts
+      - run: npx prettier --check --range-start 5400 --range-end 11000 src/ui/space/procedural-surface-textures.ts
 
-  fmt-npcsalias:
+  map-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check src/data/economy/tutorial-npc-economy.ts
+      - run: npx prettier --check --range-start 0 --range-end 6200 src/data/maps/narrows-sector.ts
 
-  fmt-econcover:
+  map-b:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
+      - run: npx prettier --check --range-start 6200 --range-end 12500 src/data/maps/narrows-sector.ts
 
-  fmt-miningtest:
+  ports-a:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check tests/economy/mining-resource-flow.test.cjs
+      - run: npx prettier --check --range-start 0 --range-end 6200 src/data/ports/sector-ports.ts
+
+  ports-b:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 6200 --range-end 12500 src/data/ports/sector-ports.ts
+
+  econ-a:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 0 --range-end 2500 tests/economy/sector-economy-coverage.test.cjs
+
+  econ-b:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 2500 --range-end 5100 tests/economy/sector-economy-coverage.test.cjs
 
 workflows:
-  prettier-recheck:
+  prettier-range-diagnostics:
     jobs:
-      - fmt-controller:
+      - ctl-a:
           filters: { branches: { only: ci-gate } }
-      - fmt-surface:
+      - ctl-b:
           filters: { branches: { only: ci-gate } }
-      - fmt-mapdata:
+      - surf-a:
           filters: { branches: { only: ci-gate } }
-      - fmt-ports:
+      - surf-b:
           filters: { branches: { only: ci-gate } }
-      - fmt-npcsalias:
+      - map-a:
           filters: { branches: { only: ci-gate } }
-      - fmt-econcover:
+      - map-b:
           filters: { branches: { only: ci-gate } }
-      - fmt-miningtest:
+      - ports-a:
+          filters: { branches: { only: ci-gate } }
+      - ports-b:
+          filters: { branches: { only: ci-gate } }
+      - econ-a:
+          filters: { branches: { only: ci-gate } }
+      - econ-b:
           filters: { branches: { only: ci-gate } }
