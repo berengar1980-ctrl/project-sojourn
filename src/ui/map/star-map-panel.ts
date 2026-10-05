@@ -1,10 +1,7 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
 import { bindStarMapInput } from './star-map-input';
-import {
-  TopdownMapRenderer,
-  type StarMapDisplayMode,
-} from './topdown-map-renderer';
+import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 
 export interface StarMapPanel {
