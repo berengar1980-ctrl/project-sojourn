@@ -81,7 +81,10 @@ assert(
   renderer.includes('light: { x: -0.72, y: -0.56 }'),
   'ship and asteroids must share the same local light vector'
 );
-assert(shipLighting.includes('rgba(0,0,0,.34)'), 'ship shadow pass must remain directional without overpowering the sprite');
+assert(
+  shipLighting.includes('rgba(0,0,0,.34)'),
+  'ship shadow pass must remain directional without overpowering the sprite'
+);
 assert(
   shipLighting.includes("context.filter = 'saturate(.92) contrast(.94)';"),
   'ship lighting must soften sprite contrast to match procedural bodies'
