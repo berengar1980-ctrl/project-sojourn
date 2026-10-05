@@ -8,6 +8,8 @@ import { mapSymbolScale } from './map-visual-scale';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
+import { PlanetRingRenderer } from './planet-ring-renderer';
+import { StationSymbolRenderer } from './station-symbol-renderer';
 
 interface HitArea {
   readonly id: string;
@@ -22,6 +24,8 @@ export class TopdownMapRenderer {
   private readonly shipRenderer: PlayerShipRenderer;
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
+  private readonly planetRings: PlanetRingRenderer;
+  private readonly stationSymbols: StationSymbolRenderer;
   private model: StarMapViewModel;
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
@@ -39,6 +43,8 @@ export class TopdownMapRenderer {
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
+    this.planetRings = new PlanetRingRenderer(context);
+    this.stationSymbols = new StationSymbolRenderer(context);
     this.resize();
   }
 
@@ -177,17 +183,14 @@ export class TopdownMapRenderer {
 
   private drawOrbits(width: number, height: number): void {
     const star = this.camera.worldToScreen(this.model.star.position, width, height);
-    const starRadii = [
-      ...new Set(
-        this.model.locations
-          .filter((location) => !location.parentLocationId)
-          .map((location) => location.orbitRadius)
-          .filter((radius): radius is number => radius != null)
-      ),
-    ].sort((a, b) => a - b);
+    const starRadii = this.model.locations
+      .filter((location) => location.kind === 'planet' && location.showOrbit)
+      .map((location) => location.orbitRadius)
+      .filter((radius): radius is number => radius != null)
+      .sort((a, b) => a - b);
 
     this.context.save();
-    this.context.strokeStyle = 'rgba(129, 151, 174, .10)';
+    this.context.strokeStyle = 'rgba(129, 151, 174, .065)';
     this.context.lineWidth = 1;
     for (const orbit of starRadii) {
       this.context.beginPath();
@@ -195,22 +198,26 @@ export class TopdownMapRenderer {
       this.context.stroke();
     }
 
-    const drawnChildOrbits = new Set<string>();
+    if (this.camera.getRelativeZoom() >= 1.35) this.drawChildOrbits(width, height);
+    this.context.restore();
+  }
+
+  private drawChildOrbits(width: number, height: number): void {
+    const drawn = new Set<string>();
     for (const location of this.model.locations) {
       if (!location.parentLocationId || location.orbitRadius == null) continue;
-      const key = location.parentLocationId + ':' + location.orbitRadius;
-      if (drawnChildOrbits.has(key)) continue;
       const parent = this.model.locations.find(
         (candidate) => candidate.id === location.parentLocationId
       );
       if (!parent) continue;
-      drawnChildOrbits.add(key);
+      const key = location.parentLocationId + ':' + location.orbitRadius;
+      if (drawn.has(key)) continue;
+      drawn.add(key);
       const center = this.camera.worldToScreen(parent.position, width, height);
       this.context.beginPath();
       this.context.arc(center.x, center.y, this.camera.scale(location.orbitRadius), 0, Math.PI * 2);
       this.context.stroke();
     }
-    this.context.restore();
   }
 
   private drawRegions(width: number, height: number): void {
@@ -270,7 +277,9 @@ export class TopdownMapRenderer {
 
     if (location.kind === 'asteroid-field') {
       this.spaceBodies.drawAsteroidField(location.id, point.x, point.y, radius, light);
-    } else if (location.kind === 'station') this.drawStation(point, radius);
+    } else if (location.kind === 'station') {
+      this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
+    }
     else if (location.kind === 'wreck') this.drawWreck(point, radius);
     else this.drawPlanet(location, point, radius, light);
 
@@ -282,20 +291,31 @@ export class TopdownMapRenderer {
       this.context.stroke();
     }
 
-    this.context.fillStyle = '#dfe8f3';
-    this.context.font = '12px system-ui';
-    this.context.textAlign = 'center';
-    this.context.fillText(location.name, point.x, point.y + radius + 22);
+    if (this.shouldDrawLabel(location)) {
+      this.context.fillStyle = '#dfe8f3';
+      this.context.font = location.kind === 'planet' ? '12px system-ui' : '11px system-ui';
+      this.context.textAlign = 'center';
+      this.context.fillText(location.name, point.x, point.y + radius + 20);
+    }
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {
-    if (location.kind === 'asteroid-field') return 34;
-    if (location.kind === 'station') return 13;
-    if (location.kind === 'wreck') return 12;
-    if (location.kind === 'moon') return Math.min(16, Math.max(10, location.radius * 0.55));
-    return Math.min(30, Math.max(20, location.radius * 0.72));
+    if (location.kind === 'asteroid-field') return 30;
+    if (location.kind === 'station') return Math.min(17, Math.max(9, location.radius * 0.72));
+    if (location.kind === 'wreck') return 11;
+    if (location.kind === 'moon') return Math.min(20, Math.max(6, location.radius * 0.72));
+    return Math.min(54, Math.max(14, location.radius * 0.72));
+  }
+
+  private shouldDrawLabel(location: StarMapLocationView): boolean {
+    if (location.isSelected || location.isCurrent) return true;
+    const zoom = this.camera.getRelativeZoom();
+    if (location.kind === 'planet') return true;
+    if (location.kind === 'station') return zoom >= 1.25;
+    if (location.kind === 'moon') return zoom >= 1.55;
+    return zoom >= 1.18;
   }
 
   private drawPlanet(
@@ -304,6 +324,9 @@ export class TopdownMapRenderer {
     radius: number,
     light: WorldPoint
   ): void {
+    if (location.ringStyle) {
+      this.planetRings.drawBack(location.ringStyle, location.id, point, radius);
+    }
     this.spaceBodies.drawPlanet({
       id: location.id,
       x: point.x,
@@ -313,18 +336,7 @@ export class TopdownMapRenderer {
       biome: location.planetBiome ?? 'temperate',
       light,
     });
-  }
-
-  private drawStation(point: WorldPoint, radius: number): void {
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(Math.PI / 4);
-    this.context.fillStyle = '#7d8fa1';
-    this.context.strokeStyle = '#b8c8d8';
-    this.context.lineWidth = 2;
-    this.context.fillRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
-    this.context.strokeRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
-    this.context.restore();
+    if (location.ringStyle) this.planetRings.drawFront(location.ringStyle, point, radius);
   }
 
   private hashSeed(value: string): number {
