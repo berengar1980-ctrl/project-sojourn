@@ -342,8 +342,21 @@ export class ProceduralSpaceBodyRenderer {
     context.fillRect(-radius, -radius, radius * 2, radius * 2);
   }
 
-  private drawPlanetAtmosphere(x: number, y: number, radius: number, light: SpaceLight): void {
+  private drawPlanetAtmosphere(
+    x: number,
+    y: number,
+    radius: number,
+    light: SpaceLight,
+    biome: PlanetBiome
+  ): void {
+    if (biome === 'barren') return;
     const context = this.context;
+    const tint =
+      biome === 'desert' || biome === 'scorched'
+        ? '195, 145, 93'
+        : biome === 'ice'
+          ? '151, 205, 226'
+          : '140, 184, 211';
     const glow = context.createRadialGradient(
       x + light.x * radius * 0.1,
       y + light.y * radius * 0.1,
@@ -352,9 +365,9 @@ export class ProceduralSpaceBodyRenderer {
       y,
       radius * 1.08
     );
-    glow.addColorStop(0, 'rgba(140, 184, 211, 0)');
-    glow.addColorStop(0.82, 'rgba(140, 184, 211, .025)');
-    glow.addColorStop(1, 'rgba(140, 184, 211, .16)');
+    glow.addColorStop(0, 'rgba(' + tint + ', 0)');
+    glow.addColorStop(0.82, 'rgba(' + tint + ', .025)');
+    glow.addColorStop(1, 'rgba(' + tint + ', .16)');
     context.fillStyle = glow;
     context.beginPath();
     context.arc(x, y, radius * 1.08, 0, Math.PI * 2);
