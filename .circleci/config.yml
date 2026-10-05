@@ -13,66 +13,71 @@ commands:
           command: npm ci
 
 jobs:
-  format-code:
+  fmt-src:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src tests docs README.md package.json tsconfig.json vite.config.ts eslint.config.mjs
+      - run: npx prettier --check src
 
-  lint:
+  fmt-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run lint
+      - run: npx prettier --check tests
 
-  typecheck:
+  test-economy:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run typecheck
+      - run: for file in tests/economy/*.test.cjs; do node "$file" || exit 1; done
 
-  dependencies:
+  test-map:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run deps:check
+      - run: for file in tests/map/*.test.cjs; do node "$file" || exit 1; done
 
-  tests:
+  test-quality:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm test
+      - run: for file in tests/quality/*.test.cjs; do node "$file" || exit 1; done
 
-  build:
+  test-rest:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run build
+      - run: |
+          for dir in tests/assets tests/local-space tests/navigation tests/port tests/ships; do
+            for file in "$dir"/*.test.cjs; do
+              node "$file" || exit 1
+            done
+          done
 
 workflows:
-  code-quality-diagnostics:
+  remaining-diagnostics:
     jobs:
-      - format-code:
+      - fmt-src:
           filters: { branches: { only: ci-gate } }
-      - lint:
+      - fmt-tests:
           filters: { branches: { only: ci-gate } }
-      - typecheck:
+      - test-economy:
           filters: { branches: { only: ci-gate } }
-      - dependencies:
+      - test-map:
           filters: { branches: { only: ci-gate } }
-      - tests:
+      - test-quality:
           filters: { branches: { only: ci-gate } }
-      - build:
+      - test-rest:
           filters: { branches: { only: ci-gate } }
