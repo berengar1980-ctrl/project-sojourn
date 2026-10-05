@@ -27,7 +27,7 @@ function createMarkets() {
       entries: {
         steel: { resourceId: 'steel', stock: 40, demand: 0.2, production: 0, price: 40 },
         ferrite: { resourceId: 'ferrite', stock: 80, demand: 0.2, production: 0, price: 30 },
-        obscura: { resourceId: 'obscura', stock: 20, demand: 0.2, production: 0, price: 10 },
+        narcotics: { resourceId: 'narcotics', stock: 20, demand: 0.2, production: 0, price: 10 },
       },
     },
     {
@@ -37,7 +37,7 @@ function createMarkets() {
       entries: {
         steel: { resourceId: 'steel', stock: 10, demand: 0.9, production: 0, price: 100 },
         ferrite: { resourceId: 'ferrite', stock: 10, demand: 0.9, production: 0, price: 80 },
-        obscura: { resourceId: 'obscura', stock: 2, demand: 0.9, production: 0, price: 500 },
+        narcotics: { resourceId: 'narcotics', stock: 2, demand: 0.9, production: 0, price: 500 },
       },
     },
     {
@@ -47,7 +47,7 @@ function createMarkets() {
       entries: {
         steel: { resourceId: 'steel', stock: 5, demand: 0.9, production: 0, price: 1000 },
         ferrite: { resourceId: 'ferrite', stock: 5, demand: 0.8, production: 0, price: 90 },
-        obscura: { resourceId: 'obscura', stock: 1, demand: 0.9, production: 0, price: 800 },
+        narcotics: { resourceId: 'narcotics', stock: 1, demand: 0.9, production: 0, price: 800 },
       },
     },
   ];
@@ -87,8 +87,8 @@ const resources = [
     legality: 'legal',
   },
   {
-    id: 'obscura',
-    name: 'Obscura',
+    id: 'narcotics',
+    name: 'Narcotics',
     categoryId: 'contraband',
     category: 'Schmuggel',
     basePrice: 10,
@@ -171,7 +171,7 @@ function createMiner() {
   assert.equal(miner.sideTradePlan.workLocationId, 'work');
   assert.equal(miner.cargo.steel, 5);
   assert.equal(markets.markets[0].entries.steel.stock, 35);
-  assert.equal(miner.cargo.obscura, undefined, 'ordinary side trade must reject illegal cargo');
+  assert.equal(miner.cargo.narcotics, undefined, 'ordinary side trade must reject illegal cargo');
   assert.equal(simulation.getResourceTotal('steel'), steelBefore);
 
   const creditsAfterPurchase = miner.credits;
