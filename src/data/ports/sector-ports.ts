@@ -89,6 +89,7 @@ function makePort(profile: PortProfile): PortDefinition {
   };
 }
 
+// prettier-ignore
 const profiles: readonly PortProfile[] = [
   {
     locationId: 'varras-prime',
