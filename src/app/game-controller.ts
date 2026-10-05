@@ -160,6 +160,7 @@ function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService
   return service;
 }
 
+// prettier-ignore
 function createActiveLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
