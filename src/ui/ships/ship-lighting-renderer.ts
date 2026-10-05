@@ -51,7 +51,11 @@ export class ShipLightingRenderer {
     const localLight = toShipLocal(worldLight, options.angle);
     this.applyDirectionalLight(pixelWidth, pixelHeight, localLight);
 
+    context.save();
+    context.globalAlpha = 0.97;
+    context.filter = 'saturate(.92) contrast(.94)';
     context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
+    context.restore();
   }
 
   private resize(width: number, height: number): void {
@@ -72,11 +76,11 @@ export class ShipLightingRenderer {
       halfHeight - light.y * reach
     );
 
-    gradient.addColorStop(0, 'rgba(255,255,238,.19)');
-    gradient.addColorStop(0.32, 'rgba(255,255,255,.055)');
-    gradient.addColorStop(0.5, 'rgba(0,0,0,.07)');
-    gradient.addColorStop(0.72, 'rgba(0,0,0,.3)');
-    gradient.addColorStop(1, 'rgba(0,0,0,.58)');
+    gradient.addColorStop(0, 'rgba(255,255,238,.11)');
+    gradient.addColorStop(0.32, 'rgba(255,255,255,.03)');
+    gradient.addColorStop(0.5, 'rgba(0,0,0,.045)');
+    gradient.addColorStop(0.72, 'rgba(0,0,0,.18)');
+    gradient.addColorStop(1, 'rgba(0,0,0,.34)');
 
     context.globalCompositeOperation = 'source-atop';
     context.fillStyle = gradient;
