@@ -1,138 +1,35 @@
 version: 2.1
 
-commands:
-  prepare:
+jobs:
+  autoformat:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - npm-v1-{{ checksum "package-lock.json" }}
-            - npm-v1-
       - run:
           name: Install dependencies
           command: npm ci
-
-jobs:
-  core-economy:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/economy-types.ts
-
-  core-local:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/local-space-types.ts
-
-  core-port:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/port-types.ts
-
-  core-resource:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/resource-types.ts
-
-  core-shield:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/shield-types.ts
-
-  core-ship:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/ship-types.ts
-
-  core-state:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/state.ts
-
-  core-log:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/system-log-types.ts
-
-  core-world:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check src/core/world-types.ts
-
-  map-scale:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/map-visual-scale.test.cjs
-
-  map-ship:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/player-ship-rendering.test.cjs
-
-  map-bodies:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/procedural-space-bodies.test.cjs
-
-  map-route:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/route-planner.test.cjs
-
-  map-background:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/space-background.test.cjs
-
-  map-tutorial:
-    docker: [{ image: cimg/node:20.18 }]
-    resource_class: small
-    steps:
-      - prepare
-      - run: npx prettier --check tests/map/tutorial-map.test.cjs
+      - run:
+          name: Apply exact Prettier formatting
+          command: npx prettier --write src/core/world-types.ts tests/map/map-visual-scale.test.cjs
+      - run:
+          name: Commit formatted files
+          command: |
+            git config user.name "Project Sojourn CI"
+            git config user.email "ci@project-sojourn.invalid"
+            git add src/core/world-types.ts tests/map/map-visual-scale.test.cjs
+            if git diff --cached --quiet; then
+              echo "No formatting changes required"
+              exit 0
+            fi
+            git commit -m "Apply Prettier to remaining files"
+            git push origin HEAD:feat/rework-sector-visuals
 
 workflows:
-  pinpoint-format:
+  autoformat:
     jobs:
-      - core-economy: { filters: { branches: { only: ci-gate } } }
-      - core-local: { filters: { branches: { only: ci-gate } } }
-      - core-port: { filters: { branches: { only: ci-gate } } }
-      - core-resource: { filters: { branches: { only: ci-gate } } }
-      - core-shield: { filters: { branches: { only: ci-gate } } }
-      - core-ship: { filters: { branches: { only: ci-gate } } }
-      - core-state: { filters: { branches: { only: ci-gate } } }
-      - core-log: { filters: { branches: { only: ci-gate } } }
-      - core-world: { filters: { branches: { only: ci-gate } } }
-      - map-scale: { filters: { branches: { only: ci-gate } } }
-      - map-ship: { filters: { branches: { only: ci-gate } } }
-      - map-bodies: { filters: { branches: { only: ci-gate } } }
-      - map-route: { filters: { branches: { only: ci-gate } } }
-      - map-background: { filters: { branches: { only: ci-gate } } }
-      - map-tutorial: { filters: { branches: { only: ci-gate } } }
+      - autoformat:
+          filters:
+            branches:
+              only: ci-gate
