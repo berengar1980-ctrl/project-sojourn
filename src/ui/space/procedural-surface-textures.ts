@@ -18,6 +18,8 @@ export interface AsteroidSurface {
   readonly fractures: readonly SurfaceFracture[];
 }
 
+export type AsteroidTextureDetail = 'far' | 'normal' | 'near';
+
 export function hashSeed(value: string): number {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -153,8 +155,18 @@ export function createAsteroidSurface(id: string, kind: 'resource' | 'debris'): 
   return { outline, craters, fractures };
 }
 
-export function createAsteroidTexture(id: string, kind: 'resource' | 'debris'): HTMLCanvasElement {
-  const size = kind === 'debris' ? 64 : 128;
+function asteroidTextureSize(kind: 'resource' | 'debris', detail: AsteroidTextureDetail): number {
+  if (detail === 'far') return kind === 'debris' ? 48 : 64;
+  if (detail === 'near') return kind === 'debris' ? 160 : 320;
+  return kind === 'debris' ? 64 : 160;
+}
+
+export function createAsteroidTexture(
+  id: string,
+  kind: 'resource' | 'debris',
+  detail: AsteroidTextureDetail = 'normal'
+): HTMLCanvasElement {
+  const size = asteroidTextureSize(kind, detail);
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -165,17 +177,23 @@ export function createAsteroidTexture(id: string, kind: 'resource' | 'debris'): 
   const seed = hashSeed(id + ':stone');
   const dark = kind === 'debris' ? [46, 44, 42] : [54, 51, 48];
   const light = kind === 'debris' ? [116, 109, 101] : [137, 129, 119];
+  const coarseOctaves = detail === 'near' ? 6 : detail === 'far' ? 4 : 5;
+  const fineFrequency = detail === 'near' ? 10.5 : detail === 'far' ? 5.4 : 7.5;
 
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const nx = (x / (size - 1)) * 2 - 1;
       const ny = (y / (size - 1)) * 2 - 1;
       const index = (y * size + x) * 4;
-      const coarse = fbm(seed, nx * 2.4 + 11, ny * 2.4 - 7, 5);
-      const fine = fbm(seed + 701, nx * 7.5, ny * 7.5, 3);
+      const coarse = fbm(seed, nx * 2.4 + 11, ny * 2.4 - 7, coarseOctaves);
+      const fine = fbm(seed + 701, nx * fineFrequency, ny * fineFrequency, 3);
+      const micro = detail === 'near' ? fbm(seed + 1301, nx * 22, ny * 22, 2) : 0.5;
       const ridge = Math.abs(fine - 0.5) * 2;
-      const material = Math.max(0, Math.min(1, coarse * 0.78 + fine * 0.22));
-      const brightness = 0.8 + ridge * 0.18;
+      const material = Math.max(
+        0,
+        Math.min(1, coarse * 0.72 + fine * 0.22 + micro * 0.06)
+      );
+      const brightness = 0.79 + ridge * 0.17 + (micro - 0.5) * 0.12;
       paintPixel(image.data, index, dark, light, material, brightness);
     }
   }
