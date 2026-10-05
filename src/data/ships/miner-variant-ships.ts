@@ -15,10 +15,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-01.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-01.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 215,
       facing: 'right',
@@ -33,10 +31,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-02.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-02.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 213,
       facing: 'right',
@@ -51,10 +47,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-03.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-03.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 213,
       facing: 'right',
@@ -69,10 +63,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-04.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-04.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 236,
       facing: 'right',
@@ -87,10 +79,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-05.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-05.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 201,
       facing: 'right',
@@ -105,10 +95,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-06.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-06.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 231,
       facing: 'right',
@@ -123,10 +111,8 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
-      assetUrl: new URL(
-        '../../../resources/ships/mining/miner-80m-variant-07.png',
-        import.meta.url
-      ).href,
+      assetUrl: new URL('../../../resources/ships/mining/miner-80m-variant-07.png', import.meta.url)
+        .href,
       widthPx: 346,
       heightPx: 223,
       facing: 'right',
