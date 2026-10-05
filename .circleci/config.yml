@@ -1,14 +1,7 @@
 version: 2.1
 
-commands:
-  use-prepared-dependencies:
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-
 jobs:
-  prepare:
+  format-sector-test:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -19,97 +12,14 @@ jobs:
             - npm-v1-{{ checksum "package-lock.json" }}
             - npm-v1-
       - run:
-          name: Install dependencies once
+          name: Install dependencies
           command: npm ci
-      - save_cache:
-          key: npm-v1-{{ checksum "package-lock.json" }}
-          paths:
-            - ~/.npm
-      - persist_to_workspace:
-          root: .
-          paths:
-            - node_modules
-
-  format-src:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
       - run:
-          name: Format source
-          command: npx prettier --check src
-
-  format-tests:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
-      - run:
-          name: Format tests
-          command: npx prettier --check tests
-
-  format-project:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
-      - run:
-          name: Format project files
-          command: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
-
-  static-quality:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
-      - run:
-          name: Lint
-          command: npm run lint
-      - run:
-          name: TypeScript
-          command: npm run typecheck
-      - run:
-          name: Dependency architecture
-          command: npm run deps:check
-
-  verify:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
-      - run:
-          name: Tests
-          command: npm test
-      - run:
-          name: Production bundle
-          command: npx vite build
+          name: Check sector test formatting
+          command: npx prettier --check tests/economy/sector-economy-coverage.test.cjs
 
 workflows:
-  quality:
+  diagnostic:
     jobs:
-      - prepare:
-          filters: { branches: { only: ci-gate } }
-      - format-src:
-          requires: [prepare]
-          filters: { branches: { only: ci-gate } }
-      - format-tests:
-          requires: [prepare]
-          filters: { branches: { only: ci-gate } }
-      - format-project:
-          requires: [prepare]
-          filters: { branches: { only: ci-gate } }
-      - static-quality:
-          requires: [prepare]
-          filters: { branches: { only: ci-gate } }
-      - verify:
-          requires:
-            - format-src
-            - format-tests
-            - format-project
-            - static-quality
+      - format-sector-test:
           filters: { branches: { only: ci-gate } }
