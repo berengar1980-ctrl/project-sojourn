@@ -205,7 +205,7 @@ export const narrowsSector: WorldMap = {
       orbitRadius: 2030,
       planetBiome: 'temperate',
       description: 'Kleine gemäßigte Koloniewelt mit Sensorindustrie und abgelegenen Bergregionen.',
-      activities: { missions: true, salvage: true },
+      activities: { dock: true, trade: true, missions: true, salvage: true },
       dangerLevel: 1,
     },
     {
