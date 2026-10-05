@@ -77,12 +77,24 @@ assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
 assert(sectorPorts.filter((port) => port.shipyard).length >= 2, 'sector needs multiple shipyards');
-assert.equal(narrowsSector.regions.length, 0, 'decorative danger regions must not clutter the map');
+assert.equal(
+  narrowsSector.regions.length,
+  0,
+  'decorative danger regions must not clutter the map'
+);
 for (const stationId of ['helix-shipyards', 'coldwater-station']) {
   const station = stations.find((entry) => entry.id === stationId);
   assert(station, stationId + ' must remain in the sector');
-  assert.equal(station.parentLocationId, undefined, stationId + ' must be a free-space station');
-  assert.equal(station.orbitRadius, undefined, stationId + ' must not render as a planetary orbit');
+  assert.equal(
+    station.parentLocationId,
+    undefined,
+    stationId + ' must be a free-space station'
+  );
+  assert.equal(
+    station.orbitRadius,
+    undefined,
+    stationId + ' must not render as a planetary orbit'
+  );
 }
 
 const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 900);
@@ -118,13 +130,18 @@ assert.equal(
   havenPlanet.radius,
   'Haven must remain the largest planet'
 );
-const minimumPlanetSpacing = Math.min(
-  ...planets.flatMap((planet, index) =>
-    planets.slice(index + 1).map((other) =>
-      Math.hypot(planet.position.x - other.position.x, planet.position.y - other.position.y)
-    )
-  )
-);
+let minimumPlanetSpacing = Infinity;
+for (let index = 0; index < planets.length; index += 1) {
+  for (let otherIndex = index + 1; otherIndex < planets.length; otherIndex += 1) {
+    const planet = planets[index];
+    const other = planets[otherIndex];
+    const spacing = Math.hypot(
+      planet.position.x - other.position.x,
+      planet.position.y - other.position.y
+    );
+    minimumPlanetSpacing = Math.min(minimumPlanetSpacing, spacing);
+  }
+}
 assert(minimumPlanetSpacing >= 900, 'planets must stay clearly separated on the sector map');
 assert((cinderPlanet.orbitRadius ?? 0) >= 600, 'Cinder must not sit directly beside Solis');
 assert.equal(
