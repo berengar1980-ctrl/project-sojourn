@@ -189,9 +189,7 @@ export class TopdownMapRenderer {
         radius: location.orbitRadius,
         emphasized: location.isSelected || location.isCurrent,
       }))
-      .filter(
-        (orbit): orbit is { radius: number; emphasized: boolean } => orbit.radius != null
-      )
+      .filter((orbit): orbit is { radius: number; emphasized: boolean } => orbit.radius != null)
       .sort((a, b) => a.radius - b.radius);
 
     this.context.save();
