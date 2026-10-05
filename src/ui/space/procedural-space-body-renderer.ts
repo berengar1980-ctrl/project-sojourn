@@ -1,4 +1,4 @@
-import type { WorldPoint } from '../../core/world-types';
+import type { PlanetBiome, WorldPoint } from '../../core/world-types';
 import {
   createAsteroidSurface,
   createAsteroidTexture,
@@ -29,6 +29,7 @@ interface DrawPlanetOptions {
   readonly y: number;
   readonly radius: number;
   readonly dangerLevel: number;
+  readonly biome?: PlanetBiome;
   readonly light: SpaceLight;
 }
 
@@ -92,7 +93,8 @@ export class ProceduralSpaceBodyRenderer {
 
   drawPlanet(options: DrawPlanetOptions): void {
     const light = normalize(options.light);
-    const texture = this.planetTexture(options.id, options.dangerLevel);
+    const biome = options.biome ?? 'temperate';
+    const texture = this.planetTexture(options.id, options.dangerLevel, biome);
     const context = this.context;
 
     context.save();
@@ -110,7 +112,7 @@ export class ProceduralSpaceBodyRenderer {
     this.drawSphereLight(options.radius, light, 0.9);
     context.restore();
 
-    this.drawPlanetAtmosphere(options.x, options.y, options.radius, light);
+    this.drawPlanetAtmosphere(options.x, options.y, options.radius, light, biome);
   }
 
   drawAsteroidField(id: string, x: number, y: number, radius: number, light: SpaceLight): void {
@@ -283,12 +285,12 @@ export class ProceduralSpaceBodyRenderer {
     }
   }
 
-  private planetTexture(id: string, dangerLevel: number): HTMLCanvasElement {
-    const key = id + ':' + dangerLevel;
+  private planetTexture(id: string, dangerLevel: number, biome: PlanetBiome): HTMLCanvasElement {
+    const key = id + ':' + dangerLevel + ':' + biome;
     const cached = this.planetTextureCache.get(key);
     if (cached) return cached;
 
-    const texture = createPlanetTexture(id, dangerLevel);
+    const texture = createPlanetTexture(id, dangerLevel, biome);
     this.planetTextureCache.set(key, texture);
     return texture;
   }
