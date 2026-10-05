@@ -87,8 +87,14 @@ assert(
   'resource asteroids must support multiple unique ore deposits'
 );
 assert(
-  (resources.match(/id: '/g) ?? []).length === 10,
-  'resource catalog must define exactly ten mining resources'
+  (resources.match(/id: '/g) ?? []).length === 13,
+  'mining catalog must cover all thirteen raw sector resources'
+);
+assert(
+  resources.includes("id: 'carbon'") &&
+    resources.includes("id: 'sulfur'") &&
+    resources.includes("id: 'rare-metals'"),
+  'mining catalog must include non-ore raw materials used by the economy'
 );
 assert(resources.includes('rarity:'), 'resources must define rarity factors');
 assert(resources.includes('spawnWeight:'), 'rarity data must influence discovery weights');
@@ -396,8 +402,9 @@ assert(
   'shield damage model must be reusable by future weapon sources'
 );
 assert(
-  controller.includes("id === 'greyrock-belt'"),
-  'current asteroid field must support direct re-entry'
+  controller.includes('miningLocationById(id)') &&
+    controller.includes('snapshot.currentLocationId === id'),
+  'every mining location must support direct re-entry'
 );
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');
 

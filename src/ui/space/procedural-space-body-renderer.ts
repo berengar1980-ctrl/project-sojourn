@@ -1,4 +1,4 @@
-import type { WorldPoint } from '../../core/world-types';
+import type { PlanetBiome, WorldPoint } from '../../core/world-types';
 import {
   createAsteroidSurface,
   createAsteroidTexture,
@@ -29,6 +29,7 @@ interface DrawPlanetOptions {
   readonly y: number;
   readonly radius: number;
   readonly dangerLevel: number;
+  readonly biome?: PlanetBiome;
   readonly light: SpaceLight;
 }
 
@@ -92,7 +93,8 @@ export class ProceduralSpaceBodyRenderer {
 
   drawPlanet(options: DrawPlanetOptions): void {
     const light = normalize(options.light);
-    const texture = this.planetTexture(options.id, options.dangerLevel);
+    const biome = options.biome ?? 'temperate';
+    const texture = this.planetTexture(options.id, options.dangerLevel, biome);
     const context = this.context;
 
     context.save();
@@ -110,7 +112,7 @@ export class ProceduralSpaceBodyRenderer {
     this.drawSphereLight(options.radius, light, 0.9);
     context.restore();
 
-    this.drawPlanetAtmosphere(options.x, options.y, options.radius, light);
+    this.drawPlanetAtmosphere(options.x, options.y, options.radius, light, biome);
   }
 
   drawAsteroidField(id: string, x: number, y: number, radius: number, light: SpaceLight): void {
@@ -283,12 +285,12 @@ export class ProceduralSpaceBodyRenderer {
     }
   }
 
-  private planetTexture(id: string, dangerLevel: number): HTMLCanvasElement {
-    const key = id + ':' + dangerLevel;
+  private planetTexture(id: string, dangerLevel: number, biome: PlanetBiome): HTMLCanvasElement {
+    const key = id + ':' + dangerLevel + ':' + biome;
     const cached = this.planetTextureCache.get(key);
     if (cached) return cached;
 
-    const texture = createPlanetTexture(id, dangerLevel);
+    const texture = createPlanetTexture(id, dangerLevel, biome);
     this.planetTextureCache.set(key, texture);
     return texture;
   }
@@ -340,8 +342,21 @@ export class ProceduralSpaceBodyRenderer {
     context.fillRect(-radius, -radius, radius * 2, radius * 2);
   }
 
-  private drawPlanetAtmosphere(x: number, y: number, radius: number, light: SpaceLight): void {
+  private drawPlanetAtmosphere(
+    x: number,
+    y: number,
+    radius: number,
+    light: SpaceLight,
+    biome: PlanetBiome
+  ): void {
+    if (biome === 'barren') return;
     const context = this.context;
+    const tint =
+      biome === 'desert' || biome === 'scorched'
+        ? '195, 145, 93'
+        : biome === 'ice'
+          ? '151, 205, 226'
+          : '140, 184, 211';
     const glow = context.createRadialGradient(
       x + light.x * radius * 0.1,
       y + light.y * radius * 0.1,
@@ -350,9 +365,9 @@ export class ProceduralSpaceBodyRenderer {
       y,
       radius * 1.08
     );
-    glow.addColorStop(0, 'rgba(140, 184, 211, 0)');
-    glow.addColorStop(0.82, 'rgba(140, 184, 211, .025)');
-    glow.addColorStop(1, 'rgba(140, 184, 211, .16)');
+    glow.addColorStop(0, 'rgba(' + tint + ', 0)');
+    glow.addColorStop(0.82, 'rgba(' + tint + ', .025)');
+    glow.addColorStop(1, 'rgba(' + tint + ', .16)');
     context.fillStyle = glow;
     context.beginPath();
     context.arc(x, y, radius * 1.08, 0, Math.PI * 2);

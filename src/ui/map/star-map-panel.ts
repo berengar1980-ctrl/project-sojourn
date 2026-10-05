@@ -28,6 +28,7 @@ function activityLabels(model: StarMapViewModel): string {
     selected.activities.salvage ? 'BERGUNG' : null,
     selected.activities.refuel ? 'TREIBSTOFF' : null,
     selected.activities.missions ? 'MISSIONEN' : null,
+    selected.activities.shipyard ? 'WERFT' : null,
   ]
     .filter((label): label is string => Boolean(label))
     .join(' · ');

@@ -1,4 +1,4 @@
-import { tutorialCluster } from '../data/maps/tutorial-cluster';
+import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
 import { getShipDefinition } from '../systems/ships';
 import { createGameController } from './game-controller';
@@ -10,8 +10,8 @@ export function bootstrap(root: HTMLElement | null): void {
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
   const navigation = createNavigationService(
-    tutorialCluster,
-    tutorialCluster.startLocationId,
+    narrowsSector,
+    narrowsSector.startLocationId,
     ship.navigation.cruiseSpeed
   );
   const game = createGameController({ root, ship, navigation });

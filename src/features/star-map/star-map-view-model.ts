@@ -2,6 +2,7 @@ import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocationActivities,
   LocationKind,
+  PlanetBiome,
   StarBody,
   WorldMap,
   WorldPoint,
@@ -16,6 +17,8 @@ export interface StarMapLocationView {
   readonly position: WorldPoint;
   readonly radius: number;
   readonly orbitRadius?: number;
+  readonly parentLocationId?: string;
+  readonly planetBiome?: PlanetBiome;
   readonly spriteUrl?: string;
   readonly description: string;
   readonly activities: LocationActivities;

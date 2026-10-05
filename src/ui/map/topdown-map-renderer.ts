@@ -177,9 +177,10 @@ export class TopdownMapRenderer {
 
   private drawOrbits(width: number, height: number): void {
     const star = this.camera.worldToScreen(this.model.star.position, width, height);
-    const radii = [
+    const starRadii = [
       ...new Set(
         this.model.locations
+          .filter((location) => !location.parentLocationId)
           .map((location) => location.orbitRadius)
           .filter((radius): radius is number => radius != null)
       ),
@@ -188,9 +189,25 @@ export class TopdownMapRenderer {
     this.context.save();
     this.context.strokeStyle = 'rgba(129, 151, 174, .10)';
     this.context.lineWidth = 1;
-    for (const orbit of radii) {
+    for (const orbit of starRadii) {
       this.context.beginPath();
       this.context.arc(star.x, star.y, this.camera.scale(orbit), 0, Math.PI * 2);
+      this.context.stroke();
+    }
+
+    const drawnChildOrbits = new Set<string>();
+    for (const location of this.model.locations) {
+      if (!location.parentLocationId || location.orbitRadius == null) continue;
+      const key = location.parentLocationId + ':' + location.orbitRadius;
+      if (drawnChildOrbits.has(key)) continue;
+      const parent = this.model.locations.find(
+        (candidate) => candidate.id === location.parentLocationId
+      );
+      if (!parent) continue;
+      drawnChildOrbits.add(key);
+      const center = this.camera.worldToScreen(parent.position, width, height);
+      this.context.beginPath();
+      this.context.arc(center.x, center.y, this.camera.scale(location.orbitRadius), 0, Math.PI * 2);
       this.context.stroke();
     }
     this.context.restore();
@@ -277,6 +294,7 @@ export class TopdownMapRenderer {
     if (location.kind === 'asteroid-field') return 34;
     if (location.kind === 'station') return 13;
     if (location.kind === 'wreck') return 12;
+    if (location.kind === 'moon') return Math.min(16, Math.max(10, location.radius * 0.55));
     return Math.min(30, Math.max(20, location.radius * 0.72));
   }
 
@@ -292,6 +310,7 @@ export class TopdownMapRenderer {
       y: point.y,
       radius,
       dangerLevel: location.dangerLevel,
+      biome: location.planetBiome ?? 'temperate',
       light,
     });
   }
