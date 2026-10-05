@@ -13,46 +13,66 @@ commands:
           command: npm ci
 
 jobs:
-  fmt-data:
+  fmt-world:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/core/world-types.ts src/data/economy/economy-resources.ts src/data/economy/sector-npc-economy.ts src/data/maps/narrows-sector.ts src/data/ports/sector-port-profiles.ts src/data/ports/sector-ports.ts
+      - run: npx prettier --check src/core/world-types.ts
 
-  fmt-map:
+  fmt-resources:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/features/star-map/star-map-view-model.ts src/ui/map/map-camera.ts src/ui/map/map-visual-scale.ts src/ui/map/planet-ring-renderer.ts src/ui/map/station-symbol-renderer.ts src/ui/map/topdown-map-renderer.ts
+      - run: npx prettier --check src/data/economy/economy-resources.ts
 
-  fmt-space:
+  fmt-npcs:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/ui/space/procedural-space-body-renderer.ts src/ui/space/procedural-surface-textures.ts src/systems/economy/market-situation-service.ts
+      - run: npx prettier --check src/data/economy/sector-npc-economy.ts
 
-  fmt-tests:
+  fmt-sector:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/economy tests/map tests/port tests/quality/no-warhammer-references.test.cjs
+      - run: npx prettier --check src/data/maps/narrows-sector.ts
+
+  fmt-port-profiles:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/data/ports/sector-port-profiles.ts
+
+  fmt-ports:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - prepare
+      - run: npx prettier --check src/data/ports/sector-ports.ts
 
 workflows:
-  format-diagnostics:
+  exact-format-diagnostics:
     jobs:
-      - fmt-data:
+      - fmt-world:
           filters: { branches: { only: ci-gate } }
-      - fmt-map:
+      - fmt-resources:
           filters: { branches: { only: ci-gate } }
-      - fmt-space:
+      - fmt-npcs:
           filters: { branches: { only: ci-gate } }
-      - fmt-tests:
+      - fmt-sector:
+          filters: { branches: { only: ci-gate } }
+      - fmt-port-profiles:
+          filters: { branches: { only: ci-gate } }
+      - fmt-ports:
           filters: { branches: { only: ci-gate } }
