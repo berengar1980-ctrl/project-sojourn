@@ -191,6 +191,7 @@ interface PlanetPalette {
   readonly ice: readonly number[];
 }
 
+// prettier-ignore
 function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
   if (biome === 'scorched') {
     return {
@@ -248,6 +249,7 @@ function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
   };
 }
 
+// prettier-ignore
 function paintPlanetTerrain(
   data: Uint8ClampedArray,
   index: number,
@@ -290,6 +292,7 @@ function paintPlanetTerrain(
   );
 }
 
+// prettier-ignore
 export function createPlanetTexture(
   id: string,
   dangerLevel: number,
