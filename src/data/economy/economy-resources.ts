@@ -16,6 +16,7 @@ function resource(
   return { id, name, categoryId, category, basePrice, legality };
 }
 
+// prettier-ignore
 export const economyResources: readonly EconomyResourceDefinition[] = [
   resource('ferrite', 'Ferriterz', 'raw', 'Rohstoffe', 40),
   resource('silicite', 'Silicit', 'raw', 'Rohstoffe', 48),
