@@ -1,4 +1,7 @@
-export type LocationKind = 'planet' | 'station' | 'asteroid-field' | 'wreck';
+import type { EconomyResourceId } from './economy-types';
+
+export type LocationKind = 'planet' | 'moon' | 'station' | 'asteroid-field' | 'wreck';
+export type PlanetBiome = 'scorched' | 'desert' | 'temperate' | 'ice' | 'barren';
 
 export interface WorldPoint {
   readonly x: number;
@@ -21,6 +24,7 @@ export interface LocationActivities {
   readonly salvage?: boolean;
   readonly refuel?: boolean;
   readonly missions?: boolean;
+  readonly shipyard?: boolean;
 }
 
 export interface WorldLocation {
@@ -33,6 +37,9 @@ export interface WorldLocation {
   readonly activities: LocationActivities;
   readonly dangerLevel: 0 | 1 | 2 | 3;
   readonly orbitRadius?: number;
+  readonly parentLocationId?: string;
+  readonly planetBiome?: PlanetBiome;
+  readonly minedResourceIds?: readonly EconomyResourceId[];
   readonly spriteUrl?: string;
 }
 
