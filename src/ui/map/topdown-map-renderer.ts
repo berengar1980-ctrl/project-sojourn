@@ -11,6 +11,8 @@ import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-rend
 import { PlanetRingRenderer } from './planet-ring-renderer';
 import { StationSymbolRenderer } from './station-symbol-renderer';
 
+export type StarMapDisplayMode = 'physical' | 'nav';
+
 interface HitArea {
   readonly id: string;
   readonly x: number;
@@ -27,6 +29,7 @@ export class TopdownMapRenderer {
   private readonly planetRings: PlanetRingRenderer;
   private readonly stationSymbols: StationSymbolRenderer;
   private model: StarMapViewModel;
+  private displayMode: StarMapDisplayMode = 'physical';
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
@@ -76,6 +79,12 @@ export class TopdownMapRenderer {
     this.shipRenderer.toggleHardpointDebug();
   }
 
+  setDisplayMode(mode: StarMapDisplayMode): void {
+    if (this.displayMode === mode) return;
+    this.displayMode = mode;
+    this.draw();
+  }
+
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
@@ -104,13 +113,16 @@ export class TopdownMapRenderer {
     this.context.clearRect(0, 0, width, height);
 
     const timeSeconds = performance.now() / 1000;
-    this.backgroundRenderer.draw({
-      width,
-      height,
-      cameraCenter: this.camera.getCenter(),
-      cameraZoom: this.camera.getZoom(),
-      timeSeconds,
-    });
+    if (this.displayMode === 'nav') this.drawNavBackground(width, height, timeSeconds);
+    else {
+      this.backgroundRenderer.draw({
+        width,
+        height,
+        cameraCenter: this.camera.getCenter(),
+        cameraZoom: this.camera.getZoom(),
+        timeSeconds,
+      });
+    }
     this.drawRegions(width, height);
     this.drawOrbits(width, height);
     this.drawStar(width, height);
@@ -123,6 +135,11 @@ export class TopdownMapRenderer {
 
   private drawPlayerShip(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    if (this.displayMode === 'nav') {
+      this.drawNavShip(point);
+      return;
+    }
+
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     this.shipRenderer.draw(
       this.context,
@@ -136,6 +153,11 @@ export class TopdownMapRenderer {
 
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
+    if (this.displayMode === 'nav') {
+      this.drawNavStar(point);
+      return;
+    }
+
     const timeSeconds = performance.now() / 1000;
     const breathe = 1 + Math.sin(timeSeconds * 1.25) * 0.045;
     const shimmer = 0.92 + Math.sin(timeSeconds * 2.1 + 0.7) * 0.08;
@@ -280,7 +302,8 @@ export class TopdownMapRenderer {
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
 
-    if (location.kind === 'asteroid-field') {
+    if (this.displayMode === 'nav') this.drawNavLocation(location, point, radius);
+    else if (location.kind === 'asteroid-field') {
       this.spaceBodies.drawAsteroidField(location.id, point.x, point.y, radius, light);
     } else if (location.kind === 'station') {
       this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
@@ -296,13 +319,164 @@ export class TopdownMapRenderer {
     }
 
     if (this.shouldDrawLabel(location)) {
-      this.context.fillStyle = '#dfe8f3';
-      this.context.font = location.kind === 'planet' ? '12px system-ui' : '11px system-ui';
+      this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
+      this.context.font =
+        this.displayMode === 'nav'
+          ? '10px ui-monospace, monospace'
+          : location.kind === 'planet'
+            ? '12px system-ui'
+            : '11px system-ui';
       this.context.textAlign = 'center';
       this.context.fillText(location.name, point.x, point.y + radius + 20);
     }
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
+  }
+
+  private drawNavBackground(width: number, height: number, timeSeconds: number): void {
+    const context = this.context;
+    context.fillStyle = '#010807';
+    context.fillRect(0, 0, width, height);
+
+    context.save();
+    context.strokeStyle = 'rgba(83, 181, 126, .075)';
+    context.lineWidth = 1;
+    const spacing = 64;
+    for (let x = (width % spacing) * 0.5; x < width; x += spacing) {
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, height);
+      context.stroke();
+    }
+    for (let y = (height % spacing) * 0.5; y < height; y += spacing) {
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
+      context.stroke();
+    }
+
+    const centerX = width * 0.5;
+    const centerY = height * 0.5;
+    context.strokeStyle = 'rgba(99, 211, 147, .095)';
+    for (let radius = 120; radius < Math.max(width, height); radius += 120) {
+      context.beginPath();
+      context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      context.stroke();
+    }
+
+    const sweepAngle = timeSeconds * 0.22;
+    context.strokeStyle = 'rgba(112, 236, 161, .16)';
+    context.beginPath();
+    context.moveTo(centerX, centerY);
+    context.lineTo(
+      centerX + Math.cos(sweepAngle) * Math.max(width, height),
+      centerY + Math.sin(sweepAngle) * Math.max(width, height)
+    );
+    context.stroke();
+    context.restore();
+  }
+
+  private drawNavStar(point: WorldPoint): void {
+    const context = this.context;
+    const radius = 25 * mapSymbolScale(this.camera.getRelativeZoom());
+    context.save();
+    context.translate(point.x, point.y);
+    context.strokeStyle = 'rgba(255, 211, 113, .82)';
+    context.fillStyle = 'rgba(255, 193, 76, .14)';
+    context.lineWidth = 1.4;
+    context.beginPath();
+    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.arc(0, 0, radius * 0.55, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  private drawNavLocation(
+    location: StarMapLocationView,
+    point: WorldPoint,
+    radius: number
+  ): void {
+    const context = this.context;
+    if (location.kind === 'station') {
+      this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
+      return;
+    }
+    if (location.kind === 'wreck') {
+      this.drawWreck(point, radius);
+      return;
+    }
+    if (location.kind === 'asteroid-field') {
+      this.drawNavAsteroidField(location.id, point, radius);
+      return;
+    }
+
+    context.save();
+    context.translate(point.x, point.y);
+    context.strokeStyle = location.kind === 'moon' ? '#729d87' : '#76c9a0';
+    context.fillStyle = 'rgba(71, 165, 117, .08)';
+    context.lineWidth = 1.2;
+    context.beginPath();
+    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.beginPath();
+    context.moveTo(-radius * 1.25, 0);
+    context.lineTo(-radius * 0.72, 0);
+    context.moveTo(radius * 0.72, 0);
+    context.lineTo(radius * 1.25, 0);
+    context.moveTo(0, -radius * 1.25);
+    context.lineTo(0, -radius * 0.72);
+    context.moveTo(0, radius * 0.72);
+    context.lineTo(0, radius * 1.25);
+    context.stroke();
+    context.restore();
+  }
+
+  private drawNavAsteroidField(id: string, point: WorldPoint, radius: number): void {
+    const context = this.context;
+    const seed = this.hashSeed(id);
+    context.save();
+    context.translate(point.x, point.y);
+    context.strokeStyle = 'rgba(103, 177, 136, .46)';
+    context.setLineDash([3, 4]);
+    context.beginPath();
+    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = 'rgba(116, 194, 148, .72)';
+    for (let index = 0; index < 9; index += 1) {
+      const angle = ((seed % 97) + index * 137) * 0.13;
+      const distance = radius * (0.18 + ((seed + index * 31) % 61) / 100);
+      const size = 1.2 + ((seed + index * 17) % 18) / 10;
+      context.beginPath();
+      context.arc(Math.cos(angle) * distance, Math.sin(angle) * distance, size, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+  }
+
+  private drawNavShip(point: WorldPoint): void {
+    const context = this.context;
+    const scale = mapSymbolScale(this.camera.getRelativeZoom());
+    const size = 8 + scale * 3;
+    context.save();
+    context.translate(point.x, point.y);
+    context.rotate(this.model.playerShip.headingRadians);
+    context.strokeStyle = '#9dffc4';
+    context.fillStyle = 'rgba(112, 232, 157, .18)';
+    context.lineWidth = 1.4;
+    context.beginPath();
+    context.moveTo(size, 0);
+    context.lineTo(-size * 0.72, -size * 0.58);
+    context.lineTo(-size * 0.35, 0);
+    context.lineTo(-size * 0.72, size * 0.58);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {
