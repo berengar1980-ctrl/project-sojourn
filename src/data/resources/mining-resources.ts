@@ -25,7 +25,9 @@ export function pickMiningResource(
   allowedResourceIds?: readonly string[]
 ): MiningResourceDefinition {
   const allowed = allowedResourceIds ? new Set(allowedResourceIds) : null;
-  const pool = allowed ? miningResources.filter((resource) => allowed.has(resource.id)) : miningResources;
+  const pool = allowed
+    ? miningResources.filter((resource) => allowed.has(resource.id))
+    : miningResources;
   const candidates = pool.length > 0 ? pool : miningResources;
   const totalWeight = candidates.reduce((sum, resource) => sum + resource.spawnWeight, 0);
   let roll = random() * totalWeight;
