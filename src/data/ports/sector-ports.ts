@@ -131,7 +131,7 @@ const profiles: readonly PortProfile[] = [
     ],
   },
   {
-    locationId: 'karth-forge',
+    locationId: 'karth-industrial',
     subtitle: 'Industriewelt // Schwerindustrie',
     economy: 'Metallurgie, Maschinenbau, Panzerung',
     population: '8.7 Mio.',
@@ -348,7 +348,7 @@ const profiles: readonly PortProfile[] = [
     ],
   },
   {
-    locationId: 'vigil-bastion',
+    locationId: 'vigil-station',
     subtitle: 'Militärstation // Arsenal',
     economy: 'Munition, Waffen, Panzerung',
     population: '145.000',
