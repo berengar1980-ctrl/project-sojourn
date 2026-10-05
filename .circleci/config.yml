@@ -9,7 +9,7 @@ jobs:
       - checkout
       - run:
           name: Check status token presence
-          command: test -n "${SOJOURN_GITHUB_STATUS_TOKEN:-}"
+          command: test -n "$SOJOURN_GITHUB_STATUS_TOKEN"
 
   status-write:
     docker:
@@ -19,40 +19,18 @@ jobs:
       - checkout
       - run:
           name: Write diagnostic status
-          command: |
-            node - <<'NODE'
-            const token = process.env.SOJOURN_GITHUB_STATUS_TOKEN;
-            const owner = process.env.CIRCLE_PROJECT_USERNAME;
-            const repository = process.env.CIRCLE_PROJECT_REPONAME;
-            const sha = process.env.CIRCLE_SHA1;
-            if (!token || !owner || !repository || !sha) process.exit(2);
-            fetch(`https://api.github.com/repos/${owner}/${repository}/statuses/${sha}`, {
-              method: 'POST',
-              headers: {
-                Accept: 'application/vnd.github+json',
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'User-Agent': 'project-sojourn-circleci',
-                'X-GitHub-Api-Version': '2022-11-28',
-              },
-              body: JSON.stringify({
-                state: 'success',
-                context: 'ci/diagnostic: smoke',
-                description: 'CircleCI can write readable GitHub diagnostics',
-              }),
-            }).then(async (response) => {
-              if (!response.ok) {
-                console.error('status write failed: ' + response.status);
-                process.exit(1);
-              }
-            }).catch(() => process.exit(1));
-            NODE
+          command: node scripts/ci-run-and-report.cjs --smoke
 
 workflows:
   diagnostic-smoke:
     jobs:
       - secret-present:
-          filters: { branches: { only: ci-gate } }
+          filters:
+            branches:
+              only: ci-gate
       - status-write:
-          requires: [secret-present]
-          filters: { branches: { only: ci-gate } }
+          requires:
+            - secret-present
+          filters:
+            branches:
+              only: ci-gate
