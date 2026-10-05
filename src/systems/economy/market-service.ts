@@ -22,7 +22,8 @@ export function marketTargetPrice(
   resource: EconomyResourceDefinition,
   entry: Pick<EconomyMarketEntry, 'stock' | 'demand' | 'production'>,
   produces: boolean,
-  needs: boolean
+  needs: boolean,
+  situationModifier = 0
 ): number {
   const demand = clamp(entry.demand, 0, 1);
   const production = clamp(entry.production, 0, 1);
@@ -33,12 +34,18 @@ export function marketTargetPrice(
   const rolePressure = (needs ? 0.18 : 0) + (produces ? -0.16 : 0);
   const legalityPressure =
     resource.legality === 'illegal' ? 0.34 : resource.legality === 'restricted' ? 0.08 : 0;
+  const baseFactor =
+    1 + scarcity * 0.58 + demandPressure + productionPressure + rolePressure + legalityPressure;
   const factor = clamp(
-    1 + scarcity * 0.58 + demandPressure + productionPressure + rolePressure + legalityPressure,
+    baseFactor * (1 + clamp(situationModifier, -0.55, 0.9)),
     MIN_PRICE_FACTOR,
     MAX_PRICE_FACTOR
   );
   return Math.max(1, Math.round(resource.basePrice * factor));
+}
+
+export interface EconomyMarketServiceOptions {
+  readonly situationModifier?: (locationId: string, resourceId: EconomyResourceId) => number;
 }
 
 export interface EconomyMarketService {
@@ -50,7 +57,8 @@ export interface EconomyMarketService {
 
 export function createEconomyMarketService(
   ports: readonly PortDefinition[],
-  resources: readonly EconomyResourceDefinition[]
+  resources: readonly EconomyResourceDefinition[],
+  options: EconomyMarketServiceOptions = {}
 ): EconomyMarketService {
   const resourceMap = new Map(resources.map((resource) => [resource.id, resource]));
   const markets = new Map<string, EconomyMarketState>();
@@ -75,7 +83,8 @@ export function createEconomyMarketService(
         resource,
         entry,
         produces.has(commodity.id),
-        needs.has(commodity.id)
+        needs.has(commodity.id),
+        options.situationModifier?.(port.locationId, commodity.id) ?? 0
       );
       entries[commodity.id] = entry;
     }
@@ -105,7 +114,8 @@ export function createEconomyMarketService(
         resource,
         entry,
         market.produces.has(resourceId),
-        market.needs.has(resourceId)
+        market.needs.has(resourceId),
+        options.situationModifier?.(locationId, resourceId) ?? 0
       );
       return entry.price;
     },

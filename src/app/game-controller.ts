@@ -13,6 +13,10 @@ import {
   type EconomyMarketService,
 } from '../systems/economy/market-service';
 import {
+  createMarketSituationService,
+  type MarketSituationService,
+} from '../systems/economy/market-situation-service';
+import {
   createEconomySimulationService,
   type EconomySimulationService,
 } from '../systems/economy/economy-simulation-service';
@@ -77,6 +81,7 @@ interface ControllerPanels {
 
 interface ControllerEconomy {
   readonly markets: EconomyMarketService;
+  readonly situations: MarketSituationService;
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
@@ -84,7 +89,10 @@ interface ControllerEconomy {
 }
 
 function createControllerEconomy(): ControllerEconomy {
-  const markets = createEconomyMarketService(tutorialPorts, economyResources);
+  const situations = createMarketSituationService(tutorialPorts, economyResources, 73);
+  const markets = createEconomyMarketService(tutorialPorts, economyResources, {
+    situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
+  });
   const trade = createPlayerTradeService(markets);
   const npcStates = createTutorialNpcEconomyStates();
   const simulation = createEconomySimulationService(
@@ -96,6 +104,7 @@ function createControllerEconomy(): ControllerEconomy {
   );
   return {
     markets,
+    situations,
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
@@ -199,10 +208,12 @@ function enteredGreyrock(
 function advanceEconomyDay(
   previousId: string | null,
   currentId: string | null,
+  situations: MarketSituationService,
   simulation: EconomySimulationService,
   npcs: NpcEconomyService
 ): void {
   if (previousId === null && currentId !== null) {
+    situations.advanceNextDay();
     simulation.advanceNextDay();
     npcs.advanceNextDay();
   }
@@ -344,7 +355,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const { markets, trade, simulation, mining, npcs } = createControllerEconomy();
+  const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
   const starModel = () =>
     createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
   const localModel = () => createActiveLocalModel(localSpace, activeShip);
@@ -422,7 +433,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
-      advanceEconomyDay(previousLocationId, currentLocationId, simulation, npcs);
+      advanceEconomyDay(previousLocationId, currentLocationId, situations, simulation, npcs);
       previousLocationId = currentLocationId;
       shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
       if (mode === 'star-map') panels.star?.update(starModel());

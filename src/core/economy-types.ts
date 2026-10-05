@@ -98,3 +98,16 @@ export interface NpcEconomyState {
   readonly workLocationId?: EconomyLocationId;
   sideTradePlan?: NpcResourceSideTradePlan;
 }
+
+export type MarketSituationScope = 'local' | 'sector';
+
+export interface MarketSituation {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly scope: MarketSituationScope;
+  readonly locationId?: EconomyLocationId;
+  readonly resourceModifiers: Readonly<Record<EconomyResourceId, number>>;
+  readonly startDay: number;
+  readonly endDay: number;
+}
