@@ -3,6 +3,7 @@
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
@@ -13,7 +14,10 @@ const marketService = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
 );
-const portData = fs.readFileSync(path.join(root, 'src/data/ports/tutorial-ports.ts'), 'utf8');
+const portData = fs.readFileSync(path.join(root, 'src/data/ports/sector-ports.ts'), 'utf8');
+const { sectorPorts } = loadStandaloneTypeScriptModule(root, 'src/data/ports/sector-ports.ts');
+const karth = sectorPorts.find((port) => port.locationId === 'karth-forge');
+const haven = sectorPorts.find((port) => port.locationId === 'haven');
 const portTypes = fs.readFileSync(path.join(root, 'src/core/port-types.ts'), 'utf8');
 
 assert(
@@ -21,14 +25,9 @@ assert(
   'port commodities must use shared stable economy resource ids'
 );
 assert(portTypes.includes('PortCrewCandidate'), 'port crew candidates must have domain data');
-assert(
-  portData.includes("locationId: 'karth-forge'") && portData.includes('shipyard: true'),
-  'Karth Forge must expose shipyard services'
-);
-assert(
-  portData.includes("locationId: 'haven'") && portData.includes('shipyard: false'),
-  'ports without a shipyard must keep shipyard services unavailable'
-);
+assert(karth?.shipyard, 'Karth Forge must expose shipyard services');
+assert.equal(haven?.shipyard, false, 'ports without a shipyard must keep shipyard services unavailable');
+assert(portData.includes('makePort'), 'sector port data must use the shared market profile builder');
 assert(
   marketService.includes('scarcity') &&
     marketService.includes('demandPressure') &&
@@ -61,7 +60,7 @@ assert(
   'port must be a dedicated application scene'
 );
 assert(
-  controller.includes('tutorialPortByLocationId') && controller.includes('createPortViewModel'),
+  controller.includes('sectorPortByLocationId') && controller.includes('createPortViewModel'),
   'controller must resolve docked UI by stable location id'
 );
 assert(
