@@ -71,30 +71,50 @@ const stations = narrowsSector.locations.filter((location) => location.kind === 
 const miningSites = narrowsSector.locations.filter((location) => location.activities.mine);
 const salvageSites = narrowsSector.locations.filter((location) => location.activities.salvage);
 
-assert(planets.length >= 8, 'sector needs several primary planets');
-assert(moons.length >= 6, 'moons must be a meaningful part of the sector');
-assert(stations.length >= 8, 'sector needs stations for trade, shipyards and outlaw activity');
+assert(planets.length >= 11, 'planets must dominate the sector hierarchy');
+assert.equal(moons.length, 4, 'moons must stay selective instead of crowding the map');
+assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
 assert(sectorPorts.filter((port) => port.shipyard).length >= 2, 'sector needs multiple shipyards');
 
-const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 520);
+const innerPlanets = planets.filter((planet) => (planet.orbitRadius ?? Infinity) <= 900);
 assert(
   innerPlanets.every((planet) => ['scorched', 'desert'].includes(planet.planetBiome)),
   'inner planets must be rocky or desert worlds'
 );
 const middlePlanets = planets.filter((planet) => {
   const orbit = planet.orbitRadius ?? 0;
-  return orbit >= 650 && orbit <= 1000;
+  return orbit >= 1100 && orbit <= 2050;
 });
 assert(
   middlePlanets.every((planet) => planet.planetBiome === 'temperate'),
   'middle system planets must use temperate Earth-like biomes'
 );
-const outerPlanets = planets.filter((planet) => (planet.orbitRadius ?? 0) >= 1050);
+const outerPlanets = planets.filter((planet) => (planet.orbitRadius ?? 0) >= 2200);
 assert(
-  outerPlanets.every((planet) => planet.planetBiome === 'ice'),
-  'outer planets must be ice worlds'
+  outerPlanets.every((planet) => ['ice', 'gas-giant'].includes(planet.planetBiome)),
+  'outer planets must be ice worlds or gas giants'
+);
+
+const planetRadii = planets.map((planet) => planet.radius);
+assert(
+  Math.max(...planetRadii) / Math.min(...planetRadii) >= 4,
+  'planet sizes must vary strongly across the sector'
+);
+const moonRadii = moons.map((moon) => moon.radius);
+assert(
+  Math.max(...moonRadii) / Math.min(...moonRadii) >= 2,
+  'moon sizes must include clearly small and large examples'
+);
+assert(
+  planets.some((planet) => planet.ringStyle === 'broad') &&
+    planets.some((planet) => planet.ringStyle === 'asteroid'),
+  'sector needs both a ringed giant and a rocky planetary ring'
+);
+assert(
+  new Set(stations.map((station) => station.stationType)).size >= 5,
+  'stations need multiple visual roles'
 );
 
 const varras = sectorPorts.find((port) => port.locationId === 'varras-prime');
