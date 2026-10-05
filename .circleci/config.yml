@@ -1,88 +1,127 @@
 version: 2.1
 
-commands:
-  prepare:
+jobs:
+  core-world:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
     steps:
       - checkout
       - run: npm ci
+      - run: npx prettier --check src/core/world-types.ts
 
-jobs:
-  fmt-core:
+  core-view:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - prepare
-      - run: >-
-          npx prettier --check
-          src/core/world-types.ts
-          src/features/star-map/star-map-view-model.ts
-          src/ui/map/map-camera.ts
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/features/star-map/star-map-view-model.ts
 
-  fmt-map:
+  core-camera:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - prepare
-      - run: >-
-          npx prettier --check
-          src/ui/map/station-symbol-renderer.ts
-          src/ui/map/planet-ring-renderer.ts
-          src/ui/map/topdown-map-renderer.ts
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/ui/map/map-camera.ts
 
-  fmt-space:
+  map-station:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - prepare
-      - run: >-
-          npx prettier --check
-          src/ui/space/procedural-surface-textures.ts
-          src/ui/space/procedural-space-body-renderer.ts
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/ui/map/station-symbol-renderer.ts
 
-  fmt-data:
+  map-rings:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - prepare
-      - run: >-
-          npx prettier --check
-          src/data/maps/narrows-sector.ts
-          src/data/ports/sector-ports.ts
-          src/data/economy/economy-resources.ts
-          src/data/economy/sector-npc-economy.ts
-          src/systems/economy/market-situation-service.ts
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/ui/map/planet-ring-renderer.ts
 
-  fmt-tests:
+  map-main:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - prepare
-      - run: >-
-          npx prettier --check
-          tests/map/tutorial-map.test.cjs
-          tests/economy/sector-economy-coverage.test.cjs
-          tests/economy/market-pricing.test.cjs
-          tests/economy/market-situations.test.cjs
-          tests/economy/daily-simulation.test.cjs
-          tests/economy/npc-economy.test.cjs
-          tests/economy/npc-resource-side-trade.test.cjs
-          tests/port/port-ui.test.cjs
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/ui/map/topdown-map-renderer.ts
+
+  data-world:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/maps/narrows-sector.ts
+
+  data-ports:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/ports/sector-ports.ts
+
+  data-resources:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/economy/economy-resources.ts
+
+  data-npcs:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/data/economy/sector-npc-economy.ts
+
+  data-situations:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check src/systems/economy/market-situation-service.ts
 
 workflows:
-  formatting-diagnostics:
+  prettier-file-diagnostics:
     jobs:
-      - fmt-core:
+      - core-world:
           filters: { branches: { only: ci-gate } }
-      - fmt-map:
+      - core-view:
           filters: { branches: { only: ci-gate } }
-      - fmt-space:
+      - core-camera:
           filters: { branches: { only: ci-gate } }
-      - fmt-data:
+      - map-station:
           filters: { branches: { only: ci-gate } }
-      - fmt-tests:
+      - map-rings:
+          filters: { branches: { only: ci-gate } }
+      - map-main:
+          filters: { branches: { only: ci-gate } }
+      - data-world:
+          filters: { branches: { only: ci-gate } }
+      - data-ports:
+          filters: { branches: { only: ci-gate } }
+      - data-resources:
+          filters: { branches: { only: ci-gate } }
+      - data-npcs:
+          filters: { branches: { only: ci-gate } }
+      - data-situations:
           filters: { branches: { only: ci-gate } }
