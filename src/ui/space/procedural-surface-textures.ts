@@ -189,10 +189,7 @@ export function createAsteroidTexture(
       const fine = fbm(seed + 701, nx * fineFrequency, ny * fineFrequency, 3);
       const micro = detail === 'near' ? fbm(seed + 1301, nx * 22, ny * 22, 2) : 0.5;
       const ridge = Math.abs(fine - 0.5) * 2;
-      const material = Math.max(
-        0,
-        Math.min(1, coarse * 0.72 + fine * 0.22 + micro * 0.06)
-      );
+      const material = Math.max(0, Math.min(1, coarse * 0.72 + fine * 0.22 + micro * 0.06));
       const brightness = 0.79 + ridge * 0.17 + (micro - 0.5) * 0.12;
       paintPixel(image.data, index, dark, light, material, brightness);
     }
