@@ -108,6 +108,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'chemicals',
       'lubricants',
       'refinery-gas',
+      'explosives',
     ],
     crew: [
       crew(
