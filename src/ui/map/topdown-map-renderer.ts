@@ -276,7 +276,8 @@ export class TopdownMapRenderer {
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius =
-      mapLocationVisualRadius(location.kind, location.radius) *\n      mapSymbolScale(this.camera.getRelativeZoom());
+      mapLocationVisualRadius(location.kind, location.radius) *
+      mapSymbolScale(this.camera.getRelativeZoom());
 
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
