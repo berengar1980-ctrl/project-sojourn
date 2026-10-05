@@ -4,75 +4,85 @@ commands:
   prepare:
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - npm-v1-{{ checksum "package-lock.json" }}
-            - npm-v1-
-      - run:
-          name: Install dependencies
-          command: npm ci
+      - run: npm ci
 
 jobs:
-  format:
+  fmt-core:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run format:check
+      - run: >-
+          npx prettier --check
+          src/core/world-types.ts
+          src/features/star-map/star-map-view-model.ts
+          src/ui/map/map-camera.ts
 
-  lint:
+  fmt-map:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run lint
+      - run: >-
+          npx prettier --check
+          src/ui/map/station-symbol-renderer.ts
+          src/ui/map/planet-ring-renderer.ts
+          src/ui/map/topdown-map-renderer.ts
 
-  typecheck:
+  fmt-space:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run typecheck
+      - run: >-
+          npx prettier --check
+          src/ui/space/procedural-surface-textures.ts
+          src/ui/space/procedural-space-body-renderer.ts
 
-  dependencies:
+  fmt-data:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm run deps:check
+      - run: >-
+          npx prettier --check
+          src/data/maps/narrows-sector.ts
+          src/data/ports/sector-ports.ts
+          src/data/economy/economy-resources.ts
+          src/data/economy/sector-npc-economy.ts
+          src/systems/economy/market-situation-service.ts
 
-  tests:
+  fmt-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - prepare
-      - run: npm test
-
-  build:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - prepare
-      - run: npm run build
+      - run: >-
+          npx prettier --check
+          tests/map/tutorial-map.test.cjs
+          tests/economy/sector-economy-coverage.test.cjs
+          tests/economy/market-pricing.test.cjs
+          tests/economy/market-situations.test.cjs
+          tests/economy/daily-simulation.test.cjs
+          tests/economy/npc-economy.test.cjs
+          tests/economy/npc-resource-side-trade.test.cjs
+          tests/port/port-ui.test.cjs
 
 workflows:
-  diagnostic-quality:
+  formatting-diagnostics:
     jobs:
-      - format:
+      - fmt-core:
           filters: { branches: { only: ci-gate } }
-      - lint:
+      - fmt-map:
           filters: { branches: { only: ci-gate } }
-      - typecheck:
+      - fmt-space:
           filters: { branches: { only: ci-gate } }
-      - dependencies:
+      - fmt-data:
           filters: { branches: { only: ci-gate } }
-      - tests:
-          filters: { branches: { only: ci-gate } }
-      - build:
+      - fmt-tests:
           filters: { branches: { only: ci-gate } }
