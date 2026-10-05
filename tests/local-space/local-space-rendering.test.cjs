@@ -61,6 +61,14 @@ const shipLighting = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-lighting-renderer.ts'),
   'utf8'
 );
+const spaceBodyRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/space/procedural-space-body-renderer.ts'),
+  'utf8'
+);
+const surfaceTextures = fs.readFileSync(
+  path.join(root, 'src/ui/space/procedural-surface-textures.ts'),
+  'utf8'
+);
 
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
 assert(
@@ -86,8 +94,31 @@ assert(
   'ship shadow pass must remain directional without overpowering the sprite'
 );
 assert(
-  shipLighting.includes("context.filter = 'saturate(.92) contrast(.94)';"),
-  'ship lighting must soften sprite contrast to match procedural bodies'
+  shipLighting.includes("return 'saturate(.92) contrast(.94)';"),
+  'near ship rendering must preserve the shared softened appearance'
+);
+assert(
+  shipLighting.includes('if (width < 42) return 0.68;') &&
+    shipLighting.includes("return 'saturate(.72) contrast(.8)';"),
+  'small ship sprites must merge fine details through a cheaper far LOD'
+);
+assert(
+  shipLighting.includes("imageSmoothingQuality = 'high'"),
+  'ship LOD resampling must use high-quality image smoothing'
+);
+assert(
+  spaceBodyRenderer.includes("if (radius < 15) return 'far';") &&
+    spaceBodyRenderer.includes("if (radius > 60) return 'near';"),
+  'asteroid LOD must depend on actual screen radius'
+);
+assert(
+  spaceBodyRenderer.includes("if (detail === 'near') this.drawStaticMicroRelief") &&
+    surfaceTextures.includes("detail === 'near' ? 10.5"),
+  'near asteroids must add cached high-frequency surface detail'
+);
+assert(
+  surfaceTextures.includes("kind === 'debris' ? 160 : 320"),
+  'near asteroid textures must use a higher cached resolution'
 );
 assert(
   renderer.includes('ShipHardpointDebugRenderer'),

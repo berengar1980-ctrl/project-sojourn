@@ -6,6 +6,7 @@ import {
   createRandom,
   hashSeed,
   type AsteroidSurface,
+  type AsteroidTextureDetail,
 } from './procedural-surface-textures';
 
 export interface SpaceLight {
@@ -58,7 +59,8 @@ export class ProceduralSpaceBodyRenderer {
   drawAsteroid(options: DrawAsteroidOptions): void {
     const light = normalize(options.light);
     const surface = this.asteroidSurface(options.id, options.kind);
-    const sprite = this.asteroidSprite(options.id, options.kind);
+    const detail = this.asteroidDetail(options.radius);
+    const sprite = this.asteroidSprite(options.id, options.kind, detail);
     const context = this.context;
 
     context.save();
@@ -143,22 +145,47 @@ export class ProceduralSpaceBodyRenderer {
     return surface;
   }
 
-  private asteroidTexture(id: string, kind: 'resource' | 'debris'): HTMLCanvasElement {
-    const key = id + ':' + kind;
+  private asteroidDetail(radius: number): AsteroidTextureDetail {
+    if (radius < 15) return 'far';
+    if (radius > 60) return 'near';
+    return 'normal';
+  }
+
+  private asteroidTexture(
+    id: string,
+    kind: 'resource' | 'debris',
+    detail: AsteroidTextureDetail
+  ): HTMLCanvasElement {
+    const key = id + ':' + kind + ':' + detail;
     const cached = this.asteroidTextureCache.get(key);
     if (cached) return cached;
 
-    const texture = createAsteroidTexture(id, kind);
+    const texture = createAsteroidTexture(id, kind, detail);
     this.asteroidTextureCache.set(key, texture);
     return texture;
   }
 
-  private asteroidSprite(id: string, kind: 'resource' | 'debris'): HTMLCanvasElement {
-    const key = id + ':' + kind;
+  private asteroidSprite(
+    id: string,
+    kind: 'resource' | 'debris',
+    detail: AsteroidTextureDetail
+  ): HTMLCanvasElement {
+    const key = id + ':' + kind + ':' + detail;
     const cached = this.asteroidSpriteCache.get(key);
     if (cached) return cached;
 
-    const size = kind === 'debris' ? 64 : 160;
+    const size =
+      detail === 'far'
+        ? kind === 'debris'
+          ? 48
+          : 64
+        : detail === 'near'
+          ? kind === 'debris'
+            ? 160
+            : 320
+          : kind === 'debris'
+            ? 64
+            : 160;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -166,7 +193,7 @@ export class ProceduralSpaceBodyRenderer {
     if (!context) throw new Error('Asteroid sprite canvas unavailable.');
 
     const surface = this.asteroidSurface(id, kind);
-    const texture = this.asteroidTexture(id, kind);
+    const texture = this.asteroidTexture(id, kind, detail);
     const radius = size * 0.5;
     context.save();
     context.translate(radius, radius);
@@ -177,11 +204,44 @@ export class ProceduralSpaceBodyRenderer {
     if (kind === 'resource') {
       this.drawStaticCraterRelief(context, surface, radius);
       this.drawStaticFractures(context, surface, radius);
+      if (detail === 'near') this.drawStaticMicroRelief(context, id, radius);
     }
 
     context.restore();
     this.asteroidSpriteCache.set(key, canvas);
     return canvas;
+  }
+
+  private drawStaticMicroRelief(
+    context: CanvasRenderingContext2D,
+    id: string,
+    radius: number
+  ): void {
+    const random = createRandom(hashSeed(id + ':micro-relief'));
+    const count = 24;
+
+    for (let index = 0; index < count; index += 1) {
+      const angle = random() * Math.PI * 2;
+      const distance = Math.sqrt(random()) * radius * 0.72;
+      const craterRadius = radius * (0.008 + random() * 0.018);
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
+      const gradient = context.createRadialGradient(
+        x - craterRadius * 0.25,
+        y - craterRadius * 0.25,
+        craterRadius * 0.08,
+        x,
+        y,
+        craterRadius
+      );
+      gradient.addColorStop(0, 'rgba(8, 8, 8, .5)');
+      gradient.addColorStop(0.68, 'rgba(25, 23, 21, .2)');
+      gradient.addColorStop(1, 'rgba(205, 196, 181, .08)');
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(x, y, craterRadius, 0, Math.PI * 2);
+      context.fill();
+    }
   }
 
   private traceStaticOutline(
