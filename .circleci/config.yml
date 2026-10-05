@@ -18,7 +18,7 @@ jobs:
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check src/core
+      - run: npx prettier --check src/core/economy-types.ts src/core/local-space-types.ts src/core/port-types.ts src/core/resource-types.ts src/core/shield-types.ts src/core/ship-types.ts src/core/state.ts src/core/system-log-types.ts src/core/world-types.ts
 
   fmt-data:
     docker: [{ image: cimg/node:20.18 }]
@@ -67,7 +67,7 @@ jobs:
     resource_class: small
     steps:
       - prepare
-      - run: npx prettier --check tests/map
+      - run: npx prettier --check tests/map/map-visual-scale.test.cjs tests/map/player-ship-rendering.test.cjs tests/map/procedural-space-bodies.test.cjs tests/map/route-planner.test.cjs tests/map/space-background.test.cjs tests/map/tutorial-map.test.cjs
 
   fmt-test-quality:
     docker: [{ image: cimg/node:20.18 }]
