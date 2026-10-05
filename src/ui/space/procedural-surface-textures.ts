@@ -192,10 +192,38 @@ interface PlanetPalette {
 }
 
 function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
-  if (biome === 'scorched') return { water: [48, 34, 31], lowland: [102, 61, 43], highland: [164, 104, 61], ice: [190, 151, 112] };
-  if (biome === 'desert') return { water: [91, 72, 55], lowland: [169, 130, 78], highland: [116, 91, 65], ice: [213, 194, 164] };
-  if (biome === 'ice') return { water: [31, 56, 72], lowland: [123, 153, 166], highland: [177, 201, 209], ice: [224, 238, 241] };
-  if (biome === 'barren') return { water: [58, 57, 54], lowland: [101, 99, 94], highland: [151, 147, 137], ice: [189, 187, 181] };
+  if (biome === 'scorched') {
+    return {
+      water: [48, 34, 31],
+      lowland: [102, 61, 43],
+      highland: [164, 104, 61],
+      ice: [190, 151, 112],
+    };
+  }
+  if (biome === 'desert') {
+    return {
+      water: [91, 72, 55],
+      lowland: [169, 130, 78],
+      highland: [116, 91, 65],
+      ice: [213, 194, 164],
+    };
+  }
+  if (biome === 'ice') {
+    return {
+      water: [31, 56, 72],
+      lowland: [123, 153, 166],
+      highland: [177, 201, 209],
+      ice: [224, 238, 241],
+    };
+  }
+  if (biome === 'barren') {
+    return {
+      water: [58, 57, 54],
+      lowland: [101, 99, 94],
+      highland: [151, 147, 137],
+      ice: [189, 187, 181],
+    };
+  }
   if (dangerLevel >= 2) {
     return {
       water: [40, 39, 42],
@@ -299,10 +327,22 @@ export function createPlanetTexture(
       const poleSeed = ny < 0 ? seed + 811 : seed + 977;
       const polarCoast = fbm(poleSeed, nx * 2.9 + warpX * 1.7 + 3, ny * 4.2 + warpY * 1.3 - 9, 5);
       const polarFjords = fbm(poleSeed + 431, nx * 10.5, ny * 6.8, 3);
-      const polarEdge = 0.6 + (polarCoast - 0.5) * 0.38 + (polarFjords - 0.5) * 0.16 + (terrain - 0.5) * 0.12;
+      const polarEdge =
+        0.6 +
+        (polarCoast - 0.5) * 0.38 +
+        (polarFjords - 0.5) * 0.16 +
+        (terrain - 0.5) * 0.12;
       const polarBand = Math.max(0, Math.min(1, (latitude - polarEdge) / 0.2));
       const polarMass = Math.max(0, Math.min(1, (polarCoast + polarFjords * 0.35 - 0.36) / 0.66));
-      paintPlanetTerrain(image.data, index, palette, biome, elevation, detail, polarBand * polarMass);
+      paintPlanetTerrain(
+        image.data,
+        index,
+        palette,
+        biome,
+        elevation,
+        detail,
+        polarBand * polarMass
+      );
     }
   }
 
