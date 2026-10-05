@@ -1,116 +1,182 @@
 version: 2.1
 
 jobs:
-  ctl-a:
+  ctl-1:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 8300 src/app/game-controller.ts
+      - run: npx prettier --check --range-start 0 --range-end 4200 src/app/game-controller.ts
 
-  ctl-b:
+  ctl-2:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 8300 --range-end 17000 src/app/game-controller.ts
+      - run: npx prettier --check --range-start 4200 --range-end 8400 src/app/game-controller.ts
 
-  surf-a:
+  ctl-3:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 5400 src/ui/space/procedural-surface-textures.ts
+      - run: npx prettier --check --range-start 8400 --range-end 12600 src/app/game-controller.ts
 
-  surf-b:
+  ctl-4:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 5400 --range-end 11000 src/ui/space/procedural-surface-textures.ts
+      - run: npx prettier --check --range-start 12600 --range-end 17000 src/app/game-controller.ts
 
-  map-a:
+  surf-3:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 6200 src/data/maps/narrows-sector.ts
+      - run: npx prettier --check --range-start 5400 --range-end 8100 src/ui/space/procedural-surface-textures.ts
 
-  map-b:
+  surf-4:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 6200 --range-end 12500 src/data/maps/narrows-sector.ts
+      - run: npx prettier --check --range-start 8100 --range-end 11000 src/ui/space/procedural-surface-textures.ts
 
-  ports-a:
+  map-1:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 6200 src/data/ports/sector-ports.ts
+      - run: npx prettier --check --range-start 0 --range-end 3100 src/data/maps/narrows-sector.ts
 
-  ports-b:
+  map-2:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 6200 --range-end 12500 src/data/ports/sector-ports.ts
+      - run: npx prettier --check --range-start 3100 --range-end 6200 src/data/maps/narrows-sector.ts
 
-  econ-a:
+  map-3:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 0 --range-end 2500 tests/economy/sector-economy-coverage.test.cjs
+      - run: npx prettier --check --range-start 6200 --range-end 9300 src/data/maps/narrows-sector.ts
 
-  econ-b:
+  map-4:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
       - checkout
       - run: npm ci
-      - run: npx prettier --check --range-start 2500 --range-end 5100 tests/economy/sector-economy-coverage.test.cjs
+      - run: npx prettier --check --range-start 9300 --range-end 12500 src/data/maps/narrows-sector.ts
+
+  ports-1:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 0 --range-end 3100 src/data/ports/sector-ports.ts
+
+  ports-2:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 3100 --range-end 6200 src/data/ports/sector-ports.ts
+
+  ports-3:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 6200 --range-end 9300 src/data/ports/sector-ports.ts
+
+  ports-4:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 9300 --range-end 12500 src/data/ports/sector-ports.ts
+
+  econ-1:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 0 --range-end 1250 tests/economy/sector-economy-coverage.test.cjs
+
+  econ-2:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npx prettier --check --range-start 1250 --range-end 2500 tests/economy/sector-economy-coverage.test.cjs
 
 workflows:
-  prettier-range-diagnostics:
+  prettier-quarter-diagnostics:
     jobs:
-      - ctl-a:
+      - ctl-1:
           filters: { branches: { only: ci-gate } }
-      - ctl-b:
+      - ctl-2:
           filters: { branches: { only: ci-gate } }
-      - surf-a:
+      - ctl-3:
           filters: { branches: { only: ci-gate } }
-      - surf-b:
+      - ctl-4:
           filters: { branches: { only: ci-gate } }
-      - map-a:
+      - surf-3:
           filters: { branches: { only: ci-gate } }
-      - map-b:
+      - surf-4:
           filters: { branches: { only: ci-gate } }
-      - ports-a:
+      - map-1:
           filters: { branches: { only: ci-gate } }
-      - ports-b:
+      - map-2:
           filters: { branches: { only: ci-gate } }
-      - econ-a:
+      - map-3:
           filters: { branches: { only: ci-gate } }
-      - econ-b:
+      - map-4:
+          filters: { branches: { only: ci-gate } }
+      - ports-1:
+          filters: { branches: { only: ci-gate } }
+      - ports-2:
+          filters: { branches: { only: ci-gate } }
+      - ports-3:
+          filters: { branches: { only: ci-gate } }
+      - ports-4:
+          filters: { branches: { only: ci-gate } }
+      - econ-1:
+          filters: { branches: { only: ci-gate } }
+      - econ-2:
           filters: { branches: { only: ci-gate } }
