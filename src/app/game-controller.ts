@@ -2,7 +2,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation, WorldPoint } from '../core/world-types';
 import { economyResourceById, economyResources } from '../data/economy/economy-resources';
-import { createTutorialNpcEconomyStates } from '../data/economy/tutorial-npc-economy';
+import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
@@ -94,7 +94,7 @@ function createControllerEconomy(): ControllerEconomy {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
   const trade = createPlayerTradeService(markets);
-  const npcStates = createTutorialNpcEconomyStates();
+  const npcStates = createSectorNpcEconomyStates();
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
