@@ -116,7 +116,11 @@ assertHardpoints(standardHardpoints, 346, 182);
 assertHardpoints(industrialHardpoints, 346, 207);
 assert.equal(freighterHardpoints.sourceWidth, 518, 'freighter hardpoint width must match asset');
 assert.equal(freighterHardpoints.sourceHeight, 167, 'freighter hardpoint height must match asset');
-assert.equal(freighterHardpoints.engines.length, 3, 'freighter must define three engine hardpoints');
+assert.equal(
+  freighterHardpoints.engines.length,
+  3,
+  'freighter must define three engine hardpoints'
+);
 assert.equal(
   freighterHardpoints.miningLasers.length,
   0,
