@@ -1,7 +1,7 @@
 version: 2.1
 
 commands:
-  use-dependencies:
+  use-prepared-dependencies:
     steps:
       - checkout
       - attach_workspace:
@@ -21,67 +21,95 @@ jobs:
       - run:
           name: Install dependencies once
           command: npm ci
+      - save_cache:
+          key: npm-v1-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
       - persist_to_workspace:
           root: .
           paths:
             - node_modules
 
-  economy-tests:
+  format-src:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
+      - use-prepared-dependencies
       - run:
-          name: Economy tests
-          command: find tests/economy -name '*.test.cjs' -print0 | sort -z | xargs -0 -n1 node
+          name: Format source
+          command: npx prettier --check src
 
-  map-navigation-tests:
+  format-tests:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
+      - use-prepared-dependencies
       - run:
-          name: Map and navigation tests
-          command: |
-            find tests/map tests/navigation -name '*.test.cjs' -print0 | sort -z | xargs -0 -n1 node
+          name: Format tests
+          command: npx prettier --check tests
 
-  gameplay-tests:
+  format-project:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
+      - use-prepared-dependencies
       - run:
-          name: Gameplay and asset tests
-          command: |
-            find tests/assets tests/local-space tests/port tests/ships -name '*.test.cjs' -print0 | sort -z | xargs -0 -n1 node
+          name: Format project files
+          command: npx prettier --check docs scripts README.md package.json tsconfig.json vite.config.ts eslint.config.mjs index.html .github .circleci
 
-  quality-tests:
+  static-quality:
     docker:
       - image: cimg/node:20.18
     resource_class: small
     steps:
-      - use-dependencies
+      - use-prepared-dependencies
       - run:
-          name: Quality tests
-          command: find tests/quality -name '*.test.cjs' -print0 | sort -z | xargs -0 -n1 node
+          name: Lint
+          command: npm run lint
+      - run:
+          name: TypeScript
+          command: npm run typecheck
+      - run:
+          name: Dependency architecture
+          command: npm run deps:check
+
+  verify:
+    docker:
+      - image: cimg/node:20.18
+    resource_class: small
+    steps:
+      - use-prepared-dependencies
+      - run:
+          name: Tests
+          command: npm test
+      - run:
+          name: Production bundle
+          command: npx vite build
 
 workflows:
-  pinpoint-tests:
+  quality:
     jobs:
       - prepare:
           filters: { branches: { only: ci-gate } }
-      - economy-tests:
+      - format-src:
           requires: [prepare]
           filters: { branches: { only: ci-gate } }
-      - map-navigation-tests:
+      - format-tests:
           requires: [prepare]
           filters: { branches: { only: ci-gate } }
-      - gameplay-tests:
+      - format-project:
           requires: [prepare]
           filters: { branches: { only: ci-gate } }
-      - quality-tests:
+      - static-quality:
           requires: [prepare]
+          filters: { branches: { only: ci-gate } }
+      - verify:
+          requires:
+            - format-src
+            - format-tests
+            - format-project
+            - static-quality
           filters: { branches: { only: ci-gate } }
