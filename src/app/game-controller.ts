@@ -1,10 +1,10 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
-import type { WorldPoint } from '../core/world-types';
+import type { WorldLocation, WorldPoint } from '../core/world-types';
 import { economyResourceById, economyResources } from '../data/economy/economy-resources';
 import { createTutorialNpcEconomyStates } from '../data/economy/tutorial-npc-economy';
-import { tutorialCluster } from '../data/maps/tutorial-cluster';
-import { tutorialPortByLocationId, tutorialPorts } from '../data/ports/tutorial-ports';
+import { narrowsSector } from '../data/maps/narrows-sector';
+import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
@@ -89,8 +89,8 @@ interface ControllerEconomy {
 }
 
 function createControllerEconomy(): ControllerEconomy {
-  const situations = createMarketSituationService(tutorialPorts, economyResources, 73);
-  const markets = createEconomyMarketService(tutorialPorts, economyResources, {
+  const situations = createMarketSituationService(sectorPorts, economyResources, 73);
+  const markets = createEconomyMarketService(sectorPorts, economyResources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
   const trade = createPlayerTradeService(markets);
@@ -110,7 +110,7 @@ function createControllerEconomy(): ControllerEconomy {
     mining: createMiningEconomyService(simulation, trade),
     npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
       positions: Object.fromEntries(
-        tutorialCluster.locations.map((location) => [location.id, location.position])
+        narrowsSector.locations.map((location) => [location.id, location.position])
       ),
     }),
   };
@@ -160,8 +160,22 @@ function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService
   return service;
 }
 
-function createActiveLocalModel(service: LocalSpaceService | null, ship: ShipDefinition) {
-  return createLocalSpaceViewModel(requireLocalSpace(service).getSnapshot(), ship, 'Mining Zone');
+function createActiveLocalModel(
+  service: LocalSpaceService | null,
+  ship: ShipDefinition,
+  locationName: string
+) {
+  return createLocalSpaceViewModel(
+    requireLocalSpace(service).getSnapshot(),
+    ship,
+    locationName + ' // Mining'
+  );
+}
+
+function miningLocationById(locationId: string | null): WorldLocation | null {
+  if (!locationId) return null;
+  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+  return location?.activities.mine ? location : null;
 }
 
 function localSeed(visit: number): number {
@@ -185,24 +199,29 @@ async function calculatePointRoute(service: LocalSpaceService, target: WorldPoin
 function createMiningLocalSpace(
   ship: ShipDefinition,
   seed: number,
-  mining: MiningEconomyService
+  mining: MiningEconomyService,
+  location: WorldLocation
 ): LocalSpaceService {
   return createLocalSpaceService({
-    instance: generateMiningSpace('greyrock-belt', seed),
+    instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
     onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, ship.cargoCapacityTons, 'greyrock-belt'),
+      mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id),
   });
 }
 
-function enteredGreyrock(
+function enteredMiningLocation(
   mode: SceneMode,
   previousId: string | null,
   currentId: string | null
 ): boolean {
-  return mode === 'star-map' && previousId !== currentId && currentId === 'greyrock-belt';
+  return (
+    mode === 'star-map' &&
+    previousId !== currentId &&
+    miningLocationById(currentId) !== null
+  );
 }
 
 function advanceEconomyDay(
@@ -288,7 +307,7 @@ function createControllerStarPanel(options: {
     log: options.log,
     onSelectLocation: (id) => {
       const snapshot = options.navigation.getSnapshot();
-      if (id === 'greyrock-belt' && snapshot.currentLocationId === id && !snapshot.isTravelling) {
+      if (miningLocationById(id) && snapshot.currentLocationId === id && !snapshot.isTravelling) {
         options.onEnterLocalSpace();
         return;
       }
@@ -316,8 +335,8 @@ function createActivePortPanel(
   log: SystemLogService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
-  const location = tutorialCluster.locations.find((entry) => entry.id === locationId);
-  const port = locationId ? tutorialPortByLocationId(locationId) : null;
+  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+  const port = locationId ? sectorPortByLocationId(locationId) : null;
   const market = locationId ? markets.getMarket(locationId) : null;
   if (!location || !port || !market) return null;
 
@@ -357,8 +376,11 @@ export function createGameController(options: GameControllerOptions): GameContro
   const systemLog = createControllerLog();
   const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
   const starModel = () =>
-    createStarMapViewModel(tutorialCluster, navigation.getSnapshot(), activeShip);
-  const localModel = () => createActiveLocalModel(localSpace, activeShip);
+    createStarMapViewModel(narrowsSector, navigation.getSnapshot(), activeShip);
+  const localModel = () => {
+    const location = miningLocationById(navigation.getSnapshot().currentLocationId);
+    return createActiveLocalModel(localSpace, activeShip, location?.name ?? 'Mining Zone');
+  };
   const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
   const mountTestSwitcher = (): void => {
     shipSwitcher?.destroy();
@@ -414,9 +436,16 @@ export function createGameController(options: GameControllerOptions): GameContro
   const mountLocalSpace = (reuseSeed = false): void => {
     destroyScenePanels(panels);
     mode = 'local-space';
+    const location = miningLocationById(navigation.getSnapshot().currentLocationId);
+    if (!location) {
+      mountStarMap();
+      return;
+    }
     if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
-    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining);
-    systemLog.write(reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > GREYROCK BELT');
+    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining, location);
+    systemLog.write(
+      reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
+    );
     panels.local = createLocalSpacePanel({
       root,
       model: localModel(),
@@ -430,7 +459,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     tick(deltaSeconds) {
       const navigationSnapshot = navigation.tick(deltaSeconds);
       const currentLocationId = navigationSnapshot.currentLocationId;
-      if (enteredGreyrock(mode, previousLocationId, currentLocationId)) {
+      if (enteredMiningLocation(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
       }
       advanceEconomyDay(previousLocationId, currentLocationId, situations, simulation, npcs);
