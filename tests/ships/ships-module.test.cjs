@@ -77,9 +77,9 @@ assert(
   'registered miners must define explicit cargo capacity'
 );
 assert.equal(
-  (data.match(/cruiseSpeed: 140/g) ?? []).length,
+  (data.match(/cruiseSpeed: 220/g) ?? []).length,
   2,
-  'registered miners must use the faster strategic cruise speed'
+  'registered miners must use the fast strategic cruise speed'
 );
 assert(
   data.includes("import standardHardpointsJson from './miner-80m-standard.hardpoints.json'"),

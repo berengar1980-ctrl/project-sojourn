@@ -28,7 +28,7 @@ export const miner80mStandard: ShipDefinition = {
     hardpoints: miner80mStandardHardpoints,
   },
   navigation: {
-    cruiseSpeed: 140,
+    cruiseSpeed: 220,
   },
 };
 
@@ -46,7 +46,7 @@ export const miner80mIndustrialHeavy: ShipDefinition = {
     hardpoints: miner80mIndustrialHeavyHardpoints,
   },
   navigation: {
-    cruiseSpeed: 140,
+    cruiseSpeed: 220,
   },
 };
 

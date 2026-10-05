@@ -1,5 +1,7 @@
 import type { WorldPoint } from '../../core/world-types';
 
+const MAX_RELATIVE_ZOOM = 4.25;
+
 export interface ScreenPoint {
   readonly x: number;
   readonly y: number;
@@ -28,7 +30,7 @@ export class MapCamera {
     this.fitZoom = Math.max(0.12, fitZoom);
     this.zoom = this.fitZoom;
     this.minimumZoom = Math.max(0.08, this.zoom * 0.58);
-    this.maximumZoom = Math.max(4.5, this.zoom * 9);
+    this.maximumZoom = this.fitZoom * MAX_RELATIVE_ZOOM;
     this.x = this.worldWidth / 2;
     this.y = this.worldHeight / 2;
   }

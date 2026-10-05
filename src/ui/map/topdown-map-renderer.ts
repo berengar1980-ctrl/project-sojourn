@@ -183,18 +183,23 @@ export class TopdownMapRenderer {
 
   private drawOrbits(width: number, height: number): void {
     const star = this.camera.worldToScreen(this.model.star.position, width, height);
-    const starRadii = this.model.locations
+    const starOrbits = this.model.locations
       .filter((location) => location.kind === 'planet' && location.showOrbit)
-      .map((location) => location.orbitRadius)
-      .filter((radius): radius is number => radius != null)
-      .sort((a, b) => a - b);
+      .map((location) => ({
+        radius: location.orbitRadius,
+        emphasized: location.isSelected || location.isCurrent,
+      }))
+      .filter((orbit): orbit is { radius: number; emphasized: boolean } => orbit.radius != null)
+      .sort((a, b) => a.radius - b.radius);
 
     this.context.save();
-    this.context.strokeStyle = 'rgba(129, 151, 174, .065)';
-    this.context.lineWidth = 1;
-    for (const orbit of starRadii) {
+    for (const orbit of starOrbits) {
+      this.context.strokeStyle = orbit.emphasized
+        ? 'rgba(129, 151, 174, .12)'
+        : 'rgba(129, 151, 174, .026)';
+      this.context.lineWidth = orbit.emphasized ? 1.2 : 0.7;
       this.context.beginPath();
-      this.context.arc(star.x, star.y, this.camera.scale(orbit), 0, Math.PI * 2);
+      this.context.arc(star.x, star.y, this.camera.scale(orbit.radius), 0, Math.PI * 2);
       this.context.stroke();
     }
 
