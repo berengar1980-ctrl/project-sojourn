@@ -1,8 +1,4 @@
-import type {
-  ResolvedShipGameplayStats,
-  ShipDefinition,
-  ShipRole,
-} from '../../core/ship-types';
+import type { ResolvedShipGameplayStats, ShipDefinition, ShipRole } from '../../core/ship-types';
 import { freighterVariantShips } from '../../data/ships/freighter-variant-ships';
 import { minerVariantShips } from '../../data/ships/miner-variant-ships';
 import { patrolVariantShips } from '../../data/ships/patrol-variant-ships';
