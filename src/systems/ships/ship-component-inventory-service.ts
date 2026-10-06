@@ -45,8 +45,7 @@ export function createShipComponentInventoryService(
       const definition = getShipComponent(type, componentId);
       if (!definition) return null;
       const cargoTons = looseComponentCargoTons(definition.tier);
-      const occupied =
-        resourceCargoUsed(player) + finiteTons(player.reservedCargoTons ?? 0);
+      const occupied = resourceCargoUsed(player) + finiteTons(player.reservedCargoTons ?? 0);
       if (occupied + cargoTons > finiteTons(cargoCapacityTons)) return null;
 
       serial += 1;
