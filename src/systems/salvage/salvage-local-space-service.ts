@@ -6,10 +6,7 @@ import type {
 import type { LocalShipState } from '../../core/local-space-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
-import {
-  advanceAutopilotRoute,
-  resetAutopilotMotion,
-} from '../local-space/local-space-autopilot';
+import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
 import { distance } from '../local-space/local-space-motion';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import {
@@ -134,10 +131,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return this.getSnapshot();
   }
 
-  startStrip(
-    wreckId: string,
-    resourceId: EconomyResourceId
-  ): SalvageLocalSpaceSnapshot {
+  startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot {
     const wreck = this.findWreck(wreckId);
     if (!wreck?.inspected || !this.options.setup.available) return this.getSnapshot();
     const deposit = wreck.resources.find(
