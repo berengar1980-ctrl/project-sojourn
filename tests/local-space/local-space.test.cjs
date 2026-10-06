@@ -213,7 +213,7 @@ assert(
   'mining must continue until all asteroid deposits are depleted'
 );
 assert(
-  service.includes('this.miningEvents.update(asteroid)') &&
+  service.includes('this.miningEvents.pauseExtraction(asteroid, deltaSeconds)') &&
     service.includes('resolveMiningEvent(choiceId'),
   'live extraction must pause for integrated mining decisions'
 );
