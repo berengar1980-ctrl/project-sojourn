@@ -140,7 +140,7 @@ const controllerSource = require('fs').readFileSync(
   'utf8'
 );
 const usesLocationEconomy = controllerSource.includes(
-  'mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id)'
+  'mining.collect(resourceId, amount, miningSetup.cargoCapacityTons, location.id)'
 );
 const usesLocationDeposits = controllerSource.includes(
   'generateMiningSpace(location.id, seed, location.minedResourceIds)'
