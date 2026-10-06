@@ -4,7 +4,10 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
-import { resolveShipShieldCollisions } from '../local-space/ship-shield-collision';
+import {
+  resolveShipShieldCollisions,
+  type LocalShieldShipBody,
+} from '../local-space/ship-shield-collision';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 
 export type LocalNpcSalvagePhase =
@@ -359,7 +362,7 @@ export function createNpcLocalSalvageService(
       }
 
       const playerState = options.getPlayerShipState?.();
-      const bodies = ships.flatMap((local) => {
+      const bodies: LocalShieldShipBody[] = ships.flatMap((local) => {
         const definition = getShipDefinition(local.shipId);
         return definition
           ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }]
