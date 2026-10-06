@@ -136,7 +136,7 @@ const resources = [
 }
 
 const controllerSource = require('fs').readFileSync(
-  path.join(root, 'src/app/game-controller.ts'),
+  path.join(root, 'src/app/mining-local-space.ts'),
   'utf8'
 );
 const usesLocationEconomy = controllerSource.includes(
