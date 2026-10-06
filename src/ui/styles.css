@@ -1972,3 +1972,307 @@ body {
   background: rgba(107, 32, 32, 0.18);
   color: #e58d84;
 }
+
+
+/* Docked trade intelligence + ship loadout */
+.port-tabs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.port-trade-stack {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.port-cargo-sale-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.port-cargo-sale {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.1fr) 150px minmax(230px, 1.4fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(90, 145, 162, 0.2);
+  background: rgba(6, 18, 24, 0.72);
+}
+
+.port-cargo-sale--best {
+  border-left: 3px solid rgba(96, 219, 151, 0.8);
+}
+
+.port-cargo-sale--good {
+  border-left: 3px solid rgba(109, 196, 211, 0.72);
+}
+
+.port-cargo-sale--mid {
+  border-left: 3px solid rgba(206, 184, 104, 0.72);
+}
+
+.port-cargo-sale--poor,
+.port-cargo-sale--loss {
+  border-left: 3px solid rgba(205, 103, 83, 0.72);
+}
+
+.port-cargo-sale > div,
+.port-cargo-sale-main {
+  display: grid;
+  gap: 3px;
+}
+
+.port-cargo-sale span,
+.port-cargo-sale small,
+.port-system-row small,
+.port-system-head,
+.port-component-slot span,
+.port-component-slot small,
+.port-ship-stats span {
+  color: #718d99;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.port-cargo-sale strong,
+.port-system-row strong {
+  color: #d4e7eb;
+  font-size: 11px;
+}
+
+.port-cargo-sale-best b {
+  color: #a7d8e1;
+}
+
+.port-cargo-sale-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px !important;
+}
+
+.port-cargo-sale button,
+.port-system-row button,
+.port-component-slot button {
+  padding: 6px 8px;
+  border: 1px solid rgba(94, 174, 193, 0.34);
+  background: rgba(28, 77, 91, 0.22);
+  color: #a6dce6;
+  cursor: pointer;
+  font-size: 8px;
+  letter-spacing: 0.07em;
+}
+
+.port-positive {
+  color: #79d89d !important;
+}
+
+.port-negative {
+  color: #df8d7d !important;
+}
+
+.port-system-market,
+.port-local-market {
+  border-top: 1px solid rgba(92, 148, 166, 0.2);
+  border-bottom: 1px solid rgba(92, 148, 166, 0.15);
+  background: rgba(4, 13, 18, 0.72);
+}
+
+.port-panel-heading label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #718d99;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.port-panel-heading select,
+.port-station-assignment select {
+  border: 1px solid rgba(93, 161, 179, 0.3);
+  background: #071219;
+  color: #b8dce3;
+  padding: 5px 7px;
+}
+
+.port-system-note {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(92, 148, 166, 0.12);
+  color: #8299a3;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.port-system-head,
+.port-system-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(170px, 1fr) 90px minmax(130px, 1fr) 120px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.port-system-head {
+  min-height: 32px;
+  border-bottom: 1px solid rgba(95, 138, 151, 0.14);
+}
+
+.port-system-list {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.port-system-row {
+  min-height: 52px;
+  border-bottom: 1px solid rgba(89, 126, 139, 0.11);
+}
+
+.port-system-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.port-intel--live,
+.port-intel--recent {
+  color: #72d49a !important;
+}
+
+.port-intel--aging {
+  color: #d7bd72 !important;
+}
+
+.port-intel--stale {
+  color: #df8d7d !important;
+}
+
+.port-pane--ship {
+  grid-template-columns: minmax(340px, 0.9fr) minmax(520px, 1.45fr);
+}
+
+.port-ship-console,
+.port-ship-components {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(90, 144, 163, 0.28);
+  background: linear-gradient(180deg, rgba(5, 15, 21, 0.91), rgba(3, 9, 13, 0.94));
+}
+
+.port-ship-visual {
+  display: grid;
+  grid-template-rows: minmax(220px, 1fr) auto;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(51, 128, 148, 0.16), transparent 38%),
+    linear-gradient(180deg, rgba(6, 18, 25, 0.65), rgba(2, 8, 12, 0.92));
+}
+
+.port-ship-visual img {
+  width: 88%;
+  max-height: 390px;
+  align-self: center;
+  justify-self: center;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(84, 186, 207, 0.12));
+}
+
+.port-ship-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid rgba(91, 143, 159, 0.18);
+}
+
+.port-ship-stats > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border-right: 1px solid rgba(91, 143, 159, 0.12);
+}
+
+.port-ship-stats strong {
+  color: #d4e9ed;
+  font-size: 13px;
+}
+
+.port-component-list {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+}
+
+.port-component-slot {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 72px 90px 150px;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 9px 10px;
+  border: 1px solid rgba(91, 142, 158, 0.2);
+  background: rgba(7, 19, 25, 0.66);
+}
+
+.port-component-slot > div {
+  display: grid;
+  gap: 4px;
+}
+
+.port-component-slot strong {
+  color: #d1e5e9;
+  font-size: 11px;
+}
+
+.port-component-slot > b {
+  color: #8ed8e5;
+  font-size: 10px;
+}
+
+.port-component-slot--weapon {
+  border-left: 2px solid rgba(101, 190, 211, 0.62);
+}
+
+.port-component-fixed {
+  color: #5d7882;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.port-station-assignment {
+  display: grid;
+  gap: 7px;
+  min-height: 82px;
+  padding: 10px;
+  border: 1px solid rgba(91, 142, 158, 0.22);
+  background: rgba(7, 20, 27, 0.62);
+}
+
+.port-station-assignment > span {
+  display: grid;
+  gap: 3px;
+}
+
+.port-station-assignment small {
+  color: #5f7d89;
+  font-size: 8px;
+}
+
+@media (max-width: 1200px) {
+  .port-cargo-sale {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .port-cargo-sale-actions {
+    justify-content: flex-start;
+  }
+
+  .port-system-head,
+  .port-system-row {
+    grid-template-columns: minmax(130px, 1.1fr) minmax(150px, 1fr) 75px minmax(110px, 1fr) 100px;
+  }
+
+  .port-pane--ship {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}

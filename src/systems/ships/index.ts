@@ -24,6 +24,7 @@ export {
   createShipComponentInventoryService,
   looseComponentCargoTons,
 } from './ship-component-inventory-service';
+export { createShipLoadoutService } from './ship-loadout-service';
 export { resolveShipRuntimeSetup } from './ship-runtime';
 export {
   calculateStationSkill,
@@ -58,6 +59,7 @@ export type {
 } from '../../core/ship-types';
 export type { InstalledShipComponents, ShipEnergySnapshot } from './ship-component-service';
 export type { ShipComponentInventoryService } from './ship-component-inventory-service';
+export type { ShipLoadoutService } from './ship-loadout-service';
 export type { ShipMiningSetup } from './ship-mining-capability';
 export type { ShipSalvageSetup } from './ship-salvage-capability';
 export type { ShipRuntimeOptions, ShipRuntimeSetup } from './ship-runtime';

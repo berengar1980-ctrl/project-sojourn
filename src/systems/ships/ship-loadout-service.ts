@@ -1,0 +1,66 @@
+import type { ShipComponentType, ShipDefinition } from '../../core/ship-types';
+import type { InstalledShipComponents } from './ship-component-service';
+import { getShipComponent } from './ship-component-service';
+import { defaultInstalledShipComponents } from './ship-mining-capability';
+import { resolveShipGameplayStats } from './ship-stats';
+
+export interface ShipLoadoutService {
+  get(ship: ShipDefinition): InstalledShipComponents;
+  setSlot(
+    ship: ShipDefinition,
+    type: ShipComponentType,
+    index: number,
+    componentId: string | null
+  ): boolean;
+}
+
+function cloneInstalled(installed: InstalledShipComponents): InstalledShipComponents {
+  const copy: Partial<Record<ShipComponentType, readonly string[]>> = {};
+  for (const [type, ids] of Object.entries(installed)) {
+    copy[type as ShipComponentType] = [...(ids ?? [])];
+  }
+  return copy;
+}
+
+function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
+  if (type === 'weapon') return resolveShipGameplayStats(ship).weaponSlots;
+  if (type === 'mining') return ship.role === 'mining' ? 1 : 0;
+  if (type === 'salvage') return ship.role === 'salvage' ? 1 : 0;
+  return 1;
+}
+
+export function createShipLoadoutService(): ShipLoadoutService {
+  const byShipId = new Map<string, InstalledShipComponents>();
+
+  function get(ship: ShipDefinition): InstalledShipComponents {
+    const existing = byShipId.get(ship.id);
+    if (existing) return existing;
+    const created = cloneInstalled(defaultInstalledShipComponents(ship));
+    byShipId.set(ship.id, created);
+    return created;
+  }
+
+  return {
+    get,
+    setSlot(ship, type, index, componentId) {
+      const limit = slotLimit(ship, type);
+      if (index < 0 || index >= limit) return false;
+
+      if (componentId) {
+        const component = getShipComponent(type, componentId);
+        if (!component || component.tier > resolveShipGameplayStats(ship).maxComponentTier) {
+          return false;
+        }
+      }
+
+      const current = cloneInstalled(get(ship));
+      const slots = [...(current[type] ?? [])];
+      while (slots.length < limit) slots.push('');
+      slots[index] = componentId ?? '';
+      const next: Partial<Record<ShipComponentType, readonly string[]>> = { ...current };
+      next[type] = slots.slice(0, limit);
+      byShipId.set(ship.id, next);
+      return true;
+    },
+  };
+}

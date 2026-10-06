@@ -68,12 +68,27 @@ assert(
   'port recruit cards must be derived from the migrated crew catalog'
 );
 assert(
-  portPanel.includes('WERFT // KOMPONENTEN') && portPanel.includes('SCHIFFSKAUF'),
-  'shipyard UI must separate components from ship purchases'
+  portPanel.includes('SYSTEMMARKT') &&
+    portPanel.includes('FRACHT VERKAUFEN') &&
+    portPanel.includes('data-sell-all-id') &&
+    portPanel.includes('data-market-route'),
+  'trade UI must expose cargo-first selling and system market route comparison'
 );
 assert(
-  portPanel.includes('STANDARDISIERTE PREISE') && portPanel.includes('KEINE HANDELSWARE'),
-  'equipment UI must communicate non-arbitrage standardized pricing'
+  portPanel.includes('Preiswissen verfällt') &&
+    portPanel.includes('data-system-resource-select') &&
+    portModel.includes("intelStatus: 'live' | 'recent' | 'aging' | 'stale'"),
+  'system market UI must surface aging market intelligence'
+);
+assert(
+  portPanel.includes('STARTAUSSTATTUNG MK I') &&
+    portPanel.includes('data-component-type="weapon"') &&
+    portPanel.includes('LIGHT LASER MK I MONTIEREN'),
+  'ship UI must show the real ship and allow Mk I weapon slot mounting'
+);
+assert(
+  portPanel.includes('keine erfundenen T2/T3-Upgrades'),
+  'shipyard must not display fake higher-tier component upgrades'
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');
 assert(
