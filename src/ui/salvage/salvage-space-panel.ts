@@ -142,8 +142,7 @@ function resourceRow(
     model.phase === 'stripping' && model.activeResourceId === resource.resourceId
       ? 'BERGUNG LÄUFT'
       : 'BERGEN';
-  button.disabled =
-    !model.salvageAvailable || model.phase !== 'idle' || resource.remaining <= 0;
+  button.disabled = !model.salvageAvailable || model.phase !== 'idle' || resource.remaining <= 0;
   button.addEventListener('click', () => onStrip(wreckId, resource.resourceId));
   row.append(label, amount, button);
   return row;
@@ -223,9 +222,7 @@ function createRecoveryTracker(
   };
 }
 
-export function createSalvageSpacePanel(
-  options: SalvageSpacePanelOptions
-): SalvageSpacePanel {
+export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
   const shell = createShell(options);
   const ui = controls(shell);
   let model = options.model;
