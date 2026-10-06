@@ -1,4 +1,9 @@
-import type { ShipComponentType } from '../../core/ship-types';
+import type {
+  ShipComponentType,
+  ShipWeaponFamily,
+  ShipWeaponProfile,
+  ShipWeaponRole,
+} from '../../core/ship-types';
 
 export type { ShipComponentType } from '../../core/ship-types';
 
@@ -15,6 +20,7 @@ export interface ShipComponentDefinition {
   readonly range?: number;
   readonly yield?: number;
   readonly chance?: number;
+  readonly weapon?: ShipWeaponProfile;
 }
 
 type ComponentSeed = readonly [
@@ -25,6 +31,145 @@ type ComponentSeed = readonly [
   cost: number,
   effect?: number,
   chance?: number,
+];
+
+interface WeaponFamilySeed {
+  readonly id: string;
+  readonly family: ShipWeaponFamily;
+  readonly name: string;
+  readonly role: ShipWeaponRole;
+  readonly shieldDamage: number;
+  readonly hullDamage: number;
+  readonly rangeMeters: number;
+  readonly cooldownSeconds: number;
+  readonly heat: number;
+  readonly ammoPerShot: number;
+  readonly powerMultiplier: number;
+  readonly costMultiplier: number;
+  readonly legacyIds?: boolean;
+}
+
+const ROMAN_TIERS = ['I', 'II', 'III', 'IV', 'V', 'VI'] as const;
+const WEAPON_DAMAGE_SCALE = [1, 1.3, 1.65, 2.05, 2.5, 3] as const;
+const WEAPON_RANGE_SCALE = [1, 1.06, 1.12, 1.18, 1.24, 1.3] as const;
+const WEAPON_COOLDOWN_SCALE = [1, 0.97, 0.94, 0.91, 0.88, 0.85] as const;
+const WEAPON_POWER = [6, 10, 16, 22, 26, 38] as const;
+const WEAPON_COST = [0, 850000, 1800000, 2600000, 4700000, 8200000] as const;
+
+const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
+  {
+    id: 'pulse-laser',
+    family: 'pulse_laser',
+    name: 'Pulse Laser Mount',
+    role: 'balanced',
+    shieldDamage: 18,
+    hullDamage: 18,
+    rangeMeters: 750,
+    cooldownSeconds: 0.9,
+    heat: 6,
+    ammoPerShot: 0,
+    powerMultiplier: 1,
+    costMultiplier: 1,
+    legacyIds: true,
+  },
+  {
+    id: 'plasma-battery',
+    family: 'plasma_battery',
+    name: 'Plasma Battery',
+    role: 'balanced',
+    shieldDamage: 24,
+    hullDamage: 24,
+    rangeMeters: 560,
+    cooldownSeconds: 1.35,
+    heat: 12,
+    ammoPerShot: 0,
+    powerMultiplier: 1.35,
+    costMultiplier: 1.3,
+  },
+  {
+    id: 'guided-missile',
+    family: 'guided_missile',
+    name: 'Guided Missile Battery',
+    role: 'balanced',
+    shieldDamage: 18,
+    hullDamage: 25,
+    rangeMeters: 1200,
+    cooldownSeconds: 2.4,
+    heat: 2,
+    ammoPerShot: 1,
+    powerMultiplier: 0.7,
+    costMultiplier: 1.15,
+  },
+  {
+    id: 'ion-laser',
+    family: 'ion_laser',
+    name: 'Ion Laser Array',
+    role: 'shield',
+    shieldDamage: 36,
+    hullDamage: 6,
+    rangeMeters: 700,
+    cooldownSeconds: 0.95,
+    heat: 8,
+    ammoPerShot: 0,
+    powerMultiplier: 1.15,
+    costMultiplier: 1.15,
+  },
+  {
+    id: 'ion-cannon',
+    family: 'ion_cannon',
+    name: 'Ion Cannon',
+    role: 'shield',
+    shieldDamage: 46,
+    hullDamage: 3,
+    rangeMeters: 480,
+    cooldownSeconds: 1.8,
+    heat: 14,
+    ammoPerShot: 0,
+    powerMultiplier: 1.45,
+    costMultiplier: 1.35,
+  },
+  {
+    id: 'autocannon',
+    family: 'autocannon',
+    name: 'Autocannon Battery',
+    role: 'hull',
+    shieldDamage: 8,
+    hullDamage: 36,
+    rangeMeters: 560,
+    cooldownSeconds: 0.45,
+    heat: 4,
+    ammoPerShot: 1,
+    powerMultiplier: 0.8,
+    costMultiplier: 1,
+  },
+  {
+    id: 'railgun',
+    family: 'railgun',
+    name: 'Railgun',
+    role: 'hull',
+    shieldDamage: 5,
+    hullDamage: 48,
+    rangeMeters: 1100,
+    cooldownSeconds: 2.1,
+    heat: 10,
+    ammoPerShot: 1,
+    powerMultiplier: 1.2,
+    costMultiplier: 1.3,
+  },
+  {
+    id: 'he-missile',
+    family: 'he_missile',
+    name: 'HE Missile Battery',
+    role: 'hull',
+    shieldDamage: 10,
+    hullDamage: 42,
+    rangeMeters: 1250,
+    cooldownSeconds: 2.6,
+    heat: 2,
+    ammoPerShot: 1,
+    powerMultiplier: 0.75,
+    costMultiplier: 1.25,
+  },
 ];
 
 function definitions(
@@ -42,6 +187,40 @@ function definitions(
     ...(effectKey && effect !== undefined ? { [effectKey]: effect } : {}),
     ...(chance !== undefined ? { chance } : {}),
   }));
+}
+
+function scaled(value: number, multiplier: number): number {
+  return Math.max(1, Math.round(value * multiplier));
+}
+
+function weaponDefinitions(seed: WeaponFamilySeed): readonly ShipComponentDefinition[] {
+  return ROMAN_TIERS.map((roman, index) => {
+    const tier = index + 1;
+    const damageScale = WEAPON_DAMAGE_SCALE[index] ?? 1;
+    const rangeScale = WEAPON_RANGE_SCALE[index] ?? 1;
+    const cooldownScale = WEAPON_COOLDOWN_SCALE[index] ?? 1;
+    const basePower = WEAPON_POWER[index] ?? WEAPON_POWER[0];
+    const baseCost = WEAPON_COST[index] ?? WEAPON_COST[0];
+
+    return {
+      id: seed.legacyIds ? `weapon${tier}` : `weapon-${seed.id}-${tier}`,
+      type: 'weapon',
+      name: `${seed.name} Mk ${roman}`,
+      tier,
+      power: scaled(basePower, seed.powerMultiplier),
+      cost: Math.round(baseCost * seed.costMultiplier),
+      weapon: {
+        family: seed.family,
+        role: seed.role,
+        shieldDamage: scaled(seed.shieldDamage, damageScale),
+        hullDamage: scaled(seed.hullDamage, damageScale),
+        rangeMeters: scaled(seed.rangeMeters, rangeScale),
+        cooldownSeconds: Number((seed.cooldownSeconds * cooldownScale).toFixed(2)),
+        heat: scaled(seed.heat, damageScale),
+        ammoPerShot: seed.ammoPerShot,
+      },
+    };
+  });
 }
 
 export const SHIP_COMPONENT_CATALOG: Readonly<
@@ -107,14 +286,7 @@ export const SHIP_COMPONENT_CATALOG: Readonly<
     ],
     'range'
   ),
-  weapon: definitions('weapon', [
-    ['weapon1', 'Light Laser Mount Mk I', 1, 6, 0],
-    ['weapon2', 'Light Autocannon Mk II', 2, 10, 850000],
-    ['weapon3', 'Heavy Laser Mount Mk III', 3, 16, 1800000],
-    ['weapon4', 'Heavy Autocannon Mk IV', 4, 22, 2600000],
-    ['weapon5', 'Heavy Missile Battery Mk V', 5, 26, 4700000],
-    ['weapon6', 'Heavy Plasma Battery Mk VI', 6, 38, 8200000],
-  ]),
+  weapon: WEAPON_FAMILIES.flatMap(weaponDefinitions),
   cargo: definitions(
     'cargo',
     [

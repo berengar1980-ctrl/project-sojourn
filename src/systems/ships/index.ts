@@ -56,6 +56,9 @@ export type {
   ShipSprite,
   ShipStationDefinition,
   ShipStationSkill,
+  ShipWeaponFamily,
+  ShipWeaponProfile,
+  ShipWeaponRole,
 } from '../../core/ship-types';
 export type { InstalledShipComponents, ShipEnergySnapshot } from './ship-component-service';
 export type { ShipComponentInventoryService } from './ship-component-inventory-service';
