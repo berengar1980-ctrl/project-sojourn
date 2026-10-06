@@ -1707,6 +1707,13 @@ body {
   font-size: 12px;
 }
 
+.port-crew-skills {
+  margin-top: 4px;
+  color: #719aa5;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
 .port-traits {
   display: flex;
   flex-wrap: wrap;
