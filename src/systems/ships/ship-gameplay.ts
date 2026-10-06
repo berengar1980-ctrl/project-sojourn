@@ -48,9 +48,7 @@ export function canInstallShipComponent(ship: ShipDefinition, componentId: strin
   const component = getShipComponentDefinition(componentId);
   if (!component) return false;
   const profile = getShipRoleProfile(ship.role);
-  return (
-    profile.componentSlots[component.type] > 0 && component.tier <= profile.maxComponentTier
-  );
+  return profile.componentSlots[component.type] > 0 && component.tier <= profile.maxComponentTier;
 }
 
 function resolveLoadout(
