@@ -1,8 +1,4 @@
-import type {
-  SalvageField,
-  SalvageRecoveryResult,
-  SalvageWreck,
-} from '../../core/salvage-types';
+import type { SalvageField, SalvageRecoveryResult, SalvageWreck } from '../../core/salvage-types';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { stationFactor } from '../ships/station-performance';
 
@@ -50,7 +46,8 @@ export function createSalvageFieldService(options: {
       const deposit =
         wreck.resources.find(
           (entry) =>
-            entry.remainingAmount > 0 && (resourceId === undefined || entry.resourceId === resourceId)
+            entry.remainingAmount > 0 &&
+            (resourceId === undefined || entry.resourceId === resourceId)
         ) ?? null;
       if (!deposit) return null;
 
