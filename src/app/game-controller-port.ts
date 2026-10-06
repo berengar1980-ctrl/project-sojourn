@@ -6,8 +6,7 @@ import { sectorPortByLocationId } from '../data/ports/sector-ports';
 import { createPortViewModel } from '../features/port/port-view-model';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
-import type { CrewRosterService } from '../systems/crew';
-import { crewCapacity } from '../systems/crew';
+import { createCrewMember, crewCapacity, type CrewRosterService } from '../systems/crew';
 import type { NavigationService } from '../systems/navigation';
 import {
   canShipCarryResource,
@@ -43,7 +42,7 @@ export function createActivePortPanel(
       location,
       ship,
       {
-        available: crew.availableDefinitions(),
+        available: crew.availableDefinitions().map(createCrewMember),
         hired: crew.list(),
         assignments: crew.assignments(ship),
         stations: resolveShipGameplayStats(ship).stations,
