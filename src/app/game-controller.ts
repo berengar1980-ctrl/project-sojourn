@@ -1,40 +1,9 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
-import { economyResources } from '../data/economy/economy-resources';
-import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
-import { sectorPorts } from '../data/ports/sector-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
-import {
-  createEconomyMarketService,
-  type EconomyMarketService,
-} from '../systems/economy/market-service';
-import {
-  createMarketSituationService,
-  type MarketSituationService,
-} from '../systems/economy/market-situation-service';
-import {
-  createEconomySimulationService,
-  type EconomySimulationService,
-} from '../systems/economy/economy-simulation-service';
-import {
-  createMiningEconomyService,
-  type MiningEconomyService,
-} from '../systems/economy/mining-economy-service';
-import {
-  createSalvageEconomyService,
-  type SalvageEconomyService,
-} from '../systems/economy/salvage-economy-service';
-import {
-  createNpcEconomyService,
-  type NpcEconomyService,
-} from '../systems/economy/npc-economy-service';
-import {
-  createPlayerTradeService,
-  type PlayerTradeService,
-} from '../systems/economy/player-trade-service';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
 import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
@@ -43,6 +12,7 @@ import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-te
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { createControllerEconomy, type ControllerEconomy } from './game-controller-economy';
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
 import { createMiningLocalSpace } from './game-controller-mining';
 import { createActivePortPanel } from './game-controller-port';
@@ -60,45 +30,6 @@ interface ControllerPanels {
   star: StarMapPanel | null;
   local: LocalSpacePanel | null;
   port: ReturnType<typeof createActivePortPanel>;
-}
-
-interface ControllerEconomy {
-  readonly markets: EconomyMarketService;
-  readonly situations: MarketSituationService;
-  readonly trade: PlayerTradeService;
-  readonly simulation: EconomySimulationService;
-  readonly mining: MiningEconomyService;
-  readonly salvage: SalvageEconomyService;
-  readonly npcs: NpcEconomyService;
-}
-
-function createControllerEconomy(): ControllerEconomy {
-  const situations = createMarketSituationService(sectorPorts, economyResources, 73);
-  const markets = createEconomyMarketService(sectorPorts, economyResources, {
-    situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
-  });
-  const trade = createPlayerTradeService(markets);
-  const npcStates = createSectorNpcEconomyStates();
-  const simulation = createEconomySimulationService(
-    markets,
-    trade.player,
-    economyResources,
-    41,
-    npcStates
-  );
-  return {
-    markets,
-    situations,
-    trade,
-    simulation,
-    mining: createMiningEconomyService(simulation, trade),
-    salvage: createSalvageEconomyService(simulation, trade),
-    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-      positions: Object.fromEntries(
-        narrowsSector.locations.map((location) => [location.id, location.position])
-      ),
-    }),
-  };
 }
 
 function destroyScenePanels(panels: ControllerPanels): void {
@@ -208,14 +139,12 @@ function enteredSalvageLocation(
 function advanceEconomyDay(
   previousId: string | null,
   currentId: string | null,
-  situations: MarketSituationService,
-  simulation: EconomySimulationService,
-  npcs: NpcEconomyService
+  economy: ControllerEconomy
 ): void {
   if (previousId === null && currentId !== null) {
-    situations.advanceNextDay();
-    simulation.advanceNextDay();
-    npcs.advanceNextDay();
+    economy.situations.advanceNextDay();
+    economy.simulation.advanceNextDay();
+    economy.npcs.advanceNextDay();
   }
 }
 
@@ -429,6 +358,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     location,
     economy: economy.salvage,
     player: economy.trade.player,
+    componentInventory: economy.components,
     log: context.systemLog,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
@@ -446,13 +376,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   } else if (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId)) {
     runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
   }
-  advanceEconomyDay(
-    state.previousLocationId,
-    currentLocationId,
-    economy.situations,
-    economy.simulation,
-    economy.npcs
-  );
+  advanceEconomyDay(state.previousLocationId, currentLocationId, economy);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));

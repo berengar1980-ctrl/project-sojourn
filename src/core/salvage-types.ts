@@ -1,5 +1,6 @@
 import type { EconomyResourceId } from './economy-types';
 import type { LocalShipState } from './local-space-types';
+import type { ShipComponentType } from './ship-types';
 import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
@@ -12,10 +13,10 @@ export interface SalvageResourceDeposit {
 }
 
 export interface SalvageComponentCandidate {
-  readonly type:
-    'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
+  readonly type: ShipComponentType;
   readonly componentId: string;
   readonly recoveryDifficulty: number;
+  readonly cargoTons: number;
 }
 
 export interface SalvageWreck {
@@ -29,6 +30,7 @@ export interface SalvageWreck {
   readonly integrity: number;
   readonly resources: SalvageResourceDeposit[];
   readonly component: SalvageComponentCandidate | null;
+  componentStatus: 'none' | 'available' | 'recovered' | 'destroyed';
   inspected: boolean;
 }
 
@@ -49,7 +51,15 @@ export interface SalvageRecoveryResult {
   readonly depleted: boolean;
 }
 
-export type SalvageLocalPhase = 'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping';
+export interface SalvageComponentRecoveryResult {
+  readonly wreckId: string;
+  readonly componentId: string;
+  readonly outcome: 'recovered' | 'destroyed' | 'no_space';
+  readonly chancePercent: number;
+}
+
+export type SalvageLocalPhase =
+  'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping' | 'extracting-component';
 
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
@@ -63,6 +73,9 @@ export interface SalvageLocalSpaceSnapshot {
   readonly activeResourceId: EconomyResourceId | null;
   readonly lastRecovery: SalvageRecoveryResult | null;
   readonly recoverySerial: number;
+  readonly lastComponentRecovery: SalvageComponentRecoveryResult | null;
+  readonly componentRecoverySerial: number;
+  readonly componentRecoveryChances: Readonly<Record<string, number>>;
   readonly salvageAvailable: boolean;
   readonly cargoCapacityTons: number;
 }

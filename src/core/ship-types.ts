@@ -1,5 +1,18 @@
 export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 
+export type ShipComponentType =
+  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
+
+export interface LooseShipComponent {
+  readonly uid: string;
+  readonly type: ShipComponentType;
+  readonly componentId: string;
+  readonly name: string;
+  readonly tier: number;
+  readonly cargoTons: number;
+  readonly sourceWreckId: string;
+}
+
 export type ShipStationSkill =
   'piloting' | 'sensors' | 'weapons' | 'engineering' | 'mining' | 'salvage' | 'logistics';
 

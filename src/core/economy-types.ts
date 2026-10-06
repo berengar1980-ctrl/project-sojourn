@@ -62,6 +62,7 @@ export interface PlayerCargoLot {
 export interface PlayerEconomyState {
   credits: number;
   readonly cargo: Record<EconomyResourceId, PlayerCargoLot>;
+  reservedCargoTons?: number;
 }
 
 export interface TradeResult {

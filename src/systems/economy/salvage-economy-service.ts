@@ -20,7 +20,8 @@ function quantity(value: number): number {
 }
 
 function cargoUsed(player: PlayerEconomyState): number {
-  return Object.values(player.cargo).reduce((sum, lot) => sum + quantity(lot.qty), 0);
+  const resources = Object.values(player.cargo).reduce((sum, lot) => sum + quantity(lot.qty), 0);
+  return resources + quantity(player.reservedCargoTons ?? 0);
 }
 
 export interface SalvageEconomyService {

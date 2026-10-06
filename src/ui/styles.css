@@ -480,6 +480,52 @@ body {
   transition: width 140ms linear;
 }
 
+.salvage-component-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid rgba(204, 160, 78, 0.22);
+  border-bottom: 1px solid rgba(204, 160, 78, 0.12);
+}
+
+.salvage-component-row div {
+  display: grid;
+  gap: 3px;
+}
+
+.salvage-component-row span {
+  color: #9c8a69;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-component-row strong {
+  color: #dfc487;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.salvage-component-row button {
+  padding: 7px 9px;
+  border: 1px solid rgba(211, 163, 79, 0.42);
+  background: rgba(89, 61, 19, 0.24);
+  color: #e4c68e;
+  cursor: pointer;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.salvage-component-row button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.local-cargo-row--component {
+  color: #d1b16f;
+}
+
 .salvage-resource-list {
   display: grid;
   gap: 7px;

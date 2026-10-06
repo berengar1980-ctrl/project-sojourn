@@ -1,14 +1,24 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SalvageLocalSpaceSnapshot, SalvageWreckKind } from '../../core/salvage-types';
-import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
+import type { LooseShipComponent, ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { economyResourceById } from '../../data/economy/economy-resources';
+import { getShipComponent } from '../../systems/ships';
 
 export interface SalvageResourceView {
   readonly resourceId: string;
   readonly name: string;
   readonly remaining: number;
   readonly initial: number;
+}
+
+export interface SalvageComponentView {
+  readonly componentId: string;
+  readonly name: string;
+  readonly tier: number;
+  readonly cargoTons: number;
+  readonly chancePercent: number;
+  readonly status: 'available' | 'recovered' | 'destroyed';
 }
 
 export interface SalvageWreckView {
@@ -25,6 +35,7 @@ export interface SalvageWreckView {
   readonly inspected: boolean;
   readonly depleted: boolean;
   readonly componentSignal: boolean;
+  readonly component: SalvageComponentView | null;
   readonly resources: readonly SalvageResourceView[];
   readonly isSelected: boolean;
   readonly isWorkTarget: boolean;
@@ -49,6 +60,13 @@ export interface SalvageCargoView {
   readonly amount: number;
 }
 
+export interface SalvageLooseComponentView {
+  readonly uid: string;
+  readonly name: string;
+  readonly tier: number;
+  readonly cargoTons: number;
+}
+
 export interface SalvageSpaceViewModel {
   readonly title: string;
   readonly backgroundSeed: number;
@@ -66,8 +84,11 @@ export interface SalvageSpaceViewModel {
   readonly cargoCapacityTons: number;
   readonly cargoUsedTons: number;
   readonly cargoResources: readonly SalvageCargoView[];
+  readonly looseComponents: readonly SalvageLooseComponentView[];
   readonly lastRecovery: SalvageLocalSpaceSnapshot['lastRecovery'];
   readonly recoverySerial: number;
+  readonly lastComponentRecovery: SalvageLocalSpaceSnapshot['lastComponentRecovery'];
+  readonly componentRecoverySerial: number;
 }
 
 function wreckKindLabel(kind: SalvageWreckKind): string {
@@ -100,33 +121,54 @@ export function createSalvageSpaceViewModel(
   snapshot: SalvageLocalSpaceSnapshot,
   ship: ShipDefinition,
   player: PlayerEconomyState,
+  looseComponents: readonly LooseShipComponent[],
   title: string
 ): SalvageSpaceViewModel {
-  const wrecks = snapshot.field.wrecks.map((wreck) => ({
-    id: wreck.id,
-    name: wreck.name,
-    kind: wreck.kind,
-    kindLabel: wreckKindLabel(wreck.kind),
-    position: wreck.position,
-    radius: wreck.radius,
-    rotation: wreck.rotation,
-    integrity: wreck.integrity,
-    quality: wreck.quality,
-    qualityLabel: qualityLabel(wreck.quality),
-    inspected: wreck.inspected,
-    depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
-    componentSignal: wreck.inspected && wreck.component !== null,
-    resources: wreck.inspected
-      ? wreck.resources.map((entry) => ({
-          resourceId: entry.resourceId,
-          name: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
-          remaining: entry.remainingAmount,
-          initial: entry.initialAmount,
-        }))
-      : [],
-    isSelected: wreck.id === snapshot.selectedWreckId,
-    isWorkTarget: wreck.id === snapshot.workTargetId,
-  }));
+  const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
+    (wreck): SalvageWreckView => ({
+      id: wreck.id,
+      name: wreck.name,
+      kind: wreck.kind,
+      kindLabel: wreckKindLabel(wreck.kind),
+      position: wreck.position,
+      radius: wreck.radius,
+      rotation: wreck.rotation,
+      integrity: wreck.integrity,
+      quality: wreck.quality,
+      qualityLabel: qualityLabel(wreck.quality),
+      inspected: wreck.inspected,
+      depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
+      componentSignal: wreck.inspected && wreck.component !== null,
+      component:
+        wreck.inspected && wreck.component
+          ? {
+              componentId: wreck.component.componentId,
+              name:
+                getShipComponent(wreck.component.type, wreck.component.componentId)?.name ??
+                wreck.component.componentId,
+              tier:
+                getShipComponent(wreck.component.type, wreck.component.componentId)?.tier ??
+                wreck.quality,
+              cargoTons: wreck.component.cargoTons,
+              chancePercent: snapshot.componentRecoveryChances[wreck.id] ?? 0,
+              status:
+                wreck.componentStatus === 'recovered' || wreck.componentStatus === 'destroyed'
+                  ? wreck.componentStatus
+                  : 'available',
+            }
+          : null,
+      resources: wreck.inspected
+        ? wreck.resources.map((entry) => ({
+            resourceId: entry.resourceId,
+            name: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
+            remaining: entry.remainingAmount,
+            initial: entry.initialAmount,
+          }))
+        : [],
+      isSelected: wreck.id === snapshot.selectedWreckId,
+      isWorkTarget: wreck.id === snapshot.workTargetId,
+    })
+  );
   const cargoResources = cargoView(player);
 
   return {
@@ -155,9 +197,19 @@ export function createSalvageSpaceViewModel(
     activeResourceId: snapshot.activeResourceId,
     salvageAvailable: snapshot.salvageAvailable,
     cargoCapacityTons: snapshot.cargoCapacityTons,
-    cargoUsedTons: cargoResources.reduce((sum, entry) => sum + entry.amount, 0),
+    cargoUsedTons:
+      cargoResources.reduce((sum, entry) => sum + entry.amount, 0) +
+      looseComponents.reduce((sum, component) => sum + component.cargoTons, 0),
     cargoResources,
+    looseComponents: looseComponents.map((component) => ({
+      uid: component.uid,
+      name: component.name,
+      tier: component.tier,
+      cargoTons: component.cargoTons,
+    })),
     lastRecovery: snapshot.lastRecovery,
     recoverySerial: snapshot.recoverySerial,
+    lastComponentRecovery: snapshot.lastComponentRecovery,
+    componentRecoverySerial: snapshot.componentRecoverySerial,
   };
 }

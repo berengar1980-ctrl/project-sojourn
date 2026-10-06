@@ -19,7 +19,10 @@ const marketSource = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
 );
-const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerEconomySource = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-economy.ts'),
+  'utf8'
+);
 
 assert(
   resourcesSource.includes("'narcotics'") &&
@@ -66,8 +69,8 @@ assert(
   'market pricing must account for legality risk'
 );
 assert(
-  controllerSource.includes('const markets = createEconomyMarketService(') &&
-    controllerSource.includes('sectorPorts, economyResources'),
+  controllerEconomySource.includes('const markets = createEconomyMarketService(') &&
+    controllerEconomySource.includes('sectorPorts, economyResources'),
   'game controller must own persistent market state instead of rebuilding prices per view'
 );
 
