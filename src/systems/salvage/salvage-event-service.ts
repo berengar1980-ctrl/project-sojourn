@@ -121,11 +121,7 @@ function removeResources(wreck: SalvageWreck, fraction: number): number {
   return lost;
 }
 
-function addResource(
-  wreck: SalvageWreck,
-  resourceId: EconomyResourceId,
-  amount: number
-): number {
+function addResource(wreck: SalvageWreck, resourceId: EconomyResourceId, amount: number): number {
   const added = Math.max(0, Math.floor(amount));
   if (added <= 0) return 0;
   const existing = wreck.resources.find((entry) => entry.resourceId === resourceId);
@@ -199,12 +195,7 @@ export function createSalvageEventController(
 
     resolve(wreck, choiceId) {
       if (!pending || pending.state.wreckId !== wreck.id) return null;
-      const effect = resolveSalvageEventEffect(
-        pending.state.type,
-        choiceId,
-        wreck,
-        pending.rolls
-      );
+      const effect = resolveSalvageEventEffect(pending.state.type, choiceId, wreck, pending.rolls);
       if (!effect) return null;
 
       const resourceLostTons = removeResources(wreck, effect.resourceLossFraction);
@@ -219,7 +210,7 @@ export function createSalvageEventController(
       }
 
       const bonusName = effect.bonusResourceId
-        ? economyResourceById(effect.bonusResourceId)?.name ?? effect.bonusResourceId
+        ? (economyResourceById(effect.bonusResourceId)?.name ?? effect.bonusResourceId)
         : '';
       const detail = [
         resourceLostTons > 0 ? `Bergungsmaterial -${resourceLostTons} t.` : '',
