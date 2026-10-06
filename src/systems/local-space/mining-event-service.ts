@@ -79,12 +79,10 @@ function eventDescription(type: MiningEventType): string {
       'Spannungsrisse laufen durch den Asteroiden. Ein aggressiver Schnitt kann Material freilegen oder die Matrix kollabieren lassen.',
     machine:
       'Eine Lastspitze hat den Förderkopf blockiert. Eine saubere Reparatur kostet Zeit; eine Überbrückung belastet die Anlage.',
-    rich:
-      'Die Spektralanalyse meldet eine deutlich dichtere Zone direkt neben der aktuellen Schnittlinie.',
+    rich: 'Die Spektralanalyse meldet eine deutlich dichtere Zone direkt neben der aktuellen Schnittlinie.',
     cavity:
       'Hinter der Hauptader öffnet sich ein Hohlraum. Die Sensoren liefern dahinter widersprüchliche Echos.',
-    rare:
-      'Zwischen dem normalen Material sitzen kleine, extrem dichte Einschlüsse, die einen eigenen Schnitt benötigen.',
+    rare: 'Zwischen dem normalen Material sitzen kleine, extrem dichte Einschlüsse, die einen eigenen Schnitt benötigen.',
     deeper:
       'Die Ader fällt steiler in den Körper ab als erwartet. Mehr Vortrieb kann zusätzliche Reserven öffnen.',
   }[type];
