@@ -6,12 +6,14 @@ import type {
 } from '../../core/economy-types';
 import type { PortDefinition, PortTab } from '../../core/port-types';
 import type {
+  ShipComponentType,
   ShipDefinition,
   ShipStationDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
+import { getShipComponent, type InstalledShipComponents } from '../../systems/ships';
 
 export interface PortMarketRowView {
   readonly id: string;
@@ -27,6 +29,42 @@ export interface PortMarketRowView {
   readonly trend: 'up' | 'flat' | 'down';
   readonly pressurePercent: number;
   readonly owned: number;
+}
+
+export interface PortSystemMarketInput {
+  readonly locationId: string;
+  readonly locationName: string;
+  readonly locationKind: string;
+  readonly distance: number;
+  readonly resourceId: string;
+  readonly price: number;
+  readonly stock: number;
+  readonly observedDay: number;
+}
+
+export interface PortSystemMarketRowView extends PortSystemMarketInput {
+  readonly resourceName: string;
+  readonly sellPrice: number;
+  readonly ageDays: number;
+  readonly intelStatus: 'live' | 'recent' | 'aging' | 'stale';
+  readonly profit: number | null;
+}
+
+export interface PortCargoSaleView {
+  readonly resourceId: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly averageCost: number;
+  readonly localSellPrice: number;
+  readonly localProfit: number;
+  readonly rating: 'best' | 'good' | 'mid' | 'poor' | 'loss';
+  readonly bestLocationId: string;
+  readonly bestLocationName: string;
+  readonly bestSellPrice: number;
+  readonly bestProfit: number;
+  readonly bestAgeDays: number;
+  readonly bestDistance: number;
+  readonly bestIsHere: boolean;
 }
 
 export interface PortCrewView {
@@ -65,6 +103,28 @@ export interface PortCrewStateInput {
   readonly capacity: number;
 }
 
+export interface PortShipComponentSlotView {
+  readonly key: string;
+  readonly type: ShipComponentType;
+  readonly typeLabel: string;
+  readonly index: number;
+  readonly componentId: string | null;
+  readonly name: string;
+  readonly tier: number | null;
+  readonly power: number;
+  readonly weaponSlot: boolean;
+}
+
+export interface PortShipStateInput {
+  readonly installed: InstalledShipComponents;
+  readonly weaponSlots: number;
+  readonly reactorOutput: number;
+  readonly combatPowerUsed: number;
+  readonly combatPowerFree: number;
+  readonly hullMaxHp: number;
+  readonly shieldMaxHp: number;
+}
+
 export interface PortViewModel {
   readonly locationId: string;
   readonly locationName: string;
@@ -77,6 +137,9 @@ export interface PortViewModel {
   readonly shipyardAvailable: boolean;
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
   readonly market: readonly PortMarketRowView[];
+  readonly cargoSales: readonly PortCargoSaleView[];
+  readonly systemMarket: readonly PortSystemMarketRowView[];
+  readonly systemMarketResourceIds: readonly string[];
   readonly producedNames: readonly string[];
   readonly neededNames: readonly string[];
   readonly crew: PortCrewStateView;
@@ -91,6 +154,12 @@ export interface PortViewModel {
     readonly role: string;
     readonly lengthMeters: number;
     readonly spriteUrl: string;
+    readonly components: readonly PortShipComponentSlotView[];
+    readonly reactorOutput: number;
+    readonly combatPowerUsed: number;
+    readonly combatPowerFree: number;
+    readonly hullMaxHp: number;
+    readonly shieldMaxHp: number;
   };
 }
 
@@ -119,6 +188,18 @@ const STATION_LABELS: Readonly<Record<string, string>> = {
   cargo_control: 'Fracht',
   cargo_coordination: 'Frachtkoordination',
   combat_auspex: 'Kampf-Auspex',
+};
+
+const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
+  reactor: 'Reaktor',
+  engine: 'Antrieb',
+  shield: 'Schildgenerator',
+  hull: 'Hüllenverstärkung',
+  sensor: 'Sensoren',
+  weapon: 'Waffe',
+  cargo: 'Frachtmodul',
+  mining: 'Mining-System',
+  salvage: 'Bergungssystem',
 };
 
 function demandLabel(value: number): string {
@@ -169,6 +250,96 @@ function marketRows(
     });
 }
 
+function intelStatus(ageDays: number): PortSystemMarketRowView['intelStatus'] {
+  if (ageDays <= 0) return 'live';
+  if (ageDays <= 2) return 'recent';
+  if (ageDays <= 5) return 'aging';
+  return 'stale';
+}
+
+function systemRows(
+  input: readonly PortSystemMarketInput[],
+  player: PlayerEconomyState,
+  currentDay: number
+): PortSystemMarketRowView[] {
+  return input
+    .map((entry) => {
+      const lot = player.cargo[entry.resourceId];
+      const sellPrice = Math.max(1, Math.round(entry.price * 0.94));
+      const revenue = lot ? sellPrice * lot.qty : 0;
+      const profit = lot ? Math.round(revenue - lot.totalCost) : null;
+      const ageDays = Math.max(0, currentDay - entry.observedDay);
+      return {
+        ...entry,
+        resourceName: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
+        sellPrice,
+        ageDays,
+        intelStatus: intelStatus(ageDays),
+        profit,
+      };
+    })
+    .sort((a, b) => a.resourceName.localeCompare(b.resourceName) || b.sellPrice - a.sellPrice);
+}
+
+function cargoSaleRows(
+  market: readonly PortMarketRowView[],
+  system: readonly PortSystemMarketRowView[],
+  player: PlayerEconomyState,
+  locationId: string
+): PortCargoSaleView[] {
+  return Object.entries(player.cargo)
+    .filter(([, lot]) => lot.qty > 0)
+    .map(([resourceId, lot]) => {
+      const local = market.find((entry) => entry.id === resourceId);
+      const localSellPrice = local?.sellPrice ?? 0;
+      const localProfit = Math.round(localSellPrice * lot.qty - lot.totalCost);
+      const candidates = system
+        .filter((entry) => entry.resourceId === resourceId)
+        .map((entry) => ({
+          ...entry,
+          saleProfit: Math.round(entry.sellPrice * lot.qty - lot.totalCost),
+        }))
+        .sort((a, b) => b.saleProfit - a.saleProfit || a.ageDays - b.ageDays);
+      const best = candidates[0] ?? {
+        locationId,
+        locationName: 'Unbekannt',
+        sellPrice: localSellPrice,
+        saleProfit: localProfit,
+        ageDays: 0,
+        distance: 0,
+      };
+      const span = Math.max(1, best.saleProfit - Math.min(...candidates.map((entry) => entry.saleProfit), localProfit));
+      const relative = (localProfit - (best.saleProfit - span)) / span;
+      const rating: PortCargoSaleView['rating'] =
+        localProfit < 0
+          ? 'loss'
+          : best.locationId === locationId
+            ? 'best'
+            : relative >= 0.75
+              ? 'good'
+              : relative >= 0.45
+                ? 'mid'
+                : 'poor';
+      return {
+        resourceId,
+        name: economyResourceById(resourceId)?.name ?? resourceId,
+        quantity: lot.qty,
+        averageCost: lot.qty > 0 ? lot.totalCost / lot.qty : 0,
+        localSellPrice,
+        localProfit,
+        rating,
+        bestLocationId: best.locationId,
+        bestLocationName: best.locationName,
+        bestSellPrice: best.sellPrice,
+        bestProfit: best.saleProfit,
+        bestAgeDays: best.ageDays,
+        bestDistance: best.distance,
+        bestIsHere: best.locationId === locationId,
+      };
+    })
+    .sort((a, b) => b.localProfit - a.localProfit);
+}
+
 function crewInitials(name: string): string {
   return name
     .split(' ')
@@ -206,6 +377,45 @@ function crewMemberView(member: CrewMember): PortCrewView {
   };
 }
 
+function componentSlots(ship: ShipDefinition, state: PortShipStateInput): PortShipComponentSlotView[] {
+  const types: ShipComponentType[] = ['reactor', 'engine', 'shield', 'hull', 'sensor', 'cargo'];
+  if (ship.role === 'mining') types.push('mining');
+  if (ship.role === 'salvage') types.push('salvage');
+
+  const slots: PortShipComponentSlotView[] = [];
+  for (const type of types) {
+    const id = state.installed[type]?.[0] || null;
+    const definition = id ? getShipComponent(type, id) : null;
+    slots.push({
+      key: type + '-0',
+      type,
+      typeLabel: COMPONENT_LABELS[type],
+      index: 0,
+      componentId: id,
+      name: definition?.name ?? 'LEER',
+      tier: definition?.tier ?? null,
+      power: definition?.power ?? 0,
+      weaponSlot: false,
+    });
+  }
+  for (let index = 0; index < state.weaponSlots; index += 1) {
+    const id = state.installed.weapon?.[index] || null;
+    const definition = id ? getShipComponent('weapon', id) : null;
+    slots.push({
+      key: 'weapon-' + index,
+      type: 'weapon',
+      typeLabel: `Waffenhalterung ${index + 1}`,
+      index,
+      componentId: id,
+      name: definition?.name ?? 'LEER',
+      tier: definition?.tier ?? null,
+      power: definition?.power ?? 0,
+      weaponSlot: true,
+    });
+  }
+  return slots;
+}
+
 function resourceName(id: string): string {
   return economyResourceById(id)?.name ?? id;
 }
@@ -217,8 +427,13 @@ export function createPortViewModel(
   location: WorldLocation,
   ship: ShipDefinition,
   crewState: PortCrewStateInput,
+  shipState: PortShipStateInput,
+  systemMarketInput: readonly PortSystemMarketInput[],
+  currentDay: number,
   cargoCapacityTons = ship.cargoCapacityTons
 ): PortViewModel {
+  const localMarket = marketRows(market, player);
+  const systemMarket = systemRows(systemMarketInput, player, currentDay);
   return {
     locationId: location.id,
     locationName: location.name,
@@ -231,11 +446,15 @@ export function createPortViewModel(
     shipyardAvailable: port.shipyard,
     tabs: [
       { id: 'trade', label: 'HANDEL', enabled: true },
+      { id: 'ship', label: 'SCHIFF', enabled: true },
       { id: 'crew', label: 'CREW', enabled: true },
       { id: 'equipment', label: 'AUSRÜSTUNG', enabled: true },
       { id: 'shipyard', label: 'WERFT', enabled: port.shipyard },
     ],
-    market: marketRows(market, player),
+    market: localMarket,
+    cargoSales: cargoSaleRows(localMarket, systemMarket, player, location.id),
+    systemMarket,
+    systemMarketResourceIds: [...new Set(systemMarket.map((entry) => entry.resourceId))],
     producedNames: port.producedCommodityIds.map(resourceName),
     neededNames: port.neededCommodityIds.map(resourceName),
     crew: {
@@ -261,6 +480,12 @@ export function createPortViewModel(
       role: ship.role,
       lengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
+      components: componentSlots(ship, shipState),
+      reactorOutput: shipState.reactorOutput,
+      combatPowerUsed: shipState.combatPowerUsed,
+      combatPowerFree: shipState.combatPowerFree,
+      hullMaxHp: shipState.hullMaxHp,
+      shieldMaxHp: shipState.shieldMaxHp,
     },
   };
 }
