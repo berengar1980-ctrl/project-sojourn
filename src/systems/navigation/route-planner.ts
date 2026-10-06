@@ -20,6 +20,7 @@ const PROFILE_WEIGHTS: Readonly<Record<RouteProfile, readonly [number, number, n
 const REGION_CLEARANCE = 120;
 const REGION_NODE_COUNT = 10;
 const SAMPLE_STEP = 70;
+const routeCache = new Map<string, RoutePlan>();
 
 function findLocation(world: WorldMap, id: string): WorldLocation {
   const location = world.locations.find((candidate) => candidate.id === id);
@@ -125,6 +126,10 @@ export function planRouteWithProfile(
   toId: string,
   profile: RouteProfile
 ): RoutePlan {
+  const cacheKey = `${world.id}|${fromId}|${toId}|${profile}`;
+  const cached = routeCache.get(cacheKey);
+  if (cached) return cached;
+
   const from = findLocation(world, fromId);
   const to = findLocation(world, toId);
   const nodes = candidateNodes(world, from.position, to.position);
@@ -162,7 +167,7 @@ export function planRouteWithProfile(
     ? reconstruct(nodes, previous, 1)
     : [from.position, to.position];
 
-  return {
+  const plan: RoutePlan = {
     fromId,
     toId,
     points,
@@ -174,6 +179,8 @@ export function planRouteWithProfile(
       | 3,
     profile,
   };
+  routeCache.set(cacheKey, plan);
+  return plan;
 }
 
 export function planRoute(world: WorldMap, fromId: string, toId: string): RoutePlan {
