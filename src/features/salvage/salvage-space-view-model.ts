@@ -124,7 +124,8 @@ export function createSalvageSpaceViewModel(
   looseComponents: readonly LooseShipComponent[],
   title: string
 ): SalvageSpaceViewModel {
-  const wrecks = snapshot.field.wrecks.map((wreck) => ({
+  const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
+    (wreck): SalvageWreckView => ({
     id: wreck.id,
     name: wreck.name,
     kind: wreck.kind,
@@ -164,9 +165,10 @@ export function createSalvageSpaceViewModel(
           initial: entry.initialAmount,
         }))
       : [],
-    isSelected: wreck.id === snapshot.selectedWreckId,
-    isWorkTarget: wreck.id === snapshot.workTargetId,
-  }));
+      isSelected: wreck.id === snapshot.selectedWreckId,
+      isWorkTarget: wreck.id === snapshot.workTargetId,
+    })
+  );
   const cargoResources = cargoView(player);
 
   return {
