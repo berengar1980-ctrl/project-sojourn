@@ -6,11 +6,13 @@ import { sectorPortByLocationId } from '../data/ports/sector-ports';
 import { createPortViewModel } from '../features/port/port-view-model';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
+import type { CrewRosterService } from '../systems/crew';
+import { crewCapacity } from '../systems/crew';
 import type { NavigationService } from '../systems/navigation';
 import {
   canShipCarryResource,
+  resolveShipGameplayStats,
   resolveShipRuntimeSetup,
-  type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 
@@ -20,7 +22,7 @@ export function createActivePortPanel(
   markets: EconomyMarketService,
   trade: PlayerTradeService,
   ship: ShipDefinition,
-  runtimeOptions: ShipRuntimeOptions,
+  crew: CrewRosterService,
   onReturnToStarMap: () => void,
   onRefresh: () => void,
   log: SystemLogService
@@ -30,7 +32,7 @@ export function createActivePortPanel(
   const port = locationId ? sectorPortByLocationId(locationId) : null;
   const market = locationId ? markets.getMarket(locationId) : null;
   if (!location || !port || !market) return null;
-  const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
+  const runtime = resolveShipRuntimeSetup(ship, crew.runtimeOptions(ship));
 
   return createPortPanel({
     root,
@@ -40,6 +42,13 @@ export function createActivePortPanel(
       trade.player,
       location,
       ship,
+      {
+        available: crew.availableDefinitions(),
+        hired: crew.list(),
+        assignments: crew.assignments(ship),
+        stations: resolveShipGameplayStats(ship).stations,
+        capacity: crewCapacity(ship),
+      },
       runtime.cargoCapacityTons
     ),
     onReturnToStarMap,
@@ -60,6 +69,27 @@ export function createActivePortPanel(
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(
         `HANDEL > -${result.quantity} ${name.toUpperCase()} · +${result.creditsDelta} CR · P/L ${result.realizedProfit}`
+      );
+      onRefresh();
+    },
+    onHireCrew: (crewId) => {
+      const hired = crew.hire(crewId, ship);
+      if (!hired) {
+        log.write('CREW > ANHEUERUNG NICHT MÖGLICH');
+        return;
+      }
+      log.write(`CREW > ${hired.name.toUpperCase()} ANGEHEUERT · ANTEIL ${hired.share}%`);
+      onRefresh();
+    },
+    onAssignCrew: (stationId, crewId) => {
+      if (!crew.assign(ship, stationId, crewId)) {
+        log.write('CREW > STATIONSZUWEISUNG NICHT MÖGLICH');
+        return;
+      }
+      const station = resolveShipGameplayStats(ship).stations.find((entry) => entry.id === stationId);
+      const member = crewId ? crew.member(crewId) : null;
+      log.write(
+        `CREW > ${(station?.skill ?? stationId).toUpperCase()} · ${member ? member.name.toUpperCase() : 'AUTOMATIK'}`
       );
       onRefresh();
     },
