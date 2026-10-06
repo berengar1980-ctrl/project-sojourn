@@ -7,6 +7,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const portController = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-port.ts'),
+  'utf8'
+);
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
 const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
@@ -67,7 +71,7 @@ assert(
   'port must be a dedicated application scene'
 );
 assert(
-  controller.includes('sectorPortByLocationId') && controller.includes('createPortViewModel'),
+  portController.includes('sectorPortByLocationId') && portController.includes('createPortViewModel'),
   'controller must resolve docked UI by stable location id'
 );
 assert(

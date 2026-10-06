@@ -1,12 +1,11 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
-import type { WorldLocation, WorldPoint } from '../core/world-types';
-import { economyResourceById, economyResources } from '../data/economy/economy-resources';
+import type { WorldLocation } from '../core/world-types';
+import { economyResources } from '../data/economy/economy-resources';
 import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
-import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
+import { sectorPorts } from '../data/ports/sector-ports';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
-import { createPortViewModel } from '../features/port/port-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import {
   createEconomyMarketService,
@@ -36,22 +35,20 @@ import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
-import { planMiningApproachRouteAsync, planPointRouteAsync } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import {
-  canShipCarryResource,
-  getAllShipDefinitions,
-  getShipDefinition,
-  resolveShipRuntimeSetup,
-} from '../systems/ships';
+import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
-import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import {
+  createLocalPanelActions,
+  type LocalPanelActions,
+} from './game-controller-local-actions';
 import { createMiningLocalSpace } from './game-controller-mining';
+import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene, type SalvageSceneController } from './game-controller-salvage';
 
 type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port';
@@ -62,30 +59,10 @@ interface GameControllerOptions {
   readonly navigation: NavigationService;
 }
 
-interface LocalPanelActions {
-  readonly onSelectAsteroid: (id: string | null) => void;
-  readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
-  readonly onStartMining: () => Promise<void>;
-  readonly onLongRangeScan: () => void;
-  readonly onShortRangeScan: () => Promise<void>;
-  readonly onMiningEventChoice: (
-    choiceId: string
-  ) => ReturnType<LocalSpaceService['resolveMiningEvent']>;
-  readonly onCancelMining: () => void;
-  readonly onReturnToStarMap: () => void;
-}
-
-interface LocalActionContext {
-  readonly getSpace: () => LocalSpaceService | null;
-  readonly refresh: () => void;
-  readonly systemLog: SystemLogService;
-  readonly returnToStarMap: () => void;
-}
-
 interface ControllerPanels {
   star: StarMapPanel | null;
   local: LocalSpacePanel | null;
-  port: PortPanel | null;
+  port: ReturnType<typeof createActivePortPanel>;
 }
 
 interface ControllerEconomy {
@@ -215,20 +192,6 @@ function localSeed(visit: number): number {
   return (Date.now() + visit * 2654435761) >>> 0;
 }
 
-async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
-  const options = service.getMiningRouteOptions();
-  return options ? planMiningApproachRouteAsync(options) : [];
-}
-
-async function calculateScanRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
-  const options = service.getShortRangeScanRouteOptions();
-  return options ? planMiningApproachRouteAsync(options) : [];
-}
-
-async function calculatePointRoute(service: LocalSpaceService, target: WorldPoint) {
-  return planPointRouteAsync(service.getPointRouteOptions(target));
-}
-
 function enteredMiningLocation(
   mode: SceneMode,
   previousId: string | null,
@@ -257,65 +220,6 @@ function advanceEconomyDay(
     simulation.advanceNextDay();
     npcs.advanceNextDay();
   }
-}
-
-function createLocalPanelActions(context: LocalActionContext): LocalPanelActions {
-  let navigationRequest = 0;
-
-  return {
-    onSelectAsteroid(id) {
-      context.getSpace()?.selectAsteroid(id);
-      context.refresh();
-    },
-    async onNavigate(target) {
-      const activeSpace = context.getSpace();
-      if (!activeSpace) return false;
-      navigationRequest += 1;
-      const request = navigationRequest;
-      const plan = await calculatePointRoute(activeSpace, target);
-      if (
-        context.getSpace() !== activeSpace ||
-        request !== navigationRequest ||
-        plan.route.length < 2
-      ) {
-        return false;
-      }
-
-      activeSpace.startNavigation(plan.route[plan.route.length - 1]!, plan.route);
-      context.refresh();
-      return plan.compromised ? 'risk' : 'safe';
-    },
-    async onStartMining() {
-      const activeSpace = context.getSpace();
-      if (!activeSpace) return;
-      const route = await calculateMiningRoute(activeSpace);
-      if (context.getSpace() !== activeSpace || route.length === 0) return;
-      activeSpace.startMining(route);
-      context.refresh();
-    },
-    onLongRangeScan() {
-      context.getSpace()?.startLongRangeScan();
-      context.refresh();
-    },
-    async onShortRangeScan() {
-      const activeSpace = context.getSpace();
-      if (!activeSpace) return;
-      const route = await calculateScanRoute(activeSpace);
-      if (context.getSpace() !== activeSpace || route.length === 0) return;
-      activeSpace.startShortRangeScan(route);
-      context.refresh();
-    },
-    onMiningEventChoice(choiceId) {
-      const result = context.getSpace()?.resolveMiningEvent(choiceId) ?? null;
-      context.refresh();
-      return result;
-    },
-    onCancelMining() {
-      context.getSpace()?.cancelMining();
-      context.refresh();
-    },
-    onReturnToStarMap: context.returnToStarMap,
-  };
 }
 
 function createControllerStarPanel(options: {
@@ -355,57 +259,6 @@ function createControllerStarPanel(options: {
     onDock: options.onDock,
   });
   return panel;
-}
-
-function createActivePortPanel(
-  root: HTMLElement,
-  navigation: NavigationService,
-  markets: EconomyMarketService,
-  trade: PlayerTradeService,
-  ship: ShipDefinition,
-  onReturnToStarMap: () => void,
-  onRefresh: () => void,
-  log: SystemLogService
-): PortPanel | null {
-  const locationId = navigation.getSnapshot().currentLocationId;
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
-  const port = locationId ? sectorPortByLocationId(locationId) : null;
-  const market = locationId ? markets.getMarket(locationId) : null;
-  if (!location || !port || !market) return null;
-  const runtime = resolveShipRuntimeSetup(ship);
-
-  return createPortPanel({
-    root,
-    model: createPortViewModel(
-      port,
-      market,
-      trade.player,
-      location,
-      ship,
-      runtime.cargoCapacityTons
-    ),
-    onReturnToStarMap,
-    onBuy: (resourceId) => {
-      if (!canShipCarryResource(ship, resourceId)) {
-        log.write('FRACHT > MINER NIMMT NUR ROHSTOFFE AUF');
-        return;
-      }
-      const result = trade.buy(location.id, resourceId, 1, runtime.cargoCapacityTons);
-      if (!result) return;
-      const name = economyResourceById(resourceId)?.name ?? resourceId;
-      log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);
-      onRefresh();
-    },
-    onSell: (resourceId) => {
-      const result = trade.sell(location.id, resourceId, 1);
-      if (!result) return;
-      const name = economyResourceById(resourceId)?.name ?? resourceId;
-      log.write(
-        `HANDEL > -${result.quantity} ${name.toUpperCase()} · +${result.creditsDelta} CR · P/L ${result.realizedProfit}`
-      );
-      onRefresh();
-    },
-  });
 }
 
 function createControllerStarModel(navigation: NavigationService, ship: ShipDefinition) {
