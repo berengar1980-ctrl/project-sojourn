@@ -56,10 +56,7 @@ export function createSalvageFieldService(options: {
 
       const crewMultiplier = stationFactor(crewSkill, 0.35);
       const baseAmount = 3 + wreck.quality * 2;
-      const wanted = Math.max(
-        1,
-        Math.round(baseAmount * setup.yieldMultiplier * crewMultiplier)
-      );
+      const wanted = Math.max(1, Math.round(baseAmount * setup.yieldMultiplier * crewMultiplier));
       const recovered = collect(
         deposit.resourceId,
         Math.min(wanted, deposit.remainingAmount),
