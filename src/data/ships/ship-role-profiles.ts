@@ -1,8 +1,4 @@
-import type {
-  ShipGameplayProfile,
-  ShipRole,
-  ShipStationDefinition,
-} from '../../core/ship-types';
+import type { ShipGameplayProfile, ShipRole, ShipStationDefinition } from '../../core/ship-types';
 
 const COMMON_STATIONS = [
   { id: 'helm', skill: 'piloting' },
