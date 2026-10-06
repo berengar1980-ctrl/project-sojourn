@@ -44,6 +44,10 @@ function cloneMember(member: CrewMember): CrewMember {
   };
 }
 
+function canOperateStation(member: CrewMember): boolean {
+  return member.injuryState !== 'incapacitated' && member.injuryState !== 'dead';
+}
+
 export function createCrewRosterService(): CrewRosterService {
   const members: CrewMember[] = [];
   const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
@@ -55,6 +59,10 @@ export function createCrewRosterService(): CrewRosterService {
     for (const station of resolveShipGameplayStats(ship).stations) record[station.id] = undefined;
     assignmentsByShip.set(ship.id, record);
     return record;
+  }
+
+  function activeManningCount(): number {
+    return members.filter(canOperateStation).length;
   }
 
   return {
@@ -104,7 +112,8 @@ export function createCrewRosterService(): CrewRosterService {
         delete record[stationId];
         return true;
       }
-      if (!members.some((member) => member.id === crewId)) return false;
+      const member = members.find((entry) => entry.id === crewId);
+      if (!member || !canOperateStation(member)) return false;
       for (const key of Object.keys(record)) {
         if (record[key] === crewId) delete record[key];
       }
@@ -134,12 +143,12 @@ export function createCrewRosterService(): CrewRosterService {
           injuryState: member.injuryState,
         })),
         assignments: { ...assignmentRecord(ship) },
-        manningFactor: crewManningStatus(ship, members.length).factor,
+        manningFactor: crewManningStatus(ship, activeManningCount()).factor,
       };
     },
 
     manningFactor(ship) {
-      return crewManningStatus(ship, members.length).factor;
+      return crewManningStatus(ship, activeManningCount()).factor;
     },
 
     shareRate() {
@@ -188,7 +197,7 @@ export function createCrewRosterService(): CrewRosterService {
 
     accrueCombatTraining(crewId, mode, rounds = 1) {
       const member = members.find((entry) => entry.id === crewId);
-      if (!member || rounds <= 0) return;
+      if (!member || !canOperateStation(member) || rounds <= 0) return;
       member.combatTraining[mode] += rounds;
       while (member.combatSkills[mode] < 100) {
         const needed = combatRoundsNeeded(member.combatSkills[mode]);
