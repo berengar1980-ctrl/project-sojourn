@@ -1,4 +1,5 @@
 import type {
+  HullState,
   LocalAsteroid,
   LocalSpaceInstance,
   LocalSpaceSnapshot,
@@ -40,23 +41,9 @@ import {
   updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
-import type { LocalSpaceService } from './local-space-api';
+import type { LocalSpaceService, LocalSpaceServiceOptions } from './local-space-api';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
-
-export interface LocalSpaceMiningOptions {
-  readonly enabled: boolean;
-  readonly cycleSeconds: number;
-}
-
-export interface LocalSpaceServiceOptions {
-  readonly instance: LocalSpaceInstance;
-  readonly approachSpeed: number;
-  readonly hardpoints: ShipHardpoints;
-  readonly nominalLengthMeters: number;
-  readonly mining?: LocalSpaceMiningOptions;
-  readonly onMiningChunkCollected?: MiningChunkCollector;
-}
 
 class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
@@ -66,6 +53,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly nominalLengthMeters: number;
   private readonly miningEnabled: boolean;
   private readonly miningCycleSeconds: number;
+  private readonly sensorModifier: number;
+  private readonly sensorCrewSkill: number;
+  private readonly hullState: HullState;
   private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
@@ -100,12 +90,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
+    this.sensorModifier = Math.max(0.25, options.sensors?.modifier ?? 1);
+    this.sensorCrewSkill = Math.max(0, options.sensors?.crewSkill ?? 0);
     this.onMiningChunkCollected = options.onMiningChunkCollected;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
+    const hullMaxHp = Math.max(1, options.defense?.hullMaxHp ?? 100);
+    this.hullState = { maxHp: hullMaxHp, currentHp: hullMaxHp };
     this.shieldState = createShieldState(
-      options.hardpoints.shield.maxHp,
-      options.hardpoints.shield.modifier
+      Math.max(1, options.defense?.shieldMaxHp ?? options.hardpoints.shield.maxHp),
+      Math.max(
+        0.01,
+        options.defense?.shieldDamageModifier ?? options.hardpoints.shield.modifier
+      )
     );
+    if (options.defense?.shieldPowered === false) this.shieldState.currentHp = 0;
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
       options.instance.seed,
@@ -135,6 +133,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       })),
       laserActive: this.miningPhase === 'extracting',
       miningImpact: this.currentMiningImpact(),
+      hull: this.hullState,
       shield: this.shieldState,
       shieldImpacts: this.shieldImpacts,
     };
@@ -182,7 +181,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  startLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
+  startLongRangeScan(
+    sensorModifier = this.sensorModifier,
+    crewSkill = this.sensorCrewSkill
+  ): LocalSpaceSnapshot {
     if (!this.longRangeScanParameters) {
       this.longRangeScanElapsed = 0;
       this.longRangeScanParameters = { sensorModifier, crewSkill };
@@ -267,6 +269,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
         this.shieldImpactCounter
       );
       this.shieldImpactCounter += 1;
+      if (result.overflowDamage > 0) {
+        this.hullState.currentHp = Math.max(
+          0,
+          this.hullState.currentHp - result.overflowDamage
+        );
+      }
       if (result.damage > 0) this.shieldImpacts.push(result.impact);
     }
 
