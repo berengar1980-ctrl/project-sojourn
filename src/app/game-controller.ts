@@ -289,7 +289,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     economy.markets,
     economy.trade,
     state.activeShip,
-    context.crew.runtimeOptions(state.activeShip),
+    context.crew,
     () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
     () => mountControllerPort(context, false),
     context.systemLog
