@@ -40,7 +40,12 @@ import {
 } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import { getAllShipDefinitions, getShipDefinition, resolveShipMiningSetup } from '../systems/ships';
+import {
+  getAllShipDefinitions,
+  getShipDefinition,
+  resolveShipRuntimeSetup,
+  shipTradeCargoLimit,
+} from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -218,18 +223,28 @@ function createMiningLocalSpace(
   mining: MiningEconomyService,
   location: WorldLocation
 ): LocalSpaceService {
-  const miningSetup = resolveShipMiningSetup(ship);
+  const runtime = resolveShipRuntimeSetup(ship);
   return createLocalSpaceService({
     instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
     mining: {
-      enabled: miningSetup.available,
-      cycleSeconds: miningSetup.cycleSeconds,
+      enabled: runtime.mining.available,
+      cycleSeconds: runtime.mining.cycleSeconds,
+    },
+    defense: {
+      hullMaxHp: runtime.hullMaxHp,
+      shieldMaxHp: runtime.shieldMaxHp,
+      shieldDamageModifier: runtime.shieldDamageModifier,
+      shieldPowered: runtime.shieldPowered,
+    },
+    sensors: {
+      modifier: runtime.sensorModifier,
+      crewSkill: runtime.sensorCrewSkill,
     },
     onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, miningSetup.cargoCapacityTons, location.id),
+      mining.collect(resourceId, amount, runtime.cargo.totalCapacityTons, location.id),
   });
 }
 
@@ -362,7 +377,8 @@ function createActivePortPanel(
     model: createPortViewModel(port, market, trade.player, location, ship),
     onReturnToStarMap,
     onBuy: (resourceId) => {
-      const result = trade.buy(location.id, resourceId, 1, ship.cargoCapacityTons);
+      const cargoLimit = shipTradeCargoLimit(ship, trade.player, resourceId);
+      const result = trade.buy(location.id, resourceId, 1, cargoLimit);
       if (!result) return;
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);
