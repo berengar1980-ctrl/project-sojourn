@@ -3,6 +3,29 @@ export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 export type ShipComponentType =
   'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
 
+export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
+
+export type ShipWeaponFamily =
+  | 'pulse_laser'
+  | 'plasma_battery'
+  | 'guided_missile'
+  | 'ion_laser'
+  | 'ion_cannon'
+  | 'autocannon'
+  | 'railgun'
+  | 'he_missile';
+
+export interface ShipWeaponProfile {
+  readonly family: ShipWeaponFamily;
+  readonly role: ShipWeaponRole;
+  readonly shieldDamage: number;
+  readonly hullDamage: number;
+  readonly rangeMeters: number;
+  readonly cooldownSeconds: number;
+  readonly heat: number;
+  readonly ammoPerShot: number;
+}
+
 export interface LooseShipComponent {
   readonly uid: string;
   readonly type: ShipComponentType;
