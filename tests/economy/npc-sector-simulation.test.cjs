@@ -56,4 +56,16 @@ assert(patrol);
 service.tick(0.1);
 assert(service.isTravelling(patrol), 'idle patrol ships must autonomously begin a security route');
 
-console.log('PASS physical NPC ships, jobs, fuel, travel and autonomous patrol routing');
+const upgrader = npcs.find((npc) => npc.job === 'freighter' && npc.id !== freighter.id);
+assert(upgrader);
+upgrader.locationId = 'helix-shipyards';
+upgrader.successfulRuns = 8;
+upgrader.credits = 4000000;
+delete upgrader.travel;
+service.tick(0.1);
+assert.equal(upgrader.componentUpgradeCount, 1, 'experienced NPCs must invest in ship components');
+assert(upgrader.installedComponents, 'NPC component loadout must persist on the ship state');
+
+console.log(
+  'PASS physical NPC ships, jobs, fuel, travel, patrol routing and component progression'
+);
