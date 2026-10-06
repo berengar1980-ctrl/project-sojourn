@@ -69,7 +69,7 @@ function enemy(id) {
     playerUnits: [player('alpha')],
     enemyUnits: [enemy('hostile')],
   });
-  let snapshot = service.getSnapshot();
+  const snapshot = service.getSnapshot();
   const alpha = snapshot.units.find((unit) => unit.id === 'alpha');
   assert(alpha);
 
