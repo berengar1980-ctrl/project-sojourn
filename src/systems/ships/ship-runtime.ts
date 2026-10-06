@@ -3,6 +3,8 @@ import type {
   ShipDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
+import type { CrewSkillEffects } from '../crew/crew-skill-effects';
+import { crewSkillEffects } from '../crew/crew-skill-effects';
 import type { ShipComponentType } from '../../data/ships/ship-component-catalog';
 import {
   calculateShipEnergy,
@@ -54,6 +56,7 @@ export interface ShipRuntimeSetup {
   readonly mining: ShipMiningSetup;
   readonly salvage: ShipSalvageSetup;
   readonly stationSkills: Readonly<Record<ShipStationSkill, number>>;
+  readonly crewEffects: CrewSkillEffects;
   readonly miningCrewSkill: number;
   readonly salvageCrewSkill: number;
   readonly cargoCapacityTons: number;
@@ -115,6 +118,7 @@ export function resolveShipRuntimeSetup(
       ),
     ])
   ) as Readonly<Record<ShipStationSkill, number>>;
+  const effects = crewSkillEffects(stationSkills);
   const sensorCrewSkill = stationSkills.sensors;
   const salvageCrewSkill = stationSkills.salvage;
   const scanAvailable =
@@ -127,6 +131,7 @@ export function resolveShipRuntimeSetup(
     mining: resolveShipMiningSetup(ship, installed),
     salvage: resolveShipSalvageSetup(ship, installed),
     stationSkills,
+    crewEffects: effects,
     miningCrewSkill: stationSkills.mining,
     salvageCrewSkill,
     cargoCapacityTons: Math.max(0, stats.cargoCapacityTons + componentCargoBonus(installed)),
