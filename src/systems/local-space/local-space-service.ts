@@ -5,7 +5,6 @@ import type {
   MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
-import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -42,7 +41,10 @@ import {
 } from './local-space-station-keeping';
 import type { LocalSpaceService } from './local-space-api';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
-import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
+import {
+  createLocalSpaceShipSystems,
+  type LocalSpaceSystemsOptions,
+} from './local-space-ship-systems';
 
 export interface LocalSpaceMiningOptions {
   readonly enabled: boolean;
@@ -55,6 +57,7 @@ export interface LocalSpaceServiceOptions {
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
   readonly mining?: LocalSpaceMiningOptions;
+  readonly systems?: LocalSpaceSystemsOptions;
   readonly onMiningChunkCollected?: MiningChunkCollector;
 }
 
@@ -66,6 +69,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly nominalLengthMeters: number;
   private readonly miningEnabled: boolean;
   private readonly miningCycleSeconds: number;
+  private readonly shipSystems: ReturnType<typeof createLocalSpaceShipSystems>;
   private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
@@ -81,9 +85,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly collectedResources = new Map<string, number>();
   private miningAccumulator = 0;
   private chunkCounter = 0;
-  private readonly shieldState: ShieldState;
-  private shieldImpacts: ShieldImpactEffect[] = [];
-  private shieldImpactCounter = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
   private shipForwardVelocity = 0;
@@ -100,12 +101,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
+    this.shipSystems = createLocalSpaceShipSystems(options.systems, options.hardpoints);
     this.onMiningChunkCollected = options.onMiningChunkCollected;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
-    this.shieldState = createShieldState(
-      options.hardpoints.shield.maxHp,
-      options.hardpoints.shield.modifier
-    );
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
       options.instance.seed,
@@ -128,6 +126,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
         this.miningPhase === 'scanning' ? Math.min(1, this.shortRangeScanElapsed / 5) : null,
       miningPhase: this.miningPhase,
       miningAvailable: this.miningEnabled,
+      ...this.shipSystems.snapshot(),
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
         resourceId,
@@ -135,8 +134,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
       })),
       laserActive: this.miningPhase === 'extracting',
       miningImpact: this.currentMiningImpact(),
-      shield: this.shieldState,
-      shieldImpacts: this.shieldImpacts,
     };
   }
 
@@ -182,10 +179,14 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  startLongRangeScan(sensorModifier = 1, crewSkill = 0): LocalSpaceSnapshot {
+  startLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot {
+    if (!this.shipSystems.scanAvailable) return this.getSnapshot();
     if (!this.longRangeScanParameters) {
       this.longRangeScanElapsed = 0;
-      this.longRangeScanParameters = { sensorModifier, crewSkill };
+      this.longRangeScanParameters = {
+        sensorModifier: sensorModifier ?? this.shipSystems.sensorModifier,
+        crewSkill: crewSkill ?? this.shipSystems.sensorCrewSkill,
+      };
     }
     return this.getSnapshot();
   }
@@ -204,6 +205,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot {
+    if (!this.shipSystems.scanAvailable) return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
     if (!asteroid) return this.getSnapshot();
 
@@ -223,7 +225,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
-    this.shieldImpacts = advanceShieldImpacts(this.shieldImpacts, clamped);
+    this.shipSystems.advance(clamped);
     this.updateLongRangeScan(clamped);
     integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
     resolveAsteroidCollisions(this.instance.asteroids);
@@ -254,21 +256,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.instance.asteroids,
       this.shield
     );
-    for (const collision of collisions) {
-      const result = applyShieldHit(
-        this.shieldState,
-        {
-          source: 'asteroid',
-          point: collision.point,
-          normal: collision.normal,
-          surfaceAnchor: collision.surfaceAnchor,
-          impactEnergy: collision.kineticEnergy,
-        },
-        this.shieldImpactCounter
-      );
-      this.shieldImpactCounter += 1;
-      if (result.damage > 0) this.shieldImpacts.push(result.impact);
-    }
+    for (const collision of collisions) this.shipSystems.applyCollision(collision);
 
     this.updateChunks(clamped);
     return this.getSnapshot();

@@ -2,6 +2,8 @@ import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocalAsteroid,
+  LocalHullState,
+  LocalReactorState,
   LocalSpaceSnapshot,
   MiningChunk,
   MiningImpact,
@@ -77,6 +79,9 @@ export interface LocalSpaceViewModel {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly scanAvailable: boolean;
+  readonly hull: LocalHullState;
+  readonly reactor: LocalReactorState;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
   readonly shield: ShieldState;
@@ -181,6 +186,9 @@ export function createLocalSpaceViewModel(
     shortRangeScanProgress: snapshot.shortRangeScanProgress,
     miningPhase: snapshot.miningPhase,
     miningAvailable: snapshot.miningAvailable,
+    scanAvailable: snapshot.scanAvailable,
+    hull: snapshot.hull,
+    reactor: snapshot.reactor,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,
     shield: snapshot.shield,

@@ -51,6 +51,17 @@ export interface ResourceCargoEntry {
   readonly amount: number;
 }
 
+export interface LocalHullState {
+  readonly maxHp: number;
+  currentHp: number;
+}
+
+export interface LocalReactorState {
+  readonly output: number;
+  readonly continuousUsed: number;
+  readonly continuousFree: number;
+}
+
 export interface LocalShipState {
   position: WorldPoint;
   headingRadians: number;
@@ -84,6 +95,9 @@ export interface LocalSpaceSnapshot {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly scanAvailable: boolean;
+  readonly hull: LocalHullState;
+  readonly reactor: LocalReactorState;
   readonly collectedOre: number;
   readonly collectedResources: readonly ResourceCargoEntry[];
   readonly laserActive: boolean;

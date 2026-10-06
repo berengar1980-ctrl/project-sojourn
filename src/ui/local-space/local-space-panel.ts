@@ -60,6 +60,10 @@ function shieldPercent(model: LocalSpaceViewModel): number {
   return Math.max(0, Math.round((model.shield.currentHp / model.shield.maxHp) * 100));
 }
 
+function hullPercent(model: LocalSpaceViewModel): number {
+  return Math.max(0, Math.round((model.hull.currentHp / model.hull.maxHp) * 100));
+}
+
 function bindRoutePlanning(
   button: HTMLButtonElement,
   systemLog: SystemLogService,
@@ -234,9 +238,11 @@ function bindScanLabelButton(button: HTMLButtonElement, renderer: LocalSpaceRend
 function initializeSystemLog(
   log: SystemLogService,
   panel: SystemLogPanel,
-  shieldValue: number
+  shieldValue: number,
+  hullValue: number
 ): void {
   log.write('SCHILD-INTEGRITÄT ' + shieldValue + ' %');
+  log.write('HÜLLEN-INTEGRITÄT ' + hullValue + ' %');
   panel.update();
 }
 
@@ -273,7 +279,7 @@ function bindLongScanButton(
   updateOverlay: () => void
 ): void {
   button.addEventListener('click', () => {
-    if (getModel().longRangeScanProgress != null) return;
+    if (!getModel().scanAvailable || getModel().longRangeScanProgress != null) return;
     options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
     options.onLongRangeScan();
     systemLog.update();
@@ -321,6 +327,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
+  let lastHullPercent = hullPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -328,7 +335,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     header: 'SYS // LOCAL OPS',
     placementClass: 'local-system-log',
   });
-  initializeSystemLog(options.log, systemLog, lastShieldPercent);
+  initializeSystemLog(options.log, systemLog, lastShieldPercent, lastHullPercent);
   const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
 
   const updateOverlay = (): void => {
@@ -339,13 +346,23 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
     renderCargo(model, cargoTotal, cargoList);
-    longScanButton.disabled = longScanActive;
+    longScanButton.disabled = !model.scanAvailable || longScanActive;
+    longScanButton.textContent = model.scanAvailable
+      ? 'LANGREICHWEITENSCAN'
+      : 'SCAN NICHT VERFÜGBAR';
 
     const currentShieldPercent = shieldPercent(model);
     if (currentShieldPercent !== lastShieldPercent) {
       options.log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
       systemLog.update();
       lastShieldPercent = currentShieldPercent;
+    }
+
+    const currentHullPercent = hullPercent(model);
+    if (currentHullPercent !== lastHullPercent) {
+      options.log.write('HÜLLEN-INTEGRITÄT ' + currentHullPercent + ' %');
+      systemLog.update();
+      lastHullPercent = currentHullPercent;
     }
 
     const statusText = miningStatus(model);
@@ -363,7 +380,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
         ? (selected.totalRemaining / selected.totalCapacity) * 100
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
-    shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
+    shortScanButton.disabled =
+      !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
     updateMiningButton(mineButton, model, miningActive);
   };
 

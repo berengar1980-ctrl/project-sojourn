@@ -28,7 +28,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     crewBerths: 5,
     maxComponentTier: 3,
     stations: [...COMMON_STATIONS, { id: 'mining_station', skill: 'mining' }],
-    specialCargo: { kind: 'mining', capacityTons: 90 },
+    specialCargo: { kind: 'mining' },
   },
   salvage: {
     hullPoints: 82,
@@ -39,7 +39,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     crewBerths: 5,
     maxComponentTier: 3,
     stations: [...COMMON_STATIONS, { id: 'salvage_control', skill: 'salvage' }],
-    specialCargo: { kind: 'salvage', capacityTons: 45 },
+    specialCargo: { kind: 'salvage' },
   },
   patrol: {
     hullPoints: 96,

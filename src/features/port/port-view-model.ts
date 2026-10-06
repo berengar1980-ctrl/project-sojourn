@@ -129,7 +129,8 @@ export function createPortViewModel(
   market: EconomyMarketState,
   player: PlayerEconomyState,
   location: WorldLocation,
-  ship: ShipDefinition
+  ship: ShipDefinition,
+  cargoCapacityTons = ship.cargoCapacityTons
 ): PortViewModel {
   return {
     locationId: location.id,
@@ -157,7 +158,7 @@ export function createPortViewModel(
     player: {
       credits: player.credits,
       cargoUsed: Object.values(player.cargo).reduce((sum, lot) => sum + lot.qty, 0),
-      cargoCapacity: ship.cargoCapacityTons,
+      cargoCapacity: cargoCapacityTons,
     },
     ship: {
       id: ship.id,
