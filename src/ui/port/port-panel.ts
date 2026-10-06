@@ -1,6 +1,7 @@
 import type { PortTab } from '../../core/port-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import type { PortViewModel } from '../../features/port/port-view-model';
+import { PortLocationRenderer } from './port-location-renderer';
 
 export interface PortPanel {
   destroy(): void;
@@ -182,7 +183,7 @@ function tradePane(model: PortViewModel): string {
       <aside class="port-location-panel">
         <div class="port-location-hero">
           <div class="port-location-orbit"></div>
-          <div class="port-location-body">${model.locationName.slice(0, 1)}</div>
+          <canvas class="port-location-canvas" aria-label="${model.locationName}"></canvas>
           <div class="port-location-copy"><span>${model.locationKind}</span><strong>${model.locationName}</strong><small>${model.subtitle}</small></div>
         </div>
         <div class="port-location-facts">
@@ -363,7 +364,12 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
   const tabs = [...shell.querySelectorAll<HTMLButtonElement>('[data-port-tab]')];
   const panes = [...shell.querySelectorAll<HTMLElement>('[data-port-pane]')];
   const returnButton = shell.querySelector<HTMLButtonElement>('.port-return-button');
-  if (!returnButton) throw new Error('Port UI return control is missing.');
+  const locationCanvas = shell.querySelector<HTMLCanvasElement>('.port-location-canvas');
+  if (!returnButton || !locationCanvas) throw new Error('Port UI controls are incomplete.');
+
+  const locationRenderer = new PortLocationRenderer(locationCanvas, options.model.locationVisual);
+  const locationObserver = new ResizeObserver(() => locationRenderer.resize());
+  locationObserver.observe(locationCanvas);
 
   const activate = (tab: PortTab): void => {
     for (const button of tabs) button.classList.toggle('is-active', button.dataset.portTab === tab);
@@ -415,6 +421,7 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
 
   return {
     destroy(): void {
+      locationObserver.disconnect();
       shell.remove();
     },
   };
