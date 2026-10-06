@@ -5,10 +5,7 @@ import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
-import {
-  resolveShipRuntimeSetup,
-  type ShipComponentInventoryService,
-} from '../systems/ships';
+import { resolveShipRuntimeSetup, type ShipComponentInventoryService } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
@@ -42,12 +39,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     collect: options.economy.recover,
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
-        options.componentInventory.store(
-          type,
-          componentId,
-          sourceWreckId,
-          cargoCapacityTons
-        ) !== null
+        options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
+        null
       );
     },
     approachSpeed: 85,
