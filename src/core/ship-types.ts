@@ -1,13 +1,7 @@
 export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 
 export type ShipStationSkill =
-  | 'piloting'
-  | 'sensors'
-  | 'weapons'
-  | 'engineering'
-  | 'mining'
-  | 'salvage'
-  | 'logistics';
+  'piloting' | 'sensors' | 'weapons' | 'engineering' | 'mining' | 'salvage' | 'logistics';
 
 export interface ShipStationDefinition {
   readonly id: string;
