@@ -3,6 +3,15 @@ import type { ShipComponentType, ShipRole } from './ship-types';
 
 export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type NpcTravelProfile = 'fast' | 'balanced' | 'safe';
+export type NpcWorkRiskPreference = 'safe' | 'risky';
+
+export interface NpcWorkEventRecord {
+  readonly kind: 'mining' | 'salvage';
+  readonly title: string;
+  readonly choiceId: string;
+  readonly risk: 'safe' | 'controlled' | 'risky' | 'high_risk';
+  readonly resultText: string;
+}
 
 export interface NpcTravelState {
   readonly finalTargetId: string;
@@ -27,6 +36,8 @@ export interface SectorNpcState extends NpcEconomyState {
   hullHp: number;
   hullMaxHp: number;
   aggression: number;
+  workRiskPreference: NpcWorkRiskPreference;
+  lastWorkEvent?: NpcWorkEventRecord;
   activityId: string;
   activity: string;
   successfulRuns: number;
