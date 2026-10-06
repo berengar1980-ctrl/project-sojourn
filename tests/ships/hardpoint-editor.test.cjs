@@ -9,6 +9,9 @@ const editor = fs.readFileSync(path.join(root, 'tools/hardpoint-editor.html'), '
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
 assert(editor.includes('window.showDirectoryPicker'), 'editor must open a local project folder');
+assert(editor.includes('loadShipsFromServer()'), 'editor must preload ships before folder access');
+assert(editor.includes('fetch("/"+path'), 'editor must fetch hardpoint JSONs from the dev server');
+assert(editor.includes('fetch(url,{cache:"no-store"})'), 'editor must load ship sprites from the dev server');
 assert(editor.includes('createWritable()'), 'editor must save JSON directly into the checkout');
 assert(editor.includes('weaponLasers'), 'editor must expose weapon laser hardpoints');
 assert(editor.includes('miningLasers'), 'editor must expose mining laser hardpoints');
