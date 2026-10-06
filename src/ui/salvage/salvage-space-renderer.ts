@@ -8,6 +8,7 @@ import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
+import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 
 interface WreckHitArea {
   readonly id: string;
@@ -422,11 +423,12 @@ export class SalvageSpaceRenderer {
 
   private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
-    const engineIntensity = Math.max(0, Math.min(1, Math.abs(this.model.ship.speed) / 100));
+    const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 100));
     const maneuverDemand = {
       turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
       angularThrust: this.model.ship.angularThrust,
       lateralThrust: this.model.ship.lateralThrust,
+      longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
     };
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
     this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
