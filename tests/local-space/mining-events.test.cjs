@@ -56,13 +56,9 @@ function sequence(values) {
   assert(event, 'scheduled event must interrupt live extraction after real deposit progress');
   assert.equal(event.type, 'rare');
   assert.equal(event.choices.length, 3);
-  const effect = controller.resolve('careful');
-  assert(effect);
-  assert.equal(effect.bonusResourceId, 'cyranthite');
-  assert(effect.bonusAmount > 0);
-
-  const result = events.applyMiningEventDepositEffects(target, effect);
-  assert(result.bonusTons > 0);
+  const result = controller.resolve(target, 'careful', () => 0);
+  assert(result);
+  assert(result.resultText.includes('Cyranthite'));
   assert(
     target.deposits.some((deposit) => deposit.resourceId === 'cyranthite'),
     'rare inclusion must become a real asteroid deposit'
@@ -103,7 +99,7 @@ const panel = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-event-panel.ts'),
   'utf8'
 );
-assert(service.includes('this.miningEvents.update(asteroid)'));
+assert(service.includes('this.miningEvents.pauseExtraction(asteroid, deltaSeconds)'));
 assert(service.includes('this.shipSystems.damageHullFraction'));
 assert(service.includes('miningRecoverySeconds'));
 assert(panel.includes('ABBAUEREIGNIS // LIVE'));

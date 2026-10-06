@@ -41,10 +41,7 @@ import {
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
 import type { LocalSpaceService } from './local-space-api';
-import {
-  applyMiningEventDepositEffects,
-  createMiningEventController,
-} from './mining-event-service';
+import { createMiningEventController } from './mining-event-service';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import type { LocalSpaceServiceOptions } from './local-space-options';
 import { createLocalSpaceShipSystems } from './local-space-ship-systems';
@@ -73,8 +70,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private collectedOre = 0;
   private readonly collectedResources = new Map<string, number>();
   private miningAccumulator = 0;
-  private miningCycleModifier = 1;
-  private miningRecoverySeconds = 0;
   private chunkCounter = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
@@ -119,7 +114,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       miningPhase: this.miningPhase,
       miningAvailable: this.miningEnabled,
       miningEvent: this.miningEvents.pending,
-      miningRecoverySeconds: this.miningRecoverySeconds,
+      miningRecoverySeconds: this.miningEvents.recoverySeconds,
       ...this.shipSystems.snapshot(),
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
@@ -128,8 +123,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       })),
       laserActive:
         this.miningPhase === 'extracting' &&
-        !this.miningEvents.pending &&
-        this.miningRecoverySeconds <= 0,
+        !this.miningEvents.extractionPaused,
       miningImpact: this.currentMiningImpact(),
     };
   }
@@ -217,32 +211,13 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   resolveMiningEvent(choiceId: string): MiningEventResolution | null {
     const asteroid = this.findAsteroid(this.miningTargetId);
-    const effect = asteroid ? this.miningEvents.resolve(choiceId) : null;
-    if (!asteroid || !effect) return null;
-
-    const deposit = applyMiningEventDepositEffects(asteroid, effect);
-    const hullDamage = this.shipSystems.damageHullFraction(effect.hullDamageFraction);
-    this.miningCycleModifier = Math.max(
-      0.5,
-      Math.min(1.8, this.miningCycleModifier * effect.cycleMultiplier)
+    if (!asteroid) return null;
+    const result = this.miningEvents.resolve(
+      asteroid,
+      choiceId,
+      (fraction) => this.shipSystems.damageHullFraction(fraction)
     );
-    this.miningRecoverySeconds = Math.max(this.miningRecoverySeconds, effect.recoverySeconds);
-
-    const consequences = [
-      hullDamage > 0 ? `Hülle -${hullDamage}.` : '',
-      deposit.lostTons > 0 ? `Lagerstätte -${deposit.lostTons} t.` : '',
-      deposit.bonusTons > 0
-        ? `${deposit.bonusTons} t ${deposit.bonusResourceName} zusätzlich lokalisiert.`
-        : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const result = {
-      title: effect.title,
-      resultText: consequences ? effect.resultText + ' ' + consequences : effect.resultText,
-      aborted: effect.abort,
-    };
-    if (effect.abort || !hasMineableDeposits(asteroid)) this.finishMining();
+    if (result?.aborted || !hasMineableDeposits(asteroid)) this.finishMining();
     return result;
   }
 
@@ -326,8 +301,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private currentMiningImpact(): MiningImpact | null {
     if (
       this.miningPhase !== 'extracting' ||
-      this.miningEvents.pending ||
-      this.miningRecoverySeconds > 0
+      this.miningEvents.extractionPaused
     )
       return null;
     const asteroid = this.findAsteroid(this.miningTargetId);
@@ -346,8 +320,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.scanTargetId = null;
     this.approachPurpose = null;
     this.miningAccumulator = 0;
-    this.miningCycleModifier = 1;
-    this.miningRecoverySeconds = 0;
     this.miningEvents.clear();
     this.shortRangeScanElapsed = 0;
     this.approachRoute = [];
@@ -426,8 +398,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.stationKeepingPosition = { ...ship.position };
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
-    this.miningCycleModifier = 1;
-    this.miningRecoverySeconds = 0;
     this.miningEvents.begin(asteroid);
     this.miningPhase = 'extracting';
   }
@@ -449,14 +419,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {
     this.updateMiningFormation(deltaSeconds, asteroid);
-    if (this.miningEvents.pending || this.miningEvents.update(asteroid)) return;
-    if (this.miningRecoverySeconds > 0) {
-      this.miningRecoverySeconds = Math.max(0, this.miningRecoverySeconds - deltaSeconds);
-      return;
-    }
+    if (this.miningEvents.pauseExtraction(asteroid, deltaSeconds)) return;
 
     this.miningAccumulator += deltaSeconds;
-    const cycleSeconds = this.miningCycleSeconds * this.miningCycleModifier;
+    const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds);
     while (this.miningAccumulator >= cycleSeconds && hasMineableDeposits(asteroid)) {
       this.miningAccumulator -= cycleSeconds;
       this.spawnChunk(asteroid);

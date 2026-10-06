@@ -1,6 +1,7 @@
 import type {
   LocalAsteroid,
   MiningEventChoice,
+  MiningEventResolution,
   MiningEventState,
   MiningEventType,
 } from '../../core/local-space-types';
@@ -243,16 +244,32 @@ export function createMiningEventController(seed: number, random = createRandom(
   let sessionCounter = 0;
   let session: MiningEventSession | null = null;
   let pending: MiningEventState | null = null;
+  let cycleModifier = 1;
+  let recoverySeconds = 0;
 
   return {
     get pending(): MiningEventState | null {
       return pending;
     },
 
+    get recoverySeconds(): number {
+      return recoverySeconds;
+    },
+
+    get extractionPaused(): boolean {
+      return pending !== null || recoverySeconds > 0;
+    },
+
+    cycleSeconds(baseSeconds: number): number {
+      return Math.max(0.05, baseSeconds * cycleModifier);
+    },
+
     begin(asteroid: LocalAsteroid): void {
       sessionCounter += 1;
       const initialOre = totalOre(asteroid);
       const type = eventType(random());
+      cycleModifier = 1;
+      recoverySeconds = 0;
       session = {
         initialOre,
         triggerProgress: 0.22 + random() * 0.34,
@@ -284,17 +301,49 @@ export function createMiningEventController(seed: number, random = createRandom(
       return pending;
     },
 
-    resolve(choiceId: string): MiningEventEffect | null {
+    pauseExtraction(asteroid: LocalAsteroid, deltaSeconds: number): boolean {
+      if (pending || this.update(asteroid)) return true;
+      if (recoverySeconds <= 0) return false;
+      recoverySeconds = Math.max(0, recoverySeconds - Math.max(0, deltaSeconds));
+      return true;
+    },
+
+    resolve(
+      asteroid: LocalAsteroid,
+      choiceId: string,
+      damageHullFraction: (fraction: number) => number
+    ): MiningEventResolution | null {
       if (!session || !pending) return null;
       const effect = resolveEffect(session, choiceId);
       if (!effect) return null;
       pending = null;
-      return effect;
+
+      const deposit = applyMiningEventDepositEffects(asteroid, effect);
+      const hullDamage = damageHullFraction(effect.hullDamageFraction);
+      cycleModifier = Math.max(0.5, Math.min(1.8, cycleModifier * effect.cycleMultiplier));
+      recoverySeconds = Math.max(recoverySeconds, effect.recoverySeconds);
+      const consequences = [
+        hullDamage > 0 ? `Hülle -${hullDamage}.` : '',
+        deposit.lostTons > 0 ? `Lagerstätte -${deposit.lostTons} t.` : '',
+        deposit.bonusTons > 0
+          ? `${deposit.bonusTons} t ${deposit.bonusResourceName} zusätzlich lokalisiert.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      return {
+        title: effect.title,
+        resultText: consequences ? effect.resultText + ' ' + consequences : effect.resultText,
+        aborted: effect.abort,
+      };
     },
 
     clear(): void {
       session = null;
       pending = null;
+      cycleModifier = 1;
+      recoverySeconds = 0;
     },
   };
 }
