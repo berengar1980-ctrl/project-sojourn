@@ -73,14 +73,12 @@ function enemy(id) {
   const alpha = snapshot.units.find((unit) => unit.id === 'alpha');
   assert(alpha);
 
-  service.move('alpha', { q: 3, r: 3 });
-  snapshot = service.getSnapshot();
-  const atDoor = snapshot.units.find((unit) => unit.id === 'alpha');
-  if (atDoor.q !== 3 || atDoor.r !== 3) {
-    service.endTurn();
-    service.endTurn();
-    service.move('alpha', { q: 3, r: 3 });
-  }
+  assert.equal(service.move('alpha', { q: 2, r: 1 }), true);
+  service.endTurn();
+  service.endTurn();
+  assert.equal(service.move('alpha', { q: 3, r: 3 }), true);
+  service.endTurn();
+  service.endTurn();
   assert.equal(service.openDoor('alpha', 'door-4-3'), true);
   assert.equal(service.getSnapshot().doorStates['door-4-3'], true);
 }
