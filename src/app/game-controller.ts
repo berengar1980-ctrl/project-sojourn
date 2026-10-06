@@ -40,11 +40,7 @@ import {
 } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import {
-  getAllShipDefinitions,
-  getShipDefinition,
-  resolveShipMiningSetup,
-} from '../systems/ships';
+import { getAllShipDefinitions, getShipDefinition, resolveShipMiningSetup } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
