@@ -12,7 +12,6 @@ export type ShipSpecialCargoKind = 'mining' | 'salvage';
 
 export interface ShipSpecialCargoProfile {
   readonly kind: ShipSpecialCargoKind;
-  readonly capacityTons: number;
 }
 
 export interface ShipGameplayProfile {

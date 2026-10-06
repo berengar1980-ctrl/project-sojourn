@@ -42,6 +42,10 @@ const stationKeeping = fs.readFileSync(
   'utf8'
 );
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const miningController = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-mining.ts'),
+  'utf8'
+);
 const shieldService = fs.readFileSync(
   path.join(root, 'src/systems/shields/shield-service.ts'),
   'utf8'
@@ -54,6 +58,10 @@ const resources = fs.readFileSync(
 const scanner = fs.readFileSync(path.join(root, 'src/systems/scanning/scanner-service.ts'), 'utf8');
 const localScanning = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-scanning.ts'),
+  'utf8'
+);
+const shipSystems = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-ship-systems.ts'),
   'utf8'
 );
 const miningChunks = fs.readFileSync(
@@ -221,7 +229,7 @@ assert(
   'idle attitude correction must drive RCS turn commands'
 );
 assert(
-  controller.includes('approachSpeed: 85'),
+  miningController.includes('approachSpeed: 85'),
   'local-space travel must remain deliberately slow'
 );
 assert(
@@ -365,8 +373,12 @@ assert(
 );
 assert(!service.includes('Canvas'), 'local-space simulation must stay renderer-independent');
 assert(
-  service.includes('applyShieldHit'),
-  'asteroid impacts must damage the shield through shield service'
+  shipSystems.includes('applyShieldHit') && service.includes('this.shipSystems.applyCollision'),
+  'asteroid impacts must damage the shield through the ship-systems runtime'
+);
+assert(
+  shipSystems.includes('overflowDamage') && shipSystems.includes('hull.currentHp'),
+  'shield overflow damage must continue into the ship hull'
 );
 assert(
   collision.includes('kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed'),

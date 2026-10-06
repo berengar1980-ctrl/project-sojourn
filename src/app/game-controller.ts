@@ -32,21 +32,22 @@ import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
-import {
-  createLocalSpaceService,
-  generateMiningSpace,
-  planMiningApproachRouteAsync,
-  planPointRouteAsync,
-} from '../systems/local-space';
+import { planMiningApproachRouteAsync, planPointRouteAsync } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import { getAllShipDefinitions, getShipDefinition, resolveShipMiningSetup } from '../systems/ships';
+import {
+  canShipCarryResource,
+  getAllShipDefinitions,
+  getShipDefinition,
+  resolveShipRuntimeSetup,
+} from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { createMiningLocalSpace } from './game-controller-mining';
 
 type SceneMode = 'star-map' | 'local-space' | 'port';
 
@@ -212,27 +213,6 @@ async function calculatePointRoute(service: LocalSpaceService, target: WorldPoin
   return planPointRouteAsync(service.getPointRouteOptions(target));
 }
 
-function createMiningLocalSpace(
-  ship: ShipDefinition,
-  seed: number,
-  mining: MiningEconomyService,
-  location: WorldLocation
-): LocalSpaceService {
-  const miningSetup = resolveShipMiningSetup(ship);
-  return createLocalSpaceService({
-    instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
-    approachSpeed: 85,
-    hardpoints: ship.sprite.hardpoints,
-    nominalLengthMeters: ship.nominalLengthMeters,
-    mining: {
-      enabled: miningSetup.available,
-      cycleSeconds: miningSetup.cycleSeconds,
-    },
-    onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, miningSetup.cargoCapacityTons, location.id),
-  });
-}
-
 function enteredMiningLocation(
   mode: SceneMode,
   previousId: string | null,
@@ -356,13 +336,25 @@ function createActivePortPanel(
   const port = locationId ? sectorPortByLocationId(locationId) : null;
   const market = locationId ? markets.getMarket(locationId) : null;
   if (!location || !port || !market) return null;
+  const runtime = resolveShipRuntimeSetup(ship);
 
   return createPortPanel({
     root,
-    model: createPortViewModel(port, market, trade.player, location, ship),
+    model: createPortViewModel(
+      port,
+      market,
+      trade.player,
+      location,
+      ship,
+      runtime.cargoCapacityTons
+    ),
     onReturnToStarMap,
     onBuy: (resourceId) => {
-      const result = trade.buy(location.id, resourceId, 1, ship.cargoCapacityTons);
+      if (!canShipCarryResource(ship, resourceId)) {
+        log.write('FRACHT > MINER NIMMT NUR ROHSTOFFE AUF');
+        return;
+      }
+      const result = trade.buy(location.id, resourceId, 1, runtime.cargoCapacityTons);
       if (!result) return;
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(`HANDEL > +${result.quantity} ${name.toUpperCase()} · ${-result.creditsDelta} CR`);

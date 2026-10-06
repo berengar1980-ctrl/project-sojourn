@@ -39,8 +39,8 @@ function stationSkill(profile, stationId) {
   assert.equal(patrol.weaponSlots, 3);
 
   assert.deepEqual(freighter.specialCargo, null);
-  assert.deepEqual(mining.specialCargo, { kind: 'mining', capacityTons: 90 });
-  assert.deepEqual(salvage.specialCargo, { kind: 'salvage', capacityTons: 45 });
+  assert.deepEqual(mining.specialCargo, { kind: 'mining' });
+  assert.deepEqual(salvage.specialCargo, { kind: 'salvage' });
   assert.deepEqual(patrol.specialCargo, null);
 
   assert.equal(stationSkill(freighter, 'cargo_control'), 'logistics');

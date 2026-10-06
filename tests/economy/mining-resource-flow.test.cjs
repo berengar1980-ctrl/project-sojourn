@@ -136,11 +136,11 @@ const resources = [
 }
 
 const controllerSource = require('fs').readFileSync(
-  path.join(root, 'src/app/game-controller.ts'),
+  path.join(root, 'src/app/game-controller-mining.ts'),
   'utf8'
 );
 const usesLocationEconomy = controllerSource.includes(
-  'mining.collect(resourceId, amount, miningSetup.cargoCapacityTons, location.id)'
+  'mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id)'
 );
 const usesLocationDeposits = controllerSource.includes(
   'generateMiningSpace(location.id, seed, location.minedResourceIds)'
