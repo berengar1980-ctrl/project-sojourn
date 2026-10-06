@@ -36,6 +36,10 @@ const hardpointDebug = fs.readFileSync(
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const localActions = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-local-actions.ts'),
+  'utf8'
+);
 const viewModel = fs.readFileSync(
   path.join(root, 'src/features/local-space/local-space-view-model.ts'),
   'utf8'
@@ -343,6 +347,9 @@ assert(
   styles.includes('.system-log--activity .system-log-lines'),
   'fresh log activity must jolt only the log content'
 );
-assert(controller.includes('onCancelMining'), 'app controller must wire mining cancellation');
+assert(
+  controller.includes('createLocalPanelActions') && localActions.includes('onCancelMining'),
+  'app controller must wire mining cancellation'
+);
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');
