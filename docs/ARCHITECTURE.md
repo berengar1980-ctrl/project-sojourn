@@ -50,4 +50,6 @@ Do not use `any` as an escape hatch. Prefer explicit domain types, discriminated
 
 Add behavior to its canonical owner. Expose narrow APIs. Keep presentation passive. Add regression tests. Run `npm run check`.
 
+Before merging any change under `src/`, `tests/` or `resources/`, review and update `docs/VOIDBOUND_FEATURE_PARITY.md`. If parity does not change, record `keine Statusänderung` in its Review-Log. The normal test gate enforces that the parity document is touched on feature-bearing branches.
+
 Do not add version-named patch files, hotfix chains, monkey-patching, function replacement layers, or load-order fixes. If a canonical module becomes too large, split responsibilities before weakening a gate.

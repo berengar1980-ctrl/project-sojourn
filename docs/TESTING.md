@@ -12,3 +12,16 @@
 - `npm run check`: complete quality gate including production build.
 
 Tests use semantic names and domain folders. Do not use historical version numbers in test names. Slow simulations belong under `tests/full/`.
+
+
+## Voidbound feature parity gate
+
+`npm test` includes `tests/quality/feature-parity.test.cjs`. On feature branches, it compares the branch against `origin/main` (or local `main`) and requires `docs/VOIDBOUND_FEATURE_PARITY.md` to be changed whenever `src/`, `tests/` or `resources/` changes.
+
+Before merge, the explicit check can also be run with:
+
+```bash
+npm run parity:check -- --base origin/main
+```
+
+A parity-document change must either update affected feature statuses/notes or add a Review-Log entry stating `keine Statusänderung`.
