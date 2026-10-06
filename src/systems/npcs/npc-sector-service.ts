@@ -110,36 +110,58 @@ export function createNpcSectorService(
     return true;
   }
 
-  function refuelStopFor(npc: SectorNpcState, destinationId: string): string | null {
+  function refuelItinerary(npc: SectorNpcState, destinationId: string): readonly string[] | null {
     const profile = routeProfile(npc);
-    const candidates = world.locations
+    const refuelIds = world.locations
       .filter(
         (location) =>
           location.id !== npc.locationId &&
           location.id !== destinationId &&
           location.activities.refuel
       )
-      .map((location) => {
-        const first = planRouteWithProfile(world, npc.locationId, location.id, profile);
-        const second = planRouteWithProfile(world, location.id, destinationId, profile);
-        return {
-          id: location.id,
-          first,
-          second,
-          firstFuel: routeFuel(npc, first),
-          secondFuel: routeFuel(npc, second),
-        };
-      })
-      .filter(
-        (candidate) =>
-          candidate.firstFuel <= npc.fuel * 0.94 &&
-          candidate.secondFuel <= npc.fuelCapacity * 0.94
-      )
-      .sort(
-        (first, second) =>
-          first.first.distance + first.second.distance - (second.first.distance + second.second.distance)
-      );
-    return candidates[0]?.id ?? null;
+      .map((location) => location.id);
+    const nodeIds = [npc.locationId, ...refuelIds, destinationId];
+    const distances = nodeIds.map(() => Number.POSITIVE_INFINITY);
+    const previous = nodeIds.map(() => -1);
+    const visited = new Set<number>();
+    distances[0] = 0;
+
+    while (visited.size < nodeIds.length) {
+      let current = -1;
+      let best = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < nodeIds.length; index += 1) {
+        if (!visited.has(index) && distances[index]! < best) {
+          current = index;
+          best = distances[index]!;
+        }
+      }
+      if (current < 0 || current === nodeIds.length - 1) break;
+      visited.add(current);
+
+      const availableFuel = current === 0 ? npc.fuel * 0.96 : npc.fuelCapacity * 0.94;
+      for (let next = 1; next < nodeIds.length; next += 1) {
+        if (next === current || visited.has(next)) continue;
+        const route = planRouteWithProfile(world, nodeIds[current]!, nodeIds[next]!, profile);
+        if (routeFuel(npc, route) > availableFuel) continue;
+        const score = distances[current]! + route.distance;
+        if (score < distances[next]!) {
+          distances[next] = score;
+          previous[next] = current;
+        }
+      }
+    }
+
+    const targetIndex = nodeIds.length - 1;
+    if (!Number.isFinite(distances[targetIndex]!)) return null;
+    const path: string[] = [];
+    let cursor = targetIndex;
+    while (cursor > 0) {
+      path.push(nodeIds[cursor]!);
+      cursor = previous[cursor]!;
+      if (cursor < 0) return null;
+    }
+    path.reverse();
+    return path.slice(0, -1);
   }
 
   const service: NpcSectorService = {
@@ -154,9 +176,9 @@ export function createNpcSectorService(
         return startLeg(npc, destinationId, destinationId, [], reason);
       }
 
-      const stop = refuelStopFor(npc, destinationId);
-      if (!stop) return false;
-      return startLeg(npc, stop, destinationId, [stop], reason + ' · Tankstopp');
+      const stops = refuelItinerary(npc, destinationId);
+      if (!stops || stops.length === 0) return false;
+      return startLeg(npc, stops[0]!, destinationId, stops, reason + ' · Tankstopp');
     },
 
     isTravelling(npc) {
@@ -203,6 +225,10 @@ export function createNpcSectorService(
         npc.locationId = travel.targetLocationId;
         const finalTargetId = travel.finalTargetId;
         const reachedFinal = npc.locationId === finalTargetId;
+        const remainingStops =
+          travel.refuelStops[0] === npc.locationId
+            ? travel.refuelStops.slice(1)
+            : travel.refuelStops;
         delete npc.travel;
         npc.successfulRuns += 1;
 
@@ -210,7 +236,14 @@ export function createNpcSectorService(
         if (arrival?.activities.refuel) npc.fuel = npc.fuelCapacity;
 
         if (!reachedFinal) {
-          startLeg(npc, finalTargetId, finalTargetId, [], 'Weiterflug nach Tankstopp');
+          const nextTarget = remainingStops[0] ?? finalTargetId;
+          startLeg(
+            npc,
+            nextTarget,
+            finalTargetId,
+            remainingStops,
+            'Weiterflug nach Tankstopp'
+          );
         } else {
           npc.activityId = npc.job === 'patrol' ? 'patrol' : 'dock';
           npc.activity = npc.job === 'patrol' ? 'Sicherheitspatrouille' : 'Liegezeit';
