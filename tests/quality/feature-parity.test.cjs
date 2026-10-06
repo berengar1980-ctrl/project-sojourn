@@ -32,5 +32,5 @@ assert.throws(
 assert.doesNotThrow(() => reviewCurrentBranch(root));
 
 console.log(
-  `PASS Voidbound parity matrix has ${EXPECTED_FEATURES} unique features and the merge gate requires parity review for feature-bearing changes`
+  `PASS feature parity matrix: ${EXPECTED_FEATURES} unique features; branch review gate active`
 );
