@@ -6,6 +6,8 @@ export interface PortPanel {
   destroy(): void;
 }
 
+let lastPortTab: PortTab = 'trade';
+
 interface PortPanelOptions {
   readonly root: HTMLElement;
   readonly model: PortViewModel;
@@ -321,7 +323,10 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
 
   for (const button of tabs) {
     button.addEventListener('click', () => {
-      if (!button.disabled) activate(button.dataset.portTab as PortTab);
+      if (!button.disabled) {
+        lastPortTab = button.dataset.portTab as PortTab;
+        activate(lastPortTab);
+      }
     });
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-id]')) {
@@ -355,7 +360,9 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
 
   bindSystemMarketFilter(shell);
   returnButton.addEventListener('click', options.onReturnToStarMap);
-  activate('trade');
+  const lastButton = tabs.find((button) => button.dataset.portTab === lastPortTab);
+  if (!lastButton || lastButton.disabled) lastPortTab = 'trade';
+  activate(lastPortTab);
 
   return {
     destroy(): void {
