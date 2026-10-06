@@ -191,6 +191,8 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       fuel: profile.fuelCapacity,
       fuelCapacity: profile.fuelCapacity,
       fuelUse: profile.fuelUse,
+      hullHp: profile.hullPoints,
+      hullMaxHp: profile.hullPoints,
       aggression: (index * 23 + 17) % 100,
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
