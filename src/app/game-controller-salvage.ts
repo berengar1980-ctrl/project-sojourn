@@ -26,7 +26,11 @@ interface SalvageSceneOptions {
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
   const runtime = resolveShipRuntimeSetup(options.ship);
-  const field = generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
+  const field = generateSalvageField(
+    options.location.id,
+    options.seed,
+    options.location.dangerLevel
+  );
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
