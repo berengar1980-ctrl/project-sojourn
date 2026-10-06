@@ -6,6 +6,7 @@ import type {
   LocalReactorState,
   LocalSpaceSnapshot,
   MiningChunk,
+  MiningEventState,
   MiningImpact,
   MiningPhase,
 } from '../../core/local-space-types';
@@ -79,6 +80,8 @@ export interface LocalSpaceViewModel {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly miningEvent: MiningEventState | null;
+  readonly miningRecoverySeconds: number;
   readonly scanAvailable: boolean;
   readonly hull: LocalHullState;
   readonly reactor: LocalReactorState;
@@ -186,6 +189,8 @@ export function createLocalSpaceViewModel(
     shortRangeScanProgress: snapshot.shortRangeScanProgress,
     miningPhase: snapshot.miningPhase,
     miningAvailable: snapshot.miningAvailable,
+    miningEvent: snapshot.miningEvent,
+    miningRecoverySeconds: snapshot.miningRecoverySeconds,
     scanAvailable: snapshot.scanAvailable,
     hull: snapshot.hull,
     reactor: snapshot.reactor,

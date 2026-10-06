@@ -3,6 +3,7 @@ import type { LocalSpaceViewModel } from '../../features/local-space/local-space
 import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
 import type { SystemLogService } from '../../core/system-log-types';
+import { createMiningEventPanel } from './mining-event-panel';
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 export interface LocalSpacePanel {
@@ -19,11 +20,20 @@ interface LocalSpacePanelOptions {
   readonly onStartMining: () => Promise<void>;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
+  readonly onMiningEventChoice: (choiceId: string) => {
+    readonly title: string;
+    readonly resultText: string;
+    readonly aborted: boolean;
+  } | null;
   readonly onCancelMining: () => void;
   readonly onReturnToStarMap: () => void;
 }
 
 function miningStatus(model: LocalSpaceViewModel): string {
+  if (model.miningEvent) return 'MINING PAUSIERT · ENTSCHEIDUNG ERFORDERLICH';
+  if (model.miningRecoverySeconds > 0) {
+    return 'MINING-SYSTEME NEUSTART · ' + Math.ceil(model.miningRecoverySeconds) + ' s';
+  }
   if (model.longRangeScanProgress != null) {
     return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
   }
@@ -107,6 +117,7 @@ interface LocalSpaceControls {
   readonly scanLabelsButton: HTMLButtonElement;
   readonly cargoTotal: HTMLElement;
   readonly cargoList: HTMLElement;
+  readonly eventContainer: HTMLElement;
 }
 
 function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
@@ -121,6 +132,7 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<button class="scan-label-toggle is-active" type="button">SCAN-DATEN AN</button>',
     '<div class="local-mining-status" hidden></div>',
     '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
+    '<aside class="local-mining-event" hidden></aside>',
     '<div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // CONTAINER</div>',
     '<div class="local-cargo-total">GESAMT · <strong>0</strong></div>',
@@ -158,6 +170,7 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     scanLabelsButton: query<HTMLButtonElement>('.scan-label-toggle'),
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),
+    eventContainer: query<HTMLElement>('.local-mining-event'),
   };
 }
 
@@ -349,6 +362,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     scanLabelsButton,
     cargoTotal,
     cargoList,
+    eventContainer,
   } = controls;
 
   let model = options.model;
@@ -361,16 +375,27 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   });
   const trackIntegrity = createIntegrityTracker(options.log, systemLog, model);
   const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
+  const miningEventPanel = createMiningEventPanel({
+    container: eventContainer,
+    log: options.log,
+    logPanel: systemLog,
+    onChoice: options.onMiningEventChoice,
+  });
 
   const updateOverlay = (): void => {
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
+    const eventActive = model.miningEvent !== null;
     const longScanActive = model.longRangeScanProgress != null;
     trackScanCompletion(model);
+    miningEventPanel.update(model.miningEvent);
+    canvas.classList.toggle('is-locked', eventActive);
     card.hidden = !selected;
     cancelButton.hidden = !miningActive;
+    cancelButton.disabled = eventActive;
+    backButton.disabled = eventActive;
     renderCargo(model, cargoTotal, cargoList);
-    longScanButton.disabled = !model.scanAvailable || longScanActive;
+    longScanButton.disabled = eventActive || !model.scanAvailable || longScanActive;
     longScanButton.textContent = model.scanAvailable
       ? 'LANGREICHWEITENSCAN'
       : 'SCAN NICHT VERFÜGBAR';
@@ -393,7 +418,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
     shortScanButton.disabled =
-      !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
+      eventActive || !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
     updateMiningButton(mineButton, model, miningActive);
   };
 

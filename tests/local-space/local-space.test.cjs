@@ -68,6 +68,10 @@ const miningChunks = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
   'utf8'
 );
+const miningEvents = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/mining-event-service.ts'),
+  'utf8'
+);
 const miningFormation = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-mining-formation.ts'),
   'utf8'
@@ -207,6 +211,20 @@ assert(
 assert(
   service.includes('hasMineableDeposits'),
   'mining must continue until all asteroid deposits are depleted'
+);
+assert(
+  service.includes('this.miningEvents.update(asteroid)') &&
+    service.includes('resolveMiningEvent(choiceId'),
+  'live extraction must pause for integrated mining decisions'
+);
+assert(
+  miningEvents.includes("'unstable'") &&
+    miningEvents.includes("'machine'") &&
+    miningEvents.includes("'rich'") &&
+    miningEvents.includes("'cavity'") &&
+    miningEvents.includes("'rare'") &&
+    miningEvents.includes("'deeper'"),
+  'mining events must migrate the six physical Voidbound mining hazards without fake NPC encounters'
 );
 assert(
   service.includes('shipLateralVelocity'),

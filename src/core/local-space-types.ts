@@ -16,7 +16,7 @@ export interface AsteroidResourceDeposit {
   readonly resourceId: string;
   readonly oreType: string;
   oreRemaining: number;
-  readonly oreCapacity: number;
+  oreCapacity: number;
 }
 
 export interface LocalAsteroid {
@@ -84,6 +84,31 @@ export interface LocalSpaceInstance {
 
 export type MiningPhase = 'idle' | 'approaching' | 'scanning' | 'extracting';
 
+export type MiningEventType = 'unstable' | 'machine' | 'rich' | 'cavity' | 'rare' | 'deeper';
+export type MiningEventRisk = 'safe' | 'controlled' | 'risky' | 'high_risk';
+
+export interface MiningEventChoice {
+  readonly id: string;
+  readonly label: string;
+  readonly risk: MiningEventRisk;
+  readonly riskLabel: string;
+}
+
+export interface MiningEventState {
+  readonly id: string;
+  readonly type: MiningEventType;
+  readonly title: string;
+  readonly description: string;
+  readonly extractionProgress: number;
+  readonly choices: readonly MiningEventChoice[];
+}
+
+export interface MiningEventResolution {
+  readonly title: string;
+  readonly resultText: string;
+  readonly aborted: boolean;
+}
+
 export interface LocalSpaceSnapshot {
   readonly instance: LocalSpaceInstance;
   readonly selectedAsteroidId: string | null;
@@ -95,6 +120,8 @@ export interface LocalSpaceSnapshot {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly miningEvent: MiningEventState | null;
+  readonly miningRecoverySeconds: number;
   readonly scanAvailable: boolean;
   readonly hull: LocalHullState;
   readonly reactor: LocalReactorState;
