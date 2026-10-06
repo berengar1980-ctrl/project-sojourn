@@ -95,10 +95,7 @@ const service = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-service.ts'),
   'utf8'
 );
-const panel = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/mining-event-panel.ts'),
-  'utf8'
-);
+const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/mining-event-panel.ts'), 'utf8');
 assert(service.includes('this.miningEvents.pauseExtraction(asteroid, deltaSeconds)'));
 assert(service.includes('this.shipSystems.damageHullFraction'));
 assert(service.includes('miningRecoverySeconds'));
