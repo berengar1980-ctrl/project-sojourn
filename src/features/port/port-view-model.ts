@@ -1,4 +1,4 @@
-import type { CrewDefinition, CrewMember } from '../../core/crew-types';
+import type { CrewMember } from '../../core/crew-types';
 import type {
   EconomyMarketState,
   PlayerEconomyState,
@@ -12,7 +12,6 @@ import type {
 } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
-import { createCrewMember } from '../../systems/crew';
 
 export interface PortMarketRowView {
   readonly id: string;
@@ -59,7 +58,7 @@ export interface PortCrewStateView {
 }
 
 export interface PortCrewStateInput {
-  readonly available: readonly CrewDefinition[];
+  readonly available: readonly CrewMember[];
   readonly hired: readonly CrewMember[];
   readonly assignments: Readonly<Record<string, string | undefined>>;
   readonly stations: readonly ShipStationDefinition[];
@@ -178,36 +177,6 @@ function crewInitials(name: string): string {
     .join('');
 }
 
-function crewTraitLabels(definition: CrewDefinition): readonly string[] {
-  return Object.entries(definition.socialTraits)
-    .filter(([, value]) => value !== 0)
-    .sort((first, second) => Math.abs(second[1]) - Math.abs(first[1]))
-    .slice(0, 3)
-    .map(([axis, value]) => `${SOCIAL_LABELS[axis] ?? axis} ${value > 0 ? '+' : ''}${value}`);
-}
-
-function equipmentLabels(equipment: CrewMember['personalEquipment']): readonly string[] {
-  return [equipment.ranged, equipment.melee, equipment.armor, equipment.gear1, equipment.gear2].filter(
-    (value): value is string => Boolean(value)
-  );
-}
-
-function crewDefinitionView(definition: CrewDefinition): PortCrewView {
-  const member = createCrewMember(definition);
-  return {
-    id: member.id,
-    name: member.name,
-    initials: crewInitials(member.name),
-    role: member.title,
-    traits: crewTraitLabels(definition),
-    ranged: member.combatSkills.ranged,
-    melee: member.combatSkills.melee,
-    share: member.share,
-    elite: member.elite,
-    equipment: equipmentLabels(member.personalEquipment),
-  };
-}
-
 function crewMemberView(member: CrewMember): PortCrewView {
   return {
     id: member.id,
@@ -262,7 +231,7 @@ export function createPortViewModel(
     crew: {
       used: 1 + crewState.hired.length,
       capacity: crewState.capacity,
-      candidates: crewState.available.map(crewDefinitionView),
+      candidates: crewState.available.map(crewMemberView),
       hired: crewState.hired.map(crewMemberView),
       stations: crewState.stations.map((station) => ({
         id: station.id,
