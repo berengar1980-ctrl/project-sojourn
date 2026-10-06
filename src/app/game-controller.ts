@@ -431,6 +431,8 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     mine: (npc, resourceId, requested) =>
       economy.npcs.mineLocal(npc, resourceId, requested),
     depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
+    playerShip: state.activeShip,
+    getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
   });
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
