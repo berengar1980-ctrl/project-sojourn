@@ -159,10 +159,7 @@ const components = loadStandaloneTypeScriptModule(
   assert.equal(components.engineSpeedMultiplier(installed), 1.4);
   assert.equal(components.sensorRangeMultiplier(installed), 1.45);
   assert.equal(components.miningYieldMultiplier(installed), 1.48);
-  assert.equal(
-    components.salvageYieldMultiplier({ salvage: ['salvage4'] }),
-    1.48
-  );
+  assert.equal(components.salvageYieldMultiplier({ salvage: ['salvage4'] }), 1.48);
   assert.equal(components.salvageChanceBonus({ salvage: ['salvage4'] }), 15);
 }
 
