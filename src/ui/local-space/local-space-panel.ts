@@ -281,6 +281,22 @@ function bindLongScanButton(
   });
 }
 
+function updateMiningButton(
+  button: HTMLButtonElement,
+  model: LocalSpaceViewModel,
+  miningActive: boolean
+): void {
+  const selected = model.selectedAsteroid;
+  if (!selected) return;
+
+  const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
+  const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
+  button.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
+  button.title = model.miningAvailable ? '' : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
+  button.disabled =
+    !model.miningAvailable || knownEmpty || depleted || (selected.isMiningTarget && miningActive);
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const controls = localSpaceControls(shell);
@@ -346,14 +362,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
     shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
-    const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
-    const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
-    mineButton.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
-    mineButton.title = model.miningAvailable
-      ? ''
-      : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
-    mineButton.disabled =
-      !model.miningAvailable || knownEmpty || depleted || (selected.isMiningTarget && miningActive);
+    updateMiningButton(mineButton, model, miningActive);
   };
 
   const observer = observeCanvas(canvas, renderer);
