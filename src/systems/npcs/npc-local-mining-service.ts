@@ -151,7 +151,7 @@ function chooseEventChoice(
 ): MiningEventChoice | null {
   if (choices.length === 0) return null;
   const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
-  const risky = npc.aggression >= 50;
+  const risky = npc.workRiskPreference === 'risky';
   return [...choices].sort((a, b) =>
     risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
   )[0] ?? null;
@@ -254,6 +254,13 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       return damage;
     });
     if (!result) return false;
+    npc.lastWorkEvent = {
+      kind: 'mining',
+      title: result.title,
+      choiceId: choice.id,
+      risk: choice.risk,
+      resultText: result.resultText,
+    };
     npc.activityId = 'mining-event';
     npc.activity = `${result.title} · ${choice.riskLabel}`;
     if (result.aborted || npc.hullHp <= 0) {
