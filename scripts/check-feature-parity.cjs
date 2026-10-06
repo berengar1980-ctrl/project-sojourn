@@ -18,7 +18,9 @@ const FEATURE_BEARING_PREFIXES = ['src/', 'tests/', 'resources/'];
 function parseFeatureRows(content) {
   const rows = [];
   for (const line of content.split(/\r?\n/)) {
-    const match = line.match(\n      /^\\|\\s*(✅ Umgesetzt|🟨 Teilweise|⬜ Offen|🔁 Bewusst anders)\\s*\\|\\s*`([^`]+)`\\s*\\|/\n    );
+    const match = line.match(
+      /^\|\s*(✅ Umgesetzt|🟨 Teilweise|⬜ Offen|🔁 Bewusst anders)\s*\|\s*`([^`]+)`\s*\|/
+    );
     if (!match) continue;
     const decisionMatch = line.match(/\|\s*(offen|übernehmen|ändern|verwerfen|später)\s*\|\s*$/);
     rows.push({
@@ -156,7 +158,9 @@ function main() {
 
   if (review.checked) {
     console.log(
-      `PARITY GATE OK · ${validation.featureCount} features · base ${review.base} · review ${\n        review.required ? 'required and present' : 'not required'\n      }`
+      `PARITY GATE OK · ${validation.featureCount} features · base ${review.base} · review ${
+        review.required ? 'required and present' : 'not required'
+      }`
     );
   } else {
     console.log(`PARITY DOCUMENT OK · ${validation.featureCount} unique features`);
