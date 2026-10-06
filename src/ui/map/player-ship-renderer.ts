@@ -13,7 +13,7 @@ import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoi
 import type { ScreenPoint } from './map-camera';
 import { shipSymbolScale } from './map-visual-scale';
 
-const BASE_SHIP_WIDTH = 32;
+const BASE_SHIP_WIDTH = 15;
 
 function idleSeed(name: string): number {
   let hash = 2166136261;
