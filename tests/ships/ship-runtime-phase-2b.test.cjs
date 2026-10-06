@@ -146,10 +146,7 @@ assert.equal(systemSnapshot.shield.currentHp, 0);
 assert.equal(systemSnapshot.hull.currentHp, 30, 'shield overflow must damage hull');
 assert.equal(systemSnapshot.reactor.continuousFree, 27);
 
-const portController = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-port.ts'),
-  'utf8'
-);
+const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const miningController = fs.readFileSync(
   path.join(root, 'src/app/game-controller-mining.ts'),
   'utf8'
