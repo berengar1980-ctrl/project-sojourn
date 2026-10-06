@@ -1,8 +1,10 @@
-import type { LocalAsteroid } from '../../core/local-space-types';
+import type { LocalAsteroid, MiningEventChoice } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
+import { createMiningEventController } from '../local-space/mining-event-service';
 
-export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'mining' | 'exiting';
+export type LocalNpcMiningPhase =
+  'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
 export interface LocalNpcMinerState {
   readonly npcId: string;
@@ -14,6 +16,7 @@ export interface LocalNpcMinerState {
   phase: LocalNpcMiningPhase;
   targetAsteroidId: string | null;
   laserActive: boolean;
+  scanProgress: number;
   readonly entryPoint: WorldPoint;
   exitPoint: WorldPoint;
   miningAccumulator: number;
@@ -38,6 +41,7 @@ const ENTRY_MARGIN = 18;
 const EXIT_MARGIN = 90;
 const APPROACH_DISTANCE = 105;
 const FLIGHT_SPEED = 92;
+const SCAN_SECONDS = 5;
 const MINING_CYCLE_SECONDS = 1.15;
 const MINING_AMOUNT = 4;
 
@@ -110,12 +114,16 @@ function chooseAsteroid(
   );
   const pool = preferred.length > 0 ? preferred : fallback;
   if (pool.length === 0) return null;
-  return [...pool].sort(
-    (first, second) =>
-      distance(first.position, { x: 2200, y: 1285 }) -
-        distance(second.position, { x: 2200, y: 1285 }) ||
-      first.id.localeCompare(second.id)
-  )[hashId(npc.id) % Math.min(8, pool.length)] ?? pool[0] ?? null;
+  return (
+    [...pool].sort(
+      (first, second) =>
+        distance(first.position, { x: 2200, y: 1285 }) -
+          distance(second.position, { x: 2200, y: 1285 }) ||
+        first.id.localeCompare(second.id)
+    )[hashId(npc.id) % Math.min(8, pool.length)] ??
+    pool[0] ??
+    null
+  );
 }
 
 function approachPoint(npcId: string, asteroid: LocalAsteroid): WorldPoint {
@@ -137,14 +145,33 @@ function eligibleMiner(npc: SectorNpcState, locationId: string): boolean {
   );
 }
 
+function chooseEventChoice(
+  npc: SectorNpcState,
+  choices: readonly MiningEventChoice[]
+): MiningEventChoice | null {
+  if (choices.length === 0) return null;
+  const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
+  const risky = npc.aggression >= 50;
+  return [...choices].sort((a, b) =>
+    risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
+  )[0] ?? null;
+}
+
 export function createNpcLocalMiningService(options: NpcLocalMiningOptions): NpcLocalMiningService {
   const ships: LocalNpcMinerState[] = [];
   const byId = new Map(options.miners.map((npc) => [npc.id, npc] as const));
+  const events = new Map(
+    options.miners.map((npc) => [
+      npc.id,
+      createMiningEventController(hashId(options.locationId + ':' + npc.id)),
+    ])
+  );
 
   function beginExit(ship: LocalNpcMinerState): void {
     ship.phase = 'exiting';
     ship.targetAsteroidId = null;
     ship.laserActive = false;
+    ship.scanProgress = 0;
     ship.exitPoint = edgePoint(ship.npcId + ':exit', options.width, options.height, true);
   }
 
@@ -163,6 +190,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
         phase: 'entering',
         targetAsteroidId: null,
         laserActive: false,
+        scanProgress: 0,
         entryPoint: entry,
         exitPoint: edgePoint(npc.id + ':exit', options.width, options.height, true),
         miningAccumulator: 0,
@@ -184,6 +212,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
     ship.targetAsteroidId = asteroid.id;
     ship.phase = 'approaching';
     ship.laserActive = false;
+    ship.scanProgress = 0;
     return true;
   }
 
@@ -207,6 +236,31 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
     } else if (!asteroid.deposits.some((candidate) => candidate.oreRemaining > 0)) {
       assignTarget(ship, npc);
     }
+  }
+
+  function resolvePendingEvent(
+    ship: LocalNpcMinerState,
+    npc: SectorNpcState,
+    asteroid: LocalAsteroid
+  ): boolean {
+    const controller = events.get(npc.id);
+    const pending = controller?.pending;
+    if (!controller || !pending) return false;
+    const choice = chooseEventChoice(npc, pending.choices);
+    if (!choice) return false;
+    const result = controller.resolve(asteroid, choice.id, (fraction) => {
+      const damage = Math.max(0, Math.round(npc.hullMaxHp * fraction));
+      npc.hullHp = Math.max(0, npc.hullHp - damage);
+      return damage;
+    });
+    if (!result) return false;
+    npc.activityId = 'mining-event';
+    npc.activity = `${result.title} · ${choice.riskLabel}`;
+    if (result.aborted || npc.hullHp <= 0) {
+      beginExit(ship);
+      return true;
+    }
+    return false;
   }
 
   syncArrivals();
@@ -240,15 +294,36 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
           }
           const point = approachPoint(npc.id, asteroid);
           if (moveToward(ship, point, FLIGHT_SPEED, dt)) {
-            ship.phase = 'mining';
+            ship.phase = 'scanning';
             ship.speed = 0;
-            ship.laserActive = true;
+            ship.scanProgress = 0;
             ship.headingRadians = Math.atan2(
               asteroid.position.y - ship.position.y,
               asteroid.position.x - ship.position.x
             );
-            ship.miningAccumulator = 0;
           }
+          continue;
+        }
+
+        if (ship.phase === 'scanning') {
+          const asteroid = options
+            .getAsteroids()
+            .find((candidate) => candidate.id === ship.targetAsteroidId);
+          if (!asteroid) {
+            beginExit(ship);
+            continue;
+          }
+          ship.speed = 0;
+          ship.laserActive = false;
+          ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
+          if (ship.scanProgress < 1) continue;
+          asteroid.scanLevel = 'analyzed';
+          events.get(npc.id)?.begin(asteroid);
+          ship.phase = 'mining';
+          ship.miningAccumulator = 0;
+          ship.laserActive = true;
+          npc.activityId = 'mining';
+          npc.activity = 'Abbau nach Asteroidenscan';
           continue;
         }
 
@@ -260,6 +335,12 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
             beginExit(ship);
             continue;
           }
+          const controller = events.get(npc.id);
+          if (controller?.pauseExtraction(asteroid, dt)) {
+            ship.laserActive = false;
+            if (resolvePendingEvent(ship, npc, asteroid)) continue;
+            continue;
+          }
           ship.speed = 0;
           ship.laserActive = true;
           ship.headingRadians = Math.atan2(
@@ -267,8 +348,9 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
             asteroid.position.x - ship.position.x
           );
           ship.miningAccumulator += dt;
-          while (ship.miningAccumulator >= MINING_CYCLE_SECONDS && ship.phase === 'mining') {
-            ship.miningAccumulator -= MINING_CYCLE_SECONDS;
+          const cycle = controller?.cycleSeconds(MINING_CYCLE_SECONDS) ?? MINING_CYCLE_SECONDS;
+          while (ship.miningAccumulator >= cycle && ship.phase === 'mining') {
+            ship.miningAccumulator -= cycle;
             mine(ship, npc, asteroid);
           }
           continue;
