@@ -1,3 +1,5 @@
+import ambienceChunk0 from '../../../resources/audio/base64/space-ambience-00.b64?raw';
+import ambienceChunk1 from '../../../resources/audio/base64/space-ambience-01.b64?raw';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import {
@@ -5,10 +7,8 @@ import {
   type ManeuverDemand,
 } from '../ships/ship-maneuver-thrusters';
 
-const AMBIENCE_URL = new URL(
-  '../../../resources/audio/sfx-deep-space-travel-ambience.ogg',
-  import.meta.url
-).href;
+const AMBIENCE_URL =
+  'data:audio/ogg;base64,' + ambienceChunk0.trim() + ambienceChunk1.trim();
 const RCS_BURST_URL = new URL(
   '../../../resources/audio/spacecraft-rcs-thruster-burst.ogg',
   import.meta.url
