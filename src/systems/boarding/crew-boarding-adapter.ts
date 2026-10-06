@@ -84,6 +84,7 @@ export function crewMemberToBoardingUnit(member: CrewMember): BoardingUnitTempla
     name: member.name,
     team: 'player',
     hp: boardingHp(member),
+    maxHp: 10,
     armor: crewBoardingArmor(member),
     rangedSkill: clamp(member.combatSkills.ranged + gearRangedBonus(member), 0, 100),
     meleeSkill: clamp(member.combatSkills.melee, 0, 100),
