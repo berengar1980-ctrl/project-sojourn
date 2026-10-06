@@ -58,7 +58,7 @@ export interface ShipComponentDefinition {
   readonly chanceBonus?: number;
 }
 
-export type ShipComponentLoadout = Readonly<Partial<Record<ShipComponentType, readonly string[]>>>;
+type ShipComponentAssignments = Partial<Record<ShipComponentType, readonly string[]>>;\n\nexport type ShipComponentLoadout = Readonly<ShipComponentAssignments>;
 
 export interface ShipEnergyStats {
   readonly output: number;
