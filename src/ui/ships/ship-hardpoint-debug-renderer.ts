@@ -46,14 +46,36 @@ export class ShipHardpointDebugRenderer {
       drawMarker(context, point.x, point.y, { fill: '#4da3ff', label: engine.id });
     }
 
+    for (const laser of source.weaponLasers ?? []) {
+      const point = projectHardpoint(laser, source, geometry);
+      drawMarker(context, point.x, point.y, {
+        fill: '#ffb347',
+        label: `${laser.id} [${laser.layer ?? 'above'}]`,
+      });
+    }
+
     for (const laser of source.miningLasers) {
       const point = projectHardpoint(laser, source, geometry);
-      drawMarker(context, point.x, point.y, { fill: '#ff4d4d', label: laser.id });
+      drawMarker(context, point.x, point.y, {
+        fill: '#ff4d4d',
+        label: `${laser.id} [${laser.layer ?? 'above'}]`,
+      });
+    }
+
+    for (const tractor of source.tractorBeams ?? []) {
+      const point = projectHardpoint(tractor, source, geometry);
+      drawMarker(context, point.x, point.y, {
+        fill: '#54ef8d',
+        label: `${tractor.id} [${tractor.layer ?? 'above'}]`,
+      });
     }
 
     for (const thruster of source.maneuverThrusters) {
       const point = projectHardpoint(thruster, source, geometry);
-      drawMarker(context, point.x, point.y, { fill: '#f4f7fb', label: thruster.id });
+      drawMarker(context, point.x, point.y, {
+        fill: '#f4f7fb',
+        label: `${thruster.id} [${thruster.layer ?? 'above'}]`,
+      });
     }
 
     const shield = projectShieldGeometry(source.shield, source, geometry);

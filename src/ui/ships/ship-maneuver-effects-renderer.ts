@@ -1,4 +1,4 @@
-import type { ShipHardpoints } from '../../core/ship-types';
+import type { ShipEffectLayer, ShipHardpoints } from '../../core/ship-types';
 import {
   activeManeuverThrusterBursts,
   type ManeuverDemand,
@@ -23,12 +23,13 @@ export class ShipManeuverEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
     const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
     for (const burst of bursts) {
       const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
-      if (!thruster) continue;
+      if (!thruster || (thruster.layer ?? 'above') !== layer) continue;
       this.drawThruster(context, source, geometry, thruster, burst.intensity, timeSeconds);
     }
   }
@@ -38,12 +39,13 @@ export class ShipManeuverEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
     const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
     for (const burst of bursts) {
       const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
-      if (!thruster) continue;
+      if (!thruster || (thruster.layer ?? 'above') !== layer) continue;
 
       const nozzle = projectHardpoint(thruster, source, geometry);
       const flicker =
@@ -67,10 +69,11 @@ export class ShipManeuverEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
-    this.drawExhaust(context, source, geometry, demand, timeSeconds);
-    this.drawGlow(context, source, geometry, demand, timeSeconds);
+    this.drawExhaust(context, source, geometry, demand, timeSeconds, layer);
+    this.drawGlow(context, source, geometry, demand, timeSeconds, layer);
   }
 
   private drawThruster(

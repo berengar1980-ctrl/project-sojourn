@@ -1,3 +1,4 @@
+import type { ShipEffectLayer } from '../../core/ship-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
@@ -22,7 +23,8 @@ export class MiningEffectsRenderer {
     geometry: ShipScreenGeometry,
     viewportWidth: number,
     viewportHeight: number,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer
   ): void {
     if (!model.laserActive || !model.miningImpact) return;
 
@@ -33,13 +35,16 @@ export class MiningEffectsRenderer {
     );
     const normal = normalized(model.miningImpact.normal);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
+    const hardpoints = model.ship.hardpoints.miningLasers.filter(
+      (hardpoint) => (hardpoint.layer ?? 'above') === layer
+    );
 
     this.context.save();
     this.context.shadowColor = 'rgba(255, 54, 30, .85)';
     this.context.shadowBlur = 5 + pulse * 6;
     this.context.strokeStyle = 'rgba(238, 62, 40, ' + (0.62 + pulse * 0.3) + ')';
 
-    for (const hardpoint of model.ship.hardpoints.miningLasers) {
+    for (const hardpoint of hardpoints) {
       const start = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
       const baseWidth = Math.max(
         1.1,
@@ -53,17 +58,25 @@ export class MiningEffectsRenderer {
     }
 
     this.context.restore();
-    this.drawImpactSparks(target, normal, timeSeconds);
-    this.drawImpactDust(target, normal, timeSeconds);
+    if (layer === 'above') {
+      this.drawImpactSparks(target, normal, timeSeconds);
+      this.drawImpactDust(target, normal, timeSeconds);
+    }
   }
 
   drawTractorFields(
     model: LocalSpaceViewModel,
+    geometry: ShipScreenGeometry,
     viewportWidth: number,
     viewportHeight: number,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer
   ): void {
-    const ship = this.camera.worldToScreen(model.ship.position, viewportWidth, viewportHeight);
+    const hardpoints = (model.ship.hardpoints.tractorBeams ?? []).filter(
+      (hardpoint) => (hardpoint.layer ?? 'above') === layer
+    );
+    if (hardpoints.length === 0) return;
+
     this.context.save();
 
     model.chunks.forEach((chunk, index) => {
@@ -71,22 +84,25 @@ export class MiningEffectsRenderer {
       const point = this.camera.worldToScreen(chunk.position, viewportWidth, viewportHeight);
       const pulse = 0.58 + Math.sin(timeSeconds * 8.5 + index * 0.9) * 0.28;
 
-      this.context.shadowColor = 'rgba(74, 255, 140, .82)';
-      this.context.shadowBlur = 7 + pulse * 8;
-      this.context.strokeStyle = 'rgba(54, 229, 117, ' + (0.12 + pulse * 0.2) + ')';
-      this.context.lineWidth = 4 + pulse * 3;
-      this.context.beginPath();
-      this.context.moveTo(point.x, point.y);
-      this.context.lineTo(ship.x, ship.y);
-      this.context.stroke();
+      for (const hardpoint of hardpoints) {
+        const ship = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
+        this.context.shadowColor = 'rgba(74, 255, 140, .82)';
+        this.context.shadowBlur = 7 + pulse * 8;
+        this.context.strokeStyle = 'rgba(54, 229, 117, ' + (0.12 + pulse * 0.2) + ')';
+        this.context.lineWidth = 4 + pulse * 3;
+        this.context.beginPath();
+        this.context.moveTo(point.x, point.y);
+        this.context.lineTo(ship.x, ship.y);
+        this.context.stroke();
 
-      this.context.shadowBlur = 2 + pulse * 2;
-      this.context.strokeStyle = 'rgba(166, 255, 195, ' + (0.42 + pulse * 0.42) + ')';
-      this.context.lineWidth = 0.9 + pulse * 1.4;
-      this.context.beginPath();
-      this.context.moveTo(point.x, point.y);
-      this.context.lineTo(ship.x, ship.y);
-      this.context.stroke();
+        this.context.shadowBlur = 2 + pulse * 2;
+        this.context.strokeStyle = 'rgba(166, 255, 195, ' + (0.42 + pulse * 0.42) + ')';
+        this.context.lineWidth = 0.9 + pulse * 1.4;
+        this.context.beginPath();
+        this.context.moveTo(point.x, point.y);
+        this.context.lineTo(ship.x, ship.y);
+        this.context.stroke();
+      }
     });
 
     this.context.restore();

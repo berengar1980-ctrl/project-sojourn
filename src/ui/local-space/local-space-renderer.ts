@@ -146,8 +146,6 @@ export class LocalSpaceRenderer {
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
     });
-    this.miningEffects.drawTractorFields(this.model, width, height, timeSeconds);
-
     const hitAreas: AsteroidHitArea[] = [];
     for (const asteroid of this.model.asteroids) {
       const hitArea = this.drawAsteroid(asteroid, width, height);
@@ -160,8 +158,25 @@ export class LocalSpaceRenderer {
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
     this.drawShortRangeScan(width, height, timeSeconds);
-    this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds);
+    this.miningEffects.drawTractorFields(
+      this.model,
+      geometry,
+      width,
+      height,
+      timeSeconds,
+      'below'
+    );
+    this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'below');
     this.drawShip(geometry, timeSeconds);
+    this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'above');
+    this.miningEffects.drawTractorFields(
+      this.model,
+      geometry,
+      width,
+      height,
+      timeSeconds,
+      'above'
+    );
     if (this.debugHardpoints) {
       this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
     }
@@ -447,7 +462,14 @@ export class LocalSpaceRenderer {
     };
 
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
+    this.maneuverEffects.draw(
+      this.context,
+      source,
+      geometry,
+      maneuverDemand,
+      timeSeconds,
+      'below'
+    );
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
@@ -469,7 +491,14 @@ export class LocalSpaceRenderer {
     this.context.restore();
 
     this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
+    this.maneuverEffects.draw(
+      this.context,
+      source,
+      geometry,
+      maneuverDemand,
+      timeSeconds,
+      'above'
+    );
 
     this.shieldImpacts.draw(this.context, this.model.shieldImpacts, source, geometry);
   }
