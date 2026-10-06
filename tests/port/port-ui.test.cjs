@@ -11,6 +11,10 @@ const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
 const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
+const portLocationRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/port/port-location-renderer.ts'),
+  'utf8'
+);
 const marketService = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
@@ -101,6 +105,23 @@ assert(
   'shipyard must not display fake higher-tier component upgrades'
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');
+assert(
+  portPanel.includes('port-location-canvas') &&
+    !portPanel.includes("model.locationName.slice(0, 1)") &&
+    portLocationRenderer.includes('ProceduralSpaceBodyRenderer') &&
+    portLocationRenderer.includes('PlanetRingRenderer') &&
+    portLocationRenderer.includes('StationSymbolRenderer') &&
+    portLocationRenderer.includes('drawPlanet'),
+  'docked location hero must reuse the star-map planet and station renderers instead of a placeholder'
+);
+assert(
+  portModel.includes('locationVisual') &&
+    portModel.includes('planetBiome: location.planetBiome') &&
+    portModel.includes('ringStyle: location.ringStyle') &&
+    portModel.includes('starPosition.x - location.position.x') &&
+    portController.includes('narrowsSector.star.position'),
+  'docked visuals must preserve the star-map identity, biome, rings and star-relative lighting'
+);
 assert(
   controller.includes("type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port'"),
   'port must be a dedicated application scene'
