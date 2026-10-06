@@ -40,6 +40,7 @@ import {
   updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
+import type { LocalSpaceService } from './local-space-api';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
 
@@ -55,20 +56,6 @@ export interface LocalSpaceServiceOptions {
   readonly nominalLengthMeters: number;
   readonly mining?: LocalSpaceMiningOptions;
   readonly onMiningChunkCollected?: MiningChunkCollector;
-}
-
-export interface LocalSpaceService {
-  getSnapshot(): LocalSpaceSnapshot;
-  selectAsteroid(id: string | null): LocalSpaceSnapshot;
-  getMiningRouteOptions(): RoutePlanningOptions | null;
-  getShortRangeScanRouteOptions(): RoutePlanningOptions | null;
-  getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions;
-  startLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
-  startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  cancelMining(): LocalSpaceSnapshot;
-  tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
 
 class LocalSpaceRuntime implements LocalSpaceService {
