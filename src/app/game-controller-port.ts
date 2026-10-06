@@ -75,6 +75,10 @@ export function createActivePortPanel(
     installed,
   });
   const gameplay = resolveShipGameplayStats(ship);
+  const saleFeeRate = runtime.crewEffects.logistics.saleFeeRate;
+  navigation.setCruiseSpeed(
+    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+  );
 
   return createPortPanel({
     root,
@@ -103,7 +107,8 @@ export function createActivePortPanel(
       },
       systemMarketRows(location.id, marketIntel),
       Math.max(0, currentDay),
-      runtime.cargoCapacityTons
+      runtime.cargoCapacityTons,
+      saleFeeRate
     ),
     onReturnToStarMap,
     onMarketRoute: (destinationId) => {
@@ -125,7 +130,7 @@ export function createActivePortPanel(
       onRefresh();
     },
     onSell: (resourceId) => {
-      const result = trade.sell(location.id, resourceId, 1);
+      const result = trade.sell(location.id, resourceId, 1, saleFeeRate);
       if (!result) return;
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
@@ -136,7 +141,7 @@ export function createActivePortPanel(
     },
     onSellAll: (resourceId) => {
       const quantity = trade.player.cargo[resourceId]?.qty ?? 0;
-      const result = trade.sell(location.id, resourceId, quantity);
+      const result = trade.sell(location.id, resourceId, quantity, saleFeeRate);
       if (!result) return;
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
