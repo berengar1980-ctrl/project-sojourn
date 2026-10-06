@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -66,6 +67,17 @@ service.tick(0.1);
 assert.equal(upgrader.componentUpgradeCount, 1, 'experienced NPCs must invest in ship components');
 assert(upgrader.installedComponents, 'NPC component loadout must persist on the ship state');
 
+const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const rendererSource = fs.readFileSync(
+  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
+  'utf8'
+);
+assert(
+  controllerSource.includes('economy.sectorNpcs.livePosition(npc)') &&
+    rendererSource.includes('drawNpcShips'),
+  'physical NPC traffic must be exposed on the live star map'
+);
+
 console.log(
-  'PASS physical NPC ships, jobs, fuel, travel, patrol routing and component progression'
+  'PASS physical NPC ships, jobs, fuel, travel, patrol routing, upgrades and map presence'
 );
