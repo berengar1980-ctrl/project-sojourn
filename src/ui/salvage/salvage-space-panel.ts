@@ -176,12 +176,7 @@ function componentRow(
   const detail = document.createElement('strong');
   label.textContent = 'SCHIFFSKOMPONENTE';
   detail.textContent =
-    component.name.toUpperCase() +
-    ' · MK ' +
-    component.tier +
-    ' · ' +
-    component.cargoTons +
-    ' t';
+    component.name.toUpperCase() + ' · MK ' + component.tier + ' · ' + component.cargoTons + ' t';
   copy.append(label, detail);
 
   const button = document.createElement('button');
@@ -190,9 +185,7 @@ function componentRow(
   else if (component.status === 'destroyed') button.textContent = 'ZERSTÖRT';
   else button.textContent = 'KOMPONENTE BERGEN · ' + component.chancePercent + ' %';
   button.disabled =
-    component.status !== 'available' ||
-    !model.salvageAvailable ||
-    model.phase !== 'idle';
+    component.status !== 'available' || !model.salvageAvailable || model.phase !== 'idle';
   button.addEventListener('click', () => options.onRecoverComponent(wreckId));
   row.append(copy, button);
   return row;
@@ -277,23 +270,18 @@ function createRecoveryTracker(
       changed = true;
     }
 
-    if (
-      model.componentRecoverySerial !== lastComponentSerial &&
-      model.lastComponentRecovery
-    ) {
+    if (model.componentRecoverySerial !== lastComponentSerial && model.lastComponentRecovery) {
       lastComponentSerial = model.componentRecoverySerial;
       const result = model.lastComponentRecovery;
       const wreck = model.wrecks.find((entry) => entry.id === result.wreckId);
       const component = wreck?.component;
       if (result.outcome === 'recovered') {
         options.log.write(
-          'BERGUNG > KOMPONENTE GEBORGEN: ' +
-            (component?.name ?? result.componentId).toUpperCase()
+          'BERGUNG > KOMPONENTE GEBORGEN: ' + (component?.name ?? result.componentId).toUpperCase()
         );
       } else if (result.outcome === 'destroyed') {
         options.log.write(
-          'BERGUNG > KOMPONENTE ZERSTÖRT: ' +
-            (component?.name ?? result.componentId).toUpperCase()
+          'BERGUNG > KOMPONENTE ZERSTÖRT: ' + (component?.name ?? result.componentId).toUpperCase()
         );
       } else {
         options.log.write('BERGUNG > NICHT GENÜGEND FRACHTRAUM FÜR KOMPONENTE');
