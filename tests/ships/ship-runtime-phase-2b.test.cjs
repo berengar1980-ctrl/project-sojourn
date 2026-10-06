@@ -62,7 +62,11 @@ assert.equal(baseline.energy.output, 40);
 assert.equal(baseline.energy.baseUsed, 22);
 assert.equal(baseline.scanAvailable, true);
 assert.equal(baseline.sensorModifier, 1);
-assert.equal(baseline.sensorCrewSkill, 20, 'unmanned sensor station must retain automation skill');
+assert.equal(
+  baseline.sensorCrewSkill,
+  12,
+  'unmanned sensor station must retain the existing automation fallback'
+);
 assert.equal(baseline.cargoCapacityTons, 360);
 assert.equal(
   baseline.mining.cargoCapacityTons,
