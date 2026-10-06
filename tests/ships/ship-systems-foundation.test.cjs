@@ -6,19 +6,16 @@ const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-
-const roleProfiles = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/ships/ship-role-profiles.ts'
-);
-const station = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/ships/station-performance.ts'
-);
+const roleProfiles = loadStandaloneTypeScriptModule(root, 'src/data/ships/ship-role-profiles.ts');
+const station = loadStandaloneTypeScriptModule(root, 'src/systems/ships/station-performance.ts');
 const components = loadStandaloneTypeScriptModule(
   root,
   'src/systems/ships/ship-component-service.ts'
 );
+
+function stationSkill(profile, stationId) {
+  return profile.stations.find((entry) => entry.id === stationId)?.skill;
+}
 
 {
   const freighter = roleProfiles.getShipRoleProfile('freighter');
@@ -46,22 +43,10 @@ const components = loadStandaloneTypeScriptModule(
   assert.deepEqual(salvage.specialCargo, { kind: 'salvage', capacityTons: 45 });
   assert.deepEqual(patrol.specialCargo, null);
 
-  assert.equal(
-    freighter.stations.find((entry) => entry.id === 'cargo_control').skill,
-    'logistics'
-  );
-  assert.equal(
-    mining.stations.find((entry) => entry.id === 'mining_station').skill,
-    'mining'
-  );
-  assert.equal(
-    salvage.stations.find((entry) => entry.id === 'salvage_control').skill,
-    'salvage'
-  );
-  assert.equal(
-    patrol.stations.find((entry) => entry.id === 'damage_control').skill,
-    'engineering'
-  );
+  assert.equal(stationSkill(freighter, 'cargo_control'), 'logistics');
+  assert.equal(stationSkill(mining, 'mining_station'), 'mining');
+  assert.equal(stationSkill(salvage, 'salvage_control'), 'salvage');
+  assert.equal(stationSkill(patrol, 'damage_control'), 'engineering');
 }
 
 {
@@ -119,6 +104,7 @@ const components = loadStandaloneTypeScriptModule(
     crew,
     'engineering'
   );
+
   assert(two > one, 'a second station must add reduced extra performance');
 }
 
@@ -130,12 +116,13 @@ const components = loadStandaloneTypeScriptModule(
   assert.equal(components.getShipComponent('mining', 'mining4').yield, 0.48);
   assert.equal(components.getShipComponent('salvage', 'salvage6').chance, 30);
 
+  const compatibleEngines = components.getCompatibleShipComponents('engine', 3);
   assert(
-    components.getCompatibleShipComponents('engine', 3).every((entry) => entry.tier <= 3),
+    compatibleEngines.every((entry) => entry.tier <= 3),
     'component compatibility must respect hull tier limits'
   );
   assert.equal(
-    components.getCompatibleShipComponents('engine', 3).some((entry) => entry.tier === 4),
+    compatibleEngines.some((entry) => entry.tier === 4),
     false
   );
 
@@ -148,6 +135,7 @@ const components = loadStandaloneTypeScriptModule(
     weapon: ['weapon4'],
   };
   const energy = components.calculateShipEnergy(installed);
+
   assert.equal(energy.output, 128);
   assert.equal(energy.baseUsed, 54);
   assert.equal(energy.shieldUsed, 21);
@@ -169,6 +157,7 @@ const components = loadStandaloneTypeScriptModule(
     'utf8'
   );
   const api = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'utf8');
+
   assert(
     registry.includes('getShipGameplayStats'),
     'ship registry must expose resolved gameplay stats'
