@@ -13,6 +13,9 @@ export {
 } from './crew-performance';
 export {
   crewSkillEffects,
+  deepMiningFuelUseMultiplier,
+  deepMiningWorkTimeMultiplier,
+  deepMiningYieldMultiplier,
   engineeringOverloadFailureMultiplier,
   engineeringRepairCostMultiplier,
   engineeringShieldRegenMultiplier,
@@ -33,6 +36,7 @@ export {
   salvageExtraWreckLootChance,
   salvageWorkTimeMultiplier,
   salvageYieldMultiplier,
+  sensorContactBaseRange,
   sensorMarketIntelBaseRange,
   sensorWeaponHitChanceBonus,
   weaponCriticalChance,
