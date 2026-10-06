@@ -319,8 +319,12 @@ assert(
   'route calculation must be visible in the system log'
 );
 assert(
-  panel.includes("'SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %'"),
+  panel.includes("'SCHILD-INTEGRITÄT ' + nextShield + ' %'"),
   'shield integrity changes must be logged'
+);
+assert(
+  panel.includes("'HÜLLEN-INTEGRITÄT ' + nextHull + ' %'"),
+  'hull integrity changes must be logged'
 );
 assert(systemLogPanel.includes('VISIBLE_LOG_LINES = 8'), 'system log must keep a bounded view');
 assert(
