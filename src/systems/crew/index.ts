@@ -11,8 +11,41 @@ export {
   initialCrewLoyalty,
   stationTrainingDaysNeeded,
 } from './crew-performance';
+export {
+  crewSkillEffects,
+  deepMiningFuelUseMultiplier,
+  deepMiningWorkTimeMultiplier,
+  deepMiningYieldMultiplier,
+  engineeringOverloadFailureMultiplier,
+  engineeringRepairCostMultiplier,
+  engineeringShieldRegenMultiplier,
+  logisticsSaleFeeRate,
+  miningFuelUseMultiplier,
+  miningProspectTimeMultiplier,
+  miningProspectUncertainty,
+  miningSecondDepositChance,
+  miningThirdDepositChance,
+  miningWorkTimeMultiplier,
+  miningYieldMultiplier,
+  navigationEvadeChance,
+  normalizedCrewSkill,
+  pilotingDodgeChance,
+  pilotingFuelUseMultiplier,
+  pilotingTravelSpeedMultiplier,
+  pilotingTravelTimeMultiplier,
+  salvageExtraWreckLootChance,
+  salvageWorkTimeMultiplier,
+  salvageYieldMultiplier,
+  sensorContactBaseRange,
+  sensorMarketIntelBaseRange,
+  sensorWeaponHitChanceBonus,
+  weaponCriticalChance,
+  weaponCycleTimeMultiplier,
+  weaponDamageMultiplier,
+} from './crew-skill-effects';
 export { createCrewRosterService } from './crew-roster-service';
 
+export type { CrewSkillEffects } from './crew-skill-effects';
 export type { CrewRosterService } from './crew-roster-service';
 export type {
   CrewCombatSkills,

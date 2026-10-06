@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 33 |
+| ✅ Umgesetzt | 34 |
 | 🟨 Teilweise | 47 |
-| ⬜ Offen | 159 |
+| ⬜ Offen | 158 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -57,7 +57,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | settings | 0 | 0 | 2 | 0 | 2 |
 | ui | 2 | 2 | 8 | 1 | 13 |
 | smuggling | 1 | 0 | 11 | 0 | 12 |
-| trade | 7 | 7 | 13 | 0 | 27 |
+| trade | 8 | 7 | 12 | 0 | 27 |
 | npc | 7 | 3 | 12 | 0 | 22 |
 | salvage | 0 | 0 | 1 | 0 | 1 |
 | ship | 5 | 4 | 8 | 0 | 17 |
@@ -91,7 +91,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
 | 2026-10-06 | Baseline-Migration der Voidbound-Feature-Matrix | 241 Features erstmals gegen Sojourn main klassifiziert: 33 umgesetzt, 47 teilweise, 159 offen, 2 bewusst anders. |
-| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |\n| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
+| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |
+| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
+| 2026-10-06 | PR #69 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
 
 ## Vollständige Matrix
 
@@ -222,7 +224,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 🟨 Teilweise | `trade.risk_economy` | Dangerous trade regions carry a logistics price premium while high-value ores concentrate in dangerous mining regions | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
 | 🟨 Teilweise | `trade.system_market_route_intent` | System-market route buttons are visible without opening details and carry buy/sell arrival intent to the destination trade screen | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
 | ⬜ Offen | `trade.price_colors` | Effective purchase prices retain five price bands/legend | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
-| ⬜ Offen | `trade.logistics_fee` | Logistics skill changes sale fee | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| ✅ Umgesetzt | `trade.logistics_fee` | Logistics skill changes sale fee | Voidbound-Logistikgebühr ist als zentrale Skill-Formel portiert und beeinflusst den tatsächlichen Verkaufserlös im Port. | offen |
 | ⬜ Offen | `trade.restricted_fees` | Restricted goods pay local regulatory fees | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ✅ Umgesetzt | `trade.market_situations` | Market situations modify affected prices and expire | Zeitlich begrenzte lokale/sektorweite Marktsituationen verändern Preise und laufen aus. | offen |
 | ✅ Umgesetzt | `trade.market_simulation` | Market simulation preserves resource circulation | Tägliche Produktion/Verbrauch/Nachfrage/Resource-Circulation ist umgesetzt. | offen |

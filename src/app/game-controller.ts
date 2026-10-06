@@ -16,6 +16,7 @@ import {
   createShipLoadoutService,
   getAllShipDefinitions,
   getShipDefinition,
+  resolveShipRuntimeSetup,
   type ShipLoadoutService,
   type ShipRuntimeOptions,
 } from '../systems/ships';
@@ -302,6 +303,14 @@ function controllerShipRuntimeOptions(
   };
 }
 
+function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {
+  const ship = context.state.activeShip;
+  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
+  context.navigation.setCruiseSpeed(
+    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+  );
+}
+
 function controllerStarModel(context: ControllerRuntimeContext) {
   return createControllerStarModel(
     context.navigation,
@@ -349,6 +358,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   state.localSpace = null;
   state.localNpcMining = null;
   state.mode = 'star-map';
+  syncControllerNavigationCrewPerformance(context);
   context.audio.clearPlayerRcs();
   state.panels.star = createControllerStarPanel({
     root: context.root,

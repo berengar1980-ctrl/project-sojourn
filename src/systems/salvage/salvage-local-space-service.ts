@@ -8,6 +8,7 @@ import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
 import { distance } from '../local-space/local-space-motion';
+import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { createSalvageEventController } from './salvage-event-service';
 import {
@@ -300,9 +301,10 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   }
 
   private updateStripping(deltaSeconds: number): void {
+    const cycleSeconds = this.salvageCycleSeconds();
     this.elapsed += deltaSeconds;
-    if (this.elapsed < this.options.setup.cycleSeconds) return;
-    this.elapsed -= this.options.setup.cycleSeconds;
+    if (this.elapsed < cycleSeconds) return;
+    this.elapsed -= cycleSeconds;
     if (!this.workTargetId || !this.activeResourceId) return this.finishIdle();
 
     const result = this.salvage.recoverResource(this.workTargetId, this.activeResourceId);
@@ -332,14 +334,21 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.finishIdle();
   }
 
+  private salvageCycleSeconds(): number {
+    return Math.max(
+      0.05,
+      this.options.setup.cycleSeconds * salvageWorkTimeMultiplier(this.options.crewSkill)
+    );
+  }
+
   private componentCycleSeconds(): number {
-    return Math.max(2.5, this.options.setup.cycleSeconds * COMPONENT_CYCLE_MULTIPLIER);
+    return Math.max(2.5, this.salvageCycleSeconds() * COMPONENT_CYCLE_MULTIPLIER);
   }
 
   private operationProgress(): number | null {
     if (this.phase === 'inspecting') return Math.min(1, this.elapsed / INSPECTION_SECONDS);
     if (this.phase === 'stripping') {
-      return Math.min(1, this.elapsed / Math.max(0.05, this.options.setup.cycleSeconds));
+      return Math.min(1, this.elapsed / this.salvageCycleSeconds());
     }
     if (this.phase === 'extracting-component') {
       return Math.min(1, this.elapsed / this.componentCycleSeconds());

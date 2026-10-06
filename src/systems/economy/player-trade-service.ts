@@ -6,9 +6,20 @@ import type {
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
 
+const DEFAULT_SALE_FEE_RATE = 0.06;
+
 function finiteInteger(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.floor(value));
+}
+
+export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_FEE_RATE): number {
+  const price = Math.max(1, Number.isFinite(marketPrice) ? marketPrice : 1);
+  const fee = Math.max(
+    0,
+    Math.min(1, Number.isFinite(feeRate) ? feeRate : DEFAULT_SALE_FEE_RATE)
+  );
+  return Math.max(1, Math.round(price * (1 - fee)));
 }
 
 export function playerCargoUsed(player: PlayerEconomyState): number {
@@ -35,7 +46,8 @@ export interface PlayerTradeService {
   sell(
     locationId: string,
     resourceId: EconomyResourceId,
-    requestedQuantity: number
+    requestedQuantity: number,
+    saleFeeRate?: number
   ): TradeResult | null;
   receiveCargo(
     resourceId: EconomyResourceId,
@@ -106,7 +118,7 @@ export function createPlayerTradeService(
       return quantity;
     },
 
-    sell(locationId, resourceId, requestedQuantity) {
+    sell(locationId, resourceId, requestedQuantity, saleFeeRate) {
       const entry = markets.getEntry(locationId, resourceId);
       const lot = player.cargo[resourceId];
       if (!entry || !lot) return null;
@@ -114,7 +126,7 @@ export function createPlayerTradeService(
       const quantity = Math.min(finiteInteger(requestedQuantity), finiteInteger(lot.qty));
       if (quantity <= 0) return null;
 
-      const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
+      const unitPrice = playerSaleUnitPrice(entry.price, saleFeeRate);
       const averageCost = lot.qty > 0 ? lot.totalCost / lot.qty : 0;
       const revenue = quantity * unitPrice;
       const realizedProfit = Math.round(revenue - averageCost * quantity);
