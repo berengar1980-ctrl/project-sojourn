@@ -10,6 +10,7 @@ export interface StarMapPanel {
 }
 
 let preferredDisplayMode: StarMapDisplayMode = 'physical';
+let preferredLabelsVisible = true;
 
 interface StarMapPanelOptions {
   readonly root: HTMLElement;
@@ -47,6 +48,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     </div>
     <div class="travel-status" hidden></div>
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
+    <button class="map-label-toggle" type="button">NAMEN // AN</button>
     <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
@@ -67,7 +69,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
-  if (!canvas || !card || !travelButton || !dockButton || !travelStatus || !modeToggle) {
+  const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
+  if (!canvas || !card || !travelButton || !dockButton || !travelStatus || !modeToggle || !labelToggle) {
     throw new Error('Star map UI is incomplete.');
   }
 
@@ -82,7 +85,16 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   modeToggle.addEventListener('click', () =>
     applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
   );
+  labelToggle.addEventListener('click', () => {
+    preferredLabelsVisible = !preferredLabelsVisible;
+    labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+    labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+    renderer.setLabelsVisible(preferredLabelsVisible);
+  });
   applyDisplayMode(preferredDisplayMode);
+  labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+  labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+  renderer.setLabelsVisible(preferredLabelsVisible);
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
