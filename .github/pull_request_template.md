@@ -15,4 +15,4 @@ For any PR that changes `src/`, `tests/` or `resources/`:
 - [ ] Updated affected feature status/notes, **or** added a Review-Log entry stating `keine Statusänderung`
 - [ ] Considered whether the change ports, changes, rejects, or supersedes a Voidbound feature
 
-The **Feature Parity Gate** will fail if feature-bearing files change without a parity-document update.
+The normal `npm test` / `npm run check` gate will fail on feature branches if feature-bearing files change without a parity-document update.
