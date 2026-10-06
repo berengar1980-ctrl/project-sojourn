@@ -136,6 +136,40 @@ function eventChoices(type: MiningEventType): readonly MiningEventChoice[] {
   }[type];
 }
 
+interface AppliedMiningEventResult {
+  readonly resolution: MiningEventResolution;
+  readonly cycleMultiplier: number;
+  readonly recoverySeconds: number;
+}
+
+function applyMiningEventResult(
+  asteroid: LocalAsteroid,
+  effect: MiningEventEffect,
+  damageHullFraction: (fraction: number) => number
+): AppliedMiningEventResult {
+  const deposit = applyMiningEventDepositEffects(asteroid, effect);
+  const hullDamage = damageHullFraction(effect.hullDamageFraction);
+  const consequences = [
+    hullDamage > 0 ? `Hülle -${hullDamage}.` : '',
+    deposit.lostTons > 0 ? `Lagerstätte -${deposit.lostTons} t.` : '',
+    deposit.bonusTons > 0
+      ? `${deposit.bonusTons} t ${deposit.bonusResourceName} zusätzlich lokalisiert.`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return {
+    resolution: {
+      title: effect.title,
+      resultText: consequences ? effect.resultText + ' ' + consequences : effect.resultText,
+      aborted: effect.abort,
+    },
+    cycleMultiplier: effect.cycleMultiplier,
+    recoverySeconds: effect.recoverySeconds,
+  };
+}
+
 export function createMiningEventController(
   seed: number,
   random = createRandom(seed ^ 0x4d494e45)
@@ -213,26 +247,10 @@ export function createMiningEventController(
       );
       if (!effect) return null;
       pending = null;
-
-      const deposit = applyMiningEventDepositEffects(asteroid, effect);
-      const hullDamage = damageHullFraction(effect.hullDamageFraction);
-      cycleModifier = Math.max(0.5, Math.min(1.8, cycleModifier * effect.cycleMultiplier));
-      recoverySeconds = Math.max(recoverySeconds, effect.recoverySeconds);
-      const consequences = [
-        hullDamage > 0 ? `Hülle -${hullDamage}.` : '',
-        deposit.lostTons > 0 ? `Lagerstätte -${deposit.lostTons} t.` : '',
-        deposit.bonusTons > 0
-          ? `${deposit.bonusTons} t ${deposit.bonusResourceName} zusätzlich lokalisiert.`
-          : '',
-      ]
-        .filter(Boolean)
-        .join(' ');
-
-      return {
-        title: effect.title,
-        resultText: consequences ? effect.resultText + ' ' + consequences : effect.resultText,
-        aborted: effect.abort,
-      };
+      const applied = applyMiningEventResult(asteroid, effect, damageHullFraction);
+      cycleModifier = Math.max(0.5, Math.min(1.8, cycleModifier * applied.cycleMultiplier));
+      recoverySeconds = Math.max(recoverySeconds, applied.recoverySeconds);
+      return applied.resolution;
     },
     clear(): void {
       session = null;
