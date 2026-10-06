@@ -8,7 +8,7 @@ export type SalvageWreckQuality = 1 | 2 | 3;
 
 export interface SalvageResourceDeposit {
   readonly resourceId: EconomyResourceId;
-  readonly initialAmount: number;
+  initialAmount: number;
   remainingAmount: number;
 }
 
@@ -58,6 +58,36 @@ export interface SalvageComponentRecoveryResult {
   readonly chancePercent: number;
 }
 
+export type SalvageEventType =
+  'unstable-frame' | 'residual-power' | 'sealed-compartment' | 'volatile-cargo' | 'data-core';
+
+export type SalvageEventRisk = 'safe' | 'controlled' | 'risky' | 'high_risk';
+
+export interface SalvageEventChoice {
+  readonly id: string;
+  readonly label: string;
+  readonly risk: SalvageEventRisk;
+  readonly riskLabel: string;
+}
+
+export interface SalvageEventState {
+  readonly id: string;
+  readonly wreckId: string;
+  readonly type: SalvageEventType;
+  readonly title: string;
+  readonly description: string;
+  readonly choices: readonly SalvageEventChoice[];
+}
+
+export interface SalvageEventResolution {
+  readonly title: string;
+  readonly resultText: string;
+  readonly resourceLostTons: number;
+  readonly resourceAddedTons: number;
+  readonly bonusResourceId: EconomyResourceId | null;
+  readonly componentDestroyed: boolean;
+}
+
 export type SalvageLocalPhase =
   'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping' | 'extracting-component';
 
@@ -76,6 +106,10 @@ export interface SalvageLocalSpaceSnapshot {
   readonly lastComponentRecovery: SalvageComponentRecoveryResult | null;
   readonly componentRecoverySerial: number;
   readonly componentRecoveryChances: Readonly<Record<string, number>>;
+  readonly salvageEvent: SalvageEventState | null;
+  readonly salvageEventRecoverySeconds: number;
+  readonly lastEventResolution: SalvageEventResolution | null;
+  readonly eventResolutionSerial: number;
   readonly salvageAvailable: boolean;
   readonly cargoCapacityTons: number;
 }

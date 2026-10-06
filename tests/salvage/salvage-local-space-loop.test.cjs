@@ -43,6 +43,18 @@ for (let index = 0; index < 500; index += 1) service.tick(0.05);
 assert.equal(wreck.inspected, true, 'approach must transition into a real wreck inspection');
 assert.equal(service.getSnapshot().phase, 'idle');
 
+const inspectionSnapshot = service.getSnapshot();
+if (inspectionSnapshot.salvageEvent) {
+  const safeChoice = inspectionSnapshot.salvageEvent.choices.find(
+    (choice) => choice.risk === 'safe'
+  );
+  assert(safeChoice, 'wreck events must expose a safe decision path');
+  service.resolveSalvageEvent(safeChoice.id);
+  for (let index = 0; index < 200; index += 1) service.tick(0.05);
+  assert.equal(service.getSnapshot().salvageEvent, null);
+  assert.equal(service.getSnapshot().salvageEventRecoverySeconds, 0);
+}
+
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
 service.startStrip(wreck.id, firstDeposit.resourceId);

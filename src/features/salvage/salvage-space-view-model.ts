@@ -89,6 +89,10 @@ export interface SalvageSpaceViewModel {
   readonly recoverySerial: number;
   readonly lastComponentRecovery: SalvageLocalSpaceSnapshot['lastComponentRecovery'];
   readonly componentRecoverySerial: number;
+  readonly salvageEvent: SalvageLocalSpaceSnapshot['salvageEvent'];
+  readonly salvageEventRecoverySeconds: number;
+  readonly lastEventResolution: SalvageLocalSpaceSnapshot['lastEventResolution'];
+  readonly eventResolutionSerial: number;
 }
 
 function wreckKindLabel(kind: SalvageWreckKind): string {
@@ -211,5 +215,9 @@ export function createSalvageSpaceViewModel(
     recoverySerial: snapshot.recoverySerial,
     lastComponentRecovery: snapshot.lastComponentRecovery,
     componentRecoverySerial: snapshot.componentRecoverySerial,
+    salvageEvent: snapshot.salvageEvent,
+    salvageEventRecoverySeconds: snapshot.salvageEventRecoverySeconds,
+    lastEventResolution: snapshot.lastEventResolution,
+    eventResolutionSerial: snapshot.eventResolutionSerial,
   };
 }

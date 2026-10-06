@@ -2,6 +2,7 @@ import type { SystemLogService } from '../../core/system-log-types';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import type { WorldPoint } from '../../core/world-types';
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
+import { createSalvageEventPanel } from './salvage-event-panel';
 import { bindSalvageSpaceInput } from './salvage-space-input';
 import { SalvageSpaceRenderer } from './salvage-space-renderer';
 
@@ -19,6 +20,7 @@ interface SalvageSpacePanelOptions {
   readonly onInspect: (wreckId: string) => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
   readonly onRecoverComponent: (wreckId: string) => void;
+  readonly onEventChoice: (choiceId: string) => SalvageSpaceViewModel['lastEventResolution'];
   readonly onCancel: () => void;
   readonly onReturnToStarMap: () => void;
 }
@@ -36,6 +38,7 @@ interface SalvageControls {
   readonly cargoTotal: HTMLElement;
   readonly cargoList: HTMLElement;
   readonly backButton: HTMLButtonElement;
+  readonly eventContainer: HTMLElement;
 }
 
 function createShell(options: SalvageSpacePanelOptions): HTMLElement {
@@ -49,6 +52,7 @@ function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<div class="salvage-operation-status" hidden></div>',
     '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
+    '<aside class="salvage-event" hidden></aside>',
     '<div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // BERGUNG</div>',
     '<div class="local-cargo-total">BELEGT · <strong>0 / 0</strong></div>',
@@ -85,6 +89,7 @@ function controls(shell: HTMLElement): SalvageControls {
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
+    eventContainer: query<HTMLElement>('.salvage-event'),
   };
 }
 
@@ -99,6 +104,9 @@ function statusText(model: SalvageSpaceViewModel): string {
   }
   if (model.phase === 'extracting-component') {
     return 'KOMPONENTENEXTRAKTION · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+  }
+  if (model.salvageEventRecoverySeconds > 0) {
+    return 'BERGUNGSTEAM SICHERT SEKTION · ' + model.salvageEventRecoverySeconds.toFixed(1) + ' s';
   }
   return '';
 }
@@ -156,7 +164,12 @@ function resourceRow(
     model.phase === 'stripping' && model.activeResourceId === resource.resourceId
       ? 'BERGUNG LÄUFT'
       : 'BERGEN';
-  button.disabled = !model.salvageAvailable || model.phase !== 'idle' || resource.remaining <= 0;
+  button.disabled =
+    !model.salvageAvailable ||
+    model.phase !== 'idle' ||
+    model.salvageEvent !== null ||
+    model.salvageEventRecoverySeconds > 0 ||
+    resource.remaining <= 0;
   button.addEventListener('click', () => onStrip(wreckId, resource.resourceId));
   row.append(label, amount, button);
   return row;
@@ -185,7 +198,11 @@ function componentRow(
   else if (component.status === 'destroyed') button.textContent = 'ZERSTÖRT';
   else button.textContent = 'KOMPONENTE BERGEN · ' + component.chancePercent + ' %';
   button.disabled =
-    component.status !== 'available' || !model.salvageAvailable || model.phase !== 'idle';
+    component.status !== 'available' ||
+    !model.salvageAvailable ||
+    model.phase !== 'idle' ||
+    model.salvageEvent !== null ||
+    model.salvageEventRecoverySeconds > 0;
   button.addEventListener('click', () => options.onRecoverComponent(wreckId));
   row.append(copy, button);
   return row;
@@ -202,7 +219,8 @@ function renderSelection(
 
   ui.name.textContent = wreck.name;
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
-  const busy = model.phase !== 'idle';
+  const busy =
+    model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
     ui.meta.textContent = wreck.kindLabel + ' · ANALYSE ERFORDERLICH';
     ui.resources.replaceChildren();
@@ -305,6 +323,12 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     placementClass: 'system-log--local',
   });
   const trackRecovery = createRecoveryTracker(options, systemLog);
+  const eventPanel = createSalvageEventPanel({
+    container: ui.eventContainer,
+    log: options.log,
+    logPanel: systemLog,
+    onChoice: options.onEventChoice,
+  });
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(ui.canvas);
 
@@ -315,7 +339,12 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     ui.status.hidden = status.length === 0;
     ui.status.textContent = status;
     ui.cancelButton.hidden = model.phase === 'idle';
-    ui.backButton.disabled = model.phase !== 'idle';
+    ui.backButton.disabled =
+      model.phase !== 'idle' ||
+      model.salvageEvent !== null ||
+      model.salvageEventRecoverySeconds > 0;
+    ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
+    eventPanel.update(model.salvageEvent);
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     renderSelection(model, ui, options);
     trackRecovery(model);

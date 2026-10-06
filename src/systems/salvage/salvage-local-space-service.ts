@@ -9,6 +9,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
 import { distance } from '../local-space/local-space-motion';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
+import { createSalvageEventController } from './salvage-event-service';
 import {
   createSalvageFieldService,
   type SalvageComponentCollector,
@@ -29,6 +30,7 @@ export interface SalvageLocalSpaceService {
   startInspect(wreckId: string): SalvageLocalSpaceSnapshot;
   startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot;
   startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot;
+  resolveSalvageEvent(choiceId: string): SalvageLocalSpaceSnapshot['lastEventResolution'];
   cancelOperation(): SalvageLocalSpaceSnapshot;
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot;
 }
@@ -62,6 +64,7 @@ function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint {
 
 class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private readonly salvage: SalvageFieldService;
+  private readonly events;
   private readonly ship: LocalShipState;
   private selectedWreckId: string | null = null;
   private workTargetId: string | null = null;
@@ -76,6 +79,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private recoverySerial = 0;
   private lastComponentRecovery: SalvageLocalSpaceSnapshot['lastComponentRecovery'] = null;
   private componentRecoverySerial = 0;
+  private lastEventResolution: SalvageLocalSpaceSnapshot['lastEventResolution'] = null;
+  private eventResolutionSerial = 0;
 
   constructor(private readonly options: SalvageRuntimeOptions) {
     this.salvage = createSalvageFieldService({
@@ -85,6 +90,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       collect: options.collect,
       ...(options.collectComponent ? { collectComponent: options.collectComponent } : {}),
     });
+    this.events = createSalvageEventController(options.field.seed);
     this.ship = {
       position: { x: options.field.width * 0.5, y: options.field.height * 0.5 },
       headingRadians: 0,
@@ -115,6 +121,10 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
           .map((wreck) => [wreck.id, this.salvage.componentChance(wreck.id)] as const)
           .filter((entry): entry is readonly [string, number] => entry[1] !== null)
       ),
+      salvageEvent: this.events.pending,
+      salvageEventRecoverySeconds: this.events.recoverySeconds,
+      lastEventResolution: this.lastEventResolution,
+      eventResolutionSerial: this.eventResolutionSerial,
       salvageAvailable: this.options.setup.available,
       cargoCapacityTons: this.options.setup.cargoCapacityTons,
     };
@@ -147,7 +157,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot {
     const wreck = this.findWreck(wreckId);
-    if (!wreck?.inspected || !this.options.setup.available) return this.getSnapshot();
+    if (!wreck?.inspected || !this.options.setup.available || this.events.blocked) {
+      return this.getSnapshot();
+    }
     const deposit = wreck.resources.find(
       (entry) => entry.resourceId === resourceId && entry.remainingAmount > 0
     );
@@ -166,7 +178,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     if (
       !wreck?.inspected ||
       wreck.componentStatus !== 'available' ||
-      !this.options.setup.available
+      !this.options.setup.available ||
+      this.events.blocked
     ) {
       return this.getSnapshot();
     }
@@ -179,6 +192,17 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return this.getSnapshot();
   }
 
+  resolveSalvageEvent(choiceId: string): SalvageLocalSpaceSnapshot['lastEventResolution'] {
+    const pending = this.events.pending;
+    const wreck = this.findWreck(pending?.wreckId ?? null);
+    if (!pending || !wreck) return null;
+    const result = this.events.resolve(wreck, choiceId);
+    if (!result) return null;
+    this.lastEventResolution = result;
+    this.eventResolutionSerial += 1;
+    return result;
+  }
+
   cancelOperation(): SalvageLocalSpaceSnapshot {
     this.finishIdle();
     this.navigationRoute = [];
@@ -188,6 +212,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot {
     const delta = Math.max(0, Math.min(0.05, deltaSeconds));
+    this.events.tick(delta);
     if (this.phase === 'navigating' || this.phase === 'approaching') {
       this.updateRoute(delta);
     } else if (this.phase === 'inspecting') {
@@ -260,7 +285,10 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private updateInspection(deltaSeconds: number): void {
     this.elapsed += deltaSeconds;
     if (this.elapsed < INSPECTION_SECONDS) return;
-    if (this.workTargetId) this.salvage.inspectWreck(this.workTargetId);
+    if (this.workTargetId) {
+      const wreck = this.salvage.inspectWreck(this.workTargetId);
+      if (wreck) this.events.inspect(wreck);
+    }
     this.finishIdle();
   }
 
