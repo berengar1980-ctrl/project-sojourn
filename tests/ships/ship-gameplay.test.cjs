@@ -43,7 +43,6 @@ function ship(role, cargoCapacityTons) {
 
 const miningShip = ship('mining', 360);
 const freighter = ship('freighter', 900);
-const salvageShip = ship('salvage', 500);
 const patrolShip = ship('patrol', 120);
 
 {
