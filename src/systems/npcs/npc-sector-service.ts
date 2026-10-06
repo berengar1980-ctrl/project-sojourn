@@ -15,6 +15,7 @@ export interface NpcSectorService {
   requestTravel(npc: SectorNpcState, destinationId: string, reason?: string): boolean;
   isTravelling(npc: SectorNpcState): boolean;
   livePosition(npc: SectorNpcState): WorldPoint;
+  liveHeading(npc: SectorNpcState): number;
   tick(deltaSeconds: number): void;
 }
 
@@ -51,6 +52,15 @@ function routePoint(route: readonly WorldPoint[], distance: number): WorldPoint 
     remaining -= segment;
   }
   return route[route.length - 1] ?? { x: 0, y: 0 };
+}
+
+
+function routeHeading(route: readonly WorldPoint[], distance: number): number {
+  const here = routePoint(route, distance);
+  const ahead = routePoint(route, distance + 20);
+  const dx = ahead.x - here.x;
+  const dy = ahead.y - here.y;
+  return Math.hypot(dx, dy) > 0.001 ? Math.atan2(dy, dx) : 0;
 }
 
 function locationPoint(world: WorldMap, id: string): WorldPoint {
@@ -189,6 +199,12 @@ export function createNpcSectorService(
       return npc.travel
         ? routePoint(npc.travel.routePoints, npc.travel.distanceTravelled)
         : locationPoint(world, npc.locationId);
+    },
+
+    liveHeading(npc) {
+      return npc.travel
+        ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled)
+        : 0;
     },
 
     tick(deltaSeconds) {

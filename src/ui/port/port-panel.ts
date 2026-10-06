@@ -78,6 +78,54 @@ function cargoSaleRows(model: PortViewModel): string {
     .join('');
 }
 
+function tradeOpportunityRows(model: PortViewModel): string {
+  if (model.tradeOpportunities.length === 0) {
+    return '<div class="port-info-box">Noch keine belastbare Handelsroute bekannt.</div>';
+  }
+  return model.tradeOpportunities
+    .slice(0, 12)
+    .map(
+      (route) => `
+        <article class="port-trade-opportunity ${route.spreadPerTon > 0 ? 'port-trade-opportunity--profit' : 'port-trade-opportunity--weak'}">
+          <div class="port-trade-opportunity-resource">
+            <span>WARE</span>
+            <strong>${route.resourceName}</strong>
+            <small>${route.spreadPerTon >= 0 ? '+' : ''}${route.spreadPerTon.toLocaleString('de-DE')} CR/t · ${route.spreadPercent >= 0 ? '+' : ''}${route.spreadPercent}%</small>
+          </div>
+          <div class="port-trade-opportunity-leg">
+            <span>GÜNSTIG KAUFEN</span>
+            <strong>${route.buyLocationName}</strong>
+            <b>${route.buyPrice.toLocaleString('de-DE')} CR/t</b>
+            <small>${route.buyAgeDays === 0 ? 'LIVE' : 'Daten vor ' + route.buyAgeDays + ' T'} · ${Math.round(route.buyDistance).toLocaleString('de-DE')} Dist.</small>
+            <button type="button" data-market-route="${route.buyLocationId}">KURS ZUM KAUF</button>
+          </div>
+          <div class="port-trade-opportunity-arrow">→</div>
+          <div class="port-trade-opportunity-leg">
+            <span>TEUER VERKAUFEN</span>
+            <strong>${route.sellLocationName}</strong>
+            <b>${route.sellPrice.toLocaleString('de-DE')} CR/t</b>
+            <small>${route.sellAgeDays === 0 ? 'LIVE' : 'Daten vor ' + route.sellAgeDays + ' T'} · ${Math.round(route.sellDistance).toLocaleString('de-DE')} Dist.</small>
+            <button type="button" data-market-route="${route.sellLocationId}">KURS ZUM VERKAUF</button>
+          </div>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function tradeOpportunities(model: PortViewModel): string {
+  return `
+    <section class="port-trade-routes">
+      <div class="port-panel-heading">
+        <span>HANDELSROUTEN</span>
+        <small>BILLIGSTER BEKANNTER KAUF → HÖCHSTER BEKANNTER VERKAUF</small>
+      </div>
+      <div class="port-system-note">Nach geschätzter Marge sortiert. Das Datenalter steht direkt an beiden Enden der Route – alte Preise sind Chancen, aber keine Garantie.</div>
+      <div class="port-trade-opportunity-list">${tradeOpportunityRows(model)}</div>
+    </section>
+  `;
+}
+
 function systemMarket(model: PortViewModel): string {
   const owned = model.cargoSales[0]?.resourceId;
   const initial = owned ?? model.systemMarketResourceIds[0] ?? '';
@@ -118,6 +166,7 @@ function tradePane(model: PortViewModel): string {
   return `
     <section class="port-pane port-pane--trade" data-port-pane="trade">
       <div class="port-wide-panel port-trade-stack">
+        ${tradeOpportunities(model)}
         <div class="port-panel-heading"><span>FRACHT VERKAUFEN</span><small>LOKALER PREIS VS. BEKANNTE SYSTEMMÄRKTE</small></div>
         <div class="port-cargo-sale-list">${cargoSaleRows(model)}</div>
         ${systemMarket(model)}

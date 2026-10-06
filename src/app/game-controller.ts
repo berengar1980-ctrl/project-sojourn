@@ -231,13 +231,24 @@ function createControllerStarModel(
     narrowsSector,
     navigation.getSnapshot(),
     ship,
-    economy.sectorNpcs.npcs.map((npc) => ({
-      id: npc.id,
-      name: npc.name,
-      job: npc.job,
-      position: economy.sectorNpcs.livePosition(npc),
-      isTravelling: economy.sectorNpcs.isTravelling(npc),
-    }))
+    economy.sectorNpcs.npcs.flatMap((npc) => {
+      const definition = getShipDefinition(npc.shipId);
+      if (!definition) return [];
+      return [
+        {
+          id: npc.id,
+          name: npc.name,
+          job: npc.job,
+          position: economy.sectorNpcs.livePosition(npc),
+          headingRadians: economy.sectorNpcs.liveHeading(npc),
+          isTravelling: economy.sectorNpcs.isTravelling(npc),
+          nominalLengthMeters: definition.nominalLengthMeters,
+          spriteUrl: definition.sprite.assetUrl,
+          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+          hardpoints: definition.sprite.hardpoints,
+        },
+      ];
+    })
   );
 }
 
@@ -420,6 +431,8 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     mine: (npc, resourceId, requested) =>
       economy.npcs.mineLocal(npc, resourceId, requested),
     depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
+    playerShip: state.activeShip,
+    getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
   });
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()

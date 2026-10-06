@@ -11,6 +11,8 @@ import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { PlanetRingRenderer } from './planet-ring-renderer';
 import { StationSymbolRenderer } from './station-symbol-renderer';
+import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
 
@@ -30,6 +32,8 @@ export class TopdownMapRenderer {
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
   private readonly stationSymbols: StationSymbolRenderer;
+  private readonly npcLighting = new ShipLightingRenderer();
+  private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
   private hasFitted = false;
@@ -138,22 +142,55 @@ export class TopdownMapRenderer {
 
   private drawNpcShips(width: number, height: number): void {
     const zoom = this.camera.getRelativeZoom();
+    const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     for (const npc of this.model.npcShips) {
       const point = this.camera.worldToScreen(npc.position, width, height);
-      const size = Math.max(3, Math.min(7, 4.5 * mapSymbolScale(zoom)));
+      let image = this.npcImages.get(npc.spriteUrl);
+      if (!image) {
+        image = new Image();
+        image.onload = () => this.draw();
+        image.src = npc.spriteUrl;
+        this.npcImages.set(npc.spriteUrl, image);
+      }
+
+      const widthPx = Math.max(12, Math.min(30, npc.nominalLengthMeters * 0.22 * mapSymbolScale(zoom)));
+      const aspect =
+        image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+          ? image.naturalWidth / image.naturalHeight
+          : npc.spriteAspectRatio;
+      const geometry: ShipScreenGeometry = {
+        center: point,
+        width: widthPx,
+        height: widthPx / aspect,
+        angle: npc.headingRadians,
+      };
+
       this.context.save();
       this.context.translate(point.x, point.y);
-      this.context.rotate(Math.PI / 4);
-      this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
-      this.context.globalAlpha = npc.isTravelling ? 0.95 : 0.72;
-      this.context.fillRect(-size / 2, -size / 2, size, size);
+      this.context.rotate(npc.headingRadians);
+      this.context.globalAlpha = npc.isTravelling ? 0.96 : 0.8;
+      if (image.complete && image.naturalWidth > 0) {
+        const offset = spriteDrawOffset(npc.hardpoints, geometry);
+        this.npcLighting.draw(this.context, {
+          image,
+          width: geometry.width,
+          height: geometry.height,
+          angle: npc.headingRadians,
+          light: { x: starPoint.x - point.x, y: starPoint.y - point.y },
+          offsetX: offset.x,
+          offsetY: offset.y,
+        });
+      } else {
+        this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
+        this.context.fillRect(-widthPx / 2, -geometry.height / 2, widthPx, geometry.height);
+      }
       this.context.restore();
 
-      if (zoom >= 1.45) {
-        this.context.fillStyle = 'rgba(196, 211, 221, .72)';
+      if (zoom >= 1.35) {
+        this.context.fillStyle = 'rgba(196, 211, 221, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + 12);
+        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 11);
       }
     }
   }

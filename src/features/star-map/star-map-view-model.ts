@@ -37,7 +37,12 @@ export interface NpcShipMapView {
   readonly name: string;
   readonly job: 'freighter' | 'miner' | 'salvager' | 'patrol';
   readonly position: WorldPoint;
+  readonly headingRadians: number;
   readonly isTravelling: boolean;
+  readonly nominalLengthMeters: number;
+  readonly spriteUrl: string;
+  readonly spriteAspectRatio: number;
+  readonly hardpoints: ShipHardpoints;
 }
 
 export interface PlayerShipMapView {

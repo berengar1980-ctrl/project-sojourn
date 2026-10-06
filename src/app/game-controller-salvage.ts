@@ -68,6 +68,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     recover: (npc, resourceId, requested) =>
       options.npcEconomy.salvageLocal(npc, resourceId, requested),
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
+    playerShip: options.ship,
+    getPlayerShipState: () => service.getSnapshot().ship,
   });
 
   const model = () => {
