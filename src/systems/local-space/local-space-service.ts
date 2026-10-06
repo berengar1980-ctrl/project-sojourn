@@ -99,10 +99,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.hullState = { maxHp: hullMaxHp, currentHp: hullMaxHp };
     this.shieldState = createShieldState(
       Math.max(1, options.defense?.shieldMaxHp ?? options.hardpoints.shield.maxHp),
-      Math.max(
-        0.01,
-        options.defense?.shieldDamageModifier ?? options.hardpoints.shield.modifier
-      )
+      Math.max(0.01, options.defense?.shieldDamageModifier ?? options.hardpoints.shield.modifier)
     );
     if (options.defense?.shieldPowered === false) this.shieldState.currentHp = 0;
     this.stationKeepingPosition = { ...options.instance.ship.position };
@@ -264,10 +261,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       );
       this.shieldImpactCounter += 1;
       if (result.overflowDamage > 0) {
-        this.hullState.currentHp = Math.max(
-          0,
-          this.hullState.currentHp - result.overflowDamage
-        );
+        this.hullState.currentHp = Math.max(0, this.hullState.currentHp - result.overflowDamage);
       }
       if (result.damage > 0) this.shieldImpacts.push(result.impact);
     }
