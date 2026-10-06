@@ -60,6 +60,10 @@ function shieldPercent(model: LocalSpaceViewModel): number {
   return Math.max(0, Math.round((model.shield.currentHp / model.shield.maxHp) * 100));
 }
 
+function hullPercent(model: LocalSpaceViewModel): number {
+  return Math.max(0, Math.round((model.hull.currentHp / model.hull.maxHp) * 100));
+}
+
 function bindRoutePlanning(
   button: HTMLButtonElement,
   systemLog: SystemLogService,
@@ -234,9 +238,11 @@ function bindScanLabelButton(button: HTMLButtonElement, renderer: LocalSpaceRend
 function initializeSystemLog(
   log: SystemLogService,
   panel: SystemLogPanel,
-  shieldValue: number
+  shieldValue: number,
+  hullValue: number
 ): void {
   log.write('SCHILD-INTEGRITÄT ' + shieldValue + ' %');
+  log.write('HÜLLEN-INTEGRITÄT ' + hullValue + ' %');
   panel.update();
 }
 
@@ -321,6 +327,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   let model = options.model;
   let lastShieldPercent = shieldPercent(model);
+  let lastHullPercent = hullPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -328,7 +335,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     header: 'SYS // LOCAL OPS',
     placementClass: 'local-system-log',
   });
-  initializeSystemLog(options.log, systemLog, lastShieldPercent);
+  initializeSystemLog(options.log, systemLog, lastShieldPercent, lastHullPercent);
   const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
 
   const updateOverlay = (): void => {
@@ -346,6 +353,13 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       options.log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
       systemLog.update();
       lastShieldPercent = currentShieldPercent;
+    }
+
+    const currentHullPercent = hullPercent(model);
+    if (currentHullPercent !== lastHullPercent) {
+      options.log.write('HÜLLEN-INTEGRITÄT ' + currentHullPercent + ' %');
+      systemLog.update();
+      lastHullPercent = currentHullPercent;
     }
 
     const statusText = miningStatus(model);
