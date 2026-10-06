@@ -17,7 +17,10 @@ export {
   salvageYieldMultiplier,
   sensorRangeMultiplier,
 } from './ship-component-service';
-export { defaultInstalledShipComponents, resolveShipMiningSetup } from './ship-mining-capability';
+export { resolveShipCargoPolicy, shipTradeCargoLimit } from './ship-cargo-policy';
+export { defaultInstalledShipComponents } from './ship-default-loadout';
+export { resolveShipMiningSetup } from './ship-mining-capability';
+export { resolveShipRuntimeSetup } from './ship-runtime';
 export {
   calculateStationSkill,
   crewInjuryFactor,
@@ -48,8 +51,10 @@ export type {
   ShipStationDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
+export type { ShipCargoPolicy } from './ship-cargo-policy';
 export type { InstalledShipComponents, ShipEnergySnapshot } from './ship-component-service';
 export type { ShipMiningSetup } from './ship-mining-capability';
+export type { ShipRuntimeOptions, ShipRuntimeSetup } from './ship-runtime';
 export type {
   CrewInjuryState,
   ShipCrewMember,
