@@ -49,12 +49,7 @@ export interface SalvageRecoveryResult {
   readonly depleted: boolean;
 }
 
-export type SalvageLocalPhase =
-  | 'idle'
-  | 'navigating'
-  | 'approaching'
-  | 'inspecting'
-  | 'stripping';
+export type SalvageLocalPhase = 'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping';
 
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
