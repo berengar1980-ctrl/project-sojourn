@@ -1,13 +1,5 @@
 export type ShipComponentType =
-  | 'reactor'
-  | 'engine'
-  | 'shield'
-  | 'hull'
-  | 'sensor'
-  | 'weapon'
-  | 'cargo'
-  | 'mining'
-  | 'salvage';
+  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
 
 export interface ShipComponentDefinition {
   readonly id: string;
