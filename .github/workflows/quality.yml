@@ -1,9 +1,6 @@
 name: Quality
 
 on:
-  push:
-    branches:
-      - feature/ship-weapons-mines-mk1-mk6
   workflow_dispatch:
 
 jobs:
