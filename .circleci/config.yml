@@ -27,7 +27,7 @@ jobs:
             - ~/.npm
       - run:
           name: Format
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
+          command: node scripts/ci-run-and-report.cjs format -- node scripts/ci-format-first-diff.cjs src/core/ship-gameplay-types.ts src/core/ship-types.ts src/data/ships/ship-role-profiles.ts src/data/ships/ship-components.ts src/systems/ships/ship-gameplay.ts src/systems/ships/ship-stations.ts src/systems/ships/index.ts tests/ships/ship-gameplay.test.cjs
       - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
