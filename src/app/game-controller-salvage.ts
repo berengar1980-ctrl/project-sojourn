@@ -1,6 +1,7 @@
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
+import type { GameAudioService } from '../systems/audio/game-audio-service';
 import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
@@ -36,6 +37,7 @@ interface SalvageSceneOptions {
   readonly componentInventory: ShipComponentInventoryService;
   readonly runtimeOptions?: ShipRuntimeOptions;
   readonly log: SystemLogService;
+  readonly audio: GameAudioService;
   readonly onReturnToStarMap: () => void;
 }
 
@@ -154,6 +156,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   return {
     tick(deltaSeconds) {
       service.tick(deltaSeconds);
+      options.audio.updatePlayerRcs(
+        options.ship.sprite.hardpoints,
+        service.getSnapshot().ship,
+        performance.now() / 1000
+      );
       npcSalvage.tick(deltaSeconds);
       refresh();
     },
