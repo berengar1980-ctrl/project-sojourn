@@ -64,7 +64,8 @@ function defaultMap(seed: number): BoardingMapDefinition {
 }
 
 function createUnit(template: BoardingUnitTemplate): BoardingUnit {
-  const hp = Math.max(1, Math.round(template.hp ?? 10));
+  const maxHp = Math.max(1, Math.round(template.maxHp ?? template.hp ?? 10));
+  const hp = clamp(Math.round(template.hp ?? maxHp), 1, maxHp);
   return {
     id: template.id,
     name: template.name,
@@ -72,7 +73,7 @@ function createUnit(template: BoardingUnitTemplate): BoardingUnit {
     q: -1,
     r: -1,
     hp,
-    maxHp: hp,
+    maxHp,
     armor: clamp(Math.round(template.armor ?? 0), 0, 5),
     rangedSkill: clamp(Math.round(template.rangedSkill ?? 50), 0, 100),
     meleeSkill: clamp(Math.round(template.meleeSkill ?? 45), 0, 100),
