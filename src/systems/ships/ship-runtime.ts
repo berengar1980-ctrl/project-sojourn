@@ -15,6 +15,7 @@ import {
   resolveShipMiningSetup,
   type ShipMiningSetup,
 } from './ship-mining-capability';
+import { resolveShipSalvageSetup, type ShipSalvageSetup } from './ship-salvage-capability';
 import { resolveShipGameplayStats, shipHullMaxHp, shipShieldMaxHp } from './ship-stats';
 import {
   calculateStationSkill,
@@ -46,6 +47,8 @@ export interface ShipRuntimeSetup {
   readonly installed: InstalledShipComponents;
   readonly energy: ShipEnergySnapshot;
   readonly mining: ShipMiningSetup;
+  readonly salvage: ShipSalvageSetup;
+  readonly salvageCrewSkill: number;
   readonly cargoCapacityTons: number;
   readonly hullMaxHp: number;
   readonly shieldMaxHp: number;
@@ -90,6 +93,14 @@ export function resolveShipRuntimeSetup(
     1,
     options.commandBonus ?? 0
   );
+  const salvageCrewSkill = calculateStationSkill(
+    stats.stations,
+    options.assignments ?? {},
+    options.crew ?? [],
+    'salvage',
+    1,
+    options.commandBonus ?? 0
+  );
   const scanAvailable =
     (installed.sensor?.length ?? 0) > 0 && energy.output > 0 && energy.baseFree >= 0;
 
@@ -98,6 +109,8 @@ export function resolveShipRuntimeSetup(
     installed,
     energy,
     mining: resolveShipMiningSetup(ship, installed),
+    salvage: resolveShipSalvageSetup(ship, installed),
+    salvageCrewSkill,
     cargoCapacityTons: Math.max(0, stats.cargoCapacityTons + componentCargoBonus(installed)),
     hullMaxHp: shipHullMaxHp(ship, componentHullBonus(installed)),
     shieldMaxHp: Math.max(1, shipShieldMaxHp(ship) + componentShieldBonus(installed)),
