@@ -106,6 +106,29 @@ function enforceChangedFileGate(files) {
   return { required: true };
 }
 
+function gitOutput(args, root = path.resolve(__dirname, '..')) {
+  try {
+    return execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function detectBaseRef(root = path.resolve(__dirname, '..')) {
+  for (const candidate of ['origin/main', 'main']) {
+    if (gitOutput(['rev-parse', '--verify', candidate], root)) return candidate;
+  }
+  return null;
+}
+
+function currentBranch(root = path.resolve(__dirname, '..')) {
+  return gitOutput(['rev-parse', '--abbrev-ref', 'HEAD'], root);
+}
+
 function cliArgs(argv) {
   const baseIndex = argv.indexOf('--base');
   return {
@@ -113,16 +136,27 @@ function cliArgs(argv) {
   };
 }
 
+function reviewCurrentBranch(root = path.resolve(__dirname, '..'), explicitBase = null) {
+  const branch = currentBranch(root);
+  if (branch === 'main') return { checked: false, required: false, base: null, files: [] };
+
+  const base = explicitBase || detectBaseRef(root);
+  if (!base) return { checked: false, required: false, base: null, files: [] };
+
+  const files = changedFilesSince(base, root);
+  const gate = enforceChangedFileGate(files);
+  return { checked: true, required: gate.required, base, files };
+}
+
 function main() {
   const root = path.resolve(__dirname, '..');
   const validation = validateParityDocument(root);
   const { base } = cliArgs(process.argv.slice(2));
+  const review = reviewCurrentBranch(root, base);
 
-  if (base) {
-    const files = changedFilesSince(base, root);
-    const gate = enforceChangedFileGate(files);
+  if (review.checked) {
     console.log(
-      `PARITY GATE OK · ${validation.featureCount} features · review ${gate.required ? 'required and present' : 'not required'}`
+      `PARITY GATE OK · ${validation.featureCount} features · base ${review.base} · review ${review.required ? 'required and present' : 'not required'}`
     );
   } else {
     console.log(`PARITY DOCUMENT OK · ${validation.featureCount} unique features`);
@@ -140,6 +174,9 @@ module.exports = {
   changedFilesSince,
   needsParityReview,
   enforceChangedFileGate,
+  detectBaseRef,
+  currentBranch,
+  reviewCurrentBranch,
 };
 
 if (require.main === module) {
