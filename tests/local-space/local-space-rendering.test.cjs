@@ -77,6 +77,10 @@ const surfaceTextures = fs.readFileSync(
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
 assert(renderer.includes('drawNpcShips'), 'local space must render physical NPC miners');
 assert(
+  renderer.includes('drawNpcMinerScan'),
+  'NPC miners must visibly scan their asteroid before starting extraction'
+);
+assert(
   renderer.includes('drawNpcMiningBeam'),
   'working NPC miners must visibly fire a mining beam at their target asteroid'
 );
