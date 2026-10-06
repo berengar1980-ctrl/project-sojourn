@@ -7,6 +7,7 @@ const {
   validateParityDocument,
   needsParityReview,
   enforceChangedFileGate,
+  reviewCurrentBranch,
 } = require('../../scripts/check-feature-parity.cjs');
 
 const root = path.resolve(__dirname, '../..');
@@ -27,6 +28,8 @@ assert.throws(
   () => enforceChangedFileGate(['src/systems/example.ts']),
   /Feature parity review required/
 );
+
+assert.doesNotThrow(() => reviewCurrentBranch(root));
 
 console.log(
   `PASS Voidbound parity matrix has ${EXPECTED_FEATURES} unique features and the merge gate requires parity review for feature-bearing changes`
