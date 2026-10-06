@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 33 |
-| 🟨 Teilweise | 47 |
-| ⬜ Offen | 159 |
+| ✅ Umgesetzt | 35 |
+| 🟨 Teilweise | 48 |
+| ⬜ Offen | 156 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -57,16 +57,16 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | settings | 0 | 0 | 2 | 0 | 2 |
 | ui | 2 | 2 | 8 | 1 | 13 |
 | smuggling | 1 | 0 | 11 | 0 | 12 |
-| trade | 7 | 7 | 13 | 0 | 27 |
+| trade | 8 | 7 | 12 | 0 | 27 |
 | npc | 7 | 3 | 12 | 0 | 22 |
 | salvage | 0 | 0 | 1 | 0 | 1 |
-| ship | 5 | 4 | 8 | 0 | 17 |
+| ship | 6 | 4 | 7 | 0 | 17 |
 | equipment | 0 | 0 | 4 | 0 | 4 |
 | crew | 4 | 8 | 11 | 0 | 23 |
 | operations | 0 | 9 | 10 | 0 | 19 |
 | patrol | 0 | 0 | 7 | 0 | 7 |
 | customs | 0 | 0 | 10 | 0 | 10 |
-| combat | 0 | 0 | 14 | 0 | 14 |
+| combat | 0 | 1 | 13 | 0 | 14 |
 | boarding | 0 | 3 | 3 | 0 | 6 |
 | save | 0 | 0 | 5 | 0 | 5 |
 | audio | 0 | 1 | 1 | 0 | 2 |
@@ -91,7 +91,10 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
 | 2026-10-06 | Baseline-Migration der Voidbound-Feature-Matrix | 241 Features erstmals gegen Sojourn main klassifiziert: 33 umgesetzt, 47 teilweise, 159 offen, 2 bewusst anders. |
-| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |\n| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
+| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |
+| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
+| 2026-10-06 | PR #70 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
+| 2026-10-06 | Ship weapons + mines Mk I–VI | Acht Waffenfamilien und drei Minentypen jeweils Mk I–VI ergänzt; Schild/Hüllen/Allround-Rollen, geschichtete Schadensauflösung und crew-/sensorabhängige Minenerkennung getestet. `ship.weapon_roles` offen → umgesetzt; `combat.weapon_fire` offen → teilweise. Minen sind eine neue Sojourn-Erweiterung ohne eigene Voidbound-ID. |
 
 ## Vollständige Matrix
 
@@ -222,7 +225,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 🟨 Teilweise | `trade.risk_economy` | Dangerous trade regions carry a logistics price premium while high-value ores concentrate in dangerous mining regions | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
 | 🟨 Teilweise | `trade.system_market_route_intent` | System-market route buttons are visible without opening details and carry buy/sell arrival intent to the destination trade screen | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
 | ⬜ Offen | `trade.price_colors` | Effective purchase prices retain five price bands/legend | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
-| ⬜ Offen | `trade.logistics_fee` | Logistics skill changes sale fee | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| ✅ Umgesetzt | `trade.logistics_fee` | Logistics skill changes sale fee | Logistik-Stationsleistung steuert die tatsächliche Verkaufsgebühr und die im Port/Systemmarkt angezeigten Nettoverkaufspreise; Schiffe ohne Logistikstation erhalten keinen Bonus. | übernehmen |
 | ⬜ Offen | `trade.restricted_fees` | Restricted goods pay local regulatory fees | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ✅ Umgesetzt | `trade.market_situations` | Market situations modify affected prices and expire | Zeitlich begrenzte lokale/sektorweite Marktsituationen verändern Preise und laufen aus. | offen |
 | ✅ Umgesetzt | `trade.market_simulation` | Market simulation preserves resource circulation | Tägliche Produktion/Verbrauch/Nachfrage/Resource-Circulation ist umgesetzt. | offen |
@@ -230,7 +233,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 🟨 Teilweise | `economy.career_progression_balance` | Legal market spreads are constrained so trade remains lucrative without collapsing hull progression into a few oracle-perfect routes | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
 | ✅ Umgesetzt | `trade.market_intel` | Sensor market intel stores age/history rather than fabricating data | Marktbeobachtungen speichern Beobachtungstag/Alter; UI nutzt alternde Intel. | offen |
 | ⬜ Offen | `trade.port_intel_broker` | Paid local trade intelligence reveals and refreshes targeted best buy/sell market data | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
-| 🟨 Teilweise | `trade.route_profit` | Best-sale route uses actual fees/fuel/charter effects | Routenfinder vorhanden; Voidbound-Effekte aus Fuel/Charter/Gebühren noch nicht vollständig äquivalent. | offen |
+| 🟨 Teilweise | `trade.route_profit` | Best-sale route uses actual fees/fuel/charter effects | Routenfinder berücksichtigt nun die aktive Logistikgebühr; Player-Fuel und Chartereffekte sind noch nicht vollständig äquivalent. | offen |
 | 🟨 Teilweise | `trade.crew_profit_share` | Crew profit shares are charged on realised income | Crew-Anteile existieren als Daten/Share-Rate; vollständige Belastung realisierter Gewinne ist noch nicht äquivalent abgesichert. | offen |
 | ⬜ Offen | `trade.faction_reputation` | Trading/faction actions can change reputation | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 
@@ -280,8 +283,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ✅ Umgesetzt | `ship.slot_normalization` | Installed component layout survives normalization | Persistenter Loadout-Service hält typisierte Komponenten-Slots pro Schiff. | offen |
 | 🟨 Teilweise | `ship.component_picker` | Component picker shows true before/after effects | Loadout-Konsole/Slot-Wechsel vorhanden; vollständige Vorher/Nachher-Picker-UX fehlt. | offen |
 | ⬜ Offen | `ship.weapon_configurator` | Weapon configurator preserves series/tier/modifiers | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
-| 🟨 Teilweise | `ship.weapon_tiers` | Small/medium hull weapon tier limits remain enforced | Tier-Limits über Ship-Stats vorhanden; kompletter Voidbound Weapon Configurator/Role-Unterbau fehlt. | offen |
-| ⬜ Offen | `ship.weapon_roles` | Shield/hull/allround weapon roles remain mechanically distinct | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| 🟨 Teilweise | `ship.weapon_tiers` | Small/medium hull weapon tier limits remain enforced | Mk I–VI sind für alle acht Waffenfamilien definiert und Loadout-Tierlimits bleiben erzwungen; mittlere/Mk4-Hüllen und vollständige Configurator-UX fehlen noch. | übernehmen |
+| ✅ Umgesetzt | `ship.weapon_roles` | Shield/hull/allround weapon roles remain mechanically distinct | Acht Waffenfamilien besitzen explizite Allround-/Schild-/Hüllenrollen mit getrennten Schild-/Hüllenschäden; Spezialwaffen sind mechanisch mindestens etwa vierfach auf ihren Zieltyp fokussiert. | übernehmen |
 | ✅ Umgesetzt | `ship.energy` | Ship energy reports permanent and combat load separately | Reaktoroutput sowie Base/Shield/Weapon/Combat-Last werden getrennt berechnet. | offen |
 | 🟨 Teilweise | `ship.energy_overfit` | Combat-only systems may overfit while permanent load may not | Energy-Snapshot bildet Combat-Last ab; vollständige Voidbound-Validierungsregeln fehlen. | offen |
 | ⬜ Offen | `ship.refuel` | Port refuel charges correct credits and fills fuel | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
@@ -327,7 +330,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `crew.hugo_story` | Hugo is a campaign-owned elite recruit whose pirate-base introduction leads into a persistent charter-linked criminal storyline | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `crew.departures` | Repeated unresolved grievances can schedule safe harbor departure | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `crew.injury_healing` | Injury state persists/heals and affects crew stories | Injury/Incapacitation beeinflusst Assignment/Boarding; zeitbasierte Heilung/Story-Verknüpfung fehlt. | offen |
-| 🟨 Teilweise | `crew.card_layout` | Roster and hire candidates use portrait-left summary cards with ship skills below and responsive 3/2/1 columns | Echte Crew erscheint im Port-UI; vollständige responsive Voidbound-Card-UX fehlt. | offen |
+| 🟨 Teilweise | `crew.card_layout` | Roster and hire candidates use portrait-left summary cards with ship skills below and responsive 3/2/1 columns | Echte Crew erscheint im Port-UI und zeigt alle sieben Stationsskills; Portrait-/Responsive-Card-UX ist noch nicht vollständig äquivalent. | offen |
 | ⬜ Offen | `crew.character_header` | Character sheet keeps portrait/identity left and character navigation plus Crew action on the right | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 
 ### operations
@@ -419,7 +422,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `combat.pirate_threat_tiers` | Persistent corsairs resolve into distinct light, heavy and marauder combat profiles with staggered engagement distances and weapon tiers | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.patrol_defeat_recovery` | Patrol hull defeats use a softer credits, cargo and tow-hull recovery curve while civilian defeat penalties retain legacy severity | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.realtime_timer` | Combat timer/watchdog repairs stalled runtime combat | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
-| ⬜ Offen | `combat.weapon_fire` | Player weapon fire consumes fire-control/cooldown and deals damage | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
+| 🟨 Teilweise | `combat.weapon_fire` | Player weapon fire consumes fire-control/cooldown and deals damage | Waffen besitzen Reichweite, Cooldown, Energie-/Hitze-/Munitionsprofile und eine getestete geschichtete Schild-/Hüllen-Trefferauflösung; aktiver Feuerleit-/Combat-Loop fehlt noch. | übernehmen |
 | ⬜ Offen | `combat.fire_control` | Fire-control impulse count follows weapon slots | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.shield_window` | Shield break opens temporary hull-damage window | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.pause` | Combat pause freezes cooldown/overload deadlines | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
