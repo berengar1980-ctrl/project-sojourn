@@ -11,6 +11,10 @@ import {
   type MarketSituationService,
 } from '../systems/economy/market-situation-service';
 import {
+  createMarketIntelService,
+  type MarketIntelService,
+} from '../systems/economy/market-intel-service';
+import {
   createEconomySimulationService,
   type EconomySimulationService,
 } from '../systems/economy/economy-simulation-service';
@@ -43,6 +47,7 @@ import type { SectorNpcState } from '../core/npc-types';
 export interface ControllerEconomy {
   readonly markets: EconomyMarketService;
   readonly situations: MarketSituationService;
+  readonly marketIntel: MarketIntelService;
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
@@ -57,7 +62,10 @@ export function createControllerEconomy(): ControllerEconomy {
   const markets = createEconomyMarketService(sectorPorts, economyResources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
+  situations.advanceDay(0);
   const trade = createPlayerTradeService(markets);
+  const marketIntel = createMarketIntelService(markets);
+  marketIntel.observeAll(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates);
   const simulation = createEconomySimulationService(
@@ -83,6 +91,7 @@ export function createControllerEconomy(): ControllerEconomy {
   return {
     markets,
     situations,
+    marketIntel,
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
