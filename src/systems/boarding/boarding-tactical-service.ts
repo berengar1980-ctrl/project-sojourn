@@ -9,10 +9,7 @@ import type {
   BoardingUnitTemplate,
 } from '../../core/boarding-types';
 import { boardingMapById, boardingMaps } from '../../data/boarding/boarding-maps';
-import {
-  boardingMeleeWeapons,
-  boardingRangedWeapons,
-} from '../../data/boarding/boarding-weapons';
+import { boardingMeleeWeapons, boardingRangedWeapons } from '../../data/boarding/boarding-weapons';
 import {
   boardingDoorAt,
   boardingHasLineOfSight,
@@ -110,9 +107,7 @@ function placeTeam(
   const teamUnits = units.filter((unit) => unit.team === team);
   for (let index = 0; index < teamUnits.length; index += 1) {
     const unit = teamUnits[index];
-    const spot = candidates.find(
-      (hex) => boardingUnitAt(units, hex.q, hex.r, unit?.id) === null
-    );
+    const spot = candidates.find((hex) => boardingUnitAt(units, hex.q, hex.r, unit?.id) === null);
     if (!unit || !spot) continue;
     unit.q = spot.q;
     unit.r = spot.r;
@@ -177,11 +172,7 @@ function meleeChance(attacker: BoardingUnit): number {
   );
 }
 
-function damageAfterArmor(
-  damage: number,
-  armorPenetration: number,
-  targetArmor: number
-): number {
+function damageAfterArmor(damage: number, armorPenetration: number, targetArmor: number): number {
   return Math.max(1, damage - Math.max(0, targetArmor - armorPenetration));
 }
 
@@ -198,7 +189,9 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   constructor(private readonly options: CreateBoardingEncounterOptions) {
     this.random = createRandom(options.seed);
-    this.map = options.mapId ? boardingMapById(options.mapId) ?? defaultMap(options.seed) : defaultMap(options.seed);
+    this.map = options.mapId
+      ? (boardingMapById(options.mapId) ?? defaultMap(options.seed))
+      : defaultMap(options.seed);
     this.units = [...options.playerUnits, ...options.enemyUnits].map(createUnit);
     this.doorStates = Object.fromEntries(this.map.doors.map((door) => [door.id, false]));
     placeTeam(this.map, this.doorStates, this.units, 'player');
@@ -224,7 +217,8 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   selectUnit(unitId: string | null): BoardingEncounterSnapshot {
     if (unitId === null) this.selectedUnitId = null;
-    else if (this.units.some((unit) => unit.id === unitId && unit.hp > 0)) this.selectedUnitId = unitId;
+    else if (this.units.some((unit) => unit.id === unitId && unit.hp > 0))
+      this.selectedUnitId = unitId;
     return this.getSnapshot();
   }
 
@@ -330,7 +324,13 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   ): { readonly attacker: BoardingUnit; readonly target: BoardingUnit } | null {
     const attacker = this.unitForAction(attackerId);
     const target = this.units.find((unit) => unit.id === targetId && unit.hp > 0) ?? null;
-    if (!attacker || !target || target.team === attacker.team || attacker.ap < 1 || attacker.combatUsed) {
+    if (
+      !attacker ||
+      !target ||
+      target.team === attacker.team ||
+      attacker.ap < 1 ||
+      attacker.combatUsed
+    ) {
       return null;
     }
     return { attacker, target };
