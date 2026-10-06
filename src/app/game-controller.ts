@@ -237,9 +237,15 @@ function createControllerStarModel(
 function createControllerLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
-  navigation: NavigationService
+  navigation: NavigationService,
+  npcMining: NpcLocalMiningService | null
 ) {
-  return createActiveLocalModel(service, ship, currentMiningLocationName(navigation));
+  return createActiveLocalModel(
+    service,
+    ship,
+    currentMiningLocationName(navigation),
+    npcMining
+  );
 }
 
 interface ControllerRuntimeState {
@@ -451,6 +457,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
   else if (state.mode === 'local-space' && state.localSpace) {
     state.localSpace.tick(deltaSeconds);
+    state.localNpcMining?.tick(deltaSeconds);
     state.panels.local?.update(controllerLocalModel(context));
   } else if (state.mode === 'salvage-space') {
     state.salvageScene?.tick(deltaSeconds);
