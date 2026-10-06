@@ -1,5 +1,48 @@
 export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 
+export type ShipStationSkill =
+  'piloting' | 'sensors' | 'weapons' | 'engineering' | 'mining' | 'salvage' | 'logistics';
+
+export interface ShipStationDefinition {
+  readonly id: string;
+  readonly skill: ShipStationSkill;
+}
+
+export type ShipSpecialCargoKind = 'mining' | 'salvage';
+
+export interface ShipSpecialCargoProfile {
+  readonly kind: ShipSpecialCargoKind;
+  readonly capacityTons: number;
+}
+
+export interface ShipGameplayProfile {
+  readonly hullPoints: number;
+  readonly shieldModifier: number;
+  readonly fuelCapacity: number;
+  readonly fuelUse: number;
+  readonly weaponSlots: number;
+  readonly crewBerths: number;
+  readonly maxComponentTier: number;
+  readonly stations: readonly ShipStationDefinition[];
+  readonly specialCargo: ShipSpecialCargoProfile | null;
+}
+
+export interface ShipGameplayOverrides {
+  readonly hullPoints?: number;
+  readonly shieldModifier?: number;
+  readonly fuelCapacity?: number;
+  readonly fuelUse?: number;
+  readonly weaponSlots?: number;
+  readonly crewBerths?: number;
+  readonly maxComponentTier?: number;
+  readonly specialCargo?: ShipSpecialCargoProfile | null;
+}
+
+export interface ResolvedShipGameplayStats extends ShipGameplayProfile {
+  readonly cargoCapacityTons: number;
+  readonly cruiseSpeed: number;
+}
+
 export interface ShipHardpoint {
   readonly id: string;
   readonly x: number;
@@ -56,4 +99,5 @@ export interface ShipDefinition {
   readonly cargoCapacityTons: number;
   readonly sprite: ShipSprite;
   readonly navigation: ShipNavigationStats;
+  readonly gameplayOverrides?: ShipGameplayOverrides;
 }
