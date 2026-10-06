@@ -26,9 +26,6 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Export Prettier diagnostic
-          command: node scripts/ci-export-prettier.cjs
-      - run:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
