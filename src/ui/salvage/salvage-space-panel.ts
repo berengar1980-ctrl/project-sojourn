@@ -1,0 +1,275 @@
+import type { SystemLogService } from '../../core/system-log-types';
+import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
+import type { WorldPoint } from '../../core/world-types';
+import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
+import { bindSalvageSpaceInput } from './salvage-space-input';
+import { SalvageSpaceRenderer } from './salvage-space-renderer';
+
+export interface SalvageSpacePanel {
+  update(model: SalvageSpaceViewModel): void;
+  destroy(): void;
+}
+
+interface SalvageSpacePanelOptions {
+  readonly root: HTMLElement;
+  readonly model: SalvageSpaceViewModel;
+  readonly log: SystemLogService;
+  readonly onSelectWreck: (id: string | null) => void;
+  readonly onNavigate: (target: WorldPoint) => void;
+  readonly onInspect: (wreckId: string) => void;
+  readonly onStrip: (wreckId: string, resourceId: string) => void;
+  readonly onCancel: () => void;
+  readonly onReturnToStarMap: () => void;
+}
+
+interface SalvageControls {
+  readonly canvas: HTMLCanvasElement;
+  readonly card: HTMLElement;
+  readonly name: HTMLElement;
+  readonly meta: HTMLElement;
+  readonly integrity: HTMLElement;
+  readonly inspectButton: HTMLButtonElement;
+  readonly resources: HTMLElement;
+  readonly status: HTMLElement;
+  readonly cancelButton: HTMLButtonElement;
+  readonly cargoTotal: HTMLElement;
+  readonly cargoList: HTMLElement;
+  readonly backButton: HTMLButtonElement;
+}
+
+function createShell(options: SalvageSpacePanelOptions): HTMLElement {
+  const shell = document.createElement('section');
+  shell.className = 'local-space-shell salvage-space-shell';
+  shell.innerHTML = [
+    '<canvas class="local-space-canvas salvage-space-canvas" aria-label="Lokales Wrackfeld"></canvas>',
+    '<div class="local-space-title"><span>BERGUNGSZONE</span><strong>',
+    options.model.title,
+    '</strong></div>',
+    '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
+    '<div class="salvage-operation-status" hidden></div>',
+    '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
+    '<div class="local-cargo-panel">',
+    '<div class="local-cargo-title">FRACHT // BERGUNG</div>',
+    '<div class="local-cargo-total">BELEGT · <strong>0 / 0</strong></div>',
+    '<div class="local-cargo-list"></div></div>',
+    '<div class="local-selection-card salvage-selection-card" hidden>',
+    '<div class="local-selection-kind">WRACK</div>',
+    '<div class="local-selection-name"></div>',
+    '<div class="local-selection-meta"></div>',
+    '<div class="salvage-integrity"><div></div></div>',
+    '<div class="salvage-resource-list"></div>',
+    '<button class="salvage-inspect-button" type="button">UNTERSUCHEN</button>',
+    '</div>',
+  ].join('');
+  options.root.replaceChildren(shell);
+  return shell;
+}
+
+function controls(shell: HTMLElement): SalvageControls {
+  const query = <T extends Element>(selector: string): T => {
+    const element = shell.querySelector<T>(selector);
+    if (!element) throw new Error('Salvage-space UI is incomplete: ' + selector);
+    return element;
+  };
+  return {
+    canvas: query<HTMLCanvasElement>('.salvage-space-canvas'),
+    card: query<HTMLElement>('.salvage-selection-card'),
+    name: query<HTMLElement>('.local-selection-name'),
+    meta: query<HTMLElement>('.local-selection-meta'),
+    integrity: query<HTMLElement>('.salvage-integrity > div'),
+    inspectButton: query<HTMLButtonElement>('.salvage-inspect-button'),
+    resources: query<HTMLElement>('.salvage-resource-list'),
+    status: query<HTMLElement>('.salvage-operation-status'),
+    cancelButton: query<HTMLButtonElement>('.salvage-cancel-button'),
+    cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
+    cargoList: query<HTMLElement>('.local-cargo-list'),
+    backButton: query<HTMLButtonElement>('.return-map-button'),
+  };
+}
+
+function statusText(model: SalvageSpaceViewModel): string {
+  if (model.phase === 'navigating') return 'NAVIGATION IM WRACKFELD';
+  if (model.phase === 'approaching') return 'ANFLUG AUF BERGUNGSPOSITION';
+  if (model.phase === 'inspecting') {
+    return 'WRACKANALYSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+  }
+  if (model.phase === 'stripping') {
+    return 'BERGUNG AKTIV · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+  }
+  return '';
+}
+
+function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTMLElement): void {
+  total.textContent =
+    Math.round(model.cargoUsedTons) + ' / ' + Math.round(model.cargoCapacityTons) + ' t';
+  list.replaceChildren();
+  if (model.cargoResources.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'local-cargo-empty';
+    empty.textContent = 'LEER';
+    list.append(empty);
+    return;
+  }
+  for (const resource of model.cargoResources) {
+    const row = document.createElement('div');
+    row.className = 'local-cargo-row';
+    const name = document.createElement('span');
+    const amount = document.createElement('strong');
+    name.textContent = resource.name.toUpperCase();
+    amount.textContent = Math.round(resource.amount) + ' t';
+    row.append(name, amount);
+    list.append(row);
+  }
+}
+
+function resourceRow(
+  model: SalvageSpaceViewModel,
+  wreckId: string,
+  resource: SalvageSpaceViewModel['selectedWreck'] extends infer _T
+    ? { readonly resourceId: string; readonly name: string; readonly remaining: number }
+    : never,
+  onStrip: SalvageSpacePanelOptions['onStrip']
+): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'salvage-resource-row';
+  const label = document.createElement('span');
+  label.textContent = resource.name.toUpperCase();
+  const amount = document.createElement('strong');
+  amount.textContent = Math.round(resource.remaining) + ' t';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent =
+    model.phase === 'stripping' && model.activeResourceId === resource.resourceId
+      ? 'BERGUNG LÄUFT'
+      : 'BERGEN';
+  button.disabled = !model.salvageAvailable || model.phase !== 'idle' || resource.remaining <= 0;
+  button.addEventListener('click', () => onStrip(wreckId, resource.resourceId));
+  row.append(label, amount, button);
+  return row;
+}
+
+function renderSelection(
+  model: SalvageSpaceViewModel,
+  ui: SalvageControls,
+  options: SalvageSpacePanelOptions
+): void {
+  const wreck = model.selectedWreck;
+  ui.card.hidden = !wreck;
+  if (!wreck) return;
+
+  ui.name.textContent = wreck.name;
+  ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
+  const busy = model.phase !== 'idle';
+  if (!wreck.inspected) {
+    ui.meta.textContent = wreck.kindLabel + ' · ANALYSE ERFORDERLICH';
+    ui.resources.replaceChildren();
+    ui.inspectButton.hidden = false;
+    ui.inspectButton.disabled = busy;
+    return;
+  }
+
+  ui.meta.textContent =
+    wreck.kindLabel +
+    ' · QUALITÄT ' +
+    wreck.qualityLabel +
+    ' · INTEGRITÄT ' +
+    wreck.integrity +
+    '%' +
+    (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
+  ui.inspectButton.hidden = true;
+  ui.resources.replaceChildren();
+
+  if (wreck.depleted) {
+    const empty = document.createElement('div');
+    empty.className = 'salvage-resource-empty';
+    empty.textContent = 'WRACK AUSGESCHLACHTET';
+    ui.resources.append(empty);
+    return;
+  }
+  for (const resource of wreck.resources) {
+    ui.resources.append(resourceRow(model, wreck.id, resource, options.onStrip));
+  }
+}
+
+function createRecoveryTracker(
+  options: SalvageSpacePanelOptions,
+  panel: SystemLogPanel
+): (model: SalvageSpaceViewModel) => void {
+  let lastSerial = options.model.recoverySerial;
+  const inspected = new Set(
+    options.model.wrecks.filter((wreck) => wreck.inspected).map((wreck) => wreck.id)
+  );
+  return (model) => {
+    for (const wreck of model.wrecks) {
+      if (!wreck.inspected || inspected.has(wreck.id)) continue;
+      inspected.add(wreck.id);
+      options.log.write('BERGUNG > WRACKANALYSE ABGESCHLOSSEN: ' + wreck.name.toUpperCase());
+      panel.update();
+    }
+    if (model.recoverySerial === lastSerial || !model.lastRecovery) return;
+    lastSerial = model.recoverySerial;
+    const resource = model.cargoResources.find(
+      (entry) => entry.resourceId === model.lastRecovery?.resourceId
+    );
+    options.log.write(
+      'BERGUNG > +' +
+        model.lastRecovery.recovered +
+        ' t ' +
+        (resource?.name ?? model.lastRecovery.resourceId).toUpperCase()
+    );
+    if (model.lastRecovery.depleted) options.log.write('BERGUNG > WRACK AUSGESCHLACHTET');
+    panel.update();
+  };
+}
+
+export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
+  const shell = createShell(options);
+  const ui = controls(shell);
+  let model = options.model;
+  const renderer = new SalvageSpaceRenderer(ui.canvas, model);
+  const systemLog = createSystemLogPanel({
+    root: shell,
+    log: options.log,
+    header: 'BERGUNGSKONTROLLE // SYSTEMLOG',
+    placementClass: 'system-log--local',
+  });
+  const trackRecovery = createRecoveryTracker(options, systemLog);
+  const resizeObserver = new ResizeObserver(() => renderer.resize());
+  resizeObserver.observe(ui.canvas);
+
+  const update = (next: SalvageSpaceViewModel): void => {
+    model = next;
+    renderer.update(model);
+    const status = statusText(model);
+    ui.status.hidden = status.length === 0;
+    ui.status.textContent = status;
+    ui.cancelButton.hidden = model.phase === 'idle';
+    ui.backButton.disabled = model.phase !== 'idle';
+    renderCargo(model, ui.cargoTotal, ui.cargoList);
+    renderSelection(model, ui, options);
+    trackRecovery(model);
+  };
+
+  const unbindInput = bindSalvageSpaceInput({
+    canvas: ui.canvas,
+    renderer,
+    onSelectWreck: options.onSelectWreck,
+    onNavigate: (x, y) => options.onNavigate({ x, y }),
+  });
+  ui.inspectButton.addEventListener('click', () => {
+    if (model.selectedWreck) options.onInspect(model.selectedWreck.id);
+  });
+  ui.cancelButton.addEventListener('click', options.onCancel);
+  ui.backButton.addEventListener('click', options.onReturnToStarMap);
+  update(model);
+
+  return {
+    update,
+    destroy() {
+      unbindInput();
+      resizeObserver.disconnect();
+      systemLog.destroy();
+      shell.remove();
+    },
+  };
+}

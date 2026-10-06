@@ -1,4 +1,5 @@
 import type { EconomyResourceId } from './economy-types';
+import type { LocalShipState } from './local-space-types';
 import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
@@ -46,4 +47,22 @@ export interface SalvageRecoveryResult {
   readonly recovered: number;
   readonly remaining: number;
   readonly depleted: boolean;
+}
+
+export type SalvageLocalPhase = 'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping';
+
+export interface SalvageLocalSpaceSnapshot {
+  readonly field: SalvageField;
+  readonly ship: LocalShipState;
+  readonly selectedWreckId: string | null;
+  readonly workTargetId: string | null;
+  readonly navigationTarget: WorldPoint | null;
+  readonly navigationRoute: readonly WorldPoint[];
+  readonly phase: SalvageLocalPhase;
+  readonly operationProgress: number | null;
+  readonly activeResourceId: EconomyResourceId | null;
+  readonly lastRecovery: SalvageRecoveryResult | null;
+  readonly recoverySerial: number;
+  readonly salvageAvailable: boolean;
+  readonly cargoCapacityTons: number;
 }

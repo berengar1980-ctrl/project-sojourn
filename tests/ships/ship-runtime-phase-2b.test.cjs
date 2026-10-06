@@ -146,13 +146,13 @@ assert.equal(systemSnapshot.shield.currentHp, 0);
 assert.equal(systemSnapshot.hull.currentHp, 30, 'shield overflow must damage hull');
 assert.equal(systemSnapshot.reactor.continuousFree, 27);
 
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const miningController = fs.readFileSync(
   path.join(root, 'src/app/game-controller-mining.ts'),
   'utf8'
 );
-assert(controller.includes('canShipCarryResource(ship, resourceId)'));
-assert(controller.includes('runtime.cargoCapacityTons'));
+assert(portController.includes('canShipCarryResource(ship, resourceId)'));
+assert(portController.includes('runtime.cargoCapacityTons'));
 assert(miningController.includes('systems: {'));
 assert(miningController.includes('sensorCrewSkill: runtime.sensorCrewSkill'));
 

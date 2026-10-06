@@ -42,6 +42,10 @@ const stationKeeping = fs.readFileSync(
   'utf8'
 );
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const localActions = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-local-actions.ts'),
+  'utf8'
+);
 const miningController = fs.readFileSync(
   path.join(root, 'src/app/game-controller-mining.ts'),
   'utf8'
@@ -302,7 +306,8 @@ assert(
   'point route planning must stay off the UI thread'
 );
 assert(
-  controller.includes('planMiningApproachRouteAsync'),
+  controller.includes('createLocalPanelActions') &&
+    localActions.includes('planMiningApproachRouteAsync'),
   'game controller must await asynchronous mining route calculation'
 );
 assert(service.includes('approachRoute'), 'approach must persist a fixed precomputed route');

@@ -432,6 +432,102 @@ body {
   letter-spacing: 0.1em;
 }
 
+.salvage-operation-status {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  padding: 8px 10px;
+  border: 1px solid rgba(213, 168, 83, 0.36);
+  background: rgba(34, 24, 9, 0.78);
+  color: #e2bd78;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-operation-status[hidden],
+.salvage-cancel-button[hidden] {
+  display: none;
+}
+
+.salvage-cancel-button {
+  position: absolute;
+  top: 108px;
+  right: 24px;
+  padding: 7px 10px;
+  border: 1px solid rgba(188, 119, 83, 0.38);
+  background: rgba(61, 31, 18, 0.66);
+  color: #e0b09a;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-selection-card {
+  border-left-color: rgba(218, 170, 83, 0.78);
+}
+
+.salvage-integrity {
+  height: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: rgba(132, 143, 146, 0.17);
+}
+
+.salvage-integrity > div {
+  width: 100%;
+  height: 100%;
+  background: #c59b58;
+  transition: width 140ms linear;
+}
+
+.salvage-resource-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.salvage-resource-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  color: #9ca7a9;
+  font-size: 9px;
+  letter-spacing: 0.07em;
+}
+
+.salvage-resource-row strong {
+  color: #d6c59f;
+  font-weight: 600;
+}
+
+.salvage-resource-row button,
+.salvage-inspect-button {
+  padding: 7px 9px;
+  border: 1px solid rgba(211, 163, 79, 0.42);
+  background: rgba(89, 61, 19, 0.24);
+  color: #e4c68e;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.salvage-inspect-button {
+  margin-top: 13px;
+}
+
+.salvage-resource-row button:disabled,
+.salvage-inspect-button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.salvage-resource-empty {
+  color: rgba(184, 161, 117, 0.7);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
 .local-cargo-panel {
   position: absolute;
   right: 24px;
@@ -913,6 +1009,16 @@ body {
 
   .cancel-mining-button {
     top: 170px;
+    right: 16px;
+  }
+
+  .salvage-operation-status {
+    top: 62px;
+    right: 16px;
+  }
+
+  .salvage-cancel-button {
+    top: 98px;
     right: 16px;
   }
 
