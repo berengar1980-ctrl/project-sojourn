@@ -31,7 +31,7 @@ Dabei gilt:
 4. Neue Sojourn-Features, die kein Voidbound-Gegenstück haben, werden im Review-Log genannt; die 241 Voidbound-IDs bleiben unverändert.
 5. Erst danach darf der PR gemergt werden.
 
-Automatisiert wird das durch `scripts/check-feature-parity.cjs` und den PR-Workflow **Feature Parity Gate**. Der Check schlägt fehl, wenn Feature-/Test-/Resource-Dateien geändert wurden, diese Matrix aber unverändert blieb. Zusätzlich validiert er 241 eindeutige Feature-IDs und die erlaubten Status-/Entscheidungswerte.
+Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quality/feature-parity.test.cjs`. Der normale `npm test`-/`npm run check`-Lauf erkennt auf Feature-Branches den Diff zu `main` und schlägt fehl, wenn `src/`, `tests/` oder `resources/` geändert wurden, diese Matrix aber unverändert blieb. Zusätzlich validiert der Test 241 eindeutige Feature-IDs und die erlaubten Status-/Entscheidungswerte.
 
 ## Gesamtstatus
 
