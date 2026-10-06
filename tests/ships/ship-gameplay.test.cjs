@@ -185,10 +185,10 @@ const patrolShip = ship('patrol', 120);
   assert.equal(stations.stationInjuryMultiplier('incapacitated'), 0);
   assert.equal(stations.stationInjuryMultiplier('dead'), 0);
 
-  const performance = stations.calculateStationPerformance(
-    { skill: 80 },
-    [{ skill: 60 }, { skill: 40 }]
-  );
+  const performance = stations.calculateStationPerformance({ skill: 80 }, [
+    { skill: 60 },
+    { skill: 40 },
+  ]);
   assert.equal(performance, 68, 'station performance must preserve the Voidbound 60/40 model');
 
   const injured = stations.stationContributorPerformance({
