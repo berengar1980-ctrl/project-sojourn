@@ -28,10 +28,10 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <body>
 <header>
 <strong>SOJOURN // HARDPOINT CALIBRATOR</strong>
-<button id="openBtn" class="primary">Projektordner öffnen</button>
+<button id="openBtn" class="primary">Projektordner verbinden</button>
 <button id="saveBtn">Aktuelles JSON speichern</button>
 <button id="saveAllBtn">Alle Änderungen speichern</button>
-<span id="status" class="status">Noch kein Projektordner geöffnet.</span>
+<span id="status" class="status">Schiffsdaten werden geladen…</span>
 </header>
 <div class="layout">
 <aside>
@@ -108,6 +108,18 @@ const TYPES={
 };
 const els=Object.fromEntries(["openBtn","saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","meta"].map(id=>[id,document.getElementById(id)]));
 const ctx=els.canvas.getContext("2d");
+const SHIP_IDS=[
+ "freighter-120m-industrial-heavy",
+ "freighter-120m-variant-01","freighter-120m-variant-02","freighter-120m-variant-03","freighter-120m-variant-04",
+ "freighter-120m-variant-05","freighter-120m-variant-06","freighter-120m-variant-07",
+ "miner-80m-industrial-heavy","miner-80m-standard",
+ "miner-80m-variant-01","miner-80m-variant-02","miner-80m-variant-03","miner-80m-variant-04",
+ "miner-80m-variant-05","miner-80m-variant-06","miner-80m-variant-07",
+ "patrol-60m-variant-01","patrol-60m-variant-02","patrol-60m-variant-03","patrol-60m-variant-04",
+ "patrol-60m-variant-05","patrol-60m-variant-06","patrol-60m-variant-07",
+ "salvage-100m-variant-01","salvage-100m-variant-02","salvage-100m-variant-03","salvage-100m-variant-04",
+ "salvage-100m-variant-05","salvage-100m-variant-06","salvage-100m-variant-07"
+];
 const state={root:null,ships:[],ship:null,type:"miningLasers",selected:null,image:null,zoom:1,panX:0,panY:0,dragging:false,dirty:new Set()};
 
 function setStatus(text,error=false){els.status.textContent=text;els.status.style.color=error?"#ff8e95":""}
@@ -115,36 +127,64 @@ function spriteFolder(id){if(id.startsWith("miner-"))return"mining";if(id.starts
 async function dir(root,parts){let d=root;for(const part of parts)d=await d.getDirectoryHandle(part);return d}
 async function fileHandle(root,path){const parts=path.split("/");const file=parts.pop();return(await dir(root,parts)).getFileHandle(file)}
 async function readJson(handle){return JSON.parse(await(await handle.getFile()).text())}
-function shipId(path){return path.split("/").pop().replace(".hardpoints.json","")}
 function normalize(data){
  for(const key of Object.keys(TYPES))if(!Array.isArray(data[key]))data[key]=[];
  return data;
 }
-async function discoverShips(){
- const d=await dir(state.root,["src","data","ships"]);const ships=[];
- for await(const [name,handle] of d.entries()){
-  if(handle.kind!=="file"||!name.endsWith(".hardpoints.json"))continue;
-  const path="src/data/ships/"+name;const data=normalize(await readJson(handle));const id=shipId(path);
-  ships.push({id,path,handle,data,dirty:false});
+async function loadShipsFromServer(){
+ const ships=[];
+ for(const id of SHIP_IDS){
+  const path="src/data/ships/"+id+".hardpoints.json";
+  try{
+   const response=await fetch("/"+path,{cache:"no-store"});
+   if(!response.ok)throw new Error(response.status+" "+response.statusText);
+   ships.push({id,path,handle:null,data:normalize(await response.json()),dirty:false});
+  }catch(error){
+   console.warn("Hardpoint-Datei konnte nicht geladen werden:",path,error);
+  }
  }
- ships.sort((a,b)=>a.id.localeCompare(b.id));return ships;
+ ships.sort((a,b)=>a.id.localeCompare(b.id));
+ state.ships=ships;
+ els.shipSelect.innerHTML=ships.map(ship=>'<option value="'+ship.id+'">'+ship.id+"</option>").join("");
+ els.shipSelect.disabled=ships.length===0;
+ if(ships.length){
+  await selectShip(ships[0].id);
+  setStatus(ships.length+" Schiffe geladen. Projektordner erst zum Speichern nötig.");
+ }else{
+  setStatus("Keine Hardpoint-Dateien über den Dev-Server gefunden.",true);
+ }
 }
 async function loadImage(ship){
  const folder=spriteFolder(ship.id);if(!folder){state.image=null;return}
- const path="resources/ships/"+folder+"/"+ship.id+".png";
- try{const h=await fileHandle(state.root,path);state.image=await createImageBitmap(await h.getFile())}
- catch{state.image=null;setStatus("Sprite nicht gefunden: "+path,true)}
+ const url="/resources/ships/"+folder+"/"+ship.id+".png";
+ try{
+  const response=await fetch(url,{cache:"no-store"});
+  if(!response.ok)throw new Error(response.status+" "+response.statusText);
+  state.image=await createImageBitmap(await response.blob());
+ }catch{
+  state.image=null;setStatus("Sprite nicht gefunden: "+url,true);
+ }
+}
+async function attachProjectHandles(){
+ const d=await dir(state.root,["src","data","ships"]);
+ for(const ship of state.ships){
+  try{ship.handle=await d.getFileHandle(ship.id+".hardpoints.json")}
+  catch{ship.handle=null}
+ }
 }
 async function openProject(){
- if(!window.showDirectoryPicker){setStatus("File System Access API fehlt. Bitte Chrome/Edge über localhost verwenden.",true);return}
+ if(!window.showDirectoryPicker){setStatus("File System Access API fehlt. Bitte Chrome/Edge über localhost verwenden.",true);return false}
  try{
   state.root=await window.showDirectoryPicker({mode:"readwrite"});
-  state.ships=await discoverShips();
-  els.shipSelect.innerHTML=state.ships.map(s=>'<option value="'+s.id+'">'+s.id+"</option>").join("");
-  els.shipSelect.disabled=false;
-  if(state.ships.length)await selectShip(state.ships[0].id);
-  setStatus(state.ships.length+" Hardpoint-Dateien geladen.");
- }catch(error){if(error.name!=="AbortError")setStatus(String(error),true)}
+  await attachProjectHandles();
+  const missing=state.ships.filter(ship=>!ship.handle).length;
+  if(missing)throw new Error(missing+" Hardpoint-Datei(en) fehlen im gewählten Projektordner.");
+  setStatus("Projektordner verbunden. Änderungen können direkt gespeichert werden.");
+  return true;
+ }catch(error){
+  if(error.name!=="AbortError")setStatus(String(error),true);
+  return false;
+ }
 }
 async function selectShip(id){
  state.ship=state.ships.find(s=>s.id===id)||null;state.selected=null;state.zoom=1;state.panX=0;state.panY=0;
@@ -235,7 +275,7 @@ for(const el of [els.fieldId,els.fieldX,els.fieldY,els.fieldWidth,els.fieldLayer
 els.canvas.addEventListener("pointerdown",pointerDown);els.canvas.addEventListener("pointermove",pointerMove);els.canvas.addEventListener("pointerup",pointerUp);els.canvas.addEventListener("pointercancel",pointerUp);
 els.canvas.addEventListener("wheel",e=>{e.preventDefault();state.zoom=Math.max(.35,Math.min(5,state.zoom*Math.exp(-e.deltaY*.001)));draw()},{passive:false});
 window.addEventListener("keydown",e=>{if(e.key==="0"){state.zoom=1;state.panX=0;state.panY=0;draw()}});
-window.addEventListener("resize",resize);resize();
+window.addEventListener("resize",resize);resize();loadShipsFromServer();
 </script>
 </body>
 </html>
