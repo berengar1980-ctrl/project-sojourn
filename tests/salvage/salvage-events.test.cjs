@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const events = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/salvage/salvage-event-service.ts'
-);
+const events = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/salvage-event-service.ts');
 
 function sequence(values) {
   let index = 0;
@@ -43,10 +40,7 @@ function wreck() {
 
 {
   const target = wreck();
-  const controller = events.createSalvageEventController(
-    9,
-    sequence([0.9, 0.1, 0.2, 0.7, 0.4])
-  );
+  const controller = events.createSalvageEventController(9, sequence([0.9, 0.1, 0.2, 0.7, 0.4]));
   const event = controller.inspect(target);
   assert(event, 'inspection should be able to expose a live wreck event');
   assert.equal(event.type, 'data-core');
