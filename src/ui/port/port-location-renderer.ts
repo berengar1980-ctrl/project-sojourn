@@ -1,13 +1,13 @@
 import type { PortLocationVisualView } from '../../features/port/port-view-model';
 import { PlanetRingRenderer } from '../map/planet-ring-renderer';
-import { StationSymbolRenderer } from '../map/station-symbol-renderer';
+import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 
 export class PortLocationRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
-  private readonly stationSymbols: StationSymbolRenderer;
+  private readonly stations: ProceduralStationRenderer;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -19,7 +19,7 @@ export class PortLocationRenderer {
     this.context = context;
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
-    this.stationSymbols = new StationSymbolRenderer(context);
+    this.stations = new ProceduralStationRenderer(context);
     this.resize();
   }
 
@@ -37,8 +37,15 @@ export class PortLocationRenderer {
 
     const point = { x: width * 0.5, y: height * 0.43 };
     if (this.visual.kind === 'station') {
-      const radius = Math.min(48, Math.max(30, Math.min(width, height) * 0.22));
-      this.stationSymbols.draw(this.visual.stationType ?? 'utility', point, radius);
+      const radius = Math.min(76, Math.max(54, Math.min(width, height) * 0.34));
+      this.stations.draw({
+        id: this.visual.id,
+        type: this.visual.stationType ?? 'utility',
+        point,
+        radius,
+        detailLevel: 'dock',
+        light: this.visual.light,
+      });
       return;
     }
 
