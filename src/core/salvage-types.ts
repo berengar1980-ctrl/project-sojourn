@@ -12,15 +12,7 @@ export interface SalvageResourceDeposit {
 
 export interface SalvageComponentCandidate {
   readonly type:
-    | 'reactor'
-    | 'engine'
-    | 'shield'
-    | 'hull'
-    | 'sensor'
-    | 'weapon'
-    | 'cargo'
-    | 'mining'
-    | 'salvage';
+    'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
   readonly componentId: string;
   readonly recoveryDifficulty: number;
 }
