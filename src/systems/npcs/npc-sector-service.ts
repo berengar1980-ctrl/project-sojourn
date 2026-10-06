@@ -1,6 +1,7 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
+import { npcOperationalSpeed, tryNpcComponentUpgrade } from './npc-upgrade-service';
 import {
   planRouteWithProfile,
   type RoutePlan,
@@ -179,6 +180,7 @@ export function createNpcSectorService(
           if (current?.activities.refuel && npc.fuel < npc.fuelCapacity * 0.92) {
             npc.fuel = npc.fuelCapacity;
           }
+          if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
           if (npc.job === 'patrol') {
             const target = patrolDestination(world, npc);
             if (target) service.requestTravel(npc, target, 'Sicherheitspatrouille');
@@ -187,7 +189,7 @@ export function createNpcSectorService(
         }
 
         const ship = getShipDefinition(npc.shipId);
-        const speed = Math.max(1, ship?.navigation.cruiseSpeed ?? 180);
+        const speed = ship ? npcOperationalSpeed(npc) : 180;
         const remaining = Math.max(0, travel.routeDistance - travel.distanceTravelled);
         const moved = Math.min(remaining, speed * dt);
         travel.distanceTravelled += moved;
