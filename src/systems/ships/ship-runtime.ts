@@ -118,7 +118,13 @@ export function resolveShipRuntimeSetup(
       ),
     ])
   ) as Readonly<Record<ShipStationSkill, number>>;
-  const effects = crewSkillEffects(stationSkills);
+  const effectSkills: Readonly<Record<ShipStationSkill, number>> = {
+    ...stationSkills,
+    logistics: stats.stations.some((station) => station.skill === 'logistics')
+      ? stationSkills.logistics
+      : 0,
+  };
+  const effects = crewSkillEffects(effectSkills);
   const sensorCrewSkill = stationSkills.sensors;
   const salvageCrewSkill = stationSkills.salvage;
   const scanAvailable =
