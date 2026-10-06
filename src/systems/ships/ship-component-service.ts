@@ -18,10 +18,7 @@ export interface ShipEnergySnapshot {
   readonly combatFree: number;
 }
 
-export function getShipComponent(
-  type: ShipComponentType,
-  id: string
-): ShipComponentDefinition | null {
+export function getShipComponent(type: ShipComponentType, id: string): ShipComponentDefinition | null {
   return SHIP_COMPONENT_CATALOG[type]?.find((component) => component.id === id) ?? null;
 }
 
