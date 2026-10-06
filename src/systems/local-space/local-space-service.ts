@@ -121,9 +121,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
         resourceId,
         amount,
       })),
-      laserActive:
-        this.miningPhase === 'extracting' &&
-        !this.miningEvents.extractionPaused,
+      laserActive: this.miningPhase === 'extracting' && !this.miningEvents.extractionPaused,
       miningImpact: this.currentMiningImpact(),
     };
   }
@@ -299,11 +297,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private currentMiningImpact(): MiningImpact | null {
-    if (
-      this.miningPhase !== 'extracting' ||
-      this.miningEvents.extractionPaused
-    )
-      return null;
+    if (this.miningPhase !== 'extracting' || this.miningEvents.extractionPaused) return null;
     const asteroid = this.findAsteroid(this.miningTargetId);
     if (!asteroid) return null;
     return calculateMiningImpact(
