@@ -9,16 +9,6 @@ export interface PortCommodityDefinition {
   readonly production: number;
 }
 
-export interface PortCrewCandidate {
-  readonly id: string;
-  readonly name: string;
-  readonly role: string;
-  readonly traits: readonly string[];
-  readonly combat: number;
-  readonly salary: number;
-  readonly equipment: readonly string[];
-}
-
 export interface PortDefinition {
   readonly locationId: string;
   readonly subtitle: string;
@@ -27,7 +17,6 @@ export interface PortDefinition {
   readonly security: 'low' | 'medium' | 'high';
   readonly shipyard: boolean;
   readonly commodities: readonly PortCommodityDefinition[];
-  readonly crew: readonly PortCrewCandidate[];
   readonly producedCommodityIds: readonly EconomyResourceId[];
   readonly neededCommodityIds: readonly EconomyResourceId[];
 }
