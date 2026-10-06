@@ -430,6 +430,8 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     seed: state.salvageSpaceSeed,
     location,
     economy: economy.salvage,
+    npcEconomy: economy.npcs,
+    sectorNpcs: economy.sectorNpcs.npcs,
     player: economy.trade.player,
     componentInventory: economy.components,
     runtimeOptions: context.crew.runtimeOptions(state.activeShip),
