@@ -123,7 +123,7 @@ export function createCrewBoardingEncounter(options: {
   let settled = false;
   const base = createBoardingTacticalService({
     seed: options.seed,
-    mapId: options.mapId,
+    ...(options.mapId ? { mapId: options.mapId } : {}),
     playerUnits: crewBoardingUnits(options.roster),
     enemyUnits: options.enemyUnits,
   });
