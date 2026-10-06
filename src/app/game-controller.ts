@@ -340,7 +340,14 @@ function createActivePortPanel(
 
   return createPortPanel({
     root,
-    model: createPortViewModel(port, market, trade.player, location, ship, runtime.cargoCapacityTons),
+    model: createPortViewModel(
+      port,
+      market,
+      trade.player,
+      location,
+      ship,
+      runtime.cargoCapacityTons
+    ),
     onReturnToStarMap,
     onBuy: (resourceId) => {
       if (!canShipCarryResource(ship, resourceId)) {
