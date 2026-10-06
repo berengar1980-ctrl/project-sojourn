@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const mining = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/ships/ship-mining-capability.ts'
-);
+const mining = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-mining-capability.ts');
 
 function createShip(role, laserCount, cargoCapacityTons = 360) {
   return {
