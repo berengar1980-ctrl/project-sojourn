@@ -3,7 +3,10 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
-import { resolveShipShieldCollisions } from '../local-space/ship-shield-collision';
+import {
+  resolveShipShieldCollisions,
+  type LocalShieldShipBody,
+} from '../local-space/ship-shield-collision';
 import { getShipDefinition } from '../ships';
 
 export type LocalNpcMiningPhase =
@@ -375,7 +378,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       }
 
       const playerState = options.getPlayerShipState?.();
-      const bodies = ships.flatMap((local) => {
+      const bodies: LocalShieldShipBody[] = ships.flatMap((local) => {
         const definition = getShipDefinition(local.shipId);
         return definition
           ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }]
