@@ -1,14 +1,7 @@
 import type { ShipStationSkill } from './ship-types';
 
 export type CrewSocialAxis =
-  | 'loyalty'
-  | 'order'
-  | 'duty'
-  | 'risk'
-  | 'empathy'
-  | 'faith'
-  | 'cunning'
-  | 'trust';
+  'loyalty' | 'order' | 'duty' | 'risk' | 'empathy' | 'faith' | 'cunning' | 'trust';
 
 export type CrewSocialTraits = Readonly<Record<CrewSocialAxis, number>>;
 
