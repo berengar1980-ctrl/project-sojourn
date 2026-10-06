@@ -41,6 +41,22 @@ export interface SalvageWreckView {
   readonly isWorkTarget: boolean;
 }
 
+export interface SalvageNpcShipView {
+  readonly id: string;
+  readonly name: string;
+  readonly position: WorldPoint;
+  readonly headingRadians: number;
+  readonly speed: number;
+  readonly phase: 'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
+  readonly targetWreckId: string | null;
+  readonly salvageActive: boolean;
+  readonly scanProgress: number;
+  readonly nominalLengthMeters: number;
+  readonly spriteUrl: string;
+  readonly spriteAspectRatio: number;
+  readonly hardpoints: ShipHardpoints;
+}
+
 export interface SalvageShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
@@ -73,6 +89,7 @@ export interface SalvageSpaceViewModel {
   readonly width: number;
   readonly height: number;
   readonly ship: SalvageShipView;
+  readonly npcShips: readonly SalvageNpcShipView[];
   readonly wrecks: readonly SalvageWreckView[];
   readonly selectedWreck: SalvageWreckView | null;
   readonly navigationTarget: WorldPoint | null;
@@ -126,7 +143,8 @@ export function createSalvageSpaceViewModel(
   ship: ShipDefinition,
   player: PlayerEconomyState,
   looseComponents: readonly LooseShipComponent[],
-  title: string
+  title: string,
+  npcShips: readonly SalvageNpcShipView[] = []
 ): SalvageSpaceViewModel {
   const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
     (wreck): SalvageWreckView => ({
@@ -192,6 +210,7 @@ export function createSalvageSpaceViewModel(
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
+    npcShips,
     wrecks,
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
