@@ -121,10 +121,7 @@ function stationSkill(profile, stationId) {
     compatibleEngines.every((entry) => entry.tier <= 3),
     'component compatibility must respect hull tier limits'
   );
-  assert.equal(
-    compatibleEngines.some((entry) => entry.tier === 4),
-    false
-  );
+  assert.equal(compatibleEngines.some((entry) => entry.tier === 4), false);
 
   const installed = {
     reactor: ['reactor4'],
@@ -152,10 +149,7 @@ function stationSkill(profile, stationId) {
 }
 
 {
-  const registry = fs.readFileSync(
-    path.join(root, 'src/systems/ships/ship-registry.ts'),
-    'utf8'
-  );
+  const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
   const api = fs.readFileSync(path.join(root, 'src/systems/ships/index.ts'), 'utf8');
 
   assert(
