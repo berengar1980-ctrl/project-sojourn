@@ -6,33 +6,23 @@ import {
   miningYieldMultiplier,
   type InstalledShipComponents,
 } from './ship-component-service';
+import { defaultInstalledShipComponents } from './ship-default-loadout';
 import { resolveShipGameplayStats } from './ship-stats';
+import { stationFactor } from './station-performance';
 
 const BASE_MINING_CYCLE_SECONDS = 0.42;
 const BASELINE_MINING_LASERS = 3;
+const AUTOMATION_SKILL = 20;
 
 export interface ShipMiningSetup {
   readonly available: boolean;
   readonly laserCount: number;
   readonly yieldMultiplier: number;
+  readonly crewMultiplier: number;
   readonly cycleSeconds: number;
   readonly cargoCapacityTons: number;
   readonly reactorOutput: number;
   readonly continuousPowerUsed: number;
-}
-
-export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledShipComponents {
-  const common: InstalledShipComponents = {
-    reactor: ['reactor1'],
-    engine: ['engine1'],
-    shield: ['shield1'],
-    sensor: ['sensor1'],
-  };
-
-  if (ship.role === 'mining') return { ...common, mining: ['mining1'] };
-  if (ship.role === 'salvage') return { ...common, salvage: ['salvage1'] };
-  if (ship.role === 'patrol') return { ...common, weapon: ['weapon1'] };
-  return common;
 }
 
 function compatibleMiningModuleIds(
@@ -45,9 +35,15 @@ function compatibleMiningModuleIds(
   });
 }
 
+function miningCrewMultiplier(skill: number): number {
+  const baseline = stationFactor(AUTOMATION_SKILL, 0.25);
+  return stationFactor(skill, 0.25) / baseline;
+}
+
 export function resolveShipMiningSetup(
   ship: ShipDefinition,
-  installed: InstalledShipComponents = defaultInstalledShipComponents(ship)
+  installed: InstalledShipComponents = defaultInstalledShipComponents(ship),
+  crewSkill = AUTOMATION_SKILL
 ): ShipMiningSetup {
   const stats = resolveShipGameplayStats(ship);
   const miningIds = compatibleMiningModuleIds(installed, stats.maxComponentTier);
@@ -56,7 +52,9 @@ export function resolveShipMiningSetup(
   const laserCount = ship.sprite.hardpoints.miningLasers.length;
   const yieldMultiplier = miningYieldMultiplier(effectiveInstalled);
   const laserMultiplier = Math.max(1 / BASELINE_MINING_LASERS, laserCount / BASELINE_MINING_LASERS);
-  const cycleSeconds = BASE_MINING_CYCLE_SECONDS / (yieldMultiplier * laserMultiplier);
+  const crewMultiplier = miningCrewMultiplier(crewSkill);
+  const cycleSeconds =
+    BASE_MINING_CYCLE_SECONDS / (yieldMultiplier * laserMultiplier * crewMultiplier);
   const hasMiningModule = miningIds.length > 0;
   const hasContinuousPower = energy.output > 0 && energy.baseFree >= 0;
 
@@ -64,6 +62,7 @@ export function resolveShipMiningSetup(
     available: laserCount > 0 && hasMiningModule && hasContinuousPower,
     laserCount,
     yieldMultiplier,
+    crewMultiplier,
     cycleSeconds,
     cargoCapacityTons: Math.max(0, stats.cargoCapacityTons + componentCargoBonus(installed)),
     reactorOutput: energy.output,
