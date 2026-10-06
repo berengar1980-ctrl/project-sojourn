@@ -246,6 +246,34 @@ function initializeSystemLog(
   panel.update();
 }
 
+function createIntegrityTracker(
+  log: SystemLogService,
+  panel: SystemLogPanel,
+  initialModel: LocalSpaceViewModel
+): (model: LocalSpaceViewModel) => void {
+  let lastShield = shieldPercent(initialModel);
+  let lastHull = hullPercent(initialModel);
+  initializeSystemLog(log, panel, lastShield, lastHull);
+
+  return (model) => {
+    const nextShield = shieldPercent(model);
+    const nextHull = hullPercent(model);
+    let changed = false;
+
+    if (nextShield !== lastShield) {
+      log.write('SCHILD-INTEGRITÄT ' + nextShield + ' %');
+      lastShield = nextShield;
+      changed = true;
+    }
+    if (nextHull !== lastHull) {
+      log.write('HÜLLEN-INTEGRITÄT ' + nextHull + ' %');
+      lastHull = nextHull;
+      changed = true;
+    }
+    if (changed) panel.update();
+  };
+}
+
 function observeCanvas(canvas: HTMLCanvasElement, renderer: LocalSpaceRenderer): ResizeObserver {
   const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
@@ -326,8 +354,6 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   } = controls;
 
   let model = options.model;
-  let lastShieldPercent = shieldPercent(model);
-  let lastHullPercent = hullPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -335,7 +361,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     header: 'SYS // LOCAL OPS',
     placementClass: 'local-system-log',
   });
-  initializeSystemLog(options.log, systemLog, lastShieldPercent, lastHullPercent);
+  const trackIntegrity = createIntegrityTracker(options.log, systemLog, model);
   const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
 
   const updateOverlay = (): void => {
@@ -348,19 +374,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     renderCargo(model, cargoTotal, cargoList);
     longScanButton.disabled = longScanActive;
 
-    const currentShieldPercent = shieldPercent(model);
-    if (currentShieldPercent !== lastShieldPercent) {
-      options.log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
-      systemLog.update();
-      lastShieldPercent = currentShieldPercent;
-    }
-
-    const currentHullPercent = hullPercent(model);
-    if (currentHullPercent !== lastHullPercent) {
-      options.log.write('HÜLLEN-INTEGRITÄT ' + currentHullPercent + ' %');
-      systemLog.update();
-      lastHullPercent = currentHullPercent;
-    }
+    trackIntegrity(model);
 
     const statusText = miningStatus(model);
     status.hidden = statusText.length === 0;
