@@ -1,70 +1,200 @@
-import type { NpcEconomyState } from '../../core/economy-types';
+import type { EconomyResourceId } from '../../core/economy-types';
+import type { NpcJob, SectorNpcState } from '../../core/npc-types';
+import { freighterVariantShips } from '../ships/freighter-variant-ships';
+import { minerVariantShips } from '../ships/miner-variant-ships';
+import { patrolVariantShips } from '../ships/patrol-variant-ships';
+import { salvageVariantShips } from '../ships/salvage-variant-ships';
+import { getShipRoleProfile } from '../ships/ship-role-profiles';
 
-export function createSectorNpcEconomyStates(): NpcEconomyState[] {
-  return [
-    {
-      id: 'npc-trader-helix',
-      role: 'trader',
-      locationId: 'haven',
-      credits: 18000,
-      cargoCapacity: 48,
-      normalCargoCapacity: 48,
+const CAPTAINS = [
+  'Acastus Avern',
+  'Berren Brax',
+  'Caldus Cordael',
+  'Drustan Drayk',
+  'Edrik Eisen',
+  'Faustus Ferrox',
+  'Galen Gault',
+  'Hadric Hadran',
+  'Isen Iscor',
+  'Jorvan Jex',
+  'Kaelus Karsk',
+  'Lucan Lorn',
+  'Mordec Mordane',
+  'Nican Nex',
+  'Orren Orsik',
+  'Perrin Prax',
+  'Quint Quell',
+  'Roderic Rath',
+  'Stavan Stahl',
+  'Tiber Tervan',
+  'Ulric Urix',
+  'Valen Valk',
+  'Wulfric Weyland',
+  'Xavian Xerxes',
+] as const;
+
+const JOBS: readonly NpcJob[] = [
+  'freighter',
+  'freighter',
+  'miner',
+  'salvager',
+  'freighter',
+  'patrol',
+  'freighter',
+  'miner',
+  'freighter',
+  'salvager',
+  'freighter',
+  'patrol',
+  'miner',
+  'freighter',
+  'salvager',
+  'miner',
+  'freighter',
+  'patrol',
+  'freighter',
+  'miner',
+  'salvager',
+  'freighter',
+  'patrol',
+  'freighter',
+];
+
+const TRADE_HOMES = [
+  'haven',
+  'meridian-exchange',
+  'verdant',
+  'karth-industrial',
+  'helix-shipyards',
+  'crown',
+  'eidolon',
+  'coldwater-station',
+] as const;
+
+const MINING_JOBS = [
+  {
+    locationId: 'karth-industrial',
+    workLocationId: 'copper-crown-field',
+    resources: ['cuprium', 'kharvium', 'cobaltite'],
+  },
+  {
+    locationId: 'niveus',
+    workLocationId: 'greyrock-belt',
+    resources: ['ferrite', 'silicite', 'carbon', 'sulfur'],
+  },
+  {
+    locationId: 'crown',
+    workLocationId: 'deadlight-belt',
+    resources: ['iridite', 'volucrium', 'rare-metals'],
+  },
+  {
+    locationId: 'coldwater-station',
+    workLocationId: 'frostline-belt',
+    resources: ['silicite', 'iridite', 'rare-metals'],
+  },
+  {
+    locationId: 'haven',
+    workLocationId: 'outer-shards',
+    resources: ['elydrase', 'orvessium', 'cyranthite', 'rare-metals'],
+  },
+] as const;
+
+const SALVAGE_JOBS = [
+  {
+    locationId: 'coldwater-station',
+    workLocationId: 'drift-wreck',
+    resources: ['spare-parts', 'ship-parts', 'ferrite'],
+  },
+  {
+    locationId: 'meridian-exchange',
+    workLocationId: 'sargasso-graveyard',
+    resources: ['machine-parts', 'electronics', 'steel'],
+  },
+  {
+    locationId: 'haven',
+    workLocationId: 'kestrel-breaker',
+    resources: ['machine-parts', 'ship-parts', 'steel'],
+  },
+  {
+    locationId: 'ilex',
+    workLocationId: 'ilex',
+    resources: ['spare-parts', 'electronics', 'ferrite'],
+  },
+] as const;
+
+const PATROL_HOMES = ['vigil-station', 'haven', 'karth-industrial', 'coldwater-station'] as const;
+
+function shipForJob(job: NpcJob, index: number) {
+  const list =
+    job === 'freighter'
+      ? freighterVariantShips
+      : job === 'miner'
+        ? minerVariantShips
+        : job === 'salvager'
+          ? salvageVariantShips
+          : patrolVariantShips;
+  return list[index % list.length]!;
+}
+
+function activityFor(job: NpcJob): string {
+  if (job === 'freighter') return 'Handel / Liegezeit';
+  if (job === 'miner') return 'Wartet auf Förderauftrag';
+  if (job === 'salvager') return 'Wartet auf Bergungsauftrag';
+  return 'Sicherheitspatrouille';
+}
+
+export function createSectorNpcEconomyStates(): SectorNpcState[] {
+  let minerIndex = 0;
+  let salvageIndex = 0;
+  let patrolIndex = 0;
+  let freighterIndex = 0;
+
+  return JOBS.map((job, index) => {
+    const ship = shipForJob(job, index);
+    const profile = getShipRoleProfile(ship.role);
+    let locationId: string;
+    let workLocationId: string | undefined;
+    let workResourceIds: readonly EconomyResourceId[] = [];
+
+    if (job === 'miner') {
+      const work = MINING_JOBS[minerIndex++ % MINING_JOBS.length]!;
+      locationId = work.locationId;
+      workLocationId = work.workLocationId;
+      workResourceIds = work.resources;
+    } else if (job === 'salvager') {
+      const work = SALVAGE_JOBS[salvageIndex++ % SALVAGE_JOBS.length]!;
+      locationId = work.locationId;
+      workLocationId = work.workLocationId;
+      workResourceIds = work.resources;
+    } else if (job === 'patrol') {
+      locationId = PATROL_HOMES[patrolIndex++ % PATROL_HOMES.length]!;
+    } else {
+      locationId = TRADE_HOMES[freighterIndex++ % TRADE_HOMES.length]!;
+    }
+
+    return {
+      id: `npc-${String(index + 1).padStart(2, '0')}`,
+      name: CAPTAINS[index]!,
+      role: job,
+      job,
+      shipId: ship.id,
+      locationId,
+      credits: 18000 + (index % 7) * 2400,
+      cargoCapacity: ship.cargoCapacityTons,
+      normalCargoCapacity:
+        job === 'miner' || job === 'salvager'
+          ? Math.max(20, Math.round(ship.cargoCapacityTons * 0.35))
+          : ship.cargoCapacityTons,
       cargo: {},
-      workResourceIds: [],
-    },
-    {
-      id: 'npc-trader-sable',
-      role: 'trader',
-      locationId: 'verdant',
-      credits: 24000,
-      cargoCapacity: 64,
-      normalCargoCapacity: 64,
-      cargo: {},
-      workResourceIds: [],
-    },
-    {
-      id: 'npc-miner-rusk',
-      role: 'miner',
-      locationId: 'karth-industrial',
-      credits: 9500,
-      cargoCapacity: 56,
-      normalCargoCapacity: 20,
-      cargo: {},
-      workResourceIds: ['cuprium', 'cobaltite'],
-      workLocationId: 'copper-crown-field',
-    },
-    {
-      id: 'npc-miner-orin',
-      role: 'miner',
-      locationId: 'coldwater-station',
-      credits: 12800,
-      cargoCapacity: 52,
-      normalCargoCapacity: 16,
-      cargo: {},
-      workResourceIds: ['elydrase', 'orvessium', 'cyranthite'],
-      workLocationId: 'glass-moon',
-    },
-    {
-      id: 'npc-salvager-varda',
-      role: 'salvager',
-      locationId: 'coldwater-station',
-      credits: 7200,
-      cargoCapacity: 42,
-      normalCargoCapacity: 18,
-      cargo: {},
-      workResourceIds: ['spare-parts', 'ship-parts', 'ferrite'],
-      workLocationId: 'drift-wreck',
-    },
-    {
-      id: 'npc-salvager-niko',
-      role: 'salvager',
-      locationId: 'meridian-exchange',
-      credits: 8600,
-      cargoCapacity: 46,
-      normalCargoCapacity: 18,
-      cargo: {},
-      workResourceIds: ['machine-parts', 'electronics', 'steel'],
-      workLocationId: 'sargasso-graveyard',
-    },
-  ];
+      workResourceIds,
+      ...(workLocationId ? { workLocationId } : {}),
+      fuel: profile.fuelCapacity,
+      fuelCapacity: profile.fuelCapacity,
+      fuelUse: profile.fuelUse,
+      aggression: (index * 23 + 17) % 100,
+      activityId: job === 'patrol' ? 'patrol' : 'dock',
+      activity: activityFor(job),
+      successfulRuns: 0,
+    };
+  });
 }
