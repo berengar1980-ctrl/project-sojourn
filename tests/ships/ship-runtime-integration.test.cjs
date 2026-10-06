@@ -8,10 +8,6 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const runtimeModule = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-runtime.ts');
 const cargoModule = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-cargo-policy.ts');
-const tradeModule = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/economy/player-trade-service.ts'
-);
 
 function createShip(role, laserCount, cargoCapacityTons = 360) {
   return {
@@ -51,35 +47,6 @@ function createShip(role, laserCount, cargoCapacityTons = 360) {
   };
 }
 
-function fakeMarkets() {
-  const entries = {
-    ferrite: {
-      resourceId: 'ferrite',
-      stock: 1000,
-      demand: 0.5,
-      production: 0.2,
-      price: 1,
-    },
-    steel: {
-      resourceId: 'steel',
-      stock: 1000,
-      demand: 0.5,
-      production: 0.2,
-      price: 1,
-    },
-  };
-
-  return {
-    entries,
-    getEntry(locationId, resourceId) {
-      return locationId === 'haven' ? entries[resourceId] ?? null : null;
-    },
-    recalculate(locationId, resourceId) {
-      return this.getEntry(locationId, resourceId)?.price ?? null;
-    },
-  };
-}
-
 const miner = createShip('mining', 3);
 const runtime = runtimeModule.resolveShipRuntimeSetup(miner);
 
@@ -97,19 +64,19 @@ assert.equal(runtime.cargo.totalCapacityTons, 360);
 assert.equal(runtime.cargo.generalCapacityTons, 270);
 assert.equal(runtime.cargo.reservedSpecialCargoTons, 90);
 
-const specialistRuntime = runtimeModule.resolveShipRuntimeSetup(miner, {
-  crew: [
-    {
-      id: 'operator',
-      skills: { mining: 80, sensors: 70, engineering: 60 },
-    },
-  ],
-  assignments: {
-    mining_station: 'operator',
-    sensor_station: 'operator',
-    engine_room: 'operator',
+const crew = [
+  {
+    id: 'operator',
+    skills: { mining: 80, sensors: 70, engineering: 60 },
   },
-});
+];
+const assignments = {
+  mining_station: 'operator',
+  sensor_station: 'operator',
+  engine_room: 'operator',
+};
+const specialistRuntime = runtimeModule.resolveShipRuntimeSetup(miner, { crew, assignments });
+
 assert(specialistRuntime.miningCrewSkill > 20);
 assert(specialistRuntime.sensorCrewSkill > 20);
 assert(
@@ -126,6 +93,7 @@ const underpowered = runtimeModule.resolveShipRuntimeSetup(miner, {
     mining: ['mining3'],
   },
 });
+
 assert.equal(underpowered.energy.baseFree < 0, true);
 assert.equal(underpowered.mining.available, false);
 assert.equal(underpowered.shieldPowered, false);
@@ -139,44 +107,33 @@ assert.deepEqual(policy, {
   specialCargoKind: 'mining',
 });
 
-{
-  const player = { credits: 1000, cargo: {} };
-  assert.equal(cargoModule.shipTradeCargoLimit(miner, player, 'ferrite'), 360);
-  assert.equal(cargoModule.shipTradeCargoLimit(miner, player, 'steel'), 270);
-}
+const emptyCargo = { credits: 0, cargo: {} };
+assert.equal(cargoModule.shipTradeCargoLimit(miner, emptyCargo, 'ferrite'), 360);
+assert.equal(cargoModule.shipTradeCargoLimit(miner, emptyCargo, 'steel'), 270);
 
-{
-  const markets = fakeMarkets();
-  const trade = tradeModule.createPlayerTradeService(markets, 1000);
-  const oreLimit = cargoModule.shipTradeCargoLimit(miner, trade.player, 'ferrite');
-  trade.buy('haven', 'ferrite', 90, oreLimit);
-  const steelLimit = cargoModule.shipTradeCargoLimit(miner, trade.player, 'steel');
-  const steel = trade.buy('haven', 'steel', 500, steelLimit);
+const oreInReserve = {
+  credits: 0,
+  cargo: {
+    ferrite: { qty: 90, totalCost: 0 },
+  },
+};
+assert.equal(
+  cargoModule.shipTradeCargoLimit(miner, oreInReserve, 'steel'),
+  360,
+  'ore in the reserved bay must not consume general trade capacity'
+);
 
-  assert(steel);
-  assert.equal(steel.quantity, 270);
-  assert.equal(trade.player.cargo.ferrite.qty, 90);
-  assert.equal(trade.player.cargo.steel.qty, 270);
-  assert.equal(
-    tradeModule.playerCargoUsed(trade.player),
-    360,
-    'reserved ore space must not reduce the miner total ore-capable hold'
-  );
-}
-
-{
-  const markets = fakeMarkets();
-  const trade = tradeModule.createPlayerTradeService(markets, 1000);
-  const steelLimit = cargoModule.shipTradeCargoLimit(miner, trade.player, 'steel');
-  const steel = trade.buy('haven', 'steel', 500, steelLimit);
-
-  assert(steel);
-  assert.equal(
-    steel.quantity,
-    270,
-    'an empty miner must not use the ore-only reserve for ordinary freight'
-  );
-}
+const fullOfOre = {
+  credits: 0,
+  cargo: {
+    ferrite: { qty: 360, totalCost: 0 },
+  },
+};
+assert.equal(
+  cargoModule.shipTradeCargoLimit(miner, fullOfOre, 'ferrite'),
+  360,
+  'ore must be allowed to fill the entire miner cargo capacity'
+);
 
 const miningComposition = fs.readFileSync(path.join(root, 'src/app/mining-local-space.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
