@@ -1,9 +1,12 @@
 import type { ShipHardpoints, ShipManeuverThruster } from '../../core/ship-types';
 
+const REVERSE_REFERENCE_SPEED = 18;
+
 export interface ManeuverDemand {
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
   readonly lateralThrust: number;
+  readonly longitudinalThrust: number;
 }
 
 export interface ManeuverThrusterBurst {
@@ -18,11 +21,31 @@ function torqueSign(thruster: ShipManeuverThruster, source: ShipHardpoints): num
   return Math.sign(torque);
 }
 
+function isAxialThruster(thruster: ShipManeuverThruster): boolean {
+  return Math.abs(thruster.forceX) > Math.abs(thruster.forceY);
+}
+
+export function longitudinalManeuverDemand(speed: number): number {
+  if (speed >= -0.5) return 0;
+  return Math.max(-1, Math.min(0, speed / REVERSE_REFERENCE_SPEED));
+}
+
 function demandForThruster(
   thruster: ShipManeuverThruster,
   source: ShipHardpoints,
   demand: ManeuverDemand
 ): number {
+  if (isAxialThruster(thruster)) {
+    const longitudinalSign = Math.sign(demand.longitudinalThrust);
+    if (
+      longitudinalSign !== 0 &&
+      Math.sign(thruster.forceX) === longitudinalSign
+    ) {
+      return Math.min(1, Math.abs(demand.longitudinalThrust));
+    }
+    return 0;
+  }
+
   const turnCommand =
     Math.abs(demand.angularThrust) > 0.02
       ? demand.angularThrust
