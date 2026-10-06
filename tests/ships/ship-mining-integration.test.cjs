@@ -118,7 +118,8 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-mini
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 
 assert(service.includes('miningAvailable: this.miningEnabled'));
-assert(service.includes('this.miningAccumulator >= this.miningCycleSeconds'));
+assert(service.includes('const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds)'));
+assert(service.includes('this.miningAccumulator >= cycleSeconds'));
 assert(controller.includes('const runtime = resolveShipRuntimeSetup(ship)'));
 assert(controller.includes('cycleSeconds: runtime.mining.cycleSeconds'));
 assert(controller.includes('runtime.cargoCapacityTons'));
