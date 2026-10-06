@@ -34,7 +34,6 @@ export interface SalvageFieldService {
   recoverResource(wreckId: string, resourceId?: string): SalvageRecoveryResult | null;
 }
 
-
 function deterministicComponentRoll(field: SalvageField, wreck: SalvageWreck): number {
   const source = field.seed + ':' + wreck.id + ':' + (wreck.component?.componentId ?? '');
   let hash = 2166136261;
