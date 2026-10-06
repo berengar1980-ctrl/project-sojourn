@@ -1,5 +1,5 @@
 import type { EconomyResourceId } from '../../core/economy-types';
-import type { PortCrewCandidate, PortDefinition } from '../../core/port-types';
+import type { PortDefinition } from '../../core/port-types';
 
 type Security = PortDefinition['security'];
 
@@ -13,19 +13,6 @@ export interface PortProfile {
   readonly produces: readonly EconomyResourceId[];
   readonly needs: readonly EconomyResourceId[];
   readonly trades?: readonly EconomyResourceId[];
-  readonly crew?: readonly PortCrewCandidate[];
-}
-
-function crew(
-  id: string,
-  name: string,
-  role: string,
-  traits: readonly string[],
-  combat: number,
-  salary: number,
-  equipment: readonly string[]
-): PortCrewCandidate {
-  return { id, name, role, traits, combat, salary, equipment };
 }
 
 // prettier-ignore
@@ -110,26 +97,6 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'refinery-gas',
       'explosives',
     ],
-    crew: [
-      crew(
-        'crew-tomas-reik',
-        'Tomas Reik',
-        'Waffenoffizier',
-        ['Diszipliniert', 'Aggressiv'],
-        5,
-        1700,
-        ['Karabiner', 'Panzerweste']
-      ),
-      crew(
-        'crew-lysa-orn',
-        'Lysa Orn',
-        'Reaktortechnik',
-        ['Hartnäckig', 'Effizient'],
-        2,
-        1650,
-        ['Werkzeug']
-      ),
-    ],
   },
   {
     locationId: 'helix-shipyards',
@@ -188,16 +155,6 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'protein',
       'luxury-food',
       'aged-spirits',
-    ],
-    crew: [
-      crew('crew-elara-voss', 'Elara Voss', 'Sensorik', ['Scharfsinnig', 'Umsichtig'], 2, 1800, [
-        'Scanner',
-        'Pistole',
-      ]),
-      crew('crew-joran-kade', 'Joran Kade', 'Techniker', ['Diszipliniert', 'Loyal'], 3, 1500, [
-        'Werkzeug',
-        'Karabiner',
-      ]),
     ],
   },
   {
@@ -338,12 +295,6 @@ export const sectorPortProfiles: readonly PortProfile[] = [
       'medical',
       'tools',
       'coolant',
-    ],
-    crew: [
-      crew('crew-ivar-denn', 'Ivar Denn', 'Maschinenraum', ['Pragmatisch', 'Robust'], 3, 1250, [
-        'Werkzeug',
-        'Pistole',
-      ]),
     ],
   },
   {
