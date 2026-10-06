@@ -98,7 +98,8 @@ export function npcOperationalSpeed(npc: SectorNpcState): number {
 }
 
 export function tryNpcComponentUpgrade(npc: SectorNpcState): boolean {
-  if (npc.successfulRuns < 8) return false;
+  const lastUpgradeRun = npc.lastComponentUpgradeRun ?? 0;
+  if (npc.successfulRuns < 8 || npc.successfulRuns - lastUpgradeRun < 8) return false;
   const reserve = 300000;
   const candidates = UPGRADE_TYPES
     .map((type) => {
@@ -126,6 +127,7 @@ export function tryNpcComponentUpgrade(npc: SectorNpcState): boolean {
   installed[selected.type] = ids;
   npc.credits -= selected.cost;
   npc.componentUpgradeCount = (npc.componentUpgradeCount ?? 0) + 1;
+  npc.lastComponentUpgradeRun = npc.successfulRuns;
   npc.activityId = 'shipyard-upgrade';
   npc.activity = `Werftumbau · ${getShipComponent(selected.type, selected.nextId)?.name ?? selected.nextId}`;
   return true;
