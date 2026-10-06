@@ -19,6 +19,7 @@ import type {
   WorldPoint,
 } from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
+import { playerSaleUnitPrice } from '../../systems/economy/player-trade-service';
 import { getShipComponent, type InstalledShipComponents } from '../../systems/ships';
 
 export interface PortMarketRowView {
@@ -95,6 +96,7 @@ export interface PortCrewView {
   readonly name: string;
   readonly initials: string;
   readonly role: string;
+  readonly skills: readonly string[];
   readonly traits: readonly string[];
   readonly ranged: number;
   readonly melee: number;
@@ -209,6 +211,26 @@ const SOCIAL_LABELS: Readonly<Record<string, string>> = {
   trust: 'Vertrauen',
 };
 
+const SKILL_LABELS: Readonly<Record<ShipStationSkill, string>> = {
+  piloting: 'STEUER',
+  sensors: 'SENSOR',
+  weapons: 'WAFFEN',
+  engineering: 'TECH',
+  salvage: 'BERGUNG',
+  mining: 'MINING',
+  logistics: 'LOGISTIK',
+};
+
+const SKILL_ORDER = [
+  'piloting',
+  'sensors',
+  'weapons',
+  'engineering',
+  'salvage',
+  'mining',
+  'logistics',
+] as const satisfies readonly ShipStationSkill[];
+
 const STATION_LABELS: Readonly<Record<string, string>> = {
   helm: 'Brücke',
   sensor_station: 'Sensorik',
@@ -253,7 +275,8 @@ function productionLabel(value: number): string {
 
 function marketRows(
   market: EconomyMarketState,
-  player: PlayerEconomyState
+  player: PlayerEconomyState,
+  saleFeeRate: number
 ): readonly PortMarketRowView[] {
   return Object.values(market.entries)
     .map((entry) => {
@@ -270,7 +293,7 @@ function marketRows(
         legality: resource.legality,
         legalityLabel: resourceLegalityLabel(resource.id),
         buyPrice: entry.price,
-        sellPrice: Math.max(1, Math.round(entry.price * 0.94)),
+        sellPrice: playerSaleUnitPrice(entry.price, saleFeeRate),
         stock: Math.round(entry.stock),
         demandLabel: demandLabel(entry.demand),
         productionLabel: productionLabel(entry.production),
@@ -295,12 +318,13 @@ function intelStatus(ageDays: number): PortSystemMarketRowView['intelStatus'] {
 function systemRows(
   input: readonly PortSystemMarketInput[],
   player: PlayerEconomyState,
-  currentDay: number
+  currentDay: number,
+  saleFeeRate: number
 ): PortSystemMarketRowView[] {
   return input
     .map((entry) => {
       const lot = player.cargo[entry.resourceId];
-      const sellPrice = Math.max(1, Math.round(entry.price * 0.94));
+      const sellPrice = playerSaleUnitPrice(entry.price, saleFeeRate);
       const revenue = lot ? sellPrice * lot.qty : 0;
       const profit = lot ? Math.round(revenue - lot.totalCost) : null;
       const ageDays = Math.max(0, currentDay - entry.observedDay);
@@ -441,6 +465,7 @@ function crewMemberView(member: CrewMember): PortCrewView {
     name: member.name,
     initials: crewInitials(member.name),
     role: member.title,
+    skills: SKILL_ORDER.map((skill) => `${SKILL_LABELS[skill]} ${member.skills[skill]}`),
     traits: Object.entries(member.socialTraits)
       .filter(([, value]) => value !== 0)
       .sort((first, second) => Math.abs(second[1]) - Math.abs(first[1]))
@@ -508,10 +533,11 @@ export function createPortViewModel(
   shipState: PortShipStateInput,
   systemMarketInput: readonly PortSystemMarketInput[],
   currentDay: number,
-  cargoCapacityTons = ship.cargoCapacityTons
+  cargoCapacityTons = ship.cargoCapacityTons,
+  saleFeeRate = 0.06
 ): PortViewModel {
-  const localMarket = marketRows(market, player);
-  const systemMarket = systemRows(systemMarketInput, player, currentDay);
+  const localMarket = marketRows(market, player, saleFeeRate);
+  const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
   return {
     locationId: location.id,
     locationName: location.name,
