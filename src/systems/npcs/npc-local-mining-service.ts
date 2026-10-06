@@ -141,7 +141,7 @@ function eligibleMiner(npc: SectorNpcState, locationId: string): boolean {
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
     !npc.travel &&
-    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity * 0.82))
+    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
   );
 }
 
@@ -231,7 +231,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
     const requested = Math.min(MINING_AMOUNT, deposit.oreRemaining);
     const accepted = options.mine(npc, deposit.resourceId, requested);
     if (accepted > 0) deposit.oreRemaining = Math.max(0, deposit.oreRemaining - accepted);
-    if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity * 0.82)) {
+    if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
       beginExit(ship);
     } else if (!asteroid.deposits.some((candidate) => candidate.oreRemaining > 0)) {
       assignTarget(ship, npc);
@@ -317,7 +317,6 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
           ship.laserActive = false;
           ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
           if (ship.scanProgress < 1) continue;
-          asteroid.scanLevel = 'analyzed';
           events.get(npc.id)?.begin(asteroid);
           ship.phase = 'mining';
           ship.miningAccumulator = 0;
