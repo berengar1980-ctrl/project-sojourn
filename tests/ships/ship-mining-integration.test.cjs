@@ -122,8 +122,18 @@ assert(
   service.includes('const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds)')
 );
 assert(service.includes('this.miningAccumulator >= cycleSeconds'));
-assert(controller.includes('const runtime = resolveShipRuntimeSetup(ship)'));
-assert(controller.includes('cycleSeconds: runtime.mining.cycleSeconds'));
+assert(controller.includes('const runtime = resolveShipRuntimeSetup(ship, runtimeOptions)'));
+assert(
+  controller.includes(
+    'runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier'
+  )
+);
+assert(
+  controller.includes(
+    'runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier'
+  )
+);
+assert(service.includes('this.miningYieldMultiplier'));
 assert(controller.includes('runtime.cargoCapacityTons'));
 assert(panel.includes('!model.miningAvailable'));
 
