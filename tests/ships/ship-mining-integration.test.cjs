@@ -114,10 +114,7 @@ const service = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-service.ts'),
   'utf8'
 );
-const miningComposition = fs.readFileSync(
-  path.join(root, 'src/app/mining-local-space.ts'),
-  'utf8'
-);
+const miningComposition = fs.readFileSync(path.join(root, 'src/app/mining-local-space.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 
 assert(service.includes('miningAvailable: this.miningEnabled'));
