@@ -96,6 +96,7 @@ export interface PortCrewView {
   readonly name: string;
   readonly initials: string;
   readonly role: string;
+  readonly skills: readonly string[];
   readonly traits: readonly string[];
   readonly ranged: number;
   readonly melee: number;
@@ -209,6 +210,26 @@ const SOCIAL_LABELS: Readonly<Record<string, string>> = {
   cunning: 'List',
   trust: 'Vertrauen',
 };
+
+const SKILL_LABELS: Readonly<Record<ShipStationSkill, string>> = {
+  piloting: 'STEUER',
+  sensors: 'SENSOR',
+  weapons: 'WAFFEN',
+  engineering: 'TECH',
+  salvage: 'BERGUNG',
+  mining: 'MINING',
+  logistics: 'LOGISTIK',
+};
+
+const SKILL_ORDER = [
+  'piloting',
+  'sensors',
+  'weapons',
+  'engineering',
+  'salvage',
+  'mining',
+  'logistics',
+] as const satisfies readonly ShipStationSkill[];
 
 const STATION_LABELS: Readonly<Record<string, string>> = {
   helm: 'Brücke',
@@ -444,6 +465,7 @@ function crewMemberView(member: CrewMember): PortCrewView {
     name: member.name,
     initials: crewInitials(member.name),
     role: member.title,
+    skills: SKILL_ORDER.map((skill) => `${SKILL_LABELS[skill]} ${member.skills[skill]}`),
     traits: Object.entries(member.socialTraits)
       .filter(([, value]) => value !== 0)
       .sort((first, second) => Math.abs(second[1]) - Math.abs(first[1]))
