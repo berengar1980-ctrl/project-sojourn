@@ -7,6 +7,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const routes = loadStandaloneTypeScriptModule(root, 'src/systems/navigation/route-planner.ts');
+const navigation = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/navigation/navigation-service.ts'
+);
 
 const world = {
   id: 'danger-test',
@@ -69,6 +73,17 @@ assert(
   'safe routing must trade distance for lower danger when a red region blocks the direct course'
 );
 assert(safe.distance >= 1000, 'detours must never under-report geometric route distance');
+
+const service = navigation.createNavigationService(world, 'a', 240);
+service.selectDestination('b');
+const preview = service.getSnapshot().previewRoute;
+assert(preview && preview.points.length > 2, 'player navigation must preview the routed detour');
+service.startTravel();
+for (let step = 0; step < 10000 && service.getSnapshot().isTravelling; step += 1) {
+  service.tick(0.1);
+}
+assert.equal(service.getSnapshot().currentLocationId, 'b');
+assert.equal(service.getSnapshot().isTravelling, false);
 
 const sectorMap = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts').narrowsSector;
 assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger regions');
