@@ -84,6 +84,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
     },
+    onEventChoice(choiceId) {
+      const result = service.resolveSalvageEvent(choiceId);
+      refresh();
+      return result;
+    },
     onCancel() {
       service.cancelOperation();
       options.log.write('BERGUNG > VORGANG ABGEBROCHEN');
