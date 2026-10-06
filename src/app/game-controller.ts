@@ -32,26 +32,17 @@ import {
   createPlayerTradeService,
   type PlayerTradeService,
 } from '../systems/economy/player-trade-service';
-import {
-  createLocalSpaceService,
-  generateMiningSpace,
-  planMiningApproachRouteAsync,
-  planPointRouteAsync,
-} from '../systems/local-space';
+import { planMiningApproachRouteAsync, planPointRouteAsync } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import {
-  getAllShipDefinitions,
-  getShipDefinition,
-  resolveShipRuntimeSetup,
-  shipTradeCargoLimit,
-} from '../systems/ships';
+import { getAllShipDefinitions, getShipDefinition, shipTradeCargoLimit } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { createMiningLocalSpace } from './mining-local-space';
 
 type SceneMode = 'star-map' | 'local-space' | 'port';
 
@@ -215,37 +206,6 @@ async function calculateScanRoute(service: LocalSpaceService): Promise<readonly 
 
 async function calculatePointRoute(service: LocalSpaceService, target: WorldPoint) {
   return planPointRouteAsync(service.getPointRouteOptions(target));
-}
-
-function createMiningLocalSpace(
-  ship: ShipDefinition,
-  seed: number,
-  mining: MiningEconomyService,
-  location: WorldLocation
-): LocalSpaceService {
-  const runtime = resolveShipRuntimeSetup(ship);
-  return createLocalSpaceService({
-    instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
-    approachSpeed: 85,
-    hardpoints: ship.sprite.hardpoints,
-    nominalLengthMeters: ship.nominalLengthMeters,
-    mining: {
-      enabled: runtime.mining.available,
-      cycleSeconds: runtime.mining.cycleSeconds,
-    },
-    defense: {
-      hullMaxHp: runtime.hullMaxHp,
-      shieldMaxHp: runtime.shieldMaxHp,
-      shieldDamageModifier: runtime.shieldDamageModifier,
-      shieldPowered: runtime.shieldPowered,
-    },
-    sensors: {
-      modifier: runtime.sensorModifier,
-      crewSkill: runtime.sensorCrewSkill,
-    },
-    onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, runtime.cargo.totalCapacityTons, location.id),
-  });
 }
 
 function enteredMiningLocation(
