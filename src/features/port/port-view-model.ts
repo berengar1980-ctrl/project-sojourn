@@ -11,7 +11,13 @@ import type {
   ShipStationDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
-import type { WorldLocation } from '../../core/world-types';
+import type {
+  PlanetBiome,
+  PlanetRingStyle,
+  StationType,
+  WorldLocation,
+  WorldPoint,
+} from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
 import { getShipComponent, type InstalledShipComponents } from '../../systems/ships';
 
@@ -112,6 +118,17 @@ export interface PortCrewStateView {
   readonly stations: readonly PortStationView[];
 }
 
+export interface PortLocationVisualView {
+  readonly id: string;
+  readonly kind: WorldLocation['kind'];
+  readonly dangerLevel: WorldLocation['dangerLevel'];
+  readonly planetBiome?: PlanetBiome;
+  readonly ringStyle?: PlanetRingStyle;
+  readonly stationType?: StationType;
+  readonly light: WorldPoint;
+}
+
+
 export interface PortCrewStateInput {
   readonly available: readonly CrewMember[];
   readonly hired: readonly CrewMember[];
@@ -146,6 +163,7 @@ export interface PortViewModel {
   readonly locationId: string;
   readonly locationName: string;
   readonly locationKind: string;
+  readonly locationVisual: PortLocationVisualView;
   readonly subtitle: string;
   readonly economy: string;
   readonly population: string;
@@ -485,6 +503,7 @@ export function createPortViewModel(
   market: EconomyMarketState,
   player: PlayerEconomyState,
   location: WorldLocation,
+  starPosition: WorldPoint,
   ship: ShipDefinition,
   crewState: PortCrewStateInput,
   shipState: PortShipStateInput,
@@ -498,6 +517,18 @@ export function createPortViewModel(
     locationId: location.id,
     locationName: location.name,
     locationKind: location.kind === 'station' ? 'ORBITALSTATION' : 'PLANET',
+    locationVisual: {
+      id: location.id,
+      kind: location.kind,
+      dangerLevel: location.dangerLevel,
+      planetBiome: location.planetBiome,
+      ringStyle: location.ringStyle,
+      stationType: location.stationType,
+      light: {
+        x: starPosition.x - location.position.x,
+        y: starPosition.y - location.position.y,
+      },
+    },
     subtitle: port.subtitle,
     economy: port.economy,
     population: port.population,
