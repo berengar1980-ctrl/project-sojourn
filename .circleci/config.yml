@@ -1,14 +1,7 @@
 version: 2.1
 
-commands:
-  use-prepared-dependencies:
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-
 jobs:
-  quick-gate:
+  quality-gate:
     docker:
       - image: cimg/node:20.18
     resource_class: small
@@ -37,17 +30,6 @@ jobs:
       - run:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
-      - persist_to_workspace:
-          root: .
-          paths:
-            - node_modules
-
-  verify:
-    docker:
-      - image: cimg/node:20.18
-    resource_class: small
-    steps:
-      - use-prepared-dependencies
       - run:
           name: Tests
           command: node scripts/ci-run-and-report.cjs tests -- npm test
@@ -58,13 +40,7 @@ jobs:
 workflows:
   quality:
     jobs:
-      - quick-gate:
-          filters:
-            branches:
-              only: ci-gate
-      - verify:
-          requires:
-            - quick-gate
+      - quality-gate:
           filters:
             branches:
               only: ci-gate
