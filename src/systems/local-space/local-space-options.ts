@@ -6,6 +6,7 @@ import type { LocalSpaceSystemsOptions } from './local-space-ship-systems';
 export interface LocalSpaceMiningOptions {
   readonly enabled: boolean;
   readonly cycleSeconds: number;
+  readonly yieldMultiplier?: number;
 }
 
 export interface LocalSpaceServiceOptions {

@@ -5,8 +5,8 @@ import type {
   SalvageWreck,
 } from '../../core/salvage-types';
 import type { ShipComponentType } from '../../core/ship-types';
+import { salvageYieldMultiplier } from '../crew/crew-skill-effects';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
-import { stationFactor } from '../ships/station-performance';
 
 export interface SalvageResourceCollector {
   (
@@ -143,7 +143,7 @@ export function createSalvageFieldService(options: {
         ) ?? null;
       if (!deposit) return null;
 
-      const crewMultiplier = stationFactor(crewSkill, 0.35);
+      const crewMultiplier = salvageYieldMultiplier(crewSkill);
       const baseAmount = 3 + wreck.quality * 2;
       const wanted = Math.max(1, Math.round(baseAmount * setup.yieldMultiplier * crewMultiplier));
       const recovered = collect(

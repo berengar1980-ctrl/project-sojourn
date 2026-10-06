@@ -104,4 +104,16 @@ function fakeMarkets(initialStock = 20, initialPrice = 100) {
   assert.equal(trade.player.credits, 1000);
 }
 
-console.log('PASS player trade transactions, cargo limits and cost basis');
+{
+  const markets = fakeMarkets(20, 100);
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  trade.buy('haven', 'steel', 2, 10);
+  markets.entry.price = 200;
+  const result = trade.sell('haven', 'steel', 1, 0.25);
+
+  assert(result);
+  assert.equal(result.unitPrice, 150, 'logistics fee must affect actual sale payout');
+  assert.equal(result.creditsDelta, 150);
+}
+
+console.log('PASS player trade transactions, cargo limits, cost basis and logistics fees');

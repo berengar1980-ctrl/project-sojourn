@@ -6,7 +6,6 @@ import {
   generateMiningSpace,
   type LocalSpaceService,
 } from '../systems/local-space';
-import { stationReduction } from '../systems/ships';
 import { resolveShipRuntimeSetup, type ShipRuntimeOptions } from '../systems/ships';
 
 export function createMiningLocalSpace(
@@ -25,8 +24,9 @@ export function createMiningLocalSpace(
     nominalLengthMeters: ship.nominalLengthMeters,
     mining: {
       enabled: runtime.mining.available,
-      cycleSeconds:
-        runtime.mining.cycleSeconds * stationReduction(runtime.miningCrewSkill, 0.25),
+      cycleSeconds: runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier,
+      yieldMultiplier:
+        runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier,
     },
     systems: {
       shieldMaxHp: runtime.shieldMaxHp,
