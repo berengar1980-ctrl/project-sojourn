@@ -30,6 +30,7 @@ export interface SectorNpcState extends NpcEconomyState {
   successfulRuns: number;
   installedComponents?: NpcInstalledComponents;
   componentUpgradeCount?: number;
+  lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;
 }
 
