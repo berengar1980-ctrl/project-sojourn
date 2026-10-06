@@ -76,6 +76,7 @@ export interface LocalSpaceViewModel {
   readonly longRangeScanProgress: number | null;
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
+  readonly miningAvailable: boolean;
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
   readonly shield: ShieldState;
@@ -179,6 +180,7 @@ export function createLocalSpaceViewModel(
     longRangeScanProgress: snapshot.longRangeScanProgress,
     shortRangeScanProgress: snapshot.shortRangeScanProgress,
     miningPhase: snapshot.miningPhase,
+    miningAvailable: snapshot.miningAvailable,
     laserActive: snapshot.laserActive,
     miningImpact: snapshot.miningImpact,
     shield: snapshot.shield,

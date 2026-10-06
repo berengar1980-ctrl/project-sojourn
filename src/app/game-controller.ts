@@ -40,7 +40,7 @@ import {
 } from '../systems/local-space';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
+import { getAllShipDefinitions, getShipDefinition, resolveShipMiningSetup } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -218,13 +218,18 @@ function createMiningLocalSpace(
   mining: MiningEconomyService,
   location: WorldLocation
 ): LocalSpaceService {
+  const miningSetup = resolveShipMiningSetup(ship);
   return createLocalSpaceService({
     instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
     approachSpeed: 85,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
+    mining: {
+      enabled: miningSetup.available,
+      cycleSeconds: miningSetup.cycleSeconds,
+    },
     onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, ship.cargoCapacityTons, location.id),
+      mining.collect(resourceId, amount, miningSetup.cargoCapacityTons, location.id),
   });
 }
 

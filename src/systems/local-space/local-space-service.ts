@@ -40,29 +40,22 @@ import {
   updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
+import type { LocalSpaceService } from './local-space-api';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { advanceShieldImpacts, applyShieldHit, createShieldState } from '../shields';
+
+export interface LocalSpaceMiningOptions {
+  readonly enabled: boolean;
+  readonly cycleSeconds: number;
+}
 
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
   readonly approachSpeed: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
+  readonly mining?: LocalSpaceMiningOptions;
   readonly onMiningChunkCollected?: MiningChunkCollector;
-}
-
-export interface LocalSpaceService {
-  getSnapshot(): LocalSpaceSnapshot;
-  selectAsteroid(id: string | null): LocalSpaceSnapshot;
-  getMiningRouteOptions(): RoutePlanningOptions | null;
-  getShortRangeScanRouteOptions(): RoutePlanningOptions | null;
-  getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions;
-  startLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot;
-  startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
-  cancelMining(): LocalSpaceSnapshot;
-  tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
 
 class LocalSpaceRuntime implements LocalSpaceService {
@@ -71,6 +64,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
+  private readonly miningEnabled: boolean;
+  private readonly miningCycleSeconds: number;
   private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
@@ -103,6 +98,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachSpeed = options.approachSpeed;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
+    this.miningEnabled = options.mining?.enabled ?? true;
+    this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
     this.onMiningChunkCollected = options.onMiningChunkCollected;
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.shieldState = createShieldState(
@@ -130,6 +127,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       shortRangeScanProgress:
         this.miningPhase === 'scanning' ? Math.min(1, this.shortRangeScanElapsed / 5) : null,
       miningPhase: this.miningPhase,
+      miningAvailable: this.miningEnabled,
       collectedOre: this.collectedOre,
       collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
         resourceId,
@@ -193,6 +191,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
+    if (!this.miningEnabled) return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
     if (!asteroid) return this.getSnapshot();
 
@@ -425,8 +424,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.updateMiningFormation(deltaSeconds, asteroid);
     this.miningAccumulator += deltaSeconds;
 
-    while (this.miningAccumulator >= 0.42 && hasMineableDeposits(asteroid)) {
-      this.miningAccumulator -= 0.42;
+    while (this.miningAccumulator >= this.miningCycleSeconds && hasMineableDeposits(asteroid)) {
+      this.miningAccumulator -= this.miningCycleSeconds;
       this.spawnChunk(asteroid);
     }
 

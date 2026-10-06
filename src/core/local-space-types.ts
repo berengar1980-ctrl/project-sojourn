@@ -83,6 +83,7 @@ export interface LocalSpaceSnapshot {
   readonly longRangeScanProgress: number | null;
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
+  readonly miningAvailable: boolean;
   readonly collectedOre: number;
   readonly collectedResources: readonly ResourceCargoEntry[];
   readonly laserActive: boolean;
