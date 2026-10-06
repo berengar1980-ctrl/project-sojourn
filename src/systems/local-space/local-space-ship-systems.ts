@@ -30,6 +30,7 @@ export interface LocalSpaceShipSystems {
   readonly sensorCrewSkill: number;
   snapshot(): ShipSystemsSnapshot;
   advance(deltaSeconds: number): void;
+  damageHullFraction(fraction: number): number;
   applyCollision(collision: ShieldCollisionImpact): void;
 }
 
@@ -70,6 +71,15 @@ export function createLocalSpaceShipSystems(
 
     advance(deltaSeconds) {
       shieldImpacts = advanceShieldImpacts(shieldImpacts, deltaSeconds);
+    },
+
+    damageHullFraction(fraction) {
+      const damage = Math.min(
+        hull.currentHp,
+        Math.max(0, Math.round(hull.maxHp * Math.max(0, fraction)))
+      );
+      hull.currentHp = Math.max(0, hull.currentHp - damage);
+      return damage;
     },
 
     applyCollision(collision) {

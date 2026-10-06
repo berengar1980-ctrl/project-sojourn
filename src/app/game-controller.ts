@@ -63,6 +63,9 @@ interface LocalPanelActions {
   readonly onStartMining: () => Promise<void>;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
+  readonly onMiningEventChoice: (
+    choiceId: string
+  ) => ReturnType<LocalSpaceService['resolveMiningEvent']>;
   readonly onCancelMining: () => void;
   readonly onReturnToStarMap: () => void;
 }
@@ -280,6 +283,11 @@ function createLocalPanelActions(context: LocalActionContext): LocalPanelActions
       if (context.getSpace() !== activeSpace || route.length === 0) return;
       activeSpace.startShortRangeScan(route);
       context.refresh();
+    },
+    onMiningEventChoice(choiceId) {
+      const result = context.getSpace()?.resolveMiningEvent(choiceId) ?? null;
+      context.refresh();
+      return result;
     },
     onCancelMining() {
       context.getSpace()?.cancelMining();

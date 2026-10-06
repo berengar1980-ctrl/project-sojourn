@@ -1,4 +1,4 @@
-import type { LocalSpaceSnapshot } from '../../core/local-space-types';
+import type { LocalSpaceSnapshot, MiningEventResolution } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 
@@ -12,6 +12,7 @@ export interface LocalSpaceService {
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
+  resolveMiningEvent(choiceId: string): MiningEventResolution | null;
   cancelMining(): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
