@@ -2,7 +2,7 @@ import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-t
 import type { ShipDefinition, ShipSpecialCargoKind } from '../../core/ship-types';
 import { economyResourceById } from '../../data/economy/economy-resources';
 import { componentCargoBonus, type InstalledShipComponents } from './ship-component-service';
-import { defaultInstalledShipComponents } from './ship-mining-capability';
+import { defaultInstalledShipComponents } from './ship-default-loadout';
 import { resolveShipGameplayStats } from './ship-stats';
 
 export interface ShipCargoPolicy {
