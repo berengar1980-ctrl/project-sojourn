@@ -12,12 +12,7 @@ const COMMON_STATIONS: readonly ShipStationDefinition[] = [
   { id: 'engine-room', skill: 'engineering' },
 ];
 
-function slots(
-  weapon: number,
-  cargo: number,
-  mining: number,
-  salvage: number
-): ShipComponentSlots {
+function slots(weapon: number, cargo: number, mining: number, salvage: number): ShipComponentSlots {
   return {
     reactor: 1,
     engine: 1,
