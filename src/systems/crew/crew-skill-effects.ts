@@ -9,6 +9,7 @@ export interface CrewSkillEffects {
   };
   readonly sensors: {
     readonly weaponHitChanceBonus: number;
+    readonly contactBaseRange: number;
     readonly marketIntelBaseRange: number;
   };
   readonly weapons: {
@@ -31,6 +32,9 @@ export interface CrewSkillEffects {
     readonly workTimeMultiplier: number;
     readonly prospectTimeMultiplier: number;
     readonly fuelUseMultiplier: number;
+    readonly deepYieldMultiplier: number;
+    readonly deepWorkTimeMultiplier: number;
+    readonly deepFuelUseMultiplier: number;
     readonly prospectUncertainty: number;
     readonly secondDepositChance: number;
     readonly thirdDepositChance: number;
@@ -66,6 +70,10 @@ export function pilotingFuelUseMultiplier(skill: number): number {
 
 export function sensorWeaponHitChanceBonus(skill: number): number {
   return (normalizedCrewSkill(skill) / 100) * 0.15;
+}
+
+export function sensorContactBaseRange(skill: number): number {
+  return 1.4 + normalizedCrewSkill(skill) * 0.045;
 }
 
 export function sensorMarketIntelBaseRange(skill: number): number {
@@ -124,6 +132,18 @@ export function miningFuelUseMultiplier(skill: number): number {
   return 1 - (normalizedCrewSkill(skill) / 100) * 0.1;
 }
 
+export function deepMiningYieldMultiplier(skill: number): number {
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.35;
+}
+
+export function deepMiningWorkTimeMultiplier(skill: number): number {
+  return 1 - (normalizedCrewSkill(skill) / 100) * 0.2;
+}
+
+export function deepMiningFuelUseMultiplier(skill: number): number {
+  return 1 - (normalizedCrewSkill(skill) / 100) * 0.08;
+}
+
 export function miningProspectUncertainty(skill: number): number {
   return clamp(0.34 - (normalizedCrewSkill(skill) / 100) * 0.18, 0.14, 0.34);
 }
@@ -167,6 +187,7 @@ export function crewSkillEffects(
     },
     sensors: {
       weaponHitChanceBonus: sensorWeaponHitChanceBonus(sensors),
+      contactBaseRange: sensorContactBaseRange(sensors),
       marketIntelBaseRange: sensorMarketIntelBaseRange(sensors),
     },
     weapons: {
@@ -189,6 +210,9 @@ export function crewSkillEffects(
       workTimeMultiplier: miningWorkTimeMultiplier(mining),
       prospectTimeMultiplier: miningProspectTimeMultiplier(mining),
       fuelUseMultiplier: miningFuelUseMultiplier(mining),
+      deepYieldMultiplier: deepMiningYieldMultiplier(mining),
+      deepWorkTimeMultiplier: deepMiningWorkTimeMultiplier(mining),
+      deepFuelUseMultiplier: deepMiningFuelUseMultiplier(mining),
       prospectUncertainty: miningProspectUncertainty(mining),
       secondDepositChance: miningSecondDepositChance(mining),
       thirdDepositChance: miningThirdDepositChance(mining),
