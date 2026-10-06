@@ -4,15 +4,9 @@ import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
-import {
-  createSalvageLocalSpaceService,
-  generateSalvageField,
-} from '../systems/salvage';
+import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { resolveShipRuntimeSetup } from '../systems/ships';
-import {
-  createSalvageSpacePanel,
-  type SalvageSpacePanel,
-} from '../ui/salvage/salvage-space-panel';
+import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
   tick(deltaSeconds: number): void;
