@@ -1,4 +1,8 @@
-import type { ResolvedShipGameplayStats, ShipDefinition } from '../../core/ship-types';
+import type {
+  ResolvedShipGameplayStats,
+  ShipDefinition,
+  ShipStationSkill,
+} from '../../core/ship-types';
 import type { ShipComponentType } from '../../data/ships/ship-component-catalog';
 import {
   calculateShipEnergy,
@@ -39,6 +43,7 @@ export interface ShipRuntimeOptions {
   readonly installed?: InstalledShipComponents;
   readonly crew?: readonly ShipCrewMember[];
   readonly assignments?: ShipStationAssignments;
+  readonly manningFactor?: number;
   readonly commandBonus?: number;
 }
 
@@ -48,6 +53,8 @@ export interface ShipRuntimeSetup {
   readonly energy: ShipEnergySnapshot;
   readonly mining: ShipMiningSetup;
   readonly salvage: ShipSalvageSetup;
+  readonly stationSkills: Readonly<Record<ShipStationSkill, number>>;
+  readonly miningCrewSkill: number;
   readonly salvageCrewSkill: number;
   readonly cargoCapacityTons: number;
   readonly hullMaxHp: number;
@@ -85,22 +92,31 @@ export function resolveShipRuntimeSetup(
     stats.maxComponentTier
   );
   const energy = calculateShipEnergy(installed);
-  const sensorCrewSkill = calculateStationSkill(
-    stats.stations,
-    options.assignments ?? {},
-    options.crew ?? [],
-    'sensors',
-    1,
-    options.commandBonus ?? 0
-  );
-  const salvageCrewSkill = calculateStationSkill(
-    stats.stations,
-    options.assignments ?? {},
-    options.crew ?? [],
-    'salvage',
-    1,
-    options.commandBonus ?? 0
-  );
+  const stationSkills = Object.fromEntries(
+    (
+      [
+        'piloting',
+        'sensors',
+        'weapons',
+        'engineering',
+        'salvage',
+        'mining',
+        'logistics',
+      ] as const satisfies readonly ShipStationSkill[]
+    ).map((skill) => [
+      skill,
+      calculateStationSkill(
+        stats.stations,
+        options.assignments ?? {},
+        options.crew ?? [],
+        skill,
+        options.manningFactor ?? 1,
+        options.commandBonus ?? 0
+      ),
+    ])
+  ) as Readonly<Record<ShipStationSkill, number>>;
+  const sensorCrewSkill = stationSkills.sensors;
+  const salvageCrewSkill = stationSkills.salvage;
   const scanAvailable =
     (installed.sensor?.length ?? 0) > 0 && energy.output > 0 && energy.baseFree >= 0;
 
@@ -110,6 +126,8 @@ export function resolveShipRuntimeSetup(
     energy,
     mining: resolveShipMiningSetup(ship, installed),
     salvage: resolveShipSalvageSetup(ship, installed),
+    stationSkills,
+    miningCrewSkill: stationSkills.mining,
     salvageCrewSkill,
     cargoCapacityTons: Math.max(0, stats.cargoCapacityTons + componentCargoBonus(installed)),
     hullMaxHp: shipHullMaxHp(ship, componentHullBonus(installed)),

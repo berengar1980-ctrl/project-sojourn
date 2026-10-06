@@ -55,7 +55,6 @@ function makePort(profile: PortProfile): PortDefinition {
     commodities: commodityIds.map((id) =>
       commodity(id, produced.has(id) ? 'produces' : needed.has(id) ? 'needs' : 'trade')
     ),
-    crew: [...(profile.crew ?? [])],
   };
 }
 

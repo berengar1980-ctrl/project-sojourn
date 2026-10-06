@@ -25,7 +25,7 @@ assert(
   portTypes.includes('EconomyResourceId'),
   'port commodities must use shared stable economy resource ids'
 );
-assert(portTypes.includes('PortCrewCandidate'), 'port crew candidates must have domain data');
+assert(!portTypes.includes('PortCrewCandidate'), 'ports must not carry fake crew candidate records');
 assert(karth?.shipyard, 'Karth Industrial must expose shipyard services');
 assert.equal(
   haven?.shipyard,
@@ -51,8 +51,21 @@ assert(
   'port UI must expose trade, crew, equipment and shipyard navigation'
 );
 assert(
-  portPanel.includes('SCHIFFSSTATIONEN') && portPanel.includes('CREW ZUWEISEN'),
-  'crew UI must expose ship station assignment slots'
+  portPanel.includes('SCHIFFSSTATIONEN') &&
+    portPanel.includes('CREW ZUWEISEN') &&
+    portPanel.includes('data-station-id'),
+  'crew UI must expose real ship station assignment controls'
+);
+assert(
+  portPanel.includes('data-hire-crew-id') &&
+    portController.includes('crew.hire') &&
+    portController.includes('crew.assign'),
+  'crew UI must hire and assign through the persistent crew roster'
+);
+assert(
+  portController.includes('availableDefinitions().map(createCrewMember)') &&
+    portModel.includes('crewState.available.map(crewMemberView)'),
+  'port recruit cards must be derived from the migrated crew catalog'
 );
 assert(
   portPanel.includes('WERFT // KOMPONENTEN') && portPanel.includes('SCHIFFSKAUF'),

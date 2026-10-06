@@ -11,6 +11,8 @@ interface PortPanelOptions {
   readonly onReturnToStarMap: () => void;
   readonly onBuy: (resourceId: string) => void;
   readonly onSell: (resourceId: string) => void;
+  readonly onHireCrew: (crewId: string) => void;
+  readonly onAssignCrew: (stationId: string, crewId: string | null) => void;
 }
 
 function marketRows(model: PortViewModel): string {
@@ -33,19 +35,20 @@ function marketRows(model: PortViewModel): string {
 }
 
 function crewRows(model: PortViewModel): string {
-  return model.crew
+  const full = model.crew.used >= model.crew.capacity;
+  return model.crew.candidates
     .map(
       (crew) => `
         <article class="port-crew-row">
           <div class="port-crew-avatar">${crew.initials}</div>
-          <div class="port-crew-identity"><strong>${crew.name}</strong><span>${crew.role}</span></div>
+          <div class="port-crew-identity"><strong>${crew.name}${crew.elite ? ' // ELITE' : ''}</strong><span>${crew.role}</span></div>
           <div class="port-traits">${crew.traits.map((trait) => `<span>${trait}</span>`).join('')}</div>
-          <div class="port-combat" aria-label="Kampfstärke ${crew.combat} von 5">
-            ${Array.from({ length: 5 }, (_, index) => `<i class="${index < crew.combat ? 'is-active' : ''}"></i>`).join('')}
+          <div class="port-combat" aria-label="Fernkampf ${crew.ranged}, Nahkampf ${crew.melee}">
+            <span>FK ${crew.ranged}</span><span>NK ${crew.melee}</span>
           </div>
           <div class="port-crew-equipment">${crew.equipment.join(' · ')}</div>
-          <strong class="port-salary">${crew.salary.toLocaleString('de-DE')} CR</strong>
-          <button class="port-action-button" type="button">ANHEUERN</button>
+          <strong class="port-salary">ANTEIL ${crew.share}%</strong>
+          <button class="port-action-button" type="button" data-hire-crew-id="${crew.id}" ${full ? 'disabled' : ''}>ANHEUERN</button>
         </article>
       `
     )
@@ -92,20 +95,32 @@ function crewPane(model: PortViewModel): string {
   return `
     <section class="port-pane" data-port-pane="crew" hidden>
       <div class="port-wide-panel">
-        <div class="port-panel-heading"><span>VERFÜGBARE REKRUTEN</span><small>${model.crew.length} KANDIDATEN</small></div>
-        <div class="port-crew-list">${crewRows(model)}</div>
+        <div class="port-panel-heading"><span>VERFÜGBARE REKRUTEN</span><small>${model.crew.candidates.length} KANDIDATEN · ${model.crew.used} / ${model.crew.capacity} KOJEN</small></div>
+        <div class="port-crew-list">${crewRows(model) || '<div class="port-info-box">Keine weiteren Spezialisten verfügbar.</div>'}</div>
       </div>
       <aside class="port-stations-panel">
         <div class="port-panel-heading"><span>SCHIFFSSTATIONEN</span><small>CREW ZUWEISEN</small></div>
         <div class="port-station-grid">
-          ${['Brücke', 'Sensorik', 'Maschinenraum', 'Waffen', 'Medizin', 'Fracht']
+          ${model.crew.stations
             .map(
-              (station, index) =>
-                `<button type="button"><span>${station}</span><strong>0 / ${index === 2 || index === 3 ? 2 : 1}</strong><i>＋</i></button>`
+              (station) => `
+                <label class="port-station-assignment">
+                  <span>${station.label}<small>${station.skill.toUpperCase()}</small></span>
+                  <select data-station-id="${station.id}">
+                    <option value="">AUTOMATIK</option>
+                    ${model.crew.hired
+                      .map(
+                        (crew) =>
+                          `<option value="${crew.id}" ${station.assignedCrewId === crew.id ? 'selected' : ''}>${crew.name}</option>`
+                      )
+                      .join('')}
+                  </select>
+                </label>
+              `
             )
             .join('')}
         </div>
-        <div class="port-info-box">Crew-Skills wirken später direkt auf Sensorik, Navigation, Reaktor, Waffen und Boarding. Kampfwerte und Ausrüstung bleiben Teil derselben Figur.</div>
+        <div class="port-info-box">Stationszuweisungen wirken sofort auf Sensorik, Navigation, Technik, Waffen, Mining, Bergung und Logistik. Ausgefallene Crew wird automatisch von ihrer Station entfernt.</div>
       </aside>
     </section>
   `;
@@ -223,6 +238,14 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-id]')) {
     button.addEventListener('click', () => options.onSell(button.dataset.sellId ?? ''));
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
+    button.addEventListener('click', () => options.onHireCrew(button.dataset.hireCrewId ?? ''));
+  }
+  for (const select of shell.querySelectorAll<HTMLSelectElement>('[data-station-id]')) {
+    select.addEventListener('change', () =>
+      options.onAssignCrew(select.dataset.stationId ?? '', select.value || null)
+    );
   }
   returnButton.addEventListener('click', options.onReturnToStarMap);
   activate('trade');
