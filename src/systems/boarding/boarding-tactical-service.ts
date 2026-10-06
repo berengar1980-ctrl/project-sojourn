@@ -11,7 +11,6 @@ import type {
 import { boardingMapById, boardingMaps } from '../../data/boarding/boarding-maps';
 import { boardingMeleeWeapons, boardingRangedWeapons } from '../../data/boarding/boarding-weapons';
 import {
-  boardingDoorAt,
   boardingHasLineOfSight,
   boardingHexBlocked,
   boardingHexDistance,
