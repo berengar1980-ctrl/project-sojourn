@@ -114,14 +114,17 @@ const service = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-service.ts'),
   'utf8'
 );
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const miningComposition = fs.readFileSync(
+  path.join(root, 'src/app/mining-local-space.ts'),
+  'utf8'
+);
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 
 assert(service.includes('miningAvailable: this.miningEnabled'));
 assert(service.includes('this.miningAccumulator >= this.miningCycleSeconds'));
-assert(controller.includes('const runtime = resolveShipRuntimeSetup(ship)'));
-assert(controller.includes('cycleSeconds: runtime.mining.cycleSeconds'));
-assert(controller.includes('runtime.cargo.totalCapacityTons'));
+assert(miningComposition.includes('const runtime = resolveShipRuntimeSetup(ship)'));
+assert(miningComposition.includes('cycleSeconds: runtime.mining.cycleSeconds'));
+assert(miningComposition.includes('runtime.cargo.totalCapacityTons'));
 assert(panel.includes('!model.miningAvailable'));
 
 console.log('PASS ship modules, reactor load, hardpoints and cargo drive local mining');
