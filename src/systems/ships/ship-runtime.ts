@@ -47,18 +47,8 @@ export function resolveShipRuntimeSetup(
   const assignments = options.assignments ?? {};
   const stats = resolveShipGameplayStats(ship);
   const energy = calculateShipEnergy(installed);
-  const sensorCrewSkill = calculateStationSkill(
-    stats.stations,
-    assignments,
-    crew,
-    'sensors'
-  );
-  const miningCrewSkill = calculateStationSkill(
-    stats.stations,
-    assignments,
-    crew,
-    'mining'
-  );
+  const sensorCrewSkill = calculateStationSkill(stats.stations, assignments, crew, 'sensors');
+  const miningCrewSkill = calculateStationSkill(stats.stations, assignments, crew, 'mining');
   const engineeringCrewSkill = calculateStationSkill(
     stats.stations,
     assignments,
