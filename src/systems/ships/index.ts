@@ -19,6 +19,7 @@ export {
 } from './ship-component-service';
 export { canShipCarryResource } from './ship-cargo-policy';
 export { defaultInstalledShipComponents, resolveShipMiningSetup } from './ship-mining-capability';
+export { resolveShipSalvageSetup } from './ship-salvage-capability';
 export { resolveShipRuntimeSetup } from './ship-runtime';
 export {
   calculateStationSkill,
@@ -52,6 +53,7 @@ export type {
 } from '../../core/ship-types';
 export type { InstalledShipComponents, ShipEnergySnapshot } from './ship-component-service';
 export type { ShipMiningSetup } from './ship-mining-capability';
+export type { ShipSalvageSetup } from './ship-salvage-capability';
 export type { ShipRuntimeOptions, ShipRuntimeSetup } from './ship-runtime';
 export type {
   CrewInjuryState,

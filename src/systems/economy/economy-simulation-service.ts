@@ -206,6 +206,7 @@ function driftDemand(
 export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
+  allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
   advanceNextDay(): void;
@@ -223,7 +224,10 @@ export function createEconomySimulationService(
   let lastDay = -1;
   let physicalAllocationCounter = 0;
 
-  const createMinedResource = (resourceId: EconomyResourceId, amount: number): number => {
+  const allocatePhysicalResource = (
+    resourceId: EconomyResourceId,
+    amount: number
+  ): number => {
     const pool = pools[resourceId];
     const requested = quantity(amount);
     if (!pool || requested <= 0) return 0;
@@ -246,6 +250,7 @@ export function createEconomySimulationService(
 
     return allocated;
   };
+  const createMinedResource = allocatePhysicalResource;
 
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
@@ -291,6 +296,7 @@ export function createEconomySimulationService(
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
     },
+    allocatePhysicalResource,
     createMinedResource,
     advanceDay,
     advanceNextDay() {
