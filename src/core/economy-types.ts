@@ -73,7 +73,7 @@ export interface TradeResult {
   readonly realizedProfit: number;
 }
 
-export type NpcEconomyRole = 'trader' | 'miner' | 'salvager';
+export type NpcEconomyRole = 'freighter' | 'miner' | 'salvager' | 'patrol' | 'trader';
 
 export interface NpcResourceSideTradePlan {
   readonly resourceId: EconomyResourceId;
