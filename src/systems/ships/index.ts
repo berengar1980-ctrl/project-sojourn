@@ -17,10 +17,7 @@ export {
   salvageYieldMultiplier,
   sensorRangeMultiplier,
 } from './ship-component-service';
-export {
-  defaultInstalledShipComponents,
-  resolveShipMiningSetup,
-} from './ship-mining-capability';
+export { defaultInstalledShipComponents, resolveShipMiningSetup } from './ship-mining-capability';
 export {
   calculateStationSkill,
   crewInjuryFactor,
