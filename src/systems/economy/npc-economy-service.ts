@@ -199,7 +199,7 @@ function runResourceWorkerDay(
   }
 
   const used = npcCargoUsed(npc);
-  const threshold = Math.max(1, Math.floor(npc.cargoCapacity * 0.82));
+  const threshold = Math.max(1, Math.floor(npc.cargoCapacity));
 
   if (used >= threshold) {
     const cargo = Object.entries(npc.cargo)
