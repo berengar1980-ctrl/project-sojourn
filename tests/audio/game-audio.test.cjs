@@ -13,20 +13,22 @@ const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 
-const ambienceBase64 =
-  read('resources/audio/base64/ambience-00.b64').trim() +
-  read('resources/audio/base64/ambience-01.b64').trim();
-const rcsBase64 = read('resources/audio/base64/rcs-burst.b64').trim();
+const ambience = fs.readFileSync(
+  path.join(root, 'resources/audio/sfx-deep-space-travel-ambience.ogg')
+);
+const rcs = fs.readFileSync(
+  path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
+);
 
 assert.equal(
-  Buffer.from(ambienceBase64, 'base64').subarray(0, 4).toString('ascii'),
+  ambience.subarray(0, 4).toString('ascii'),
   'OggS',
-  'bundled ambience must decode to an Ogg stream'
+  'bundled ambience must be a valid Ogg stream'
 );
 assert.equal(
-  Buffer.from(rcsBase64, 'base64').subarray(0, 4).toString('ascii'),
+  rcs.subarray(0, 4).toString('ascii'),
   'OggS',
-  'bundled RCS burst must decode to an Ogg stream'
+  'bundled RCS burst must be a valid Ogg stream'
 );
 
 assert(
@@ -46,7 +48,7 @@ assert(
 assert(
   audio.includes('!activeThrusters.has(burst.id)') &&
     audio.includes('RCS_RETRIGGER_SECONDS'),
-  'RCS audio must fire on a burst onset without frame-by-frame audio spam'
+  'RCS audio must fire on burst onset without frame-by-frame audio spam'
 );
 
 assert(
