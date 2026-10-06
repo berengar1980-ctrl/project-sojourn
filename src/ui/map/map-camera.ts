@@ -1,10 +1,18 @@
 import type { WorldPoint } from '../../core/world-types';
 
-const MAX_RELATIVE_ZOOM = 4.25;
+const MAX_RELATIVE_ZOOM = 4.6;
+const MIN_RELATIVE_ZOOM = 0.96;
 
 export interface ScreenPoint {
   readonly x: number;
   readonly y: number;
+}
+
+export interface MapBounds {
+  readonly minX: number;
+  readonly minY: number;
+  readonly maxX: number;
+  readonly maxY: number;
 }
 
 export class MapCamera {
@@ -20,19 +28,25 @@ export class MapCamera {
     private readonly worldHeight: number
   ) {}
 
-  fit(viewWidth: number, viewHeight: number): void {
-    const padding = 90;
+  fit(viewWidth: number, viewHeight: number, bounds?: MapBounds): void {
+    const padding = 72;
+    const minX = bounds?.minX ?? 0;
+    const minY = bounds?.minY ?? 0;
+    const maxX = bounds?.maxX ?? this.worldWidth;
+    const maxY = bounds?.maxY ?? this.worldHeight;
+    const contentWidth = Math.max(1, maxX - minX);
+    const contentHeight = Math.max(1, maxY - minY);
     const fitZoom = Math.min(
-      (viewWidth - padding) / this.worldWidth,
-      (viewHeight - padding) / this.worldHeight
+      (viewWidth - padding) / contentWidth,
+      (viewHeight - padding) / contentHeight
     );
 
     this.fitZoom = Math.max(0.12, fitZoom);
     this.zoom = this.fitZoom;
-    this.minimumZoom = Math.max(0.08, this.zoom * 0.58);
+    this.minimumZoom = this.fitZoom * MIN_RELATIVE_ZOOM;
     this.maximumZoom = this.fitZoom * MAX_RELATIVE_ZOOM;
-    this.x = this.worldWidth / 2;
-    this.y = this.worldHeight / 2;
+    this.x = (minX + maxX) / 2;
+    this.y = (minY + maxY) / 2;
   }
 
   pan(screenDx: number, screenDy: number): void {
