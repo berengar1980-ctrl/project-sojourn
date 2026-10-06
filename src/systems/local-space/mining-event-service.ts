@@ -6,10 +6,7 @@ import type {
   MiningEventType,
 } from '../../core/local-space-types';
 import { miningResourceById } from '../../data/resources/mining-resources';
-import {
-  resolveMiningEventEffect,
-  type MiningEventEffect,
-} from './mining-event-outcomes';
+import { resolveMiningEventEffect, type MiningEventEffect } from './mining-event-outcomes';
 
 const EVENT_RATE = 0.42;
 
