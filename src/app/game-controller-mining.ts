@@ -6,15 +6,17 @@ import {
   generateMiningSpace,
   type LocalSpaceService,
 } from '../systems/local-space';
-import { resolveShipRuntimeSetup } from '../systems/ships';
+import { stationReduction } from '../systems/ships';
+import { resolveShipRuntimeSetup, type ShipRuntimeOptions } from '../systems/ships';
 
 export function createMiningLocalSpace(
   ship: ShipDefinition,
   seed: number,
   mining: MiningEconomyService,
-  location: WorldLocation
+  location: WorldLocation,
+  runtimeOptions: ShipRuntimeOptions = {}
 ): LocalSpaceService {
-  const runtime = resolveShipRuntimeSetup(ship);
+  const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
   return createLocalSpaceService({
     instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
@@ -23,7 +25,8 @@ export function createMiningLocalSpace(
     nominalLengthMeters: ship.nominalLengthMeters,
     mining: {
       enabled: runtime.mining.available,
-      cycleSeconds: runtime.mining.cycleSeconds,
+      cycleSeconds:
+        runtime.mining.cycleSeconds * stationReduction(runtime.miningCrewSkill, 0.25),
     },
     systems: {
       shieldMaxHp: runtime.shieldMaxHp,

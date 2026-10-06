@@ -5,7 +5,11 @@ import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
-import { resolveShipRuntimeSetup, type ShipComponentInventoryService } from '../systems/ships';
+import {
+  resolveShipRuntimeSetup,
+  type ShipComponentInventoryService,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
@@ -21,12 +25,13 @@ interface SalvageSceneOptions {
   readonly economy: SalvageEconomyService;
   readonly player: PlayerEconomyState;
   readonly componentInventory: ShipComponentInventoryService;
+  readonly runtimeOptions?: ShipRuntimeOptions;
   readonly log: SystemLogService;
   readonly onReturnToStarMap: () => void;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
-  const runtime = resolveShipRuntimeSetup(options.ship);
+  const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
   const field = generateSalvageField(
     options.location.id,
     options.seed,

@@ -7,6 +7,12 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const definitions = loadStandaloneTypeScriptModule(root, 'src/data/crew/crew-definitions.ts');
 const performance = loadStandaloneTypeScriptModule(root, 'src/systems/crew/crew-performance.ts');
+const rosterModule = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/crew/crew-roster-service.ts'
+);
+const ships = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
+const runtimeModule = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-runtime.ts');
 
 assert.equal(definitions.crewDefinitions.length, 26, 'all Voidbound hireable crew must be migrated');
 
@@ -33,8 +39,12 @@ assert.equal(dagan?.combatSkills.melee, 97);
 const torvenMember = performance.createCrewMember(torven);
 assert.equal(torvenMember.morale.motivation, 60);
 assert.equal(torvenMember.morale.loyalty, 50);
-assert(torvenMember.combatSkills.ranged >= 35 && torvenMember.combatSkills.ranged <= 65);
-assert(torvenMember.combatSkills.melee >= 35 && torvenMember.combatSkills.melee <= 65);
+assert(
+  torvenMember.combatSkills.ranged >= 35 && torvenMember.combatSkills.ranged <= 65
+);
+assert(
+  torvenMember.combatSkills.melee >= 35 && torvenMember.combatSkills.melee <= 65
+);
 assert.equal(torvenMember.personalEquipment.ranged, 'off_autopistol');
 
 assert.equal(performance.crewStationTraitModifier(torven.socialTraits, 'piloting'), 1.5);
@@ -45,4 +55,25 @@ assert.equal(performance.stationTrainingDaysNeeded(29), 3);
 assert.equal(performance.stationTrainingDaysNeeded(84), 25);
 assert.equal(performance.combatRoundsNeeded(84), 14);
 
-console.log('PASS migrated crew definitions, social traits, skills, morale and progression rules');
+const miner = ships.getShipsByRole('mining')[0];
+assert(miner);
+const roster = rosterModule.createCrewRosterService();
+const hired = roster.hire('torven_kray', miner);
+assert(hired);
+assert.equal(hired.portraitAssetUrl, null, 'portraits stay intentionally unset until new art arrives');
+assert.equal(roster.assign(miner, 'helm', 'torven_kray'), true);
+const runtime = runtimeModule.resolveShipRuntimeSetup(miner, roster.runtimeOptions(miner));
+assert(runtime.stationSkills.piloting > 0);
+assert.equal(runtime.miningCrewSkill, runtime.stationSkills.mining);
+assert(roster.manningFactor(miner) < 1, 'understaffed ships must keep the Voidbound manning penalty');
+
+roster.setInjuryState('torven_kray', 'incapacitated');
+assert.equal(
+  roster.assignments(miner).helm,
+  undefined,
+  'incapacitated crew must be removed from active stations'
+);
+
+console.log(
+  'PASS migrated crew definitions, traits, skills, progression, manning and ship-runtime wiring'
+);

@@ -7,7 +7,11 @@ import { createPortViewModel } from '../features/port/port-view-model';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
 import type { NavigationService } from '../systems/navigation';
-import { canShipCarryResource, resolveShipRuntimeSetup } from '../systems/ships';
+import {
+  canShipCarryResource,
+  resolveShipRuntimeSetup,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 
 export function createActivePortPanel(
@@ -16,6 +20,7 @@ export function createActivePortPanel(
   markets: EconomyMarketService,
   trade: PlayerTradeService,
   ship: ShipDefinition,
+  runtimeOptions: ShipRuntimeOptions,
   onReturnToStarMap: () => void,
   onRefresh: () => void,
   log: SystemLogService
@@ -25,7 +30,7 @@ export function createActivePortPanel(
   const port = locationId ? sectorPortByLocationId(locationId) : null;
   const market = locationId ? markets.getMarket(locationId) : null;
   if (!location || !port || !market) return null;
-  const runtime = resolveShipRuntimeSetup(ship);
+  const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
   return createPortPanel({
     root,

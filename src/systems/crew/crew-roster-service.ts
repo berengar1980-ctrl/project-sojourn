@@ -1,5 +1,6 @@
 import type { CrewDefinition, CrewMember } from '../../core/crew-types';
 import type { ShipDefinition, ShipStationSkill } from '../../core/ship-types';
+import type { ShipRuntimeOptions } from '../ships/ship-runtime';
 import { resolveShipGameplayStats } from '../ships/ship-stats';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 import type { ShipCrewMember, ShipStationAssignments } from '../ships/station-performance';
@@ -22,8 +23,10 @@ export interface CrewRosterService {
   assign(ship: ShipDefinition, stationId: string, crewId: string | null): boolean;
   assignments(ship: ShipDefinition): ShipStationAssignments;
   shipCrewMembers(): readonly ShipCrewMember[];
+  runtimeOptions(ship: ShipDefinition): ShipRuntimeOptions;
   manningFactor(ship: ShipDefinition): number;
   shareRate(): number;
+  setInjuryState(id: string, state: CrewMember['injuryState']): CrewMember | null;
   accrueStationTraining(ship: ShipDefinition, hours?: number): void;
   accrueCombatTraining(crewId: string, mode: 'ranged' | 'melee', rounds?: number): void;
 }
@@ -122,6 +125,19 @@ export function createCrewRosterService(): CrewRosterService {
       }));
     },
 
+    runtimeOptions(ship) {
+      return {
+        crew: members.map((member) => ({
+          id: member.id,
+          skills: effectiveCrewSkills(member),
+          stationModifiers: crewStationModifiers(member),
+          injuryState: member.injuryState,
+        })),
+        assignments: { ...assignmentRecord(ship) },
+        manningFactor: crewManningStatus(ship, members.length).factor,
+      };
+    },
+
     manningFactor(ship) {
       return crewManningStatus(ship, members.length).factor;
     },
@@ -133,6 +149,19 @@ export function createCrewRosterService(): CrewRosterService {
           .filter((member) => member.injuryState !== 'dead')
           .reduce((sum, member) => sum + Math.max(0, member.share), 0)
       );
+    },
+
+    setInjuryState(id, state) {
+      const member = members.find((entry) => entry.id === id);
+      if (!member) return null;
+      member.injuryState = state;
+      for (const record of assignmentsByShip.values()) {
+        if (state !== 'incapacitated' && state !== 'dead') continue;
+        for (const stationId of Object.keys(record)) {
+          if (record[stationId] === id) delete record[stationId];
+        }
+      }
+      return cloneMember(member);
     },
 
     accrueStationTraining(ship, hours = 1) {

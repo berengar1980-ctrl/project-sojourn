@@ -1,6 +1,7 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
+import { createCrewRosterService, type CrewRosterService } from '../systems/crew';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
@@ -217,6 +218,7 @@ interface ControllerRuntimeContext {
   readonly navigation: NavigationService;
   readonly systemLog: SystemLogService;
   readonly economy: ControllerEconomy;
+  readonly crew: CrewRosterService;
   readonly state: ControllerRuntimeState;
 }
 
@@ -287,6 +289,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     economy.markets,
     economy.trade,
     state.activeShip,
+    context.crew.runtimeOptions(state.activeShip),
     () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
     () => mountControllerPort(context, false),
     context.systemLog
@@ -326,7 +329,8 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     state.activeShip,
     state.localSpaceSeed,
     economy.mining,
-    location
+    location,
+    context.crew.runtimeOptions(state.activeShip)
   );
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
@@ -359,6 +363,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     economy: economy.salvage,
     player: economy.trade.player,
     componentInventory: economy.components,
+    runtimeOptions: context.crew.runtimeOptions(state.activeShip),
     log: context.systemLog,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
@@ -394,6 +399,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     systemLog: createControllerLog(),
     economy: createControllerEconomy(),
+    crew: createCrewRosterService(),
     state: {
       activeShip: options.ship,
       mode: 'star-map',
