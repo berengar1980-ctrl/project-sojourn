@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -69,4 +70,16 @@ assert(
 );
 assert(safe.distance >= 1000, 'detours must never under-report geometric route distance');
 
-console.log('PASS danger-aware fast/balanced/safe route profiles');
+const sectorMap = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts').narrowsSector;
+assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger regions');
+
+const rendererSource = fs.readFileSync(
+  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
+  'utf8'
+);
+assert(
+  !rendererSource.includes('this.drawRegions(width, height);'),
+  'danger regions must influence routing without being rendered on the star map'
+);
+
+console.log('PASS hidden danger regions and fast/balanced/safe route profiles');
