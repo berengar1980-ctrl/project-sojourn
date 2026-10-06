@@ -7,9 +7,10 @@ import {
   type InstalledShipComponents,
 } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-default-loadout';
-export { defaultInstalledShipComponents };
 import { resolveShipGameplayStats } from './ship-stats';
 import { stationFactor } from './station-performance';
+
+export { defaultInstalledShipComponents };
 
 const BASE_MINING_CYCLE_SECONDS = 0.42;
 const BASELINE_MINING_LASERS = 3;
