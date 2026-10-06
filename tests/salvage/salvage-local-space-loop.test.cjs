@@ -70,6 +70,7 @@ assert(scene.includes('generateSalvageField'));
 assert(scene.includes('economy: SalvageEconomyService'));
 assert(panel.includes('UNTERSUCHEN'));
 assert(panel.includes('BERGEN'));
+assert(panel.includes('KOMPONENTE BERGEN'));
 assert(!panel.includes('dialog'), 'salvage interaction must remain embedded in local-space UI');
 assert(renderer.includes('drawHullFragments'));
 assert(renderer.includes('pickWreck'));

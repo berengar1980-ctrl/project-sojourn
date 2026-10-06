@@ -37,7 +37,12 @@ import {
 } from '../systems/economy/player-trade-service';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
-import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
+import {
+  createShipComponentInventoryService,
+  getAllShipDefinitions,
+  getShipDefinition,
+  type ShipComponentInventoryService,
+} from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -69,6 +74,7 @@ interface ControllerEconomy {
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
   readonly salvage: SalvageEconomyService;
+  readonly components: ShipComponentInventoryService;
   readonly npcs: NpcEconomyService;
 }
 
@@ -93,6 +99,7 @@ function createControllerEconomy(): ControllerEconomy {
     simulation,
     mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
+    components: createShipComponentInventoryService(trade.player),
     npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
       positions: Object.fromEntries(
         narrowsSector.locations.map((location) => [location.id, location.position])
@@ -429,6 +436,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     location,
     economy: economy.salvage,
     player: economy.trade.player,
+    componentInventory: economy.components,
     log: context.systemLog,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)

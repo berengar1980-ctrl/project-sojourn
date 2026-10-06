@@ -5,7 +5,10 @@ import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
-import { resolveShipRuntimeSetup } from '../systems/ships';
+import {
+  resolveShipRuntimeSetup,
+  type ShipComponentInventoryService,
+} from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
@@ -20,6 +23,7 @@ interface SalvageSceneOptions {
   readonly location: WorldLocation;
   readonly economy: SalvageEconomyService;
   readonly player: PlayerEconomyState;
+  readonly componentInventory: ShipComponentInventoryService;
   readonly log: SystemLogService;
   readonly onReturnToStarMap: () => void;
 }
@@ -36,6 +40,16 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     setup: runtime.salvage,
     crewSkill: runtime.salvageCrewSkill,
     collect: options.economy.recover,
+    collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
+      return (
+        options.componentInventory.store(
+          type,
+          componentId,
+          sourceWreckId,
+          cargoCapacityTons
+        ) !== null
+      );
+    },
     approachSpeed: 85,
   });
   const model = () =>
@@ -43,6 +57,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       service.getSnapshot(),
       options.ship,
       options.player,
+      options.componentInventory.list(),
       options.location.name + ' // Bergung'
     );
 
@@ -69,6 +84,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     onStrip(wreckId, resourceId) {
       service.startStrip(wreckId, resourceId);
       options.log.write('BERGUNG > MATERIALBERGUNG GESTARTET');
+      refresh();
+    },
+    onRecoverComponent(wreckId) {
+      service.startComponentRecovery(wreckId);
+      options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
     },
     onCancel() {

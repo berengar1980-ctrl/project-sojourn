@@ -18,6 +18,7 @@ interface SalvageSpacePanelOptions {
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
+  readonly onRecoverComponent: (wreckId: string) => void;
   readonly onCancel: () => void;
   readonly onReturnToStarMap: () => void;
 }
@@ -96,6 +97,9 @@ function statusText(model: SalvageSpaceViewModel): string {
   if (model.phase === 'stripping') {
     return 'BERGUNG AKTIV · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
   }
+  if (model.phase === 'extracting-component') {
+    return 'KOMPONENTENEXTRAKTION · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+  }
   return '';
 }
 
@@ -103,7 +107,7 @@ function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTM
   total.textContent =
     Math.round(model.cargoUsedTons) + ' / ' + Math.round(model.cargoCapacityTons) + ' t';
   list.replaceChildren();
-  if (model.cargoResources.length === 0) {
+  if (model.cargoResources.length === 0 && model.looseComponents.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'local-cargo-empty';
     empty.textContent = 'LEER';
@@ -117,6 +121,16 @@ function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTM
     const amount = document.createElement('strong');
     name.textContent = resource.name.toUpperCase();
     amount.textContent = Math.round(resource.amount) + ' t';
+    row.append(name, amount);
+    list.append(row);
+  }
+  for (const component of model.looseComponents) {
+    const row = document.createElement('div');
+    row.className = 'local-cargo-row local-cargo-row--component';
+    const name = document.createElement('span');
+    const amount = document.createElement('strong');
+    name.textContent = component.name.toUpperCase();
+    amount.textContent = component.cargoTons + ' t · MK ' + component.tier;
     row.append(name, amount);
     list.append(row);
   }
@@ -145,6 +159,42 @@ function resourceRow(
   button.disabled = !model.salvageAvailable || model.phase !== 'idle' || resource.remaining <= 0;
   button.addEventListener('click', () => onStrip(wreckId, resource.resourceId));
   row.append(label, amount, button);
+  return row;
+}
+
+function componentRow(
+  model: SalvageSpaceViewModel,
+  wreckId: string,
+  options: SalvageSpacePanelOptions
+): HTMLElement | null {
+  const component = model.selectedWreck?.component;
+  if (!component) return null;
+  const row = document.createElement('div');
+  row.className = 'salvage-component-row';
+  const copy = document.createElement('div');
+  const label = document.createElement('span');
+  const detail = document.createElement('strong');
+  label.textContent = 'SCHIFFSKOMPONENTE';
+  detail.textContent =
+    component.name.toUpperCase() +
+    ' · MK ' +
+    component.tier +
+    ' · ' +
+    component.cargoTons +
+    ' t';
+  copy.append(label, detail);
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  if (component.status === 'recovered') button.textContent = 'GEBORGEN';
+  else if (component.status === 'destroyed') button.textContent = 'ZERSTÖRT';
+  else button.textContent = 'KOMPONENTE BERGEN · ' + component.chancePercent + ' %';
+  button.disabled =
+    component.status !== 'available' ||
+    !model.salvageAvailable ||
+    model.phase !== 'idle';
+  button.addEventListener('click', () => options.onRecoverComponent(wreckId));
+  row.append(copy, button);
   return row;
 }
 
@@ -178,6 +228,8 @@ function renderSelection(
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
   ui.inspectButton.hidden = true;
   ui.resources.replaceChildren();
+  const component = componentRow(model, wreck.id, options);
+  if (component) ui.resources.append(component);
 
   if (wreck.depleted) {
     const empty = document.createElement('div');
@@ -196,29 +248,60 @@ function createRecoveryTracker(
   panel: SystemLogPanel
 ): (model: SalvageSpaceViewModel) => void {
   let lastSerial = options.model.recoverySerial;
+  let lastComponentSerial = options.model.componentRecoverySerial;
   const inspected = new Set(
     options.model.wrecks.filter((wreck) => wreck.inspected).map((wreck) => wreck.id)
   );
+
   return (model) => {
+    let changed = false;
     for (const wreck of model.wrecks) {
       if (!wreck.inspected || inspected.has(wreck.id)) continue;
       inspected.add(wreck.id);
       options.log.write('BERGUNG > WRACKANALYSE ABGESCHLOSSEN: ' + wreck.name.toUpperCase());
-      panel.update();
+      changed = true;
     }
-    if (model.recoverySerial === lastSerial || !model.lastRecovery) return;
-    lastSerial = model.recoverySerial;
-    const resource = model.cargoResources.find(
-      (entry) => entry.resourceId === model.lastRecovery?.resourceId
-    );
-    options.log.write(
-      'BERGUNG > +' +
-        model.lastRecovery.recovered +
-        ' t ' +
-        (resource?.name ?? model.lastRecovery.resourceId).toUpperCase()
-    );
-    if (model.lastRecovery.depleted) options.log.write('BERGUNG > WRACK AUSGESCHLACHTET');
-    panel.update();
+
+    if (model.recoverySerial !== lastSerial && model.lastRecovery) {
+      lastSerial = model.recoverySerial;
+      const resource = model.cargoResources.find(
+        (entry) => entry.resourceId === model.lastRecovery?.resourceId
+      );
+      options.log.write(
+        'BERGUNG > +' +
+          model.lastRecovery.recovered +
+          ' t ' +
+          (resource?.name ?? model.lastRecovery.resourceId).toUpperCase()
+      );
+      if (model.lastRecovery.depleted) options.log.write('BERGUNG > WRACK AUSGESCHLACHTET');
+      changed = true;
+    }
+
+    if (
+      model.componentRecoverySerial !== lastComponentSerial &&
+      model.lastComponentRecovery
+    ) {
+      lastComponentSerial = model.componentRecoverySerial;
+      const result = model.lastComponentRecovery;
+      const wreck = model.wrecks.find((entry) => entry.id === result.wreckId);
+      const component = wreck?.component;
+      if (result.outcome === 'recovered') {
+        options.log.write(
+          'BERGUNG > KOMPONENTE GEBORGEN: ' +
+            (component?.name ?? result.componentId).toUpperCase()
+        );
+      } else if (result.outcome === 'destroyed') {
+        options.log.write(
+          'BERGUNG > KOMPONENTE ZERSTÖRT: ' +
+            (component?.name ?? result.componentId).toUpperCase()
+        );
+      } else {
+        options.log.write('BERGUNG > NICHT GENÜGEND FRACHTRAUM FÜR KOMPONENTE');
+      }
+      changed = true;
+    }
+
+    if (changed) panel.update();
   };
 }
 
