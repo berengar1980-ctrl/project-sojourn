@@ -176,9 +176,7 @@ export function calculateShipDerivedStats(
     shieldModifier:
       ship.sprite.hardpoints.shield.modifier * multiplier(gameplay.shieldModifierMultiplier),
     cruiseSpeed:
-      ship.navigation.cruiseSpeed *
-      (1 + speedBonus) *
-      multiplier(gameplay.cruiseSpeedMultiplier),
+      ship.navigation.cruiseSpeed * (1 + speedBonus) * multiplier(gameplay.cruiseSpeedMultiplier),
     fuelCapacity: profile.fuelCapacity * multiplier(gameplay.fuelCapacityMultiplier),
     fuelUse: profile.fuelUse * multiplier(gameplay.fuelUseMultiplier),
     cargoCapacityTons: Math.max(
