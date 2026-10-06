@@ -47,10 +47,7 @@ export type {
   ShipStationDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
-export type {
-  InstalledShipComponents,
-  ShipEnergySnapshot,
-} from './ship-component-service';
+export type { InstalledShipComponents, ShipEnergySnapshot } from './ship-component-service';
 export type {
   CrewInjuryState,
   ShipCrewMember,
