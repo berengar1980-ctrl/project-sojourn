@@ -36,6 +36,7 @@ export class TopdownMapRenderer {
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
+  private labelsVisible = true;
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
@@ -89,6 +90,12 @@ export class TopdownMapRenderer {
   setDisplayMode(mode: StarMapDisplayMode): void {
     if (this.displayMode === mode) return;
     this.displayMode = mode;
+    this.draw();
+  }
+
+  setLabelsVisible(visible: boolean): void {
+    if (this.labelsVisible === visible) return;
+    this.labelsVisible = visible;
     this.draw();
   }
 
@@ -207,7 +214,7 @@ export class TopdownMapRenderer {
       }
       this.context.restore();
 
-      if (zoom >= 1.35) {
+      if (this.labelsVisible && zoom >= 1.35) {
         this.context.fillStyle = 'rgba(196, 211, 221, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
@@ -284,10 +291,12 @@ export class TopdownMapRenderer {
     this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
     this.context.fill();
 
-    this.context.fillStyle = 'rgba(255,244,215,.86)';
-    this.context.font = '600 12px system-ui';
-    this.context.textAlign = 'center';
-    this.context.fillText(this.model.star.name.toUpperCase(), point.x, point.y + radius + 22);
+    if (this.labelsVisible) {
+      this.context.fillStyle = 'rgba(255,244,215,.86)';
+      this.context.font = '600 12px system-ui';
+      this.context.textAlign = 'center';
+      this.context.fillText(this.model.star.name.toUpperCase(), point.x, point.y + radius + 22);
+    }
   }
 
   private drawOrbits(width: number, height: number): void {
@@ -405,7 +414,7 @@ export class TopdownMapRenderer {
       this.context.stroke();
     }
 
-    if (this.shouldDrawLabel(location)) {
+    if (this.labelsVisible && this.shouldDrawLabel(location)) {
       this.drawLocationLabel(location, point.x, point.y + radius + 20);
     }
 
