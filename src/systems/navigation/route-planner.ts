@@ -153,9 +153,7 @@ export function planRouteWithProfile(
     for (let next = 0; next < nodes.length; next += 1) {
       if (next === current || visited.has(next)) continue;
       const metrics = segmentMetrics(world, nodes[current]!, nodes[next]!, profile);
-      const direct = distanceBetween(nodes[current]!, nodes[next]!);
-      const detourPenalty = profile === 'fast' ? 0.002 : profile === 'balanced' ? 0.001 : 0.0005;
-      const score = distances[current]! + metrics.cost + direct * direct * detourPenalty;
+      const score = distances[current]! + metrics.cost;
       if (score < distances[next]!) {
         distances[next] = score;
         previous[next] = current;
