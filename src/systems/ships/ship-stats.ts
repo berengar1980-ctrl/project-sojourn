@@ -14,7 +14,9 @@ export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGame
     ...overrides,
     stations: role.stations,
     specialCargo:
-      overrides && 'specialCargo' in overrides ? (overrides.specialCargo ?? null) : role.specialCargo,
+      overrides && 'specialCargo' in overrides
+        ? (overrides.specialCargo ?? null)
+        : role.specialCargo,
     cargoCapacityTons: ship.cargoCapacityTons,
     cruiseSpeed: ship.navigation.cruiseSpeed,
   };
