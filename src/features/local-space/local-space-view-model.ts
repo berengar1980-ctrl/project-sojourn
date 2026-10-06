@@ -56,9 +56,10 @@ export interface LocalNpcShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly speed: number;
-  readonly phase: 'entering' | 'approaching' | 'mining' | 'exiting';
+  readonly phase: 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
   readonly targetAsteroidId: string | null;
   readonly laserActive: boolean;
+  readonly scanProgress?: number;
   readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;

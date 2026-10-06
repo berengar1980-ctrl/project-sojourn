@@ -32,6 +32,7 @@ export class SalvageSpaceRenderer {
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly shipLighting = new ShipLightingRenderer();
   private readonly shipImage = new Image();
+  private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: SalvageSpaceViewModel;
   private hitAreas: readonly WreckHitArea[] = [];
   private loadedShipUrl = '';
@@ -53,6 +54,7 @@ export class SalvageSpaceRenderer {
   update(model: SalvageSpaceViewModel): void {
     this.model = model;
     this.ensureShipImage(model.ship.spriteUrl);
+    for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
 
@@ -68,6 +70,7 @@ export class SalvageSpaceRenderer {
       this.hasFitted = true;
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
+    for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
 
@@ -122,8 +125,141 @@ export class SalvageSpaceRenderer {
       if (hit) hitAreas.push(hit);
     }
     this.hitAreas = hitAreas;
+    this.drawNpcShips(width, height, timeSeconds);
     this.drawRoute(width, height);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
+  }
+
+  private ensureNpcImage(url: string): HTMLImageElement {
+    const existing = this.npcImages.get(url);
+    if (existing) return existing;
+    const image = new Image();
+    image.onload = () => this.draw();
+    image.src = url;
+    this.npcImages.set(url, image);
+    return image;
+  }
+
+  private drawNpcShips(width: number, height: number, timeSeconds: number): void {
+    for (const npc of this.model.npcShips) {
+      const point = this.camera.worldToScreen(npc.position, width, height);
+      const shipWidth = this.camera.scale(npc.nominalLengthMeters);
+      const geometry: ShipScreenGeometry = {
+        center: point,
+        width: shipWidth,
+        height: shipWidth / npc.spriteAspectRatio,
+        angle: npc.headingRadians,
+      };
+      const image = this.ensureNpcImage(npc.spriteUrl);
+      const engineIntensity = npc.speed > 1 ? Math.max(0.32, Math.min(1, npc.speed / 100)) : 0;
+
+      if (engineIntensity > 0) {
+        this.engineEffects.drawExhaust(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          engineIntensity,
+          timeSeconds
+        );
+      }
+
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      this.context.rotate(npc.headingRadians);
+      if (image.complete && image.naturalWidth > 0) {
+        const offset = spriteDrawOffset(npc.hardpoints, geometry);
+        this.shipLighting.draw(this.context, {
+          image,
+          width: geometry.width,
+          height: geometry.height,
+          angle: npc.headingRadians,
+          light: { x: -0.72, y: -0.56 },
+          offsetX: offset.x,
+          offsetY: offset.y,
+        });
+      } else {
+        this.context.fillStyle = '#8e999f';
+        this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
+      }
+      this.context.restore();
+
+      if (engineIntensity > 0) {
+        this.engineEffects.drawGlow(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          engineIntensity,
+          timeSeconds
+        );
+      }
+
+      const wreck = npc.targetWreckId
+        ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
+        : null;
+      if (wreck && npc.phase === 'scanning') {
+        this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
+      } else if (wreck && npc.salvageActive) {
+        this.drawNpcSalvageTether(point, wreck.position, width, height, timeSeconds);
+      }
+
+      if (this.camera.getRelativeZoom() >= 1.55) {
+        this.context.fillStyle = 'rgba(215, 202, 168, .8)';
+        this.context.font = '9px ui-monospace, monospace';
+        this.context.textAlign = 'center';
+        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
+      }
+    }
+  }
+
+  private drawNpcScan(
+    shipPoint: ScreenPoint,
+    targetWorld: { readonly x: number; readonly y: number },
+    width: number,
+    height: number,
+    progress: number,
+    timeSeconds: number
+  ): void {
+    const target = this.camera.worldToScreen(targetWorld, width, height);
+    const radius = 12 + progress * 24;
+    this.context.save();
+    this.context.strokeStyle = `rgba(119, 226, 240, ${0.5 + Math.sin(timeSeconds * 10) * 0.18})`;
+    this.context.lineWidth = 1.2;
+    this.context.beginPath();
+    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.setLineDash([4, 5]);
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+    this.context.restore();
+  }
+
+  private drawNpcSalvageTether(
+    shipPoint: ScreenPoint,
+    targetWorld: { readonly x: number; readonly y: number },
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    const target = this.camera.worldToScreen(targetWorld, width, height);
+    const pulse = 0.62 + Math.sin(timeSeconds * 8) * 0.18;
+    this.context.save();
+    this.context.strokeStyle = `rgba(228, 181, 93, ${pulse})`;
+    this.context.lineWidth = 1.4;
+    this.context.setLineDash([5, 4]);
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+    this.context.strokeStyle = `rgba(245, 214, 147, ${pulse * 0.26})`;
+    this.context.lineWidth = 7;
+    this.context.setLineDash([]);
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {

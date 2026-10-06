@@ -161,7 +161,11 @@ const resources = [
 
   service.advanceDay(1);
 
-  assert.equal(miner.cargo.ferrite, undefined, 'loaded resource worker must sell its cargo');
+  assert.equal(miner.cargo.ferrite, 10, 'resource worker must fill cargo before selling');
+
+  service.advanceDay(2);
+
+  assert.equal(miner.cargo.ferrite, undefined, 'full resource worker must sell its cargo');
   assert.equal(miner.locationId, 'destination');
   assert.equal(
     simulation.getResourceTotal('ferrite'),

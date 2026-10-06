@@ -26,6 +26,8 @@ const miner = {
   fuel: 145,
   fuelCapacity: 145,
   fuelUse: 0.86,
+  hullHp: 72,
+  hullMaxHp: 72,
   aggression: 20,
   activityId: 'dock',
   activity: 'Wartet',
@@ -84,6 +86,7 @@ assert(
 );
 
 let sawFlight = false;
+let sawScan = false;
 let sawMining = false;
 let sawExit = false;
 for (let step = 0; step < 10000 && !departed; step += 1) {
@@ -91,16 +94,18 @@ for (let step = 0; step < 10000 && !departed; step += 1) {
   const ship = service.ships[0];
   if (!ship) continue;
   if (ship.phase === 'approaching') sawFlight = true;
+  if (ship.phase === 'scanning' && ship.scanProgress > 0) sawScan = true;
   if (ship.phase === 'mining' && ship.laserActive) sawMining = true;
   if (ship.phase === 'exiting') sawExit = true;
 }
 
 assert(sawFlight, 'NPC miner must visibly fly from the perimeter to an asteroid');
+assert(sawScan, 'NPC miner must complete a visible scan before extraction');
 assert(sawMining, 'NPC miner must visibly enter an active laser-mining phase');
 assert(sawExit, 'loaded NPC miner must fly back out through the field perimeter');
 assert(departed, 'NPC miner must hand back to sector travel after leaving local space');
 assert.equal(service.ships.length, 0, 'exited miner must disappear only after crossing the boundary');
-assert(miner.cargo.ferrite >= 16, 'local mining must fill the NPC cargo threshold');
+assert.equal(miner.cargo.ferrite, 20, 'local mining must fill the NPC cargo completely');
 assert(asteroid.deposits[0].oreRemaining < 100, 'local NPC mining must deplete the visible asteroid');
 
-console.log('PASS NPC miners enter, fly, mine, fill cargo and leave asteroid fields');
+console.log('PASS NPC miners enter, scan, mine until full and leave asteroid fields');

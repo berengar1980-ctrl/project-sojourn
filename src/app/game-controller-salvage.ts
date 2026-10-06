@@ -4,8 +4,15 @@ import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
+import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
+import type { SectorNpcState } from '../core/npc-types';
+import {
+  createNpcLocalSalvageService,
+  type NpcLocalSalvageService,
+} from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import {
+  getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipComponentInventoryService,
   type ShipRuntimeOptions,
@@ -23,6 +30,8 @@ interface SalvageSceneOptions {
   readonly seed: number;
   readonly location: WorldLocation;
   readonly economy: SalvageEconomyService;
+  readonly npcEconomy: NpcEconomyService;
+  readonly sectorNpcs: readonly SectorNpcState[];
   readonly player: PlayerEconomyState;
   readonly componentInventory: ShipComponentInventoryService;
   readonly runtimeOptions?: ShipRuntimeOptions;
@@ -50,14 +59,48 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     approachSpeed: 85,
   });
-  const model = () =>
-    createSalvageSpaceViewModel(
+  const npcSalvage: NpcLocalSalvageService = createNpcLocalSalvageService({
+    locationId: options.location.id,
+    field,
+    salvagers: options.sectorNpcs.filter(
+      (npc) => npc.job === 'salvager' && npc.workLocationId === options.location.id
+    ),
+    recover: (npc, resourceId, requested) =>
+      options.npcEconomy.salvageLocal(npc, resourceId, requested),
+    depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
+  });
+
+  const model = () => {
+    const npcShips = npcSalvage.ships.flatMap((npc) => {
+      const definition = getShipDefinition(npc.shipId);
+      if (!definition) return [];
+      return [
+        {
+          id: npc.npcId,
+          name: npc.name,
+          position: npc.position,
+          headingRadians: npc.headingRadians,
+          speed: npc.speed,
+          phase: npc.phase,
+          targetWreckId: npc.targetWreckId,
+          salvageActive: npc.salvageActive,
+          scanProgress: npc.scanProgress,
+          nominalLengthMeters: definition.nominalLengthMeters,
+          spriteUrl: definition.sprite.assetUrl,
+          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+          hardpoints: definition.sprite.hardpoints,
+        },
+      ];
+    });
+    return createSalvageSpaceViewModel(
       service.getSnapshot(),
       options.ship,
       options.player,
       options.componentInventory.list(),
-      options.location.name + ' // Bergung'
+      options.location.name + ' // Bergung',
+      npcShips
     );
+  };
 
   let panel: SalvageSpacePanel | null = null;
   const refresh = (): void => panel?.update(model());
@@ -109,6 +152,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   return {
     tick(deltaSeconds) {
       service.tick(deltaSeconds);
+      npcSalvage.tick(deltaSeconds);
       refresh();
     },
     destroy() {
