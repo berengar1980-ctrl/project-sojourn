@@ -54,6 +54,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly nominalLengthMeters: number;
   private readonly miningEnabled: boolean;
   private readonly miningCycleSeconds: number;
+  private readonly miningYieldMultiplier: number;
   private readonly shipSystems: ReturnType<typeof createLocalSpaceShipSystems>;
   private readonly miningEvents: ReturnType<typeof createMiningEventController>;
   private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
@@ -87,6 +88,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
+    this.miningYieldMultiplier = Math.max(0, options.mining?.yieldMultiplier ?? 1);
     this.shipSystems = createLocalSpaceShipSystems(options.systems, options.hardpoints);
     this.miningEvents = createMiningEventController(options.instance.seed);
     this.onMiningChunkCollected = options.onMiningChunkCollected;
@@ -457,7 +459,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.hardpoints,
       this.nominalLengthMeters,
       this.instance.seed,
-      this.chunkCounter
+      this.chunkCounter,
+      this.miningYieldMultiplier
     );
     if (!chunk) return;
     this.instance.chunks.push(chunk);
