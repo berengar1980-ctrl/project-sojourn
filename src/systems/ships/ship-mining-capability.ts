@@ -7,6 +7,7 @@ import {
   type InstalledShipComponents,
 } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-default-loadout';
+export { defaultInstalledShipComponents };
 import { resolveShipGameplayStats } from './ship-stats';
 import { stationFactor } from './station-performance';
 
