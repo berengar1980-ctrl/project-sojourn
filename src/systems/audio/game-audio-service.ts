@@ -1,3 +1,6 @@
+import ambience0 from '../../../resources/audio/base64/ambience-00.b64?raw';
+import ambience1 from '../../../resources/audio/base64/ambience-01.b64?raw';
+import rcsBurst from '../../../resources/audio/base64/rcs-burst.b64?raw';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import {
@@ -5,14 +8,18 @@ import {
   type ManeuverDemand,
 } from '../ships/ship-maneuver-thrusters';
 
-const AMBIENCE_URL = new URL(
-  '../../../resources/audio/sfx-deep-space-travel-ambience.ogg',
-  import.meta.url
-).href;
-const RCS_BURST_URL = new URL(
-  '../../../resources/audio/spacecraft-rcs-thruster-burst.ogg',
-  import.meta.url
-).href;
+const AMBIENCE_BASE64 = [ambience0, ambience1] as const;
+const RCS_BURST_BASE64 = [rcsBurst] as const;
+
+function audioObjectUrl(chunks: readonly string[]): string {
+  const encoded = chunks.join('').replace(/\s+/g, '');
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return URL.createObjectURL(new Blob([bytes], { type: 'audio/ogg' }));
+}
 
 const AMBIENCE_VOLUME = 0.22;
 const RCS_VOLUME = 0.46;
@@ -37,10 +44,12 @@ function createAudio(url: string, volume: number): HTMLAudioElement {
 }
 
 export function createGameAudioService(): GameAudioService {
-  const ambience = createAudio(AMBIENCE_URL, AMBIENCE_VOLUME);
+  const ambienceUrl = audioObjectUrl(AMBIENCE_BASE64);
+  const rcsBurstUrl = audioObjectUrl(RCS_BURST_BASE64);
+  const ambience = createAudio(ambienceUrl, AMBIENCE_VOLUME);
   ambience.loop = true;
 
-  const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () => createAudio(RCS_BURST_URL, RCS_VOLUME));
+  const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () => createAudio(rcsBurstUrl, RCS_VOLUME));
   let rcsPoolIndex = 0;
   let activeThrusters = new Set<string>();
   let lastRcsPlaySeconds = Number.NEGATIVE_INFINITY;
@@ -108,6 +117,8 @@ export function createGameAudioService(): GameAudioService {
       window.removeEventListener('keydown', unlock);
       ambience.pause();
       for (const audio of rcsPool) audio.pause();
+      URL.revokeObjectURL(ambienceUrl);
+      URL.revokeObjectURL(rcsBurstUrl);
       activeThrusters.clear();
     },
   };
