@@ -55,11 +55,14 @@ export interface ResolvedShipGameplayStats extends ShipGameplayProfile {
   readonly cruiseSpeed: number;
 }
 
+export type ShipEffectLayer = 'below' | 'above';
+
 export interface ShipHardpoint {
   readonly id: string;
   readonly x: number;
   readonly y: number;
   readonly width: number;
+  readonly layer?: ShipEffectLayer;
 }
 
 export interface ShipPivot {
@@ -86,7 +89,9 @@ export interface ShipHardpoints {
   readonly sourceHeight: number;
   readonly pivot: ShipPivot;
   readonly engines: readonly ShipHardpoint[];
+  readonly weaponLasers?: readonly ShipHardpoint[];
   readonly miningLasers: readonly ShipHardpoint[];
+  readonly tractorBeams?: readonly ShipHardpoint[];
   readonly maneuverThrusters: readonly ShipManeuverThruster[];
   readonly shield: ShipShieldGeometry;
 }

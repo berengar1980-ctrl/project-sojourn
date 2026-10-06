@@ -19,7 +19,9 @@
       "width": 12
     }
   ],
+  "weaponLasers": [],
   "miningLasers": [],
+  "tractorBeams": [],
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
@@ -27,7 +29,8 @@
       "y": 38,
       "width": 7,
       "forceX": 0,
-      "forceY": 1
+      "forceY": 1,
+      "layer": "below"
     },
     {
       "id": "rcs-bow-lower",
@@ -35,7 +38,8 @@
       "y": 135,
       "width": 7,
       "forceX": 0,
-      "forceY": -1
+      "forceY": -1,
+      "layer": "above"
     },
     {
       "id": "rcs-stern-upper",
@@ -43,7 +47,8 @@
       "y": 31,
       "width": 7,
       "forceX": 0,
-      "forceY": 1
+      "forceY": 1,
+      "layer": "below"
     },
     {
       "id": "rcs-stern-lower",
@@ -51,7 +56,26 @@
       "y": 142,
       "width": 7,
       "forceX": 0,
-      "forceY": -1
+      "forceY": -1,
+      "layer": "above"
+    },
+    {
+      "id": "rcs-front-upper",
+      "x": 240,
+      "y": 70,
+      "width": 7,
+      "forceX": -1,
+      "forceY": 0,
+      "layer": "below"
+    },
+    {
+      "id": "rcs-front-lower",
+      "x": 240,
+      "y": 104,
+      "width": 7,
+      "forceX": -1,
+      "forceY": 0,
+      "layer": "above"
     }
   ],
   "shield": {

@@ -21,7 +21,8 @@
     "check": "npm run check:quick && npm run build",
     "test:ships": "node tests/assets/ship-asset-standard.test.cjs",
     "check:quick": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:quick",
-    "check:full": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:full && npm run build"
+    "check:full": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:full && npm run build",
+    "hardpoints:edit": "vite --open /tools/hardpoint-editor.html"
   },
   "engines": {
     "node": ">=20"

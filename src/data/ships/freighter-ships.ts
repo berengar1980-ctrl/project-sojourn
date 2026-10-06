@@ -6,7 +6,7 @@ const freighter120mIndustrialHeavySpriteUrl = new URL(
   import.meta.url
 ).href;
 
-const freighter120mIndustrialHeavyHardpoints: ShipHardpoints = industrialHeavyHardpointsJson;
+const freighter120mIndustrialHeavyHardpoints: ShipHardpoints = industrialHeavyHardpointsJson as ShipHardpoints;
 
 export const freighter120mIndustrialHeavy: ShipDefinition = {
   id: 'freighter-120m-industrial-heavy',

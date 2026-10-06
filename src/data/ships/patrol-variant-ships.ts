@@ -1,4 +1,4 @@
-import type { ShipDefinition } from '../../core/ship-types';
+import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import hardpoints1 from './patrol-60m-variant-01.hardpoints.json';
 import hardpoints2 from './patrol-60m-variant-02.hardpoints.json';
 import hardpoints3 from './patrol-60m-variant-03.hardpoints.json';
@@ -22,7 +22,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 171,
       facing: 'right',
-      hardpoints: hardpoints1,
+      hardpoints: hardpoints1 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -40,7 +40,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 174,
       facing: 'right',
-      hardpoints: hardpoints2,
+      hardpoints: hardpoints2 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -58,7 +58,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 180,
       facing: 'right',
-      hardpoints: hardpoints3,
+      hardpoints: hardpoints3 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -76,7 +76,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 164,
       facing: 'right',
-      hardpoints: hardpoints4,
+      hardpoints: hardpoints4 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -94,7 +94,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 173,
       facing: 'right',
-      hardpoints: hardpoints5,
+      hardpoints: hardpoints5 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -112,7 +112,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 165,
       facing: 'right',
-      hardpoints: hardpoints6,
+      hardpoints: hardpoints6 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -130,7 +130,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
       widthPx: 260,
       heightPx: 171,
       facing: 'right',
-      hardpoints: hardpoints7,
+      hardpoints: hardpoints7 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
