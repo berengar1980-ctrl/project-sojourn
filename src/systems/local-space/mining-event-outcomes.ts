@@ -44,213 +44,238 @@ function baseEffect(title: string, resultText: string): MiningEventEffect {
   };
 }
 
+interface OutcomeContext {
+  readonly title: string;
+  readonly outcome: number;
+  readonly secondary: number;
+  readonly rareId: string;
+  readonly primaryResourceId: string;
+}
+
+function resolveUnstable(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'stabilize') {
+    return {
+      ...baseEffect(
+        context.title,
+        'Die Matrix hält. Der sichere Schnitt läuft langsamer weiter.'
+      ),
+      recoverySeconds: 2.5,
+      cycleMultiplier: 1.08,
+    };
+  }
+  if (choiceId === 'push' && context.outcome < 0.62) {
+    return {
+      ...baseEffect(
+        context.title,
+        'Der aggressive Schnitt sitzt. Der Materialstrom beschleunigt sich.'
+      ),
+      cycleMultiplier: 0.78,
+    };
+  }
+  if (choiceId === 'push') {
+    return {
+      ...baseEffect(context.title, 'Die Matrix bricht früher als berechnet.'),
+      hullDamageFraction: 0.04 + context.secondary * 0.05,
+      depositLossFraction: 0.1 + context.secondary * 0.1,
+      cycleMultiplier: 1.12,
+    };
+  }
+  if (choiceId === 'abort') {
+    return { ...baseEffect(context.title, 'Die Laser werden eingefahren.'), abort: true };
+  }
+  return null;
+}
+
+function resolveMachine(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'repair') {
+    return {
+      ...baseEffect(
+        context.title,
+        'Der Förderkopf wird neu ausgerichtet und sauber hochgefahren.'
+      ),
+      recoverySeconds: 4,
+    };
+  }
+  if (choiceId === 'bypass' && context.outcome < 0.68) {
+    return {
+      ...baseEffect(context.title, 'Die Überbrückung hält. Der Förderstrom läuft wieder.'),
+      recoverySeconds: 1.2,
+      cycleMultiplier: 0.92,
+    };
+  }
+  if (choiceId === 'bypass') {
+    return {
+      ...baseEffect(
+        context.title,
+        'Die Überbrückung schlägt zurück und belastet die Anlage.'
+      ),
+      recoverySeconds: 4.5,
+      hullDamageFraction: 0.02 + context.secondary * 0.02,
+      cycleMultiplier: 1.18,
+    };
+  }
+  if (choiceId === 'abort') {
+    return { ...baseEffect(context.title, 'Die Mining-Anlage wird abgeschaltet.'), abort: true };
+  }
+  return null;
+}
+
+function resolveRich(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'follow') {
+    return {
+      ...baseEffect(
+        context.title,
+        'Die dichtere Zone wird kontrolliert verfolgt. Der Abbau beschleunigt sich.'
+      ),
+      recoverySeconds: 1.5,
+      cycleMultiplier: 0.78,
+    };
+  }
+  if (choiceId === 'exploit' && context.outcome < 0.7) {
+    return {
+      ...baseEffect(context.title, 'Die aggressive Schnittfolge zahlt sich aus.'),
+      recoverySeconds: 0.8,
+      cycleMultiplier: 0.65,
+    };
+  }
+  if (choiceId === 'exploit') {
+    return {
+      ...baseEffect(context.title, 'Die Ader zerbricht unter der Last.'),
+      depositLossFraction: 0.1 + context.secondary * 0.08,
+      hullDamageFraction: 0.015 + context.secondary * 0.02,
+      cycleMultiplier: 1.1,
+    };
+  }
+  if (choiceId === 'plan') {
+    return baseEffect(context.title, 'Die Crew bleibt beim ursprünglichen Schnittplan.');
+  }
+  return null;
+}
+
+function resolveCavity(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'detour') {
+    return {
+      ...baseEffect(context.title, 'Die Schnittlinie wird um den Hohlraum gelegt.'),
+      recoverySeconds: 2.5,
+      cycleMultiplier: 1.05,
+    };
+  }
+  if (choiceId === 'survey' && context.outcome < 0.82) {
+    return {
+      ...baseEffect(
+        context.title,
+        'Die Sondierung findet verwertbares Sondermaterial hinter der Wand.'
+      ),
+      recoverySeconds: 4,
+      bonusResourceId: context.rareId,
+      bonusAmount: 4 + Math.floor(context.secondary * 8),
+    };
+  }
+  if (choiceId === 'survey') {
+    return {
+      ...baseEffect(context.title, 'Der Hohlraum ist leer und instabil.'),
+      recoverySeconds: 4,
+      cycleMultiplier: 1.12,
+    };
+  }
+  if (choiceId === 'ignore' && context.outcome < 0.74) {
+    return baseEffect(context.title, 'Der Schnitt passiert den Hohlraum ohne Zwischenfall.');
+  }
+  if (choiceId === 'ignore') {
+    return {
+      ...baseEffect(context.title, 'Ein Teil der Hohlraumdecke gibt nach.'),
+      hullDamageFraction: 0.025 + context.secondary * 0.025,
+      cycleMultiplier: 1.08,
+    };
+  }
+  return null;
+}
+
+function resolveRare(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'careful') {
+    return {
+      ...baseEffect(context.title, 'Die Einschlüsse werden getrennt aus der Matrix gelöst.'),
+      recoverySeconds: 4,
+      bonusResourceId: context.rareId,
+      bonusAmount: 8 + Math.floor(context.secondary * 9),
+    };
+  }
+  if (choiceId === 'rip' && context.outcome < 0.6) {
+    return {
+      ...baseEffect(context.title, 'Der grobe Schnitt funktioniert und löst die Einschlüsse.'),
+      recoverySeconds: 1.5,
+      bonusResourceId: context.rareId,
+      bonusAmount: 6 + Math.floor(context.secondary * 8),
+    };
+  }
+  if (choiceId === 'rip') {
+    return {
+      ...baseEffect(context.title, 'Der Einschluss zerbricht und schlägt gegen die Anlage.'),
+      hullDamageFraction: 0.02 + context.secondary * 0.03,
+      cycleMultiplier: 1.12,
+    };
+  }
+  if (choiceId === 'leave') {
+    return baseEffect(context.title, 'Der Einschluss bleibt unangetastet.');
+  }
+  return null;
+}
+
+function resolveDeeper(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
+  if (choiceId === 'stop') {
+    return baseEffect(context.title, 'Der tiefere Verlauf wird markiert, aber nicht angeschnitten.');
+  }
+  if (choiceId === 'drill' && context.outcome < 0.6) {
+    return {
+      ...baseEffect(
+        context.title,
+        'Der zusätzliche Vortrieb findet Anschluss an eine tiefere Tasche.'
+      ),
+      recoverySeconds: 3.5,
+      cycleMultiplier: 0.88,
+      bonusResourceId: context.primaryResourceId,
+      bonusAmount: 12 + Math.floor(context.secondary * 20),
+    };
+  }
+  if (choiceId === 'drill') {
+    return {
+      ...baseEffect(context.title, 'Der tiefere Schnitt destabilisiert den Körper.'),
+      recoverySeconds: 3.5,
+      hullDamageFraction: 0.03 + context.secondary * 0.035,
+      depositLossFraction: 0.08 + context.secondary * 0.1,
+      cycleMultiplier: 1.15,
+    };
+  }
+  if (choiceId === 'abort') {
+    return {
+      ...baseEffect(
+        context.title,
+        'Der tiefe Verlauf bleibt für eine spätere Rückkehr markiert.'
+      ),
+      abort: true,
+    };
+  }
+  return null;
+}
+
 export function resolveMiningEventEffect(
   type: MiningEventType,
   choiceId: string,
   rolls: readonly number[],
   primaryResourceId: string
 ): MiningEventEffect | null {
-  const title = eventTitle(type);
-  const outcome = rolls[0] ?? 0;
-  const secondary = rolls[1] ?? 0;
-  const rareId = rareResource(rolls[2] ?? 0);
+  const context: OutcomeContext = {
+    title: eventTitle(type),
+    outcome: rolls[0] ?? 0,
+    secondary: rolls[1] ?? 0,
+    rareId: rareResource(rolls[2] ?? 0),
+    primaryResourceId,
+  };
 
-  if (type === 'unstable') {
-    if (choiceId === 'stabilize') {
-      return {
-        ...baseEffect(
-          title,
-          'Die Matrix hält. Der sichere Schnitt läuft langsamer weiter.'
-        ),
-        recoverySeconds: 2.5,
-        cycleMultiplier: 1.08,
-      };
-    }
-    if (choiceId === 'push' && outcome < 0.62) {
-      return {
-        ...baseEffect(
-          title,
-          'Der aggressive Schnitt sitzt. Der Materialstrom beschleunigt sich.'
-        ),
-        cycleMultiplier: 0.78,
-      };
-    }
-    if (choiceId === 'push') {
-      return {
-        ...baseEffect(title, 'Die Matrix bricht früher als berechnet.'),
-        hullDamageFraction: 0.04 + secondary * 0.05,
-        depositLossFraction: 0.1 + secondary * 0.1,
-        cycleMultiplier: 1.12,
-      };
-    }
-    if (choiceId === 'abort') {
-      return { ...baseEffect(title, 'Die Laser werden eingefahren.'), abort: true };
-    }
-  }
-
-  if (type === 'machine') {
-    if (choiceId === 'repair') {
-      return {
-        ...baseEffect(
-          title,
-          'Der Förderkopf wird neu ausgerichtet und sauber hochgefahren.'
-        ),
-        recoverySeconds: 4,
-      };
-    }
-    if (choiceId === 'bypass' && outcome < 0.68) {
-      return {
-        ...baseEffect(title, 'Die Überbrückung hält. Der Förderstrom läuft wieder.'),
-        recoverySeconds: 1.2,
-        cycleMultiplier: 0.92,
-      };
-    }
-    if (choiceId === 'bypass') {
-      return {
-        ...baseEffect(title, 'Die Überbrückung schlägt zurück und belastet die Anlage.'),
-        recoverySeconds: 4.5,
-        hullDamageFraction: 0.02 + secondary * 0.02,
-        cycleMultiplier: 1.18,
-      };
-    }
-    if (choiceId === 'abort') {
-      return { ...baseEffect(title, 'Die Mining-Anlage wird abgeschaltet.'), abort: true };
-    }
-  }
-
-  if (type === 'rich') {
-    if (choiceId === 'follow') {
-      return {
-        ...baseEffect(
-          title,
-          'Die dichtere Zone wird kontrolliert verfolgt. Der Abbau beschleunigt sich.'
-        ),
-        recoverySeconds: 1.5,
-        cycleMultiplier: 0.78,
-      };
-    }
-    if (choiceId === 'exploit' && outcome < 0.7) {
-      return {
-        ...baseEffect(title, 'Die aggressive Schnittfolge zahlt sich aus.'),
-        recoverySeconds: 0.8,
-        cycleMultiplier: 0.65,
-      };
-    }
-    if (choiceId === 'exploit') {
-      return {
-        ...baseEffect(title, 'Die Ader zerbricht unter der Last.'),
-        depositLossFraction: 0.1 + secondary * 0.08,
-        hullDamageFraction: 0.015 + secondary * 0.02,
-        cycleMultiplier: 1.1,
-      };
-    }
-    if (choiceId === 'plan') {
-      return baseEffect(title, 'Die Crew bleibt beim ursprünglichen Schnittplan.');
-    }
-  }
-
-  if (type === 'cavity') {
-    if (choiceId === 'detour') {
-      return {
-        ...baseEffect(title, 'Die Schnittlinie wird um den Hohlraum gelegt.'),
-        recoverySeconds: 2.5,
-        cycleMultiplier: 1.05,
-      };
-    }
-    if (choiceId === 'survey' && outcome < 0.82) {
-      return {
-        ...baseEffect(
-          title,
-          'Die Sondierung findet verwertbares Sondermaterial hinter der Wand.'
-        ),
-        recoverySeconds: 4,
-        bonusResourceId: rareId,
-        bonusAmount: 4 + Math.floor(secondary * 8),
-      };
-    }
-    if (choiceId === 'survey') {
-      return {
-        ...baseEffect(title, 'Der Hohlraum ist leer und instabil.'),
-        recoverySeconds: 4,
-        cycleMultiplier: 1.12,
-      };
-    }
-    if (choiceId === 'ignore' && outcome < 0.74) {
-      return baseEffect(title, 'Der Schnitt passiert den Hohlraum ohne Zwischenfall.');
-    }
-    if (choiceId === 'ignore') {
-      return {
-        ...baseEffect(title, 'Ein Teil der Hohlraumdecke gibt nach.'),
-        hullDamageFraction: 0.025 + secondary * 0.025,
-        cycleMultiplier: 1.08,
-      };
-    }
-  }
-
-  if (type === 'rare') {
-    if (choiceId === 'careful') {
-      return {
-        ...baseEffect(title, 'Die Einschlüsse werden getrennt aus der Matrix gelöst.'),
-        recoverySeconds: 4,
-        bonusResourceId: rareId,
-        bonusAmount: 8 + Math.floor(secondary * 9),
-      };
-    }
-    if (choiceId === 'rip' && outcome < 0.6) {
-      return {
-        ...baseEffect(title, 'Der grobe Schnitt funktioniert und löst die Einschlüsse.'),
-        recoverySeconds: 1.5,
-        bonusResourceId: rareId,
-        bonusAmount: 6 + Math.floor(secondary * 8),
-      };
-    }
-    if (choiceId === 'rip') {
-      return {
-        ...baseEffect(title, 'Der Einschluss zerbricht und schlägt gegen die Anlage.'),
-        hullDamageFraction: 0.02 + secondary * 0.03,
-        cycleMultiplier: 1.12,
-      };
-    }
-    if (choiceId === 'leave') {
-      return baseEffect(title, 'Der Einschluss bleibt unangetastet.');
-    }
-  }
-
-  if (type === 'deeper') {
-    if (choiceId === 'stop') {
-      return baseEffect(title, 'Der tiefere Verlauf wird markiert, aber nicht angeschnitten.');
-    }
-    if (choiceId === 'drill' && outcome < 0.6) {
-      return {
-        ...baseEffect(
-          title,
-          'Der zusätzliche Vortrieb findet Anschluss an eine tiefere Tasche.'
-        ),
-        recoverySeconds: 3.5,
-        cycleMultiplier: 0.88,
-        bonusResourceId: primaryResourceId,
-        bonusAmount: 12 + Math.floor(secondary * 20),
-      };
-    }
-    if (choiceId === 'drill') {
-      return {
-        ...baseEffect(title, 'Der tiefere Schnitt destabilisiert den Körper.'),
-        recoverySeconds: 3.5,
-        hullDamageFraction: 0.03 + secondary * 0.035,
-        depositLossFraction: 0.08 + secondary * 0.1,
-        cycleMultiplier: 1.15,
-      };
-    }
-    if (choiceId === 'abort') {
-      return {
-        ...baseEffect(
-          title,
-          'Der tiefe Verlauf bleibt für eine spätere Rückkehr markiert.'
-        ),
-        abort: true,
-      };
-    }
-  }
-
-  return null;
+  if (type === 'unstable') return resolveUnstable(choiceId, context);
+  if (type === 'machine') return resolveMachine(choiceId, context);
+  if (type === 'rich') return resolveRich(choiceId, context);
+  if (type === 'cavity') return resolveCavity(choiceId, context);
+  if (type === 'rare') return resolveRare(choiceId, context);
+  return resolveDeeper(choiceId, context);
 }
