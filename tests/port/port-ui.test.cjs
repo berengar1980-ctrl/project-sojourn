@@ -75,6 +75,16 @@ assert(
   'trade UI must expose cargo-first selling and system market route comparison'
 );
 assert(
+  portPanel.includes('HANDELSROUTEN') &&
+    portPanel.includes('GÜNSTIG KAUFEN') &&
+    portPanel.includes('TEUER VERKAUFEN') &&
+    portPanel.includes('KURS ZUM KAUF') &&
+    portPanel.includes('KURS ZUM VERKAUF') &&
+    portModel.includes('tradeOpportunities'),
+  'trade UI must show cheapest-buy to best-sell opportunities with direct course actions'
+);
+
+assert(
   portPanel.includes('Preiswissen verfällt') &&
     portPanel.includes('data-system-resource-select') &&
     portModel.includes("intelStatus: 'live' | 'recent' | 'aging' | 'stale'"),
