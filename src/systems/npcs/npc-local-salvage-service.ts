@@ -6,6 +6,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
 import {
   resolveShipShieldCollisions,
+  resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
@@ -377,6 +378,14 @@ export function createNpcLocalSalvageService(
         });
       }
       resolveShipShieldCollisions(bodies);
+      resolveShipShieldObstacleCollisions(
+        bodies,
+        options.field.wrecks.map((wreck) => ({
+          id: wreck.id,
+          position: wreck.position,
+          radius: wreck.radius,
+        }))
+      );
     },
   };
 }

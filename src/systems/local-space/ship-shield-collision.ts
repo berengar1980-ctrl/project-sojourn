@@ -105,3 +105,58 @@ export function resolveShipShieldCollisions(
 
   return impacts;
 }
+
+
+export interface ShieldCircleObstacle {
+  readonly id: string;
+  readonly position: WorldPoint;
+  readonly radius: number;
+}
+
+export interface ShipObstacleCollision {
+  readonly shipId: string;
+  readonly obstacleId: string;
+  readonly point: WorldPoint;
+  readonly normal: WorldPoint;
+  readonly closingDistance: number;
+}
+
+export function resolveShipShieldObstacleCollisions(
+  bodies: readonly LocalShieldShipBody[],
+  obstacles: readonly ShieldCircleObstacle[]
+): readonly ShipObstacleCollision[] {
+  const impacts: ShipObstacleCollision[] = [];
+
+  for (const body of bodies) {
+    for (const obstacle of obstacles) {
+      const center = shieldCenter(body);
+      const dx = obstacle.position.x - center.x;
+      const dy = obstacle.position.y - center.y;
+      const distance = Math.hypot(dx, dy);
+      const towardObstacle =
+        distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+      const shieldRadius = supportRadius(body, towardObstacle);
+      const required = shieldRadius + Math.max(0, obstacle.radius);
+      if (distance >= required) continue;
+
+      const overlap = required - distance + 0.5;
+      body.state.position = {
+        x: body.state.position.x - towardObstacle.x * overlap,
+        y: body.state.position.y - towardObstacle.y * overlap,
+      };
+
+      impacts.push({
+        shipId: body.id,
+        obstacleId: obstacle.id,
+        point: {
+          x: obstacle.position.x - towardObstacle.x * obstacle.radius,
+          y: obstacle.position.y - towardObstacle.y * obstacle.radius,
+        },
+        normal: { x: -towardObstacle.x, y: -towardObstacle.y },
+        closingDistance: overlap,
+      });
+    }
+  }
+
+  return impacts;
+}

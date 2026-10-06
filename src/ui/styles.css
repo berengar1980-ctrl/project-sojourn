@@ -81,7 +81,8 @@ body {
   pointer-events: none;
 }
 
-.map-mode-toggle {
+.map-mode-toggle,
+.map-label-toggle {
   position: absolute;
   right: 22px;
   bottom: 42px;
@@ -96,9 +97,20 @@ body {
   letter-spacing: 0.12em;
 }
 
-.map-mode-toggle:hover {
+.map-label-toggle {
+  right: 130px;
+  bottom: 42px;
+}
+
+.map-mode-toggle:hover,
+.map-label-toggle:hover {
   border-color: rgba(114, 210, 151, 0.52);
   color: #a9e7c1;
+}
+
+.map-label-toggle.is-off {
+  color: #6d7b82;
+  border-color: rgba(101, 153, 171, 0.18);
 }
 
 .star-map-shell.is-nav-mode .map-mode-toggle {
@@ -520,6 +532,35 @@ body {
 .salvage-operation-status[hidden],
 .salvage-cancel-button[hidden] {
   display: none;
+}
+
+.salvage-help {
+  position: absolute;
+  top: 72px;
+  left: 24px;
+  max-width: min(560px, 52vw);
+  padding: 8px 10px;
+  border: 1px solid rgba(110, 170, 186, 0.28);
+  background: rgba(5, 17, 22, 0.82);
+  color: #9fb8c1;
+  font-size: 9px;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.salvage-help strong {
+  color: #c9e4ea;
+}
+
+.salvage-help.is-warning {
+  border-color: rgba(205, 119, 83, 0.46);
+  background: rgba(48, 24, 16, 0.84);
+  color: #d9aa94;
+}
+
+.salvage-help.is-warning strong {
+  color: #efb69b;
 }
 
 .salvage-cancel-button {
