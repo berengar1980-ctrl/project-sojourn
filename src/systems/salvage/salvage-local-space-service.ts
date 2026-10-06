@@ -83,7 +83,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       setup: options.setup,
       crewSkill: options.crewSkill,
       collect: options.collect,
-      collectComponent: options.collectComponent,
+      ...(options.collectComponent ? { collectComponent: options.collectComponent } : {}),
     });
     this.ship = {
       position: { x: options.field.width * 0.5, y: options.field.height * 0.5 },
