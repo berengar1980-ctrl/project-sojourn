@@ -1,7 +1,6 @@
 import type { ShipStationDefinition, ShipStationSkill } from '../../core/ship-types';
 
-export type CrewInjuryState =
-  'healthy' | 'light_wound' | 'severe_wound' | 'incapacitated' | 'dead';
+export type CrewInjuryState = 'healthy' | 'light_wound' | 'severe_wound' | 'incapacitated' | 'dead';
 
 export interface ShipCrewMember {
   readonly id: string;
