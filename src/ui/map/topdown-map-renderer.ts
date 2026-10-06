@@ -4,7 +4,7 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
-import { mapSymbolScale } from './map-visual-scale';
+import { mapSymbolScale, shipSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
@@ -70,7 +70,7 @@ export class TopdownMapRenderer {
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     if (!this.hasFitted) {
-      this.camera.fit(rect.width, rect.height);
+      this.camera.fit(rect.width, rect.height, this.contentBounds());
       this.hasFitted = true;
     }
     this.draw();
@@ -78,7 +78,7 @@ export class TopdownMapRenderer {
 
   resetCamera(): void {
     const rect = this.canvas.getBoundingClientRect();
-    this.camera.fit(rect.width, rect.height);
+    this.camera.fit(rect.width, rect.height, this.contentBounds());
     this.draw();
   }
 
@@ -140,6 +140,24 @@ export class TopdownMapRenderer {
     this.drawPlayerShip(width, height);
   }
 
+  private contentBounds() {
+    const points = [
+      this.model.star.position,
+      ...this.model.locations.map((location) => location.position),
+    ];
+    const minX = Math.min(...points.map((point) => point.x));
+    const maxX = Math.max(...points.map((point) => point.x));
+    const minY = Math.min(...points.map((point) => point.y));
+    const maxY = Math.max(...points.map((point) => point.y));
+    const padding = 180;
+    return {
+      minX: minX - padding,
+      minY: minY - padding,
+      maxX: maxX + padding,
+      maxY: maxY + padding,
+    };
+  }
+
   private drawNpcShips(width: number, height: number): void {
     const zoom = this.camera.getRelativeZoom();
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
@@ -153,7 +171,10 @@ export class TopdownMapRenderer {
         this.npcImages.set(npc.spriteUrl, image);
       }
 
-      const widthPx = Math.max(12, Math.min(30, npc.nominalLengthMeters * 0.22 * mapSymbolScale(zoom)));
+      const widthPx = Math.max(
+        8,
+        Math.min(22, npc.nominalLengthMeters * 0.13 * shipSymbolScale(zoom))
+      );
       const aspect =
         image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
           ? image.naturalWidth / image.naturalHeight
@@ -385,15 +406,7 @@ export class TopdownMapRenderer {
     }
 
     if (this.shouldDrawLabel(location)) {
-      this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
-      this.context.font =
-        this.displayMode === 'nav'
-          ? '10px ui-monospace, monospace'
-          : location.kind === 'planet'
-            ? '12px system-ui'
-            : '11px system-ui';
-      this.context.textAlign = 'center';
-      this.context.fillText(location.name, point.x, point.y + radius + 20);
+      this.drawLocationLabel(location, point.x, point.y + radius + 20);
     }
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
@@ -411,9 +424,45 @@ export class TopdownMapRenderer {
     if (location.isSelected || location.isCurrent) return true;
     const zoom = this.camera.getRelativeZoom();
     if (location.kind === 'planet') return true;
-    if (location.kind === 'station') return zoom >= 1.25;
-    if (location.kind === 'moon') return zoom >= 1.55;
-    return zoom >= 1.18;
+    if (location.kind === 'station') return zoom >= 0.98;
+    if (location.kind === 'moon') return zoom >= 1.18;
+    return zoom >= 1.05;
+  }
+
+  private drawLocationLabel(location: StarMapLocationView, x: number, y: number): void {
+    const font =
+      this.displayMode === 'nav'
+        ? '10px ui-monospace, monospace'
+        : location.kind === 'planet'
+          ? '11px system-ui'
+          : '10px system-ui';
+    this.context.save();
+    this.context.font = font;
+    this.context.textAlign = 'center';
+    this.context.textBaseline = 'middle';
+    const width = this.context.measureText(location.name).width;
+    const horizontalPadding = 6;
+    const height = 17;
+    this.context.fillStyle =
+      this.displayMode === 'nav' ? 'rgba(3, 16, 12, .78)' : 'rgba(4, 11, 16, .78)';
+    this.context.strokeStyle =
+      location.isSelected || location.isCurrent
+        ? 'rgba(140, 211, 229, .48)'
+        : 'rgba(112, 139, 151, .24)';
+    this.context.lineWidth = 1;
+    this.context.beginPath();
+    this.context.roundRect(
+      x - width / 2 - horizontalPadding,
+      y - height / 2,
+      width + horizontalPadding * 2,
+      height,
+      3
+    );
+    this.context.fill();
+    this.context.stroke();
+    this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
+    this.context.fillText(location.name, x, y);
+    this.context.restore();
   }
 
   private drawPlanet(

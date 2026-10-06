@@ -3,9 +3,9 @@ function clamp(value: number, minimum: number, maximum: number): number {
 }
 
 export function mapSymbolScale(relativeZoom: number): number {
-  return clamp(Math.pow(relativeZoom, 0.8), 0.55, 3.2);
+  return clamp(Math.pow(relativeZoom, 0.62), 0.72, 2.5);
 }
 
 export function shipSymbolScale(relativeZoom: number): number {
-  return clamp(Math.pow(relativeZoom, 0.8), 0.55, 2.6);
+  return clamp(Math.pow(relativeZoom, 0.45), 0.78, 1.95);
 }
