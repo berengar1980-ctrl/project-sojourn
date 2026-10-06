@@ -35,6 +35,26 @@ function interpolate(from: WorldPoint, to: WorldPoint, progress: number): WorldP
   };
 }
 
+function routePointAtDistance(route: RoutePlan, distance: number): WorldPoint {
+  let remaining = Math.max(0, distance);
+  for (let index = 1; index < route.points.length; index += 1) {
+    const from = route.points[index - 1]!;
+    const to = route.points[index]!;
+    const segmentDistance = Math.hypot(to.x - from.x, to.y - from.y);
+    if (remaining <= segmentDistance || index === route.points.length - 1) {
+      const progress = segmentDistance <= 0 ? 1 : Math.min(1, remaining / segmentDistance);
+      return interpolate(from, to, progress);
+    }
+    remaining -= segmentDistance;
+  }
+  return route.points[route.points.length - 1] ?? route.points[0] ?? { x: 0, y: 0 };
+}
+
+function routeHeadingTarget(route: RoutePlan, distance: number): WorldPoint {
+  const lookAhead = Math.min(route.distance, Math.max(0, distance) + 30);
+  return routePointAtDistance(route, lookAhead);
+}
+
 function heading(from: WorldPoint, to: WorldPoint): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
 }
@@ -106,10 +126,12 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
   if (!travel || deltaSeconds <= 0) return;
 
   const clamped = Math.min(deltaSeconds, 0.1);
-  const [from, to] = travel.route.points;
-  if (!from || !to) return;
+  const currentRoutePoint = routePointAtDistance(travel.route, travel.distanceTravelled);
+  const headingTarget = routeHeadingTarget(travel.route, travel.distanceTravelled);
+  const to = travel.route.points[travel.route.points.length - 1];
+  if (!to) return;
 
-  const desiredHeading = heading(from, to);
+  const desiredHeading = heading(currentRoutePoint, headingTarget);
   state.currentAngularThrust = Math.max(
     -1,
     Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
@@ -129,7 +151,7 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
   );
 
   const progress = travel.distanceTravelled / travel.route.distance;
-  state.currentPosition = interpolate(from, to, progress);
+  state.currentPosition = routePointAtDistance(travel.route, travel.distanceTravelled);
 
   if (remainingDistance <= 0.5 || progress >= 1) {
     state.currentLocationId = travel.destinationId;
@@ -179,7 +201,8 @@ export function createNavigationService(
     if (state.selectedDestinationId === state.currentLocationId) return snapshot();
 
     const route = planRoute(world, state.currentLocationId, state.selectedDestinationId);
-    const [from, to] = route.points;
+    const from = route.points[0];
+    const to = route.points[route.points.length - 1];
     if (!from || !to) return snapshot();
 
     state.travel = {
