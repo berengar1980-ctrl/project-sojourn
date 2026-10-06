@@ -13,9 +13,16 @@ const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 
-const ambience = fs.readFileSync(
-  path.join(root, 'resources/audio/sfx-deep-space-travel-ambience.ogg')
-);
+const ambienceBase64 =
+  fs.readFileSync(
+    path.join(root, 'resources/audio/base64/space-ambience-00.b64'),
+    'utf8'
+  ).trim() +
+  fs.readFileSync(
+    path.join(root, 'resources/audio/base64/space-ambience-01.b64'),
+    'utf8'
+  ).trim();
+const ambience = Buffer.from(ambienceBase64, 'base64');
 const rcs = fs.readFileSync(
   path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
 );
@@ -23,7 +30,7 @@ const rcs = fs.readFileSync(
 assert.equal(
   ambience.subarray(0, 4).toString('ascii'),
   'OggS',
-  'bundled ambience must be a valid Ogg stream'
+  'bundled ambience must decode to a valid Ogg stream'
 );
 assert.equal(
   rcs.subarray(0, 4).toString('ascii'),
@@ -32,7 +39,8 @@ assert.equal(
 );
 
 assert(
-  audio.includes('ambience.loop = true') &&
+  audio.includes("'data:audio/ogg;base64,'") &&
+    audio.includes('ambience.loop = true') &&
     audio.includes("window.addEventListener('pointerdown', unlock") &&
     audio.includes("window.addEventListener('keydown', unlock"),
   'deep-space ambience must loop and unlock after the first browser user gesture'
