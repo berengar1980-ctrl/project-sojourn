@@ -348,7 +348,12 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     shortScanButton.disabled = miningActive || selected.scanLevel === 'analyzed';
     const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
     const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
-    mineButton.disabled = knownEmpty || depleted || (selected.isMiningTarget && miningActive);
+    mineButton.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
+    mineButton.title = model.miningAvailable
+      ? ''
+      : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
+    mineButton.disabled =
+      !model.miningAvailable || knownEmpty || depleted || (selected.isMiningTarget && miningActive);
   };
 
   const observer = observeCanvas(canvas, renderer);
