@@ -190,6 +190,10 @@ assert(engines.includes('projectHardpoint'), 'engine effects must use shared har
 assert(engines.includes('ThrusterGlowRenderer'), 'main engines must use shared nozzle glow');
 assert(maneuvers.includes('ThrusterGlowRenderer'), 'RCS thrusters must use shared nozzle glow');
 assert(
+  maneuvers.includes("ShipEffectLayer") && maneuvers.includes("(thruster.layer ?? 'above') !== layer"),
+  'RCS effects must respect per-hardpoint above/below rendering'
+);
+assert(
   thrusterGlow.includes("globalCompositeOperation = 'lighter'"),
   'thruster light must use additive glow'
 );
@@ -226,6 +230,14 @@ assert(effects.includes('Math.sin(timeSeconds * 13)'), 'mining laser must pulse 
 assert(effects.includes('drawImpactSparks'), 'mining impact must render sparks');
 assert(effects.includes('drawImpactDust'), 'mining impact must render transparent dust');
 assert(effects.includes('drawTractorFields'), 'mining effects must render tractor collection');
+assert(
+  effects.includes('source.tractorBeams') || effects.includes('hardpoints.tractorBeams'),
+  'tractor collection must originate from configured ship hardpoints'
+);
+assert(
+  effects.includes("(hardpoint.layer ?? 'above') === layer"),
+  'mining and tractor effects must support above/below ship layers'
+);
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
 assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
 assert(panel.includes('LANGREICHWEITENSCAN'), 'local UI must expose long-range scanning');
