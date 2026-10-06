@@ -11,6 +11,7 @@ import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
+import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 
 interface AsteroidHitArea {
@@ -459,6 +460,7 @@ export class LocalSpaceRenderer {
       turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
       angularThrust: this.model.ship.angularThrust,
       lateralThrust: this.model.ship.lateralThrust,
+      longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
     };
 
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
