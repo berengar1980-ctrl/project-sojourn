@@ -12,10 +12,7 @@ import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-te
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
-import {
-  createControllerEconomy,
-  type ControllerEconomy,
-} from './game-controller-economy';
+import { createControllerEconomy, type ControllerEconomy } from './game-controller-economy';
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
 import { createMiningLocalSpace } from './game-controller-mining';
 import { createActivePortPanel } from './game-controller-port';
