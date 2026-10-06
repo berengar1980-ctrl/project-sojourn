@@ -10,7 +10,7 @@ import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { PlanetRingRenderer } from './planet-ring-renderer';
-import { StationSymbolRenderer } from './station-symbol-renderer';
+import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
@@ -31,7 +31,7 @@ export class TopdownMapRenderer {
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
-  private readonly stationSymbols: StationSymbolRenderer;
+  private readonly stations: ProceduralStationRenderer;
   private readonly npcLighting = new ShipLightingRenderer();
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: StarMapViewModel;
@@ -55,7 +55,7 @@ export class TopdownMapRenderer {
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
-    this.stationSymbols = new StationSymbolRenderer(context);
+    this.stations = new ProceduralStationRenderer(context);
     this.resize();
   }
 
@@ -402,7 +402,14 @@ export class TopdownMapRenderer {
     else if (location.kind === 'asteroid-field') {
       this.spaceBodies.drawAsteroidField(location.id, point.x, point.y, radius, light);
     } else if (location.kind === 'station') {
-      this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
+      this.stations.draw({
+        id: location.id,
+        type: location.stationType ?? 'utility',
+        point,
+        radius,
+        detailLevel: 'map',
+        light,
+      });
     } else if (location.kind === 'wreck') this.drawWreck(point, radius);
     else this.drawPlanet(location, point, radius, light);
 
@@ -423,7 +430,7 @@ export class TopdownMapRenderer {
 
   private locationVisualRadius(location: StarMapLocationView): number {
     if (location.kind === 'asteroid-field') return 24;
-    if (location.kind === 'station') return Math.min(13, Math.max(7, location.radius * 0.6));
+    if (location.kind === 'station') return Math.min(18, Math.max(10, location.radius * 0.72));
     if (location.kind === 'wreck') return 9;
     if (location.kind === 'moon') return Math.min(12, Math.max(4, location.radius * 0.65));
     return Math.min(30, Math.max(8, location.radius * 0.55));
