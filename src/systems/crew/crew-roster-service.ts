@@ -92,7 +92,9 @@ export function createCrewRosterService(): CrewRosterService {
     },
 
     assign(ship, stationId, crewId) {
-      const validStations = new Set(resolveShipGameplayStats(ship).stations.map((station) => station.id));
+      const validStations = new Set(
+        resolveShipGameplayStats(ship).stations.map((station) => station.id)
+      );
       if (!validStations.has(stationId)) return false;
       const record = assignmentRecord(ship);
       if (crewId === null) {
