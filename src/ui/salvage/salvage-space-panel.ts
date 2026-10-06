@@ -35,6 +35,7 @@ interface SalvageControls {
   readonly resources: HTMLElement;
   readonly status: HTMLElement;
   readonly cancelButton: HTMLButtonElement;
+  readonly help: HTMLElement;
   readonly cargoTotal: HTMLElement;
   readonly cargoList: HTMLElement;
   readonly backButton: HTMLButtonElement;
@@ -51,6 +52,7 @@ function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '</strong></div>',
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<div class="salvage-operation-status" hidden></div>',
+    '<div class="salvage-help"></div>',
     '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
     '<aside class="salvage-event" hidden></aside>',
     '<div class="local-cargo-panel">',
@@ -86,6 +88,7 @@ function controls(shell: HTMLElement): SalvageControls {
     resources: query<HTMLElement>('.salvage-resource-list'),
     status: query<HTMLElement>('.salvage-operation-status'),
     cancelButton: query<HTMLButtonElement>('.salvage-cancel-button'),
+    help: query<HTMLElement>('.salvage-help'),
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
@@ -161,9 +164,11 @@ function resourceRow(
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent =
-    model.phase === 'stripping' && model.activeResourceId === resource.resourceId
-      ? 'BERGUNG LÄUFT'
-      : 'BERGEN';
+    !model.salvageAvailable
+      ? 'BERGUNGSMODUL FEHLT'
+      : model.phase === 'stripping' && model.activeResourceId === resource.resourceId
+        ? 'BERGUNG LÄUFT'
+        : 'ANFLIEGEN & BERGEN';
   button.disabled =
     !model.salvageAvailable ||
     model.phase !== 'idle' ||
@@ -223,6 +228,10 @@ function renderSelection(
     model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
     ui.meta.textContent = wreck.kindLabel + ' · ANALYSE ERFORDERLICH';
+    ui.inspectButton.textContent =
+      model.phase === 'approaching' || model.phase === 'inspecting'
+        ? 'SCAN LÄUFT'
+        : 'ANFLIEGEN & SCANNEN';
     ui.resources.replaceChildren();
     ui.inspectButton.hidden = false;
     ui.inspectButton.disabled = busy;
@@ -338,6 +347,10 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     const status = statusText(model);
     ui.status.hidden = status.length === 0;
     ui.status.textContent = status;
+    ui.help.classList.toggle('is-warning', !model.salvageAvailable);
+    ui.help.innerHTML = model.salvageAvailable
+      ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
+      : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
     ui.cancelButton.hidden = model.phase === 'idle';
     ui.backButton.disabled =
       model.phase !== 'idle' ||
