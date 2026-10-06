@@ -57,10 +57,8 @@ export function createShipLoadoutService(): ShipLoadoutService {
       const slots = [...(current[type] ?? [])];
       while (slots.length < limit) slots.push('');
       slots[index] = componentId ?? '';
-      const cleaned = slots.filter((id, slotIndex) => slotIndex < limit && id.length > 0);
       const next: Partial<Record<ShipComponentType, readonly string[]>> = { ...current };
-      if (cleaned.length > 0) next[type] = cleaned;
-      else delete next[type];
+      next[type] = slots.slice(0, limit);
       byShipId.set(ship.id, next);
       return true;
     },
