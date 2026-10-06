@@ -3,3 +3,5 @@ dist/
 coverage/
 docs/generated/
 tools/hardpoint-editor.html
+
+resources/audio/ambience/*.b64
