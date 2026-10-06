@@ -51,6 +51,11 @@ export interface ResourceCargoEntry {
   readonly amount: number;
 }
 
+export interface HullState {
+  readonly maxHp: number;
+  currentHp: number;
+}
+
 export interface LocalShipState {
   position: WorldPoint;
   headingRadians: number;
@@ -88,6 +93,7 @@ export interface LocalSpaceSnapshot {
   readonly collectedResources: readonly ResourceCargoEntry[];
   readonly laserActive: boolean;
   readonly miningImpact: MiningImpact | null;
+  readonly hull: HullState;
   readonly shield: ShieldState;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
 }
