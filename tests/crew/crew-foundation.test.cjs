@@ -67,11 +67,29 @@ assert(runtime.stationSkills.piloting > 0);
 assert.equal(runtime.miningCrewSkill, runtime.stationSkills.mining);
 assert(roster.manningFactor(miner) < 1, 'understaffed ships must keep the Voidbound manning penalty');
 
+const manningBeforeInjury = roster.manningFactor(miner);
 roster.setInjuryState('torven_kray', 'incapacitated');
 assert.equal(
   roster.assignments(miner).helm,
   undefined,
   'incapacitated crew must be removed from active stations'
+);
+assert.equal(
+  roster.assign(miner, 'helm', 'torven_kray'),
+  false,
+  'incapacitated crew must not be assignable again'
+);
+assert(
+  roster.manningFactor(miner) < manningBeforeInjury,
+  'incapacitated crew must not count toward active ship manning'
+);
+
+const combatBefore = roster.member('torven_kray').combatSkills.ranged;
+roster.accrueCombatTraining('torven_kray', 'ranged', 1000);
+assert.equal(
+  roster.member('torven_kray').combatSkills.ranged,
+  combatBefore,
+  'incapacitated crew must not gain combat training'
 );
 
 console.log(
