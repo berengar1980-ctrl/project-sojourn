@@ -534,6 +534,35 @@ body {
   display: none;
 }
 
+.salvage-help {
+  position: absolute;
+  top: 72px;
+  left: 24px;
+  max-width: min(560px, 52vw);
+  padding: 8px 10px;
+  border: 1px solid rgba(110, 170, 186, 0.28);
+  background: rgba(5, 17, 22, 0.82);
+  color: #9fb8c1;
+  font-size: 9px;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.salvage-help strong {
+  color: #c9e4ea;
+}
+
+.salvage-help.is-warning {
+  border-color: rgba(205, 119, 83, 0.46);
+  background: rgba(48, 24, 16, 0.84);
+  color: #d9aa94;
+}
+
+.salvage-help.is-warning strong {
+  color: #efb69b;
+}
+
 .salvage-cancel-button {
   position: absolute;
   top: 108px;
