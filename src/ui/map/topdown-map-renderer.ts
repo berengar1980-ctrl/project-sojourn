@@ -126,7 +126,6 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
-    this.drawRegions(width, height);
     this.drawOrbits(width, height);
     this.drawStar(width, height);
     this.drawRoute(width, height);
@@ -281,22 +280,22 @@ export class TopdownMapRenderer {
   }
 
   private drawRoute(width: number, height: number): void {
-    if (!this.model.route) return;
+    const route = this.model.route;
+    if (!route || route.points.length < 2) return;
 
-    const [from, to] = this.model.route.points;
-    if (!from || !to) return;
-
-    const routeStart = this.model.navigation.isTravelling ? this.model.playerShip.position : from;
-    const a = this.camera.worldToScreen(routeStart, width, height);
-    const b = this.camera.worldToScreen(to, width, height);
+    const routePoints = [...route.points];
+    if (this.model.navigation.isTravelling) routePoints[0] = this.model.playerShip.position;
 
     this.context.save();
     this.context.strokeStyle = 'rgba(111, 190, 210, 0.72)';
     this.context.lineWidth = 1.4;
     this.context.setLineDash([6, 7]);
     this.context.beginPath();
-    this.context.moveTo(a.x, a.y);
-    this.context.lineTo(b.x, b.y);
+    routePoints.forEach((point, index) => {
+      const screen = this.camera.worldToScreen(point, width, height);
+      if (index === 0) this.context.moveTo(screen.x, screen.y);
+      else this.context.lineTo(screen.x, screen.y);
+    });
     this.context.stroke();
     this.context.restore();
   }
