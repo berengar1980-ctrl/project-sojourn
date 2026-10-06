@@ -2,6 +2,7 @@ import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import {
   activeManeuverThrusterBursts,
+  longitudinalManeuverDemand,
   type ManeuverDemand,
 } from '../ships/ship-maneuver-thrusters';
 
@@ -26,7 +27,7 @@ const RCS_RETRIGGER_SECONDS = 0.12;
 export interface GameAudioService {
   updatePlayerRcs(
     hardpoints: ShipHardpoints,
-    state: Pick<LocalShipState, 'turnRateRadiansPerSecond' | 'angularThrust' | 'lateralThrust'>,
+    state: Pick<LocalShipState, 'speed' | 'turnRateRadiansPerSecond' | 'angularThrust' | 'lateralThrust'>,
     timeSeconds: number
   ): void;
   clearPlayerRcs(): void;
@@ -129,6 +130,7 @@ export function createGameAudioService(): GameAudioService {
         turnRateRadiansPerSecond: state.turnRateRadiansPerSecond,
         angularThrust: state.angularThrust,
         lateralThrust: state.lateralThrust,
+        longitudinalThrust: longitudinalManeuverDemand(state.speed),
       };
       const bursts = activeManeuverThrusterBursts(hardpoints, demand, timeSeconds);
       const next = new Set(bursts.map((burst) => burst.id));

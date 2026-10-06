@@ -13,18 +13,10 @@ const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 
-const ambience = fs.readFileSync(
-  path.join(root, 'resources/audio/sfx-deep-space-travel-ambience.ogg')
-);
 const rcs = fs.readFileSync(
   path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
 );
 
-assert.equal(
-  ambience.subarray(0, 4).toString('ascii'),
-  'OggS',
-  'bundled ambience must be a valid Ogg stream'
-);
 assert.equal(
   rcs.subarray(0, 4).toString('ascii'),
   'OggS',
@@ -32,10 +24,11 @@ assert.equal(
 );
 
 assert(
-  audio.includes('ambience.loop = true') &&
+  audio.includes('AMBIENCE_CHUNK_URLS') &&
+    audio.includes('ambience.loop = true') &&
     audio.includes("window.addEventListener('pointerdown', unlock") &&
     audio.includes("window.addEventListener('keydown', unlock"),
-  'deep-space ambience must loop and unlock after the first browser user gesture'
+  'chunked deep-space ambience must loop and unlock after the first browser user gesture'
 );
 
 assert(
@@ -46,7 +39,8 @@ assert(
 );
 
 assert(
-  audio.includes('!activeThrusters.has(burst.id)') &&
+  audio.includes('longitudinalManeuverDemand(state.speed)') &&
+    audio.includes('!activeThrusters.has(burst.id)') &&
     audio.includes('RCS_RETRIGGER_SECONDS'),
   'RCS audio must fire on burst onset without frame-by-frame audio spam'
 );
