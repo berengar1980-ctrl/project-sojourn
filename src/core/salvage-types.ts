@@ -49,7 +49,6 @@ export interface SalvageRecoveryResult {
   readonly depleted: boolean;
 }
 
-
 export type SalvageLocalPhase =
   | 'idle'
   | 'navigating'
