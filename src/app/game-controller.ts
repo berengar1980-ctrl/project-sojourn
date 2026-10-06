@@ -11,7 +11,13 @@ import {
   createNpcLocalMiningService,
   type NpcLocalMiningService,
 } from '../systems/npcs/npc-local-mining-service';
-import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
+import {
+  createShipLoadoutService,
+  getAllShipDefinitions,
+  getShipDefinition,
+  type ShipLoadoutService,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -170,7 +176,7 @@ function advanceEconomyDay(
   currentId: string | null,
   economy: ControllerEconomy
 ): void {
-  if (previousId === null && currentId !== null) {
+  if (currentId !== null && previousId !== currentId) {
     economy.situations.advanceNextDay();
     economy.simulation.advanceNextDay();
     economy.npcs.advanceNextDay();
@@ -269,7 +275,18 @@ interface ControllerRuntimeContext {
   readonly systemLog: SystemLogService;
   readonly economy: ControllerEconomy;
   readonly crew: CrewRosterService;
+  readonly loadouts: ShipLoadoutService;
   readonly state: ControllerRuntimeState;
+}
+
+function controllerShipRuntimeOptions(
+  context: ControllerRuntimeContext,
+  ship: ShipDefinition = context.state.activeShip
+): ShipRuntimeOptions {
+  return {
+    ...context.crew.runtimeOptions(ship),
+    installed: context.loadouts.get(ship),
+  };
 }
 
 function controllerStarModel(context: ControllerRuntimeContext) {
@@ -347,6 +364,9 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     economy.trade,
     state.activeShip,
     context.crew,
+    context.loadouts,
+    economy.marketIntel,
+    economy.situations.currentDay,
     () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
     () => mountControllerPort(context, false),
     context.systemLog
@@ -387,7 +407,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     state.localSpaceSeed,
     economy.mining,
     location,
-    context.crew.runtimeOptions(state.activeShip)
+    controllerShipRuntimeOptions(context, state.activeShip)
   );
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
@@ -435,7 +455,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     sectorNpcs: economy.sectorNpcs.npcs,
     player: economy.trade.player,
     componentInventory: economy.components,
-    runtimeOptions: context.crew.runtimeOptions(state.activeShip),
+    runtimeOptions: controllerShipRuntimeOptions(context, state.activeShip),
     log: context.systemLog,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
@@ -474,6 +494,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     systemLog: createControllerLog(),
     economy: createControllerEconomy(),
     crew: createCrewRosterService(),
+    loadouts: createShipLoadoutService(),
     state: {
       activeShip: options.ship,
       mode: 'star-map',
