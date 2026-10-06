@@ -224,10 +224,7 @@ export function createEconomySimulationService(
   let lastDay = -1;
   let physicalAllocationCounter = 0;
 
-  const allocatePhysicalResource = (
-    resourceId: EconomyResourceId,
-    amount: number
-  ): number => {
+  const allocatePhysicalResource = (resourceId: EconomyResourceId, amount: number): number => {
     const pool = pools[resourceId];
     const requested = quantity(amount);
     if (!pool || requested <= 0) return 0;
