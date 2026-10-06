@@ -11,14 +11,16 @@ import { distance } from '../local-space/local-space-motion';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import {
   createSalvageFieldService,
+  type SalvageComponentCollector,
   type SalvageFieldService,
   type SalvageResourceCollector,
 } from './salvage-field-service';
 
 const INSPECTION_SECONDS = 2.8;
 const WORK_STANDOFF = 105;
+const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
-type ApproachPurpose = 'inspect' | 'strip';
+type ApproachPurpose = 'inspect' | 'strip' | 'component';
 
 export interface SalvageLocalSpaceService {
   getSnapshot(): SalvageLocalSpaceSnapshot;
@@ -26,6 +28,7 @@ export interface SalvageLocalSpaceService {
   startNavigation(target: WorldPoint): SalvageLocalSpaceSnapshot;
   startInspect(wreckId: string): SalvageLocalSpaceSnapshot;
   startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot;
+  startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot;
   cancelOperation(): SalvageLocalSpaceSnapshot;
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot;
 }
@@ -35,6 +38,7 @@ interface SalvageRuntimeOptions {
   readonly setup: ShipSalvageSetup;
   readonly crewSkill: number;
   readonly collect: SalvageResourceCollector;
+  readonly collectComponent?: SalvageComponentCollector;
   readonly approachSpeed: number;
 }
 
@@ -70,6 +74,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private approachPurpose: ApproachPurpose | null = null;
   private lastRecovery: SalvageLocalSpaceSnapshot['lastRecovery'] = null;
   private recoverySerial = 0;
+  private lastComponentRecovery: SalvageLocalSpaceSnapshot['lastComponentRecovery'] = null;
+  private componentRecoverySerial = 0;
 
   constructor(private readonly options: SalvageRuntimeOptions) {
     this.salvage = createSalvageFieldService({
@@ -77,6 +83,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       setup: options.setup,
       crewSkill: options.crewSkill,
       collect: options.collect,
+      collectComponent: options.collectComponent,
     });
     this.ship = {
       position: { x: options.field.width * 0.5, y: options.field.height * 0.5 },
@@ -101,6 +108,13 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       activeResourceId: this.activeResourceId,
       lastRecovery: this.lastRecovery,
       recoverySerial: this.recoverySerial,
+      lastComponentRecovery: this.lastComponentRecovery,
+      componentRecoverySerial: this.componentRecoverySerial,
+      componentRecoveryChances: Object.fromEntries(
+        this.options.field.wrecks
+          .map((wreck) => [wreck.id, this.salvage.componentChance(wreck.id)] as const)
+          .filter((entry): entry is readonly [string, number] => entry[1] !== null)
+      ),
       salvageAvailable: this.options.setup.available,
       cargoCapacityTons: this.options.setup.cargoCapacityTons,
     };
@@ -147,6 +161,24 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return this.getSnapshot();
   }
 
+  startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot {
+    const wreck = this.findWreck(wreckId);
+    if (
+      !wreck?.inspected ||
+      wreck.componentStatus !== 'available' ||
+      !this.options.setup.available
+    ) {
+      return this.getSnapshot();
+    }
+
+    this.selectedWreckId = wreckId;
+    this.workTargetId = wreckId;
+    this.activeResourceId = null;
+    if (this.withinWorkRange(wreck)) this.beginComponentRecovery();
+    else this.beginApproach(wreck, 'component');
+    return this.getSnapshot();
+  }
+
   cancelOperation(): SalvageLocalSpaceSnapshot {
     this.finishIdle();
     this.navigationRoute = [];
@@ -162,6 +194,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.updateInspection(delta);
     } else if (this.phase === 'stripping') {
       this.updateStripping(delta);
+    } else if (this.phase === 'extracting-component') {
+      this.updateComponentRecovery(delta);
     }
     return this.getSnapshot();
   }
@@ -212,6 +246,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     }
     if (this.approachPurpose === 'inspect') this.beginInspection();
     else if (this.approachPurpose === 'strip') this.beginStripping();
+    else if (this.approachPurpose === 'component') this.beginComponentRecovery();
     else this.finishIdle();
   }
 
@@ -249,10 +284,37 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     if (result.remaining <= 0 || result.depleted) this.finishIdle();
   }
 
+  private beginComponentRecovery(): void {
+    this.phase = 'extracting-component';
+    this.elapsed = 0;
+    this.approachPurpose = null;
+    resetAutopilotMotion(this.ship);
+  }
+
+  private updateComponentRecovery(deltaSeconds: number): void {
+    this.elapsed += deltaSeconds;
+    if (this.elapsed < this.componentCycleSeconds()) return;
+    if (!this.workTargetId) return this.finishIdle();
+
+    const result = this.salvage.recoverComponent(this.workTargetId);
+    if (result) {
+      this.lastComponentRecovery = result;
+      this.componentRecoverySerial += 1;
+    }
+    this.finishIdle();
+  }
+
+  private componentCycleSeconds(): number {
+    return Math.max(2.5, this.options.setup.cycleSeconds * COMPONENT_CYCLE_MULTIPLIER);
+  }
+
   private operationProgress(): number | null {
     if (this.phase === 'inspecting') return Math.min(1, this.elapsed / INSPECTION_SECONDS);
     if (this.phase === 'stripping') {
       return Math.min(1, this.elapsed / Math.max(0.05, this.options.setup.cycleSeconds));
+    }
+    if (this.phase === 'extracting-component') {
+      return Math.min(1, this.elapsed / this.componentCycleSeconds());
     }
     return null;
   }

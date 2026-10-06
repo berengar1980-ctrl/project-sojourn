@@ -1,5 +1,6 @@
-export type ShipComponentType =
-  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
+import type { ShipComponentType } from '../../core/ship-types';
+
+export type { ShipComponentType } from '../../core/ship-types';
 
 export interface ShipComponentDefinition {
   readonly id: string;

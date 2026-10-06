@@ -12,7 +12,8 @@ function finiteInteger(value: number): number {
 }
 
 export function playerCargoUsed(player: PlayerEconomyState): number {
-  return Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
+  const cargo = Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
+  return cargo + finiteInteger(player.reservedCargoTons ?? 0);
 }
 
 function weightedCostAfterPurchase(

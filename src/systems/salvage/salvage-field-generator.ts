@@ -90,6 +90,7 @@ function componentCandidate(
     type,
     componentId: `${type}${tier}`,
     recoveryDifficulty: 35 + tier * 15,
+    cargoTons: 8 + tier * 4,
   };
 }
 
@@ -107,6 +108,7 @@ export function generateSalvageField(
   for (let index = 0; index < count; index += 1) {
     const quality = qualityFromRoll(random(), dangerLevel);
     const kind = wreckKind(random());
+    const component = componentCandidate(random, quality, kind);
     wrecks.push({
       id: `wreck-${seed}-${index}`,
       name: wreckName(kind, index),
@@ -120,7 +122,8 @@ export function generateSalvageField(
       rotation: random() * Math.PI * 2,
       integrity: Math.round(30 + random() * 65),
       resources: createResources(random, quality),
-      component: componentCandidate(random, quality, kind),
+      component,
+      componentStatus: component ? 'available' : 'none',
       inspected: false,
     });
   }
