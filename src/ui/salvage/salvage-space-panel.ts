@@ -220,9 +220,7 @@ function renderSelection(
   ui.name.textContent = wreck.name;
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
   const busy =
-    model.phase !== 'idle' ||
-    model.salvageEvent !== null ||
-    model.salvageEventRecoverySeconds > 0;
+    model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
     ui.meta.textContent = wreck.kindLabel + ' · ANALYSE ERFORDERLICH';
     ui.resources.replaceChildren();
