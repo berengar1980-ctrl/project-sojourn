@@ -100,9 +100,10 @@ export function createCrewMember(definition: CrewDefinition): CrewMember {
       momentum: 0,
       loyaltyMomentum: 0,
     },
-    skillTrainingHours: Object.fromEntries(
-      SKILLS.map((skill) => [skill, 0])
-    ) as Record<ShipStationSkill, number>,
+    skillTrainingHours: Object.fromEntries(SKILLS.map((skill) => [skill, 0])) as Record<
+      ShipStationSkill,
+      number
+    >,
     combatTraining: { ranged: 0, melee: 0 },
   };
 }
