@@ -145,24 +145,19 @@ export function createMiningEventController(
   let pending: MiningEventState | null = null;
   let cycleModifier = 1;
   let recoverySeconds = 0;
-
   return {
     get pending(): MiningEventState | null {
       return pending;
     },
-
     get recoverySeconds(): number {
       return recoverySeconds;
     },
-
     get extractionPaused(): boolean {
       return pending !== null || recoverySeconds > 0;
     },
-
     cycleSeconds(baseSeconds: number): number {
       return Math.max(0.05, baseSeconds * cycleModifier);
     },
-
     begin(asteroid: LocalAsteroid): void {
       sessionCounter += 1;
       const initialOre = totalOre(asteroid);
@@ -181,7 +176,6 @@ export function createMiningEventController(
       };
       pending = null;
     },
-
     update(asteroid: LocalAsteroid): MiningEventState | null {
       if (!session || pending || session.triggered || !session.scheduled) return pending;
       const progress =
@@ -199,14 +193,12 @@ export function createMiningEventController(
       };
       return pending;
     },
-
     pauseExtraction(asteroid: LocalAsteroid, deltaSeconds: number): boolean {
       if (pending || this.update(asteroid)) return true;
       if (recoverySeconds <= 0) return false;
       recoverySeconds = Math.max(0, recoverySeconds - Math.max(0, deltaSeconds));
       return true;
     },
-
     resolve(
       asteroid: LocalAsteroid,
       choiceId: string,
@@ -242,7 +234,6 @@ export function createMiningEventController(
         aborted: effect.abort,
       };
     },
-
     clear(): void {
       session = null;
       pending = null;
