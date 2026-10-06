@@ -1,5 +1,13 @@
 export { createBoardingTacticalService } from './boarding-tactical-service';
 export {
+  createCrewBoardingEncounter,
+  crewBoardingArmor,
+  crewBoardingMeleeWeapon,
+  crewBoardingUnits,
+  crewBoardingWeapon,
+  crewMemberToBoardingUnit,
+} from './crew-boarding-adapter';
+export {
   boardingDoorAt,
   boardingHasLineOfSight,
   boardingHexBlocked,
@@ -10,3 +18,4 @@ export {
   boardingUnitAt,
 } from './boarding-geometry';
 export type { BoardingTacticalService } from './boarding-tactical-service';
+export type { CrewBoardingEncounter } from './crew-boarding-adapter';

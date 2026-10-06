@@ -67,6 +67,7 @@ export interface BoardingUnitTemplate {
   readonly name: string;
   readonly team: BoardingTeam;
   readonly hp?: number;
+  readonly maxHp?: number;
   readonly armor?: number;
   readonly rangedSkill?: number;
   readonly meleeSkill?: number;
