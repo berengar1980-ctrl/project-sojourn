@@ -63,7 +63,9 @@ assert(
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');
 assert(
-  controller.includes("type SceneMode = 'star-map' | 'local-space' | 'port'"),
+  controller.includes(
+    "type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port'"
+  ),
   'port must be a dedicated application scene'
 );
 assert(
