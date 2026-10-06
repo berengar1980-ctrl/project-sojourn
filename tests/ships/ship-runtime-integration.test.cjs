@@ -182,6 +182,7 @@ const miningComposition = fs.readFileSync(
   path.join(root, 'src/app/mining-local-space.ts'),
   'utf8'
 );
+const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 const service = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-service.ts'),
   'utf8'
@@ -193,7 +194,7 @@ const panel = fs.readFileSync(
 
 assert(miningComposition.includes('const runtime = resolveShipRuntimeSetup(ship)'));
 assert(miningComposition.includes('runtime.cargo.totalCapacityTons'));
-assert(miningComposition.includes('shipTradeCargoLimit(ship, trade.player, resourceId)'));
+assert(controller.includes('shipTradeCargoLimit(ship, trade.player, resourceId)'));
 assert(miningComposition.includes('shieldMaxHp: runtime.shieldMaxHp'));
 assert(miningComposition.includes('modifier: runtime.sensorModifier'));
 assert(service.includes('this.hullState.currentHp - result.overflowDamage'));
