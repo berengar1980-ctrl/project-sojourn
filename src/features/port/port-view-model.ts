@@ -177,6 +177,16 @@ function crewInitials(name: string): string {
     .join('');
 }
 
+function equipmentLabels(equipment: CrewMember['personalEquipment']): readonly string[] {
+  return [
+    equipment.ranged,
+    equipment.melee,
+    equipment.armor,
+    equipment.gear1,
+    equipment.gear2,
+  ].filter((value): value is string => Boolean(value));
+}
+
 function crewMemberView(member: CrewMember): PortCrewView {
   return {
     id: member.id,
