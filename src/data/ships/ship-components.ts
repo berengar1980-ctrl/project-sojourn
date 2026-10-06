@@ -1,7 +1,4 @@
-import type {
-  ShipComponentDefinition,
-  ShipComponentType,
-} from '../../core/ship-gameplay-types';
+import type { ShipComponentDefinition, ShipComponentType } from '../../core/ship-gameplay-types';
 
 type ComponentBonuses = Omit<
   Partial<ShipComponentDefinition>,
