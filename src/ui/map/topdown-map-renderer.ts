@@ -406,15 +406,7 @@ export class TopdownMapRenderer {
     }
 
     if (this.shouldDrawLabel(location)) {
-      this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
-      this.context.font =
-        this.displayMode === 'nav'
-          ? '10px ui-monospace, monospace'
-          : location.kind === 'planet'
-            ? '12px system-ui'
-            : '11px system-ui';
-      this.context.textAlign = 'center';
-      this.context.fillText(location.name, point.x, point.y + radius + 20);
+      this.drawLocationLabel(location, point.x, point.y + radius + 20);
     }
 
     return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
@@ -432,9 +424,45 @@ export class TopdownMapRenderer {
     if (location.isSelected || location.isCurrent) return true;
     const zoom = this.camera.getRelativeZoom();
     if (location.kind === 'planet') return true;
-    if (location.kind === 'station') return zoom >= 1.25;
-    if (location.kind === 'moon') return zoom >= 1.55;
-    return zoom >= 1.18;
+    if (location.kind === 'station') return zoom >= 0.98;
+    if (location.kind === 'moon') return zoom >= 1.18;
+    return zoom >= 1.05;
+  }
+
+  private drawLocationLabel(location: StarMapLocationView, x: number, y: number): void {
+    const font =
+      this.displayMode === 'nav'
+        ? '10px ui-monospace, monospace'
+        : location.kind === 'planet'
+          ? '11px system-ui'
+          : '10px system-ui';
+    this.context.save();
+    this.context.font = font;
+    this.context.textAlign = 'center';
+    this.context.textBaseline = 'middle';
+    const width = this.context.measureText(location.name).width;
+    const horizontalPadding = 6;
+    const height = 17;
+    this.context.fillStyle =
+      this.displayMode === 'nav' ? 'rgba(3, 16, 12, .78)' : 'rgba(4, 11, 16, .78)';
+    this.context.strokeStyle =
+      location.isSelected || location.isCurrent
+        ? 'rgba(140, 211, 229, .48)'
+        : 'rgba(112, 139, 151, .24)';
+    this.context.lineWidth = 1;
+    this.context.beginPath();
+    this.context.roundRect(
+      x - width / 2 - horizontalPadding,
+      y - height / 2,
+      width + horizontalPadding * 2,
+      height,
+      3
+    );
+    this.context.fill();
+    this.context.stroke();
+    this.context.fillStyle = this.displayMode === 'nav' ? '#8fd7b1' : '#dfe8f3';
+    this.context.fillText(location.name, x, y);
+    this.context.restore();
   }
 
   private drawPlanet(
