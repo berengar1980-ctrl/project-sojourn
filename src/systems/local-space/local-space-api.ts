@@ -1,7 +1,4 @@
-import type {
-  LocalSpaceSnapshot,
-  MiningEventResolution,
-} from '../../core/local-space-types';
+import type { LocalSpaceSnapshot, MiningEventResolution } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 
