@@ -7,6 +7,7 @@ import type { PortDefinition, PortTab } from '../../core/port-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldLocation } from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
+import { resolveShipCargoPolicy } from '../../systems/ships';
 
 export interface PortMarketRowView {
   readonly id: string;
@@ -54,6 +55,8 @@ export interface PortViewModel {
     readonly credits: number;
     readonly cargoUsed: number;
     readonly cargoCapacity: number;
+    readonly generalCargoCapacity: number;
+    readonly specialCargoCapacity: number;
   };
   readonly ship: {
     readonly id: string;
@@ -131,6 +134,7 @@ export function createPortViewModel(
   location: WorldLocation,
   ship: ShipDefinition
 ): PortViewModel {
+  const cargoPolicy = resolveShipCargoPolicy(ship);
   return {
     locationId: location.id,
     locationName: location.name,
@@ -157,7 +161,9 @@ export function createPortViewModel(
     player: {
       credits: player.credits,
       cargoUsed: Object.values(player.cargo).reduce((sum, lot) => sum + lot.qty, 0),
-      cargoCapacity: ship.cargoCapacityTons,
+      cargoCapacity: cargoPolicy.totalCapacityTons,
+      generalCargoCapacity: cargoPolicy.generalCapacityTons,
+      specialCargoCapacity: cargoPolicy.reservedSpecialCargoTons,
     },
     ship: {
       id: ship.id,
