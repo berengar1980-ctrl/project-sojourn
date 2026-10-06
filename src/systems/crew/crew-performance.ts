@@ -88,10 +88,9 @@ export function createCrewMember(definition: CrewDefinition): CrewMember {
     elite: definition.elite ?? false,
     portraitAssetUrl: null,
     socialTraits: { ...definition.socialTraits },
-    skills: Object.fromEntries(SKILLS.map((skill) => [skill, definition.skills[skill] ?? 0])) as Record<
-      ShipStationSkill,
-      number
-    >,
+    skills: Object.fromEntries(
+      SKILLS.map((skill) => [skill, definition.skills[skill] ?? 0])
+    ) as Record<ShipStationSkill, number>,
     combatSkills: { ranged, melee },
     personalEquipment: { ...equipment },
     injuryState: 'healthy',
@@ -101,10 +100,9 @@ export function createCrewMember(definition: CrewDefinition): CrewMember {
       momentum: 0,
       loyaltyMomentum: 0,
     },
-    skillTrainingHours: Object.fromEntries(SKILLS.map((skill) => [skill, 0])) as Record<
-      ShipStationSkill,
-      number
-    >,
+    skillTrainingHours: Object.fromEntries(
+      SKILLS.map((skill) => [skill, 0])
+    ) as Record<ShipStationSkill, number>,
     combatTraining: { ranged: 0, melee: 0 },
   };
 }
