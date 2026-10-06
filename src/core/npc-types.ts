@@ -24,6 +24,8 @@ export interface SectorNpcState extends NpcEconomyState {
   fuel: number;
   fuelCapacity: number;
   fuelUse: number;
+  hullHp: number;
+  hullMaxHp: number;
   aggression: number;
   activityId: string;
   activity: string;
