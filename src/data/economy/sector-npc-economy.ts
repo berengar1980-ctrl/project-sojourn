@@ -179,7 +179,7 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       job,
       shipId: ship.id,
       locationId,
-      credits: 18000 + (index % 7) * 2400,
+      credits: 3000000 + (index % 7) * 900000,
       cargoCapacity: ship.cargoCapacityTons,
       normalCargoCapacity:
         job === 'miner' || job === 'salvager'
