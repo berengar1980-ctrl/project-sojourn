@@ -371,13 +371,17 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     onSelectWreck: options.onSelectWreck,
     onNavigate: (x, y) => options.onNavigate({ x, y }),
   });
-  ui.resources.addEventListener('click', (event) => {
+  ui.resources.addEventListener('pointerdown', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
     const button = target.closest<HTMLButtonElement>('button[data-salvage-action]');
     if (!button || button.disabled) return;
     const wreckId = button.dataset.wreckId;
     if (!wreckId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
     if (button.dataset.salvageAction === 'strip') {
       const resourceId = button.dataset.resourceId;
       if (resourceId) options.onStrip(wreckId, resourceId);
