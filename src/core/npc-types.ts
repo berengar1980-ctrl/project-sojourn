@@ -1,5 +1,5 @@
 import type { NpcEconomyState } from './economy-types';
-import type { ShipRole } from './ship-types';
+import type { ShipComponentType, ShipRole } from './ship-types';
 
 export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type NpcTravelProfile = 'fast' | 'balanced' | 'safe';
@@ -15,6 +15,8 @@ export interface NpcTravelState {
   readonly refuelStops: readonly string[];
 }
 
+export type NpcInstalledComponents = Partial<Record<ShipComponentType, string[]>>;
+
 export interface SectorNpcState extends NpcEconomyState {
   readonly name: string;
   readonly job: NpcJob;
@@ -26,6 +28,8 @@ export interface SectorNpcState extends NpcEconomyState {
   activityId: string;
   activity: string;
   successfulRuns: number;
+  installedComponents?: NpcInstalledComponents;
+  componentUpgradeCount?: number;
   travel?: NpcTravelState;
 }
 
