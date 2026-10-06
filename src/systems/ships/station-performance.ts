@@ -65,9 +65,7 @@ export function calculateStationSkill(
 ): number {
   const values = stations
     .filter((station) => station.skill === skill)
-    .map((station) =>
-      stationPerformanceForOperator(skill, assignments[station.id], crew)
-    )
+    .map((station) => stationPerformanceForOperator(skill, assignments[station.id], crew))
     .sort((a, b) => b - a);
 
   if (!values.length) return AUTOMATION_SKILL;
