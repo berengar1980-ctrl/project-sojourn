@@ -68,6 +68,18 @@ export function createControllerEconomy(): ControllerEconomy {
     npcStates
   );
 
+  const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
+    positions: Object.fromEntries(
+      narrowsSector.locations.map((location) => [location.id, location.position])
+    ),
+    travel: {
+      requestTravel: (npc, destinationId, reason) =>
+        sectorNpcs.requestTravel(npc as SectorNpcState, destinationId, reason),
+      isTravelling: (npc) => sectorNpcs.isTravelling(npc as SectorNpcState),
+    },
+  });
+  npcEconomy.advanceDay(0);
+
   return {
     markets,
     situations,
@@ -76,16 +88,7 @@ export function createControllerEconomy(): ControllerEconomy {
     mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
     components: createShipComponentInventoryService(trade.player),
-    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-      positions: Object.fromEntries(
-        narrowsSector.locations.map((location) => [location.id, location.position])
-      ),
-      travel: {
-        requestTravel: (npc, destinationId, reason) =>
-          sectorNpcs.requestTravel(npc as SectorNpcState, destinationId, reason),
-        isTravelling: (npc) => sectorNpcs.isTravelling(npc as SectorNpcState),
-      },
-    }),
+    npcs: npcEconomy,
     sectorNpcs,
   };
 }
