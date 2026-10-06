@@ -420,137 +420,227 @@ function createControllerLocalModel(
   return createActiveLocalModel(service, ship, currentMiningLocationName(navigation));
 }
 
-export function createGameController(options: GameControllerOptions): GameController {
-  const { root, navigation } = options;
-  let activeShip = options.ship;
-  let mode: SceneMode = 'star-map';
-  const panels: ControllerPanels = { star: null, local: null, port: null };
-  let shipSwitcher: ShipTestSwitcher | null = null;
-  let localSpace: LocalSpaceService | null = null;
-  let salvageScene: SalvageSceneController | null = null;
-  let localSpaceSeed = 0;
-  let salvageSpaceSeed = 0;
-  let visitCounter = 0;
-  let previousLocationId = navigation.getSnapshot().currentLocationId;
-  const systemLog = createControllerLog();
-  const { markets, situations, trade, simulation, mining, salvage, npcs } =
-    createControllerEconomy();
-  const starModel = () => createControllerStarModel(navigation, activeShip);
-  const localModel = () => createControllerLocalModel(localSpace, activeShip, navigation);
-  const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
-  const mountTestSwitcher = (): void => {
-    shipSwitcher?.destroy();
-    shipSwitcher = createControllerShipSwitcher(root, activeShip, navigation, (nextShip) => {
-      activeShip = nextShip;
-      systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
-      if (mode === 'local-space') mountLocalSpace(true);
-      else if (mode === 'salvage-space') mountSalvageSpace(true);
-      else if (mode === 'port') mountPort();
-      else mountStarMap();
-    });
-  };
-  const mountStarMap = (): void => {
-    destroyScenePanels(panels);
-    salvageScene?.destroy();
-    salvageScene = null;
-    localSpace = null;
-    mode = 'star-map';
-    panels.star = createControllerStarPanel({
-      root,
-      navigation,
-      log: systemLog,
-      getModel: starModel,
-      onEnterLocalSpace: () => runSceneZoomTransition(root, mountLocalSpace),
-      onEnterSalvageSpace: () => runSceneZoomTransition(root, mountSalvageSpace),
-      onDock: () => runSceneZoomTransition(root, mountPort),
-    });
-    mountTestSwitcher();
-  };
-  const mountPort = (announce = true): void => {
-    const locationId = navigation.getSnapshot().currentLocationId;
-    salvageScene?.destroy();
-    salvageScene = null;
-    destroyScenePanels(panels);
-    panels.port = createActivePortPanel(
-      root,
-      navigation,
-      markets,
-      trade,
-      activeShip,
-      () => runSceneZoomTransition(root, mountStarMap),
-      () => mountPort(false),
-      systemLog
-    );
-    if (!panels.port) return;
-    mode = 'port';
-    if (announce) systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
-    mountTestSwitcher();
-  };
-  const localActions = createLocalPanelActions({
-    getSpace: () => localSpace,
-    refresh: refreshLocalPanel,
-    systemLog,
-    returnToStarMap: createStarMapReturnAction(root, systemLog, mountStarMap),
+interface ControllerRuntimeState {
+  activeShip: ShipDefinition;
+  mode: SceneMode;
+  readonly panels: ControllerPanels;
+  shipSwitcher: ShipTestSwitcher | null;
+  localSpace: LocalSpaceService | null;
+  salvageScene: SalvageSceneController | null;
+  localSpaceSeed: number;
+  salvageSpaceSeed: number;
+  visitCounter: number;
+  previousLocationId: string | null;
+}
+
+interface ControllerRuntimeContext {
+  readonly root: HTMLElement;
+  readonly navigation: NavigationService;
+  readonly systemLog: SystemLogService;
+  readonly economy: ControllerEconomy;
+  readonly state: ControllerRuntimeState;
+}
+
+function controllerStarModel(context: ControllerRuntimeContext) {
+  return createControllerStarModel(context.navigation, context.state.activeShip);
+}
+
+function controllerLocalModel(context: ControllerRuntimeContext) {
+  return createControllerLocalModel(
+    context.state.localSpace,
+    context.state.activeShip,
+    context.navigation
+  );
+}
+
+function destroyControllerSalvage(context: ControllerRuntimeContext): void {
+  context.state.salvageScene?.destroy();
+  context.state.salvageScene = null;
+}
+
+function mountControllerSwitcher(context: ControllerRuntimeContext): void {
+  const { state } = context;
+  state.shipSwitcher?.destroy();
+  state.shipSwitcher = createControllerShipSwitcher(
+    context.root,
+    state.activeShip,
+    context.navigation,
+    (nextShip) => {
+      state.activeShip = nextShip;
+      context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
+      if (state.mode === 'local-space') mountControllerMining(context, true);
+      else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
+      else if (state.mode === 'port') mountControllerPort(context);
+      else mountControllerStarMap(context);
+    }
+  );
+}
+
+function mountControllerStarMap(context: ControllerRuntimeContext): void {
+  const { state } = context;
+  destroyScenePanels(state.panels);
+  destroyControllerSalvage(context);
+  state.localSpace = null;
+  state.mode = 'star-map';
+  state.panels.star = createControllerStarPanel({
+    root: context.root,
+    navigation: context.navigation,
+    log: context.systemLog,
+    getModel: () => controllerStarModel(context),
+    onEnterLocalSpace: () =>
+      runSceneZoomTransition(context.root, () => mountControllerMining(context)),
+    onEnterSalvageSpace: () =>
+      runSceneZoomTransition(context.root, () => mountControllerSalvage(context)),
+    onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
   });
-  const mountLocalSpace = (reuseSeed = false): void => {
-    salvageScene?.destroy();
-    salvageScene = null;
-    destroyScenePanels(panels);
-    mode = 'local-space';
-    const location = miningLocationById(navigation.getSnapshot().currentLocationId);
-    if (!location) return mountStarMap();
-    if (!reuseSeed || localSpaceSeed === 0) localSpaceSeed = localSeed((visitCounter += 1));
-    localSpace = createMiningLocalSpace(activeShip, localSpaceSeed, mining, location);
-    systemLog.write(
-      reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
-    );
-    panels.local = createLocalSpacePanel({
-      root,
-      model: localModel(),
-      log: systemLog,
-      ...localActions,
-    });
-    mountTestSwitcher();
+  mountControllerSwitcher(context);
+}
+
+function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
+  const { state, economy } = context;
+  const locationId = context.navigation.getSnapshot().currentLocationId;
+  destroyControllerSalvage(context);
+  state.localSpace = null;
+  destroyScenePanels(state.panels);
+  state.panels.port = createActivePortPanel(
+    context.root,
+    context.navigation,
+    economy.markets,
+    economy.trade,
+    state.activeShip,
+    () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
+    () => mountControllerPort(context, false),
+    context.systemLog
+  );
+  if (!state.panels.port) return;
+  state.mode = 'port';
+  if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
+  mountControllerSwitcher(context);
+}
+
+function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelActions {
+  return createLocalPanelActions({
+    getSpace: () => context.state.localSpace,
+    refresh: () => {
+      if (context.state.localSpace) {
+        context.state.panels.local?.update(controllerLocalModel(context));
+      }
+    },
+    systemLog: context.systemLog,
+    returnToStarMap: createStarMapReturnAction(
+      context.root,
+      context.systemLog,
+      () => mountControllerStarMap(context)
+    ),
+  });
+}
+
+function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = false): void {
+  const { state, economy } = context;
+  destroyControllerSalvage(context);
+  destroyScenePanels(state.panels);
+  state.mode = 'local-space';
+  const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
+  if (!location) return mountControllerStarMap(context);
+  if (!reuseSeed || state.localSpaceSeed === 0) {
+    state.localSpaceSeed = localSeed((state.visitCounter += 1));
+  }
+  state.localSpace = createMiningLocalSpace(
+    state.activeShip,
+    state.localSpaceSeed,
+    economy.mining,
+    location
+  );
+  context.systemLog.write(
+    reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
+  );
+  state.panels.local = createLocalSpacePanel({
+    root: context.root,
+    model: controllerLocalModel(context),
+    log: context.systemLog,
+    ...controllerLocalActions(context),
+  });
+  mountControllerSwitcher(context);
+}
+
+function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = false): void {
+  const { state, economy } = context;
+  destroyScenePanels(state.panels);
+  destroyControllerSalvage(context);
+  state.localSpace = null;
+  const location = salvageLocationById(context.navigation.getSnapshot().currentLocationId);
+  if (!location) return mountControllerStarMap(context);
+  state.mode = 'salvage-space';
+  if (!reuseSeed || state.salvageSpaceSeed === 0) {
+    state.salvageSpaceSeed = localSeed((state.visitCounter += 1));
+  }
+  state.salvageScene = createSalvageScene({
+    root: context.root,
+    ship: state.activeShip,
+    seed: state.salvageSpaceSeed,
+    location,
+    economy: economy.salvage,
+    player: economy.trade.player,
+    log: context.systemLog,
+    onReturnToStarMap: createStarMapReturnAction(
+      context.root,
+      context.systemLog,
+      () => mountControllerStarMap(context)
+    ),
+  });
+  mountControllerSwitcher(context);
+}
+
+function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
+  const { state, economy } = context;
+  const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  const currentLocationId = navigationSnapshot.currentLocationId;
+  if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
+    runSceneZoomTransition(context.root, () => mountControllerMining(context));
+  } else if (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId)) {
+    runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
+  }
+  advanceEconomyDay(
+    state.previousLocationId,
+    currentLocationId,
+    economy.situations,
+    economy.simulation,
+    economy.npcs
+  );
+  state.previousLocationId = currentLocationId;
+  state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
+  if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
+  else if (state.mode === 'local-space' && state.localSpace) {
+    state.localSpace.tick(deltaSeconds);
+    state.panels.local?.update(controllerLocalModel(context));
+  } else if (state.mode === 'salvage-space') {
+    state.salvageScene?.tick(deltaSeconds);
+  }
+}
+
+export function createGameController(options: GameControllerOptions): GameController {
+  const context: ControllerRuntimeContext = {
+    root: options.root,
+    navigation: options.navigation,
+    systemLog: createControllerLog(),
+    economy: createControllerEconomy(),
+    state: {
+      activeShip: options.ship,
+      mode: 'star-map',
+      panels: { star: null, local: null, port: null },
+      shipSwitcher: null,
+      localSpace: null,
+      salvageScene: null,
+      localSpaceSeed: 0,
+      salvageSpaceSeed: 0,
+      visitCounter: 0,
+      previousLocationId: options.navigation.getSnapshot().currentLocationId,
+    },
   };
-  const mountSalvageSpace = (reuseSeed = false): void => {
-    destroyScenePanels(panels);
-    salvageScene?.destroy();
-    const location = salvageLocationById(navigation.getSnapshot().currentLocationId);
-    if (!location) return mountStarMap();
-    mode = 'salvage-space';
-    if (!reuseSeed || salvageSpaceSeed === 0) salvageSpaceSeed = localSeed((visitCounter += 1));
-    salvageScene = createSalvageScene({
-      root,
-      ship: activeShip,
-      seed: salvageSpaceSeed,
-      location,
-      economy: salvage,
-      player: trade.player,
-      log: systemLog,
-      onReturnToStarMap: createStarMapReturnAction(root, systemLog, mountStarMap),
-    });
-    mountTestSwitcher();
-  };
-  mountStarMap();
+  mountControllerStarMap(context);
   return {
     tick(deltaSeconds) {
-      const navigationSnapshot = navigation.tick(deltaSeconds);
-      const currentLocationId = navigationSnapshot.currentLocationId;
-      if (enteredMiningLocation(mode, previousLocationId, currentLocationId)) {
-        runSceneZoomTransition(root, mountLocalSpace);
-      } else if (enteredSalvageLocation(mode, previousLocationId, currentLocationId)) {
-        runSceneZoomTransition(root, mountSalvageSpace);
-      }
-      advanceEconomyDay(previousLocationId, currentLocationId, situations, simulation, npcs);
-      previousLocationId = currentLocationId;
-      shipSwitcher?.update(activeShip.id, navigationSnapshot.isTravelling);
-      if (mode === 'star-map') panels.star?.update(starModel());
-      else if (mode === 'local-space' && localSpace) {
-        localSpace.tick(deltaSeconds);
-        panels.local?.update(localModel());
-      } else if (mode === 'salvage-space') {
-        salvageScene?.tick(deltaSeconds);
-      }
+      tickController(context, deltaSeconds);
     },
   };
 }
