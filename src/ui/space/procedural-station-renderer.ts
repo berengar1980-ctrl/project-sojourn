@@ -1,4 +1,9 @@
 import type { StationType, WorldPoint } from '../../core/world-types';
+import {
+  createStationLayout,
+  type StationLayout,
+  type StationModuleLayout,
+} from './station-layout-generator';
 
 export type StationDetailLevel = 'map' | 'dock';
 
@@ -9,150 +14,6 @@ interface StationDrawOptions {
   readonly radius: number;
   readonly detailLevel: StationDetailLevel;
   readonly light?: WorldPoint;
-}
-
-type StationModuleKind =
-  | 'habitat'
-  | 'cargo'
-  | 'tank'
-  | 'dock'
-  | 'radiator'
-  | 'sensor'
-  | 'armor'
-  | 'utility';
-
-interface StationArm {
-  readonly angle: number;
-  readonly length: number;
-  readonly width: number;
-}
-
-interface StationModule {
-  readonly kind: StationModuleKind;
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly rotation: number;
-  readonly phase: number;
-}
-
-interface StationLayout {
-  readonly rotation: number;
-  readonly coreRadius: number;
-  readonly ringRadius: number;
-  readonly arms: readonly StationArm[];
-  readonly modules: readonly StationModule[];
-}
-
-interface StationProfile {
-  readonly armMin: number;
-  readonly armMax: number;
-  readonly coreScale: number;
-  readonly ringScale: number;
-  readonly moduleKinds: readonly StationModuleKind[];
-  readonly moduleMin: number;
-  readonly moduleMax: number;
-  readonly irregularity: number;
-}
-
-const PROFILES: Readonly<Record<StationType, StationProfile>> = {
-  trade: {
-    armMin: 4,
-    armMax: 6,
-    coreScale: 0.28,
-    ringScale: 0.55,
-    moduleKinds: ['dock', 'cargo', 'cargo', 'habitat', 'utility', 'sensor'],
-    moduleMin: 7,
-    moduleMax: 10,
-    irregularity: 0.12,
-  },
-  shipyard: {
-    armMin: 3,
-    armMax: 5,
-    coreScale: 0.24,
-    ringScale: 0.48,
-    moduleKinds: ['dock', 'dock', 'dock', 'utility', 'cargo', 'radiator'],
-    moduleMin: 7,
-    moduleMax: 10,
-    irregularity: 0.16,
-  },
-  military: {
-    armMin: 3,
-    armMax: 4,
-    coreScale: 0.34,
-    ringScale: 0.48,
-    moduleKinds: ['armor', 'armor', 'sensor', 'utility', 'dock'],
-    moduleMin: 6,
-    moduleMax: 8,
-    irregularity: 0.07,
-  },
-  refinery: {
-    armMin: 4,
-    armMax: 5,
-    coreScale: 0.27,
-    ringScale: 0.5,
-    moduleKinds: ['tank', 'tank', 'tank', 'radiator', 'cargo', 'dock'],
-    moduleMin: 8,
-    moduleMax: 11,
-    irregularity: 0.13,
-  },
-  research: {
-    armMin: 3,
-    armMax: 5,
-    coreScale: 0.24,
-    ringScale: 0.48,
-    moduleKinds: ['sensor', 'sensor', 'radiator', 'habitat', 'utility', 'dock'],
-    moduleMin: 6,
-    moduleMax: 9,
-    irregularity: 0.1,
-  },
-  pirate: {
-    armMin: 3,
-    armMax: 6,
-    coreScale: 0.26,
-    ringScale: 0.44,
-    moduleKinds: ['cargo', 'tank', 'dock', 'utility', 'armor', 'habitat'],
-    moduleMin: 7,
-    moduleMax: 12,
-    irregularity: 0.28,
-  },
-  utility: {
-    armMin: 3,
-    armMax: 4,
-    coreScale: 0.27,
-    ringScale: 0.46,
-    moduleKinds: ['utility', 'habitat', 'dock', 'cargo', 'sensor'],
-    moduleMin: 5,
-    moduleMax: 8,
-    irregularity: 0.12,
-  },
-};
-
-function hashSeed(value: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function createRandom(seed: number): () => number {
-  let state = seed || 1;
-  return () => {
-    state = Math.imul(state ^ (state >>> 15), 1 | state);
-    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
-    return ((state ^ (state >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function randomInt(random: () => number, min: number, max: number): number {
-  return min + Math.floor(random() * (max - min + 1));
-}
-
-function pick<T>(random: () => number, values: readonly T[]): T {
-  return values[Math.floor(random() * values.length)]!;
 }
 
 function normalize(point: WorldPoint): WorldPoint {
@@ -176,8 +37,8 @@ export class ProceduralStationRenderer {
 
   draw(options: StationDrawOptions): void {
     const layout = this.layout(options.id, options.type);
-    const context = this.context;
     const dockDetail = options.detailLevel === 'dock';
+    const context = this.context;
 
     context.save();
     context.translate(options.point.x, options.point.y);
@@ -185,14 +46,13 @@ export class ProceduralStationRenderer {
 
     this.drawArms(layout, options.radius, dockDetail);
     this.drawRing(layout, options.radius, options.type, dockDetail);
-
     for (const module of layout.modules) {
       this.drawModule(module, options.radius, options.type, dockDetail);
     }
-
     this.drawCore(layout, options.radius, options.type, dockDetail);
     if (dockDetail) this.drawServiceDetails(layout, options.radius, options.type);
     this.applyDirectionalLight(options.radius, layout.rotation, options.light);
+
     context.restore();
   }
 
@@ -201,46 +61,7 @@ export class ProceduralStationRenderer {
     const cached = this.layouts.get(key);
     if (cached) return cached;
 
-    const profile = PROFILES[type];
-    const random = createRandom(hashSeed(key));
-    const armCount = randomInt(random, profile.armMin, profile.armMax);
-    const arms: StationArm[] = [];
-    for (let index = 0; index < armCount; index += 1) {
-      const base = (index / armCount) * Math.PI * 2;
-      const angle = base + (random() - 0.5) * profile.irregularity * 1.7;
-      arms.push({
-        angle,
-        length: 0.48 + random() * 0.3,
-        width: 0.045 + random() * 0.035,
-      });
-    }
-
-    const modules: StationModule[] = [];
-    const moduleCount = randomInt(random, profile.moduleMin, profile.moduleMax);
-    for (let index = 0; index < moduleCount; index += 1) {
-      const arm = arms[index % arms.length]!;
-      const radial = 0.38 + random() * 0.45;
-      const lateral = (random() - 0.5) * profile.irregularity * 0.65;
-      const tangentX = -Math.sin(arm.angle);
-      const tangentY = Math.cos(arm.angle);
-      modules.push({
-        kind: pick(random, profile.moduleKinds),
-        x: Math.cos(arm.angle) * radial + tangentX * lateral,
-        y: Math.sin(arm.angle) * radial + tangentY * lateral,
-        width: 0.11 + random() * 0.11,
-        height: 0.08 + random() * 0.13,
-        rotation: arm.angle + (random() - 0.5) * profile.irregularity * 1.8,
-        phase: random() * Math.PI * 2,
-      });
-    }
-
-    const layout: StationLayout = {
-      rotation: (random() - 0.5) * Math.PI * 0.65,
-      coreRadius: profile.coreScale,
-      ringRadius: profile.ringScale,
-      arms,
-      modules,
-    };
+    const layout = createStationLayout(id, type);
     this.layouts.set(key, layout);
     return layout;
   }
@@ -248,6 +69,7 @@ export class ProceduralStationRenderer {
   private drawArms(layout: StationLayout, radius: number, dockDetail: boolean): void {
     const context = this.context;
     context.lineCap = 'square';
+
     for (const arm of layout.arms) {
       const length = radius * arm.length;
       const width = Math.max(dockDetail ? 3 : 1.4, radius * arm.width);
@@ -289,9 +111,9 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
     if (type === 'shipyard' || type === 'pirate') return;
 
+    const context = this.context;
     const ringRadius = radius * layout.ringRadius;
     context.strokeStyle = type === 'military' ? '#68767d' : '#74898f';
     context.lineWidth = Math.max(dockDetail ? 4 : 1.2, radius * 0.055);
@@ -299,13 +121,12 @@ export class ProceduralStationRenderer {
     context.arc(0, 0, ringRadius, 0, Math.PI * 2);
     context.stroke();
 
-    if (dockDetail) {
-      context.strokeStyle = 'rgba(173, 187, 188, .3)';
-      context.lineWidth = 1;
-      context.beginPath();
-      context.arc(0, 0, ringRadius * 0.9, 0, Math.PI * 2);
-      context.stroke();
-    }
+    if (!dockDetail) return;
+    context.strokeStyle = 'rgba(173, 187, 188, .3)';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(0, 0, ringRadius * 0.9, 0, Math.PI * 2);
+    context.stroke();
   }
 
   private drawCore(
@@ -317,7 +138,6 @@ export class ProceduralStationRenderer {
     const context = this.context;
     const coreRadius = radius * layout.coreRadius;
     const sides = type === 'military' ? 8 : type === 'pirate' ? 7 : 10;
-
     const gradient = context.createRadialGradient(
       -coreRadius * 0.3,
       -coreRadius * 0.35,
@@ -329,6 +149,7 @@ export class ProceduralStationRenderer {
     gradient.addColorStop(0, type === 'pirate' ? '#9c8879' : '#aebdc0');
     gradient.addColorStop(0.52, type === 'military' ? '#53636b' : '#61757b');
     gradient.addColorStop(1, type === 'pirate' ? '#403a37' : '#273238');
+
     context.fillStyle = gradient;
     context.strokeStyle = type === 'pirate' ? '#a2856e' : '#9aafb4';
     context.lineWidth = Math.max(1, radius * 0.018);
@@ -347,39 +168,36 @@ export class ProceduralStationRenderer {
     context.arc(0, 0, coreRadius * 0.5, 0, Math.PI * 2);
     context.stroke();
 
-    if (dockDetail) {
-      context.strokeStyle = 'rgba(55, 65, 68, .72)';
-      context.lineWidth = 1;
-      for (let index = 0; index < sides; index += 1) {
-        const angle = (index / sides) * Math.PI * 2;
-        context.beginPath();
-        context.moveTo(
-          Math.cos(angle) * coreRadius * 0.55,
-          Math.sin(angle) * coreRadius * 0.55
-        );
-        context.lineTo(
-          Math.cos(angle) * coreRadius * 0.9,
-          Math.sin(angle) * coreRadius * 0.9
-        );
-        context.stroke();
-      }
+    if (!dockDetail) return;
+    context.strokeStyle = 'rgba(55, 65, 68, .72)';
+    context.lineWidth = 1;
+    for (let index = 0; index < sides; index += 1) {
+      const angle = (index / sides) * Math.PI * 2;
+      context.beginPath();
+      context.moveTo(
+        Math.cos(angle) * coreRadius * 0.55,
+        Math.sin(angle) * coreRadius * 0.55
+      );
+      context.lineTo(
+        Math.cos(angle) * coreRadius * 0.9,
+        Math.sin(angle) * coreRadius * 0.9
+      );
+      context.stroke();
     }
   }
 
   private drawModule(
-    module: StationModule,
+    module: StationModuleLayout,
     radius: number,
     type: StationType,
     dockDetail: boolean
   ): void {
     const context = this.context;
-    const x = module.x * radius;
-    const y = module.y * radius;
     const width = module.width * radius;
     const height = module.height * radius;
 
     context.save();
-    context.translate(x, y);
+    context.translate(module.x * radius, module.y * radius);
     context.rotate(module.rotation);
 
     if (module.kind === 'tank') this.drawTank(width, height, type, dockDetail);
@@ -402,7 +220,8 @@ export class ProceduralStationRenderer {
     dockDetail: boolean
   ): void {
     const context = this.context;
-    context.fillStyle = type === 'pirate' ? '#5b5149' : kind === 'habitat' ? '#647a80' : '#52646a';
+    context.fillStyle =
+      type === 'pirate' ? '#5b5149' : kind === 'habitat' ? '#647a80' : '#52646a';
     context.strokeStyle = type === 'pirate' ? '#9a806b' : '#91a6aa';
     context.lineWidth = 1;
     context.fillRect(-width / 2, -height / 2, width, height);
@@ -418,11 +237,11 @@ export class ProceduralStationRenderer {
       context.lineTo(x, height / 2);
       context.stroke();
     }
-    if (kind === 'habitat') {
-      context.fillStyle = 'rgba(203, 225, 173, .75)';
-      for (let index = 0; index < 3; index += 1) {
-        context.fillRect(-width * 0.3 + index * width * 0.28, -1, 2, 2);
-      }
+
+    if (kind !== 'habitat') return;
+    context.fillStyle = 'rgba(203, 225, 173, .75)';
+    for (let index = 0; index < 3; index += 1) {
+      context.fillRect(-width * 0.3 + index * width * 0.28, -1, 2, 2);
     }
   }
 
@@ -442,14 +261,13 @@ export class ProceduralStationRenderer {
     context.fill();
     context.stroke();
 
-    if (dockDetail) {
-      context.strokeStyle = 'rgba(36, 46, 49, .85)';
-      for (const fraction of [-0.42, 0, 0.42]) {
-        context.beginPath();
-        context.moveTo(fraction * radiusX, -radiusY * 0.88);
-        context.lineTo(fraction * radiusX, radiusY * 0.88);
-        context.stroke();
-      }
+    if (!dockDetail) return;
+    context.strokeStyle = 'rgba(36, 46, 49, .85)';
+    for (const fraction of [-0.42, 0, 0.42]) {
+      context.beginPath();
+      context.moveTo(fraction * radiusX, -radiusY * 0.88);
+      context.lineTo(fraction * radiusX, radiusY * 0.88);
+      context.stroke();
     }
   }
 
@@ -478,11 +296,10 @@ export class ProceduralStationRenderer {
     context.lineTo(width * 0.34, 0);
     context.stroke();
 
-    if (dockDetail) {
-      context.fillStyle = '#d5b36d';
-      context.fillRect(width * 0.38, -height * 0.32, 2, 2);
-      context.fillRect(width * 0.38, height * 0.28, 2, 2);
-    }
+    if (!dockDetail) return;
+    context.fillStyle = '#d5b36d';
+    context.fillRect(width * 0.38, -height * 0.32, 2, 2);
+    context.fillRect(width * 0.38, height * 0.28, 2, 2);
   }
 
   private drawRadiator(width: number, height: number, dockDetail: boolean): void {
@@ -516,13 +333,12 @@ export class ProceduralStationRenderer {
     context.arc(width * 0.26, 0, Math.max(2, height * 0.35), -1.15, 1.15);
     context.stroke();
 
-    if (dockDetail) {
-      context.strokeStyle = 'rgba(125, 204, 219, .6)';
-      context.lineWidth = 1;
-      context.beginPath();
-      context.arc(width * 0.26, 0, Math.max(3, height * 0.48), -0.9, 0.9);
-      context.stroke();
-    }
+    if (!dockDetail) return;
+    context.strokeStyle = 'rgba(125, 204, 219, .6)';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(width * 0.26, 0, Math.max(3, height * 0.48), -0.9, 0.9);
+    context.stroke();
   }
 
   private drawCargo(
@@ -535,6 +351,7 @@ export class ProceduralStationRenderer {
     const columns = dockDetail ? 3 : 2;
     const gap = Math.max(1, width * 0.04);
     const unitWidth = (width - gap * (columns - 1)) / columns;
+
     for (let index = 0; index < columns; index += 1) {
       const x = -width / 2 + index * (unitWidth + gap);
       context.fillStyle =
@@ -560,13 +377,12 @@ export class ProceduralStationRenderer {
     context.fill();
     context.stroke();
 
-    if (dockDetail) {
-      context.strokeStyle = 'rgba(35, 44, 48, .8)';
-      context.beginPath();
-      context.moveTo(-width * 0.22, -height * 0.38);
-      context.lineTo(width * 0.25, height * 0.38);
-      context.stroke();
-    }
+    if (!dockDetail) return;
+    context.strokeStyle = 'rgba(35, 44, 48, .8)';
+    context.beginPath();
+    context.moveTo(-width * 0.22, -height * 0.38);
+    context.lineTo(width * 0.25, height * 0.38);
+    context.stroke();
   }
 
   private drawWear(
@@ -595,9 +411,10 @@ export class ProceduralStationRenderer {
     type: StationType
   ): void {
     const context = this.context;
-
-    context.strokeStyle = type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
+    context.strokeStyle =
+      type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
     context.lineWidth = Math.max(1, radius * 0.012);
+
     for (let index = 0; index < layout.modules.length - 1; index += 2) {
       const first = layout.modules[index]!;
       const second = layout.modules[index + 1]!;
@@ -614,10 +431,15 @@ export class ProceduralStationRenderer {
 
     context.fillStyle = type === 'pirate' ? '#d28a61' : '#9bd6d9';
     for (const arm of layout.arms) {
-      const x = Math.cos(arm.angle) * radius * Math.min(0.86, arm.length + 0.04);
-      const y = Math.sin(arm.angle) * radius * Math.min(0.86, arm.length + 0.04);
+      const distance = radius * Math.min(0.86, arm.length + 0.04);
       context.beginPath();
-      context.arc(x, y, Math.max(1.2, radius * 0.012), 0, Math.PI * 2);
+      context.arc(
+        Math.cos(arm.angle) * distance,
+        Math.sin(arm.angle) * distance,
+        Math.max(1.2, radius * 0.012),
+        0,
+        Math.PI * 2
+      );
       context.fill();
     }
   }
@@ -628,6 +450,7 @@ export class ProceduralStationRenderer {
     light?: WorldPoint
   ): void {
     if (!light) return;
+
     const context = this.context;
     const localLight = normalize(rotate(light, -rotationRadians));
     const gradient = context.createLinearGradient(
