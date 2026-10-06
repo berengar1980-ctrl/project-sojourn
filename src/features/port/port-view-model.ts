@@ -128,7 +128,6 @@ export interface PortLocationVisualView {
   readonly light: WorldPoint;
 }
 
-
 export interface PortCrewStateInput {
   readonly available: readonly CrewMember[];
   readonly hired: readonly CrewMember[];
