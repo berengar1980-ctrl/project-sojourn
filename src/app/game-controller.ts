@@ -374,6 +374,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
 
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
+  economy.sectorNpcs.tick(deltaSeconds);
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
