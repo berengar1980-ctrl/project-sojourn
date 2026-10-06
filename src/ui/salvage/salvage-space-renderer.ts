@@ -213,7 +213,12 @@ export class SalvageSpaceRenderer {
     context.fillStyle = 'rgba(26, 31, 34, .92)';
     if (wreck.kind === 'freighter') {
       for (let index = -2; index <= 1; index += 1) {
-        context.fillRect(-radius * 0.65 + index * radius * 0.24, -radius * 0.2, radius * 0.2, radius * 0.4);
+        context.fillRect(
+          -radius * 0.65 + index * radius * 0.24,
+          -radius * 0.2,
+          radius * 0.2,
+          radius * 0.4
+        );
       }
     } else if (wreck.kind === 'miner') {
       for (const y of [-0.38, 0, 0.38]) {
