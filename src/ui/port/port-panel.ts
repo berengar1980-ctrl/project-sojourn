@@ -180,7 +180,7 @@ function shellMarkup(model: PortViewModel): string {
     <header class="port-header">
       <div class="port-brand"><span>PROJECT SOJOURN</span><small>DOCKED OPERATIONS</small></div>
       <div class="port-title"><span>${model.locationKind}</span><strong>${model.locationName}</strong><small>${model.subtitle}</small></div>
-      <div class="port-summary"><div><span>CREDITS</span><strong>${model.player.credits.toLocaleString('de-DE')}</strong></div><div><span>FRACHT</span><strong>${model.player.cargoUsed} / ${model.player.cargoCapacity} t</strong></div><div><span>SCHIFF</span><strong>${model.ship.name}</strong></div></div>
+      <div class="port-summary"><div><span>CREDITS</span><strong>${model.player.credits.toLocaleString('de-DE')}</strong></div><div><span>FRACHT</span><strong>${model.player.cargoUsed} / ${model.player.cargoCapacity} t${model.player.specialCargoCapacity > 0 ? ' · HANDEL ' + model.player.generalCargoCapacity + ' t' : ''}</strong></div><div><span>SCHIFF</span><strong>${model.ship.name}</strong></div></div>
       <button class="port-return-button" type="button">ZUR STERNKARTE</button>
     </header>
     <nav class="port-tabs">
