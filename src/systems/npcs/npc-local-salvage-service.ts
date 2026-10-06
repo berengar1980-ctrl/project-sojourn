@@ -1,7 +1,10 @@
+import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
+import type { ShipDefinition } from '../../core/ship-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
+import { resolveShipShieldCollisions } from '../local-space/ship-shield-collision';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 
 export type LocalNpcSalvagePhase =
@@ -33,6 +36,8 @@ export interface NpcLocalSalvageOptions {
   readonly salvagers: readonly SectorNpcState[];
   readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
+  readonly playerShip?: ShipDefinition;
+  readonly getPlayerShipState?: () => LocalShipState;
 }
 
 const ENTRY_MARGIN = 18;
@@ -352,6 +357,23 @@ export function createNpcLocalSalvageService(
           options.depart(npc);
         }
       }
+
+      const playerState = options.getPlayerShipState?.();
+      const bodies = ships.flatMap((local) => {
+        const definition = getShipDefinition(local.shipId);
+        return definition
+          ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }]
+          : [];
+      });
+      if (playerState && options.playerShip) {
+        bodies.unshift({
+          id: 'player',
+          ship: options.playerShip,
+          state: playerState,
+          pushWeight: 2.4,
+        });
+      }
+      resolveShipShieldCollisions(bodies);
     },
   };
 }
