@@ -1,10 +1,6 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SalvageLocalSpaceSnapshot, SalvageWreckKind } from '../../core/salvage-types';
-import type {
-  LooseShipComponent,
-  ShipDefinition,
-  ShipHardpoints,
-} from '../../core/ship-types';
+import type { LooseShipComponent, ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { economyResourceById } from '../../data/economy/economy-resources';
 import { getShipComponent } from '../../systems/ships';
