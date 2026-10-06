@@ -55,10 +55,7 @@ interface OutcomeContext {
 function resolveUnstable(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
   if (choiceId === 'stabilize') {
     return {
-      ...baseEffect(
-        context.title,
-        'Die Matrix hält. Der sichere Schnitt läuft langsamer weiter.'
-      ),
+      ...baseEffect(context.title, 'Die Matrix hält. Der sichere Schnitt läuft langsamer weiter.'),
       recoverySeconds: 2.5,
       cycleMultiplier: 1.08,
     };
@@ -89,10 +86,7 @@ function resolveUnstable(choiceId: string, context: OutcomeContext): MiningEvent
 function resolveMachine(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
   if (choiceId === 'repair') {
     return {
-      ...baseEffect(
-        context.title,
-        'Der Förderkopf wird neu ausgerichtet und sauber hochgefahren.'
-      ),
+      ...baseEffect(context.title, 'Der Förderkopf wird neu ausgerichtet und sauber hochgefahren.'),
       recoverySeconds: 4,
     };
   }
@@ -105,10 +99,7 @@ function resolveMachine(choiceId: string, context: OutcomeContext): MiningEventE
   }
   if (choiceId === 'bypass') {
     return {
-      ...baseEffect(
-        context.title,
-        'Die Überbrückung schlägt zurück und belastet die Anlage.'
-      ),
+      ...baseEffect(context.title, 'Die Überbrückung schlägt zurück und belastet die Anlage.'),
       recoverySeconds: 4.5,
       hullDamageFraction: 0.02 + context.secondary * 0.02,
       cycleMultiplier: 1.18,
@@ -251,10 +242,7 @@ function resolveDeeper(choiceId: string, context: OutcomeContext): MiningEventEf
   }
   if (choiceId === 'abort') {
     return {
-      ...baseEffect(
-        context.title,
-        'Der tiefe Verlauf bleibt für eine spätere Rückkehr markiert.'
-      ),
+      ...baseEffect(context.title, 'Der tiefe Verlauf bleibt für eine spätere Rückkehr markiert.'),
       abort: true,
     };
   }
