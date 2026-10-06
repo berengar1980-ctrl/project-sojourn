@@ -97,7 +97,11 @@ const cargoExpanded = mining.resolveShipMiningSetup(miner, {
   ...defaultLoadout,
   cargo: ['cargo2'],
 });
-assert.equal(cargoExpanded.cargoCapacityTons, 405, 'cargo modules must increase mining cargo limit');
+assert.equal(
+  cargoExpanded.cargoCapacityTons,
+  405,
+  'cargo modules must increase mining cargo limit'
+);
 
 const incompatibleTier = mining.resolveShipMiningSetup(miner, {
   ...defaultLoadout,
