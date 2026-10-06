@@ -437,10 +437,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.updateMiningFormation(deltaSeconds, asteroid);
     this.miningAccumulator += deltaSeconds;
 
-    while (
-      this.miningAccumulator >= this.miningCycleSeconds &&
-      hasMineableDeposits(asteroid)
-    ) {
+    while (this.miningAccumulator >= this.miningCycleSeconds && hasMineableDeposits(asteroid)) {
       this.miningAccumulator -= this.miningCycleSeconds;
       this.spawnChunk(asteroid);
     }
