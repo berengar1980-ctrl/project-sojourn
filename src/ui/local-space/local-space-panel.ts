@@ -292,7 +292,9 @@ function updateMiningButton(
   const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
   const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
   button.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
-  button.title = model.miningAvailable ? '' : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
+  button.title = model.miningAvailable
+    ? ''
+    : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
   button.disabled =
     !model.miningAvailable || knownEmpty || depleted || (selected.isMiningTarget && miningActive);
 }
