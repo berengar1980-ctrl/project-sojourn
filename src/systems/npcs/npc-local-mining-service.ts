@@ -1,7 +1,10 @@
-import type { LocalAsteroid, MiningEventChoice } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalShipState, MiningEventChoice } from '../../core/local-space-types';
+import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
+import { resolveShipShieldCollisions } from '../local-space/ship-shield-collision';
+import { getShipDefinition } from '../ships';
 
 export type LocalNpcMiningPhase =
   'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
@@ -35,6 +38,8 @@ export interface NpcLocalMiningOptions {
   readonly getAsteroids: () => readonly LocalAsteroid[];
   readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
+  readonly playerShip?: ShipDefinition;
+  readonly getPlayerShipState?: () => LocalShipState;
 }
 
 const ENTRY_MARGIN = 18;
@@ -368,6 +373,23 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
           options.depart(npc);
         }
       }
+
+      const playerState = options.getPlayerShipState?.();
+      const bodies = ships.flatMap((local) => {
+        const definition = getShipDefinition(local.shipId);
+        return definition
+          ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }]
+          : [];
+      });
+      if (playerState && options.playerShip) {
+        bodies.unshift({
+          id: 'player',
+          ship: options.playerShip,
+          state: playerState,
+          pushWeight: 2.4,
+        });
+      }
+      resolveShipShieldCollisions(bodies);
     },
   };
 }
