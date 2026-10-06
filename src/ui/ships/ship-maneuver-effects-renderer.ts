@@ -1,43 +1,10 @@
-import type { ShipHardpoints, ShipManeuverThruster } from '../../core/ship-types';
+import type { ShipHardpoints } from '../../core/ship-types';
+import {
+  activeManeuverThrusterBursts,
+  type ManeuverDemand,
+} from '../../systems/ships/ship-maneuver-thrusters';
 import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
 import { ThrusterGlowRenderer } from './thruster-glow-renderer';
-
-interface ManeuverDemand {
-  readonly turnRateRadiansPerSecond: number;
-  readonly angularThrust: number;
-  readonly lateralThrust: number;
-}
-
-function torqueSign(thruster: ShipManeuverThruster, source: ShipHardpoints): number {
-  const leverX = thruster.x - source.pivot.x;
-  const leverY = thruster.y - source.pivot.y;
-  const torque = leverX * thruster.forceY - leverY * thruster.forceX;
-  return Math.sign(torque);
-}
-
-function demandForThruster(
-  thruster: ShipManeuverThruster,
-  source: ShipHardpoints,
-  demand: ManeuverDemand
-): number {
-  const turnCommand =
-    Math.abs(demand.angularThrust) > 0.02
-      ? demand.angularThrust
-      : demand.turnRateRadiansPerSecond / 1.15;
-  const turnSign = Math.sign(turnCommand);
-  const lateralSign = Math.sign(demand.lateralThrust);
-  let intensity = 0;
-
-  if (turnSign !== 0 && torqueSign(thruster, source) === turnSign) {
-    intensity = Math.max(intensity, Math.min(1, Math.abs(turnCommand)));
-  }
-
-  if (lateralSign !== 0 && Math.sign(thruster.forceY) === lateralSign) {
-    intensity = Math.max(intensity, Math.min(1, Math.abs(demand.lateralThrust)));
-  }
-
-  return intensity;
-}
 
 function hashId(id: string): number {
   let hash = 2166136261;
@@ -46,15 +13,6 @@ function hashId(id: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-}
-
-function shouldBurst(id: string, intensity: number, timeSeconds: number): boolean {
-  if (intensity >= 0.72) return true;
-
-  const phase = hashId(id) % 17;
-  const pulse = Math.sin(timeSeconds * (13 + intensity * 8) + phase);
-  if (intensity < 0.32) return pulse > 0.72;
-  return pulse > 0.15;
 }
 
 export class ShipManeuverEffectsRenderer {
@@ -67,10 +25,11 @@ export class ShipManeuverEffectsRenderer {
     demand: ManeuverDemand,
     timeSeconds: number
   ): void {
-    for (const thruster of source.maneuverThrusters) {
-      const intensity = demandForThruster(thruster, source, demand);
-      if (intensity <= 0.03 || !shouldBurst(thruster.id, intensity, timeSeconds)) continue;
-      this.drawThruster(context, source, geometry, thruster, intensity, timeSeconds);
+    const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
+    for (const burst of bursts) {
+      const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
+      if (!thruster) continue;
+      this.drawThruster(context, source, geometry, thruster, burst.intensity, timeSeconds);
     }
   }
 
@@ -81,9 +40,10 @@ export class ShipManeuverEffectsRenderer {
     demand: ManeuverDemand,
     timeSeconds: number
   ): void {
-    for (const thruster of source.maneuverThrusters) {
-      const intensity = demandForThruster(thruster, source, demand);
-      if (intensity <= 0.03 || !shouldBurst(thruster.id, intensity, timeSeconds)) continue;
+    const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
+    for (const burst of bursts) {
+      const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
+      if (!thruster) continue;
 
       const nozzle = projectHardpoint(thruster, source, geometry);
       const flicker =
@@ -95,7 +55,7 @@ export class ShipManeuverEffectsRenderer {
       this.glow.draw(context, {
         center: nozzle,
         radius: nozzleWidth * 2.7,
-        intensity: 0.4 + intensity * 0.6,
+        intensity: 0.4 + burst.intensity * 0.6,
         flicker,
         warmth: 0.08,
       });
@@ -117,7 +77,7 @@ export class ShipManeuverEffectsRenderer {
     context: CanvasRenderingContext2D,
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
-    thruster: ShipManeuverThruster,
+    thruster: ShipHardpoints['maneuverThrusters'][number],
     intensity: number,
     timeSeconds: number
   ): void {
