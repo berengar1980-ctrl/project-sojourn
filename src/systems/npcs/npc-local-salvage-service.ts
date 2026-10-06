@@ -95,7 +95,7 @@ function eligible(npc: SectorNpcState, locationId: string): boolean {
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
     !npc.travel &&
-    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity * 0.82))
+    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
   );
 }
 
@@ -255,7 +255,7 @@ export function createNpcLocalSalvageService(
     const accepted = options.recover(npc, deposit.resourceId, requested);
     if (accepted > 0) deposit.remainingAmount = Math.max(0, deposit.remainingAmount - accepted);
 
-    if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity * 0.82)) {
+    if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
       beginExit(ship);
     } else if (wreckRemaining(wreck) <= 0) {
       assignTarget(ship, npc);
