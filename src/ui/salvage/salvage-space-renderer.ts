@@ -78,12 +78,7 @@ export class SalvageSpaceRenderer {
 
   zoomAt(deltaY: number, x: number, y: number): void {
     const rect = this.canvas.getBoundingClientRect();
-    this.camera.zoomAt(
-      Math.exp(-deltaY * 0.00135),
-      { x, y },
-      rect.width,
-      rect.height
-    );
+    this.camera.zoomAt(Math.exp(-deltaY * 0.00135), { x, y }, rect.width, rect.height);
     this.draw();
   }
 
@@ -131,11 +126,7 @@ export class SalvageSpaceRenderer {
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
 
-  private drawWreck(
-    wreck: SalvageWreckView,
-    width: number,
-    height: number
-  ): WreckHitArea | null {
+  private drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {
     const point = this.camera.worldToScreen(wreck.position, width, height);
     const radius = Math.max(15, this.camera.scale(wreck.radius));
     const padding = radius + 30;
