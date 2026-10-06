@@ -153,7 +153,6 @@ function resourceRow(
   resource: SalvageSpaceViewModel['selectedWreck'] extends infer _T
     ? { readonly resourceId: string; readonly name: string; readonly remaining: number }
     : never,
-  onStrip: SalvageSpacePanelOptions['onStrip']
 ): HTMLElement {
   const row = document.createElement('div');
   row.className = 'salvage-resource-row';
@@ -175,7 +174,9 @@ function resourceRow(
     model.salvageEvent !== null ||
     model.salvageEventRecoverySeconds > 0 ||
     resource.remaining <= 0;
-  button.addEventListener('click', () => onStrip(wreckId, resource.resourceId));
+  button.dataset.salvageAction = 'strip';
+  button.dataset.wreckId = wreckId;
+  button.dataset.resourceId = resource.resourceId;
   row.append(label, amount, button);
   return row;
 }
@@ -208,7 +209,8 @@ function componentRow(
     model.phase !== 'idle' ||
     model.salvageEvent !== null ||
     model.salvageEventRecoverySeconds > 0;
-  button.addEventListener('click', () => options.onRecoverComponent(wreckId));
+  button.dataset.salvageAction = 'component';
+  button.dataset.wreckId = wreckId;
   row.append(copy, button);
   return row;
 }
@@ -259,7 +261,7 @@ function renderSelection(
     return;
   }
   for (const resource of wreck.resources) {
-    ui.resources.append(resourceRow(model, wreck.id, resource, options.onStrip));
+    ui.resources.append(resourceRow(model, wreck.id, resource));
   }
 }
 
@@ -369,6 +371,23 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     onSelectWreck: options.onSelectWreck,
     onNavigate: (x, y) => options.onNavigate({ x, y }),
   });
+  ui.resources.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-salvage-action]');
+    if (!button || button.disabled) return;
+    const wreckId = button.dataset.wreckId;
+    if (!wreckId) return;
+    if (button.dataset.salvageAction === 'strip') {
+      const resourceId = button.dataset.resourceId;
+      if (resourceId) options.onStrip(wreckId, resourceId);
+      return;
+    }
+    if (button.dataset.salvageAction === 'component') {
+      options.onRecoverComponent(wreckId);
+    }
+  });
+
   ui.inspectButton.addEventListener('click', () => {
     if (model.selectedWreck) options.onInspect(model.selectedWreck.id);
   });
