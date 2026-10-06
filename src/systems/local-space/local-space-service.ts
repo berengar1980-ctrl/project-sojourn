@@ -35,6 +35,7 @@ import {
   selectedAsteroid,
   selectedRouteOptions,
 } from './local-space-scanning';
+import { createPointRouteOptions } from './local-space-route-options';
 import {
   createIdleStationKeepingState,
   resetIdleStationKeeping,
@@ -157,14 +158,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
-    return {
-      start: this.instance.ship.position,
-      target,
-      asteroids: this.instance.asteroids,
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
-      width: this.instance.width,
-      height: this.instance.height,
-    };
+    return createPointRouteOptions(this.instance, target, this.shield);
   }
 
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot {
