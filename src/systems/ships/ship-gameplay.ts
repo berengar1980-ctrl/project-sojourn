@@ -7,10 +7,7 @@ import type {
   ShipRoleProfile,
 } from '../../core/ship-gameplay-types';
 import type { ShipDefinition, ShipGameplayModifiers, ShipRole } from '../../core/ship-types';
-import {
-  shipComponents,
-  starterShipComponentIds,
-} from '../../data/ships/ship-components';
+import { shipComponents, starterShipComponentIds } from '../../data/ships/ship-components';
 import { shipRoleProfiles } from '../../data/ships/ship-role-profiles';
 
 const componentById = new Map(shipComponents.map((definition) => [definition.id, definition]));
