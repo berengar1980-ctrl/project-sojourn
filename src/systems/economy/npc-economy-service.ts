@@ -261,6 +261,8 @@ function runResourceWorkerDay(
 
 export interface NpcEconomyService {
   readonly npcs: readonly NpcEconomyState[];
+  mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   advanceDay(day: number): void;
   advanceNextDay(): void;
 }
@@ -306,6 +308,26 @@ export function createNpcEconomyService(
 
   return {
     npcs,
+    mineLocal(npc, resourceId, requestedQuantity) {
+      const wanted = Math.min(quantity(requestedQuantity), cargoFree(npc));
+      if (wanted <= 0) return 0;
+      const allocated = allocator.createMinedResource(resourceId, wanted);
+      if (allocated <= 0) return 0;
+      npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
+      return allocated;
+    },
+    dispatchLoadedWorker(npc) {
+      const cargo = Object.entries(npc.cargo)
+        .filter(([, amount]) => quantity(amount) > 0)
+        .sort((first, second) => quantity(second[1]) - quantity(first[1]));
+      if (cargo.length === 0) return false;
+      for (const [resourceId] of cargo) {
+        const destination = bestSaleLocation(markets, resourceId);
+        if (!destination || destination.locationId === npc.locationId) continue;
+        return requestNpcTravel(npc, destination.locationId, options, 'Rohstoffverkauf');
+      }
+      return false;
+    },
     advanceDay,
     advanceNextDay() {
       advanceDay(lastDay + 1);
