@@ -40,6 +40,7 @@ interface StationProfile {
   readonly coreScale: number;
   readonly ringScale: number;
   readonly moduleKinds: readonly StationModuleKind[];
+  readonly requiredModules: readonly StationModuleKind[];
   readonly moduleMin: number;
   readonly moduleMax: number;
   readonly irregularity: number;
@@ -52,6 +53,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.28,
     ringScale: 0.55,
     moduleKinds: ['dock', 'cargo', 'cargo', 'habitat', 'utility', 'sensor'],
+    requiredModules: ['dock', 'cargo', 'habitat'],
     moduleMin: 7,
     moduleMax: 10,
     irregularity: 0.12,
@@ -62,6 +64,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.24,
     ringScale: 0.48,
     moduleKinds: ['dock', 'dock', 'dock', 'utility', 'cargo', 'radiator'],
+    requiredModules: ['dock', 'dock', 'cargo', 'radiator'],
     moduleMin: 7,
     moduleMax: 10,
     irregularity: 0.16,
@@ -72,6 +75,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.34,
     ringScale: 0.48,
     moduleKinds: ['armor', 'armor', 'sensor', 'utility', 'dock'],
+    requiredModules: ['armor', 'armor', 'sensor', 'dock'],
     moduleMin: 6,
     moduleMax: 8,
     irregularity: 0.07,
@@ -82,6 +86,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.27,
     ringScale: 0.5,
     moduleKinds: ['tank', 'tank', 'tank', 'radiator', 'cargo', 'dock'],
+    requiredModules: ['tank', 'tank', 'radiator', 'dock'],
     moduleMin: 8,
     moduleMax: 11,
     irregularity: 0.13,
@@ -92,6 +97,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.24,
     ringScale: 0.48,
     moduleKinds: ['sensor', 'sensor', 'radiator', 'habitat', 'utility', 'dock'],
+    requiredModules: ['sensor', 'radiator', 'habitat', 'dock'],
     moduleMin: 6,
     moduleMax: 9,
     irregularity: 0.1,
@@ -102,6 +108,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.26,
     ringScale: 0.44,
     moduleKinds: ['cargo', 'tank', 'dock', 'utility', 'armor', 'habitat'],
+    requiredModules: ['cargo', 'tank', 'dock', 'armor'],
     moduleMin: 7,
     moduleMax: 12,
     irregularity: 0.28,
@@ -112,6 +119,7 @@ const PROFILES: Readonly<Record<StationType, StationProfile>> = {
     coreScale: 0.27,
     ringScale: 0.46,
     moduleKinds: ['utility', 'habitat', 'dock', 'cargo', 'sensor'],
+    requiredModules: ['utility', 'habitat', 'dock'],
     moduleMin: 5,
     moduleMax: 8,
     irregularity: 0.12,
@@ -169,7 +177,7 @@ export function createStationLayout(id: string, type: StationType): StationLayou
     const tangentX = -Math.sin(arm.angle);
     const tangentY = Math.cos(arm.angle);
     modules.push({
-      kind: pick(random, profile.moduleKinds),
+      kind: profile.requiredModules[index] ?? pick(random, profile.moduleKinds),
       x: Math.cos(arm.angle) * radial + tangentX * lateral,
       y: Math.sin(arm.angle) * radial + tangentY * lateral,
       width: 0.11 + random() * 0.11,
