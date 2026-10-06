@@ -310,6 +310,24 @@ function createScanCompletionTracker(
   };
 }
 
+function bindShortScanPlanning(
+  button: HTMLButtonElement,
+  options: LocalSpacePanelOptions,
+  systemLog: SystemLogPanel,
+  updateOverlay: () => void
+): void {
+  bindRoutePlanning(
+    button,
+    options.log,
+    systemLog,
+    async () => {
+      options.log.write('SCAN > NAHBEREICHSANALYSE');
+      await options.onShortRangeScan();
+    },
+    updateOverlay
+  );
+}
+
 function bindLongScanButton(
   button: HTMLButtonElement,
   getModel: () => LocalSpaceViewModel,
@@ -426,16 +444,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const unbindInput = bindNavigationInput(canvas, renderer, options, systemLog, updateOverlay);
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
-  bindRoutePlanning(
-    shortScanButton,
-    options.log,
-    systemLog,
-    async () => {
-      options.log.write('SCAN > NAHBEREICHSANALYSE');
-      await options.onShortRangeScan();
-    },
-    updateOverlay
-  );
+  bindShortScanPlanning(shortScanButton, options, systemLog, updateOverlay);
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
   bindScanLabelButton(scanLabelsButton, renderer);
   cancelButton.addEventListener('click', options.onCancelMining);
