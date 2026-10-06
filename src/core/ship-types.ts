@@ -48,6 +48,18 @@ export interface ShipNavigationStats {
   readonly cruiseSpeed: number;
 }
 
+export interface ShipGameplayModifiers {
+  readonly hullMultiplier?: number;
+  readonly shieldHpMultiplier?: number;
+  readonly shieldModifierMultiplier?: number;
+  readonly cruiseSpeedMultiplier?: number;
+  readonly fuelCapacityMultiplier?: number;
+  readonly fuelUseMultiplier?: number;
+  readonly cargoCapacityMultiplier?: number;
+  readonly weaponSlotDelta?: number;
+  readonly crewCapacityDelta?: number;
+}
+
 export interface ShipDefinition {
   readonly id: string;
   readonly name: string;
@@ -56,4 +68,5 @@ export interface ShipDefinition {
   readonly cargoCapacityTons: number;
   readonly sprite: ShipSprite;
   readonly navigation: ShipNavigationStats;
+  readonly gameplay?: ShipGameplayModifiers;
 }
