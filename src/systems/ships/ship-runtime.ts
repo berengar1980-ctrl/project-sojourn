@@ -49,12 +49,7 @@ export function resolveShipRuntimeSetup(
   const energy = calculateShipEnergy(installed);
   const sensorCrewSkill = calculateStationSkill(stats.stations, assignments, crew, 'sensors');
   const miningCrewSkill = calculateStationSkill(stats.stations, assignments, crew, 'mining');
-  const engineeringCrewSkill = calculateStationSkill(
-    stats.stations,
-    assignments,
-    crew,
-    'engineering'
-  );
+  const engineeringCrewSkill = calculateStationSkill(stats.stations, assignments, crew, 'engineering');
   const continuousSystemsPowered = energy.output > 0 && energy.baseFree >= 0;
   const shieldPowered =
     continuousSystemsPowered && energy.output >= energy.baseUsed + energy.shieldUsed;
