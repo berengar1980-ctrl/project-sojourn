@@ -1,26 +1,12 @@
 import type { ShipRole } from './ship-types';
 
 export type ShipStationSkill =
-  | 'piloting'
-  | 'sensors'
-  | 'weapons'
-  | 'engineering'
-  | 'mining'
-  | 'salvage'
-  | 'logistics';
+  'piloting' | 'sensors' | 'weapons' | 'engineering' | 'mining' | 'salvage' | 'logistics';
 
 export type ShipCargoMode = 'general' | 'mining' | 'salvage';
 
 export type ShipComponentType =
-  | 'reactor'
-  | 'engine'
-  | 'shield'
-  | 'hull'
-  | 'sensor'
-  | 'weapon'
-  | 'cargo'
-  | 'mining'
-  | 'salvage';
+  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
 
 export interface ShipStationDefinition {
   readonly id: string;
@@ -91,11 +77,7 @@ export interface ShipDerivedStats {
 }
 
 export type ShipCrewInjuryState =
-  | 'healthy'
-  | 'light-wound'
-  | 'severe-wound'
-  | 'incapacitated'
-  | 'dead';
+  'healthy' | 'light-wound' | 'severe-wound' | 'incapacitated' | 'dead';
 
 export interface ShipStationContributor {
   readonly skill: number;
