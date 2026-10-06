@@ -59,11 +59,7 @@ export interface SalvageComponentRecoveryResult {
 }
 
 export type SalvageEventType =
-  | 'unstable-frame'
-  | 'residual-power'
-  | 'sealed-compartment'
-  | 'volatile-cargo'
-  | 'data-core';
+  'unstable-frame' | 'residual-power' | 'sealed-compartment' | 'volatile-cargo' | 'data-core';
 
 export type SalvageEventRisk = 'safe' | 'controlled' | 'risky' | 'high_risk';
 
