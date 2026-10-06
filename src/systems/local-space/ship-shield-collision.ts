@@ -84,10 +84,14 @@ export function resolveShipShieldCollisions(
       const firstMove = overlap * (secondWeight / totalWeight);
       const secondMove = overlap * (firstWeight / totalWeight);
 
-      first.state.position.x -= normal.x * firstMove;
-      first.state.position.y -= normal.y * firstMove;
-      second.state.position.x += normal.x * secondMove;
-      second.state.position.y += normal.y * secondMove;
+      first.state.position = {
+        x: first.state.position.x - normal.x * firstMove,
+        y: first.state.position.y - normal.y * firstMove,
+      };
+      second.state.position = {
+        x: second.state.position.x + normal.x * secondMove,
+        y: second.state.position.y + normal.y * secondMove,
+      };
 
       impacts.push({
         firstId: first.id,
