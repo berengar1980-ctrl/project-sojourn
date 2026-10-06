@@ -3,8 +3,7 @@ import type {
   ShipDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
-import type { CrewSkillEffects } from '../crew/crew-skill-effects';
-import { crewSkillEffects } from '../crew/crew-skill-effects';
+import { crewSkillEffects, type CrewSkillEffects } from '../crew/crew-skill-effects';
 import type { ShipComponentType } from '../../data/ships/ship-component-catalog';
 import {
   calculateShipEnergy,
