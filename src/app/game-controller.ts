@@ -527,10 +527,8 @@ function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelAc
       }
     },
     systemLog: context.systemLog,
-    returnToStarMap: createStarMapReturnAction(
-      context.root,
-      context.systemLog,
-      () => mountControllerStarMap(context)
+    returnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
+      mountControllerStarMap(context)
     ),
   });
 }
@@ -582,10 +580,8 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     economy: economy.salvage,
     player: economy.trade.player,
     log: context.systemLog,
-    onReturnToStarMap: createStarMapReturnAction(
-      context.root,
-      context.systemLog,
-      () => mountControllerStarMap(context)
+    onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
+      mountControllerStarMap(context)
     ),
   });
   mountControllerSwitcher(context);
