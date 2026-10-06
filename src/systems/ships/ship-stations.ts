@@ -1,7 +1,4 @@
-import type {
-  ShipCrewInjuryState,
-  ShipStationContributor,
-} from '../../core/ship-gameplay-types';
+import type { ShipCrewInjuryState, ShipStationContributor } from '../../core/ship-gameplay-types';
 
 function clamp(value: number, minimum = 0, maximum = 100): number {
   return Math.max(minimum, Math.min(maximum, value));
