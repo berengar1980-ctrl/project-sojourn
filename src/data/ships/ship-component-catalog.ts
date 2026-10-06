@@ -114,6 +114,14 @@ export const SHIP_COMPONENT_CATALOG: Readonly<
     ],
     'range'
   ),
+  weapon: definitions('weapon', [
+    ['weapon1', 'Light Laser Mount Mk I', 1, 6, 0],
+    ['weapon2', 'Light Autocannon Mk II', 2, 10, 850000],
+    ['weapon3', 'Heavy Laser Mount Mk III', 3, 16, 1800000],
+    ['weapon4', 'Heavy Autocannon Mk IV', 4, 22, 2600000],
+    ['weapon5', 'Heavy Missile Battery Mk V', 5, 26, 4700000],
+    ['weapon6', 'Heavy Plasma Battery Mk VI', 6, 38, 8200000],
+  ]),
   cargo: definitions(
     'cargo',
     [
