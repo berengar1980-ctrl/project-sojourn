@@ -81,6 +81,7 @@ const underpowered = capability.resolveShipSalvageSetup(salvager, {
   reactor: ['reactor1'],
   engine: ['engine3'],
   sensor: ['sensor3'],
+  mining: ['mining1'],
   salvage: ['salvage3'],
 });
 assert.equal(underpowered.available, false);
