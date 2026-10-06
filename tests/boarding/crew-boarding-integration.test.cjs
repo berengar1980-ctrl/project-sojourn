@@ -41,6 +41,18 @@ assert(miner);
   assert.equal(wounded.hp, 7);
   assert.equal(wounded.maxHp, 10, 'pre-existing wounds must survive encounter setup');
 
+  const woundedEncounter = boarding.createCrewBoardingEncounter({
+    roster,
+    seed: 17,
+    enemyUnits: [],
+  });
+  woundedEncounter.settle();
+  assert.equal(
+    roster.member('tiber_krane').injuryState,
+    'severe_wound',
+    'boarding settlement must not heal pre-existing severe wounds'
+  );
+
   roster.setInjuryState('tiber_krane', 'incapacitated');
   assert.equal(
     boarding.crewMemberToBoardingUnit(roster.member('tiber_krane')),
