@@ -5,6 +5,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
 import {
   resolveShipShieldCollisions,
+  resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
 import { getShipDefinition } from '../ships';
@@ -393,6 +394,14 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
         });
       }
       resolveShipShieldCollisions(bodies);
+      resolveShipShieldObstacleCollisions(
+        bodies.filter((body) => body.id !== 'player'),
+        options.getAsteroids().map((asteroid) => ({
+          id: asteroid.id,
+          position: asteroid.position,
+          radius: asteroid.radius,
+        }))
+      );
     },
   };
 }
