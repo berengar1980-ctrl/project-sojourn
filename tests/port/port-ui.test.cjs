@@ -110,7 +110,8 @@ assert(
     !portPanel.includes("model.locationName.slice(0, 1)") &&
     portLocationRenderer.includes('ProceduralSpaceBodyRenderer') &&
     portLocationRenderer.includes('PlanetRingRenderer') &&
-    portLocationRenderer.includes('StationSymbolRenderer') &&
+    portLocationRenderer.includes('ProceduralStationRenderer') &&
+    portLocationRenderer.includes("detailLevel: 'dock'") &&
     portLocationRenderer.includes('drawPlanet'),
   'docked location hero must reuse the star-map planet and station renderers instead of a placeholder'
 );
