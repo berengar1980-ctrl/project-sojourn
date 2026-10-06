@@ -83,6 +83,7 @@ export function createActivePortPanel(
       market,
       trade.player,
       location,
+      narrowsSector.star.position,
       ship,
       {
         available: crew.availableDefinitions().map(createCrewMember),
