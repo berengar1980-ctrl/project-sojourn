@@ -29,10 +29,7 @@ function baseEffect(title: string, resultText: string): SalvageEventEffect {
   };
 }
 
-function resolveUnstableFrame(
-  choiceId: string,
-  context: EventContext
-): SalvageEventEffect | null {
+function resolveUnstableFrame(choiceId: string, context: EventContext): SalvageEventEffect | null {
   const title = 'Instabiles Wrackgerüst';
   if (choiceId === 'stabilize') {
     return {
@@ -62,10 +59,7 @@ function resolveUnstableFrame(
   return null;
 }
 
-function resolveResidualPower(
-  choiceId: string,
-  context: EventContext
-): SalvageEventEffect | null {
+function resolveResidualPower(choiceId: string, context: EventContext): SalvageEventEffect | null {
   const title = 'Restspannung im Energienetz';
   if (choiceId === 'isolate') {
     return {
@@ -83,7 +77,10 @@ function resolveResidualPower(
   }
   if (choiceId === 'bridge') {
     return {
-      ...baseEffect(title, 'Ein Lichtbogen fährt durch die Sektion und verschmort verwertbare Systeme.'),
+      ...baseEffect(
+        title,
+        'Ein Lichtbogen fährt durch die Sektion und verschmort verwertbare Systeme.'
+      ),
       recoverySeconds: 3.2,
       resourceLossFraction: 0.08 + context.secondary * 0.1,
       destroyComponent: context.secondary > 0.58,
@@ -102,7 +99,10 @@ function resolveSealedCompartment(
   const title = 'Versiegeltes Abteil';
   if (choiceId === 'cut') {
     return {
-      ...baseEffect(title, 'Der Zugang wird kontrolliert geöffnet. Dahinter liegen brauchbare Ersatzteile.'),
+      ...baseEffect(
+        title,
+        'Der Zugang wird kontrolliert geöffnet. Dahinter liegen brauchbare Ersatzteile.'
+      ),
       recoverySeconds: 3.5,
       bonusResourceId: context.wreck.quality >= 3 ? 'rare-tech' : 'ship-parts',
       bonusAmount: 4 + context.wreck.quality * 2 + Math.floor(context.secondary * 5),
@@ -129,14 +129,14 @@ function resolveSealedCompartment(
   return null;
 }
 
-function resolveVolatileCargo(
-  choiceId: string,
-  context: EventContext
-): SalvageEventEffect | null {
+function resolveVolatileCargo(choiceId: string, context: EventContext): SalvageEventEffect | null {
   const title = 'Flüchtige Gefahrgutreste';
   if (choiceId === 'vent') {
     return {
-      ...baseEffect(title, 'Die Crew entlüftet die Sektion. Ein Teil der Ladung geht kontrolliert verloren.'),
+      ...baseEffect(
+        title,
+        'Die Crew entlüftet die Sektion. Ein Teil der Ladung geht kontrolliert verloren.'
+      ),
       recoverySeconds: 2.6,
       resourceLossFraction: 0.05,
     };
@@ -167,7 +167,10 @@ function resolveDataCore(choiceId: string, context: EventContext): SalvageEventE
   const title = 'Abgeschirmter Datenkern';
   if (choiceId === 'extract') {
     return {
-      ...baseEffect(title, 'Der Datenkern wird physisch getrennt. Die Archive sind verwertbar, aber illegal.'),
+      ...baseEffect(
+        title,
+        'Der Datenkern wird physisch getrennt. Die Archive sind verwertbar, aber illegal.'
+      ),
       recoverySeconds: 3,
       bonusResourceId: 'stolen-data',
       bonusAmount: 1 + Math.floor(context.secondary * 3),
@@ -175,7 +178,10 @@ function resolveDataCore(choiceId: string, context: EventContext): SalvageEventE
   }
   if (choiceId === 'decrypt' && context.outcome < 0.64) {
     return {
-      ...baseEffect(title, 'Die Crew knackt die Sicherung und gewinnt zusätzliche verschlüsselte Archive.'),
+      ...baseEffect(
+        title,
+        'Die Crew knackt die Sicherung und gewinnt zusätzliche verschlüsselte Archive.'
+      ),
       recoverySeconds: 4.5,
       bonusResourceId: 'stolen-data',
       bonusAmount: 3 + Math.floor(context.secondary * 4),
