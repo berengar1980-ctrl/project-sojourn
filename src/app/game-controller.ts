@@ -7,6 +7,10 @@ import { createLocalSpaceViewModel } from '../features/local-space/local-space-v
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
+import {
+  createNpcLocalMiningService,
+  type NpcLocalMiningService,
+} from '../systems/npcs/npc-local-mining-service';
 import { getAllShipDefinitions, getShipDefinition } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
@@ -81,12 +85,35 @@ function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService
 function createActiveLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
-  locationName: string
+  locationName: string,
+  npcMining: NpcLocalMiningService | null
 ) {
+  const npcShips = (npcMining?.ships ?? []).flatMap((npc) => {
+    const definition = getShipDefinition(npc.shipId);
+    if (!definition) return [];
+    return [
+      {
+        id: npc.npcId,
+        name: npc.name,
+        position: npc.position,
+        headingRadians: npc.headingRadians,
+        speed: npc.speed,
+        phase: npc.phase,
+        targetAsteroidId: npc.targetAsteroidId,
+        laserActive: npc.laserActive,
+        nominalLengthMeters: definition.nominalLengthMeters,
+        spriteUrl: definition.sprite.assetUrl,
+        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+        hardpoints: definition.sprite.hardpoints,
+      },
+    ];
+  });
+
   return createLocalSpaceViewModel(
     requireLocalSpace(service).getSnapshot(),
     ship,
-    locationName + ' // Mining'
+    locationName + ' // Mining',
+    npcShips
   );
 }
 
@@ -221,6 +248,7 @@ interface ControllerRuntimeState {
   readonly panels: ControllerPanels;
   shipSwitcher: ShipTestSwitcher | null;
   localSpace: LocalSpaceService | null;
+  localNpcMining: NpcLocalMiningService | null;
   salvageScene: SalvageSceneController | null;
   localSpaceSeed: number;
   salvageSpaceSeed: number;
@@ -249,7 +277,8 @@ function controllerLocalModel(context: ControllerRuntimeContext) {
   return createControllerLocalModel(
     context.state.localSpace,
     context.state.activeShip,
-    context.navigation
+    context.navigation,
+    context.state.localNpcMining
   );
 }
 
@@ -281,6 +310,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
   state.localSpace = null;
+  state.localNpcMining = null;
   state.mode = 'star-map';
   state.panels.star = createControllerStarPanel({
     root: context.root,
@@ -301,6 +331,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   const locationId = context.navigation.getSnapshot().currentLocationId;
   destroyControllerSalvage(context);
   state.localSpace = null;
+  state.localNpcMining = null;
   destroyScenePanels(state.panels);
   state.panels.port = createActivePortPanel(
     context.root,
@@ -351,6 +382,18 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     location,
     context.crew.runtimeOptions(state.activeShip)
   );
+  state.localNpcMining = createNpcLocalMiningService({
+    locationId: location.id,
+    width: state.localSpace.getSnapshot().instance.width,
+    height: state.localSpace.getSnapshot().instance.height,
+    miners: economy.sectorNpcs.npcs.filter(
+      (npc) => npc.job === 'miner' && npc.workLocationId === location.id
+    ),
+    getAsteroids: () => state.localSpace?.getSnapshot().instance.asteroids ?? [],
+    mine: (npc, resourceId, requested) =>
+      economy.npcs.mineLocal(npc, resourceId, requested),
+    depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
+  });
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
   );
@@ -368,6 +411,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
   state.localSpace = null;
+  state.localNpcMining = null;
   const location = salvageLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   state.mode = 'salvage-space';
@@ -426,6 +470,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       panels: { star: null, local: null, port: null },
       shipSwitcher: null,
       localSpace: null,
+      localNpcMining: null,
       salvageScene: null,
       localSpaceSeed: 0,
       salvageSpaceSeed: 0,
