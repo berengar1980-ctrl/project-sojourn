@@ -81,7 +81,8 @@ body {
   pointer-events: none;
 }
 
-.map-mode-toggle {
+.map-mode-toggle,
+.map-label-toggle {
   position: absolute;
   right: 22px;
   bottom: 42px;
@@ -96,9 +97,20 @@ body {
   letter-spacing: 0.12em;
 }
 
-.map-mode-toggle:hover {
+.map-label-toggle {
+  right: 130px;
+  bottom: 42px;
+}
+
+.map-mode-toggle:hover,
+.map-label-toggle:hover {
   border-color: rgba(114, 210, 151, 0.52);
   color: #a9e7c1;
+}
+
+.map-label-toggle.is-off {
+  color: #6d7b82;
+  border-color: rgba(101, 153, 171, 0.18);
 }
 
 .star-map-shell.is-nav-mode .map-mode-toggle {
