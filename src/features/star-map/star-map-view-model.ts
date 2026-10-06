@@ -32,6 +32,14 @@ export interface StarMapLocationView {
   readonly isSelected: boolean;
 }
 
+export interface NpcShipMapView {
+  readonly id: string;
+  readonly name: string;
+  readonly job: 'freighter' | 'miner' | 'salvager' | 'patrol';
+  readonly position: WorldPoint;
+  readonly isTravelling: boolean;
+}
+
 export interface PlayerShipMapView {
   readonly name: string;
   readonly position: WorldPoint;
@@ -55,6 +63,7 @@ export interface StarMapViewModel {
   readonly star: StarBody;
   readonly locations: readonly StarMapLocationView[];
   readonly regions: WorldMap['regions'];
+  readonly npcShips: readonly NpcShipMapView[];
   readonly route: RoutePlan | null;
   readonly playerShip: PlayerShipMapView;
   readonly navigation: NavigationSnapshot;
@@ -63,7 +72,8 @@ export interface StarMapViewModel {
 export function createStarMapViewModel(
   world: WorldMap,
   navigation: NavigationSnapshot,
-  ship: ShipDefinition
+  ship: ShipDefinition,
+  npcShips: readonly NpcShipMapView[] = []
 ): StarMapViewModel {
   return {
     worldId: world.id,
@@ -72,6 +82,7 @@ export function createStarMapViewModel(
     height: world.height,
     star: world.star,
     regions: world.regions,
+    npcShips,
     route: navigation.activeRoute ?? navigation.previewRoute,
     navigation,
     playerShip: {
