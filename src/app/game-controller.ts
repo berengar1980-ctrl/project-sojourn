@@ -1,4 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
+import { createGameAudioService, type GameAudioService } from '../systems/audio/game-audio-service';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
 import { createCrewRosterService, type CrewRosterService } from '../systems/crew';
@@ -287,6 +288,7 @@ interface ControllerRuntimeContext {
   readonly economy: ControllerEconomy;
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
+  readonly audio: GameAudioService;
   readonly state: ControllerRuntimeState;
 }
 
@@ -347,6 +349,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   state.localSpace = null;
   state.localNpcMining = null;
   state.mode = 'star-map';
+  context.audio.clearPlayerRcs();
   state.panels.star = createControllerStarPanel({
     root: context.root,
     navigation: context.navigation,
@@ -384,6 +387,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   );
   if (!state.panels.port) return;
   state.mode = 'port';
+  context.audio.clearPlayerRcs();
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
   mountControllerSwitcher(context);
 }
@@ -470,6 +474,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     componentInventory: economy.components,
     runtimeOptions: controllerShipRuntimeOptions(context, state.activeShip),
     log: context.systemLog,
+    audio: context.audio,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
     ),
@@ -493,6 +498,12 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
   else if (state.mode === 'local-space' && state.localSpace) {
     state.localSpace.tick(deltaSeconds);
+    const localSnapshot = state.localSpace.getSnapshot();
+    context.audio.updatePlayerRcs(
+      state.activeShip.sprite.hardpoints,
+      localSnapshot.instance.ship,
+      performance.now() / 1000
+    );
     state.localNpcMining?.tick(deltaSeconds);
     state.panels.local?.update(controllerLocalModel(context));
   } else if (state.mode === 'salvage-space') {
@@ -508,6 +519,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     economy: createControllerEconomy(),
     crew: createCrewRosterService(),
     loadouts: createShipLoadoutService(),
+    audio: createGameAudioService(),
     state: {
       activeShip: options.ship,
       mode: 'star-map',
