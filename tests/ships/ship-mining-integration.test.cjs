@@ -115,10 +115,7 @@ const service = fs.readFileSync(
   'utf8'
 );
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const panel = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-panel.ts'),
-  'utf8'
-);
+const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 
 assert(service.includes('miningAvailable: this.miningEnabled'));
 assert(service.includes('this.miningAccumulator >= this.miningCycleSeconds'));
