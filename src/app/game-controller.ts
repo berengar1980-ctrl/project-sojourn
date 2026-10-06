@@ -188,8 +188,23 @@ function createControllerStarPanel(options: {
   return panel;
 }
 
-function createControllerStarModel(navigation: NavigationService, ship: ShipDefinition) {
-  return createStarMapViewModel(narrowsSector, navigation.getSnapshot(), ship);
+function createControllerStarModel(
+  navigation: NavigationService,
+  ship: ShipDefinition,
+  economy: ControllerEconomy
+) {
+  return createStarMapViewModel(
+    narrowsSector,
+    navigation.getSnapshot(),
+    ship,
+    economy.sectorNpcs.npcs.map((npc) => ({
+      id: npc.id,
+      name: npc.name,
+      job: npc.job,
+      position: economy.sectorNpcs.livePosition(npc),
+      isTravelling: economy.sectorNpcs.isTravelling(npc),
+    }))
+  );
 }
 
 function createControllerLocalModel(
@@ -223,7 +238,11 @@ interface ControllerRuntimeContext {
 }
 
 function controllerStarModel(context: ControllerRuntimeContext) {
-  return createControllerStarModel(context.navigation, context.state.activeShip);
+  return createControllerStarModel(
+    context.navigation,
+    context.state.activeShip,
+    context.economy
+  );
 }
 
 function controllerLocalModel(context: ControllerRuntimeContext) {
