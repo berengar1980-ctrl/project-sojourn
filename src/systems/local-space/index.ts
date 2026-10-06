@@ -5,8 +5,5 @@ export {
   planPointRouteAsync,
 } from './local-space-route-worker-client';
 
-export type {
-  LocalSpaceMiningOptions,
-  LocalSpaceService,
-  LocalSpaceServiceOptions,
-} from './local-space-service';
+export type { LocalSpaceService } from './local-space-api';
+export type { LocalSpaceMiningOptions, LocalSpaceServiceOptions } from './local-space-service';
