@@ -25,6 +25,10 @@ import {
   type MiningEconomyService,
 } from '../systems/economy/mining-economy-service';
 import {
+  createSalvageEconomyService,
+  type SalvageEconomyService,
+} from '../systems/economy/salvage-economy-service';
+import {
   createNpcEconomyService,
   type NpcEconomyService,
 } from '../systems/economy/npc-economy-service';
@@ -48,8 +52,9 @@ import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel'
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createMiningLocalSpace } from './game-controller-mining';
+import { createSalvageScene, type SalvageSceneController } from './game-controller-salvage';
 
-type SceneMode = 'star-map' | 'local-space' | 'port';
+type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port';
 
 interface GameControllerOptions {
   readonly root: HTMLElement;
@@ -89,6 +94,7 @@ interface ControllerEconomy {
   readonly trade: PlayerTradeService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
+  readonly salvage: SalvageEconomyService;
   readonly npcs: NpcEconomyService;
 }
 
@@ -112,6 +118,7 @@ function createControllerEconomy(): ControllerEconomy {
     trade,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
+    salvage: createSalvageEconomyService(simulation, trade),
     npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
       positions: Object.fromEntries(
         narrowsSector.locations.map((location) => [location.id, location.position])
@@ -187,6 +194,12 @@ function currentMiningLocationName(navigation: NavigationService): string {
   return miningLocationById(navigation.getSnapshot().currentLocationId)?.name ?? 'Mining Zone';
 }
 
+function salvageLocationById(locationId: string | null): WorldLocation | null {
+  if (!locationId) return null;
+  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+  return location?.activities.salvage ? location : null;
+}
+
 function createStarMapReturnAction(
   root: HTMLElement,
   systemLog: SystemLogService,
@@ -222,6 +235,14 @@ function enteredMiningLocation(
   currentId: string | null
 ): boolean {
   return mode === 'star-map' && previousId !== currentId && miningLocationById(currentId) !== null;
+}
+
+function enteredSalvageLocation(
+  mode: SceneMode,
+  previousId: string | null,
+  currentId: string | null
+): boolean {
+  return mode === 'star-map' && previousId !== currentId && salvageLocationById(currentId) !== null;
 }
 
 function advanceEconomyDay(
@@ -303,6 +324,7 @@ function createControllerStarPanel(options: {
   log: SystemLogService;
   getModel: () => ReturnType<typeof createStarMapViewModel>;
   onEnterLocalSpace: () => void;
+  onEnterSalvageSpace: () => void;
   onDock: () => void;
 }): StarMapPanel {
   let panel: StarMapPanel | null = null;
@@ -312,9 +334,15 @@ function createControllerStarPanel(options: {
     log: options.log,
     onSelectLocation: (id) => {
       const snapshot = options.navigation.getSnapshot();
-      if (miningLocationById(id) && snapshot.currentLocationId === id && !snapshot.isTravelling) {
-        options.onEnterLocalSpace();
-        return;
+      if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
+        if (miningLocationById(id)) {
+          options.onEnterLocalSpace();
+          return;
+        }
+        if (salvageLocationById(id)) {
+          options.onEnterSalvageSpace();
+          return;
+        }
       }
       options.navigation.selectDestination(id);
       panel?.update(options.getModel());
@@ -399,11 +427,14 @@ export function createGameController(options: GameControllerOptions): GameContro
   const panels: ControllerPanels = { star: null, local: null, port: null };
   let shipSwitcher: ShipTestSwitcher | null = null;
   let localSpace: LocalSpaceService | null = null;
+  let salvageScene: SalvageSceneController | null = null;
   let localSpaceSeed = 0;
+  let salvageSpaceSeed = 0;
   let visitCounter = 0;
   let previousLocationId = navigation.getSnapshot().currentLocationId;
   const systemLog = createControllerLog();
-  const { markets, situations, trade, simulation, mining, npcs } = createControllerEconomy();
+  const { markets, situations, trade, simulation, mining, salvage, npcs } =
+    createControllerEconomy();
   const starModel = () => createControllerStarModel(navigation, activeShip);
   const localModel = () => createControllerLocalModel(localSpace, activeShip, navigation);
   const refreshLocalPanel = () => localSpace && panels.local?.update(localModel());
@@ -413,12 +444,15 @@ export function createGameController(options: GameControllerOptions): GameContro
       activeShip = nextShip;
       systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (mode === 'local-space') mountLocalSpace(true);
+      else if (mode === 'salvage-space') mountSalvageSpace(true);
       else if (mode === 'port') mountPort();
       else mountStarMap();
     });
   };
   const mountStarMap = (): void => {
     destroyScenePanels(panels);
+    salvageScene?.destroy();
+    salvageScene = null;
     localSpace = null;
     mode = 'star-map';
     panels.star = createControllerStarPanel({
@@ -427,12 +461,15 @@ export function createGameController(options: GameControllerOptions): GameContro
       log: systemLog,
       getModel: starModel,
       onEnterLocalSpace: () => runSceneZoomTransition(root, mountLocalSpace),
+      onEnterSalvageSpace: () => runSceneZoomTransition(root, mountSalvageSpace),
       onDock: () => runSceneZoomTransition(root, mountPort),
     });
     mountTestSwitcher();
   };
   const mountPort = (announce = true): void => {
     const locationId = navigation.getSnapshot().currentLocationId;
+    salvageScene?.destroy();
+    salvageScene = null;
     destroyScenePanels(panels);
     panels.port = createActivePortPanel(
       root,
@@ -456,6 +493,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     returnToStarMap: createStarMapReturnAction(root, systemLog, mountStarMap),
   });
   const mountLocalSpace = (reuseSeed = false): void => {
+    salvageScene?.destroy();
+    salvageScene = null;
     destroyScenePanels(panels);
     mode = 'local-space';
     const location = miningLocationById(navigation.getSnapshot().currentLocationId);
@@ -473,6 +512,25 @@ export function createGameController(options: GameControllerOptions): GameContro
     });
     mountTestSwitcher();
   };
+  const mountSalvageSpace = (reuseSeed = false): void => {
+    destroyScenePanels(panels);
+    salvageScene?.destroy();
+    const location = salvageLocationById(navigation.getSnapshot().currentLocationId);
+    if (!location) return mountStarMap();
+    mode = 'salvage-space';
+    if (!reuseSeed || salvageSpaceSeed === 0) salvageSpaceSeed = localSeed((visitCounter += 1));
+    salvageScene = createSalvageScene({
+      root,
+      ship: activeShip,
+      seed: salvageSpaceSeed,
+      location,
+      economy: salvage,
+      player: trade.player,
+      log: systemLog,
+      onReturnToStarMap: createStarMapReturnAction(root, systemLog, mountStarMap),
+    });
+    mountTestSwitcher();
+  };
   mountStarMap();
   return {
     tick(deltaSeconds) {
@@ -480,6 +538,8 @@ export function createGameController(options: GameControllerOptions): GameContro
       const currentLocationId = navigationSnapshot.currentLocationId;
       if (enteredMiningLocation(mode, previousLocationId, currentLocationId)) {
         runSceneZoomTransition(root, mountLocalSpace);
+      } else if (enteredSalvageLocation(mode, previousLocationId, currentLocationId)) {
+        runSceneZoomTransition(root, mountSalvageSpace);
       }
       advanceEconomyDay(previousLocationId, currentLocationId, situations, simulation, npcs);
       previousLocationId = currentLocationId;
@@ -488,6 +548,8 @@ export function createGameController(options: GameControllerOptions): GameContro
       else if (mode === 'local-space' && localSpace) {
         localSpace.tick(deltaSeconds);
         panels.local?.update(localModel());
+      } else if (mode === 'salvage-space') {
+        salvageScene?.tick(deltaSeconds);
       }
     },
   };
