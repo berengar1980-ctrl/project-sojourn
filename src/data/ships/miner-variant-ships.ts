@@ -1,4 +1,4 @@
-import type { ShipDefinition } from '../../core/ship-types';
+import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import hardpoints1 from './miner-80m-variant-01.hardpoints.json';
 import hardpoints2 from './miner-80m-variant-02.hardpoints.json';
 import hardpoints3 from './miner-80m-variant-03.hardpoints.json';
@@ -20,7 +20,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 215,
       facing: 'right',
-      hardpoints: hardpoints1,
+      hardpoints: hardpoints1 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -36,7 +36,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 213,
       facing: 'right',
-      hardpoints: hardpoints2,
+      hardpoints: hardpoints2 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -52,7 +52,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 213,
       facing: 'right',
-      hardpoints: hardpoints3,
+      hardpoints: hardpoints3 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -68,7 +68,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 236,
       facing: 'right',
-      hardpoints: hardpoints4,
+      hardpoints: hardpoints4 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -84,7 +84,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 201,
       facing: 'right',
-      hardpoints: hardpoints5,
+      hardpoints: hardpoints5 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -100,7 +100,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 231,
       facing: 'right',
-      hardpoints: hardpoints6,
+      hardpoints: hardpoints6 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },
@@ -116,7 +116,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
       widthPx: 346,
       heightPx: 223,
       facing: 'right',
-      hardpoints: hardpoints7,
+      hardpoints: hardpoints7 as ShipHardpoints,
     },
     navigation: { cruiseSpeed: 220 },
   },

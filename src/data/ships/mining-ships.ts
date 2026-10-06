@@ -11,8 +11,8 @@ const miner80mIndustrialHeavySpriteUrl = new URL(
   import.meta.url
 ).href;
 
-const miner80mStandardHardpoints: ShipHardpoints = standardHardpointsJson;
-const miner80mIndustrialHeavyHardpoints: ShipHardpoints = industrialHeavyHardpointsJson;
+const miner80mStandardHardpoints: ShipHardpoints = standardHardpointsJson as ShipHardpoints;
+const miner80mIndustrialHeavyHardpoints: ShipHardpoints = industrialHeavyHardpointsJson as ShipHardpoints;
 
 export const miner80mStandard: ShipDefinition = {
   id: 'miner-80m-standard',
