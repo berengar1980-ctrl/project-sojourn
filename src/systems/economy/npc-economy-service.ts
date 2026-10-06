@@ -9,6 +9,7 @@ import { findNpcResourceSideTrade, type EconomyPoint } from './npc-resource-side
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
+  allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
 }
 
 function quantity(value: number): number {
@@ -262,6 +263,11 @@ function runResourceWorkerDay(
 export interface NpcEconomyService {
   readonly npcs: readonly NpcEconomyState[];
   mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  salvageLocal(
+    npc: NpcEconomyState,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number
+  ): number;
   dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   advanceDay(day: number): void;
   advanceNextDay(): void;
@@ -312,6 +318,14 @@ export function createNpcEconomyService(
       const wanted = Math.min(quantity(requestedQuantity), cargoFree(npc));
       if (wanted <= 0) return 0;
       const allocated = allocator.createMinedResource(resourceId, wanted);
+      if (allocated <= 0) return 0;
+      npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
+      return allocated;
+    },
+    salvageLocal(npc, resourceId, requestedQuantity) {
+      const wanted = Math.min(quantity(requestedQuantity), cargoFree(npc));
+      if (wanted <= 0) return 0;
+      const allocated = allocator.allocatePhysicalResource(resourceId, wanted);
       if (allocated <= 0) return 0;
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
       return allocated;
