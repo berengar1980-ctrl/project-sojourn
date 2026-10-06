@@ -347,7 +347,6 @@ body {
   letter-spacing: 0.14em;
 }
 
-
 .local-space-canvas.is-locked {
   pointer-events: none;
   cursor: default;
