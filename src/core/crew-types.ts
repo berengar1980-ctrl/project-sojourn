@@ -37,12 +37,7 @@ export interface CrewDefinition {
   readonly personalEquipment?: CrewPersonalEquipment;
 }
 
-export type CrewInjuryState =
-  | 'healthy'
-  | 'light_wound'
-  | 'severe_wound'
-  | 'incapacitated'
-  | 'dead';
+export type CrewInjuryState = 'healthy' | 'light_wound' | 'severe_wound' | 'incapacitated' | 'dead';
 
 export interface CrewMoraleState {
   motivation: number;
