@@ -42,10 +42,7 @@ const stationKeeping = fs.readFileSync(
   'utf8'
 );
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const miningComposition = fs.readFileSync(
-  path.join(root, 'src/app/mining-local-space.ts'),
-  'utf8'
-);
+const miningComposition = fs.readFileSync(path.join(root, 'src/app/mining-local-space.ts'), 'utf8');
 const shieldService = fs.readFileSync(
   path.join(root, 'src/systems/shields/shield-service.ts'),
   'utf8'
