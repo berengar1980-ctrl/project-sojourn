@@ -103,8 +103,8 @@ export function crewBoardingUnits(roster: CrewRosterService): readonly BoardingU
 function injuryFromBoarding(hp: number, maxHp: number): CrewInjuryState {
   if (hp <= 0) return 'incapacitated';
   const fraction = hp / Math.max(1, maxHp);
-  if (fraction <= 0.35) return 'severe_wound';
-  if (fraction <= 0.7) return 'light_wound';
+  if (fraction <= 0.7) return 'severe_wound';
+  if (fraction <= 0.9) return 'light_wound';
   return 'healthy';
 }
 
