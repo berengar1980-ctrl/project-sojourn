@@ -91,7 +91,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
 | 2026-10-06 | Baseline-Migration der Voidbound-Feature-Matrix | 241 Features erstmals gegen Sojourn main klassifiziert: 33 umgesetzt, 47 teilweise, 159 offen, 2 bewusst anders. |
-| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |\n| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |\n| 2026-10-06 | PR #69 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
+| 2026-10-06 | PR #67 · Docked location visuals | Geprüft: angedockte Orte verwenden Sternkarten-Visuals; keine Parity-Statusänderung erforderlich (`ui.port_local_hub` bleibt umgesetzt). |\n| 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |\n| 2026-10-06 | PR #70 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
 
 ## Vollständige Matrix
 
