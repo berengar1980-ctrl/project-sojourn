@@ -13,6 +13,7 @@ export interface LocalSpaceDefenseOptions {
   readonly hullMaxHp: number;
   readonly shieldMaxHp: number;
   readonly shieldDamageModifier: number;
+  readonly shieldPowered: boolean;
 }
 
 export interface LocalSpaceSensorOptions {
