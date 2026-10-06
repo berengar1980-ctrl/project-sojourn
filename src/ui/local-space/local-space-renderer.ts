@@ -230,9 +230,20 @@ export class LocalSpaceRenderer {
         );
       }
 
-      if (npc.laserActive && npc.targetAsteroidId) {
+      if (npc.targetAsteroidId) {
         const target = this.model.asteroids.find((asteroid) => asteroid.id === npc.targetAsteroidId);
-        if (target) this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds);
+        if (target && npc.phase === 'scanning') {
+          this.drawNpcMinerScan(
+            point,
+            target.position,
+            width,
+            height,
+            npc.scanProgress ?? 0,
+            timeSeconds
+          );
+        } else if (target && npc.laserActive) {
+          this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds);
+        }
       }
 
       const zoom = this.camera.getRelativeZoom();
@@ -243,6 +254,30 @@ export class LocalSpaceRenderer {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
+  }
+
+  private drawNpcMinerScan(
+    shipPoint: ScreenPoint,
+    targetWorld: { readonly x: number; readonly y: number },
+    width: number,
+    height: number,
+    progress: number,
+    timeSeconds: number
+  ): void {
+    const target = this.camera.worldToScreen(targetWorld, width, height);
+    const radius = 10 + progress * 28;
+    this.context.save();
+    this.context.strokeStyle = `rgba(116, 235, 248, ${0.52 + Math.sin(timeSeconds * 10) * 0.16})`;
+    this.context.lineWidth = 1.2;
+    this.context.beginPath();
+    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.setLineDash([4, 5]);
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawNpcMiningBeam(
