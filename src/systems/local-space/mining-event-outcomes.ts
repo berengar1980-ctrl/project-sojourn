@@ -223,7 +223,10 @@ function resolveRare(choiceId: string, context: OutcomeContext): MiningEventEffe
 
 function resolveDeeper(choiceId: string, context: OutcomeContext): MiningEventEffect | null {
   if (choiceId === 'stop') {
-    return baseEffect(context.title, 'Der tiefere Verlauf wird markiert, aber nicht angeschnitten.');
+    return baseEffect(
+      context.title,
+      'Der tiefere Verlauf wird markiert, aber nicht angeschnitten.'
+    );
   }
   if (choiceId === 'drill' && context.outcome < 0.6) {
     return {
