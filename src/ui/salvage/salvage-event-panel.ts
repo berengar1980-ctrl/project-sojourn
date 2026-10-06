@@ -1,7 +1,4 @@
-import type {
-  SalvageEventResolution,
-  SalvageEventState,
-} from '../../core/salvage-types';
+import type { SalvageEventResolution, SalvageEventState } from '../../core/salvage-types';
 import type { SystemLogService } from '../../core/system-log-types';
 import type { SystemLogPanel } from '../system-log/system-log-panel';
 
