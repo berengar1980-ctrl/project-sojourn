@@ -22,7 +22,9 @@ for (const ship of ships.getAllShipDefinitions()) {
     assert.equal(components.getShipComponent(type, id).tier, 1);
   }
 
-  const weaponSlots = ships.getShipGameplayStats(ship.id).weaponSlots;
+  const stats = ships.getShipGameplayStats(ship.id);
+  assert(stats);
+  const weaponSlots = stats.weaponSlots;
   assert.equal(installed.weapon?.length, weaponSlots);
   for (const id of installed.weapon ?? []) {
     assert.equal(components.getShipComponent('weapon', id).tier, 1);
