@@ -252,6 +252,32 @@ function observeCanvas(canvas: HTMLCanvasElement, renderer: LocalSpaceRenderer):
   return observer;
 }
 
+function createIntegrityTracker(
+  log: SystemLogService,
+  panel: SystemLogPanel,
+  initialModel: LocalSpaceViewModel
+): (model: LocalSpaceViewModel) => void {
+  let lastShieldPercent = shieldPercent(initialModel);
+  let lastHullPercent = hullPercent(initialModel);
+  initializeSystemLog(log, panel, lastShieldPercent, lastHullPercent);
+
+  return (model) => {
+    const currentShieldPercent = shieldPercent(model);
+    const currentHullPercent = hullPercent(model);
+    const shieldChanged = currentShieldPercent !== lastShieldPercent;
+    const hullChanged = currentHullPercent !== lastHullPercent;
+    if (shieldChanged) {
+      log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
+      lastShieldPercent = currentShieldPercent;
+    }
+    if (hullChanged) {
+      log.write('HÜLLEN-INTEGRITÄT ' + currentHullPercent + ' %');
+      lastHullPercent = currentHullPercent;
+    }
+    if (shieldChanged || hullChanged) panel.update();
+  };
+}
+
 function createScanCompletionTracker(
   log: SystemLogService,
   panel: SystemLogPanel,
@@ -326,8 +352,6 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   } = controls;
 
   let model = options.model;
-  let lastShieldPercent = shieldPercent(model);
-  let lastHullPercent = hullPercent(model);
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -335,7 +359,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     header: 'SYS // LOCAL OPS',
     placementClass: 'local-system-log',
   });
-  initializeSystemLog(options.log, systemLog, lastShieldPercent, lastHullPercent);
+  const trackIntegrity = createIntegrityTracker(options.log, systemLog, model);
   const trackScanCompletion = createScanCompletionTracker(options.log, systemLog, model);
 
   const updateOverlay = (): void => {
@@ -351,19 +375,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       ? 'LANGREICHWEITENSCAN'
       : 'SCAN NICHT VERFÜGBAR';
 
-    const currentShieldPercent = shieldPercent(model);
-    if (currentShieldPercent !== lastShieldPercent) {
-      options.log.write('SCHILD-INTEGRITÄT ' + currentShieldPercent + ' %');
-      systemLog.update();
-      lastShieldPercent = currentShieldPercent;
-    }
-
-    const currentHullPercent = hullPercent(model);
-    if (currentHullPercent !== lastHullPercent) {
-      options.log.write('HÜLLEN-INTEGRITÄT ' + currentHullPercent + ' %');
-      systemLog.update();
-      lastHullPercent = currentHullPercent;
-    }
+    trackIntegrity(model);
 
     const statusText = miningStatus(model);
     status.hidden = statusText.length === 0;
