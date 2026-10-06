@@ -59,12 +59,7 @@ export interface SalvageComponentRecoveryResult {
 }
 
 export type SalvageLocalPhase =
-  | 'idle'
-  | 'navigating'
-  | 'approaching'
-  | 'inspecting'
-  | 'stripping'
-  | 'extracting-component';
+  'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping' | 'extracting-component';
 
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
