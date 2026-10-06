@@ -46,10 +46,11 @@ assert(
   'salvage UI must explain the workflow and clearly expose missing salvage equipment'
 );
 assert(
-  salvagePanel.includes("ui.resources.addEventListener('click'") &&
+  salvagePanel.includes("ui.resources.addEventListener('pointerdown'") &&
     salvagePanel.includes("button[data-salvage-action]") &&
-    salvagePanel.includes("dataset.salvageAction = 'strip'"),
-  'salvage action buttons must use stable delegated click handling because resource rows are rebuilt every frame'
+    salvagePanel.includes("dataset.salvageAction = 'strip'") &&
+    salvagePanel.includes('event.preventDefault()'),
+  'frame-rebuilt salvage buttons must fire on pointerdown before the button node is replaced'
 );
 
 console.log('PASS local collision wiring, star-map name toggle and salvage guidance');
