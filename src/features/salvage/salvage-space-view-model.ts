@@ -126,45 +126,45 @@ export function createSalvageSpaceViewModel(
 ): SalvageSpaceViewModel {
   const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
     (wreck): SalvageWreckView => ({
-    id: wreck.id,
-    name: wreck.name,
-    kind: wreck.kind,
-    kindLabel: wreckKindLabel(wreck.kind),
-    position: wreck.position,
-    radius: wreck.radius,
-    rotation: wreck.rotation,
-    integrity: wreck.integrity,
-    quality: wreck.quality,
-    qualityLabel: qualityLabel(wreck.quality),
-    inspected: wreck.inspected,
-    depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
-    componentSignal: wreck.inspected && wreck.component !== null,
-    component:
-      wreck.inspected && wreck.component
-        ? {
-            componentId: wreck.component.componentId,
-            name:
-              getShipComponent(wreck.component.type, wreck.component.componentId)?.name ??
-              wreck.component.componentId,
-            tier:
-              getShipComponent(wreck.component.type, wreck.component.componentId)?.tier ??
-              wreck.quality,
-            cargoTons: wreck.component.cargoTons,
-            chancePercent: snapshot.componentRecoveryChances[wreck.id] ?? 0,
-            status:
-              wreck.componentStatus === 'recovered' || wreck.componentStatus === 'destroyed'
-                ? wreck.componentStatus
-                : 'available',
-          }
-        : null,
-    resources: wreck.inspected
-      ? wreck.resources.map((entry) => ({
-          resourceId: entry.resourceId,
-          name: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
-          remaining: entry.remainingAmount,
-          initial: entry.initialAmount,
-        }))
-      : [],
+      id: wreck.id,
+      name: wreck.name,
+      kind: wreck.kind,
+      kindLabel: wreckKindLabel(wreck.kind),
+      position: wreck.position,
+      radius: wreck.radius,
+      rotation: wreck.rotation,
+      integrity: wreck.integrity,
+      quality: wreck.quality,
+      qualityLabel: qualityLabel(wreck.quality),
+      inspected: wreck.inspected,
+      depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
+      componentSignal: wreck.inspected && wreck.component !== null,
+      component:
+        wreck.inspected && wreck.component
+          ? {
+              componentId: wreck.component.componentId,
+              name:
+                getShipComponent(wreck.component.type, wreck.component.componentId)?.name ??
+                wreck.component.componentId,
+              tier:
+                getShipComponent(wreck.component.type, wreck.component.componentId)?.tier ??
+                wreck.quality,
+              cargoTons: wreck.component.cargoTons,
+              chancePercent: snapshot.componentRecoveryChances[wreck.id] ?? 0,
+              status:
+                wreck.componentStatus === 'recovered' || wreck.componentStatus === 'destroyed'
+                  ? wreck.componentStatus
+                  : 'available',
+            }
+          : null,
+      resources: wreck.inspected
+        ? wreck.resources.map((entry) => ({
+            resourceId: entry.resourceId,
+            name: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
+            remaining: entry.remainingAmount,
+            initial: entry.initialAmount,
+          }))
+        : [],
       isSelected: wreck.id === snapshot.selectedWreckId,
       isWorkTarget: wreck.id === snapshot.workTargetId,
     })
