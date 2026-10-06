@@ -1,8 +1,4 @@
-import type {
-  BoardingHex,
-  BoardingMapDefinition,
-  BoardingUnit,
-} from '../../core/boarding-types';
+import type { BoardingHex, BoardingMapDefinition, BoardingUnit } from '../../core/boarding-types';
 
 const DIRECTIONS = [
   [1, 0],
@@ -32,11 +28,7 @@ export function boardingHexNeighbours(
   hex: BoardingHex
 ): readonly BoardingHex[] {
   return DIRECTIONS.map(([dq, dr]) => ({ q: hex.q + dq, r: hex.r + dr })).filter(
-    (entry) =>
-      entry.q >= 0 &&
-      entry.r >= 0 &&
-      entry.q < map.columns &&
-      entry.r < map.rows
+    (entry) => entry.q >= 0 && entry.r >= 0 && entry.q < map.columns && entry.r < map.rows
   );
 }
 
@@ -67,11 +59,7 @@ export function boardingUnitAt(
 ): BoardingUnit | null {
   return (
     units.find(
-      (unit) =>
-        unit.id !== ignoredUnitId &&
-        unit.hp > 0 &&
-        unit.q === q &&
-        unit.r === r
+      (unit) => unit.id !== ignoredUnitId && unit.hp > 0 && unit.q === q && unit.r === r
     ) ?? null
   );
 }
@@ -119,9 +107,7 @@ export function boardingHasLineOfSight(
   first: BoardingHex,
   second: BoardingHex
 ): boolean {
-  return !lineHexes(first, second).some((hex) =>
-    boardingHexBlocked(map, doorStates, hex.q, hex.r)
-  );
+  return !lineHexes(first, second).some((hex) => boardingHexBlocked(map, doorStates, hex.q, hex.r));
 }
 
 export function boardingTargetHasCover(
@@ -135,6 +121,8 @@ export function boardingTargetHasCover(
   return map.cover.some((cover) => {
     if (cover.q !== target.q || cover.r !== target.r) return false;
     const vector = DIRECTIONS[cover.side];
-    return vector ? Math.sign(vector[0]) === directionQ && Math.sign(vector[1]) === directionR : false;
+    return vector
+      ? Math.sign(vector[0]) === directionQ && Math.sign(vector[1]) === directionR
+      : false;
   });
 }
