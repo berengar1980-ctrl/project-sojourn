@@ -139,16 +139,32 @@ function bestSaleLocation(
   return best;
 }
 
+function requestNpcTravel(
+  npc: NpcEconomyState,
+  destinationId: string,
+  options: NpcEconomyServiceOptions,
+  reason: string
+): boolean {
+  if (destinationId === npc.locationId) return true;
+  if (options.travel) return options.travel.requestTravel(npc, destinationId, reason);
+  npc.locationId = destinationId;
+  return true;
+}
+
 function runTraderDay(
   npc: NpcEconomyState,
   markets: EconomyMarketService,
-  resources: readonly EconomyResourceDefinition[]
+  resources: readonly EconomyResourceDefinition[],
+  options: NpcEconomyServiceOptions
 ): void {
   const aboard = Object.entries(npc.cargo).find(([, value]) => quantity(value) > 0);
   if (aboard) {
     const destination = bestSaleLocation(markets, aboard[0]);
     if (!destination) return;
-    npc.locationId = destination.locationId;
+    if (npc.locationId !== destination.locationId) {
+      requestNpcTravel(npc, destination.locationId, options, 'Verkaufsroute');
+      return;
+    }
     sellToMarket(npc, markets, destination.locationId, aboard[0]);
     return;
   }
@@ -156,7 +172,7 @@ function runTraderDay(
   const route = bestTradeRoute(npc, markets, resources);
   if (!route) return;
   const moved = buyFromMarket(npc, markets, npc.locationId, route.resourceId, route.quantity);
-  if (moved > 0) npc.locationId = route.destinationId;
+  if (moved > 0) requestNpcTravel(npc, route.destinationId, options, 'Handelsroute');
 }
 
 function runResourceWorkerDay(
@@ -165,18 +181,19 @@ function runResourceWorkerDay(
   allocator: PhysicalResourceAllocator,
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
-  day: number
+  day: number,
+  options: NpcEconomyServiceOptions
 ): void {
   if (npc.sideTradePlan) {
     const plan = npc.sideTradePlan;
     if (npc.locationId !== plan.tradeLocationId) {
-      npc.locationId = plan.tradeLocationId;
+      requestNpcTravel(npc, plan.tradeLocationId, options, 'Nebenhandel · Verkauf');
       return;
     }
 
     sellToMarket(npc, markets, plan.tradeLocationId, plan.resourceId, plan.quantity);
-    npc.locationId = plan.workLocationId;
     delete npc.sideTradePlan;
+    requestNpcTravel(npc, plan.workLocationId, options, 'Rückkehr zum Arbeitsgebiet');
     return;
   }
 
@@ -190,7 +207,10 @@ function runResourceWorkerDay(
     for (const [resourceId] of cargo) {
       const destination = bestSaleLocation(markets, resourceId);
       if (!destination) continue;
-      npc.locationId = destination.locationId;
+      if (npc.locationId !== destination.locationId) {
+        requestNpcTravel(npc, destination.locationId, options, 'Rohstoffverkauf');
+        return;
+      }
       sellToMarket(npc, markets, destination.locationId, resourceId);
     }
     return;
@@ -220,12 +240,12 @@ function runResourceWorkerDay(
           costBasis: Math.round(plan.costBasis * scale),
           expectedProfit: Math.round(plan.expectedProfit * scale),
         };
-        npc.locationId = plan.tradeLocationId;
+        requestNpcTravel(npc, plan.tradeLocationId, options, 'Nebenhandel');
         return;
       }
     }
 
-    npc.locationId = npc.workLocationId;
+    requestNpcTravel(npc, npc.workLocationId, options, 'Arbeitsflug');
     return;
   }
 
@@ -241,12 +261,22 @@ function runResourceWorkerDay(
 
 export interface NpcEconomyService {
   readonly npcs: readonly NpcEconomyState[];
+  mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   advanceDay(day: number): void;
   advanceNextDay(): void;
 }
 
 export interface NpcEconomyServiceOptions {
   readonly positions?: Readonly<Record<string, EconomyPoint>>;
+  readonly travel?: {
+    readonly requestTravel: (
+      npc: NpcEconomyState,
+      destinationId: string,
+      reason: string
+    ) => boolean;
+    readonly isTravelling: (npc: NpcEconomyState) => boolean;
+  };
 }
 
 export function createNpcEconomyService(
@@ -265,8 +295,12 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
-        if (npc.role === 'trader') runTraderDay(npc, markets, resources);
-        else runResourceWorkerDay(npc, markets, allocator, resources, positions, current);
+        if (options.travel?.isTravelling(npc)) continue;
+        if (npc.role === 'trader' || npc.role === 'freighter') {
+          runTraderDay(npc, markets, resources, options);
+        } else if (npc.role === 'miner' || npc.role === 'salvager') {
+          runResourceWorkerDay(npc, markets, allocator, resources, positions, current, options);
+        }
       }
     }
     lastDay = target;
@@ -274,6 +308,26 @@ export function createNpcEconomyService(
 
   return {
     npcs,
+    mineLocal(npc, resourceId, requestedQuantity) {
+      const wanted = Math.min(quantity(requestedQuantity), cargoFree(npc));
+      if (wanted <= 0) return 0;
+      const allocated = allocator.createMinedResource(resourceId, wanted);
+      if (allocated <= 0) return 0;
+      npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
+      return allocated;
+    },
+    dispatchLoadedWorker(npc) {
+      const cargo = Object.entries(npc.cargo)
+        .filter(([, amount]) => quantity(amount) > 0)
+        .sort((first, second) => quantity(second[1]) - quantity(first[1]));
+      if (cargo.length === 0) return false;
+      for (const [resourceId] of cargo) {
+        const destination = bestSaleLocation(markets, resourceId);
+        if (!destination || destination.locationId === npc.locationId) continue;
+        return requestNpcTravel(npc, destination.locationId, options, 'Rohstoffverkauf');
+      }
+      return false;
+    },
     advanceDay,
     advanceNextDay() {
       advanceDay(lastDay + 1);

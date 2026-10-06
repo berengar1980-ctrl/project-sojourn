@@ -126,14 +126,36 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
-    this.drawRegions(width, height);
     this.drawOrbits(width, height);
     this.drawStar(width, height);
     this.drawRoute(width, height);
     this.hitAreas = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
     );
+    this.drawNpcShips(width, height);
     this.drawPlayerShip(width, height);
+  }
+
+  private drawNpcShips(width: number, height: number): void {
+    const zoom = this.camera.getRelativeZoom();
+    for (const npc of this.model.npcShips) {
+      const point = this.camera.worldToScreen(npc.position, width, height);
+      const size = Math.max(3, Math.min(7, 4.5 * mapSymbolScale(zoom)));
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      this.context.rotate(Math.PI / 4);
+      this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
+      this.context.globalAlpha = npc.isTravelling ? 0.95 : 0.72;
+      this.context.fillRect(-size / 2, -size / 2, size, size);
+      this.context.restore();
+
+      if (zoom >= 1.45) {
+        this.context.fillStyle = 'rgba(196, 211, 221, .72)';
+        this.context.font = '9px ui-monospace, monospace';
+        this.context.textAlign = 'center';
+        this.context.fillText(npc.name, point.x, point.y + 12);
+      }
+    }
   }
 
   private drawPlayerShip(width: number, height: number): void {
@@ -281,22 +303,22 @@ export class TopdownMapRenderer {
   }
 
   private drawRoute(width: number, height: number): void {
-    if (!this.model.route) return;
+    const route = this.model.route;
+    if (!route || route.points.length < 2) return;
 
-    const [from, to] = this.model.route.points;
-    if (!from || !to) return;
-
-    const routeStart = this.model.navigation.isTravelling ? this.model.playerShip.position : from;
-    const a = this.camera.worldToScreen(routeStart, width, height);
-    const b = this.camera.worldToScreen(to, width, height);
+    const routePoints = [...route.points];
+    if (this.model.navigation.isTravelling) routePoints[0] = this.model.playerShip.position;
 
     this.context.save();
     this.context.strokeStyle = 'rgba(111, 190, 210, 0.72)';
     this.context.lineWidth = 1.4;
     this.context.setLineDash([6, 7]);
     this.context.beginPath();
-    this.context.moveTo(a.x, a.y);
-    this.context.lineTo(b.x, b.y);
+    routePoints.forEach((point, index) => {
+      const screen = this.camera.worldToScreen(point, width, height);
+      if (index === 0) this.context.moveTo(screen.x, screen.y);
+      else this.context.lineTo(screen.x, screen.y);
+    });
     this.context.stroke();
     this.context.restore();
   }

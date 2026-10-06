@@ -50,6 +50,21 @@ export interface LocalCargoResourceView {
   readonly amount: number;
 }
 
+export interface LocalNpcShipView {
+  readonly id: string;
+  readonly name: string;
+  readonly position: WorldPoint;
+  readonly headingRadians: number;
+  readonly speed: number;
+  readonly phase: 'entering' | 'approaching' | 'mining' | 'exiting';
+  readonly targetAsteroidId: string | null;
+  readonly laserActive: boolean;
+  readonly nominalLengthMeters: number;
+  readonly spriteUrl: string;
+  readonly spriteAspectRatio: number;
+  readonly hardpoints: ShipHardpoints;
+}
+
 export interface LocalShipView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
@@ -69,6 +84,7 @@ export interface LocalSpaceViewModel {
   readonly width: number;
   readonly height: number;
   readonly ship: LocalShipView;
+  readonly npcShips: readonly LocalNpcShipView[];
   readonly asteroids: readonly LocalAsteroidView[];
   readonly chunks: readonly LocalChunkView[];
   readonly selectedAsteroid: LocalAsteroidView | null;
@@ -154,7 +170,8 @@ function mapCargo(snapshot: LocalSpaceSnapshot): LocalCargoResourceView[] {
 export function createLocalSpaceViewModel(
   snapshot: LocalSpaceSnapshot,
   ship: ShipDefinition,
-  title: string
+  title: string,
+  npcShips: readonly LocalNpcShipView[] = []
 ): LocalSpaceViewModel {
   const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
@@ -178,6 +195,7 @@ export function createLocalSpaceViewModel(
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
+    npcShips,
     asteroids,
     chunks: snapshot.instance.chunks.map(mapChunk),
     selectedAsteroid,

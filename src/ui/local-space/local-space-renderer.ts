@@ -40,6 +40,7 @@ export class LocalSpaceRenderer {
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly shipImage = new Image();
+  private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: LocalSpaceViewModel;
   private hitAreas: readonly AsteroidHitArea[] = [];
   private loadedShipUrl = '';
@@ -66,6 +67,7 @@ export class LocalSpaceRenderer {
   update(model: LocalSpaceViewModel): void {
     this.model = model;
     this.ensureShipImage(model.ship.spriteUrl);
+    for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
 
@@ -83,6 +85,7 @@ export class LocalSpaceRenderer {
     }
 
     this.ensureShipImage(this.model.ship.spriteUrl);
+    for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
 
@@ -152,6 +155,7 @@ export class LocalSpaceRenderer {
     }
     this.hitAreas = hitAreas;
 
+    this.drawNpcShips(width, height, timeSeconds);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
@@ -161,6 +165,112 @@ export class LocalSpaceRenderer {
     if (this.debugHardpoints) {
       this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
     }
+  }
+
+  private ensureNpcImage(url: string): HTMLImageElement {
+    const existing = this.npcImages.get(url);
+    if (existing) return existing;
+    const image = new Image();
+    image.onload = () => this.draw();
+    image.src = url;
+    this.npcImages.set(url, image);
+    return image;
+  }
+
+  private drawNpcShips(width: number, height: number, timeSeconds: number): void {
+    for (const npc of this.model.npcShips) {
+      const point = this.camera.worldToScreen(npc.position, width, height);
+      const shipWidth = this.camera.scale(npc.nominalLengthMeters);
+      const geometry: ShipScreenGeometry = {
+        center: point,
+        width: shipWidth,
+        height: shipWidth / npc.spriteAspectRatio,
+        angle: npc.headingRadians,
+      };
+      const image = this.ensureNpcImage(npc.spriteUrl);
+      const engineIntensity = npc.speed > 1 ? Math.max(0.35, Math.min(1, npc.speed / 110)) : 0;
+
+      if (engineIntensity > 0) {
+        this.engineEffects.drawExhaust(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          engineIntensity,
+          timeSeconds
+        );
+      }
+
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      this.context.rotate(npc.headingRadians);
+      if (image.complete && image.naturalWidth > 0) {
+        const offset = spriteDrawOffset(npc.hardpoints, geometry);
+        this.shipLighting.draw(this.context, {
+          image,
+          width: geometry.width,
+          height: geometry.height,
+          angle: npc.headingRadians,
+          light: { x: -0.72, y: -0.56 },
+          offsetX: offset.x,
+          offsetY: offset.y,
+        });
+      } else {
+        this.context.fillStyle = '#8597a1';
+        this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
+      }
+      this.context.restore();
+
+      if (engineIntensity > 0) {
+        this.engineEffects.drawGlow(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          engineIntensity,
+          timeSeconds
+        );
+      }
+
+      if (npc.laserActive && npc.targetAsteroidId) {
+        const target = this.model.asteroids.find((asteroid) => asteroid.id === npc.targetAsteroidId);
+        if (target) this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds);
+      }
+
+      const zoom = this.camera.getRelativeZoom();
+      if (zoom >= 1.55) {
+        this.context.fillStyle = 'rgba(184, 210, 216, .78)';
+        this.context.font = '9px ui-monospace, monospace';
+        this.context.textAlign = 'center';
+        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
+      }
+    }
+  }
+
+  private drawNpcMiningBeam(
+    shipPoint: ScreenPoint,
+    targetWorld: { readonly x: number; readonly y: number },
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    const target = this.camera.worldToScreen(targetWorld, width, height);
+    const pulse = 0.68 + Math.sin(timeSeconds * 13) * 0.18;
+    this.context.save();
+    this.context.strokeStyle = `rgba(121, 214, 235, ${pulse})`;
+    this.context.lineWidth = 1.4;
+    this.context.shadowColor = 'rgba(86, 205, 235, .7)';
+    this.context.shadowBlur = 7;
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+
+    this.context.strokeStyle = `rgba(160, 228, 241, ${pulse * 0.35})`;
+    this.context.lineWidth = 8;
+    this.context.beginPath();
+    this.context.moveTo(shipPoint.x, shipPoint.y);
+    this.context.lineTo(target.x, target.y);
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawAsteroid(

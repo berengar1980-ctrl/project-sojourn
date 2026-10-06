@@ -75,6 +75,15 @@ const surfaceTextures = fs.readFileSync(
 );
 
 assert(renderer.includes('MiningEffectsRenderer'), 'mining VFX must be split from scene renderer');
+assert(renderer.includes('drawNpcShips'), 'local space must render physical NPC miners');
+assert(
+  renderer.includes('drawNpcMiningBeam'),
+  'working NPC miners must visibly fire a mining beam at their target asteroid'
+);
+assert(
+  renderer.includes('npc.speed > 1') && renderer.includes('engineEffects.drawExhaust'),
+  'arriving and departing NPC miners must show engine thrust instead of popping in place'
+);
 assert(
   renderer.includes('this.camera.zoomAt(3'),
   'larger local space must preserve the previous initial visual scale'
@@ -350,6 +359,11 @@ assert(
 assert(
   controller.includes('createLocalPanelActions') && localActions.includes('onCancelMining'),
   'app controller must wire mining cancellation'
+);
+assert(
+  controller.includes('createNpcLocalMiningService') &&
+    controller.includes('state.localNpcMining?.tick(deltaSeconds)'),
+  'active asteroid fields must advance NPC miner traffic every frame'
 );
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');

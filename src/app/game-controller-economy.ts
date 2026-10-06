@@ -34,6 +34,11 @@ import {
   createShipComponentInventoryService,
   type ShipComponentInventoryService,
 } from '../systems/ships';
+import {
+  createNpcSectorService,
+  type NpcSectorService,
+} from '../systems/npcs/npc-sector-service';
+import type { SectorNpcState } from '../core/npc-types';
 
 export interface ControllerEconomy {
   readonly markets: EconomyMarketService;
@@ -44,6 +49,7 @@ export interface ControllerEconomy {
   readonly salvage: SalvageEconomyService;
   readonly components: ShipComponentInventoryService;
   readonly npcs: NpcEconomyService;
+  readonly sectorNpcs: NpcSectorService;
 }
 
 export function createControllerEconomy(): ControllerEconomy {
@@ -52,7 +58,8 @@ export function createControllerEconomy(): ControllerEconomy {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
   const trade = createPlayerTradeService(markets);
-  const npcStates = createSectorNpcEconomyStates();
+  const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
+  const sectorNpcs = createNpcSectorService(narrowsSector, npcStates);
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
@@ -60,6 +67,18 @@ export function createControllerEconomy(): ControllerEconomy {
     41,
     npcStates
   );
+
+  const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
+    positions: Object.fromEntries(
+      narrowsSector.locations.map((location) => [location.id, location.position])
+    ),
+    travel: {
+      requestTravel: (npc, destinationId, reason) =>
+        sectorNpcs.requestTravel(npc as SectorNpcState, destinationId, reason),
+      isTravelling: (npc) => sectorNpcs.isTravelling(npc as SectorNpcState),
+    },
+  });
+  npcEconomy.advanceDay(0);
 
   return {
     markets,
@@ -69,10 +88,7 @@ export function createControllerEconomy(): ControllerEconomy {
     mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
     components: createShipComponentInventoryService(trade.player),
-    npcs: createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-      positions: Object.fromEntries(
-        narrowsSector.locations.map((location) => [location.id, location.position])
-      ),
-    }),
+    npcs: npcEconomy,
+    sectorNpcs,
   };
 }
