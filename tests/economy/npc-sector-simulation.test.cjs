@@ -66,6 +66,12 @@ delete upgrader.travel;
 service.tick(0.1);
 assert.equal(upgrader.componentUpgradeCount, 1, 'experienced NPCs must invest in ship components');
 assert(upgrader.installedComponents, 'NPC component loadout must persist on the ship state');
+service.tick(0.1);
+assert.equal(
+  upgrader.componentUpgradeCount,
+  1,
+  'NPC component upgrades must respect a completed-run cooldown'
+);
 
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 const rendererSource = fs.readFileSync(
