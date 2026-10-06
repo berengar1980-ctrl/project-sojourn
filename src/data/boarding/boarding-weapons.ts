@@ -1,7 +1,4 @@
-import type {
-  BoardingMeleeProfile,
-  BoardingWeaponProfile,
-} from '../../core/boarding-types';
+import type { BoardingMeleeProfile, BoardingWeaponProfile } from '../../core/boarding-types';
 
 export const boardingRangedWeapons = {
   sidearm: {
