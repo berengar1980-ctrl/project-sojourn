@@ -19,12 +19,21 @@ const RCS_BURST_URL = new URL(
   import.meta.url
 ).href;
 
-const AMBIENCE_VOLUME = 0.22;
-const RCS_VOLUME = 0.46;
+const DEFAULT_AMBIENCE_VOLUME = 0.22;
+const DEFAULT_RCS_VOLUME = 0.46;
+const AUDIO_SETTINGS_STORAGE_KEY = 'sojourn.audio-settings.v1';
 const RCS_POOL_SIZE = 4;
 const RCS_RETRIGGER_SECONDS = 0.12;
 
+export interface GameAudioSettings {
+  readonly ambienceVolume: number;
+  readonly rcsVolume: number;
+}
+
 export interface GameAudioService {
+  getSettings(): GameAudioSettings;
+  setAmbienceVolume(volume: number): GameAudioSettings;
+  setRcsVolume(volume: number): GameAudioSettings;
   updatePlayerRcs(
     hardpoints: ShipHardpoints,
     state: Pick<LocalShipState, 'speed' | 'turnRateRadiansPerSecond' | 'angularThrust' | 'lateralThrust'>,
@@ -32,6 +41,46 @@ export interface GameAudioService {
   ): void;
   clearPlayerRcs(): void;
   destroy(): void;
+}
+
+function clampVolume(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+}
+
+function loadAudioSettings(): GameAudioSettings {
+  try {
+    const raw = window.localStorage.getItem(AUDIO_SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      return {
+        ambienceVolume: DEFAULT_AMBIENCE_VOLUME,
+        rcsVolume: DEFAULT_RCS_VOLUME,
+      };
+    }
+    const parsed = JSON.parse(raw) as Partial<GameAudioSettings>;
+    return {
+      ambienceVolume: clampVolume(
+        typeof parsed.ambienceVolume === 'number'
+          ? parsed.ambienceVolume
+          : DEFAULT_AMBIENCE_VOLUME
+      ),
+      rcsVolume: clampVolume(
+        typeof parsed.rcsVolume === 'number' ? parsed.rcsVolume : DEFAULT_RCS_VOLUME
+      ),
+    };
+  } catch {
+    return {
+      ambienceVolume: DEFAULT_AMBIENCE_VOLUME,
+      rcsVolume: DEFAULT_RCS_VOLUME,
+    };
+  }
+}
+
+function saveAudioSettings(settings: GameAudioSettings): void {
+  try {
+    window.localStorage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Audio still works when browser storage is unavailable.
+  }
 }
 
 function createAudio(url: string, volume: number): HTMLAudioElement {
@@ -67,12 +116,13 @@ async function loadChunkedAmbience(): Promise<string> {
 }
 
 export function createGameAudioService(): GameAudioService {
-  const ambience = createAudio('', AMBIENCE_VOLUME);
+  let settings = loadAudioSettings();
+  const ambience = createAudio('', settings.ambienceVolume);
   ambience.loop = true;
 
   const rcsPool = Array.from(
     { length: RCS_POOL_SIZE },
-    () => createAudio(RCS_BURST_URL, RCS_VOLUME)
+    () => createAudio(RCS_BURST_URL, settings.rcsVolume)
   );
   let ambienceObjectUrl: string | null = null;
   let rcsPoolIndex = 0;
@@ -116,7 +166,7 @@ export function createGameAudioService(): GameAudioService {
     rcsPoolIndex = (rcsPoolIndex + 1) % rcsPool.length;
     audio.pause();
     audio.currentTime = 0;
-    audio.volume = Math.min(0.62, RCS_VOLUME * (0.7 + intensity * 0.3));
+    audio.volume = clampVolume(settings.rcsVolume * (0.7 + intensity * 0.3));
     void audio.play().catch(() => {
       // A future user gesture will unlock playback if the browser blocked this attempt.
     });
@@ -126,6 +176,25 @@ export function createGameAudioService(): GameAudioService {
   window.addEventListener('keydown', unlock);
 
   return {
+    getSettings() {
+      return { ...settings };
+    },
+
+    setAmbienceVolume(volume) {
+      settings = { ...settings, ambienceVolume: clampVolume(volume) };
+      ambience.volume = settings.ambienceVolume;
+      saveAudioSettings(settings);
+      playAmbience();
+      return { ...settings };
+    },
+
+    setRcsVolume(volume) {
+      settings = { ...settings, rcsVolume: clampVolume(volume) };
+      for (const audio of rcsPool) audio.volume = settings.rcsVolume;
+      saveAudioSettings(settings);
+      return { ...settings };
+    },
+
     updatePlayerRcs(hardpoints, state, timeSeconds) {
       playAmbience();
       const demand: ManeuverDemand = {
