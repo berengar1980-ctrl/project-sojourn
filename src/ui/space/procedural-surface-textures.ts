@@ -297,6 +297,28 @@ function paintGasGiantPixel(
   paintPixel(data, index, first, second, wave * 0.64, 0.86 + turbulence * 0.16);
 }
 
+function paintPaleReachGasGiantPixel(
+  data: Uint8ClampedArray,
+  index: number,
+  seed: number,
+  nx: number,
+  ny: number,
+  palette: PlanetPalette
+): void {
+  const turbulence = fbm(seed + 3907, nx * 5.2, ny * 6.4, 5);
+  const curls = fbm(seed + 4903, nx * 10.5 + ny * 2.2, ny * 12.5 - nx * 1.7, 3);
+  const warpedY = ny + (turbulence - 0.5) * 0.24 + Math.sin(nx * 4.3) * 0.045;
+  const broad = Math.sin(warpedY * 18 + curls * 2.2) * 0.5 + 0.5;
+  const fine = Math.sin(warpedY * 46 - turbulence * 4.5) * 0.5 + 0.5;
+  const stormX = (nx - 0.34) / 0.32;
+  const stormY = (ny + 0.08) / 0.16;
+  const storm = Math.max(0, 1 - Math.hypot(stormX, stormY));
+  const first = broad > 0.48 ? palette.lowland : palette.water;
+  const second = storm > 0.12 ? palette.ice : palette.highland;
+  const mix = Math.min(1, fine * 0.48 + broad * 0.28 + storm * 0.62);
+  paintPixel(data, index, first, second, mix, 0.88 + turbulence * 0.13 + storm * 0.08);
+}
+
 // prettier-ignore
 function paintPlanetTerrain(
   data: Uint8ClampedArray,
@@ -371,7 +393,11 @@ export function createPlanetTexture(
       }
 
       if (biome === 'gas-giant') {
-        paintGasGiantPixel(image.data, index, seed, nx, ny, palette);
+        if (id === 'pale-reach') {
+          paintPaleReachGasGiantPixel(image.data, index, seed, nx, ny, palette);
+        } else {
+          paintGasGiantPixel(image.data, index, seed, nx, ny, palette);
+        }
         continue;
       }
 
