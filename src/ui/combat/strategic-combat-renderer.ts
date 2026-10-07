@@ -12,6 +12,7 @@ import {
   spriteDrawOffset,
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -331,6 +332,10 @@ export class StrategicCombatRenderer {
       this.context.fillRect(-geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
     }
     this.context.restore();
+
+    if (combatant.pirateMark) {
+      drawPirateInsignia(this.context, combatant.pirateMark, geometry);
+    }
 
     if (hardpoints) {
       this.engineEffects.drawGlow(this.context, hardpoints, geometry, engineIntensity, timeSeconds, 'above');
