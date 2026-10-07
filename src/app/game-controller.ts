@@ -8,6 +8,7 @@ import { createLocalSpaceViewModel } from '../features/local-space/local-space-v
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
+import { sectorSensorContactInfo } from '../systems/scanning/sensor-contact-service';
 import {
   createNpcLocalMiningService,
   type NpcLocalMiningService,
@@ -182,6 +183,7 @@ function advanceEconomyDay(
     economy.situations.advanceNextDay();
     economy.simulation.advanceNextDay();
     economy.npcs.advanceNextDay();
+    economy.marketIntel.recordHistory(economy.situations.currentDay);
   }
 }
 
@@ -227,30 +229,55 @@ function createControllerStarPanel(options: {
 function createControllerStarModel(
   navigation: NavigationService,
   ship: ShipDefinition,
-  economy: ControllerEconomy
+  economy: ControllerEconomy,
+  sensorCrewSkill: number,
+  sensorModifier: number
 ) {
+  const navigationSnapshot = navigation.getSnapshot();
+  economy.marketIntel.observeFromSensors(
+    narrowsSector.locations.map((location) => ({
+      locationId: location.id,
+      position: location.position,
+    })),
+    navigationSnapshot.currentPosition,
+    economy.situations.currentDay,
+    sensorCrewSkill,
+    sensorModifier
+  );
+
+  const npcShips = economy.sectorNpcs.npcs.flatMap((npc) => {
+    const definition = getShipDefinition(npc.shipId);
+    if (!definition) return [];
+    const position = economy.sectorNpcs.livePosition(npc);
+    const contact = sectorSensorContactInfo({
+      playerPosition: navigationSnapshot.currentPosition,
+      targetPosition: position,
+      sensorSkill: sensorCrewSkill,
+      sensorModifier,
+      civilianTransponder: true,
+    });
+    if (!contact.visible) return [];
+    return [
+      {
+        id: npc.id,
+        name: contact.identified ? npc.name : 'Unbekannter Kontakt',
+        job: npc.job,
+        position,
+        headingRadians: economy.sectorNpcs.liveHeading(npc),
+        isTravelling: economy.sectorNpcs.isTravelling(npc),
+        nominalLengthMeters: definition.nominalLengthMeters,
+        spriteUrl: definition.sprite.assetUrl,
+        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+        hardpoints: definition.sprite.hardpoints,
+      },
+    ];
+  });
+
   return createStarMapViewModel(
     narrowsSector,
-    navigation.getSnapshot(),
+    navigationSnapshot,
     ship,
-    economy.sectorNpcs.npcs.flatMap((npc) => {
-      const definition = getShipDefinition(npc.shipId);
-      if (!definition) return [];
-      return [
-        {
-          id: npc.id,
-          name: npc.name,
-          job: npc.job,
-          position: economy.sectorNpcs.livePosition(npc),
-          headingRadians: economy.sectorNpcs.liveHeading(npc),
-          isTravelling: economy.sectorNpcs.isTravelling(npc),
-          nominalLengthMeters: definition.nominalLengthMeters,
-          spriteUrl: definition.sprite.assetUrl,
-          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-          hardpoints: definition.sprite.hardpoints,
-        },
-      ];
-    })
+    npcShips
   );
 }
 
@@ -312,10 +339,16 @@ function syncControllerNavigationCrewPerformance(context: ControllerRuntimeConte
 }
 
 function controllerStarModel(context: ControllerRuntimeContext) {
+  const runtime = resolveShipRuntimeSetup(
+    context.state.activeShip,
+    controllerShipRuntimeOptions(context)
+  );
   return createControllerStarModel(
     context.navigation,
     context.state.activeShip,
-    context.economy
+    context.economy,
+    runtime.sensorCrewSkill,
+    runtime.sensorModifier
   );
 }
 
