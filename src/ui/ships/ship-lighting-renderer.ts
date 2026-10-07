@@ -39,7 +39,7 @@ export class ShipLightingRenderer {
   }
 
   draw(context: CanvasRenderingContext2D, options: LitShipDrawOptions): void {
-    const renderScale = options.preserveDetail ? 1.6 : this.detailRenderScale(options.width);
+    const renderScale = options.preserveDetail ? 2.4 : this.detailRenderScale(options.width);
     const pixelWidth = Math.max(1, Math.ceil(options.width * renderScale));
     const pixelHeight = Math.max(1, Math.ceil(options.height * renderScale));
     this.resize(pixelWidth, pixelHeight);
@@ -57,7 +57,7 @@ export class ShipLightingRenderer {
 
     context.save();
     context.globalAlpha = 0.97;
-    context.imageSmoothingEnabled = true;
+    context.imageSmoothingEnabled = !(options.preserveDetail && options.width < 18);
     context.imageSmoothingQuality = 'high';
     context.filter = options.preserveDetail ? 'none' : this.appearanceFilter(options.width);
     context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
