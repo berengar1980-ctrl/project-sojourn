@@ -39,6 +39,8 @@ export interface StrategicCombatantSetup {
   readonly sensorRangeMultiplier?: number;
   readonly aiControlled?: boolean;
   readonly aiAggression?: number;
+  readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
 }
 
 export interface StrategicCombatantSnapshot {
@@ -55,6 +57,8 @@ export interface StrategicCombatantSnapshot {
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
   readonly tactic: CombatTactic;
+  readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly shieldImpacts: readonly ShieldImpactEffect[];
 }
 
@@ -289,6 +293,8 @@ function snapshot(combatant: MutableCombatant): StrategicCombatantSnapshot {
     turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
     angularThrust: combatant.angularThrust,
     tactic: combatant.tactic,
+    ...(combatant.setup.factionId ? { factionId: combatant.setup.factionId } : {}),
+    ...(combatant.setup.pirateMark ? { pirateMark: combatant.setup.pirateMark } : {}),
     shieldImpacts: combatant.shieldImpacts.map((impact) => ({ ...impact })),
   };
 }

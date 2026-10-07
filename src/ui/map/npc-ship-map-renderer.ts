@@ -1,4 +1,5 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { MapCamera } from './map-camera';
@@ -58,6 +59,7 @@ export class NpcShipMapRenderer {
         npc.headingRadians,
         npc.isTravelling
       );
+      if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
       this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
       hits.push({
         id: npc.id,
@@ -142,7 +144,8 @@ export class NpcShipMapRenderer {
         preserveDetail: true,
       });
     } else {
-      this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
+      this.context.fillStyle =
+        npc.job === 'pirate' ? '#c78f72' : npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
       this.context.fillRect(
         -geometry.width / 2,
         -geometry.height / 2,

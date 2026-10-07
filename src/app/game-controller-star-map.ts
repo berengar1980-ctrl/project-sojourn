@@ -78,6 +78,7 @@ export function createControllerStarModel(
   );
 
   const npcShips = economy.sectorNpcs.npcs.flatMap((npc) => {
+    if (npc.hullHp <= 0) return [];
     const definition = getShipDefinition(npc.shipId);
     if (!definition) return [];
     const position = economy.sectorNpcs.livePosition(npc);
@@ -86,14 +87,17 @@ export function createControllerStarModel(
       targetPosition: position,
       sensorSkill: sensorCrewSkill,
       sensorModifier,
-      civilianTransponder: true,
+      civilianTransponder: npc.pirate !== true,
+      pirate: npc.pirate === true,
     });
     if (!contact.visible) return [];
     return [
       {
         id: npc.id,
         name: contact.identified ? npc.name : 'Unbekannter Kontakt',
-        job: npc.job,
+        job: contact.identified ? npc.job : 'patrol',
+        ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
+        ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
         position,
         headingRadians: economy.sectorNpcs.liveHeading(npc),
         isTravelling: economy.sectorNpcs.isTravelling(npc),
