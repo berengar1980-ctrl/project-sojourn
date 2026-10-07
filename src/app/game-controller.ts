@@ -405,6 +405,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
+  destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
   state.mode = 'star-map';
@@ -419,15 +420,49 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       runSceneZoomTransition(context.root, () => mountControllerMining(context)),
     onEnterSalvageSpace: () =>
       runSceneZoomTransition(context.root, () => mountControllerSalvage(context)),
+    onSelectNpc: (id) => {
+      state.selectedNpcId = id || null;
+      if (id) context.navigation.selectDestination(null);
+      state.panels.star?.update(controllerStarModel(context));
+    },
+    onAttackNpc: (id) => {
+      state.selectedNpcId = id;
+      context.engagements.attackNpc(id);
+      state.panels.star?.update(controllerStarModel(context));
+    },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
   });
   mountControllerSwitcher(context);
+}
+
+function mountControllerCombat(context: ControllerRuntimeContext): void {
+  const combat = context.engagements.activePlayerCombat();
+  if (!combat) return;
+  const { state } = context;
+  destroyScenePanels(state.panels);
+  destroyControllerSalvage(context);
+  destroyControllerCombat(context);
+  state.localSpace = null;
+  state.localNpcMining = null;
+  state.mode = 'combat';
+  context.audio.clearPlayerRcs();
+  state.combatPanel = createStrategicCombatPanel({
+    root: context.root,
+    combat,
+    onReturn: () => {
+      context.engagements.finishPlayerCombat();
+      runSceneZoomTransition(context.root, () => mountControllerStarMap(context));
+    },
+  });
+  state.shipSwitcher?.destroy();
+  state.shipSwitcher = null;
 }
 
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
   destroyControllerSalvage(context);
+  destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
   destroyScenePanels(state.panels);
@@ -470,6 +505,7 @@ function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelAc
 function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = false): void {
   const { state, economy } = context;
   destroyControllerSalvage(context);
+  destroyControllerCombat(context);
   destroyScenePanels(state.panels);
   state.mode = 'local-space';
   const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
@@ -514,6 +550,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   const { state, economy } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
+  destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
   const location = salvageLocationById(context.navigation.getSnapshot().currentLocationId);
