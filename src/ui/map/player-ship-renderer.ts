@@ -8,6 +8,10 @@ import {
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import {
+  longitudinalManeuverDemand,
+  type ManeuverDemand,
+} from '../../systems/ships/ship-maneuver-thrusters';
 import { ShipLightingRenderer, type ShipLightVector } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
@@ -74,10 +78,12 @@ export class PlayerShipRenderer {
       angle,
     };
 
-    const maneuverDemand = idle ?? {
-      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
-      angularThrust: ship.angularThrust,
-      lateralThrust: ship.lateralThrust,
+    const maneuverDemand: ManeuverDemand = {
+      turnRateRadiansPerSecond:
+        idle?.turnRateRadiansPerSecond ?? ship.turnRateRadiansPerSecond,
+      angularThrust: idle?.angularThrust ?? ship.angularThrust,
+      lateralThrust: idle?.lateralThrust ?? ship.lateralThrust,
+      longitudinalThrust: longitudinalManeuverDemand(idle?.speed ?? 0),
     };
     const engineIntensity = ship.isTravelling ? 0.82 : 0;
 

@@ -55,7 +55,13 @@ assert.equal(service.isTravelling(freighter), false);
 const patrol = npcs.find((npc) => npc.job === 'patrol');
 assert(patrol);
 service.tick(0.1);
-assert(service.isTravelling(patrol), 'idle patrol ships must autonomously begin a security route');
+assert.equal(
+  service.isTravelling(patrol),
+  false,
+  'sector service alone must not bypass patrol rest and autonomy timing'
+);
+assert.equal(service.requestPatrol(patrol), true, 'autonomy must be able to request a patrol route');
+assert(service.isTravelling(patrol));
 
 const upgrader = npcs.find((npc) => npc.job === 'freighter' && npc.id !== freighter.id);
 assert(upgrader);
@@ -85,5 +91,5 @@ assert(
 );
 
 console.log(
-  'PASS physical NPC ships, jobs, fuel, travel, patrol routing, upgrades and map presence'
+  'PASS physical NPC ships, jobs, fuel, explicit patrol routing, upgrades and map presence'
 );

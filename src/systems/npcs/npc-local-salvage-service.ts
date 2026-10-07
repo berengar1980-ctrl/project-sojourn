@@ -104,6 +104,7 @@ function eligible(npc: SectorNpcState, locationId: string): boolean {
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
     !npc.travel &&
+    npc.autonomy?.phase === 'working' &&
     cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
   );
 }

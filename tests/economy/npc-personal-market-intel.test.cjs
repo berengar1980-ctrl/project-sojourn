@@ -57,6 +57,14 @@ function createMarkets(definitions) {
   };
 }
 
+function tickUntil(service, predicate, message, maximumTicks = 2200) {
+  for (let tick = 0; tick < maximumTicks; tick += 1) {
+    if (predicate()) return;
+    service.tick(0.25);
+  }
+  assert(predicate(), message);
+}
+
 const allocator = {
   createMinedResource(_resourceId, amount) {
     return amount;
@@ -144,7 +152,11 @@ function trader(id = 'trader') {
   markets.getEntry('old-best', 'steel').price = 45;
   markets.getEntry('old-second', 'steel').price = 500;
 
-  service.advanceDay(0);
+  tickUntil(
+    service,
+    () => requestedDestination !== null,
+    'trader must eventually complete thinking, loading and launch preparation'
+  );
 
   assert.equal(
     requestedDestination,
@@ -168,14 +180,22 @@ function trader(id = 'trader') {
   travelling = false;
   npc.locationId = 'old-best';
   requestedDestination = null;
-  service.advanceDay(4);
+  service.tick(0.25);
 
   assert.equal(
     npc.marketIntel['old-best'].entries.steel.price,
     45,
     'arrival must refresh the local market to the exact current price'
   );
+
+  service.advanceDay(4);
   assert.equal(npc.marketIntel['old-best'].observedDay, 4);
+
+  tickUntil(
+    service,
+    () => requestedDestination !== null,
+    'captain must reconsider the stale route after the arrival dwell'
+  );
   assert.equal(
     requestedDestination,
     'old-second',
@@ -215,7 +235,11 @@ function trader(id = 'trader') {
   assert(unknown, 'limited personal network must leave at least one remote market unknown');
 
   unknown.entries.steel.price = 5000;
-  service.advanceDay(0);
+  tickUntil(
+    service,
+    () => requestedDestination !== null,
+    'trader should still find a route among known reports'
+  );
 
   assert(requestedDestination, 'trader should still find a route among known reports');
   assert.notEqual(

@@ -98,6 +98,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-07 | Sternkarten-Verfolgung und Schiffskampf | Spieler kann reale NPC-Schiffe auf der Sternkarte auswählen und angreifen; bewegliche Ziele werden physisch verfolgt, Verteidiger fliehen oder gehen zum Gegenangriff über, Kontakt startet den strategischen Waffenloop. Aggressive Patrol-NPCs können andere NPC-Schiffe eigenständig abfangen. `travel.chase` offen → umgesetzt; `combat.start` offen → umgesetzt; `combat.weapon_fire` bleibt teilweise. Vor-Kontakt-Flucht ist neu, `combat.flee` bleibt bis zum vollständigen In-Combat-Retreat offen. |
 | 2026-10-07 | Crew-Skill Runtime Audit | Alle Voidbound-Verwendungen der sieben Stationsskills auditiert. Sensorik live an NPC-Kontakte, Transponder und echte historische Markt-Intel gekoppelt; Engineering-Schildregeneration mit 3/7-s Sperren portiert. Fehlende Parent-Systeme bleiben ausdrücklich READY/OPEN statt fälschlich umgesetzt. |
 | 2026-10-07 | Persönliches NPC-Markt-Intel | Händler, Miner und Salvager besitzen eigene Markt-Snapshots. Lokale Märkte werden beim Aufenthalt exakt aktualisiert, entfernte Berichte altern und unbekannte Märkte beeinflussen keine Route. `npc.trade_routes` und `npc.resource_side_trade` bleiben umgesetzt; keine Statusänderung. |
+| 2026-10-07 | NPC-Autonomie State Machine | Händler, Miner, Salvager und Patrol teilen eine sekundengenaue Activity-State-Machine mit Dock-/Liege-/Denk-/Lade-/Startzeiten. Persistente Persönlichkeit beeinflusst Timing und Entscheidungen; Patrols erhalten echte Ruhephasen. Bestehende NPC-Features bleiben umgesetzt; keine Statusänderung. |
 
 ## Vollständige Matrix
 
@@ -264,13 +265,13 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ✅ Umgesetzt | `npc.civilian_visibility` | Civilian traffic remains visible through transponders | Zivile NPC-Schiffe werden über eine sensor- und hardwareabhängige Transponderreichweite sichtbar; die Sternkarte zeigt nicht mehr global alle NPCs. | übernehmen |
 | 🟨 Teilweise | `npc.corsair_stealth` | Corsairs retain shorter tactical detection range | Voidbounds verkürzte Corsair-Erfassungs- und Identifikationsreichweiten sind im Sensor-Contact-Service exakt portiert; eine echte Corsair-Population fehlt noch. | übernehmen |
 | ⬜ Offen | `npc.trade_charters` | Civilian NPCs receive Veylan/Mercator trade charters | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
-| ✅ Umgesetzt | `npc.trade_routes` | Civilian NPCs buy, move and sell cargo | NPC-Händler kaufen physisch, reisen und verkaufen gegen denselben Marktstate wie der Spieler; Zielwahl und Verkaufsplanung verwenden dabei nur persönliches, alterndes Markt-Intel statt globaler Livepreise. | übernehmen |
+| ✅ Umgesetzt | `npc.trade_routes` | Civilian NPCs buy, move and sell cargo | NPC-Händler kaufen physisch, reisen und verkaufen gegen denselben Marktstate wie der Spieler; Zielwahl nutzt persönliches, alterndes Markt-Intel und läuft über Andocken, Liegezeit, Denken, Laden, Startvorbereitung und Flug statt Sofortentscheidungen. | übernehmen |
 | ✅ Umgesetzt | `npc.resource_side_trade` | Miner and salvager NPCs choose their work destination first, then may use only ordinary cargo space for one profitable low-detour trade stop before continuing to the original job | Mining-/Salvage-NPCs können auf dem Weg zum Job profitablen Nebenhandel durchführen; auch dieser verwendet ausschließlich das persönliche Markt-Intel des NPCs. | übernehmen |
-| ✅ Umgesetzt | `npc.personal_route_planning` | Civilian NPCs use the shared geometric route planner with capability- and temperament-dependent safe/balanced/fast policies that automatically adapt when their ship strength changes | NPC-Routenpolitik hängt von Rolle/Aggression ab und nutzt den gemeinsamen Planner. | offen |
+| ✅ Umgesetzt | `npc.personal_route_planning` | Civilian NPCs use the shared geometric route planner with capability- and temperament-dependent safe/balanced/fast policies that automatically adapt when their ship strength changes | NPC-Routenpolitik nutzt den gemeinsamen Planner und wird zusätzlich durch persistente Risikobereitschaft, Geduld, Profitfokus, Routinen und bevorzugte Märkte beeinflusst. | übernehmen |
 | ⬜ Offen | `npc.travel_corsair_risk` | Existing corsair NPCs can intercept travelling NPCs along their actual route; personal red space increases contact range and attack pressure while stronger NPCs can treat the same world space as safer | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `npc.travel_raid_repair_delay` | NPCs damaged by a strategic corsair interception actually pause for field repairs before resuming the stored route | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `npc.financial_integrity` | NPC accounts cannot remain invalid/negative | Transaktionen schützen viele Invarianten; der vollständige Voidbound Audit/Repair-Unterbau fehlt. | offen |
-| ✅ Umgesetzt | `npc.resource_work` | Miner and salvager NPCs select sites and complete persistent work cycles | NPC-Miner/Salvager reisen sichtbar, scannen/arbeiten, füllen Cargo und fliegen zum Verkauf. | offen |
+| ✅ Umgesetzt | `npc.resource_work` | Miner and salvager NPCs select sites and complete persistent work cycles | NPC-Miner/Salvager verwenden dieselbe Autonomie-State-Machine wie Händler: Arbeitsflug, Working-Phase, sichtbarer Scan/Abbau bzw. Bergung, volle Fracht, Denk-/Startphase und Verkaufsflug. | übernehmen |
 | ⬜ Offen | `npc.market_sabotage` | NPC traders can finance anonymous corsair blockades from profitable opportunities; hired corsairs are exclusive and other civilians weigh blockade risk before routing there | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `npc.smuggling_inspections` | NPC contraband concealment, Fleet scans, inspection choices, fines and confiscation remain deterministic and bounded | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `npc.corsair_hulls` | Corsairs use corsair hull classes, not civilian freighters | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
@@ -533,6 +534,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 - Kampagnen unter `campaigns/`
 
 ### Project Sojourn
+- `docs/NPC_AUTONOMY.md`
 - `docs/VOIDBOUND_CREW_SKILL_RUNTIME.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ECONOMY_PORT_PLAN.md`

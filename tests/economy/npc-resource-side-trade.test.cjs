@@ -69,6 +69,14 @@ function createMarkets() {
   };
 }
 
+function tickUntil(service, predicate, message, maximumTicks = 2200) {
+  for (let tick = 0; tick < maximumTicks; tick += 1) {
+    if (predicate()) return;
+    service.tick(0.25);
+  }
+  assert(predicate(), message);
+}
+
 const resources = [
   {
     id: 'steel',
@@ -114,6 +122,12 @@ function createMiner() {
     cargo: {},
     workResourceIds: ['ferrite'],
     workLocationId: 'work',
+    personality: {
+      riskTolerance: 0.4,
+      patience: 0.4,
+      profitDrive: 0.8,
+      routineBias: 0.5,
+    },
   };
 }
 
@@ -164,32 +178,47 @@ function createMiner() {
   });
   const steelBefore = simulation.getResourceTotal('steel');
 
-  service.advanceDay(0);
+  service.tick(0.25);
+  assert.equal(miner.locationId, 'source', 'worker must not instantly jump into a side trade');
 
-  assert.equal(miner.locationId, 'near-stop');
-  assert(miner.sideTradePlan, 'purchase must create an explicit side-trade plan');
-  assert.equal(miner.sideTradePlan.workLocationId, 'work');
-  assert.equal(miner.cargo.steel, 5);
+  tickUntil(
+    service,
+    () =>
+      miner.locationId === 'near-stop' &&
+      miner.sideTradePlan &&
+      miner.cargo.steel === 5,
+    'worker must eventually load the bounded side trade and travel to its stop'
+  );
+
   assert.equal(markets.markets[0].entries.steel.stock, 35);
   assert.equal(miner.cargo.narcotics, undefined, 'ordinary side trade must reject illegal cargo');
   assert.equal(simulation.getResourceTotal('steel'), steelBefore);
 
   const creditsAfterPurchase = miner.credits;
-  service.advanceDay(1);
+  tickUntil(
+    service,
+    () =>
+      miner.locationId === 'work' &&
+      miner.sideTradePlan === undefined &&
+      miner.cargo.steel === undefined,
+    'worker must unload, dwell, then resume its original work destination'
+  );
 
-  assert.equal(miner.locationId, 'work', 'worker must resume the fixed work destination');
-  assert.equal(miner.sideTradePlan, undefined);
-  assert.equal(miner.cargo.steel, undefined);
   assert.equal(markets.markets[1].entries.steel.stock, 15);
   assert(miner.credits > creditsAfterPurchase);
   assert.equal(simulation.getResourceTotal('steel'), steelBefore);
 
+  tickUntil(
+    service,
+    () => miner.autonomy?.phase === 'working',
+    'worker must enter the shared working phase at its work destination'
+  );
   const ferriteBefore = simulation.getResourceTotal('ferrite');
-  service.advanceDay(2);
+  service.advanceDay(0);
 
   assert.equal(miner.locationId, 'work');
   assert.equal(miner.cargo.ferrite, 8, 'worker must begin resource work after the trade stop');
   assert.equal(simulation.getResourceTotal('ferrite'), ferriteBefore);
 }
 
-console.log('PASS bounded NPC resource side trade and work resumption');
+console.log('PASS timed bounded NPC side trade, dwell and work resumption');

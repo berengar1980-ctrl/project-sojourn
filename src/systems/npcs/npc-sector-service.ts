@@ -23,6 +23,7 @@ export interface NpcSectorServiceOptions {
 export interface NpcSectorService {
   readonly npcs: readonly SectorNpcState[];
   requestTravel(npc: SectorNpcState, destinationId: string, reason?: string): boolean;
+  requestPatrol(npc: SectorNpcState): boolean;
   startPursuit(
     npc: SectorNpcState,
     targetKind: NpcCombatTargetKind,
@@ -354,6 +355,14 @@ export function createNpcSectorService(
       return startLeg(npc, stops[0]!, destinationId, stops, reason + ' · Tankstopp');
     },
 
+    requestPatrol(npc) {
+      if (npc.job !== 'patrol' || npc.travel || npc.combatMovement || npc.hullHp <= 0) {
+        return false;
+      }
+      const target = patrolDestination(world, npc);
+      return target ? service.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
+    },
+
     startPursuit(npc, targetKind, targetId, position, reason = 'Verfolgung') {
       return beginCombatMovement(npc, 'pursue', targetKind, targetId, position, reason);
     },
@@ -437,10 +446,6 @@ export function createNpcSectorService(
             npc.fuel = npc.fuelCapacity;
           }
           if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
-          if (npc.job === 'patrol') {
-            const target = patrolDestination(world, npc);
-            if (target) service.requestTravel(npc, target, 'Sicherheitspatrouille');
-          }
           continue;
         }
 

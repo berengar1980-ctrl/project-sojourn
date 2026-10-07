@@ -29,6 +29,12 @@ const miner = {
   hullHp: 72,
   hullMaxHp: 72,
   aggression: 20,
+  autonomy: {
+    phase: 'working',
+    secondsRemaining: 0,
+    lastLocationId: 'test-field',
+    wasTravelling: false,
+  },
   activityId: 'dock',
   activity: 'Wartet',
   successfulRuns: 0,
@@ -60,11 +66,23 @@ const asteroid = {
 };
 
 let departed = false;
+const restingMiner = {
+  ...miner,
+  id: 'npc-miner-resting',
+  cargo: {},
+  autonomy: {
+    phase: 'resting',
+    secondsRemaining: 10,
+    lastLocationId: 'test-field',
+    wasTravelling: false,
+  },
+};
+
 const service = localMining.createNpcLocalMiningService({
   locationId: 'test-field',
   width: 1000,
   height: 800,
-  miners: [miner],
+  miners: [miner, restingMiner],
   getAsteroids: () => [asteroid],
   mine: (npc, resourceId, requested) => {
     const free = npc.cargoCapacity - Object.values(npc.cargo).reduce((sum, value) => sum + value, 0);
@@ -78,7 +96,11 @@ const service = localMining.createNpcLocalMiningService({
   },
 });
 
-assert.equal(service.ships.length, 1);
+assert.equal(
+  service.ships.length,
+  1,
+  'only NPCs in the shared working phase may enter the mining field'
+);
 const first = { ...service.ships[0].position };
 assert(
   first.x <= 18 || first.x >= 982 || first.y <= 18 || first.y >= 782,
