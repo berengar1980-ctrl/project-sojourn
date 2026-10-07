@@ -7,6 +7,8 @@ export type NpcTravelProfile = 'fast' | 'balanced' | 'safe';
 export type NpcWorkRiskPreference = 'safe' | 'risky';
 export type NpcCombatTargetKind = 'player' | 'npc';
 export type NpcCombatMovementMode = 'pursue' | 'flee' | 'engaged';
+export type PirateFactionId = 'harrow-corsairs' | 'black-tide';
+export type PirateEmblemId = 'harrow-claw' | 'black-cross';
 
 export interface NpcWorkEventRecord {
   readonly kind: 'mining' | 'salvage';
@@ -58,6 +60,13 @@ export interface SectorNpcState extends NpcEconomyState {
   lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;
   combatMovement?: NpcCombatMovementState;
+  pirate?: boolean;
+  pirateFaction?: PirateFactionId;
+  pirateEmblem?: PirateEmblemId;
+  pirateHomeLocationId?: string;
+  pirateHuntZoneId?: string;
+  pirateHuntZoneCycles?: number;
+  pirateRaidCooldownSeconds?: number;
 }
 
 export function npcJobShipRole(job: NpcJob): ShipRole {
