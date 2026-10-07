@@ -24,12 +24,12 @@ export class ShipManeuverEffectsRenderer {
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
     for (const burst of bursts) {
       const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
-      if (!thruster || (thruster.layer ?? 'above') !== layer) continue;
+      if (!thruster || (thruster.layer ?? 'below') !== layer) continue;
       this.drawThruster(context, source, geometry, thruster, burst.intensity, timeSeconds);
     }
   }
@@ -40,12 +40,12 @@ export class ShipManeuverEffectsRenderer {
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     const bursts = activeManeuverThrusterBursts(source, demand, timeSeconds);
     for (const burst of bursts) {
       const thruster = source.maneuverThrusters.find((candidate) => candidate.id === burst.id);
-      if (!thruster || (thruster.layer ?? 'above') !== layer) continue;
+      if (!thruster || (thruster.layer ?? 'below') !== layer) continue;
 
       const nozzle = projectHardpoint(thruster, source, geometry);
       const flicker =
@@ -70,7 +70,7 @@ export class ShipManeuverEffectsRenderer {
     geometry: ShipScreenGeometry,
     demand: ManeuverDemand,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     this.drawExhaust(context, source, geometry, demand, timeSeconds, layer);
     this.drawGlow(context, source, geometry, demand, timeSeconds, layer);

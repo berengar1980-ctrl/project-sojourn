@@ -10,13 +10,15 @@
       "id": "engine-upper",
       "x": 17,
       "y": 72,
-      "width": 18
+      "width": 18,
+      "layer": "below"
     },
     {
       "id": "engine-lower",
       "x": 17,
       "y": 141,
-      "width": 18
+      "width": 18,
+      "layer": "below"
     }
   ],
   "weaponLasers": [],
@@ -40,7 +42,7 @@
       "x": 256,
       "y": 155,
       "width": 7,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "tractorBeams": [
@@ -49,7 +51,7 @@
       "x": 173,
       "y": 107,
       "width": 8,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "maneuverThrusters": [
@@ -69,7 +71,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-stern-upper",
@@ -87,7 +89,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-front-upper",
@@ -105,7 +107,7 @@
       "width": 7,
       "forceX": -1,
       "forceY": 0,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "shield": {

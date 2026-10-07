@@ -36,7 +36,7 @@ export class MiningEffectsRenderer {
     const normal = normalized(model.miningImpact.normal);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
     const hardpoints = model.ship.hardpoints.miningLasers.filter(
-      (hardpoint) => (hardpoint.layer ?? 'above') === layer
+      (hardpoint) => (hardpoint.layer ?? 'below') === layer
     );
 
     this.context.save();
@@ -73,7 +73,7 @@ export class MiningEffectsRenderer {
     layer: ShipEffectLayer
   ): void {
     const hardpoints = (model.ship.hardpoints.tractorBeams ?? []).filter(
-      (hardpoint) => (hardpoint.layer ?? 'above') === layer
+      (hardpoint) => (hardpoint.layer ?? 'below') === layer
     );
     if (hardpoints.length === 0) return;
 

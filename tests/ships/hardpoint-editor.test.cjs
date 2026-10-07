@@ -13,11 +13,14 @@ assert(editor.includes('loadShipsFromServer()'), 'editor must preload ships befo
 assert(editor.includes('fetch("/"+path'), 'editor must fetch hardpoint JSONs from the dev server');
 assert(editor.includes('fetch(url,{cache:"no-store"})'), 'editor must load ship sprites from the dev server');
 assert(editor.includes('createWritable()'), 'editor must save JSON directly into the checkout');
+assert(editor.includes('data-type="engines"'), 'editor must expose editable engine hardpoints');
+assert(editor.includes('engines:{label:"Engine"'), 'engines must participate in editor selection and dragging');
 assert(editor.includes('weaponLasers'), 'editor must expose weapon laser hardpoints');
 assert(editor.includes('miningLasers'), 'editor must expose mining laser hardpoints');
 assert(editor.includes('maneuverThrusters'), 'editor must expose RCS hardpoints');
 assert(editor.includes('tractorBeams'), 'editor must expose tractor beam hardpoints');
 assert(editor.includes('fieldLayer'), 'editor must expose above/below effect layering');
+assert(editor.includes('width:7,layer:"below"'), 'new hardpoints must default to below');
 assert(editor.includes('pointermove'), 'editor must support drag calibration on the ship sprite');
 assert.equal(
   packageJson.scripts['hardpoints:edit'],

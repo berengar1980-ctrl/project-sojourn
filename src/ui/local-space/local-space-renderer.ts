@@ -234,12 +234,13 @@ export class LocalSpaceRenderer {
       const engineIntensity = npc.speed > 1 ? Math.max(0.35, Math.min(1, npc.speed / 110)) : 0;
 
       if (engineIntensity > 0) {
-        this.engineEffects.drawExhaust(
+        this.engineEffects.draw(
           this.context,
           npc.hardpoints,
           geometry,
           engineIntensity,
-          timeSeconds
+          timeSeconds,
+          'below'
         );
       }
 
@@ -264,12 +265,13 @@ export class LocalSpaceRenderer {
       this.context.restore();
 
       if (engineIntensity > 0) {
-        this.engineEffects.drawGlow(
+        this.engineEffects.draw(
           this.context,
           npc.hardpoints,
           geometry,
           engineIntensity,
-          timeSeconds
+          timeSeconds,
+          'above'
         );
       }
 
@@ -584,7 +586,14 @@ export class LocalSpaceRenderer {
       longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
     };
 
-    this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
+    this.engineEffects.draw(
+      this.context,
+      source,
+      geometry,
+      engineIntensity,
+      timeSeconds,
+      'below'
+    );
     this.maneuverEffects.draw(
       this.context,
       source,
@@ -613,7 +622,14 @@ export class LocalSpaceRenderer {
 
     this.context.restore();
 
-    this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
+    this.engineEffects.draw(
+      this.context,
+      source,
+      geometry,
+      engineIntensity,
+      timeSeconds,
+      'above'
+    );
     this.maneuverEffects.draw(
       this.context,
       source,
