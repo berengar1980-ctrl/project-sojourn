@@ -455,16 +455,18 @@ export function createGameController(options: GameControllerOptions): GameContro
   const economy = createControllerEconomy(options.navigation);
   const crew = createCrewRosterService();
   const loadouts = createShipLoadoutService();
-  let context: ControllerRuntimeContext;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
-      createPlayerCombatant(state.activeShip, controllerShipRuntimeOptions(context)),
+      createPlayerCombatant(state.activeShip, {
+        ...crew.runtimeOptions(state.activeShip),
+        installed: loadouts.get(state.activeShip),
+      }),
     log: (message) => systemLog.write(message),
   });
-  context = {
+  const context: ControllerRuntimeContext = {
     root: options.root,
     navigation: options.navigation,
     systemLog,
