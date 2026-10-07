@@ -38,10 +38,7 @@ import {
   createShipComponentInventoryService,
   type ShipComponentInventoryService,
 } from '../systems/ships';
-import {
-  createNpcSectorService,
-  type NpcSectorService,
-} from '../systems/npcs/npc-sector-service';
+import { createNpcSectorService, type NpcSectorService } from '../systems/npcs/npc-sector-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
 
