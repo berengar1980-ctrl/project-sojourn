@@ -274,8 +274,14 @@ export function createNpcSectorService(
       const template = entry.template;
       pirateRespawnSerial += 1;
       const factionId = template.factionId === 'pirates2' ? 'pirates2' : 'pirates';
+      const {
+        travel: _travel,
+        combatMovement: _combatMovement,
+        pirateHuntZoneId: _pirateHuntZoneId,
+        ...base
+      } = template;
       const fresh: SectorNpcState = {
-        ...template,
+        ...base,
         id: template.id + '-r' + pirateRespawnSerial,
         name: template.name + ' II',
         locationId: factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost',
@@ -286,10 +292,7 @@ export function createNpcSectorService(
         activityId: 'raiding',
         activity: 'Neue Korsarenaktivität · auf Beutezug',
         successfulRuns: 0,
-        pirateHuntZoneId: undefined,
         pirateHuntCycles: 2 + (pirateRespawnSerial % 5),
-        travel: undefined,
-        combatMovement: undefined,
       };
       (npcs as SectorNpcState[]).push(fresh);
       activePirates += 1;
