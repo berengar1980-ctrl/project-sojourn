@@ -2889,3 +2889,21 @@ body {
 .port-system-summary[hidden] {
   display: none !important;
 }
+
+
+.port-expectation {
+  font-size: 8px !important;
+  letter-spacing: 0.08em;
+}
+
+.port-expectation--cheap {
+  color: #79d89d !important;
+}
+
+.port-expectation--neutral {
+  color: #b9b07d !important;
+}
+
+.port-expectation--expensive {
+  color: #dfa06f !important;
+}

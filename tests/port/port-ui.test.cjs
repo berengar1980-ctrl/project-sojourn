@@ -106,6 +106,16 @@ assert(
 );
 
 assert(
+  portController.includes('sectorPorts.flatMap') &&
+    portController.includes("expectation: produced.has(commodity.id)") &&
+    portPanel.includes('KEINE MARKTDATEN') &&
+    portPanel.includes('ERWARTUNG:') &&
+    portPanel.includes('Sensorintel oder Besuch nötig') &&
+    portModel.includes("intelStatus: 'unknown' | 'live' | 'recent' | 'aging' | 'stale'"),
+  'system market must show structural expectations before exact intel exists'
+);
+
+assert(
   portPanel.includes('GÜNSTIGSTER BEKANNTER EINKAUF') &&
     portPanel.includes('BESTER BEKANNTER VERKAUF') &&
     portPanel.includes('GESCHÄTZTE MARGE') &&
