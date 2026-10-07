@@ -121,6 +121,36 @@ export function sensorSalvageWreckRange(skill: number): number {
   return 5 + normalizedCrewSkill(skill) * 0.11;
 }
 
+export interface SensorInspectionAnomalyContext {
+  readonly load: number;
+  readonly illegalFraction: number;
+  readonly concealment: number;
+  readonly suspicion: number;
+  readonly falsePositive?: number;
+  readonly riskTrader?: boolean;
+}
+
+export function sensorInspectionAnomalyChance(
+  skill: number,
+  context: SensorInspectionAnomalyContext
+): number {
+  const sensor = normalizedCrewSkill(skill) / 100;
+  const falsePositive = Math.max(0.015, Number(context.falsePositive ?? 0.03));
+  const load = clamp(Number(context.load) || 0, 0, 1);
+  const illegalFraction = clamp(Number(context.illegalFraction) || 0, 0, 1);
+  const concealment = clamp(Number(context.concealment) || 0, 0, 0.9);
+  const suspicion = clamp(Number(context.suspicion) || 0, 0, 100);
+  return clamp(
+    falsePositive +
+      load * 0.055 +
+      (context.riskTrader ? 0.045 : 0) +
+      suspicion * 0.0025 +
+      illegalFraction * (0.55 + 0.25 * sensor) * (1 - concealment * 0.72),
+    0.02,
+    0.88
+  );
+}
+
 export function sensorInspectionScanStrength(skill: number, customsStrength = 0): number {
   return clamp(
     0.34 + normalizedCrewSkill(skill) / 145 + Math.max(0, customsStrength) * 0.18,
@@ -132,6 +162,14 @@ export function sensorInspectionScanStrength(skill: number, customsStrength = 0)
 export function sensorMiningClaimDetectionChance(playerSkill: number, npcSkill: number): number {
   return clamp(
     0.45 + (normalizedCrewSkill(playerSkill) - normalizedCrewSkill(npcSkill)) / 140,
+    0.1,
+    0.92
+  );
+}
+
+export function sensorNpcMiningClaimDetectionChance(npcSkill: number, playerSkill: number): number {
+  return clamp(
+    0.42 + (normalizedCrewSkill(npcSkill) - normalizedCrewSkill(playerSkill)) / 140,
     0.1,
     0.92
   );
