@@ -11,6 +11,22 @@ import { calculateMiningImpact } from './mining-impact';
 
 export type MiningChunkCollector = (resourceId: string, amount: number) => number;
 
+export interface CollectedMiningSample {
+  readonly sourceAsteroidId: string;
+  readonly resourceId: string;
+  readonly amount: number;
+}
+
+export function identifyMinedResource(
+  asteroid: LocalAsteroid,
+  resourceId: string
+): boolean {
+  const deposit = asteroid.deposits.find((entry) => entry.resourceId === resourceId);
+  if (!deposit || deposit.identified) return false;
+  deposit.identified = true;
+  return true;
+}
+
 function activeMiningDeposits(
   asteroid: LocalAsteroid,
   resourceSelection: MiningResourceSelection
@@ -72,6 +88,7 @@ export function createMiningChunk(
 
   return {
     id: 'chunk-' + seed + '-' + chunkCounter,
+    sourceAsteroidId: asteroid.id,
     resourceId: deposit.resourceId,
     position: {
       x: impact.point.x + impact.normal.x * 2,
@@ -121,6 +138,7 @@ export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCo
 export interface MiningChunkCollectionResult {
   readonly remaining: MiningChunk[];
   readonly collected: ReadonlyMap<string, number>;
+  readonly samples: readonly CollectedMiningSample[];
 }
 
 export function advanceAndCollectMiningChunks(
@@ -131,6 +149,7 @@ export function advanceAndCollectMiningChunks(
 ): MiningChunkCollectionResult {
   const remaining: MiningChunk[] = [];
   const collected = new Map<string, number>();
+  const samples: CollectedMiningSample[] = [];
 
   for (const chunk of chunks) {
     advanceMiningChunk(chunk, shipPosition, deltaSeconds);
@@ -138,10 +157,15 @@ export function advanceAndCollectMiningChunks(
       const accepted = collectMiningChunk(chunk, collector);
       if (accepted > 0) {
         collected.set(chunk.resourceId, (collected.get(chunk.resourceId) ?? 0) + accepted);
+        samples.push({
+          sourceAsteroidId: chunk.sourceAsteroidId,
+          resourceId: chunk.resourceId,
+          amount: accepted,
+        });
       }
     }
     if (chunk.amount > 0) remaining.push(chunk);
   }
 
-  return { remaining, collected };
+  return { remaining, collected, samples };
 }

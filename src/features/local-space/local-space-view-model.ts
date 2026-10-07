@@ -123,12 +123,15 @@ function estimateResourceAmount(amount: number): number {
 function mapAsteroid(asteroid: LocalAsteroid, snapshot: LocalSpaceSnapshot): LocalAsteroidView {
   const surveyed = asteroid.scanLevel !== 'unscanned';
   const analyzed = asteroid.scanLevel === 'analyzed';
-  const deposits = asteroid.deposits.map((deposit) => ({
-    resourceId: analyzed ? deposit.resourceId : null,
-    resourceName: analyzed ? deposit.oreType : null,
-    estimatedAmount: analyzed ? estimateResourceAmount(deposit.oreRemaining) : null,
-    capacity: analyzed ? deposit.oreCapacity : null,
-  }));
+  const deposits = asteroid.deposits.map((deposit) => {
+    const identified = analyzed || deposit.identified;
+    return {
+      resourceId: identified ? deposit.resourceId : null,
+      resourceName: identified ? deposit.oreType : null,
+      estimatedAmount: analyzed ? estimateResourceAmount(deposit.oreRemaining) : null,
+      capacity: analyzed ? deposit.oreCapacity : null,
+    };
+  });
 
   return {
     id: asteroid.id,

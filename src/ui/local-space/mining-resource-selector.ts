@@ -1,7 +1,21 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 
+export function toggleMiningResourceSelection(
+  current: readonly string[] | null,
+  resourceId: string
+): readonly string[] | null {
+  if (current === null) return [resourceId];
+  if (current.includes(resourceId)) {
+    const next = current.filter((id) => id !== resourceId);
+    return next.length > 0 ? next : null;
+  }
+  if (current.length < 2) return [...current, resourceId];
+  return [current[1]!, resourceId];
+}
+
 export class MiningResourceSelector {
   private model: LocalSpaceViewModel | null = null;
+  private selection: readonly string[] | null = null;
   private locked = false;
 
   constructor(
@@ -13,6 +27,9 @@ export class MiningResourceSelector {
 
   update(model: LocalSpaceViewModel, locked: boolean, visible = true): void {
     this.model = model;
+    this.selection = model.miningResourceSelection
+      ? [...model.miningResourceSelection]
+      : null;
     this.locked = locked;
     const asteroid = model.selectedAsteroid;
     const deposits =
@@ -40,11 +57,11 @@ export class MiningResourceSelector {
     allButton.type = 'button';
     allButton.dataset.allResources = 'true';
     allButton.textContent = 'ALLE';
-    allButton.classList.toggle('is-active', model.miningResourceSelection === null);
+    allButton.classList.toggle('is-active', this.selection === null);
     allButton.disabled = locked;
     choices.append(allButton);
 
-    const selection = model.miningResourceSelection ?? [];
+    const selection = this.selection ?? [];
     for (const deposit of deposits) {
       if (!deposit.resourceId) continue;
       const active = selection.includes(deposit.resourceId);
@@ -54,7 +71,7 @@ export class MiningResourceSelector {
       button.dataset.resourceId = deposit.resourceId;
       button.classList.toggle('is-active', active);
       button.classList.toggle('is-depleted', depleted);
-      button.disabled = locked || depleted || (!active && selection.length >= 2);
+      button.disabled = locked || depleted;
       button.textContent =
         (deposit.resourceName ?? deposit.resourceId).toUpperCase() +
         ' · ~' +
@@ -65,9 +82,9 @@ export class MiningResourceSelector {
     const hint = document.createElement('div');
     hint.className = 'mining-resource-selector__hint';
     hint.textContent =
-      model.miningResourceSelection === null
+      this.selection === null
         ? 'ALLE VORKOMMEN WERDEN GEBORGEN'
-        : 'NICHT GEWÄHLT · 50 % SCHWUND · KEINE FRACHT';
+        : 'MAX. 2 · DRITTE AUSWAHL ERSETZT DIE ÄLTESTE · REST 50 % SCHWUND';
 
     this.container.append(title, choices, hint);
   }
@@ -78,24 +95,16 @@ export class MiningResourceSelector {
     if (!(target instanceof HTMLButtonElement) || target.disabled) return;
 
     if (target.dataset.allResources === 'true') {
+      this.selection = null;
       this.onChange(null);
       return;
     }
 
     const resourceId = target.dataset.resourceId;
     if (!resourceId) return;
-    const current = this.model.miningResourceSelection;
-    if (current === null) {
-      this.onChange([resourceId]);
-      return;
-    }
 
-    if (current.includes(resourceId)) {
-      const next = current.filter((id) => id !== resourceId);
-      this.onChange(next.length > 0 ? next : null);
-      return;
-    }
-
-    if (current.length < 2) this.onChange([...current, resourceId]);
+    const next = toggleMiningResourceSelection(this.selection, resourceId);
+    this.selection = next;
+    this.onChange(next);
   }
 }
