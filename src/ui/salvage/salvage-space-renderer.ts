@@ -143,6 +143,7 @@ export class SalvageSpaceRenderer {
     }
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
+    this.drawCombat(width, height);
     this.drawRoute(width, height);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
@@ -244,6 +245,81 @@ export class SalvageSpaceRenderer {
     }
     return hits;
   }
+
+  private drawCombat(width: number, height: number): void {
+    const combat = this.model.combat;
+    if (!combat) return;
+
+    for (const mine of combat.mines) {
+      const point = this.camera.worldToScreen(mine.position, width, height);
+      this.context.save();
+      this.context.strokeStyle = mine.armed
+        ? 'rgba(226, 108, 82, .82)'
+        : 'rgba(166, 175, 177, .55)';
+      this.context.fillStyle = 'rgba(42, 47, 50, .92)';
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.stroke();
+      this.context.restore();
+    }
+
+    for (const projectile of combat.projectiles) {
+      const point = this.camera.worldToScreen(projectile.position, width, height);
+      const target = this.camera.worldToScreen(projectile.target, width, height);
+      const angle = Math.atan2(target.y - point.y, target.x - point.x);
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      this.context.rotate(angle);
+      if (projectile.kind === 'missile') {
+        this.context.fillStyle = '#e7d7b0';
+        this.context.fillRect(-7, -2, 12, 4);
+        this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
+        this.context.lineWidth = 3;
+        this.context.beginPath();
+        this.context.moveTo(-8, 0);
+        this.context.lineTo(-22, 0);
+        this.context.stroke();
+      } else if (projectile.kind === 'plasma') {
+        this.context.fillStyle = 'rgba(118, 225, 255, .95)';
+        this.context.shadowColor = 'rgba(81, 194, 255, .95)';
+        this.context.shadowBlur = 10;
+        this.context.beginPath();
+        this.context.arc(0, 0, 5, 0, Math.PI * 2);
+        this.context.fill();
+      } else {
+        this.context.strokeStyle =
+          projectile.kind === 'autocannon'
+            ? 'rgba(245, 211, 156, .95)'
+            : 'rgba(102, 207, 255, .95)';
+        this.context.lineWidth = projectile.kind === 'rail' ? 1.2 : 2;
+        this.context.beginPath();
+        this.context.moveTo(-24, 0);
+        this.context.lineTo(24, 0);
+        this.context.stroke();
+      }
+      this.context.restore();
+    }
+
+    const impact = combat.lastImpact;
+    if (!impact || impact.layer === 'miss') return;
+    const point = this.camera.worldToScreen(impact.position, width, height);
+    this.context.save();
+    if (impact.layer === 'shield') {
+      this.context.strokeStyle = 'rgba(123, 211, 255, .88)';
+      this.context.lineWidth = 2.4;
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 26, -0.9, 0.9);
+      this.context.stroke();
+    } else {
+      this.context.fillStyle = 'rgba(255, 139, 68, .76)';
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 12, 0, Math.PI * 2);
+      this.context.fill();
+    }
+    this.context.restore();
+  }
+
 
   private drawNpcScan(
     shipPoint: ScreenPoint,
