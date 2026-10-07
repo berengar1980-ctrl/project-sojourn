@@ -72,8 +72,12 @@ assert(
   renderer.includes("detailLevel === 'dock'") &&
     renderer.includes('drawServiceDetails') &&
     renderer.includes('drawWear') &&
-    renderer.includes("globalCompositeOperation = 'source-atop'"),
-  'dock detail must add service lines, surface wear and star-relative lighting'
+    renderer.includes('spriteCanvas') &&
+    renderer.includes('spriteContext') &&
+    renderer.includes("globalCompositeOperation = 'destination-out'") &&
+    renderer.includes("globalCompositeOperation = 'source-atop'") &&
+    renderer.includes('this.context.drawImage'),
+  'station cutouts and lighting must be composited on a transparent sprite before reaching the map'
 );
 assert(
   mapRenderer.includes('ProceduralStationRenderer') &&
