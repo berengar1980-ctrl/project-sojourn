@@ -16,8 +16,12 @@ import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoi
 
 export type StarMapDisplayMode = 'physical' | 'nav';
 
-interface HitArea {
+export interface StarMapPick {
+  readonly kind: 'location' | 'npc';
   readonly id: string;
+}
+
+interface HitArea extends StarMapPick {
   readonly x: number;
   readonly y: number;
   readonly radius: number;
@@ -111,13 +115,13 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
-  pickLocation(x: number, y: number): string | null {
+  pickContact(x: number, y: number): StarMapPick | null {
     let best: HitArea | null = null;
     for (const area of this.hitAreas) {
       if (Math.hypot(x - area.x, y - area.y) > area.radius) continue;
       if (!best || area.radius < best.radius) best = area;
     }
-    return best?.id ?? null;
+    return best ? { kind: best.kind, id: best.id } : null;
   }
 
   private draw(): void {
@@ -140,10 +144,12 @@ export class TopdownMapRenderer {
     this.drawOrbits(width, height);
     this.drawStar(width, height);
     this.drawRoute(width, height);
-    this.hitAreas = this.model.locations.map((location) =>
+    this.drawPursuitLine(width, height);
+    const locationHits = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
     );
-    this.drawNpcShips(width, height);
+    const npcHits = this.drawNpcShips(width, height);
+    this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height);
   }
 
@@ -165,7 +171,8 @@ export class TopdownMapRenderer {
     };
   }
 
-  private drawNpcShips(width: number, height: number): void {
+  private drawNpcShips(width: number, height: number): HitArea[] {
+    const hits: HitArea[] = [];
     const zoom = this.camera.getRelativeZoom();
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     for (const npc of this.model.npcShips) {
@@ -214,13 +221,36 @@ export class TopdownMapRenderer {
       }
       this.context.restore();
 
-      if (this.labelsVisible && zoom >= 1.35) {
+      if (npc.isSelected || npc.isPursuitTarget || npc.combatMode) {
+        this.context.save();
+        this.context.strokeStyle = npc.isPursuitTarget
+          ? 'rgba(233, 102, 83, .95)'
+          : npc.combatMode
+            ? 'rgba(225, 142, 75, .82)'
+            : 'rgba(231, 193, 101, .84)';
+        this.context.lineWidth = npc.isPursuitTarget ? 2.2 : 1.5;
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, Math.max(widthPx, geometry.height) * 0.72 + 5, 0, Math.PI * 2);
+        this.context.stroke();
+        this.context.restore();
+      }
+
+      hits.push({
+        kind: 'npc',
+        id: npc.id,
+        x: point.x,
+        y: point.y,
+        radius: Math.max(12, Math.max(widthPx, geometry.height) * 0.75 + 6),
+      });
+
+      if (this.labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
         this.context.fillStyle = 'rgba(196, 211, 221, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 11);
       }
     }
+    return hits;
   }
 
   private drawPlayerShip(width: number, height: number): void {
@@ -390,6 +420,25 @@ export class TopdownMapRenderer {
     this.context.restore();
   }
 
+  private drawPursuitLine(width: number, height: number): void {
+    const targetId = this.model.navigation.pursuitTargetId;
+    if (!targetId) return;
+    const target = this.model.npcShips.find((npc) => npc.id === targetId);
+    if (!target) return;
+
+    const from = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    const to = this.camera.worldToScreen(target.position, width, height);
+    this.context.save();
+    this.context.strokeStyle = 'rgba(221, 82, 67, .58)';
+    this.context.lineWidth = 1.3;
+    this.context.setLineDash([4, 5]);
+    this.context.beginPath();
+    this.context.moveTo(from.x, from.y);
+    this.context.lineTo(to.x, to.y);
+    this.context.stroke();
+    this.context.restore();
+  }
+
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius =
@@ -425,7 +474,13 @@ export class TopdownMapRenderer {
       this.drawLocationLabel(location, point.x, point.y + radius + 20);
     }
 
-    return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
+    return {
+      kind: 'location',
+      id: location.id,
+      x: point.x,
+      y: point.y,
+      radius: radius + 12,
+    };
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {
