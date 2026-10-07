@@ -33,7 +33,7 @@ const CAPTAINS = [
   'Xavian Xerxes',
 ] as const;
 
-const JOBS: readonly NpcJob[] = [
+const JOBS: readonly Exclude<NpcJob, 'pirate'>[] = [
   'freighter',
   'freighter',
   'miner',
