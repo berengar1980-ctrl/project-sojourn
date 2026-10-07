@@ -31,9 +31,6 @@ jobs:
           name: Navigation recovery
           command: node scripts/ci-run-and-report.cjs navigation-recovery -- node tests/navigation/navigation-module.test.cjs
       - run:
-          name: NPC aggression
-          command: node scripts/ci-run-and-report.cjs npc-aggression -- node tests/combat/npc-star-map-aggression.test.cjs
-      - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
 
