@@ -28,6 +28,7 @@ import {
 import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
 import {
+  createCombatShieldGeometry,
   createStrategicCombatService,
   type StrategicCombatArenaOptions,
   type StrategicCombatService,
@@ -112,6 +113,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     name: npc.name,
     shipId: ship.id,
     shieldHp: Math.max(1, shieldMax),
+    shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
     weapons: npcWeaponComponents(installed),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
