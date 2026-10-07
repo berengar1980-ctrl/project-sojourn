@@ -29,11 +29,16 @@ function combatantMarkup(
       <small>${combatant.shipId}</small>
       <div class="strategic-combat-stat">
         <label>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</label>
-        <div><i data-shield style="width:${percent(combatant.shieldHp, combatant.shieldMaxHp)}%"></i></div>
+        <div>
+          <i data-shield
+            style="width:${percent(combatant.shieldHp, combatant.shieldMaxHp)}%"></i>
+        </div>
       </div>
       <div class="strategic-combat-stat strategic-combat-stat--hull">
         <label>HÜLLE ${Math.round(combatant.hullHp)} / ${combatant.hullMaxHp}</label>
-        <div><i data-hull style="width:${percent(combatant.hullHp, combatant.hullMaxHp)}%"></i></div>
+        <div>
+          <i data-hull style="width:${percent(combatant.hullHp, combatant.hullMaxHp)}%"></i>
+        </div>
       </div>
     </article>
   `;
