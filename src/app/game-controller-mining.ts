@@ -37,6 +37,7 @@ export function createMiningLocalSpace(
       sensorCrewSkill: runtime.sensorCrewSkill,
       reactorOutput: runtime.energy.output,
       reactorContinuousUsed: runtime.energy.baseUsed,
+      shieldRegenMultiplier: runtime.crewEffects.engineering.shieldRegenMultiplier,
     },
     onMiningChunkCollected: (resourceId, amount) =>
       mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id),
