@@ -238,6 +238,8 @@ function renderSelection(
   const wreck = model.selectedWreck;
   ui.card.hidden = !wreck && !npc;
   if (npc) {
+    const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
+    if (kind) kind.textContent = 'SCHIFF';
     ui.name.textContent = npc.name;
     ui.meta.textContent = model.combat
       ? 'GEFECHT · SCHILD ' +
@@ -254,6 +256,8 @@ function renderSelection(
   ui.attackButton.hidden = true;
   if (!wreck) return;
 
+  const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind) kind.textContent = 'WRACK';
   ui.name.textContent = wreck.name;
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
   const busy =
