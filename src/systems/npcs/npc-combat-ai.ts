@@ -4,8 +4,7 @@ export type NpcDefenseReaction = 'fight' | 'flee';
 
 export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
   const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
-  const roleBonus =
-    npc.job === 'patrol' || npc.pirate ? 28 : npc.job === 'freighter' ? -8 : 0;
+  const roleBonus = npc.job === 'patrol' || npc.pirate ? 28 : npc.job === 'freighter' ? -8 : 0;
   const score = npc.aggression + roleBonus + hullRatio * 18;
   return score >= 72 ? 'fight' : 'flee';
 }
