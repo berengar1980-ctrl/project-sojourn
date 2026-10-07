@@ -190,7 +190,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     travelButton.hidden = true;
     dockButton.hidden = true;
     attackButton.hidden =
-      selected.combatMode === 'engaged' || selected.id === model.navigation.pursuitTargetId;
+      selected.combatMode !== null || selected.id === model.navigation.pursuitTargetId;
     return true;
   };
 
