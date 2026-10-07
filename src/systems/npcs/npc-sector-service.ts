@@ -62,6 +62,7 @@ function hashId(id: string): number {
 }
 
 function routeProfile(npc: SectorNpcState): RouteProfile {
+  if (npc.pirate) return 'fast';
   if (npc.job === 'patrol') return npc.aggression >= 35 ? 'fast' : 'balanced';
   if (npc.aggression <= 28) return 'safe';
   if (npc.aggression >= 68) return 'fast';
@@ -484,8 +485,13 @@ export function createNpcSectorService(
             'Weiterflug nach Tankstopp'
           );
         } else {
-          npc.activityId = npc.job === 'patrol' ? 'patrol' : 'dock';
-          npc.activity = npc.job === 'patrol' ? 'Sicherheitspatrouille' : 'Liegezeit';
+          if (npc.pirate) {
+            npc.activityId = 'raiding';
+            npc.activity = 'Auf Beutezug';
+          } else {
+            npc.activityId = npc.job === 'patrol' ? 'patrol' : 'dock';
+            npc.activity = npc.job === 'patrol' ? 'Sicherheitspatrouille' : 'Liegezeit';
+          }
         }
       }
     },
