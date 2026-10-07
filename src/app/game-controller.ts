@@ -384,6 +384,11 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
         height: local.instance.height,
         attackerPosition: { ...local.instance.ship.position },
         defenderPosition: { ...target.position },
+        obstacles: local.instance.asteroids.map((asteroid) => ({
+          id: asteroid.id,
+          position: { ...asteroid.position },
+          radius: asteroid.radius,
+        })),
       });
       if (started) {
         state.embeddedCombat = 'local-space';
