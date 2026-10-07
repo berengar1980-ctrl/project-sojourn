@@ -5,7 +5,6 @@ import type {
   ResourceCargoEntry,
 } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
-import type { WorldPoint } from '../../core/world-types';
 import {
   advanceAndCollectMiningChunks,
   createMiningChunk,
@@ -81,10 +80,12 @@ export class MiningResourceRuntime {
     this.chunkCounter += 1;
   }
 
-  advanceChunks(shipPosition: WorldPoint, deltaSeconds: number): void {
+  advanceChunks(ship: LocalSpaceInstance['ship'], deltaSeconds: number): void {
     const result = advanceAndCollectMiningChunks(
       this.instance.chunks,
-      shipPosition,
+      ship,
+      this.hardpoints,
+      this.nominalLengthMeters,
       deltaSeconds,
       this.collector
     );
