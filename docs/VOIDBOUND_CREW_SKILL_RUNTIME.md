@@ -18,8 +18,9 @@ Both projects use the same core station model:
 - multiple equal-skill stations: best station at full value; each additional station contributes **35 % of its performance above automation 20**
 - understaffing reduces the final station value
 - automation baseline: **20**
+- Voidbound then adds a captain command bonus: `round((order + duty) × 1.5)`
 
-Sojourn additionally already applies injury, motivation and social-trait modifiers before station performance is resolved.
+Sojourn additionally already applies injury, motivation and social-trait modifiers before station performance is resolved. Its runtime already accepts a generic `commandBonus`, but the player-captain trait system that supplies Voidbound's Order/Duty command value does not exist yet, so that final captain contribution is **READY**, not live.
 
 ## Piloting
 
