@@ -124,7 +124,10 @@ function fireWeapon(
       scaledDamage(weapon.weapon.shieldDamage, attacker, critical)
     );
     defender.shieldHp = Math.max(0, defender.shieldHp - damage);
-    return `${attacker.setup.name}: ${weapon.name} trifft Schild -${damage}${critical ? ' KRIT' : ''}`;
+    return (
+      `${attacker.setup.name}: ${weapon.name} trifft Schild -${damage}` +
+      (critical ? ' KRIT' : '')
+    );
   }
 
   const damage = Math.min(
