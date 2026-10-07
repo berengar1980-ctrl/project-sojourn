@@ -27,6 +27,10 @@ interface NpcHitArea {
   readonly radius: number;
 }
 
+function fractional(value: number): number {
+  return value - Math.floor(value);
+}
+
 function hashId(id: string): number {
   let hash = 2166136261;
   for (let index = 0; index < id.length; index += 1) {
