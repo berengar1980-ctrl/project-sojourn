@@ -26,6 +26,8 @@ export interface StrategicCombatantSetup {
   readonly preferredTactic?: CombatTactic;
   readonly combatSpeed?: number;
   readonly mineCharges?: number;
+  readonly aiControlled?: boolean;
+  readonly aiAggression?: number;
 }
 
 export interface StrategicCombatantSnapshot {
@@ -232,6 +234,45 @@ function preferredRange(combatant: MutableCombatant): number {
   if (combatant.tactic === 'minefield') return Math.max(320, min * 0.72);
   return Math.max(220, min * 0.64);
 }
+
+function updateAiTactic(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  elapsedSeconds: number
+): void {
+  if (!combatant.setup.aiControlled || combatant.hullHp <= 0) return;
+  const hullRatio = combatant.hullHp / Math.max(1, combatant.hullMaxHp);
+  const shieldRatio =
+    combatant.shieldMaxHp <= 0
+      ? 0
+      : combatant.shieldHp / Math.max(1, combatant.shieldMaxHp);
+  const aggression = clamp(combatant.setup.aiAggression ?? 50, 0, 100);
+  const range = distance(combatant.position, enemy.position);
+
+  if (hullRatio <= 0.28 && aggression < 88) {
+    combatant.tactic = 'flee';
+    return;
+  }
+
+  if (
+    combatant.mineCharges > 0 &&
+    elapsedSeconds >= 2 &&
+    range <= 620 &&
+    aggression >= 58 &&
+    Math.floor(elapsedSeconds / 8) % 2 === 0
+  ) {
+    combatant.tactic = 'minefield';
+    return;
+  }
+
+  if (shieldRatio <= 0.22 && hullRatio > 0.45 && aggression < 78) {
+    combatant.tactic = 'kite';
+    return;
+  }
+
+  combatant.tactic = combatant.setup.preferredTactic ?? 'fight';
+}
+
 
 function moveCombatant(
   combatant: MutableCombatant,
@@ -616,6 +657,8 @@ export function createStrategicCombatService(
       const dt = Math.min(deltaSeconds, 0.08);
       elapsedSeconds += dt;
 
+      updateAiTactic(attacker, defender, elapsedSeconds);
+      updateAiTactic(defender, attacker, elapsedSeconds);
       moveCombatant(attacker, defender, 'attacker', dt, arena);
       moveCombatant(defender, attacker, 'defender', dt, arena);
       maybeDropMine('attacker', attacker, defender, dt);
