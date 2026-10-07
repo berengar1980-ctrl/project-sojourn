@@ -202,6 +202,8 @@ function createControllerStarPanel(options: {
   getModel: () => ReturnType<typeof createStarMapViewModel>;
   onEnterLocalSpace: () => void;
   onEnterSalvageSpace: () => void;
+  onSelectNpc: (id: string) => void;
+  onAttackNpc: (id: string) => void;
   onDock: () => void;
 }): StarMapPanel {
   let panel: StarMapPanel | null = null;
@@ -210,6 +212,7 @@ function createControllerStarPanel(options: {
     model: options.getModel(),
     log: options.log,
     onSelectLocation: (id) => {
+      options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
       if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
         if (miningLocationById(id)) {
@@ -224,6 +227,8 @@ function createControllerStarPanel(options: {
       options.navigation.selectDestination(id);
       panel?.update(options.getModel());
     },
+    onSelectNpc: options.onSelectNpc,
+    onAttackNpc: options.onAttackNpc,
     onStartTravel: () => {
       options.navigation.startTravel();
       options.log.write('NAV > FLUG GESTARTET');
@@ -237,7 +242,8 @@ function createControllerStarPanel(options: {
 function createControllerStarModel(
   navigation: NavigationService,
   ship: ShipDefinition,
-  economy: ControllerEconomy
+  economy: ControllerEconomy,
+  selectedNpcId: string | null
 ) {
   return createStarMapViewModel(
     narrowsSector,
@@ -254,13 +260,16 @@ function createControllerStarModel(
           position: economy.sectorNpcs.livePosition(npc),
           headingRadians: economy.sectorNpcs.liveHeading(npc),
           isTravelling: economy.sectorNpcs.isTravelling(npc),
+          activity: npc.activity,
+          combatMode: economy.sectorNpcs.combatMode(npc),
           nominalLengthMeters: definition.nominalLengthMeters,
           spriteUrl: definition.sprite.assetUrl,
           spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
           hardpoints: definition.sprite.hardpoints,
         },
       ];
-    })
+    }),
+    selectedNpcId
   );
 }
 
