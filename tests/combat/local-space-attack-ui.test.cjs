@@ -35,9 +35,9 @@ assert(
   'both local-space scenes must expose an attack action for selected ships'
 );
 assert(
-  engagements.includes('engageNpcNow') &&
-    controller.includes('context.engagements.engageNpcNow(id)'),
-  'local attacks must enter the shared combat service without star-map pursuit'
+  engagements.includes('engageNpcInArena') &&
+    controller.includes('context.engagements.engageNpcInArena(id'),
+  'local attacks must enter the shared combat service inside the active local arena'
 );
 assert(
   miningInput.includes('event.clientX - rect.left') &&
