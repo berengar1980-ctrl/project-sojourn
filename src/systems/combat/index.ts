@@ -13,8 +13,12 @@ export type {
   ShipMineKind,
 } from '../../core/combat-types';
 
-export { createStrategicCombatService } from './strategic-combat-service';
+export {
+  createCombatShieldGeometry,
+  createStrategicCombatService,
+} from './strategic-combat-service';
 export type {
+  CombatShieldGeometry,
   StrategicCombatService,
   StrategicCombatSnapshot,
   StrategicCombatantSetup,
