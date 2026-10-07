@@ -120,6 +120,7 @@ export class PlayerShipRenderer {
         light,
         offsetX: offset.x,
         offsetY: offset.y,
+        preserveDetail: true,
       });
     } else {
       this.drawFallback(context, geometry.width, geometry.height);
