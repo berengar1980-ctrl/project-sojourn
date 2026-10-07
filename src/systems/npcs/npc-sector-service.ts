@@ -582,9 +582,7 @@ export function createNpcSectorService(
 
     liveHeading(npc) {
       if (npc.combatMovement) return npc.combatMovement.headingRadians;
-      return npc.travel
-        ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled)
-        : 0;
+      return npc.travel ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled) : 0;
     },
 
     tick(deltaSeconds) {
@@ -643,13 +641,7 @@ export function createNpcSectorService(
 
         if (!reachedFinal) {
           const nextTarget = remainingStops[0] ?? finalTargetId;
-          startLeg(
-            npc,
-            nextTarget,
-            finalTargetId,
-            remainingStops,
-            'Weiterflug nach Tankstopp'
-          );
+          startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp');
         } else {
           npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
           npc.activity = npc.pirate
