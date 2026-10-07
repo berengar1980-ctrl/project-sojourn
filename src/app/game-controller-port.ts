@@ -3,7 +3,10 @@ import type { SystemLogService } from '../core/system-log-types';
 import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
-import { createPortViewModel, type PortSystemMarketInput } from '../features/port/port-view-model';
+import {
+  createPortViewModel,
+  type PortSystemMarketInput,
+} from '../features/port/port-view-model';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
@@ -147,7 +150,11 @@ export function createActivePortPanel(
       );
       onRefresh();
     },
-    onSetComponentSlot: (type: ShipComponentType, index: number, componentId: string | null) => {
+    onSetComponentSlot: (
+      type: ShipComponentType,
+      index: number,
+      componentId: string | null
+    ) => {
       if (!loadouts.setSlot(ship, type, index, componentId)) {
         log.write('SCHIFF > KOMPONENTE NICHT KOMPATIBEL');
         return;
