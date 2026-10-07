@@ -1,9 +1,12 @@
 import type { NpcEconomyState } from './economy-types';
 import type { ShipComponentType, ShipRole } from './ship-types';
+import type { WorldPoint } from './world-types';
 
 export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type NpcTravelProfile = 'fast' | 'balanced' | 'safe';
 export type NpcWorkRiskPreference = 'safe' | 'risky';
+export type NpcCombatTargetKind = 'player' | 'npc';
+export type NpcCombatMovementMode = 'pursue' | 'flee' | 'engaged';
 
 export interface NpcWorkEventRecord {
   readonly kind: 'mining' | 'salvage';
@@ -22,6 +25,15 @@ export interface NpcTravelState {
   readonly fuelRequired: number;
   readonly profile: NpcTravelProfile;
   readonly refuelStops: readonly string[];
+}
+
+export interface NpcCombatMovementState {
+  mode: NpcCombatMovementMode;
+  readonly targetKind: NpcCombatTargetKind;
+  readonly targetId: string;
+  position: WorldPoint;
+  headingRadians: number;
+  speed: number;
 }
 
 export type NpcInstalledComponents = Partial<Record<ShipComponentType, string[]>>;
@@ -45,6 +57,7 @@ export interface SectorNpcState extends NpcEconomyState {
   componentUpgradeCount?: number;
   lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;
+  combatMovement?: NpcCombatMovementState;
 }
 
 export function npcJobShipRole(job: NpcJob): ShipRole {
