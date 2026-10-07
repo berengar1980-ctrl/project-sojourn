@@ -102,6 +102,14 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     damageMultiplier: weaponDamageMultiplier(skill),
     criticalChance: weaponCriticalChance(skill),
     cycleTimeMultiplier: weaponCycleTimeMultiplier(skill),
+    preferredTactic:
+      npcDefenseReaction(npc) === 'flee'
+        ? 'flee'
+        : npc.job === 'patrol' && npc.aggression >= 82
+          ? 'kite'
+          : 'fight',
+    combatSpeed: Math.max(82, Math.min(185, ship.navigation.cruiseSpeed * 0.33)),
+    mineCharges: npc.job === 'patrol' ? 3 : 1,
   };
 }
 
