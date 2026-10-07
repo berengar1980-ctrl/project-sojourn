@@ -90,6 +90,27 @@ assert.equal(
 assert(service.isTravelling(pirate));
 assert(pirate.pirateHuntZoneId, 'pirate hunt-zone choice must persist on the NPC state');
 
+delete freighter.travel;
+service.markEngaged(freighter, 'npc', pirate.id, 'Recovery-Test');
+freighter.hullHp = 0;
+assert.equal(
+  service.recoverFromCombat(freighter, 'Kampfunfähig'),
+  true,
+  'a defeated NPC must be recovered instead of permanently removed'
+);
+assert(freighter.hullHp > 0, 'recovered NPC must retain a damaged but operational hull');
+assert(
+  (freighter.combatRecoverySeconds ?? 0) > 0,
+  'defeated NPC must enter a repair cooldown'
+);
+const recoveredId = freighter.id;
+for (let step = 0; step < 600 && (freighter.combatRecoverySeconds ?? 0) > 0; step += 1) {
+  service.tick(0.25);
+}
+assert.equal(freighter.id, recoveredId, 'combat recovery must keep the same persistent NPC identity');
+assert.equal(freighter.hullHp, freighter.hullMaxHp, 'NPC hull must be restored after repair');
+assert.equal(freighter.combatRecoverySeconds, undefined);
+
 const upgrader = npcs.find((npc) => npc.job === 'freighter' && npc.id !== freighter.id);
 assert(upgrader);
 upgrader.locationId = 'helix-shipyards';
@@ -118,5 +139,5 @@ assert(
 );
 
 console.log(
-  'PASS physical NPC ships, civilian jobs, pirate factions, hunt routing, upgrades and map presence'
+  'PASS physical NPC ships, nonlethal recovery, pirate factions, hunt routing, upgrades and map presence'
 );
