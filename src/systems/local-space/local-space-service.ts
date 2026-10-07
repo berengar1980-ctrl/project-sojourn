@@ -5,6 +5,7 @@ import type {
   MiningEventResolution,
   MiningImpact,
   MiningPhase,
+  MiningResourceSelection,
 } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -63,6 +64,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private scanTargetId: string | null = null;
   private approachPurpose: 'mining' | 'scan' | null = null;
   private miningPhase: MiningPhase = 'idle';
+  private miningResourceSelection: MiningResourceSelection = null;
   private approachRoute: readonly WorldPoint[] = [];
   private approachIndex = 0;
   private navigationTarget: WorldPoint | null = null;
@@ -115,6 +117,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
         this.miningPhase === 'scanning' ? Math.min(1, this.shortRangeScanElapsed / 5) : null,
       miningPhase: this.miningPhase,
       miningAvailable: this.miningEnabled,
+      miningResourceSelection: this.miningResourceSelection,
       miningEvent: this.miningEvents.pending,
       miningRecoverySeconds: this.miningEvents.recoverySeconds,
       ...this.shipSystems.snapshot(),
@@ -133,7 +136,32 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (id && (!asteroid || asteroid.kind !== 'resource')) {
       throw new Error('Unknown mineable asteroid: ' + id);
     }
+    if (this.selectedAsteroidId !== id) this.miningResourceSelection = null;
     this.selectedAsteroidId = id;
+    return this.getSnapshot();
+  }
+
+  setMiningResourceSelection(resourceIds: MiningResourceSelection): LocalSpaceSnapshot {
+    if (this.miningPhase !== 'idle') return this.getSnapshot();
+    const asteroid = this.findAsteroid(this.selectedAsteroidId);
+    if (!asteroid || asteroid.scanLevel !== 'analyzed') {
+      this.miningResourceSelection = null;
+      return this.getSnapshot();
+    }
+    if (resourceIds === null) {
+      this.miningResourceSelection = null;
+      return this.getSnapshot();
+    }
+
+    const unique = [...new Set(resourceIds)];
+    if (unique.length < 1 || unique.length > 2) {
+      throw new Error('Targeted mining requires one or two resources.');
+    }
+    const available = new Set(asteroid.deposits.map((deposit) => deposit.resourceId));
+    if (unique.some((resourceId) => !available.has(resourceId))) {
+      throw new Error('Unknown asteroid resource selected for mining.');
+    }
+    this.miningResourceSelection = unique;
     return this.getSnapshot();
   }
 
@@ -185,7 +213,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (!this.miningEnabled || this.miningEvents.pending) return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
-    if (!asteroid) return this.getSnapshot();
+    if (!asteroid || !hasMineableDeposits(asteroid, this.miningResourceSelection)) {
+      return this.getSnapshot();
+    }
 
     this.miningTargetId = asteroid.id;
     this.scanTargetId = null;
@@ -215,7 +245,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const result = this.miningEvents.resolve(asteroid, choiceId, (fraction) =>
       this.shipSystems.damageHullFraction(fraction)
     );
-    if (result?.aborted || !hasMineableDeposits(asteroid)) this.finishMining();
+    if (
+      result?.aborted ||
+      !hasMineableDeposits(asteroid, this.miningResourceSelection)
+    ) {
+      this.finishMining();
+    }
     return result;
   }
 
@@ -401,7 +436,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     asteroid.scanLevel = 'analyzed';
-    if (!hasMineableDeposits(asteroid)) {
+    if (!hasMineableDeposits(asteroid, this.miningResourceSelection)) {
       this.finishMining();
       return;
     }
@@ -438,12 +473,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     this.miningAccumulator += deltaSeconds;
     const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds);
-    while (this.miningAccumulator >= cycleSeconds && hasMineableDeposits(asteroid)) {
+    while (
+      this.miningAccumulator >= cycleSeconds &&
+      hasMineableDeposits(asteroid, this.miningResourceSelection)
+    ) {
       this.miningAccumulator -= cycleSeconds;
       this.spawnChunk(asteroid);
     }
 
-    if (!hasMineableDeposits(asteroid)) {
+    if (!hasMineableDeposits(asteroid, this.miningResourceSelection)) {
       this.finishMining();
     }
   }
@@ -481,7 +519,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.nominalLengthMeters,
       this.instance.seed,
       this.chunkCounter,
-      this.miningYieldMultiplier
+      this.miningYieldMultiplier,
+      this.miningResourceSelection
     );
     if (!chunk) return;
     this.instance.chunks.push(chunk);

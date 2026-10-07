@@ -1,4 +1,9 @@
-import type { LocalAsteroid, LocalShipState, MiningChunk } from '../../core/local-space-types';
+import type {
+  LocalAsteroid,
+  LocalShipState,
+  MiningChunk,
+  MiningResourceSelection,
+} from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { distance } from './local-space-motion';
@@ -6,8 +11,22 @@ import { calculateMiningImpact } from './mining-impact';
 
 export type MiningChunkCollector = (resourceId: string, amount: number) => number;
 
-export function hasMineableDeposits(asteroid: LocalAsteroid): boolean {
-  return asteroid.deposits.some((deposit) => deposit.oreRemaining > 0);
+function activeMiningDeposits(
+  asteroid: LocalAsteroid,
+  resourceSelection: MiningResourceSelection
+) {
+  const selected = resourceSelection ? new Set(resourceSelection) : null;
+  return asteroid.deposits.filter(
+    (deposit) =>
+      deposit.oreRemaining > 0 && (!selected || selected.has(deposit.resourceId))
+  );
+}
+
+export function hasMineableDeposits(
+  asteroid: LocalAsteroid,
+  resourceSelection: MiningResourceSelection = null
+): boolean {
+  return activeMiningDeposits(asteroid, resourceSelection).length > 0;
 }
 
 function heading(from: WorldPoint, to: WorldPoint): number {
@@ -21,9 +40,10 @@ export function createMiningChunk(
   nominalLengthMeters: number,
   seed: number,
   chunkCounter: number,
-  yieldMultiplier = 1
+  yieldMultiplier = 1,
+  resourceSelection: MiningResourceSelection = null
 ): MiningChunk | null {
-  const activeDeposits = asteroid.deposits.filter((deposit) => deposit.oreRemaining > 0);
+  const activeDeposits = activeMiningDeposits(asteroid, resourceSelection);
   if (activeDeposits.length === 0) return null;
 
   const deposit = activeDeposits[chunkCounter % activeDeposits.length]!;
@@ -31,6 +51,15 @@ export function createMiningChunk(
   const amountPerChunk = Math.max(1, Math.round(6 * Math.max(0, yieldMultiplier)));
   const amount = Math.min(amountPerChunk, deposit.oreRemaining);
   deposit.oreRemaining -= amount;
+
+  if (resourceSelection) {
+    const selected = new Set(resourceSelection);
+    const collateralLoss = (amount * 0.5) / activeDeposits.length;
+    for (const other of asteroid.deposits) {
+      if (selected.has(other.resourceId) || other.oreRemaining <= 0) continue;
+      other.oreRemaining = Math.max(0, other.oreRemaining - collateralLoss);
+    }
+  }
 
   const tangent = { x: -impact.normal.y, y: impact.normal.x };
   const spread = Math.sin(chunkCounter * 2.17) * 0.42;

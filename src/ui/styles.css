@@ -2929,3 +2929,59 @@ body {
   font-style: normal;
   letter-spacing: 0.08em;
 }
+
+
+.mining-resource-selector {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(115, 164, 181, 0.18);
+}
+
+.mining-resource-selector[hidden] {
+  display: none;
+}
+
+.mining-resource-selector__title {
+  color: #718d9a;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.mining-resource-selector__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mining-resource-selector__choices button {
+  padding: 6px 8px;
+  border: 1px solid rgba(104, 159, 176, 0.28);
+  background: rgba(19, 42, 50, 0.42);
+  color: #88a8b5;
+  cursor: pointer;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.mining-resource-selector__choices button.is-active {
+  border-color: rgba(105, 211, 232, 0.72);
+  background: rgba(39, 107, 122, 0.42);
+  color: #c1f2fa;
+}
+
+.mining-resource-selector__choices button.is-depleted {
+  text-decoration: line-through;
+}
+
+.mining-resource-selector__choices button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.mining-resource-selector__hint {
+  color: rgba(160, 177, 182, 0.62);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}

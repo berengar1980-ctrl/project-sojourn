@@ -12,6 +12,7 @@ interface LitShipDrawOptions {
   readonly offsetX: number;
   readonly offsetY: number;
   readonly preserveDetail?: boolean;
+  readonly directionalStrength?: number;
 }
 
 function normalize(light: ShipLightVector): ShipLightVector {
@@ -53,7 +54,12 @@ export class ShipLightingRenderer {
 
     const worldLight = normalize(options.light);
     const localLight = toShipLocal(worldLight, options.angle);
-    this.applyDirectionalLight(pixelWidth, pixelHeight, localLight);
+    this.applyDirectionalLight(
+      pixelWidth,
+      pixelHeight,
+      localLight,
+      options.directionalStrength ?? 1
+    );
 
     context.save();
     context.globalAlpha = 0.97;
@@ -82,7 +88,12 @@ export class ShipLightingRenderer {
     this.canvas.height = height;
   }
 
-  private applyDirectionalLight(width: number, height: number, light: ShipLightVector): void {
+  private applyDirectionalLight(
+    width: number,
+    height: number,
+    light: ShipLightVector,
+    directionalStrength: number
+  ): void {
     const context = this.context;
     const halfWidth = width * 0.5;
     const halfHeight = height * 0.5;
@@ -94,11 +105,14 @@ export class ShipLightingRenderer {
       halfHeight - light.y * reach
     );
 
-    gradient.addColorStop(0, 'rgba(255,255,238,.11)');
-    gradient.addColorStop(0.32, 'rgba(255,255,255,.03)');
-    gradient.addColorStop(0.5, 'rgba(0,0,0,.045)');
-    gradient.addColorStop(0.72, 'rgba(0,0,0,.18)');
-    gradient.addColorStop(1, 'rgba(0,0,0,.34)');
+    const strength = Math.max(0, Math.min(2.5, directionalStrength));
+    const alpha = (base: number): number => Math.min(0.92, base * strength);
+
+    gradient.addColorStop(0, `rgba(255,255,238,${alpha(0.11)})`);
+    gradient.addColorStop(0.32, `rgba(255,255,255,${alpha(0.03)})`);
+    gradient.addColorStop(0.5, `rgba(0,0,0,${alpha(0.045)})`);
+    gradient.addColorStop(0.72, `rgba(0,0,0,${alpha(0.18)})`);
+    gradient.addColorStop(1, `rgba(0,0,0,${alpha(0.34)})`);
 
     context.globalCompositeOperation = 'source-atop';
     context.fillStyle = gradient;

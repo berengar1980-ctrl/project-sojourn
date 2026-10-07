@@ -83,6 +83,7 @@ export interface LocalSpaceInstance {
 }
 
 export type MiningPhase = 'idle' | 'approaching' | 'scanning' | 'extracting';
+export type MiningResourceSelection = readonly string[] | null;
 
 export type MiningEventType = 'unstable' | 'machine' | 'rich' | 'cavity' | 'rare' | 'deeper';
 export type MiningEventRisk = 'safe' | 'controlled' | 'risky' | 'high_risk';
@@ -120,6 +121,7 @@ export interface LocalSpaceSnapshot {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly miningResourceSelection: MiningResourceSelection;
   readonly miningEvent: MiningEventState | null;
   readonly miningRecoverySeconds: number;
   readonly scanAvailable: boolean;

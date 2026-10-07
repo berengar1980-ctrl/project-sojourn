@@ -199,11 +199,22 @@ assert(
 );
 assert(
   miningChunks.includes('deposit.oreRemaining -= amount'),
-  'extracted chunks must reduce only the selected deposit amount'
+  'extracted chunks must reduce the recovered target deposit'
+);
+assert(
+  miningChunks.includes('collateralLoss') &&
+    miningChunks.includes('amount * 0.5') &&
+    miningChunks.includes('selected.has(other.resourceId)'),
+  'targeted mining must waste unselected deposits at half the individual target rate'
 );
 assert(
   miningChunks.includes('activeDeposits[chunkCounter % activeDeposits.length]'),
-  'mining must rotate deterministically across remaining deposits'
+  'mining must rotate deterministically across selected remaining deposits'
+);
+assert(
+  service.includes('setMiningResourceSelection') &&
+    service.includes('unique.length < 1 || unique.length > 2'),
+  'local mining must support ALL or exactly one/two targeted resources'
 );
 assert(
   miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&

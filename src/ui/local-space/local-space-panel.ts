@@ -5,6 +5,7 @@ import { bindLocalSpaceInput } from './local-space-input';
 import { LocalSpaceRenderer } from './local-space-renderer';
 import type { SystemLogService } from '../../core/system-log-types';
 import { createMiningEventPanel } from './mining-event-panel';
+import { MiningResourceSelector } from './mining-resource-selector';
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 export interface LocalSpacePanel {
@@ -22,6 +23,7 @@ interface LocalSpacePanelOptions {
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
+  readonly onMiningResourceSelection: (resourceIds: readonly string[] | null) => void;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
   readonly onMiningEventChoice: (choiceId: string) => {
@@ -112,6 +114,7 @@ interface LocalSpaceControls {
   readonly name: HTMLElement;
   readonly meta: HTMLElement;
   readonly oreBar: HTMLElement;
+  readonly resourceSelector: HTMLElement;
   readonly mineButton: HTMLButtonElement;
   readonly shortScanButton: HTMLButtonElement;
   readonly attackButton: HTMLButtonElement;
@@ -152,6 +155,7 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<div class="local-selection-kind">ASTEROID</div>',
     '<div class="local-selection-name"></div><div class="local-selection-meta"></div>',
     '<div class="local-ore-bar"><div></div></div>',
+    '<div class="mining-resource-selector" hidden></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
     '<button class="mine-button" type="button">MINING</button>',
     '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div>',
@@ -173,6 +177,7 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     name: query<HTMLElement>('.local-selection-name'),
     meta: query<HTMLElement>('.local-selection-meta'),
     oreBar: query<HTMLElement>('.local-ore-bar > div'),
+    resourceSelector: query<HTMLElement>('.mining-resource-selector'),
     mineButton: query<HTMLButtonElement>('.mine-button'),
     shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
     attackButton: query<HTMLButtonElement>('.local-attack-button'),
@@ -368,7 +373,16 @@ function updateMiningButton(
   if (!selected) return;
 
   const knownEmpty = selected.scanLevel !== 'unscanned' && selected.surveyResult === 'empty';
-  const depleted = selected.scanLevel === 'analyzed' && (selected.totalRemaining ?? 0) <= 0;
+  const targetedRemaining =
+    model.miningResourceSelection === null
+      ? (selected.totalRemaining ?? 0) > 0
+      : selected.deposits.some(
+          (deposit) =>
+            deposit.resourceId !== null &&
+            model.miningResourceSelection?.includes(deposit.resourceId) &&
+            (deposit.estimatedAmount ?? 0) > 0
+        );
+  const depleted = selected.scanLevel === 'analyzed' && !targetedRemaining;
   button.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
   button.title = model.miningAvailable
     ? ''
@@ -386,6 +400,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     name,
     meta,
     oreBar,
+    resourceSelector,
     mineButton,
     shortScanButton,
     attackButton,
@@ -416,6 +431,10 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     logPanel: systemLog,
     onChoice: options.onMiningEventChoice,
   });
+  const miningResourceSelector = new MiningResourceSelector(
+    resourceSelector,
+    options.onMiningResourceSelection
+  );
 
   const updateOverlay = (): void => {
     const selectedNpc = model.npcShips.find((npc) => npc.isSelected);
@@ -460,12 +479,16 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       shortScanButton.hidden = true;
       mineButton.hidden = true;
       attackButton.hidden = model.combat !== null;
+      miningResourceSelector.update(model, true, false);
       return;
     }
     attackButton.hidden = true;
     shortScanButton.hidden = false;
     mineButton.hidden = false;
-    if (!selected) return;
+    if (!selected) {
+      miningResourceSelector.update(model, true, false);
+      return;
+    }
     const kind = card.querySelector<HTMLElement>('.local-selection-kind');
     if (kind) kind.textContent = 'ASTEROID';
     name.textContent =
@@ -478,6 +501,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
         ? (selected.totalRemaining / selected.totalCapacity) * 100
         : 0;
     oreBar.style.width = Math.max(0, remaining) + '%';
+    miningResourceSelector.update(model, miningActive || eventActive);
     shortScanButton.disabled =
       eventActive || !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
     updateMiningButton(mineButton, model, miningActive);
