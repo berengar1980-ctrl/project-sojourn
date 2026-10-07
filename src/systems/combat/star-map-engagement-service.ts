@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import { getShipMine } from '../../data/combat/ship-mines';
 import type { ShipDefinition } from '../../core/ship-types';
 import {
   pilotingDodgeChance,
@@ -91,6 +92,18 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
+  const sensor = (installed.sensor ?? [])
+    .map((id) => getShipComponent('sensor', id))
+    .find((component) => component !== null);
+  const mineTier = Math.max(1, Math.min(6, ship.gameplayOverrides?.maxComponentTier ?? 1));
+  const mineCopies = npc.job === 'patrol' ? 2 : 1;
+  const mines = Array.from({ length: mineCopies }).flatMap(() =>
+    [
+      getShipMine('mine-ion-' + mineTier),
+      getShipMine('mine-shaped-charge-' + mineTier),
+      getShipMine('mine-hunter-' + mineTier),
+    ].filter((mine): mine is NonNullable<typeof mine> => mine !== null)
+  );
 
   return {
     id: npc.id,
@@ -111,7 +124,11 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
           ? 'kite'
           : 'fight',
     combatSpeed: Math.max(82, Math.min(185, ship.navigation.cruiseSpeed * 0.33)),
-    mineCharges: npc.job === 'patrol' ? 3 : 1,
+    mines,
+    sensorCrewSkill: skill,
+    sensorTier: sensor?.tier ?? 0,
+    sensorRangeMeters: sensor ? 1000 : 0,
+    sensorRangeMultiplier: sensor ? 1 + Number(sensor.range ?? 0) : 1,
     aiControlled: true,
     aiAggression: npc.aggression,
   };
