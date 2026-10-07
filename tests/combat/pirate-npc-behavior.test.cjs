@@ -15,7 +15,10 @@ const starModel = read('src/app/game-controller-star-map.ts');
 const mapRenderer = read('src/ui/map/npc-ship-map-renderer.ts');
 const combatRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
 const insignia = read('src/ui/ships/pirate-insignia-renderer.ts');
-const combatAi = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-combat-ai.ts');
+const combatAi = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-combat-ai.ts'
+);
 
 assert(
   data.includes('const PIRATE_NAMES = [') &&
@@ -105,4 +108,6 @@ assert(
   'both gang insignia must render on the star map and during combat'
 );
 
-console.log('PASS Voidbound-equivalent pirate population, hunt, raid, intercept and insignia wiring');
+console.log(
+  'PASS Voidbound-equivalent pirate population, hunt, raid, intercept and insignia wiring'
+);
