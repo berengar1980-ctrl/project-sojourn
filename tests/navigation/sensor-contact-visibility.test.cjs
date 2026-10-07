@@ -32,7 +32,11 @@ const eliteCivilian = sensors.sectorSensorContactInfo({
   sensorModifier: 1,
   civilianTransponder: true,
 });
-assert.equal(eliteCivilian.visible, true, 'elite sensors must resolve distant civilian transponders');
+assert.equal(
+  eliteCivilian.visible,
+  true,
+  'elite sensors must resolve distant civilian transponders'
+);
 assert.equal(eliteCivilian.identified, true);
 assert.equal(eliteCivilian.source, 'transponder');
 
@@ -44,7 +48,11 @@ const pirateContact = sensors.sectorSensorContactInfo({
   civilianTransponder: false,
   pirate: true,
 });
-assert.equal(pirateContact.visible, true, 'elite sensors must detect a nearby low-signature pirate');
+assert.equal(
+  pirateContact.visible,
+  true,
+  'elite sensors must detect a nearby low-signature pirate'
+);
 assert.equal(
   pirateContact.identified,
   false,
