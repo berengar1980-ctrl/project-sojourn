@@ -7,7 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 const model = fs.readFileSync(path.join(root, 'src/features/star-map/star-map-view-model.ts'), 'utf8');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-star-map.ts'), 'utf8');
 
 assert(
   model.includes('spriteUrl: string') &&
@@ -19,6 +19,11 @@ assert(
   controller.includes('definition.sprite.assetUrl') &&
     controller.includes('economy.sectorNpcs.liveHeading(npc)'),
   'star-map controller must resolve each NPC to its real Sojourn ship asset and heading'
+);
+assert(
+  controller.includes('sectorSensorContactInfo') &&
+    controller.includes('if (!contact.visible) return []'),
+  'star-map NPC visibility must be gated by sensor crew and hardware'
 );
 assert(
   renderer.includes('this.npcImages') &&

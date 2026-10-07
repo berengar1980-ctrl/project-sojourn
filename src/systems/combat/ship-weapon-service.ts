@@ -1,8 +1,41 @@
 import type { LayeredDamageResult, ShipIntegrityState } from '../../core/combat-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
+import {
+  sensorWeaponHitChanceBonus,
+  weaponCriticalChance,
+  weaponCycleTimeMultiplier,
+  weaponDamageMultiplier,
+} from '../crew/crew-skill-effects';
+
+export interface CrewAdjustedWeaponProfile {
+  readonly shieldDamage: number;
+  readonly hullDamage: number;
+  readonly rangeMeters: number;
+  readonly cooldownSeconds: number;
+  readonly criticalChance: number;
+  readonly hitChanceBonus: number;
+}
 
 function currentHp(value: number): number {
   return Math.max(0, value);
+}
+
+export function crewAdjustedShipWeaponProfile(
+  component: ShipComponentDefinition,
+  weaponSkill: number,
+  sensorSkill: number
+): CrewAdjustedWeaponProfile {
+  if (component.type !== 'weapon' || !component.weapon) {
+    throw new Error('Component is not a combat-capable ship weapon.');
+  }
+  return {
+    shieldDamage: Math.round(component.weapon.shieldDamage * weaponDamageMultiplier(weaponSkill)),
+    hullDamage: Math.round(component.weapon.hullDamage * weaponDamageMultiplier(weaponSkill)),
+    rangeMeters: component.weapon.rangeMeters,
+    cooldownSeconds: component.weapon.cooldownSeconds * weaponCycleTimeMultiplier(weaponSkill),
+    criticalChance: weaponCriticalChance(weaponSkill),
+    hitChanceBonus: sensorWeaponHitChanceBonus(sensorSkill),
+  };
 }
 
 export function resolveShipWeaponHit(
