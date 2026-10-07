@@ -86,8 +86,8 @@ export function createControllerStarModel(
       targetPosition: position,
       sensorSkill: sensorCrewSkill,
       sensorModifier,
-      civilianTransponder: !npc.pirate,
-      pirate: npc.pirate,
+      civilianTransponder: npc.pirate !== true,
+      pirate: npc.pirate === true,
     });
     if (!contact.visible) return [];
     return [
@@ -95,8 +95,8 @@ export function createControllerStarModel(
         id: npc.id,
         name: contact.identified ? npc.name : 'Unbekannter Kontakt',
         job: npc.job,
-        factionId: npc.factionId,
-        pirateMark: npc.pirateMark,
+        ...(npc.factionId ? { factionId: npc.factionId } : {}),
+        ...(npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
         position,
         headingRadians: economy.sectorNpcs.liveHeading(npc),
         isTravelling: economy.sectorNpcs.isTravelling(npc),
