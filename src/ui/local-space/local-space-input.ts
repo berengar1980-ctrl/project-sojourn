@@ -4,11 +4,12 @@ interface LocalSpaceInputOptions {
   readonly canvas: HTMLCanvasElement;
   readonly renderer: LocalSpaceRenderer;
   readonly onSelectAsteroid: (id: string | null) => void;
+  readonly onSelectNpc: (id: string | null) => void;
   readonly onNavigate: (x: number, y: number) => void;
 }
 
 export function bindLocalSpaceInput(options: LocalSpaceInputOptions): () => void {
-  const { canvas, renderer, onSelectAsteroid, onNavigate } = options;
+  const { canvas, renderer, onSelectAsteroid, onSelectNpc, onNavigate } = options;
   let dragging = false;
   let moved = false;
   let lastX = 0;
@@ -36,12 +37,20 @@ export function bindLocalSpaceInput(options: LocalSpaceInputOptions): () => void
     dragging = false;
     if (moved) return;
 
+    const npcId = renderer.pickNpc(event.offsetX, event.offsetY);
+    if (npcId) {
+      onSelectAsteroid(null);
+      onSelectNpc(npcId);
+      return;
+    }
     const asteroidId = renderer.pickAsteroid(event.offsetX, event.offsetY);
     if (asteroidId) {
+      onSelectNpc(null);
       onSelectAsteroid(asteroidId);
       return;
     }
 
+    onSelectNpc(null);
     onSelectAsteroid(null);
     const target = renderer.worldPointAt(event.offsetX, event.offsetY);
     onNavigate(target.x, target.y);
