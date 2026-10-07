@@ -190,9 +190,10 @@ interface MutableMine {
   definition: ShipMineDefinition;
 }
 
-const DEFAULT_ARENA_WIDTH = 2600;
-const DEFAULT_ARENA_HEIGHT = 1600;
-const EDGE_PADDING = 140;
+const DEFAULT_ARENA_WIDTH = 4200;
+const DEFAULT_ARENA_HEIGHT = 2600;
+const EDGE_PADDING = 160;
+const EDGE_WARNING_DISTANCE = 650;
 const MINE_DROP_COOLDOWN = 7.5;
 const COMBAT_DAMAGE_SCALE = 0.09;
 const DEFAULT_TURN_RATE = 0.72;
@@ -345,6 +346,40 @@ function updateAiTactic(
   combatant.tactic = combatant.setup.preferredTactic ?? 'fight';
 }
 
+function arenaBoundaryAvoidance(
+  combatant: MutableCombatant,
+  arena: StrategicCombatArenaOptions
+): { readonly x: number; readonly y: number; readonly strength: number } | null {
+  const warning = Math.max(
+    120,
+    Math.min(EDGE_WARNING_DISTANCE, arena.width * 0.22, arena.height * 0.22)
+  );
+  const left = combatant.position.x - EDGE_PADDING;
+  const right = arena.width - EDGE_PADDING - combatant.position.x;
+  const top = combatant.position.y - EDGE_PADDING;
+  const bottom = arena.height - EDGE_PADDING - combatant.position.y;
+  let x = 0;
+  let y = 0;
+  let strongest = 0;
+
+  const push = (distanceToEdge: number, dx: number, dy: number): void => {
+    if (distanceToEdge >= warning) return;
+    const raw = clamp((warning - Math.max(0, distanceToEdge)) / warning, 0, 1);
+    const strength = raw * raw;
+    x += dx * strength;
+    y += dy * strength;
+    strongest = Math.max(strongest, strength);
+  };
+
+  push(left, 1, 0);
+  push(right, -1, 0);
+  push(top, 0, 1);
+  push(bottom, 0, -1);
+  if (strongest <= 0) return null;
+  const direction = normalize(x, y);
+  return { x: direction.x, y: direction.y, strength: strongest };
+}
+
 function obstacleAvoidance(
   combatant: MutableCombatant,
   arena: StrategicCombatArenaOptions
@@ -489,6 +524,19 @@ function moveCombatant(
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
+  }
+
+  const boundary = arenaBoundaryAvoidance(combatant, arena);
+  if (boundary) {
+    const steeringWeight = 1.8 + boundary.strength * 4.2;
+    direction = normalize(
+      direction.x + boundary.x * steeringWeight,
+      direction.y + boundary.y * steeringWeight
+    );
+    targetSpeedFactor = Math.min(
+      targetSpeedFactor,
+      Math.max(0.38, 0.76 - boundary.strength * 0.34)
+    );
   }
 
   const desiredHeading = Math.atan2(direction.y, direction.x);
