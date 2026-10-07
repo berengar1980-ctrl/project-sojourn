@@ -19,8 +19,8 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Format pirate additions
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/ui/ships/pirate-insignia-renderer.ts tests/combat/pirate-npc-behavior.test.cjs
+          name: Format pirate test probe
+          command: node scripts/ci-run-and-report.cjs format -- node scripts/prettier-pirate-test-probe.cjs
       - run:
           name: Lint pirate additions
           command: node scripts/ci-run-and-report.cjs lint -- npx eslint src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/ui/ships/pirate-insignia-renderer.ts
