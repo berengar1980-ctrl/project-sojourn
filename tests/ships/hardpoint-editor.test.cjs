@@ -13,6 +13,9 @@ assert(editor.includes('loadShipsFromServer()'), 'editor must preload ships befo
 assert(editor.includes('fetch("/"+path'), 'editor must fetch hardpoint JSONs from the dev server');
 assert(editor.includes('fetch(url,{cache:"no-store"})'), 'editor must load ship sprites from the dev server');
 assert(editor.includes('createWritable()'), 'editor must save JSON directly into the checkout');
+assert(editor.includes('ensureProjectConnected()'), 'saving must reconnect project file handles when needed');
+assert(editor.includes('if(!(await ensureProjectConnected()))return;'), 'save actions must request project access before writing');
+assert(editor.includes('if(!ship.handle)throw new Error'), 'save must fail clearly instead of dereferencing a null file handle');
 assert(editor.includes('data-type="engines"'), 'editor must expose editable engine hardpoints');
 assert(editor.includes('engines:{label:"Engine"'), 'engines must participate in editor selection and dragging');
 assert(editor.includes('weaponLasers'), 'editor must expose weapon laser hardpoints');
