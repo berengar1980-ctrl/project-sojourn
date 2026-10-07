@@ -57,23 +57,6 @@ export interface PortSystemMarketRowView extends PortSystemMarketInput {
   readonly profit: number | null;
 }
 
-export interface PortTradeOpportunityView {
-  readonly resourceId: string;
-  readonly resourceName: string;
-  readonly buyLocationId: string;
-  readonly buyLocationName: string;
-  readonly buyPrice: number;
-  readonly buyAgeDays: number;
-  readonly buyDistance: number;
-  readonly sellLocationId: string;
-  readonly sellLocationName: string;
-  readonly sellPrice: number;
-  readonly sellAgeDays: number;
-  readonly sellDistance: number;
-  readonly spreadPerTon: number;
-  readonly spreadPercent: number;
-}
-
 export interface PortCargoSaleView {
   readonly resourceId: string;
   readonly name: string;
@@ -176,7 +159,6 @@ export interface PortViewModel {
   readonly cargoSales: readonly PortCargoSaleView[];
   readonly systemMarket: readonly PortSystemMarketRowView[];
   readonly systemMarketResourceIds: readonly string[];
-  readonly tradeOpportunities: readonly PortTradeOpportunityView[];
   readonly producedNames: readonly string[];
   readonly neededNames: readonly string[];
   readonly crew: PortCrewStateView;
@@ -399,48 +381,6 @@ function cargoSaleRows(
     .sort((a, b) => b.localProfit - a.localProfit);
 }
 
-function tradeOpportunities(
-  system: readonly PortSystemMarketRowView[]
-): readonly PortTradeOpportunityView[] {
-  const ids = [...new Set(system.map((entry) => entry.resourceId))];
-  return ids
-    .flatMap((resourceId) => {
-      const rows = system.filter((entry) => entry.resourceId === resourceId);
-      if (rows.length < 2) return [];
-      const buy = [...rows].sort(
-        (a, b) => a.price - b.price || a.ageDays - b.ageDays || a.distance - b.distance
-      )[0]!;
-      const sell = [...rows].sort(
-        (a, b) => b.sellPrice - a.sellPrice || a.ageDays - b.ageDays || a.distance - b.distance
-      )[0]!;
-      const spreadPerTon = sell.sellPrice - buy.price;
-      return [
-        {
-          resourceId,
-          resourceName: buy.resourceName,
-          buyLocationId: buy.locationId,
-          buyLocationName: buy.locationName,
-          buyPrice: buy.price,
-          buyAgeDays: buy.ageDays,
-          buyDistance: buy.distance,
-          sellLocationId: sell.locationId,
-          sellLocationName: sell.locationName,
-          sellPrice: sell.sellPrice,
-          sellAgeDays: sell.ageDays,
-          sellDistance: sell.distance,
-          spreadPerTon,
-          spreadPercent: buy.price > 0 ? Math.round((spreadPerTon / buy.price) * 100) : 0,
-        },
-      ];
-    })
-    .sort(
-      (a, b) =>
-        b.spreadPercent - a.spreadPercent ||
-        b.spreadPerTon - a.spreadPerTon ||
-        a.resourceName.localeCompare(b.resourceName)
-    );
-}
-
 function crewInitials(name: string): string {
   return name
     .split(' ')
@@ -571,7 +511,6 @@ export function createPortViewModel(
     cargoSales: cargoSaleRows(localMarket, systemMarket, player, location.id),
     systemMarket,
     systemMarketResourceIds: [...new Set(systemMarket.map((entry) => entry.resourceId))],
-    tradeOpportunities: tradeOpportunities(systemMarket),
     producedNames: port.producedCommodityIds.map(resourceName),
     neededNames: port.neededCommodityIds.map(resourceName),
     crew: {
