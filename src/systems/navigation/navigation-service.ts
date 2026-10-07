@@ -287,6 +287,36 @@ export function createNavigationService(
       state.currentAngularThrust = 0;
       return snapshot();
     },
+    recoverToNearestDock() {
+      const destination = world.locations
+        .filter(
+          (location) =>
+            location.activities.shipyard || location.activities.dock || location.activities.refuel
+        )
+        .map((location) => ({
+          location,
+          priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
+          distance: Math.hypot(
+            location.position.x - state.currentPosition.x,
+            location.position.y - state.currentPosition.y
+          ),
+        }))
+        .sort(
+          (first, second) =>
+            first.priority - second.priority || first.distance - second.distance
+        )[0]?.location;
+      if (!destination) return snapshot();
+
+      state.travel = null;
+      state.pursuit = null;
+      state.currentLocationId = destination.id;
+      state.selectedDestinationId = destination.id;
+      state.currentPosition = { ...destination.position };
+      state.currentHeading = 0;
+      state.currentTurnRate = 0;
+      state.currentAngularThrust = 0;
+      return snapshot();
+    },
     setCruiseSpeed,
     tick(deltaSeconds) {
       if (state.pursuit) advancePursuit(state, deltaSeconds);

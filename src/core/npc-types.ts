@@ -2,7 +2,8 @@ import type { NpcEconomyState } from './economy-types';
 import type { ShipComponentType, ShipRole } from './ship-types';
 import type { WorldPoint } from './world-types';
 
-export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol';
+export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol' | 'pirate';
+export type NpcFactionId = 'civilian' | 'pirates' | 'pirates2';
 export type NpcTravelProfile = 'fast' | 'balanced' | 'safe';
 export type NpcWorkRiskPreference = 'safe' | 'risky';
 export type NpcCombatTargetKind = 'player' | 'npc';
@@ -48,6 +49,14 @@ export interface SectorNpcState extends NpcEconomyState {
   hullHp: number;
   hullMaxHp: number;
   aggression: number;
+  factionId?: NpcFactionId;
+  pirate?: boolean;
+  pirateMark?: 'broken-spear' | 'black-tide';
+  pirateHuntZoneId?: string;
+  pirateHuntCycles?: number;
+  combatRecoverySeconds?: number;
+  combatRecoveryLocationId?: string;
+  combatDefeats?: number;
   workRiskPreference: NpcWorkRiskPreference;
   lastWorkEvent?: NpcWorkEventRecord;
   activityId: string;
