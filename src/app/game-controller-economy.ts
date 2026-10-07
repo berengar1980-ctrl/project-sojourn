@@ -43,6 +43,7 @@ import {
   type NpcSectorService,
 } from '../systems/npcs/npc-sector-service';
 import type { SectorNpcState } from '../core/npc-types';
+import type { NavigationService } from '../systems/navigation';
 
 export interface ControllerEconomy {
   readonly markets: EconomyMarketService;
@@ -57,7 +58,7 @@ export interface ControllerEconomy {
   readonly sectorNpcs: NpcSectorService;
 }
 
-export function createControllerEconomy(): ControllerEconomy {
+export function createControllerEconomy(navigation: NavigationService): ControllerEconomy {
   const situations = createMarketSituationService(sectorPorts, economyResources, 73);
   const markets = createEconomyMarketService(sectorPorts, economyResources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
@@ -67,7 +68,9 @@ export function createControllerEconomy(): ControllerEconomy {
   const marketIntel = createMarketIntelService(markets);
   marketIntel.observeAll(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
-  const sectorNpcs = createNpcSectorService(narrowsSector, npcStates);
+  const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
+    getPlayerPosition: () => navigation.getSnapshot().currentPosition,
+  });
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
