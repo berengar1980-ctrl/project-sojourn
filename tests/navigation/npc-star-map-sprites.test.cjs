@@ -21,6 +21,11 @@ assert(
   'star-map controller must resolve each NPC to its real Sojourn ship asset and heading'
 );
 assert(
+  controller.includes('sectorSensorContactInfo') &&
+    controller.includes('if (!contact.visible) return []'),
+  'star-map NPC visibility must be gated by the player sensor crew and sensor hardware'
+);
+assert(
   renderer.includes('this.npcImages') &&
     renderer.includes('this.npcLighting.draw') &&
     !renderer.includes('this.context.rotate(Math.PI / 4)'),
