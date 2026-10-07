@@ -6,12 +6,7 @@ const { execFileSync } = require('child_process');
 
 const DOC_PATH = 'docs/VOIDBOUND_FEATURE_PARITY.md';
 const EXPECTED_FEATURES = 241;
-const VALID_STATUSES = new Set([
-  '✅ Umgesetzt',
-  '🟨 Teilweise',
-  '⬜ Offen',
-  '🔁 Bewusst anders',
-]);
+const VALID_STATUSES = new Set(['✅ Umgesetzt', '🟨 Teilweise', '⬜ Offen', '🔁 Bewusst anders']);
 const VALID_DECISIONS = new Set(['offen', 'übernehmen', 'ändern', 'verwerfen', 'später']);
 const FEATURE_BEARING_PREFIXES = ['src/', 'tests/', 'resources/'];
 
