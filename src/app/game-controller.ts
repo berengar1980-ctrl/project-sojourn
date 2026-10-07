@@ -481,14 +481,16 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
     state.combatPanel?.update();
   } else if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
   else if (state.mode === 'local-space' && state.localSpace) {
-    state.localSpace.tick(deltaSeconds);
-    const localSnapshot = state.localSpace.getSnapshot();
-    context.audio.updatePlayerRcs(
-      state.activeShip.sprite.hardpoints,
-      localSnapshot.instance.ship,
-      performance.now() / 1000
-    );
-    state.localNpcMining?.tick(deltaSeconds);
+    if (state.embeddedCombat !== 'local-space') {
+      state.localSpace.tick(deltaSeconds);
+      const localSnapshot = state.localSpace.getSnapshot();
+      context.audio.updatePlayerRcs(
+        state.activeShip.sprite.hardpoints,
+        localSnapshot.instance.ship,
+        performance.now() / 1000
+      );
+      state.localNpcMining?.tick(deltaSeconds);
+    }
     state.panels.local?.update(controllerLocalModel(context));
   } else if (state.mode === 'salvage-space') {
     state.salvageScene?.tick(deltaSeconds);
