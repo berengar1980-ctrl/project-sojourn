@@ -53,6 +53,7 @@ interface SalvageSceneOptions {
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly isCombatActive?: () => boolean;
+  readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -148,6 +149,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         attackerPosition: { ...playerShip.position },
         defenderPosition: { ...target.position },
       });
+    },
+    onCombatTactic(tactic) {
+      options.onCombatTactic?.(tactic);
+      refresh();
     },
     onNavigate(target) {
       service.startNavigation(target);
