@@ -261,6 +261,7 @@ export class LocalSpaceRenderer {
           light: { x: -0.72, y: -0.56 },
           offsetX: offset.x,
           offsetY: offset.y,
+          directionalStrength: 2.05,
         });
       } else {
         this.context.fillStyle = '#8597a1';
@@ -688,6 +689,7 @@ export class LocalSpaceRenderer {
         light: { x: -0.72, y: -0.56 },
         offsetX: offset.x,
         offsetY: offset.y,
+        directionalStrength: 2.05,
       });
     }
 
