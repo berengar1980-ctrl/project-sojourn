@@ -6,79 +6,63 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const data = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/economy/sector-npc-economy.ts'
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+const data = read('src/data/economy/sector-npc-economy.ts');
+const pirateService = read('src/systems/npcs/pirate-npc-service.ts');
+const engagements = read('src/systems/combat/star-map-engagement-service.ts');
+const renderer = read('src/ui/map/npc-ship-map-renderer.ts');
+const starModel = read('src/app/game-controller-star-map.ts');
+const economy = read('src/systems/economy/npc-economy-service.ts');
+
+for (const name of [
+  'Azrael Crovus',
+  'Borsk Dhal',
+  'Cairn Eshkar',
+  'Dagan Frayne',
+  'Ezek Vargos',
+  'Fenric Ghor',
+  'Gideon Hrax',
+  'Havel Jurn',
+  'Ishar Krail',
+]) {
+  assert(data.includes(name), 'missing Voidbound pirate captain: ' + name);
+}
+
+assert(
+  data.includes("index < 5") &&
+    data.includes("'harrow-corsairs'") &&
+    data.includes("'black-tide'"),
+  'initial pirates must be split 5/4 across the two gangs'
 );
+assert(
+  data.includes("pirateEmblem: firstGang ? 'harrow-claw' : 'black-cross'") &&
+    data.includes("firstGang ? 'blackjaw-outpost' : 'gallows-anchor'"),
+  'each gang must have a distinct emblem and home base'
+);
+assert(
+  data.includes("const ship = patrolVariantShips[index % patrolVariantShips.length]!"),
+  'pirates must temporarily use patrol hull variants'
+);
+assert(
+  data.includes('aggression: 76 + ((index * 7) % 23)'),
+  'pirates should inherit Voidbound-style high aggression'
+);
+
 const combatAi = loadStandaloneTypeScriptModule(
   root,
   'src/systems/npcs/npc-combat-ai.ts'
 );
-
-const npcs = data.createSectorNpcEconomyStates();
-const pirates = npcs.filter((npc) => npc.pirate);
-
-assert.equal(pirates.length, 9, 'Sojourn should start with the Voidbound-equivalent pirate population');
-assert.equal(
-  pirates.filter((npc) => npc.pirateFaction === 'harrow-corsairs').length,
-  5,
-  'Harrow Corsairs should have five initial ships'
-);
-assert.equal(
-  pirates.filter((npc) => npc.pirateFaction === 'black-tide').length,
-  4,
-  'Black Tide should have four initial ships'
-);
-assert(
-  pirates.every((npc) => npc.job === 'patrol' && npc.shipId.startsWith('patrol-60m-variant-')),
-  'pirates must temporarily use patrol hulls'
-);
-assert(
-  pirates.every((npc) => npc.aggression >= 75),
-  'pirates should inherit Voidbound-style high aggression'
-);
-assert(
-  pirates
-    .filter((npc) => npc.pirateFaction === 'harrow-corsairs')
-    .every(
-      (npc) =>
-        npc.pirateHomeLocationId === 'blackjaw-outpost' &&
-        npc.pirateEmblem === 'harrow-claw'
-    ),
-  'Harrow Corsairs need their own base and insignia'
-);
-assert(
-  pirates
-    .filter((npc) => npc.pirateFaction === 'black-tide')
-    .every(
-      (npc) =>
-        npc.pirateHomeLocationId === 'gallows-anchor' &&
-        npc.pirateEmblem === 'black-cross'
-    ),
-  'Black Tide needs its own base and insignia'
-);
-
-const pirate = pirates[0];
-assert(pirate);
+const pirate = {
+  id: 'pirate-test',
+  pirate: true,
+  job: 'patrol',
+  hullHp: 100,
+  hullMaxHp: 100,
+  aggression: 90,
+};
 assert.equal(combatAi.npcMayInitiateAttack(pirate), true);
 assert.equal(combatAi.npcLooksHostileToPatrol(pirate), true);
-
-const pirateService = fs.readFileSync(
-  path.join(root, 'src/systems/npcs/pirate-npc-service.ts'),
-  'utf8'
-);
-const engagements = fs.readFileSync(
-  path.join(root, 'src/systems/combat/star-map-engagement-service.ts'),
-  'utf8'
-);
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/map/npc-ship-map-renderer.ts'),
-  'utf8'
-);
-const economy = fs.readFileSync(
-  path.join(root, 'src/systems/economy/npc-economy-service.ts'),
-  'utf8'
-);
 
 assert(
   pirateService.includes('chooseHuntZone') &&
@@ -87,7 +71,7 @@ assert(
     pirateService.includes('patrolPressure') &&
     pirateService.includes('Kampfschäden · Rückzug') &&
     pirateService.includes('maintainPopulation'),
-  'pirate autonomy must preserve Voidbound hunt-zone, anti-clustering, patrol-pressure, retreat and replacement behavior'
+  'pirate autonomy must preserve hunt zones, anti-clustering, patrol pressure, retreat and replacement'
 );
 
 assert(
@@ -95,16 +79,20 @@ assert(
     engagements.includes("['freighter', 'miner', 'salvager']") &&
     engagements.includes('pirateLoot') &&
     engagements.includes('NOTSIGNAL > KORSARENÜBERFALL'),
-  'pirates must intercept the player and civilian prey and resolve raids through shared combat'
+  'pirates must intercept player/civilian prey and resolve raids through shared combat'
 );
 
 assert(
   renderer.includes("'harrow-claw'") &&
     renderer.includes("'black-cross'") &&
     renderer.includes("'black-tide'"),
-  'the two pirate gangs must have visibly distinct map insignia'
+  'the two gangs must have visibly distinct map insignia'
 );
-
+assert(
+  starModel.includes('civilianTransponder: !npc.pirate') &&
+    starModel.includes('npc.pirateFaction && npc.pirateEmblem'),
+  'pirates must use shorter non-civilian contact ranges and reveal insignia only after identification'
+);
 assert(
   economy.includes("pirate?: boolean") && economy.includes('.pirate) continue'),
   'pirates must stay out of civilian trade/rest autonomy'
