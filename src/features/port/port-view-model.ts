@@ -546,9 +546,9 @@ export function createPortViewModel(
       id: location.id,
       kind: location.kind,
       dangerLevel: location.dangerLevel,
-      planetBiome: location.planetBiome,
-      ringStyle: location.ringStyle,
-      stationType: location.stationType,
+      ...(location.planetBiome === undefined ? {} : { planetBiome: location.planetBiome }),
+      ...(location.ringStyle === undefined ? {} : { ringStyle: location.ringStyle }),
+      ...(location.stationType === undefined ? {} : { stationType: location.stationType }),
       light: {
         x: starPosition.x - location.position.x,
         y: starPosition.y - location.position.y,

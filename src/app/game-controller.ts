@@ -119,6 +119,7 @@ function advanceEconomyDay(
     economy.situations.advanceNextDay();
     economy.simulation.advanceNextDay();
     economy.npcs.advanceNextDay();
+    economy.marketIntel.recordHistory(economy.situations.currentDay);
   }
 }
 
@@ -169,11 +170,17 @@ function syncControllerNavigationCrewPerformance(context: ControllerRuntimeConte
 }
 
 function controllerStarModel(context: ControllerRuntimeContext) {
+  const runtime = resolveShipRuntimeSetup(
+    context.state.activeShip,
+    controllerShipRuntimeOptions(context)
+  );
   return createControllerStarModel(
     context.navigation,
     context.state.activeShip,
     context.economy,
-    context.state.selectedNpcId
+    context.state.selectedNpcId,
+    runtime.sensorCrewSkill,
+    runtime.sensorModifier
   );
 }
 

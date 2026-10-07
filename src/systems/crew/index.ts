@@ -20,6 +20,7 @@ export {
   engineeringRepairCostMultiplier,
   engineeringShieldRegenMultiplier,
   logisticsSaleFeeRate,
+  miningDeepSignatureChance,
   miningFuelUseMultiplier,
   miningProspectTimeMultiplier,
   miningProspectUncertainty,
@@ -33,19 +34,36 @@ export {
   pilotingFuelUseMultiplier,
   pilotingTravelSpeedMultiplier,
   pilotingTravelTimeMultiplier,
+  salvageActionChance,
   salvageExtraWreckLootChance,
+  salvageRelicChance,
+  salvageSpecialPersonalLootChance,
   salvageWorkTimeMultiplier,
+  salvageWreckResourceQuantity,
   salvageYieldMultiplier,
+  sensorCivilianTransponderRange,
   sensorContactBaseRange,
+  sensorInspectionAnomalyChance,
+  sensorInspectionScanStrength,
+  sensorMarketIntelAge,
   sensorMarketIntelBaseRange,
+  sensorMiningClaimDetectionChance,
+  sensorNpcMiningClaimDetectionChance,
+  sensorPirateDetectionRange,
+  sensorPirateIdentificationRange,
+  sensorSalvageWreckRange,
   sensorWeaponHitChanceBonus,
   weaponCriticalChance,
   weaponCycleTimeMultiplier,
   weaponDamageMultiplier,
+  weaponInspectionPowerBonus,
 } from './crew-skill-effects';
 export { createCrewRosterService } from './crew-roster-service';
 
-export type { CrewSkillEffects } from './crew-skill-effects';
+export type {
+  CrewSkillEffects,
+  SensorInspectionAnomalyContext,
+} from './crew-skill-effects';
 export type { CrewRosterService } from './crew-roster-service';
 export type {
   CrewCombatSkills,

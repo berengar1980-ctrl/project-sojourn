@@ -66,7 +66,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   situations.advanceDay(0);
   const trade = createPlayerTradeService(markets);
   const marketIntel = createMarketIntelService(markets);
-  marketIntel.observeAll(0);
+  marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
