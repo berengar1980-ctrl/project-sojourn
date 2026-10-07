@@ -1,4 +1,5 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { MapCamera } from './map-camera';
@@ -58,7 +59,7 @@ export class NpcShipMapRenderer {
         npc.headingRadians,
         npc.isTravelling
       );
-      this.drawPirateMark(npc, geometry);
+      if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
       this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
       hits.push({
         id: npc.id,
@@ -176,57 +177,6 @@ export class NpcShipMapRenderer {
     this.context.beginPath();
     this.context.arc(x, y, Math.max(width, height) * 0.72 + 5, 0, Math.PI * 2);
     this.context.stroke();
-    this.context.restore();
-  }
-  private drawPirateMark(
-    npc: StarMapViewModel['npcShips'][number],
-    geometry: ShipScreenGeometry
-  ): void {
-    if (!npc.pirateMark || geometry.width < 10) return;
-    const size = Math.max(5, Math.min(9, geometry.width * 0.42));
-    const x = geometry.center.x;
-    const y = geometry.center.y;
-    this.context.save();
-    this.context.translate(x, y);
-    this.context.lineWidth = 1.35;
-    this.context.lineCap = 'round';
-    this.context.lineJoin = 'round';
-    this.context.strokeStyle =
-      npc.pirateMark === 'broken-spear'
-        ? 'rgba(240, 190, 91, .92)'
-        : 'rgba(224, 76, 68, .92)';
-    this.context.fillStyle =
-      npc.pirateMark === 'broken-spear'
-        ? 'rgba(240, 190, 91, .32)'
-        : 'rgba(224, 76, 68, .28)';
-
-    if (npc.pirateMark === 'broken-spear') {
-      this.context.beginPath();
-      this.context.moveTo(-size * 0.52, size * 0.48);
-      this.context.lineTo(-size * 0.08, size * 0.04);
-      this.context.lineTo(size * 0.18, -size * 0.2);
-      this.context.moveTo(size * 0.48, -size * 0.5);
-      this.context.lineTo(size * 0.12, -size * 0.14);
-      this.context.stroke();
-      this.context.beginPath();
-      this.context.moveTo(-size * 0.16, -size * 0.08);
-      this.context.lineTo(size * 0.22, size * 0.3);
-      this.context.lineTo(-size * 0.04, size * 0.38);
-      this.context.closePath();
-      this.context.fill();
-      this.context.stroke();
-    } else {
-      this.context.beginPath();
-      this.context.arc(0, 0, size * 0.5, Math.PI * 0.15, Math.PI * 1.85);
-      this.context.stroke();
-      this.context.beginPath();
-      this.context.moveTo(-size * 0.52, size * 0.2);
-      this.context.lineTo(-size * 0.15, size * 0.52);
-      this.context.lineTo(0, size * 0.22);
-      this.context.lineTo(size * 0.18, size * 0.52);
-      this.context.lineTo(size * 0.52, size * 0.18);
-      this.context.stroke();
-    }
     this.context.restore();
   }
 
