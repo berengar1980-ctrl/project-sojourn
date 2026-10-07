@@ -86,7 +86,7 @@ export function createControllerStarModel(
       targetPosition: position,
       sensorSkill: sensorCrewSkill,
       sensorModifier,
-      civilianTransponder: true,
+      civilianTransponder: !npc.pirate,
     });
     if (!contact.visible) return [];
     return [
@@ -103,6 +103,9 @@ export function createControllerStarModel(
         spriteUrl: definition.sprite.assetUrl,
         spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
         hardpoints: definition.sprite.hardpoints,
+        ...(contact.identified && npc.pirateFaction
+          ? { pirateFaction: npc.pirateFaction, pirateEmblem: npc.pirateEmblem }
+          : {}),
       },
     ];
   });
