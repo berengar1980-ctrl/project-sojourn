@@ -78,6 +78,7 @@ export function createControllerStarModel(
   );
 
   const npcShips = economy.sectorNpcs.npcs.flatMap((npc) => {
+    if (npc.hullHp <= 0) return [];
     const definition = getShipDefinition(npc.shipId);
     if (!definition) return [];
     const position = economy.sectorNpcs.livePosition(npc);
