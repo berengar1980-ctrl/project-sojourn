@@ -3,6 +3,11 @@ import { createGameAudioService, type GameAudioService } from '../systems/audio/
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldLocation } from '../core/world-types';
 import { createCrewRosterService, type CrewRosterService } from '../systems/crew';
+import {
+  createStarMapEngagementService,
+  type StarMapEngagementService,
+  type StrategicCombatantSetup,
+} from '../systems/combat';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
@@ -15,6 +20,7 @@ import {
 import {
   createShipLoadoutService,
   getAllShipDefinitions,
+  getShipComponent,
   getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipLoadoutService,
@@ -23,6 +29,10 @@ import {
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
+import {
+  createStrategicCombatPanel,
+  type StrategicCombatPanel,
+} from '../ui/combat/strategic-combat-panel';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createControllerEconomy, type ControllerEconomy } from './game-controller-economy';
@@ -31,7 +41,7 @@ import { createMiningLocalSpace } from './game-controller-mining';
 import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene, type SalvageSceneController } from './game-controller-salvage';
 
-type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port';
+type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port' | 'combat';
 
 interface GameControllerOptions {
   readonly root: HTMLElement;
