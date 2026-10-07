@@ -1,5 +1,6 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { PlayerShipMapView } from '../../features/star-map/star-map-view-model';
+import type { ManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import {
   createIdleStationKeepingState,
   updateIdleStationKeeping,
@@ -74,11 +75,17 @@ export class PlayerShipRenderer {
       angle,
     };
 
-    const maneuverDemand = idle ?? {
-      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
-      angularThrust: ship.angularThrust,
-      lateralThrust: ship.lateralThrust,
-    };
+    const maneuverDemand: ManeuverDemand = idle
+      ? {
+          turnRateRadiansPerSecond: idle.turnRateRadiansPerSecond,
+          angularThrust: idle.angularThrust,
+          lateralThrust: idle.lateralThrust,
+        }
+      : {
+          turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+          angularThrust: ship.angularThrust,
+          lateralThrust: ship.lateralThrust,
+        };
     const engineIntensity = ship.isTravelling ? 0.82 : 0;
 
     if (ship.isTravelling) {
