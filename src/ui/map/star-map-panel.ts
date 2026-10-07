@@ -17,6 +17,8 @@ interface StarMapPanelOptions {
   readonly model: StarMapViewModel;
   readonly log: SystemLogService;
   readonly onSelectLocation: (id: string) => void;
+  readonly onSelectNpc: (id: string) => void;
+  readonly onAttackNpc: (id: string) => void;
   readonly onStartTravel: () => void;
   readonly onDock: () => void;
 }
@@ -35,6 +37,15 @@ function activityLabels(model: StarMapViewModel): string {
   ]
     .filter((label): label is string => Boolean(label))
     .join(' · ');
+}
+
+function distanceToSelectedNpc(model: StarMapViewModel): number {
+  const selected = model.npcShips.find((npc) => npc.isSelected);
+  if (!selected) return 0;
+  return Math.hypot(
+    selected.position.x - model.playerShip.position.x,
+    selected.position.y - model.playerShip.position.y
+  );
 }
 
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
@@ -58,6 +69,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       <div class="selection-actions">
         <button class="travel-button" type="button">FLUG STARTEN</button>
         <button class="dock-button" type="button" hidden>ANDOCKEN</button>
+        <button class="attack-button" type="button" hidden>ANGREIFEN</button>
       </div>
     </div>
   `;
@@ -67,10 +79,20 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const card = shell.querySelector<HTMLElement>('.selection-card');
   const travelButton = shell.querySelector<HTMLButtonElement>('.travel-button');
   const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
+  const attackButton = shell.querySelector<HTMLButtonElement>('.attack-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
   const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
-  if (!canvas || !card || !travelButton || !dockButton || !travelStatus || !modeToggle || !labelToggle) {
+  if (
+    !canvas ||
+    !card ||
+    !travelButton ||
+    !dockButton ||
+    !attackButton ||
+    !travelStatus ||
+    !modeToggle ||
+    !labelToggle
+  ) {
     throw new Error('Star map UI is incomplete.');
   }
 
@@ -102,24 +124,41 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     placementClass: 'star-system-log',
   });
 
-  const updateSelection = (): void => {
-    const selected = model.locations.find((location) => location.isSelected);
-    card.hidden = !selected;
+  const updateTravelStatus = (): void => {
     travelStatus.hidden = !model.navigation.isTravelling;
+    if (!model.navigation.isTravelling) return;
 
-    if (model.navigation.isTravelling) {
-      const percent = Math.round(model.navigation.progress * 100);
+    if (model.navigation.isPursuing) {
+      const target = model.npcShips.find((npc) => npc.id === model.navigation.pursuitTargetId);
+      const distance = target
+        ? Math.hypot(
+            target.position.x - model.playerShip.position.x,
+            target.position.y - model.playerShip.position.y
+          )
+        : 0;
       travelStatus.textContent =
-        'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
+        'VERFOLGUNG · ' +
+        (target?.name.toUpperCase() ?? 'KONTAKT') +
+        ' · ' +
+        Math.round(distance) +
+        ' u';
+      return;
     }
 
-    if (!selected) return;
+    const percent = Math.round(model.navigation.progress * 100);
+    travelStatus.textContent =
+      'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
+  };
+
+  const updateLocationSelection = (): boolean => {
+    const selected = model.locations.find((location) => location.isSelected);
+    if (!selected) return false;
 
     const kind = card.querySelector<HTMLElement>('.selection-kind');
     const name = card.querySelector<HTMLElement>('.selection-name');
     const description = card.querySelector<HTMLElement>('.selection-description');
     const meta = card.querySelector<HTMLElement>('.selection-meta');
-    if (!kind || !name || !description || !meta) return;
+    if (!kind || !name || !description || !meta) return true;
 
     kind.textContent = selected.kind.replace('-', ' ').toUpperCase();
     name.textContent = selected.name;
@@ -129,6 +168,36 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     const isCurrent = selected.id === model.navigation.currentLocationId;
     travelButton.hidden = model.navigation.isTravelling || isCurrent;
     dockButton.hidden = model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
+    attackButton.hidden = true;
+    return true;
+  };
+
+  const updateNpcSelection = (): boolean => {
+    const selected = model.npcShips.find((npc) => npc.isSelected);
+    if (!selected) return false;
+
+    const kind = card.querySelector<HTMLElement>('.selection-kind');
+    const name = card.querySelector<HTMLElement>('.selection-name');
+    const description = card.querySelector<HTMLElement>('.selection-description');
+    const meta = card.querySelector<HTMLElement>('.selection-meta');
+    if (!kind || !name || !description || !meta) return true;
+
+    kind.textContent = 'SCHIFF // ' + selected.job.toUpperCase();
+    name.textContent = selected.name;
+    description.textContent = selected.activity;
+    const status = selected.combatMode ? selected.combatMode.toUpperCase() : 'KONTAKT';
+    meta.textContent = `STATUS ${status} · DISTANZ ${Math.round(distanceToSelectedNpc(model))} u`;
+    travelButton.hidden = true;
+    dockButton.hidden = true;
+    attackButton.hidden =
+      selected.combatMode !== null || selected.id === model.navigation.pursuitTargetId;
+    return true;
+  };
+
+  const updateSelection = (): void => {
+    updateTravelStatus();
+    const hasSelection = updateNpcSelection() || updateLocationSelection();
+    card.hidden = !hasSelection;
   };
 
   const observer = new ResizeObserver(() => renderer.resize());
@@ -138,9 +207,14 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     canvas,
     renderer,
     onSelectLocation: options.onSelectLocation,
+    onSelectNpc: options.onSelectNpc,
   });
   travelButton.addEventListener('click', options.onStartTravel);
   dockButton.addEventListener('click', options.onDock);
+  attackButton.addEventListener('click', () => {
+    const selected = model.npcShips.find((npc) => npc.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
 
   updateSelection();
 

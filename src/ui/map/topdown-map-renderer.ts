@@ -6,18 +6,21 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale, shipSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
+import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
-import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
-import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
 
-interface HitArea {
+export interface StarMapPick {
+  readonly kind: 'location' | 'npc';
   readonly id: string;
+}
+
+interface HitArea extends StarMapPick {
   readonly x: number;
   readonly y: number;
   readonly radius: number;
@@ -32,8 +35,7 @@ export class TopdownMapRenderer {
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
   private readonly stations: ProceduralStationRenderer;
-  private readonly npcLighting = new ShipLightingRenderer();
-  private readonly npcImages = new Map<string, HTMLImageElement>();
+  private readonly npcShips: NpcShipMapRenderer;
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
   private labelsVisible = true;
@@ -56,6 +58,7 @@ export class TopdownMapRenderer {
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
     this.stations = new ProceduralStationRenderer(context);
+    this.npcShips = new NpcShipMapRenderer(context, () => this.draw());
     this.resize();
   }
 
@@ -111,13 +114,13 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
-  pickLocation(x: number, y: number): string | null {
+  pickContact(x: number, y: number): StarMapPick | null {
     let best: HitArea | null = null;
     for (const area of this.hitAreas) {
       if (Math.hypot(x - area.x, y - area.y) > area.radius) continue;
       if (!best || area.radius < best.radius) best = area;
     }
-    return best?.id ?? null;
+    return best ? { kind: best.kind, id: best.id } : null;
   }
 
   private draw(): void {
@@ -140,10 +143,14 @@ export class TopdownMapRenderer {
     this.drawOrbits(width, height);
     this.drawStar(width, height);
     this.drawRoute(width, height);
-    this.hitAreas = this.model.locations.map((location) =>
+    this.npcShips.drawPursuitLine(this.model, this.camera, width, height);
+    const locationHits = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
     );
-    this.drawNpcShips(width, height);
+    const npcHits = this.npcShips
+      .draw(this.model, this.camera, width, height, this.labelsVisible)
+      .map((hit) => ({ ...hit, kind: 'npc' as const }));
+    this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height);
   }
 
@@ -163,64 +170,6 @@ export class TopdownMapRenderer {
       maxX: maxX + padding,
       maxY: maxY + padding,
     };
-  }
-
-  private drawNpcShips(width: number, height: number): void {
-    const zoom = this.camera.getRelativeZoom();
-    const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
-    for (const npc of this.model.npcShips) {
-      const point = this.camera.worldToScreen(npc.position, width, height);
-      let image = this.npcImages.get(npc.spriteUrl);
-      if (!image) {
-        image = new Image();
-        image.onload = () => this.draw();
-        image.src = npc.spriteUrl;
-        this.npcImages.set(npc.spriteUrl, image);
-      }
-
-      const widthPx = Math.max(
-        8,
-        Math.min(22, npc.nominalLengthMeters * 0.13 * shipSymbolScale(zoom))
-      );
-      const aspect =
-        image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-          ? image.naturalWidth / image.naturalHeight
-          : npc.spriteAspectRatio;
-      const geometry: ShipScreenGeometry = {
-        center: point,
-        width: widthPx,
-        height: widthPx / aspect,
-        angle: npc.headingRadians,
-      };
-
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(npc.headingRadians);
-      this.context.globalAlpha = npc.isTravelling ? 0.96 : 0.8;
-      if (image.complete && image.naturalWidth > 0) {
-        const offset = spriteDrawOffset(npc.hardpoints, geometry);
-        this.npcLighting.draw(this.context, {
-          image,
-          width: geometry.width,
-          height: geometry.height,
-          angle: npc.headingRadians,
-          light: { x: starPoint.x - point.x, y: starPoint.y - point.y },
-          offsetX: offset.x,
-          offsetY: offset.y,
-        });
-      } else {
-        this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
-        this.context.fillRect(-widthPx / 2, -geometry.height / 2, widthPx, geometry.height);
-      }
-      this.context.restore();
-
-      if (this.labelsVisible && zoom >= 1.35) {
-        this.context.fillStyle = 'rgba(196, 211, 221, .78)';
-        this.context.font = '9px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 11);
-      }
-    }
   }
 
   private drawPlayerShip(width: number, height: number): void {
@@ -425,7 +374,13 @@ export class TopdownMapRenderer {
       this.drawLocationLabel(location, point.x, point.y + radius + 20);
     }
 
-    return { id: location.id, x: point.x, y: point.y, radius: radius + 12 };
+    return {
+      kind: 'location',
+      id: location.id,
+      x: point.x,
+      y: point.y,
+      radius: radius + 12,
+    };
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {

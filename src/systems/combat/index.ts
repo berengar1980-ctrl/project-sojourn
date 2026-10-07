@@ -12,3 +12,18 @@ export type {
   ShipMineDefinition,
   ShipMineKind,
 } from '../../core/combat-types';
+
+export { createStrategicCombatService } from './strategic-combat-service';
+export type {
+  StrategicCombatService,
+  StrategicCombatSnapshot,
+  StrategicCombatantSetup,
+  StrategicCombatantSnapshot,
+  StrategicCombatSide,
+} from './strategic-combat-service';
+
+export { createStarMapEngagementService } from './star-map-engagement-service';
+export type {
+  StarMapEngagementOptions,
+  StarMapEngagementService,
+} from './star-map-engagement-service';

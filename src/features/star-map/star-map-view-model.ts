@@ -1,3 +1,4 @@
+import type { NpcCombatMovementMode } from '../../core/npc-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocationActivities,
@@ -39,10 +40,14 @@ export interface NpcShipMapView {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly isTravelling: boolean;
+  readonly activity: string;
+  readonly combatMode: NpcCombatMovementMode | null;
   readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly isSelected?: boolean;
+  readonly isPursuitTarget?: boolean;
 }
 
 export interface PlayerShipMapView {
@@ -78,7 +83,8 @@ export function createStarMapViewModel(
   world: WorldMap,
   navigation: NavigationSnapshot,
   ship: ShipDefinition,
-  npcShips: readonly NpcShipMapView[] = []
+  npcShips: readonly NpcShipMapView[] = [],
+  selectedNpcId: string | null = null
 ): StarMapViewModel {
   return {
     worldId: world.id,
@@ -87,7 +93,11 @@ export function createStarMapViewModel(
     height: world.height,
     star: world.star,
     regions: world.regions,
-    npcShips,
+    npcShips: npcShips.map((npc) => ({
+      ...npc,
+      isSelected: npc.id === selectedNpcId,
+      isPursuitTarget: npc.id === navigation.pursuitTargetId,
+    })),
     route: navigation.activeRoute ?? navigation.previewRoute,
     navigation,
     playerShip: {
