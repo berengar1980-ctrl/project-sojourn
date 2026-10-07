@@ -28,5 +28,8 @@ export function createPlayerCombatant(
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
     criticalChance: runtime.crewEffects.weapons.criticalChance,
     cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
+    preferredTactic: 'fight',
+    combatSpeed: Math.max(90, Math.min(190, ship.navigation.cruiseSpeed * 0.35)),
+    mineCharges: 3,
   };
 }
