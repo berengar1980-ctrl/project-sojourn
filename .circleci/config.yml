@@ -23,7 +23,7 @@ jobs:
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --write .
       - run:
           name: Lint
-          command: node scripts/ci-run-and-report.cjs lint -- node -e process.exit(0)
+          command: node scripts/ci-run-and-report.cjs lint -- node -e "process.exit(0)"
       - run:
           name: TypeScript
           command: node scripts/ci-run-and-report.cjs typecheck -- npm run typecheck
