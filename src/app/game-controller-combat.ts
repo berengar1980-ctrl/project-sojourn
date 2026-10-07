@@ -1,5 +1,9 @@
 import type { ShipDefinition } from '../core/ship-types';
-import { getShipMine, type StrategicCombatantSetup } from '../systems/combat';
+import {
+  createCombatShieldGeometry,
+  getShipMine,
+  type StrategicCombatantSetup,
+} from '../systems/combat';
 import {
   getShipComponent,
   resolveShipRuntimeSetup,
@@ -30,6 +34,7 @@ export function createPlayerCombatant(
     name: ship.name,
     shipId: ship.id,
     shieldHp: runtime.shieldMaxHp,
+    shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
     weapons,
     hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
