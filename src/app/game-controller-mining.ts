@@ -25,8 +25,7 @@ export function createMiningLocalSpace(
     mining: {
       enabled: runtime.mining.available,
       cycleSeconds: runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier,
-      yieldMultiplier:
-        runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier,
+      yieldMultiplier: runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier,
     },
     systems: {
       shieldMaxHp: runtime.shieldMaxHp,
