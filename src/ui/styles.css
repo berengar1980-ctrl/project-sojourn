@@ -2882,3 +2882,10 @@ body {
     grid-template-columns: minmax(130px, 1.2fr) 110px 75px 80px 80px 88px 98px;
   }
 }
+
+
+.port-trade-view[hidden],
+.port-system-row[hidden],
+.port-system-summary[hidden] {
+  display: none !important;
+}

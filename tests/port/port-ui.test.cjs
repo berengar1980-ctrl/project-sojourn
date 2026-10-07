@@ -10,6 +10,7 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts')
 const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
+const styles = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
 const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
 const portLocationRenderer = fs.readFileSync(
   path.join(root, 'src/ui/port/port-location-renderer.ts'),
@@ -97,6 +98,13 @@ assert(
     portPanel.includes('priceBand(row.pressurePercent)'),
   'local market must expose five immediately readable price bands'
 );
+assert(
+  styles.includes('.port-system-row[hidden]') &&
+    styles.includes('.port-system-summary[hidden]') &&
+    styles.includes('display: none !important'),
+  'system market CSS must not override resource filtering hidden state'
+);
+
 assert(
   portPanel.includes('GÜNSTIGSTER BEKANNTER EINKAUF') &&
     portPanel.includes('BESTER BEKANNTER VERKAUF') &&
