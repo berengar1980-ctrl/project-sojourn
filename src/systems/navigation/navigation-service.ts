@@ -1,11 +1,17 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-import { planRoute, type RoutePlan } from './route-planner';
+import { planRoute, planRouteFromPoint, type RoutePlan } from './route-planner';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
 
 interface TravelState {
   destinationId: string;
   route: RoutePlan;
   distanceTravelled: number;
+  currentSpeed: number;
+}
+
+interface PursuitState {
+  targetId: string;
+  targetPosition: WorldPoint;
   currentSpeed: number;
 }
 
@@ -17,6 +23,7 @@ interface NavigationRuntimeState {
   currentTurnRate: number;
   currentAngularThrust: number;
   travel: TravelState | null;
+  pursuit: PursuitState | null;
   cruiseSpeed: number;
 }
 
@@ -93,30 +100,38 @@ function approachSpeed(
   return current + Math.sign(target - current) * maximumChange;
 }
 
-function createSnapshot(world: WorldMap, state: NavigationRuntimeState): NavigationSnapshot {
-  const previewRoute =
-    !state.travel &&
-    state.currentLocationId &&
-    state.selectedDestinationId &&
-    state.selectedDestinationId !== state.currentLocationId
-      ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
-      : null;
+function previewRoute(world: WorldMap, state: NavigationRuntimeState): RoutePlan | null {
+  if (
+    state.travel ||
+    state.pursuit ||
+    !state.selectedDestinationId ||
+    state.selectedDestinationId === state.currentLocationId
+  ) {
+    return null;
+  }
+  return state.currentLocationId
+    ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
+    : planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId);
+}
 
+function createSnapshot(world: WorldMap, state: NavigationRuntimeState): NavigationSnapshot {
   return {
     currentLocationId: state.currentLocationId,
     selectedDestinationId: state.selectedDestinationId,
     destinationId: state.travel?.destinationId ?? null,
+    pursuitTargetId: state.pursuit?.targetId ?? null,
     currentPosition: state.currentPosition,
     headingRadians: state.currentHeading,
     turnRateRadiansPerSecond: state.currentTurnRate,
     angularThrust: state.currentAngularThrust,
     lateralThrust: 0,
-    isTravelling: state.travel !== null,
+    isTravelling: state.travel !== null || state.pursuit !== null,
+    isPursuing: state.pursuit !== null,
     progress: state.travel
-      ? Math.min(1, state.travel.distanceTravelled / state.travel.route.distance)
+      ? Math.min(1, state.travel.distanceTravelled / Math.max(1, state.travel.route.distance))
       : 0,
-    speed: state.travel?.currentSpeed ?? 0,
-    previewRoute,
+    speed: state.travel?.currentSpeed ?? state.pursuit?.currentSpeed ?? 0,
+    previewRoute: previewRoute(world, state),
     activeRoute: state.travel?.route ?? null,
   };
 }
@@ -150,7 +165,7 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
     travel.distanceTravelled + travel.currentSpeed * clamped
   );
 
-  const progress = travel.distanceTravelled / travel.route.distance;
+  const progress = travel.distanceTravelled / Math.max(1, travel.route.distance);
   state.currentPosition = routePointAtDistance(travel.route, travel.distanceTravelled);
 
   if (remainingDistance <= 0.5 || progress >= 1) {
@@ -161,6 +176,32 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
     state.currentAngularThrust = 0;
     state.travel = null;
   }
+}
+
+function advancePursuit(state: NavigationRuntimeState, deltaSeconds: number): void {
+  const pursuit = state.pursuit;
+  if (!pursuit || deltaSeconds <= 0) return;
+
+  const clamped = Math.min(deltaSeconds, 0.1);
+  const desiredHeading = heading(state.currentPosition, pursuit.targetPosition);
+  const previousHeading = state.currentHeading;
+  state.currentAngularThrust = Math.max(
+    -1,
+    Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
+  );
+  state.currentHeading = turnToward(state.currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+  state.currentTurnRate = angleDelta(previousHeading, state.currentHeading) / clamped;
+
+  const turnRemaining = Math.abs(angleDelta(state.currentHeading, desiredHeading));
+  const alignment = Math.max(0.2, Math.cos(turnRemaining));
+  const acceleration = Math.max(12, state.cruiseSpeed * 0.72);
+  const desiredSpeed = state.cruiseSpeed * alignment;
+  pursuit.currentSpeed = approachSpeed(pursuit.currentSpeed, desiredSpeed, acceleration, clamped);
+
+  state.currentPosition = {
+    x: state.currentPosition.x + Math.cos(state.currentHeading) * pursuit.currentSpeed * clamped,
+    y: state.currentPosition.y + Math.sin(state.currentHeading) * pursuit.currentSpeed * clamped,
+  };
 }
 
 export function createNavigationService(
@@ -176,6 +217,7 @@ export function createNavigationService(
     currentTurnRate: 0,
     currentAngularThrust: 0,
     travel: null,
+    pursuit: null,
     cruiseSpeed: initialCruiseSpeed,
   };
   const snapshot = (): NavigationSnapshot => createSnapshot(world, state);
@@ -197,13 +239,14 @@ export function createNavigationService(
   };
 
   const startTravel = (): NavigationSnapshot => {
-    if (state.travel || !state.currentLocationId || !state.selectedDestinationId) return snapshot();
+    if (state.travel || state.pursuit || !state.selectedDestinationId) return snapshot();
     if (state.selectedDestinationId === state.currentLocationId) return snapshot();
 
-    const route = planRoute(world, state.currentLocationId, state.selectedDestinationId);
-    const from = route.points[0];
+    const route = state.currentLocationId
+      ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
+      : planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId);
     const to = route.points[route.points.length - 1];
-    if (!from || !to) return snapshot();
+    if (!to) return snapshot();
 
     state.travel = {
       destinationId: state.selectedDestinationId,
@@ -215,13 +258,39 @@ export function createNavigationService(
     return snapshot();
   };
 
+  const startPursuit = (targetId: string, targetPosition: WorldPoint): NavigationSnapshot => {
+    if (!targetId) return snapshot();
+    const currentSpeed = state.travel?.currentSpeed ?? state.pursuit?.currentSpeed ?? 0;
+    state.travel = null;
+    state.pursuit = {
+      targetId,
+      targetPosition: { ...targetPosition },
+      currentSpeed,
+    };
+    state.currentLocationId = null;
+    state.selectedDestinationId = null;
+    return snapshot();
+  };
+
   return {
     getSnapshot: snapshot,
     selectDestination,
     startTravel,
+    startPursuit,
+    updatePursuitTarget(targetPosition) {
+      if (state.pursuit) state.pursuit.targetPosition = { ...targetPosition };
+      return snapshot();
+    },
+    stopPursuit() {
+      state.pursuit = null;
+      state.currentTurnRate = 0;
+      state.currentAngularThrust = 0;
+      return snapshot();
+    },
     setCruiseSpeed,
     tick(deltaSeconds) {
-      advanceTravel(state, deltaSeconds);
+      if (state.pursuit) advancePursuit(state, deltaSeconds);
+      else advanceTravel(state, deltaSeconds);
       return snapshot();
     },
   };
