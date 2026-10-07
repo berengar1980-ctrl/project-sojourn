@@ -6,13 +6,12 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale, shipSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
+import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
-import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
-import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
 
@@ -36,8 +35,7 @@ export class TopdownMapRenderer {
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly planetRings: PlanetRingRenderer;
   private readonly stations: ProceduralStationRenderer;
-  private readonly npcLighting = new ShipLightingRenderer();
-  private readonly npcImages = new Map<string, HTMLImageElement>();
+  private readonly npcShips: NpcShipMapRenderer;
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
   private labelsVisible = true;
@@ -60,6 +58,7 @@ export class TopdownMapRenderer {
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
     this.stations = new ProceduralStationRenderer(context);
+    this.npcShips = new NpcShipMapRenderer(context, () => this.draw());
     this.resize();
   }
 
@@ -144,11 +143,13 @@ export class TopdownMapRenderer {
     this.drawOrbits(width, height);
     this.drawStar(width, height);
     this.drawRoute(width, height);
-    this.drawPursuitLine(width, height);
+    this.npcShips.drawPursuitLine(this.model, this.camera, width, height);
     const locationHits = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
     );
-    const npcHits = this.drawNpcShips(width, height);
+    const npcHits = this.npcShips
+      .draw(this.model, this.camera, width, height, this.labelsVisible)
+      .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height);
   }
@@ -169,88 +170,6 @@ export class TopdownMapRenderer {
       maxX: maxX + padding,
       maxY: maxY + padding,
     };
-  }
-
-  private drawNpcShips(width: number, height: number): HitArea[] {
-    const hits: HitArea[] = [];
-    const zoom = this.camera.getRelativeZoom();
-    const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
-    for (const npc of this.model.npcShips) {
-      const point = this.camera.worldToScreen(npc.position, width, height);
-      let image = this.npcImages.get(npc.spriteUrl);
-      if (!image) {
-        image = new Image();
-        image.onload = () => this.draw();
-        image.src = npc.spriteUrl;
-        this.npcImages.set(npc.spriteUrl, image);
-      }
-
-      const widthPx = Math.max(
-        8,
-        Math.min(22, npc.nominalLengthMeters * 0.13 * shipSymbolScale(zoom))
-      );
-      const aspect =
-        image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-          ? image.naturalWidth / image.naturalHeight
-          : npc.spriteAspectRatio;
-      const geometry: ShipScreenGeometry = {
-        center: point,
-        width: widthPx,
-        height: widthPx / aspect,
-        angle: npc.headingRadians,
-      };
-
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(npc.headingRadians);
-      this.context.globalAlpha = npc.isTravelling ? 0.96 : 0.8;
-      if (image.complete && image.naturalWidth > 0) {
-        const offset = spriteDrawOffset(npc.hardpoints, geometry);
-        this.npcLighting.draw(this.context, {
-          image,
-          width: geometry.width,
-          height: geometry.height,
-          angle: npc.headingRadians,
-          light: { x: starPoint.x - point.x, y: starPoint.y - point.y },
-          offsetX: offset.x,
-          offsetY: offset.y,
-        });
-      } else {
-        this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';
-        this.context.fillRect(-widthPx / 2, -geometry.height / 2, widthPx, geometry.height);
-      }
-      this.context.restore();
-
-      if (npc.isSelected || npc.isPursuitTarget || npc.combatMode) {
-        this.context.save();
-        this.context.strokeStyle = npc.isPursuitTarget
-          ? 'rgba(233, 102, 83, .95)'
-          : npc.combatMode
-            ? 'rgba(225, 142, 75, .82)'
-            : 'rgba(231, 193, 101, .84)';
-        this.context.lineWidth = npc.isPursuitTarget ? 2.2 : 1.5;
-        this.context.beginPath();
-        this.context.arc(point.x, point.y, Math.max(widthPx, geometry.height) * 0.72 + 5, 0, Math.PI * 2);
-        this.context.stroke();
-        this.context.restore();
-      }
-
-      hits.push({
-        kind: 'npc',
-        id: npc.id,
-        x: point.x,
-        y: point.y,
-        radius: Math.max(12, Math.max(widthPx, geometry.height) * 0.75 + 6),
-      });
-
-      if (this.labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
-        this.context.fillStyle = 'rgba(196, 211, 221, .78)';
-        this.context.font = '9px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 11);
-      }
-    }
-    return hits;
   }
 
   private drawPlayerShip(width: number, height: number): void {
@@ -416,25 +335,6 @@ export class TopdownMapRenderer {
       if (index === 0) this.context.moveTo(screen.x, screen.y);
       else this.context.lineTo(screen.x, screen.y);
     });
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private drawPursuitLine(width: number, height: number): void {
-    const targetId = this.model.navigation.pursuitTargetId;
-    if (!targetId) return;
-    const target = this.model.npcShips.find((npc) => npc.id === targetId);
-    if (!target) return;
-
-    const from = this.camera.worldToScreen(this.model.playerShip.position, width, height);
-    const to = this.camera.worldToScreen(target.position, width, height);
-    this.context.save();
-    this.context.strokeStyle = 'rgba(221, 82, 67, .58)';
-    this.context.lineWidth = 1.3;
-    this.context.setLineDash([4, 5]);
-    this.context.beginPath();
-    this.context.moveTo(from.x, from.y);
-    this.context.lineTo(to.x, to.y);
     this.context.stroke();
     this.context.restore();
   }
