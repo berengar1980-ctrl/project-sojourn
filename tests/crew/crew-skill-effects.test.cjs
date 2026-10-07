@@ -27,7 +27,18 @@ close(effects.sensorMarketIntelAge(100, 0, 30), 0);
 close(effects.sensorMarketIntelAge(0, 8, 8), 9);
 close(effects.sensorSalvageWreckRange(100), 16);
 close(effects.sensorInspectionScanStrength(100, 0), 0.97);
+close(
+  effects.sensorInspectionAnomalyChance(100, {
+    load: 0,
+    illegalFraction: 1,
+    concealment: 0,
+    suspicion: 0,
+    falsePositive: 0.03,
+  }),
+  0.83
+);
 close(effects.sensorMiningClaimDetectionChance(100, 0), 0.92);
+close(effects.sensorNpcMiningClaimDetectionChance(100, 0), 0.92);
 
 close(effects.weaponDamageMultiplier(100), 1.2);
 close(effects.weaponCriticalChance(100), 0.1);
