@@ -39,6 +39,9 @@ interface SalvageSceneOptions {
   readonly log: SystemLogService;
   readonly audio: GameAudioService;
   readonly onReturnToStarMap: () => void;
+  readonly selectedNpcId?: string | null;
+  readonly onSelectNpc?: (id: string | null) => void;
+  readonly onAttackNpc?: (id: string) => void;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -61,6 +64,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     approachSpeed: 85,
   });
+  let selectedNpcId = options.selectedNpcId ?? null;
   const npcSalvage: NpcLocalSalvageService = createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
@@ -102,7 +106,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       options.player,
       options.componentInventory.list(),
       options.location.name + ' // Bergung',
-      npcShips
+      npcShips,
+      selectedNpcId
     );
   };
 
@@ -115,6 +120,14 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     onSelectWreck(id) {
       service.selectWreck(id);
       refresh();
+    },
+    onSelectNpc(id) {
+      selectedNpcId = id;
+      options.onSelectNpc?.(id);
+      refresh();
+    },
+    onAttackNpc(id) {
+      options.onAttackNpc?.(id);
     },
     onNavigate(target) {
       service.startNavigation(target);
