@@ -4,10 +4,11 @@ interface StarMapInputOptions {
   readonly canvas: HTMLCanvasElement;
   readonly renderer: TopdownMapRenderer;
   readonly onSelectLocation: (id: string) => void;
+  readonly onSelectNpc: (id: string) => void;
 }
 
 export function bindStarMapInput(options: StarMapInputOptions): () => void {
-  const { canvas, renderer, onSelectLocation } = options;
+  const { canvas, renderer, onSelectLocation, onSelectNpc } = options;
   let dragging = false;
   let moved = false;
   let lastX = 0;
@@ -34,8 +35,10 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
   const pointerUp = (event: PointerEvent): void => {
     dragging = false;
     if (moved) return;
-    const id = renderer.pickLocation(event.offsetX, event.offsetY);
-    if (id) onSelectLocation(id);
+    const contact = renderer.pickContact(event.offsetX, event.offsetY);
+    if (!contact) return;
+    if (contact.kind === 'npc') onSelectNpc(contact.id);
+    else onSelectLocation(contact.id);
   };
 
   const wheel = (event: WheelEvent): void => {
