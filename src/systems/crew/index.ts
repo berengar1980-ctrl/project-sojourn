@@ -43,10 +43,12 @@ export {
   salvageYieldMultiplier,
   sensorCivilianTransponderRange,
   sensorContactBaseRange,
+  sensorInspectionAnomalyChance,
   sensorInspectionScanStrength,
   sensorMarketIntelAge,
   sensorMarketIntelBaseRange,
   sensorMiningClaimDetectionChance,
+  sensorNpcMiningClaimDetectionChance,
   sensorPirateDetectionRange,
   sensorPirateIdentificationRange,
   sensorSalvageWreckRange,
@@ -58,7 +60,10 @@ export {
 } from './crew-skill-effects';
 export { createCrewRosterService } from './crew-roster-service';
 
-export type { CrewSkillEffects } from './crew-skill-effects';
+export type {
+  CrewSkillEffects,
+  SensorInspectionAnomalyContext,
+} from './crew-skill-effects';
 export type { CrewRosterService } from './crew-roster-service';
 export type {
   CrewCombatSkills,
