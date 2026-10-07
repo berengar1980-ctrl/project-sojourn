@@ -1,4 +1,5 @@
 import type {
+  CombatTactic,
   StrategicCombatService,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
@@ -19,29 +20,16 @@ function percent(current: number, maximum: number): number {
   return maximum <= 0 ? 0 : Math.max(0, Math.min(100, (current / maximum) * 100));
 }
 
-function combatantMarkup(
-  side: 'ANGREIFER' | 'VERTEIDIGER',
-  combatant: StrategicCombatSnapshot['attacker']
-): string {
+function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
+  const shield = Math.round(percent(combatant.shieldHp, combatant.shieldMaxHp));
+  const hull = Math.round(percent(combatant.hullHp, combatant.hullMaxHp));
   return `
-    <article class="strategic-combatant">
-      <span>${side}</span>
-      <strong>${combatant.name}</strong>
-      <small>${combatant.shipId}</small>
-      <div class="strategic-combat-stat">
-        <label>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</label>
-        <div>
-          <i data-shield
-            style="width:${percent(combatant.shieldHp, combatant.shieldMaxHp)}%"></i>
-        </div>
-      </div>
-      <div class="strategic-combat-stat strategic-combat-stat--hull">
-        <label>HÜLLE ${Math.round(combatant.hullHp)} / ${combatant.hullMaxHp}</label>
-        <div>
-          <i data-hull style="width:${percent(combatant.hullHp, combatant.hullMaxHp)}%"></i>
-        </div>
-      </div>
-    </article>
+    <strong>${combatant.name}</strong>
+    <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
+    <div class="combat-hud-bar"><i data-layer="shield" style="width:${shield}%"></i></div>
+    <span>HÜLLE ${Math.round(combatant.hullHp)} / ${combatant.hullMaxHp}</span>
+    <div class="combat-hud-bar combat-hud-bar--hull"><i data-layer="hull" style="width:${hull}%"></i></div>
+    <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s</small>
   `;
 }
 
@@ -52,22 +40,27 @@ export function createStrategicCombatPanel(
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
     <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
-    <div class="strategic-combat-title">
-      <span>SOJOURN // STRATEGISCHER RAUMKAMPF</span>
-      <strong>KAMPF BEGINNT</strong>
+    <div class="combat-map-title">SOJOURN // RAUMKAMPF</div>
+    <aside class="combat-hud combat-hud--player"></aside>
+    <aside class="combat-hud combat-hud--enemy"></aside>
+    <div class="combat-tactics" aria-label="Kampftaktik">
+      <button type="button" data-tactic="fight">KAMPF</button>
+      <button type="button" data-tactic="kite">DISTANZ</button>
+      <button type="button" data-tactic="minefield">MINEN</button>
+      <button type="button" data-tactic="flee">FLUCHT</button>
     </div>
-    <div class="strategic-combat-grid"></div>
     <div class="strategic-combat-event"></div>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
   options.root.replaceChildren(shell);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
-  const grid = shell.querySelector<HTMLElement>('.strategic-combat-grid');
+  const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
+  const enemyHud = shell.querySelector<HTMLElement>('.combat-hud--enemy');
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
-  const title = shell.querySelector<HTMLElement>('.strategic-combat-title strong');
-  if (!canvas || !grid || !event || !returnButton || !title) {
+  const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
+  if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
   }
 
@@ -75,14 +68,23 @@ export function createStrategicCombatPanel(
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
+  for (const button of tacticButtons) {
+    button.addEventListener('click', () => {
+      const tactic = button.dataset.tactic as CombatTactic | undefined;
+      if (tactic) options.combat.setTactic('attacker', tactic);
+    });
+  }
+
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    grid.innerHTML =
-      combatantMarkup('ANGREIFER', model.attacker) +
-      combatantMarkup('VERTEIDIGER', model.defender);
+    playerHud.innerHTML = combatantHud(model.attacker);
+    enemyHud.innerHTML = combatantHud(model.defender);
     event.textContent = model.lastEvent;
-    title.textContent = model.winner ? 'GEFECHT BEENDET' : 'KAMPF LÄUFT';
     returnButton.hidden = model.winner === null;
+    for (const button of tacticButtons) {
+      button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);
+      button.disabled = model.winner !== null;
+    }
     renderer.update(model);
   };
 
