@@ -208,7 +208,7 @@ export class NpcShipMapRenderer {
       this.context.lineTo(size * 0.08, 0);
       this.context.lineTo(size * 0.45, size * 0.35);
       this.context.stroke();
-    } else {
+    } else if (npc.pirateEmblem === 'black-cross') {
       this.context.beginPath();
       this.context.moveTo(0, -size * 0.5);
       this.context.lineTo(0, size * 0.5);
