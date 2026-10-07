@@ -1,4 +1,4 @@
-import type { NpcCombatMovementMode } from '../../core/npc-types';
+import type { NpcCombatMovementMode, PirateEmblemId, PirateFactionId } from '../../core/npc-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
   LocationActivities,
@@ -46,6 +46,8 @@ export interface NpcShipMapView {
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly pirateFaction?: PirateFactionId;
+  readonly pirateEmblem?: PirateEmblemId;
   readonly isSelected?: boolean;
   readonly isPursuitTarget?: boolean;
 }
