@@ -75,8 +75,11 @@ assert(
     sector.includes('traffic * 2.4') &&
     sector.includes('density * 3.4') &&
     sector.includes('patrolPressure * 0.85') &&
-    sector.includes("'Auf Beutezug · Jagdrevier'"),
-  'pirates must choose traffic-rich hunt zones while avoiding clustering and patrol pressure'
+    sector.includes("'Auf Beutezug · Jagdrevier'") &&
+    sector.includes('PIRATE_POPULATION_TARGET = 9') &&
+    sector.includes('schedulePirateRespawns') &&
+    sector.includes('deployDuePirateRespawns'),
+  'pirates must choose traffic-rich hunt zones, avoid clustering/patrol pressure and replenish losses'
 );
 
 assert(
