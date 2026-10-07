@@ -3,7 +3,7 @@ import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { MapCamera } from './map-camera';
-import { shipSymbolScale } from './map-visual-scale';
+import { starMapShipWidth } from './map-visual-scale';
 
 export interface NpcShipMapHitArea {
   readonly id: string;
@@ -35,10 +35,7 @@ export class NpcShipMapRenderer {
     for (const npc of model.npcShips) {
       const point = camera.worldToScreen(npc.position, width, height);
       const image = this.image(npc.spriteUrl);
-      const widthPx = Math.max(
-        10,
-        Math.min(22, npc.nominalLengthMeters * 0.13 * shipSymbolScale(zoom))
-      );
+      const widthPx = starMapShipWidth(npc.nominalLengthMeters, zoom);
       const aspect =
         image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
           ? image.naturalWidth / image.naturalHeight
