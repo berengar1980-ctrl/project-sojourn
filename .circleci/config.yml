@@ -25,12 +25,17 @@ jobs:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
-          name: Combat tests
-          command: |
-            node tests/combat/spatial-combat.test.cjs
-            node tests/combat/local-space-attack-ui.test.cjs
-            node tests/combat/ship-weapons-mines.test.cjs
-            node tests/ui/local-collision-salvage-map-controls.test.cjs
+          name: Spatial combat
+          command: node scripts/ci-run-and-report.cjs spatial-combat -- node tests/combat/spatial-combat.test.cjs
+      - run:
+          name: Local combat UI
+          command: node scripts/ci-run-and-report.cjs local-combat-ui -- node tests/combat/local-space-attack-ui.test.cjs
+      - run:
+          name: Weapons and mines
+          command: node scripts/ci-run-and-report.cjs weapons-mines -- node tests/combat/ship-weapons-mines.test.cjs
+      - run:
+          name: Local collision
+          command: node scripts/ci-run-and-report.cjs local-collision -- node tests/ui/local-collision-salvage-map-controls.test.cjs
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
