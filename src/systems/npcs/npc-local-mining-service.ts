@@ -31,6 +31,7 @@ export interface LocalNpcMinerState {
 
 export interface NpcLocalMiningService {
   readonly ships: readonly LocalNpcMinerState[];
+  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
   tick(deltaSeconds: number): void;
 }
 
@@ -281,6 +282,26 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
   }
 
   syncArrivals();
+
+  function syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    speed: number
+  ): void {
+    const ship = ships.find((entry) => entry.npcId === npcId);
+    if (!ship) return;
+    ship.position = {
+      x: Math.max(0, Math.min(options.width, position.x)),
+      y: Math.max(0, Math.min(options.height, position.y)),
+    };
+    ship.headingRadians = headingRadians;
+    ship.speed = Math.max(0, speed);
+    ship.phase = 'approaching';
+    ship.targetAsteroidId = null;
+    ship.laserActive = false;
+    ship.scanProgress = 0;
+  }
 
   return {
     ships,
