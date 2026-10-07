@@ -23,13 +23,7 @@ import {
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
-import {
-  advanceAndCollectMiningChunks,
-  createMiningChunk,
-  hasMineableDeposits,
-  identifyMinedResource,
-  type MiningChunkCollector,
-} from './mining-chunk-service';
+import { hasMineableDeposits } from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
 import {
   runLongRangeAsteroidScan,
@@ -44,6 +38,7 @@ import {
 } from './local-space-station-keeping';
 import type { LocalSpaceService } from './local-space-api';
 import { createMiningEventController } from './mining-event-service';
+import { MiningResourceRuntime } from './mining-resource-runtime';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import type { LocalSpaceServiceOptions } from './local-space-options';
 import { createLocalSpaceShipSystems } from './local-space-ship-systems';
@@ -56,25 +51,20 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly nominalLengthMeters: number;
   private readonly miningEnabled: boolean;
   private readonly miningCycleSeconds: number;
-  private readonly miningYieldMultiplier: number;
   private readonly shipSystems: ReturnType<typeof createLocalSpaceShipSystems>;
   private readonly miningEvents: ReturnType<typeof createMiningEventController>;
-  private readonly onMiningChunkCollected: MiningChunkCollector | undefined;
+  private readonly miningResources: MiningResourceRuntime;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
   private approachPurpose: 'mining' | 'scan' | null = null;
   private miningPhase: MiningPhase = 'idle';
-  private readonly miningResourceSelections = new Map<string, readonly string[]>();
   private approachRoute: readonly WorldPoint[] = [];
   private approachIndex = 0;
   private navigationTarget: WorldPoint | null = null;
   private navigationRoute: readonly WorldPoint[] = [];
   private navigationIndex = 0;
-  private collectedOre = 0;
-  private readonly collectedResources = new Map<string, number>();
   private miningAccumulator = 0;
-  private chunkCounter = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
   private shipForwardVelocity = 0;
@@ -91,10 +81,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
-    this.miningYieldMultiplier = Math.max(0, options.mining?.yieldMultiplier ?? 1);
     this.shipSystems = createLocalSpaceShipSystems(options.systems, options.hardpoints);
     this.miningEvents = createMiningEventController(options.instance.seed);
-    this.onMiningChunkCollected = options.onMiningChunkCollected;
+    this.miningResources = new MiningResourceRuntime(
+      options.instance,
+      options.hardpoints,
+      options.nominalLengthMeters,
+      Math.max(0, options.mining?.yieldMultiplier ?? 1),
+      options.onMiningChunkCollected
+    );
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
@@ -118,15 +113,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
         this.miningPhase === 'scanning' ? Math.min(1, this.shortRangeScanElapsed / 5) : null,
       miningPhase: this.miningPhase,
       miningAvailable: this.miningEnabled,
-      miningResourceSelection: this.miningSelectionFor(this.selectedAsteroidId),
+      miningResourceSelection: this.miningResources.selectionFor(this.selectedAsteroidId),
       miningEvent: this.miningEvents.pending,
       miningRecoverySeconds: this.miningEvents.recoverySeconds,
       ...this.shipSystems.snapshot(),
-      collectedOre: this.collectedOre,
-      collectedResources: [...this.collectedResources.entries()].map(([resourceId, amount]) => ({
-        resourceId,
-        amount,
-      })),
+      ...this.miningResources.snapshot(),
       laserActive: this.miningPhase === 'extracting' && !this.miningEvents.extractionPaused,
       miningImpact: this.currentMiningImpact(),
     };
@@ -145,20 +136,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (this.miningPhase !== 'idle') return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
     if (!asteroid || asteroid.scanLevel !== 'analyzed') return this.getSnapshot();
-    if (resourceIds === null) {
-      this.miningResourceSelections.delete(asteroid.id);
-      return this.getSnapshot();
-    }
-
-    const unique = [...new Set(resourceIds)];
-    if (unique.length < 1 || unique.length > 2) {
-      throw new Error('Targeted mining requires one or two resources.');
-    }
-    const available = new Set(asteroid.deposits.map((deposit) => deposit.resourceId));
-    if (unique.some((resourceId) => !available.has(resourceId))) {
-      throw new Error('Unknown asteroid resource selected for mining.');
-    }
-    this.miningResourceSelections.set(asteroid.id, [...unique]);
+    this.miningResources.setSelection(asteroid, resourceIds);
     return this.getSnapshot();
   }
 
@@ -210,7 +188,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (!this.miningEnabled || this.miningEvents.pending) return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
-    const selection = this.miningSelectionFor(asteroid?.id ?? null);
+    const selection = this.miningResources.selectionFor(asteroid?.id ?? null);
     if (!asteroid || !hasMineableDeposits(asteroid, selection)) return this.getSnapshot();
 
     this.miningTargetId = asteroid.id;
@@ -243,7 +221,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     if (
       result?.aborted ||
-      !hasMineableDeposits(asteroid, this.miningSelectionFor(asteroid.id))
+      !hasMineableDeposits(asteroid, this.miningResources.selectionFor(asteroid.id))
     ) {
       this.finishMining();
     }
@@ -311,7 +289,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     for (const collision of collisions) this.shipSystems.applyCollision(collision);
 
-    this.updateChunks(clamped);
+    this.miningResources.advanceChunks(this.instance.ship.position, clamped);
     return this.getSnapshot();
   }
 
@@ -346,11 +324,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   private findAsteroid(id: string | null): LocalAsteroid | null {
     return selectedAsteroid(this.instance, id);
-  }
-
-  private miningSelectionFor(asteroidId: string | null): MiningResourceSelection {
-    if (!asteroidId) return null;
-    return this.miningResourceSelections.get(asteroidId) ?? null;
   }
 
   private currentMiningImpact(): MiningImpact | null {
@@ -436,7 +409,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       return;
     }
 
-    if (!hasMineableDeposits(asteroid, this.miningSelectionFor(asteroid.id))) {
+    if (!hasMineableDeposits(asteroid, this.miningResources.selectionFor(asteroid.id))) {
       this.finishMining();
       return;
     }
@@ -474,13 +447,13 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     this.miningAccumulator += deltaSeconds;
     const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds);
-    const selection = this.miningSelectionFor(asteroid.id);
+    const selection = this.miningResources.selectionFor(asteroid.id);
     while (
       this.miningAccumulator >= cycleSeconds &&
       hasMineableDeposits(asteroid, selection)
     ) {
       this.miningAccumulator -= cycleSeconds;
-      this.spawnChunk(asteroid);
+      this.miningResources.spawnChunk(asteroid);
     }
 
     if (!hasMineableDeposits(asteroid, selection)) this.finishMining();
@@ -511,42 +484,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipLateralVelocity = velocity.lateral;
   }
 
-  private spawnChunk(asteroid: LocalAsteroid): void {
-    const chunk = createMiningChunk(
-      asteroid,
-      this.instance.ship,
-      this.hardpoints,
-      this.nominalLengthMeters,
-      this.instance.seed,
-      this.chunkCounter,
-      this.miningYieldMultiplier,
-      this.miningSelectionFor(asteroid.id)
-    );
-    if (!chunk) return;
-    this.instance.chunks.push(chunk);
-    this.chunkCounter += 1;
-  }
 
-  private updateChunks(deltaSeconds: number): void {
-    const result = advanceAndCollectMiningChunks(
-      this.instance.chunks,
-      this.instance.ship.position,
-      deltaSeconds,
-      this.onMiningChunkCollected
-    );
-    for (const [resourceId, amount] of result.collected) {
-      this.collectedOre += amount;
-      this.collectedResources.set(
-        resourceId,
-        (this.collectedResources.get(resourceId) ?? 0) + amount
-      );
-    }
-    for (const sample of result.samples) {
-      const asteroid = this.findAsteroid(sample.sourceAsteroidId);
-      if (asteroid) identifyMinedResource(asteroid, sample.resourceId);
-    }
-    this.instance.chunks.splice(0, this.instance.chunks.length, ...result.remaining);
-  }
 }
 
 export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
