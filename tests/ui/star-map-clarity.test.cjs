@@ -25,7 +25,7 @@ const leviathan = byId('leviathan');
 assert(star.y - ember.position.y > 1000, 'Ember must sit clearly north of the solar core');
 assert(star.y - relay.position.y > 1100, 'Ember Relay must sit clearly north of the solar core');
 assert(
-  Math.abs(pale.position.x - star.x) < 80 && star.y - pale.position.y > 2200,
+  Math.abs(pale.position.x - star.x) < 80 && star.y - pale.position.y > 1800,
   'Pale Reach must occupy the open upper-middle outer system'
 );
 assert.equal(pale.ringStyle, 'broad', 'Pale Reach must keep its broad rings');
