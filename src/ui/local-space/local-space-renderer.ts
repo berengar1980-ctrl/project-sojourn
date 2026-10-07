@@ -49,6 +49,8 @@ export class LocalSpaceRenderer {
   private readonly shipImage = new Image();
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: LocalSpaceViewModel;
+  private combatImpactSerial = -1;
+  private combatImpactAge = 1;
   private hitAreas: readonly AsteroidHitArea[] = [];
   private npcHitAreas: readonly NpcHitArea[] = [];
   private loadedShipUrl = '';
@@ -73,6 +75,13 @@ export class LocalSpaceRenderer {
   }
 
   update(model: LocalSpaceViewModel): void {
+    const impact = model.combat?.lastImpact;
+    if (impact && impact.serial !== this.combatImpactSerial) {
+      this.combatImpactSerial = impact.serial;
+      this.combatImpactAge = 0;
+    } else {
+      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
+    }
     this.model = model;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
@@ -362,19 +371,21 @@ export class LocalSpaceRenderer {
     }
 
     const impact = combat.lastImpact;
-    if (!impact || impact.layer === 'miss') return;
+    if (!impact || impact.layer === 'miss' || this.combatImpactAge >= 1) return;
     const point = this.camera.worldToScreen(impact.position, width, height);
+    const alpha = 1 - this.combatImpactAge;
+    const radius = 10 + this.combatImpactAge * 34;
     this.context.save();
     if (impact.layer === 'shield') {
-      this.context.strokeStyle = 'rgba(123, 211, 255, .88)';
+      this.context.strokeStyle = `rgba(123, 211, 255, ${alpha * 0.9})`;
       this.context.lineWidth = 2.4;
       this.context.beginPath();
-      this.context.arc(point.x, point.y, 26, -0.9, 0.9);
+      this.context.arc(point.x, point.y, radius, -0.9, 0.9);
       this.context.stroke();
     } else {
-      this.context.fillStyle = 'rgba(255, 139, 68, .76)';
+      this.context.fillStyle = `rgba(255, 139, 68, ${alpha * 0.8})`;
       this.context.beginPath();
-      this.context.arc(point.x, point.y, 12, 0, Math.PI * 2);
+      this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
       this.context.fill();
     }
     this.context.restore();
