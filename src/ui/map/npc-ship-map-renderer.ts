@@ -59,6 +59,7 @@ export class NpcShipMapRenderer {
         npc.isTravelling
       );
       this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
+      this.drawPirateEmblem(npc, point.x, point.y, widthPx, geometry.height);
       hits.push({
         id: npc.id,
         x: point.x,
@@ -176,4 +177,48 @@ export class NpcShipMapRenderer {
     this.context.stroke();
     this.context.restore();
   }
+  private drawPirateEmblem(
+    npc: StarMapViewModel['npcShips'][number],
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ): void {
+    if (!npc.pirateEmblem) return;
+    const size = Math.max(7, Math.min(12, Math.max(width, height) * 0.58));
+    const cx = x + width * 0.68 + 4;
+    const cy = y - height * 0.62 - 4;
+
+    this.context.save();
+    this.context.translate(cx, cy);
+    this.context.lineWidth = 1.6;
+    this.context.lineCap = 'round';
+    this.context.lineJoin = 'round';
+    this.context.strokeStyle =
+      npc.pirateFaction === 'black-tide'
+        ? 'rgba(206, 70, 58, .96)'
+        : 'rgba(226, 184, 73, .96)';
+
+    if (npc.pirateEmblem === 'harrow-claw') {
+      this.context.beginPath();
+      this.context.moveTo(-size * 0.45, -size * 0.35);
+      this.context.lineTo(-size * 0.08, 0);
+      this.context.lineTo(-size * 0.45, size * 0.35);
+      this.context.moveTo(size * 0.45, -size * 0.35);
+      this.context.lineTo(size * 0.08, 0);
+      this.context.lineTo(size * 0.45, size * 0.35);
+      this.context.stroke();
+    } else {
+      this.context.beginPath();
+      this.context.moveTo(0, -size * 0.5);
+      this.context.lineTo(0, size * 0.5);
+      this.context.moveTo(-size * 0.5, 0);
+      this.context.lineTo(size * 0.5, 0);
+      this.context.moveTo(-size * 0.28, -size * 0.28);
+      this.context.lineTo(size * 0.28, size * 0.28);
+      this.context.stroke();
+    }
+    this.context.restore();
+  }
+
 }
