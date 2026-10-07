@@ -1,5 +1,7 @@
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
+import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 import type { ShipWeaponFamily } from '../../core/ship-types';
+import { detectShipMine } from './mine-detection-service';
 
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
@@ -25,7 +27,11 @@ export interface StrategicCombatantSetup {
   readonly cycleTimeMultiplier: number;
   readonly preferredTactic?: CombatTactic;
   readonly combatSpeed?: number;
-  readonly mineCharges?: number;
+  readonly mines?: readonly ShipMineDefinition[];
+  readonly sensorCrewSkill?: number;
+  readonly sensorTier?: number;
+  readonly sensorRangeMeters?: number;
+  readonly sensorRangeMultiplier?: number;
   readonly aiControlled?: boolean;
   readonly aiAggression?: number;
 }
@@ -57,9 +63,14 @@ export interface CombatProjectileSnapshot {
 export interface CombatMineSnapshot {
   readonly id: number;
   readonly owner: StrategicCombatSide;
+  readonly mineId: string;
+  readonly kind: ShipMineDefinition['kind'];
+  readonly name: string;
+  readonly tier: number;
   readonly position: CombatPoint;
   readonly armed: boolean;
   readonly radius: number;
+  readonly detection: MineContactLevel;
 }
 
 export interface CombatImpactSnapshot {
@@ -85,11 +96,18 @@ export interface StrategicCombatSnapshot {
   };
 }
 
+export interface StrategicCombatObstacle {
+  readonly id: string;
+  readonly position: CombatPoint;
+  readonly radius: number;
+}
+
 export interface StrategicCombatArenaOptions {
   readonly width: number;
   readonly height: number;
   readonly attackerPosition?: CombatPoint;
   readonly defenderPosition?: CombatPoint;
+  readonly obstacles?: readonly StrategicCombatObstacle[];
 }
 
 export interface StrategicCombatService {
@@ -109,7 +127,7 @@ interface MutableCombatant {
   tactic: CombatTactic;
   shieldHp: number;
   hullHp: number;
-  mineCharges: number;
+  mineStock: ShipMineDefinition[];
   mineCooldown: number;
 }
 
@@ -132,17 +150,14 @@ interface MutableMine {
   owner: StrategicCombatSide;
   position: { x: number; y: number };
   armedSeconds: number;
-  radius: number;
-  shieldDamage: number;
-  hullDamage: number;
+  pursuitRemaining: number;
+  definition: ShipMineDefinition;
 }
 
 const DEFAULT_ARENA_WIDTH = 2600;
 const DEFAULT_ARENA_HEIGHT = 1600;
 const EDGE_PADDING = 140;
 const MINE_DROP_COOLDOWN = 7.5;
-const MINE_TRIGGER_RADIUS = 125;
-const MINE_DAMAGE = 34;
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
@@ -195,7 +210,7 @@ function createCombatant(
     headingRadians: side === 'attacker' ? 0 : Math.PI,
     speed: 0,
     tactic: setup.preferredTactic ?? 'fight',
-    mineCharges: Math.max(0, Math.floor(setup.mineCharges ?? 0)),
+    mineStock: [...(setup.mines ?? [])],
     mineCooldown: 0,
   };
 }
@@ -255,7 +270,7 @@ function updateAiTactic(
   }
 
   if (
-    combatant.mineCharges > 0 &&
+    combatant.mineStock.length > 0 &&
     elapsedSeconds >= 2 &&
     range <= 620 &&
     aggression >= 58 &&
@@ -274,12 +289,83 @@ function updateAiTactic(
 }
 
 
+
+function resolveArenaObstacles(
+  combatant: MutableCombatant,
+  arena: StrategicCombatArenaOptions
+): void {
+  const obstacles = arena.obstacles ?? [];
+  const shipRadius = Math.max(24, Math.min(70, 28 + combatant.setup.hullHp * 0.12));
+  for (const obstacle of obstacles) {
+    const dx = combatant.position.x - obstacle.position.x;
+    const dy = combatant.position.y - obstacle.position.y;
+    const range = Math.hypot(dx, dy);
+    const required = Math.max(0, obstacle.radius) + shipRadius + 8;
+    if (range >= required) continue;
+    const normal = range > 0.001 ? { x: dx / range, y: dy / range } : { x: 1, y: 0 };
+    combatant.position.x = obstacle.position.x + normal.x * required;
+    combatant.position.y = obstacle.position.y + normal.y * required;
+    combatant.headingRadians = Math.atan2(normal.y, normal.x);
+  }
+}
+
+function resolveCombatantCollision(first: MutableCombatant, second: MutableCombatant): void {
+  const dx = second.position.x - first.position.x;
+  const dy = second.position.y - first.position.y;
+  const range = Math.hypot(dx, dy);
+  const required = 78;
+  if (range >= required) return;
+  const normal = range > 0.001 ? { x: dx / range, y: dy / range } : { x: 1, y: 0 };
+  const overlap = required - range + 1;
+  first.position.x -= normal.x * overlap * 0.5;
+  first.position.y -= normal.y * overlap * 0.5;
+  second.position.x += normal.x * overlap * 0.5;
+  second.position.y += normal.y * overlap * 0.5;
+}
+
+function mineDetection(
+  mine: ShipMineDefinition,
+  viewer: MutableCombatant,
+  minePosition: CombatPoint
+): MineContactLevel {
+  const result = detectShipMine(mine, {
+    crewSkill: viewer.setup.sensorCrewSkill ?? 0,
+    sensorTier: viewer.setup.sensorTier ?? 0,
+    sensorRangeMeters: viewer.setup.sensorRangeMeters ?? 0,
+    sensorRangeMultiplier: viewer.setup.sensorRangeMultiplier ?? 1,
+    distanceMeters: distance(viewer.position, minePosition),
+  });
+  return result.level;
+}
+
+function avoidDetectedMine(
+  combatant: MutableCombatant,
+  mines: readonly MutableMine[]
+): { x: number; y: number } | null {
+  if (!combatant.setup.aiControlled) return null;
+  const threat = mines
+    .filter((mine) => mine.owner !== (combatant.setup.id === 'player' ? 'attacker' : 'defender'))
+    .map((mine) => ({
+      mine,
+      level: mineDetection(mine.definition, combatant, mine.position),
+      range: distance(combatant.position, mine.position),
+    }))
+    .filter((entry) => entry.level !== 'hidden' && entry.range <= entry.mine.definition.triggerRadiusMeters * 2.2)
+    .sort((a, b) => a.range - b.range)[0];
+  if (!threat) return null;
+  return normalize(
+    combatant.position.x - threat.mine.position.x,
+    combatant.position.y - threat.mine.position.y
+  );
+}
+
 function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
   side: StrategicCombatSide,
   deltaSeconds: number,
-  arena: StrategicCombatArenaOptions
+  arena: StrategicCombatArenaOptions,
+  activeMines: readonly MutableMine[]
 ): void {
   if (combatant.hullHp <= 0) {
     combatant.speed = 0;
@@ -306,6 +392,9 @@ function moveCombatant(
     direction = normalize(-toward.x * 0.6 + perpendicular.x, -toward.y * 0.6 + perpendicular.y);
   }
 
+  const mineAvoidance = avoidDetectedMine(combatant, activeMines);
+  if (mineAvoidance) direction = normalize(direction.x + mineAvoidance.x * 1.8, direction.y + mineAvoidance.y * 1.8);
+
   const baseSpeed = Math.max(70, combatant.setup.combatSpeed ?? 120);
   const speedMultiplier =
     combatant.tactic === 'flee' ? 1.18 : combatant.tactic === 'kite' ? 1.05 : 0.92;
@@ -321,6 +410,7 @@ function moveCombatant(
     EDGE_PADDING,
     arena.height - EDGE_PADDING
   );
+  resolveArenaObstacles(combatant, arena);
 }
 
 function scaledDamage(raw: number, attacker: MutableCombatant, critical: boolean): number {
@@ -527,6 +617,21 @@ export function createStrategicCombatService(
     }
   }
 
+  function chooseMine(source: MutableCombatant, target: MutableCombatant): ShipMineDefinition | null {
+    if (source.mineStock.length === 0) return null;
+    const preferredKind =
+      target.shieldHp > 0
+        ? 'ion'
+        : distance(source.position, target.position) > 360
+          ? 'hunter'
+          : 'shaped_charge';
+    return (
+      source.mineStock.find((mine) => mine.kind === preferredKind) ??
+      source.mineStock[0] ??
+      null
+    );
+  }
+
   function maybeDropMine(
     side: StrategicCombatSide,
     source: MutableCombatant,
@@ -534,37 +639,60 @@ export function createStrategicCombatService(
     deltaSeconds: number
   ): void {
     source.mineCooldown = Math.max(0, source.mineCooldown - deltaSeconds);
-    if (source.tactic !== 'minefield' || source.mineCharges <= 0 || source.mineCooldown > 0) return;
-    if (distance(source.position, target.position) > 700) return;
+    if (source.tactic !== 'minefield' || source.mineStock.length === 0 || source.mineCooldown > 0) {
+      return;
+    }
+    if (distance(source.position, target.position) > 720) return;
+
+    const definition = chooseMine(source, target);
+    if (!definition) return;
+    const stockIndex = source.mineStock.findIndex((mine) => mine.id === definition.id);
+    if (stockIndex >= 0) source.mineStock.splice(stockIndex, 1);
 
     mineSerial += 1;
-    source.mineCharges -= 1;
     source.mineCooldown = MINE_DROP_COOLDOWN;
     mines.push({
       id: mineSerial,
       owner: side,
       position: { ...source.position },
       armedSeconds: 0.7,
-      radius: MINE_TRIGGER_RADIUS,
-      shieldDamage: MINE_DAMAGE,
-      hullDamage: MINE_DAMAGE,
+      pursuitRemaining: definition.pursuitSeconds,
+      definition,
     });
-    lastEvent = source.setup.name + ': Mine gelegt';
+    lastEvent = source.setup.name + ': ' + definition.name + ' gelegt';
   }
 
   function advanceMines(deltaSeconds: number): void {
     for (let index = mines.length - 1; index >= 0; index -= 1) {
       const mine = mines[index]!;
       mine.armedSeconds = Math.max(0, mine.armedSeconds - deltaSeconds);
-      if (mine.armedSeconds > 0) continue;
       const target = enemyFor(mine.owner);
-      if (target.hullHp <= 0) continue;
-      if (distance(mine.position, target.position) > mine.radius) continue;
+      if (target.hullHp <= 0) {
+        mines.splice(index, 1);
+        continue;
+      }
+
+      if (
+        mine.armedSeconds <= 0 &&
+        mine.pursuitRemaining > 0 &&
+        mine.definition.pursuitSpeedMetersPerSecond > 0
+      ) {
+        const direction = normalize(
+          target.position.x - mine.position.x,
+          target.position.y - mine.position.y
+        );
+        mine.position.x += direction.x * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
+        mine.position.y += direction.y * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
+        mine.pursuitRemaining = Math.max(0, mine.pursuitRemaining - deltaSeconds);
+      }
+
+      if (mine.armedSeconds > 0) continue;
+      if (distance(mine.position, target.position) > mine.definition.triggerRadiusMeters) continue;
 
       const result = applyDamage(
         target,
-        mine.shieldDamage,
-        mine.hullDamage,
+        mine.definition.shieldDamage,
+        mine.definition.hullDamage,
         combatantFor(mine.owner),
         false
       );
@@ -572,7 +700,9 @@ export function createStrategicCombatService(
       noteImpact(targetSide, result.layer, result.damage, target.position);
       lastEvent =
         combatantFor(mine.owner).setup.name +
-        ': Mine detoniert · ' +
+        ': ' +
+        mine.definition.name +
+        ' detoniert · ' +
         (result.layer === 'shield' ? 'Schild' : 'Hülle') +
         ' -' +
         result.damage;
@@ -636,9 +766,17 @@ export function createStrategicCombatService(
     mines: mines.map((mine) => ({
       id: mine.id,
       owner: mine.owner,
+      mineId: mine.definition.id,
+      kind: mine.definition.kind,
+      name: mine.definition.name,
+      tier: mine.definition.tier,
       position: { ...mine.position },
       armed: mine.armedSeconds <= 0,
-      radius: mine.radius,
+      radius: mine.definition.triggerRadiusMeters,
+      detection:
+        mine.owner === 'attacker'
+          ? 'identified'
+          : mineDetection(mine.definition, attacker, mine.position),
     })),
     lastImpact,
     arena: { width: arena.width, height: arena.height },
@@ -659,8 +797,11 @@ export function createStrategicCombatService(
 
       updateAiTactic(attacker, defender, elapsedSeconds);
       updateAiTactic(defender, attacker, elapsedSeconds);
-      moveCombatant(attacker, defender, 'attacker', dt, arena);
-      moveCombatant(defender, attacker, 'defender', dt, arena);
+      moveCombatant(attacker, defender, 'attacker', dt, arena, mines);
+      moveCombatant(defender, attacker, 'defender', dt, arena, mines);
+      resolveCombatantCollision(attacker, defender);
+      resolveArenaObstacles(attacker, arena);
+      resolveArenaObstacles(defender, arena);
       maybeDropMine('attacker', attacker, defender, dt);
       maybeDropMine('defender', defender, attacker, dt);
       advanceWeapons('attacker', attacker, defender, dt);
