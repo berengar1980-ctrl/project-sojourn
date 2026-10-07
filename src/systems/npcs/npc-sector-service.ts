@@ -15,9 +15,8 @@ import {
 
 const FUEL_DISTANCE_SCALE = 0.025;
 const COMBAT_TURN_RATE = 1.15;
-const PIRATE_POPULATION_TARGET = 9;
-const PIRATE_RESPAWN_MIN_SECONDS = 120;
-const PIRATE_RESPAWN_SPAN_SECONDS = 240;
+const COMBAT_RECOVERY_MIN_SECONDS = 45;
+const COMBAT_RECOVERY_SPAN_SECONDS = 76;
 
 export interface NpcSectorServiceOptions {
   readonly getPlayerPosition?: () => WorldPoint;
@@ -236,68 +235,75 @@ export function createNpcSectorService(
   npcs: readonly SectorNpcState[],
   options: NpcSectorServiceOptions = {}
 ): NpcSectorService {
-  let elapsedSeconds = 0;
-  let pirateRespawnSerial = 0;
-  const queuedPirateRespawns = new Set<string>();
-  const pirateRespawns: Array<{
-    readonly sourceId: string;
-    readonly dueSeconds: number;
-    readonly template: SectorNpcState;
-  }> = [];
-
-  function schedulePirateRespawns(): void {
-    for (const npc of npcs) {
-      if (!npc.pirate || npc.hullHp > 0 || queuedPirateRespawns.has(npc.id)) continue;
-      queuedPirateRespawns.add(npc.id);
-      const delay =
-        PIRATE_RESPAWN_MIN_SECONDS +
-        (hashId(npc.id + ':' + Math.floor(elapsedSeconds)) % PIRATE_RESPAWN_SPAN_SECONDS);
-      pirateRespawns.push({
-        sourceId: npc.id,
-        dueSeconds: elapsedSeconds + delay,
-        template: npc,
-      });
+  function recoveryLocation(npc: SectorNpcState, position: WorldPoint): string | null {
+    if (npc.pirate) {
+      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+      if (world.locations.some((location) => location.id === homeId)) return homeId;
     }
+
+    const candidates = world.locations
+      .filter(
+        (location) =>
+          location.activities.shipyard || location.activities.dock || location.activities.refuel
+      )
+      .map((location) => ({
+        id: location.id,
+        priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
+        distance: Math.hypot(location.position.x - position.x, location.position.y - position.y),
+      }))
+      .sort(
+        (first, second) =>
+          first.priority - second.priority || first.distance - second.distance
+      );
+    return candidates[0]?.id ?? nearestLocation(world, position);
   }
 
-  function deployDuePirateRespawns(): void {
-    let activePirates = npcs.filter((npc) => npc.pirate && npc.hullHp > 0).length;
-    if (activePirates >= PIRATE_POPULATION_TARGET) return;
-    const due = pirateRespawns
-      .filter((entry) => entry.dueSeconds <= elapsedSeconds)
-      .sort((first, second) => first.dueSeconds - second.dueSeconds);
+  function beginCombatRecovery(
+    npc: SectorNpcState,
+    position: WorldPoint,
+    reason = 'Kampfunfähig'
+  ): boolean {
+    const destinationId = recoveryLocation(npc, position);
+    if (!destinationId) return false;
 
-    for (const entry of due) {
-      if (activePirates >= PIRATE_POPULATION_TARGET) break;
-      const index = pirateRespawns.indexOf(entry);
-      if (index >= 0) pirateRespawns.splice(index, 1);
-      const template = entry.template;
-      pirateRespawnSerial += 1;
-      const factionId = template.factionId === 'pirates2' ? 'pirates2' : 'pirates';
-      const {
-        travel: _travel,
-        combatMovement: _combatMovement,
-        pirateHuntZoneId: _pirateHuntZoneId,
-        ...base
-      } = template;
-      const fresh: SectorNpcState = {
-        ...base,
-        id: template.id + '-r' + pirateRespawnSerial,
-        name: template.name + ' II',
-        locationId: factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost',
-        fuel: template.fuelCapacity,
-        hullHp: template.hullMaxHp,
-        cargo: {},
-        marketIntel: {},
-        activityId: 'raiding',
-        activity: 'Neue Korsarenaktivität · auf Beutezug',
-        successfulRuns: 0,
-        pirateHuntCycles: 2 + (pirateRespawnSerial % 5),
-      };
-      (npcs as SectorNpcState[]).push(fresh);
-      activePirates += 1;
-    }
+    delete npc.travel;
+    delete npc.combatMovement;
+    npc.locationId = destinationId;
+    npc.hullHp = Math.max(
+      1,
+      Math.round(npc.hullMaxHp * (npc.job === 'patrol' || npc.pirate ? 0.4 : 0.2))
+    );
+    npc.fuel = Math.max(npc.fuel, npc.fuelCapacity * 0.2);
+    npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
+    npc.combatRecoveryLocationId = destinationId;
+    npc.combatRecoverySeconds =
+      COMBAT_RECOVERY_MIN_SECONDS +
+      (hashId(npc.id + ':' + npc.combatDefeats) % COMBAT_RECOVERY_SPAN_SECONDS);
+    npc.activityId = 'repair';
+    npc.activity = reason + ' · geborgen · Reparatur';
+    return true;
   }
+
+  function advanceCombatRecovery(npc: SectorNpcState, deltaSeconds: number): boolean {
+    const remaining = npc.combatRecoverySeconds ?? 0;
+    if (remaining <= 0) return false;
+    npc.combatRecoverySeconds = Math.max(0, remaining - deltaSeconds);
+    if (npc.combatRecoverySeconds > 0) return true;
+
+    npc.hullHp = npc.hullMaxHp;
+    const location = world.locations.find((candidate) => candidate.id === npc.locationId);
+    if (location?.activities.refuel) npc.fuel = npc.fuelCapacity;
+    delete npc.combatRecoverySeconds;
+    delete npc.combatRecoveryLocationId;
+    npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
+    npc.activity = npc.pirate
+      ? 'Reparatur abgeschlossen · auf Beutezug'
+      : npc.job === 'patrol'
+        ? 'Reparatur abgeschlossen · Sicherheitspatrouille'
+        : 'Reparatur abgeschlossen · Liegezeit';
+    return true;
+  }
+
   function buildRoute(npc: SectorNpcState, fromId: string, toId: string): RoutePlan {
     return planRouteWithProfile(world, fromId, toId, routeProfile(npc));
   }
@@ -550,14 +556,10 @@ export function createNpcSectorService(
 
     recoverFromCombat(npc, reason = 'Rückzug') {
       const movement = npc.combatMovement;
+      const position = movement ? { ...movement.position } : service.livePosition(npc);
+      if (npc.hullHp <= 0) return beginCombatRecovery(npc, position, reason);
       if (!movement) return false;
-      const position = { ...movement.position };
       delete npc.combatMovement;
-      if (npc.hullHp <= 0) {
-        npc.activityId = 'disabled';
-        npc.activity = 'Kampfunfähig';
-        return false;
-      }
       const destinationId = nearestLocation(world, position);
       if (!destinationId) return false;
       return startDeepSpaceLeg(npc, position, destinationId, reason);
@@ -588,14 +590,15 @@ export function createNpcSectorService(
     tick(deltaSeconds) {
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
       const dt = Math.min(deltaSeconds, 0.25);
-      elapsedSeconds += dt;
-      schedulePirateRespawns();
-      deployDuePirateRespawns();
       const npcPositions = new Map(npcs.map((npc) => [npc.id, service.livePosition(npc)]));
       const playerPosition = options.getPlayerPosition?.() ?? null;
 
       for (const npc of npcs) {
-        if (npc.hullHp <= 0) continue;
+        if (advanceCombatRecovery(npc, dt)) continue;
+        if (npc.hullHp <= 0) {
+          beginCombatRecovery(npc, service.livePosition(npc), 'Notbergung');
+          continue;
+        }
         const movement = npc.combatMovement;
         if (movement) {
           const target = targetPosition(movement, npcPositions, playerPosition);
