@@ -49,7 +49,15 @@ export class NpcShipMapRenderer {
         angle: npc.headingRadians,
       };
 
-      this.drawShip(model, npc.id, image, geometry, starPoint, npc.headingRadians, npc.isTravelling);
+      this.drawShip(
+        model,
+        npc.id,
+        image,
+        geometry,
+        starPoint,
+        npc.headingRadians,
+        npc.isTravelling
+      );
       this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
       hits.push({
         id: npc.id,
