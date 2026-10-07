@@ -20,6 +20,12 @@ interface AsteroidHitArea {
   readonly radius: number;
 }
 
+interface NpcHitArea {
+  readonly id: string;
+  readonly point: ScreenPoint;
+  readonly radius: number;
+}
+
 function hashId(id: string): number {
   let hash = 2166136261;
   for (let index = 0; index < id.length; index += 1) {
@@ -44,6 +50,7 @@ export class LocalSpaceRenderer {
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: LocalSpaceViewModel;
   private hitAreas: readonly AsteroidHitArea[] = [];
+  private npcHitAreas: readonly NpcHitArea[] = [];
   private loadedShipUrl = '';
   private hasFitted = false;
   private debugHardpoints = false;
@@ -117,6 +124,15 @@ export class LocalSpaceRenderer {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
 
+  pickNpc(x: number, y: number): string | null {
+    let best: NpcHitArea | null = null;
+    for (const area of this.npcHitAreas) {
+      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
+      if (!best || area.radius < best.radius) best = area;
+    }
+    return best?.id ?? null;
+  }
+
   pickAsteroid(x: number, y: number): string | null {
     let best: AsteroidHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -154,7 +170,7 @@ export class LocalSpaceRenderer {
     }
     this.hitAreas = hitAreas;
 
-    this.drawNpcShips(width, height, timeSeconds);
+    this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
@@ -193,7 +209,8 @@ export class LocalSpaceRenderer {
     return image;
   }
 
-  private drawNpcShips(width: number, height: number, timeSeconds: number): void {
+  private drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
+    const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
       const point = this.camera.worldToScreen(npc.position, width, height);
       const shipWidth = this.camera.scale(npc.nominalLengthMeters);
@@ -246,6 +263,21 @@ export class LocalSpaceRenderer {
         );
       }
 
+      hits.push({
+        id: npc.id,
+        point,
+        radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
+      });
+      if (npc.isSelected) {
+        this.context.save();
+        this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
+        this.context.lineWidth = 2;
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.stroke();
+        this.context.restore();
+      }
+
       if (npc.targetAsteroidId) {
         const target = this.model.asteroids.find((asteroid) => asteroid.id === npc.targetAsteroidId);
         if (target && npc.phase === 'scanning') {
@@ -271,6 +303,8 @@ export class LocalSpaceRenderer {
       }
     }
   }
+
+    return hits;
 
   private drawNpcMinerScan(
     shipPoint: ScreenPoint,
