@@ -83,9 +83,7 @@ function changedFilesSince(base, root = path.resolve(__dirname, '..')) {
 }
 
 function needsParityReview(files) {
-  return files.some((file) =>
-    FEATURE_BEARING_PREFIXES.some((prefix) => file.startsWith(prefix))
-  );
+  return files.some((file) => FEATURE_BEARING_PREFIXES.some((prefix) => file.startsWith(prefix)));
 }
 
 function enforceChangedFileGate(files) {
