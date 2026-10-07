@@ -15,6 +15,6 @@ export function npcMayInitiateAttack(npc: SectorNpcState): boolean {
 }
 
 export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
-  if (npc.hullHp <= 0 || npc.job === 'patrol') return false;
+  if (npc.hullHp <= 0 || npc.job === 'patrol' || npc.combatMovement) return false;
   return npc.aggression >= 65;
 }
