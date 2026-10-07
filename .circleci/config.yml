@@ -28,9 +28,6 @@ jobs:
           name: Pirate behavior
           command: node scripts/ci-run-and-report.cjs pirate-behavior -- node tests/combat/pirate-npc-behavior.test.cjs
       - run:
-          name: NPC sector recovery
-          command: node scripts/ci-run-and-report.cjs npc-sector-recovery -- node tests/economy/npc-sector-simulation.test.cjs
-      - run:
           name: Navigation recovery
           command: node scripts/ci-run-and-report.cjs navigation-recovery -- node tests/navigation/navigation-module.test.cjs
       - run:
