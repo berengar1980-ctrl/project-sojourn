@@ -1,9 +1,6 @@
 name: Quality
 
 on:
-  push:
-    branches:
-      - feat/mining-selection-map-scale-lighting
   workflow_dispatch:
 
 jobs:
