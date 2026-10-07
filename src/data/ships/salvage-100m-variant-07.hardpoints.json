@@ -10,13 +10,15 @@
       "id": "engine-upper",
       "x": 20,
       "y": 102,
-      "width": 20
+      "width": 20,
+      "layer": "below"
     },
     {
       "id": "engine-lower",
       "x": 20,
       "y": 197,
-      "width": 20
+      "width": 20,
+      "layer": "below"
     }
   ],
   "weaponLasers": [],
@@ -27,7 +29,7 @@
       "x": 216,
       "y": 150,
       "width": 8,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "maneuverThrusters": [
@@ -47,7 +49,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-stern-upper",
@@ -65,7 +67,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-front-upper",
@@ -83,7 +85,7 @@
       "width": 7,
       "forceX": -1,
       "forceY": 0,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "shield": {
