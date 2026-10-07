@@ -132,6 +132,7 @@ interface ControllerRuntimeState {
   localNpcMining: NpcLocalMiningService | null;
   salvageScene: SalvageSceneController | null;
   combatPanel: StrategicCombatPanel | null;
+  embeddedCombat: 'local-space' | 'salvage-space' | null;
   selectedNpcId: string | null;
   localSpaceSeed: number;
   salvageSpaceSeed: number;
@@ -190,7 +191,10 @@ function controllerLocalModel(context: ControllerRuntimeContext) {
     context.state.activeShip,
     context.navigation,
     context.state.localNpcMining,
-    context.state.selectedNpcId
+    context.state.selectedNpcId,
+    context.state.embeddedCombat === 'local-space'
+      ? context.engagements.activePlayerCombat()?.getSnapshot() ?? null
+      : null
   );
 }
 
@@ -229,6 +233,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
+  state.embeddedCombat = null;
   state.mode = 'star-map';
   syncControllerNavigationCrewPerformance(context);
   context.audio.clearPlayerRcs();
@@ -265,6 +270,7 @@ function mountControllerCombat(context: ControllerRuntimeContext): void {
   destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
+  state.embeddedCombat = null;
   state.mode = 'combat';
   context.audio.clearPlayerRcs();
   state.combatPanel = createStrategicCombatPanel({
@@ -369,7 +375,20 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     },
     onAttackNpc: (id) => {
       state.selectedNpcId = id;
-      if (context.engagements.engageNpcNow(id)) mountControllerCombat(context);
+      const local = state.localSpace?.getSnapshot();
+      const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
+      if (!local || !target) return;
+      const started = context.engagements.engageNpcInArena(id, {
+        width: local.instance.width,
+        height: local.instance.height,
+        attackerPosition: { ...local.instance.ship.position },
+        defenderPosition: { ...target.position },
+      });
+      if (started) {
+        state.embeddedCombat = 'local-space';
+        context.systemLog.write('COMBAT > GEFECHT IM ASTEROIDENFELD');
+        state.panels.local?.update(controllerLocalModel(context));
+      }
     },
   });
   mountControllerSwitcher(context);
@@ -405,10 +424,17 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     onSelectNpc: (id) => {
       state.selectedNpcId = id;
     },
-    onAttackNpc: (id) => {
+    onAttackNpc: (id, arena) => {
       state.selectedNpcId = id;
-      if (context.engagements.engageNpcNow(id)) mountControllerCombat(context);
+      if (context.engagements.engageNpcInArena(id, arena)) {
+        state.embeddedCombat = 'salvage-space';
+        context.systemLog.write('COMBAT > GEFECHT IM WRACKFELD');
+      }
     },
+    getCombat: () =>
+      state.embeddedCombat === 'salvage-space'
+        ? context.engagements.activePlayerCombat()?.getSnapshot() ?? null
+        : null,
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
     ),
@@ -423,8 +449,14 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   context.engagements.tick(deltaSeconds);
-  if (context.engagements.activePlayerCombat() && state.mode !== 'combat') {
+  const activeCombat = context.engagements.activePlayerCombat();
+  if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
     mountControllerCombat(context);
+  }
+  if (activeCombat?.getSnapshot().winner && state.embeddedCombat !== null) {
+    context.systemLog.write('COMBAT > ' + activeCombat.getSnapshot().lastEvent.toUpperCase());
+    context.engagements.finishPlayerCombat();
+    state.embeddedCombat = null;
   }
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
@@ -463,6 +495,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     localNpcMining: null,
     salvageScene: null,
     combatPanel: null,
+    embeddedCombat: null,
     selectedNpcId: null,
     localSpaceSeed: 0,
     salvageSpaceSeed: 0,
