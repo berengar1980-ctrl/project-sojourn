@@ -291,7 +291,7 @@ export function createNpcLocalSalvageService(
       for (let index = ships.length - 1; index >= 0; index -= 1) {
         const ship = ships[index]!;
         const npc = byId.get(ship.npcId);
-        if (!npc) {
+        if (!npc || npc.hullHp <= 0) {
           ships.splice(index, 1);
           continue;
         }
