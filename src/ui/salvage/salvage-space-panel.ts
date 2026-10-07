@@ -16,6 +16,8 @@ interface SalvageSpacePanelOptions {
   readonly model: SalvageSpaceViewModel;
   readonly log: SystemLogService;
   readonly onSelectWreck: (id: string | null) => void;
+  readonly onSelectNpc: (id: string | null) => void;
+  readonly onAttackNpc: (id: string) => void;
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
@@ -32,6 +34,7 @@ interface SalvageControls {
   readonly meta: HTMLElement;
   readonly integrity: HTMLElement;
   readonly inspectButton: HTMLButtonElement;
+  readonly attackButton: HTMLButtonElement;
   readonly resources: HTMLElement;
   readonly status: HTMLElement;
   readonly cancelButton: HTMLButtonElement;
@@ -66,6 +69,7 @@ function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<div class="salvage-integrity"><div></div></div>',
     '<div class="salvage-resource-list"></div>',
     '<button class="salvage-inspect-button" type="button">UNTERSUCHEN</button>',
+    '<button class="salvage-attack-button" type="button" hidden>ANGREIFEN</button>',
     '</div>',
   ].join('');
   options.root.replaceChildren(shell);
@@ -85,6 +89,7 @@ function controls(shell: HTMLElement): SalvageControls {
     meta: query<HTMLElement>('.local-selection-meta'),
     integrity: query<HTMLElement>('.salvage-integrity > div'),
     inspectButton: query<HTMLButtonElement>('.salvage-inspect-button'),
+    attackButton: query<HTMLButtonElement>('.salvage-attack-button'),
     resources: query<HTMLElement>('.salvage-resource-list'),
     status: query<HTMLElement>('.salvage-operation-status'),
     cancelButton: query<HTMLButtonElement>('.salvage-cancel-button'),
@@ -220,8 +225,19 @@ function renderSelection(
   ui: SalvageControls,
   options: SalvageSpacePanelOptions
 ): void {
+  const npc = model.npcShips.find((entry) => entry.isSelected);
   const wreck = model.selectedWreck;
-  ui.card.hidden = !wreck;
+  ui.card.hidden = !wreck && !npc;
+  if (npc) {
+    ui.name.textContent = npc.name;
+    ui.meta.textContent = 'SCHIFF · ' + npc.phase.toUpperCase();
+    ui.integrity.style.width = '100%';
+    ui.resources.replaceChildren();
+    ui.inspectButton.hidden = true;
+    ui.attackButton.hidden = false;
+    return;
+  }
+  ui.attackButton.hidden = true;
   if (!wreck) return;
 
   ui.name.textContent = wreck.name;
@@ -369,6 +385,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     canvas: ui.canvas,
     renderer,
     onSelectWreck: options.onSelectWreck,
+    onSelectNpc: options.onSelectNpc,
     onNavigate: (x, y) => options.onNavigate({ x, y }),
   });
   ui.resources.addEventListener('pointerdown', (event) => {
@@ -394,6 +411,10 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
 
   ui.inspectButton.addEventListener('click', () => {
     if (model.selectedWreck) options.onInspect(model.selectedWreck.id);
+  });
+  ui.attackButton.addEventListener('click', () => {
+    const selected = model.npcShips.find((entry) => entry.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
   });
   ui.cancelButton.addEventListener('click', options.onCancel);
   ui.backButton.addEventListener('click', options.onReturnToStarMap);
