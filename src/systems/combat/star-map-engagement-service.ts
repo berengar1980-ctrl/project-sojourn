@@ -135,6 +135,8 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     sensorRangeMultiplier: sensor ? 1 + Number(sensor.range ?? 0) : 1,
     aiControlled: true,
     aiAggression: npc.aggression,
+    ...(npc.factionId ? { factionId: npc.factionId } : {}),
+    ...(npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
   };
 }
 
