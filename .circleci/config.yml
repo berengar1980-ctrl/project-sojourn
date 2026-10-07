@@ -32,7 +32,7 @@ jobs:
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
           name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- node tests/combat/spatial-combat.test.cjs
+          command: node scripts/ci-run-and-report.cjs tests -- node scripts/run-combat-validation.cjs
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
