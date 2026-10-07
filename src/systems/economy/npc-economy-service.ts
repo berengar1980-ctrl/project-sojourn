@@ -745,6 +745,7 @@ export function createNpcEconomyService(
   const positions = options.positions ?? {};
 
   for (const npc of npcs) {
+    if ((npc as NpcEconomyState & { pirate?: boolean }).pirate) continue;
     initializeNpcMarketIntel(npc, markets, positions, 0);
     const personality = ensureNpcPersonality(npc);
     ensureNpcAutonomy(npc);
@@ -760,6 +761,7 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
+        if ((npc as NpcEconomyState & { pirate?: boolean }).pirate) continue;
         if (options.travel?.isTravelling(npc)) continue;
         observeNpcMarket(npc, markets, npc.locationId, current);
         if (npc.role === 'miner' || npc.role === 'salvager') {
@@ -799,6 +801,7 @@ export function createNpcEconomyService(
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
       const dt = Math.min(deltaSeconds, 0.25);
       for (const npc of npcs) {
+        if ((npc as NpcEconomyState & { pirate?: boolean }).pirate) continue;
         advanceNpcActivity(npc, dt, markets, resources, positions, Math.max(0, lastDay), options);
       }
     },
