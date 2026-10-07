@@ -320,6 +320,7 @@ export class LocalSpaceRenderer {
     if (!combat) return;
 
     for (const mine of combat.mines) {
+      if (mine.detection === 'hidden') continue;
       const point = this.camera.worldToScreen(mine.position, width, height);
       this.context.save();
       this.context.strokeStyle = mine.armed
