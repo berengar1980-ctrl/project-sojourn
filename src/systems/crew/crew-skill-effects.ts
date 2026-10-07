@@ -10,7 +10,9 @@ export interface CrewSkillEffects {
   readonly sensors: {
     readonly weaponHitChanceBonus: number;
     readonly contactBaseRange: number;
+    readonly civilianTransponderRange: number;
     readonly marketIntelBaseRange: number;
+    readonly salvageWreckRange: number;
   };
   readonly weapons: {
     readonly damageMultiplier: number;
@@ -26,6 +28,9 @@ export interface CrewSkillEffects {
     readonly yieldMultiplier: number;
     readonly workTimeMultiplier: number;
     readonly extraWreckLootChance: number;
+    readonly specialPersonalLootChance: number;
+    readonly relicChance: number;
+    readonly wreckResourceQuantity: number;
   };
   readonly mining: {
     readonly yieldMultiplier: number;
@@ -38,6 +43,7 @@ export interface CrewSkillEffects {
     readonly prospectUncertainty: number;
     readonly secondDepositChance: number;
     readonly thirdDepositChance: number;
+    readonly deepSignatureChance: number;
   };
   readonly logistics: {
     readonly saleFeeRate: number;
@@ -76,8 +82,89 @@ export function sensorContactBaseRange(skill: number): number {
   return 1.4 + normalizedCrewSkill(skill) * 0.045;
 }
 
+export function sensorCivilianTransponderRange(skill: number): number {
+  return clamp(26 + normalizedCrewSkill(skill) * 0.2, 28, 46);
+}
+
+export function sensorPirateDetectionRange(skill: number): number {
+  return sensorContactBaseRange(skill) * 0.78;
+}
+
+export function sensorPirateIdentificationRange(skill: number): number {
+  return Math.max(0.85, sensorPirateDetectionRange(skill) * 0.52);
+}
+
 export function sensorMarketIntelBaseRange(skill: number): number {
   return 8 + normalizedCrewSkill(skill) * 0.22;
+}
+
+export function sensorMarketIntelAge(skill: number, distance: number, range: number): number {
+  const resolvedSkill = normalizedCrewSkill(skill);
+  const ratio = clamp(
+    Math.max(0, Number.isFinite(distance) ? distance : 0) /
+      Math.max(0.1, Number.isFinite(range) ? range : 0.1),
+    0,
+    1
+  );
+  return clamp(Math.round((100 - resolvedSkill) / 45 + ratio * (7 - 0.055 * resolvedSkill)), 0, 10);
+}
+
+export function sensorSalvageWreckRange(skill: number): number {
+  return 5 + normalizedCrewSkill(skill) * 0.11;
+}
+
+export interface SensorInspectionAnomalyContext {
+  readonly load: number;
+  readonly illegalFraction: number;
+  readonly concealment: number;
+  readonly suspicion: number;
+  readonly falsePositive?: number;
+  readonly riskTrader?: boolean;
+}
+
+export function sensorInspectionAnomalyChance(
+  skill: number,
+  context: SensorInspectionAnomalyContext
+): number {
+  const sensor = normalizedCrewSkill(skill) / 100;
+  const falsePositive = Math.max(0.015, Number(context.falsePositive ?? 0.03));
+  const load = clamp(Number(context.load) || 0, 0, 1);
+  const illegalFraction = clamp(Number(context.illegalFraction) || 0, 0, 1);
+  const concealment = clamp(Number(context.concealment) || 0, 0, 0.9);
+  const suspicion = clamp(Number(context.suspicion) || 0, 0, 100);
+  return clamp(
+    falsePositive +
+      load * 0.055 +
+      (context.riskTrader ? 0.045 : 0) +
+      suspicion * 0.0025 +
+      illegalFraction * (0.55 + 0.25 * sensor) * (1 - concealment * 0.72),
+    0.02,
+    0.88
+  );
+}
+
+export function sensorInspectionScanStrength(skill: number, customsStrength = 0): number {
+  return clamp(
+    0.34 + normalizedCrewSkill(skill) / 145 + Math.max(0, customsStrength) * 0.18,
+    0.25,
+    0.97
+  );
+}
+
+export function sensorMiningClaimDetectionChance(playerSkill: number, npcSkill: number): number {
+  return clamp(
+    0.45 + (normalizedCrewSkill(playerSkill) - normalizedCrewSkill(npcSkill)) / 140,
+    0.1,
+    0.92
+  );
+}
+
+export function sensorNpcMiningClaimDetectionChance(npcSkill: number, playerSkill: number): number {
+  return clamp(
+    0.42 + (normalizedCrewSkill(npcSkill) - normalizedCrewSkill(playerSkill)) / 140,
+    0.1,
+    0.92
+  );
 }
 
 export function weaponDamageMultiplier(skill: number): number {
@@ -90,6 +177,10 @@ export function weaponCriticalChance(skill: number): number {
 
 export function weaponCycleTimeMultiplier(skill: number): number {
   return 1 - clamp(normalizedCrewSkill(skill) * 0.0012, 0, 0.12);
+}
+
+export function weaponInspectionPowerBonus(skill: number): number {
+  return normalizedCrewSkill(skill) * 0.18;
 }
 
 export function engineeringShieldRegenMultiplier(skill: number): number {
@@ -114,6 +205,33 @@ export function salvageWorkTimeMultiplier(skill: number): number {
 
 export function salvageExtraWreckLootChance(skill: number): number {
   return clamp(normalizedCrewSkill(skill) / 120, 0, 1);
+}
+
+export function salvageSpecialPersonalLootChance(skill: number): number {
+  return clamp(0.55 + normalizedCrewSkill(skill) * 0.003, 0, 1);
+}
+
+export function salvageRelicChance(skill: number): number {
+  return clamp(0.06 + normalizedCrewSkill(skill) * 0.0025, 0, 1);
+}
+
+export function salvageWreckResourceQuantity(skill: number): number {
+  return Math.max(2, Math.round(3 + normalizedCrewSkill(skill) / 18));
+}
+
+export function salvageActionChance(
+  skill: number,
+  kind: 'board' | 'component',
+  special = false,
+  moduleBonus = 0
+): number {
+  const base = kind === 'board' ? (special ? 24 : 42) : special ? 30 : 50;
+  const skillFactor = special ? 0.34 : 0.48;
+  return clamp(
+    Math.round(base + normalizedCrewSkill(skill) * skillFactor + Number(moduleBonus || 0)),
+    12,
+    95
+  );
 }
 
 export function miningYieldMultiplier(skill: number): number {
@@ -156,8 +274,14 @@ export function miningThirdDepositChance(skill: number): number {
   return clamp(0.18 + normalizedCrewSkill(skill) * 0.0015, 0, 1);
 }
 
-export function logisticsSaleFeeRate(skill: number): number {
-  return clamp(0.25 * (1 - normalizedCrewSkill(skill) / 100), 0, 0.25);
+export function miningDeepSignatureChance(skill: number): number {
+  return clamp(0.36 + normalizedCrewSkill(skill) / 220, 0.36, 0.74);
+}
+
+export function logisticsSaleFeeRate(skill: number, captainCunning = 0, captainTrust = 0): number {
+  const base = 0.25 * (1 - normalizedCrewSkill(skill) / 100);
+  const edge = Number(captainCunning || 0) - Number(captainTrust || 0);
+  return clamp(base - edge * 0.005, 0, 0.25);
 }
 
 export function navigationEvadeChance(sensorSkill: number, pilotingSkill: number): number {
@@ -188,7 +312,9 @@ export function crewSkillEffects(
     sensors: {
       weaponHitChanceBonus: sensorWeaponHitChanceBonus(sensors),
       contactBaseRange: sensorContactBaseRange(sensors),
+      civilianTransponderRange: sensorCivilianTransponderRange(sensors),
       marketIntelBaseRange: sensorMarketIntelBaseRange(sensors),
+      salvageWreckRange: sensorSalvageWreckRange(sensors),
     },
     weapons: {
       damageMultiplier: weaponDamageMultiplier(weapons),
@@ -204,6 +330,9 @@ export function crewSkillEffects(
       yieldMultiplier: salvageYieldMultiplier(salvage),
       workTimeMultiplier: salvageWorkTimeMultiplier(salvage),
       extraWreckLootChance: salvageExtraWreckLootChance(salvage),
+      specialPersonalLootChance: salvageSpecialPersonalLootChance(salvage),
+      relicChance: salvageRelicChance(salvage),
+      wreckResourceQuantity: salvageWreckResourceQuantity(salvage),
     },
     mining: {
       yieldMultiplier: miningYieldMultiplier(mining),
@@ -216,6 +345,7 @@ export function crewSkillEffects(
       prospectUncertainty: miningProspectUncertainty(mining),
       secondDepositChance: miningSecondDepositChance(mining),
       thirdDepositChance: miningThirdDepositChance(mining),
+      deepSignatureChance: miningDeepSignatureChance(mining),
     },
     logistics: {
       saleFeeRate: logisticsSaleFeeRate(logistics),

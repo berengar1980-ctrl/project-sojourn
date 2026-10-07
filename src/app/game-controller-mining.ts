@@ -25,8 +25,7 @@ export function createMiningLocalSpace(
     mining: {
       enabled: runtime.mining.available,
       cycleSeconds: runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier,
-      yieldMultiplier:
-        runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier,
+      yieldMultiplier: runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier,
     },
     systems: {
       shieldMaxHp: runtime.shieldMaxHp,
@@ -37,6 +36,7 @@ export function createMiningLocalSpace(
       sensorCrewSkill: runtime.sensorCrewSkill,
       reactorOutput: runtime.energy.output,
       reactorContinuousUsed: runtime.energy.baseUsed,
+      shieldRegenMultiplier: runtime.crewEffects.engineering.shieldRegenMultiplier,
     },
     onMiningChunkCollected: (resourceId, amount) =>
       mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id),

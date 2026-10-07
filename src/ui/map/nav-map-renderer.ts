@@ -1,13 +1,13 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { StarMapLocationView } from '../../features/star-map/star-map-view-model';
 import { mapSymbolScale } from './map-visual-scale';
-import { StationSymbolRenderer } from './station-symbol-renderer';
+import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 
 export class NavMapRenderer {
-  private readonly stationSymbols: StationSymbolRenderer;
+  private readonly stationSymbols: ProceduralStationRenderer;
 
   constructor(private readonly context: CanvasRenderingContext2D) {
-    this.stationSymbols = new StationSymbolRenderer(context);
+    this.stationSymbols = new ProceduralStationRenderer(context);
   }
 
   drawBackground(width: number, height: number, timeSeconds: number): void {
@@ -73,7 +73,13 @@ export class NavMapRenderer {
 
   drawLocation(location: StarMapLocationView, point: WorldPoint, radius: number): void {
     if (location.kind === 'station') {
-      this.stationSymbols.draw(location.stationType ?? 'utility', point, radius);
+      this.stationSymbols.draw({
+        id: location.id,
+        type: location.stationType ?? 'utility',
+        point,
+        radius,
+        detailLevel: 'map',
+      });
       return;
     }
     if (location.kind === 'wreck') {

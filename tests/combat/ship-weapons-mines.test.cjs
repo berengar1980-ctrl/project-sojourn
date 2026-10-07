@@ -6,7 +6,19 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const catalog = loadStandaloneTypeScriptModule(root, 'src/data/ships/ship-component-catalog.ts');
-const combat = loadStandaloneTypeScriptModule(root, 'src/systems/combat/index.ts');
+const weaponCombat = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/ship-weapon-service.ts'
+);
+const mineCatalog = loadStandaloneTypeScriptModule(root, 'src/data/combat/ship-mines.ts');
+const mineDetection = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/mine-detection-service.ts'
+);
+const mineDamage = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/mine-damage-service.ts'
+);
 
 const weapons = catalog.SHIP_COMPONENT_CATALOG.weapon ?? [];
 const expectedFamilies = [
@@ -37,14 +49,10 @@ for (const family of expectedFamilies) {
     const previous = variants[index - 1].weapon;
     const current = variants[index].weapon;
     assert(
-      current.shieldDamage + current.hullDamage >
-        previous.shieldDamage + previous.hullDamage,
+      current.shieldDamage + current.hullDamage > previous.shieldDamage + previous.hullDamage,
       family + ' must gain raw damage every Mk'
     );
-    assert(
-      current.rangeMeters > previous.rangeMeters,
-      family + ' must gain range every Mk'
-    );
+    assert(current.rangeMeters > previous.rangeMeters, family + ' must gain range every Mk');
     assert(
       current.cooldownSeconds <= previous.cooldownSeconds,
       family + ' must not fire slower at higher Mk'
@@ -85,19 +93,26 @@ for (const family of expectedFamilies) {
   const railgun = weapons.find((component) => component.id === 'weapon-railgun-1');
   assert(ion?.weapon && railgun?.weapon);
 
-  const ionHit = combat.resolveShipWeaponHit(ion, { shieldHp: 100, hullHp: 100 });
+  const eliteProfile = weaponCombat.crewAdjustedShipWeaponProfile(ion, 100, 100);
+  assert.equal(eliteProfile.shieldDamage, Math.round(46 * 1.2));
+  assert.equal(eliteProfile.hullDamage, Math.round(3 * 1.2));
+  assert.equal(eliteProfile.cooldownSeconds, 1.8 * 0.88);
+  assert.equal(eliteProfile.criticalChance, 0.1);
+  assert.equal(eliteProfile.hitChanceBonus, 0.15);
+
+  const ionHit = weaponCombat.resolveShipWeaponHit(ion, { shieldHp: 100, hullHp: 100 });
   assert.equal(ionHit.shieldDamage, 46);
   assert.equal(ionHit.hullDamage, 0);
   assert.equal(ionHit.hullRemaining, 100);
 
-  const blockedRailgun = combat.resolveShipWeaponHit(railgun, {
+  const blockedRailgun = weaponCombat.resolveShipWeaponHit(railgun, {
     shieldHp: 100,
     hullHp: 100,
   });
   assert.equal(blockedRailgun.shieldDamage, 5);
   assert.equal(blockedRailgun.hullDamage, 0);
 
-  const exposedRailgun = combat.resolveShipWeaponHit(railgun, {
+  const exposedRailgun = weaponCombat.resolveShipWeaponHit(railgun, {
     shieldHp: 0,
     hullHp: 100,
   });
@@ -105,10 +120,10 @@ for (const family of expectedFamilies) {
   assert.equal(exposedRailgun.hullDamage, 48);
 }
 
-assert.equal(combat.SHIP_MINE_CATALOG.length, 18, 'three mine kinds need Mk I-VI');
+assert.equal(mineCatalog.SHIP_MINE_CATALOG.length, 18, 'three mine kinds need Mk I-VI');
 
 for (const kind of ['ion', 'shaped_charge', 'hunter']) {
-  const mines = combat
+  const mines = mineCatalog
     .getShipMinesByKind(kind)
     .slice()
     .sort((left, right) => left.tier - right.tier);
@@ -123,8 +138,7 @@ for (const kind of ['ion', 'shaped_charge', 'hunter']) {
     const previous = mines[index - 1];
     const current = mines[index];
     assert(
-      current.shieldDamage + current.hullDamage >
-        previous.shieldDamage + previous.hullDamage,
+      current.shieldDamage + current.hullDamage > previous.shieldDamage + previous.hullDamage,
       kind + ' mines must gain raw damage every Mk'
     );
     assert(current.stealth >= previous.stealth, kind + ' mines must not become easier to detect');
@@ -132,15 +146,15 @@ for (const kind of ['ion', 'shaped_charge', 'hunter']) {
 }
 
 {
-  const ionMine = combat.getShipMine('mine-ion-1');
-  const shapedMine = combat.getShipMine('mine-shaped-charge-1');
-  const hunterMk6 = combat.getShipMine('mine-hunter-6');
+  const ionMine = mineCatalog.getShipMine('mine-ion-1');
+  const shapedMine = mineCatalog.getShipMine('mine-shaped-charge-1');
+  const hunterMk6 = mineCatalog.getShipMine('mine-hunter-6');
   assert(ionMine && shapedMine && hunterMk6);
 
   assert(ionMine.shieldDamage >= ionMine.hullDamage * 4);
   assert(shapedMine.hullDamage >= shapedMine.shieldDamage * 4);
 
-  const lowSkill = combat.detectShipMine(ionMine, {
+  const lowSkill = mineDetection.detectShipMine(ionMine, {
     crewSkill: 20,
     sensorTier: 1,
     sensorRangeMeters: 1000,
@@ -149,7 +163,7 @@ for (const kind of ['ion', 'shaped_charge', 'hunter']) {
   });
   assert.equal(lowSkill.level, 'hidden', 'weak sensor crews must completely miss mines');
 
-  const trainedCrew = combat.detectShipMine(ionMine, {
+  const trainedCrew = mineDetection.detectShipMine(ionMine, {
     crewSkill: 64,
     sensorTier: 1,
     sensorRangeMeters: 1000,
@@ -158,7 +172,7 @@ for (const kind of ['ion', 'shaped_charge', 'hunter']) {
   });
   assert.equal(trainedCrew.level, 'mine', 'trained crew should detect but not fully identify it');
 
-  const eliteCrew = combat.detectShipMine(hunterMk6, {
+  const eliteCrew = mineDetection.detectShipMine(hunterMk6, {
     crewSkill: 92,
     sensorTier: 3,
     sensorRangeMeters: 1000,
@@ -171,11 +185,11 @@ for (const kind of ['ion', 'shaped_charge', 'hunter']) {
     'elite sensor crews with upgraded arrays should identify hunter mines'
   );
 
-  const ionHit = combat.resolveShipMineHit(ionMine, { shieldHp: 100, hullHp: 100 });
+  const ionHit = mineDamage.resolveShipMineHit(ionMine, { shieldHp: 100, hullHp: 100 });
   assert.equal(ionHit.shieldDamage, 65);
   assert.equal(ionHit.hullDamage, 0);
 
-  const shapedHit = combat.resolveShipMineHit(shapedMine, { shieldHp: 0, hullHp: 100 });
+  const shapedHit = mineDamage.resolveShipMineHit(shapedMine, { shieldHp: 0, hullHp: 100 });
   assert.equal(shapedHit.shieldDamage, 0);
   assert.equal(shapedHit.hullDamage, 75);
 }

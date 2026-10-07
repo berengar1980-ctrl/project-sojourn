@@ -61,7 +61,9 @@ async function loadChunkedAmbience(): Promise<string> {
     })
   );
   const bytes = base64ToBytes(chunks.join(''));
-  return URL.createObjectURL(new Blob([bytes], { type: 'audio/ogg' }));
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return URL.createObjectURL(new Blob([buffer], { type: 'audio/ogg' }));
 }
 
 export function createGameAudioService(): GameAudioService {
