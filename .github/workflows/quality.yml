@@ -1,9 +1,6 @@
 name: Quality
 
 on:
-  push:
-    branches:
-      - feature/star-map-ship-engagements
   workflow_dispatch:
 
 jobs:
