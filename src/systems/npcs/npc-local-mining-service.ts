@@ -221,7 +221,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       return false;
     }
     ship.targetAsteroidId = asteroid.id;
-    ship.phase = 'approaching';
+    ship.phase = 'entering';
     ship.laserActive = false;
     ship.scanProgress = 0;
     return true;
