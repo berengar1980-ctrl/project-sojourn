@@ -452,7 +452,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     getPlayerShip: () => state.activeShip,
-    getPlayerCombatant: () => createPlayerCombatant(state.activeShip, controllerShipRuntimeOptions(context)),
+    getPlayerCombatant: () =>
+      createPlayerCombatant(state.activeShip, controllerShipRuntimeOptions(context)),
     log: (message) => systemLog.write(message),
   });
   context = {
