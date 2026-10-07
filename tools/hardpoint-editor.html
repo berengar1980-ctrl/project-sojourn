@@ -224,13 +224,34 @@ function addPoint(){
 function deletePoint(){
  const list=points();if(state.selected==null||!list[state.selected])return;list.splice(state.selected,1);state.selected=null;markDirty();renderList();renderEditor();draw();
 }
-async function saveShip(ship){
- const writable=await ship.handle.createWritable();await writable.write(JSON.stringify(ship.data,null,2)+"\n");await writable.close();ship.dirty=false;state.dirty.delete(ship.id);
+async function ensureProjectConnected(){
+ if(state.root&&state.ships.every(ship=>ship.handle))return true;
+ return openProject();
 }
-async function saveCurrent(){if(!state.ship)return;try{await saveShip(state.ship);updateDirty();setStatus(state.ship.id+" gespeichert.")}catch(error){setStatus(String(error),true)}}
+async function saveShip(ship){
+ if(!ship.handle)throw new Error("Kein lokaler Dateizugriff für "+ship.id+". Bitte den project-sojourn Projektordner auswählen.");
+ const writable=await ship.handle.createWritable();
+ await writable.write(JSON.stringify(ship.data,null,2)+"\n");
+ await writable.close();
+ ship.dirty=false;
+ state.dirty.delete(ship.id);
+}
+async function saveCurrent(){
+ if(!state.ship)return;
+ try{
+  if(!(await ensureProjectConnected()))return;
+  await saveShip(state.ship);
+  updateDirty();
+  setStatus(state.ship.id+" gespeichert.");
+ }catch(error){setStatus(String(error),true)}
+}
 async function saveAll(){
- try{for(const ship of state.ships)if(ship.dirty)await saveShip(ship);updateDirty();setStatus("Alle geänderten Hardpoint-JSONs gespeichert.")}
- catch(error){setStatus(String(error),true)}
+ try{
+  if(!(await ensureProjectConnected()))return;
+  for(const ship of state.ships)if(ship.dirty)await saveShip(ship);
+  updateDirty();
+  setStatus("Alle geänderten Hardpoint-JSONs gespeichert.");
+ }catch(error){setStatus(String(error),true)}
 }
 function resize(){const r=els.canvas.getBoundingClientRect(),dpr=Math.max(1,devicePixelRatio||1);els.canvas.width=Math.round(r.width*dpr);els.canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
 function transform(){
