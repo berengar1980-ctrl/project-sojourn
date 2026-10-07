@@ -60,6 +60,7 @@ const asteroid = {
       oreType: 'Ferrite',
       oreRemaining: 100,
       oreCapacity: 100,
+      identified: false,
     },
   ],
   scanLevel: 'unscanned',
