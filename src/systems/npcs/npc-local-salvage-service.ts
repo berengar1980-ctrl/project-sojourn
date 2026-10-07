@@ -31,6 +31,7 @@ export interface LocalNpcSalvagerState {
 
 export interface NpcLocalSalvageService {
   readonly ships: readonly LocalNpcSalvagerState[];
+  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
   tick(deltaSeconds: number): void;
 }
 
@@ -281,8 +282,29 @@ export function createNpcLocalSalvageService(
 
   syncArrivals();
 
+  function syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    speed: number
+  ): void {
+    const ship = ships.find((entry) => entry.npcId === npcId);
+    if (!ship) return;
+    ship.position = {
+      x: Math.max(0, Math.min(options.field.width, position.x)),
+      y: Math.max(0, Math.min(options.field.height, position.y)),
+    };
+    ship.headingRadians = headingRadians;
+    ship.speed = Math.max(0, speed);
+    ship.phase = 'approaching';
+    ship.targetWreckId = null;
+    ship.salvageActive = false;
+    ship.scanProgress = 0;
+  }
+
   return {
     ships,
+    syncCombatPose,
     tick(deltaSeconds) {
       const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
       if (dt <= 0) return;
