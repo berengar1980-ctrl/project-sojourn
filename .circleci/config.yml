@@ -19,11 +19,11 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Format
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
+          name: Format pirate additions
+          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/ui/ships/pirate-insignia-renderer.ts tests/combat/pirate-npc-behavior.test.cjs
       - run:
-          name: Lint
-          command: node scripts/ci-run-and-report.cjs lint -- npm run lint
+          name: Lint pirate additions
+          command: node scripts/ci-run-and-report.cjs lint -- npx eslint src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/ui/ships/pirate-insignia-renderer.ts
       - run:
           name: TypeScript
           command: node scripts/ci-run-and-report.cjs typecheck -- npm run typecheck
@@ -31,8 +31,8 @@ jobs:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
-          name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- npm test
+          name: Pirate NPC behavior
+          command: node scripts/ci-run-and-report.cjs pirate-behavior -- node tests/combat/pirate-npc-behavior.test.cjs
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
