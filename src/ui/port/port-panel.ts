@@ -134,12 +134,12 @@ function systemMarket(model: PortViewModel): string {
         <div class="port-system-summary" data-system-resource-summary="${resourceId}" ${resourceId === initial ? '' : 'hidden'}>
           <div><span>GÜNSTIGSTER BEKANNTER EINKAUF</span>${
             buy && buy.price !== null && buy.ageDays !== null
-              ? `<strong>${buy.locationName}</strong><b>${buy.price.toLocaleString('de-DE')} CR/t</b><small>${buy.ageDays === 0 ? 'LIVE' : buy.ageDays + ' T ALT'}</small>`
+              ? `<strong>${buy.locationName}</strong><b>${buy.price.toLocaleString('de-DE')} CR/t</b><small>${buy.ageDays === 0 ? 'LIVE' : buy.ageDays + ' T ALT'}</small>${buy.locationId === model.locationId ? '<em class="port-system-summary-current">HIER</em>' : `<button type="button" data-market-route="${buy.locationId}">ZUM EINKAUF</button>`}`
               : `<strong>KEINE PREISDATEN</strong><small>${expectedBuy ? 'Profil-Hinweis: ' + expectedBuy.locationName : 'Sensorintel oder Besuch nötig'}</small>`
           }</div>
           <div><span>BESTER BEKANNTER VERKAUF</span>${
             sell && sell.sellPrice !== null && sell.ageDays !== null
-              ? `<strong>${sell.locationName}</strong><b>${sell.sellPrice.toLocaleString('de-DE')} CR/t</b><small>${sell.ageDays === 0 ? 'LIVE' : sell.ageDays + ' T ALT'}</small>`
+              ? `<strong>${sell.locationName}</strong><b>${sell.sellPrice.toLocaleString('de-DE')} CR/t</b><small>${sell.ageDays === 0 ? 'LIVE' : sell.ageDays + ' T ALT'}</small>${sell.locationId === model.locationId ? '<em class="port-system-summary-current">HIER</em>' : `<button type="button" data-market-route="${sell.locationId}">ZUM VERKAUF</button>`}`
               : `<strong>KEINE PREISDATEN</strong><small>${expectedSell ? 'Profil-Hinweis: ' + expectedSell.locationName : 'Sensorintel oder Besuch nötig'}</small>`
           }</div>
           <div><span>GESCHÄTZTE MARGE</span>${
