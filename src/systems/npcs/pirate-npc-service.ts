@@ -281,7 +281,9 @@ export function createPirateNpcService(options: PirateNpcServiceOptions): Pirate
 
     npc.pirateHuntZoneCycles = Math.max(0, (npc.pirateHuntZoneCycles ?? 0) - 1);
     if (!npc.pirateHuntZoneId || (npc.pirateHuntZoneCycles ?? 0) <= 0) {
-      npc.pirateHuntZoneId = chooseHuntZone(options, npc) ?? undefined;
+      const huntZoneId = chooseHuntZone(options, npc);
+      if (huntZoneId) npc.pirateHuntZoneId = huntZoneId;
+      else delete npc.pirateHuntZoneId;
       npc.pirateHuntZoneCycles = 2 + (hashText(npc.id + ':' + npc.successfulRuns) % 5);
     }
 
