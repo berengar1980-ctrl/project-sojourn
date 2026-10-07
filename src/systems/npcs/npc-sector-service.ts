@@ -252,8 +252,7 @@ export function createNpcSectorService(
         distance: Math.hypot(location.position.x - position.x, location.position.y - position.y),
       }))
       .sort(
-        (first, second) =>
-          first.priority - second.priority || first.distance - second.distance
+        (first, second) => first.priority - second.priority || first.distance - second.distance
       );
     return candidates[0]?.id ?? nearestLocation(world, position);
   }
