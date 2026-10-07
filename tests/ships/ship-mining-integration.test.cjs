@@ -137,4 +137,15 @@ assert(service.includes('this.miningYieldMultiplier'));
 assert(controller.includes('runtime.cargoCapacityTons'));
 assert(panel.includes('!model.miningAvailable'));
 
+const miningEffects = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/mining-effects-renderer.ts'),
+  'utf8'
+);
+assert(
+  miningEffects.includes('interferenceStrength') &&
+    miningEffects.includes('Math.floor(timeSeconds * 9') &&
+    miningEffects.includes('lineTo(target.x, target.y)'),
+  'mining laser interference must remain a visual intensity dropout on a straight beam'
+);
+
 console.log('PASS ship modules, reactor load, hardpoints and cargo drive local mining');
