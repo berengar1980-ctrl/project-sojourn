@@ -98,7 +98,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     .map((id) => getShipComponent('sensor', id))
     .find((component) => component !== null);
   const mineTier = Math.max(1, Math.min(6, resolveShipGameplayStats(ship).maxComponentTier));
-  const mineCopies = npc.job === 'patrol' ? 2 : 1;
+  const mineCopies = npc.job === 'patrol' || npc.pirate ? 2 : 1;
   const mines = Array.from({ length: mineCopies }).flatMap(() =>
     [
       getShipMine('mine-ion-' + mineTier),
@@ -122,7 +122,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     preferredTactic:
       npcDefenseReaction(npc) === 'flee'
         ? 'flee'
-        : npc.job === 'patrol' && npc.aggression >= 82
+        : (npc.job === 'patrol' || npc.pirate) && npc.aggression >= 82
           ? 'kite'
           : 'fight',
     combatSpeed: Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
