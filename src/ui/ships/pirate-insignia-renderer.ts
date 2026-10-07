@@ -11,6 +11,7 @@ export function drawPirateInsignia(
   const size = Math.max(5, Math.min(10, geometry.width * 0.42));
   context.save();
   context.translate(geometry.center.x, geometry.center.y);
+  context.rotate(geometry.angle);
   context.lineWidth = 1.35;
   context.lineCap = 'round';
   context.lineJoin = 'round';
