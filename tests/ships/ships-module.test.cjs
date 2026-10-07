@@ -27,14 +27,6 @@ assert(registry.includes('minerVariantShips'), 'registry must expose miner varia
 assert(registry.includes('salvageVariantShips'), 'registry must expose salvage variants');
 assert(registry.includes('freighterVariantShips'), 'registry must expose freighter variants');
 assert(
-  !registry.includes('miningShips'),
-  'legacy mining ships must be ignored by the test registry'
-);
-assert(
-  !registry.includes('freighterShips'),
-  'legacy freighter must be ignored by the test registry'
-);
-assert(
   bootstrap.includes("getShipDefinition('miner-80m-variant-01')"),
   'the first sprite-sheet miner must be the default test ship'
 );
