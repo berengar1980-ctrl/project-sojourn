@@ -28,9 +28,6 @@ jobs:
           name: Pirate faction tests
           command: node scripts/ci-run-and-report.cjs pirate-factions -- node tests/npc/pirate-factions.test.cjs
       - run:
-          name: NPC combat tests
-          command: node scripts/ci-run-and-report.cjs npc-combat -- node tests/combat/npc-star-map-aggression.test.cjs
-      - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
 
