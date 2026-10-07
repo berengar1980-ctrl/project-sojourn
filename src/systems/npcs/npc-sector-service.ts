@@ -317,8 +317,20 @@ export function createNpcSectorService(
     movement.speed = Math.min(targetSpeed, movement.speed + acceleration * deltaSeconds);
     const moved = movement.speed * deltaSeconds;
     movement.position = {
-      x: Math.max(0, Math.min(world.width, movement.position.x + Math.cos(movement.headingRadians) * moved)),
-      y: Math.max(0, Math.min(world.height, movement.position.y + Math.sin(movement.headingRadians) * moved)),
+      x: Math.max(
+        0,
+        Math.min(
+          world.width,
+          movement.position.x + Math.cos(movement.headingRadians) * moved
+        )
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          world.height,
+          movement.position.y + Math.sin(movement.headingRadians) * moved
+        )
+      ),
     };
     npc.fuel = Math.max(0, npc.fuel - moved * npc.fuelUse * FUEL_DISTANCE_SCALE);
   }
