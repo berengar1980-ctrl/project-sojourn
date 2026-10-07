@@ -213,7 +213,7 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       hullHp: profile.hullPoints,
       hullMaxHp: profile.hullPoints,
       aggression: (index * 23 + 17) % 100,
-      workRiskPreference: ((index * 23 + 17) % 100) >= 50 ? 'risky' : 'safe',
+      workRiskPreference: (index * 23 + 17) % 100 >= 50 ? 'risky' : 'safe',
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
       factionId: 'civilian',
