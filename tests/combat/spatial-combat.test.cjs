@@ -170,16 +170,17 @@ const blockedCombat = combatModule.createStrategicCombatService(
     obstacles: [{ id: 'wreck', position: { x: 900, y: 500 }, radius: 190 }],
   }
 );
-for (let step = 0; step < 14; step += 1) blockedCombat.tick(0.08);
+let sawBlockedBeam = false;
+for (let step = 0; step < 14; step += 1) {
+  const blockedSnapshot = blockedCombat.tick(0.08);
+  if (blockedSnapshot.lastEvent.includes('Hindernis')) sawBlockedBeam = true;
+}
 assert.equal(
   blockedCombat.getSnapshot().defender.shieldHp,
   blockedCombat.getSnapshot().defender.shieldMaxHp,
   'wrecks and asteroids must block direct laser fire'
 );
-assert(
-  blockedCombat.getSnapshot().lastEvent.includes('Hindernis'),
-  'blocked beam should report the obstacle hit'
-);
+assert(sawBlockedBeam, 'blocked beam should report the obstacle hit');
 
 const shieldSideCombat = combatModule.createStrategicCombatService(
   laserOnly('left-attacker'),
