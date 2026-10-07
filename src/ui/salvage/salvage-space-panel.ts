@@ -1,3 +1,4 @@
+import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import type { SystemLogService } from '../../core/system-log-types';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import type { WorldPoint } from '../../core/world-types';
@@ -18,6 +19,7 @@ interface SalvageSpacePanelOptions {
   readonly onSelectWreck: (id: string | null) => void;
   readonly onSelectNpc: (id: string | null) => void;
   readonly onAttackNpc: (id: string) => void;
+  readonly onCombatTactic: (tactic: CombatTactic) => void;
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
@@ -43,6 +45,7 @@ interface SalvageControls {
   readonly cargoList: HTMLElement;
   readonly backButton: HTMLButtonElement;
   readonly eventContainer: HTMLElement;
+  readonly combatTactics: HTMLElement;
 }
 
 function createShell(options: SalvageSpacePanelOptions): HTMLElement {
@@ -56,6 +59,11 @@ function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<div class="salvage-operation-status" hidden></div>',
     '<div class="salvage-help"></div>',
+    '<div class="salvage-combat-tactics combat-tactics" hidden>',
+    '<button type="button" data-tactic="fight">KAMPF</button>',
+    '<button type="button" data-tactic="kite">DISTANZ</button>',
+    '<button type="button" data-tactic="minefield">MINEN</button>',
+    '<button type="button" data-tactic="flee">FLUCHT</button></div>',
     '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
     '<aside class="salvage-event" hidden></aside>',
     '<div class="local-cargo-panel">',
@@ -98,6 +106,7 @@ function controls(shell: HTMLElement): SalvageControls {
     cargoList: query<HTMLElement>('.local-cargo-list'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
     eventContainer: query<HTMLElement>('.salvage-event'),
+    combatTactics: query<HTMLElement>('.salvage-combat-tactics'),
   };
 }
 
@@ -230,11 +239,16 @@ function renderSelection(
   ui.card.hidden = !wreck && !npc;
   if (npc) {
     ui.name.textContent = npc.name;
-    ui.meta.textContent = 'SCHIFF · ' + npc.phase.toUpperCase();
+    ui.meta.textContent = model.combat
+      ? 'GEFECHT · SCHILD ' +
+        Math.round(model.combat.defender.shieldHp) +
+        ' · HÜLLE ' +
+        Math.round(model.combat.defender.hullHp)
+      : 'SCHIFF · ' + npc.phase.toUpperCase();
     ui.integrity.style.width = '100%';
     ui.resources.replaceChildren();
     ui.inspectButton.hidden = true;
-    ui.attackButton.hidden = false;
+    ui.attackButton.hidden = model.combat !== null;
     return;
   }
   ui.attackButton.hidden = true;
@@ -377,6 +391,10 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
     renderCargo(model, ui.cargoTotal, ui.cargoList);
+    ui.combatTactics.hidden = model.combat === null;
+    for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
+      button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
+    }
     renderSelection(model, ui, options);
     trackRecovery(model);
   };
@@ -415,6 +433,12 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
   ui.attackButton.addEventListener('click', () => {
     const selected = model.npcShips.find((entry) => entry.isSelected);
     if (selected) options.onAttackNpc(selected.id);
+  });
+  ui.combatTactics.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const tactic = target.dataset.tactic as CombatTactic | undefined;
+    if (tactic) options.onCombatTactic(tactic);
   });
   ui.cancelButton.addEventListener('click', options.onCancel);
   ui.backButton.addEventListener('click', options.onReturnToStarMap);
