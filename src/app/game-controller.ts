@@ -402,6 +402,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.sectorNpcs.tick(deltaSeconds);
+  economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   context.engagements.tick(deltaSeconds);

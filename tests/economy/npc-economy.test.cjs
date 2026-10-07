@@ -56,6 +56,14 @@ function createMarkets() {
   };
 }
 
+function tickUntil(service, predicate, message, maximumTicks = 2000) {
+  for (let tick = 0; tick < maximumTicks; tick += 1) {
+    if (predicate()) return;
+    service.tick(0.25);
+  }
+  assert(predicate(), message);
+}
+
 const resources = [
   {
     id: 'steel',
@@ -104,10 +112,16 @@ const resources = [
   const service = npcModule.createNpcEconomyService(markets, simulation, resources, [trader]);
   const steelBefore = simulation.getResourceTotal('steel');
 
-  service.advanceDay(0);
+  service.tick(0.25);
+  assert.equal(trader.locationId, 'source', 'trader must not depart immediately');
+  assert.equal(trader.cargo.steel, undefined, 'loading must not happen instantly');
 
-  assert.equal(trader.locationId, 'destination');
-  assert.equal(trader.cargo.steel, 10, 'trader must buy the profitable legal route');
+  tickUntil(
+    service,
+    () => trader.locationId === 'destination' && trader.cargo.steel === 10,
+    'trader must eventually load and depart on the profitable legal route'
+  );
+
   assert.equal(markets.markets[0].entries.steel.stock, 40);
   assert.equal(trader.cargo.narcotics, undefined, 'ordinary NPC trade must not buy illegal cargo');
   assert.equal(
@@ -116,9 +130,12 @@ const resources = [
     'NPC purchase must conserve physical stock'
   );
 
-  service.advanceDay(1);
+  tickUntil(
+    service,
+    () => trader.cargo.steel === undefined,
+    'trader must unload only after arrival, dwell and market decision'
+  );
 
-  assert.equal(trader.cargo.steel, undefined);
   assert.equal(markets.markets[1].entries.steel.stock, 30);
   assert(trader.credits > 1000, 'completed profitable route must increase NPC credits');
   assert.equal(
@@ -149,8 +166,13 @@ const resources = [
   const service = npcModule.createNpcEconomyService(markets, simulation, resources, [miner]);
   const before = simulation.getResourceTotal('ferrite');
 
-  service.advanceDay(0);
+  tickUntil(
+    service,
+    () => miner.autonomy?.phase === 'working',
+    'resource worker must pass through rest/thinking before starting work'
+  );
 
+  service.advanceDay(0);
   assert.equal(miner.cargo.ferrite, 8, 'miner must fill cargo from the shared circulation pool');
   assert.equal(npcModule.npcCargoUsed(miner), 8);
   assert.equal(
@@ -160,12 +182,14 @@ const resources = [
   );
 
   service.advanceDay(1);
-
   assert.equal(miner.cargo.ferrite, 10, 'resource worker must fill cargo before selling');
 
-  service.advanceDay(2);
+  tickUntil(
+    service,
+    () => miner.cargo.ferrite === undefined,
+    'full resource worker must think, travel and unload before resuming work'
+  );
 
-  assert.equal(miner.cargo.ferrite, undefined, 'full resource worker must sell its cargo');
   assert.equal(miner.locationId, 'destination');
   assert.equal(
     simulation.getResourceTotal('ferrite'),
@@ -208,6 +232,7 @@ const resources = [
   for (let day = 0; day < 365; day += 1) {
     simulation.advanceDay(day);
     service.advanceDay(day);
+    for (let step = 0; step < 160; step += 1) service.tick(0.25);
   }
 
   for (const npc of npcs) {
@@ -226,8 +251,9 @@ const resources = [
 
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 assert(
-  controllerSource.includes('npcs.advanceNextDay()'),
-  'completed travel must advance NPC economic activity with the daily economy'
+  controllerSource.includes('economy.npcs.tick(deltaSeconds)') &&
+    controllerSource.includes('npcs.advanceNextDay()'),
+  'NPC autonomy must tick continuously while daily resource simulation remains preserved'
 );
 
-console.log('PASS NPC trade, resource work, conservation and 365-day stability');
+console.log('PASS timed NPC trade, resource work, conservation and 365-day stability');

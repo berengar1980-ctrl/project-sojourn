@@ -32,6 +32,12 @@ function salvager(id, preference) {
     hullMaxHp: 82,
     aggression: preference === 'risky' ? 80 : 20,
     workRiskPreference: preference,
+    autonomy: {
+      phase: 'working',
+      secondsRemaining: 0,
+      lastLocationId: 'wreck-field',
+      wasTravelling: false,
+    },
     activityId: 'dock',
     activity: 'Wartet',
     successfulRuns: 0,
@@ -69,12 +75,21 @@ function field() {
 
 {
   const npc = salvager('salvager-lifecycle', 'safe');
+  const restingNpc = {
+    ...salvager('salvager-resting', 'safe'),
+    autonomy: {
+      phase: 'resting',
+      secondsRemaining: 10,
+      lastLocationId: 'wreck-field',
+      wasTravelling: false,
+    },
+  };
   const salvageField = field();
   let departed = false;
   const service = localSalvage.createNpcLocalSalvageService({
     locationId: 'wreck-field',
     field: salvageField,
-    salvagers: [npc],
+    salvagers: [npc, restingNpc],
     recover: (worker, resourceId, requested) => {
       const used = Object.values(worker.cargo).reduce((sum, value) => sum + value, 0);
       const accepted = Math.min(requested, worker.cargoCapacity - used);
@@ -87,7 +102,11 @@ function field() {
     },
   });
 
-  assert.equal(service.ships.length, 1);
+  assert.equal(
+    service.ships.length,
+    1,
+    'only NPCs in the shared working phase may enter the salvage field'
+  );
   const first = { ...service.ships[0].position };
   assert(
     first.x <= 18 || first.x >= 982 || first.y <= 18 || first.y >= 782,

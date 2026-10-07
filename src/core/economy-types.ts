@@ -75,6 +75,45 @@ export interface TradeResult {
 
 export type NpcEconomyRole = 'freighter' | 'miner' | 'salvager' | 'patrol' | 'trader';
 
+export type NpcAutonomyPhase =
+  | 'docking'
+  | 'unloading'
+  | 'resting'
+  | 'thinking'
+  | 'loading'
+  | 'launch-prep'
+  | 'working'
+  | 'patrol-rest'
+  | 'ready'
+  | 'travel';
+
+export interface NpcPersonality {
+  readonly riskTolerance: number;
+  readonly patience: number;
+  readonly profitDrive: number;
+  readonly routineBias: number;
+  preferredMarketId?: EconomyLocationId;
+}
+
+export interface NpcPendingTrade {
+  readonly resourceId: EconomyResourceId;
+  readonly destinationId: EconomyLocationId;
+  readonly quantity: number;
+  readonly reason: string;
+}
+
+export interface NpcAutonomyState {
+  phase: NpcAutonomyPhase;
+  secondsRemaining: number;
+  lastLocationId: EconomyLocationId;
+  wasTravelling: boolean;
+  pendingDestinationId?: EconomyLocationId;
+  pendingReason?: string;
+  pendingTrade?: NpcPendingTrade;
+  pendingSaleResourceId?: EconomyResourceId;
+  lastTradeDestinationId?: EconomyLocationId;
+}
+
 export interface NpcMarketIntelEntry {
   readonly resourceId: EconomyResourceId;
   price: number;
@@ -110,6 +149,8 @@ export interface NpcEconomyState {
   readonly workResourceIds: readonly EconomyResourceId[];
   readonly workLocationId?: EconomyLocationId;
   marketIntel?: Record<EconomyLocationId, NpcMarketIntelLocation>;
+  personality?: NpcPersonality;
+  autonomy?: NpcAutonomyState;
   sideTradePlan?: NpcResourceSideTradePlan;
 }
 
