@@ -116,6 +116,13 @@ assert(
 );
 
 assert(
+  portPanel.includes('ZUM EINKAUF') &&
+    portPanel.includes('ZUM VERKAUF') &&
+    portPanel.includes('data-market-route'),
+  'system market summary must expose quick route controls for best buy and sell'
+);
+
+assert(
   portPanel.includes('GÜNSTIGSTER BEKANNTER EINKAUF') &&
     portPanel.includes('BESTER BEKANNTER VERKAUF') &&
     portPanel.includes('GESCHÄTZTE MARGE') &&
