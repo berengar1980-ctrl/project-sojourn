@@ -182,7 +182,13 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     const meta = card.querySelector<HTMLElement>('.selection-meta');
     if (!kind || !name || !description || !meta) return true;
 
-    kind.textContent = 'SCHIFF // ' + selected.job.toUpperCase();
+    const faction =
+      selected.pirateFaction === 'black-tide'
+        ? 'SCHWARZE FLUT'
+        : selected.pirateFaction === 'harrow-corsairs'
+          ? 'HARROW-KORSAREN'
+          : null;
+    kind.textContent = faction ? 'PIRAT // ' + faction : 'SCHIFF // ' + selected.job.toUpperCase();
     name.textContent = selected.name;
     description.textContent = selected.activity;
     const status = selected.combatMode ? selected.combatMode.toUpperCase() : 'KONTAKT';
