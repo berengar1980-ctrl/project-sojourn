@@ -99,6 +99,7 @@ export interface LocalSpaceViewModel {
   readonly shortRangeScanProgress: number | null;
   readonly miningPhase: MiningPhase;
   readonly miningAvailable: boolean;
+  readonly miningResourceSelection: readonly string[] | null;
   readonly miningEvent: MiningEventState | null;
   readonly miningRecoverySeconds: number;
   readonly scanAvailable: boolean;
@@ -224,6 +225,7 @@ export function createLocalSpaceViewModel(
     shortRangeScanProgress: snapshot.shortRangeScanProgress,
     miningPhase: snapshot.miningPhase,
     miningAvailable: snapshot.miningAvailable,
+    miningResourceSelection: snapshot.miningResourceSelection,
     miningEvent: snapshot.miningEvent,
     miningRecoverySeconds: snapshot.miningRecoverySeconds,
     scanAvailable: snapshot.scanAvailable,
