@@ -70,10 +70,7 @@ export class MapCamera {
     this.fitZoom = fitZoom;
     this.minimumZoom = fitZoom * MIN_RELATIVE_ZOOM;
     this.maximumZoom = fitZoom * MAX_RELATIVE_ZOOM;
-    this.zoom = Math.min(
-      this.maximumZoom,
-      Math.max(this.minimumZoom, fitZoom * relativeZoom)
-    );
+    this.zoom = Math.min(this.maximumZoom, Math.max(this.minimumZoom, fitZoom * relativeZoom));
   }
 
   pan(screenDx: number, screenDy: number): void {
