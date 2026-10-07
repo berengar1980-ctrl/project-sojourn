@@ -10,13 +10,15 @@
       "id": "engine-upper",
       "x": 14,
       "y": 59,
-      "width": 12
+      "width": 12,
+      "layer": "below"
     },
     {
       "id": "engine-lower",
       "x": 14,
       "y": 114,
-      "width": 12
+      "width": 12,
+      "layer": "below"
     }
   ],
   "weaponLasers": [],
@@ -39,7 +41,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-stern-upper",
@@ -57,7 +59,7 @@
       "width": 7,
       "forceX": 0,
       "forceY": -1,
-      "layer": "above"
+      "layer": "below"
     },
     {
       "id": "rcs-front-upper",
@@ -75,7 +77,7 @@
       "width": 7,
       "forceX": -1,
       "forceY": 0,
-      "layer": "above"
+      "layer": "below"
     }
   ],
   "shield": {
