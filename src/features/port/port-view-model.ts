@@ -44,16 +44,17 @@ export interface PortSystemMarketInput {
   readonly locationKind: string;
   readonly distance: number;
   readonly resourceId: string;
-  readonly price: number;
-  readonly stock: number;
-  readonly observedDay: number;
+  readonly price: number | null;
+  readonly stock: number | null;
+  readonly observedDay: number | null;
+  readonly expectation: 'cheap' | 'neutral' | 'expensive';
 }
 
 export interface PortSystemMarketRowView extends PortSystemMarketInput {
   readonly resourceName: string;
-  readonly sellPrice: number;
-  readonly ageDays: number;
-  readonly intelStatus: 'live' | 'recent' | 'aging' | 'stale';
+  readonly sellPrice: number | null;
+  readonly ageDays: number | null;
+  readonly intelStatus: 'unknown' | 'live' | 'recent' | 'aging' | 'stale';
   readonly profit: number | null;
 }
 
@@ -290,7 +291,8 @@ function marketRows(
     });
 }
 
-function intelStatus(ageDays: number): PortSystemMarketRowView['intelStatus'] {
+function intelStatus(ageDays: number | null): PortSystemMarketRowView['intelStatus'] {
+  if (ageDays === null) return 'unknown';
   if (ageDays <= 0) return 'live';
   if (ageDays <= 2) return 'recent';
   if (ageDays <= 5) return 'aging';
@@ -306,10 +308,12 @@ function systemRows(
   return input
     .map((entry) => {
       const lot = player.cargo[entry.resourceId];
-      const sellPrice = playerSaleUnitPrice(entry.price, saleFeeRate);
-      const revenue = lot ? sellPrice * lot.qty : 0;
-      const profit = lot ? Math.round(revenue - lot.totalCost) : null;
-      const ageDays = Math.max(0, currentDay - entry.observedDay);
+      const sellPrice = entry.price === null ? null : playerSaleUnitPrice(entry.price, saleFeeRate);
+      const revenue = lot && sellPrice !== null ? sellPrice * lot.qty : 0;
+      const profit =
+        lot && sellPrice !== null ? Math.round(revenue - lot.totalCost) : null;
+      const ageDays =
+        entry.observedDay === null ? null : Math.max(0, currentDay - entry.observedDay);
       return {
         ...entry,
         resourceName: economyResourceById(entry.resourceId)?.name ?? entry.resourceId,
@@ -319,7 +323,13 @@ function systemRows(
         profit,
       };
     })
-    .sort((a, b) => a.resourceName.localeCompare(b.resourceName) || b.sellPrice - a.sellPrice);
+    .sort((a, b) => {
+      const resource = a.resourceName.localeCompare(b.resourceName);
+      if (resource !== 0) return resource;
+      if (a.sellPrice === null && b.sellPrice !== null) return 1;
+      if (a.sellPrice !== null && b.sellPrice === null) return -1;
+      return (b.sellPrice ?? 0) - (a.sellPrice ?? 0);
+    });
 }
 
 function cargoSaleRows(
@@ -335,11 +345,23 @@ function cargoSaleRows(
       const localSellPrice = local?.sellPrice ?? 0;
       const localProfit = Math.round(localSellPrice * lot.qty - lot.totalCost);
       const candidates = system
-        .filter((entry) => entry.resourceId === resourceId)
-        .map((entry) => ({
-          ...entry,
-          saleProfit: Math.round(entry.sellPrice * lot.qty - lot.totalCost),
-        }))
+        .flatMap((entry) => {
+          if (
+            entry.resourceId !== resourceId ||
+            entry.sellPrice === null ||
+            entry.ageDays === null
+          ) {
+            return [];
+          }
+          return [
+            {
+              ...entry,
+              sellPrice: entry.sellPrice,
+              ageDays: entry.ageDays,
+              saleProfit: Math.round(entry.sellPrice * lot.qty - lot.totalCost),
+            },
+          ];
+        })
         .sort((a, b) => b.saleProfit - a.saleProfit || a.ageDays - b.ageDays);
       const best = candidates[0] ?? {
         locationId,

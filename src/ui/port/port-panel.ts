@@ -39,6 +39,12 @@ function priceBand(pressurePercent: number): { label: string; className: string 
   return { label: 'SEHR TEUER', className: 'very-expensive' };
 }
 
+function marketExpectation(expectation: 'cheap' | 'neutral' | 'expensive'): string {
+  if (expectation === 'cheap') return 'EHER GÜNSTIG';
+  if (expectation === 'expensive') return 'EHER TEUER';
+  return 'NORMAL';
+}
+
 function marketRows(model: PortViewModel): string {
   return model.market
     .map((row) => {
@@ -88,7 +94,10 @@ function cargoSaleRows(model: PortViewModel): string {
 
 function systemMarket(model: PortViewModel): string {
   const owned = model.cargoSales[0]?.resourceId;
-  const initial = owned ?? model.systemMarketResourceIds[0] ?? '';
+  const initial =
+    owned && model.systemMarketResourceIds.includes(owned)
+      ? owned
+      : (model.systemMarketResourceIds[0] ?? '');
   const options = model.systemMarketResourceIds
     .map((id) => {
       const name = model.systemMarket.find((row) => row.resourceId === id)?.resourceName ?? id;
@@ -100,36 +109,66 @@ function systemMarket(model: PortViewModel): string {
     .map((resourceId) => {
       const rows = model.systemMarket.filter((row) => row.resourceId === resourceId);
       if (rows.length === 0) return '';
-      const buy = [...rows].sort(
-        (a, b) => a.price - b.price || a.ageDays - b.ageDays || a.distance - b.distance
-      )[0]!;
-      const sell = [...rows].sort(
-        (a, b) => b.sellPrice - a.sellPrice || a.ageDays - b.ageDays || a.distance - b.distance
-      )[0]!;
-      const margin = sell.sellPrice - buy.price;
-      const percent = buy.price > 0 ? Math.round((margin / buy.price) * 100) : 0;
+      const known = rows.filter(
+        (row) => row.price !== null && row.sellPrice !== null && row.ageDays !== null
+      );
+      const buy = [...known].sort(
+        (a, b) => (a.price ?? 0) - (b.price ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
+      )[0];
+      const sell = [...known].sort(
+        (a, b) => (b.sellPrice ?? 0) - (a.sellPrice ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
+      )[0];
+      const margin =
+        buy?.price !== null && buy?.price !== undefined &&
+        sell?.sellPrice !== null && sell?.sellPrice !== undefined
+          ? sell.sellPrice - buy.price
+          : null;
+      const percent =
+        margin !== null && buy?.price
+          ? Math.round((margin / buy.price) * 100)
+          : null;
+      const expectedBuy = rows.find((row) => row.expectation === 'cheap');
+      const expectedSell = rows.find((row) => row.expectation === 'expensive');
+
       return `
         <div class="port-system-summary" data-system-resource-summary="${resourceId}" ${resourceId === initial ? '' : 'hidden'}>
-          <div><span>GÜNSTIGSTER BEKANNTER EINKAUF</span><strong>${buy.locationName}</strong><b>${buy.price.toLocaleString('de-DE')} CR/t</b><small>${buy.ageDays === 0 ? 'LIVE' : buy.ageDays + ' T ALT'}</small></div>
-          <div><span>BESTER BEKANNTER VERKAUF</span><strong>${sell.locationName}</strong><b>${sell.sellPrice.toLocaleString('de-DE')} CR/t</b><small>${sell.ageDays === 0 ? 'LIVE' : sell.ageDays + ' T ALT'}</small></div>
-          <div><span>GESCHÄTZTE MARGE</span><strong class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${margin >= 0 ? '+' : ''}${margin.toLocaleString('de-DE')} CR/t</strong><b class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${percent >= 0 ? '+' : ''}${percent}%</b><small>vor Gebühren/Fuel</small></div>
+          <div><span>GÜNSTIGSTER BEKANNTER EINKAUF</span>${
+            buy && buy.price !== null && buy.ageDays !== null
+              ? `<strong>${buy.locationName}</strong><b>${buy.price.toLocaleString('de-DE')} CR/t</b><small>${buy.ageDays === 0 ? 'LIVE' : buy.ageDays + ' T ALT'}</small>`
+              : `<strong>KEINE PREISDATEN</strong><small>${expectedBuy ? 'Profil-Hinweis: ' + expectedBuy.locationName : 'Sensorintel oder Besuch nötig'}</small>`
+          }</div>
+          <div><span>BESTER BEKANNTER VERKAUF</span>${
+            sell && sell.sellPrice !== null && sell.ageDays !== null
+              ? `<strong>${sell.locationName}</strong><b>${sell.sellPrice.toLocaleString('de-DE')} CR/t</b><small>${sell.ageDays === 0 ? 'LIVE' : sell.ageDays + ' T ALT'}</small>`
+              : `<strong>KEINE PREISDATEN</strong><small>${expectedSell ? 'Profil-Hinweis: ' + expectedSell.locationName : 'Sensorintel oder Besuch nötig'}</small>`
+          }</div>
+          <div><span>GESCHÄTZTE MARGE</span>${
+            margin !== null && percent !== null
+              ? `<strong class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${margin >= 0 ? '+' : ''}${margin.toLocaleString('de-DE')} CR/t</strong><b class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${percent >= 0 ? '+' : ''}${percent}%</b><small>vor Gebühren/Fuel</small>`
+              : '<strong>UNBEKANNT</strong><small>keine erfundene Preisprognose</small>'
+          }</div>
         </div>
       `;
     })
     .join('');
 
   const rows = model.systemMarket
-    .map(
-      (row) => `
+    .map((row) => {
+      const expectation = marketExpectation(row.expectation);
+      const price =
+        row.sellPrice === null || row.ageDays === null
+          ? `<strong>KEINE MARKTDATEN</strong><small class="port-expectation port-expectation--${row.expectation}">ERWARTUNG: ${expectation}</small>`
+          : `<strong>${row.sellPrice.toLocaleString('de-DE')} CR/t</strong><small class="port-intel port-intel--${row.intelStatus}">${row.ageDays === 0 ? 'LIVE' : row.ageDays + ' T ALT'} · ${row.stock ?? 0} t</small><small class="port-expectation port-expectation--${row.expectation}">PROFIL: ${expectation}</small>`;
+      return `
         <div class="port-system-row" data-system-resource-row="${row.resourceId}" ${row.resourceId === initial ? '' : 'hidden'}>
           <div><strong>${row.locationName}</strong><small>${row.locationKind}${row.locationId === model.locationId ? ' · HIER' : ''}</small></div>
-          <div class="port-system-price"><strong>${row.sellPrice.toLocaleString('de-DE')} CR/t</strong><small class="port-intel port-intel--${row.intelStatus}">${row.ageDays === 0 ? 'LIVE' : row.ageDays + ' T ALT'} · ${row.stock} t</small></div>
+          <div class="port-system-price">${price}</div>
           <div><span>${Math.round(row.distance).toLocaleString('de-DE')}</span><small>Distanz</small></div>
-          <div>${row.profit === null ? '<span>—</span><small>keine Fracht</small>' : `<strong class="${row.profit >= 0 ? 'port-positive' : 'port-negative'}">${credits(row.profit)}</strong><small>aktuelle Fracht</small>`}</div>
+          <div>${row.profit === null ? '<span>—</span><small>keine belastbaren Preisdaten</small>' : `<strong class="${row.profit >= 0 ? 'port-positive' : 'port-negative'}">${credits(row.profit)}</strong><small>aktuelle Fracht</small>`}</div>
           <div>${row.locationId === model.locationId ? '<b>HIER</b>' : `<button type="button" data-market-route="${row.locationId}">ROUTE SETZEN</button>`}</div>
         </div>
-      `
-    )
+      `;
+    })
     .join('');
 
   return `
@@ -141,7 +180,7 @@ function systemMarket(model: PortViewModel): string {
       ${summaries}
       <div class="port-system-head"><span>MARKT</span><span>VERKAUF / INTEL</span><span>DISTANZ</span><span>P/L FRACHT</span><span>ROUTE</span></div>
       <div class="port-system-list">${rows}</div>
-      <div class="port-intel-hint">ⓘ Entfernte Preise sind der letzte bekannte echte Marktstand. LIVE = aktuell; ältere Daten können abweichen.</div>
+      <div class="port-intel-hint">ⓘ PRODUZIERT/BENÖTIGT liefert nur eine strukturelle Erwartung. Konkrete Preise erscheinen ausschließlich durch Sensorintel oder Besuch und zeigen immer ihr Datenalter.</div>
     </section>
   `;
 }

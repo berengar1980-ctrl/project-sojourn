@@ -2,7 +2,7 @@ import type { ShipComponentType, ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
-import { sectorPortByLocationId } from '../data/ports/sector-ports';
+import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
 import {
   createPortViewModel,
   type PortSystemMarketInput,
@@ -24,27 +24,36 @@ function systemMarketRows(
   fromLocationId: string,
   intel: MarketIntelService
 ): readonly PortSystemMarketInput[] {
-  return intel.entries().flatMap((entry) => {
+  return sectorPorts.flatMap((port) => {
     const destination = narrowsSector.locations.find(
-      (location) => location.id === entry.locationId
+      (location) => location.id === port.locationId
     );
     if (!destination) return [];
     const route =
-      entry.locationId === fromLocationId
+      port.locationId === fromLocationId
         ? null
-        : planRouteWithProfile(narrowsSector, fromLocationId, entry.locationId, 'balanced');
-    return [
-      {
-        locationId: entry.locationId,
+        : planRouteWithProfile(narrowsSector, fromLocationId, port.locationId, 'balanced');
+    const produced = new Set(port.producedCommodityIds);
+    const needed = new Set(port.neededCommodityIds);
+
+    return port.commodities.map((commodity) => {
+      const observed = intel.entry(port.locationId, commodity.id);
+      return {
+        locationId: port.locationId,
         locationName: destination.name,
         locationKind: destination.kind === 'station' ? 'Station' : 'Planet',
         distance: route?.distance ?? 0,
-        resourceId: entry.resourceId,
-        price: entry.price,
-        stock: entry.stock,
-        observedDay: entry.observedDay,
-      },
-    ];
+        resourceId: commodity.id,
+        price: observed?.price ?? null,
+        stock: observed?.stock ?? null,
+        observedDay: observed?.observedDay ?? null,
+        expectation: produced.has(commodity.id)
+          ? 'cheap'
+          : needed.has(commodity.id)
+            ? 'expensive'
+            : 'neutral',
+      };
+    });
   });
 }
 
