@@ -231,7 +231,7 @@ export function createNpcLocalSalvageService(
       return false;
     }
     ship.targetWreckId = wreck.id;
-    ship.phase = 'approaching';
+    ship.phase = 'entering';
     ship.salvageActive = false;
     ship.scanProgress = 0;
     return true;
