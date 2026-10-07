@@ -120,19 +120,13 @@ function pathDanger(world: WorldMap, points: readonly WorldPoint[]): 0 | 1 | 2 |
   return danger;
 }
 
-export function planRouteWithProfile(
+function routePoints(
   world: WorldMap,
-  fromId: string,
-  toId: string,
+  from: WorldPoint,
+  to: WorldPoint,
   profile: RouteProfile
-): RoutePlan {
-  const cacheKey = `${world.id}|${fromId}|${toId}|${profile}`;
-  const cached = routeCache.get(cacheKey);
-  if (cached) return cached;
-
-  const from = findLocation(world, fromId);
-  const to = findLocation(world, toId);
-  const nodes = candidateNodes(world, from.position, to.position);
+): readonly WorldPoint[] {
+  const nodes = candidateNodes(world, from, to);
   const distances = nodes.map(() => Number.POSITIVE_INFINITY);
   const previous: (number | null)[] = nodes.map(() => null);
   const visited = new Set<number>();
@@ -161,24 +155,74 @@ export function planRouteWithProfile(
     }
   }
 
-  const points = Number.isFinite(distances[1]!)
-    ? reconstruct(nodes, previous, 1)
-    : [from.position, to.position];
+  return Number.isFinite(distances[1]!) ? reconstruct(nodes, previous, 1) : [from, to];
+}
 
-  const plan: RoutePlan = {
+function createPlan(
+  world: WorldMap,
+  fromId: string,
+  toId: string,
+  from: WorldPoint,
+  to: WorldPoint,
+  profile: RouteProfile,
+  endpointDanger: readonly [0 | 1 | 2 | 3, 0 | 1 | 2 | 3]
+): RoutePlan {
+  const points = routePoints(world, from, to, profile);
+  return {
     fromId,
     toId,
     points,
     distance: pathDistance(points),
-    dangerLevel: Math.max(from.dangerLevel, to.dangerLevel, pathDanger(world, points)) as
+    dangerLevel: Math.max(endpointDanger[0], endpointDanger[1], pathDanger(world, points)) as
       | 0
       | 1
       | 2
       | 3,
     profile,
   };
+}
+
+export function planRouteWithProfile(
+  world: WorldMap,
+  fromId: string,
+  toId: string,
+  profile: RouteProfile
+): RoutePlan {
+  const cacheKey = `${world.id}|${fromId}|${toId}|${profile}`;
+  const cached = routeCache.get(cacheKey);
+  if (cached) return cached;
+
+  const from = findLocation(world, fromId);
+  const to = findLocation(world, toId);
+  const plan = createPlan(
+    world,
+    fromId,
+    toId,
+    from.position,
+    to.position,
+    profile,
+    [from.dangerLevel, to.dangerLevel]
+  );
   routeCache.set(cacheKey, plan);
   return plan;
+}
+
+export function planRouteFromPoint(
+  world: WorldMap,
+  from: WorldPoint,
+  toId: string,
+  profile: RouteProfile = 'balanced'
+): RoutePlan {
+  const to = findLocation(world, toId);
+  return createPlan(
+    world,
+    'deep-space',
+    toId,
+    from,
+    to.position,
+    profile,
+    [pointDanger(world, from), to.dangerLevel]
+  );
 }
 
 export function planRoute(world: WorldMap, fromId: string, toId: string): RoutePlan {
