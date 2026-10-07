@@ -55,6 +55,7 @@ export interface SalvageNpcShipView {
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly isSelected?: boolean;
 }
 
 export interface SalvageShipView {
@@ -144,7 +145,8 @@ export function createSalvageSpaceViewModel(
   player: PlayerEconomyState,
   looseComponents: readonly LooseShipComponent[],
   title: string,
-  npcShips: readonly SalvageNpcShipView[] = []
+  npcShips: readonly SalvageNpcShipView[] = [],
+  selectedNpcId: string | null = null
 ): SalvageSpaceViewModel {
   const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
     (wreck): SalvageWreckView => ({
@@ -210,7 +212,7 @@ export function createSalvageSpaceViewModel(
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
-    npcShips,
+    npcShips: npcShips.map((npc) => ({ ...npc, isSelected: npc.id === selectedNpcId })),
     wrecks,
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
