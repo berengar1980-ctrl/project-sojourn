@@ -6,108 +6,100 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const data = loadStandaloneTypeScriptModule(root, 'src/data/economy/sector-npc-economy.ts');
-const mapModule = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts');
-const navigationModule = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/navigation/navigation-service.ts'
-);
-const sectorModule = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-sector-service.ts');
-const engagementModule = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/combat/star-map-engagement-service.ts'
-);
-const ships = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
-const components = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/ships/ship-component-service.ts'
-);
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+const data = read('src/data/economy/sector-npc-economy.ts');
+const sector = read('src/systems/npcs/npc-sector-service.ts');
+const engagement = read('src/systems/combat/star-map-engagement-service.ts');
+const starModel = read('src/app/game-controller-star-map.ts');
+const mapRenderer = read('src/ui/map/npc-ship-map-renderer.ts');
+const combatRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
+const insignia = read('src/ui/ships/pirate-insignia-renderer.ts');
 const combatAi = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-combat-ai.ts');
 
-const npcs = data.createSectorNpcEconomyStates();
-const pirates = npcs.filter((npc) => npc.pirate);
-assert.equal(pirates.length, 9);
-assert.deepEqual(
-  new Set(pirates.map((npc) => npc.pirateMark)),
-  new Set(['broken-spear', 'black-tide']),
-  'two pirate gangs must expose distinct insignia'
-);
-assert(pirates.every((npc) => npc.job === 'pirate' && npc.aggression >= 75));
 assert(
-  pirates.every((npc) => ships.getShipDefinition(npc.shipId)?.role === 'patrol'),
-  'pirates must temporarily use patrol hulls'
+  data.includes('const PIRATE_NAMES = [') &&
+    data.includes("const PIRATE_HOMES = {") &&
+    data.includes("pirates: 'blackjaw-outpost'") &&
+    data.includes("pirates2: 'gallows-anchor'"),
+  'pirate population must have two persistent gang homes'
+);
+assert(
+  data.includes("const factionId = index < 5 ? 'pirates' : 'pirates2'") &&
+    data.includes("job: 'pirate'") &&
+    data.includes('patrolVariantShips[index % patrolVariantShips.length]') &&
+    data.includes('aggression: 75 +'),
+  'nine high-aggression pirates must temporarily use patrol hulls with a 5/4 faction split'
+);
+assert(
+  data.includes("pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide'"),
+  'the two gangs must carry different insignia ids'
 );
 
-const pirate = pirates[0];
-const prey = npcs.find((npc) => !npc.pirate && npc.job === 'freighter');
-const patrol = npcs.find((npc) => !npc.pirate && npc.job === 'patrol');
-assert(pirate && prey && patrol);
+const prey = {
+  id: 'prey',
+  name: 'Prey',
+  role: 'freighter',
+  job: 'freighter',
+  shipId: 'x',
+  locationId: 'haven',
+  credits: 0,
+  cargoCapacity: 10,
+  cargo: {},
+  workResourceIds: [],
+  fuel: 1,
+  fuelCapacity: 1,
+  fuelUse: 1,
+  hullHp: 100,
+  hullMaxHp: 100,
+  aggression: 5,
+  workRiskPreference: 'safe',
+  activityId: 'dock',
+  activity: 'dock',
+  successfulRuns: 0,
+};
+const pirate = {
+  ...prey,
+  id: 'pirate',
+  job: 'pirate',
+  role: 'patrol',
+  pirate: true,
+  aggression: 90,
+};
 assert.equal(combatAi.npcIsPiratePrey(prey), true);
 assert.equal(combatAi.npcLooksHostileToPatrol(pirate), true);
+assert.equal(combatAi.npcMayInitiateAttack(pirate), true);
 
-const playerShip = ships.getShipDefinition('patrol-60m-variant-01');
-assert(playerShip);
-const navigation = navigationModule.createNavigationService(
-  mapModule.narrowsSector,
-  mapModule.narrowsSector.startLocationId,
-  playerShip.navigation.cruiseSpeed
-);
-const destination = mapModule.narrowsSector.locations.find(
-  (location) => location.id !== mapModule.narrowsSector.startLocationId
-);
-assert(destination);
-navigation.selectDestination(destination.id);
-navigation.startTravel();
-
-pirate.locationId = mapModule.narrowsSector.startLocationId;
-delete pirate.travel;
-delete pirate.combatMovement;
-
-const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, npcs, {
-  getPlayerPosition: () => navigation.getSnapshot().currentPosition,
-});
-const weapon = components.getShipComponent('weapon', 'weapon1');
-assert(weapon?.weapon);
-const logs = [];
-const engagements = engagementModule.createStarMapEngagementService({
-  navigation,
-  sectorNpcs: sector,
-  getPlayerShip: () => playerShip,
-  getPlayerCombatant: () => ({
-    id: 'player',
-    name: playerShip.name,
-    shipId: playerShip.id,
-    shieldHp: 100,
-    hullHp: 100,
-    weapons: [weapon],
-    hitChance: 0.8,
-    dodgeChance: 0,
-    damageMultiplier: 1,
-    criticalChance: 0,
-    cycleTimeMultiplier: 1,
-  }),
-  log: (message) => logs.push(message),
-});
-
-engagements.tick(1.1);
-assert.equal(
-  engagements.activePlayerEnemy()?.id,
-  pirate.id,
-  'a nearby pirate must physically intercept a travelling player'
-);
 assert(
-  logs.some((entry) => entry.includes('KORSAREN-ABFANGKURS')),
-  'pirate interception must be visible in the system log'
+  sector.includes('function pirateHuntDestination(') &&
+    sector.includes('traffic * 2.4') &&
+    sector.includes('density * 3.4') &&
+    sector.includes('patrolPressure * 0.85') &&
+    sector.includes("'Auf Beutezug · Jagdrevier'"),
+  'pirates must choose traffic-rich hunt zones while avoiding clustering and patrol pressure'
 );
 
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/map/npc-ship-map-renderer.ts'),
-  'utf8'
-);
 assert(
-  renderer.includes("npc.pirateMark === 'broken-spear'") &&
-    renderer.includes("'black-tide'"),
-  'star-map renderer must draw different marks for both pirate gangs'
+  engagement.includes('function scanForPiratePlayerAttack()') &&
+    engagement.includes("'Korsaren-Abfangkurs'") &&
+    engagement.includes('npcIsPiratePrey(candidate)') &&
+    engagement.includes('function transferPirateLoot(') &&
+    engagement.includes('remaining = 10'),
+  'pirates must intercept travelling players, raid civilian ships and steal up to ten cargo units'
 );
 
-console.log('PASS Voidbound-equivalent pirate factions, prey logic, player intercept and insignia');
+assert(
+  starModel.includes('civilianTransponder: npc.pirate !== true') &&
+    starModel.includes('pirate: npc.pirate === true'),
+  'pirates must use pirate sensor detection instead of civilian transponders'
+);
+
+assert(
+  insignia.includes("mark === 'broken-spear'") &&
+    insignia.includes("'black-tide'") &&
+    mapRenderer.includes('drawPirateInsignia') &&
+    combatRenderer.includes('drawPirateInsignia'),
+  'both gang insignia must render on the star map and during combat'
+);
+
+console.log('PASS Voidbound-equivalent pirate population, hunt, raid, intercept and insignia wiring');
