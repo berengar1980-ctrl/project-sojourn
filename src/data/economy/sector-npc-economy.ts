@@ -167,7 +167,7 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
   let patrolIndex = 0;
   let freighterIndex = 0;
 
-  const civilians = JOBS.map((job, index) => {
+  const civilians = JOBS.map((job, index): SectorNpcState => {
     const ship = shipForJob(job, index);
     const profile = getShipRoleProfile(ship.role);
     let locationId: string;
