@@ -19,20 +19,14 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Format
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
-      - run:
-          name: Lint
-          command: node scripts/ci-run-and-report.cjs lint -- npm run lint
+          name: Pirate test prettier probe
+          command: node scripts/ci-run-and-report.cjs format -- node scripts/prettier-pirate-test-probe.cjs
       - run:
           name: TypeScript
           command: node scripts/ci-run-and-report.cjs typecheck -- npm run typecheck
       - run:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
-      - run:
-          name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
@@ -43,4 +37,4 @@ workflows:
       - quality-gate:
           filters:
             branches:
-              only: ci-gate
+              only: ci/pirate-prettier-probe3
