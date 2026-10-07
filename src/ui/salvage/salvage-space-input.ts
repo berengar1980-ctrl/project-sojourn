@@ -4,6 +4,7 @@ interface SalvageSpaceInputOptions {
   readonly canvas: HTMLCanvasElement;
   readonly renderer: SalvageSpaceRenderer;
   readonly onSelectWreck: (id: string | null) => void;
+  readonly onSelectNpc: (id: string | null) => void;
   readonly onNavigate: (x: number, y: number) => void;
 }
 
@@ -33,8 +34,19 @@ export function bindSalvageSpaceInput(options: SalvageSpaceInputOptions): () => 
   const pointerUp = (event: PointerEvent): void => {
     dragging = false;
     if (moved) return;
+    const npcId = renderer.pickNpc(event.offsetX, event.offsetY);
+    if (npcId) {
+      options.onSelectWreck(null);
+      options.onSelectNpc(npcId);
+      return;
+    }
     const wreckId = renderer.pickWreck(event.offsetX, event.offsetY);
-    if (wreckId) return options.onSelectWreck(wreckId);
+    if (wreckId) {
+      options.onSelectNpc(null);
+      options.onSelectWreck(wreckId);
+      return;
+    }
+    options.onSelectNpc(null);
     options.onSelectWreck(null);
     const target = renderer.worldPointAt(event.offsetX, event.offsetY);
     options.onNavigate(target.x, target.y);
