@@ -79,20 +79,32 @@ assert(
   'trade UI must expose cargo-first selling and system market route comparison'
 );
 assert(
-  portPanel.includes('HANDELSROUTEN') &&
-    portPanel.includes('GÜNSTIG KAUFEN') &&
-    portPanel.includes('TEUER VERKAUFEN') &&
-    portPanel.includes('KURS ZUM KAUF') &&
-    portPanel.includes('KURS ZUM VERKAUF') &&
-    portModel.includes('tradeOpportunities'),
-  'trade UI must show cheapest-buy to best-sell opportunities with direct course actions'
+  portPanel.includes('data-trade-view="cargo"') &&
+    portPanel.includes('data-trade-view="market"') &&
+    portPanel.includes('data-trade-view="system"') &&
+    portPanel.includes('MEINE FRACHT') &&
+    portPanel.includes('LOKALER MARKT') &&
+    portPanel.includes('SYSTEMMARKT') &&
+    !portPanel.includes('HANDELSROUTEN'),
+  'trade UI must separate cargo, local market and system market instead of stacking route analysis'
 );
-
 assert(
-  portPanel.includes('Preiswissen verfällt') &&
+  portPanel.includes('SEHR BILLIG') &&
+    portPanel.includes('BILLIG') &&
+    portPanel.includes('NORMAL') &&
+    portPanel.includes('TEUER') &&
+    portPanel.includes('SEHR TEUER') &&
+    portPanel.includes('priceBand(row.pressurePercent)'),
+  'local market must expose five immediately readable price bands'
+);
+assert(
+  portPanel.includes('GÜNSTIGSTER BEKANNTER EINKAUF') &&
+    portPanel.includes('BESTER BEKANNTER VERKAUF') &&
+    portPanel.includes('GESCHÄTZTE MARGE') &&
+    portPanel.includes('data-system-resource-summary') &&
     portPanel.includes('data-system-resource-select') &&
     portModel.includes("intelStatus: 'live' | 'recent' | 'aging' | 'stale'"),
-  'system market UI must surface aging market intelligence'
+  'system market must combine route opportunity summary with aging market intelligence'
 );
 assert(
   portPanel.includes('STARTAUSSTATTUNG MK I') &&
