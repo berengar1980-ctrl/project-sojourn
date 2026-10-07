@@ -224,6 +224,27 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
+  syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot {
+    this.instance.ship.position = {
+      x: Math.max(0, Math.min(this.instance.width, position.x)),
+      y: Math.max(0, Math.min(this.instance.height, position.y)),
+    };
+    this.instance.ship.headingRadians = headingRadians;
+    this.instance.ship.speed = Math.max(0, speed);
+    this.navigationTarget = null;
+    this.navigationRoute = [];
+    this.navigationIndex = 0;
+    this.approachRoute = [];
+    this.approachIndex = 0;
+    this.miningPhase = 'idle';
+    this.miningTargetId = null;
+    this.scanTargetId = null;
+    this.approachPurpose = null;
+    resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
+    return this.getSnapshot();
+  }
+
+
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);
