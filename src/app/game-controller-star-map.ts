@@ -103,7 +103,7 @@ export function createControllerStarModel(
         spriteUrl: definition.sprite.assetUrl,
         spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
         hardpoints: definition.sprite.hardpoints,
-        ...(contact.identified && npc.pirateFaction
+        ...(contact.identified && npc.pirateFaction && npc.pirateEmblem
           ? { pirateFaction: npc.pirateFaction, pirateEmblem: npc.pirateEmblem }
           : {}),
       },
