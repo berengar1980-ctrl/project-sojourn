@@ -94,7 +94,10 @@ function cargoSaleRows(model: PortViewModel): string {
 
 function systemMarket(model: PortViewModel): string {
   const owned = model.cargoSales[0]?.resourceId;
-  const initial = owned ?? model.systemMarketResourceIds[0] ?? '';
+  const initial =
+    owned && model.systemMarketResourceIds.includes(owned)
+      ? owned
+      : (model.systemMarketResourceIds[0] ?? '');
   const options = model.systemMarketResourceIds
     .map((id) => {
       const name = model.systemMarket.find((row) => row.resourceId === id)?.resourceName ?? id;
