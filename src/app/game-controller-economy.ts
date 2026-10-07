@@ -39,6 +39,7 @@ import {
   type ShipComponentInventoryService,
 } from '../systems/ships';
 import { createNpcSectorService, type NpcSectorService } from '../systems/npcs/npc-sector-service';
+import { createPirateNpcService, type PirateNpcService } from '../systems/npcs/pirate-npc-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
 
@@ -53,6 +54,7 @@ export interface ControllerEconomy {
   readonly components: ShipComponentInventoryService;
   readonly npcs: NpcEconomyService;
   readonly sectorNpcs: NpcSectorService;
+  readonly pirates: PirateNpcService;
 }
 
 export function createControllerEconomy(navigation: NavigationService): ControllerEconomy {
@@ -88,6 +90,12 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     },
   });
   npcEconomy.advanceDay(0);
+  const pirates = createPirateNpcService({
+    world: narrowsSector,
+    npcs: npcStates,
+    sector: sectorNpcs,
+    log: () => {},
+  });
 
   return {
     markets,
@@ -100,5 +108,6 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     components: createShipComponentInventoryService(trade.player),
     npcs: npcEconomy,
     sectorNpcs,
+    pirates,
   };
 }
