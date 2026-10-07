@@ -35,7 +35,7 @@ export class NpcShipMapRenderer {
       const point = camera.worldToScreen(npc.position, width, height);
       const image = this.image(npc.spriteUrl);
       const widthPx = Math.max(
-        8,
+        10,
         Math.min(22, npc.nominalLengthMeters * 0.13 * shipSymbolScale(zoom))
       );
       const aspect =

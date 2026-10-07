@@ -32,17 +32,33 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
 
 export class ProceduralStationRenderer {
   private readonly layouts = new Map<string, StationLayout>();
+  private readonly spriteCanvas = document.createElement('canvas');
+  private readonly spriteContext: CanvasRenderingContext2D;
 
-  constructor(private readonly context: CanvasRenderingContext2D) {}
+  constructor(private readonly context: CanvasRenderingContext2D) {
+    const spriteContext = this.spriteCanvas.getContext('2d');
+    if (!spriteContext) throw new Error('Station sprite canvas unavailable.');
+    this.spriteContext = spriteContext;
+  }
 
   draw(options: StationDrawOptions): void {
     const layout = this.layout(options.id, options.type);
     const dockDetail = options.detailLevel === 'dock';
-    const context = this.context;
+    const renderScale = dockDetail ? 2.2 : 2;
+    const extent = options.radius * 2.35;
+    const pixelSize = Math.max(8, Math.ceil(extent * renderScale));
 
-    context.save();
-    context.translate(options.point.x, options.point.y);
-    context.rotate(layout.rotation);
+    if (this.spriteCanvas.width !== pixelSize || this.spriteCanvas.height !== pixelSize) {
+      this.spriteCanvas.width = pixelSize;
+      this.spriteCanvas.height = pixelSize;
+    }
+
+    const sprite = this.spriteContext;
+    sprite.setTransform(1, 0, 0, 1, 0, 0);
+    sprite.clearRect(0, 0, pixelSize, pixelSize);
+    sprite.setTransform(renderScale, 0, 0, renderScale, pixelSize / 2, pixelSize / 2);
+    sprite.save();
+    sprite.rotate(layout.rotation);
 
     this.drawArms(layout, options.radius, dockDetail);
     this.drawRing(layout, options.radius, options.type, dockDetail);
@@ -52,8 +68,19 @@ export class ProceduralStationRenderer {
     this.drawCore(layout, options.radius, options.type, dockDetail);
     if (dockDetail) this.drawServiceDetails(layout, options.radius, options.type);
     this.applyDirectionalLight(options.radius, layout.rotation, options.light);
+    sprite.restore();
 
-    context.restore();
+    this.context.save();
+    this.context.imageSmoothingEnabled = true;
+    this.context.imageSmoothingQuality = 'high';
+    this.context.drawImage(
+      this.spriteCanvas,
+      options.point.x - extent / 2,
+      options.point.y - extent / 2,
+      extent,
+      extent
+    );
+    this.context.restore();
   }
 
   private layout(id: string, type: StationType): StationLayout {
@@ -67,7 +94,7 @@ export class ProceduralStationRenderer {
   }
 
   private drawArms(layout: StationLayout, radius: number, dockDetail: boolean): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.lineCap = 'square';
 
     for (const arm of layout.arms) {
@@ -113,7 +140,7 @@ export class ProceduralStationRenderer {
   ): void {
     if (type === 'shipyard' || type === 'pirate') return;
 
-    const context = this.context;
+    const context = this.spriteContext;
     const ringRadius = radius * layout.ringRadius;
     context.strokeStyle = type === 'military' ? '#68767d' : '#74898f';
     context.lineWidth = Math.max(dockDetail ? 4 : 1.2, radius * 0.055);
@@ -135,7 +162,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     const coreRadius = radius * layout.coreRadius;
     const sides = type === 'military' ? 8 : type === 'pirate' ? 7 : 10;
     const gradient = context.createRadialGradient(
@@ -201,7 +228,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     const width = module.width * radius;
     const height = module.height * radius;
 
@@ -228,7 +255,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.fillStyle =
       type === 'pirate' ? '#5b5149' : kind === 'habitat' ? '#647a80' : '#52646a';
     context.strokeStyle = type === 'pirate' ? '#9a806b' : '#91a6aa';
@@ -260,7 +287,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     const radiusX = Math.max(width * 0.48, 2);
     const radiusY = Math.max(height * 0.48, 2);
     context.fillStyle = type === 'pirate' ? '#6b5848' : '#66777a';
@@ -286,7 +313,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     const frame = Math.max(1.2, Math.min(width, height) * 0.16);
     context.strokeStyle = type === 'pirate' ? '#a77c5e' : '#91a8ad';
     context.lineWidth = frame;
@@ -312,7 +339,7 @@ export class ProceduralStationRenderer {
   }
 
   private drawRadiator(width: number, height: number, dockDetail: boolean): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.fillStyle = '#35464d';
     context.strokeStyle = '#778d91';
     context.lineWidth = 1;
@@ -331,7 +358,7 @@ export class ProceduralStationRenderer {
   }
 
   private drawSensor(width: number, height: number, dockDetail: boolean): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.strokeStyle = '#9bb1b5';
     context.lineWidth = Math.max(1, Math.min(width, height) * 0.08);
     context.beginPath();
@@ -356,7 +383,7 @@ export class ProceduralStationRenderer {
     type: StationType,
     dockDetail: boolean
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     const columns = dockDetail ? 3 : 2;
     const gap = Math.max(1, width * 0.04);
     const unitWidth = (width - gap * (columns - 1)) / columns;
@@ -372,7 +399,7 @@ export class ProceduralStationRenderer {
   }
 
   private drawArmor(width: number, height: number, dockDetail: boolean): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.fillStyle = '#46555c';
     context.strokeStyle = '#85979d';
     context.beginPath();
@@ -400,7 +427,7 @@ export class ProceduralStationRenderer {
     phase: number,
     type: StationType
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.strokeStyle =
       type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
     context.lineWidth = 1;
@@ -419,7 +446,7 @@ export class ProceduralStationRenderer {
     radius: number,
     type: StationType
   ): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.strokeStyle =
       type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
     context.lineWidth = Math.max(1, radius * 0.012);
@@ -460,7 +487,7 @@ export class ProceduralStationRenderer {
   ): void {
     if (!light) return;
 
-    const context = this.context;
+    const context = this.spriteContext;
     const localLight = normalize(rotate(light, -rotationRadians));
     const gradient = context.createLinearGradient(
       localLight.x * radius,
@@ -481,7 +508,7 @@ export class ProceduralStationRenderer {
   }
 
   private polygon(radius: number, sides: number): void {
-    const context = this.context;
+    const context = this.spriteContext;
     context.beginPath();
     for (let index = 0; index < sides; index += 1) {
       const angle = -Math.PI / 2 + (index / sides) * Math.PI * 2;

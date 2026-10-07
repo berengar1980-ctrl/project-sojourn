@@ -44,9 +44,11 @@ const rendererSource = fs.readFileSync(
 );
 
 assert(
-  cameraSource.includes('MIN_RELATIVE_ZOOM = 0.96') &&
+  cameraSource.includes('MIN_RELATIVE_ZOOM = 1') &&
+    cameraSource.includes('updateViewport') &&
+    rendererSource.includes('this.camera.updateViewport') &&
     rendererSource.includes('this.contentBounds()'),
-  'fully zoomed-out view must frame the actual system instead of shrinking it into empty space'
+  'fully zoomed-out view must stay locked to the fitted system after viewport changes'
 );
 assert(
   scaleSource.includes("Math.pow(relativeZoom, 0.45)") &&
