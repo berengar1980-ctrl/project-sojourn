@@ -9,6 +9,7 @@ const combatModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
 );
+const mineCatalog = loadStandaloneTypeScriptModule(root, 'src/data/combat/ship-mines.ts');
 
 const laser = {
   id: 'test-laser',
@@ -63,7 +64,15 @@ function setup(id, tactic) {
     cycleTimeMultiplier: 1,
     preferredTactic: tactic,
     combatSpeed: 120,
-    mineCharges: 3,
+    mines: [
+      mineCatalog.getShipMine('mine-ion-1'),
+      mineCatalog.getShipMine('mine-shaped-charge-1'),
+      mineCatalog.getShipMine('mine-hunter-1'),
+    ].filter(Boolean),
+    sensorCrewSkill: 80,
+    sensorTier: 2,
+    sensorRangeMeters: 1000,
+    sensorRangeMultiplier: 1.15,
   };
 }
 
@@ -76,6 +85,7 @@ const combat = combatModule.createStrategicCombatService(
     height: 1400,
     attackerPosition: { x: 500, y: 700 },
     defenderPosition: { x: 1500, y: 700 },
+    obstacles: [{ id: 'rock', position: { x: 1000, y: 700 }, radius: 140 }],
   }
 );
 
@@ -106,6 +116,10 @@ assert(
   afterFire.attacker.position.x !== initial.attacker.position.x ||
     afterFire.attacker.position.y !== initial.attacker.position.y,
   'combatants must move in tactical space'
+);
+assert(
+  Math.hypot(afterFire.attacker.position.x - 1000, afterFire.attacker.position.y - 700) >= 160,
+  'combat movement must not pass through local obstacles'
 );
 assert(sawProjectile, 'weapons must create visible projectiles');
 assert(sawImpact, 'weapon hits must create impact events');
