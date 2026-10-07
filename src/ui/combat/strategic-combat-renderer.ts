@@ -191,6 +191,7 @@ export class StrategicCombatRenderer {
 
   private drawMines(width: number, height: number): void {
     for (const mine of this.model.mines) {
+      if (mine.detection === 'hidden') continue;
       const point = this.screen(mine.position, width, height);
       this.drawMine(mine, point);
     }
