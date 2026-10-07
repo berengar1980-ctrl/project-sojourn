@@ -64,9 +64,10 @@ function distance(a: { readonly x: number; readonly y: number }, b: { readonly x
 }
 
 function npcWeaponComponents(installed: InstalledShipComponents) {
-  return (installed.weapon ?? [])
-    .map((id) => getShipComponent('weapon', id))
-    .filter((component) => component?.weapon);
+  return (installed.weapon ?? []).flatMap((id) => {
+    const component = getShipComponent('weapon', id);
+    return component?.weapon ? [component] : [];
+  });
 }
 
 function npcCombatSkill(npc: SectorNpcState): number {
