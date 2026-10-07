@@ -38,8 +38,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Status | Anzahl |
 |---|---:|
 | ✅ Umgesetzt | 35 |
-| 🟨 Teilweise | 48 |
-| ⬜ Offen | 156 |
+| 🟨 Teilweise | 51 |
+| ⬜ Offen | 153 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -58,13 +58,13 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ui | 2 | 2 | 8 | 1 | 13 |
 | smuggling | 1 | 0 | 11 | 0 | 12 |
 | trade | 8 | 7 | 12 | 0 | 27 |
-| npc | 7 | 3 | 12 | 0 | 22 |
+| npc | 7 | 4 | 11 | 0 | 22 |
 | salvage | 0 | 0 | 1 | 0 | 1 |
 | ship | 6 | 4 | 7 | 0 | 17 |
 | equipment | 0 | 0 | 4 | 0 | 4 |
 | crew | 4 | 8 | 11 | 0 | 23 |
-| operations | 0 | 9 | 10 | 0 | 19 |
-| patrol | 0 | 0 | 7 | 0 | 7 |
+| operations | 0 | 10 | 9 | 0 | 19 |
+| patrol | 0 | 1 | 6 | 0 | 7 |
 | customs | 0 | 0 | 10 | 0 | 10 |
 | combat | 0 | 1 | 13 | 0 | 14 |
 | boarding | 0 | 3 | 3 | 0 | 6 |
@@ -95,6 +95,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
 | 2026-10-06 | PR #70 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
 | 2026-10-06 | Ship weapons + mines Mk I–VI | Acht Waffenfamilien und drei Minentypen jeweils Mk I–VI ergänzt; Schild/Hüllen/Allround-Rollen, geschichtete Schadensauflösung und crew-/sensorabhängige Minenerkennung getestet. `ship.weapon_roles` offen → umgesetzt; `combat.weapon_fire` offen → teilweise. Minen sind eine neue Sojourn-Erweiterung ohne eigene Voidbound-ID. |
+| 2026-10-07 | Crew-Skill Runtime Audit | Alle Voidbound-Verwendungen der sieben Stationsskills auditiert. Sensorik live an NPC-Kontakte, Transponder und echte historische Markt-Intel gekoppelt; Engineering-Schildregeneration mit 3/7-s Sperren portiert. Fehlende Parent-Systeme bleiben ausdrücklich READY/OPEN statt fälschlich umgesetzt. |
 
 ## Vollständige Matrix
 
@@ -231,7 +232,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ✅ Umgesetzt | `trade.market_simulation` | Market simulation preserves resource circulation | Tägliche Produktion/Verbrauch/Nachfrage/Resource-Circulation ist umgesetzt. | offen |
 | ⬜ Offen | `trade.market_sabotage` | Frachter can hire exclusive existing corsairs to sabotage a needed import resource; blockade start produces a live price/status overlay and world event, while civilian NPC routing reacts to the blockade | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `economy.career_progression_balance` | Legal market spreads are constrained so trade remains lucrative without collapsing hull progression into a few oracle-perfect routes | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
-| ✅ Umgesetzt | `trade.market_intel` | Sensor market intel stores age/history rather than fabricating data | Marktbeobachtungen speichern Beobachtungstag/Alter; UI nutzt alternde Intel. | offen |
+| ✅ Umgesetzt | `trade.market_intel` | Sensor market intel stores age/history rather than fabricating data | Sensorcrew und Sensorhardware bestimmen Reichweite und Alter der Marktinformationen; alte Daten stammen aus echten historischen Snapshots und fehlende Historie wird nicht erfunden. | übernehmen |
 | ⬜ Offen | `trade.port_intel_broker` | Paid local trade intelligence reveals and refreshes targeted best buy/sell market data | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `trade.route_profit` | Best-sale route uses actual fees/fuel/charter effects | Routenfinder berücksichtigt nun die aktive Logistikgebühr; Player-Fuel und Chartereffekte sind noch nicht vollständig äquivalent. | offen |
 | 🟨 Teilweise | `trade.crew_profit_share` | Crew profit shares are charged on realised income | Crew-Anteile existieren als Daten/Share-Rate; vollständige Belastung realisierter Gewinne ist noch nicht äquivalent abgesichert. | offen |
@@ -258,8 +259,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Feature-ID | Voidbound-Feature | Sojourn-Bewertung | Entscheidung |
 |---|---|---|---|---|
-| ✅ Umgesetzt | `npc.civilian_visibility` | Civilian traffic remains visible through transponders | Live-NPC-Schiffe werden auf Sternkarte/lokal gerendert. | offen |
-| ⬜ Offen | `npc.corsair_stealth` | Corsairs retain shorter tactical detection range | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| ✅ Umgesetzt | `npc.civilian_visibility` | Civilian traffic remains visible through transponders | Zivile NPC-Schiffe werden über eine sensor- und hardwareabhängige Transponderreichweite sichtbar; die Sternkarte zeigt nicht mehr global alle NPCs. | übernehmen |
+| 🟨 Teilweise | `npc.corsair_stealth` | Corsairs retain shorter tactical detection range | Voidbounds verkürzte Corsair-Erfassungs- und Identifikationsreichweiten sind im Sensor-Contact-Service exakt portiert; eine echte Corsair-Population fehlt noch. | übernehmen |
 | ⬜ Offen | `npc.trade_charters` | Civilian NPCs receive Veylan/Mercator trade charters | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ✅ Umgesetzt | `npc.trade_routes` | Civilian NPCs buy, move and sell cargo | NPC-Händler kaufen physisch, reisen und verkaufen gegen denselben Marktstate wie der Spieler. | offen |
 | ✅ Umgesetzt | `npc.resource_side_trade` | Miner and salvager NPCs choose their work destination first, then may use only ordinary cargo space for one profitable low-detour trade stop before continuing to the original job | Mining-/Salvage-NPCs können auf dem Weg zum Job profitablen Nebenhandel durchführen. | offen |
@@ -360,7 +361,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `salvage.standard` | Standard salvage cycles consume time and generate salvage | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `salvage.progression` | Routine salvage has increased baseline yield and dedicated special-cargo capacity so progression does not depend only on rare jackpot wrecks | Routine-Salvage und physische Bergung existieren; Special-Cargo/Progression-Tuning ist unvollständig. | offen |
 | 🟨 Teilweise | `salvage.special_events` | Timed special salvage signals can spawn and be pursued | Salvage-Event/Wreck-System vorhanden; Voidbounds zeitlich begrenzte Signalverfolgung nicht vollständig. | offen |
-| ⬜ Offen | `salvage.sensor_wrecks` | Sensor wreck detection depends on range/officer state | Wrack-Anflug/Scan-Gating ist im Live-Salvage-Loop umgesetzt. | offen |
+| 🟨 Teilweise | `salvage.sensor_wrecks` | Sensor wreck detection depends on range/officer state | Die exakte sensorabhängige Wrackreichweite ist portiert; der lokale Wrackscan existiert, aber sektorweite versteckte/dynamische Wrackentdeckung fehlt noch. | übernehmen |
 | 🟨 Teilweise | `salvage.boarding_wreck` | Boardable wrecks can spawn and enter boarding flow | Tactical-Boarding-Foundation vorhanden; Live-Wrack→Boarding-Integration ist unvollständig. | offen |
 | ⬜ Offen | `salvage.component_extract` | Wreck component extraction advances world time | Physische Schiffskomponenten können aus Wracks geborgen werden. | offen |
 | 🟨 Teilweise | `salvage.component_value` | Better salvaged components have higher intrinsic value | Komponentenkatalog hat Tier/Kosten; vollständige Appraisal-/Value-Mechanik fehlt. | offen |
@@ -377,7 +378,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `patrol.distress_events` | Corsair attacks can create distress events | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `patrol.distress_pursuit` | Patrol distress pursuit starts a real chase/combat | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `patrol.piracy_revokes_mandate` | Civilian piracy revokes imperial patrol mandate | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
-| ⬜ Offen | `sensors.contacts` | Sensor contact identification depends on distance/type | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
+| 🟨 Teilweise | `sensors.contacts` | Sensor contact identification depends on distance/type | Sternkartenkontakte werden jetzt nach Sensorcrew, Sensorhardware und Kontaktart gefiltert; zivile Transponder sowie verkürzte Corsair-Erfassungs-/Identifikationsreichweiten sind portiert. Patrol-Chase/Ignore-Flow fehlt noch. | übernehmen |
 | ⬜ Offen | `sensors.suppression` | Ignored contacts can be suppressed and reset at safe harbor | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 
 ### smuggling
@@ -530,6 +531,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 - Kampagnen unter `campaigns/`
 
 ### Project Sojourn
+- `docs/VOIDBOUND_CREW_SKILL_RUNTIME.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ECONOMY_PORT_PLAN.md`
 - Runtime unter `src/`
