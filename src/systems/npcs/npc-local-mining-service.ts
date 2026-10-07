@@ -305,6 +305,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
 
   return {
     ships,
+    syncCombatPose,
     tick(deltaSeconds) {
       const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
       if (dt <= 0) return;
