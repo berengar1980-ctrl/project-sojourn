@@ -1,4 +1,4 @@
-import type { ShipHardpoints } from '../../core/ship-types';
+import type { ShipEffectLayer, ShipHardpoints } from '../../core/ship-types';
 import { projectHardpoint, type ShipScreenGeometry } from './ship-hardpoint-projector';
 import { ThrusterGlowRenderer } from './thruster-glow-renderer';
 
@@ -17,12 +17,14 @@ export class ShipEngineEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     intensity: number,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
     if (intensity <= 0) return;
     const normalizedIntensity = Math.min(1, Math.max(0, intensity));
 
     source.engines.forEach((hardpoint, index) => {
+      if ((hardpoint.layer ?? 'above') !== layer) return;
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
@@ -69,12 +71,14 @@ export class ShipEngineEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     intensity: number,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
     if (intensity <= 0) return;
     const normalizedIntensity = Math.min(1, Math.max(0, intensity));
 
     source.engines.forEach((hardpoint, index) => {
+      if ((hardpoint.layer ?? 'above') !== layer) return;
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
@@ -92,9 +96,10 @@ export class ShipEngineEffectsRenderer {
     source: ShipHardpoints,
     geometry: ShipScreenGeometry,
     intensity: number,
-    timeSeconds: number
+    timeSeconds: number,
+    layer: ShipEffectLayer = 'above'
   ): void {
-    this.drawExhaust(context, source, geometry, intensity, timeSeconds);
-    this.drawGlow(context, source, geometry, intensity, timeSeconds);
+    this.drawExhaust(context, source, geometry, intensity, timeSeconds, layer);
+    this.drawGlow(context, source, geometry, intensity, timeSeconds, layer);
   }
 }
