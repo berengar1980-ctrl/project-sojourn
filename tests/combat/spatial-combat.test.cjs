@@ -55,6 +55,12 @@ function setup(id, tactic) {
     name: id,
     shipId: 'patrol-60m-variant-01',
     shieldHp: 90,
+    shieldGeometry: {
+      centerOffset: { x: 4, y: 0 },
+      radiusX: 72,
+      radiusY: 46,
+      modifier: 1.25,
+    },
     hullHp: 100,
     weapons: [laser, missile],
     hitChance: 0.95,
@@ -245,6 +251,42 @@ const dot =
   worldAnchor.x * (towardSource.x / sourceLength) +
   worldAnchor.y * (towardSource.y / sourceLength);
 assert(dot > 0.65, 'shield impact must appear on the incoming-fire side, not opposite');
+
+assert(
+  shieldSnapshot.lastImpact &&
+    shieldSnapshot.lastImpact.layer === 'shield' &&
+    Math.hypot(
+      shieldSnapshot.lastImpact.position.x - shieldSnapshot.defender.position.x,
+      shieldSnapshot.lastImpact.position.y - shieldSnapshot.defender.position.y
+    ) > 20,
+  'beam impact position must be the shield ellipse surface, not the ship center'
+);
+
+const geometry = combatModule.createCombatShieldGeometry(
+  {
+    sourceWidth: 200,
+    sourceHeight: 100,
+    pivot: { x: 100, y: 50 },
+    engines: [],
+    weaponLasers: [],
+    miningLasers: [],
+    tractorBeams: [],
+    maneuverThrusters: [],
+    shield: {
+      centerX: 110,
+      centerY: 45,
+      radiusX: 120,
+      radiusY: 70,
+      maxHp: 100,
+      modifier: 1.4,
+    },
+  },
+  50
+);
+assert.deepEqual(geometry.centerOffset, { x: 2.5, y: -1.25 });
+assert.equal(geometry.radiusX, 30);
+assert.equal(geometry.radiusY, 17.5);
+assert.equal(geometry.modifier, 1.4);
 
 const durationCombat = combatModule.createStrategicCombatService(
   setup('duration-a', 'fight'),
