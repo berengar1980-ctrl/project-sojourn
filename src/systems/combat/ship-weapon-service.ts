@@ -29,13 +29,10 @@ export function crewAdjustedShipWeaponProfile(
     throw new Error('Component is not a combat-capable ship weapon.');
   }
   return {
-    shieldDamage: Math.round(
-      component.weapon.shieldDamage * weaponDamageMultiplier(weaponSkill)
-    ),
+    shieldDamage: Math.round(component.weapon.shieldDamage * weaponDamageMultiplier(weaponSkill)),
     hullDamage: Math.round(component.weapon.hullDamage * weaponDamageMultiplier(weaponSkill)),
     rangeMeters: component.weapon.rangeMeters,
-    cooldownSeconds:
-      component.weapon.cooldownSeconds * weaponCycleTimeMultiplier(weaponSkill),
+    cooldownSeconds: component.weapon.cooldownSeconds * weaponCycleTimeMultiplier(weaponSkill),
     criticalChance: weaponCriticalChance(weaponSkill),
     hitChanceBonus: sensorWeaponHitChanceBonus(sensorSkill),
   };
