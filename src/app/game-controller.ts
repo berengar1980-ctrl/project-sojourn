@@ -282,12 +282,7 @@ function createControllerLocalModel(
   navigation: NavigationService,
   npcMining: NpcLocalMiningService | null
 ) {
-  return createActiveLocalModel(
-    service,
-    ship,
-    currentMiningLocationName(navigation),
-    npcMining
-  );
+  return createActiveLocalModel(service, ship, currentMiningLocationName(navigation), npcMining);
 }
 
 interface ControllerRuntimeState {
