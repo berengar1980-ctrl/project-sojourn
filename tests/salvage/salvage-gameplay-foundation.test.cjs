@@ -141,4 +141,18 @@ assert.equal(before - after, recovered.recovered);
 assert(Object.keys(player.cargo).length > 0);
 assert.equal(pool, 100 - recovered.recovered, 'salvage must draw from the physical resource pool');
 
+const fs = require('node:fs');
+const salvageRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'),
+  'utf8'
+);
+assert(
+  salvageRenderer.includes('drawPlayerSalvageEffect') &&
+    salvageRenderer.includes("this.model.phase !== 'stripping'") &&
+    salvageRenderer.includes("'extracting-component'") &&
+    salvageRenderer.includes('tractorBeams') &&
+    salvageRenderer.includes('lineDashOffset'),
+  'active player salvage must have a visible tether and material-transfer effect'
+);
+
 console.log('PASS salvage capability, deterministic wrecks, crew yield and economy recovery');
