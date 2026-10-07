@@ -641,13 +641,7 @@ export function createNpcSectorService(
 
         if (!reachedFinal) {
           const nextTarget = remainingStops[0] ?? finalTargetId;
-          startLeg(
-            npc,
-            nextTarget,
-            finalTargetId,
-            remainingStops,
-            'Weiterflug nach Tankstopp'
-          );
+          startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp');
         } else {
           npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
           npc.activity = npc.pirate
