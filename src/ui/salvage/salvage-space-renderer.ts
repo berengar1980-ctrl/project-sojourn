@@ -3,10 +3,15 @@ import type {
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
-import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import {
+  projectHardpoint,
+  spriteDrawOffset,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 
@@ -38,6 +43,7 @@ export class SalvageSpaceRenderer {
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly shipLighting = new ShipLightingRenderer();
+  private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly shipImage = new Image();
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: SalvageSpaceViewModel;
@@ -220,6 +226,16 @@ export class SalvageSpaceRenderer {
           timeSeconds
         );
       }
+      const combatDefender =
+        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
+      if (combatDefender) {
+        this.shieldImpacts.draw(
+          this.context,
+          combatDefender.shieldImpacts,
+          npc.hardpoints,
+          geometry
+        );
+      }
 
       hits.push({
         id: npc.id,
@@ -274,6 +290,69 @@ export class SalvageSpaceRenderer {
       this.context.restore();
     }
 
+    for (const beam of combat.beams) {
+      const source =
+        beam.owner === 'attacker'
+          ? {
+              hardpoints: this.model.ship.hardpoints,
+              geometry: this.shipGeometry(width, height),
+            }
+          : (() => {
+              const npc = this.model.npcShips.find((entry) => entry.id === combat.defender.id);
+              if (!npc) return null;
+              const center = this.camera.worldToScreen(npc.position, width, height);
+              const shipWidth = this.camera.scale(npc.nominalLengthMeters);
+              return {
+                hardpoints: npc.hardpoints,
+                geometry: {
+                  center,
+                  width: shipWidth,
+                  height: shipWidth / npc.spriteAspectRatio,
+                  angle: npc.headingRadians,
+                } satisfies ShipScreenGeometry,
+              };
+            })();
+      if (!source) continue;
+      const weaponHardpoints = source.hardpoints.weaponLasers ?? [];
+      const hardpoint =
+        weaponHardpoints.length > 0
+          ? weaponHardpoints[beam.weaponIndex % weaponHardpoints.length]
+          : null;
+      const from = hardpoint
+        ? projectHardpoint(hardpoint, source.hardpoints, source.geometry)
+        : source.geometry.center;
+      const to = this.camera.worldToScreen(beam.end, width, height);
+      const alpha = Math.max(0, Math.min(1, beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds)));
+      this.context.save();
+      this.context.lineCap = 'round';
+      if (beam.kind === 'laser') {
+        this.context.shadowColor = 'rgba(67, 185, 255, .95)';
+        this.context.shadowBlur = 10;
+        this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
+        this.context.lineWidth = 4.5;
+        this.context.beginPath();
+        this.context.moveTo(from.x, from.y);
+        this.context.lineTo(to.x, to.y);
+        this.context.stroke();
+        this.context.shadowBlur = 3;
+        this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
+        this.context.lineWidth = 1.15;
+        this.context.beginPath();
+        this.context.moveTo(from.x, from.y);
+        this.context.lineTo(to.x, to.y);
+        this.context.stroke();
+      } else {
+        this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
+        this.context.lineWidth = 1.3;
+        this.context.setLineDash([18, 5]);
+        this.context.beginPath();
+        this.context.moveTo(from.x, from.y);
+        this.context.lineTo(to.x, to.y);
+        this.context.stroke();
+      }
+      this.context.restore();
+    }
+
     for (const projectile of combat.projectiles) {
       const point = this.camera.worldToScreen(projectile.position, width, height);
       const target = this.camera.worldToScreen(projectile.target, width, height);
@@ -298,37 +377,31 @@ export class SalvageSpaceRenderer {
         this.context.arc(0, 0, 5, 0, Math.PI * 2);
         this.context.fill();
       } else {
-        this.context.strokeStyle =
-          projectile.kind === 'autocannon'
-            ? 'rgba(245, 211, 156, .95)'
-            : 'rgba(102, 207, 255, .95)';
-        this.context.lineWidth = projectile.kind === 'rail' ? 1.2 : 2;
-        this.context.beginPath();
-        this.context.moveTo(-24, 0);
-        this.context.lineTo(24, 0);
-        this.context.stroke();
+        this.context.fillStyle = 'rgba(245, 211, 156, .95)';
+        this.context.fillRect(-2, -1, 5, 2);
       }
       this.context.restore();
     }
 
     const impact = combat.lastImpact;
-    if (!impact || impact.layer === 'miss' || this.combatImpactAge >= 1) return;
+    if (
+      !impact ||
+      (impact.layer !== 'hull' && impact.layer !== 'obstacle') ||
+      this.combatImpactAge >= 1
+    ) {
+      return;
+    }
     const point = this.camera.worldToScreen(impact.position, width, height);
     const alpha = 1 - this.combatImpactAge;
     const radius = 10 + this.combatImpactAge * 34;
     this.context.save();
-    if (impact.layer === 'shield') {
-      this.context.strokeStyle = `rgba(123, 211, 255, ${alpha * 0.9})`;
-      this.context.lineWidth = 2.4;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius, -0.9, 0.9);
-      this.context.stroke();
-    } else {
-      this.context.fillStyle = `rgba(255, 139, 68, ${alpha * 0.8})`;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
-      this.context.fill();
-    }
+    this.context.fillStyle =
+      impact.layer === 'obstacle'
+        ? `rgba(196, 185, 160, ${alpha * 0.6})`
+        : `rgba(255, 139, 68, ${alpha * 0.8})`;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
+    this.context.fill();
     this.context.restore();
   }
 
@@ -572,5 +645,11 @@ export class SalvageSpaceRenderer {
     this.context.restore();
     this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
     this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
+    this.shieldImpacts.draw(
+      this.context,
+      this.model.combat?.attacker.shieldImpacts ?? [],
+      source,
+      geometry
+    );
   }
 }
