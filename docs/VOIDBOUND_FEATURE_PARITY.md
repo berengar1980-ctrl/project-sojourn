@@ -87,6 +87,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 8. **Salvage Depth:** Distress-Rescue, Relics, Boarding-Wreck-Integration und Progression.
 
 ## Review-Log
+| 2026-10-07 | Voidbound-Korsaren für Sojourn | Neun persistente Piraten-NPCs in zwei Banden (Harrow-Korsaren/Schwarze Flut) ergänzt. Vorläufig nutzen sie Patrol-Hüllen. Hunt-Zones gewichten Verkehr, Heimatnähe, Piratendichte und Patrouillendruck; Piraten jagen Frachter/Miner/Salvager und den Spieler, plündern nach NPC-Siegen Fracht, ziehen sich beschädigt zur Heimatbasis zurück und werden verzögert ersetzt. Zwei getrennte Fraktionszeichen werden nach Sensoridentifikation angezeigt. Tributdialog, eigene Piratenhüllen und vollständige Gefahrenzonen-Gewichtung bleiben separat offen. |
 
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
@@ -248,7 +249,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Feature-ID | Voidbound-Feature | Sojourn-Bewertung | Entscheidung |
 |---|---|---|---|---|
-| 🟨 Teilweise | `npc.population` | Civilian and corsair NPC populations spawn | Persistente zivile/patrol NPCs vorhanden; vollständige zivile + Corsair-Ökologie fehlt. | offen |
+| ✅ Umgesetzt | `npc.population` | Civilian and corsair NPC populations spawn | Zivile NPCs und neun persistente Korsaren-NPCs aus zwei Banden werden gemeinsam in der Sektorpopulation erzeugt. | übernehmen |
 | ⬜ Offen | `npc.population_continuity` | Destroyed trader, miner and salvager traffic is replaced after a delayed registration window so long-term corsair losses cannot permanently collapse the civilian economy | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `npc.ship_progression` | Established civilian captains can spend accumulated profits on their role-specific Mk-IV hull at a real shipyard; subsequent route policy automatically re-evaluates the stronger ship | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ✅ Umgesetzt | `npc.component_progression` | Civilian NPCs purchase persistent reactor/engine/shield/hull/sensor/weapon upgrades at real shipyards; derived speed, fuel efficiency and route capability use the installed loadout | NPCs kaufen persistente, rollenpriorisierte Komponenten-Upgrades an Werften. | offen |
@@ -266,12 +267,12 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Status | Feature-ID | Voidbound-Feature | Sojourn-Bewertung | Entscheidung |
 |---|---|---|---|---|
 | ✅ Umgesetzt | `npc.civilian_visibility` | Civilian traffic remains visible through transponders | Zivile NPC-Schiffe werden über eine sensor- und hardwareabhängige Transponderreichweite sichtbar; die Sternkarte zeigt nicht mehr global alle NPCs. | übernehmen |
-| 🟨 Teilweise | `npc.corsair_stealth` | Corsairs retain shorter tactical detection range | Voidbounds verkürzte Corsair-Erfassungs- und Identifikationsreichweiten sind im Sensor-Contact-Service exakt portiert; eine echte Corsair-Population fehlt noch. | übernehmen |
+| ✅ Umgesetzt | `npc.corsair_stealth` | Corsairs retain shorter tactical detection range | Verkürzte Korsaren-Erfassungs-/Identifikationsreichweiten werden jetzt von der echten Korsarenpopulation genutzt; Fraktionszeichen erscheinen erst nach Identifikation. | übernehmen |
 | ⬜ Offen | `npc.trade_charters` | Civilian NPCs receive Veylan/Mercator trade charters | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ✅ Umgesetzt | `npc.trade_routes` | Civilian NPCs buy, move and sell cargo | NPC-Händler kaufen physisch, reisen und verkaufen gegen denselben Marktstate wie der Spieler; Zielwahl nutzt persönliches, alterndes Markt-Intel und läuft über Andocken, Liegezeit, Denken, Laden, Startvorbereitung und Flug statt Sofortentscheidungen. | übernehmen |
 | ✅ Umgesetzt | `npc.resource_side_trade` | Miner and salvager NPCs choose their work destination first, then may use only ordinary cargo space for one profitable low-detour trade stop before continuing to the original job | Mining-/Salvage-NPCs können auf dem Weg zum Job profitablen Nebenhandel durchführen; auch dieser verwendet ausschließlich das persönliche Markt-Intel des NPCs. | übernehmen |
 | ✅ Umgesetzt | `npc.personal_route_planning` | Civilian NPCs use the shared geometric route planner with capability- and temperament-dependent safe/balanced/fast policies that automatically adapt when their ship strength changes | NPC-Routenpolitik nutzt den gemeinsamen Planner und wird zusätzlich durch persistente Risikobereitschaft, Geduld, Profitfokus, Routinen und bevorzugte Märkte beeinflusst. | übernehmen |
-| ⬜ Offen | `npc.travel_corsair_risk` | Existing corsair NPCs can intercept travelling NPCs along their actual route; personal red space increases contact range and attack pressure while stronger NPCs can treat the same world space as safer | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| 🟨 Teilweise | `npc.travel_corsair_risk` | Existing corsair NPCs can intercept travelling NPCs along their actual route; personal red space increases contact range and attack pressure while stronger NPCs can treat the same world space as safer | Persistente Korsaren suchen echte zivile Schiffe, verfolgen deren Live-Positionen und starten daraus NPC-Gefechte. Die zusätzliche Voidbound-Gefahrenzonen-/Stärkegewichtung des Abfangdrucks fehlt noch. | übernehmen |
 | ⬜ Offen | `npc.travel_raid_repair_delay` | NPCs damaged by a strategic corsair interception actually pause for field repairs before resuming the stored route | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `npc.financial_integrity` | NPC accounts cannot remain invalid/negative | Transaktionen schützen viele Invarianten; der vollständige Voidbound Audit/Repair-Unterbau fehlt. | offen |
 | ✅ Umgesetzt | `npc.resource_work` | Miner and salvager NPCs select sites and complete persistent work cycles | NPC-Miner/Salvager verwenden dieselbe Autonomie-State-Machine wie Händler: Arbeitsflug, Working-Phase, sichtbarer Scan/Abbau bzw. Bergung, volle Fracht, Denk-/Startphase und Verkaufsflug. | übernehmen |
