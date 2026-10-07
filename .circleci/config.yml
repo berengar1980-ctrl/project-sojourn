@@ -20,10 +20,10 @@ jobs:
             - ~/.npm
       - run:
           name: Format
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --write .
+          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
           name: Lint
-          command: node scripts/ci-run-and-report.cjs lint -- node -e "process.exit(0)"
+          command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
           name: TypeScript
           command: node scripts/ci-run-and-report.cjs typecheck -- npm run typecheck
@@ -32,7 +32,7 @@ jobs:
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
           name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- node scripts/run-combat-validation.cjs
+          command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
