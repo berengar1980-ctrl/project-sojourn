@@ -165,9 +165,9 @@ const blockedCombat = combatModule.createStrategicCombatService(
   {
     width: 1800,
     height: 1000,
-    attackerPosition: { x: 400, y: 500 },
-    defenderPosition: { x: 1400, y: 500 },
-    obstacles: [{ id: 'wreck', position: { x: 900, y: 500 }, radius: 190 }],
+    attackerPosition: { x: 500, y: 500 },
+    defenderPosition: { x: 1300, y: 500 },
+    obstacles: [{ id: 'wreck', position: { x: 900, y: 500 }, radius: 170 }],
   }
 );
 let sawBlockedBeam = false;
