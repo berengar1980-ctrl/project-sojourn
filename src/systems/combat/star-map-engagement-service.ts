@@ -48,6 +48,7 @@ interface BackgroundCombat {
 
 export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
+  engageNpcNow(npcId: string): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -314,6 +315,14 @@ export function createStarMapEngagementService(
   }
 
   return {
+    engageNpcNow(npcId) {
+      if (playerCombat) return false;
+      const target = npcById(npcId);
+      if (!target || target.hullHp <= 0) return false;
+      beginPlayerCombat(target);
+      return playerCombat !== null;
+    },
+
     attackNpc(npcId) {
       if (playerCombat) return false;
       const target = npcById(npcId);
