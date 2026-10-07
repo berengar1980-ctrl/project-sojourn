@@ -447,6 +447,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     status.textContent = statusText;
 
     if (selectedNpc) {
+      const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+      if (kind) kind.textContent = 'SCHIFF';
       name.textContent = selectedNpc.name;
       meta.textContent = model.combat
         ? 'GEFECHT · SCHILD ' +
@@ -464,6 +466,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     shortScanButton.hidden = false;
     mineButton.hidden = false;
     if (!selected) return;
+    const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+    if (kind) kind.textContent = 'ASTEROID';
     name.textContent =
       selected.scanLevel === 'analyzed' && selected.deposits.length > 0
         ? 'ASTEROID · ' + selected.deposits.length + ' VORKOMMEN'
