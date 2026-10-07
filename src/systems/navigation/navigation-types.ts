@@ -26,6 +26,7 @@ export interface NavigationService {
   startPursuit(targetId: string, targetPosition: WorldPoint): NavigationSnapshot;
   updatePursuitTarget(targetPosition: WorldPoint): NavigationSnapshot;
   stopPursuit(): NavigationSnapshot;
+  recoverToNearestDock(): NavigationSnapshot;
   setCruiseSpeed(cruiseSpeed: number): NavigationSnapshot;
   tick(deltaSeconds: number): NavigationSnapshot;
 }

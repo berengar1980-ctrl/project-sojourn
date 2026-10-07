@@ -21,6 +21,7 @@ import {
 } from '../ships';
 import {
   npcDefenseReaction,
+  npcIsPiratePrey,
   npcLooksHostileToPatrol,
   npcMayInitiateAttack,
 } from '../npcs/npc-combat-ai';
@@ -97,7 +98,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     .map((id) => getShipComponent('sensor', id))
     .find((component) => component !== null);
   const mineTier = Math.max(1, Math.min(6, resolveShipGameplayStats(ship).maxComponentTier));
-  const mineCopies = npc.job === 'patrol' ? 2 : 1;
+  const mineCopies = npc.job === 'patrol' || npc.pirate ? 2 : 1;
   const mines = Array.from({ length: mineCopies }).flatMap(() =>
     [
       getShipMine('mine-ion-' + mineTier),
@@ -121,7 +122,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     preferredTactic:
       npcDefenseReaction(npc) === 'flee'
         ? 'flee'
-        : npc.job === 'patrol' && npc.aggression >= 82
+        : (npc.job === 'patrol' || npc.pirate) && npc.aggression >= 82
           ? 'kite'
           : 'fight',
     combatSpeed: Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
@@ -134,6 +135,8 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     sensorRangeMultiplier: sensor ? 1 + Number(sensor.range ?? 0) : 1,
     aiControlled: true,
     aiAggression: npc.aggression,
+    ...(npc.factionId ? { factionId: npc.factionId } : {}),
+    ...(npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
   };
 }
 
@@ -151,6 +154,7 @@ export function createStarMapEngagementService(
   let playerChase: ChaseRecord | null = null;
   let playerCombat: StrategicCombatService | null = null;
   let playerEnemy: SectorNpcState | null = null;
+  let piratePlayerChase: ChaseRecord | null = null;
   const npcChases = new Map<string, ChaseRecord>();
   const backgroundCombats = new Map<string, BackgroundCombat>();
   let attackScanAccumulator = 0;
@@ -218,20 +222,108 @@ export function createStarMapEngagementService(
     );
   }
 
+  function scanForPiratePlayerAttack(): void {
+    if (playerCombat || playerChase || piratePlayerChase) return;
+    const navigation = options.navigation.getSnapshot();
+    if (!navigation.isTravelling || navigation.isPursuing) return;
+    const target = options.sectorNpcs.npcs
+      .filter((npc) => npc.pirate && npcMayInitiateAttack(npc))
+      .map((npc) => ({
+        npc,
+        range: distance(options.sectorNpcs.livePosition(npc), navigation.currentPosition),
+      }))
+      .filter((entry) => entry.range <= NPC_ATTACK_SCAN_RANGE)
+      .sort((first, second) => first.range - second.range)[0];
+    if (!target) return;
+    if (
+      !options.sectorNpcs.startPursuit(
+        target.npc,
+        'player',
+        PLAYER_ID,
+        navigation.currentPosition,
+        'Korsaren-Abfangkurs'
+      )
+    ) {
+      return;
+    }
+    piratePlayerChase = {
+      attackerId: target.npc.id,
+      targetId: PLAYER_ID,
+      initialDistance: target.range,
+    };
+    options.log('COMBAT > KORSAREN-ABFANGKURS · ' + target.npc.name.toUpperCase());
+  }
+
   function scanForNpcAttacks(): void {
     for (const attacker of options.sectorNpcs.npcs) {
       if (!npcMayInitiateAttack(attacker) || npcChases.has(attacker.id)) continue;
       const attackerPosition = options.sectorNpcs.livePosition(attacker);
       const target = options.sectorNpcs.npcs
-        .filter((candidate) => candidate.id !== attacker.id && npcLooksHostileToPatrol(candidate))
+        .filter((candidate) => {
+          if (candidate.id === attacker.id) return false;
+          return attacker.pirate
+            ? npcIsPiratePrey(candidate)
+            : npcLooksHostileToPatrol(candidate);
+        })
         .map((candidate) => ({
           candidate,
           range: distance(attackerPosition, options.sectorNpcs.livePosition(candidate)),
+          priority: !attacker.pirate && candidate.pirate ? 0 : 1,
         }))
         .filter((entry) => entry.range <= NPC_ATTACK_SCAN_RANGE)
-        .sort((first, second) => first.range - second.range)[0];
+        .sort(
+          (first, second) =>
+            first.priority - second.priority || first.range - second.range
+        )[0];
       if (target) startNpcAttack(attacker, target.candidate);
     }
+  }
+
+  function updatePiratePlayerChase(): void {
+    if (!piratePlayerChase || playerCombat) return;
+    const pirate = npcById(piratePlayerChase.attackerId);
+    if (!pirate || pirate.hullHp <= 0) {
+      piratePlayerChase = null;
+      return;
+    }
+    const playerPosition = options.navigation.getSnapshot().currentPosition;
+    const piratePosition = options.sectorNpcs.livePosition(pirate);
+    const pirateShip = getShipDefinition(pirate.shipId);
+    const playerShip = options.getPlayerShip();
+    if (!pirateShip) return;
+    const currentDistance = distance(piratePosition, playerPosition);
+    if (currentDistance <= engagementRange(pirateShip, playerShip)) {
+      piratePlayerChase = null;
+      beginPlayerCombat(pirate);
+      return;
+    }
+    if (currentDistance >= NPC_ATTACK_SCAN_RANGE * 2.2) {
+      options.sectorNpcs.recoverFromCombat(pirate, 'Beute außer Reichweite');
+      piratePlayerChase = null;
+    }
+  }
+
+  function transferPirateLoot(pirate: SectorNpcState, victim: SectorNpcState): number {
+    let remaining = 10;
+    let stolen = 0;
+    const cargo = Object.entries(victim.cargo)
+      .filter(([, quantity]) => quantity > 0)
+      .sort((first, second) => second[1] - first[1]);
+    for (const [resourceId, available] of cargo) {
+      if (remaining <= 0) break;
+      const quantity = Math.min(remaining, Math.max(0, Math.floor(available)));
+      if (quantity <= 0) continue;
+      victim.cargo[resourceId] = Math.max(0, victim.cargo[resourceId]! - quantity);
+      if (victim.cargo[resourceId] <= 0) delete victim.cargo[resourceId];
+      pirate.cargo[resourceId] = (pirate.cargo[resourceId] ?? 0) + quantity;
+      remaining -= quantity;
+      stolen += quantity;
+    }
+    if (stolen > 0) {
+      pirate.activityId = 'raiding';
+      pirate.activity = 'Beutezug gegen ' + victim.name;
+    }
+    return stolen;
   }
 
   function beginPlayerCombat(
@@ -342,6 +434,15 @@ export function createStarMapEngagementService(
 
       entry.first.hullHp = Math.round(model.attacker.hullHp);
       entry.second.hullHp = Math.round(model.defender.hullHp);
+      if (model.winner === 'attacker' && entry.first.pirate && npcIsPiratePrey(entry.second)) {
+        transferPirateLoot(entry.first, entry.second);
+      } else if (
+        model.winner === 'defender' &&
+        entry.second.pirate &&
+        npcIsPiratePrey(entry.first)
+      ) {
+        transferPirateLoot(entry.second, entry.first);
+      }
       options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
       options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');
       backgroundCombats.delete(key);
@@ -394,9 +495,11 @@ export function createStarMapEngagementService(
       attackScanAccumulator += Math.max(0, deltaSeconds);
       if (attackScanAccumulator >= 1) {
         attackScanAccumulator = 0;
+        scanForPiratePlayerAttack();
         scanForNpcAttacks();
       }
 
+      updatePiratePlayerChase();
       updatePlayerChase();
       updateNpcChases();
       resolveBackgroundCombats(deltaSeconds);
@@ -419,7 +522,25 @@ export function createStarMapEngagementService(
       if (!playerCombat || !playerEnemy) return;
       const model = playerCombat.getSnapshot();
       playerEnemy.hullHp = Math.round(model.defender.hullHp);
-      options.sectorNpcs.recoverFromCombat(playerEnemy, 'Nach Gefecht');
+      if (model.defender.hullHp <= 0) {
+        options.sectorNpcs.recoverFromCombat(playerEnemy, 'Kampfunfähig');
+        options.log(
+          'COMBAT > ' +
+            playerEnemy.name.toUpperCase() +
+            ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
+        );
+      } else {
+        options.sectorNpcs.recoverFromCombat(playerEnemy, 'Nach Gefecht');
+      }
+
+      if (model.attacker.hullHp <= 0) {
+        const recovery = options.navigation.recoverToNearestDock();
+        const destination = recovery.currentLocationId ?? 'UNKNOWN';
+        options.log(
+          'COMBAT > EIGENES SCHIFF KAMPFUNFÄHIG · BERGUNG NACH ' + destination.toUpperCase()
+        );
+      }
+
       playerCombat = null;
       playerEnemy = null;
     },
