@@ -23,6 +23,7 @@ import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/s
 
 export interface SalvageSceneController {
   tick(deltaSeconds: number): void;
+  finishCombat(snapshot: StrategicCombatSnapshot): void;
   destroy(): void;
 }
 
@@ -202,6 +203,20 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
+    finishCombat(snapshot) {
+      service.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
+      );
+      npcSalvage.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+      refresh();
+    },
     tick(deltaSeconds) {
       if (!options.isCombatActive?.()) {
         service.tick(deltaSeconds);
