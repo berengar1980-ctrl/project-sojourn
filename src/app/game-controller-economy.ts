@@ -57,7 +57,10 @@ export interface ControllerEconomy {
   readonly pirates: PirateNpcService;
 }
 
-export function createControllerEconomy(navigation: NavigationService): ControllerEconomy {
+export function createControllerEconomy(
+  navigation: NavigationService,
+  log: (message: string) => void = () => {}
+): ControllerEconomy {
   const situations = createMarketSituationService(sectorPorts, economyResources, 73);
   const markets = createEconomyMarketService(sectorPorts, economyResources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
@@ -94,7 +97,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     world: narrowsSector,
     npcs: npcStates,
     sector: sectorNpcs,
-    log: () => {},
+    log,
   });
 
   return {
