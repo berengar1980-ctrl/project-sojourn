@@ -143,13 +143,65 @@ function activityFor(job: NpcJob): string {
   return 'Sicherheitspatrouille';
 }
 
+const PIRATE_NAMES = [
+  'Azrael Crovus',
+  'Borsk Dhal',
+  'Cairn Eshkar',
+  'Dagan Frayne',
+  'Ezek Vargos',
+  'Fenric Ghor',
+  'Gideon Hrax',
+  'Havel Jurn',
+  'Ishar Krail',
+] as const;
+
+function createPirateStates(): SectorNpcState[] {
+  return PIRATE_NAMES.map((name, index) => {
+    const ship = patrolVariantShips[index % patrolVariantShips.length]!;
+    const profile = getShipRoleProfile(ship.role);
+    const firstGang = index < 5;
+    return {
+      id: `pirate-${String(index + 1).padStart(2, '0')}`,
+      name,
+      role: 'patrol',
+      job: 'patrol',
+      shipId: ship.id,
+      locationId: firstGang ? 'blackjaw-outpost' : 'gallows-anchor',
+      credits: 700000 + (index % 4) * 450000,
+      cargoCapacity: ship.cargoCapacityTons,
+      normalCargoCapacity: ship.cargoCapacityTons,
+      cargo: {},
+      marketIntel: {},
+      workResourceIds: [],
+      fuel: profile.fuelCapacity,
+      fuelCapacity: profile.fuelCapacity,
+      fuelUse: profile.fuelUse,
+      hullHp: profile.hullPoints,
+      hullMaxHp: profile.hullPoints,
+      aggression: 76 + ((index * 7) % 23),
+      workRiskPreference: 'risky',
+      activityId: 'raiding',
+      activity: 'Auf Beutezug',
+      successfulRuns: 0,
+      pirate: true,
+      pirateFaction: firstGang ? 'harrow-corsairs' : 'black-tide',
+      pirateEmblem: firstGang ? 'harrow-claw' : 'black-cross',
+      pirateHomeLocationId: firstGang ? 'blackjaw-outpost' : 'gallows-anchor',
+      pirateHuntZoneCycles: 0,
+      pirateRaidCooldownSeconds: 0,
+    };
+  });
+
+  return civilians.concat(createPirateStates());
+}
+
 export function createSectorNpcEconomyStates(): SectorNpcState[] {
   let minerIndex = 0;
   let salvageIndex = 0;
   let patrolIndex = 0;
   let freighterIndex = 0;
 
-  return JOBS.map((job, index) => {
+  const civilians = JOBS.map((job, index) => {
     const ship = shipForJob(job, index);
     const profile = getShipRoleProfile(ship.role);
     let locationId: string;
