@@ -52,6 +52,7 @@ interface SalvageSceneOptions {
     }
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
+  readonly isCombatActive?: () => boolean;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -187,13 +188,15 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
 
   return {
     tick(deltaSeconds) {
-      service.tick(deltaSeconds);
-      options.audio.updatePlayerRcs(
-        options.ship.sprite.hardpoints,
-        service.getSnapshot().ship,
-        performance.now() / 1000
-      );
-      npcSalvage.tick(deltaSeconds);
+      if (!options.isCombatActive?.()) {
+        service.tick(deltaSeconds);
+        options.audio.updatePlayerRcs(
+          options.ship.sprite.hardpoints,
+          service.getSnapshot().ship,
+          performance.now() / 1000
+        );
+        npcSalvage.tick(deltaSeconds);
+      }
       refresh();
     },
     destroy() {
