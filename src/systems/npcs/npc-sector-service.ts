@@ -582,9 +582,7 @@ export function createNpcSectorService(
 
     liveHeading(npc) {
       if (npc.combatMovement) return npc.combatMovement.headingRadians;
-      return npc.travel
-        ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled)
-        : 0;
+      return npc.travel ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled) : 0;
     },
 
     tick(deltaSeconds) {
