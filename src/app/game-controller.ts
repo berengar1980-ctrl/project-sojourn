@@ -582,7 +582,12 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.sectorNpcs.tick(deltaSeconds);
+  context.engagements.syncPlayerPursuitTarget();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  context.engagements.tick(deltaSeconds);
+  if (context.engagements.activePlayerCombat() && state.mode !== 'combat') {
+    mountControllerCombat(context);
+  }
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
     runSceneZoomTransition(context.root, () => mountControllerMining(context));
@@ -592,7 +597,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   advanceEconomyDay(state.previousLocationId, currentLocationId, economy);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
-  if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
+  if (state.mode === 'combat') {
+    state.combatPanel?.update();
+  } else if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
   else if (state.mode === 'local-space' && state.localSpace) {
     state.localSpace.tick(deltaSeconds);
     const localSnapshot = state.localSpace.getSnapshot();
@@ -609,27 +616,43 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
-  const context: ControllerRuntimeContext = {
+  const state: ControllerRuntimeState = {
+    activeShip: options.ship,
+    mode: 'star-map',
+    panels: { star: null, local: null, port: null },
+    shipSwitcher: null,
+    localSpace: null,
+    localNpcMining: null,
+    salvageScene: null,
+    combatPanel: null,
+    selectedNpcId: null,
+    localSpaceSeed: 0,
+    salvageSpaceSeed: 0,
+    visitCounter: 0,
+    previousLocationId: options.navigation.getSnapshot().currentLocationId,
+  };
+  const systemLog = createControllerLog();
+  const economy = createControllerEconomy(options.navigation);
+  const crew = createCrewRosterService();
+  const loadouts = createShipLoadoutService();
+  let context: ControllerRuntimeContext;
+  const engagements = createStarMapEngagementService({
+    navigation: options.navigation,
+    sectorNpcs: economy.sectorNpcs,
+    getPlayerShip: () => state.activeShip,
+    getPlayerCombatant: () => controllerPlayerCombatant(context),
+    log: (message) => systemLog.write(message),
+  });
+  context = {
     root: options.root,
     navigation: options.navigation,
-    systemLog: createControllerLog(),
-    economy: createControllerEconomy(),
-    crew: createCrewRosterService(),
-    loadouts: createShipLoadoutService(),
+    systemLog,
+    economy,
+    crew,
+    loadouts,
     audio: createGameAudioService(),
-    state: {
-      activeShip: options.ship,
-      mode: 'star-map',
-      panels: { star: null, local: null, port: null },
-      shipSwitcher: null,
-      localSpace: null,
-      localNpcMining: null,
-      salvageScene: null,
-      localSpaceSeed: 0,
-      salvageSpaceSeed: 0,
-      visitCounter: 0,
-      previousLocationId: options.navigation.getSnapshot().currentLocationId,
-    },
+    engagements,
+    state,
   };
   mountControllerStarMap(context);
   return {
