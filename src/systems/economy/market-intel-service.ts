@@ -133,8 +133,13 @@ export function createMarketIntelService(markets: EconomyMarketService): MarketI
         if (targetDistance > rangeWorld) continue;
         const distanceAu = targetDistance / SECTOR_UNITS_PER_VOIDBOUND_AU;
         const age = sensorMarketIntelAge(sensorSkill, distanceAu, rangeAu);
-        if (age <= 0) observeLocation(target.locationId, currentDay);
-        else observeHistoricalLocation(target.locationId, Math.max(0, currentDay - age));
+        if (age <= 0) {
+          observeLocation(target.locationId, currentDay);
+          continue;
+        }
+        const observedDay = currentDay - age;
+        if (observedDay < 0) continue;
+        observeHistoricalLocation(target.locationId, observedDay);
       }
     },
 
