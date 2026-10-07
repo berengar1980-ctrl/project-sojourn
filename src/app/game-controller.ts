@@ -537,7 +537,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     previousLocationId: options.navigation.getSnapshot().currentLocationId,
   };
   const systemLog = createControllerLog();
-  const economy = createControllerEconomy(options.navigation);
+  const economy = createControllerEconomy(options.navigation, (message) => systemLog.write(message));
   const crew = createCrewRosterService();
   const loadouts = createShipLoadoutService();
   let context: ControllerRuntimeContext;
