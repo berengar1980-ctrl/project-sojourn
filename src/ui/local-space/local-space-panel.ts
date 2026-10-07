@@ -485,7 +485,10 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     attackButton.hidden = true;
     shortScanButton.hidden = false;
     mineButton.hidden = false;
-    if (!selected) return;
+    if (!selected) {
+      miningResourceSelector.update(model, true, false);
+      return;
+    }
     const kind = card.querySelector<HTMLElement>('.local-selection-kind');
     if (kind) kind.textContent = 'ASTEROID';
     name.textContent =
