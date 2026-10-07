@@ -25,8 +25,17 @@ jobs:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
-          name: Pirate and recovery tests
-          command: node scripts/ci-run-and-report.cjs tests -- sh -c 'node tests/combat/pirate-npc-behavior.test.cjs && node tests/economy/npc-sector-simulation.test.cjs && node tests/navigation/navigation-module.test.cjs && node tests/combat/npc-star-map-aggression.test.cjs'
+          name: Pirate behavior
+          command: node scripts/ci-run-and-report.cjs pirate-behavior -- node tests/combat/pirate-npc-behavior.test.cjs
+      - run:
+          name: NPC sector recovery
+          command: node scripts/ci-run-and-report.cjs npc-sector-recovery -- node tests/economy/npc-sector-simulation.test.cjs
+      - run:
+          name: Navigation recovery
+          command: node scripts/ci-run-and-report.cjs navigation-recovery -- node tests/navigation/navigation-module.test.cjs
+      - run:
+          name: NPC aggression
+          command: node scripts/ci-run-and-report.cjs npc-aggression -- node tests/combat/npc-star-map-aggression.test.cjs
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
