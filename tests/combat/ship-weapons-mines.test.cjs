@@ -85,6 +85,13 @@ for (const family of expectedFamilies) {
   const railgun = weapons.find((component) => component.id === 'weapon-railgun-1');
   assert(ion?.weapon && railgun?.weapon);
 
+  const eliteProfile = combat.crewAdjustedShipWeaponProfile(ion, 100, 100);
+  assert.equal(eliteProfile.shieldDamage, Math.round(46 * 1.2));
+  assert.equal(eliteProfile.hullDamage, Math.round(3 * 1.2));
+  assert.equal(eliteProfile.cooldownSeconds, 1.8 * 0.88);
+  assert.equal(eliteProfile.criticalChance, 0.1);
+  assert.equal(eliteProfile.hitChanceBonus, 0.15);
+
   const ionHit = combat.resolveShipWeaponHit(ion, { shieldHp: 100, hullHp: 100 });
   assert.equal(ionHit.shieldDamage, 46);
   assert.equal(ionHit.hullDamage, 0);
