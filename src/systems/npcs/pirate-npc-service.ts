@@ -181,6 +181,13 @@ export function createPirateNpcService(options: PirateNpcServiceOptions): Pirate
 
   function decide(npc: SectorNpcState): void {
     if (!npc.pirate || npc.hullHp <= 0 || options.sector.isTravelling(npc)) return;
+    if (
+      npc.pirateHomeLocationId &&
+      npc.locationId === npc.pirateHomeLocationId &&
+      npc.hullHp < npc.hullMaxHp
+    ) {
+      return;
+    }
 
     const hullRatio = npc.hullHp / Math.max(1, npc.hullMaxHp);
     if (hullRatio < 0.45 && npc.pirateHomeLocationId && npc.locationId !== npc.pirateHomeLocationId) {
