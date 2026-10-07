@@ -419,7 +419,7 @@ export function createNpcSectorService(
     targetPosition: WorldPoint,
     reason: string
   ): boolean {
-    if (npc.hullHp <= 0) return false;
+    if (npc.hullHp <= 0 || (npc.combatRecoverySeconds ?? 0) > 0) return false;
     const position = service.livePosition(npc);
     const headingRadians = service.liveHeading(npc);
     const speed = npc.combatMovement?.speed ?? 0;
@@ -498,7 +498,13 @@ export function createNpcSectorService(
     npcs,
 
     requestTravel(npc, destinationId, reason = 'Flug') {
-      if (npc.travel || npc.combatMovement || destinationId === npc.locationId || npc.hullHp <= 0) {
+      if (
+        npc.travel ||
+        npc.combatMovement ||
+        destinationId === npc.locationId ||
+        npc.hullHp <= 0 ||
+        (npc.combatRecoverySeconds ?? 0) > 0
+      ) {
         return false;
       }
       if (!world.locations.some((location) => location.id === destinationId)) return false;
@@ -518,7 +524,8 @@ export function createNpcSectorService(
         (npc.job !== 'patrol' && !npc.pirate) ||
         npc.travel ||
         npc.combatMovement ||
-        npc.hullHp <= 0
+        npc.hullHp <= 0 ||
+        (npc.combatRecoverySeconds ?? 0) > 0
       ) {
         return false;
       }
