@@ -46,6 +46,7 @@ export interface MiningChunk {
   amount: number;
   ageSeconds: number;
   tractorActive: boolean;
+  tractorHardpointId: string | null;
 }
 
 export interface ResourceCargoEntry {

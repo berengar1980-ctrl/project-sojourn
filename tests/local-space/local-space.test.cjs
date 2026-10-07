@@ -315,6 +315,23 @@ assert(
   miningChunks.includes('position: {\n      x: impact.point.x'),
   'mining chunks must spawn from the impact point'
 );
+
+assert(
+  miningChunks.includes('tractorHardpointId') &&
+    miningChunks.includes('tractorHardpointWorldPosition') &&
+    miningChunks.includes('tractor.x - hardpoints.pivot.x') &&
+    miningChunks.includes('tractor.y - hardpoints.pivot.y'),
+  'mining tractor chunks must target their assigned tractor hardpoint instead of ship center'
+);
+assert(
+  miningChunks.includes('distance(chunk.position, tractorTarget) < 24'),
+  'mined chunks must be collected at the tractor emitter position'
+);
+assert(
+  miningResourceRuntime.includes('this.hardpoints') &&
+    miningResourceRuntime.includes('this.nominalLengthMeters'),
+  'chunk runtime must provide hardpoint geometry for tractor targeting'
+);
 assert(
   service.includes('getMiningRouteOptions'),
   'local-space service must expose immutable route-planning input'

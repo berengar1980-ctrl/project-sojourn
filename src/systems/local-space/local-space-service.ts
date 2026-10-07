@@ -289,7 +289,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     for (const collision of collisions) this.shipSystems.applyCollision(collision);
 
-    this.miningResources.advanceChunks(this.instance.ship.position, clamped);
+    this.miningResources.advanceChunks(this.instance.ship, clamped);
     return this.getSnapshot();
   }
 
