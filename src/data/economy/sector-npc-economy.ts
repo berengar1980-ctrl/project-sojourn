@@ -124,6 +124,23 @@ const SALVAGE_JOBS = [
 
 const PATROL_HOMES = ['vigil-station', 'haven', 'karth-industrial', 'coldwater-station'] as const;
 
+const PIRATE_NAMES = [
+  'Azrael Crovus',
+  'Borsk Dhal',
+  'Cairn Eshkar',
+  'Dagan Frayne',
+  'Ezek Vargos',
+  'Fenric Ghor',
+  'Gideon Hrax',
+  'Havel Jurn',
+  'Ishar Krail',
+] as const;
+
+const PIRATE_HOMES = {
+  pirates: 'blackjaw-outpost',
+  pirates2: 'gallows-anchor',
+} as const;
+
 function shipForJob(job: NpcJob, index: number) {
   const list =
     job === 'freighter'
@@ -140,6 +157,7 @@ function activityFor(job: NpcJob): string {
   if (job === 'freighter') return 'Handel / Liegezeit';
   if (job === 'miner') return 'Wartet auf Förderauftrag';
   if (job === 'salvager') return 'Wartet auf Bergungsauftrag';
+  if (job === 'pirate') return 'Auf Beutezug';
   return 'Sicherheitspatrouille';
 }
 
@@ -149,7 +167,7 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
   let patrolIndex = 0;
   let freighterIndex = 0;
 
-  return JOBS.map((job, index) => {
+  const civilians = JOBS.map((job, index) => {
     const ship = shipForJob(job, index);
     const profile = getShipRoleProfile(ship.role);
     let locationId: string;
@@ -198,7 +216,44 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       workRiskPreference: ((index * 23 + 17) % 100) >= 50 ? 'risky' : 'safe',
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
+      factionId: 'civilian',
       successfulRuns: 0,
     };
   });
+
+  const pirates = PIRATE_NAMES.map((name, index): SectorNpcState => {
+    const factionId = index < 5 ? 'pirates' : 'pirates2';
+    const ship = patrolVariantShips[index % patrolVariantShips.length]!;
+    const profile = getShipRoleProfile(ship.role);
+    return {
+      id: `pirate-${String(index + 1).padStart(2, '0')}`,
+      name,
+      role: 'patrol',
+      job: 'pirate',
+      shipId: ship.id,
+      locationId: PIRATE_HOMES[factionId],
+      credits: 700000 + (index % 4) * 450000,
+      cargoCapacity: ship.cargoCapacityTons,
+      normalCargoCapacity: ship.cargoCapacityTons,
+      cargo: {},
+      marketIntel: {},
+      workResourceIds: [],
+      fuel: profile.fuelCapacity,
+      fuelCapacity: profile.fuelCapacity,
+      fuelUse: profile.fuelUse,
+      hullHp: profile.hullPoints,
+      hullMaxHp: profile.hullPoints,
+      aggression: 75 + ((index * 11 + 7) % 25),
+      factionId,
+      pirate: true,
+      pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
+      pirateHuntCycles: 2 + (index % 5),
+      workRiskPreference: 'risky',
+      activityId: 'raiding',
+      activity: 'Auf Beutezug',
+      successfulRuns: 0,
+    };
+  });
+
+  return [...civilians, ...pirates];
 }
