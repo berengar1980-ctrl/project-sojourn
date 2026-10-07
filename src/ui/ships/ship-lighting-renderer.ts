@@ -11,6 +11,7 @@ interface LitShipDrawOptions {
   readonly light: ShipLightVector;
   readonly offsetX: number;
   readonly offsetY: number;
+  readonly preserveDetail?: boolean;
 }
 
 function normalize(light: ShipLightVector): ShipLightVector {
@@ -38,7 +39,7 @@ export class ShipLightingRenderer {
   }
 
   draw(context: CanvasRenderingContext2D, options: LitShipDrawOptions): void {
-    const renderScale = this.detailRenderScale(options.width);
+    const renderScale = options.preserveDetail ? 1.6 : this.detailRenderScale(options.width);
     const pixelWidth = Math.max(1, Math.ceil(options.width * renderScale));
     const pixelHeight = Math.max(1, Math.ceil(options.height * renderScale));
     this.resize(pixelWidth, pixelHeight);
@@ -58,7 +59,7 @@ export class ShipLightingRenderer {
     context.globalAlpha = 0.97;
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
-    context.filter = this.appearanceFilter(options.width);
+    context.filter = options.preserveDetail ? 'none' : this.appearanceFilter(options.width);
     context.drawImage(this.canvas, options.offsetX, options.offsetY, options.width, options.height);
     context.restore();
   }

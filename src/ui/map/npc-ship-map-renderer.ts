@@ -139,6 +139,7 @@ export class NpcShipMapRenderer {
         },
         offsetX: offset.x,
         offsetY: offset.y,
+        preserveDetail: true,
       });
     } else {
       this.context.fillStyle = npc.job === 'patrol' ? '#9fc8e8' : '#b5c4b1';

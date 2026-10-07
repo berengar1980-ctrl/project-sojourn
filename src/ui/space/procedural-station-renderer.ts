@@ -157,10 +157,19 @@ export class ProceduralStationRenderer {
     context.fill();
     context.stroke();
 
-    context.fillStyle = '#182126';
-    context.beginPath();
-    context.arc(0, 0, coreRadius * 0.32, 0, Math.PI * 2);
-    context.fill();
+    context.save();
+    if (dockDetail) {
+      context.fillStyle = '#182126';
+      context.beginPath();
+      context.arc(0, 0, coreRadius * 0.32, 0, Math.PI * 2);
+      context.fill();
+    } else {
+      context.globalCompositeOperation = 'destination-out';
+      context.beginPath();
+      context.arc(0, 0, coreRadius * 0.32, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
 
     context.strokeStyle = 'rgba(176, 203, 207, .5)';
     context.lineWidth = Math.max(0.8, radius * 0.012);

@@ -1,7 +1,7 @@
 import type { WorldPoint } from '../../core/world-types';
 
 const MAX_RELATIVE_ZOOM = 4.6;
-const MIN_RELATIVE_ZOOM = 0.96;
+const MIN_RELATIVE_ZOOM = 1;
 
 export interface ScreenPoint {
   readonly x: number;
