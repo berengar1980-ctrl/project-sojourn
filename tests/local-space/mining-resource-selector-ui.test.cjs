@@ -26,6 +26,10 @@ const service = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-service.ts'),
   'utf8'
 );
+const resourceRuntime = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/mining-resource-runtime.ts'),
+  'utf8'
+);
 
 assert.deepEqual(selector.toggleMiningResourceSelection(null, 'ferrite'), ['ferrite']);
 assert.deepEqual(
@@ -49,10 +53,11 @@ assert(selectorSource.includes("allButton.textContent = 'ALLE'"));
 assert(selectorSource.includes('DRITTE AUSWAHL ERSETZT DIE ÄLTESTE'));
 assert(!selectorSource.includes('selection.length >= 2'));
 assert(actions.includes('setMiningResourceSelection(resourceIds)'));
-assert(service.includes('miningResourceSelections = new Map'));
-assert(service.includes('miningSelectionFor(this.selectedAsteroidId)'));
-assert(service.includes('this.miningResourceSelections.set(asteroid.id'));
-assert(service.includes('this.miningResourceSelections.delete(asteroid.id)'));
+assert(service.includes('this.miningResources.selectionFor(this.selectedAsteroidId)'));
+assert(service.includes('this.miningResources.setSelection(asteroid, resourceIds)'));
+assert(resourceRuntime.includes('private readonly selections = new Map'));
+assert(resourceRuntime.includes('this.selections.set(asteroid.id'));
+assert(resourceRuntime.includes('this.selections.delete(asteroid.id)'));
 assert(
   !service.includes('if (this.selectedAsteroidId !== id) this.miningResourceSelection = null'),
   'deselecting and reselecting an asteroid must not discard its mining target selection'
