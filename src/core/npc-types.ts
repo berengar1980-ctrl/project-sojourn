@@ -54,6 +54,9 @@ export interface SectorNpcState extends NpcEconomyState {
   pirateMark?: 'broken-spear' | 'black-tide';
   pirateHuntZoneId?: string;
   pirateHuntCycles?: number;
+  combatRecoverySeconds?: number;
+  combatRecoveryLocationId?: string;
+  combatDefeats?: number;
   workRiskPreference: NpcWorkRiskPreference;
   lastWorkEvent?: NpcWorkEventRecord;
   activityId: string;
