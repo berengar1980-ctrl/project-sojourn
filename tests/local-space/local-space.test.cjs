@@ -72,6 +72,10 @@ const miningChunks = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
   'utf8'
 );
+const miningResourceRuntime = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/mining-resource-runtime.ts'),
+  'utf8'
+);
 const miningEvents = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-event-service.ts'),
   'utf8'
@@ -229,7 +233,7 @@ assert(
 );
 assert(
   service.includes('setMiningResourceSelection') &&
-    service.includes('unique.length < 1 || unique.length > 2'),
+    miningResourceRuntime.includes('unique.length < 1 || unique.length > 2'),
   'local mining must support ALL or exactly one/two targeted resources'
 );
 assert(
@@ -240,8 +244,8 @@ assert(
 assert(
   miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&
     miningChunks.includes('advanceAndCollectMiningChunks') &&
-    service.includes('advanceAndCollectMiningChunks(') &&
-    service.includes('this.collectedResources.set('),
+    miningResourceRuntime.includes('advanceAndCollectMiningChunks(') &&
+    miningResourceRuntime.includes('this.collectedResources.set('),
   'recovered chunks must pass through the economy callback before local cargo is credited'
 );
 assert(
