@@ -43,4 +43,4 @@ workflows:
       - quality-gate:
           filters:
             branches:
-              only: ci-gate
+              only: ci/validate-pirate-npcs-run
