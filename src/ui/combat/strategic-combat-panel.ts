@@ -2,6 +2,7 @@ import type {
   StrategicCombatService,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
+import { StrategicCombatRenderer } from './strategic-combat-renderer';
 
 export interface StrategicCombatPanel {
   update(): void;
@@ -50,6 +51,7 @@ export function createStrategicCombatPanel(
   const shell = document.createElement('section');
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
+    <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
     <div class="strategic-combat-title">
       <span>SOJOURN // STRATEGISCHER RAUMKAMPF</span>
       <strong>KAMPF BEGINNT</strong>
@@ -60,13 +62,18 @@ export function createStrategicCombatPanel(
   `;
   options.root.replaceChildren(shell);
 
+  const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const grid = shell.querySelector<HTMLElement>('.strategic-combat-grid');
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
   const title = shell.querySelector<HTMLElement>('.strategic-combat-title strong');
-  if (!grid || !event || !returnButton || !title) {
+  if (!canvas || !grid || !event || !returnButton || !title) {
     throw new Error('Strategic combat UI is incomplete.');
   }
+
+  const renderer = new StrategicCombatRenderer(canvas, options.combat.getSnapshot());
+  const resizeObserver = new ResizeObserver(() => renderer.resize());
+  resizeObserver.observe(canvas);
 
   const render = (): void => {
     const model = options.combat.getSnapshot();
@@ -76,6 +83,7 @@ export function createStrategicCombatPanel(
     event.textContent = model.lastEvent;
     title.textContent = model.winner ? 'GEFECHT BEENDET' : 'KAMPF LÄUFT';
     returnButton.hidden = model.winner === null;
+    renderer.update(model);
   };
 
   returnButton.addEventListener('click', options.onReturn);
@@ -84,6 +92,7 @@ export function createStrategicCombatPanel(
   return {
     update: render,
     destroy() {
+      resizeObserver.disconnect();
       shell.remove();
     },
   };
