@@ -189,13 +189,29 @@ assert(
   localScanning.includes("asteroid.scanLevel = 'surveyed'"),
   'long-range scan must reveal only deposit presence'
 );
-assert(
-  service.includes("asteroid.scanLevel = 'analyzed'"),
-  'close scan or mining must reveal exact asteroid contents'
+const miningApproachSection = service.slice(
+  service.indexOf('private finishApproachFacing'),
+  service.indexOf('private updateShortRangeScan')
 );
 assert(
-  miningChunks.includes('resourceId: deposit.resourceId'),
-  'mined chunks must retain the selected deposit resource identity'
+  !miningApproachSection.includes("asteroid.scanLevel = 'analyzed'"),
+  'starting mining must not reveal unknown asteroid resources'
+);
+assert(
+  service.includes("asteroid.scanLevel = 'analyzed'") &&
+    service.includes('for (const deposit of asteroid.deposits) deposit.identified = true'),
+  'close scan must reveal all asteroid resources'
+);
+assert(
+  miningChunks.includes('resourceId: deposit.resourceId') &&
+    miningChunks.includes('sourceAsteroidId: asteroid.id'),
+  'mined chunks must retain their resource identity and source asteroid'
+);
+assert(
+  miningChunks.includes('identifyMinedResource') &&
+    miningChunks.includes('samples.push({') &&
+    service.includes('identifyMinedResource(asteroid, sample.resourceId)'),
+  'resource identity must be revealed only after a chunk is accepted into cargo'
 );
 assert(
   miningChunks.includes('deposit.oreRemaining -= amount'),
@@ -215,6 +231,11 @@ assert(
   service.includes('setMiningResourceSelection') &&
     service.includes('unique.length < 1 || unique.length > 2'),
   'local mining must support ALL or exactly one/two targeted resources'
+);
+assert(
+  service.includes('miningResourceSelections = new Map') &&
+    service.includes('miningSelectionFor(this.selectedAsteroidId)'),
+  'targeted mining choices must persist per asteroid across UI focus changes'
 );
 assert(
   miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&

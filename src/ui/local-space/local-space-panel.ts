@@ -58,11 +58,23 @@ function miningStatus(model: LocalSpaceViewModel): string {
 function asteroidStatus(model: LocalSpaceViewModel): string {
   const asteroid = model.selectedAsteroid;
   if (!asteroid) return '';
-  if (asteroid.scanLevel === 'unscanned') return 'NICHT GESCANNT';
+
+  if (asteroid.scanLevel === 'unscanned') {
+    const identified = asteroid.deposits
+      .map((deposit) => deposit.resourceName)
+      .filter((name): name is string => name !== null);
+    return identified.length > 0
+      ? 'NICHT GESCANNT · GEFUNDEN: ' + identified.join(' / ')
+      : 'NICHT GESCANNT';
+  }
+
   if (asteroid.scanLevel === 'surveyed') {
     if (asteroid.surveyResult === 'empty') return 'KEINE RESSOURCE ERKANNT';
-    return asteroid.deposits.length + ' VORKOMMEN ERKANNT';
+    return asteroid.deposits
+      .map((deposit) => deposit.resourceName ?? '???')
+      .join(' / ');
   }
+
   if (asteroid.deposits.length === 0) return 'ANALYSE · KEINE RESSOURCE';
   return asteroid.deposits
     .map((deposit) => {

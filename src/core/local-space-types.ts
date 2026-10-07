@@ -17,6 +17,7 @@ export interface AsteroidResourceDeposit {
   readonly oreType: string;
   oreRemaining: number;
   oreCapacity: number;
+  identified: boolean;
 }
 
 export interface LocalAsteroid {
@@ -38,6 +39,7 @@ export interface MiningImpact {
 
 export interface MiningChunk {
   readonly id: string;
+  readonly sourceAsteroidId: string;
   readonly resourceId: string;
   position: WorldPoint;
   velocity: WorldPoint;

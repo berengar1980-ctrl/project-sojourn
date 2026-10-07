@@ -32,6 +32,7 @@ function asteroid(amount = 100) {
         oreType: 'Ferrit',
         oreRemaining: amount,
         oreCapacity: amount,
+        identified: true,
       },
     ],
     scanLevel: 'analyzed',
