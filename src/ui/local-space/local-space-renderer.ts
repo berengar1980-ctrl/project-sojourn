@@ -302,9 +302,8 @@ export class LocalSpaceRenderer {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
-  }
-
     return hits;
+  }
 
   private drawNpcMinerScan(
     shipPoint: ScreenPoint,
