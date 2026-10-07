@@ -39,8 +39,14 @@ export function createPlayerCombatant(
     cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
     preferredTactic: 'fight',
     combatSpeed: Math.max(82, Math.min(150, ship.navigation.cruiseSpeed * 0.28)),
-    turnRateRadiansPerSecond: Math.max(0.42, Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)),
-    accelerationMetersPerSecond2: Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18)),
+    turnRateRadiansPerSecond: Math.max(
+      0.42,
+      Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)
+    ),
+    accelerationMetersPerSecond2: Math.max(
+      20,
+      Math.min(38, 46 - ship.nominalLengthMeters * 0.18)
+    ),
     mines,
     sensorCrewSkill: runtime.sensorCrewSkill,
     sensorTier: sensor?.tier ?? 0,
