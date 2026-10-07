@@ -15,19 +15,21 @@ assert(files.length > 0, 'expected ship hardpoint files');
 
 for (const name of files) {
   const data = JSON.parse(fs.readFileSync(path.join(shipsDir, name), 'utf8'));
+  assert(Array.isArray(data.engines), name + ': engines must be an array');
   assert(Array.isArray(data.weaponLasers), name + ': weaponLasers must be an array');
   assert(Array.isArray(data.tractorBeams), name + ': tractorBeams must be an array');
   assert(Array.isArray(data.maneuverThrusters), name + ': maneuverThrusters must be an array');
 
   for (const hardpoint of [
+    ...data.engines,
     ...data.weaponLasers,
     ...data.miningLasers,
     ...data.tractorBeams,
     ...data.maneuverThrusters,
   ]) {
     assert(
-      hardpoint.layer === 'below' || hardpoint.layer === 'above',
-      name + ': effect hardpoint ' + hardpoint.id + ' needs a valid layer'
+      hardpoint.layer === 'below',
+      name + ': hardpoint ' + hardpoint.id + ' must default to below'
     );
   }
 
