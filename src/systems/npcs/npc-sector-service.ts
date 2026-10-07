@@ -1,4 +1,5 @@
 import type {
+  NpcCombatMovementMode,
   NpcCombatTargetKind,
   SectorNpcState,
 } from '../../core/npc-types';
@@ -43,7 +44,7 @@ export interface NpcSectorService {
     reason?: string
   ): void;
   recoverFromCombat(npc: SectorNpcState, reason?: string): boolean;
-  combatMode(npc: SectorNpcState): SectorNpcState['combatMovement']['mode'] | null;
+  combatMode(npc: SectorNpcState): NpcCombatMovementMode | null;
   isTravelling(npc: SectorNpcState): boolean;
   livePosition(npc: SectorNpcState): WorldPoint;
   liveHeading(npc: SectorNpcState): number;
