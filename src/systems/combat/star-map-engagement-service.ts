@@ -17,7 +17,11 @@ import {
   shipShieldMaxHp,
   type InstalledShipComponents,
 } from '../ships';
-import { npcDefenseReaction, npcLooksHostileToPatrol, npcMayInitiateAttack } from '../npcs/npc-combat-ai';
+import {
+  npcDefenseReaction,
+  npcLooksHostileToPatrol,
+  npcMayInitiateAttack,
+} from '../npcs/npc-combat-ai';
 import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
 import {
@@ -59,7 +63,10 @@ export interface StarMapEngagementOptions {
   readonly log: (message: string) => void;
 }
 
-function distance(a: { readonly x: number; readonly y: number }, b: { readonly x: number; readonly y: number }): number {
+function distance(
+  a: { readonly x: number; readonly y: number },
+  b: { readonly x: number; readonly y: number }
+): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
