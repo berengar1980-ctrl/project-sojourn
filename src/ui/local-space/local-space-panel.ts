@@ -15,6 +15,8 @@ interface LocalSpacePanelOptions {
   readonly root: HTMLElement;
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
+  readonly onSelectNpc: (id: string | null) => void;
+  readonly onAttackNpc: (id: string) => void;
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
@@ -110,6 +112,7 @@ interface LocalSpaceControls {
   readonly oreBar: HTMLElement;
   readonly mineButton: HTMLButtonElement;
   readonly shortScanButton: HTMLButtonElement;
+  readonly attackButton: HTMLButtonElement;
   readonly longScanButton: HTMLButtonElement;
   readonly cancelButton: HTMLButtonElement;
   readonly backButton: HTMLButtonElement;
@@ -142,7 +145,8 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<div class="local-selection-name"></div><div class="local-selection-meta"></div>',
     '<div class="local-ore-bar"><div></div></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
-    '<button class="mine-button" type="button">MINING</button></div>',
+    '<button class="mine-button" type="button">MINING</button>',
+    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div>',
   ].join('');
   options.root.replaceChildren(shell);
   return shell;
@@ -163,6 +167,7 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     oreBar: query<HTMLElement>('.local-ore-bar > div'),
     mineButton: query<HTMLButtonElement>('.mine-button'),
     shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
+    attackButton: query<HTMLButtonElement>('.local-attack-button'),
     longScanButton: query<HTMLButtonElement>('.long-scan-button'),
     cancelButton: query<HTMLButtonElement>('.cancel-mining-button'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
@@ -187,6 +192,7 @@ function bindNavigationInput(
     canvas,
     renderer,
     onSelectAsteroid: options.onSelectAsteroid,
+    onSelectNpc: options.onSelectNpc,
     onNavigate: (x, y) => {
       navigationRequest += 1;
       const request = navigationRequest;
@@ -373,6 +379,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     oreBar,
     mineButton,
     shortScanButton,
+    attackButton,
     longScanButton,
     cancelButton,
     backButton,
@@ -401,6 +408,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   });
 
   const updateOverlay = (): void => {
+    const selectedNpc = model.npcShips.find((npc) => npc.isSelected);
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
     const eventActive = model.miningEvent !== null;
@@ -408,7 +416,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     trackScanCompletion(model);
     miningEventPanel.update(model.miningEvent);
     canvas.classList.toggle('is-locked', eventActive);
-    card.hidden = !selected;
+    card.hidden = !selected && !selectedNpc;
     cancelButton.hidden = !miningActive;
     cancelButton.disabled = eventActive;
     backButton.disabled = eventActive;
@@ -424,6 +432,18 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     status.hidden = statusText.length === 0;
     status.textContent = statusText;
 
+    if (selectedNpc) {
+      name.textContent = selectedNpc.name;
+      meta.textContent = 'SCHIFF · ' + selectedNpc.phase.toUpperCase();
+      oreBar.style.width = '100%';
+      shortScanButton.hidden = true;
+      mineButton.hidden = true;
+      attackButton.hidden = false;
+      return;
+    }
+    attackButton.hidden = true;
+    shortScanButton.hidden = false;
+    mineButton.hidden = false;
     if (!selected) return;
     name.textContent =
       selected.scanLevel === 'analyzed' && selected.deposits.length > 0
@@ -447,6 +467,10 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   bindShortScanPlanning(shortScanButton, options, systemLog, updateOverlay);
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
   bindScanLabelButton(scanLabelsButton, renderer);
+  attackButton.addEventListener('click', () => {
+    const selected = model.npcShips.find((npc) => npc.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
