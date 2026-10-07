@@ -32,6 +32,7 @@ export function bindSalvageSpaceInput(options: SalvageSpaceInputOptions): () => 
     downY = point.y;
     canvas.setPointerCapture(event.pointerId);
   };
+
   const pointerMove = (event: PointerEvent): void => {
     if (!dragging) return;
     const point = pointerPoint(event);
@@ -42,10 +43,13 @@ export function bindSalvageSpaceInput(options: SalvageSpaceInputOptions): () => 
     lastX = point.x;
     lastY = point.y;
   };
+
   const pointerUp = (event: PointerEvent): void => {
     dragging = false;
     if (moved) return;
-    const npcId = renderer.pickNpc(event.offsetX, event.offsetY);
+
+    const point = pointerPoint(event);
+    const npcId = renderer.pickNpc(point.x, point.y);
     if (npcId) {
       options.onSelectWreck(null);
       options.onSelectNpc(npcId);
@@ -62,6 +66,7 @@ export function bindSalvageSpaceInput(options: SalvageSpaceInputOptions): () => 
     const target = renderer.worldPointAt(point.x, point.y);
     options.onNavigate(target.x, target.y);
   };
+
   const wheel = (event: WheelEvent): void => {
     event.preventDefault();
     renderer.zoomAt(event.deltaY, event.offsetX, event.offsetY);
