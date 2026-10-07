@@ -324,6 +324,7 @@ export class StrategicCombatRenderer {
         light: { x: -0.72, y: -0.56 },
         offsetX: offset.x,
         offsetY: offset.y,
+        directionalStrength: 2.05,
       });
     } else if (image && image.complete && image.naturalWidth > 0) {
       this.context.drawImage(image, -geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
