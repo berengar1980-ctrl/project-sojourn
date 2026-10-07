@@ -289,6 +289,7 @@ function addBonusDeposit(asteroid: LocalAsteroid, resourceId: string, amount: nu
     oreType: miningResourceById(resourceId)?.name ?? resourceId,
     oreRemaining: bonus,
     oreCapacity: bonus,
+    identified: asteroid.scanLevel === 'analyzed',
   });
   return bonus;
 }

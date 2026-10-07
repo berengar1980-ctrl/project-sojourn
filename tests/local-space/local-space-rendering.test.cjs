@@ -290,8 +290,13 @@ assert(
   'surveyed asteroids must be visibly distinguishable in local space'
 );
 assert(
-  renderer.includes('drawScanCallout') && renderer.includes("map(() => '???')"),
-  'surveyed asteroids must render one unknown callout line per deposit'
+  renderer.includes('drawScanCallout') &&
+    renderer.includes("deposit.resourceName?.toUpperCase() ?? '???'"),
+  'surveyed asteroids must keep unknown deposits as question marks while showing mined samples'
+);
+assert(
+  viewModel.includes('analyzed || deposit.identified'),
+  'a mined deposit name must be revealed independently from full asteroid analysis'
 );
 assert(
   renderer.includes('startX + 10') && renderer.includes('startY - 10'),

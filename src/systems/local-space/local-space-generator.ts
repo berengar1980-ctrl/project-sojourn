@@ -68,6 +68,7 @@ function createDeposits(
       oreType: resource.name,
       oreRemaining: oreCapacity,
       oreCapacity,
+      identified: false,
     });
   }
 

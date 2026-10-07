@@ -589,10 +589,16 @@ export class LocalSpaceRenderer {
   }
 
   private scanCalloutLines(asteroid: LocalAsteroidView): readonly string[] {
-    if (asteroid.scanLevel === 'unscanned') return [];
     if (asteroid.surveyResult === 'empty') return ['LEER'];
+    if (asteroid.scanLevel === 'unscanned') {
+      return asteroid.deposits
+        .filter((deposit) => deposit.resourceName !== null)
+        .map((deposit) => deposit.resourceName!.toUpperCase());
+    }
     if (asteroid.scanLevel === 'surveyed') {
-      return asteroid.deposits.map(() => '???');
+      return asteroid.deposits.map(
+        (deposit) => deposit.resourceName?.toUpperCase() ?? '???'
+      );
     }
 
     return asteroid.deposits.map((deposit) => {
