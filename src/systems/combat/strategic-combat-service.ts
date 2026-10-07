@@ -995,15 +995,23 @@ export function createStrategicCombatService(
         x: projectile.position.x + direction.x * step,
         y: projectile.position.y + direction.y * step,
       };
+      const shieldHit =
+        projectile.shieldDamage > 0 || projectile.hullDamage > 0
+          ? segmentShieldHit(projectile.position, next, target)
+          : null;
       const obstacle = firstObstacleHit(projectile.position, next, arena.obstacles ?? []);
-      if (obstacle) {
+      if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
         noteImpact(
           projectile.owner === 'attacker' ? 'defender' : 'attacker',
           'obstacle',
           0,
           obstacle.point
         );
-        lastEvent = source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
+        lastEvent =
+          source.setup.name +
+          ': ' +
+          projectile.family.replaceAll('_', ' ') +
+          ' trifft Hindernis';
         projectiles.splice(index, 1);
         continue;
       }
@@ -1014,7 +1022,6 @@ export function createStrategicCombatService(
         continue;
       }
 
-      const shieldHit = segmentShieldHit(projectile.position, next, target);
       if (shieldHit) {
         impactSerial += 1;
         const result = applyDamage(
