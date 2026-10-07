@@ -95,9 +95,9 @@ export function createControllerStarModel(
       {
         id: npc.id,
         name: contact.identified ? npc.name : 'Unbekannter Kontakt',
-        job: npc.job,
-        ...(npc.factionId ? { factionId: npc.factionId } : {}),
-        ...(npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
+        job: contact.identified ? npc.job : 'patrol',
+        ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
+        ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
         position,
         headingRadians: economy.sectorNpcs.liveHeading(npc),
         isTravelling: economy.sectorNpcs.isTravelling(npc),
