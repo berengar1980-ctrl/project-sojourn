@@ -522,7 +522,25 @@ export function createStarMapEngagementService(
       if (!playerCombat || !playerEnemy) return;
       const model = playerCombat.getSnapshot();
       playerEnemy.hullHp = Math.round(model.defender.hullHp);
-      options.sectorNpcs.recoverFromCombat(playerEnemy, 'Nach Gefecht');
+      if (model.defender.hullHp <= 0) {
+        options.sectorNpcs.recoverFromCombat(playerEnemy, 'Kampfunfähig');
+        options.log(
+          'COMBAT > ' +
+            playerEnemy.name.toUpperCase() +
+            ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
+        );
+      } else {
+        options.sectorNpcs.recoverFromCombat(playerEnemy, 'Nach Gefecht');
+      }
+
+      if (model.attacker.hullHp <= 0) {
+        const recovery = options.navigation.recoverToNearestDock();
+        const destination = recovery.currentLocationId ?? 'UNKNOWN';
+        options.log(
+          'COMBAT > EIGENES SCHIFF KAMPFUNFÄHIG · BERGUNG NACH ' + destination.toUpperCase()
+        );
+      }
+
       playerCombat = null;
       playerEnemy = null;
     },
