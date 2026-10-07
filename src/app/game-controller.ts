@@ -465,8 +465,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
       (npc) => npc.job === 'miner' && npc.workLocationId === location.id
     ),
     getAsteroids: () => state.localSpace?.getSnapshot().instance.asteroids ?? [],
-    mine: (npc, resourceId, requested) =>
-      economy.npcs.mineLocal(npc, resourceId, requested),
+    mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
     depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
     playerShip: state.activeShip,
     getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
