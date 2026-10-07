@@ -2907,3 +2907,25 @@ body {
 .port-expectation--expensive {
   color: #dfa06f !important;
 }
+
+
+.port-system-summary button {
+  width: max-content;
+  margin-top: 5px;
+  padding: 6px 8px;
+  border: 1px solid rgba(94, 174, 193, 0.34);
+  background: rgba(28, 77, 91, 0.22);
+  color: #a6dce6;
+  cursor: pointer;
+  font-size: 8px;
+  letter-spacing: 0.07em;
+}
+
+.port-system-summary-current {
+  width: max-content;
+  margin-top: 5px;
+  color: #79d89d;
+  font-size: 8px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+}
