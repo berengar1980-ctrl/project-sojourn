@@ -33,6 +33,7 @@ export interface SalvageLocalSpaceService {
   startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot;
   resolveSalvageEvent(choiceId: string): SalvageLocalSpaceSnapshot['lastEventResolution'];
   cancelOperation(): SalvageLocalSpaceSnapshot;
+  syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): SalvageLocalSpaceSnapshot;
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot;
 }
 
@@ -210,6 +211,22 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.navigationTarget = null;
     return this.getSnapshot();
   }
+
+  syncCombatPose(
+    position: WorldPoint,
+    headingRadians: number,
+    speed: number
+  ): SalvageLocalSpaceSnapshot {
+    this.ship.position = clampPoint(position, this.options.field.width, this.options.field.height);
+    this.ship.headingRadians = headingRadians;
+    this.ship.speed = Math.max(0, speed);
+    this.navigationTarget = null;
+    this.navigationRoute = [];
+    this.routeIndex = 0;
+    this.finishIdle();
+    return this.getSnapshot();
+  }
+
 
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot {
     const delta = Math.max(0, Math.min(0.05, deltaSeconds));
