@@ -340,11 +340,12 @@ function mineDetection(
 
 function avoidDetectedMine(
   combatant: MutableCombatant,
+  side: StrategicCombatSide,
   mines: readonly MutableMine[]
 ): { x: number; y: number } | null {
   if (!combatant.setup.aiControlled) return null;
   const threat = mines
-    .filter((mine) => mine.owner !== (combatant.setup.id === 'player' ? 'attacker' : 'defender'))
+    .filter((mine) => mine.owner !== side)
     .map((mine) => ({
       mine,
       level: mineDetection(mine.definition, combatant, mine.position),
@@ -392,7 +393,7 @@ function moveCombatant(
     direction = normalize(-toward.x * 0.6 + perpendicular.x, -toward.y * 0.6 + perpendicular.y);
   }
 
-  const mineAvoidance = avoidDetectedMine(combatant, activeMines);
+  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
   if (mineAvoidance) direction = normalize(direction.x + mineAvoidance.x * 1.8, direction.y + mineAvoidance.y * 1.8);
 
   const baseSpeed = Math.max(70, combatant.setup.combatSpeed ?? 120);
@@ -460,6 +461,7 @@ export function createStrategicCombatService(
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
     ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+    ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
   };
   const attacker = createCombatant(attackerSetup, 'attacker', arena);
   const defender = createCombatant(defenderSetup, 'defender', arena);
