@@ -18,13 +18,13 @@ export class ShipEngineEffectsRenderer {
     geometry: ShipScreenGeometry,
     intensity: number,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     if (intensity <= 0) return;
     const normalizedIntensity = Math.min(1, Math.max(0, intensity));
 
     source.engines.forEach((hardpoint, index) => {
-      if ((hardpoint.layer ?? 'above') !== layer) return;
+      if ((hardpoint.layer ?? 'below') !== layer) return;
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
@@ -72,13 +72,13 @@ export class ShipEngineEffectsRenderer {
     geometry: ShipScreenGeometry,
     intensity: number,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     if (intensity <= 0) return;
     const normalizedIntensity = Math.min(1, Math.max(0, intensity));
 
     source.engines.forEach((hardpoint, index) => {
-      if ((hardpoint.layer ?? 'above') !== layer) return;
+      if ((hardpoint.layer ?? 'below') !== layer) return;
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
@@ -97,7 +97,7 @@ export class ShipEngineEffectsRenderer {
     geometry: ShipScreenGeometry,
     intensity: number,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'above'
+    layer: ShipEffectLayer = 'below'
   ): void {
     this.drawExhaust(context, source, geometry, intensity, timeSeconds, layer);
     this.drawGlow(context, source, geometry, intensity, timeSeconds, layer);
