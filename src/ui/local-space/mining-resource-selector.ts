@@ -16,7 +16,9 @@ export class MiningResourceSelector {
     this.locked = locked;
     const asteroid = model.selectedAsteroid;
     const deposits =
-      asteroid?.scanLevel === 'analyzed' ? asteroid.deposits.filter((entry) => entry.resourceId) : [];
+      asteroid?.scanLevel === 'analyzed'
+        ? asteroid.deposits.filter((entry) => entry.resourceId)
+        : [];
 
     if (!visible || !asteroid || deposits.length < 2) {
       this.container.hidden = true;
