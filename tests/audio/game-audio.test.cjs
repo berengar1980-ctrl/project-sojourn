@@ -12,6 +12,8 @@ const bursts = read('src/systems/ships/ship-maneuver-thrusters.ts');
 const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
+const settingsPanel = read('src/ui/settings/audio-settings-panel.ts');
+const styles = read('src/ui/styles.css');
 
 const rcs = fs.readFileSync(
   path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
@@ -51,4 +53,23 @@ assert(
   'player RCS audio must run in mining/local and salvage spaces'
 );
 
-console.log('PASS bundled ambience loop and synchronized RCS burst audio wiring');
+assert(
+  audio.includes("AUDIO_SETTINGS_STORAGE_KEY = 'sojourn.audio-settings.v1'") &&
+    audio.includes('getSettings(): GameAudioSettings') &&
+    audio.includes('setAmbienceVolume(volume: number)') &&
+    audio.includes('setRcsVolume(volume: number)') &&
+    audio.includes('window.localStorage.setItem'),
+  'audio volumes must be adjustable at runtime and persisted locally'
+);
+
+assert(
+  controller.includes('createAudioSettingsPanel(context.audio)') &&
+    settingsPanel.includes('UMGEBUNGSSOUND') &&
+    settingsPanel.includes('RCS-SOUND') &&
+    settingsPanel.includes('data-audio-slider="ambience"') &&
+    settingsPanel.includes('data-audio-slider="rcs"') &&
+    styles.includes('.audio-settings__panel'),
+  'global settings menu must expose separate ambience and RCS volume sliders'
+);
+
+console.log('PASS bundled ambience, synchronized RCS bursts and persistent audio settings');

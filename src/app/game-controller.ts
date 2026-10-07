@@ -26,6 +26,7 @@ import {
   type StrategicCombatPanel,
 } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { createAudioSettingsPanel } from '../ui/settings/audio-settings-panel';
 import { createControllerEconomy, type ControllerEconomy } from './game-controller-economy';
 import { createPlayerCombatant } from './game-controller-combat';
 import {
@@ -559,6 +560,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     engagements,
     state,
   };
+  createAudioSettingsPanel(context.audio);
   mountControllerStarMap(context);
   return {
     tick(deltaSeconds) {

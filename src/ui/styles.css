@@ -2882,3 +2882,128 @@ body {
     grid-template-columns: minmax(130px, 1.2fr) 110px 75px 80px 80px 88px 98px;
   }
 }
+
+
+.audio-settings {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 120;
+  font-family: 'Courier New', ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.audio-settings__toggle,
+.audio-settings__close {
+  border: 1px solid rgba(101, 153, 171, 0.36);
+  background: rgba(5, 13, 18, 0.88);
+  color: #91afbb;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+}
+
+.audio-settings__toggle {
+  min-width: 64px;
+  padding: 8px 10px;
+  font-size: 9px;
+}
+
+.audio-settings__toggle:hover,
+.audio-settings.is-open .audio-settings__toggle {
+  border-color: rgba(112, 205, 224, 0.56);
+  color: #b8eaf2;
+}
+
+.audio-settings__panel {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 286px;
+  padding: 13px 14px 14px;
+  border: 1px solid rgba(101, 153, 171, 0.36);
+  border-left: 2px solid rgba(103, 209, 232, 0.58);
+  background: rgba(4, 11, 16, 0.96);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(9px);
+}
+
+.audio-settings__panel[hidden] {
+  display: none;
+}
+
+.audio-settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(103, 160, 178, 0.18);
+}
+
+.audio-settings__header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.audio-settings__header span,
+.audio-settings__panel small,
+.audio-settings__row span {
+  color: #718b96;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+
+.audio-settings__header strong {
+  color: #cbe9ef;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+}
+
+.audio-settings__close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.audio-settings__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 10px;
+  align-items: center;
+  padding: 12px 0 8px;
+}
+
+.audio-settings__row + .audio-settings__row {
+  border-top: 1px solid rgba(103, 160, 178, 0.12);
+}
+
+.audio-settings__row strong {
+  color: #b8e5ed;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.audio-settings__row input[type='range'] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: #67cfe3;
+  cursor: pointer;
+}
+
+.audio-settings__panel small {
+  display: block;
+  margin-top: 8px;
+  color: rgba(113, 139, 150, 0.68);
+  line-height: 1.45;
+}
+
+@media (max-width: 650px) {
+  .audio-settings {
+    top: 12px;
+    right: 12px;
+  }
+
+  .audio-settings__panel {
+    width: min(286px, calc(100vw - 24px));
+  }
+}
