@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
@@ -41,7 +42,16 @@ interface SalvageSceneOptions {
   readonly onReturnToStarMap: () => void;
   readonly selectedNpcId?: string | null;
   readonly onSelectNpc?: (id: string | null) => void;
-  readonly onAttackNpc?: (id: string) => void;
+  readonly onAttackNpc?: (
+    id: string,
+    arena: {
+      readonly width: number;
+      readonly height: number;
+      readonly attackerPosition: { readonly x: number; readonly y: number };
+      readonly defenderPosition: { readonly x: number; readonly y: number };
+    }
+  ) => void;
+  readonly getCombat?: () => StrategicCombatSnapshot | null;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -107,7 +117,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       options.componentInventory.list(),
       options.location.name + ' // Bergung',
       npcShips,
-      selectedNpcId
+      selectedNpcId,
+      options.getCombat?.() ?? null
     );
   };
 
@@ -127,7 +138,15 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       refresh();
     },
     onAttackNpc(id) {
-      options.onAttackNpc?.(id);
+      const target = npcSalvage.ships.find((entry) => entry.npcId === id);
+      if (!target) return;
+      const playerShip = service.getSnapshot().ship;
+      options.onAttackNpc?.(id, {
+        width: field.width,
+        height: field.height,
+        attackerPosition: { ...playerShip.position },
+        defenderPosition: { ...target.position },
+      });
     },
     onNavigate(target) {
       service.startNavigation(target);
