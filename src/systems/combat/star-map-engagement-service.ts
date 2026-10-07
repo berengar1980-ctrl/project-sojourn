@@ -26,6 +26,7 @@ import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
 import {
   createStrategicCombatService,
+  type StrategicCombatArenaOptions,
   type StrategicCombatService,
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
@@ -49,6 +50,7 @@ interface BackgroundCombat {
 export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
   engageNpcNow(npcId: string): boolean;
+  engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -210,14 +212,17 @@ export function createStarMapEngagementService(
     }
   }
 
-  function beginPlayerCombat(target: SectorNpcState): void {
+  function beginPlayerCombat(
+    target: SectorNpcState,
+    arena?: StrategicCombatArenaOptions
+  ): void {
     const playerSetup = options.getPlayerCombatant();
     const npcSetup = npcCombatant(target);
     if (!npcSetup) return;
 
     options.navigation.stopPursuit();
     options.sectorNpcs.markEngaged(target, 'player', PLAYER_ID, 'Gefecht mit Spieler');
-    playerCombat = createStrategicCombatService(playerSetup, npcSetup);
+    playerCombat = createStrategicCombatService(playerSetup, npcSetup, undefined, arena);
     playerEnemy = target;
     playerChase = null;
     options.log('COMBAT > KONTAKT · KAMPF BEGINNT GEGEN ' + target.name.toUpperCase());
@@ -328,6 +333,14 @@ export function createStarMapEngagementService(
       const target = npcById(npcId);
       if (!target || target.hullHp <= 0) return false;
       beginPlayerCombat(target);
+      return playerCombat !== null;
+    },
+
+    engageNpcInArena(npcId, arena) {
+      if (playerCombat) return false;
+      const target = npcById(npcId);
+      if (!target || target.hullHp <= 0) return false;
+      beginPlayerCombat(target, arena);
       return playerCombat !== null;
     },
 
