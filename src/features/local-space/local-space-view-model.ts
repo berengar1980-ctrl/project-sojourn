@@ -64,6 +64,7 @@ export interface LocalNpcShipView {
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly isSelected?: boolean;
 }
 
 export interface LocalShipView {
@@ -172,7 +173,8 @@ export function createLocalSpaceViewModel(
   snapshot: LocalSpaceSnapshot,
   ship: ShipDefinition,
   title: string,
-  npcShips: readonly LocalNpcShipView[] = []
+  npcShips: readonly LocalNpcShipView[] = [],
+  selectedNpcId: string | null = null
 ): LocalSpaceViewModel {
   const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
@@ -196,7 +198,7 @@ export function createLocalSpaceViewModel(
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
-    npcShips,
+    npcShips: npcShips.map((npc) => ({ ...npc, isSelected: npc.id === selectedNpcId })),
     asteroids,
     chunks: snapshot.instance.chunks.map(mapChunk),
     selectedAsteroid,
