@@ -83,6 +83,13 @@ export interface StrategicCombatSnapshot {
   };
 }
 
+export interface StrategicCombatArenaOptions {
+  readonly width: number;
+  readonly height: number;
+  readonly attackerPosition?: CombatPoint;
+  readonly defenderPosition?: CombatPoint;
+}
+
 export interface StrategicCombatService {
   getSnapshot(): StrategicCombatSnapshot;
   tick(deltaSeconds: number): StrategicCombatSnapshot;
@@ -128,8 +135,8 @@ interface MutableMine {
   hullDamage: number;
 }
 
-const ARENA_WIDTH = 2600;
-const ARENA_HEIGHT = 1600;
+const DEFAULT_ARENA_WIDTH = 2600;
+const DEFAULT_ARENA_HEIGHT = 1600;
 const EDGE_PADDING = 140;
 const MINE_DROP_COOLDOWN = 7.5;
 const MINE_TRIGGER_RADIUS = 125;
@@ -169,10 +176,12 @@ function normalize(dx: number, dy: number): { x: number; y: number } {
 
 function createCombatant(
   setup: StrategicCombatantSetup,
-  side: StrategicCombatSide
+  side: StrategicCombatSide,
+  arena: StrategicCombatArenaOptions
 ): MutableCombatant {
-  const startX = side === 'attacker' ? ARENA_WIDTH * 0.28 : ARENA_WIDTH * 0.72;
-  const startY = ARENA_HEIGHT * (side === 'attacker' ? 0.46 : 0.54);
+  const configured = side === 'attacker' ? arena.attackerPosition : arena.defenderPosition;
+  const startX = configured?.x ?? (side === 'attacker' ? arena.width * 0.28 : arena.width * 0.72);
+  const startY = configured?.y ?? arena.height * (side === 'attacker' ? 0.46 : 0.54);
   return {
     setup,
     shieldMaxHp: Math.max(0, setup.shieldHp),
@@ -228,7 +237,8 @@ function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
   side: StrategicCombatSide,
-  deltaSeconds: number
+  deltaSeconds: number,
+  arena: StrategicCombatArenaOptions
 ): void {
   if (combatant.hullHp <= 0) {
     combatant.speed = 0;
@@ -263,12 +273,12 @@ function moveCombatant(
   combatant.position.x = clamp(
     combatant.position.x + direction.x * combatant.speed * deltaSeconds,
     EDGE_PADDING,
-    ARENA_WIDTH - EDGE_PADDING
+    arena.width - EDGE_PADDING
   );
   combatant.position.y = clamp(
     combatant.position.y + direction.y * combatant.speed * deltaSeconds,
     EDGE_PADDING,
-    ARENA_HEIGHT - EDGE_PADDING
+    arena.height - EDGE_PADDING
   );
 }
 
@@ -311,10 +321,17 @@ function projectileSpeed(kind: CombatProjectileKind): number {
 export function createStrategicCombatService(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
-  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id)
+  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
+  arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
-  const attacker = createCombatant(attackerSetup, 'attacker');
-  const defender = createCombatant(defenderSetup, 'defender');
+  const arena: StrategicCombatArenaOptions = {
+    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
+    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
+    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
+    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+  };
+  const attacker = createCombatant(attackerSetup, 'attacker', arena);
+  const defender = createCombatant(defenderSetup, 'defender', arena);
   const random = createRng(seed);
   const projectiles: MutableProjectile[] = [];
   const mines: MutableMine[] = [];
@@ -539,16 +556,16 @@ export function createStrategicCombatService(
     const fleeingAttacker =
       attacker.tactic === 'flee' &&
       (attacker.position.x <= EDGE_PADDING + 8 ||
-        attacker.position.x >= ARENA_WIDTH - EDGE_PADDING - 8 ||
+        attacker.position.x >= arena.width - EDGE_PADDING - 8 ||
         attacker.position.y <= EDGE_PADDING + 8 ||
-        attacker.position.y >= ARENA_HEIGHT - EDGE_PADDING - 8) &&
+        attacker.position.y >= arena.height - EDGE_PADDING - 8) &&
       separation > 900;
     const fleeingDefender =
       defender.tactic === 'flee' &&
       (defender.position.x <= EDGE_PADDING + 8 ||
-        defender.position.x >= ARENA_WIDTH - EDGE_PADDING - 8 ||
+        defender.position.x >= arena.width - EDGE_PADDING - 8 ||
         defender.position.y <= EDGE_PADDING + 8 ||
-        defender.position.y >= ARENA_HEIGHT - EDGE_PADDING - 8) &&
+        defender.position.y >= arena.height - EDGE_PADDING - 8) &&
       separation > 900;
 
     if (fleeingAttacker) {
@@ -583,7 +600,7 @@ export function createStrategicCombatService(
       radius: mine.radius,
     })),
     lastImpact,
-    arena: { width: ARENA_WIDTH, height: ARENA_HEIGHT },
+    arena: { width: arena.width, height: arena.height },
   });
 
   return {
@@ -599,8 +616,8 @@ export function createStrategicCombatService(
       const dt = Math.min(deltaSeconds, 0.08);
       elapsedSeconds += dt;
 
-      moveCombatant(attacker, defender, 'attacker', dt);
-      moveCombatant(defender, attacker, 'defender', dt);
+      moveCombatant(attacker, defender, 'attacker', dt, arena);
+      moveCombatant(defender, attacker, 'defender', dt, arena);
       maybeDropMine('attacker', attacker, defender, dt);
       maybeDropMine('defender', defender, attacker, dt);
       advanceWeapons('attacker', attacker, defender, dt);
