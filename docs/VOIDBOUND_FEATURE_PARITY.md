@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 36 |
+| ✅ Umgesetzt | 37 |
 | 🟨 Teilweise | 48 |
-| ⬜ Offen | 155 |
+| ⬜ Offen | 154 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -53,7 +53,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | dialogue | 0 | 0 | 1 | 0 | 1 |
 | world | 2 | 0 | 1 | 0 | 3 |
 | map | 2 | 4 | 3 | 0 | 9 |
-| travel | 2 | 3 | 4 | 0 | 9 |
+| travel | 3 | 3 | 3 | 0 | 9 |
 | settings | 0 | 0 | 2 | 0 | 2 |
 | ui | 2 | 2 | 8 | 1 | 13 |
 | smuggling | 1 | 0 | 11 | 0 | 12 |
@@ -95,7 +95,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-06 | PR #68 · Feature parity baseline und Merge-Regel | Matrix eingecheckt; Branch-Diff-Gate und Regressionstest eingeführt; keine zusätzliche Feature-Statusänderung. |
 | 2026-10-06 | PR #70 · Voidbound Crew-Skill-Effekte | Alle sieben Stationsskill-Effekte als zentrale Runtime-Formeln portiert; Mining/Bergung/Piloting/Logistics an vorhandene Sojourn-Systeme verdrahtet; `trade.logistics_fee` offen → umgesetzt. |
 | 2026-10-06 | Ship weapons + mines Mk I–VI | Acht Waffenfamilien und drei Minentypen jeweils Mk I–VI ergänzt; Schild/Hüllen/Allround-Rollen, geschichtete Schadensauflösung und crew-/sensorabhängige Minenerkennung getestet. `ship.weapon_roles` offen → umgesetzt; `combat.weapon_fire` offen → teilweise. Minen sind eine neue Sojourn-Erweiterung ohne eigene Voidbound-ID. |
-| 2026-10-07 | Sternkarten-Verfolgung und Schiffskampf | Spieler kann reale NPC-Schiffe auf der Sternkarte auswählen und angreifen; bewegliche Ziele werden physisch verfolgt, Verteidiger fliehen oder gehen zum Gegenangriff über, Kontakt startet den strategischen Waffenloop. Aggressive Patrol-NPCs können andere NPC-Schiffe eigenständig abfangen. `combat.start` offen → umgesetzt; `combat.weapon_fire` bleibt teilweise. Vor-Kontakt-Flucht ist neu, `combat.flee` bleibt bis zum vollständigen In-Combat-Retreat offen. |
+| 2026-10-07 | Sternkarten-Verfolgung und Schiffskampf | Spieler kann reale NPC-Schiffe auf der Sternkarte auswählen und angreifen; bewegliche Ziele werden physisch verfolgt, Verteidiger fliehen oder gehen zum Gegenangriff über, Kontakt startet den strategischen Waffenloop. Aggressive Patrol-NPCs können andere NPC-Schiffe eigenständig abfangen. `travel.chase` offen → umgesetzt; `combat.start` offen → umgesetzt; `combat.weapon_fire` bleibt teilweise. Vor-Kontakt-Flucht ist neu, `combat.flee` bleibt bis zum vollständigen In-Combat-Retreat offen. |
 
 ## Vollständige Matrix
 
@@ -171,7 +171,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 🟨 Teilweise | `travel.fuel_cost` | Travel consumes the displayed fuel cost | Persistenter NPC-Treibstoff ist umgesetzt; Player-Strategic-Travel spiegelt Voidbounds Fuel-Logik noch nicht vollständig. | offen |
 | ✅ Umgesetzt | `travel.arrival` | Arrival restores normal location state and opens the local Aufenthalt hub | Äquivalentes Kernverhalten ist in Sojourn main vorhanden. | offen |
 | 🟨 Teilweise | `travel.market_lock` | Trading/port services are blocked while in flight | Grundlage ist vorhanden, aber das vollständige Voidbound-Verhalten ist noch nicht erreicht. | offen |
-| ⬜ Offen | `travel.chase` | NPC pursuit/chase state remains functional | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| ✅ Umgesetzt | `travel.chase` | NPC pursuit/chase state remains functional | Spieler und NPCs besitzen einen physischen Moving-Target-Chase-State auf der Sternkarte; Ziele werden dynamisch nachgeführt, Flucht/Gegenverfolgung und Deep-Space-Rückkehr bleiben navigationskonsistent. | übernehmen |
 | ⬜ Offen | `travel.emergency_fuel` | Emergency fuel assistance works when stranded | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `travel.corsair_grace` | Passive player corsair interception is zone-driven from the start of a career: green lowers contact pressure, yellow is baseline and red increases both interception pressure and heavy-corsair weighting | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `travel.stationary_fast_forward` | Stationary play can toggle a realtime x10 game-hour fast-forward without the old +1h wait button | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
