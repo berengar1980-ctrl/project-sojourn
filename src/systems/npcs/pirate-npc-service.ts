@@ -189,21 +189,24 @@ export function createPirateNpcService(options: PirateNpcServiceOptions): Pirate
         pirateTemplates[job.templateIndex % Math.max(1, pirateTemplates.length)] ??
         pirateTemplates[0];
       if (!template) break;
-      const fresh = structuredClone(template);
       respawnSerial += 1;
-      fresh.id = 'pirate-respawn-' + respawnSerial;
-      fresh.cargo = {};
-      fresh.hullHp = fresh.hullMaxHp;
-      fresh.fuel = fresh.fuelCapacity;
-      fresh.locationId = fresh.pirateHomeLocationId ?? fresh.locationId;
-      fresh.activityId = 'raiding';
-      fresh.activity = 'Auf Beutezug';
-      fresh.successfulRuns = 0;
+      const cloned = structuredClone(template);
+      const fresh: SectorNpcState = {
+        ...cloned,
+        id: 'pirate-respawn-' + respawnSerial,
+        cargo: {},
+        hullHp: cloned.hullMaxHp,
+        fuel: cloned.fuelCapacity,
+        locationId: cloned.pirateHomeLocationId ?? cloned.locationId,
+        activityId: 'raiding',
+        activity: 'Auf Beutezug',
+        successfulRuns: 0,
+        pirateHuntZoneId: undefined,
+        pirateHuntZoneCycles: 0,
+        pirateRaidCooldownSeconds: 5,
+      };
       delete fresh.travel;
       delete fresh.combatMovement;
-      fresh.pirateHuntZoneId = undefined;
-      fresh.pirateHuntZoneCycles = 0;
-      fresh.pirateRaidCooldownSeconds = 5;
       options.npcs.push(fresh);
       options.log(
         'SEKTORMELDUNG > NEUE KORSARENAKTIVITÄT · ' +
