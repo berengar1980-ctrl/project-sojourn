@@ -14,6 +14,7 @@ import {
   componentShieldBonus,
   getShipComponent,
   getShipDefinition,
+  resolveShipGameplayStats,
   shipHullMaxHp,
   shipShieldMaxHp,
   type InstalledShipComponents,
@@ -95,7 +96,7 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
   const sensor = (installed.sensor ?? [])
     .map((id) => getShipComponent('sensor', id))
     .find((component) => component !== null);
-  const mineTier = Math.max(1, Math.min(6, ship.gameplayOverrides?.maxComponentTier ?? 1));
+  const mineTier = Math.max(1, Math.min(6, resolveShipGameplayStats(ship).maxComponentTier));
   const mineCopies = npc.job === 'patrol' ? 2 : 1;
   const mines = Array.from({ length: mineCopies }).flatMap(() =>
     [
