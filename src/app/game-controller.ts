@@ -295,6 +295,8 @@ interface ControllerRuntimeState {
   localSpace: LocalSpaceService | null;
   localNpcMining: NpcLocalMiningService | null;
   salvageScene: SalvageSceneController | null;
+  combatPanel: StrategicCombatPanel | null;
+  selectedNpcId: string | null;
   localSpaceSeed: number;
   salvageSpaceSeed: number;
   visitCounter: number;
@@ -309,6 +311,7 @@ interface ControllerRuntimeContext {
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
   readonly audio: GameAudioService;
+  readonly engagements: StarMapEngagementService;
   readonly state: ControllerRuntimeState;
 }
 
@@ -319,6 +322,28 @@ function controllerShipRuntimeOptions(
   return {
     ...context.crew.runtimeOptions(ship),
     installed: context.loadouts.get(ship),
+  };
+}
+
+function controllerPlayerCombatant(context: ControllerRuntimeContext): StrategicCombatantSetup {
+  const ship = context.state.activeShip;
+  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
+  const weapons = (runtime.installed.weapon ?? []).flatMap((id) => {
+    const component = getShipComponent('weapon', id);
+    return component?.weapon ? [component] : [];
+  });
+  return {
+    id: 'player',
+    name: ship.name,
+    shipId: ship.id,
+    shieldHp: runtime.shieldMaxHp,
+    hullHp: runtime.hullMaxHp,
+    weapons,
+    hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
+    dodgeChance: runtime.crewEffects.piloting.dodgeChance,
+    damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
+    criticalChance: runtime.crewEffects.weapons.criticalChance,
+    cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
   };
 }
 
@@ -334,7 +359,8 @@ function controllerStarModel(context: ControllerRuntimeContext) {
   return createControllerStarModel(
     context.navigation,
     context.state.activeShip,
-    context.economy
+    context.economy,
+    context.state.selectedNpcId
   );
 }
 
@@ -345,6 +371,11 @@ function controllerLocalModel(context: ControllerRuntimeContext) {
     context.navigation,
     context.state.localNpcMining
   );
+}
+
+function destroyControllerCombat(context: ControllerRuntimeContext): void {
+  context.state.combatPanel?.destroy();
+  context.state.combatPanel = null;
 }
 
 function destroyControllerSalvage(context: ControllerRuntimeContext): void {
