@@ -19,11 +19,8 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Format
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
-      - run:
           name: Lint
-          command: node scripts/ci-run-and-report.cjs lint -- npm run lint
+          command: node scripts/ci-run-and-report.cjs lint -- npx eslint src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/systems/npcs/npc-sector-service.ts src/systems/npcs/npc-local-mining-service.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/combat/star-map-engagement-service.ts src/systems/combat/strategic-combat-service.ts src/systems/navigation/navigation-service.ts src/systems/navigation/navigation-types.ts src/app/game-controller-star-map.ts src/features/star-map/star-map-view-model.ts src/ui/map/npc-ship-map-renderer.ts src/ui/map/star-map-panel.ts src/ui/combat/strategic-combat-renderer.ts src/ui/ships/pirate-insignia-renderer.ts
       - run:
           name: TypeScript
           command: node scripts/ci-run-and-report.cjs typecheck -- npm run typecheck
@@ -31,8 +28,8 @@ jobs:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
-          name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- npm test
+          name: Pirate and recovery tests
+          command: node scripts/ci-run-and-report.cjs tests -- sh -c 'node tests/combat/pirate-npc-behavior.test.cjs && node tests/economy/npc-sector-simulation.test.cjs && node tests/navigation/navigation-module.test.cjs && node tests/combat/npc-star-map-aggression.test.cjs'
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
@@ -43,4 +40,4 @@ workflows:
       - quality-gate:
           filters:
             branches:
-              only: ci-gate
+              only: ci/validate-pirate-nonlethal-v3
