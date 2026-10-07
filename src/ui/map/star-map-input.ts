@@ -13,29 +13,41 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
   let moved = false;
   let lastX = 0;
   let lastY = 0;
+  let downX = 0;
+  let downY = 0;
+
+  const pointerPoint = (event: PointerEvent): { x: number; y: number } => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
 
   const pointerDown = (event: PointerEvent): void => {
     dragging = true;
     moved = false;
-    lastX = event.offsetX;
-    lastY = event.offsetY;
+    const point = pointerPoint(event);
+    lastX = point.x;
+    lastY = point.y;
+    downX = point.x;
+    downY = point.y;
     canvas.setPointerCapture(event.pointerId);
   };
 
   const pointerMove = (event: PointerEvent): void => {
     if (!dragging) return;
-    const dx = event.offsetX - lastX;
-    const dy = event.offsetY - lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+    const point = pointerPoint(event);
+    const dx = point.x - lastX;
+    const dy = point.y - lastY;
+    if (Math.hypot(point.x - downX, point.y - downY) > 6) moved = true;
     renderer.pan(dx, dy);
-    lastX = event.offsetX;
-    lastY = event.offsetY;
+    lastX = point.x;
+    lastY = point.y;
   };
 
   const pointerUp = (event: PointerEvent): void => {
     dragging = false;
     if (moved) return;
-    const contact = renderer.pickContact(event.offsetX, event.offsetY);
+    const point = pointerPoint(event);
+    const contact = renderer.pickContact(point.x, point.y);
     if (!contact) return;
     if (contact.kind === 'npc') onSelectNpc(contact.id);
     else onSelectLocation(contact.id);

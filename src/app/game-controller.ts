@@ -132,6 +132,7 @@ interface ControllerRuntimeState {
   localNpcMining: NpcLocalMiningService | null;
   salvageScene: SalvageSceneController | null;
   combatPanel: StrategicCombatPanel | null;
+  embeddedCombat: 'local-space' | 'salvage-space' | null;
   selectedNpcId: string | null;
   localSpaceSeed: number;
   salvageSpaceSeed: number;
@@ -189,7 +190,11 @@ function controllerLocalModel(context: ControllerRuntimeContext) {
     context.state.localSpace,
     context.state.activeShip,
     context.navigation,
-    context.state.localNpcMining
+    context.state.localNpcMining,
+    context.state.selectedNpcId,
+    context.state.embeddedCombat === 'local-space'
+      ? context.engagements.activePlayerCombat()?.getSnapshot() ?? null
+      : null
   );
 }
 
@@ -228,6 +233,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
+  state.embeddedCombat = null;
   state.mode = 'star-map';
   syncControllerNavigationCrewPerformance(context);
   context.audio.clearPlayerRcs();
@@ -264,6 +270,7 @@ function mountControllerCombat(context: ControllerRuntimeContext): void {
   destroyControllerCombat(context);
   state.localSpace = null;
   state.localNpcMining = null;
+  state.embeddedCombat = null;
   state.mode = 'combat';
   context.audio.clearPlayerRcs();
   state.combatPanel = createStrategicCombatPanel({
@@ -328,6 +335,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   destroyControllerCombat(context);
   destroyScenePanels(state.panels);
   state.mode = 'local-space';
+  state.embeddedCombat = null;
   const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   if (!reuseSeed || state.localSpaceSeed === 0) {
@@ -362,6 +370,36 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     model: controllerLocalModel(context),
     log: context.systemLog,
     ...controllerLocalActions(context),
+    onSelectNpc: (id) => {
+      state.selectedNpcId = id;
+      state.panels.local?.update(controllerLocalModel(context));
+    },
+    onAttackNpc: (id) => {
+      state.selectedNpcId = id;
+      const local = state.localSpace?.getSnapshot();
+      const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
+      if (!local || !target) return;
+      const started = context.engagements.engageNpcInArena(id, {
+        width: local.instance.width,
+        height: local.instance.height,
+        attackerPosition: { ...local.instance.ship.position },
+        defenderPosition: { ...target.position },
+        obstacles: local.instance.asteroids.map((asteroid) => ({
+          id: asteroid.id,
+          position: { ...asteroid.position },
+          radius: asteroid.radius,
+        })),
+      });
+      if (started) {
+        state.embeddedCombat = 'local-space';
+        context.systemLog.write('COMBAT > GEFECHT IM ASTEROIDENFELD');
+        state.panels.local?.update(controllerLocalModel(context));
+      }
+    },
+    onCombatTactic: (tactic) => {
+      context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
+      state.panels.local?.update(controllerLocalModel(context));
+    },
   });
   mountControllerSwitcher(context);
 }
@@ -376,6 +414,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   const location = salvageLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   state.mode = 'salvage-space';
+  state.embeddedCombat = null;
   if (!reuseSeed || state.salvageSpaceSeed === 0) {
     state.salvageSpaceSeed = localSeed((state.visitCounter += 1));
   }
@@ -392,6 +431,25 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     runtimeOptions: controllerShipRuntimeOptions(context, state.activeShip),
     log: context.systemLog,
     audio: context.audio,
+    selectedNpcId: state.selectedNpcId,
+    onSelectNpc: (id) => {
+      state.selectedNpcId = id;
+    },
+    onAttackNpc: (id, arena) => {
+      state.selectedNpcId = id;
+      if (context.engagements.engageNpcInArena(id, arena)) {
+        state.embeddedCombat = 'salvage-space';
+        context.systemLog.write('COMBAT > GEFECHT IM WRACKFELD');
+      }
+    },
+    getCombat: () =>
+      state.embeddedCombat === 'salvage-space'
+        ? context.engagements.activePlayerCombat()?.getSnapshot() ?? null
+        : null,
+    isCombatActive: () => state.embeddedCombat === 'salvage-space',
+    onCombatTactic: (tactic) => {
+      context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
+    },
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
     ),
@@ -406,8 +464,30 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   context.engagements.tick(deltaSeconds);
-  if (context.engagements.activePlayerCombat() && state.mode !== 'combat') {
+  const activeCombat = context.engagements.activePlayerCombat();
+  if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
     mountControllerCombat(context);
+  }
+  if (activeCombat?.getSnapshot().winner && state.embeddedCombat !== null) {
+    const snapshot = activeCombat.getSnapshot();
+    context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
+    if (state.embeddedCombat === 'local-space') {
+      state.localSpace?.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
+      );
+      state.localNpcMining?.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+    } else {
+      state.salvageScene?.finishCombat(snapshot);
+    }
+    context.engagements.finishPlayerCombat();
+    state.embeddedCombat = null;
   }
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
@@ -422,14 +502,16 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
     state.combatPanel?.update();
   } else if (state.mode === 'star-map') state.panels.star?.update(controllerStarModel(context));
   else if (state.mode === 'local-space' && state.localSpace) {
-    state.localSpace.tick(deltaSeconds);
-    const localSnapshot = state.localSpace.getSnapshot();
-    context.audio.updatePlayerRcs(
-      state.activeShip.sprite.hardpoints,
-      localSnapshot.instance.ship,
-      performance.now() / 1000
-    );
-    state.localNpcMining?.tick(deltaSeconds);
+    if (state.embeddedCombat !== 'local-space') {
+      state.localSpace.tick(deltaSeconds);
+      const localSnapshot = state.localSpace.getSnapshot();
+      context.audio.updatePlayerRcs(
+        state.activeShip.sprite.hardpoints,
+        localSnapshot.instance.ship,
+        performance.now() / 1000
+      );
+      state.localNpcMining?.tick(deltaSeconds);
+    }
     state.panels.local?.update(controllerLocalModel(context));
   } else if (state.mode === 'salvage-space') {
     state.salvageScene?.tick(deltaSeconds);
@@ -446,6 +528,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     localNpcMining: null,
     salvageScene: null,
     combatPanel: null,
+    embeddedCombat: null,
     selectedNpcId: null,
     localSpaceSeed: 0,
     salvageSpaceSeed: 0,

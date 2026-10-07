@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import { getShipMine } from '../../data/combat/ship-mines';
 import type { ShipDefinition } from '../../core/ship-types';
 import {
   pilotingDodgeChance,
@@ -13,6 +14,7 @@ import {
   componentShieldBonus,
   getShipComponent,
   getShipDefinition,
+  resolveShipGameplayStats,
   shipHullMaxHp,
   shipShieldMaxHp,
   type InstalledShipComponents,
@@ -26,6 +28,7 @@ import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
 import {
   createStrategicCombatService,
+  type StrategicCombatArenaOptions,
   type StrategicCombatService,
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
@@ -48,6 +51,8 @@ interface BackgroundCombat {
 
 export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
+  engageNpcNow(npcId: string): boolean;
+  engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -88,6 +93,18 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
+  const sensor = (installed.sensor ?? [])
+    .map((id) => getShipComponent('sensor', id))
+    .find((component) => component !== null);
+  const mineTier = Math.max(1, Math.min(6, resolveShipGameplayStats(ship).maxComponentTier));
+  const mineCopies = npc.job === 'patrol' ? 2 : 1;
+  const mines = Array.from({ length: mineCopies }).flatMap(() =>
+    [
+      getShipMine('mine-ion-' + mineTier),
+      getShipMine('mine-shaped-charge-' + mineTier),
+      getShipMine('mine-hunter-' + mineTier),
+    ].filter((mine): mine is NonNullable<typeof mine> => mine !== null)
+  );
 
   return {
     id: npc.id,
@@ -101,6 +118,20 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
     damageMultiplier: weaponDamageMultiplier(skill),
     criticalChance: weaponCriticalChance(skill),
     cycleTimeMultiplier: weaponCycleTimeMultiplier(skill),
+    preferredTactic:
+      npcDefenseReaction(npc) === 'flee'
+        ? 'flee'
+        : npc.job === 'patrol' && npc.aggression >= 82
+          ? 'kite'
+          : 'fight',
+    combatSpeed: Math.max(82, Math.min(185, ship.navigation.cruiseSpeed * 0.33)),
+    mines,
+    sensorCrewSkill: skill,
+    sensorTier: sensor?.tier ?? 0,
+    sensorRangeMeters: sensor ? 1000 : 0,
+    sensorRangeMultiplier: sensor ? 1 + Number(sensor.range ?? 0) : 1,
+    aiControlled: true,
+    aiAggression: npc.aggression,
   };
 }
 
@@ -201,14 +232,17 @@ export function createStarMapEngagementService(
     }
   }
 
-  function beginPlayerCombat(target: SectorNpcState): void {
+  function beginPlayerCombat(
+    target: SectorNpcState,
+    arena?: StrategicCombatArenaOptions
+  ): void {
     const playerSetup = options.getPlayerCombatant();
     const npcSetup = npcCombatant(target);
     if (!npcSetup) return;
 
     options.navigation.stopPursuit();
     options.sectorNpcs.markEngaged(target, 'player', PLAYER_ID, 'Gefecht mit Spieler');
-    playerCombat = createStrategicCombatService(playerSetup, npcSetup);
+    playerCombat = createStrategicCombatService(playerSetup, npcSetup, undefined, arena);
     playerEnemy = target;
     playerChase = null;
     options.log('COMBAT > KONTAKT · KAMPF BEGINNT GEGEN ' + target.name.toUpperCase());
@@ -314,6 +348,22 @@ export function createStarMapEngagementService(
   }
 
   return {
+    engageNpcNow(npcId) {
+      if (playerCombat) return false;
+      const target = npcById(npcId);
+      if (!target || target.hullHp <= 0) return false;
+      beginPlayerCombat(target);
+      return playerCombat !== null;
+    },
+
+    engageNpcInArena(npcId, arena) {
+      if (playerCombat) return false;
+      const target = npcById(npcId);
+      if (!target || target.hullHp <= 0) return false;
+      beginPlayerCombat(target, arena);
+      return playerCombat !== null;
+    },
+
     attackNpc(npcId) {
       if (playerCombat) return false;
       const target = npcById(npcId);

@@ -14,5 +14,6 @@ export interface LocalSpaceService {
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   resolveMiningEvent(choiceId: string): MiningEventResolution | null;
   cancelMining(): LocalSpaceSnapshot;
+  syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }

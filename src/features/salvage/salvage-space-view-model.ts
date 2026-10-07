@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SalvageLocalSpaceSnapshot, SalvageWreckKind } from '../../core/salvage-types';
 import type { LooseShipComponent, ShipDefinition, ShipHardpoints } from '../../core/ship-types';
@@ -55,6 +56,7 @@ export interface SalvageNpcShipView {
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly isSelected?: boolean;
 }
 
 export interface SalvageShipView {
@@ -110,6 +112,7 @@ export interface SalvageSpaceViewModel {
   readonly salvageEventRecoverySeconds: number;
   readonly lastEventResolution: SalvageLocalSpaceSnapshot['lastEventResolution'];
   readonly eventResolutionSerial: number;
+  readonly combat: StrategicCombatSnapshot | null;
 }
 
 function wreckKindLabel(kind: SalvageWreckKind): string {
@@ -144,7 +147,9 @@ export function createSalvageSpaceViewModel(
   player: PlayerEconomyState,
   looseComponents: readonly LooseShipComponent[],
   title: string,
-  npcShips: readonly SalvageNpcShipView[] = []
+  npcShips: readonly SalvageNpcShipView[] = [],
+  selectedNpcId: string | null = null,
+  combat: StrategicCombatSnapshot | null = null
 ): SalvageSpaceViewModel {
   const wrecks: readonly SalvageWreckView[] = snapshot.field.wrecks.map(
     (wreck): SalvageWreckView => ({
@@ -199,18 +204,29 @@ export function createSalvageSpaceViewModel(
     width: snapshot.field.width,
     height: snapshot.field.height,
     ship: {
-      position: snapshot.ship.position,
-      headingRadians: snapshot.ship.headingRadians,
+      position: combat?.attacker.position ?? snapshot.ship.position,
+      headingRadians: combat?.attacker.headingRadians ?? snapshot.ship.headingRadians,
       turnRateRadiansPerSecond: snapshot.ship.turnRateRadiansPerSecond,
       angularThrust: snapshot.ship.angularThrust,
       lateralThrust: snapshot.ship.lateralThrust,
-      speed: snapshot.ship.speed,
+      speed: combat?.attacker.speed ?? snapshot.ship.speed,
       nominalLengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
-    npcShips,
+    npcShips: npcShips.map((npc) => {
+      if (combat?.defender.id === npc.id) {
+        return {
+          ...npc,
+          position: combat.defender.position,
+          headingRadians: combat.defender.headingRadians,
+          speed: combat.defender.speed,
+          isSelected: true,
+        };
+      }
+      return { ...npc, isSelected: npc.id === selectedNpcId };
+    }),
     wrecks,
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
@@ -238,5 +254,6 @@ export function createSalvageSpaceViewModel(
     salvageEventRecoverySeconds: snapshot.salvageEventRecoverySeconds,
     lastEventResolution: snapshot.lastEventResolution,
     eventResolutionSerial: snapshot.eventResolutionSerial,
+    combat,
   };
 }

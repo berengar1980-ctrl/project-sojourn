@@ -2433,8 +2433,16 @@ body {
     linear-gradient(180deg, #05090d, #020406 78%);
 }
 
+.strategic-combat-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .strategic-combat-title {
   position: absolute;
+  z-index: 2;
   top: 28px;
   left: 50%;
   display: grid;
@@ -2459,13 +2467,14 @@ body {
 
 .strategic-combat-grid {
   position: absolute;
-  top: 50%;
+  z-index: 2;
   left: 50%;
+  bottom: 142px;
   display: grid;
   grid-template-columns: minmax(260px, 360px) minmax(260px, 360px);
   gap: 54px;
   width: min(820px, calc(100vw - 48px));
-  transform: translate(-50%, -52%);
+  transform: translateX(-50%);
 }
 
 .strategic-combatant {
@@ -2517,6 +2526,7 @@ body {
 
 .strategic-combat-event {
   position: absolute;
+  z-index: 2;
   left: 50%;
   bottom: 98px;
   min-width: min(560px, calc(100vw - 48px));
@@ -2533,6 +2543,7 @@ body {
 
 .strategic-combat-return {
   position: absolute;
+  z-index: 2;
   left: 50%;
   bottom: 42px;
   padding: 9px 14px;
@@ -2551,8 +2562,9 @@ body {
 
 @media (max-width: 650px) {
   .strategic-combat-grid {
+    bottom: 130px;
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 10px;
     width: calc(100vw - 32px);
   }
 
@@ -2567,5 +2579,140 @@ body {
 
   .strategic-combat-return {
     bottom: 24px;
+  }
+}
+
+
+.combat-map-title {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  color: rgba(218, 231, 238, .76);
+  font-size: 10px;
+  letter-spacing: .18em;
+  pointer-events: none;
+}
+
+.combat-hud {
+  position: absolute;
+  top: 22px;
+  z-index: 3;
+  display: grid;
+  gap: 5px;
+  width: min(250px, 26vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 150, 166, .22);
+  background: rgba(4, 10, 14, .66);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+.combat-hud--player {
+  left: 20px;
+}
+
+.combat-hud--enemy {
+  right: 20px;
+}
+
+.combat-hud strong {
+  color: #e6edf0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.combat-hud span,
+.combat-hud small {
+  color: rgba(190, 205, 213, .72);
+  font-size: 8px;
+  letter-spacing: .11em;
+}
+
+.combat-hud-bar {
+  height: 4px;
+  overflow: hidden;
+  background: rgba(83, 105, 117, .24);
+}
+
+.combat-hud-bar i {
+  display: block;
+  height: 100%;
+  background: #77bdd7;
+  transition: width 100ms linear;
+}
+
+.combat-hud-bar--hull i {
+  background: #be705e;
+}
+
+.combat-tactics {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  z-index: 4;
+  display: flex;
+  gap: 7px;
+}
+
+.combat-tactics button {
+  padding: 8px 11px;
+  border: 1px solid rgba(111, 149, 164, .32);
+  background: rgba(5, 13, 18, .76);
+  color: rgba(199, 216, 225, .72);
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: .11em;
+}
+
+.combat-tactics button:hover,
+.combat-tactics button.is-active {
+  border-color: rgba(118, 201, 226, .72);
+  background: rgba(31, 81, 96, .58);
+  color: #d9f3f8;
+}
+
+.combat-tactics button:disabled {
+  cursor: default;
+  opacity: .48;
+}
+
+.strategic-combat-event {
+  bottom: 24px;
+  max-width: min(620px, calc(100vw - 520px));
+  min-width: 320px;
+  pointer-events: none;
+}
+
+.strategic-combat-return {
+  right: 20px;
+  bottom: 22px;
+  left: auto;
+  transform: none;
+}
+
+@media (max-width: 780px) {
+  .combat-hud {
+    top: 42px;
+    width: calc(50vw - 28px);
+  }
+
+  .combat-tactics {
+    left: 12px;
+    bottom: 12px;
+    flex-wrap: wrap;
+    max-width: 190px;
+  }
+
+  .strategic-combat-event {
+    bottom: 78px;
+    min-width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+  }
+
+  .strategic-combat-return {
+    right: 12px;
+    bottom: 12px;
   }
 }

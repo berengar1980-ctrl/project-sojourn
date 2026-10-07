@@ -91,4 +91,14 @@ for (let step = 0; step < 1000 && !combat.getSnapshot().winner; step += 1) {
 }
 assert(combat.getSnapshot().winner, 'strategic combat must resolve using mounted ship weapons');
 
-console.log('PASS attack pursuit, NPC reaction, interception and strategic combat start');
+engagements.finishPlayerCombat();
+const localTarget = npcs.find((npc) => npc.id !== target.id && npc.hullHp > 0);
+assert(localTarget, 'test requires a second live NPC for direct local-space engagement');
+assert.equal(
+  engagements.engageNpcNow(localTarget.id),
+  true,
+  'local-space attack must enter combat immediately without a star-map pursuit'
+);
+assert(engagements.activePlayerCombat(), 'direct local-space engagement must create combat');
+
+console.log('PASS pursuit, direct local engagement, NPC reaction and strategic combat start');

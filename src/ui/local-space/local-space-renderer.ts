@@ -20,6 +20,12 @@ interface AsteroidHitArea {
   readonly radius: number;
 }
 
+interface NpcHitArea {
+  readonly id: string;
+  readonly point: ScreenPoint;
+  readonly radius: number;
+}
+
 function hashId(id: string): number {
   let hash = 2166136261;
   for (let index = 0; index < id.length; index += 1) {
@@ -43,7 +49,10 @@ export class LocalSpaceRenderer {
   private readonly shipImage = new Image();
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: LocalSpaceViewModel;
+  private combatImpactSerial = -1;
+  private combatImpactAge = 1;
   private hitAreas: readonly AsteroidHitArea[] = [];
+  private npcHitAreas: readonly NpcHitArea[] = [];
   private loadedShipUrl = '';
   private hasFitted = false;
   private debugHardpoints = false;
@@ -66,6 +75,13 @@ export class LocalSpaceRenderer {
   }
 
   update(model: LocalSpaceViewModel): void {
+    const impact = model.combat?.lastImpact;
+    if (impact && impact.serial !== this.combatImpactSerial) {
+      this.combatImpactSerial = impact.serial;
+      this.combatImpactAge = 0;
+    } else {
+      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
+    }
     this.model = model;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
@@ -117,6 +133,15 @@ export class LocalSpaceRenderer {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
 
+  pickNpc(x: number, y: number): string | null {
+    let best: NpcHitArea | null = null;
+    for (const area of this.npcHitAreas) {
+      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
+      if (!best || area.radius < best.radius) best = area;
+    }
+    return best?.id ?? null;
+  }
+
   pickAsteroid(x: number, y: number): string | null {
     let best: AsteroidHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -154,7 +179,8 @@ export class LocalSpaceRenderer {
     }
     this.hitAreas = hitAreas;
 
-    this.drawNpcShips(width, height, timeSeconds);
+    this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
+    this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
@@ -193,7 +219,8 @@ export class LocalSpaceRenderer {
     return image;
   }
 
-  private drawNpcShips(width: number, height: number, timeSeconds: number): void {
+  private drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
+    const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
       const point = this.camera.worldToScreen(npc.position, width, height);
       const shipWidth = this.camera.scale(npc.nominalLengthMeters);
@@ -246,6 +273,21 @@ export class LocalSpaceRenderer {
         );
       }
 
+      hits.push({
+        id: npc.id,
+        point,
+        radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
+      });
+      if (npc.isSelected) {
+        this.context.save();
+        this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
+        this.context.lineWidth = 2;
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.stroke();
+        this.context.restore();
+      }
+
       if (npc.targetAsteroidId) {
         const target = this.model.asteroids.find((asteroid) => asteroid.id === npc.targetAsteroidId);
         if (target && npc.phase === 'scanning') {
@@ -270,7 +312,86 @@ export class LocalSpaceRenderer {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
+    return hits;
   }
+
+  private drawCombat(width: number, height: number): void {
+    const combat = this.model.combat;
+    if (!combat) return;
+
+    for (const mine of combat.mines) {
+      if (mine.detection === 'hidden') continue;
+      const point = this.camera.worldToScreen(mine.position, width, height);
+      this.context.save();
+      this.context.strokeStyle = mine.armed
+        ? 'rgba(226, 108, 82, .82)'
+        : 'rgba(166, 175, 177, .55)';
+      this.context.fillStyle = 'rgba(42, 47, 50, .92)';
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.stroke();
+      this.context.restore();
+    }
+
+    for (const projectile of combat.projectiles) {
+      const point = this.camera.worldToScreen(projectile.position, width, height);
+      const target = this.camera.worldToScreen(projectile.target, width, height);
+      const angle = Math.atan2(target.y - point.y, target.x - point.x);
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      this.context.rotate(angle);
+      if (projectile.kind === 'missile') {
+        this.context.fillStyle = '#e7d7b0';
+        this.context.fillRect(-7, -2, 12, 4);
+        this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
+        this.context.lineWidth = 3;
+        this.context.beginPath();
+        this.context.moveTo(-8, 0);
+        this.context.lineTo(-22, 0);
+        this.context.stroke();
+      } else if (projectile.kind === 'plasma') {
+        this.context.fillStyle = 'rgba(118, 225, 255, .95)';
+        this.context.shadowColor = 'rgba(81, 194, 255, .95)';
+        this.context.shadowBlur = 10;
+        this.context.beginPath();
+        this.context.arc(0, 0, 5, 0, Math.PI * 2);
+        this.context.fill();
+      } else {
+        this.context.strokeStyle =
+          projectile.kind === 'autocannon'
+            ? 'rgba(245, 211, 156, .95)'
+            : 'rgba(102, 207, 255, .95)';
+        this.context.lineWidth = projectile.kind === 'rail' ? 1.2 : 2;
+        this.context.beginPath();
+        this.context.moveTo(-24, 0);
+        this.context.lineTo(24, 0);
+        this.context.stroke();
+      }
+      this.context.restore();
+    }
+
+    const impact = combat.lastImpact;
+    if (!impact || impact.layer === 'miss' || this.combatImpactAge >= 1) return;
+    const point = this.camera.worldToScreen(impact.position, width, height);
+    const alpha = 1 - this.combatImpactAge;
+    const radius = 10 + this.combatImpactAge * 34;
+    this.context.save();
+    if (impact.layer === 'shield') {
+      this.context.strokeStyle = `rgba(123, 211, 255, ${alpha * 0.9})`;
+      this.context.lineWidth = 2.4;
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, radius, -0.9, 0.9);
+      this.context.stroke();
+    } else {
+      this.context.fillStyle = `rgba(255, 139, 68, ${alpha * 0.8})`;
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
+      this.context.fill();
+    }
+    this.context.restore();
+  }
+
 
   private drawNpcMinerScan(
     shipPoint: ScreenPoint,

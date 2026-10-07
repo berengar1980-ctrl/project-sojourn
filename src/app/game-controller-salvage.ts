@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
@@ -22,6 +23,7 @@ import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/s
 
 export interface SalvageSceneController {
   tick(deltaSeconds: number): void;
+  finishCombat(snapshot: StrategicCombatSnapshot): void;
   destroy(): void;
 }
 
@@ -39,6 +41,25 @@ interface SalvageSceneOptions {
   readonly log: SystemLogService;
   readonly audio: GameAudioService;
   readonly onReturnToStarMap: () => void;
+  readonly selectedNpcId?: string | null;
+  readonly onSelectNpc?: (id: string | null) => void;
+  readonly onAttackNpc?: (
+    id: string,
+    arena: {
+      readonly width: number;
+      readonly height: number;
+      readonly attackerPosition: { readonly x: number; readonly y: number };
+      readonly defenderPosition: { readonly x: number; readonly y: number };
+      readonly obstacles?: readonly {
+        readonly id: string;
+        readonly position: { readonly x: number; readonly y: number };
+        readonly radius: number;
+      }[];
+    }
+  ) => void;
+  readonly getCombat?: () => StrategicCombatSnapshot | null;
+  readonly isCombatActive?: () => boolean;
+  readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -61,6 +82,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     approachSpeed: 85,
   });
+  let selectedNpcId = options.selectedNpcId ?? null;
   const npcSalvage: NpcLocalSalvageService = createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
@@ -102,7 +124,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       options.player,
       options.componentInventory.list(),
       options.location.name + ' // Bergung',
-      npcShips
+      npcShips,
+      selectedNpcId,
+      options.getCombat?.() ?? null
     );
   };
 
@@ -114,6 +138,31 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     log: options.log,
     onSelectWreck(id) {
       service.selectWreck(id);
+      refresh();
+    },
+    onSelectNpc(id) {
+      selectedNpcId = id;
+      options.onSelectNpc?.(id);
+      refresh();
+    },
+    onAttackNpc(id) {
+      const target = npcSalvage.ships.find((entry) => entry.npcId === id);
+      if (!target) return;
+      const playerShip = service.getSnapshot().ship;
+      options.onAttackNpc?.(id, {
+        width: field.width,
+        height: field.height,
+        attackerPosition: { ...playerShip.position },
+        defenderPosition: { ...target.position },
+        obstacles: field.wrecks.map((wreck) => ({
+          id: wreck.id,
+          position: { ...wreck.position },
+          radius: wreck.radius,
+        })),
+      });
+    },
+    onCombatTactic(tactic) {
+      options.onCombatTactic?.(tactic);
       refresh();
     },
     onNavigate(target) {
@@ -154,14 +203,30 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
-    tick(deltaSeconds) {
-      service.tick(deltaSeconds);
-      options.audio.updatePlayerRcs(
-        options.ship.sprite.hardpoints,
-        service.getSnapshot().ship,
-        performance.now() / 1000
+    finishCombat(snapshot) {
+      service.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
       );
-      npcSalvage.tick(deltaSeconds);
+      npcSalvage.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+      refresh();
+    },
+    tick(deltaSeconds) {
+      if (!options.isCombatActive?.()) {
+        service.tick(deltaSeconds);
+        options.audio.updatePlayerRcs(
+          options.ship.sprite.hardpoints,
+          service.getSnapshot().ship,
+          performance.now() / 1000
+        );
+        npcSalvage.tick(deltaSeconds);
+      }
       refresh();
     },
     destroy() {

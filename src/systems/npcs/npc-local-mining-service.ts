@@ -31,6 +31,7 @@ export interface LocalNpcMinerState {
 
 export interface NpcLocalMiningService {
   readonly ships: readonly LocalNpcMinerState[];
+  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
   tick(deltaSeconds: number): void;
 }
 
@@ -220,7 +221,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       return false;
     }
     ship.targetAsteroidId = asteroid.id;
-    ship.phase = 'approaching';
+    ship.phase = 'entering';
     ship.laserActive = false;
     ship.scanProgress = 0;
     return true;
@@ -282,8 +283,29 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
 
   syncArrivals();
 
+  function syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    speed: number
+  ): void {
+    const ship = ships.find((entry) => entry.npcId === npcId);
+    if (!ship) return;
+    ship.position = {
+      x: Math.max(0, Math.min(options.width, position.x)),
+      y: Math.max(0, Math.min(options.height, position.y)),
+    };
+    ship.headingRadians = headingRadians;
+    ship.speed = Math.max(0, speed);
+    ship.phase = 'approaching';
+    ship.targetAsteroidId = null;
+    ship.laserActive = false;
+    ship.scanProgress = 0;
+  }
+
   return {
     ships,
+    syncCombatPose,
     tick(deltaSeconds) {
       const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
       if (dt <= 0) return;
@@ -292,7 +314,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       for (let index = ships.length - 1; index >= 0; index -= 1) {
         const ship = ships[index]!;
         const npc = byId.get(ship.npcId);
-        if (!npc) {
+        if (!npc || npc.hullHp <= 0) {
           ships.splice(index, 1);
           continue;
         }

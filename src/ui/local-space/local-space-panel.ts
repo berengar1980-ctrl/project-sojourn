@@ -1,3 +1,4 @@
+import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { bindLocalSpaceInput } from './local-space-input';
@@ -15,6 +16,9 @@ interface LocalSpacePanelOptions {
   readonly root: HTMLElement;
   readonly model: LocalSpaceViewModel;
   readonly onSelectAsteroid: (id: string | null) => void;
+  readonly onSelectNpc: (id: string | null) => void;
+  readonly onAttackNpc: (id: string) => void;
+  readonly onCombatTactic: (tactic: CombatTactic) => void;
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
@@ -110,6 +114,7 @@ interface LocalSpaceControls {
   readonly oreBar: HTMLElement;
   readonly mineButton: HTMLButtonElement;
   readonly shortScanButton: HTMLButtonElement;
+  readonly attackButton: HTMLButtonElement;
   readonly longScanButton: HTMLButtonElement;
   readonly cancelButton: HTMLButtonElement;
   readonly backButton: HTMLButtonElement;
@@ -118,6 +123,7 @@ interface LocalSpaceControls {
   readonly cargoTotal: HTMLElement;
   readonly cargoList: HTMLElement;
   readonly eventContainer: HTMLElement;
+  readonly combatTactics: HTMLElement;
 }
 
 function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
@@ -130,6 +136,11 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<button class="long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
     '<button class="scan-label-toggle is-active" type="button">SCAN-DATEN AN</button>',
+    '<div class="local-combat-tactics combat-tactics" hidden>',
+    '<button type="button" data-tactic="fight">KAMPF</button>',
+    '<button type="button" data-tactic="kite">DISTANZ</button>',
+    '<button type="button" data-tactic="minefield">MINEN</button>',
+    '<button type="button" data-tactic="flee">FLUCHT</button></div>',
     '<div class="local-mining-status" hidden></div>',
     '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
     '<aside class="local-mining-event" hidden></aside>',
@@ -142,7 +153,8 @@ function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElement {
     '<div class="local-selection-name"></div><div class="local-selection-meta"></div>',
     '<div class="local-ore-bar"><div></div></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
-    '<button class="mine-button" type="button">MINING</button></div>',
+    '<button class="mine-button" type="button">MINING</button>',
+    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div>',
   ].join('');
   options.root.replaceChildren(shell);
   return shell;
@@ -163,6 +175,7 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     oreBar: query<HTMLElement>('.local-ore-bar > div'),
     mineButton: query<HTMLButtonElement>('.mine-button'),
     shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
+    attackButton: query<HTMLButtonElement>('.local-attack-button'),
     longScanButton: query<HTMLButtonElement>('.long-scan-button'),
     cancelButton: query<HTMLButtonElement>('.cancel-mining-button'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
@@ -171,6 +184,7 @@ function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),
     eventContainer: query<HTMLElement>('.local-mining-event'),
+    combatTactics: query<HTMLElement>('.local-combat-tactics'),
   };
 }
 
@@ -187,6 +201,7 @@ function bindNavigationInput(
     canvas,
     renderer,
     onSelectAsteroid: options.onSelectAsteroid,
+    onSelectNpc: options.onSelectNpc,
     onNavigate: (x, y) => {
       navigationRequest += 1;
       const request = navigationRequest;
@@ -373,6 +388,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     oreBar,
     mineButton,
     shortScanButton,
+    attackButton,
     longScanButton,
     cancelButton,
     backButton,
@@ -381,6 +397,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     cargoTotal,
     cargoList,
     eventContainer,
+    combatTactics,
   } = controls;
 
   let model = options.model;
@@ -401,6 +418,11 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   });
 
   const updateOverlay = (): void => {
+    const selectedNpc = model.npcShips.find((npc) => npc.isSelected);
+    combatTactics.hidden = model.combat === null;
+    for (const button of combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
+      button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
+    }
     const selected = model.selectedAsteroid;
     const miningActive = model.miningPhase !== 'idle';
     const eventActive = model.miningEvent !== null;
@@ -408,7 +430,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     trackScanCompletion(model);
     miningEventPanel.update(model.miningEvent);
     canvas.classList.toggle('is-locked', eventActive);
-    card.hidden = !selected;
+    card.hidden = !selected && !selectedNpc;
     cancelButton.hidden = !miningActive;
     cancelButton.disabled = eventActive;
     backButton.disabled = eventActive;
@@ -424,7 +446,28 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     status.hidden = statusText.length === 0;
     status.textContent = statusText;
 
+    if (selectedNpc) {
+      const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+      if (kind) kind.textContent = 'SCHIFF';
+      name.textContent = selectedNpc.name;
+      meta.textContent = model.combat
+        ? 'GEFECHT · SCHILD ' +
+          Math.round(model.combat.defender.shieldHp) +
+          ' · HÜLLE ' +
+          Math.round(model.combat.defender.hullHp)
+        : 'SCHIFF · ' + selectedNpc.phase.toUpperCase();
+      oreBar.style.width = '100%';
+      shortScanButton.hidden = true;
+      mineButton.hidden = true;
+      attackButton.hidden = model.combat !== null;
+      return;
+    }
+    attackButton.hidden = true;
+    shortScanButton.hidden = false;
+    mineButton.hidden = false;
     if (!selected) return;
+    const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+    if (kind) kind.textContent = 'ASTEROID';
     name.textContent =
       selected.scanLevel === 'analyzed' && selected.deposits.length > 0
         ? 'ASTEROID · ' + selected.deposits.length + ' VORKOMMEN'
@@ -447,6 +490,16 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   bindShortScanPlanning(shortScanButton, options, systemLog, updateOverlay);
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
   bindScanLabelButton(scanLabelsButton, renderer);
+  attackButton.addEventListener('click', () => {
+    const selected = model.npcShips.find((npc) => npc.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
+  combatTactics.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const tactic = target.dataset.tactic as CombatTactic | undefined;
+    if (tactic) options.onCombatTactic(tactic);
+  });
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();

@@ -13,7 +13,15 @@ const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts')
 assert(panel.includes('ANGREIFEN'), 'selected NPC contacts must expose an attack action');
 assert(panel.includes('onAttackNpc'), 'star map panel must dispatch NPC attack actions');
 assert(input.includes('pickContact'), 'star map input must select moving ship contacts');
+assert(
+  input.includes('event.clientX - rect.left') && input.includes('Math.hypot'),
+  'star map click handling must tolerate small pointer jitter and use canvas-relative coordinates'
+);
 assert(renderer.includes("kind: 'npc'"), 'NPC ship sprites must own hit areas');
+assert(
+  renderer.includes("filter((area) => area.kind === 'npc')"),
+  'NPC hit areas must win over overlapping planets, stations and fields'
+);
 assert(renderer.includes('drawPursuitLine'), 'active pursuit must be visible on the star map');
 assert(
   controller.includes('createStarMapEngagementService') &&

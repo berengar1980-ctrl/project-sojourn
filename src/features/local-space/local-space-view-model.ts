@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
@@ -64,6 +65,7 @@ export interface LocalNpcShipView {
   readonly spriteUrl: string;
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
+  readonly isSelected?: boolean;
 }
 
 export interface LocalShipView {
@@ -108,6 +110,7 @@ export interface LocalSpaceViewModel {
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly collectedOre: number;
   readonly cargoResources: readonly LocalCargoResourceView[];
+  readonly combat: StrategicCombatSnapshot | null;
 }
 
 function estimateResourceAmount(amount: number): number {
@@ -172,7 +175,9 @@ export function createLocalSpaceViewModel(
   snapshot: LocalSpaceSnapshot,
   ship: ShipDefinition,
   title: string,
-  npcShips: readonly LocalNpcShipView[] = []
+  npcShips: readonly LocalNpcShipView[] = [],
+  selectedNpcId: string | null = null,
+  combat: StrategicCombatSnapshot | null = null
 ): LocalSpaceViewModel {
   const asteroids = snapshot.instance.asteroids.map((asteroid) => mapAsteroid(asteroid, snapshot));
   const selectedAsteroid = asteroids.find((asteroid) => asteroid.isSelected) ?? null;
@@ -185,18 +190,29 @@ export function createLocalSpaceViewModel(
     width: snapshot.instance.width,
     height: snapshot.instance.height,
     ship: {
-      position: snapshot.instance.ship.position,
-      headingRadians: snapshot.instance.ship.headingRadians,
+      position: combat?.attacker.position ?? snapshot.instance.ship.position,
+      headingRadians: combat?.attacker.headingRadians ?? snapshot.instance.ship.headingRadians,
       turnRateRadiansPerSecond: snapshot.instance.ship.turnRateRadiansPerSecond,
       angularThrust: snapshot.instance.ship.angularThrust,
       lateralThrust: snapshot.instance.ship.lateralThrust,
-      speed: snapshot.instance.ship.speed,
+      speed: combat?.attacker.speed ?? snapshot.instance.ship.speed,
       nominalLengthMeters: ship.nominalLengthMeters,
       spriteUrl: ship.sprite.assetUrl,
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
-    npcShips,
+    npcShips: npcShips.map((npc) => {
+      if (combat?.defender.id === npc.id) {
+        return {
+          ...npc,
+          position: combat.defender.position,
+          headingRadians: combat.defender.headingRadians,
+          speed: combat.defender.speed,
+          isSelected: true,
+        };
+      }
+      return { ...npc, isSelected: npc.id === selectedNpcId };
+    }),
     asteroids,
     chunks: snapshot.instance.chunks.map(mapChunk),
     selectedAsteroid,
@@ -219,5 +235,6 @@ export function createLocalSpaceViewModel(
     shieldImpacts: snapshot.shieldImpacts,
     collectedOre: snapshot.collectedOre,
     cargoResources: mapCargo(snapshot),
+    combat,
   };
 }

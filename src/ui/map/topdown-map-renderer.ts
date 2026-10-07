@@ -115,11 +115,14 @@ export class TopdownMapRenderer {
   }
 
   pickContact(x: number, y: number): StarMapPick | null {
-    let best: HitArea | null = null;
-    for (const area of this.hitAreas) {
-      if (Math.hypot(x - area.x, y - area.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
+    const matches = this.hitAreas.filter(
+      (area) => Math.hypot(x - area.x, y - area.y) <= area.radius
+    );
+    const npc = matches
+      .filter((area) => area.kind === 'npc')
+      .sort((first, second) => first.radius - second.radius)[0];
+    const best =
+      npc ?? [...matches].sort((first, second) => first.radius - second.radius)[0] ?? null;
     return best ? { kind: best.kind, id: best.id } : null;
   }
 

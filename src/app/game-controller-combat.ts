@@ -1,5 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
-import type { StrategicCombatantSetup } from '../systems/combat';
+import { getShipMine, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
   resolveShipRuntimeSetup,
@@ -15,6 +15,15 @@ export function createPlayerCombatant(
     const component = getShipComponent('weapon', id);
     return component?.weapon ? [component] : [];
   });
+  const sensor = (runtime.installed.sensor ?? [])
+    .map((id) => getShipComponent('sensor', id))
+    .find((component) => component !== null);
+  const mineTier = Math.max(1, Math.min(6, runtime.stats.maxComponentTier));
+  const mines = [
+    getShipMine('mine-ion-' + mineTier),
+    getShipMine('mine-shaped-charge-' + mineTier),
+    getShipMine('mine-hunter-' + mineTier),
+  ].filter((mine): mine is NonNullable<typeof mine> => mine !== null);
 
   return {
     id: 'player',
@@ -28,5 +37,12 @@ export function createPlayerCombatant(
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
     criticalChance: runtime.crewEffects.weapons.criticalChance,
     cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
+    preferredTactic: 'fight',
+    combatSpeed: Math.max(90, Math.min(190, ship.navigation.cruiseSpeed * 0.35)),
+    mines,
+    sensorCrewSkill: runtime.sensorCrewSkill,
+    sensorTier: sensor?.tier ?? 0,
+    sensorRangeMeters: runtime.scanAvailable ? 1000 : 0,
+    sensorRangeMultiplier: runtime.sensorModifier || 1,
   };
 }
