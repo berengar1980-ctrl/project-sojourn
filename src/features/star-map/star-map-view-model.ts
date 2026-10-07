@@ -36,7 +36,9 @@ export interface StarMapLocationView {
 export interface NpcShipMapView {
   readonly id: string;
   readonly name: string;
-  readonly job: 'freighter' | 'miner' | 'salvager' | 'patrol';
+  readonly job: 'freighter' | 'miner' | 'salvager' | 'patrol' | 'pirate';
+  readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly isTravelling: boolean;
