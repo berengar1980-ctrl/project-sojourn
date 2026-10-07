@@ -77,11 +77,8 @@ assert(
     sector.includes('traffic * 2.4') &&
     sector.includes('density * 3.4') &&
     sector.includes('patrolPressure * 0.85') &&
-    sector.includes("'Auf Beutezug · Jagdrevier'") &&
-    sector.includes('PIRATE_POPULATION_TARGET = 9') &&
-    sector.includes('schedulePirateRespawns') &&
-    sector.includes('deployDuePirateRespawns'),
-  'pirates must choose traffic-rich hunt zones, avoid clustering/patrol pressure and replenish losses'
+    sector.includes("'Auf Beutezug · Jagdrevier'"),
+  'pirates must choose traffic-rich hunt zones while avoiding clustering and patrol pressure'
 );
 
 assert(
@@ -91,6 +88,13 @@ assert(
     engagement.includes('function transferPirateLoot(') &&
     engagement.includes('remaining = 10'),
   'pirates must intercept travelling players, raid civilian ships and steal up to ten cargo units'
+);
+
+assert(
+  sector.includes('function beginCombatRecovery(') &&
+    sector.includes("npc.activityId = 'repair'") &&
+    engagement.includes('KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'),
+  'pirates and civilians must survive defeat as disabled ships and recover instead of dying'
 );
 
 assert(
