@@ -17,6 +17,7 @@ export interface LocalSpaceSystemsOptions {
   readonly sensorCrewSkill: number;
   readonly reactorOutput: number;
   readonly reactorContinuousUsed: number;
+  readonly shieldRegenMultiplier?: number;
 }
 
 type ShipSystemsSnapshot = Pick<
@@ -53,6 +54,8 @@ export function createLocalSpaceShipSystems(
   };
   let shieldImpacts: ShieldImpactEffect[] = [];
   let shieldImpactCounter = 0;
+  let shieldRegenBlockedSeconds = 0;
+  const shieldRegenMultiplier = Math.max(0, options?.shieldRegenMultiplier ?? 1);
 
   return {
     scanAvailable: options?.scanAvailable ?? true,
@@ -70,7 +73,15 @@ export function createLocalSpaceShipSystems(
     },
 
     advance(deltaSeconds) {
-      shieldImpacts = advanceShieldImpacts(shieldImpacts, deltaSeconds);
+      const delta = Math.max(0, deltaSeconds);
+      shieldImpacts = advanceShieldImpacts(shieldImpacts, delta);
+      shieldRegenBlockedSeconds = Math.max(0, shieldRegenBlockedSeconds - delta);
+      if (shieldRegenBlockedSeconds <= 0 && shield.currentHp < shield.maxHp) {
+        shield.currentHp = Math.min(
+          shield.maxHp,
+          shield.currentHp + 0.4 * shieldRegenMultiplier * delta
+        );
+      }
     },
 
     damageHullFraction(fraction) {
@@ -95,7 +106,13 @@ export function createLocalSpaceShipSystems(
         shieldImpactCounter
       );
       shieldImpactCounter += 1;
-      if (result.damage > 0) shieldImpacts.push(result.impact);
+      if (result.damage > 0) {
+        shieldImpacts.push(result.impact);
+        shieldRegenBlockedSeconds = Math.max(
+          shieldRegenBlockedSeconds,
+          shield.currentHp <= 0 ? 7 : 3
+        );
+      }
       if (result.overflowDamage > 0) {
         hull.currentHp = Math.max(0, hull.currentHp - result.overflowDamage);
       }
