@@ -201,7 +201,6 @@ export function createPirateNpcService(options: PirateNpcServiceOptions): Pirate
         activityId: 'raiding',
         activity: 'Auf Beutezug',
         successfulRuns: 0,
-        pirateHuntZoneId: undefined,
         pirateHuntZoneCycles: 0,
         pirateRaidCooldownSeconds: 5,
       };
