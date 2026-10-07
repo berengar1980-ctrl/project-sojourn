@@ -398,9 +398,17 @@ export function createNpcSectorService(
         npc.activity = 'Kampfunfähig';
         return false;
       }
-      const destinationId = nearestLocation(world, position);
+      const destinationId =
+        npc.pirate && npc.pirateHomeLocationId
+          ? npc.pirateHomeLocationId
+          : nearestLocation(world, position);
       if (!destinationId) return false;
-      return startDeepSpaceLeg(npc, position, destinationId, reason);
+      return startDeepSpaceLeg(
+        npc,
+        position,
+        destinationId,
+        npc.pirate ? 'Kampfschäden · Rückzug' : reason
+      );
     },
 
     combatMode(npc) {
