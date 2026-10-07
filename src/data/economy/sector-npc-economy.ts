@@ -186,6 +186,7 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
           ? Math.max(20, Math.round(ship.cargoCapacityTons * 0.35))
           : ship.cargoCapacityTons,
       cargo: {},
+      marketIntel: {},
       workResourceIds,
       ...(workLocationId ? { workLocationId } : {}),
       fuel: profile.fuelCapacity,

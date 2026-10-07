@@ -1,5 +1,4 @@
 import type {
-  EconomyMarketState,
   EconomyResourceDefinition,
   EconomyResourceId,
   NpcEconomyState,
@@ -11,8 +10,19 @@ export interface EconomyPoint {
   readonly y: number;
 }
 
+export interface NpcTradeMarketEntry {
+  readonly resourceId: EconomyResourceId;
+  readonly stock: number;
+  readonly price: number;
+}
+
+export interface NpcTradeMarketView {
+  readonly locationId: string;
+  readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
+}
+
 export interface NpcSideTradeContext {
-  readonly markets: readonly EconomyMarketState[];
+  readonly markets: readonly NpcTradeMarketView[];
   readonly resources: readonly EconomyResourceDefinition[];
   readonly positions: Readonly<Record<string, EconomyPoint>>;
 }
@@ -35,7 +45,7 @@ function distance(first: EconomyPoint, second: EconomyPoint): number {
 }
 
 function sourcePricePercentile(
-  markets: readonly EconomyMarketState[],
+  markets: readonly NpcTradeMarketView[],
   resourceId: EconomyResourceId,
   price: number
 ): number {
@@ -63,8 +73,8 @@ interface ScoredPlan {
 
 function destinationCandidate(
   resource: EconomyResourceDefinition,
-  source: EconomyMarketState,
-  destination: EconomyMarketState,
+  source: NpcTradeMarketView,
+  destination: NpcTradeMarketView,
   workLocationId: string,
   maxQuantity: number,
   geometry: RouteGeometry,
@@ -110,7 +120,7 @@ function destinationCandidate(
 function bestResourceCandidate(
   npc: NpcEconomyState,
   resource: EconomyResourceDefinition,
-  source: EconomyMarketState,
+  source: NpcTradeMarketView,
   workLocationId: string,
   free: number,
   geometry: RouteGeometry,
