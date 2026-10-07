@@ -47,8 +47,17 @@ assert(
 assert(
   combatPanel.includes('strategic-combat-map') &&
     combatPanel.includes('StrategicCombatRenderer') &&
-    combatRenderer.includes('drawWeaponEvent'),
-  'combat contact must open a dedicated local battle-map visualization'
+    combatRenderer.includes('drawProjectiles') &&
+    combatRenderer.includes('drawMines') &&
+    combatRenderer.includes('drawImpact'),
+  'star-map combat contact must open a live tactical battle-map visualization'
 );
 
-console.log('PASS local NPC selection, attack wiring and combat-map transition');
+assert(
+  controller.includes("embeddedCombat = 'local-space'") &&
+    controller.includes("embeddedCombat = 'salvage-space'") &&
+    controller.includes('engageNpcInArena'),
+  'attacks started inside mining or salvage space must stay embedded in that map'
+);
+
+console.log('PASS local NPC selection, embedded attacks and tactical combat rendering');
