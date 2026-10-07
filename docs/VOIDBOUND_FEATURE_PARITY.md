@@ -99,6 +99,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-07 | Crew-Skill Runtime Audit | Alle Voidbound-Verwendungen der sieben Stationsskills auditiert. Sensorik live an NPC-Kontakte, Transponder und echte historische Markt-Intel gekoppelt; Engineering-Schildregeneration mit 3/7-s Sperren portiert. Fehlende Parent-Systeme bleiben ausdrücklich READY/OPEN statt fälschlich umgesetzt. |
 | 2026-10-07 | Persönliches NPC-Markt-Intel | Händler, Miner und Salvager besitzen eigene Markt-Snapshots. Lokale Märkte werden beim Aufenthalt exakt aktualisiert, entfernte Berichte altern und unbekannte Märkte beeinflussen keine Route. `npc.trade_routes` und `npc.resource_side_trade` bleiben umgesetzt; keine Statusänderung. |
 | 2026-10-07 | NPC-Autonomie State Machine | Händler, Miner, Salvager und Patrol teilen eine sekundengenaue Activity-State-Machine mit Dock-/Liege-/Denk-/Lade-/Startzeiten. Persistente Persönlichkeit beeinflusst Timing und Entscheidungen; Patrols erhalten echte Ruhephasen. Bestehende NPC-Features bleiben umgesetzt; keine Statusänderung. |
+| 2026-10-07 | PR #80 · Räumlicher Raumkampf | Raumkampf auf echte Top-Down-Karten umgestellt: Verfolgung führt in lokale Gefechte; in Mining-/Bergungsfeldern bleibt der Kampf in derselben Karte. Waffen fliegen räumlich mit Cooldowns, Schild/Hülle und Impact-Effekten; NPC-KI kämpft, kitet, legt Minen oder flieht. Drei Minentypen nutzen Sensor-Erkennung, Hunter-Minen verfolgen Ziele; Asteroiden und Wracks blockieren Kampfbewegung. `combat.flee` offen → umgesetzt; `combat.weapon_fire` bleibt teilweise wegen noch fehlender vollständiger Munitions-/Fire-Control-Persistenz. |
 
 ## Vollständige Matrix
 
@@ -430,7 +431,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `combat.fire_control` | Fire-control impulse count follows weapon slots | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.shield_window` | Shield break opens temporary hull-damage window | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.pause` | Combat pause freezes cooldown/overload deadlines | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
-| ⬜ Offen | `combat.flee` | Flee/retreat can resolve without corrupting navigation | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
+| ✅ Umgesetzt | `combat.flee` | Flee/retreat can resolve without corrupting navigation | Räumlicher Raumkampf unterstützt Flucht als echte Taktik: Schiffe brechen aus dem Gefechtsraum aus, der Kampf wird sauber beendet und bei lokalen Gefechten wird die Endposition in Mining-/Bergungsraum zurückgeschrieben. | übernehmen |
 | ⬜ Offen | `combat.victory` | Victory resolves source event, cargo/components and corsair fate | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.defeat` | Defeat consistently reduces cargo and resolves combat | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.overload_cooldown` | Overload increases weapon cooldown | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
