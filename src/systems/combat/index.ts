@@ -21,3 +21,9 @@ export type {
   StrategicCombatantSnapshot,
   StrategicCombatSide,
 } from './strategic-combat-service';
+
+export { createStarMapEngagementService } from './star-map-engagement-service';
+export type {
+  StarMapEngagementOptions,
+  StarMapEngagementService,
+} from './star-map-engagement-service';
