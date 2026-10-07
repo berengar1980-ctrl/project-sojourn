@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -18,7 +19,8 @@ function createActiveLocalModel(
   ship: ShipDefinition,
   locationName: string,
   npcMining: NpcLocalMiningService | null,
-  selectedNpcId: string | null
+  selectedNpcId: string | null,
+  combat: StrategicCombatSnapshot | null
 ) {
   const npcShips = (npcMining?.ships ?? []).flatMap((npc) => {
     const definition = getShipDefinition(npc.shipId);
@@ -47,7 +49,8 @@ function createActiveLocalModel(
     ship,
     locationName + ' // Mining',
     npcShips,
-    selectedNpcId
+    selectedNpcId,
+    combat
   );
 }
 
@@ -68,7 +71,8 @@ export function createControllerLocalModel(
   ship: ShipDefinition,
   navigation: NavigationService,
   npcMining: NpcLocalMiningService | null,
-  selectedNpcId: string | null = null
+  selectedNpcId: string | null = null,
+  combat: StrategicCombatSnapshot | null = null
 ) {
   const locationName = miningLocationById(navigation.getSnapshot().currentLocationId)?.name;
   return createActiveLocalModel(
@@ -76,6 +80,7 @@ export function createControllerLocalModel(
     ship,
     locationName ?? 'Mining Zone',
     npcMining,
-    selectedNpcId
+    selectedNpcId,
+    combat
   );
 }
