@@ -437,6 +437,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
       state.embeddedCombat === 'salvage-space'
         ? context.engagements.activePlayerCombat()?.getSnapshot() ?? null
         : null,
+    isCombatActive: () => state.embeddedCombat === 'salvage-space',
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
     ),
