@@ -14,6 +14,8 @@ const salvageInput = read('src/ui/salvage/salvage-space-input.ts');
 const salvagePanel = read('src/ui/salvage/salvage-space-panel.ts');
 const salvageRenderer = read('src/ui/salvage/salvage-space-renderer.ts');
 const engagements = read('src/systems/combat/star-map-engagement-service.ts');
+const combatPanel = read('src/ui/combat/strategic-combat-panel.ts');
+const combatRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 
 assert(
@@ -42,5 +44,11 @@ assert(
     salvageInput.includes('event.clientX - rect.left'),
   'local click coordinates must be measured against the canvas bounds'
 );
+assert(
+  combatPanel.includes('strategic-combat-map') &&
+    combatPanel.includes('StrategicCombatRenderer') &&
+    combatRenderer.includes('drawWeaponEvent'),
+  'combat contact must open a dedicated local battle-map visualization'
+);
 
-console.log('PASS local NPC selection and attack wiring in mining and salvage scenes');
+console.log('PASS local NPC selection, attack wiring and combat-map transition');
