@@ -191,8 +191,6 @@ function createPirateStates(): SectorNpcState[] {
       pirateRaidCooldownSeconds: 0,
     };
   });
-
-  return civilians.concat(createPirateStates());
 }
 
 export function createSectorNpcEconomyStates(): SectorNpcState[] {
@@ -253,4 +251,6 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       successfulRuns: 0,
     };
   });
+
+  return civilians.concat(createPirateStates());
 }
