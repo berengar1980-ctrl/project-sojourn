@@ -479,6 +479,27 @@ function crewMemberView(member: CrewMember): PortCrewView {
   };
 }
 
+function componentSlotView(
+  type: ShipComponentType,
+  index: number,
+  componentId: string | null,
+  typeLabel: string,
+  weaponSlot: boolean
+): PortShipComponentSlotView {
+  const definition = componentId ? getShipComponent(type, componentId) : null;
+  return {
+    key: type + '-' + index,
+    type,
+    typeLabel,
+    index,
+    componentId,
+    name: definition?.name ?? 'LEER',
+    tier: definition?.tier ?? null,
+    power: definition?.power ?? 0,
+    weaponSlot,
+  };
+}
+
 function componentSlots(ship: ShipDefinition, state: PortShipStateInput): PortShipComponentSlotView[] {
   const types: ShipComponentType[] = ['reactor', 'engine', 'shield', 'hull', 'sensor', 'cargo'];
   if (ship.role === 'mining') types.push('mining');
@@ -486,34 +507,12 @@ function componentSlots(ship: ShipDefinition, state: PortShipStateInput): PortSh
 
   const slots: PortShipComponentSlotView[] = [];
   for (const type of types) {
-    const id = state.installed[type]?.[0] || null;
-    const definition = id ? getShipComponent(type, id) : null;
-    slots.push({
-      key: type + '-0',
-      type,
-      typeLabel: COMPONENT_LABELS[type],
-      index: 0,
-      componentId: id,
-      name: definition?.name ?? 'LEER',
-      tier: definition?.tier ?? null,
-      power: definition?.power ?? 0,
-      weaponSlot: false,
-    });
+    const id = state.installed[type]?.[0] ?? null;
+    slots.push(componentSlotView(type, 0, id, COMPONENT_LABELS[type], false));
   }
   for (let index = 0; index < state.weaponSlots; index += 1) {
-    const id = state.installed.weapon?.[index] || null;
-    const definition = id ? getShipComponent('weapon', id) : null;
-    slots.push({
-      key: 'weapon-' + index,
-      type: 'weapon',
-      typeLabel: `Waffenhalterung ${index + 1}`,
-      index,
-      componentId: id,
-      name: definition?.name ?? 'LEER',
-      tier: definition?.tier ?? null,
-      power: definition?.power ?? 0,
-      weaponSlot: true,
-    });
+    const id = state.installed.weapon?.[index] ?? null;
+    slots.push(componentSlotView('weapon', index, id, `Waffenhalterung ${index + 1}`, true));
   }
   return slots;
 }
