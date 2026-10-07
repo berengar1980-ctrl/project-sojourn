@@ -20,7 +20,7 @@ jobs:
             - ~/.npm
       - run:
           name: Format
-          command: node scripts/ci-run-and-report.cjs format -- node scripts/prettier-diff-probe.cjs
+          command: node scripts/ci-run-and-report.cjs format -- npx prettier --write .
       - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
