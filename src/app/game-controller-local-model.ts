@@ -17,7 +17,8 @@ function createActiveLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
   locationName: string,
-  npcMining: NpcLocalMiningService | null
+  npcMining: NpcLocalMiningService | null,
+  selectedNpcId: string | null
 ) {
   const npcShips = (npcMining?.ships ?? []).flatMap((npc) => {
     const definition = getShipDefinition(npc.shipId);
@@ -45,7 +46,8 @@ function createActiveLocalModel(
     requireLocalSpace(service).getSnapshot(),
     ship,
     locationName + ' // Mining',
-    npcShips
+    npcShips,
+    selectedNpcId
   );
 }
 
@@ -65,8 +67,15 @@ export function createControllerLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
   navigation: NavigationService,
-  npcMining: NpcLocalMiningService | null
+  npcMining: NpcLocalMiningService | null,
+  selectedNpcId: string | null = null
 ) {
   const locationName = miningLocationById(navigation.getSnapshot().currentLocationId)?.name;
-  return createActiveLocalModel(service, ship, locationName ?? 'Mining Zone', npcMining);
+  return createActiveLocalModel(
+    service,
+    ship,
+    locationName ?? 'Mining Zone',
+    npcMining,
+    selectedNpcId
+  );
 }
