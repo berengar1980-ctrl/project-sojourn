@@ -1,10 +1,20 @@
 import type {
+  CombatBeamSnapshot,
   CombatImpactSnapshot,
   CombatMineSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { getShipDefinition } from '../../systems/ships';
+import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import {
+  projectHardpoint,
+  spriteDrawOffset,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
+import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
+import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 
 interface Point {
   readonly x: number;
@@ -27,6 +37,10 @@ function clamp01(value: number): number {
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly images = new Map<string, HTMLImageElement>();
+  private readonly engineEffects = new ShipEngineEffectsRenderer();
+  private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  private readonly lighting = new ShipLightingRenderer();
+  private readonly shieldImpacts = new ShieldImpactRenderer();
   private model: StrategicCombatSnapshot;
   private seenImpactSerial = -1;
   private impactAge = 1;
@@ -84,21 +98,44 @@ export class StrategicCombatRenderer {
     };
   }
 
+  private shipGeometry(
+    combatant: StrategicCombatSnapshot['attacker'],
+    width: number,
+    height: number
+  ): ShipScreenGeometry {
+    const image = this.image(combatant.shipId);
+    const definition = getShipDefinition(combatant.shipId);
+    const nominalLength = definition?.nominalLengthMeters ?? 60;
+    const canvasScale = Math.min(width / this.model.arena.width, height / this.model.arena.height);
+    const shipWidth = Math.max(44, Math.min(150, nominalLength * canvasScale * 3.2));
+    const aspect =
+      image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        ? image.naturalWidth / image.naturalHeight
+        : definition
+          ? definition.sprite.widthPx / definition.sprite.heightPx
+          : 2.2;
+    return {
+      center: this.screen(combatant.position, width, height),
+      width: shipWidth,
+      height: shipWidth / Math.max(0.35, aspect),
+      angle: combatant.headingRadians,
+    };
+  }
+
   private draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
 
-    const attacker = this.screen(this.model.attacker.position, width, height);
-    const defender = this.screen(this.model.defender.position, width, height);
-
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
-    this.drawShip(this.model.attacker, attacker, width, height);
-    this.drawShip(this.model.defender, defender, width, height);
-    this.drawImpact(this.model.lastImpact, width, height);
+    this.drawBeams(width, height);
+    this.drawShip(this.model.attacker, width, height, timeSeconds);
+    this.drawShip(this.model.defender, width, height, timeSeconds);
+    this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
   private drawBackground(width: number, height: number): void {
@@ -121,15 +158,60 @@ export class StrategicCombatRenderer {
     for (let index = 0; index < 110; index += 1) {
       const x = ((seed + index * 2654435761) >>> 0) % 10000;
       const y = ((seed ^ (index * 2246822519)) >>> 0) % 10000;
-      const px = (x / 10000) * width;
-      const py = (y / 10000) * height;
-      const radius = index % 11 === 0 ? 1.2 : 0.55;
       this.context.globalAlpha = 0.26 + ((index * 37) % 48) / 100;
       this.context.beginPath();
-      this.context.arc(px, py, radius, 0, Math.PI * 2);
+      this.context.arc((x / 10000) * width, (y / 10000) * height, index % 11 === 0 ? 1.2 : 0.55, 0, Math.PI * 2);
       this.context.fill();
     }
     this.context.globalAlpha = 1;
+  }
+
+  private drawBeams(width: number, height: number): void {
+    for (const beam of this.model.beams) this.drawBeam(beam, width, height);
+  }
+
+  private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
+    const source = beam.owner === 'attacker' ? this.model.attacker : this.model.defender;
+    const definition = getShipDefinition(source.shipId);
+    const geometry = this.shipGeometry(source, width, height);
+    const hardpoints = definition?.sprite.hardpoints.weaponLasers ?? [];
+    const hardpoint = hardpoints.length > 0 ? hardpoints[beam.weaponIndex % hardpoints.length] : null;
+    const start =
+      hardpoint && definition
+        ? projectHardpoint(hardpoint, definition.sprite.hardpoints, geometry)
+        : geometry.center;
+    const end = this.screen(beam.end, width, height);
+    const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
+
+    this.context.save();
+    this.context.lineCap = 'round';
+    if (beam.kind === 'laser') {
+      this.context.shadowColor = 'rgba(67, 185, 255, .95)';
+      this.context.shadowBlur = 10;
+      this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
+      this.context.lineWidth = 4.5;
+      this.context.beginPath();
+      this.context.moveTo(start.x, start.y);
+      this.context.lineTo(end.x, end.y);
+      this.context.stroke();
+
+      this.context.shadowBlur = 3;
+      this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
+      this.context.lineWidth = 1.15;
+      this.context.beginPath();
+      this.context.moveTo(start.x, start.y);
+      this.context.lineTo(end.x, end.y);
+      this.context.stroke();
+    } else {
+      this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
+      this.context.lineWidth = 1.3;
+      this.context.setLineDash([18, 5]);
+      this.context.beginPath();
+      this.context.moveTo(start.x, start.y);
+      this.context.lineTo(end.x, end.y);
+      this.context.stroke();
+    }
+    this.context.restore();
   }
 
   private drawProjectiles(width: number, height: number): void {
@@ -150,16 +232,7 @@ export class StrategicCombatRenderer {
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);
 
-    if (projectile.kind === 'laser') {
-      this.context.strokeStyle = 'rgba(102, 207, 255, .95)';
-      this.context.lineWidth = 2;
-      this.context.shadowColor = 'rgba(75, 181, 255, .9)';
-      this.context.shadowBlur = 8;
-      this.context.beginPath();
-      this.context.moveTo(-34, 0);
-      this.context.lineTo(34, 0);
-      this.context.stroke();
-    } else if (projectile.kind === 'plasma') {
+    if (projectile.kind === 'plasma') {
       this.context.fillStyle = 'rgba(118, 225, 255, .92)';
       this.context.shadowColor = 'rgba(81, 194, 255, .95)';
       this.context.shadowBlur = 12;
@@ -173,14 +246,7 @@ export class StrategicCombatRenderer {
       this.context.lineWidth = 3;
       this.context.beginPath();
       this.context.moveTo(-8, 0);
-      this.context.lineTo(-22, 0);
-      this.context.stroke();
-    } else if (projectile.kind === 'rail') {
-      this.context.strokeStyle = 'rgba(244, 224, 188, .95)';
-      this.context.lineWidth = 1.4;
-      this.context.beginPath();
-      this.context.moveTo(-24, 0);
-      this.context.lineTo(24, 0);
+      this.context.lineTo(-23, 0);
       this.context.stroke();
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
@@ -221,74 +287,55 @@ export class StrategicCombatRenderer {
 
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
-    point: Point,
     width: number,
-    height: number
+    height: number,
+    timeSeconds: number
   ): void {
     const image = this.image(combatant.shipId);
     const definition = getShipDefinition(combatant.shipId);
-    const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = Math.min(width / this.model.arena.width, height / this.model.arena.height);
-    const shipWidth = Math.max(44, Math.min(150, nominalLength * canvasScale * 3.2));
-    const aspect =
-      image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-        ? image.naturalWidth / image.naturalHeight
-        : definition
-          ? definition.sprite.widthPx / definition.sprite.heightPx
-          : 2.2;
-    const shipHeight = shipWidth / Math.max(0.35, aspect);
-    const shieldRatio = clamp01(combatant.shieldHp / Math.max(1, combatant.shieldMaxHp));
+    const geometry = this.shipGeometry(combatant, width, height);
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
+    const hardpoints = definition?.sprite.hardpoints;
+    const engineIntensity = Math.max(0, Math.min(1, combatant.speed / 120));
+    const maneuverDemand = {
+      turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
+      angularThrust: combatant.angularThrust,
+      lateralThrust: 0,
+      longitudinalThrust: 0,
+    };
 
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(combatant.headingRadians);
-    this.context.globalAlpha = hullRatio <= 0 ? 0.28 : 1;
-
-    if (combatant.speed > 8) {
-      this.context.strokeStyle = 'rgba(111, 184, 224, .38)';
-      this.context.lineWidth = Math.max(2, shipHeight * 0.08);
-      this.context.beginPath();
-      this.context.moveTo(-shipWidth * 0.45, 0);
-      this.context.lineTo(-shipWidth * 0.72, 0);
-      this.context.stroke();
+    if (hardpoints) {
+      this.engineEffects.drawExhaust(this.context, hardpoints, geometry, engineIntensity, timeSeconds, 'below');
+      this.maneuverEffects.drawExhaust(this.context, hardpoints, geometry, maneuverDemand, timeSeconds, 'below');
     }
 
-    if (image && image.complete && image.naturalWidth > 0) {
-      this.context.drawImage(
+    this.context.save();
+    this.context.translate(geometry.center.x, geometry.center.y);
+    this.context.rotate(geometry.angle);
+    this.context.globalAlpha = hullRatio <= 0 ? 0.28 : 1;
+    if (image && image.complete && image.naturalWidth > 0 && hardpoints) {
+      const offset = spriteDrawOffset(hardpoints, geometry);
+      this.lighting.draw(this.context, {
         image,
-        -shipWidth / 2,
-        -shipHeight / 2,
-        shipWidth,
-        shipHeight
-      );
+        width: geometry.width,
+        height: geometry.height,
+        angle: geometry.angle,
+        light: { x: -0.72, y: -0.56 },
+        offsetX: offset.x,
+        offsetY: offset.y,
+      });
+    } else if (image && image.complete && image.naturalWidth > 0) {
+      this.context.drawImage(image, -geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
     } else {
       this.context.fillStyle = '#a4b2ba';
-      this.context.beginPath();
-      this.context.moveTo(shipWidth * 0.5, 0);
-      this.context.lineTo(-shipWidth * 0.45, -shipHeight * 0.45);
-      this.context.lineTo(-shipWidth * 0.32, shipHeight * 0.45);
-      this.context.closePath();
-      this.context.fill();
+      this.context.fillRect(-geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
     }
     this.context.restore();
 
-    if (shieldRatio > 0) {
-      this.context.save();
-      this.context.strokeStyle = `rgba(103, 191, 227, ${0.18 + shieldRatio * 0.45})`;
-      this.context.lineWidth = 1.3 + shieldRatio;
-      this.context.beginPath();
-      this.context.ellipse(
-        point.x,
-        point.y,
-        shipWidth * 0.62,
-        shipHeight * 0.82,
-        combatant.headingRadians,
-        0,
-        Math.PI * 2
-      );
-      this.context.stroke();
-      this.context.restore();
+    if (hardpoints) {
+      this.engineEffects.drawGlow(this.context, hardpoints, geometry, engineIntensity, timeSeconds, 'above');
+      this.maneuverEffects.drawGlow(this.context, hardpoints, geometry, maneuverDemand, timeSeconds, 'above');
+      this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
 
     this.context.fillStyle = hullRatio > 0.35 ? 'rgba(220, 232, 238, .78)' : '#d88673';
@@ -296,48 +343,40 @@ export class StrategicCombatRenderer {
     this.context.textAlign = 'center';
     this.context.fillText(
       combatant.name.toUpperCase(),
-      point.x,
-      point.y + shipHeight * 0.8 + 18
+      geometry.center.x,
+      geometry.center.y + geometry.height * 0.8 + 18
     );
   }
 
-  private drawImpact(
+  private drawHullImpact(
     impact: CombatImpactSnapshot | null,
     width: number,
     height: number
   ): void {
-    if (!impact || this.impactAge >= 1) return;
+    if (!impact || this.impactAge >= 1 || (impact.layer !== 'hull' && impact.layer !== 'obstacle')) {
+      return;
+    }
     const point = this.screen(impact.position, width, height);
     const progress = this.impactAge;
-    const radius = 8 + progress * (impact.layer === 'shield' ? 38 : 24);
+    const radius = 8 + progress * 24;
     const alpha = 1 - progress;
 
     this.context.save();
-    if (impact.layer === 'shield') {
-      this.context.strokeStyle = `rgba(123, 211, 255, ${alpha * 0.9})`;
-      this.context.lineWidth = 2.2;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius, -0.9, 0.9);
-      this.context.stroke();
-      this.context.fillStyle = `rgba(191, 235, 255, ${alpha * 0.22})`;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
-      this.context.fill();
-    } else if (impact.layer === 'hull') {
-      this.context.fillStyle = `rgba(255, 147, 72, ${alpha * 0.85})`;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
-      this.context.fill();
+    this.context.fillStyle =
+      impact.layer === 'obstacle'
+        ? `rgba(196, 185, 160, ${alpha * 0.6})`
+        : `rgba(255, 147, 72, ${alpha * 0.85})`;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
+    this.context.fill();
+    if (impact.layer === 'hull') {
       this.context.strokeStyle = `rgba(255, 218, 154, ${alpha * 0.8})`;
       this.context.lineWidth = 1.4;
       for (let index = 0; index < 5; index += 1) {
         const angle = index * 1.37 + impact.serial;
         this.context.beginPath();
         this.context.moveTo(point.x, point.y);
-        this.context.lineTo(
-          point.x + Math.cos(angle) * radius,
-          point.y + Math.sin(angle) * radius
-        );
+        this.context.lineTo(point.x + Math.cos(angle) * radius, point.y + Math.sin(angle) * radius);
         this.context.stroke();
       }
     }
