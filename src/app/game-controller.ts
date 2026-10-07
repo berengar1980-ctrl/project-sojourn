@@ -335,6 +335,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   destroyControllerCombat(context);
   destroyScenePanels(state.panels);
   state.mode = 'local-space';
+  state.embeddedCombat = null;
   const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   if (!reuseSeed || state.localSpaceSeed === 0) {
@@ -404,6 +405,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   const location = salvageLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   state.mode = 'salvage-space';
+  state.embeddedCombat = null;
   if (!reuseSeed || state.salvageSpaceSeed === 0) {
     state.salvageSpaceSeed = localSeed((state.visitCounter += 1));
   }
