@@ -10,6 +10,7 @@ export interface LocalPanelActions {
   readonly onSelectAsteroid: (id: string | null) => void;
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly onStartMining: () => Promise<void>;
+  readonly onMiningResourceSelection: (resourceIds: readonly string[] | null) => void;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
   readonly onMiningEventChoice: (
@@ -65,6 +66,10 @@ export function createLocalPanelActions(context: LocalActionContext): LocalPanel
       activeSpace.startNavigation(plan.route[plan.route.length - 1]!, plan.route);
       context.refresh();
       return plan.compromised ? 'risk' : 'safe';
+    },
+    onMiningResourceSelection(resourceIds) {
+      context.getSpace()?.setMiningResourceSelection(resourceIds);
+      context.refresh();
     },
     async onStartMining() {
       const activeSpace = context.getSpace();
