@@ -48,8 +48,10 @@ assert(
   combatPanel.includes('strategic-combat-map') &&
     combatPanel.includes('StrategicCombatRenderer') &&
     combatRenderer.includes('drawProjectiles') &&
+    combatRenderer.includes('drawBeams') &&
+    combatRenderer.includes('ShieldImpactRenderer') &&
     combatRenderer.includes('drawMines') &&
-    combatRenderer.includes('drawImpact'),
+    combatRenderer.includes('drawHullImpact'),
   'star-map combat contact must open a live tactical battle-map visualization'
 );
 
