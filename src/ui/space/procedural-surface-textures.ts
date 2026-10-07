@@ -207,7 +207,7 @@ interface PlanetPalette {
 }
 
 // prettier-ignore
-function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
+function planetPalette(biome: PlanetBiome, dangerLevel: number, id = ''): PlanetPalette {
   if (biome === 'scorched') {
     return {
       water: [48, 34, 31],
@@ -241,6 +241,14 @@ function planetPalette(biome: PlanetBiome, dangerLevel: number): PlanetPalette {
     };
   }
   if (biome === 'gas-giant') {
+    if (id === 'pale-reach') {
+      return {
+        water: [31, 66, 91],
+        lowland: [74, 125, 149],
+        highland: [146, 202, 214],
+        ice: [215, 235, 239],
+      };
+    }
     return {
       water: [65, 91, 111],
       lowland: [126, 152, 157],
@@ -347,7 +355,7 @@ export function createPlanetTexture(
 
   const image = context.createImageData(size, size);
   const seed = hashSeed(id + ':planet:' + biome);
-  const palette = planetPalette(biome, dangerLevel);
+  const palette = planetPalette(biome, dangerLevel, id);
 
   for (let y = 0; y < size; y += 1) {
     const latitude = Math.abs((y / (size - 1)) * 2 - 1);
