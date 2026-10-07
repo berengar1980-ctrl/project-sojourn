@@ -19,8 +19,8 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Format pirate changes
-          command: node scripts/ci-run-and-report.cjs format -- npx prettier --check src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/systems/npcs/npc-sector-service.ts src/systems/combat/star-map-engagement-service.ts src/systems/combat/strategic-combat-service.ts src/app/game-controller-star-map.ts src/features/star-map/star-map-view-model.ts src/ui/map/npc-ship-map-renderer.ts src/ui/map/star-map-panel.ts src/ui/combat/strategic-combat-renderer.ts src/ui/ships/pirate-insignia-renderer.ts tests/combat/pirate-npc-behavior.test.cjs tests/economy/npc-sector-simulation.test.cjs
+          name: Format pirate data probe
+          command: node scripts/ci-run-and-report.cjs format -- node scripts/prettier-pirate-probe.cjs
       - run:
           name: Lint pirate changes
           command: node scripts/ci-run-and-report.cjs lint -- npx eslint src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/systems/npcs/npc-combat-ai.ts src/systems/npcs/npc-sector-service.ts src/systems/combat/star-map-engagement-service.ts src/systems/combat/strategic-combat-service.ts src/app/game-controller-star-map.ts src/features/star-map/star-map-view-model.ts src/ui/map/npc-ship-map-renderer.ts src/ui/map/star-map-panel.ts src/ui/combat/strategic-combat-renderer.ts src/ui/ships/pirate-insignia-renderer.ts
