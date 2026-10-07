@@ -401,6 +401,14 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     runtimeOptions: controllerShipRuntimeOptions(context, state.activeShip),
     log: context.systemLog,
     audio: context.audio,
+    selectedNpcId: state.selectedNpcId,
+    onSelectNpc: (id) => {
+      state.selectedNpcId = id;
+    },
+    onAttackNpc: (id) => {
+      state.selectedNpcId = id;
+      if (context.engagements.engageNpcNow(id)) mountControllerCombat(context);
+    },
     onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
       mountControllerStarMap(context)
     ),
