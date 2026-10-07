@@ -63,7 +63,7 @@ export class NpcShipMapRenderer {
         id: npc.id,
         x: point.x,
         y: point.y,
-        radius: Math.max(12, Math.max(widthPx, geometry.height) * 0.75 + 6),
+        radius: Math.max(20, Math.max(widthPx, geometry.height) * 0.85 + 8),
       });
 
       if (labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
