@@ -273,12 +273,7 @@ function createControllerStarModel(
     ];
   });
 
-  return createStarMapViewModel(
-    narrowsSector,
-    navigationSnapshot,
-    ship,
-    npcShips
-  );
+  return createStarMapViewModel(narrowsSector, navigationSnapshot, ship, npcShips);
 }
 
 function createControllerLocalModel(
