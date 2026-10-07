@@ -6,11 +6,9 @@ import { createCrewRosterService, type CrewRosterService } from '../systems/crew
 import {
   createStarMapEngagementService,
   type StarMapEngagementService,
-  type StrategicCombatantSetup,
 } from '../systems/combat';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
-import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
 import {
@@ -19,23 +17,28 @@ import {
 } from '../systems/npcs/npc-local-mining-service';
 import {
   createShipLoadoutService,
-  getAllShipDefinitions,
-  getShipComponent,
   getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipLoadoutService,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
-import { createShipTestSwitcher, type ShipTestSwitcher } from '../ui/dev/ship-test-switcher';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import {
   createStrategicCombatPanel,
   type StrategicCombatPanel,
 } from '../ui/combat/strategic-combat-panel';
-import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createControllerEconomy, type ControllerEconomy } from './game-controller-economy';
+import { createPlayerCombatant } from './game-controller-combat';
+import {
+  createControllerShipSwitcher,
+  type ShipTestSwitcher,
+} from './game-controller-ship-switcher';
+import {
+  createControllerStarModel,
+  createControllerStarPanel,
+} from './game-controller-star-map';
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
 import { createMiningLocalSpace } from './game-controller-mining';
 import { createActivePortPanel } from './game-controller-port';
@@ -72,26 +75,6 @@ function createControllerLog(): SystemLogService {
   const log = createSystemLogService();
   log.write('SYSTEM ONLINE');
   return log;
-}
-
-function createControllerShipSwitcher(
-  root: HTMLElement,
-  activeShip: ShipDefinition,
-  navigation: NavigationService,
-  onSwitch: (ship: ShipDefinition) => void
-): ShipTestSwitcher {
-  return createShipTestSwitcher({
-    root,
-    ships: getAllShipDefinitions(),
-    activeShipId: activeShip.id,
-    disabled: navigation.getSnapshot().isTravelling,
-    onSelect: (shipId) => {
-      const nextShip = getShipDefinition(shipId);
-      if (!nextShip || nextShip.id === activeShip.id) return;
-      navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
-      onSwitch(nextShip);
-    },
-  });
 }
 
 function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService {
@@ -195,84 +178,6 @@ function advanceEconomyDay(
   }
 }
 
-function createControllerStarPanel(options: {
-  root: HTMLElement;
-  navigation: NavigationService;
-  log: SystemLogService;
-  getModel: () => ReturnType<typeof createStarMapViewModel>;
-  onEnterLocalSpace: () => void;
-  onEnterSalvageSpace: () => void;
-  onSelectNpc: (id: string) => void;
-  onAttackNpc: (id: string) => void;
-  onDock: () => void;
-}): StarMapPanel {
-  let panel: StarMapPanel | null = null;
-  panel = createStarMapPanel({
-    root: options.root,
-    model: options.getModel(),
-    log: options.log,
-    onSelectLocation: (id) => {
-      options.onSelectNpc('');
-      const snapshot = options.navigation.getSnapshot();
-      if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
-        if (miningLocationById(id)) {
-          options.onEnterLocalSpace();
-          return;
-        }
-        if (salvageLocationById(id)) {
-          options.onEnterSalvageSpace();
-          return;
-        }
-      }
-      options.navigation.selectDestination(id);
-      panel?.update(options.getModel());
-    },
-    onSelectNpc: options.onSelectNpc,
-    onAttackNpc: options.onAttackNpc,
-    onStartTravel: () => {
-      options.navigation.startTravel();
-      options.log.write('NAV > FLUG GESTARTET');
-      panel?.update(options.getModel());
-    },
-    onDock: options.onDock,
-  });
-  return panel;
-}
-
-function createControllerStarModel(
-  navigation: NavigationService,
-  ship: ShipDefinition,
-  economy: ControllerEconomy,
-  selectedNpcId: string | null
-) {
-  return createStarMapViewModel(
-    narrowsSector,
-    navigation.getSnapshot(),
-    ship,
-    economy.sectorNpcs.npcs.flatMap((npc) => {
-      const definition = getShipDefinition(npc.shipId);
-      if (!definition) return [];
-      return [
-        {
-          id: npc.id,
-          name: npc.name,
-          job: npc.job,
-          position: economy.sectorNpcs.livePosition(npc),
-          headingRadians: economy.sectorNpcs.liveHeading(npc),
-          isTravelling: economy.sectorNpcs.isTravelling(npc),
-          activity: npc.activity,
-          combatMode: economy.sectorNpcs.combatMode(npc),
-          nominalLengthMeters: definition.nominalLengthMeters,
-          spriteUrl: definition.sprite.assetUrl,
-          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-          hardpoints: definition.sprite.hardpoints,
-        },
-      ];
-    }),
-    selectedNpcId
-  );
-}
-
 function createControllerLocalModel(
   service: LocalSpaceService | null,
   ship: ShipDefinition,
@@ -322,28 +227,6 @@ function controllerShipRuntimeOptions(
   return {
     ...context.crew.runtimeOptions(ship),
     installed: context.loadouts.get(ship),
-  };
-}
-
-function controllerPlayerCombatant(context: ControllerRuntimeContext): StrategicCombatantSetup {
-  const ship = context.state.activeShip;
-  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
-  const weapons = (runtime.installed.weapon ?? []).flatMap((id) => {
-    const component = getShipComponent('weapon', id);
-    return component?.weapon ? [component] : [];
-  });
-  return {
-    id: 'player',
-    name: ship.name,
-    shipId: ship.id,
-    shieldHp: runtime.shieldMaxHp,
-    hullHp: runtime.hullMaxHp,
-    weapons,
-    hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
-    dodgeChance: runtime.crewEffects.piloting.dodgeChance,
-    damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
-    criticalChance: runtime.crewEffects.weapons.criticalChance,
-    cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
   };
 }
 
@@ -640,7 +523,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     getPlayerShip: () => state.activeShip,
-    getPlayerCombatant: () => controllerPlayerCombatant(context),
+    getPlayerCombatant: () => createPlayerCombatant(state.activeShip, controllerShipRuntimeOptions(context)),
     log: (message) => systemLog.write(message),
   });
   context = {
