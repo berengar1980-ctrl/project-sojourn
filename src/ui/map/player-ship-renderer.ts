@@ -15,9 +15,7 @@ import {
 import { ShipLightingRenderer, type ShipLightVector } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { ScreenPoint } from './map-camera';
-import { shipSymbolScale } from './map-visual-scale';
-
-const BASE_SHIP_WIDTH = 15;
+import { starMapShipWidth } from './map-visual-scale';
 
 function idleSeed(name: string): number {
   let hash = 2166136261;
@@ -59,8 +57,7 @@ export class PlayerShipRenderer {
   ): void {
     this.ensureImage(ship.spriteUrl);
 
-    const scale = shipSymbolScale(relativeZoom);
-    const width = BASE_SHIP_WIDTH * scale;
+    const width = starMapShipWidth(ship.nominalLengthMeters, relativeZoom);
     const aspectRatio = this.imageAspectRatio(ship.spriteAspectRatio);
     const idle = ship.isTravelling ? null : this.updateIdleShip(ship, timeSeconds);
     const pixelsPerMeter = width / ship.nominalLengthMeters;
