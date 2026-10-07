@@ -155,6 +155,62 @@ function chooseNearbyPrey(
 
 export function createPirateNpcService(options: PirateNpcServiceOptions): PirateNpcService {
   let decisionAccumulator = 0;
+  let elapsedSeconds = 0;
+  let respawnSerial = 0;
+  const targetPopulation = options.npcs.filter((npc) => npc.pirate).length;
+  const pirateTemplates = options.npcs
+    .filter((npc) => npc.pirate)
+    .map((npc) => structuredClone(npc));
+  const respawns: Array<{ dueSeconds: number; templateIndex: number }> = [];
+
+  function maintainPopulation(): void {
+    for (let index = options.npcs.length - 1; index >= 0; index -= 1) {
+      const npc = options.npcs[index]!;
+      if (!npc.pirate || npc.hullHp > 0) continue;
+      const templateIndex = Math.max(
+        0,
+        pirateTemplates.findIndex((template) => template.pirateFaction === npc.pirateFaction)
+      );
+      respawns.push({
+        dueSeconds: elapsedSeconds + 60 + (hashText(npc.id + ':respawn') % 181),
+        templateIndex,
+      });
+      options.npcs.splice(index, 1);
+    }
+
+    respawns.sort((first, second) => first.dueSeconds - second.dueSeconds);
+    while (
+      respawns.length > 0 &&
+      respawns[0]!.dueSeconds <= elapsedSeconds &&
+      options.npcs.filter((npc) => npc.pirate && npc.hullHp > 0).length < targetPopulation
+    ) {
+      const job = respawns.shift()!;
+      const template =
+        pirateTemplates[job.templateIndex % Math.max(1, pirateTemplates.length)] ??
+        pirateTemplates[0];
+      if (!template) break;
+      const fresh = structuredClone(template);
+      respawnSerial += 1;
+      fresh.id = 'pirate-respawn-' + respawnSerial;
+      fresh.cargo = {};
+      fresh.hullHp = fresh.hullMaxHp;
+      fresh.fuel = fresh.fuelCapacity;
+      fresh.locationId = fresh.pirateHomeLocationId ?? fresh.locationId;
+      fresh.activityId = 'raiding';
+      fresh.activity = 'Auf Beutezug';
+      fresh.successfulRuns = 0;
+      delete fresh.travel;
+      delete fresh.combatMovement;
+      fresh.pirateHuntZoneId = undefined;
+      fresh.pirateHuntZoneCycles = 0;
+      fresh.pirateRaidCooldownSeconds = 5;
+      options.npcs.push(fresh);
+      options.log(
+        'SEKTORMELDUNG > NEUE KORSARENAKTIVITÄT · ' +
+          pirateFactionLabel(fresh).toUpperCase()
+      );
+    }
+  }
 
   function repairOrRaid(npc: SectorNpcState, deltaSeconds: number): boolean {
     if (npc.pirateRaidCooldownSeconds && npc.pirateRaidCooldownSeconds > 0) {
@@ -239,6 +295,8 @@ export function createPirateNpcService(options: PirateNpcServiceOptions): Pirate
     tick(deltaSeconds) {
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
       const dt = Math.min(deltaSeconds, 0.25);
+      elapsedSeconds += dt;
+      maintainPopulation();
       for (const npc of options.npcs) {
         if (!npc.pirate) continue;
         repairOrRaid(npc, dt);
