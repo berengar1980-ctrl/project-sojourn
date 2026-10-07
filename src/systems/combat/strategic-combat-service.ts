@@ -847,20 +847,25 @@ export function createStrategicCombatService(
     critical: boolean
   ): string {
     if (!weapon.weapon) return '';
+    const shield = combatShieldGeometry(target);
+    const center = combatShieldCenter(target);
+    const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
     const targetPoint = hit
-      ? target.position
+      ? center
       : {
-          x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 85,
-          y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 85,
+          x: center.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
+          y: center.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
         };
-    const obstacle = firstObstacleHit(source.position, targetPoint, arena.obstacles ?? []);
+    const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
+    const beamEnd = shieldHit?.point ?? targetPoint;
+    const obstacle = firstObstacleHit(source.position, beamEnd, arena.obstacles ?? []);
     if (obstacle) {
       addBeam(side, kind, weapon.weapon.family, source.position, obstacle.point, weaponIndex);
       noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'obstacle', 0, obstacle.point);
       return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
     }
 
-    addBeam(side, kind, weapon.weapon.family, source.position, targetPoint, weaponIndex);
+    addBeam(side, kind, weapon.weapon.family, source.position, beamEnd, weaponIndex);
     if (!hit) {
       noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'miss', 0, targetPoint);
       return source.setup.name + ': ' + weapon.name + ' verfehlt';
@@ -874,8 +879,9 @@ export function createStrategicCombatService(
       source,
       critical,
       source.position,
-      kind === 'laser' ? 'laser' : 'laser',
-      impactSerial
+      'laser',
+      impactSerial,
+      shieldHit ?? undefined
     );
     const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
     lastImpact = {
@@ -883,7 +889,7 @@ export function createStrategicCombatService(
       target: targetSide,
       layer: result.layer,
       damage: result.damage,
-      position: { ...target.position },
+      position: { ...result.point },
     };
     return (
       source.setup.name +
@@ -1008,6 +1014,39 @@ export function createStrategicCombatService(
         continue;
       }
 
+      const shieldHit = segmentShieldHit(projectile.position, next, target);
+      if (shieldHit) {
+        impactSerial += 1;
+        const result = applyDamage(
+          target,
+          projectile.shieldDamage,
+          projectile.hullDamage,
+          source,
+          projectile.critical,
+          projectile.position,
+          projectile.kind === 'missile' ? 'missile' : 'laser',
+          impactSerial,
+          shieldHit
+        );
+        const targetSide: StrategicCombatSide =
+          projectile.owner === 'attacker' ? 'defender' : 'attacker';
+        lastImpact = {
+          serial: impactSerial,
+          target: targetSide,
+          layer: result.layer,
+          damage: result.damage,
+          position: { ...result.point },
+        };
+        lastEvent =
+          source.setup.name +
+          ': ' +
+          projectile.family.replaceAll('_', ' ') +
+          ' trifft Schild -' +
+          Math.round(result.damage);
+        projectiles.splice(index, 1);
+        continue;
+      }
+
       if (remaining <= Math.max(18, step) || projectile.ttlSeconds <= 0) {
         impactSerial += 1;
         const result = applyDamage(
@@ -1027,7 +1066,7 @@ export function createStrategicCombatService(
           target: targetSide,
           layer: result.layer,
           damage: result.damage,
-          position: { ...target.position },
+          position: { ...result.point },
         };
         lastEvent =
           source.setup.name +
