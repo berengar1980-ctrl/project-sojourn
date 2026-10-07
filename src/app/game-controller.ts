@@ -189,7 +189,8 @@ function controllerLocalModel(context: ControllerRuntimeContext) {
     context.state.localSpace,
     context.state.activeShip,
     context.navigation,
-    context.state.localNpcMining
+    context.state.localNpcMining,
+    context.state.selectedNpcId
   );
 }
 
@@ -362,6 +363,14 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     model: controllerLocalModel(context),
     log: context.systemLog,
     ...controllerLocalActions(context),
+    onSelectNpc: (id) => {
+      state.selectedNpcId = id;
+      state.panels.local?.update(controllerLocalModel(context));
+    },
+    onAttackNpc: (id) => {
+      state.selectedNpcId = id;
+      if (context.engagements.engageNpcNow(id)) mountControllerCombat(context);
+    },
   });
   mountControllerSwitcher(context);
 }
