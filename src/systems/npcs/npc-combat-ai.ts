@@ -10,13 +10,15 @@ export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
 }
 
 export function npcMayInitiateAttack(npc: SectorNpcState): boolean {
-  if (npc.hullHp <= 0 || npc.combatMovement) return false;
+  if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) return false;
   if (npc.pirate) return npc.aggression >= 60;
   return npc.job === 'patrol' && npc.aggression >= 60;
 }
 
 export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
-  if (npc.hullHp <= 0 || npc.combatMovement) return false;
+  if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+    return false;
+  }
   if (npc.pirate) return true;
   if (npc.job === 'patrol') return false;
   return npc.aggression >= 65;
@@ -27,6 +29,7 @@ export function npcIsPiratePrey(npc: SectorNpcState): boolean {
     npc.hullHp > 0 &&
     !npc.pirate &&
     !npc.combatMovement &&
+    (npc.combatRecoverySeconds ?? 0) <= 0 &&
     (npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager')
   );
 }
