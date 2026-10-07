@@ -1,14 +1,11 @@
 import type { ShipDefinition } from '../core/ship-types';
 import { createGameAudioService, type GameAudioService } from '../systems/audio/game-audio-service';
 import type { SystemLogService } from '../core/system-log-types';
-import type { WorldLocation } from '../core/world-types';
 import { createCrewRosterService, type CrewRosterService } from '../systems/crew';
 import {
   createStarMapEngagementService,
   type StarMapEngagementService,
 } from '../systems/combat';
-import { narrowsSector } from '../data/maps/narrows-sector';
-import { createLocalSpaceViewModel } from '../features/local-space/local-space-view-model';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
 import {
@@ -17,7 +14,6 @@ import {
 } from '../systems/npcs/npc-local-mining-service';
 import {
   createShipLoadoutService,
-  getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipLoadoutService,
   type ShipRuntimeOptions,
@@ -40,6 +36,11 @@ import {
   createControllerStarPanel,
 } from './game-controller-star-map';
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
+import {
+  createControllerLocalModel,
+  miningLocationById,
+  salvageLocationById,
+} from './game-controller-local-model';
 import { createMiningLocalSpace } from './game-controller-mining';
 import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene, type SalvageSceneController } from './game-controller-salvage';
@@ -75,64 +76,6 @@ function createControllerLog(): SystemLogService {
   const log = createSystemLogService();
   log.write('SYSTEM ONLINE');
   return log;
-}
-
-function requireLocalSpace(service: LocalSpaceService | null): LocalSpaceService {
-  if (!service) throw new Error('Local space is not active.');
-  return service;
-}
-
-// prettier-ignore
-function createActiveLocalModel(
-  service: LocalSpaceService | null,
-  ship: ShipDefinition,
-  locationName: string,
-  npcMining: NpcLocalMiningService | null
-) {
-  const npcShips = (npcMining?.ships ?? []).flatMap((npc) => {
-    const definition = getShipDefinition(npc.shipId);
-    if (!definition) return [];
-    return [
-      {
-        id: npc.npcId,
-        name: npc.name,
-        position: npc.position,
-        headingRadians: npc.headingRadians,
-        speed: npc.speed,
-        phase: npc.phase,
-        targetAsteroidId: npc.targetAsteroidId,
-        laserActive: npc.laserActive,
-        scanProgress: npc.scanProgress,
-        nominalLengthMeters: definition.nominalLengthMeters,
-        spriteUrl: definition.sprite.assetUrl,
-        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-        hardpoints: definition.sprite.hardpoints,
-      },
-    ];
-  });
-
-  return createLocalSpaceViewModel(
-    requireLocalSpace(service).getSnapshot(),
-    ship,
-    locationName + ' // Mining',
-    npcShips
-  );
-}
-
-function miningLocationById(locationId: string | null): WorldLocation | null {
-  if (!locationId) return null;
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
-  return location?.activities.mine ? location : null;
-}
-
-function currentMiningLocationName(navigation: NavigationService): string {
-  return miningLocationById(navigation.getSnapshot().currentLocationId)?.name ?? 'Mining Zone';
-}
-
-function salvageLocationById(locationId: string | null): WorldLocation | null {
-  if (!locationId) return null;
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
-  return location?.activities.salvage ? location : null;
 }
 
 function createStarMapReturnAction(
@@ -176,20 +119,6 @@ function advanceEconomyDay(
     economy.simulation.advanceNextDay();
     economy.npcs.advanceNextDay();
   }
-}
-
-function createControllerLocalModel(
-  service: LocalSpaceService | null,
-  ship: ShipDefinition,
-  navigation: NavigationService,
-  npcMining: NpcLocalMiningService | null
-) {
-  return createActiveLocalModel(
-    service,
-    ship,
-    currentMiningLocationName(navigation),
-    npcMining
-  );
 }
 
 interface ControllerRuntimeState {
