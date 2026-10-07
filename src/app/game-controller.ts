@@ -20,6 +20,7 @@ import {
 } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
+import type { StarMapPanel } from '../ui/map/star-map-panel';
 import {
   createStrategicCombatPanel,
   type StrategicCombatPanel,
