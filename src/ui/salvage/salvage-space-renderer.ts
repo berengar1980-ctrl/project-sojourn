@@ -16,6 +16,12 @@ interface WreckHitArea {
   readonly radius: number;
 }
 
+interface NpcHitArea {
+  readonly id: string;
+  readonly point: ScreenPoint;
+  readonly radius: number;
+}
+
 function hashId(id: string): number {
   let hash = 2166136261;
   for (let index = 0; index < id.length; index += 1) {
@@ -36,6 +42,7 @@ export class SalvageSpaceRenderer {
   private readonly npcImages = new Map<string, HTMLImageElement>();
   private model: SalvageSpaceViewModel;
   private hitAreas: readonly WreckHitArea[] = [];
+  private npcHitAreas: readonly NpcHitArea[] = [];
   private loadedShipUrl = '';
   private hasFitted = false;
 
@@ -91,6 +98,15 @@ export class SalvageSpaceRenderer {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
 
+  pickNpc(x: number, y: number): string | null {
+    let best: NpcHitArea | null = null;
+    for (const area of this.npcHitAreas) {
+      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
+      if (!best || area.radius < best.radius) best = area;
+    }
+    return best?.id ?? null;
+  }
+
   pickWreck(x: number, y: number): string | null {
     let best: WreckHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -126,7 +142,7 @@ export class SalvageSpaceRenderer {
       if (hit) hitAreas.push(hit);
     }
     this.hitAreas = hitAreas;
-    this.drawNpcShips(width, height, timeSeconds);
+    this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawRoute(width, height);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
@@ -141,7 +157,8 @@ export class SalvageSpaceRenderer {
     return image;
   }
 
-  private drawNpcShips(width: number, height: number, timeSeconds: number): void {
+  private drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
+    const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
       const point = this.camera.worldToScreen(npc.position, width, height);
       const shipWidth = this.camera.scale(npc.nominalLengthMeters);
@@ -194,6 +211,21 @@ export class SalvageSpaceRenderer {
         );
       }
 
+      hits.push({
+        id: npc.id,
+        point,
+        radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
+      });
+      if (npc.isSelected) {
+        this.context.save();
+        this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
+        this.context.lineWidth = 2;
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.stroke();
+        this.context.restore();
+      }
+
       const wreck = npc.targetWreckId
         ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
         : null;
@@ -211,6 +243,8 @@ export class SalvageSpaceRenderer {
       }
     }
   }
+
+    return hits;
 
   private drawNpcScan(
     shipPoint: ScreenPoint,
