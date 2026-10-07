@@ -98,11 +98,7 @@ export function sensorMarketIntelBaseRange(skill: number): number {
   return 8 + normalizedCrewSkill(skill) * 0.22;
 }
 
-export function sensorMarketIntelAge(
-  skill: number,
-  distance: number,
-  range: number
-): number {
+export function sensorMarketIntelAge(skill: number, distance: number, range: number): number {
   const resolvedSkill = normalizedCrewSkill(skill);
   const ratio = clamp(
     Math.max(0, Number.isFinite(distance) ? distance : 0) /
@@ -286,11 +282,7 @@ export function miningDeepSignatureChance(skill: number): number {
   return clamp(0.36 + normalizedCrewSkill(skill) / 220, 0.36, 0.74);
 }
 
-export function logisticsSaleFeeRate(
-  skill: number,
-  captainCunning = 0,
-  captainTrust = 0
-): number {
+export function logisticsSaleFeeRate(skill: number, captainCunning = 0, captainTrust = 0): number {
   const base = 0.25 * (1 - normalizedCrewSkill(skill) / 100);
   const edge = Number(captainCunning || 0) - Number(captainTrust || 0);
   return clamp(base - edge * 0.005, 0, 0.25);
