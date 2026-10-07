@@ -9,6 +9,10 @@ const sensors = loadStandaloneTypeScriptModule(
   root,
   'src/systems/scanning/sensor-contact-service.ts'
 );
+const scanner = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/scanning/scanner-service.ts'
+);
 
 const origin = { x: 0, y: 0 };
 
@@ -57,4 +61,14 @@ const pirateIdentified = sensors.sectorSensorContactInfo({
 });
 assert.equal(pirateIdentified.identified, true, 'close pirate contacts must become identified');
 
-console.log('PASS Voidbound sensor/transponder visibility and pirate identification ranges');
+assert.equal(
+  scanner.longRangeScanRadius({ sensorModifier: 1, crewSkill: 20 }),
+  1080,
+  'automation-grade sensors must preserve the prior Sojourn scan baseline'
+);
+assert(
+  scanner.longRangeScanRadius({ sensorModifier: 1, crewSkill: 100 }) > 2700,
+  'elite sensor crews must materially extend long-range asteroid scans'
+);
+
+console.log('PASS Voidbound sensor ranges drive contacts, identification and active scanning');
