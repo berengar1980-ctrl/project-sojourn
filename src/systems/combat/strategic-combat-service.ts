@@ -850,11 +850,12 @@ export function createStrategicCombatService(
     const shield = combatShieldGeometry(target);
     const center = combatShieldCenter(target);
     const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
+    const aimCenter = target.shieldHp > 0 ? center : target.position;
     const targetPoint = hit
-      ? center
+      ? aimCenter
       : {
-          x: center.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
-          y: center.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
+          x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
+          y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
         };
     const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
     const beamEnd = shieldHit?.point ?? targetPoint;
