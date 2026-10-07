@@ -75,11 +75,13 @@ export function createLocalSpaceShipSystems(
     advance(deltaSeconds) {
       const delta = Math.max(0, deltaSeconds);
       shieldImpacts = advanceShieldImpacts(shieldImpacts, delta);
-      shieldRegenBlockedSeconds = Math.max(0, shieldRegenBlockedSeconds - delta);
-      if (shieldRegenBlockedSeconds <= 0 && shield.currentHp < shield.maxHp) {
+      const blockedBeforeAdvance = shieldRegenBlockedSeconds;
+      shieldRegenBlockedSeconds = Math.max(0, blockedBeforeAdvance - delta);
+      const regenSeconds = Math.max(0, delta - blockedBeforeAdvance);
+      if (regenSeconds > 0 && shield.currentHp < shield.maxHp) {
         shield.currentHp = Math.min(
           shield.maxHp,
-          shield.currentHp + 0.4 * shieldRegenMultiplier * delta
+          shield.currentHp + 0.4 * shieldRegenMultiplier * regenSeconds
         );
       }
     },
