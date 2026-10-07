@@ -91,6 +91,35 @@ const combat = combatModule.createStrategicCombatService(
   }
 );
 
+const defaultArenaCombat = combatModule.createStrategicCombatService(
+  setup('default-arena-a', 'fight'),
+  setup('default-arena-b', 'fight'),
+  42
+);
+assert.equal(defaultArenaCombat.getSnapshot().arena.width, 4200);
+assert.equal(defaultArenaCombat.getSnapshot().arena.height, 2600);
+
+const boundaryCombat = combatModule.createStrategicCombatService(
+  { ...setup('boundary-runner', 'flee'), preferredTactic: 'flee' },
+  { ...setup('boundary-pursuer', 'fight'), preferredTactic: 'fight' },
+  43,
+  {
+    width: 2200,
+    height: 1400,
+    attackerPosition: { x: 1500, y: 700 },
+    defenderPosition: { x: 1000, y: 700 },
+  }
+);
+let boundaryPinnedFrames = 0;
+for (let step = 0; step < 100; step += 1) {
+  const snap = boundaryCombat.tick(0.08);
+  if (Math.abs(snap.attacker.position.x - 2040) < 0.001) boundaryPinnedFrames += 1;
+}
+assert(
+  boundaryPinnedFrames < 4,
+  'combat navigation must steer away from arena bounds instead of riding the invisible wall'
+);
+
 const initial = combat.getSnapshot();
 assert.equal(initial.arena.width, 2200);
 assert.equal(initial.attacker.position.x, 500);
