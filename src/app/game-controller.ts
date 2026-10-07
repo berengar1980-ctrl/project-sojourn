@@ -469,7 +469,23 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
     mountControllerCombat(context);
   }
   if (activeCombat?.getSnapshot().winner && state.embeddedCombat !== null) {
-    context.systemLog.write('COMBAT > ' + activeCombat.getSnapshot().lastEvent.toUpperCase());
+    const snapshot = activeCombat.getSnapshot();
+    context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
+    if (state.embeddedCombat === 'local-space') {
+      state.localSpace?.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
+      );
+      state.localNpcMining?.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+    } else {
+      state.salvageScene?.finishCombat(snapshot);
+    }
     context.engagements.finishPlayerCombat();
     state.embeddedCombat = null;
   }
