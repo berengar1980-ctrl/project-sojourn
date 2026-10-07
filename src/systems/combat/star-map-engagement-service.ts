@@ -317,7 +317,7 @@ export function createStarMapEngagementService(
     attackNpc(npcId) {
       if (playerCombat) return false;
       const target = npcById(npcId);
-      if (!target || target.hullHp <= 0) return false;
+      if (!target || target.hullHp <= 0 || target.combatMovement) return false;
       const playerPosition = options.navigation.getSnapshot().currentPosition;
       const targetPosition = options.sectorNpcs.livePosition(target);
       options.navigation.startPursuit(target.id, targetPosition);
