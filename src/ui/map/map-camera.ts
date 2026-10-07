@@ -29,24 +29,51 @@ export class MapCamera {
   ) {}
 
   fit(viewWidth: number, viewHeight: number, bounds?: MapBounds): void {
+    const fitZoom = this.calculateFitZoom(viewWidth, viewHeight, bounds);
+    const { minX, minY, maxX, maxY } = this.resolveBounds(bounds);
+
+    this.applyZoomLimits(fitZoom, 1);
+    this.x = (minX + maxX) / 2;
+    this.y = (minY + maxY) / 2;
+  }
+
+  updateViewport(viewWidth: number, viewHeight: number, bounds?: MapBounds): void {
+    const relativeZoom = Math.min(
+      MAX_RELATIVE_ZOOM,
+      Math.max(MIN_RELATIVE_ZOOM, this.getRelativeZoom())
+    );
+    this.applyZoomLimits(this.calculateFitZoom(viewWidth, viewHeight, bounds), relativeZoom);
+  }
+
+  private resolveBounds(bounds?: MapBounds): MapBounds {
+    return {
+      minX: bounds?.minX ?? 0,
+      minY: bounds?.minY ?? 0,
+      maxX: bounds?.maxX ?? this.worldWidth,
+      maxY: bounds?.maxY ?? this.worldHeight,
+    };
+  }
+
+  private calculateFitZoom(viewWidth: number, viewHeight: number, bounds?: MapBounds): number {
     const padding = 72;
-    const minX = bounds?.minX ?? 0;
-    const minY = bounds?.minY ?? 0;
-    const maxX = bounds?.maxX ?? this.worldWidth;
-    const maxY = bounds?.maxY ?? this.worldHeight;
+    const { minX, minY, maxX, maxY } = this.resolveBounds(bounds);
     const contentWidth = Math.max(1, maxX - minX);
     const contentHeight = Math.max(1, maxY - minY);
     const fitZoom = Math.min(
-      (viewWidth - padding) / contentWidth,
-      (viewHeight - padding) / contentHeight
+      Math.max(1, viewWidth - padding) / contentWidth,
+      Math.max(1, viewHeight - padding) / contentHeight
     );
+    return Math.max(0.12, fitZoom);
+  }
 
-    this.fitZoom = Math.max(0.12, fitZoom);
-    this.zoom = this.fitZoom;
-    this.minimumZoom = this.fitZoom * MIN_RELATIVE_ZOOM;
-    this.maximumZoom = this.fitZoom * MAX_RELATIVE_ZOOM;
-    this.x = (minX + maxX) / 2;
-    this.y = (minY + maxY) / 2;
+  private applyZoomLimits(fitZoom: number, relativeZoom: number): void {
+    this.fitZoom = fitZoom;
+    this.minimumZoom = fitZoom * MIN_RELATIVE_ZOOM;
+    this.maximumZoom = fitZoom * MAX_RELATIVE_ZOOM;
+    this.zoom = Math.min(
+      this.maximumZoom,
+      Math.max(this.minimumZoom, fitZoom * relativeZoom)
+    );
   }
 
   pan(screenDx: number, screenDy: number): void {
