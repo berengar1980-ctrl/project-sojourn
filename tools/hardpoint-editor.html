@@ -123,6 +123,44 @@ const state={ships:[],ship:null,type:"miningLasers",selected:null,image:null,zoo
 
 function setStatus(text,error=false){els.status.textContent=text;els.status.style.color=error?"#ff8e95":""}
 function spriteFolder(id){if(id.startsWith("miner-"))return"mining";if(id.startsWith("freighter-"))return"freighter";if(id.startsWith("patrol-"))return"patrol";if(id.startsWith("salvage-"))return"salvage";return""}
+function normalize(data){
+ for(const key of Object.keys(TYPES))if(!Array.isArray(data[key]))data[key]=[];
+ return data;
+}
+async function loadShipsFromServer(){
+ const ships=[];
+ for(const id of SHIP_IDS){
+  const path="src/data/ships/"+id+".hardpoints.json";
+  try{
+   const response=await fetch("/"+path,{cache:"no-store"});
+   if(!response.ok)throw new Error(response.status+" "+response.statusText);
+   ships.push({id,path,data:normalize(await response.json()),dirty:false});
+  }catch(error){
+   console.warn("Hardpoint-Datei konnte nicht geladen werden:",path,error);
+  }
+ }
+ ships.sort((a,b)=>a.id.localeCompare(b.id));
+ state.ships=ships;
+ els.shipSelect.innerHTML=ships.map(ship=>'<option value="'+ship.id+'">'+ship.id+"</option>").join("");
+ els.shipSelect.disabled=ships.length===0;
+ if(ships.length){
+  await selectShip(ships[0].id);
+  setStatus(ships.length+" Schiffe geladen. Speichern schreibt direkt in den Checkout.");
+ }else{
+  setStatus("Keine Hardpoint-Dateien über den Dev-Server gefunden.",true);
+ }
+}
+async function loadImage(ship){
+ const folder=spriteFolder(ship.id);if(!folder){state.image=null;return}
+ const url="/resources/ships/"+folder+"/"+ship.id+".png";
+ try{
+  const response=await fetch(url,{cache:"no-store"});
+  if(!response.ok)throw new Error(response.status+" "+response.statusText);
+  state.image=await createImageBitmap(await response.blob());
+ }catch{
+  state.image=null;setStatus("Sprite nicht gefunden: "+url,true);
+ }
+}
 async function selectShip(id){
  state.ship=state.ships.find(s=>s.id===id)||null;state.selected=null;state.zoom=1;state.panX=0;state.panY=0;
  if(!state.ship)return;

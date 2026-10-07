@@ -8,7 +8,9 @@ const root = path.resolve(__dirname, '../..');
 const editor = fs.readFileSync(path.join(root, 'tools/hardpoint-editor.html'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
-assert(editor.includes('loadShipsFromServer()'), 'editor must preload ships before folder access');
+assert(editor.includes('loadShipsFromServer()'), 'editor must preload ships on startup');
+assert(editor.includes('async function loadShipsFromServer()'), 'ship autoload implementation must exist');
+assert(editor.includes('async function loadImage(ship)'), 'ship sprite loader must exist');
 assert(editor.includes('fetch("/"+path'), 'editor must fetch hardpoint JSONs from the dev server');
 assert(editor.includes('fetch(url,{cache:"no-store"})'), 'editor must load ship sprites from the dev server');
 assert(
