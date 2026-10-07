@@ -112,6 +112,8 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
           : 'fight',
     combatSpeed: Math.max(82, Math.min(185, ship.navigation.cruiseSpeed * 0.33)),
     mineCharges: npc.job === 'patrol' ? 3 : 1,
+    aiControlled: true,
+    aiAggression: npc.aggression,
   };
 }
 
