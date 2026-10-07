@@ -43,14 +43,17 @@ export class ShipHardpointDebugRenderer {
 
     for (const engine of source.engines) {
       const point = projectHardpoint(engine, source, geometry);
-      drawMarker(context, point.x, point.y, { fill: '#4da3ff', label: engine.id });
+      drawMarker(context, point.x, point.y, {
+        fill: '#4da3ff',
+        label: `${engine.id} [${engine.layer ?? 'below'}]`,
+      });
     }
 
     for (const laser of source.weaponLasers ?? []) {
       const point = projectHardpoint(laser, source, geometry);
       drawMarker(context, point.x, point.y, {
         fill: '#ffb347',
-        label: `${laser.id} [${laser.layer ?? 'above'}]`,
+        label: `${laser.id} [${laser.layer ?? 'below'}]`,
       });
     }
 
@@ -58,7 +61,7 @@ export class ShipHardpointDebugRenderer {
       const point = projectHardpoint(laser, source, geometry);
       drawMarker(context, point.x, point.y, {
         fill: '#ff4d4d',
-        label: `${laser.id} [${laser.layer ?? 'above'}]`,
+        label: `${laser.id} [${laser.layer ?? 'below'}]`,
       });
     }
 
@@ -66,7 +69,7 @@ export class ShipHardpointDebugRenderer {
       const point = projectHardpoint(tractor, source, geometry);
       drawMarker(context, point.x, point.y, {
         fill: '#54ef8d',
-        label: `${tractor.id} [${tractor.layer ?? 'above'}]`,
+        label: `${tractor.id} [${tractor.layer ?? 'below'}]`,
       });
     }
 
@@ -74,7 +77,7 @@ export class ShipHardpointDebugRenderer {
       const point = projectHardpoint(thruster, source, geometry);
       drawMarker(context, point.x, point.y, {
         fill: '#f4f7fb',
-        label: `${thruster.id} [${thruster.layer ?? 'above'}]`,
+        label: `${thruster.id} [${thruster.layer ?? 'below'}]`,
       });
     }
 
