@@ -73,7 +73,7 @@ export class TopdownMapRenderer {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    if (!this.hasFitted) {
+    if (!this.hasFitted && rect.width >= 200 && rect.height >= 200) {
       this.camera.fit(rect.width, rect.height, this.contentBounds());
       this.hasFitted = true;
     }
