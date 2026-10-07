@@ -44,18 +44,36 @@ export class MiningEffectsRenderer {
     this.context.shadowBlur = 5 + pulse * 6;
     this.context.strokeStyle = 'rgba(238, 62, 40, ' + (0.62 + pulse * 0.3) + ')';
 
-    for (const hardpoint of hardpoints) {
+    for (const [index, hardpoint] of hardpoints.entries()) {
       const start = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
       const baseWidth = Math.max(
         1.1,
         (hardpoint.width / model.ship.hardpoints.sourceWidth) * geometry.width * 0.72
       );
-      this.context.lineWidth = baseWidth * (0.72 + pulse * 0.55);
+      const interferenceSeed = Math.sin(
+        Math.floor(timeSeconds * 9 + index * 3.7) * 12.9898 + index * 78.233
+      );
+      const interference = fractional(Math.abs(interferenceSeed) * 43758.5453);
+      const interferenceStrength =
+        interference < 0.055 ? 0.08 : interference < 0.13 ? 0.42 : 1;
+      this.context.globalAlpha = interferenceStrength;
+      this.context.lineWidth =
+        baseWidth * (0.72 + pulse * 0.55) * (interferenceStrength < 1 ? 0.72 : 1);
       this.context.beginPath();
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(target.x, target.y);
       this.context.stroke();
+
+      if (interferenceStrength < 0.5) {
+        const phase = 0.28 + fractional(timeSeconds * 3.1 + index * 0.23) * 0.44;
+        const x = start.x + (target.x - start.x) * phase;
+        const y = start.y + (target.y - start.y) * phase;
+        this.context.globalAlpha = 0.75;
+        this.context.fillStyle = 'rgba(255, 205, 170, .9)';
+        this.context.fillRect(x - 2.5, y - 1, 5, 2);
+      }
     }
+    this.context.globalAlpha = 1;
 
     this.context.restore();
     if (layer === 'above') {
