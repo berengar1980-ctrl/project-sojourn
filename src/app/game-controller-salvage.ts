@@ -49,6 +49,11 @@ interface SalvageSceneOptions {
       readonly height: number;
       readonly attackerPosition: { readonly x: number; readonly y: number };
       readonly defenderPosition: { readonly x: number; readonly y: number };
+      readonly obstacles?: readonly {
+        readonly id: string;
+        readonly position: { readonly x: number; readonly y: number };
+        readonly radius: number;
+      }[];
     }
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
@@ -148,6 +153,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         height: field.height,
         attackerPosition: { ...playerShip.position },
         defenderPosition: { ...target.position },
+        obstacles: field.wrecks.map((wreck) => ({
+          id: wreck.id,
+          position: { ...wreck.position },
+          radius: wreck.radius,
+        })),
       });
     },
     onCombatTactic(tactic) {
