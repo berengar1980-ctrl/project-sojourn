@@ -6,10 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
-const mapRenderer = fs.readFileSync(
-  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
-  'utf8'
-);
+const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 const miningNpc = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-mining-service.ts'),
   'utf8'
@@ -47,7 +44,7 @@ assert(
 );
 assert(
   salvagePanel.includes("ui.resources.addEventListener('pointerdown'") &&
-    salvagePanel.includes("button[data-salvage-action]") &&
+    salvagePanel.includes('button[data-salvage-action]') &&
     salvagePanel.includes("dataset.salvageAction = 'strip'") &&
     salvagePanel.includes('event.preventDefault()'),
   'frame-rebuilt salvage buttons must fire on pointerdown before the button node is replaced'
