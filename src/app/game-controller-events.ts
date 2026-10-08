@@ -52,6 +52,16 @@ export function sectorEventLocation(
   };
 }
 
+const WORLD_DAY_SECONDS = 180;
+const controllerDayElapsed = new WeakMap<ControllerRuntimeContext, number>();
+
+export function advanceEconomyTime(context: ControllerRuntimeContext, deltaSeconds: number): void {
+  const elapsed = (controllerDayElapsed.get(context) ?? 0) + Math.max(0, deltaSeconds);
+  const days = Math.floor(elapsed / WORLD_DAY_SECONDS);
+  controllerDayElapsed.set(context, elapsed - days * WORLD_DAY_SECONDS);
+  for (let i = 0; i < days; i += 1) advanceEconomyDay(context);
+}
+
 export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   const economy = context.economy;
   economy.situations.advanceNextDay();
