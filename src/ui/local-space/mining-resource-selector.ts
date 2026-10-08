@@ -27,9 +27,7 @@ export class MiningResourceSelector {
 
   update(model: LocalSpaceViewModel, locked: boolean, visible = true): void {
     this.model = model;
-    this.selection = model.miningResourceSelection
-      ? [...model.miningResourceSelection]
-      : null;
+    this.selection = model.miningResourceSelection ? [...model.miningResourceSelection] : null;
     this.locked = locked;
     const asteroid = model.selectedAsteroid;
     const deposits =
