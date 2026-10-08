@@ -377,8 +377,6 @@ export class TopdownMapRenderer {
       this.context.beginPath();
       this.context.arc(point.x, point.y, radius + 6, 0, Math.PI * 2);
       this.context.stroke();
-      this.context.fillStyle = this.context.strokeStyle;
-      this.context.font = 'bold 12px monospace';
       this.context.fillText(distress ? '!' : '◆', point.x, point.y - radius - 15);
       this.context.restore();
     }
