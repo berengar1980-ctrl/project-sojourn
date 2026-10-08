@@ -59,10 +59,7 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/space/procedural-station-renderer.ts'),
   'utf8'
 );
-const mapRenderer = fs.readFileSync(
-  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
-  'utf8'
-);
+const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 const dockRenderer = fs.readFileSync(
   path.join(root, 'src/ui/port/port-location-renderer.ts'),
   'utf8'
@@ -87,8 +84,7 @@ assert(
   'star map and dock view must render the same procedural station layout at different detail levels'
 );
 assert(
-  !mapRenderer.includes('StationSymbolRenderer') &&
-    !dockRenderer.includes('StationSymbolRenderer'),
+  !mapRenderer.includes('StationSymbolRenderer') && !dockRenderer.includes('StationSymbolRenderer'),
   'physical station views must no longer fall back to the old abstract station symbols'
 );
 
