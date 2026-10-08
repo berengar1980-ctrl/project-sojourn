@@ -126,9 +126,7 @@ function chooseWreck(
   return (
     [...candidates].sort(
       (a, b) =>
-        b.quality - a.quality ||
-        wreckRemaining(b) - wreckRemaining(a) ||
-        a.id.localeCompare(b.id)
+        b.quality - a.quality || wreckRemaining(b) - wreckRemaining(a) || a.id.localeCompare(b.id)
     )[hashId(npc.id) % Math.min(4, candidates.length)] ??
     candidates[0] ??
     null
@@ -151,9 +149,11 @@ function chooseEventChoice(
   if (choices.length === 0) return null;
   const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
   const risky = npc.workRiskPreference === 'risky';
-  return [...choices].sort((a, b) =>
-    risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
-  )[0] ?? null;
+  return (
+    [...choices].sort((a, b) =>
+      risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
+    )[0] ?? null
+  );
 }
 
 function recoveryAmount(npc: SectorNpcState, wreck: SalvageWreck): number {
@@ -209,12 +209,7 @@ export function createNpcLocalSalvageService(
         salvageActive: false,
         scanProgress: 0,
         workAccumulator: 0,
-        exitPoint: edgePoint(
-          npc.id + ':exit',
-          options.field.width,
-          options.field.height,
-          true
-        ),
+        exitPoint: edgePoint(npc.id + ':exit', options.field.width, options.field.height, true),
       });
     }
   }
