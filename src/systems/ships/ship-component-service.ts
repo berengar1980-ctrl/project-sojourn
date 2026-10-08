@@ -94,8 +94,8 @@ function variantDefinition(
 
   const special = parsed.source === 'special';
   const weapon = variantWeapon(base, parsed.modifier, parsed.pct);
-  const boost = (value: number | undefined): number | undefined =>
-    value === undefined ? undefined : Math.round(value * (1 + parsed.pct / 100) * 100) / 100;
+  const boost = (value: number | undefined, minimum = 0): number | undefined =>
+    value === undefined ? undefined : Math.round((value === 0 ? minimum : value * (1 + parsed.pct / 100)) * 100) / 100;
   const performance = parsed.modifier === 'performance';
   return {
     ...base,
@@ -117,11 +117,11 @@ function variantDefinition(
       hullDamage: boost(weapon.hullDamage)!,
     } : weapon } : {}),
     ...(performance && base.output !== undefined ? { output: boost(base.output) } : {}),
-    ...(performance && base.speed !== undefined ? { speed: boost(base.speed) } : {}),
-    ...(performance && base.bonus !== undefined ? { bonus: boost(base.bonus) } : {}),
-    ...(performance && base.range !== undefined ? { range: boost(base.range) } : {}),
-    ...(performance && base.yield !== undefined ? { yield: boost(base.yield) } : {}),
-    ...(performance && base.chance !== undefined ? { chance: boost(base.chance) } : {}),
+    ...(performance && base.speed !== undefined ? { speed: boost(base.speed, parsed.pct / 100) } : {}),
+    ...(performance && base.bonus !== undefined ? { bonus: boost(base.bonus, parsed.pct) } : {}),
+    ...(performance && base.range !== undefined ? { range: boost(base.range, parsed.pct / 100) } : {}),
+    ...(performance && base.yield !== undefined ? { yield: boost(base.yield, parsed.pct / 100) } : {}),
+    ...(performance && base.chance !== undefined ? { chance: boost(base.chance, parsed.pct) } : {}),
   };
 }
 
