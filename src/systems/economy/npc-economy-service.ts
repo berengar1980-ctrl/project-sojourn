@@ -162,8 +162,7 @@ function initializeNpcMarketIntel(
       .filter((locationId) => locationId !== npc.locationId)
       .sort();
     if (knownRemote.length > 0) {
-      const preferred =
-        knownRemote[hashText(npc.id + ':preferred-market') % knownRemote.length];
+      const preferred = knownRemote[hashText(npc.id + ':preferred-market') % knownRemote.length];
       if (preferred) personality.preferredMarketId = preferred;
     }
   }
@@ -309,13 +308,7 @@ function bestSaleLocation(
     const expectedRevenue = Math.round(entry.price * 0.94) * aboard;
     const distance = distanceBetween(positions, npc.locationId, market.locationId);
     const age = Math.max(0, day - market.observedDay);
-    const score = npcPersonalityTradeWeight(
-      npc,
-      expectedRevenue,
-      distance,
-      age,
-      market.locationId
-    );
+    const score = npcPersonalityTradeWeight(npc, expectedRevenue, distance, age, market.locationId);
     if (!best || score > best.score) {
       best = {
         locationId: market.locationId,
@@ -404,8 +397,7 @@ function sideTradeWorthTaking(
 ): boolean {
   const personality = ensureNpcPersonality(npc);
   const returnRate = expectedProfit / Math.max(1, costBasis);
-  const minimumReturn =
-    0.05 + (1 - personality.profitDrive) * 0.08 + personality.patience * 0.04;
+  const minimumReturn = 0.05 + (1 - personality.profitDrive) * 0.08 + personality.patience * 0.04;
   return returnRate >= minimumReturn;
 }
 
@@ -460,8 +452,7 @@ function chooseWorkerAction(
     autonomy.secondsRemaining = 0;
     const state = npc as NpcEconomyState & { activityId?: string; activity?: string };
     state.activityId = npc.role === 'miner' ? 'mining' : 'salvage';
-    state.activity =
-      npc.role === 'miner' ? 'Scannen und Ressourcenabbau' : 'Scannen und Bergung';
+    state.activity = npc.role === 'miner' ? 'Scannen und Ressourcenabbau' : 'Scannen und Bergung';
     return;
   }
 
@@ -491,11 +482,7 @@ function chooseWorkerAction(
   beginNpcAutonomyPhase(npc, 'working');
 }
 
-function completeLoading(
-  npc: NpcEconomyState,
-  markets: EconomyMarketService,
-  day: number
-): void {
+function completeLoading(npc: NpcEconomyState, markets: EconomyMarketService, day: number): void {
   const autonomy = ensureNpcAutonomy(npc);
   const pending = autonomy.pendingTrade;
   if (!pending) {
@@ -505,7 +492,7 @@ function completeLoading(
 
   const capacity =
     npc.sideTradePlan && pending.reason === 'Nebenhandel'
-      ? npc.normalCargoCapacity ?? npc.cargoCapacity
+      ? (npc.normalCargoCapacity ?? npc.cargoCapacity)
       : npc.cargoCapacity;
   const moved = buyFromMarket(
     npc,
@@ -528,11 +515,7 @@ function completeLoading(
   beginNpcAutonomyPhase(npc, 'launch-prep');
 }
 
-function completeUnloading(
-  npc: NpcEconomyState,
-  markets: EconomyMarketService,
-  day: number
-): void {
+function completeUnloading(npc: NpcEconomyState, markets: EconomyMarketService, day: number): void {
   const autonomy = ensureNpcAutonomy(npc);
   const resourceId = autonomy.pendingSaleResourceId;
   if (!resourceId) {

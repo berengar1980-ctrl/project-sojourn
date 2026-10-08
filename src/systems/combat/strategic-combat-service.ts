@@ -495,8 +495,7 @@ function avoidDetectedMine(
     }))
     .filter(
       (entry) =>
-        entry.level !== 'hidden' &&
-        entry.range <= entry.mine.definition.triggerRadiusMeters * 2.4
+        entry.level !== 'hidden' && entry.range <= entry.mine.definition.triggerRadiusMeters * 2.4
     )
     .sort((a, b) => a.range - b.range)[0];
   if (!threat) return null;
@@ -526,9 +525,7 @@ function moveCombatant(
   const range = Math.max(1, Math.hypot(dx, dy));
   const toward = normalize(dx, dy);
   const perpendicular =
-    side === 'attacker'
-      ? { x: -toward.y, y: toward.x }
-      : { x: toward.y, y: -toward.x };
+    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
   const desired = preferredRange(combatant);
 
   let direction = toward;
@@ -537,7 +534,10 @@ function moveCombatant(
     direction = { x: -toward.x, y: -toward.y };
     targetSpeedFactor = 1;
   } else if (range < desired * 0.72) {
-    direction = normalize(-toward.x * 0.8 + perpendicular.x * 0.45, -toward.y * 0.8 + perpendicular.y * 0.45);
+    direction = normalize(
+      -toward.x * 0.8 + perpendicular.x * 0.45,
+      -toward.y * 0.8 + perpendicular.y * 0.45
+    );
     targetSpeedFactor = 0.72;
   } else if (range <= desired * 1.18) {
     direction = normalize(perpendicular.x + toward.x * 0.18, perpendicular.y + toward.y * 0.18);
@@ -580,8 +580,15 @@ function moveCombatant(
   const baseSpeed = Math.max(65, combatant.setup.combatSpeed ?? 120);
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
   const desiredSpeed = baseSpeed * targetSpeedFactor * alignment;
-  const acceleration = Math.max(12, combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION);
-  const speedDelta = clamp(desiredSpeed - combatant.speed, -acceleration * 1.35 * deltaSeconds, acceleration * deltaSeconds);
+  const acceleration = Math.max(
+    12,
+    combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
+  );
+  const speedDelta = clamp(
+    desiredSpeed - combatant.speed,
+    -acceleration * 1.35 * deltaSeconds,
+    acceleration * deltaSeconds
+  );
   combatant.speed = clamp(combatant.speed + speedDelta, 0, baseSpeed * 1.05);
 
   combatant.position.x = clamp(
@@ -599,7 +606,10 @@ function moveCombatant(
 
 function scaledDamage(raw: number, attacker: MutableCombatant, critical: boolean): number {
   const criticalMultiplier = critical ? 1.5 : 1;
-  return Math.max(1, raw * attacker.setup.damageMultiplier * criticalMultiplier * COMBAT_DAMAGE_SCALE);
+  return Math.max(
+    1,
+    raw * attacker.setup.damageMultiplier * criticalMultiplier * COMBAT_DAMAGE_SCALE
+  );
 }
 
 function combatShieldGeometry(target: MutableCombatant): CombatShieldGeometry {
@@ -709,10 +719,7 @@ function applyDamage(
     return { layer: 'shield', damage: result.absorbedDamage, point: impactPoint };
   }
 
-  const damage = Math.min(
-    target.hullHp,
-    scaledDamage(hullDamage, attacker, critical)
-  );
+  const damage = Math.min(target.hullHp, scaledDamage(hullDamage, attacker, critical));
   target.hullHp = Math.max(0, target.hullHp - damage);
   return { layer: 'hull', damage, point: { ...target.position } };
 }
@@ -922,7 +929,10 @@ export function createStrategicCombatService(
       position: { ...source.position },
       target: side === 'attacker' ? 'defender' : 'attacker',
       speed: projectileSpeed(kind),
-      ttlSeconds: Math.max(0.4, distance(source.position, target.position) / projectileSpeed(kind) + 0.8),
+      ttlSeconds: Math.max(
+        0.4,
+        distance(source.position, target.position) / projectileSpeed(kind) + 0.8
+      ),
       shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
       hullDamage: hit ? weapon.weapon.hullDamage : 0,
       critical: hit && critical,
@@ -1009,10 +1019,7 @@ export function createStrategicCombatService(
           obstacle.point
         );
         lastEvent =
-          source.setup.name +
-          ': ' +
-          projectile.family.replaceAll('_', ' ') +
-          ' trifft Hindernis';
+          source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
         projectiles.splice(index, 1);
         continue;
       }
@@ -1092,7 +1099,10 @@ export function createStrategicCombatService(
     }
   }
 
-  function chooseMine(source: MutableCombatant, target: MutableCombatant): ShipMineDefinition | null {
+  function chooseMine(
+    source: MutableCombatant,
+    target: MutableCombatant
+  ): ShipMineDefinition | null {
     if (source.mineStock.length === 0) return null;
     const preferredKind =
       target.shieldHp > 0
@@ -1101,9 +1111,7 @@ export function createStrategicCombatService(
           ? 'hunter'
           : 'shaped_charge';
     return (
-      source.mineStock.find((mine) => mine.kind === preferredKind) ??
-      source.mineStock[0] ??
-      null
+      source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null
     );
   }
 
