@@ -19,7 +19,7 @@ const combatAi = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-comb
 
 assert(
   data.includes('const PIRATE_NAMES = [') &&
-    data.includes("const PIRATE_HOMES = {") &&
+    data.includes('const PIRATE_HOMES = {') &&
     data.includes("pirates: 'blackjaw-outpost'") &&
     data.includes("pirates2: 'gallows-anchor'"),
   'pirate population must have two persistent gang homes'
@@ -32,9 +32,7 @@ assert(
   'nine high-aggression pirates must temporarily use patrol hulls with a 5/4 faction split'
 );
 assert(
-  data.includes(
-    "pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide'"
-  ),
+  data.includes("pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide'"),
   'the two gangs must carry different insignia ids'
 );
 
