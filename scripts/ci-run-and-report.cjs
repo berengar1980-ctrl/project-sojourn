@@ -207,7 +207,7 @@ async function run() {
   const lines = extractDiagnosticLines(captured, diagnostic);
   if (detail && !lines.includes(detail)) lines.unshift(detail);
   for (const [index, line] of lines.slice(0, 5).entries()) {
-    await postStatus('failure', label + ' detail ' + (index + 1), line);
+    await postStatus('failure', label + ' error ' + (index + 1) + ': ' + truncate(line, 72), line);
   }
   process.exitCode = exitCode;
 }
