@@ -142,10 +142,10 @@ assert(
   'system market must combine route opportunity summary with aging market intelligence'
 );
 assert(
-  portUi.includes('STARTAUSSTATTUNG MK I') &&
-    portUi.includes('data-component-type="weapon"') &&
-    portUi.includes('LIGHT LASER MK I MONTIEREN'),
-  'ship UI must show the real ship and allow Mk I weapon slot mounting'
+  portUi.includes('EINBAU / AUSTAUSCH') &&
+    portUi.includes('data-component-slot-select') &&
+    portController.includes('componentInventory.take(item.uid)'),
+  'ship UI must equip inventory-owned modules rather than granting free weapons'
 );
 assert(
   portUi.includes('ANALYSIEREN') &&
