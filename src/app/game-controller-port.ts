@@ -208,7 +208,10 @@ function createTradeCallbacks(
 
 function createShipyardCallbacks(
   context: ActivePortContext
-): Pick<PortPanelOptions, 'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant' | 'onBuyShip'> {
+): Pick<
+  PortPanelOptions,
+  'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant' | 'onBuyShip'
+> {
   const {
     ship,
     loadouts,
@@ -226,7 +229,16 @@ function createShipyardCallbacks(
       const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
       if (uid && (!item || item.type !== type)) return;
       const before = loadouts.get(ship)[type]?.[index] ?? null;
-      if (before && !componentInventory.store(type, before, 'removed-' + ship.id, runtime.cargoCapacityTons, 'removed')) {
+      if (
+        before &&
+        !componentInventory.store(
+          type,
+          before,
+          'removed-' + ship.id,
+          runtime.cargoCapacityTons,
+          'removed'
+        )
+      ) {
         log.write('WERFT > ZU WENIG FRACHTRAUM FÜR AUSGEBAUTE KOMPONENTE');
         return;
       }
@@ -265,8 +277,12 @@ function createShipyardCallbacks(
     },
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
-      if (!definition?.shipyardVariant || trade.player.credits < definition.cost ||
-        definition.tier > context.gameplay.maxComponentTier) return;
+      if (
+        !definition?.shipyardVariant ||
+        trade.player.credits < definition.cost ||
+        definition.tier > context.gameplay.maxComponentTier
+      )
+        return;
       const stored = componentInventory.store(
         type,
         componentId,
