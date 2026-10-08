@@ -113,6 +113,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-10-08 | PR #162 · NPC-Triebwerks- und RCS-Effekte auf der Sternkarte | Voidbound-Parity geprüft: NPC-Schiffe zeigen auf der Sternkarte Haupttriebwerksabgas bei Reisebewegung und RCS-Manövereffekte bei Richtungsänderungen anhand der Schiffshardpoints. Bestehende NPC-Bewegungs- und Darstellungsmechanik bleibt erhalten; keine Statusänderung in der Feature-Matrix. |
 
+| 2026-10-08 | Kampf-Flucht an Kartenrändern | Parity-Review für `combat.flee`: Fliehende Schiffe werden am Arenarand nicht mehr durch normale Randvermeidung zurückgelenkt; bei ausreichendem Abstand beendet das Erreichen des Randes die Flucht. `combat.flee` bleibt umgesetzt; keine Statusänderung. |
+
 ## Vollständige Matrix
 
 ### runtime
