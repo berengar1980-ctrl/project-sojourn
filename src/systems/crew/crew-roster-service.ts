@@ -48,24 +48,17 @@ function canOperateStation(member: CrewMember): boolean {
   return member.injuryState !== 'incapacitated' && member.injuryState !== 'dead';
 }
 
-export function createCrewRosterService(): CrewRosterService {
-  const members: CrewMember[] = [];
-  const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
+interface RosterContext {
+  readonly members: CrewMember[];
+  readonly assignmentsByShip: Map<string, Record<string, string | undefined>>;
+  assignmentRecord(ship: ShipDefinition): Record<string, string | undefined>;
+  activeManningCount(): number;
+}
 
-  function assignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
-    const existing = assignmentsByShip.get(ship.id);
-    if (existing) return existing;
-    const record: Record<string, string | undefined> = {};
-    for (const station of resolveShipGameplayStats(ship).stations) record[station.id] = undefined;
-    assignmentsByShip.set(ship.id, record);
-    return record;
-  }
-
-  function activeManningCount(): number {
-    return members.filter(canOperateStation).length;
-  }
-
+function createRosterManagement(context: RosterContext): Pick<CrewRosterService, 'list' | 'member' | 'availableDefinitions' | 'hire' | 'dismiss'> {
+  const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
   return {
+
     list() {
       return members.map(cloneMember);
     },
@@ -101,6 +94,12 @@ export function createCrewRosterService(): CrewRosterService {
       }
       return member ? cloneMember(member) : null;
     },
+  };
+}
+
+function createRosterAssignments(context: RosterContext): Pick<CrewRosterService, 'assign' | 'assignments' | 'shipCrewMembers' | 'runtimeOptions' | 'manningFactor' | 'shareRate' | 'setInjuryState'> {
+  const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
+  return {
 
     assign(ship, stationId, crewId) {
       const validStations = new Set(
@@ -172,6 +171,12 @@ export function createCrewRosterService(): CrewRosterService {
       }
       return cloneMember(member);
     },
+  };
+}
+
+function createRosterTraining(context: RosterContext): Pick<CrewRosterService, 'accrueStationTraining' | 'accrueCombatTraining'> {
+  const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
+  return {
 
     accrueStationTraining(ship, hours = 1) {
       if (hours <= 0) return;
@@ -206,5 +211,30 @@ export function createCrewRosterService(): CrewRosterService {
         member.combatSkills[mode] += 1;
       }
     },
+  };
+}
+
+export function createCrewRosterService(): CrewRosterService {
+  const members: CrewMember[] = [];
+  const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
+
+  function assignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
+    const existing = assignmentsByShip.get(ship.id);
+    if (existing) return existing;
+    const record: Record<string, string | undefined> = {};
+    for (const station of resolveShipGameplayStats(ship).stations) record[station.id] = undefined;
+    assignmentsByShip.set(ship.id, record);
+    return record;
+  }
+
+  function activeManningCount(): number {
+    return members.filter(canOperateStation).length;
+  }
+
+  const context: RosterContext = { members, assignmentsByShip, assignmentRecord, activeManningCount };
+  return {
+    ...createRosterManagement(context),
+    ...createRosterAssignments(context),
+    ...createRosterTraining(context),
   };
 }
