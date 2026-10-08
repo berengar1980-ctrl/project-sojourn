@@ -37,10 +37,7 @@ function demandForThruster(
 ): number {
   if (isAxialThruster(thruster)) {
     const longitudinalSign = Math.sign(demand.longitudinalThrust);
-    if (
-      longitudinalSign !== 0 &&
-      Math.sign(thruster.forceX) === longitudinalSign
-    ) {
+    if (longitudinalSign !== 0 && Math.sign(thruster.forceX) === longitudinalSign) {
       return Math.min(1, Math.abs(demand.longitudinalThrust));
     }
     return 0;
