@@ -253,7 +253,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);
@@ -448,10 +447,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningAccumulator += deltaSeconds;
     const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds);
     const selection = this.miningResources.selectionFor(asteroid.id);
-    while (
-      this.miningAccumulator >= cycleSeconds &&
-      hasMineableDeposits(asteroid, selection)
-    ) {
+    while (this.miningAccumulator >= cycleSeconds && hasMineableDeposits(asteroid, selection)) {
       this.miningAccumulator -= cycleSeconds;
       this.miningResources.spawnChunk(asteroid);
     }
@@ -483,8 +479,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipForwardVelocity = velocity.forward;
     this.shipLateralVelocity = velocity.lateral;
   }
-
-
 }
 
 export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
