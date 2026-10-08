@@ -1,5 +1,4 @@
 import type {
-  SalvageComponentCandidate,
   SalvageField,
   SalvageResourceDeposit,
   SalvageWreck,
@@ -69,31 +68,6 @@ function createResources(
   return deposits;
 }
 
-function componentCandidate(
-  random: () => number,
-  quality: SalvageWreckQuality,
-  kind: SalvageWreckKind
-): SalvageComponentCandidate | null {
-  if (random() > 0.28 + quality * 0.16) return null;
-  const tier = quality;
-  const type =
-    kind === 'miner'
-      ? 'mining'
-      : kind === 'salvager'
-        ? 'salvage'
-        : kind === 'patrol'
-          ? 'weapon'
-          : random() < 0.5
-            ? 'cargo'
-            : 'engine';
-  return {
-    type,
-    componentId: `${type}${tier}`,
-    recoveryDifficulty: 35 + tier * 15,
-    cargoTons: 8 + tier * 4,
-  };
-}
-
 export function generateSalvageField(
   sourceLocationId: string,
   seed: number,
@@ -108,7 +82,6 @@ export function generateSalvageField(
   for (let index = 0; index < count; index += 1) {
     const quality = qualityFromRoll(random(), dangerLevel);
     const kind = wreckKind(random());
-    const component = componentCandidate(random, quality, kind);
     wrecks.push({
       id: `wreck-${seed}-${index}`,
       name: wreckName(kind, index),
@@ -122,8 +95,8 @@ export function generateSalvageField(
       rotation: random() * Math.PI * 2,
       integrity: Math.round(30 + random() * 65),
       resources: createResources(random, quality),
-      component,
-      componentStatus: component ? 'available' : 'none',
+      component: null,
+      componentStatus: 'none',
       inspected: false,
     });
   }

@@ -23,6 +23,9 @@ export function createControllerStarPanel(options: {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
+  readonly eventById?: (
+    id: string
+  ) => { readonly position: { readonly x: number; readonly y: number } } | null;
 }): StarMapPanel {
   let panel: StarMapPanel | null = null;
   panel = createStarMapPanel({
@@ -37,12 +40,14 @@ export function createControllerStarPanel(options: {
           options.onEnterLocalSpace();
           return;
         }
-        if (locationHasActivity(id, 'salvage')) {
+        if (locationHasActivity(id, 'salvage') || options.eventById?.(id)) {
           options.onEnterSalvageSpace();
           return;
         }
       }
-      options.navigation.selectDestination(id);
+      const event = options.eventById?.(id);
+      if (event) options.navigation.selectPointDestination(id, event.position);
+      else options.navigation.selectDestination(id);
       panel?.update(options.getModel());
     },
     onSelectNpc: options.onSelectNpc,
@@ -111,5 +116,23 @@ export function createControllerStarModel(
     ];
   });
 
-  return createStarMapViewModel(narrowsSector, navigationSnapshot, ship, npcShips, selectedNpcId);
+  const eventLocations = economy.salvageEvents.active.map((event) => ({
+    id: event.id,
+    name: event.title,
+    kind: 'wreck' as const,
+    position: event.position,
+    radius: event.type === 'distress-rescue' ? 12 : 9,
+    description: event.description,
+    activities: { salvage: true, missions: event.type === 'distress-rescue' },
+    dangerLevel:
+      event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
+  }));
+  return createStarMapViewModel(
+    narrowsSector,
+    navigationSnapshot,
+    ship,
+    npcShips,
+    selectedNpcId,
+    eventLocations
+  );
 }

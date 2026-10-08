@@ -113,3 +113,40 @@ export interface SalvageLocalSpaceSnapshot {
   readonly salvageAvailable: boolean;
   readonly cargoCapacityTons: number;
 }
+
+export type SectorSalvageEventType = 'special-wreck' | 'distress-rescue';
+export type DistressDamageType =
+  | 'nav_bus'
+  | 'drive_control'
+  | 'power_grid'
+  | 'main_drive'
+  | 'coolant'
+  | 'hull_breach'
+  | 'total_loss';
+export type DistressStage = 'approach' | 'diagnosed' | 'towing' | 'salvage_rights' | 'resolved';
+
+export interface SectorSalvageEvent {
+  readonly id: string;
+  readonly type: SectorSalvageEventType;
+  readonly title: string;
+  readonly description: string;
+  readonly position: WorldPoint;
+  readonly wreckKind: SalvageWreckKind;
+  readonly fieldSeed: number;
+  readonly createdDay: number;
+  expiresDay: number;
+  resolved: boolean;
+  claimedByNpcId: string | null;
+  readonly specialComponent: boolean;
+  distressDamage: DistressDamageType | null;
+  distressStage: DistressStage | null;
+  distressTrap: boolean;
+  salvageRights: boolean;
+}
+
+export interface DistressActionResult {
+  readonly success: boolean;
+  readonly text: string;
+  readonly boardingRequired: boolean;
+  readonly salvageRights: boolean;
+}

@@ -21,6 +21,11 @@ export interface ShipComponentDefinition {
   readonly yield?: number;
   readonly chance?: number;
   readonly weapon?: ShipWeaponProfile;
+  readonly baseId?: string;
+  readonly specialSalvage?: boolean;
+  readonly shipyardVariant?: boolean;
+  readonly salvageModifier?: 'efficiency' | 'damage';
+  readonly salvageModifierPct?: number;
 }
 
 type ComponentSeed = readonly [

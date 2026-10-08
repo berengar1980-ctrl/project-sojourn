@@ -6,10 +6,18 @@ const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerRuntimeTypes = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-runtime-types.ts'),
+  'utf8'
+);
 const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
+const portSecondaryPanes = fs.readFileSync(
+  path.join(root, 'src/ui/port/port-secondary-panes.ts'),
+  'utf8'
+);
+const portUi = portPanel + '\n' + portSecondaryPanes;
 const styles = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
 const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
 const portLocationRenderer = fs.readFileSync(
@@ -30,7 +38,10 @@ assert(
   portTypes.includes('EconomyResourceId'),
   'port commodities must use shared stable economy resource ids'
 );
-assert(!portTypes.includes('PortCrewCandidate'), 'ports must not carry fake crew candidate records');
+assert(
+  !portTypes.includes('PortCrewCandidate'),
+  'ports must not carry fake crew candidate records'
+);
 assert(karth?.shipyard, 'Karth Industrial must expose shipyard services');
 assert.equal(
   haven?.shipyard,
@@ -56,13 +67,13 @@ assert(
   'port UI must expose trade, crew, equipment and shipyard navigation'
 );
 assert(
-  portPanel.includes('SCHIFFSSTATIONEN') &&
-    portPanel.includes('CREW ZUWEISEN') &&
-    portPanel.includes('data-station-id'),
+  portUi.includes('SCHIFFSSTATIONEN') &&
+    portUi.includes('CREW ZUWEISEN') &&
+    portUi.includes('data-station-id'),
   'crew UI must expose real ship station assignment controls'
 );
 assert(
-  portPanel.includes('data-hire-crew-id') &&
+  portUi.includes('data-hire-crew-id') &&
     portController.includes('crew.hire') &&
     portController.includes('crew.assign'),
   'crew UI must hire and assign through the persistent crew roster'
@@ -74,7 +85,7 @@ assert(
 );
 assert(
   portPanel.includes('SYSTEMMARKT') &&
-    portPanel.includes('FRACHT VERKAUFEN') &&
+    portPanel.includes('WO VERKAUFE ICH MEINE LADUNG?') &&
     portPanel.includes('data-sell-all-id') &&
     portPanel.includes('data-market-route'),
   'trade UI must expose cargo-first selling and system market route comparison'
@@ -107,7 +118,7 @@ assert(
 
 assert(
   portController.includes('sectorPorts.flatMap') &&
-    portController.includes("expectation: produced.has(commodity.id)") &&
+    portController.includes('expectation: produced.has(commodity.id)') &&
     portPanel.includes('KEINE MARKTDATEN') &&
     portPanel.includes('ERWARTUNG:') &&
     portPanel.includes('Sensorintel oder Besuch nötig') &&
@@ -128,23 +139,28 @@ assert(
     portPanel.includes('GESCHÄTZTE MARGE') &&
     portPanel.includes('data-system-resource-summary') &&
     portPanel.includes('data-system-resource-select') &&
-    portModel.includes("intelStatus: 'live' | 'recent' | 'aging' | 'stale'"),
+    portModel.includes("intelStatus: 'unknown' | 'live' | 'recent' | 'aging' | 'stale'"),
   'system market must combine route opportunity summary with aging market intelligence'
 );
 assert(
-  portPanel.includes('STARTAUSSTATTUNG MK I') &&
-    portPanel.includes('data-component-type="weapon"') &&
-    portPanel.includes('LIGHT LASER MK I MONTIEREN'),
+  portUi.includes('STARTAUSSTATTUNG MK I') &&
+    portUi.includes('data-component-type="weapon"') &&
+    portUi.includes('LIGHT LASER MK I MONTIEREN'),
   'ship UI must show the real ship and allow Mk I weapon slot mounting'
 );
 assert(
-  portPanel.includes('keine erfundenen T2/T3-Upgrades'),
-  'shipyard must not display fake higher-tier component upgrades'
+  portUi.includes('ANALYSIEREN') &&
+    portUi.includes('FREIGESCHALTETE WERFTVARIANTEN') &&
+    portUi.includes('data-sell-loose-component') &&
+    portUi.includes('data-buy-yard-id') &&
+    portController.includes('shipyardResearch.registerComponent') &&
+    portController.includes('salvagedComponentAppraisal'),
+  'shipyard must sell and research real salvage variants instead of showing fake upgrades'
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');
 assert(
   portPanel.includes('port-location-canvas') &&
-    !portPanel.includes("model.locationName.slice(0, 1)") &&
+    !portPanel.includes('model.locationName.slice(0, 1)') &&
     portLocationRenderer.includes('ProceduralSpaceBodyRenderer') &&
     portLocationRenderer.includes('PlanetRingRenderer') &&
     portLocationRenderer.includes('ProceduralStationRenderer') &&
@@ -161,7 +177,7 @@ assert(
   'docked visuals must preserve the star-map identity, biome, rings and star-relative lighting'
 );
 assert(
-  controller.includes("type SceneMode = 'star-map' | 'local-space' | 'salvage-space' | 'port'"),
+  controllerRuntimeTypes.includes("'port'") && controllerRuntimeTypes.includes("'boarding'"),
   'port must be a dedicated application scene'
 );
 assert(

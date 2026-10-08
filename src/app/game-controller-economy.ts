@@ -36,9 +36,19 @@ import {
 } from '../systems/economy/salvage-economy-service';
 import {
   createShipComponentInventoryService,
+  createShipyardResearchService,
   type ShipComponentInventoryService,
+  type ShipyardResearchService,
 } from '../systems/ships';
+import {
+  createSectorSalvageEventService,
+  type SectorSalvageEventService,
+} from '../systems/salvage';
 import { createNpcSectorService, type NpcSectorService } from '../systems/npcs/npc-sector-service';
+import {
+  createNpcSalvageEventService,
+  type NpcSalvageEventService,
+} from '../systems/npcs/npc-salvage-event-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
 
@@ -51,6 +61,9 @@ export interface ControllerEconomy {
   readonly mining: MiningEconomyService;
   readonly salvage: SalvageEconomyService;
   readonly components: ShipComponentInventoryService;
+  readonly shipyardResearch: ShipyardResearchService;
+  readonly salvageEvents: SectorSalvageEventService;
+  readonly npcSalvageEvents: NpcSalvageEventService;
   readonly npcs: NpcEconomyService;
   readonly sectorNpcs: NpcSectorService;
 }
@@ -65,6 +78,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   const marketIntel = createMarketIntelService(markets);
   marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
+  const shipyardResearch = createShipyardResearchService();
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
   });
@@ -88,6 +102,13 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     },
   });
   npcEconomy.advanceDay(0);
+  const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
+  const npcSalvageEvents = createNpcSalvageEventService({
+    world: narrowsSector,
+    sector: sectorNpcs,
+    events: salvageEvents,
+    research: shipyardResearch,
+  });
 
   return {
     markets,
@@ -98,6 +119,9 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
     components: createShipComponentInventoryService(trade.player),
+    shipyardResearch,
+    salvageEvents,
+    npcSalvageEvents,
     npcs: npcEconomy,
     sectorNpcs,
   };

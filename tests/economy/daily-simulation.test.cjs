@@ -176,8 +176,13 @@ const controllerSource = require('fs').readFileSync(
   path.join(root, 'src/app/game-controller.ts'),
   'utf8'
 );
+const controllerEventsSource = require('fs').readFileSync(
+  path.join(root, 'src/app/game-controller-events.ts'),
+  'utf8'
+);
 assert(
-  controllerSource.includes('simulation.advanceNextDay()'),
+  controllerSource.includes('advanceEconomyDay(') &&
+    controllerEventsSource.includes('economy.simulation.advanceNextDay()'),
   'completed inter-location travel must advance the demo economy by one day'
 );
 

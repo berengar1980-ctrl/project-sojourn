@@ -17,6 +17,7 @@ interface PursuitState {
 
 interface NavigationRuntimeState {
   currentLocationId: string | null;
+  pointDestination: { readonly id: string; readonly position: WorldPoint } | null;
   selectedDestinationId: string | null;
   currentPosition: WorldPoint;
   currentHeading: number;
@@ -109,8 +110,27 @@ function previewRoute(world: WorldMap, state: NavigationRuntimeState): RoutePlan
   ) {
     return null;
   }
-  return state.currentLocationId
-    ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
+  const pointDestination =
+    state.pointDestination?.id === state.selectedDestinationId ? state.pointDestination : null;
+  if (pointDestination) {
+    const distance = Math.hypot(
+      pointDestination.position.x - state.currentPosition.x,
+      pointDestination.position.y - state.currentPosition.y
+    );
+    return {
+      fromId: state.currentLocationId ?? 'deep-space',
+      toId: pointDestination.id,
+      points: [{ ...state.currentPosition }, { ...pointDestination.position }],
+      distance,
+      dangerLevel: 0,
+      profile: 'balanced',
+    };
+  }
+  const currentIsStatic =
+    state.currentLocationId !== null &&
+    world.locations.some((location) => location.id === state.currentLocationId);
+  return currentIsStatic
+    ? planRoute(world, state.currentLocationId!, state.selectedDestinationId)
     : planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId);
 }
 
@@ -175,6 +195,7 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
     state.currentTurnRate = 0;
     state.currentAngularThrust = 0;
     state.travel = null;
+    state.pointDestination = null;
   }
 }
 
@@ -204,6 +225,39 @@ function advancePursuit(state: NavigationRuntimeState, deltaSeconds: number): vo
   };
 }
 
+function startSelectedTravel(world: WorldMap, state: NavigationRuntimeState): void {
+  const destinationId = state.selectedDestinationId;
+  if (!destinationId) return;
+  const route = previewRoute(world, state);
+  if (!route || !route.points[route.points.length - 1]) return;
+
+  state.travel = {
+    destinationId,
+    route,
+    distanceTravelled: 0,
+    currentSpeed: 0,
+  };
+  state.currentLocationId = null;
+}
+
+function startNavigationPursuit(
+  state: NavigationRuntimeState,
+  targetId: string,
+  targetPosition: WorldPoint
+): void {
+  if (!targetId) return;
+  const currentSpeed = state.travel?.currentSpeed ?? state.pursuit?.currentSpeed ?? 0;
+  state.travel = null;
+  state.pursuit = {
+    targetId,
+    targetPosition: { ...targetPosition },
+    currentSpeed,
+  };
+  state.currentLocationId = null;
+  state.selectedDestinationId = null;
+  state.pointDestination = null;
+}
+
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
@@ -211,6 +265,7 @@ export function createNavigationService(
 ): NavigationService {
   const state: NavigationRuntimeState = {
     currentLocationId: startLocationId,
+    pointDestination: null,
     selectedDestinationId: null,
     currentPosition: locationPosition(world, startLocationId),
     currentHeading: 0,
@@ -227,6 +282,13 @@ export function createNavigationService(
       throw new Error('Unknown navigation destination: ' + locationId);
     }
     state.selectedDestinationId = locationId;
+    state.pointDestination = null;
+    return snapshot();
+  };
+
+  const selectPointDestination = (id: string, position: WorldPoint): NavigationSnapshot => {
+    state.selectedDestinationId = id;
+    state.pointDestination = { id, position: { ...position } };
     return snapshot();
   };
 
@@ -239,42 +301,19 @@ export function createNavigationService(
   };
 
   const startTravel = (): NavigationSnapshot => {
-    if (state.travel || state.pursuit || !state.selectedDestinationId) return snapshot();
-    if (state.selectedDestinationId === state.currentLocationId) return snapshot();
-
-    const route = state.currentLocationId
-      ? planRoute(world, state.currentLocationId, state.selectedDestinationId)
-      : planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId);
-    const to = route.points[route.points.length - 1];
-    if (!to) return snapshot();
-
-    state.travel = {
-      destinationId: state.selectedDestinationId,
-      route,
-      distanceTravelled: 0,
-      currentSpeed: 0,
-    };
-    state.currentLocationId = null;
+    startSelectedTravel(world, state);
     return snapshot();
   };
 
   const startPursuit = (targetId: string, targetPosition: WorldPoint): NavigationSnapshot => {
-    if (!targetId) return snapshot();
-    const currentSpeed = state.travel?.currentSpeed ?? state.pursuit?.currentSpeed ?? 0;
-    state.travel = null;
-    state.pursuit = {
-      targetId,
-      targetPosition: { ...targetPosition },
-      currentSpeed,
-    };
-    state.currentLocationId = null;
-    state.selectedDestinationId = null;
+    startNavigationPursuit(state, targetId, targetPosition);
     return snapshot();
   };
 
   return {
     getSnapshot: snapshot,
     selectDestination,
+    selectPointDestination,
     startTravel,
     startPursuit,
     updatePursuitTarget(targetPosition) {
@@ -302,8 +341,7 @@ export function createNavigationService(
           ),
         }))
         .sort(
-          (first, second) =>
-            first.priority - second.priority || first.distance - second.distance
+          (first, second) => first.priority - second.priority || first.distance - second.distance
         )[0]?.location;
       if (!destination) return snapshot();
 
@@ -311,6 +349,7 @@ export function createNavigationService(
       state.pursuit = null;
       state.currentLocationId = destination.id;
       state.selectedDestinationId = destination.id;
+      state.pointDestination = null;
       state.currentPosition = { ...destination.position };
       state.currentHeading = 0;
       state.currentTurnRate = 0;

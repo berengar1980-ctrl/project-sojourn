@@ -25,6 +25,10 @@ interface SalvageSpacePanelOptions {
   readonly onStrip: (wreckId: string, resourceId: string) => void;
   readonly onRecoverComponent: (wreckId: string) => void;
   readonly onEventChoice: (choiceId: string) => SalvageSpaceViewModel['lastEventResolution'];
+  readonly onDiagnoseDistress?: (eventId: string) => void;
+  readonly onRepairDistress?: (eventId: string) => void;
+  readonly onTowDistress?: (eventId: string) => void;
+  readonly onEvacuateDistress?: (eventId: string) => void;
   readonly onCancel: () => void;
   readonly onReturnToStarMap: () => void;
 }
@@ -45,6 +49,7 @@ interface SalvageControls {
   readonly cargoList: HTMLElement;
   readonly backButton: HTMLButtonElement;
   readonly eventContainer: HTMLElement;
+  readonly sectorEventContainer: HTMLElement;
   readonly combatTactics: HTMLElement;
 }
 
@@ -65,6 +70,7 @@ function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button type="button" data-tactic="minefield">MINEN</button>',
     '<button type="button" data-tactic="flee">FLUCHT</button></div>',
     '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
+    '<aside class="sector-salvage-event" hidden></aside>',
     '<aside class="salvage-event" hidden></aside>',
     '<div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // BERGUNG</div>',
@@ -106,8 +112,39 @@ function controls(shell: HTMLElement): SalvageControls {
     cargoList: query<HTMLElement>('.local-cargo-list'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
     eventContainer: query<HTMLElement>('.salvage-event'),
+    sectorEventContainer: query<HTMLElement>('.sector-salvage-event'),
     combatTactics: query<HTMLElement>('.salvage-combat-tactics'),
   };
+}
+
+function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement): void {
+  const event = model.sectorEvent;
+  container.hidden = !event;
+  if (!event) {
+    container.replaceChildren();
+    return;
+  }
+  if (event.type === 'special-wreck') {
+    container.innerHTML =
+      '<strong>SELTENES BERGUNGSSIGNAL</strong><span>Dieses Wrack kann eine modifizierte Schiffskomponente enthalten.</span>';
+    return;
+  }
+  const damage = event.distressDamage?.replaceAll('_', ' ').toUpperCase() ?? 'UNBEKANNT';
+  const stage = event.distressStage ?? 'approach';
+  const actions =
+    stage === 'approach'
+      ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
+      : stage === 'diagnosed'
+        ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button><button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
+        : stage === 'salvage_rights'
+          ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
+          : '<span>EINSATZ ABGESCHLOSSEN</span>';
+  container.innerHTML =
+    '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
+    damage +
+    '</span><div class="sector-salvage-actions">' +
+    actions +
+    '</div>';
 }
 
 function statusText(model: SalvageSpaceViewModel): string {
@@ -166,7 +203,7 @@ function resourceRow(
   wreckId: string,
   resource: SalvageSpaceViewModel['selectedWreck'] extends infer _T
     ? { readonly resourceId: string; readonly name: string; readonly remaining: number }
-    : never,
+    : never
 ): HTMLElement {
   const row = document.createElement('div');
   row.className = 'salvage-resource-row';
@@ -176,12 +213,11 @@ function resourceRow(
   amount.textContent = Math.round(resource.remaining) + ' t';
   const button = document.createElement('button');
   button.type = 'button';
-  button.textContent =
-    !model.salvageAvailable
-      ? 'BERGUNGSMODUL FEHLT'
-      : model.phase === 'stripping' && model.activeResourceId === resource.resourceId
-        ? 'BERGUNG LÄUFT'
-        : 'ANFLIEGEN & BERGEN';
+  button.textContent = !model.salvageAvailable
+    ? 'BERGUNGSMODUL FEHLT'
+    : model.phase === 'stripping' && model.activeResourceId === resource.resourceId
+      ? 'BERGUNG LÄUFT'
+      : 'ANFLIEGEN & BERGEN';
   button.disabled =
     !model.salvageAvailable ||
     model.phase !== 'idle' ||
@@ -195,11 +231,7 @@ function resourceRow(
   return row;
 }
 
-function componentRow(
-  model: SalvageSpaceViewModel,
-  wreckId: string,
-  options: SalvageSpacePanelOptions
-): HTMLElement | null {
+function componentRow(model: SalvageSpaceViewModel, wreckId: string): HTMLElement | null {
   const component = model.selectedWreck?.component;
   if (!component) return null;
   const row = document.createElement('div');
@@ -229,11 +261,7 @@ function componentRow(
   return row;
 }
 
-function renderSelection(
-  model: SalvageSpaceViewModel,
-  ui: SalvageControls,
-  options: SalvageSpacePanelOptions
-): void {
+function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
   const npc = model.npcShips.find((entry) => entry.isSelected);
   const wreck = model.selectedWreck;
   ui.card.hidden = !wreck && !npc;
@@ -284,7 +312,7 @@ function renderSelection(
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
   ui.inspectButton.hidden = true;
   ui.resources.replaceChildren();
-  const component = componentRow(model, wreck.id, options);
+  const component = componentRow(model, wreck.id);
   if (component) ui.resources.append(component);
 
   if (wreck.depleted) {
@@ -356,6 +384,64 @@ function createRecoveryTracker(
   };
 }
 
+function bindSalvagePanelActions(
+  ui: SalvageControls,
+  renderer: SalvageSpaceRenderer,
+  options: SalvageSpacePanelOptions,
+  getModel: () => SalvageSpaceViewModel
+): () => void {
+  const unbindInput = bindSalvageSpaceInput({
+    canvas: ui.canvas,
+    renderer,
+    onSelectWreck: options.onSelectWreck,
+    onSelectNpc: options.onSelectNpc,
+    onNavigate: (x, y) => options.onNavigate({ x, y }),
+  });
+  ui.resources.addEventListener('pointerdown', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-salvage-action]');
+    if (!button || button.disabled) return;
+    const wreckId = button.dataset.wreckId;
+    if (!wreckId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.dataset.salvageAction === 'strip') {
+      const resourceId = button.dataset.resourceId;
+      if (resourceId) options.onStrip(wreckId, resourceId);
+      return;
+    }
+    if (button.dataset.salvageAction === 'component') options.onRecoverComponent(wreckId);
+  });
+  ui.sectorEventContainer.addEventListener('click', (event) => {
+    const target = event.target;
+    const model = getModel();
+    if (!(target instanceof HTMLButtonElement) || !model.sectorEvent) return;
+    const id = model.sectorEvent.id;
+    if (target.dataset.distressAction === 'diagnose') options.onDiagnoseDistress?.(id);
+    if (target.dataset.distressAction === 'repair') options.onRepairDistress?.(id);
+    if (target.dataset.distressAction === 'tow') options.onTowDistress?.(id);
+    if (target.dataset.distressAction === 'evacuate') options.onEvacuateDistress?.(id);
+  });
+  ui.inspectButton.addEventListener('click', () => {
+    const wreck = getModel().selectedWreck;
+    if (wreck) options.onInspect(wreck.id);
+  });
+  ui.attackButton.addEventListener('click', () => {
+    const selected = getModel().npcShips.find((entry) => entry.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
+  ui.combatTactics.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const tactic = target.dataset.tactic as CombatTactic | undefined;
+    if (tactic) options.onCombatTactic(tactic);
+  });
+  ui.cancelButton.addEventListener('click', options.onCancel);
+  ui.backButton.addEventListener('click', options.onReturnToStarMap);
+  return unbindInput;
+}
+
 export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
   const shell = createShell(options);
   const ui = controls(shell);
@@ -394,58 +480,17 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       model.salvageEventRecoverySeconds > 0;
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
+    renderSectorEvent(model, ui.sectorEventContainer);
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
       button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
     }
-    renderSelection(model, ui, options);
+    renderSelection(model, ui);
     trackRecovery(model);
   };
 
-  const unbindInput = bindSalvageSpaceInput({
-    canvas: ui.canvas,
-    renderer,
-    onSelectWreck: options.onSelectWreck,
-    onSelectNpc: options.onSelectNpc,
-    onNavigate: (x, y) => options.onNavigate({ x, y }),
-  });
-  ui.resources.addEventListener('pointerdown', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const button = target.closest<HTMLButtonElement>('button[data-salvage-action]');
-    if (!button || button.disabled) return;
-    const wreckId = button.dataset.wreckId;
-    if (!wreckId) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (button.dataset.salvageAction === 'strip') {
-      const resourceId = button.dataset.resourceId;
-      if (resourceId) options.onStrip(wreckId, resourceId);
-      return;
-    }
-    if (button.dataset.salvageAction === 'component') {
-      options.onRecoverComponent(wreckId);
-    }
-  });
-
-  ui.inspectButton.addEventListener('click', () => {
-    if (model.selectedWreck) options.onInspect(model.selectedWreck.id);
-  });
-  ui.attackButton.addEventListener('click', () => {
-    const selected = model.npcShips.find((entry) => entry.isSelected);
-    if (selected) options.onAttackNpc(selected.id);
-  });
-  ui.combatTactics.addEventListener('click', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLButtonElement)) return;
-    const tactic = target.dataset.tactic as CombatTactic | undefined;
-    if (tactic) options.onCombatTactic(tactic);
-  });
-  ui.cancelButton.addEventListener('click', options.onCancel);
-  ui.backButton.addEventListener('click', options.onReturnToStarMap);
+  const unbindInput = bindSalvagePanelActions(ui, renderer, options, () => model);
   update(model);
 
   return {

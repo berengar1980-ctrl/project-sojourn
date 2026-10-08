@@ -18,11 +18,161 @@ export interface ShipEnergySnapshot {
   readonly combatFree: number;
 }
 
+interface ParsedVariantId {
+  readonly source: 'special' | 'yard';
+  readonly modifier: 'efficiency' | 'damage';
+  readonly pct: number;
+  readonly baseId: string;
+}
+
+function parseVariantId(id: string): ParsedVariantId | null {
+  const match = /^(special|yard)_(efficiency|damage)_(\d+)_(.+)$/.exec(id);
+  if (!match) return null;
+  const [, source, modifier, rawPct, baseId] = match;
+  const pct = Number(rawPct);
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 100 || !baseId) return null;
+  return {
+    source: source as ParsedVariantId['source'],
+    modifier: modifier as ParsedVariantId['modifier'],
+    pct,
+    baseId,
+  };
+}
+
+function variantWeapon(
+  base: ShipComponentDefinition,
+  modifier: ParsedVariantId['modifier'],
+  pct: number
+) {
+  if (modifier !== 'damage' || !base.weapon) return base.weapon;
+  return {
+    ...base.weapon,
+    shieldDamage: Math.round(base.weapon.shieldDamage * (1 + pct / 100) * 10) / 10,
+    hullDamage: Math.round(base.weapon.hullDamage * (1 + pct / 100) * 10) / 10,
+  };
+}
+
+function variantCost(
+  base: ShipComponentDefinition,
+  type: ShipComponentType,
+  modifier: ParsedVariantId['modifier'],
+  pct: number,
+  special: boolean
+): number {
+  if (special || type !== 'weapon') return base.cost;
+  const multiplier = modifier === 'efficiency' ? 1 + pct * 0.02 : 1 + pct * 0.03;
+  return Math.round((Math.max(350000, base.cost) * multiplier) / 5000) * 5000;
+}
+
+function variantName(
+  base: ShipComponentDefinition,
+  modifier: ParsedVariantId['modifier'],
+  pct: number,
+  special: boolean
+): string {
+  if (modifier === 'efficiency') {
+    return `${base.name} – ${special ? 'Effiziente Ausführung' : 'Effizient'} (−${pct} % Energie)`;
+  }
+  return `${base.name} – ${special ? 'Überladene Ausführung' : 'Leistungsoptimiert'} (+${pct} % Schaden)`;
+}
+
+function variantDefinition(
+  type: ShipComponentType,
+  id: string,
+  depth = 0
+): ShipComponentDefinition | null {
+  if (depth > 8) return null;
+  const parsed = parseVariantId(id);
+  if (!parsed) return null;
+  if (parsed.modifier === 'damage' && type !== 'weapon') return null;
+
+  const base = getShipComponentInternal(type, parsed.baseId, depth + 1);
+  if (!base) return null;
+  if (parsed.modifier === 'efficiency' && base.power <= 0) return null;
+
+  const special = parsed.source === 'special';
+  const weapon = variantWeapon(base, parsed.modifier, parsed.pct);
+  return {
+    ...base,
+    id,
+    cost: variantCost(base, type, parsed.modifier, parsed.pct, special),
+    baseId: base.id,
+    specialSalvage: special,
+    shipyardVariant: !special,
+    salvageModifier: parsed.modifier,
+    salvageModifierPct: parsed.pct,
+    name: variantName(base, parsed.modifier, parsed.pct, special),
+    power:
+      parsed.modifier === 'efficiency'
+        ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100)))
+        : base.power,
+    ...(weapon ? { weapon } : {}),
+  };
+}
+
+function getShipComponentInternal(
+  type: ShipComponentType,
+  id: string,
+  depth: number
+): ShipComponentDefinition | null {
+  return (
+    SHIP_COMPONENT_CATALOG[type]?.find((component) => component.id === id) ??
+    variantDefinition(type, id, depth)
+  );
+}
+
 export function getShipComponent(
   type: ShipComponentType,
   id: string
 ): ShipComponentDefinition | null {
-  return SHIP_COMPONENT_CATALOG[type]?.find((component) => component.id === id) ?? null;
+  return getShipComponentInternal(type, id, 0);
+}
+
+export function createSpecialSalvageComponentId(
+  type: ShipComponentType,
+  baseId: string,
+  modifier: 'efficiency' | 'damage',
+  percent: number
+): string | null {
+  const pct = Math.max(1, Math.min(100, Math.round(percent)));
+  const id = `special_${modifier}_${pct}_${baseId}`;
+  return getShipComponent(type, id) ? id : null;
+}
+
+export function createShipyardVariantId(
+  type: ShipComponentType,
+  baseId: string,
+  modifier: 'efficiency' | 'damage',
+  percent: number
+): string | null {
+  const pct = Math.max(1, Math.min(100, Math.round(percent)));
+  const id = `yard_${modifier}_${pct}_${baseId}`;
+  return getShipComponent(type, id) ? id : null;
+}
+
+export function salvagedComponentAppraisal(
+  type: ShipComponentType,
+  id: string
+): { readonly market: number; readonly sell: number; readonly rare: boolean } {
+  const component = getShipComponent(type, id);
+  if (!component) return { market: 0, sell: 0, rare: false };
+  const base = component.baseId
+    ? (getShipComponent(type, component.baseId) ?? component)
+    : component;
+  const intrinsic = Math.max(
+    180000,
+    Number(base.cost || 0) || Math.round(240000 * Math.max(1, base.tier))
+  );
+  const rare = Boolean(component.specialSalvage);
+  const pct = Math.max(0, Number(component.salvageModifierPct ?? 0));
+  const premium =
+    component.salvageModifier === 'damage'
+      ? Math.min(0.75, pct * 0.06)
+      : component.salvageModifier === 'efficiency'
+        ? Math.min(0.75, pct * 0.04)
+        : 0;
+  const market = Math.round(intrinsic * (rare ? 2.1 : 1) * (1 + premium));
+  return { market, sell: Math.round(market * 0.45), rare };
 }
 
 export function getCompatibleShipComponents(

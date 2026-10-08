@@ -10,11 +10,14 @@ export {
   componentHullBonus,
   componentShieldBonus,
   engineSpeedMultiplier,
+  createShipyardVariantId,
+  createSpecialSalvageComponentId,
   getCompatibleShipComponents,
   getShipComponent,
   miningYieldMultiplier,
   salvageChanceBonus,
   salvageYieldMultiplier,
+  salvagedComponentAppraisal,
   sensorRangeMultiplier,
 } from './ship-component-service';
 export { canShipCarryResource } from './ship-cargo-policy';
@@ -25,6 +28,7 @@ export {
   looseComponentCargoTons,
 } from './ship-component-inventory-service';
 export { createShipLoadoutService } from './ship-loadout-service';
+export { createShipyardResearchService } from './shipyard-research-service';
 export { resolveShipRuntimeSetup } from './ship-runtime';
 export {
   calculateStationSkill,
@@ -71,3 +75,5 @@ export type {
   ShipCrewMember,
   ShipStationAssignments,
 } from './station-performance';
+
+export type { ShipyardResearchService, SalvageModifierKind } from './shipyard-research-service';
