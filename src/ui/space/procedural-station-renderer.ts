@@ -446,11 +446,7 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private applyDirectionalLight(
-    radius: number,
-    rotationRadians: number,
-    light?: WorldPoint
-  ): void {
+  private applyDirectionalLight(radius: number, rotationRadians: number, light?: WorldPoint): void {
     if (!light) return;
 
     const context = this.spriteContext;
@@ -479,7 +475,7 @@ export class ProceduralStationRenderer {
     for (let index = 0; index < sides; index += 1) {
       const angle = -Math.PI / 2 + (index / sides) * Math.PI * 2;
       const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
+     const y = Math.sin(angle) * radius;
       if (index === 0) context.moveTo(x, y);
       else context.lineTo(x, y);
     }
