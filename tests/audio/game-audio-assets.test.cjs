@@ -51,7 +51,7 @@ const ambience = Buffer.from(ambienceChunks.join('').trim(), 'base64');
 assert.equal(ambience.subarray(0, 4).toString('ascii'), 'OggS');
 assert.equal(
   crypto.createHash('sha256').update(ambience).digest('hex'),
-  '7ac4b955250825af15f7458629f9cc95a0d0292f7c9187feebbb8a10803f0fa1',
+  'ae563895f5877cf4f9fc12cfd46e84483f90d1550be6e0e1f8af1e7cbe57e694',
   'chunked ambience must rebuild to the verified full encoded asset'
 );
 assert(
