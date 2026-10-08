@@ -1,5 +1,7 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
+import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
+import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { MapCamera } from './map-camera';
@@ -14,6 +16,9 @@ export interface NpcShipMapHitArea {
 
 export class NpcShipMapRenderer {
   private readonly lighting = new ShipLightingRenderer();
+  private readonly engines = new ShipEngineEffectsRenderer();
+  private readonly maneuvers = new ShipManeuverEffectsRenderer();
+  private readonly priorHeading = new Map<string, { angle: number; time: number }>();
   private readonly images = new Map<string, HTMLImageElement>();
 
   constructor(
@@ -30,6 +35,7 @@ export class NpcShipMapRenderer {
   ): NpcShipMapHitArea[] {
     const hits: NpcShipMapHitArea[] = [];
     const zoom = camera.getRelativeZoom();
+    const timeSeconds = performance.now() / 1000;
     const starPoint = camera.worldToScreen(model.star.position, width, height);
 
     for (const npc of model.npcShips) {
@@ -54,7 +60,8 @@ export class NpcShipMapRenderer {
         geometry,
         starPoint,
         npc.headingRadians,
-        npc.isTravelling
+        npc.isTravelling,
+        timeSeconds
       );
       if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
       this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
@@ -112,10 +119,31 @@ export class NpcShipMapRenderer {
     geometry: ShipScreenGeometry,
     starPoint: { readonly x: number; readonly y: number },
     headingRadians: number,
-    isTravelling: boolean
+    isTravelling: boolean,
+    timeSeconds: number
   ): void {
     const npc = model.npcShips.find((candidate) => candidate.id === npcId);
     if (!npc) return;
+    const previous = this.priorHeading.get(npcId);
+    const elapsed = previous ? timeSeconds - previous.time : 0;
+    const delta = previous
+      ? Math.atan2(
+          Math.sin(headingRadians - previous.angle),
+          Math.cos(headingRadians - previous.angle)
+        )
+      : 0;
+    const turnRate =
+      elapsed > 0.001 && elapsed < 0.5 ? Math.max(-1.15, Math.min(1.15, delta / elapsed)) : 0;
+    this.priorHeading.set(npcId, { angle: headingRadians, time: timeSeconds });
+    const demand = {
+      turnRateRadiansPerSecond: turnRate,
+      angularThrust: turnRate / 1.15,
+      lateralThrust: 0,
+      longitudinalThrust: 0,
+    };
+    const intensity = isTravelling ? 0.82 : 0;
+    this.engines.drawExhaust(this.context, npc.hardpoints, geometry, intensity, timeSeconds);
+    this.maneuvers.drawExhaust(this.context, npc.hardpoints, geometry, demand, timeSeconds);
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(headingRadians);
@@ -146,6 +174,8 @@ export class NpcShipMapRenderer {
       );
     }
     this.context.restore();
+    this.engines.drawGlow(this.context, npc.hardpoints, geometry, intensity, timeSeconds);
+    this.maneuvers.drawGlow(this.context, npc.hardpoints, geometry, demand, timeSeconds);
   }
 
   private drawContactRing(
