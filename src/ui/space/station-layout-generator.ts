@@ -1,14 +1,7 @@
 import type { StationType } from '../../core/world-types';
 
 export type StationModuleKind =
-  | 'habitat'
-  | 'cargo'
-  | 'tank'
-  | 'dock'
-  | 'radiator'
-  | 'sensor'
-  | 'armor'
-  | 'utility';
+  'habitat' | 'cargo' | 'tank' | 'dock' | 'radiator' | 'sensor' | 'armor' | 'utility';
 
 export interface StationArmLayout {
   readonly angle: number;
