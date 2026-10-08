@@ -21,6 +21,17 @@ jobs:
       - run:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
+      # Temporary diagnostic artifact: capture Prettier's exact changes without relaxing the gate.
+      - run:
+          name: Export Prettier correction patch
+          when: always
+          command: |
+            mkdir -p /tmp/shipyard-prettier
+            npx prettier --write src/app/game-controller-port.ts src/features/port/port-ship-view-model.ts src/features/port/port-view-model.ts src/systems/ships/ship-component-service.ts src/ui/port/port-panel.ts src/ui/port/port-secondary-panes.ts tests/ships/shipyard-component-market.test.cjs
+            git diff --binary -- src/app/game-controller-port.ts src/features/port/port-ship-view-model.ts src/features/port/port-view-model.ts src/systems/ships/ship-component-service.ts src/ui/port/port-panel.ts src/ui/port/port-secondary-panes.ts tests/ships/shipyard-component-market.test.cjs > /tmp/shipyard-prettier/prettier.patch
+      - store_artifacts:
+          path: /tmp/shipyard-prettier
+          destination: shipyard-prettier
       - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
