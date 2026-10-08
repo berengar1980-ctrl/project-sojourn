@@ -392,7 +392,9 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       const type = button.dataset.componentType as ShipComponentType;
       const index = Number(button.dataset.componentIndex ?? 0);
       const key = button.dataset.componentKey;
-      const select = [...shell.querySelectorAll<HTMLSelectElement>('[data-component-slot-select]')].find((item) => item.dataset.componentSlotSelect === key);
+      const select = [
+        ...shell.querySelectorAll<HTMLSelectElement>('[data-component-slot-select]'),
+      ].find((item) => item.dataset.componentSlotSelect === key);
       options.onSetComponentSlot(type, index, select?.value || null);
     });
   }
@@ -415,7 +417,10 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       if (!offer) return;
       const separator = offer.indexOf('|');
       if (separator < 1) return;
-      options.onBuyShipyardVariant(offer.slice(0, separator) as ShipComponentType, offer.slice(separator + 1));
+      options.onBuyShipyardVariant(
+        offer.slice(0, separator) as ShipComponentType,
+        offer.slice(separator + 1)
+      );
     });
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
