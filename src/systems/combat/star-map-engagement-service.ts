@@ -128,7 +128,10 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
           ? 'kite'
           : 'fight',
     combatSpeed: Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
-    turnRateRadiansPerSecond: Math.max(0.4, Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)),
+    turnRateRadiansPerSecond: Math.max(
+      0.4,
+      Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)
+    ),
     accelerationMetersPerSecond2: Math.max(18, Math.min(36, 44 - ship.nominalLengthMeters * 0.18)),
     mines,
     sensorCrewSkill: skill,
