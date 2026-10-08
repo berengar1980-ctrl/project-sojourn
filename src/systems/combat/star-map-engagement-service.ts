@@ -128,7 +128,10 @@ function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
           ? 'kite'
           : 'fight',
     combatSpeed: Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
-    turnRateRadiansPerSecond: Math.max(0.4, Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)),
+    turnRateRadiansPerSecond: Math.max(
+      0.4,
+      Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)
+    ),
     accelerationMetersPerSecond2: Math.max(18, Math.min(36, 44 - ship.nominalLengthMeters * 0.18)),
     mines,
     sensorCrewSkill: skill,
@@ -217,10 +220,7 @@ export function createStarMapEngagementService(
       initialDistance: distance(attackerPosition, defenderPosition),
     });
     options.log(
-      'NPC COMBAT > ' +
-        attacker.name.toUpperCase() +
-        ' VERFOLGT ' +
-        defender.name.toUpperCase()
+      'NPC COMBAT > ' + attacker.name.toUpperCase() + ' VERFOLGT ' + defender.name.toUpperCase()
     );
   }
 
@@ -263,9 +263,7 @@ export function createStarMapEngagementService(
       const target = options.sectorNpcs.npcs
         .filter((candidate) => {
           if (candidate.id === attacker.id) return false;
-          return attacker.pirate
-            ? npcIsPiratePrey(candidate)
-            : npcLooksHostileToPatrol(candidate);
+          return attacker.pirate ? npcIsPiratePrey(candidate) : npcLooksHostileToPatrol(candidate);
         })
         .map((candidate) => ({
           candidate,
@@ -273,10 +271,7 @@ export function createStarMapEngagementService(
           priority: !attacker.pirate && candidate.pirate ? 0 : 1,
         }))
         .filter((entry) => entry.range <= NPC_ATTACK_SCAN_RANGE)
-        .sort(
-          (first, second) =>
-            first.priority - second.priority || first.range - second.range
-        )[0];
+        .sort((first, second) => first.priority - second.priority || first.range - second.range)[0];
       if (target) startNpcAttack(attacker, target.candidate);
     }
   }
@@ -328,10 +323,7 @@ export function createStarMapEngagementService(
     return stolen;
   }
 
-  function beginPlayerCombat(
-    target: SectorNpcState,
-    arena?: StrategicCombatArenaOptions
-  ): void {
+  function beginPlayerCombat(target: SectorNpcState, arena?: StrategicCombatArenaOptions): void {
     const playerSetup = options.getPlayerCombatant();
     const npcSetup = npcCombatant(target);
     if (!npcSetup) return;
@@ -390,10 +382,7 @@ export function createStarMapEngagementService(
     });
     npcChases.delete(attacker.id);
     options.log(
-      'NPC COMBAT > KONTAKT · ' +
-        attacker.name.toUpperCase() +
-        ' VS ' +
-        defender.name.toUpperCase()
+      'NPC COMBAT > KONTAKT · ' + attacker.name.toUpperCase() + ' VS ' + defender.name.toUpperCase()
     );
   }
 
