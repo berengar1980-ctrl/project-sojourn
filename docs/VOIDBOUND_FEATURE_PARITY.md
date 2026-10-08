@@ -111,6 +111,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-10-08 | PR #161 · Zeitgesteuerte und sichtbare Welt-Events | Voidbound-Parity geprüft: Ereignis-/Ökonomie-Tagesfortschritt wird in der Demo anhand verstrichener Spielzeit statt Ortswechsel ausgelöst. Sonderwracks und Notrufe bleiben unabhängig vom Spielerschiff aktiv und erhalten erkennbare Kartenmarkierungen. `salvage.special_events` bleibt umgesetzt und `salvage.distress_rescue` bleibt teilweise; keine Statusänderung. |
 
+| 2026-10-08 | PR #162 · NPC-Triebwerks- und RCS-Effekte auf der Sternkarte | Voidbound-Parity geprüft: NPC-Schiffe zeigen auf der Sternkarte Haupttriebwerksabgas bei Reisebewegung und RCS-Manövereffekte bei Richtungsänderungen anhand der Schiffshardpoints. Bestehende NPC-Bewegungs- und Darstellungsmechanik bleibt erhalten; keine Statusänderung in der Feature-Matrix. |
+
 ## Vollständige Matrix
 
 ### runtime
