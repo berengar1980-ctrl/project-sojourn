@@ -116,15 +116,13 @@ const boundaryCombat = combatModule.createStrategicCombatService(
     defenderPosition: { x: 1000, y: 700 },
   }
 );
-let boundaryPinnedFrames = 0;
-for (let step = 0; step < 100; step += 1) {
+let escapedAtBoundary = false;
+for (let step = 0; step < 300 && !boundaryCombat.getSnapshot().winner; step += 1) {
   const snap = boundaryCombat.tick(0.08);
-  if (Math.abs(snap.attacker.position.x - 2040) < 0.001) boundaryPinnedFrames += 1;
+  if (snap.lastEvent.includes('entkommt aus dem Gefecht')) escapedAtBoundary = true;
 }
-assert(
-  boundaryPinnedFrames < 4,
-  'combat navigation must steer away from arena bounds instead of riding the invisible wall'
-);
+assert(escapedAtBoundary, 'fleeing combatant must escape instead of circling at the arena edge');
+assert.equal(boundaryCombat.getSnapshot().winner, 'defender');
 
 const initial = combat.getSnapshot();
 assert.equal(initial.arena.width, 2200);
