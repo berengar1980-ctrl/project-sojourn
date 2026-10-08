@@ -10,10 +10,7 @@ export function shipSymbolScale(relativeZoom: number): number {
   return clamp(Math.pow(relativeZoom, 0.45), 0.78, 1.95);
 }
 
-export function starMapShipWidth(
-  nominalLengthMeters: number,
-  relativeZoom: number
-): number {
+export function starMapShipWidth(nominalLengthMeters: number, relativeZoom: number): number {
   const baseWidth = clamp(nominalLengthMeters * 0.22, 18, 28);
   return baseWidth * shipSymbolScale(relativeZoom);
 }
