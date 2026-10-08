@@ -490,9 +490,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
   resolveMinerCollisions(runtime);
 }
 
-export function createNpcLocalMiningService(
-  options: NpcLocalMiningOptions
-): NpcLocalMiningService {
+export function createNpcLocalMiningService(options: NpcLocalMiningOptions): NpcLocalMiningService {
   const runtime: MinerRuntime = {
     options,
     ships: [],
