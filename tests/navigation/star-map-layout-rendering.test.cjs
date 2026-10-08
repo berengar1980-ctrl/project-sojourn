@@ -17,9 +17,9 @@ const surfaces = read('src/ui/space/procedural-surface-textures.ts');
 
 assert(camera.includes('const MIN_RELATIVE_ZOOM = 1;'));
 assert(renderer.includes('rect.width >= 200 && rect.height >= 200'));
-assert(map.includes("position: { x: 3100, y: mapY(430) }"));
-assert(map.includes("position: { x: 2960, y: mapY(1450) }"));
-assert(map.includes("position: { x: 3105, y: mapY(1320) }"));
+assert(map.includes('position: { x: 3100, y: mapY(430) }'));
+assert(map.includes('position: { x: 2960, y: mapY(1450) }'));
+assert(map.includes('position: { x: 3105, y: mapY(1320) }'));
 assert(playerShip.includes('preserveDetail: true'));
 assert(npcShips.includes('preserveDetail: true'));
 assert(stations.includes("globalCompositeOperation = 'destination-out'"));
