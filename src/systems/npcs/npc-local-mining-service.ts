@@ -255,7 +255,7 @@ function mine(runtime: MinerRuntime, ship: LocalNpcMinerState, npc: SectorNpcSta
     }
 }
 
-function resolvePendingEvent(runtime: MinerRuntime, 
+function resolvePendingEvent(runtime: MinerRuntime,
     ship: LocalNpcMinerState,
     npc: SectorNpcState,
     asteroid: LocalAsteroid
@@ -287,8 +287,7 @@ function resolvePendingEvent(runtime: MinerRuntime,
     return false;
 }
 
-
-function syncCombatPose(runtime: MinerRuntime, 
+function syncCombatPose(runtime: MinerRuntime,
     npcId: string,
     position: WorldPoint,
     headingRadians: number,
@@ -310,7 +309,7 @@ function syncCombatPose(runtime: MinerRuntime,
 
 function advanceApproaching(runtime: MinerRuntime, ship: LocalNpcMinerState, npc: SectorNpcState, dt: number): void {
         if (ship.phase === 'approaching') {
-          const asteroid = runtime.runtime.options.getAsteroids()
+          const asteroid = runtime.options.getAsteroids()
             .find((candidate) => candidate.id === ship.targetAsteroidId);
           if (!asteroid || !asteroid.deposits.some((deposit) => deposit.oreRemaining > 0)) {
             assignTarget(runtime, ship, npc);
@@ -332,7 +331,7 @@ function advanceApproaching(runtime: MinerRuntime, ship: LocalNpcMinerState, npc
 
 function advanceScanning(runtime: MinerRuntime, ship: LocalNpcMinerState, npc: SectorNpcState, dt: number): void {
         if (ship.phase === 'scanning') {
-          const asteroid = runtime.runtime.options.getAsteroids()
+          const asteroid = runtime.options.getAsteroids()
             .find((candidate) => candidate.id === ship.targetAsteroidId);
           if (!asteroid) {
             beginExit(runtime, ship);
@@ -354,7 +353,7 @@ function advanceScanning(runtime: MinerRuntime, ship: LocalNpcMinerState, npc: S
 
 function advanceMining(runtime: MinerRuntime, ship: LocalNpcMinerState, npc: SectorNpcState, dt: number): void {
         if (ship.phase === 'mining') {
-          const asteroid = runtime.runtime.options.getAsteroids()
+          const asteroid = runtime.options.getAsteroids()
             .find((candidate) => candidate.id === ship.targetAsteroidId);
           if (!asteroid) {
             beginExit(runtime, ship);
