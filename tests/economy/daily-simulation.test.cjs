@@ -181,10 +181,8 @@ const controllerEventsSource = require('fs').readFileSync(
   'utf8'
 );
 assert(
-  controllerSource.includes('advanceEconomyTime(context, deltaSeconds)') &&
-    controllerEventsSource.includes(
-      'for (let i = 0; i < days; i += 1) advanceEconomyDay(context)'
-    ) &&
+  controllerSource.includes('tickEconomy(context, deltaSeconds)') &&
+    controllerEventsSource.includes('advanceEconomyDay(context)') &&
     controllerEventsSource.includes('economy.simulation.advanceNextDay()'),
   'elapsed game time must advance the demo economy independently of location changes'
 );
