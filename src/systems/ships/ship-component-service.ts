@@ -26,7 +26,7 @@ interface ParsedVariantId {
 }
 
 function parseVariantId(id: string): ParsedVariantId | null {
-  const match = /^(special|yard)_(efficiency|damage)_(\d+)_(.+)$/.exec(id);
+  const match = /^(special|yard)_(efficiency|damage|performance)_(\d+)_(.+)$/.exec(id);
   if (!match) return null;
   const [, source, modifier, rawPct, baseId] = match;
   const pct = Number(rawPct);
