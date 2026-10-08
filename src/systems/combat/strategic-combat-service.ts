@@ -768,497 +768,507 @@ function firstObstacleHit(
   );
 }
 
-export function createStrategicCombatService(
-  attackerSetup: StrategicCombatantSetup,
-  defenderSetup: StrategicCombatantSetup,
-  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
-  arenaOptions?: StrategicCombatArenaOptions
-): StrategicCombatService {
-  const arena: StrategicCombatArenaOptions = {
-    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
-    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
-    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
-    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
-    ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
+interface StrategicCombatRuntime {
+  readonly arena: StrategicCombatArenaOptions;
+  readonly attacker: MutableCombatant;
+  readonly defender: MutableCombatant;
+  readonly random: () => number;
+  readonly projectiles: MutableProjectile[];
+  readonly beams: MutableBeam[];
+  readonly mines: MutableMine[];
+  elapsedSeconds: number;
+  winner: StrategicCombatSide | null;
+  lastEvent: string;
+  projectileSerial: number;
+  beamSerial: number;
+  mineSerial: number;
+  impactSerial: number;
+  lastImpact: CombatImpactSnapshot | null;
+}
+
+function runtimeCombatant(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide
+): MutableCombatant {
+  return side === 'attacker' ? runtime.attacker : runtime.defender;
+}
+
+function runtimeEnemy(runtime: StrategicCombatRuntime, side: StrategicCombatSide): MutableCombatant {
+  return side === 'attacker' ? runtime.defender : runtime.attacker;
+}
+
+function noteRuntimeImpact(
+  runtime: StrategicCombatRuntime,
+  target: StrategicCombatSide,
+  layer: CombatImpactLayer,
+  damage: number,
+  point: CombatPoint
+): void {
+  runtime.impactSerial += 1;
+  runtime.lastImpact = {
+    serial: runtime.impactSerial,
+    target,
+    layer,
+    damage,
+    position: { ...point },
   };
-  const attacker = createCombatant(attackerSetup, 'attacker', arena);
-  const defender = createCombatant(defenderSetup, 'defender', arena);
-  const random = createRng(seed);
-  const projectiles: MutableProjectile[] = [];
-  const beams: MutableBeam[] = [];
-  const mines: MutableMine[] = [];
-  let elapsedSeconds = 0;
-  let winner: StrategicCombatSide | null = null;
-  let lastEvent = 'Kampfkontakt hergestellt';
-  let projectileSerial = 0;
-  let beamSerial = 0;
-  let mineSerial = 0;
-  let impactSerial = 0;
-  let lastImpact: CombatImpactSnapshot | null = null;
+}
 
-  function combatantFor(side: StrategicCombatSide): MutableCombatant {
-    return side === 'attacker' ? attacker : defender;
+function addRuntimeBeam(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  kind: CombatBeamKind,
+  family: ShipWeaponFamily,
+  origin: CombatPoint,
+  end: CombatPoint,
+  weaponIndex: number
+): void {
+  runtime.beamSerial += 1;
+  const maxTtlSeconds = kind === 'laser' ? 0.16 : 0.09;
+  runtime.beams.push({
+    id: runtime.beamSerial,
+    owner: side,
+    kind,
+    family,
+    origin: { ...origin },
+    end: { ...end },
+    weaponIndex,
+    ttlSeconds: maxTtlSeconds,
+    maxTtlSeconds,
+  });
+}
+
+function fireRuntimeInstantWeapon(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  weapon: ShipComponentDefinition,
+  weaponIndex: number,
+  kind: CombatBeamKind,
+  hit: boolean,
+  critical: boolean
+): string {
+  if (!weapon.weapon) return '';
+  const shield = combatShieldGeometry(target);
+  const center = combatShieldCenter(target);
+  const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
+  const aimCenter = target.shieldHp > 0 ? center : target.position;
+  const targetPoint = hit
+    ? aimCenter
+    : {
+        x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
+        y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
+      };
+  const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
+  const beamEnd = shieldHit?.point ?? targetPoint;
+  const obstacle = firstObstacleHit(source.position, beamEnd, runtime.arena.obstacles ?? []);
+  const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
+
+  if (obstacle) {
+    addRuntimeBeam(runtime, side, kind, weapon.weapon.family, source.position, obstacle.point, weaponIndex);
+    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point);
+    return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
-  function enemyFor(side: StrategicCombatSide): MutableCombatant {
-    return side === 'attacker' ? defender : attacker;
+  addRuntimeBeam(runtime, side, kind, weapon.weapon.family, source.position, beamEnd, weaponIndex);
+  if (!hit) {
+    noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint);
+    return source.setup.name + ': ' + weapon.name + ' verfehlt';
   }
 
-  function noteImpact(
-    target: StrategicCombatSide,
-    layer: CombatImpactLayer,
-    damage: number,
-    point: CombatPoint
-  ): void {
-    impactSerial += 1;
-    lastImpact = {
-      serial: impactSerial,
-      target,
-      layer,
-      damage,
-      position: { ...point },
-    };
+  runtime.impactSerial += 1;
+  const result = applyDamage(
+    target,
+    weapon.weapon.shieldDamage,
+    weapon.weapon.hullDamage,
+    source,
+    critical,
+    source.position,
+    'laser',
+    runtime.impactSerial,
+    shieldHit ?? undefined
+  );
+  runtime.lastImpact = {
+    serial: runtime.impactSerial,
+    target: targetSide,
+    layer: result.layer,
+    damage: result.damage,
+    position: { ...result.point },
+  };
+  return (
+    source.setup.name +
+    ': ' +
+    weapon.name +
+    ' trifft ' +
+    (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+    ' -' +
+    Math.round(result.damage)
+  );
+}
+
+function fireRuntimeProjectileWeapon(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  weapon: ShipComponentDefinition,
+  kind: CombatProjectileKind,
+  hit: boolean,
+  critical: boolean
+): string {
+  if (!weapon.weapon) return '';
+  runtime.projectileSerial += 1;
+  runtime.projectiles.push({
+    id: runtime.projectileSerial,
+    owner: side,
+    kind,
+    family: weapon.weapon.family,
+    position: { ...source.position },
+    target: side === 'attacker' ? 'defender' : 'attacker',
+    speed: projectileSpeed(kind),
+    ttlSeconds: Math.max(
+      0.4,
+      distance(source.position, target.position) / projectileSpeed(kind) + 0.8
+    ),
+    shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
+    hullDamage: hit ? weapon.weapon.hullDamage : 0,
+    critical: hit && critical,
+  });
+  return source.setup.name + ': ' + weapon.name + ' abgefeuert' + (critical ? ' · KRITISCH' : '');
+}
+
+function fireRuntimeWeapon(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  weapon: ShipComponentDefinition,
+  weaponIndex: number
+): string {
+  if (!weapon.weapon || distance(source.position, target.position) > weapon.weapon.rangeMeters) {
+    return '';
   }
-
-  function addBeam(
-    side: StrategicCombatSide,
-    kind: CombatBeamKind,
-    family: ShipWeaponFamily,
-    origin: CombatPoint,
-    end: CombatPoint,
-    weaponIndex: number
-  ): void {
-    beamSerial += 1;
-    const maxTtlSeconds = kind === 'laser' ? 0.16 : 0.09;
-    beams.push({
-      id: beamSerial,
-      owner: side,
-      kind,
-      family,
-      origin: { ...origin },
-      end: { ...end },
-      weaponIndex,
-      ttlSeconds: maxTtlSeconds,
-      maxTtlSeconds,
-    });
-  }
-
-  function fireInstantWeapon(
-    side: StrategicCombatSide,
-    source: MutableCombatant,
-    target: MutableCombatant,
-    weapon: ShipComponentDefinition,
-    weaponIndex: number,
-    kind: CombatBeamKind,
-    hit: boolean,
-    critical: boolean
-  ): string {
-    if (!weapon.weapon) return '';
-    const shield = combatShieldGeometry(target);
-    const center = combatShieldCenter(target);
-    const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
-    const aimCenter = target.shieldHp > 0 ? center : target.position;
-    const targetPoint = hit
-      ? aimCenter
-      : {
-          x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
-          y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
-        };
-    const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
-    const beamEnd = shieldHit?.point ?? targetPoint;
-    const obstacle = firstObstacleHit(source.position, beamEnd, arena.obstacles ?? []);
-    if (obstacle) {
-      addBeam(side, kind, weapon.weapon.family, source.position, obstacle.point, weaponIndex);
-      noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'obstacle', 0, obstacle.point);
-      return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
-    }
-
-    addBeam(side, kind, weapon.weapon.family, source.position, beamEnd, weaponIndex);
-    if (!hit) {
-      noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'miss', 0, targetPoint);
-      return source.setup.name + ': ' + weapon.name + ' verfehlt';
-    }
-
-    impactSerial += 1;
-    const result = applyDamage(
-      target,
-      weapon.weapon.shieldDamage,
-      weapon.weapon.hullDamage,
+  const hitChance = clamp(source.setup.hitChance - target.setup.dodgeChance, 0.2, 0.98);
+  const critical = runtime.random() < clamp(source.setup.criticalChance, 0, 0.5);
+  const kind = weaponKind(weapon.weapon.family);
+  const hit = runtime.random() <= hitChance;
+  if (kind === 'laser' || kind === 'rail') {
+    return fireRuntimeInstantWeapon(
+      runtime,
+      side,
       source,
-      critical,
-      source.position,
-      'laser',
-      impactSerial,
-      shieldHit ?? undefined
+      target,
+      weapon,
+      weaponIndex,
+      kind,
+      hit,
+      critical
     );
-    const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
-    lastImpact = {
-      serial: impactSerial,
-      target: targetSide,
-      layer: result.layer,
-      damage: result.damage,
-      position: { ...result.point },
-    };
-    return (
+  }
+  return fireRuntimeProjectileWeapon(runtime, side, source, target, weapon, kind, hit, critical);
+}
+
+function advanceRuntimeWeapons(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  deltaSeconds: number
+): void {
+  for (let index = 0; index < source.setup.weapons.length; index += 1) {
+    source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
+    if ((source.cooldowns[index] ?? 0) > 0 || target.hullHp <= 0) continue;
+    const weapon = source.setup.weapons[index];
+    if (!weapon?.weapon || distance(source.position, target.position) > weapon.weapon.rangeMeters) {
+      continue;
+    }
+    const event = fireRuntimeWeapon(runtime, side, source, target, weapon, index);
+    source.cooldowns[index] =
+      weapon.weapon.cooldownSeconds * clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
+    if (event) runtime.lastEvent = event;
+  }
+}
+
+function recordProjectileDamage(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  shieldHit?: SegmentShieldHit
+): ReturnType<typeof applyDamage> {
+  runtime.impactSerial += 1;
+  const result = applyDamage(
+    target,
+    projectile.shieldDamage,
+    projectile.hullDamage,
+    source,
+    projectile.critical,
+    projectile.position,
+    projectile.kind === 'missile' ? 'missile' : 'laser',
+    runtime.impactSerial,
+    shieldHit
+  );
+  const targetSide: StrategicCombatSide =
+    projectile.owner === 'attacker' ? 'defender' : 'attacker';
+  runtime.lastImpact = {
+    serial: runtime.impactSerial,
+    target: targetSide,
+    layer: result.layer,
+    damage: result.damage,
+    position: { ...result.point },
+  };
+  return result;
+}
+
+function advanceRuntimeProjectile(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  index: number,
+  deltaSeconds: number
+): void {
+  const source = runtimeCombatant(runtime, projectile.owner);
+  const target = runtimeEnemy(runtime, projectile.owner);
+  if (target.hullHp <= 0) {
+    runtime.projectiles.splice(index, 1);
+    return;
+  }
+
+  const dx = target.position.x - projectile.position.x;
+  const dy = target.position.y - projectile.position.y;
+  const remaining = Math.hypot(dx, dy);
+  const step = projectile.speed * deltaSeconds;
+  projectile.ttlSeconds -= deltaSeconds;
+  const direction =
+    projectile.shieldDamage <= 0 && projectile.hullDamage <= 0
+      ? normalize(dx - dy * 0.14, dy + dx * 0.14)
+      : normalize(dx, dy);
+  const next = {
+    x: projectile.position.x + direction.x * step,
+    y: projectile.position.y + direction.y * step,
+  };
+  const shieldHit =
+    projectile.shieldDamage > 0 || projectile.hullDamage > 0
+      ? segmentShieldHit(projectile.position, next, target)
+      : null;
+  const obstacle = firstObstacleHit(projectile.position, next, runtime.arena.obstacles ?? []);
+
+  if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
+    noteRuntimeImpact(
+      runtime,
+      projectile.owner === 'attacker' ? 'defender' : 'attacker',
+      'obstacle',
+      0,
+      obstacle.point
+    );
+    runtime.lastEvent =
+      source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
+    runtime.projectiles.splice(index, 1);
+    return;
+  }
+  if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0) {
+    projectile.position = next;
+    if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
+    return;
+  }
+  if (shieldHit) {
+    const result = recordProjectileDamage(runtime, projectile, source, target, shieldHit);
+    runtime.lastEvent =
       source.setup.name +
       ': ' +
-      weapon.name +
+      projectile.family.replaceAll('_', ' ') +
+      ' trifft Schild -' +
+      Math.round(result.damage);
+    runtime.projectiles.splice(index, 1);
+    return;
+  }
+  if (remaining <= Math.max(18, step) || projectile.ttlSeconds <= 0) {
+    const result = recordProjectileDamage(runtime, projectile, source, target);
+    runtime.lastEvent =
+      source.setup.name +
+      ': ' +
+      projectile.family.replaceAll('_', ' ') +
       ' trifft ' +
       (result.layer === 'shield' ? 'Schild' : 'Hülle') +
       ' -' +
-      Math.round(result.damage)
+      Math.round(result.damage);
+    runtime.projectiles.splice(index, 1);
+    return;
+  }
+  projectile.position = next;
+}
+
+function advanceRuntimeProjectiles(runtime: StrategicCombatRuntime, deltaSeconds: number): void {
+  for (let index = runtime.projectiles.length - 1; index >= 0; index -= 1) {
+    advanceRuntimeProjectile(runtime, runtime.projectiles[index]!, index, deltaSeconds);
+  }
+}
+
+function chooseRuntimeMine(
+  source: MutableCombatant,
+  target: MutableCombatant
+): ShipMineDefinition | null {
+  if (source.mineStock.length === 0) return null;
+  const preferredKind =
+    target.shieldHp > 0
+      ? 'ion'
+      : distance(source.position, target.position) > 360
+        ? 'hunter'
+        : 'shaped_charge';
+  return source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null;
+}
+
+function maybeDropRuntimeMine(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  deltaSeconds: number
+): void {
+  source.mineCooldown = Math.max(0, source.mineCooldown - deltaSeconds);
+  if (source.tactic !== 'minefield' || source.mineStock.length === 0 || source.mineCooldown > 0) {
+    return;
+  }
+  if (distance(source.position, target.position) > 720) return;
+  const definition = chooseRuntimeMine(source, target);
+  if (!definition) return;
+  const stockIndex = source.mineStock.findIndex((mine) => mine.id === definition.id);
+  if (stockIndex >= 0) source.mineStock.splice(stockIndex, 1);
+
+  runtime.mineSerial += 1;
+  source.mineCooldown = MINE_DROP_COOLDOWN;
+  runtime.mines.push({
+    id: runtime.mineSerial,
+    owner: side,
+    position: { ...source.position },
+    armedSeconds: 0.7,
+    pursuitRemaining: definition.pursuitSeconds,
+    definition,
+  });
+  runtime.lastEvent = source.setup.name + ': ' + definition.name + ' gelegt';
+}
+
+function advanceRuntimeMine(
+  runtime: StrategicCombatRuntime,
+  mine: MutableMine,
+  index: number,
+  deltaSeconds: number
+): void {
+  mine.armedSeconds = Math.max(0, mine.armedSeconds - deltaSeconds);
+  const target = runtimeEnemy(runtime, mine.owner);
+  if (target.hullHp <= 0) {
+    runtime.mines.splice(index, 1);
+    return;
+  }
+  if (
+    mine.armedSeconds <= 0 &&
+    mine.pursuitRemaining > 0 &&
+    mine.definition.pursuitSpeedMetersPerSecond > 0
+  ) {
+    const direction = normalize(
+      target.position.x - mine.position.x,
+      target.position.y - mine.position.y
     );
+    mine.position.x += direction.x * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
+    mine.position.y += direction.y * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
+    mine.pursuitRemaining = Math.max(0, mine.pursuitRemaining - deltaSeconds);
   }
+  if (mine.armedSeconds > 0) return;
+  if (distance(mine.position, target.position) > mine.definition.triggerRadiusMeters) return;
 
-  function fireProjectileWeapon(
-    side: StrategicCombatSide,
-    source: MutableCombatant,
-    target: MutableCombatant,
-    weapon: ShipComponentDefinition,
-    kind: CombatProjectileKind,
-    hit: boolean,
-    critical: boolean
-  ): string {
-    if (!weapon.weapon) return '';
-    projectileSerial += 1;
-    projectiles.push({
-      id: projectileSerial,
-      owner: side,
-      kind,
-      family: weapon.weapon.family,
-      position: { ...source.position },
-      target: side === 'attacker' ? 'defender' : 'attacker',
-      speed: projectileSpeed(kind),
-      ttlSeconds: Math.max(
-        0.4,
-        distance(source.position, target.position) / projectileSpeed(kind) + 0.8
-      ),
-      shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
-      hullDamage: hit ? weapon.weapon.hullDamage : 0,
-      critical: hit && critical,
-    });
-    return source.setup.name + ': ' + weapon.name + ' abgefeuert' + (critical ? ' · KRITISCH' : '');
+  runtime.impactSerial += 1;
+  const source = runtimeCombatant(runtime, mine.owner);
+  const result = applyDamage(
+    target,
+    mine.definition.shieldDamage,
+    mine.definition.hullDamage,
+    source,
+    false,
+    mine.position,
+    'missile',
+    runtime.impactSerial
+  );
+  runtime.lastImpact = {
+    serial: runtime.impactSerial,
+    target: mine.owner === 'attacker' ? 'defender' : 'attacker',
+    layer: result.layer,
+    damage: result.damage,
+    position: { ...target.position },
+  };
+  runtime.lastEvent =
+    source.setup.name +
+    ': ' +
+    mine.definition.name +
+    ' detoniert · ' +
+    (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+    ' -' +
+    Math.round(result.damage);
+  runtime.mines.splice(index, 1);
+}
+
+function advanceRuntimeMines(runtime: StrategicCombatRuntime, deltaSeconds: number): void {
+  for (let index = runtime.mines.length - 1; index >= 0; index -= 1) {
+    advanceRuntimeMine(runtime, runtime.mines[index]!, index, deltaSeconds);
   }
+}
 
-  function fireWeapon(
-    side: StrategicCombatSide,
-    source: MutableCombatant,
-    target: MutableCombatant,
-    weapon: ShipComponentDefinition,
-    weaponIndex: number
-  ): string {
-    if (!weapon.weapon) return '';
-    const range = distance(source.position, target.position);
-    if (range > weapon.weapon.rangeMeters) return '';
+function runtimeCombatantEscaped(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  if (combatant.tactic !== 'flee') return false;
+  const atEdge =
+    combatant.position.x <= EDGE_PADDING + 8 ||
+    combatant.position.x >= arena.width - EDGE_PADDING - 8 ||
+    combatant.position.y <= EDGE_PADDING + 8 ||
+    combatant.position.y >= arena.height - EDGE_PADDING - 8;
+  return atEdge && distance(combatant.position, enemy.position) > 900;
+}
 
-    const hitChance = clamp(source.setup.hitChance - target.setup.dodgeChance, 0.2, 0.98);
-    const critical = random() < clamp(source.setup.criticalChance, 0, 0.5);
-    const kind = weaponKind(weapon.weapon.family);
-    const hit = random() <= hitChance;
-
-    if (kind === 'laser' || kind === 'rail') {
-      return fireInstantWeapon(side, source, target, weapon, weaponIndex, kind, hit, critical);
-    }
-    return fireProjectileWeapon(side, source, target, weapon, kind, hit, critical);
+function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
+  if (runtime.winner) return;
+  if (runtime.defender.hullHp <= 0) {
+    runtime.winner = 'attacker';
+    runtime.lastEvent = runtime.attacker.setup.name + ' gewinnt das Gefecht';
+    return;
   }
-
-  function advanceWeapons(
-    side: StrategicCombatSide,
-    source: MutableCombatant,
-    target: MutableCombatant,
-    deltaSeconds: number
-  ): void {
-    for (let index = 0; index < source.setup.weapons.length; index += 1) {
-      source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
-      if ((source.cooldowns[index] ?? 0) > 0 || target.hullHp <= 0) continue;
-      const weapon = source.setup.weapons[index];
-      if (!weapon?.weapon) continue;
-      if (distance(source.position, target.position) > weapon.weapon.rangeMeters) continue;
-
-      const event = fireWeapon(side, source, target, weapon, index);
-      source.cooldowns[index] =
-        weapon.weapon.cooldownSeconds * clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
-      if (event) lastEvent = event;
-    }
+  if (runtime.attacker.hullHp <= 0) {
+    runtime.winner = 'defender';
+    runtime.lastEvent = runtime.defender.setup.name + ' gewinnt das Gefecht';
+    return;
   }
-
-  function advanceProjectiles(deltaSeconds: number): void {
-    for (let index = projectiles.length - 1; index >= 0; index -= 1) {
-      const projectile = projectiles[index]!;
-      const source = combatantFor(projectile.owner);
-      const target = enemyFor(projectile.owner);
-      if (target.hullHp <= 0) {
-        projectiles.splice(index, 1);
-        continue;
-      }
-
-      const dx = target.position.x - projectile.position.x;
-      const dy = target.position.y - projectile.position.y;
-      const remaining = Math.hypot(dx, dy);
-      const step = projectile.speed * deltaSeconds;
-      projectile.ttlSeconds -= deltaSeconds;
-
-      const direction =
-        projectile.shieldDamage <= 0 && projectile.hullDamage <= 0
-          ? normalize(dx - dy * 0.14, dy + dx * 0.14)
-          : normalize(dx, dy);
-      const next = {
-        x: projectile.position.x + direction.x * step,
-        y: projectile.position.y + direction.y * step,
-      };
-      const shieldHit =
-        projectile.shieldDamage > 0 || projectile.hullDamage > 0
-          ? segmentShieldHit(projectile.position, next, target)
-          : null;
-      const obstacle = firstObstacleHit(projectile.position, next, arena.obstacles ?? []);
-      if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
-        noteImpact(
-          projectile.owner === 'attacker' ? 'defender' : 'attacker',
-          'obstacle',
-          0,
-          obstacle.point
-        );
-        lastEvent =
-          source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
-        projectiles.splice(index, 1);
-        continue;
-      }
-
-      if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0) {
-        projectile.position = next;
-        if (projectile.ttlSeconds <= 0) projectiles.splice(index, 1);
-        continue;
-      }
-
-      if (shieldHit) {
-        impactSerial += 1;
-        const result = applyDamage(
-          target,
-          projectile.shieldDamage,
-          projectile.hullDamage,
-          source,
-          projectile.critical,
-          projectile.position,
-          projectile.kind === 'missile' ? 'missile' : 'laser',
-          impactSerial,
-          shieldHit
-        );
-        const targetSide: StrategicCombatSide =
-          projectile.owner === 'attacker' ? 'defender' : 'attacker';
-        lastImpact = {
-          serial: impactSerial,
-          target: targetSide,
-          layer: result.layer,
-          damage: result.damage,
-          position: { ...result.point },
-        };
-        lastEvent =
-          source.setup.name +
-          ': ' +
-          projectile.family.replaceAll('_', ' ') +
-          ' trifft Schild -' +
-          Math.round(result.damage);
-        projectiles.splice(index, 1);
-        continue;
-      }
-
-      if (remaining <= Math.max(18, step) || projectile.ttlSeconds <= 0) {
-        impactSerial += 1;
-        const result = applyDamage(
-          target,
-          projectile.shieldDamage,
-          projectile.hullDamage,
-          source,
-          projectile.critical,
-          projectile.position,
-          projectile.kind === 'missile' ? 'missile' : 'laser',
-          impactSerial
-        );
-        const targetSide: StrategicCombatSide =
-          projectile.owner === 'attacker' ? 'defender' : 'attacker';
-        lastImpact = {
-          serial: impactSerial,
-          target: targetSide,
-          layer: result.layer,
-          damage: result.damage,
-          position: { ...result.point },
-        };
-        lastEvent =
-          source.setup.name +
-          ': ' +
-          projectile.family.replaceAll('_', ' ') +
-          ' trifft ' +
-          (result.layer === 'shield' ? 'Schild' : 'Hülle') +
-          ' -' +
-          Math.round(result.damage);
-        projectiles.splice(index, 1);
-        continue;
-      }
-
-      projectile.position = next;
-    }
+  if (runtimeCombatantEscaped(runtime.attacker, runtime.defender, runtime.arena)) {
+    runtime.winner = 'defender';
+    runtime.lastEvent = runtime.attacker.setup.name + ' entkommt aus dem Gefecht';
+  } else if (runtimeCombatantEscaped(runtime.defender, runtime.attacker, runtime.arena)) {
+    runtime.winner = 'attacker';
+    runtime.lastEvent = runtime.defender.setup.name + ' entkommt aus dem Gefecht';
   }
+}
 
-  function chooseMine(
-    source: MutableCombatant,
-    target: MutableCombatant
-  ): ShipMineDefinition | null {
-    if (source.mineStock.length === 0) return null;
-    const preferredKind =
-      target.shieldHp > 0
-        ? 'ion'
-        : distance(source.position, target.position) > 360
-          ? 'hunter'
-          : 'shaped_charge';
-    return (
-      source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null
-    );
-  }
-
-  function maybeDropMine(
-    side: StrategicCombatSide,
-    source: MutableCombatant,
-    target: MutableCombatant,
-    deltaSeconds: number
-  ): void {
-    source.mineCooldown = Math.max(0, source.mineCooldown - deltaSeconds);
-    if (source.tactic !== 'minefield' || source.mineStock.length === 0 || source.mineCooldown > 0) {
-      return;
-    }
-    if (distance(source.position, target.position) > 720) return;
-
-    const definition = chooseMine(source, target);
-    if (!definition) return;
-    const stockIndex = source.mineStock.findIndex((mine) => mine.id === definition.id);
-    if (stockIndex >= 0) source.mineStock.splice(stockIndex, 1);
-
-    mineSerial += 1;
-    source.mineCooldown = MINE_DROP_COOLDOWN;
-    mines.push({
-      id: mineSerial,
-      owner: side,
-      position: { ...source.position },
-      armedSeconds: 0.7,
-      pursuitRemaining: definition.pursuitSeconds,
-      definition,
-    });
-    lastEvent = source.setup.name + ': ' + definition.name + ' gelegt';
-  }
-
-  function advanceMines(deltaSeconds: number): void {
-    for (let index = mines.length - 1; index >= 0; index -= 1) {
-      const mine = mines[index]!;
-      mine.armedSeconds = Math.max(0, mine.armedSeconds - deltaSeconds);
-      const target = enemyFor(mine.owner);
-      if (target.hullHp <= 0) {
-        mines.splice(index, 1);
-        continue;
-      }
-
-      if (
-        mine.armedSeconds <= 0 &&
-        mine.pursuitRemaining > 0 &&
-        mine.definition.pursuitSpeedMetersPerSecond > 0
-      ) {
-        const direction = normalize(
-          target.position.x - mine.position.x,
-          target.position.y - mine.position.y
-        );
-        mine.position.x += direction.x * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
-        mine.position.y += direction.y * mine.definition.pursuitSpeedMetersPerSecond * deltaSeconds;
-        mine.pursuitRemaining = Math.max(0, mine.pursuitRemaining - deltaSeconds);
-      }
-
-      if (mine.armedSeconds > 0) continue;
-      if (distance(mine.position, target.position) > mine.definition.triggerRadiusMeters) continue;
-
-      impactSerial += 1;
-      const source = combatantFor(mine.owner);
-      const result = applyDamage(
-        target,
-        mine.definition.shieldDamage,
-        mine.definition.hullDamage,
-        source,
-        false,
-        mine.position,
-        'missile',
-        impactSerial
-      );
-      const targetSide: StrategicCombatSide = mine.owner === 'attacker' ? 'defender' : 'attacker';
-      lastImpact = {
-        serial: impactSerial,
-        target: targetSide,
-        layer: result.layer,
-        damage: result.damage,
-        position: { ...target.position },
-      };
-      lastEvent =
-        source.setup.name +
-        ': ' +
-        mine.definition.name +
-        ' detoniert · ' +
-        (result.layer === 'shield' ? 'Schild' : 'Hülle') +
-        ' -' +
-        Math.round(result.damage);
-      mines.splice(index, 1);
-    }
-  }
-
-  function resolveWinner(): void {
-    if (winner) return;
-    if (defender.hullHp <= 0) {
-      winner = 'attacker';
-      lastEvent = attacker.setup.name + ' gewinnt das Gefecht';
-      return;
-    }
-    if (attacker.hullHp <= 0) {
-      winner = 'defender';
-      lastEvent = defender.setup.name + ' gewinnt das Gefecht';
-      return;
-    }
-
-    const separation = distance(attacker.position, defender.position);
-    const fleeingAttacker =
-      attacker.tactic === 'flee' &&
-      (attacker.position.x <= EDGE_PADDING + 8 ||
-        attacker.position.x >= arena.width - EDGE_PADDING - 8 ||
-        attacker.position.y <= EDGE_PADDING + 8 ||
-        attacker.position.y >= arena.height - EDGE_PADDING - 8) &&
-      separation > 900;
-    const fleeingDefender =
-      defender.tactic === 'flee' &&
-      (defender.position.x <= EDGE_PADDING + 8 ||
-        defender.position.x >= arena.width - EDGE_PADDING - 8 ||
-        defender.position.y <= EDGE_PADDING + 8 ||
-        defender.position.y >= arena.height - EDGE_PADDING - 8) &&
-      separation > 900;
-
-    if (fleeingAttacker) {
-      winner = 'defender';
-      lastEvent = attacker.setup.name + ' entkommt aus dem Gefecht';
-    } else if (fleeingDefender) {
-      winner = 'attacker';
-      lastEvent = defender.setup.name + ' entkommt aus dem Gefecht';
-    }
-  }
-
-  const current = (): StrategicCombatSnapshot => ({
-    attacker: snapshot(attacker),
-    defender: snapshot(defender),
-    elapsedSeconds,
-    winner,
-    lastEvent,
-    projectiles: projectiles.map((projectile) => ({
+function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
+  return {
+    attacker: snapshot(runtime.attacker),
+    defender: snapshot(runtime.defender),
+    elapsedSeconds: runtime.elapsedSeconds,
+    winner: runtime.winner,
+    lastEvent: runtime.lastEvent,
+    projectiles: runtime.projectiles.map((projectile) => ({
       id: projectile.id,
       owner: projectile.owner,
       kind: projectile.kind,
       family: projectile.family,
       position: { ...projectile.position },
-      target: { ...enemyFor(projectile.owner).position },
+      target: { ...runtimeEnemy(runtime, projectile.owner).position },
       ttlSeconds: projectile.ttlSeconds,
     })),
-    beams: beams.map((beam) => ({ ...beam, origin: { ...beam.origin }, end: { ...beam.end } })),
-    mines: mines.map((mine) => ({
+    beams: runtime.beams.map((beam) => ({
+      ...beam,
+      origin: { ...beam.origin },
+      end: { ...beam.end },
+    })),
+    mines: runtime.mines.map((mine) => ({
       id: mine.id,
       owner: mine.owner,
       mineId: mine.definition.id,
@@ -1271,47 +1281,95 @@ export function createStrategicCombatService(
       detection:
         mine.owner === 'attacker'
           ? 'identified'
-          : mineDetection(mine.definition, attacker, mine.position),
+          : mineDetection(mine.definition, runtime.attacker, mine.position),
     })),
-    lastImpact,
-    arena: { width: arena.width, height: arena.height },
-  });
+    lastImpact: runtime.lastImpact,
+    arena: { width: runtime.arena.width, height: runtime.arena.height },
+  };
+}
 
+function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: number): void {
+  for (let index = runtime.beams.length - 1; index >= 0; index -= 1) {
+    runtime.beams[index]!.ttlSeconds -= deltaSeconds;
+    if (runtime.beams[index]!.ttlSeconds <= 0) runtime.beams.splice(index, 1);
+  }
+}
+
+function tickStrategicCombat(
+  runtime: StrategicCombatRuntime,
+  deltaSeconds: number
+): StrategicCombatSnapshot {
+  if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
+    return runtimeSnapshot(runtime);
+  }
+  const dt = Math.min(deltaSeconds, 0.08);
+  runtime.elapsedSeconds += dt;
+  runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
+  runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
+  advanceRuntimeBeams(runtime, dt);
+  updateAiTactic(runtime.attacker, runtime.defender, runtime.elapsedSeconds);
+  updateAiTactic(runtime.defender, runtime.attacker, runtime.elapsedSeconds);
+  moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
+  moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
+  resolveCombatantCollision(runtime.attacker, runtime.defender);
+  resolveArenaObstacles(runtime.attacker, runtime.arena);
+  resolveArenaObstacles(runtime.defender, runtime.arena);
+  maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  advanceRuntimeWeapons(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  advanceRuntimeProjectiles(runtime, dt);
+  advanceRuntimeMines(runtime, dt);
+  resolveRuntimeWinner(runtime);
+  return runtimeSnapshot(runtime);
+}
+
+function createStrategicCombatRuntime(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed: number,
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatRuntime {
+  const arena: StrategicCombatArenaOptions = {
+    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
+    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
+    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
+    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+    ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
+  };
   return {
-    getSnapshot: current,
+    arena,
+    attacker: createCombatant(attackerSetup, 'attacker', arena),
+    defender: createCombatant(defenderSetup, 'defender', arena),
+    random: createRng(seed),
+    projectiles: [],
+    beams: [],
+    mines: [],
+    elapsedSeconds: 0,
+    winner: null,
+    lastEvent: 'Kampfkontakt hergestellt',
+    projectileSerial: 0,
+    beamSerial: 0,
+    mineSerial: 0,
+    impactSerial: 0,
+    lastImpact: null,
+  };
+}
 
+export function createStrategicCombatService(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatService {
+  const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
+  return {
+    getSnapshot: () => runtimeSnapshot(runtime),
     setTactic(side, tactic) {
-      combatantFor(side).tactic = tactic;
-      lastEvent = combatantFor(side).setup.name + ': Taktik ' + tactic.toUpperCase();
+      const combatant = runtimeCombatant(runtime, side);
+      combatant.tactic = tactic;
+      runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
-
-    tick(deltaSeconds) {
-      if (winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return current();
-      const dt = Math.min(deltaSeconds, 0.08);
-      elapsedSeconds += dt;
-
-      attacker.shieldImpacts = advanceShieldImpacts(attacker.shieldImpacts, dt);
-      defender.shieldImpacts = advanceShieldImpacts(defender.shieldImpacts, dt);
-      for (let index = beams.length - 1; index >= 0; index -= 1) {
-        beams[index]!.ttlSeconds -= dt;
-        if (beams[index]!.ttlSeconds <= 0) beams.splice(index, 1);
-      }
-
-      updateAiTactic(attacker, defender, elapsedSeconds);
-      updateAiTactic(defender, attacker, elapsedSeconds);
-      moveCombatant(attacker, defender, 'attacker', dt, arena, mines);
-      moveCombatant(defender, attacker, 'defender', dt, arena, mines);
-      resolveCombatantCollision(attacker, defender);
-      resolveArenaObstacles(attacker, arena);
-      resolveArenaObstacles(defender, arena);
-      maybeDropMine('attacker', attacker, defender, dt);
-      maybeDropMine('defender', defender, attacker, dt);
-      advanceWeapons('attacker', attacker, defender, dt);
-      advanceWeapons('defender', defender, attacker, dt);
-      advanceProjectiles(dt);
-      advanceMines(dt);
-      resolveWinner();
-      return current();
-    },
+    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
   };
 }
