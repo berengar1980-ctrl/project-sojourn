@@ -406,7 +406,9 @@ export class TopdownMapRenderer {
     if (
       location.id.startsWith('salvage-special-') ||
       location.id.startsWith('salvage-distress-')
-    ) return true;
+    ) {
+      return true;
+    }
     const zoom = this.camera.getRelativeZoom();
     if (location.kind === 'planet') return true;
     if (location.kind === 'station') return zoom >= 0.98;
