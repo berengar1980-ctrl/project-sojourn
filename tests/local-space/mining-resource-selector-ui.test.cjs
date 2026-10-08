@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const panel = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-panel.ts'),
-  'utf8'
-);
+const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
 const selectorSource = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-resource-selector.ts'),
   'utf8'
