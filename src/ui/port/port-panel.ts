@@ -391,8 +391,9 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
     button.addEventListener('click', () => {
       const type = button.dataset.componentType as ShipComponentType;
       const index = Number(button.dataset.componentIndex ?? 0);
-      const id = button.dataset.componentId || null;
-      options.onSetComponentSlot(type, index, id);
+      const key = button.dataset.componentKey;
+      const select = [...shell.querySelectorAll<HTMLSelectElement>('[data-component-slot-select]')].find((item) => item.dataset.componentSlotSelect === key);
+      options.onSetComponentSlot(type, index, select?.value || null);
     });
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-loose-component]')) {
@@ -407,6 +408,15 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
         button.dataset.buyYardId ?? ''
       )
     );
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-catalog]')) {
+    button.addEventListener('click', () => {
+      const offer = shell.querySelector<HTMLSelectElement>('[data-yard-catalog]')?.value;
+      if (!offer) return;
+      const separator = offer.indexOf('|');
+      if (separator < 1) return;
+      options.onBuyShipyardVariant(offer.slice(0, separator) as ShipComponentType, offer.slice(separator + 1));
+    });
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
     button.addEventListener('click', () => options.onBuyShip(button.dataset.buyShipId ?? ''));
