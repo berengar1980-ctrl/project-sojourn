@@ -30,7 +30,7 @@ import type {
 } from './game-controller-runtime-types';
 
 import {
-  advanceEconomyTime,
+  tickEconomy,
   controllerSalvageEventCallbacks,
   destroyControllerBoarding,
   destroyControllerCombat,
@@ -432,7 +432,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
   const currentLocationId = navigationSnapshot.currentLocationId;
   handleControllerLocationEntry(context, currentLocationId);
-  advanceEconomyTime(context, deltaSeconds);
+  tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);
