@@ -210,14 +210,8 @@ export class ProceduralStationRenderer {
     for (let index = 0; index < sides; index += 1) {
       const angle = (index / sides) * Math.PI * 2;
       context.beginPath();
-      context.moveTo(
-        Math.cos(angle) * coreRadius * 0.55,
-        Math.sin(angle) * coreRadius * 0.55
-      );
-      context.lineTo(
-        Math.cos(angle) * coreRadius * 0.9,
-        Math.sin(angle) * coreRadius * 0.9
-      );
+      context.moveTo(Math.cos(angle) * coreRadius * 0.55, Math.sin(angle) * coreRadius * 0.55);
+      context.lineTo(Math.cos(angle) * coreRadius * 0.9, Math.sin(angle) * coreRadius * 0.9);
       context.stroke();
     }
   }
