@@ -81,7 +81,8 @@ function runtimeCombatantEscaped(
     combatant.position.x >= arena.width - EDGE_PADDING - 8 ||
     combatant.position.y <= EDGE_PADDING + 8 ||
     combatant.position.y >= arena.height - EDGE_PADDING - 8;
-  return atEdge && distance(combatant.position, enemy.position) > 900;
+  const safeSeparation = Math.max(350, Math.min(600, arena.width * 0.2));
+  return atEdge && distance(combatant.position, enemy.position) > safeSeparation;
 }
 
 function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
