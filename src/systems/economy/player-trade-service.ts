@@ -13,7 +13,10 @@ function finiteInteger(value: number): number {
   return Math.max(0, Math.floor(value));
 }
 
-export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_FEE_RATE): number {
+export function playerSaleUnitPrice(
+  marketPrice: number,
+  feeRate = DEFAULT_SALE_FEE_RATE
+): number {
   const price = Math.max(1, Number.isFinite(marketPrice) ? marketPrice : 1);
   const fee = Math.max(
     0,
