@@ -210,14 +210,8 @@ export class ProceduralStationRenderer {
     for (let index = 0; index < sides; index += 1) {
       const angle = (index / sides) * Math.PI * 2;
       context.beginPath();
-      context.moveTo(
-        Math.cos(angle) * coreRadius * 0.55,
-        Math.sin(angle) * coreRadius * 0.55
-      );
-      context.lineTo(
-        Math.cos(angle) * coreRadius * 0.9,
-        Math.sin(angle) * coreRadius * 0.9
-      );
+      context.moveTo(Math.cos(angle) * coreRadius * 0.55, Math.sin(angle) * coreRadius * 0.55);
+      context.lineTo(Math.cos(angle) * coreRadius * 0.9, Math.sin(angle) * coreRadius * 0.9);
       context.stroke();
     }
   }
@@ -256,8 +250,7 @@ export class ProceduralStationRenderer {
     dockDetail: boolean
   ): void {
     const context = this.spriteContext;
-    context.fillStyle =
-      type === 'pirate' ? '#5b5149' : kind === 'habitat' ? '#647a80' : '#52646a';
+    context.fillStyle = type === 'pirate' ? '#5b5149' : kind === 'habitat' ? '#647a80' : '#52646a';
     context.strokeStyle = type === 'pirate' ? '#9a806b' : '#91a6aa';
     context.lineWidth = 1;
     context.fillRect(-width / 2, -height / 2, width, height);
@@ -281,12 +274,7 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private drawTank(
-    width: number,
-    height: number,
-    type: StationType,
-    dockDetail: boolean
-  ): void {
+  private drawTank(width: number, height: number, type: StationType, dockDetail: boolean): void {
     const context = this.spriteContext;
     const radiusX = Math.max(width * 0.48, 2);
     const radiusY = Math.max(height * 0.48, 2);
@@ -307,12 +295,7 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private drawDock(
-    width: number,
-    height: number,
-    type: StationType,
-    dockDetail: boolean
-  ): void {
+  private drawDock(width: number, height: number, type: StationType, dockDetail: boolean): void {
     const context = this.spriteContext;
     const frame = Math.max(1.2, Math.min(width, height) * 0.16);
     context.strokeStyle = type === 'pirate' ? '#a77c5e' : '#91a8ad';
@@ -377,12 +360,7 @@ export class ProceduralStationRenderer {
     context.stroke();
   }
 
-  private drawCargo(
-    width: number,
-    height: number,
-    type: StationType,
-    dockDetail: boolean
-  ): void {
+  private drawCargo(width: number, height: number, type: StationType, dockDetail: boolean): void {
     const context = this.spriteContext;
     const columns = dockDetail ? 3 : 2;
     const gap = Math.max(1, width * 0.04);
@@ -390,8 +368,7 @@ export class ProceduralStationRenderer {
 
     for (let index = 0; index < columns; index += 1) {
       const x = -width / 2 + index * (unitWidth + gap);
-      context.fillStyle =
-        type === 'pirate' ? (index % 2 === 0 ? '#625245' : '#514b48') : '#56666b';
+      context.fillStyle = type === 'pirate' ? (index % 2 === 0 ? '#625245' : '#514b48') : '#56666b';
       context.strokeStyle = type === 'pirate' ? '#98755b' : '#82969a';
       context.fillRect(x, -height / 2, unitWidth, height);
       context.strokeRect(x, -height / 2, unitWidth, height);
@@ -421,12 +398,7 @@ export class ProceduralStationRenderer {
     context.stroke();
   }
 
-  private drawWear(
-    width: number,
-    height: number,
-    phase: number,
-    type: StationType
-  ): void {
+  private drawWear(width: number, height: number, phase: number, type: StationType): void {
     const context = this.spriteContext;
     context.strokeStyle =
       type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
