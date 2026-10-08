@@ -323,10 +323,7 @@ export function createStarMapEngagementService(
     return stolen;
   }
 
-  function beginPlayerCombat(
-    target: SectorNpcState,
-    arena?: StrategicCombatArenaOptions
-  ): void {
+  function beginPlayerCombat(target: SectorNpcState, arena?: StrategicCombatArenaOptions): void {
     const playerSetup = options.getPlayerCombatant();
     const npcSetup = npcCombatant(target);
     if (!npcSetup) return;
@@ -385,10 +382,7 @@ export function createStarMapEngagementService(
     });
     npcChases.delete(attacker.id);
     options.log(
-      'NPC COMBAT > KONTAKT · ' +
-        attacker.name.toUpperCase() +
-        ' VS ' +
-        defender.name.toUpperCase()
+      'NPC COMBAT > KONTAKT · ' + attacker.name.toUpperCase() + ' VS ' + defender.name.toUpperCase()
     );
   }
 
