@@ -41,10 +41,7 @@ function cargoUnits(npc: NpcEconomyState): number {
   );
 }
 
-export function npcAutonomyPhaseDuration(
-  npc: NpcEconomyState,
-  phase: NpcAutonomyPhase
-): number {
+export function npcAutonomyPhaseDuration(npc: NpcEconomyState, phase: NpcAutonomyPhase): number {
   const personality = ensureNpcPersonality(npc);
   const jitter = hashFraction(
     npc.id,
@@ -184,10 +181,6 @@ export function npcPersonalityTradeWeight(
       ? Math.max(0, profit) * (0.05 + personality.routineBias * 0.12)
       : 0;
   return (
-    profit * profitWeight +
-    routineBonus +
-    preferredMarketBonus -
-    distancePenalty -
-    stalePenalty
+    profit * profitWeight + routineBonus + preferredMarketBonus - distancePenalty - stalePenalty
   );
 }
