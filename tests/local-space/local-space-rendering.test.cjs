@@ -190,7 +190,8 @@ assert(engines.includes('projectHardpoint'), 'engine effects must use shared har
 assert(engines.includes('ThrusterGlowRenderer'), 'main engines must use shared nozzle glow');
 assert(maneuvers.includes('ThrusterGlowRenderer'), 'RCS thrusters must use shared nozzle glow');
 assert(
-  maneuvers.includes("ShipEffectLayer") && maneuvers.includes("(thruster.layer ?? 'above') !== layer"),
+  maneuvers.includes('ShipEffectLayer') &&
+    maneuvers.includes("(thruster.layer ?? 'above') !== layer"),
   'RCS effects must respect per-hardpoint above/below rendering'
 );
 assert(
