@@ -373,14 +373,12 @@ export class TopdownMapRenderer {
       const distress = location.id.startsWith('salvage-distress-');
       this.context.save();
       this.context.strokeStyle = distress ? '#ff9d60' : '#6de2e8';
-      this.context.fillStyle = distress ? '#ff9d60' : '#6de2e8';
       this.context.lineWidth = 2;
       this.context.beginPath();
       this.context.arc(point.x, point.y, radius + 6, 0, Math.PI * 2);
       this.context.stroke();
-      this.context.font = 'bold 12px ui-monospace, monospace';
-      this.context.textAlign = 'center';
-      this.context.textBaseline = 'middle';
+      this.context.fillStyle = this.context.strokeStyle;
+      this.context.font = 'bold 12px monospace';
       this.context.fillText(distress ? '!' : '◆', point.x, point.y - radius - 15);
       this.context.restore();
     }
