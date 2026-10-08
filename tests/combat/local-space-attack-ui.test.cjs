@@ -1,11 +1,11 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
-const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const { readModuleSource } = require('../module-source.cjs');
+const read = (file) => readModuleSource(root, file);
 
 const miningInput = read('src/ui/local-space/local-space-input.ts');
 const miningPanel = read('src/ui/local-space/local-space-panel.ts');

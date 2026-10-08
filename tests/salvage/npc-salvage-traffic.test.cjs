@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -143,10 +145,7 @@ function field() {
   );
 }
 
-const minerSource = fs.readFileSync(
-  path.join(root, 'src/systems/npcs/npc-local-mining-service.ts'),
-  'utf8'
-);
+const minerSource = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
 const salvageSource = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'

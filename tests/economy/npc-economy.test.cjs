@@ -1,7 +1,8 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
-const fs = require('fs');
 const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -249,11 +250,8 @@ const resources = [
   }
 }
 
-const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const controllerEventsSource = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-events.ts'),
-  'utf8'
-);
+const controllerSource = readModuleSource(root, 'src/app/game-controller.ts');
+const controllerEventsSource = readModuleSource(root, 'src/app/game-controller-events.ts');
 assert(
   controllerSource.includes('economy.npcs.tick(deltaSeconds)') &&
     controllerEventsSource.includes('economy.npcs.advanceNextDay()'),

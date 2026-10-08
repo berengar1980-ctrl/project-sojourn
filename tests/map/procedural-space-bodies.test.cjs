@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -13,11 +15,8 @@ const textures = fs.readFileSync(
   path.join(root, 'src/ui/space/procedural-surface-textures.ts'),
   'utf8'
 );
-const local = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-renderer.ts'),
-  'utf8'
-);
-const map = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const local = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
+const map = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 
 assert(shared.includes('class ProceduralSpaceBodyRenderer'), 'shared body renderer must exist');
 assert(shared.includes('asteroidSurfaceCache'), 'asteroid surfaces must be cached by seed');

@@ -6,7 +6,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const definitions = loadStandaloneTypeScriptModule(root, 'src/data/crew/crew-definitions.ts');
-const performance = loadStandaloneTypeScriptModule(root, 'src/systems/crew/crew-performance.ts');
+const crewPerformance = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/crew/crew-performance.ts'
+);
 const rosterModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/crew/crew-roster-service.ts'
@@ -40,20 +43,20 @@ const dagan = definitions.crewDefinitionById('dagan_rhel');
 assert.equal(dagan?.combatSkills.ranged, 96);
 assert.equal(dagan?.combatSkills.melee, 97);
 
-const torvenMember = performance.createCrewMember(torven);
+const torvenMember = crewPerformance.createCrewMember(torven);
 assert.equal(torvenMember.morale.motivation, 60);
 assert.equal(torvenMember.morale.loyalty, 50);
 assert(torvenMember.combatSkills.ranged >= 35 && torvenMember.combatSkills.ranged <= 65);
 assert(torvenMember.combatSkills.melee >= 35 && torvenMember.combatSkills.melee <= 65);
 assert.equal(torvenMember.personalEquipment.ranged, 'off_autopistol');
 
-assert.equal(performance.crewStationTraitModifier(torven.socialTraits, 'piloting'), 1.5);
-assert.equal(performance.crewStationTraitModifier(torven.socialTraits, 'sensors'), 3);
-assert.equal(performance.crewMotivationModifier(torvenMember), 1.01);
+assert.equal(crewPerformance.crewStationTraitModifier(torven.socialTraits, 'piloting'), 1.5);
+assert.equal(crewPerformance.crewStationTraitModifier(torven.socialTraits, 'sensors'), 3);
+assert.equal(crewPerformance.crewMotivationModifier(torvenMember), 1.01);
 
-assert.equal(performance.stationTrainingDaysNeeded(29), 3);
-assert.equal(performance.stationTrainingDaysNeeded(84), 25);
-assert.equal(performance.combatRoundsNeeded(84), 14);
+assert.equal(crewPerformance.stationTrainingDaysNeeded(29), 3);
+assert.equal(crewPerformance.stationTrainingDaysNeeded(84), 25);
+assert.equal(crewPerformance.combatRoundsNeeded(84), 14);
 
 const miner = ships.getShipsByRole('mining')[0];
 assert(miner);

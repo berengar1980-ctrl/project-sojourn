@@ -130,7 +130,7 @@ assert(
 );
 
 for (let step = 0; step < 400 && service.getSnapshot().collectedOre <= 0; step += 1) {
-  snapshot = service.tick(0.05);
+  service.tick(0.05);
 }
 snapshot = service.getSnapshot();
 assert(snapshot.collectedOre > 0, 'the first mined sample must eventually reach cargo');

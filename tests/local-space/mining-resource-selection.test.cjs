@@ -84,7 +84,9 @@ chunk.position = { ...ship.position };
 chunk.velocity = { x: 0, y: 0 };
 const collected = mining.advanceAndCollectMiningChunks(
   [chunk],
-  ship.position,
+  ship,
+  hardpoints,
+  80,
   0,
   (_resourceId, amount) => amount
 );
@@ -106,7 +108,9 @@ rejectedChunk.position = { ...ship.position };
 rejectedChunk.velocity = { x: 0, y: 0 };
 const rejectedCollection = mining.advanceAndCollectMiningChunks(
   [rejectedChunk],
-  ship.position,
+  ship,
+  hardpoints,
+  80,
   0,
   () => 0
 );

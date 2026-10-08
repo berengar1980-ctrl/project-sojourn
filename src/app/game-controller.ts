@@ -1,29 +1,34 @@
-import type { ShipDefinition } from '../core/ship-types';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
-import type { SystemLogService } from '../core/system-log-types';
+
 import { createCrewRosterService } from '../systems/crew';
+
 import { createStarMapEngagementService } from '../systems/combat';
-import type { NavigationService } from '../systems/navigation';
+
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
-import {
-  createShipLoadoutService,
-  resolveShipRuntimeSetup,
-  type ShipRuntimeOptions,
-} from '../systems/ships';
-import { createSystemLogService } from '../systems/system-log/system-log-service';
+
+import { createShipLoadoutService } from '../systems/ships';
+
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
+
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
+
 import { runSceneZoomTransition } from '../ui/scene-transition';
+
 import { createSettingsMenu } from '../ui/settings/settings-menu';
+
 import { createControllerEconomy } from './game-controller-economy';
+
 import { createPlayerCombatant } from './game-controller-combat';
+
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
-import { createControllerStarModel, createControllerStarPanel } from './game-controller-star-map';
+
+import { createControllerStarPanel } from './game-controller-star-map';
+
 import type {
   ControllerRuntimeContext,
   ControllerRuntimeState,
-  SceneMode,
 } from './game-controller-runtime-types';
+
 import {
   advanceEconomyDay,
   controllerSalvageEventCallbacks,
@@ -33,109 +38,34 @@ import {
   destroyScenePanels,
   sectorEventLocation,
 } from './game-controller-events';
+
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
-import {
-  createControllerLocalModel,
-  miningLocationById,
-  salvageLocationById,
-} from './game-controller-local-model';
+
+import { miningLocationById, salvageLocationById } from './game-controller-local-model';
+
 import { createMiningLocalSpace } from './game-controller-mining';
+
 import { createActivePortPanel } from './game-controller-port';
+
 import { createSalvageScene } from './game-controller-salvage';
+
 import { generateSectorSalvageEventField } from '../systems/salvage';
 
-interface GameControllerOptions {
-  readonly root: HTMLElement;
-  readonly ship: ShipDefinition;
-  readonly navigation: NavigationService;
-}
+import {
+  controllerLocalModel,
+  controllerShipRuntimeOptions,
+  controllerStarModel,
+  createControllerLog,
+  createStarMapReturnAction,
+  enteredMiningLocation,
+  enteredSalvageLocation,
+  localSeed,
+  syncControllerNavigationCrewPerformance,
+} from './game-controller-models';
 
-export interface GameController {
-  tick(deltaSeconds: number): void;
-}
+import type { GameControllerOptions, GameController } from './game-controller-types';
 
-function createControllerLog(): SystemLogService {
-  const log = createSystemLogService();
-  log.write('SYSTEM ONLINE');
-  return log;
-}
-
-function createStarMapReturnAction(
-  root: HTMLElement,
-  systemLog: SystemLogService,
-  mountStarMap: () => void
-): () => void {
-  return () => {
-    systemLog.write('NAV > STERNKARTE');
-    runSceneZoomTransition(root, mountStarMap);
-  };
-}
-
-function localSeed(visit: number): number {
-  return (Date.now() + visit * 2654435761) >>> 0;
-}
-
-function enteredMiningLocation(
-  mode: SceneMode,
-  previousId: string | null,
-  currentId: string | null
-): boolean {
-  return mode === 'star-map' && previousId !== currentId && miningLocationById(currentId) !== null;
-}
-
-function enteredSalvageLocation(
-  mode: SceneMode,
-  previousId: string | null,
-  currentId: string | null
-): boolean {
-  return mode === 'star-map' && previousId !== currentId && salvageLocationById(currentId) !== null;
-}
-
-function controllerShipRuntimeOptions(
-  context: ControllerRuntimeContext,
-  ship: ShipDefinition = context.state.activeShip
-): ShipRuntimeOptions {
-  return {
-    ...context.crew.runtimeOptions(ship),
-    installed: context.loadouts.get(ship),
-  };
-}
-
-function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {
-  const ship = context.state.activeShip;
-  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
-  context.navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
-  );
-}
-
-function controllerStarModel(context: ControllerRuntimeContext) {
-  const runtime = resolveShipRuntimeSetup(
-    context.state.activeShip,
-    controllerShipRuntimeOptions(context)
-  );
-  return createControllerStarModel(
-    context.navigation,
-    context.state.activeShip,
-    context.economy,
-    context.state.selectedNpcId,
-    runtime.sensorCrewSkill,
-    runtime.sensorModifier
-  );
-}
-
-function controllerLocalModel(context: ControllerRuntimeContext) {
-  return createControllerLocalModel(
-    context.state.localSpace,
-    context.state.activeShip,
-    context.navigation,
-    context.state.localNpcMining,
-    context.state.selectedNpcId,
-    context.state.embeddedCombat === 'local-space'
-      ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
-      : null
-  );
-}
+export type { GameController } from './game-controller-types';
 
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;

@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,8 +9,8 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const panel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const input = fs.readFileSync(path.join(root, 'src/ui/map/star-map-input.ts'), 'utf8');
-const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
 
 assert(panel.includes('ANGREIFEN'), 'selected NPC contacts must expose an attack action');
 assert(panel.includes('onAttackNpc'), 'star map panel must dispatch NPC attack actions');

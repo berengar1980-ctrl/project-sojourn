@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -59,7 +61,7 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/space/procedural-station-renderer.ts'),
   'utf8'
 );
-const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const mapRenderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const dockRenderer = fs.readFileSync(
   path.join(root, 'src/ui/port/port-location-renderer.ts'),
   'utf8'

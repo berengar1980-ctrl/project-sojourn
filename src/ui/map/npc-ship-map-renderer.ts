@@ -2,7 +2,7 @@ import type { StarMapViewModel } from '../../features/star-map/star-map-view-mod
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
-import { MapCamera } from './map-camera';
+import type { MapCamera } from './map-camera';
 import { starMapShipWidth } from './map-visual-scale';
 
 export interface NpcShipMapHitArea {

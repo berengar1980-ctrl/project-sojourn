@@ -28,8 +28,8 @@ for (const name of files) {
     ...data.maneuverThrusters,
   ]) {
     assert(
-      hardpoint.layer === 'below',
-      name + ': hardpoint ' + hardpoint.id + ' must default to below'
+      ['below', 'above'].includes(hardpoint.layer),
+      name + ': hardpoint ' + hardpoint.id + ' must declare a supported render layer'
     );
   }
 

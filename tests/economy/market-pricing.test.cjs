@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -19,10 +21,7 @@ const marketSource = fs.readFileSync(
   path.join(root, 'src/systems/economy/market-service.ts'),
   'utf8'
 );
-const controllerEconomySource = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-economy.ts'),
-  'utf8'
-);
+const controllerEconomySource = readModuleSource(root, 'src/app/game-controller-economy.ts');
 
 assert(
   resourcesSource.includes("'narcotics'") &&

@@ -1,0 +1,43 @@
+import type {
+  NpcCombatMovementMode,
+  NpcCombatTargetKind,
+  SectorNpcState,
+} from '../../core/npc-types';
+
+import type { WorldPoint } from '../../core/world-types';
+
+export interface NpcSectorServiceOptions {
+  readonly getPlayerPosition?: () => WorldPoint;
+}
+
+export interface NpcSectorService {
+  readonly npcs: readonly SectorNpcState[];
+  requestTravel(npc: SectorNpcState, destinationId: string, reason?: string): boolean;
+  requestPatrol(npc: SectorNpcState): boolean;
+  startPursuit(
+    npc: SectorNpcState,
+    targetKind: NpcCombatTargetKind,
+    targetId: string,
+    targetPosition: WorldPoint,
+    reason?: string
+  ): boolean;
+  startFlee(
+    npc: SectorNpcState,
+    targetKind: NpcCombatTargetKind,
+    targetId: string,
+    targetPosition: WorldPoint,
+    reason?: string
+  ): boolean;
+  markEngaged(
+    npc: SectorNpcState,
+    targetKind: NpcCombatTargetKind,
+    targetId: string,
+    reason?: string
+  ): void;
+  recoverFromCombat(npc: SectorNpcState, reason?: string): boolean;
+  combatMode(npc: SectorNpcState): NpcCombatMovementMode | null;
+  isTravelling(npc: SectorNpcState): boolean;
+  livePosition(npc: SectorNpcState): WorldPoint;
+  liveHeading(npc: SectorNpcState): number;
+  tick(deltaSeconds: number): void;
+}

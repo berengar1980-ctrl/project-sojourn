@@ -1,14 +1,13 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-renderer.ts'),
-  'utf8'
-);
+const renderer = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
 const effects = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-effects-renderer.ts'),
   'utf8'
@@ -25,6 +24,10 @@ const maneuvers = fs.readFileSync(
   path.join(root, 'src/ui/ships/ship-maneuver-effects-renderer.ts'),
   'utf8'
 );
+const maneuverSelection = fs.readFileSync(
+  path.join(root, 'src/systems/ships/ship-maneuver-thrusters.ts'),
+  'utf8'
+);
 const thrusterGlow = fs.readFileSync(
   path.join(root, 'src/ui/ships/thruster-glow-renderer.ts'),
   'utf8'
@@ -34,12 +37,9 @@ const hardpointDebug = fs.readFileSync(
   'utf8'
 );
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
-const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const localActions = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-local-actions.ts'),
-  'utf8'
-);
+const panel = readModuleSource(root, 'src/ui/local-space/local-space-panel.ts');
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const viewModel = fs.readFileSync(
   path.join(root, 'src/features/local-space/local-space-view-model.ts'),
   'utf8'
@@ -53,9 +53,9 @@ const systemLogService = fs.readFileSync(
   'utf8'
 );
 const styles = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
-const stationKeeping = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
-  'utf8'
+const stationKeeping = readModuleSource(
+  root,
+  'src/systems/local-space/local-space-station-keeping.ts'
 );
 const shieldImpact = fs.readFileSync(
   path.join(root, 'src/ui/ships/shield-impact-renderer.ts'),
@@ -85,7 +85,7 @@ assert(
   'working NPC miners must visibly fire a mining beam at their target asteroid'
 );
 assert(
-  renderer.includes('npc.speed > 1') && renderer.includes('engineEffects.drawExhaust'),
+  renderer.includes('npc.speed > 1') && renderer.includes('engineEffects.draw('),
   'arriving and departing NPC miners must show engine thrust instead of popping in place'
 );
 assert(
@@ -107,7 +107,7 @@ assert(
   'ship and asteroids must share the same local light vector'
 );
 assert(
-  shipLighting.includes('rgba(0,0,0,.34)'),
+  shipLighting.includes('alpha(0.34)') && shipLighting.includes('base * strength'),
   'ship shadow pass must remain directional without overpowering the sprite'
 );
 assert(
@@ -191,7 +191,7 @@ assert(engines.includes('ThrusterGlowRenderer'), 'main engines must use shared n
 assert(maneuvers.includes('ThrusterGlowRenderer'), 'RCS thrusters must use shared nozzle glow');
 assert(
   maneuvers.includes('ShipEffectLayer') &&
-    maneuvers.includes("(thruster.layer ?? 'above') !== layer"),
+    maneuvers.includes("(thruster.layer ?? 'below') !== layer"),
   'RCS effects must respect per-hardpoint above/below rendering'
 );
 assert(
@@ -199,26 +199,26 @@ assert(
   'thruster light must use additive glow'
 );
 assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
+assert(renderer.includes('engineEffects.draw('), 'engine exhaust must render behind the ship');
 assert(
-  renderer.includes('engineEffects.drawExhaust'),
-  'engine exhaust must render behind the ship'
-);
-assert(
-  renderer.includes('engineEffects.drawGlow'),
+  renderer.includes("engineIntensity, timeSeconds, 'above'") && engines.includes('this.drawGlow('),
   'engine glow must render after the ship sprite'
 );
-assert(renderer.includes('maneuverEffects.drawGlow'), 'RCS glow must render after the ship sprite');
+assert(
+  renderer.includes("maneuverDemand, timeSeconds, 'above'") && maneuvers.includes('this.drawGlow('),
+  'RCS glow must render after the ship sprite'
+);
 assert(engines.includes('engineFlicker'), 'engine thrust must use shared visible flicker');
 assert(
   engines.includes('0.58 + normalizedIntensity * 0.92'),
   'main engine exhaust must remain compact'
 );
-assert(maneuvers.includes('torqueSign'), 'RCS selection must derive from thruster torque');
+assert(maneuverSelection.includes('torqueSign'), 'RCS selection must derive from thruster torque');
 assert(
-  maneuvers.includes('demand.angularThrust'),
+  maneuverSelection.includes('demand.angularThrust'),
   'RCS turn selection must follow commanded angular thrust'
 );
-assert(maneuvers.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
+assert(maneuverSelection.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
 assert(
   stationKeeping.includes('Math.max(-0.8, Math.min(0.8, state.lateralVelocity))'),
   'idle station keeping must allow visible low-speed drift before correcting'
@@ -236,7 +236,7 @@ assert(
   'tractor collection must originate from configured ship hardpoints'
 );
 assert(
-  effects.includes("(hardpoint.layer ?? 'above') === layer"),
+  effects.includes("(hardpoint.layer ?? 'below') === layer"),
   'mining and tractor effects must support above/below ship layers'
 );
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');

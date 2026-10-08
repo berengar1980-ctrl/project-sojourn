@@ -1,16 +1,15 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const controllerRuntimeTypes = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-runtime-types.ts'),
-  'utf8'
-);
-const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
+const controllerRuntimeTypes = readModuleSource(root, 'src/app/game-controller-runtime-types.ts');
+const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
 const portSecondaryPanes = fs.readFileSync(
@@ -19,7 +18,7 @@ const portSecondaryPanes = fs.readFileSync(
 );
 const portUi = portPanel + '\n' + portSecondaryPanes;
 const styles = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
-const portModel = fs.readFileSync(path.join(root, 'src/features/port/port-view-model.ts'), 'utf8');
+const portModel = readModuleSource(root, 'src/features/port/port-view-model.ts');
 const portLocationRenderer = fs.readFileSync(
   path.join(root, 'src/ui/port/port-location-renderer.ts'),
   'utf8'

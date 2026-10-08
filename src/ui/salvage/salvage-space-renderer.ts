@@ -2,66 +2,47 @@ import type {
   SalvageSpaceViewModel,
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
+import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
+import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
   projectHardpoint,
   spriteDrawOffset,
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
-import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
-import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
-import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
-
-interface WreckHitArea {
-  readonly id: string;
-  readonly point: ScreenPoint;
-  readonly radius: number;
-}
-
-interface NpcHitArea {
-  readonly id: string;
-  readonly point: ScreenPoint;
-  readonly radius: number;
-}
-
-function fractional(value: number): number {
-  return value - Math.floor(value);
-}
-
-function hashId(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-export class SalvageSpaceRenderer {
-  private readonly context: CanvasRenderingContext2D;
-  private readonly camera: MapCamera;
-  private readonly background: SpaceBackgroundRenderer;
-  private readonly engineEffects = new ShipEngineEffectsRenderer();
-  private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
-  private readonly shipLighting = new ShipLightingRenderer();
-  private readonly shieldImpacts = new ShieldImpactRenderer();
-  private readonly shipImage = new Image();
-  private readonly npcImages = new Map<string, HTMLImageElement>();
-  private model: SalvageSpaceViewModel;
-  private combatImpactSerial = -1;
-  private combatImpactAge = 1;
-  private hitAreas: readonly WreckHitArea[] = [];
-  private npcHitAreas: readonly NpcHitArea[] = [];
-  private loadedShipUrl = '';
-  private hasFitted = false;
-
+import {
+  type NpcHitArea,
+  SalvageSceneLayers,
+  type WreckHitArea,
+  fractional,
+  hashId,
+} from './salvage-scene-layers';
+export class SalvageSpaceRenderer extends SalvageSceneLayers {
+  protected readonly context: CanvasRenderingContext2D;
+  protected readonly camera: MapCamera;
+  protected readonly background: SpaceBackgroundRenderer;
+  protected readonly engineEffects = new ShipEngineEffectsRenderer();
+  protected readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  protected readonly shipLighting = new ShipLightingRenderer();
+  protected readonly shieldImpacts = new ShieldImpactRenderer();
+  protected readonly shipImage = new Image();
+  protected readonly npcImages = new Map<string, HTMLImageElement>();
+  protected model: SalvageSpaceViewModel;
+  protected combatImpactSerial = -1;
+  protected combatImpactAge = 1;
+  protected hitAreas: readonly WreckHitArea[] = [];
+  protected npcHitAreas: readonly NpcHitArea[] = [];
+  protected loadedShipUrl = '';
+  protected hasFitted = false;
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: SalvageSpaceViewModel
   ) {
+    super();
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Salvage-space canvas context unavailable.');
     this.context = context;
@@ -70,7 +51,6 @@ export class SalvageSpaceRenderer {
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.resize();
   }
-
   update(model: SalvageSpaceViewModel): void {
     const impact = model.combat?.lastImpact;
     if (impact && impact.serial !== this.combatImpactSerial) {
@@ -84,7 +64,6 @@ export class SalvageSpaceRenderer {
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
-
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -100,23 +79,19 @@ export class SalvageSpaceRenderer {
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
-
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
   }
-
   zoomAt(deltaY: number, x: number, y: number): void {
     const rect = this.canvas.getBoundingClientRect();
     this.camera.zoomAt(Math.exp(-deltaY * 0.00135), { x, y }, rect.width, rect.height);
     this.draw();
   }
-
   worldPointAt(x: number, y: number): ScreenPoint {
     const rect = this.canvas.getBoundingClientRect();
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
-
   pickNpc(x: number, y: number): string | null {
     let best: NpcHitArea | null = null;
     for (const area of this.npcHitAreas) {
@@ -125,7 +100,6 @@ export class SalvageSpaceRenderer {
     }
     return best?.id ?? null;
   }
-
   pickWreck(x: number, y: number): string | null {
     let best: WreckHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -134,15 +108,13 @@ export class SalvageSpaceRenderer {
     }
     return best?.id ?? null;
   }
-
-  private ensureShipImage(url: string): void {
+  protected ensureShipImage(url: string): void {
     if (url === this.loadedShipUrl) return;
     this.loadedShipUrl = url;
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-
-  private draw(): void {
+  protected draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -167,8 +139,7 @@ export class SalvageSpaceRenderer {
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
-
-  private ensureNpcImage(url: string): HTMLImageElement {
+  protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
     if (existing) return existing;
     const image = new Image();
@@ -177,298 +148,7 @@ export class SalvageSpaceRenderer {
     this.npcImages.set(url, image);
     return image;
   }
-
-  private drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
-    const hits: NpcHitArea[] = [];
-    for (const npc of this.model.npcShips) {
-      const point = this.camera.worldToScreen(npc.position, width, height);
-      const shipWidth = this.camera.scale(npc.nominalLengthMeters);
-      const geometry: ShipScreenGeometry = {
-        center: point,
-        width: shipWidth,
-        height: shipWidth / npc.spriteAspectRatio,
-        angle: npc.headingRadians,
-      };
-      const image = this.ensureNpcImage(npc.spriteUrl);
-      const engineIntensity = npc.speed > 1 ? Math.max(0.32, Math.min(1, npc.speed / 100)) : 0;
-
-      if (engineIntensity > 0) {
-        this.engineEffects.drawExhaust(
-          this.context,
-          npc.hardpoints,
-          geometry,
-          engineIntensity,
-          timeSeconds
-        );
-      }
-
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(npc.headingRadians);
-      if (image.complete && image.naturalWidth > 0) {
-        const offset = spriteDrawOffset(npc.hardpoints, geometry);
-        this.shipLighting.draw(this.context, {
-          image,
-          width: geometry.width,
-          height: geometry.height,
-          angle: npc.headingRadians,
-          light: { x: -0.72, y: -0.56 },
-          offsetX: offset.x,
-          offsetY: offset.y,
-          directionalStrength: 2.05,
-        });
-      } else {
-        this.context.fillStyle = '#8e999f';
-        this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
-      }
-      this.context.restore();
-
-      if (engineIntensity > 0) {
-        this.engineEffects.drawGlow(
-          this.context,
-          npc.hardpoints,
-          geometry,
-          engineIntensity,
-          timeSeconds
-        );
-      }
-      const combatDefender =
-        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
-      if (combatDefender) {
-        this.shieldImpacts.draw(
-          this.context,
-          combatDefender.shieldImpacts,
-          npc.hardpoints,
-          geometry
-        );
-      }
-
-      hits.push({
-        id: npc.id,
-        point,
-        radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
-      });
-      if (npc.isSelected) {
-        this.context.save();
-        this.context.strokeStyle = 'rgba(235, 91, 76, 0.95)';
-        this.context.lineWidth = 2;
-        this.context.beginPath();
-        this.context.arc(
-          point.x,
-          point.y,
-          Math.max(geometry.width, geometry.height) * 0.65 + 7,
-          0,
-          Math.PI * 2
-        );
-        this.context.stroke();
-        this.context.restore();
-      }
-
-      const wreck = npc.targetWreckId
-        ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
-        : null;
-      if (wreck && npc.phase === 'scanning') {
-        this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
-      } else if (wreck && npc.salvageActive) {
-        this.drawNpcSalvageTether(point, wreck.position, width, height, timeSeconds);
-      }
-
-      if (this.camera.getRelativeZoom() >= 1.55) {
-        this.context.fillStyle = 'rgba(215, 202, 168, 0.8)';
-        this.context.font = '9px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
-      }
-    }
-    return hits;
-  }
-
-  private drawCombat(width: number, height: number): void {
-    const combat = this.model.combat;
-    if (!combat) return;
-
-    for (const mine of combat.mines) {
-      if (mine.detection === 'hidden') continue;
-      const point = this.camera.worldToScreen(mine.position, width, height);
-      this.context.save();
-      this.context.strokeStyle = mine.armed
-        ? 'rgba(226, 108, 82, 0.82)'
-        : 'rgba(166, 175, 177, 0.55)';
-      this.context.fillStyle = 'rgba(42, 47, 50, 0.92)';
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
-      this.context.fill();
-      this.context.stroke();
-      this.context.restore();
-    }
-
-    for (const beam of combat.beams) {
-      const source =
-        beam.owner === 'attacker'
-          ? {
-              hardpoints: this.model.ship.hardpoints,
-              geometry: this.shipGeometry(width, height),
-            }
-          : (() => {
-              const npc = this.model.npcShips.find((entry) => entry.id === combat.defender.id);
-              if (!npc) return null;
-              const center = this.camera.worldToScreen(npc.position, width, height);
-              const shipWidth = this.camera.scale(npc.nominalLengthMeters);
-              return {
-                hardpoints: npc.hardpoints,
-                geometry: {
-                  center,
-                  width: shipWidth,
-                  height: shipWidth / npc.spriteAspectRatio,
-                  angle: npc.headingRadians,
-                } satisfies ShipScreenGeometry,
-              };
-            })();
-      if (!source) continue;
-      const weaponHardpoints = source.hardpoints.weaponLasers ?? [];
-      const hardpoint =
-        weaponHardpoints.length > 0
-          ? weaponHardpoints[beam.weaponIndex % weaponHardpoints.length]
-          : null;
-      const from = hardpoint
-        ? projectHardpoint(hardpoint, source.hardpoints, source.geometry)
-        : source.geometry.center;
-      const to = this.camera.worldToScreen(beam.end, width, height);
-      const alpha = Math.max(0, Math.min(1, beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds)));
-      this.context.save();
-      this.context.lineCap = 'round';
-      if (beam.kind === 'laser') {
-        this.context.shadowColor = 'rgba(67, 185, 255, 0.95)';
-        this.context.shadowBlur = 10;
-        this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
-        this.context.lineWidth = 4.5;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-        this.context.shadowBlur = 3;
-        this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
-        this.context.lineWidth = 1.15;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      } else {
-        this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
-        this.context.lineWidth = 1.3;
-        this.context.setLineDash([18, 5]);
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      }
-      this.context.restore();
-    }
-
-    for (const projectile of combat.projectiles) {
-      const point = this.camera.worldToScreen(projectile.position, width, height);
-      const target = this.camera.worldToScreen(projectile.target, width, height);
-      const angle = Math.atan2(target.y - point.y, target.x - point.x);
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(angle);
-      if (projectile.kind === 'missile') {
-        this.context.fillStyle = '#e7d7b0';
-        this.context.fillRect(-7, -2, 12, 4);
-        this.context.strokeStyle = 'rgba(230, 133, 73, 0.72)';
-        this.context.lineWidth = 3;
-        this.context.beginPath();
-        this.context.moveTo(-8, 0);
-        this.context.lineTo(-22, 0);
-        this.context.stroke();
-      } else if (projectile.kind === 'plasma') {
-        this.context.fillStyle = 'rgba(118, 225, 255, 0.95)';
-        this.context.shadowColor = 'rgba(81, 194, 255, 0.95)';
-        this.context.shadowBlur = 10;
-        this.context.beginPath();
-        this.context.arc(0, 0, 5, 0, Math.PI * 2);
-        this.context.fill();
-      } else {
-        this.context.fillStyle = 'rgba(245, 211, 156, 0.95)';
-        this.context.fillRect(-2, -1, 5, 2);
-      }
-      this.context.restore();
-    }
-
-    const impact = combat.lastImpact;
-    if (
-      !impact ||
-      (impact.layer !== 'hull' && impact.layer !== 'obstacle') ||
-      this.combatImpactAge >= 1
-    ) {
-      return;
-    }
-    const point = this.camera.worldToScreen(impact.position, width, height);
-    const alpha = 1 - this.combatImpactAge;
-    const radius = 10 + this.combatImpactAge * 34;
-    this.context.save();
-    this.context.fillStyle =
-      impact.layer === 'obstacle'
-        ? `rgba(196, 185, 160, ${alpha * 0.6})`
-        : `rgba(255, 139, 68, ${alpha * 0.8})`;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
-    this.context.fill();
-    this.context.restore();
-  }
-
-  private drawNpcScan(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    progress: number,
-    timeSeconds: number
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const radius = 12 + progress * 24;
-    this.context.save();
-    this.context.strokeStyle = `rgba(119, 226, 240, ${0.5 + Math.sin(timeSeconds * 10) * 0.18})`;
-    this.context.lineWidth = 1.2;
-    this.context.beginPath();
-    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.setLineDash([4, 5]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private drawNpcSalvageTether(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    timeSeconds: number
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const pulse = 0.62 + Math.sin(timeSeconds * 8) * 0.18;
-    this.context.save();
-    this.context.strokeStyle = `rgba(228, 181, 93, ${pulse})`;
-    this.context.lineWidth = 1.4;
-    this.context.setLineDash([5, 4]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.strokeStyle = `rgba(245, 214, 147, ${pulse * 0.26})`;
-    this.context.lineWidth = 7;
-    this.context.setLineDash([]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {
+  protected drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {
     const point = this.camera.worldToScreen(wreck.position, width, height);
     const radius = Math.max(15, this.camera.scale(wreck.radius));
     const padding = radius + 30;
@@ -504,8 +184,7 @@ export class SalvageSpaceRenderer {
 
     return { id: wreck.id, point, radius: radius + 12 };
   }
-
-  private drawHullFragments(wreck: SalvageWreckView, radius: number): void {
+  protected drawHullFragments(wreck: SalvageWreckView, radius: number): void {
     const context = this.context;
     const length = radius * 1.7;
     const height = radius * 0.72;
@@ -549,8 +228,7 @@ export class SalvageSpaceRenderer {
     context.lineTo(radius * 0.15, height * 0.58);
     context.stroke();
   }
-
-  private drawKindDetails(wreck: SalvageWreckView, radius: number): void {
+  protected drawKindDetails(wreck: SalvageWreckView, radius: number): void {
     const context = this.context;
     context.fillStyle = 'rgba(26, 31, 34, 0.92)';
     if (wreck.kind === 'freighter') {
@@ -578,8 +256,7 @@ export class SalvageSpaceRenderer {
       context.fill();
     }
   }
-
-  private drawWreckDebris(id: string, radius: number): void {
+  protected drawWreckDebris(id: string, radius: number): void {
     const context = this.context;
     const hash = hashId(id);
     context.fillStyle = 'rgba(124, 126, 122, 0.72)';
@@ -594,8 +271,7 @@ export class SalvageSpaceRenderer {
       context.restore();
     }
   }
-
-  private drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
+  protected drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
@@ -674,8 +350,7 @@ export class SalvageSpaceRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
-  private drawRoute(width: number, height: number): void {
+  protected drawRoute(width: number, height: number): void {
     if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
     this.context.save();
     this.context.strokeStyle = 'rgba(224, 177, 88, 0.68)';
@@ -690,8 +365,7 @@ export class SalvageSpaceRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
-  private shipGeometry(width: number, height: number): ShipScreenGeometry {
+  protected shipGeometry(width: number, height: number): ShipScreenGeometry {
     const center = this.camera.worldToScreen(this.model.ship.position, width, height);
     const shipWidth = this.camera.scale(this.model.ship.nominalLengthMeters);
     const aspectRatio =
@@ -705,8 +379,7 @@ export class SalvageSpaceRenderer {
       angle: this.model.ship.headingRadians,
     };
   }
-
-  private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
+  protected drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
     const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 100));
     const maneuverDemand = {

@@ -384,11 +384,15 @@ export class StrategicCombatRenderer {
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
 
+    this.drawShipCaption(combatant.name, hullRatio, geometry);
+  }
+
+  private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
     this.context.fillStyle = hullRatio > 0.35 ? 'rgba(220, 232, 238, .78)' : '#d88673';
     this.context.font = '10px ui-monospace, monospace';
     this.context.textAlign = 'center';
     this.context.fillText(
-      combatant.name.toUpperCase(),
+      name.toUpperCase(),
       geometry.center.x,
       geometry.center.y + geometry.height * 0.8 + 18
     );

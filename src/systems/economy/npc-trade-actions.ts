@@ -1,0 +1,318 @@
+import type {
+  EconomyResourceDefinition,
+  EconomyResourceId,
+  NpcEconomyState,
+} from '../../core/economy-types';
+
+import {
+  beginNpcAutonomyPhase,
+  clearNpcPendingTravel,
+  ensureNpcAutonomy,
+  ensureNpcPersonality,
+  npcDecisionThreshold,
+  npcPersonalityTradeWeight,
+  scheduleNpcTravel,
+} from '../npcs/npc-autonomy';
+
+import type { EconomyMarketService } from './market-service';
+
+import { findNpcResourceSideTrade, type EconomyPoint } from './npc-resource-side-trade';
+
+import { quantity, cargoFreeFor, cargoFree, npcCargoUsed } from './npc-cargo';
+
+import { observeNpcMarket, npcKnownMarketViews } from './npc-market-knowledge';
+
+import type { TradeRoute } from './npc-economy-types';
+
+export function buyFromMarket(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  locationId: string,
+  resourceId: EconomyResourceId,
+  requested: number,
+  day: number,
+  cargoCapacity = npc.cargoCapacity
+): number {
+  const entry = markets.getEntry(locationId, resourceId);
+  if (!entry) return 0;
+  const affordable = Math.floor(npc.credits / Math.max(1, entry.price));
+  const moved = Math.min(
+    quantity(requested),
+    quantity(entry.stock),
+    cargoFreeFor(npc, cargoCapacity),
+    Math.max(0, affordable)
+  );
+  if (moved <= 0) return 0;
+
+  npc.credits -= moved * entry.price;
+  entry.stock -= moved;
+  entry.demand = Math.min(1, entry.demand + moved / 5000);
+  npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + moved;
+  markets.recalculate(locationId, resourceId);
+  observeNpcMarket(npc, markets, locationId, day);
+  return moved;
+}
+
+export function sellToMarket(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  locationId: string,
+  resourceId: EconomyResourceId,
+  day: number,
+  requested = Number.POSITIVE_INFINITY
+): number {
+  const entry = markets.getEntry(locationId, resourceId);
+  const aboard = quantity(npc.cargo[resourceId] ?? 0);
+  const requestedQuantity = Number.isFinite(requested) ? quantity(requested) : aboard;
+  const moved = Math.min(aboard, requestedQuantity);
+  if (!entry || moved <= 0) return 0;
+
+  const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
+  npc.credits += moved * unitPrice;
+  entry.stock += moved;
+  entry.demand = Math.max(0, entry.demand - moved / 5000);
+  const remaining = aboard - moved;
+  if (remaining > 0) npc.cargo[resourceId] = remaining;
+  else delete npc.cargo[resourceId];
+  markets.recalculate(locationId, resourceId);
+  observeNpcMarket(npc, markets, locationId, day);
+  return moved;
+}
+
+function distanceBetween(
+  positions: Readonly<Record<string, EconomyPoint>>,
+  fromId: string,
+  toId: string
+): number {
+  const from = positions[fromId];
+  const to = positions[toId];
+  if (!from || !to) return 0;
+  return Math.hypot(to.x - from.x, to.y - from.y);
+}
+
+function bestTradeRoute(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  resources: readonly EconomyResourceDefinition[],
+  positions: Readonly<Record<string, EconomyPoint>>,
+  day: number
+): TradeRoute | null {
+  const source = markets.getMarket(npc.locationId);
+  const free = cargoFree(npc);
+  if (!source || free <= 0) return null;
+
+  let best: TradeRoute | null = null;
+  for (const resource of resources) {
+    if (resource.legality === 'illegal') continue;
+    const buy = source.entries[resource.id];
+    if (!buy || buy.stock <= 0 || buy.price <= 0) continue;
+    const affordable = Math.floor(npc.credits / buy.price);
+    const maxQuantity = Math.min(free, quantity(buy.stock), affordable, 32);
+    if (maxQuantity <= 0) continue;
+
+    for (const destination of Object.values(npc.marketIntel ?? {})) {
+      if (destination.locationId === source.locationId) continue;
+      const sell = destination.entries[resource.id];
+      if (!sell) continue;
+      const margin = Math.round(sell.price * 0.94) - buy.price;
+      if (margin <= 0) continue;
+      const grossProfit = margin * maxQuantity;
+      const distance = distanceBetween(positions, source.locationId, destination.locationId);
+      const age = Math.max(0, day - destination.observedDay);
+      const score = npcPersonalityTradeWeight(
+        npc,
+        grossProfit,
+        distance,
+        age,
+        destination.locationId
+      );
+      if (!best || score > best.score) {
+        best = {
+          resourceId: resource.id,
+          destinationId: destination.locationId,
+          quantity: maxQuantity,
+          margin,
+          observedDay: destination.observedDay,
+          score,
+        };
+      }
+    }
+  }
+  return best;
+}
+
+function bestSaleLocation(
+  npc: NpcEconomyState,
+  resourceId: EconomyResourceId,
+  positions: Readonly<Record<string, EconomyPoint>>,
+  day: number
+): { locationId: string; price: number; observedDay: number; score: number } | null {
+  let best: { locationId: string; price: number; observedDay: number; score: number } | null = null;
+  const aboard = Math.max(1, quantity(npc.cargo[resourceId] ?? 0));
+  for (const market of Object.values(npc.marketIntel ?? {})) {
+    const entry = market.entries[resourceId];
+    if (!entry) continue;
+    const expectedRevenue = Math.round(entry.price * 0.94) * aboard;
+    const distance = distanceBetween(positions, npc.locationId, market.locationId);
+    const age = Math.max(0, day - market.observedDay);
+    const score = npcPersonalityTradeWeight(npc, expectedRevenue, distance, age, market.locationId);
+    if (!best || score > best.score) {
+      best = {
+        locationId: market.locationId,
+        price: entry.price,
+        observedDay: market.observedDay,
+        score,
+      };
+    }
+  }
+  return best;
+}
+
+function scheduleTradeLoading(npc: NpcEconomyState, route: TradeRoute, reason: string): void {
+  const autonomy = ensureNpcAutonomy(npc);
+  autonomy.pendingTrade = {
+    resourceId: route.resourceId,
+    destinationId: route.destinationId,
+    quantity: route.quantity,
+    reason,
+  };
+  beginNpcAutonomyPhase(npc, 'loading');
+}
+
+function beginSale(npc: NpcEconomyState, resourceId: EconomyResourceId): void {
+  const autonomy = ensureNpcAutonomy(npc);
+  autonomy.pendingSaleResourceId = resourceId;
+  beginNpcAutonomyPhase(npc, 'unloading');
+}
+
+export function beginRest(npc: NpcEconomyState): void {
+  clearNpcPendingTravel(npc);
+  const autonomy = ensureNpcAutonomy(npc);
+  delete autonomy.pendingSaleResourceId;
+  beginNpcAutonomyPhase(npc, npc.role === 'patrol' ? 'patrol-rest' : 'resting');
+}
+
+export function chooseTraderAction(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  resources: readonly EconomyResourceDefinition[],
+  positions: Readonly<Record<string, EconomyPoint>>,
+  day: number
+): void {
+  const aboard = Object.entries(npc.cargo)
+    .filter(([, value]) => quantity(value) > 0)
+    .sort((first, second) => quantity(second[1]) - quantity(first[1]))[0];
+
+  if (aboard) {
+    const destination = bestSaleLocation(npc, aboard[0], positions, day);
+    if (!destination) {
+      beginRest(npc);
+      return;
+    }
+    if (npc.locationId === destination.locationId) {
+      beginSale(npc, aboard[0]);
+      return;
+    }
+    scheduleNpcTravel(npc, destination.locationId, 'Verkaufsroute');
+    return;
+  }
+
+  const route = bestTradeRoute(npc, markets, resources, positions, day);
+  if (!route || route.score <= npcDecisionThreshold(npc)) {
+    beginRest(npc);
+    return;
+  }
+  scheduleTradeLoading(npc, route, 'Handelsroute');
+}
+
+function sideTradeWorthTaking(
+  npc: NpcEconomyState,
+  expectedProfit: number,
+  costBasis: number
+): boolean {
+  const personality = ensureNpcPersonality(npc);
+  const returnRate = expectedProfit / Math.max(1, costBasis);
+  const minimumReturn = 0.05 + (1 - personality.profitDrive) * 0.08 + personality.patience * 0.04;
+  return returnRate >= minimumReturn;
+}
+
+export function chooseWorkerAction(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  resources: readonly EconomyResourceDefinition[],
+  positions: Readonly<Record<string, EconomyPoint>>,
+  day: number
+): void {
+  const autonomy = ensureNpcAutonomy(npc);
+  const used = npcCargoUsed(npc);
+  const threshold = Math.max(1, Math.floor(npc.cargoCapacity));
+
+  if (npc.sideTradePlan) {
+    const plan = npc.sideTradePlan;
+    if (npc.locationId === plan.tradeLocationId && quantity(npc.cargo[plan.resourceId] ?? 0) > 0) {
+      beginSale(npc, plan.resourceId);
+      return;
+    }
+    if (npc.locationId !== plan.tradeLocationId && quantity(npc.cargo[plan.resourceId] ?? 0) > 0) {
+      scheduleNpcTravel(npc, plan.tradeLocationId, 'Nebenhandel · Verkauf');
+      return;
+    }
+    delete npc.sideTradePlan;
+  }
+
+  if (used >= threshold) {
+    const cargo = Object.entries(npc.cargo)
+      .filter(([, value]) => quantity(value) > 0)
+      .sort((first, second) => quantity(second[1]) - quantity(first[1]));
+    const first = cargo[0];
+    if (!first) {
+      beginRest(npc);
+      return;
+    }
+    const destination = bestSaleLocation(npc, first[0], positions, day);
+    if (!destination) {
+      beginRest(npc);
+      return;
+    }
+    if (npc.locationId === destination.locationId) {
+      beginSale(npc, first[0]);
+    } else {
+      scheduleNpcTravel(npc, destination.locationId, 'Rohstoffverkauf');
+    }
+    return;
+  }
+
+  if (npc.workLocationId && npc.locationId === npc.workLocationId) {
+    autonomy.phase = 'working';
+    autonomy.secondsRemaining = 0;
+    const state = npc as NpcEconomyState & { activityId?: string; activity?: string };
+    state.activityId = npc.role === 'miner' ? 'mining' : 'salvage';
+    state.activity = npc.role === 'miner' ? 'Scannen und Ressourcenabbau' : 'Scannen und Bergung';
+    return;
+  }
+
+  if (npc.workLocationId) {
+    const plan = findNpcResourceSideTrade(npc, npc.workLocationId, {
+      markets: npcKnownMarketViews(npc),
+      resources,
+      positions,
+    });
+    if (plan && sideTradeWorthTaking(npc, plan.expectedProfit, plan.costBasis)) {
+      npc.sideTradePlan = plan;
+      const route: TradeRoute = {
+        resourceId: plan.resourceId,
+        destinationId: plan.tradeLocationId,
+        quantity: plan.quantity,
+        margin: Math.max(1, Math.round(plan.expectedProfit / Math.max(1, plan.quantity))),
+        observedDay: day,
+        score: plan.expectedProfit,
+      };
+      scheduleTradeLoading(npc, route, 'Nebenhandel');
+      return;
+    }
+    scheduleNpcTravel(npc, npc.workLocationId, 'Arbeitsflug');
+    return;
+  }
+
+  beginNpcAutonomyPhase(npc, 'working');
+}

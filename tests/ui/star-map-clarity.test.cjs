@@ -46,7 +46,8 @@ assert(
 assert(
   lighting.includes('options.preserveDetail ? 2.4') &&
     lighting.includes('options.preserveDetail && options.width < 18') &&
-    npcShips.includes('Math.max(\n        10,'),
+    npcShips.includes('starMapShipWidth(') &&
+    npcShips.includes('preserveDetail: true'),
   'star-map ship sprites must keep sharp high-detail rendering until they are genuinely tiny'
 );
 

@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -384,16 +386,10 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 }
 
 {
-  const sectorSource = fs.readFileSync(
-    path.join(root, 'src/systems/npcs/npc-sector-service.ts'),
-    'utf8'
-  );
-  const economySource = fs.readFileSync(
-    path.join(root, 'src/app/game-controller-economy.ts'),
-    'utf8'
-  );
+  const sectorSource = readModuleSource(root, 'src/systems/npcs/npc-sector-service.ts');
+  const economySource = readModuleSource(root, 'src/app/game-controller-economy.ts');
   assert(
-    sectorSource.includes('requestPatrol(npc)') &&
+    sectorSource.includes('requestPatrol = (npc: SectorNpcState)') &&
       economySource.includes('requestPatrol: (npc) => sectorNpcs.requestPatrol'),
     'sector service must expose patrol requests through autonomy'
   );
@@ -406,10 +402,7 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 }
 
 {
-  const miningSource = fs.readFileSync(
-    path.join(root, 'src/systems/npcs/npc-local-mining-service.ts'),
-    'utf8'
-  );
+  const miningSource = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
   const salvageSource = fs.readFileSync(
     path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
     'utf8'

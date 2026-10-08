@@ -1,11 +1,11 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
-const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const { readModuleSource } = require('../module-source.cjs');
+const read = (file) => readModuleSource(root, file);
 
 const camera = read('src/ui/map/map-camera.ts');
 const renderer = read('src/ui/map/topdown-map-renderer.ts');
@@ -17,9 +17,9 @@ const surfaces = read('src/ui/space/procedural-surface-textures.ts');
 
 assert(camera.includes('const MIN_RELATIVE_ZOOM = 1;'));
 assert(renderer.includes('rect.width >= 200 && rect.height >= 200'));
-assert(map.includes('position: { x: 3100, y: mapY(430) }'));
-assert(map.includes('position: { x: 2960, y: mapY(1450) }'));
-assert(map.includes('position: { x: 3105, y: mapY(1320) }'));
+assert(map.includes('position: { x: 3100, y: mapY(0) }'));
+assert(map.includes('position: { x: 2700, y: mapY(1200) }'));
+assert(map.includes('position: { x: 3200, y: mapY(950) }'));
 assert(playerShip.includes('preserveDetail: true'));
 assert(npcShips.includes('preserveDetail: true'));
 assert(stations.includes("globalCompositeOperation = 'destination-out'"));

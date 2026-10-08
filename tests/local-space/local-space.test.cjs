@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -9,17 +11,14 @@ const generator = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-generator.ts'),
   'utf8'
 );
-const service = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-service.ts'),
-  'utf8'
-);
+const service = readModuleSource(root, 'src/systems/local-space/local-space-service.ts');
 const navigation = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-navigation.ts'),
   'utf8'
 );
-const routeWorkerClient = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-route-worker-client.ts'),
-  'utf8'
+const routeWorkerClient = readModuleSource(
+  root,
+  'src/systems/local-space/local-space-route-worker-client.ts'
 );
 const routeWorker = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-route-worker.ts'),
@@ -37,19 +36,13 @@ const miningImpact = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-impact.ts'),
   'utf8'
 );
-const stationKeeping = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-station-keeping.ts'),
-  'utf8'
+const stationKeeping = readModuleSource(
+  root,
+  'src/systems/local-space/local-space-station-keeping.ts'
 );
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const localActions = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-local-actions.ts'),
-  'utf8'
-);
-const miningController = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-mining.ts'),
-  'utf8'
-);
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
+const miningController = readModuleSource(root, 'src/app/game-controller-mining.ts');
 const shieldService = fs.readFileSync(
   path.join(root, 'src/systems/shields/shield-service.ts'),
   'utf8'
@@ -72,17 +65,17 @@ const miningChunks = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-chunk-service.ts'),
   'utf8'
 );
-const miningResourceRuntime = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/mining-resource-runtime.ts'),
-  'utf8'
+const miningResourceRuntime = readModuleSource(
+  root,
+  'src/systems/local-space/mining-resource-runtime.ts'
 );
 const miningEvents = fs.readFileSync(
   path.join(root, 'src/systems/local-space/mining-event-service.ts'),
   'utf8'
 );
-const miningFormation = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-mining-formation.ts'),
-  'utf8'
+const miningFormation = readModuleSource(
+  root,
+  'src/systems/local-space/local-space-mining-formation.ts'
 );
 const autopilot = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-autopilot.ts'),
@@ -237,8 +230,8 @@ assert(
   'local mining must support ALL or exactly one/two targeted resources'
 );
 assert(
-  service.includes('miningResourceSelections = new Map') &&
-    service.includes('miningSelectionFor(this.selectedAsteroidId)'),
+  miningResourceRuntime.includes('selections = new Map') &&
+    service.includes('this.miningResources.selectionFor(this.selectedAsteroidId)'),
   'targeted mining choices must persist per asteroid across UI focus changes'
 );
 assert(
@@ -337,7 +330,9 @@ assert(
   'local-space service must expose immutable route-planning input'
 );
 assert(
-  !service.includes('planMiningApproachRoute('),
+  !fs
+    .readFileSync(path.join(root, 'src/systems/local-space/local-space-service.ts'), 'utf8')
+    .includes('planMiningApproachRoute('),
   'local-space service must not block the UI with synchronous route planning'
 );
 assert(
@@ -490,7 +485,7 @@ assert(
   'shield damage model must be reusable by future weapon sources'
 );
 assert(
-  controller.includes('miningLocationById(id)') &&
+  controller.includes("locationHasActivity(id, 'mine')") &&
     controller.includes('snapshot.currentLocationId === id'),
   'every mining location must support direct re-entry'
 );
