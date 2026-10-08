@@ -109,6 +109,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-10-08 | PR #160 · Audio-Einstellungen und Bergungs-Scan-Kegel | Review gegen Voidbound abgeschlossen: Die CSS-Darstellung vorhandener Umgebungs-/RCS-Lautstärkeregler wird wiederhergestellt und die Bergungsinspektion visualisiert einen zeitlich gesteuerten Scan-Kegel vom Traktor-Hardpoint zum Wrack. Keine Änderung an Ressourcenlogik, Bergungsfortschritt oder Voidbound-Parity-Status; keine Statusänderung. |
 
+| 2026-10-08 | PR #162 · NPC-Triebwerks- und RCS-Effekte auf der Sternkarte | Voidbound-Parity geprüft: NPC-Schiffe zeigen auf der Sternkarte Haupttriebwerksabgas bei Reisebewegung und RCS-Manövereffekte bei Richtungsänderungen anhand der Schiffshardpoints. Bestehende NPC-Bewegungs- und Darstellungsmechanik bleibt erhalten; keine Statusänderung in der Feature-Matrix. |
+
 ## Vollständige Matrix
 
 ### runtime
