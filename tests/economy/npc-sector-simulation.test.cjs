@@ -17,7 +17,11 @@ assert.equal(
   24,
   'Voidbound civilian population size must be preserved'
 );
-assert.equal(npcs.filter((npc) => npc.pirate).length, 9, 'Voidbound pirate population must be ported');
+assert.equal(
+  npcs.filter((npc) => npc.pirate).length,
+  9,
+  'Voidbound pirate population must be ported'
+);
 assert.deepEqual(
   new Set(npcs.filter((npc) => !npc.pirate).map((npc) => npc.job)),
   new Set(['freighter', 'miner', 'salvager', 'patrol']),
@@ -60,7 +64,11 @@ assert(service.isTravelling(freighter));
 const firstPosition = service.livePosition(freighter);
 service.tick(1);
 const movedPosition = service.livePosition(freighter);
-assert.notDeepEqual(movedPosition, firstPosition, 'NPC ship must physically advance along its route');
+assert.notDeepEqual(
+  movedPosition,
+  firstPosition,
+  'NPC ship must physically advance along its route'
+);
 assert(freighter.fuel < startFuel, 'physical NPC travel must consume fuel');
 
 for (let step = 0; step < 1000 && service.isTravelling(freighter); step += 1) service.tick(0.25);
@@ -75,7 +83,11 @@ assert.equal(
   false,
   'sector service alone must not bypass patrol rest and autonomy timing'
 );
-assert.equal(service.requestPatrol(patrol), true, 'autonomy must be able to request a patrol route');
+assert.equal(
+  service.requestPatrol(patrol),
+  true,
+  'autonomy must be able to request a patrol route'
+);
 assert(service.isTravelling(patrol));
 
 const pirate = npcs.find((npc) => npc.pirate);
@@ -99,15 +111,16 @@ assert.equal(
   'a defeated NPC must be recovered instead of permanently removed'
 );
 assert(freighter.hullHp > 0, 'recovered NPC must retain a damaged but operational hull');
-assert(
-  (freighter.combatRecoverySeconds ?? 0) > 0,
-  'defeated NPC must enter a repair cooldown'
-);
+assert((freighter.combatRecoverySeconds ?? 0) > 0, 'defeated NPC must enter a repair cooldown');
 const recoveredId = freighter.id;
 for (let step = 0; step < 600 && (freighter.combatRecoverySeconds ?? 0) > 0; step += 1) {
   service.tick(0.25);
 }
-assert.equal(freighter.id, recoveredId, 'combat recovery must keep the same persistent NPC identity');
+assert.equal(
+  freighter.id,
+  recoveredId,
+  'combat recovery must keep the same persistent NPC identity'
+);
 assert.equal(freighter.hullHp, freighter.hullMaxHp, 'NPC hull must be restored after repair');
 assert.equal(freighter.combatRecoverySeconds, undefined);
 
