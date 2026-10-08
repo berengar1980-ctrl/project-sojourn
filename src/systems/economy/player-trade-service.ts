@@ -15,10 +15,7 @@ function finiteInteger(value: number): number {
 
 export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_FEE_RATE): number {
   const price = Math.max(1, Number.isFinite(marketPrice) ? marketPrice : 1);
-  const fee = Math.max(
-    0,
-    Math.min(1, Number.isFinite(feeRate) ? feeRate : DEFAULT_SALE_FEE_RATE)
-  );
+  const fee = Math.max(0, Math.min(1, Number.isFinite(feeRate) ? feeRate : DEFAULT_SALE_FEE_RATE));
   return Math.max(1, Math.round(price * (1 - fee)));
 }
 
