@@ -127,7 +127,10 @@ assert.equal(
   'NPC component upgrades must respect a completed-run cooldown'
 );
 
-const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerSource = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-star-map.ts'),
+  'utf8'
+);
 const rendererSource = fs.readFileSync(
   path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
   'utf8'
