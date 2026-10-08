@@ -8,6 +8,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
+const npcRenderer = readModuleSource(root, 'src/ui/map/npc-ship-map-renderer.ts');
 const model = fs.readFileSync(
   path.join(root, 'src/features/star-map/star-map-view-model.ts'),
   'utf8'
@@ -32,9 +33,9 @@ assert(
 );
 assert(
   renderer.includes('NpcShipMapRenderer') &&
-    renderer.includes('this.lighting.draw') &&
-    renderer.includes('image,') &&
-    !renderer.includes('this.context.rotate(Math.PI / 4)'),
+    npcRenderer.includes('this.lighting.draw') &&
+    npcRenderer.includes('image,') &&
+    !npcRenderer.includes('this.context.rotate(Math.PI / 4)'),
   'physical star map must render NPC ship sprites instead of diamond dots'
 );
 
