@@ -17,7 +17,7 @@ export function shipPane(model: PortViewModel): string {
         </div>
       </div>
       <div class="port-ship-components">
-        <div class="port-panel-heading"><span>KOMPONENTEN</span><small>STARTAUSSTATTUNG MK I</small></div>
+        <div class="port-panel-heading"><span>KOMPONENTEN</span><small>EINBAU / AUSTAUSCH</small></div>
         <div class="port-component-list">
           ${model.ship.components
             .map(
@@ -26,19 +26,19 @@ export function shipPane(model: PortViewModel): string {
                   <div><span>${slot.typeLabel.toUpperCase()}</span><strong>${slot.name}</strong></div>
                   <b>${slot.tier ? 'MK ' + ['', 'I', 'II', 'III', 'IV', 'V', 'VI'][slot.tier] : 'LEER'}</b>
                   <small>${slot.power > 0 ? slot.power + ' ENERGIE' : 'PASSIV'}</small>
-                  ${
-                    slot.weaponSlot
-                      ? slot.componentId
-                        ? `<button type="button" data-component-type="weapon" data-component-index="${slot.index}" data-component-id="">AUSBAUEN</button>`
-                        : `<button type="button" data-component-type="weapon" data-component-index="${slot.index}" data-component-id="weapon1">LIGHT LASER MK I MONTIEREN</button>`
-                      : '<span class="port-component-fixed">MONTIERT</span>'
-                  }
+                  <select data-component-slot-select="${slot.key}">
+                    <option value="">${slot.componentId ? 'AUSBAUEN' : 'LEER'}</option>
+                    ${model.shipyard.loose.filter((part) => part.type === slot.type).map((part) =>
+                      `<option value="${part.uid}">${part.name} · MK ${part.tier}</option>`
+                    ).join('')}
+                  </select>
+                  <button type="button" data-component-type="${slot.type}" data-component-index="${slot.index}" data-component-key="${slot.key}">ANWENDEN</button>
                 </article>
               `
             )
             .join('')}
         </div>
-        <div class="port-info-box">Alle Schiffe starten vorerst vollständig mit Mk-I-Komponenten. Waffenhalterungen sind echte Slots und können bereits ein- und ausgebaut werden. Höhere Mk-Stufen und weitere Waffenfamilien kommen auf diesen Slot-Unterbau.</div>
+        <div class="port-info-box">Nur im Inventar vorhandene Komponenten können eingebaut werden. Pro gekaufter Komponente ist genau ein Bonus aktiv.</div>
       </div>
     </section>
   `;
@@ -142,6 +142,24 @@ export function shipyardPane(model: PortViewModel): string {
       <div class="port-wide-panel">
         <div class="port-panel-heading"><span>WERFT</span><small>BERGUNGSTECHNOLOGIE</small></div>
         <div class="port-ship-overview"><img src="${model.ship.spriteUrl}" alt=""><div><span>AKTIVER RUMPF</span><strong>${model.ship.name}</strong><small>Geborgene Sonderkomponenten können verkauft und analysiert werden.</small></div></div>
+        <div class="port-panel-heading"><span>SCHIFFSHANDEL</span><small>KAUF / BESITZ</small></div>
+        <div class="port-shipyard-list">
+          ${model.shipyard.ships.map((offer) => `
+            <div class="port-shipyard-row">
+              <div><strong>${offer.name}</strong><small>${offer.role.toUpperCase()}</small></div>
+              <span>${offer.owned ? 'IN BESITZ' : offer.price.toLocaleString('de-DE') + ' CR'}</span>
+              <button type="button" data-buy-ship-id="${offer.id}" ${!offer.owned && model.player.credits < offer.price ? 'disabled' : ''}>${offer.owned ? 'AUSWÄHLEN' : 'KAUFEN'}</button>
+            </div>`).join('')}
+        </div>
+        <div class="port-panel-heading"><span>KOMPONENTENMARKT MK I–VI</span><small>GENAU EIN BONUS</small></div>
+        <div class="port-shipyard-row">
+          <select data-yard-catalog>
+            ${model.shipyard.catalog.map((offer) => `
+              <option value="${offer.type}|${offer.id}" ${model.player.credits < offer.cost ? 'disabled' : ''}>${offer.name} · ${offer.modifierLabel} · ${offer.cost.toLocaleString('de-DE')} CR</option>
+            `).join('')}
+          </select>
+          <button type="button" data-buy-catalog>GEWÄHLTE KOMPONENTE KAUFEN</button>
+        </div>
         <div class="port-panel-heading"><span>GEBORGENE KOMPONENTEN</span><small>VERKAUF / ANALYSE</small></div>
         <div class="port-shipyard-list">${loose}</div>
         <div class="port-panel-heading"><span>FREIGESCHALTETE WERFTVARIANTEN</span><small>GEMEINSAMER FORSCHUNGSSTAND</small></div>
