@@ -1,4 +1,8 @@
-import type { LocalAsteroid, LocalShipState, MiningEventChoice } from '../../core/local-space-types';
+import type {
+  LocalAsteroid,
+  LocalShipState,
+  MiningEventChoice,
+} from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -10,8 +14,7 @@ import {
 } from '../local-space/ship-shield-collision';
 import { getShipDefinition } from '../ships';
 
-export type LocalNpcMiningPhase =
-  'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
+export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
 export interface LocalNpcMinerState {
   readonly npcId: string;
@@ -79,7 +82,12 @@ function distance(a: WorldPoint, b: WorldPoint): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
-function moveToward(ship: LocalNpcMinerState, target: WorldPoint, speed: number, dt: number): boolean {
+function moveToward(
+  ship: LocalNpcMinerState,
+  target: WorldPoint,
+  speed: number,
+  dt: number
+): boolean {
   const dx = target.x - ship.position.x;
   const dy = target.y - ship.position.y;
   const remaining = Math.hypot(dx, dy);
@@ -128,8 +136,7 @@ function chooseAsteroid(
     [...pool].sort(
       (first, second) =>
         distance(first.position, { x: 2200, y: 1285 }) -
-          distance(second.position, { x: 2200, y: 1285 }) ||
-        first.id.localeCompare(second.id)
+          distance(second.position, { x: 2200, y: 1285 }) || first.id.localeCompare(second.id)
     )[hashId(npc.id) % Math.min(8, pool.length)] ??
     pool[0] ??
     null
@@ -163,9 +170,11 @@ function chooseEventChoice(
   if (choices.length === 0) return null;
   const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
   const risky = npc.workRiskPreference === 'risky';
-  return [...choices].sort((a, b) =>
-    risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
-  )[0] ?? null;
+  return (
+    [...choices].sort((a, b) =>
+      risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
+    )[0] ?? null
+  );
 }
 
 export function createNpcLocalMiningService(options: NpcLocalMiningOptions): NpcLocalMiningService {
