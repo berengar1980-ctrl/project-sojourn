@@ -107,6 +107,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-07 | Fix selektives Mining und Ressourcen-Reveal | Zielressourcen werden pro Asteroid persistent gespeichert; zwei Ressourcen lassen sich zuverlässig markieren/wechseln. Mining-Start analysiert unbekannte Vorkommen nicht mehr automatisch; ein Ressourcenname wird erst nach tatsächlich angenommener Frachtprobe sichtbar, Nahbereichsscan identifiziert weiterhin alle Vorkommen. Keine Parity-Statusänderung. |
 | 2026-10-07 | PR #93 · Voidbound-Bergungsereignisse und Werftforschung | Maximal drei zeitlich begrenzte Bergungsevents (davon höchstens ein Hilferuf) erscheinen als dynamische Sternkartenziele. Sonderwracks liefern ausschließlich modifizierbare Schiffssysteme; normale Wracks keine Schiffskomponenten mehr. Hilferufe unterstützen Diagnose, Reparatur, Abschleppen, Evakuierung und Boarding-Hinterhalte. Spieler und Salvager-NPCs können Sonderkomponenten bergen und an Werften verkaufen; der gemeinsame Forschungsstand schaltet verbesserte Werftvarianten frei. `salvage.special_events`, `salvage.component_value` und `ship.salvage_research` → umgesetzt; `salvage.distress_rescue` → teilweise. |
 
+| 2026-10-08 | PR #160 · Audio-Einstellungen und Bergungs-Scan-Kegel | Review gegen Voidbound abgeschlossen: Die CSS-Darstellung vorhandener Umgebungs-/RCS-Lautstärkeregler wird wiederhergestellt und die Bergungsinspektion visualisiert einen zeitlich gesteuerten Scan-Kegel vom Traktor-Hardpoint zum Wrack. Keine Änderung an Ressourcenlogik, Bergungsfortschritt oder Voidbound-Parity-Status; keine Statusänderung. |
+
 ## Vollständige Matrix
 
 ### runtime
