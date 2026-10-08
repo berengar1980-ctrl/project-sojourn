@@ -51,11 +51,15 @@ export interface PortShipyardVariantView {
 export interface PortShipyardStateInput {
   readonly loose: readonly LooseShipComponent[];
   readonly variants: readonly ShipComponentDefinition[];
+  readonly catalog?: readonly ShipComponentDefinition[];
+  readonly ships?: readonly { id: string; name: string; role: string; price: number; owned: boolean }[];
 }
 
 export interface PortShipyardView {
   readonly loose: readonly PortShipyardLooseComponentView[];
   readonly variants: readonly PortShipyardVariantView[];
+  readonly catalog: readonly PortShipyardVariantView[];
+  readonly ships: readonly { id: string; name: string; role: string; price: number; owned: boolean }[];
 }
 
 const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
@@ -151,6 +155,17 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
         modifierLabel,
       };
     }),
+    ships: state.ships ?? [],
+    catalog: (state.catalog ?? []).map((component) => ({
+      id: component.id,
+      type: component.type,
+      name: component.name,
+      tier: component.tier,
+      cost: component.cost,
+      modifierLabel: component.salvageModifier === 'efficiency'
+        ? `−${component.salvageModifierPct ?? 0} % Energie`
+        : `+${component.salvageModifierPct ?? 0} % Leistung`,
+    })),
     variants: state.variants.map((component) => ({
       id: component.id,
       type: component.type,
