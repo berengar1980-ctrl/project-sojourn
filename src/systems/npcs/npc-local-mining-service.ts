@@ -189,7 +189,12 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
   ship.targetAsteroidId = null;
   ship.laserActive = false;
   ship.scanProgress = 0;
-  ship.exitPoint = edgePoint(ship.npcId + ':exit', runtime.options.width, runtime.options.height, true);
+  ship.exitPoint = edgePoint(
+    ship.npcId + ':exit',
+    runtime.options.width,
+    runtime.options.height,
+    true
+  );
 }
 
 function syncArrivals(runtime: MinerRuntime): void {
@@ -485,7 +490,9 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
   resolveMinerCollisions(runtime);
 }
 
-export function createNpcLocalMiningService(options: NpcLocalMiningOptions): NpcLocalMiningService {
+export function createNpcLocalMiningService(
+  options: NpcLocalMiningOptions
+): NpcLocalMiningService {
   const runtime: MinerRuntime = {
     options,
     ships: [],
