@@ -250,9 +250,13 @@ const resources = [
 }
 
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerEventsSource = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-events.ts'),
+  'utf8'
+);
 assert(
   controllerSource.includes('economy.npcs.tick(deltaSeconds)') &&
-    controllerSource.includes('npcs.advanceNextDay()'),
+    controllerEventsSource.includes('economy.npcs.advanceNextDay()'),
   'NPC autonomy must tick continuously while daily resource simulation remains preserved'
 );
 
