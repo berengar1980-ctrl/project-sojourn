@@ -8,16 +8,44 @@
   "engines": [
     {
       "id": "engine-upper",
-      "x": 20,
-      "y": 95,
+      "x": 17,
+      "y": 79,
       "width": 20,
       "layer": "below"
     },
     {
       "id": "engine-lower",
-      "x": 20,
-      "y": 183,
+      "x": 17,
+      "y": 202,
       "width": 20,
+      "layer": "below"
+    },
+    {
+      "id": "engine-3",
+      "x": 64,
+      "y": 30,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-4",
+      "x": 65,
+      "y": 249,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-5",
+      "x": 26,
+      "y": 137,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-6",
+      "x": 26,
+      "y": 141,
+      "width": 7,
       "layer": "below"
     }
   ],
@@ -26,8 +54,8 @@
   "tractorBeams": [
     {
       "id": "tractor-main",
-      "x": 216,
-      "y": 139,
+      "x": 289,
+      "y": 44,
       "width": 8,
       "layer": "below"
     }
@@ -35,7 +63,7 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 337,
+      "x": 311,
       "y": 61,
       "width": 7,
       "forceX": 0,
@@ -44,8 +72,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 337,
-      "y": 217,
+      "x": 313,
+      "y": 226,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -53,8 +81,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 104,
-      "y": 50,
+      "x": 89,
+      "y": 19,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -62,8 +90,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 104,
-      "y": 228,
+      "x": 88,
+      "y": 260,
       "width": 7,
       "forceX": 0,
       "forceY": -1,

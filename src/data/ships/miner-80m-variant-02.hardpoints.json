@@ -8,16 +8,30 @@
   "engines": [
     {
       "id": "engine-upper",
-      "x": 17,
-      "y": 72,
+      "x": 14,
+      "y": 51,
       "width": 18,
       "layer": "below"
     },
     {
       "id": "engine-lower",
-      "x": 17,
-      "y": 141,
+      "x": 14,
+      "y": 159,
       "width": 18,
+      "layer": "below"
+    },
+    {
+      "id": "engine-3",
+      "x": 25,
+      "y": 102,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-4",
+      "x": 25,
+      "y": 106,
+      "width": 7,
       "layer": "below"
     }
   ],
@@ -25,22 +39,29 @@
   "miningLasers": [
     {
       "id": "mining-laser-upper",
-      "x": 256,
-      "y": 58,
+      "x": 259,
+      "y": 28,
       "width": 7,
       "layer": "below"
     },
     {
       "id": "mining-laser-center",
-      "x": 322,
-      "y": 107,
+      "x": 259,
+      "y": 40,
       "width": 7,
       "layer": "below"
     },
     {
       "id": "mining-laser-lower",
-      "x": 256,
-      "y": 155,
+      "x": 259,
+      "y": 171,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "miningLaser-4",
+      "x": 259,
+      "y": 184,
       "width": 7,
       "layer": "below"
     }
@@ -48,8 +69,8 @@
   "tractorBeams": [
     {
       "id": "tractor-main",
-      "x": 173,
-      "y": 107,
+      "x": 322,
+      "y": 103,
       "width": 8,
       "layer": "below"
     }
@@ -57,8 +78,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 270,
-      "y": 47,
+      "x": 265,
+      "y": 64,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -66,8 +87,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 270,
-      "y": 166,
+      "x": 264,
+      "y": 148,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -76,7 +97,7 @@
     {
       "id": "rcs-stern-upper",
       "x": 83,
-      "y": 38,
+      "y": 33,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -85,7 +106,7 @@
     {
       "id": "rcs-stern-lower",
       "x": 83,
-      "y": 175,
+      "y": 176,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -93,8 +114,8 @@
     },
     {
       "id": "rcs-front-upper",
-      "x": 326,
-      "y": 86,
+      "x": 277,
+      "y": 65,
       "width": 7,
       "forceX": -1,
       "forceY": 0,
@@ -102,8 +123,8 @@
     },
     {
       "id": "rcs-front-lower",
-      "x": 326,
-      "y": 128,
+      "x": 278,
+      "y": 146,
       "width": 7,
       "forceX": -1,
       "forceY": 0,

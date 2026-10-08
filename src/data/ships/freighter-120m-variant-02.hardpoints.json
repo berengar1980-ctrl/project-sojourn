@@ -9,7 +9,7 @@
     {
       "id": "engine-upper",
       "x": 22,
-      "y": 93,
+      "y": 88,
       "width": 22,
       "layer": "below"
     },
@@ -22,8 +22,8 @@
     },
     {
       "id": "engine-lower",
-      "x": 22,
-      "y": 238,
+      "x": 23,
+      "y": 245,
       "width": 22,
       "layer": "below"
     }
@@ -34,8 +34,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 404,
-      "y": 73,
+      "x": 393,
+      "y": 79,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -43,8 +43,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 404,
-      "y": 258,
+      "x": 391,
+      "y": 254,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -52,8 +52,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 124,
-      "y": 60,
+      "x": 132,
+      "y": 27,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -61,8 +61,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 124,
-      "y": 271,
+      "x": 131,
+      "y": 306,
       "width": 7,
       "forceX": 0,
       "forceY": -1,

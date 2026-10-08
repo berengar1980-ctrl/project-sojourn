@@ -8,16 +8,23 @@
   "engines": [
     {
       "id": "engine-upper",
-      "x": 17,
-      "y": 80,
+      "x": 14,
+      "y": 62,
       "width": 18,
       "layer": "below"
     },
     {
       "id": "engine-lower",
-      "x": 17,
-      "y": 156,
+      "x": 14,
+      "y": 174,
       "width": 18,
+      "layer": "below"
+    },
+    {
+      "id": "engine-3",
+      "x": 28,
+      "y": 117,
+      "width": 7,
       "layer": "below"
     }
   ],
@@ -25,31 +32,31 @@
   "miningLasers": [
     {
       "id": "mining-laser-upper",
-      "x": 256,
-      "y": 64,
-      "width": 7,
-      "layer": "below"
-    },
-    {
-      "id": "mining-laser-center",
-      "x": 322,
-      "y": 118,
+      "x": 260,
+      "y": 30,
       "width": 7,
       "layer": "below"
     },
     {
       "id": "mining-laser-lower",
-      "x": 256,
-      "y": 172,
+      "x": 260,
+      "y": 206,
       "width": 7,
       "layer": "below"
+    },
+    {
+      "id": "miningLaser-3",
+      "x": 283,
+      "y": 110,
+      "width": 7,
+      "layer": "above"
     }
   ],
   "tractorBeams": [
     {
       "id": "tractor-main",
-      "x": 173,
-      "y": 118,
+      "x": 295,
+      "y": 112,
       "width": 8,
       "layer": "below"
     }
@@ -57,8 +64,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 270,
-      "y": 52,
+      "x": 269,
+      "y": 55,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -66,8 +73,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 270,
-      "y": 184,
+      "x": 269,
+      "y": 181,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -75,8 +82,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 83,
-      "y": 42,
+      "x": 50,
+      "y": 40,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -84,8 +91,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 83,
-      "y": 194,
+      "x": 49,
+      "y": 197,
       "width": 7,
       "forceX": 0,
       "forceY": -1,

@@ -8,16 +8,30 @@
   "engines": [
     {
       "id": "engine-upper",
-      "x": 20,
-      "y": 99,
+      "x": 18,
+      "y": 83,
       "width": 20,
       "layer": "below"
     },
     {
       "id": "engine-lower",
-      "x": 20,
-      "y": 191,
+      "x": 18,
+      "y": 210,
       "width": 20,
+      "layer": "below"
+    },
+    {
+      "id": "engine-3",
+      "x": 32,
+      "y": 143,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-4",
+      "x": 32,
+      "y": 148,
+      "width": 7,
       "layer": "below"
     }
   ],
@@ -26,7 +40,7 @@
   "tractorBeams": [
     {
       "id": "tractor-main",
-      "x": 216,
+      "x": 346,
       "y": 145,
       "width": 8,
       "layer": "below"
@@ -35,8 +49,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 337,
-      "y": 64,
+      "x": 293,
+      "y": 43,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -44,8 +58,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 337,
-      "y": 226,
+      "x": 293,
+      "y": 249,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -53,8 +67,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 104,
-      "y": 52,
+      "x": 102,
+      "y": 30,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -62,8 +76,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 104,
-      "y": 238,
+      "x": 98,
+      "y": 262,
       "width": 7,
       "forceX": 0,
       "forceY": -1,

@@ -34,8 +34,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 404,
-      "y": 71,
+      "x": 347,
+      "y": 44,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -43,8 +43,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 404,
-      "y": 251,
+      "x": 347,
+      "y": 279,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -52,8 +52,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 124,
-      "y": 58,
+      "x": 116,
+      "y": 24,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -61,8 +61,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 124,
-      "y": 264,
+      "x": 116,
+      "y": 299,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
