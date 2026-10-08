@@ -52,12 +52,17 @@ export function sectorEventLocation(
   };
 }
 
-export function advanceEconomyDay(
-  previousId: string | null,
-  currentId: string | null,
-  context: ControllerRuntimeContext
-): void {
-  if (currentId === null || previousId === currentId) return;
+const WORLD_DAY_SECONDS = 180;
+const controllerDayElapsed = new WeakMap<ControllerRuntimeContext, number>();
+
+export function tickEconomy(context: ControllerRuntimeContext, dt: number): void {
+  const elapsed = (controllerDayElapsed.get(context) ?? 0) + Math.max(0, dt);
+  const days = Math.floor(elapsed / WORLD_DAY_SECONDS);
+  controllerDayElapsed.set(context, elapsed - days * WORLD_DAY_SECONDS);
+  for (let i = 0; i < days; i += 1) advanceEconomyDay(context);
+}
+
+export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   const economy = context.economy;
   economy.situations.advanceNextDay();
   economy.simulation.advanceNextDay();
@@ -66,7 +71,7 @@ export function advanceEconomyDay(
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
-    context.state.activeShip.role === 'salvage'
+    true
   );
 }
 

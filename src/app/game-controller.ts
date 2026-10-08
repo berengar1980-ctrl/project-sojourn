@@ -30,7 +30,7 @@ import type {
 } from './game-controller-runtime-types';
 
 import {
-  advanceEconomyDay,
+  tickEconomy,
   controllerSalvageEventCallbacks,
   destroyControllerBoarding,
   destroyControllerCombat,
@@ -432,7 +432,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
   const currentLocationId = navigationSnapshot.currentLocationId;
   handleControllerLocationEntry(context, currentLocationId);
-  advanceEconomyDay(state.previousLocationId, currentLocationId, context);
+  tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);
@@ -486,7 +486,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,
-    state.activeShip.role === 'salvage'
+    true
   );
   createSettingsMenu(context.audio);
   mountControllerStarMap(context);

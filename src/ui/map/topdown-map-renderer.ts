@@ -6,6 +6,7 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
+import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
@@ -369,6 +370,8 @@ export class TopdownMapRenderer {
     } else if (location.kind === 'wreck') this.drawWreck(point, radius);
     else this.drawPlanet(location, point, radius, light);
 
+    drawSectorEventMarker(this.context, location.id, point, radius);
+
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
       this.context.lineWidth = 2;
@@ -400,6 +403,9 @@ export class TopdownMapRenderer {
 
   private shouldDrawLabel(location: StarMapLocationView): boolean {
     if (location.isSelected || location.isCurrent) return true;
+    if (location.id.startsWith('salvage-special-') || location.id.startsWith('salvage-distress-')) {
+      return true;
+    }
     const zoom = this.camera.getRelativeZoom();
     if (location.kind === 'planet') return true;
     if (location.kind === 'station') return zoom >= 0.98;

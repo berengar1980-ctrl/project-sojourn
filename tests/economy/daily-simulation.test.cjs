@@ -181,9 +181,10 @@ const controllerEventsSource = require('fs').readFileSync(
   'utf8'
 );
 assert(
-  controllerSource.includes('advanceEconomyDay(') &&
+  controllerSource.includes('tickEconomy(context, deltaSeconds)') &&
+    controllerEventsSource.includes('advanceEconomyDay(context)') &&
     controllerEventsSource.includes('economy.simulation.advanceNextDay()'),
-  'completed inter-location travel must advance the demo economy by one day'
+  'elapsed game time must advance the demo economy independently of location changes'
 );
 
 console.log('PASS deterministic daily economy and 1000-day stability');

@@ -109,6 +109,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-10-08 | PR #160 · Audio-Einstellungen und Bergungs-Scan-Kegel | Review gegen Voidbound abgeschlossen: Die CSS-Darstellung vorhandener Umgebungs-/RCS-Lautstärkeregler wird wiederhergestellt und die Bergungsinspektion visualisiert einen zeitlich gesteuerten Scan-Kegel vom Traktor-Hardpoint zum Wrack. Keine Änderung an Ressourcenlogik, Bergungsfortschritt oder Voidbound-Parity-Status; keine Statusänderung. |
 
+| 2026-10-08 | PR #161 · Zeitgesteuerte und sichtbare Welt-Events | Voidbound-Parity geprüft: Ereignis-/Ökonomie-Tagesfortschritt wird in der Demo anhand verstrichener Spielzeit statt Ortswechsel ausgelöst. Sonderwracks und Notrufe bleiben unabhängig vom Spielerschiff aktiv und erhalten erkennbare Kartenmarkierungen. `salvage.special_events` bleibt umgesetzt und `salvage.distress_rescue` bleibt teilweise; keine Statusänderung. |
+
 ## Vollständige Matrix
 
 ### runtime
