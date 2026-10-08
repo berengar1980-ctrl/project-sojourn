@@ -15,7 +15,7 @@ header strong{font-size:16px;margin-right:auto}.status{color:var(--muted);max-wi
 aside{padding:12px;border-right:1px solid var(--line);overflow:auto;background:var(--panel)}aside.right{border-right:0;border-left:1px solid var(--line)}
 label{display:block;color:#94aeb9;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 5px}
 .row{display:flex;gap:7px;align-items:center}.row>*{min-width:0}.grow{flex:1}
-#shipSelect{width:100%}.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.type-grid button.active{border-color:var(--accent);color:#9affec;background:#12342f}
+#shipSelect{width:100%}.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.type-grid button.active{border-color:var(--accent);color:#9affec;background:#12342f}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mode-grid button.active{border-color:var(--accent);color:#9affec;background:#12342f}
 .list{display:flex;flex-direction:column;gap:5px;margin-top:8px}.hp{display:grid;grid-template-columns:12px 1fr auto;gap:7px;align-items:center;padding:7px;border:1px solid #273d48;border-radius:4px;background:#0a161d;cursor:pointer}.hp.selected{border-color:var(--accent);background:#102c2b}.dot{width:9px;height:9px;border-radius:50%}.badge{font-size:10px;color:#8ba1ab}
 .stage{position:relative;overflow:hidden;background-color:#060b0f;background-image:linear-gradient(45deg,#0b141a 25%,transparent 25%),linear-gradient(-45deg,#0b141a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0b141a 75%),linear-gradient(-45deg,transparent 75%,#0b141a 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}
 canvas{width:100%;height:100%;display:block;touch-action:none}.hint{position:absolute;left:12px;bottom:12px;padding:8px 10px;background:#071016d9;border:1px solid #263f4b;color:#8ba5b0;font-size:11px;pointer-events:none}
@@ -40,6 +40,13 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <div id="dirtyInfo" class="muted" style="margin-top:7px">Keine Datei geladen.</div>
 </div>
 <div class="section">
+<label>Editor-Modus</label>
+<div class="mode-grid" id="modeGrid">
+<button data-mode="hardpoints" class="active">Hardpoints</button>
+<button data-mode="shield">Schild</button>
+</div>
+</div>
+<div class="section" id="hardpointControls">
 <label>Hardpoint-Typ</label>
 <div class="type-grid" id="typeGrid">
 <button data-type="engines">Engines</button>
@@ -53,7 +60,7 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <button id="deleteBtn" class="danger">Löschen</button>
 </div>
 </div>
-<div class="section">
+<div class="section" id="pointSection">
 <label>Punkte</label>
 <div id="hardpointList" class="list"></div>
 </div>
@@ -72,7 +79,7 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <div class="hint">Punkt anklicken und ziehen · Mausrad: Zoom · <kbd>0</kbd>: Ansicht zurücksetzen</div>
 </main>
 <aside class="right">
-<div class="section">
+<div class="section" id="hardpointEditorSection">
 <label>Ausgewählter Hardpoint</label>
 <div id="emptySelection" class="muted">Wähle links einen Hardpoint oder klicke einen Marker am Schiff.</div>
 <div id="editor" hidden>
@@ -87,6 +94,18 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 </div>
 <p class="muted">Layer steuert, ob Effekt/Strahl vor oder hinter dem Schiffs-Sprite gezeichnet wird.</p>
 </div>
+</div>
+<div class="section" id="shieldEditorSection" hidden>
+<label>Schild</label>
+<div class="field-grid">
+<div><label>Mittelpunkt X</label><input id="shieldCenterX" type="number" step="1"></div>
+<div><label>Mittelpunkt Y</label><input id="shieldCenterY" type="number" step="1"></div>
+<div><label>Radius X</label><input id="shieldRadiusX" type="number" min="1" step="1"></div>
+<div><label>Radius Y</label><input id="shieldRadiusY" type="number" min="1" step="1"></div>
+<div><label>Max HP</label><input id="shieldMaxHp" type="number" min="1" step="1"></div>
+<div><label>Modifier</label><input id="shieldModifier" type="number" min=".01" step=".05"></div>
+</div>
+<p class="muted">Im Schild-Modus: Mittelpunkt ziehen; rechter Griff ändert Radius X; oberer Griff Radius Y.</p>
 </div>
 <div class="section">
 <label>Canvas / Referenz</label>
@@ -107,7 +126,7 @@ const TYPES={
  maneuverThrusters:{label:"RCS Burst",color:"#f4f7fb"},
  tractorBeams:{label:"Traktorstrahl",color:"#54ef8d"}
 };
-const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","meta"].map(id=>[id,document.getElementById(id)]));
+const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","modeGrid","hardpointControls","pointSection","hardpointEditorSection","shieldEditorSection","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","shieldCenterX","shieldCenterY","shieldRadiusX","shieldRadiusY","shieldMaxHp","shieldModifier","meta"].map(id=>[id,document.getElementById(id)]));
 const ctx=els.canvas.getContext("2d");
 const SHIP_IDS=[
  "freighter-120m-variant-01","freighter-120m-variant-02","freighter-120m-variant-03","freighter-120m-variant-04",
@@ -119,7 +138,7 @@ const SHIP_IDS=[
  "salvage-100m-variant-01","salvage-100m-variant-02","salvage-100m-variant-03","salvage-100m-variant-04",
  "salvage-100m-variant-05","salvage-100m-variant-06","salvage-100m-variant-07"
 ];
-const state={ships:[],ship:null,type:"miningLasers",selected:null,image:null,zoom:1,panX:0,panY:0,dragging:false,dirty:new Set()};
+const state={ships:[],ship:null,mode:"hardpoints",type:"miningLasers",selected:null,image:null,zoom:1,panX:0,panY:0,dragging:false,dragKind:null,dirty:new Set()};
 
 function setStatus(text,error=false){els.status.textContent=text;els.status.style.color=error?"#ff8e95":""}
 function spriteFolder(id){if(id.startsWith("miner-"))return"mining";if(id.startsWith("freighter-"))return"freighter";if(id.startsWith("patrol-"))return"patrol";if(id.startsWith("salvage-"))return"salvage";return""}
@@ -164,7 +183,7 @@ async function loadImage(ship){
 async function selectShip(id){
  state.ship=state.ships.find(s=>s.id===id)||null;state.selected=null;state.zoom=1;state.panX=0;state.panY=0;
  if(!state.ship)return;
- await loadImage(state.ship);renderList();renderEditor();resize();updateMeta();updateDirty();
+ await loadImage(state.ship);renderList();renderEditor();renderShieldEditor();resize();updateMeta();updateDirty();
 }
 function points(){return state.ship?.data[state.type]||[]}
 function selectPoint(index){state.selected=index;renderList();renderEditor();draw()}
@@ -183,6 +202,27 @@ function renderEditor(){
  const hp=points()[state.selected];const has=Boolean(hp);els.editor.hidden=!has;els.emptySelection.hidden=has;if(!has)return;
  els.fieldId.value=hp.id;els.fieldX.value=hp.x;els.fieldY.value=hp.y;els.fieldWidth.value=hp.width;els.fieldLayer.value=hp.layer||"below";
  const rcs=state.type==="maneuverThrusters";els.forceXWrap.hidden=!rcs;els.forceYWrap.hidden=!rcs;els.fieldForceX.value=hp.forceX??0;els.fieldForceY.value=hp.forceY??0;
+}
+function renderShieldEditor(){
+ if(!state.ship)return;
+ const shield=state.ship.data.shield;
+ els.shieldCenterX.value=shield.centerX;
+ els.shieldCenterY.value=shield.centerY;
+ els.shieldRadiusX.value=shield.radiusX;
+ els.shieldRadiusY.value=shield.radiusY;
+ els.shieldMaxHp.value=shield.maxHp;
+ els.shieldModifier.value=shield.modifier;
+}
+function applyShieldFields(){
+ if(!state.ship)return;
+ const shield=state.ship.data.shield;
+ shield.centerX=Math.round(Number(els.shieldCenterX.value)||0);
+ shield.centerY=Math.round(Number(els.shieldCenterY.value)||0);
+ shield.radiusX=Math.max(1,Math.round(Number(els.shieldRadiusX.value)||1));
+ shield.radiusY=Math.max(1,Math.round(Number(els.shieldRadiusY.value)||1));
+ shield.maxHp=Math.max(1,Number(els.shieldMaxHp.value)||1);
+ shield.modifier=Math.max(.01,Number(els.shieldModifier.value)||1);
+ markDirty();draw();
 }
 function applyFields(){
  const hp=points()[state.selected];if(!hp)return;
@@ -240,8 +280,25 @@ function draw(){
  if(state.image){ctx.imageSmoothingEnabled=true;ctx.drawImage(state.image,t.left,t.top,state.ship.data.sourceWidth*t.scale,state.ship.data.sourceHeight*t.scale)}
  else{ctx.strokeStyle="#47606c";ctx.strokeRect(t.left,t.top,state.ship.data.sourceWidth*t.scale,state.ship.data.sourceHeight*t.scale)}
  drawMarker(state.ship.data.pivot,"#ffd75e","PIVOT",t);
- for(const [type,meta] of Object.entries(TYPES))for(const hp of state.ship.data[type]||[])drawMarker(hp,meta.color,hp.id+" · "+(hp.layer||"below"),t);
- const hp=points()[state.selected];if(hp){const p=screenPoint(hp,t);ctx.beginPath();ctx.arc(p.x,p.y,10,0,Math.PI*2);ctx.strokeStyle="#55d6c2";ctx.lineWidth=2;ctx.stroke()}
+ if(state.mode==="shield"){
+  const shield=state.ship.data.shield;
+  const center=screenPoint({x:shield.centerX,y:shield.centerY},t);
+  ctx.save();
+  ctx.strokeStyle="rgba(85,214,194,.95)";
+  ctx.fillStyle="rgba(85,214,194,.08)";
+  ctx.lineWidth=2;
+  ctx.setLineDash([7,5]);
+  ctx.beginPath();
+  ctx.ellipse(center.x,center.y,shield.radiusX*t.scale,shield.radiusY*t.scale,0,0,Math.PI*2);
+  ctx.fill();ctx.stroke();ctx.setLineDash([]);
+  drawMarker({x:shield.centerX,y:shield.centerY},"#55d6c2","CENTER",t);
+  drawMarker({x:shield.centerX+shield.radiusX,y:shield.centerY},"#6be6ff","RADIUS X",t);
+  drawMarker({x:shield.centerX,y:shield.centerY-shield.radiusY},"#6be6ff","RADIUS Y",t);
+  ctx.restore();
+ }else{
+  for(const [type,meta] of Object.entries(TYPES))for(const hp of state.ship.data[type]||[])drawMarker(hp,meta.color,hp.id+" · "+(hp.layer||"below"),t);
+  const hp=points()[state.selected];if(hp){const p=screenPoint(hp,t);ctx.beginPath();ctx.arc(p.x,p.y,10,0,Math.PI*2);ctx.strokeStyle="#55d6c2";ctx.lineWidth=2;ctx.stroke()}
+ }
 }
 function nearest(x,y){
  const t=transform();let best=null;
@@ -250,19 +307,49 @@ function nearest(x,y){
 }
 function pointerPos(event){const r=els.canvas.getBoundingClientRect();return{x:event.clientX-r.left,y:event.clientY-r.top}}
 function pointerDown(event){
- if(!state.ship)return;const p=pointerPos(event),hit=nearest(p.x,p.y);if(!hit)return;
- state.type=hit.type;syncTypeButtons();state.selected=hit.index;state.dragging=true;els.canvas.setPointerCapture(event.pointerId);renderList();renderEditor();draw();
+ if(!state.ship)return;
+ const p=pointerPos(event);
+ if(state.mode==="shield"){
+  const t=transform(),shield=state.ship.data.shield;
+  const handles=[
+   {kind:"center",point:screenPoint({x:shield.centerX,y:shield.centerY},t)},
+   {kind:"radiusX",point:screenPoint({x:shield.centerX+shield.radiusX,y:shield.centerY},t)},
+   {kind:"radiusY",point:screenPoint({x:shield.centerX,y:shield.centerY-shield.radiusY},t)}
+  ];
+  const hit=handles.map(h=>({...h,d:Math.hypot(p.x-h.point.x,p.y-h.point.y)})).filter(h=>h.d<16).sort((a,b)=>a.d-b.d)[0];
+  if(!hit)return;
+  state.dragKind=hit.kind;state.dragging=true;els.canvas.setPointerCapture(event.pointerId);return;
+ }
+ const hit=nearest(p.x,p.y);if(!hit)return;
+ state.type=hit.type;syncTypeButtons();state.selected=hit.index;state.dragKind="hardpoint";state.dragging=true;els.canvas.setPointerCapture(event.pointerId);renderList();renderEditor();draw();
 }
 function pointerMove(event){
- if(!state.dragging||state.selected==null)return;const hp=points()[state.selected],p=pointerPos(event),s=sourcePoint(p.x,p.y);hp.x=Math.round(Math.max(0,Math.min(state.ship.data.sourceWidth,s.x)));hp.y=Math.round(Math.max(0,Math.min(state.ship.data.sourceHeight,s.y)));els.fieldX.value=hp.x;els.fieldY.value=hp.y;markDirty();draw();
+ if(!state.dragging||!state.ship)return;
+ const p=pointerPos(event),source=sourcePoint(p.x,p.y);
+ if(state.mode==="shield"){
+  const shield=state.ship.data.shield;
+  if(state.dragKind==="center"){
+   shield.centerX=Math.round(Math.max(0,Math.min(state.ship.data.sourceWidth,source.x)));
+   shield.centerY=Math.round(Math.max(0,Math.min(state.ship.data.sourceHeight,source.y)));
+  }else if(state.dragKind==="radiusX"){
+   shield.radiusX=Math.max(1,Math.round(Math.abs(source.x-shield.centerX)));
+  }else if(state.dragKind==="radiusY"){
+   shield.radiusY=Math.max(1,Math.round(Math.abs(source.y-shield.centerY)));
+  }else return;
+  renderShieldEditor();markDirty();draw();return;
+ }
+ if(state.selected==null)return;
+ const hp=points()[state.selected];hp.x=Math.round(Math.max(0,Math.min(state.ship.data.sourceWidth,source.x)));hp.y=Math.round(Math.max(0,Math.min(state.ship.data.sourceHeight,source.y)));els.fieldX.value=hp.x;els.fieldY.value=hp.y;markDirty();draw();
 }
-function pointerUp(event){state.dragging=false;try{els.canvas.releasePointerCapture(event.pointerId)}catch{}renderList()}
+function pointerUp(event){state.dragging=false;state.dragKind=null;try{els.canvas.releasePointerCapture(event.pointerId)}catch{}renderList()}
 function syncTypeButtons(){for(const b of els.typeGrid.querySelectorAll("button"))b.classList.toggle("active",b.dataset.type===state.type)}
 function updateMeta(){if(!state.ship){els.meta.textContent="–";return}const d=state.ship.data;els.meta.textContent=d.sourceWidth+" × "+d.sourceHeight+" px · Pivot "+d.pivot.x+", "+d.pivot.y}
 els.saveBtn.onclick=saveCurrent;els.saveAllBtn.onclick=saveAll;els.shipSelect.onchange=()=>selectShip(els.shipSelect.value);
+els.modeGrid.onclick=e=>{const b=e.target.closest("button[data-mode]");if(!b)return;state.mode=b.dataset.mode;state.selected=null;for(const button of els.modeGrid.querySelectorAll("button"))button.classList.toggle("active",button.dataset.mode===state.mode);const shield=state.mode==="shield";els.hardpointControls.hidden=shield;els.pointSection.hidden=shield;els.hardpointEditorSection.hidden=shield;els.shieldEditorSection.hidden=!shield;renderEditor();renderShieldEditor();draw()};
 els.typeGrid.onclick=e=>{const b=e.target.closest("button[data-type]");if(!b)return;state.type=b.dataset.type;state.selected=null;syncTypeButtons();renderList();renderEditor();draw()};
 els.addBtn.onclick=addPoint;els.deleteBtn.onclick=deletePoint;
 for(const el of [els.fieldId,els.fieldX,els.fieldY,els.fieldWidth,els.fieldLayer,els.fieldForceX,els.fieldForceY])el.addEventListener("input",applyFields);
+for(const el of [els.shieldCenterX,els.shieldCenterY,els.shieldRadiusX,els.shieldRadiusY,els.shieldMaxHp,els.shieldModifier])el.addEventListener("input",applyShieldFields);
 els.canvas.addEventListener("pointerdown",pointerDown);els.canvas.addEventListener("pointermove",pointerMove);els.canvas.addEventListener("pointerup",pointerUp);els.canvas.addEventListener("pointercancel",pointerUp);
 els.canvas.addEventListener("wheel",e=>{e.preventDefault();state.zoom=Math.max(.35,Math.min(5,state.zoom*Math.exp(-e.deltaY*.001)));draw()},{passive:false});
 window.addEventListener("keydown",e=>{if(e.key==="0"){state.zoom=1;state.panX=0;state.panY=0;draw()}});

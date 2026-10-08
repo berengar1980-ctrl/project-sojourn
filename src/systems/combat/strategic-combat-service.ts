@@ -1,6 +1,6 @@
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 import type { ShieldDamageSource, ShieldImpactEffect } from '../../core/shield-types';
-import type { ShipWeaponFamily } from '../../core/ship-types';
+import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import { advanceShieldImpacts, applyShieldHit } from '../shields/shield-service';
 import { detectShipMine } from './mine-detection-service';
@@ -16,11 +16,19 @@ export interface CombatPoint {
   readonly y: number;
 }
 
+export interface CombatShieldGeometry {
+  readonly centerOffset: CombatPoint;
+  readonly radiusX: number;
+  readonly radiusY: number;
+  readonly modifier: number;
+}
+
 export interface StrategicCombatantSetup {
   readonly id: string;
   readonly name: string;
   readonly shipId: string;
   readonly shieldHp: number;
+  readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
   readonly weapons: readonly ShipComponentDefinition[];
   readonly hitChance: number;
@@ -228,6 +236,22 @@ function createRng(seed: number): () => number {
 
 function distance(a: CombatPoint, b: CombatPoint): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+export function createCombatShieldGeometry(
+  hardpoints: ShipHardpoints,
+  nominalLengthMeters: number
+): CombatShieldGeometry {
+  const scale = nominalLengthMeters / hardpoints.sourceWidth;
+  return {
+    centerOffset: {
+      x: (hardpoints.shield.centerX - hardpoints.pivot.x) * scale,
+      y: (hardpoints.shield.centerY - hardpoints.pivot.y) * scale,
+    },
+    radiusX: Math.max(1, hardpoints.shield.radiusX * scale),
+    radiusY: Math.max(1, hardpoints.shield.radiusY * scale),
+    modifier: Math.max(0.01, hardpoints.shield.modifier),
+  };
 }
 
 function normalize(dx: number, dy: number): { x: number; y: number } {
@@ -578,6 +602,66 @@ function scaledDamage(raw: number, attacker: MutableCombatant, critical: boolean
   return Math.max(1, raw * attacker.setup.damageMultiplier * criticalMultiplier * COMBAT_DAMAGE_SCALE);
 }
 
+function combatShieldGeometry(target: MutableCombatant): CombatShieldGeometry {
+  return (
+    target.setup.shieldGeometry ?? {
+      centerOffset: { x: 0, y: 0 },
+      radiusX: 48,
+      radiusY: 48,
+      modifier: 1,
+    }
+  );
+}
+
+function combatShieldCenter(target: MutableCombatant): CombatPoint {
+  const geometry = combatShieldGeometry(target);
+  const offset = rotate(geometry.centerOffset, target.headingRadians);
+  return {
+    x: target.position.x + offset.x,
+    y: target.position.y + offset.y,
+  };
+}
+
+interface ShieldSegmentHit {
+  readonly point: CombatPoint;
+  readonly surfaceAnchor: CombatPoint;
+  readonly t: number;
+}
+
+function segmentShieldHit(
+  from: CombatPoint,
+  to: CombatPoint,
+  target: MutableCombatant
+): ShieldSegmentHit | null {
+  if (target.shieldHp <= 0) return null;
+  const geometry = combatShieldGeometry(target);
+  const center = combatShieldCenter(target);
+  const start = rotate({ x: from.x - center.x, y: from.y - center.y }, -target.headingRadians);
+  const end = rotate({ x: to.x - center.x, y: to.y - center.y }, -target.headingRadians);
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const rx = Math.max(1, geometry.radiusX);
+  const ry = Math.max(1, geometry.radiusY);
+  const a = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
+  if (a <= 0.000001) return null;
+  const b = 2 * ((start.x * dx) / (rx * rx) + (start.y * dy) / (ry * ry));
+  const c = (start.x * start.x) / (rx * rx) + (start.y * start.y) / (ry * ry) - 1;
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) return null;
+  const root = Math.sqrt(discriminant);
+  const t = [(-b - root) / (2 * a), (-b + root) / (2 * a)]
+    .filter((value) => value >= 0 && value <= 1)
+    .sort((first, second) => first - second)[0];
+  if (t == null) return null;
+  const local = { x: start.x + dx * t, y: start.y + dy * t };
+  const worldOffset = rotate(local, target.headingRadians);
+  return {
+    point: { x: center.x + worldOffset.x, y: center.y + worldOffset.y },
+    surfaceAnchor: { x: local.x / rx, y: local.y / ry },
+    t,
+  };
+}
+
 function impactAnchor(target: MutableCombatant, sourcePosition: CombatPoint): CombatPoint {
   const outwardWorld = normalize(
     sourcePosition.x - target.position.x,
@@ -596,32 +680,33 @@ function applyDamage(
   critical: boolean,
   sourcePosition: CombatPoint,
   source: ShieldDamageSource,
-  impactId: number
-): { layer: CombatImpactLayer; damage: number } {
+  impactId: number,
+  shieldImpact?: ShieldSegmentHit
+): { layer: CombatImpactLayer; damage: number; point: CombatPoint } {
   if (target.shieldHp > 0) {
+    const geometry = combatShieldGeometry(target);
     const state = {
       maxHp: target.shieldMaxHp,
-      modifier: 1,
+      modifier: geometry.modifier,
       currentHp: target.shieldHp,
     };
-    const outward = normalize(
-      sourcePosition.x - target.position.x,
-      sourcePosition.y - target.position.y
-    );
+    const impactPoint = shieldImpact?.point ?? combatShieldCenter(target);
+    const center = combatShieldCenter(target);
+    const outward = normalize(impactPoint.x - center.x, impactPoint.y - center.y);
     const result = applyShieldHit(
       state,
       {
         source,
-        point: { ...target.position },
+        point: { ...impactPoint },
         normal: outward,
-        surfaceAnchor: impactAnchor(target, sourcePosition),
+        surfaceAnchor: shieldImpact?.surfaceAnchor ?? impactAnchor(target, sourcePosition),
         directDamage: scaledDamage(shieldDamage, attacker, critical),
       },
       impactId
     );
     target.shieldHp = state.currentHp;
     target.shieldImpacts.push(result.impact);
-    return { layer: 'shield', damage: result.absorbedDamage };
+    return { layer: 'shield', damage: result.absorbedDamage, point: impactPoint };
   }
 
   const damage = Math.min(
@@ -629,7 +714,7 @@ function applyDamage(
     scaledDamage(hullDamage, attacker, critical)
   );
   target.hullHp = Math.max(0, target.hullHp - damage);
-  return { layer: 'hull', damage };
+  return { layer: 'hull', damage, point: { ...target.position } };
 }
 
 function projectileSpeed(kind: CombatProjectileKind): number {
@@ -762,20 +847,26 @@ export function createStrategicCombatService(
     critical: boolean
   ): string {
     if (!weapon.weapon) return '';
+    const shield = combatShieldGeometry(target);
+    const center = combatShieldCenter(target);
+    const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
+    const aimCenter = target.shieldHp > 0 ? center : target.position;
     const targetPoint = hit
-      ? target.position
+      ? aimCenter
       : {
-          x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 85,
-          y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 85,
+          x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
+          y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
         };
-    const obstacle = firstObstacleHit(source.position, targetPoint, arena.obstacles ?? []);
+    const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
+    const beamEnd = shieldHit?.point ?? targetPoint;
+    const obstacle = firstObstacleHit(source.position, beamEnd, arena.obstacles ?? []);
     if (obstacle) {
       addBeam(side, kind, weapon.weapon.family, source.position, obstacle.point, weaponIndex);
       noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'obstacle', 0, obstacle.point);
       return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
     }
 
-    addBeam(side, kind, weapon.weapon.family, source.position, targetPoint, weaponIndex);
+    addBeam(side, kind, weapon.weapon.family, source.position, beamEnd, weaponIndex);
     if (!hit) {
       noteImpact(side === 'attacker' ? 'defender' : 'attacker', 'miss', 0, targetPoint);
       return source.setup.name + ': ' + weapon.name + ' verfehlt';
@@ -789,8 +880,9 @@ export function createStrategicCombatService(
       source,
       critical,
       source.position,
-      kind === 'laser' ? 'laser' : 'laser',
-      impactSerial
+      'laser',
+      impactSerial,
+      shieldHit ?? undefined
     );
     const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
     lastImpact = {
@@ -798,7 +890,7 @@ export function createStrategicCombatService(
       target: targetSide,
       layer: result.layer,
       damage: result.damage,
-      position: { ...target.position },
+      position: { ...result.point },
     };
     return (
       source.setup.name +
@@ -904,15 +996,23 @@ export function createStrategicCombatService(
         x: projectile.position.x + direction.x * step,
         y: projectile.position.y + direction.y * step,
       };
+      const shieldHit =
+        projectile.shieldDamage > 0 || projectile.hullDamage > 0
+          ? segmentShieldHit(projectile.position, next, target)
+          : null;
       const obstacle = firstObstacleHit(projectile.position, next, arena.obstacles ?? []);
-      if (obstacle) {
+      if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
         noteImpact(
           projectile.owner === 'attacker' ? 'defender' : 'attacker',
           'obstacle',
           0,
           obstacle.point
         );
-        lastEvent = source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
+        lastEvent =
+          source.setup.name +
+          ': ' +
+          projectile.family.replaceAll('_', ' ') +
+          ' trifft Hindernis';
         projectiles.splice(index, 1);
         continue;
       }
@@ -920,6 +1020,38 @@ export function createStrategicCombatService(
       if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0) {
         projectile.position = next;
         if (projectile.ttlSeconds <= 0) projectiles.splice(index, 1);
+        continue;
+      }
+
+      if (shieldHit) {
+        impactSerial += 1;
+        const result = applyDamage(
+          target,
+          projectile.shieldDamage,
+          projectile.hullDamage,
+          source,
+          projectile.critical,
+          projectile.position,
+          projectile.kind === 'missile' ? 'missile' : 'laser',
+          impactSerial,
+          shieldHit
+        );
+        const targetSide: StrategicCombatSide =
+          projectile.owner === 'attacker' ? 'defender' : 'attacker';
+        lastImpact = {
+          serial: impactSerial,
+          target: targetSide,
+          layer: result.layer,
+          damage: result.damage,
+          position: { ...result.point },
+        };
+        lastEvent =
+          source.setup.name +
+          ': ' +
+          projectile.family.replaceAll('_', ' ') +
+          ' trifft Schild -' +
+          Math.round(result.damage);
+        projectiles.splice(index, 1);
         continue;
       }
 
@@ -942,7 +1074,7 @@ export function createStrategicCombatService(
           target: targetSide,
           layer: result.layer,
           damage: result.damage,
-          position: { ...target.position },
+          position: { ...result.point },
         };
         lastEvent =
           source.setup.name +

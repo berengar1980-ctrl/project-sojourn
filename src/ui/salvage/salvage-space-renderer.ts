@@ -642,9 +642,11 @@ export class SalvageSpaceRenderer {
     }
     this.context.setLineDash([]);
 
-    const destination = emitters[0] ?? geometry.center;
     for (let index = 0; index < 9; index += 1) {
-      const phase = fractional(timeSeconds * (0.55 + index * 0.017) + index * 0.137 + progress * 0.2);
+      const destination = emitters[index % emitters.length] ?? geometry.center;
+      const phase = fractional(
+        timeSeconds * (0.55 + index * 0.017) + index * 0.137 + progress * 0.2
+      );
       const curve = Math.sin(phase * Math.PI) * (index % 2 === 0 ? 8 : -8);
       const dx = destination.x - wreckPoint.x;
       const dy = destination.y - wreckPoint.y;

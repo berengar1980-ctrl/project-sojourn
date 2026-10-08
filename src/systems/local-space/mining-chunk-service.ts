@@ -49,6 +49,33 @@ function heading(from: WorldPoint, to: WorldPoint): number {
   return Math.atan2(to.y - from.y, to.x - from.x);
 }
 
+function rotate(point: WorldPoint, angle: number): WorldPoint {
+  return {
+    x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
+    y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
+  };
+}
+
+export function tractorHardpointWorldPosition(
+  ship: LocalShipState,
+  hardpoints: ShipHardpoints,
+  nominalLengthMeters: number,
+  hardpointId: string | null
+): WorldPoint {
+  const tractor = (hardpoints.tractorBeams ?? []).find((entry) => entry.id === hardpointId);
+  if (!tractor) return { ...ship.position };
+  const scale = nominalLengthMeters / hardpoints.sourceWidth;
+  const local = {
+    x: (tractor.x - hardpoints.pivot.x) * scale,
+    y: (tractor.y - hardpoints.pivot.y) * scale,
+  };
+  const offset = rotate(local, ship.headingRadians);
+  return {
+    x: ship.position.x + offset.x,
+    y: ship.position.y + offset.y,
+  };
+}
+
 export function createMiningChunk(
   asteroid: LocalAsteroid,
   ship: LocalShipState,
@@ -101,19 +128,30 @@ export function createMiningChunk(
     amount,
     ageSeconds: 0,
     tractorActive: false,
+    tractorHardpointId:
+      (hardpoints.tractorBeams ?? [])[chunkCounter % Math.max(1, hardpoints.tractorBeams?.length ?? 0)]
+        ?.id ?? null,
   };
 }
 
 export function advanceMiningChunk(
   chunk: MiningChunk,
-  shipPosition: WorldPoint,
+  ship: LocalShipState,
+  hardpoints: ShipHardpoints,
+  nominalLengthMeters: number,
   deltaSeconds: number
-): void {
+): WorldPoint {
   chunk.ageSeconds += deltaSeconds;
   if (chunk.ageSeconds > 0.42) chunk.tractorActive = true;
 
+  const tractorTarget = tractorHardpointWorldPosition(
+    ship,
+    hardpoints,
+    nominalLengthMeters,
+    chunk.tractorHardpointId
+  );
   if (chunk.tractorActive) {
-    const angle = heading(chunk.position, shipPosition);
+    const angle = heading(chunk.position, tractorTarget);
     chunk.velocity = {
       x: Math.cos(angle) * 190,
       y: Math.sin(angle) * 190,
@@ -124,6 +162,7 @@ export function advanceMiningChunk(
     x: chunk.position.x + chunk.velocity.x * deltaSeconds,
     y: chunk.position.y + chunk.velocity.y * deltaSeconds,
   };
+  return tractorTarget;
 }
 
 export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCollector): number {
@@ -143,7 +182,9 @@ export interface MiningChunkCollectionResult {
 
 export function advanceAndCollectMiningChunks(
   chunks: readonly MiningChunk[],
-  shipPosition: WorldPoint,
+  ship: LocalShipState,
+  hardpoints: ShipHardpoints,
+  nominalLengthMeters: number,
   deltaSeconds: number,
   collector?: MiningChunkCollector
 ): MiningChunkCollectionResult {
@@ -152,8 +193,14 @@ export function advanceAndCollectMiningChunks(
   const samples: CollectedMiningSample[] = [];
 
   for (const chunk of chunks) {
-    advanceMiningChunk(chunk, shipPosition, deltaSeconds);
-    if (distance(chunk.position, shipPosition) < 24) {
+    const tractorTarget = advanceMiningChunk(
+      chunk,
+      ship,
+      hardpoints,
+      nominalLengthMeters,
+      deltaSeconds
+    );
+    if (distance(chunk.position, tractorTarget) < 24) {
       const accepted = collectMiningChunk(chunk, collector);
       if (accepted > 0) {
         collected.set(chunk.resourceId, (collected.get(chunk.resourceId) ?? 0) + accepted);

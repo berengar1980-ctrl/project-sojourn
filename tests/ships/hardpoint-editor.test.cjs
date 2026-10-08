@@ -28,6 +28,13 @@ assert(editor.includes('tractorBeams'), 'editor must expose tractor beam hardpoi
 assert(editor.includes('fieldLayer'), 'editor must expose above/below effect layering');
 assert(editor.includes('width:7,layer:"below"'), 'new hardpoints must default to below');
 assert(editor.includes('pointermove'), 'editor must support drag calibration on the ship sprite');
+assert(editor.includes('data-mode="shield"'), 'editor must expose a dedicated shield mode');
+assert(editor.includes('shieldCenterX'), 'shield editor must expose the shield center');
+assert(editor.includes('shieldRadiusX') && editor.includes('shieldRadiusY'), 'shield editor must expose both ellipse radii');
+assert(editor.includes('shieldMaxHp') && editor.includes('shieldModifier'), 'shield editor must expose shield HP and modifier');
+assert(editor.includes('ctx.ellipse(center.x,center.y'), 'shield mode must draw the configured ellipse');
+assert(editor.includes('state.dragKind==="radiusX"'), 'shield radius X must be draggable');
+assert(editor.includes('state.dragKind==="radiusY"'), 'shield radius Y must be draggable');
 assert.equal(
   packageJson.scripts['hardpoints:edit'],
   'vite --open /tools/hardpoint-editor.html',

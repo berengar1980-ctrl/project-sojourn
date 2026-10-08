@@ -86,5 +86,9 @@ assert(panel.includes('KOMPONENTE BERGEN'));
 assert(!panel.includes('dialog'), 'salvage interaction must remain embedded in local-space UI');
 assert(renderer.includes('drawHullFragments'));
 assert(renderer.includes('pickWreck'));
+assert(
+  renderer.includes('emitters[index % emitters.length]'),
+  'salvage tractor particles must travel to individual tractor emitters, not one shared center'
+);
 
 console.log('PASS live salvage approach, inspection, stripping, cargo and wreck-field UI');

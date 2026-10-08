@@ -27,7 +27,10 @@ const RCS_RETRIGGER_SECONDS = 0.12;
 export interface GameAudioService {
   updatePlayerRcs(
     hardpoints: ShipHardpoints,
-    state: Pick<LocalShipState, 'speed' | 'turnRateRadiansPerSecond' | 'angularThrust' | 'lateralThrust'>,
+    state: Pick<
+      LocalShipState,
+      'speed' | 'turnRateRadiansPerSecond' | 'angularThrust' | 'lateralThrust'
+    >,
     timeSeconds: number
   ): void;
   clearPlayerRcs(): void;
@@ -70,9 +73,8 @@ export function createGameAudioService(): GameAudioService {
   const ambience = createAudio('', AMBIENCE_VOLUME);
   ambience.loop = true;
 
-  const rcsPool = Array.from(
-    { length: RCS_POOL_SIZE },
-    () => createAudio(RCS_BURST_URL, RCS_VOLUME)
+  const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () =>
+    createAudio(RCS_BURST_URL, RCS_VOLUME)
   );
   let ambienceObjectUrl: string | null = null;
   let rcsPoolIndex = 0;
@@ -138,10 +140,7 @@ export function createGameAudioService(): GameAudioService {
       const next = new Set(bursts.map((burst) => burst.id));
       const started = bursts.filter((burst) => !activeThrusters.has(burst.id));
       if (started.length > 0) {
-        playRcsBurst(
-          Math.max(...started.map((burst) => burst.intensity)),
-          timeSeconds
-        );
+        playRcsBurst(Math.max(...started.map((burst) => burst.intensity)), timeSeconds);
       }
       activeThrusters = next;
     },
