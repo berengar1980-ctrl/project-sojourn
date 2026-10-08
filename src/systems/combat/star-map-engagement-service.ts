@@ -220,10 +220,7 @@ export function createStarMapEngagementService(
       initialDistance: distance(attackerPosition, defenderPosition),
     });
     options.log(
-      'NPC COMBAT > ' +
-        attacker.name.toUpperCase() +
-        ' VERFOLGT ' +
-        defender.name.toUpperCase()
+      'NPC COMBAT > ' + attacker.name.toUpperCase() + ' VERFOLGT ' + defender.name.toUpperCase()
     );
   }
 
@@ -266,9 +263,7 @@ export function createStarMapEngagementService(
       const target = options.sectorNpcs.npcs
         .filter((candidate) => {
           if (candidate.id === attacker.id) return false;
-          return attacker.pirate
-            ? npcIsPiratePrey(candidate)
-            : npcLooksHostileToPatrol(candidate);
+          return attacker.pirate ? npcIsPiratePrey(candidate) : npcLooksHostileToPatrol(candidate);
         })
         .map((candidate) => ({
           candidate,
@@ -276,10 +271,7 @@ export function createStarMapEngagementService(
           priority: !attacker.pirate && candidate.pirate ? 0 : 1,
         }))
         .filter((entry) => entry.range <= NPC_ATTACK_SCAN_RANGE)
-        .sort(
-          (first, second) =>
-            first.priority - second.priority || first.range - second.range
-        )[0];
+        .sort((first, second) => first.priority - second.priority || first.range - second.range)[0];
       if (target) startNpcAttack(attacker, target.candidate);
     }
   }
