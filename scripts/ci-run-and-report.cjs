@@ -229,4 +229,9 @@ if (require.main === module) {
   });
 }
 
-module.exports = { extractDiagnostic, extractDetail, extractDiagnosticLines, truncate };
+module.exports = {
+  extractDiagnostic,
+  extractDetail,
+  extractDiagnosticLines,
+  truncate,
+};
