@@ -72,8 +72,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
       else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
       else if (state.mode === 'port') mountControllerPort(context);
       else mountControllerStarMap(context);
-    },
-    state.ownedShipIds
+    }
   );
 }
 
