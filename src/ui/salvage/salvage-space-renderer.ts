@@ -300,7 +300,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.moveTo(origin.x, origin.y);
     this.context.arc(origin.x, origin.y, distance, angle - halfAngle, angle + halfAngle);
     this.context.closePath();
-    this.context.fillStyle = `rgba(95, 223, 237, ${0.10 + pulse * 0.10})`;
+    this.context.fillStyle = `rgba(95, 223, 237, ${0.1 + pulse * 0.1})`;
     this.context.fill();
     this.context.strokeStyle = `rgba(130, 242, 255, ${0.35 + pulse * 0.3})`;
     this.context.lineWidth = 1.2;
