@@ -54,8 +54,7 @@ export class MiningEffectsRenderer {
         Math.floor(timeSeconds * 9 + index * 3.7) * 12.9898 + index * 78.233
       );
       const interference = fractional(Math.abs(interferenceSeed) * 43758.5453);
-      const interferenceStrength =
-        interference < 0.055 ? 0.08 : interference < 0.13 ? 0.42 : 1;
+      const interferenceStrength = interference < 0.055 ? 0.08 : interference < 0.13 ? 0.42 : 1;
       this.context.globalAlpha = interferenceStrength;
       this.context.lineWidth =
         baseWidth * (0.72 + pulse * 0.55) * (interferenceStrength < 1 ? 0.72 : 1);
