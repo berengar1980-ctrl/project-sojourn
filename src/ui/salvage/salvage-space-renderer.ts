@@ -591,7 +591,11 @@ export class SalvageSpaceRenderer {
     }
   }
 
-  private drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
+  private drawPlayerScanCone(
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
