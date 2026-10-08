@@ -447,11 +447,7 @@ function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: numb
     entry.second.hullHp = Math.round(model.defender.hullHp);
     if (model.winner === 'attacker' && entry.first.pirate && npcIsPiratePrey(entry.second)) {
       transferPirateLoot(entry.first, entry.second);
-    } else if (
-      model.winner === 'defender' &&
-      entry.second.pirate &&
-      npcIsPiratePrey(entry.first)
-    ) {
+    } else if (model.winner === 'defender' && entry.second.pirate && npcIsPiratePrey(entry.first)) {
       transferPirateLoot(entry.second, entry.first);
     }
     runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
