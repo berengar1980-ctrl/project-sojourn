@@ -9,6 +9,7 @@ function percent(value: number): string {
 }
 
 export function createAudioSettingsPanel(audio: GameAudioService): AudioSettingsPanel {
+  document.querySelector('.audio-settings')?.remove();
   const shell = document.createElement('div');
   shell.className = 'audio-settings';
   shell.innerHTML = `
