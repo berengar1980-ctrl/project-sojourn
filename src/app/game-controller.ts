@@ -30,7 +30,7 @@ import type {
 } from './game-controller-runtime-types';
 
 import {
-  advanceEconomyDay,
+  advanceEconomyTime,
   controllerSalvageEventCallbacks,
   destroyControllerBoarding,
   destroyControllerCombat,
@@ -419,9 +419,6 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
   state.panels.local?.update(controllerLocalModel(context));
 }
 
-const WORLD_DAY_SECONDS = 180;
-const controllerDayElapsed = new WeakMap<ControllerRuntimeContext, number>();
-
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.sectorNpcs.tick(deltaSeconds);
@@ -435,10 +432,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
   const currentLocationId = navigationSnapshot.currentLocationId;
   handleControllerLocationEntry(context, currentLocationId);
-  const elapsed = (controllerDayElapsed.get(context) ?? 0) + Math.max(0, deltaSeconds);
-  const days = Math.floor(elapsed / WORLD_DAY_SECONDS);
-  controllerDayElapsed.set(context, elapsed - days * WORLD_DAY_SECONDS);
-  for (let i = 0; i < days; i += 1) advanceEconomyDay(context);
+  advanceEconomyTime(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);
