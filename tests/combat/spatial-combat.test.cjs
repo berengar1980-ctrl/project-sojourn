@@ -228,7 +228,11 @@ const shieldSideCombat = combatModule.createStrategicCombatService(
     defenderPosition: { x: 1180, y: 500 },
   }
 );
-for (let step = 0; step < 20 && shieldSideCombat.getSnapshot().defender.shieldImpacts.length === 0; step += 1) {
+for (
+  let step = 0;
+  step < 20 && shieldSideCombat.getSnapshot().defender.shieldImpacts.length === 0;
+  step += 1
+) {
   shieldSideCombat.tick(0.08);
 }
 const shieldSnapshot = shieldSideCombat.getSnapshot();
@@ -248,8 +252,7 @@ const towardSource = {
 };
 const sourceLength = Math.hypot(towardSource.x, towardSource.y);
 const dot =
-  worldAnchor.x * (towardSource.x / sourceLength) +
-  worldAnchor.y * (towardSource.y / sourceLength);
+  worldAnchor.x * (towardSource.x / sourceLength) + worldAnchor.y * (towardSource.y / sourceLength);
 assert(dot > 0.65, 'shield impact must appear on the incoming-fire side, not opposite');
 
 assert(
@@ -300,11 +303,18 @@ const durationCombat = combatModule.createStrategicCombatService(
   }
 );
 for (let step = 0; step < 38; step += 1) durationCombat.tick(0.08);
-assert.equal(durationCombat.getSnapshot().winner, null, 'combat must not end after only 2-3 seconds');
+assert.equal(
+  durationCombat.getSnapshot().winner,
+  null,
+  'combat must not end after only 2-3 seconds'
+);
 for (let step = 0; step < 950 && !durationCombat.getSnapshot().winner; step += 1) {
   durationCombat.tick(0.08);
 }
-assert(durationCombat.getSnapshot().winner, 'combat should still resolve without manual intervention');
+assert(
+  durationCombat.getSnapshot().winner,
+  'combat should still resolve without manual intervention'
+);
 assert(
   durationCombat.getSnapshot().elapsedSeconds >= 25,
   'normal combat should be long enough to observe tactics and effects'

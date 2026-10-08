@@ -14,9 +14,7 @@ const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
 
-const rcs = fs.readFileSync(
-  path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
-);
+const rcs = fs.readFileSync(path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg'));
 
 assert.equal(
   rcs.subarray(0, 4).toString('ascii'),
