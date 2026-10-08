@@ -123,7 +123,13 @@ export type DistressDamageType =
   | 'coolant'
   | 'hull_breach'
   | 'total_loss';
-export type DistressStage = 'approach' | 'diagnosed' | 'towing' | 'salvage_rights' | 'resolved';
+export type DistressStage =
+  | 'approach'
+  | 'diagnosed'
+  | 'tow_required'
+  | 'towing'
+  | 'salvage_rights'
+  | 'resolved';
 
 export interface SectorSalvageEvent {
   readonly id: string;
@@ -142,6 +148,17 @@ export interface SectorSalvageEvent {
   distressStage: DistressStage | null;
   distressTrap: boolean;
   salvageRights: boolean;
+  distressDamageName: string | null;
+  distressSeverity: string | null;
+  distressRequiredEngineering: number | null;
+  distressRepairHours: number;
+  distressCanRepair: boolean;
+  distressTechSkill: number | null;
+  distressRewardMin: number;
+  distressRewardMax: number;
+  distressDangerLevel: 0 | 1 | 2 | 3;
+  distressTowDestinationId: string | null;
+  distressPendingRewardCredits: number;
 }
 
 export interface DistressActionResult {
@@ -149,4 +166,7 @@ export interface DistressActionResult {
   readonly text: string;
   readonly boardingRequired: boolean;
   readonly salvageRights: boolean;
+  readonly rewardCredits: number;
+  readonly towDestinationId: string | null;
+  readonly workHours: number;
 }
