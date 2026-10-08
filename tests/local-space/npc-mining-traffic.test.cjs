@@ -86,7 +86,8 @@ const service = localMining.createNpcLocalMiningService({
   miners: [miner, restingMiner],
   getAsteroids: () => [asteroid],
   mine: (npc, resourceId, requested) => {
-    const free = npc.cargoCapacity - Object.values(npc.cargo).reduce((sum, value) => sum + value, 0);
+    const free =
+      npc.cargoCapacity - Object.values(npc.cargo).reduce((sum, value) => sum + value, 0);
     const accepted = Math.min(requested, free);
     npc.cargo[resourceId] = (npc.cargo[resourceId] ?? 0) + accepted;
     return accepted;
@@ -127,8 +128,15 @@ assert(sawScan, 'NPC miner must complete a visible scan before extraction');
 assert(sawMining, 'NPC miner must visibly enter an active laser-mining phase');
 assert(sawExit, 'loaded NPC miner must fly back out through the field perimeter');
 assert(departed, 'NPC miner must hand back to sector travel after leaving local space');
-assert.equal(service.ships.length, 0, 'exited miner must disappear only after crossing the boundary');
+assert.equal(
+  service.ships.length,
+  0,
+  'exited miner must disappear only after crossing the boundary'
+);
 assert.equal(miner.cargo.ferrite, 20, 'local mining must fill the NPC cargo completely');
-assert(asteroid.deposits[0].oreRemaining < 100, 'local NPC mining must deplete the visible asteroid');
+assert(
+  asteroid.deposits[0].oreRemaining < 100,
+  'local NPC mining must deplete the visible asteroid'
+);
 
 console.log('PASS NPC miners enter, scan, mine until full and leave asteroid fields');
