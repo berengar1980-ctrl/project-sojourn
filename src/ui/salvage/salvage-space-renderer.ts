@@ -164,6 +164,7 @@ export class SalvageSpaceRenderer {
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.drawRoute(width, height);
+    this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
@@ -588,6 +589,51 @@ export class SalvageSpaceRenderer {
       context.fillRect(-size, -size * 0.35, size * 2, size * 0.7);
       context.restore();
     }
+  }
+
+  private drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
+    if (this.model.phase !== 'inspecting') return;
+    const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
+    if (!wreck) return;
+
+    const geometry = this.shipGeometry(width, height);
+    const target = this.camera.worldToScreen(wreck.position, width, height);
+    const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
+    const origin = hardpoints.length > 0
+      ? projectHardpoint(hardpoints[0]!, this.model.ship.hardpoints, geometry)
+      : geometry.center;
+    const dx = target.x - origin.x;
+    const dy = target.y - origin.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 1) return;
+
+    const angle = Math.atan2(dy, dx);
+    const halfAngle = Math.PI / 9;
+    const progress = Math.max(0, Math.min(1, this.model.operationProgress ?? 0));
+    const pulse = 0.55 + Math.sin(timeSeconds * 9) * 0.12;
+    const sweepAngle = angle - halfAngle + 2 * halfAngle * progress;
+
+    this.context.save();
+    this.context.beginPath();
+    this.context.moveTo(origin.x, origin.y);
+    this.context.arc(origin.x, origin.y, distance, angle - halfAngle, angle + halfAngle);
+    this.context.closePath();
+    this.context.fillStyle = `rgba(95, 223, 237, ${0.10 + pulse * 0.10})`;
+    this.context.fill();
+    this.context.strokeStyle = `rgba(130, 242, 255, ${0.35 + pulse * 0.3})`;
+    this.context.lineWidth = 1.2;
+    this.context.stroke();
+
+    this.context.beginPath();
+    this.context.moveTo(origin.x, origin.y);
+    this.context.lineTo(
+      origin.x + Math.cos(sweepAngle) * distance,
+      origin.y + Math.sin(sweepAngle) * distance
+    );
+    this.context.strokeStyle = 'rgba(210, 253, 255, 0.85)';
+    this.context.lineWidth = 2;
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawPlayerSalvageEffect(
