@@ -6,7 +6,10 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
-const model = fs.readFileSync(path.join(root, 'src/features/star-map/star-map-view-model.ts'), 'utf8');
+const model = fs.readFileSync(
+  path.join(root, 'src/features/star-map/star-map-view-model.ts'),
+  'utf8'
+);
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-star-map.ts'), 'utf8');
 
 assert(
