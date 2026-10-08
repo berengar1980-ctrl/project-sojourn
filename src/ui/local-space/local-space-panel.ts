@@ -70,9 +70,7 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
 
   if (asteroid.scanLevel === 'surveyed') {
     if (asteroid.surveyResult === 'empty') return 'KEINE RESSOURCE ERKANNT';
-    return asteroid.deposits
-      .map((deposit) => deposit.resourceName ?? '???')
-      .join(' / ');
+    return asteroid.deposits.map((deposit) => deposit.resourceName ?? '???').join(' / ');
   }
 
   if (asteroid.deposits.length === 0) return 'ANALYSE · KEINE RESSOURCE';
