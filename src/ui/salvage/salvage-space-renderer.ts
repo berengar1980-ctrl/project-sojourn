@@ -253,7 +253,13 @@ export class SalvageSpaceRenderer {
         this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
         this.context.lineWidth = 2;
         this.context.beginPath();
-        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.arc(
+          point.x,
+          point.y,
+          Math.max(geometry.width, geometry.height) * 0.65 + 7,
+          0,
+          Math.PI * 2
+        );
         this.context.stroke();
         this.context.restore();
       }
@@ -410,7 +416,6 @@ export class SalvageSpaceRenderer {
     this.context.fill();
     this.context.restore();
   }
-
 
   private drawNpcScan(
     shipPoint: ScreenPoint,
@@ -590,11 +595,7 @@ export class SalvageSpaceRenderer {
     }
   }
 
-  private drawPlayerSalvageEffect(
-    width: number,
-    height: number,
-    timeSeconds: number
-  ): void {
+  private drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
@@ -615,9 +616,7 @@ export class SalvageSpaceRenderer {
     this.context.save();
     this.context.lineCap = 'round';
     for (const emitter of emitters) {
-      this.context.shadowColor = component
-        ? 'rgba(110, 214, 255, .8)'
-        : 'rgba(235, 180, 83, .78)';
+      this.context.shadowColor = component ? 'rgba(110, 214, 255, .8)' : 'rgba(235, 180, 83, .78)';
       this.context.shadowBlur = 8 + pulse * 5;
       this.context.strokeStyle = component
         ? `rgba(128, 220, 255, ${0.34 + pulse * 0.28})`
