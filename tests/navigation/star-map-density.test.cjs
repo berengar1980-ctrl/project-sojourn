@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const { narrowsSector } = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/maps/narrows-sector.ts'
-);
+const { narrowsSector } = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts');
 
 const count = (kind) => narrowsSector.locations.filter((location) => location.kind === kind).length;
 
@@ -20,7 +17,11 @@ assert.equal(
   8,
   'The Narrows should have eight asteroid fields like the Voidbound system'
 );
-assert.equal(count('station'), 15, 'The Narrows should carry a comparable station/shipyard density');
+assert.equal(
+  count('station'),
+  15,
+  'The Narrows should carry a comparable station/shipyard density'
+);
 assert(
   narrowsSector.locations.filter((location) => location.kind === 'planet' && location.showOrbit)
     .length >= 10,
@@ -51,13 +52,12 @@ assert(
   'fully zoomed-out view must stay locked to the fitted system after viewport changes'
 );
 assert(
-  scaleSource.includes("Math.pow(relativeZoom, 0.45)") &&
+  scaleSource.includes('Math.pow(relativeZoom, 0.45)') &&
     shipSource.includes('BASE_SHIP_WIDTH = 15'),
   'strategic ship scale must remain much smaller than planets at close zoom'
 );
 assert(
-  rendererSource.includes('drawLocationLabel') &&
-    rendererSource.includes('roundRect'),
+  rendererSource.includes('drawLocationLabel') && rendererSource.includes('roundRect'),
   'dense system labels must remain readable against the physical map'
 );
 
