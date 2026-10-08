@@ -247,7 +247,7 @@ export function moveCombatant(
   }
 
   const boundary = arenaBoundaryAvoidance(combatant, arena);
-  if (boundary) {
+  if (boundary && combatant.tactic !== 'flee') {
     const steeringWeight = 1.8 + boundary.strength * 4.2;
     direction = normalize(
       direction.x + boundary.x * steeringWeight,
