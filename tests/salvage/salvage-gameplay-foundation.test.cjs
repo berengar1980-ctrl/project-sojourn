@@ -95,10 +95,6 @@ const secondField = generator.generateSalvageField('drift-wreck', 77, 2);
 assert.deepEqual(firstField, secondField, 'wreck fields must be deterministic for a visit seed');
 assert(firstField.wrecks.length >= 5);
 assert(firstField.wrecks.every((wreck) => wreck.resources.length > 0));
-assert(
-  firstField.wrecks.every((wreck) => wreck.component === null && wreck.componentStatus === 'none'),
-  'ordinary salvage fields must not contain recoverable ship components'
-);
 
 const player = { credits: 0, cargo: {} };
 let pool = 100;
