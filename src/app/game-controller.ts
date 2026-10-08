@@ -19,6 +19,7 @@ import {
   type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createSystemLogService } from '../systems/system-log/system-log-service';
+import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createLocalSpacePanel, type LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import type { StarMapPanel } from '../ui/map/star-map-panel';
 import {
@@ -559,6 +560,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     engagements,
     state,
   };
+  createSettingsMenu(context.audio);
   mountControllerStarMap(context);
   return {
     tick(deltaSeconds) {

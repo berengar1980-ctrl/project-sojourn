@@ -12,6 +12,7 @@ const bursts = read('src/systems/ships/ship-maneuver-thrusters.ts');
 const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
+const settings = read('src/ui/settings/settings-menu.ts');
 
 const rcs = fs.readFileSync(
   path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
@@ -51,4 +52,25 @@ assert(
   'player RCS audio must run in mining/local and salvage spaces'
 );
 
-console.log('PASS bundled ambience loop and synchronized RCS burst audio wiring');
+assert(
+  audio.includes('getSettings(): GameAudioSettings') &&
+    audio.includes('setAmbienceVolume(volume: number)') &&
+    audio.includes('setRcsVolume(volume: number)') &&
+    audio.includes('localStorage.setItem'),
+  'audio volume settings must be adjustable and persist in browser storage'
+);
+
+assert(
+  controller.includes('createSettingsMenu(context.audio)') &&
+    settings.includes('EINSTELLUNGEN') &&
+    settings.includes('data-audio-volume="ambience"') &&
+    settings.includes('data-audio-volume="rcs"'),
+  'general settings menu must expose ambience and RCS volume controls'
+);
+
+assert(
+  settings.includes('Spielstand, Laden und Export werden hier später ergänzt.'),
+  'settings shell must remain extensible for future save, load and export controls'
+);
+
+console.log('PASS bundled ambience loop, RCS audio and settings menu wiring');
