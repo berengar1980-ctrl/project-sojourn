@@ -14,7 +14,11 @@ const rosterModule = loadStandaloneTypeScriptModule(
 const ships = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
 const runtimeModule = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-runtime.ts');
 
-assert.equal(definitions.crewDefinitions.length, 26, 'all Voidbound hireable crew must be migrated');
+assert.equal(
+  definitions.crewDefinitions.length,
+  26,
+  'all Voidbound hireable crew must be migrated'
+);
 
 const torven = definitions.crewDefinitionById('torven_kray');
 assert(torven);
@@ -39,12 +43,8 @@ assert.equal(dagan?.combatSkills.melee, 97);
 const torvenMember = performance.createCrewMember(torven);
 assert.equal(torvenMember.morale.motivation, 60);
 assert.equal(torvenMember.morale.loyalty, 50);
-assert(
-  torvenMember.combatSkills.ranged >= 35 && torvenMember.combatSkills.ranged <= 65
-);
-assert(
-  torvenMember.combatSkills.melee >= 35 && torvenMember.combatSkills.melee <= 65
-);
+assert(torvenMember.combatSkills.ranged >= 35 && torvenMember.combatSkills.ranged <= 65);
+assert(torvenMember.combatSkills.melee >= 35 && torvenMember.combatSkills.melee <= 65);
 assert.equal(torvenMember.personalEquipment.ranged, 'off_autopistol');
 
 assert.equal(performance.crewStationTraitModifier(torven.socialTraits, 'piloting'), 1.5);
@@ -60,12 +60,19 @@ assert(miner);
 const roster = rosterModule.createCrewRosterService();
 const hired = roster.hire('torven_kray', miner);
 assert(hired);
-assert.equal(hired.portraitAssetUrl, null, 'portraits stay intentionally unset until new art arrives');
+assert.equal(
+  hired.portraitAssetUrl,
+  null,
+  'portraits stay intentionally unset until new art arrives'
+);
 assert.equal(roster.assign(miner, 'helm', 'torven_kray'), true);
 const runtime = runtimeModule.resolveShipRuntimeSetup(miner, roster.runtimeOptions(miner));
 assert(runtime.stationSkills.piloting > 0);
 assert.equal(runtime.miningCrewSkill, runtime.stationSkills.mining);
-assert(roster.manningFactor(miner) < 1, 'understaffed ships must keep the Voidbound manning penalty');
+assert(
+  roster.manningFactor(miner) < 1,
+  'understaffed ships must keep the Voidbound manning penalty'
+);
 
 const manningBeforeInjury = roster.manningFactor(miner);
 roster.setInjuryState('torven_kray', 'incapacitated');
