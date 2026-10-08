@@ -150,8 +150,13 @@ function port(locationId) {
 }
 
 const controllerSource = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerEventsSource = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-events.ts'),
+  'utf8'
+);
 assert(
-  controllerSource.includes('situations.advanceNextDay()'),
+  controllerSource.includes('advanceEconomyDay(') &&
+    controllerEventsSource.includes('economy.situations.advanceNextDay()'),
   'completed travel must advance market situations before daily price simulation'
 );
 
