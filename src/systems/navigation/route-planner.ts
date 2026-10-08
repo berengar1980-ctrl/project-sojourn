@@ -174,10 +174,7 @@ function createPlan(
     points,
     distance: pathDistance(points),
     dangerLevel: Math.max(endpointDanger[0], endpointDanger[1], pathDanger(world, points)) as
-      | 0
-      | 1
-      | 2
-      | 3,
+      0 | 1 | 2 | 3,
     profile,
   };
 }
@@ -194,15 +191,10 @@ export function planRouteWithProfile(
 
   const from = findLocation(world, fromId);
   const to = findLocation(world, toId);
-  const plan = createPlan(
-    world,
-    fromId,
-    toId,
-    from.position,
-    to.position,
-    profile,
-    [from.dangerLevel, to.dangerLevel]
-  );
+  const plan = createPlan(world, fromId, toId, from.position, to.position, profile, [
+    from.dangerLevel,
+    to.dangerLevel,
+  ]);
   routeCache.set(cacheKey, plan);
   return plan;
 }
@@ -214,15 +206,10 @@ export function planRouteFromPoint(
   profile: RouteProfile = 'balanced'
 ): RoutePlan {
   const to = findLocation(world, toId);
-  return createPlan(
-    world,
-    'deep-space',
-    toId,
-    from,
-    to.position,
-    profile,
-    [pointDanger(world, from), to.dangerLevel]
-  );
+  return createPlan(world, 'deep-space', toId, from, to.position, profile, [
+    pointDanger(world, from),
+    to.dangerLevel,
+  ]);
 }
 
 export function planRoute(world: WorldMap, fromId: string, toId: string): RoutePlan {
