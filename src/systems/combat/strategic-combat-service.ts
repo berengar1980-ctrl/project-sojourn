@@ -929,7 +929,10 @@ export function createStrategicCombatService(
       position: { ...source.position },
       target: side === 'attacker' ? 'defender' : 'attacker',
       speed: projectileSpeed(kind),
-      ttlSeconds: Math.max(0.4, distance(source.position, target.position) / projectileSpeed(kind) + 0.8),
+      ttlSeconds: Math.max(
+        0.4,
+        distance(source.position, target.position) / projectileSpeed(kind) + 0.8
+      ),
       shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
       hullDamage: hit ? weapon.weapon.hullDamage : 0,
       critical: hit && critical,
@@ -1016,10 +1019,7 @@ export function createStrategicCombatService(
           obstacle.point
         );
         lastEvent =
-          source.setup.name +
-          ': ' +
-          projectile.family.replaceAll('_', ' ') +
-          ' trifft Hindernis';
+          source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
         projectiles.splice(index, 1);
         continue;
       }
@@ -1099,7 +1099,10 @@ export function createStrategicCombatService(
     }
   }
 
-  function chooseMine(source: MutableCombatant, target: MutableCombatant): ShipMineDefinition | null {
+  function chooseMine(
+    source: MutableCombatant,
+    target: MutableCombatant
+  ): ShipMineDefinition | null {
     if (source.mineStock.length === 0) return null;
     const preferredKind =
       target.shieldHp > 0
@@ -1108,9 +1111,7 @@ export function createStrategicCombatService(
           ? 'hunter'
           : 'shaped_charge';
     return (
-      source.mineStock.find((mine) => mine.kind === preferredKind) ??
-      source.mineStock[0] ??
-      null
+      source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null
     );
   }
 
