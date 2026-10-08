@@ -35,7 +35,7 @@ assert(
   renderer.includes('NpcShipMapRenderer') &&
     npcRenderer.includes('this.lighting.draw') &&
     npcRenderer.includes('image,') &&
-    !npcRenderer.includes('this.context.rotate(Math.PI / 4'),
+    !npcRenderer.includes('this.context.rotate(Math.PI / 4)'),
   'physical star map must render NPC ship sprites instead of diamond dots'
 );
 
