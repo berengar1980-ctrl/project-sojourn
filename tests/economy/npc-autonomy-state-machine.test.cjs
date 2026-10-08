@@ -300,7 +300,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   );
 }
 
-
 {
   const markets = createMarkets([market('source', 50), market('work', 50)]);
   const riskyMiner = {
@@ -384,7 +383,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   );
 }
 
-
 {
   const sectorSource = fs.readFileSync(
     path.join(root, 'src/systems/npcs/npc-sector-service.ts'),
@@ -406,7 +404,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
     'sector tick must not auto-launch idle patrols behind the autonomy state machine'
   );
 }
-
 
 {
   const miningSource = fs.readFileSync(
