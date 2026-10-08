@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
+const nodeCrypto = require('node:crypto');
 
 const EXPECTED = {
   ambience: {
@@ -18,7 +18,7 @@ const EXPECTED = {
 const AMBIENCE_CHUNKS = 5;
 
 function sha256(buffer) {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
+  return nodeCrypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 function readAndVerify(label, filePath, expected) {
