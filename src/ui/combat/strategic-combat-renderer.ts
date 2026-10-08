@@ -161,7 +161,13 @@ export class StrategicCombatRenderer {
       const y = ((seed ^ (index * 2246822519)) >>> 0) % 10000;
       this.context.globalAlpha = 0.26 + ((index * 37) % 48) / 100;
       this.context.beginPath();
-      this.context.arc((x / 10000) * width, (y / 10000) * height, index % 11 === 0 ? 1.2 : 0.55, 0, Math.PI * 2);
+      this.context.arc(
+        (x / 10000) * width,
+        (y / 10000) * height,
+        index % 11 === 0 ? 1.2 : 0.55,
+        0,
+        Math.PI * 2
+      );
       this.context.fill();
     }
     this.context.globalAlpha = 1;
@@ -176,7 +182,8 @@ export class StrategicCombatRenderer {
     const definition = getShipDefinition(source.shipId);
     const geometry = this.shipGeometry(source, width, height);
     const hardpoints = definition?.sprite.hardpoints.weaponLasers ?? [];
-    const hardpoint = hardpoints.length > 0 ? hardpoints[beam.weaponIndex % hardpoints.length] : null;
+    const hardpoint =
+      hardpoints.length > 0 ? hardpoints[beam.weaponIndex % hardpoints.length] : null;
     const start =
       hardpoint && definition
         ? projectHardpoint(hardpoint, definition.sprite.hardpoints, geometry)
@@ -223,11 +230,7 @@ export class StrategicCombatRenderer {
     }
   }
 
-  private drawProjectile(
-    projectile: CombatProjectileSnapshot,
-    point: Point,
-    target: Point
-  ): void {
+  private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
     const angle = Math.atan2(target.y - point.y, target.x - point.x);
     this.context.save();
     this.context.translate(point.x, point.y);
@@ -267,9 +270,7 @@ export class StrategicCombatRenderer {
   private drawMine(mine: CombatMineSnapshot, point: Point): void {
     this.context.save();
     this.context.translate(point.x, point.y);
-    this.context.strokeStyle = mine.armed
-      ? 'rgba(226, 108, 82, .76)'
-      : 'rgba(175, 177, 151, .48)';
+    this.context.strokeStyle = mine.armed ? 'rgba(226, 108, 82, .76)' : 'rgba(175, 177, 151, .48)';
     this.context.fillStyle = 'rgba(44, 49, 51, .9)';
     this.context.lineWidth = 1;
     this.context.beginPath();
@@ -306,8 +307,22 @@ export class StrategicCombatRenderer {
     };
 
     if (hardpoints) {
-      this.engineEffects.drawExhaust(this.context, hardpoints, geometry, engineIntensity, timeSeconds, 'below');
-      this.maneuverEffects.drawExhaust(this.context, hardpoints, geometry, maneuverDemand, timeSeconds, 'below');
+      this.engineEffects.drawExhaust(
+        this.context,
+        hardpoints,
+        geometry,
+        engineIntensity,
+        timeSeconds,
+        'below'
+      );
+      this.maneuverEffects.drawExhaust(
+        this.context,
+        hardpoints,
+        geometry,
+        maneuverDemand,
+        timeSeconds,
+        'below'
+      );
     }
 
     this.context.save();
@@ -327,10 +342,21 @@ export class StrategicCombatRenderer {
         directionalStrength: 2.05,
       });
     } else if (image && image.complete && image.naturalWidth > 0) {
-      this.context.drawImage(image, -geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
+      this.context.drawImage(
+        image,
+        -geometry.width / 2,
+        -geometry.height / 2,
+        geometry.width,
+        geometry.height
+      );
     } else {
       this.context.fillStyle = '#a4b2ba';
-      this.context.fillRect(-geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
+      this.context.fillRect(
+        -geometry.width / 2,
+        -geometry.height / 2,
+        geometry.width,
+        geometry.height
+      );
     }
     this.context.restore();
 
@@ -339,8 +365,22 @@ export class StrategicCombatRenderer {
     }
 
     if (hardpoints) {
-      this.engineEffects.drawGlow(this.context, hardpoints, geometry, engineIntensity, timeSeconds, 'above');
-      this.maneuverEffects.drawGlow(this.context, hardpoints, geometry, maneuverDemand, timeSeconds, 'above');
+      this.engineEffects.drawGlow(
+        this.context,
+        hardpoints,
+        geometry,
+        engineIntensity,
+        timeSeconds,
+        'above'
+      );
+      this.maneuverEffects.drawGlow(
+        this.context,
+        hardpoints,
+        geometry,
+        maneuverDemand,
+        timeSeconds,
+        'above'
+      );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
 
@@ -354,12 +394,12 @@ export class StrategicCombatRenderer {
     );
   }
 
-  private drawHullImpact(
-    impact: CombatImpactSnapshot | null,
-    width: number,
-    height: number
-  ): void {
-    if (!impact || this.impactAge >= 1 || (impact.layer !== 'hull' && impact.layer !== 'obstacle')) {
+  private drawHullImpact(impact: CombatImpactSnapshot | null, width: number, height: number): void {
+    if (
+      !impact ||
+      this.impactAge >= 1 ||
+      (impact.layer !== 'hull' && impact.layer !== 'obstacle')
+    ) {
       return;
     }
     const point = this.screen(impact.position, width, height);
