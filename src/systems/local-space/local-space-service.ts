@@ -447,10 +447,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningAccumulator += deltaSeconds;
     const cycleSeconds = this.miningEvents.cycleSeconds(this.miningCycleSeconds);
     const selection = this.miningResources.selectionFor(asteroid.id);
-    while (
-      this.miningAccumulator >= cycleSeconds &&
-      hasMineableDeposits(asteroid, selection)
-    ) {
+    while (this.miningAccumulator >= cycleSeconds && hasMineableDeposits(asteroid, selection)) {
       this.miningAccumulator -= cycleSeconds;
       this.miningResources.spawnChunk(asteroid);
     }
