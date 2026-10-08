@@ -10,10 +10,7 @@ const npcModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/economy/npc-economy-service.ts'
 );
-const autonomyModule = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/npcs/npc-autonomy.ts'
-);
+const autonomyModule = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-autonomy.ts');
 
 const resources = [
   {
@@ -168,11 +165,7 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 }
 
 {
-  const markets = createMarkets([
-    market('source', 40),
-    market('close', 100),
-    market('far', 110),
-  ]);
+  const markets = createMarkets([market('source', 40), market('close', 100), market('far', 110)]);
   const cautious = {
     id: 'cautious-captain',
     role: 'trader',
@@ -307,7 +300,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   );
 }
 
-
 {
   const markets = createMarkets([market('source', 50), market('work', 50)]);
   const riskyMiner = {
@@ -384,9 +376,12 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   assert.equal(patrol.autonomy.phase, 'docking');
   tickFor(service, 5);
   assert.equal(patrolRequests, 1, 'arriving patrol must not immediately depart again');
-  tickUntil(service, () => patrolRequests === 2, 'patrol must resume only after its next rest phase');
+  tickUntil(
+    service,
+    () => patrolRequests === 2,
+    'patrol must resume only after its next rest phase'
+  );
 }
-
 
 {
   const sectorSource = fs.readFileSync(
@@ -410,7 +405,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   );
 }
 
-
 {
   const miningSource = fs.readFileSync(
     path.join(root, 'src/systems/npcs/npc-local-mining-service.ts'),
@@ -427,6 +421,4 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
   );
 }
 
-console.log(
-  'PASS NPC autonomy: dwell, thinking, personality, worker lifecycle and patrol rest'
-);
+console.log('PASS NPC autonomy: dwell, thinking, personality, worker lifecycle and patrol rest');
