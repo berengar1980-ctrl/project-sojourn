@@ -52,9 +52,7 @@ export function sectorEventLocation(
   };
 }
 
-export function advanceEconomyDay(
-  context: ControllerRuntimeContext
-): void {
+export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   const economy = context.economy;
   economy.situations.advanceNextDay();
   economy.simulation.advanceNextDay();
