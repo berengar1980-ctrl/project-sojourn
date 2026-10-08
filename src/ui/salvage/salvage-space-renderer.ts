@@ -616,9 +616,7 @@ export class SalvageSpaceRenderer {
     this.context.save();
     this.context.lineCap = 'round';
     for (const emitter of emitters) {
-      this.context.shadowColor = component
-        ? 'rgba(110, 214, 255, .8)'
-        : 'rgba(235, 180, 83, .78)';
+      this.context.shadowColor = component ? 'rgba(110, 214, 255, .8)' : 'rgba(235, 180, 83, .78)';
       this.context.shadowBlur = 8 + pulse * 5;
       this.context.strokeStyle = component
         ? `rgba(128, 220, 255, ${0.34 + pulse * 0.28})`
