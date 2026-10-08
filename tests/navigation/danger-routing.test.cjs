@@ -85,7 +85,10 @@ for (let step = 0; step < 10000 && service.getSnapshot().isTravelling; step += 1
 assert.equal(service.getSnapshot().currentLocationId, 'b');
 assert.equal(service.getSnapshot().isTravelling, false);
 
-const sectorMap = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts').narrowsSector;
+const sectorMap = loadStandaloneTypeScriptModule(
+  root,
+  'src/data/maps/narrows-sector.ts'
+).narrowsSector;
 assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger regions');
 
 const rendererSource = fs.readFileSync(
