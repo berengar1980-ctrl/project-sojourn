@@ -369,7 +369,10 @@ export class TopdownMapRenderer {
     } else if (location.kind === 'wreck') this.drawWreck(point, radius);
     else this.drawPlanet(location, point, radius, light);
 
-    if (location.id.startsWith('salvage-special-') || location.id.startsWith('salvage-distress-')) {
+    if (
+      location.id.startsWith('salvage-special-') ||
+      location.id.startsWith('salvage-distress-')
+    ) {
       const distress = location.id.startsWith('salvage-distress-');
       this.context.save();
       this.context.strokeStyle = distress ? '#ff9d60' : '#6de2e8';
@@ -412,7 +415,11 @@ export class TopdownMapRenderer {
 
   private shouldDrawLabel(location: StarMapLocationView): boolean {
     if (location.isSelected || location.isCurrent) return true;
-    if (location.id.startsWith('salvage-special-') || location.id.startsWith('salvage-distress-')) return true;
+    if (
+      location.id.startsWith('salvage-special-') ||
+      location.id.startsWith('salvage-distress-')
+    )
+      return true;
     const zoom = this.camera.getRelativeZoom();
     if (location.kind === 'planet') return true;
     if (location.kind === 'station') return zoom >= 0.98;
