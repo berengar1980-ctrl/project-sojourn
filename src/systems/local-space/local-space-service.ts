@@ -253,7 +253,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);
@@ -483,8 +482,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipForwardVelocity = velocity.forward;
     this.shipLateralVelocity = velocity.lateral;
   }
-
-
 }
 
 export function createLocalSpaceService(options: LocalSpaceServiceOptions): LocalSpaceService {
