@@ -128,18 +128,14 @@ function variantDefinition(
     ...(performance && base.speed !== undefined
       ? { speed: boost(base.speed, parsed.pct / 100) }
       : {}),
-    ...(performance && base.bonus !== undefined
-      ? { bonus: boost(base.bonus, parsed.pct) }
-      : {}),
+    ...(performance && base.bonus !== undefined ? { bonus: boost(base.bonus, parsed.pct) } : {}),
     ...(performance && base.range !== undefined
       ? { range: boost(base.range, parsed.pct / 100) }
       : {}),
     ...(performance && base.yield !== undefined
       ? { yield: boost(base.yield, parsed.pct / 100) }
       : {}),
-    ...(performance && base.chance !== undefined
-      ? { chance: boost(base.chance, parsed.pct) }
-      : {}),
+    ...(performance && base.chance !== undefined ? { chance: boost(base.chance, parsed.pct) } : {}),
   };
 }
 
