@@ -36,6 +36,7 @@ export function createShipyardResearchService(): ShipyardResearchService {
       if (
         !component?.specialSalvage ||
         !component.salvageModifier ||
+        component.salvageModifier === 'performance' ||
         !component.salvageModifierPct
       ) {
         return false;
