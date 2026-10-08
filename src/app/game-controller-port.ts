@@ -232,7 +232,7 @@ function createShipyardCallbacks(
       }
       if (!loadouts.setSlot(ship, type, index, item?.componentId ?? null)) return;
       if (item) componentInventory.take(item.uid);
-      log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} UMGEB AUT`);
+      log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
       onRefresh();
     },
     onSellLooseComponent: (uid) => {
