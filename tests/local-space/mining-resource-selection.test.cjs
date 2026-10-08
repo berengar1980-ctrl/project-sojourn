@@ -67,16 +67,7 @@ const hardpoints = {
 };
 
 const single = asteroid();
-const chunk = mining.createMiningChunk(
-  single,
-  ship,
-  hardpoints,
-  80,
-  1,
-  0,
-  1,
-  ['ferrite']
-);
+const chunk = mining.createMiningChunk(single, ship, hardpoints, 80, 1, 0, 1, ['ferrite']);
 assert(chunk);
 assert.equal(chunk.resourceId, 'ferrite');
 assert.equal(single.deposits[0].oreRemaining, 54);
@@ -109,16 +100,7 @@ assert.equal(single.deposits[0].identified, true);
 assert.equal(mining.identifyMinedResource(single, collected.samples[0].resourceId), false);
 
 const rejected = asteroid();
-const rejectedChunk = mining.createMiningChunk(
-  rejected,
-  ship,
-  hardpoints,
-  80,
-  1,
-  0,
-  1,
-  null
-);
+const rejectedChunk = mining.createMiningChunk(rejected, ship, hardpoints, 80, 1, 0, 1, null);
 assert(rejectedChunk);
 rejectedChunk.position = { ...ship.position };
 rejectedChunk.velocity = { x: 0, y: 0 };
@@ -136,26 +118,8 @@ assert.equal(
 assert.equal(rejected.deposits[0].identified, false);
 
 const dual = asteroid();
-const first = mining.createMiningChunk(
-  dual,
-  ship,
-  hardpoints,
-  80,
-  1,
-  0,
-  1,
-  ['ferrite', 'sulfur']
-);
-const second = mining.createMiningChunk(
-  dual,
-  ship,
-  hardpoints,
-  80,
-  1,
-  1,
-  1,
-  ['ferrite', 'sulfur']
-);
+const first = mining.createMiningChunk(dual, ship, hardpoints, 80, 1, 0, 1, ['ferrite', 'sulfur']);
+const second = mining.createMiningChunk(dual, ship, hardpoints, 80, 1, 1, 1, ['ferrite', 'sulfur']);
 assert(first && second);
 assert.deepEqual([first.resourceId, second.resourceId], ['ferrite', 'sulfur']);
 assert.equal(dual.deposits[0].oreRemaining, 54);
