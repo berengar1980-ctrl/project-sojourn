@@ -55,10 +55,11 @@ interface RosterContext {
   activeManningCount(): number;
 }
 
-function createRosterManagement(context: RosterContext): Pick<CrewRosterService, 'list' | 'member' | 'availableDefinitions' | 'hire' | 'dismiss'> {
-  const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
+function createRosterManagement(
+  context: RosterContext
+): Pick<CrewRosterService, 'list' | 'member' | 'availableDefinitions' | 'hire' | 'dismiss'> {
+  const { members, assignmentsByShip } = context;
   return {
-
     list() {
       return members.map(cloneMember);
     },
@@ -97,10 +98,20 @@ function createRosterManagement(context: RosterContext): Pick<CrewRosterService,
   };
 }
 
-function createRosterAssignments(context: RosterContext): Pick<CrewRosterService, 'assign' | 'assignments' | 'shipCrewMembers' | 'runtimeOptions' | 'manningFactor' | 'shareRate' | 'setInjuryState'> {
+function createRosterAssignments(
+  context: RosterContext
+): Pick<
+  CrewRosterService,
+  | 'assign'
+  | 'assignments'
+  | 'shipCrewMembers'
+  | 'runtimeOptions'
+  | 'manningFactor'
+  | 'shareRate'
+  | 'setInjuryState'
+> {
   const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
   return {
-
     assign(ship, stationId, crewId) {
       const validStations = new Set(
         resolveShipGameplayStats(ship).stations.map((station) => station.id)
@@ -174,10 +185,11 @@ function createRosterAssignments(context: RosterContext): Pick<CrewRosterService
   };
 }
 
-function createRosterTraining(context: RosterContext): Pick<CrewRosterService, 'accrueStationTraining' | 'accrueCombatTraining'> {
-  const { members, assignmentsByShip, assignmentRecord, activeManningCount } = context;
+function createRosterTraining(
+  context: RosterContext
+): Pick<CrewRosterService, 'accrueStationTraining' | 'accrueCombatTraining'> {
+  const { members, assignmentRecord } = context;
   return {
-
     accrueStationTraining(ship, hours = 1) {
       if (hours <= 0) return;
       const assignments = assignmentRecord(ship);
@@ -231,7 +243,12 @@ export function createCrewRosterService(): CrewRosterService {
     return members.filter(canOperateStation).length;
   }
 
-  const context: RosterContext = { members, assignmentsByShip, assignmentRecord, activeManningCount };
+  const context: RosterContext = {
+    members,
+    assignmentsByShip,
+    assignmentRecord,
+    activeManningCount,
+  };
   return {
     ...createRosterManagement(context),
     ...createRosterAssignments(context),
