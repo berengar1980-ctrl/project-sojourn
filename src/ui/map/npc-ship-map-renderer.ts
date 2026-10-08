@@ -127,9 +127,15 @@ export class NpcShipMapRenderer {
     const previous = this.priorHeading.get(npcId);
     const elapsed = previous ? timeSeconds - previous.time : 0;
     const delta = previous
-      ? Math.atan2(Math.sin(headingRadians - previous.angle), Math.cos(headingRadians - previous.angle))
+      ? Math.atan2(
+          Math.sin(headingRadians - previous.angle),
+          Math.cos(headingRadians - previous.angle)
+        )
       : 0;
-    const turnRate = elapsed > 0.001 && elapsed < 0.5 ? Math.max(-1.15, Math.min(1.15, delta / elapsed)) : 0;
+    const turnRate =
+      elapsed > 0.001 && elapsed < 0.5
+        ? Math.max(-1.15, Math.min(1.15, delta / elapsed))
+        : 0;
     this.priorHeading.set(npcId, { angle: headingRadians, time: timeSeconds });
     const demand = {
       turnRateRadiansPerSecond: turnRate,
