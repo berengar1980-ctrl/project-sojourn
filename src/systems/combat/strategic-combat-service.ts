@@ -793,7 +793,10 @@ function runtimeCombatant(
   return side === 'attacker' ? runtime.attacker : runtime.defender;
 }
 
-function runtimeEnemy(runtime: StrategicCombatRuntime, side: StrategicCombatSide): MutableCombatant {
+function runtimeEnemy(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide
+): MutableCombatant {
   return side === 'attacker' ? runtime.defender : runtime.attacker;
 }
 
@@ -866,7 +869,15 @@ function fireRuntimeInstantWeapon(
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
-    addRuntimeBeam(runtime, side, kind, weapon.weapon.family, source.position, obstacle.point, weaponIndex);
+    addRuntimeBeam(
+      runtime,
+      side,
+      kind,
+      weapon.weapon.family,
+      source.position,
+      obstacle.point,
+      weaponIndex
+    );
     noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point);
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
@@ -1009,8 +1020,7 @@ function recordProjectileDamage(
     runtime.impactSerial,
     shieldHit
   );
-  const targetSide: StrategicCombatSide =
-    projectile.owner === 'attacker' ? 'defender' : 'attacker';
+  const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
   runtime.lastImpact = {
     serial: runtime.impactSerial,
     target: targetSide,
@@ -1115,7 +1125,9 @@ function chooseRuntimeMine(
       : distance(source.position, target.position) > 360
         ? 'hunter'
         : 'shaped_charge';
-  return source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null;
+  return (
+    source.mineStock.find((mine) => mine.kind === preferredKind) ?? source.mineStock[0] ?? null
+  );
 }
 
 function maybeDropRuntimeMine(
