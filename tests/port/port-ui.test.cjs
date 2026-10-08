@@ -6,7 +6,6 @@ const path = require('path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 const controllerRuntimeTypes = fs.readFileSync(
   path.join(root, 'src/app/game-controller-runtime-types.ts'),
   'utf8'
