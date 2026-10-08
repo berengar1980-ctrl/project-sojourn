@@ -183,10 +183,7 @@ function createMiner() {
 
   tickUntil(
     service,
-    () =>
-      miner.locationId === 'near-stop' &&
-      miner.sideTradePlan &&
-      miner.cargo.steel === 5,
+    () => miner.locationId === 'near-stop' && miner.sideTradePlan && miner.cargo.steel === 5,
     'worker must eventually load the bounded side trade and travel to its stop'
   );
 
