@@ -398,15 +398,9 @@ export class ProceduralStationRenderer {
     context.stroke();
   }
 
-  private drawWear(
-    width: number,
-    height: number,
-    phase: number,
-    type: StationType
-  ): void {
+  private drawWear(width: number, height: number, phase: number, type: StationType): void {
     const context = this.spriteContext;
-    context.strokeStyle =
-      type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
+    context.strokeStyle = type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
     context.lineWidth = 1;
     for (let index = 0; index < 3; index += 1) {
       const x = Math.sin(phase + index * 1.7) * width * 0.34;
@@ -418,14 +412,9 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private drawServiceDetails(
-    layout: StationLayout,
-    radius: number,
-    type: StationType
-  ): void {
+  private drawServiceDetails(layout: StationLayout, radius: number, type: StationType): void {
     const context = this.spriteContext;
-    context.strokeStyle =
-      type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
+    context.strokeStyle = type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
     context.lineWidth = Math.max(1, radius * 0.012);
 
     for (let index = 0; index < layout.modules.length - 1; index += 2) {
@@ -457,11 +446,7 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private applyDirectionalLight(
-    radius: number,
-    rotationRadians: number,
-    light?: WorldPoint
-  ): void {
+  private applyDirectionalLight(radius: number, rotationRadians: number, light?: WorldPoint): void {
     if (!light) return;
 
     const context = this.spriteContext;
