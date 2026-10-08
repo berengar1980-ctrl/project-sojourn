@@ -189,12 +189,7 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
   ship.targetAsteroidId = null;
   ship.laserActive = false;
   ship.scanProgress = 0;
-  ship.exitPoint = edgePoint(
-    ship.npcId + ':exit',
-    runtime.options.width,
-    runtime.options.height,
-    true
-  );
+  ship.exitPoint = edgePoint(ship.npcId + ':exit', runtime.options.width, runtime.options.height, true);
 }
 
 function syncArrivals(runtime: MinerRuntime): void {
@@ -330,7 +325,8 @@ function advanceApproaching(
   dt: number
 ): void {
   if (ship.phase === 'approaching') {
-    const asteroid = runtime.options.getAsteroids()
+    const asteroid = runtime.options
+      .getAsteroids()
       .find((candidate) => candidate.id === ship.targetAsteroidId);
     if (!asteroid || !asteroid.deposits.some((deposit) => deposit.oreRemaining > 0)) {
       assignTarget(runtime, ship, npc);
@@ -357,7 +353,8 @@ function advanceScanning(
   dt: number
 ): void {
   if (ship.phase === 'scanning') {
-    const asteroid = runtime.options.getAsteroids()
+    const asteroid = runtime.options
+      .getAsteroids()
       .find((candidate) => candidate.id === ship.targetAsteroidId);
     if (!asteroid) {
       beginExit(runtime, ship);
@@ -384,7 +381,8 @@ function advanceMining(
   dt: number
 ): void {
   if (ship.phase === 'mining') {
-    const asteroid = runtime.options.getAsteroids()
+    const asteroid = runtime.options
+      .getAsteroids()
       .find((candidate) => candidate.id === ship.targetAsteroidId);
     if (!asteroid) {
       beginExit(runtime, ship);
