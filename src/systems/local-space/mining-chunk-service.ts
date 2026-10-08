@@ -17,24 +17,17 @@ export interface CollectedMiningSample {
   readonly amount: number;
 }
 
-export function identifyMinedResource(
-  asteroid: LocalAsteroid,
-  resourceId: string
-): boolean {
+export function identifyMinedResource(asteroid: LocalAsteroid, resourceId: string): boolean {
   const deposit = asteroid.deposits.find((entry) => entry.resourceId === resourceId);
   if (!deposit || deposit.identified) return false;
   deposit.identified = true;
   return true;
 }
 
-function activeMiningDeposits(
-  asteroid: LocalAsteroid,
-  resourceSelection: MiningResourceSelection
-) {
+function activeMiningDeposits(asteroid: LocalAsteroid, resourceSelection: MiningResourceSelection) {
   const selected = resourceSelection ? new Set(resourceSelection) : null;
   return asteroid.deposits.filter(
-    (deposit) =>
-      deposit.oreRemaining > 0 && (!selected || selected.has(deposit.resourceId))
+    (deposit) => deposit.oreRemaining > 0 && (!selected || selected.has(deposit.resourceId))
   );
 }
 
@@ -129,8 +122,9 @@ export function createMiningChunk(
     ageSeconds: 0,
     tractorActive: false,
     tractorHardpointId:
-      (hardpoints.tractorBeams ?? [])[chunkCounter % Math.max(1, hardpoints.tractorBeams?.length ?? 0)]
-        ?.id ?? null,
+      (hardpoints.tractorBeams ?? [])[
+        chunkCounter % Math.max(1, hardpoints.tractorBeams?.length ?? 0)
+      ]?.id ?? null,
   };
 }
 
