@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 const vm = require('vm');
+const { pathToFileURL } = require('node:url');
 
 function resolveLocalTypeScriptModule(parentFilename, request) {
   if (!request.startsWith('.')) return null;
@@ -19,7 +20,9 @@ function loadTypeScriptFile(filename, cache) {
   const cached = cache.get(filename);
   if (cached) return cached.exports;
 
-  const source = fs.readFileSync(filename, 'utf8');
+  const source = fs
+    .readFileSync(filename, 'utf8')
+    .replace(/\bimport\.meta\.url\b/g, JSON.stringify(pathToFileURL(filename).href));
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -40,6 +43,10 @@ function loadTypeScriptFile(filename, cache) {
   const localRequire = (request) => {
     const localTypeScriptFile = resolveLocalTypeScriptModule(filename, request);
     if (localTypeScriptFile) return loadTypeScriptFile(localTypeScriptFile, cache);
+    if (request.startsWith('.')) {
+      const resolved = path.resolve(path.dirname(filename), request);
+      if (fs.existsSync(resolved)) return require(resolved);
+    }
     return require(request);
   };
 
