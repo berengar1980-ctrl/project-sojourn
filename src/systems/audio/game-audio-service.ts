@@ -62,9 +62,7 @@ function loadStoredSettings(): GameAudioSettings {
           ? clampVolume(parsed.ambienceVolume)
           : DEFAULT_AMBIENCE_VOLUME,
       rcsVolume:
-        typeof parsed.rcsVolume === 'number'
-          ? clampVolume(parsed.rcsVolume)
-          : DEFAULT_RCS_VOLUME,
+        typeof parsed.rcsVolume === 'number' ? clampVolume(parsed.rcsVolume) : DEFAULT_RCS_VOLUME,
     };
   } catch {
     return {
