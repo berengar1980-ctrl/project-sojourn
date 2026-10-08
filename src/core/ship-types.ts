@@ -34,6 +34,7 @@ export interface LooseShipComponent {
   readonly tier: number;
   readonly cargoTons: number;
   readonly sourceWreckId: string;
+  readonly source?: 'salvage' | 'removed' | 'purchased';
 }
 
 export type ShipStationSkill =

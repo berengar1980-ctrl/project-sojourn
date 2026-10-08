@@ -63,6 +63,8 @@ export interface SectorNpcState extends NpcEconomyState {
   activity: string;
   successfulRuns: number;
   installedComponents?: NpcInstalledComponents;
+  salvageComponents?: { type: ShipComponentType; componentId: string }[];
+  salvageEventId?: string;
   componentUpgradeCount?: number;
   lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;

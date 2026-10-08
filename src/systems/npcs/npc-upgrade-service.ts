@@ -1,3 +1,4 @@
+import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { NpcInstalledComponents, SectorNpcState } from '../../core/npc-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import {
@@ -21,7 +22,9 @@ const UPGRADE_TYPES: readonly ShipComponentType[] = [
   'salvage',
 ];
 
-function mutableInstalled(source: Readonly<Partial<Record<ShipComponentType, readonly string[]>>>): NpcInstalledComponents {
+function mutableInstalled(
+  source: Readonly<Partial<Record<ShipComponentType, readonly string[]>>>
+): NpcInstalledComponents {
   return Object.fromEntries(
     Object.entries(source).map(([type, ids]) => [type, [...(ids ?? [])]])
   ) as NpcInstalledComponents;
@@ -36,16 +39,24 @@ export function ensureNpcInstalledComponents(npc: SectorNpcState): NpcInstalledC
 
 function nextUpgradeForType(
   npc: SectorNpcState,
-  type: ShipComponentType
+  type: ShipComponentType,
+  extraComponents: readonly (ShipComponentDefinition | null)[] = []
 ): { readonly index: number; readonly nextId: string; readonly cost: number } | null {
   const ship = getShipDefinition(npc.shipId);
   if (!ship) return null;
   const stats = resolveShipGameplayStats(ship);
   const installed = ensureNpcInstalledComponents(npc);
   const ids = installed[type] ?? [];
+  const compatible = [
+    ...getCompatibleShipComponents(type, stats.maxComponentTier),
+    ...extraComponents.filter(
+      (component): component is ShipComponentDefinition =>
+        component !== null && component.type === type && component.tier <= stats.maxComponentTier
+    ),
+  ];
 
   if (ids.length === 0) {
-    const first = getCompatibleShipComponents(type, stats.maxComponentTier)
+    const first = compatible
       .filter((component) => component.tier >= 1)
       .sort((a, b) => a.tier - b.tier || a.cost - b.cost)[0];
     return first ? { index: 0, nextId: first.id, cost: first.cost } : null;
@@ -61,9 +72,25 @@ function nextUpgradeForType(
       bestIndex = index;
     }
   }
-  if (bestIndex < 0 || bestTier >= stats.maxComponentTier) return null;
+  if (bestIndex < 0) return null;
+  const current = getShipComponent(type, ids[bestIndex]!);
+  const sameTierVariant = compatible
+    .filter(
+      (component) =>
+        component.tier === bestTier &&
+        component.shipyardVariant &&
+        component.id !== current?.id &&
+        (current?.salvageModifierPct ?? 0) < (component.salvageModifierPct ?? 0)
+    )
+    .sort(
+      (a, b) => (b.salvageModifierPct ?? 0) - (a.salvageModifierPct ?? 0) || a.cost - b.cost
+    )[0];
+  if (sameTierVariant) {
+    return { index: bestIndex, nextId: sameTierVariant.id, cost: sameTierVariant.cost };
+  }
+  if (bestTier >= stats.maxComponentTier) return null;
 
-  const next = getCompatibleShipComponents(type, stats.maxComponentTier)
+  const next = compatible
     .filter((component) => component.tier === bestTier + 1)
     .sort((a, b) => a.cost - b.cost)[0];
   return next ? { index: bestIndex, nextId: next.id, cost: next.cost } : null;
@@ -97,15 +124,19 @@ export function npcOperationalSpeed(npc: SectorNpcState): number {
   return Math.max(1, ship.navigation.cruiseSpeed * engineSpeedMultiplier(installed));
 }
 
-export function tryNpcComponentUpgrade(npc: SectorNpcState): boolean {
+export function tryNpcComponentUpgrade(
+  npc: SectorNpcState,
+  variantsForType?: (type: ShipComponentType, maxTier: number) => readonly ShipComponentDefinition[]
+): boolean {
   const lastUpgradeRun = npc.lastComponentUpgradeRun ?? 0;
   if (npc.successfulRuns < 8 || npc.successfulRuns - lastUpgradeRun < 8) return false;
   const reserve = 300000;
-  const candidates = UPGRADE_TYPES
-    .map((type) => {
-      const upgrade = nextUpgradeForType(npc, type);
-      return upgrade ? { type, ...upgrade, priority: rolePriority(npc, type) } : null;
-    })
+  const candidates = UPGRADE_TYPES.map((type) => {
+    const ship = getShipDefinition(npc.shipId);
+    const maxTier = ship ? resolveShipGameplayStats(ship).maxComponentTier : 1;
+    const upgrade = nextUpgradeForType(npc, type, variantsForType?.(type, maxTier) ?? []);
+    return upgrade ? { type, ...upgrade, priority: rolePriority(npc, type) } : null;
+  })
     .filter(
       (
         candidate

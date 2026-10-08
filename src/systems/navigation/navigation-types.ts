@@ -22,6 +22,7 @@ export interface NavigationSnapshot {
 export interface NavigationService {
   getSnapshot(): NavigationSnapshot;
   selectDestination(locationId: string | null): NavigationSnapshot;
+  selectPointDestination(id: string, position: WorldPoint): NavigationSnapshot;
   startTravel(): NavigationSnapshot;
   startPursuit(targetId: string, targetPosition: WorldPoint): NavigationSnapshot;
   updatePursuitTarget(targetPosition: WorldPoint): NavigationSnapshot;

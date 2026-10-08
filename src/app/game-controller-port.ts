@@ -3,10 +3,7 @@ import type { SystemLogService } from '../core/system-log-types';
 import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
-import {
-  createPortViewModel,
-  type PortSystemMarketInput,
-} from '../features/port/port-view-model';
+import { createPortViewModel, type PortSystemMarketInput } from '../features/port/port-view-model';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
@@ -16,7 +13,11 @@ import {
   canShipCarryResource,
   resolveShipGameplayStats,
   resolveShipRuntimeSetup,
+  getShipComponent,
+  salvagedComponentAppraisal,
+  type ShipComponentInventoryService,
   type ShipLoadoutService,
+  type ShipyardResearchService,
 } from '../systems/ships';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
 
@@ -25,9 +26,7 @@ function systemMarketRows(
   intel: MarketIntelService
 ): readonly PortSystemMarketInput[] {
   return sectorPorts.flatMap((port) => {
-    const destination = narrowsSector.locations.find(
-      (location) => location.id === port.locationId
-    );
+    const destination = narrowsSector.locations.find((location) => location.id === port.locationId);
     if (!destination) return [];
     const route =
       port.locationId === fromLocationId
@@ -57,74 +56,98 @@ function systemMarketRows(
   });
 }
 
-export function createActivePortPanel(
-  root: HTMLElement,
-  navigation: NavigationService,
-  markets: EconomyMarketService,
-  trade: PlayerTradeService,
-  ship: ShipDefinition,
-  crew: CrewRosterService,
-  loadouts: ShipLoadoutService,
-  marketIntel: MarketIntelService,
-  currentDay: number,
-  onReturnToStarMap: () => void,
-  onRefresh: () => void,
-  log: SystemLogService
-): PortPanel | null {
-  const locationId = navigation.getSnapshot().currentLocationId;
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
-  const port = locationId ? sectorPortByLocationId(locationId) : null;
-  const market = locationId ? markets.getMarket(locationId) : null;
-  if (!location || !port || !market) return null;
+type PortPanelOptions = Parameters<typeof createPortPanel>[0];
+type ActivePortLocation = (typeof narrowsSector.locations)[number];
+type ActivePortDefinition = NonNullable<ReturnType<typeof sectorPortByLocationId>>;
+type ActivePortMarket = NonNullable<ReturnType<EconomyMarketService['getMarket']>>;
+type ActivePortRuntime = ReturnType<typeof resolveShipRuntimeSetup>;
+type ActivePortGameplay = ReturnType<typeof resolveShipGameplayStats>;
+type ActivePortInstalled = ReturnType<ShipLoadoutService['get']>;
 
-  marketIntel.observeLocation(location.id, currentDay);
-  const installed = loadouts.get(ship);
-  const runtime = resolveShipRuntimeSetup(ship, {
-    ...crew.runtimeOptions(ship),
-    installed,
-  });
-  const gameplay = resolveShipGameplayStats(ship);
-  const saleFeeRate = runtime.crewEffects.logistics.saleFeeRate;
-  navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+interface ActivePortContext {
+  readonly location: ActivePortLocation;
+  readonly port: ActivePortDefinition;
+  readonly market: ActivePortMarket;
+  readonly navigation: NavigationService;
+  readonly trade: PlayerTradeService;
+  readonly ship: ShipDefinition;
+  readonly crew: CrewRosterService;
+  readonly loadouts: ShipLoadoutService;
+  readonly marketIntel: MarketIntelService;
+  readonly componentInventory: ShipComponentInventoryService;
+  readonly shipyardResearch: ShipyardResearchService;
+  readonly installed: ActivePortInstalled;
+  readonly runtime: ActivePortRuntime;
+  readonly gameplay: ActivePortGameplay;
+  readonly currentDay: number;
+  readonly onReturnToStarMap: () => void;
+  readonly onRefresh: () => void;
+  readonly log: SystemLogService;
+}
+
+function createActivePortModel(context: ActivePortContext): PortPanelOptions['model'] {
+  const { port, market, trade, location, ship, crew, installed, runtime, gameplay } = context;
+  const shipyardTypes = [
+    'reactor',
+    'engine',
+    'shield',
+    'hull',
+    'sensor',
+    'weapon',
+    'cargo',
+    'mining',
+    'salvage',
+  ] as const;
+
+  return createPortViewModel(
+    port,
+    market,
+    trade.player,
+    location,
+    narrowsSector.star.position,
+    ship,
+    {
+      available: crew.availableDefinitions().map(createCrewMember),
+      hired: crew.list(),
+      assignments: crew.assignments(ship),
+      stations: gameplay.stations,
+      capacity: crewCapacity(ship),
+    },
+    {
+      installed,
+      weaponSlots: gameplay.weaponSlots,
+      reactorOutput: runtime.energy.output,
+      combatPowerUsed: runtime.energy.combatUsed,
+      combatPowerFree: runtime.energy.combatFree,
+      hullMaxHp: runtime.hullMaxHp,
+      shieldMaxHp: runtime.shieldMaxHp,
+    },
+    systemMarketRows(location.id, context.marketIntel),
+    Math.max(0, context.currentDay),
+    runtime.cargoCapacityTons,
+    runtime.crewEffects.logistics.saleFeeRate,
+    {
+      loose: context.componentInventory.list(),
+      variants: shipyardTypes.flatMap((type) =>
+        context.shipyardResearch.variants(type, gameplay.maxComponentTier)
+      ),
+    }
   );
+}
 
-  return createPortPanel({
-    root,
-    model: createPortViewModel(
-      port,
-      market,
-      trade.player,
-      location,
-      narrowsSector.star.position,
-      ship,
-      {
-        available: crew.availableDefinitions().map(createCrewMember),
-        hired: crew.list(),
-        assignments: crew.assignments(ship),
-        stations: gameplay.stations,
-        capacity: crewCapacity(ship),
-      },
-      {
-        installed,
-        weaponSlots: gameplay.weaponSlots,
-        reactorOutput: runtime.energy.output,
-        combatPowerUsed: runtime.energy.combatUsed,
-        combatPowerFree: runtime.energy.combatFree,
-        hullMaxHp: runtime.hullMaxHp,
-        shieldMaxHp: runtime.shieldMaxHp,
-      },
-      systemMarketRows(location.id, marketIntel),
-      Math.max(0, currentDay),
-      runtime.cargoCapacityTons,
-      saleFeeRate
-    ),
-    onReturnToStarMap,
+function createTradeCallbacks(
+  context: ActivePortContext
+): Pick<PortPanelOptions, 'onMarketRoute' | 'onBuy' | 'onSell' | 'onSellAll'> {
+  const { navigation, trade, ship, marketIntel, location, currentDay, runtime, log, onRefresh } =
+    context;
+  const saleFeeRate = runtime.crewEffects.logistics.saleFeeRate;
+
+  return {
     onMarketRoute: (destinationId) => {
       if (destinationId === location.id) return;
       navigation.selectDestination(destinationId);
       log.write('HANDEL > ROUTE ZUM VERKAUFSMARKT GESETZT');
-      onReturnToStarMap();
+      context.onReturnToStarMap();
     },
     onBuy: (resourceId) => {
       if (!canShipCarryResource(ship, resourceId)) {
@@ -159,11 +182,26 @@ export function createActivePortPanel(
       );
       onRefresh();
     },
-    onSetComponentSlot: (
-      type: ShipComponentType,
-      index: number,
-      componentId: string | null
-    ) => {
+  };
+}
+
+function createShipyardCallbacks(
+  context: ActivePortContext
+): Pick<PortPanelOptions, 'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant'> {
+  const {
+    ship,
+    loadouts,
+    componentInventory,
+    shipyardResearch,
+    trade,
+    runtime,
+    location,
+    log,
+    onRefresh,
+  } = context;
+
+  return {
+    onSetComponentSlot: (type: ShipComponentType, index: number, componentId: string | null) => {
       if (!loadouts.setSlot(ship, type, index, componentId)) {
         log.write('SCHIFF > KOMPONENTE NICHT KOMPATIBEL');
         return;
@@ -172,6 +210,46 @@ export function createActivePortPanel(
       log.write(`SCHIFF > ${type.toUpperCase()} SLOT ${index + 1} · ${label.toUpperCase()}`);
       onRefresh();
     },
+    onSellLooseComponent: (uid) => {
+      const item = componentInventory.list().find((component) => component.uid === uid);
+      if (!item) return;
+      const appraisal = salvagedComponentAppraisal(item.type, item.componentId);
+      const definition = getShipComponent(item.type, item.componentId);
+      if (appraisal.sell <= 0 || !componentInventory.take(uid)) return;
+      trade.player.credits += appraisal.sell;
+      const learned = shipyardResearch.registerComponent(item.type, item.componentId);
+      log.write(
+        `WERFT > ${definition?.name ?? item.name} VERKAUFT · +${appraisal.sell} CR` +
+          (learned ? ' · NEUER FERTIGUNGSSTANDARD FREIGESCHALTET' : '')
+      );
+      onRefresh();
+    },
+    onBuyShipyardVariant: (type, componentId) => {
+      const definition = getShipComponent(type, componentId);
+      if (!definition?.shipyardVariant || trade.player.credits < definition.cost) return;
+      const stored = componentInventory.store(
+        type,
+        componentId,
+        'shipyard-' + location.id,
+        runtime.cargoCapacityTons,
+        'purchased'
+      );
+      if (!stored) {
+        log.write('WERFT > NICHT GENÜGEND FRACHTRAUM FÜR KOMPONENTE');
+        return;
+      }
+      trade.player.credits -= definition.cost;
+      log.write(`WERFT > ${definition.name.toUpperCase()} GEKAUFT · -${definition.cost} CR`);
+      onRefresh();
+    },
+  };
+}
+
+function createCrewCallbacks(
+  context: ActivePortContext
+): Pick<PortPanelOptions, 'onHireCrew' | 'onAssignCrew'> {
+  const { crew, ship, gameplay, log, onRefresh } = context;
+  return {
     onHireCrew: (crewId) => {
       const hired = crew.hire(crewId, ship);
       if (!hired) {
@@ -193,5 +271,66 @@ export function createActivePortPanel(
       );
       onRefresh();
     },
+  };
+}
+
+export function createActivePortPanel(
+  root: HTMLElement,
+  navigation: NavigationService,
+  markets: EconomyMarketService,
+  trade: PlayerTradeService,
+  ship: ShipDefinition,
+  crew: CrewRosterService,
+  loadouts: ShipLoadoutService,
+  marketIntel: MarketIntelService,
+  componentInventory: ShipComponentInventoryService,
+  shipyardResearch: ShipyardResearchService,
+  currentDay: number,
+  onReturnToStarMap: () => void,
+  onRefresh: () => void,
+  log: SystemLogService
+): PortPanel | null {
+  const locationId = navigation.getSnapshot().currentLocationId;
+  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+  const port = locationId ? sectorPortByLocationId(locationId) : null;
+  const market = locationId ? markets.getMarket(locationId) : null;
+  if (!location || !port || !market) return null;
+
+  marketIntel.observeLocation(location.id, currentDay);
+  const installed = loadouts.get(ship);
+  const runtime = resolveShipRuntimeSetup(ship, { ...crew.runtimeOptions(ship), installed });
+  const gameplay = resolveShipGameplayStats(ship);
+  navigation.setCruiseSpeed(
+    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+  );
+
+  const context: ActivePortContext = {
+    location,
+    port,
+    market,
+    navigation,
+    trade,
+    ship,
+    crew,
+    loadouts,
+    marketIntel,
+    componentInventory,
+    shipyardResearch,
+    installed,
+    runtime,
+    gameplay,
+    currentDay,
+    onReturnToStarMap,
+    onRefresh,
+    log,
+  };
+
+  return createPortPanel({
+    root,
+    model: createActivePortModel(context),
+    onReturnToStarMap,
+    ...createTradeCallbacks(context),
+    ...createShipyardCallbacks(context),
+    ...createCrewCallbacks(context),
   });
 }

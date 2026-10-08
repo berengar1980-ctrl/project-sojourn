@@ -6,7 +6,6 @@ import type {
 } from '../../core/economy-types';
 import type { PortDefinition, PortTab } from '../../core/port-types';
 import type {
-  ShipComponentType,
   ShipDefinition,
   ShipStationDefinition,
   ShipStationSkill,
@@ -20,7 +19,22 @@ import type {
 } from '../../core/world-types';
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
 import { playerSaleUnitPrice } from '../../systems/economy/player-trade-service';
-import { getShipComponent, type InstalledShipComponents } from '../../systems/ships';
+import {
+  componentSlots,
+  shipyardView,
+  type PortShipComponentSlotView,
+  type PortShipStateInput,
+  type PortShipyardLooseComponentView,
+  type PortShipyardStateInput,
+  type PortShipyardVariantView,
+} from './port-ship-view-model';
+export type {
+  PortShipComponentSlotView,
+  PortShipStateInput,
+  PortShipyardLooseComponentView,
+  PortShipyardStateInput,
+  PortShipyardVariantView,
+} from './port-ship-view-model';
 
 export interface PortMarketRowView {
   readonly id: string;
@@ -122,28 +136,6 @@ export interface PortCrewStateInput {
   readonly capacity: number;
 }
 
-export interface PortShipComponentSlotView {
-  readonly key: string;
-  readonly type: ShipComponentType;
-  readonly typeLabel: string;
-  readonly index: number;
-  readonly componentId: string | null;
-  readonly name: string;
-  readonly tier: number | null;
-  readonly power: number;
-  readonly weaponSlot: boolean;
-}
-
-export interface PortShipStateInput {
-  readonly installed: InstalledShipComponents;
-  readonly weaponSlots: number;
-  readonly reactorOutput: number;
-  readonly combatPowerUsed: number;
-  readonly combatPowerFree: number;
-  readonly hullMaxHp: number;
-  readonly shieldMaxHp: number;
-}
-
 export interface PortViewModel {
   readonly locationId: string;
   readonly locationName: string;
@@ -155,6 +147,10 @@ export interface PortViewModel {
   readonly security: string;
   readonly description: string;
   readonly shipyardAvailable: boolean;
+  readonly shipyard: {
+    readonly loose: readonly PortShipyardLooseComponentView[];
+    readonly variants: readonly PortShipyardVariantView[];
+  };
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
   readonly market: readonly PortMarketRowView[];
   readonly cargoSales: readonly PortCargoSaleView[];
@@ -230,18 +226,6 @@ const STATION_LABELS: Readonly<Record<string, string>> = {
   combat_auspex: 'Kampf-Auspex',
 };
 
-const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
-  reactor: 'Reaktor',
-  engine: 'Antrieb',
-  shield: 'Schildgenerator',
-  hull: 'Hüllenverstärkung',
-  sensor: 'Sensoren',
-  weapon: 'Waffe',
-  cargo: 'Frachtmodul',
-  mining: 'Mining-System',
-  salvage: 'Bergungssystem',
-};
-
 function demandLabel(value: number): string {
   if (value >= 0.9) return 'sehr hoch';
   if (value >= 0.72) return 'hoch';
@@ -310,8 +294,7 @@ function systemRows(
       const lot = player.cargo[entry.resourceId];
       const sellPrice = entry.price === null ? null : playerSaleUnitPrice(entry.price, saleFeeRate);
       const revenue = lot && sellPrice !== null ? sellPrice * lot.qty : 0;
-      const profit =
-        lot && sellPrice !== null ? Math.round(revenue - lot.totalCost) : null;
+      const profit = lot && sellPrice !== null ? Math.round(revenue - lot.totalCost) : null;
       const ageDays =
         entry.observedDay === null ? null : Math.max(0, currentDay - entry.observedDay);
       return {
@@ -371,7 +354,10 @@ function cargoSaleRows(
         ageDays: 0,
         distance: 0,
       };
-      const span = Math.max(1, best.saleProfit - Math.min(...candidates.map((entry) => entry.saleProfit), localProfit));
+      const span = Math.max(
+        1,
+        best.saleProfit - Math.min(...candidates.map((entry) => entry.saleProfit), localProfit)
+      );
       const relative = (localProfit - (best.saleProfit - span)) / span;
       const rating: PortCargoSaleView['rating'] =
         localProfit < 0
@@ -441,45 +427,6 @@ function crewMemberView(member: CrewMember): PortCrewView {
   };
 }
 
-function componentSlots(ship: ShipDefinition, state: PortShipStateInput): PortShipComponentSlotView[] {
-  const types: ShipComponentType[] = ['reactor', 'engine', 'shield', 'hull', 'sensor', 'cargo'];
-  if (ship.role === 'mining') types.push('mining');
-  if (ship.role === 'salvage') types.push('salvage');
-
-  const slots: PortShipComponentSlotView[] = [];
-  for (const type of types) {
-    const id = state.installed[type]?.[0] || null;
-    const definition = id ? getShipComponent(type, id) : null;
-    slots.push({
-      key: type + '-0',
-      type,
-      typeLabel: COMPONENT_LABELS[type],
-      index: 0,
-      componentId: id,
-      name: definition?.name ?? 'LEER',
-      tier: definition?.tier ?? null,
-      power: definition?.power ?? 0,
-      weaponSlot: false,
-    });
-  }
-  for (let index = 0; index < state.weaponSlots; index += 1) {
-    const id = state.installed.weapon?.[index] || null;
-    const definition = id ? getShipComponent('weapon', id) : null;
-    slots.push({
-      key: 'weapon-' + index,
-      type: 'weapon',
-      typeLabel: `Waffenhalterung ${index + 1}`,
-      index,
-      componentId: id,
-      name: definition?.name ?? 'LEER',
-      tier: definition?.tier ?? null,
-      power: definition?.power ?? 0,
-      weaponSlot: true,
-    });
-  }
-  return slots;
-}
-
 function resourceName(id: string): string {
   return economyResourceById(id)?.name ?? id;
 }
@@ -496,7 +443,8 @@ export function createPortViewModel(
   systemMarketInput: readonly PortSystemMarketInput[],
   currentDay: number,
   cargoCapacityTons = ship.cargoCapacityTons,
-  saleFeeRate = 0.06
+  saleFeeRate = 0.06,
+  shipyardState: PortShipyardStateInput = { loose: [], variants: [] }
 ): PortViewModel {
   const localMarket = marketRows(market, player, saleFeeRate);
   const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
@@ -522,6 +470,7 @@ export function createPortViewModel(
     security: port.security.toUpperCase(),
     description: location.description,
     shipyardAvailable: port.shipyard,
+    shipyard: shipyardView(shipyardState),
     tabs: [
       { id: 'trade', label: 'HANDEL', enabled: true },
       { id: 'ship', label: 'SCHIFF', enabled: true },

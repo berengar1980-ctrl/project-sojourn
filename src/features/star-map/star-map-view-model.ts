@@ -7,6 +7,7 @@ import type {
   PlanetRingStyle,
   StationType,
   StarBody,
+  WorldLocation,
   WorldMap,
   WorldPoint,
 } from '../../core/world-types';
@@ -86,7 +87,8 @@ export function createStarMapViewModel(
   navigation: NavigationSnapshot,
   ship: ShipDefinition,
   npcShips: readonly NpcShipMapView[] = [],
-  selectedNpcId: string | null = null
+  selectedNpcId: string | null = null,
+  dynamicLocations: readonly WorldLocation[] = []
 ): StarMapViewModel {
   return {
     worldId: world.id,
@@ -116,7 +118,7 @@ export function createStarMapViewModel(
       spriteAspectRatio: ship.sprite.widthPx / ship.sprite.heightPx,
       hardpoints: ship.sprite.hardpoints,
     },
-    locations: world.locations.map((location) => ({
+    locations: [...world.locations, ...dynamicLocations].map((location) => ({
       ...location,
       isCurrent: location.id === navigation.currentLocationId,
       isSelected: location.id === navigation.selectedDestinationId,

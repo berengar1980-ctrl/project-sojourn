@@ -2,6 +2,7 @@ import type { PortTab } from '../../core/port-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import type { PortViewModel } from '../../features/port/port-view-model';
 import { PortLocationRenderer } from './port-location-renderer';
+import { crewPane, equipmentPane, shipPane, shipyardPane } from './port-secondary-panes';
 
 export interface PortPanel {
   destroy(): void;
@@ -24,6 +25,8 @@ interface PortPanelOptions {
   ) => void;
   readonly onHireCrew: (crewId: string) => void;
   readonly onAssignCrew: (stationId: string, crewId: string | null) => void;
+  readonly onSellLooseComponent: (uid: string) => void;
+  readonly onBuyShipyardVariant: (type: ShipComponentType, componentId: string) => void;
 }
 
 function credits(value: number): string {
@@ -92,6 +95,120 @@ function cargoSaleRows(model: PortViewModel): string {
     .join('');
 }
 
+type SystemMarketRow = PortViewModel['systemMarket'][number];
+
+function knownSystemRows(rows: readonly SystemMarketRow[]): readonly SystemMarketRow[] {
+  return rows.filter((row) => row.price !== null && row.sellPrice !== null && row.ageDays !== null);
+}
+
+function bestSystemBuy(rows: readonly SystemMarketRow[]): SystemMarketRow | undefined {
+  return [...knownSystemRows(rows)].sort(
+    (a, b) => (a.price ?? 0) - (b.price ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
+  )[0];
+}
+
+function bestSystemSell(rows: readonly SystemMarketRow[]): SystemMarketRow | undefined {
+  return [...knownSystemRows(rows)].sort(
+    (a, b) => (b.sellPrice ?? 0) - (a.sellPrice ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
+  )[0];
+}
+
+function systemRouteControl(
+  row: SystemMarketRow,
+  currentLocationId: string,
+  label: string
+): string {
+  return row.locationId === currentLocationId
+    ? '<em class="port-system-summary-current">HIER</em>'
+    : `<button type="button" data-market-route="${row.locationId}">${label}</button>`;
+}
+
+function systemPriceSummary(
+  title: string,
+  row: SystemMarketRow | undefined,
+  currentLocationId: string,
+  mode: 'buy' | 'sell',
+  expectedLocation: string | null
+): string {
+  const value = mode === 'buy' ? row?.price : row?.sellPrice;
+  if (row && value !== null && value !== undefined && row.ageDays !== null) {
+    const age = row.ageDays === 0 ? 'LIVE' : row.ageDays + ' T ALT';
+    const routeLabel = mode === 'buy' ? 'ZUM EINKAUF' : 'ZUM VERKAUF';
+    return `<div><span>${title}</span><strong>${row.locationName}</strong><b>${value.toLocaleString('de-DE')} CR/t</b><small>${age}</small>${systemRouteControl(row, currentLocationId, routeLabel)}</div>`;
+  }
+  const hint = expectedLocation
+    ? 'Profil-Hinweis: ' + expectedLocation
+    : 'Sensorintel oder Besuch nötig';
+  return `<div><span>${title}</span><strong>KEINE PREISDATEN</strong><small>${hint}</small></div>`;
+}
+
+function systemMarginSummary(
+  buy: SystemMarketRow | undefined,
+  sell: SystemMarketRow | undefined
+): string {
+  if (buy?.price === null || buy?.price === undefined) {
+    return '<div><span>GESCHÄTZTE MARGE</span><strong>UNBEKANNT</strong><small>keine erfundene Preisprognose</small></div>';
+  }
+  if (sell?.sellPrice === null || sell?.sellPrice === undefined) {
+    return '<div><span>GESCHÄTZTE MARGE</span><strong>UNBEKANNT</strong><small>keine erfundene Preisprognose</small></div>';
+  }
+  const margin = sell.sellPrice - buy.price;
+  const percent = buy.price === 0 ? 0 : Math.round((margin / buy.price) * 100);
+  const tone = margin >= 0 ? 'port-positive' : 'port-negative';
+  const marginSign = margin >= 0 ? '+' : '';
+  const percentSign = percent >= 0 ? '+' : '';
+  return `<div><span>GESCHÄTZTE MARGE</span><strong class="${tone}">${marginSign}${margin.toLocaleString('de-DE')} CR/t</strong><b class="${tone}">${percentSign}${percent}%</b><small>vor Gebühren/Fuel</small></div>`;
+}
+
+function systemResourceSummary(model: PortViewModel, resourceId: string, initial: string): string {
+  const rows = model.systemMarket.filter((row) => row.resourceId === resourceId);
+  if (rows.length === 0) return '';
+  const buy = bestSystemBuy(rows);
+  const sell = bestSystemSell(rows);
+  const expectedBuy = rows.find((row) => row.expectation === 'cheap')?.locationName ?? null;
+  const expectedSell = rows.find((row) => row.expectation === 'expensive')?.locationName ?? null;
+  return `
+    <div class="port-system-summary" data-system-resource-summary="${resourceId}" ${resourceId === initial ? '' : 'hidden'}>
+      ${systemPriceSummary('GÜNSTIGSTER BEKANNTER EINKAUF', buy, model.locationId, 'buy', expectedBuy)}
+      ${systemPriceSummary('BESTER BEKANNTER VERKAUF', sell, model.locationId, 'sell', expectedSell)}
+      ${systemMarginSummary(buy, sell)}
+    </div>
+  `;
+}
+
+function systemMarketPrice(row: SystemMarketRow): string {
+  const expectation = marketExpectation(row.expectation);
+  if (row.sellPrice === null || row.ageDays === null) {
+    return `<strong>KEINE MARKTDATEN</strong><small class="port-expectation port-expectation--${row.expectation}">ERWARTUNG: ${expectation}</small>`;
+  }
+  const age = row.ageDays === 0 ? 'LIVE' : row.ageDays + ' T ALT';
+  return `<strong>${row.sellPrice.toLocaleString('de-DE')} CR/t</strong><small class="port-intel port-intel--${row.intelStatus}">${age} · ${row.stock ?? 0} t</small><small class="port-expectation port-expectation--${row.expectation}">PROFIL: ${expectation}</small>`;
+}
+
+function systemMarketProfit(row: SystemMarketRow): string {
+  if (row.profit === null) return '<span>—</span><small>keine belastbaren Preisdaten</small>';
+  const tone = row.profit >= 0 ? 'port-positive' : 'port-negative';
+  return `<strong class="${tone}">${credits(row.profit)}</strong><small>aktuelle Fracht</small>`;
+}
+
+function systemMarketRoute(row: SystemMarketRow, currentLocationId: string): string {
+  return row.locationId === currentLocationId
+    ? '<b>HIER</b>'
+    : `<button type="button" data-market-route="${row.locationId}">ROUTE SETZEN</button>`;
+}
+
+function systemMarketRow(row: SystemMarketRow, currentLocationId: string, initial: string): string {
+  return `
+    <div class="port-system-row" data-system-resource-row="${row.resourceId}" ${row.resourceId === initial ? '' : 'hidden'}>
+      <div><strong>${row.locationName}</strong><small>${row.locationKind}${row.locationId === currentLocationId ? ' · HIER' : ''}</small></div>
+      <div class="port-system-price">${systemMarketPrice(row)}</div>
+      <div><span>${Math.round(row.distance).toLocaleString('de-DE')}</span><small>Distanz</small></div>
+      <div>${systemMarketProfit(row)}</div>
+      <div>${systemMarketRoute(row, currentLocationId)}</div>
+    </div>
+  `;
+}
+
 function systemMarket(model: PortViewModel): string {
   const owned = model.cargoSales[0]?.resourceId;
   const initial =
@@ -104,71 +221,11 @@ function systemMarket(model: PortViewModel): string {
       return `<option value="${id}" ${id === initial ? 'selected' : ''}>${name}</option>`;
     })
     .join('');
-
   const summaries = model.systemMarketResourceIds
-    .map((resourceId) => {
-      const rows = model.systemMarket.filter((row) => row.resourceId === resourceId);
-      if (rows.length === 0) return '';
-      const known = rows.filter(
-        (row) => row.price !== null && row.sellPrice !== null && row.ageDays !== null
-      );
-      const buy = [...known].sort(
-        (a, b) => (a.price ?? 0) - (b.price ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
-      )[0];
-      const sell = [...known].sort(
-        (a, b) => (b.sellPrice ?? 0) - (a.sellPrice ?? 0) || (a.ageDays ?? 0) - (b.ageDays ?? 0)
-      )[0];
-      const margin =
-        buy?.price !== null && buy?.price !== undefined &&
-        sell?.sellPrice !== null && sell?.sellPrice !== undefined
-          ? sell.sellPrice - buy.price
-          : null;
-      const percent =
-        margin !== null && buy?.price
-          ? Math.round((margin / buy.price) * 100)
-          : null;
-      const expectedBuy = rows.find((row) => row.expectation === 'cheap');
-      const expectedSell = rows.find((row) => row.expectation === 'expensive');
-
-      return `
-        <div class="port-system-summary" data-system-resource-summary="${resourceId}" ${resourceId === initial ? '' : 'hidden'}>
-          <div><span>GÜNSTIGSTER BEKANNTER EINKAUF</span>${
-            buy && buy.price !== null && buy.ageDays !== null
-              ? `<strong>${buy.locationName}</strong><b>${buy.price.toLocaleString('de-DE')} CR/t</b><small>${buy.ageDays === 0 ? 'LIVE' : buy.ageDays + ' T ALT'}</small>${buy.locationId === model.locationId ? '<em class="port-system-summary-current">HIER</em>' : `<button type="button" data-market-route="${buy.locationId}">ZUM EINKAUF</button>`}`
-              : `<strong>KEINE PREISDATEN</strong><small>${expectedBuy ? 'Profil-Hinweis: ' + expectedBuy.locationName : 'Sensorintel oder Besuch nötig'}</small>`
-          }</div>
-          <div><span>BESTER BEKANNTER VERKAUF</span>${
-            sell && sell.sellPrice !== null && sell.ageDays !== null
-              ? `<strong>${sell.locationName}</strong><b>${sell.sellPrice.toLocaleString('de-DE')} CR/t</b><small>${sell.ageDays === 0 ? 'LIVE' : sell.ageDays + ' T ALT'}</small>${sell.locationId === model.locationId ? '<em class="port-system-summary-current">HIER</em>' : `<button type="button" data-market-route="${sell.locationId}">ZUM VERKAUF</button>`}`
-              : `<strong>KEINE PREISDATEN</strong><small>${expectedSell ? 'Profil-Hinweis: ' + expectedSell.locationName : 'Sensorintel oder Besuch nötig'}</small>`
-          }</div>
-          <div><span>GESCHÄTZTE MARGE</span>${
-            margin !== null && percent !== null
-              ? `<strong class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${margin >= 0 ? '+' : ''}${margin.toLocaleString('de-DE')} CR/t</strong><b class="${margin >= 0 ? 'port-positive' : 'port-negative'}">${percent >= 0 ? '+' : ''}${percent}%</b><small>vor Gebühren/Fuel</small>`
-              : '<strong>UNBEKANNT</strong><small>keine erfundene Preisprognose</small>'
-          }</div>
-        </div>
-      `;
-    })
+    .map((resourceId) => systemResourceSummary(model, resourceId, initial))
     .join('');
-
   const rows = model.systemMarket
-    .map((row) => {
-      const expectation = marketExpectation(row.expectation);
-      const price =
-        row.sellPrice === null || row.ageDays === null
-          ? `<strong>KEINE MARKTDATEN</strong><small class="port-expectation port-expectation--${row.expectation}">ERWARTUNG: ${expectation}</small>`
-          : `<strong>${row.sellPrice.toLocaleString('de-DE')} CR/t</strong><small class="port-intel port-intel--${row.intelStatus}">${row.ageDays === 0 ? 'LIVE' : row.ageDays + ' T ALT'} · ${row.stock ?? 0} t</small><small class="port-expectation port-expectation--${row.expectation}">PROFIL: ${expectation}</small>`;
-      return `
-        <div class="port-system-row" data-system-resource-row="${row.resourceId}" ${row.resourceId === initial ? '' : 'hidden'}>
-          <div><strong>${row.locationName}</strong><small>${row.locationKind}${row.locationId === model.locationId ? ' · HIER' : ''}</small></div>
-          <div class="port-system-price">${price}</div>
-          <div><span>${Math.round(row.distance).toLocaleString('de-DE')}</span><small>Distanz</small></div>
-          <div>${row.profit === null ? '<span>—</span><small>keine belastbaren Preisdaten</small>' : `<strong class="${row.profit >= 0 ? 'port-positive' : 'port-negative'}">${credits(row.profit)}</strong><small>aktuelle Fracht</small>`}</div>
-          <div>${row.locationId === model.locationId ? '<b>HIER</b>' : `<button type="button" data-market-route="${row.locationId}">ROUTE SETZEN</button>`}</div>
-        </div>
-      `;
-    })
+    .map((row) => systemMarketRow(row, model.locationId, initial))
     .join('');
 
   return `
@@ -180,7 +237,7 @@ function systemMarket(model: PortViewModel): string {
       ${summaries}
       <div class="port-system-head"><span>MARKT</span><span>VERKAUF / INTEL</span><span>DISTANZ</span><span>P/L FRACHT</span><span>ROUTE</span></div>
       <div class="port-system-list">${rows}</div>
-      <div class="port-intel-hint">ⓘ PRODUZIERT/BENÖTIGT liefert nur eine strukturelle Erwartung. Konkrete Preise erscheinen ausschließlich durch Sensorintel oder Besuch und zeigen immer ihr Datenalter.</div>
+      <div class="port-intel-hint">ⓘ PRODUZIERT/BENÖTIGT liefert nur eine strukturelle Erwartung. Konkrete Preise erscheinen ausschließlich durch Sensorintel oder Besuch und zeigen immer ihr Datenalter direkt am Preis.</div>
     </section>
   `;
 }
@@ -237,126 +294,6 @@ function tradePane(model: PortViewModel): string {
   `;
 }
 
-function shipPane(model: PortViewModel): string {
-  return `
-    <section class="port-pane port-pane--ship" data-port-pane="ship" hidden>
-      <div class="port-ship-console">
-        <div class="port-panel-heading"><span>SCHIFF // ${model.ship.name.toUpperCase()}</span><small>${model.ship.role.toUpperCase()} · ${model.ship.lengthMeters} m</small></div>
-        <div class="port-ship-visual">
-          <img src="${model.ship.spriteUrl}" alt="${model.ship.name}">
-          <div class="port-ship-stats">
-            <div><span>HÜLLE MAX</span><strong>${model.ship.hullMaxHp}</strong></div>
-            <div><span>SCHILD MAX</span><strong>${model.ship.shieldMaxHp}</strong></div>
-            <div><span>REAKTOR</span><strong>${model.ship.reactorOutput}</strong></div>
-            <div><span>KAMPFLAST</span><strong>${model.ship.combatPowerUsed}</strong></div>
-            <div><span>ENERGIERESERVE</span><strong class="${model.ship.combatPowerFree >= 0 ? 'port-positive' : 'port-negative'}">${model.ship.combatPowerFree}</strong></div>
-          </div>
-        </div>
-      </div>
-      <div class="port-ship-components">
-        <div class="port-panel-heading"><span>KOMPONENTEN</span><small>STARTAUSSTATTUNG MK I</small></div>
-        <div class="port-component-list">
-          ${model.ship.components
-            .map(
-              (slot) => `
-                <article class="port-component-slot ${slot.weaponSlot ? 'port-component-slot--weapon' : ''}">
-                  <div><span>${slot.typeLabel.toUpperCase()}</span><strong>${slot.name}</strong></div>
-                  <b>${slot.tier ? 'MK ' + ['','I','II','III','IV','V','VI'][slot.tier] : 'LEER'}</b>
-                  <small>${slot.power > 0 ? slot.power + ' ENERGIE' : 'PASSIV'}</small>
-                  ${
-                    slot.weaponSlot
-                      ? slot.componentId
-                        ? `<button type="button" data-component-type="weapon" data-component-index="${slot.index}" data-component-id="">AUSBAUEN</button>`
-                        : `<button type="button" data-component-type="weapon" data-component-index="${slot.index}" data-component-id="weapon1">LIGHT LASER MK I MONTIEREN</button>`
-                      : '<span class="port-component-fixed">MONTIERT</span>'
-                  }
-                </article>
-              `
-            )
-            .join('')}
-        </div>
-        <div class="port-info-box">Alle Schiffe starten vorerst vollständig mit Mk-I-Komponenten. Waffenhalterungen sind echte Slots und können bereits ein- und ausgebaut werden. Höhere Mk-Stufen und weitere Waffenfamilien kommen auf diesen Slot-Unterbau.</div>
-      </div>
-    </section>
-  `;
-}
-
-function crewRows(model: PortViewModel): string {
-  const full = model.crew.used >= model.crew.capacity;
-  return model.crew.candidates
-    .map(
-      (crew) => `
-        <article class="port-crew-row">
-          <div class="port-crew-avatar">${crew.initials}</div>
-          <div class="port-crew-identity"><strong>${crew.name}${crew.elite ? ' // ELITE' : ''}</strong><span>${crew.role}</span><small class="port-crew-skills">${crew.skills.join(' · ')}</small></div>
-          <div class="port-traits">${crew.traits.map((trait) => `<span>${trait}</span>`).join('')}</div>
-          <div class="port-combat"><span>FK ${crew.ranged}</span><span>NK ${crew.melee}</span></div>
-          <div class="port-crew-equipment">${crew.equipment.join(' · ')}</div>
-          <strong class="port-salary">ANTEIL ${crew.share}%</strong>
-          <button class="port-action-button" type="button" data-hire-crew-id="${crew.id}" ${full ? 'disabled' : ''}>ANHEUERN</button>
-        </article>
-      `
-    )
-    .join('');
-}
-
-function crewPane(model: PortViewModel): string {
-  return `
-    <section class="port-pane" data-port-pane="crew" hidden>
-      <div class="port-wide-panel">
-        <div class="port-panel-heading"><span>VERFÜGBARE REKRUTEN</span><small>${model.crew.candidates.length} KANDIDATEN · ${model.crew.used} / ${model.crew.capacity} KOJEN</small></div>
-        <div class="port-crew-list">${crewRows(model) || '<div class="port-info-box">Keine weiteren Spezialisten verfügbar.</div>'}</div>
-      </div>
-      <aside class="port-stations-panel">
-        <div class="port-panel-heading"><span>SCHIFFSSTATIONEN</span><small>CREW ZUWEISEN</small></div>
-        <div class="port-station-grid">
-          ${model.crew.stations
-            .map(
-              (station) => `
-                <label class="port-station-assignment">
-                  <span>${station.label}<small>${station.skill.toUpperCase()}</small></span>
-                  <select data-station-id="${station.id}">
-                    <option value="">AUTOMATIK</option>
-                    ${model.crew.hired
-                      .map(
-                        (crew) =>
-                          `<option value="${crew.id}" ${station.assignedCrewId === crew.id ? 'selected' : ''}>${crew.name}</option>`
-                      )
-                      .join('')}
-                  </select>
-                </label>
-              `
-            )
-            .join('')}
-        </div>
-      </aside>
-    </section>
-  `;
-}
-
-function equipmentPane(): string {
-  return `
-    <section class="port-pane" data-port-pane="equipment" hidden>
-      <div class="port-wide-panel">
-        <div class="port-panel-heading"><span>PERSÖNLICHE AUSRÜSTUNG</span><small>CREW / BOARDING</small></div>
-        <div class="port-info-box port-info-box--large">Die Crew-Ausrüstungsdaten sind bereits echt. Der Händler wird als eigener Schritt an Inventar und Crew-Slots angeschlossen; hier werden keine Fake-Käufe mehr angezeigt.</div>
-      </div>
-    </section>
-  `;
-}
-
-function shipyardPane(model: PortViewModel): string {
-  return `
-    <section class="port-pane" data-port-pane="shipyard" hidden>
-      <div class="port-wide-panel">
-        <div class="port-panel-heading"><span>WERFT</span><small>MK-I-STANDARD</small></div>
-        <div class="port-ship-overview"><img src="${model.ship.spriteUrl}" alt=""><div><span>AKTIVER RUMPF</span><strong>${model.ship.name}</strong><small>Alle Standardkomponenten derzeit Mk I</small></div></div>
-        <div class="port-info-box port-info-box--large">Die Werft zeigt keine erfundenen T2/T3-Upgrades mehr. Als Nächstes können hier echte Komponenten gekauft, eingelagert und in die bereits vorhandenen Schiffsslots montiert werden.</div>
-      </div>
-    </section>
-  `;
-}
-
 function shellMarkup(model: PortViewModel): string {
   return `
     <header class="port-header">
@@ -398,7 +335,8 @@ function bindTradeViews(shell: HTMLElement): void {
   const buttons = [...shell.querySelectorAll<HTMLButtonElement>('[data-trade-view]')];
   const sections = [...shell.querySelectorAll<HTMLElement>('[data-trade-section]')];
   const activate = (view: string): void => {
-    for (const button of buttons) button.classList.toggle('is-active', button.dataset.tradeView === view);
+    for (const button of buttons)
+      button.classList.toggle('is-active', button.dataset.tradeView === view);
     for (const section of sections) section.hidden = section.dataset.tradeSection !== view;
   };
   for (const button of buttons) {
@@ -455,6 +393,19 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       const id = button.dataset.componentId || null;
       options.onSetComponentSlot(type, index, id);
     });
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-loose-component]')) {
+    button.addEventListener('click', () =>
+      options.onSellLooseComponent(button.dataset.sellLooseComponent ?? '')
+    );
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-yard-id]')) {
+    button.addEventListener('click', () =>
+      options.onBuyShipyardVariant(
+        button.dataset.buyYardType as ShipComponentType,
+        button.dataset.buyYardId ?? ''
+      )
+    );
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
     button.addEventListener('click', () => options.onHireCrew(button.dataset.hireCrewId ?? ''));

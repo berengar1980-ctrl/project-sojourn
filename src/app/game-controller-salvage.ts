@@ -1,4 +1,5 @@
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
+import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
@@ -58,32 +59,40 @@ interface SalvageSceneOptions {
     }
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
+  readonly field?: SalvageField;
+  readonly sectorEvent?: SectorSalvageEvent | null;
+  readonly onDiagnoseDistress?: (eventId: string) => void;
+  readonly onRepairDistress?: (eventId: string) => void;
+  readonly onTowDistress?: (eventId: string) => void;
+  readonly onEvacuateDistress?: (eventId: string) => void;
+  readonly onSectorEventResolved?: (eventId: string) => void;
   readonly isCombatActive?: () => boolean;
   readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
 }
 
-export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
-  const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
-  const field = generateSalvageField(
-    options.location.id,
-    options.seed,
-    options.location.dangerLevel
-  );
-  const service = createSalvageLocalSpaceService({
-    field,
-    setup: runtime.salvage,
-    crewSkill: runtime.salvageCrewSkill,
-    collect: options.economy.recover,
-    collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
-      return (
-        options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
-        null
-      );
-    },
-    approachSpeed: 85,
-  });
-  let selectedNpcId = options.selectedNpcId ?? null;
-  const npcSalvage: NpcLocalSalvageService = createNpcLocalSalvageService({
+type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
+
+interface SalvageSceneState {
+  selectedNpcId: string | null;
+  sectorEventResolved: boolean;
+  panel: SalvageSpacePanel | null;
+}
+
+interface SalvageSceneRuntime {
+  readonly options: SalvageSceneOptions;
+  readonly runtime: ReturnType<typeof resolveShipRuntimeSetup>;
+  readonly field: SalvageField;
+  readonly service: SalvageLocalService;
+  readonly npcSalvage: NpcLocalSalvageService;
+  readonly state: SalvageSceneState;
+}
+
+function createNpcSalvageRuntime(
+  options: SalvageSceneOptions,
+  field: SalvageField,
+  service: SalvageLocalService
+): NpcLocalSalvageService {
+  return createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
     salvagers: options.sectorNpcs.filter(
@@ -95,71 +104,87 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     playerShip: options.ship,
     getPlayerShipState: () => service.getSnapshot().ship,
   });
+}
 
-  const model = () => {
-    const npcShips = npcSalvage.ships.flatMap((npc) => {
-      const definition = getShipDefinition(npc.shipId);
-      if (!definition) return [];
-      return [
-        {
-          id: npc.npcId,
-          name: npc.name,
-          position: npc.position,
-          headingRadians: npc.headingRadians,
-          speed: npc.speed,
-          phase: npc.phase,
-          targetWreckId: npc.targetWreckId,
-          salvageActive: npc.salvageActive,
-          scanProgress: npc.scanProgress,
-          nominalLengthMeters: definition.nominalLengthMeters,
-          spriteUrl: definition.sprite.assetUrl,
-          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-          hardpoints: definition.sprite.hardpoints,
-        },
-      ];
-    });
-    return createSalvageSpaceViewModel(
-      service.getSnapshot(),
-      options.ship,
-      options.player,
-      options.componentInventory.list(),
-      options.location.name + ' // Bergung',
-      npcShips,
-      selectedNpcId,
-      options.getCombat?.() ?? null
-    );
-  };
+function salvageNpcShips(npcSalvage: NpcLocalSalvageService) {
+  return npcSalvage.ships.flatMap((npc) => {
+    const definition = getShipDefinition(npc.shipId);
+    if (!definition) return [];
+    return [
+      {
+        id: npc.npcId,
+        name: npc.name,
+        position: npc.position,
+        headingRadians: npc.headingRadians,
+        speed: npc.speed,
+        phase: npc.phase,
+        targetWreckId: npc.targetWreckId,
+        salvageActive: npc.salvageActive,
+        scanProgress: npc.scanProgress,
+        nominalLengthMeters: definition.nominalLengthMeters,
+        spriteUrl: definition.sprite.assetUrl,
+        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+        hardpoints: definition.sprite.hardpoints,
+      },
+    ];
+  });
+}
 
-  let panel: SalvageSpacePanel | null = null;
-  const refresh = (): void => panel?.update(model());
-  panel = createSalvageSpacePanel({
+function salvageSceneModel(context: SalvageSceneRuntime) {
+  const { options, service, npcSalvage, state } = context;
+  return createSalvageSpaceViewModel(
+    service.getSnapshot(),
+    options.ship,
+    options.player,
+    options.componentInventory.list(),
+    options.location.name + ' // Bergung',
+    salvageNpcShips(npcSalvage),
+    state.selectedNpcId,
+    options.getCombat?.() ?? null,
+    options.sectorEvent ?? null
+  );
+}
+
+function refreshSalvageScene(context: SalvageSceneRuntime): void {
+  context.state.panel?.update(salvageSceneModel(context));
+}
+
+function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
+  const { options, service, npcSalvage, field } = context;
+  const target = npcSalvage.ships.find((entry) => entry.npcId === id);
+  if (!target) return;
+  const playerShip = service.getSnapshot().ship;
+  options.onAttackNpc?.(id, {
+    width: field.width,
+    height: field.height,
+    attackerPosition: { ...playerShip.position },
+    defenderPosition: { ...target.position },
+    obstacles: field.wrecks.map((wreck) => ({
+      id: wreck.id,
+      position: { ...wreck.position },
+      radius: wreck.radius,
+    })),
+  });
+}
+
+function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
+  const { options, service, state } = context;
+  const refresh = (): void => refreshSalvageScene(context);
+  return createSalvageSpacePanel({
     root: options.root,
-    model: model(),
+    model: salvageSceneModel(context),
     log: options.log,
     onSelectWreck(id) {
       service.selectWreck(id);
       refresh();
     },
     onSelectNpc(id) {
-      selectedNpcId = id;
+      state.selectedNpcId = id;
       options.onSelectNpc?.(id);
       refresh();
     },
     onAttackNpc(id) {
-      const target = npcSalvage.ships.find((entry) => entry.npcId === id);
-      if (!target) return;
-      const playerShip = service.getSnapshot().ship;
-      options.onAttackNpc?.(id, {
-        width: field.width,
-        height: field.height,
-        attackerPosition: { ...playerShip.position },
-        defenderPosition: { ...target.position },
-        obstacles: field.wrecks.map((wreck) => ({
-          id: wreck.id,
-          position: { ...wreck.position },
-          radius: wreck.radius,
-        })),
-      });
+      attackSalvageNpc(context, id);
     },
     onCombatTactic(tactic) {
       options.onCombatTactic?.(tactic);
@@ -190,6 +215,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       refresh();
       return result;
     },
+    ...(options.onDiagnoseDistress ? { onDiagnoseDistress: options.onDiagnoseDistress } : {}),
+    ...(options.onRepairDistress ? { onRepairDistress: options.onRepairDistress } : {}),
+    ...(options.onTowDistress ? { onTowDistress: options.onTowDistress } : {}),
+    ...(options.onEvacuateDistress ? { onEvacuateDistress: options.onEvacuateDistress } : {}),
     onCancel() {
       service.cancelOperation();
       options.log.write('BERGUNG > VORGANG ABGEBROCHEN');
@@ -197,6 +226,93 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     onReturnToStarMap: options.onReturnToStarMap,
   });
+}
+
+function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
+  const { options, service, state } = context;
+  if (
+    !options.sectorEvent ||
+    state.sectorEventResolved ||
+    (options.sectorEvent.type !== 'special-wreck' && !options.sectorEvent.salvageRights)
+  ) {
+    return;
+  }
+  const snapshot = service.getSnapshot();
+  const complete = snapshot.field.wrecks.every(
+    (wreck) =>
+      wreck.resources.every((resource) => resource.remainingAmount <= 0) &&
+      wreck.componentStatus !== 'available'
+  );
+  if (!complete) return;
+  state.sectorEventResolved = true;
+  options.onSectorEventResolved?.(options.sectorEvent.id);
+}
+
+function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
+  const { options, service, npcSalvage } = context;
+  if (!options.isCombatActive?.()) {
+    service.tick(deltaSeconds);
+    options.audio.updatePlayerRcs(
+      options.ship.sprite.hardpoints,
+      service.getSnapshot().ship,
+      performance.now() / 1000
+    );
+    npcSalvage.tick(deltaSeconds);
+    resolveCompletedSectorEvent(context);
+  }
+  refreshSalvageScene(context);
+}
+
+function finishSalvageCombat(
+  context: SalvageSceneRuntime,
+  snapshot: StrategicCombatSnapshot
+): void {
+  context.service.syncCombatPose(
+    snapshot.attacker.position,
+    snapshot.attacker.headingRadians,
+    snapshot.attacker.speed
+  );
+  context.npcSalvage.syncCombatPose(
+    snapshot.defender.id,
+    snapshot.defender.position,
+    snapshot.defender.headingRadians,
+    snapshot.defender.speed
+  );
+  refreshSalvageScene(context);
+}
+
+export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
+  const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
+  const field =
+    options.field ??
+    generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
+  const service = createSalvageLocalSpaceService({
+    field,
+    setup: runtime.salvage,
+    crewSkill: runtime.salvageCrewSkill,
+    collect: options.economy.recover,
+    collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
+      return (
+        options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
+        null
+      );
+    },
+    approachSpeed: 85,
+  });
+  const context: SalvageSceneRuntime = {
+    options,
+    runtime,
+    field,
+    service,
+    npcSalvage: createNpcSalvageRuntime(options, field, service),
+    state: {
+      selectedNpcId: options.selectedNpcId ?? null,
+      sectorEventResolved: false,
+      panel: null,
+    },
+  };
+  context.state.panel = createSalvagePanel(context);
+
   options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
   if (!runtime.salvage.available) {
     options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
@@ -204,34 +320,14 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
 
   return {
     finishCombat(snapshot) {
-      service.syncCombatPose(
-        snapshot.attacker.position,
-        snapshot.attacker.headingRadians,
-        snapshot.attacker.speed
-      );
-      npcSalvage.syncCombatPose(
-        snapshot.defender.id,
-        snapshot.defender.position,
-        snapshot.defender.headingRadians,
-        snapshot.defender.speed
-      );
-      refresh();
+      finishSalvageCombat(context, snapshot);
     },
     tick(deltaSeconds) {
-      if (!options.isCombatActive?.()) {
-        service.tick(deltaSeconds);
-        options.audio.updatePlayerRcs(
-          options.ship.sprite.hardpoints,
-          service.getSnapshot().ship,
-          performance.now() / 1000
-        );
-        npcSalvage.tick(deltaSeconds);
-      }
-      refresh();
+      tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
-      panel?.destroy();
-      panel = null;
+      context.state.panel?.destroy();
+      context.state.panel = null;
     },
   };
 }

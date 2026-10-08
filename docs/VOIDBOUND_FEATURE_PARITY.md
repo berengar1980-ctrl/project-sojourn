@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 37 |
-| 🟨 Teilweise | 51 |
-| ⬜ Offen | 151 |
+| ✅ Umgesetzt | 40 |
+| 🟨 Teilweise | 50 |
+| ⬜ Offen | 149 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -59,11 +59,11 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | smuggling | 1 | 0 | 11 | 0 | 12 |
 | trade | 8 | 7 | 12 | 0 | 27 |
 | npc | 7 | 4 | 11 | 0 | 22 |
-| salvage | 0 | 0 | 1 | 0 | 1 |
-| ship | 6 | 4 | 7 | 0 | 17 |
+| salvage | 0 | 1 | 0 | 0 | 1 |
+| ship | 7 | 4 | 6 | 0 | 17 |
 | equipment | 0 | 0 | 4 | 0 | 4 |
 | crew | 4 | 8 | 11 | 0 | 23 |
-| operations | 0 | 10 | 9 | 0 | 19 |
+| operations | 2 | 8 | 9 | 0 | 19 |
 | patrol | 0 | 1 | 6 | 0 | 7 |
 | customs | 0 | 0 | 10 | 0 | 10 |
 | combat | 1 | 1 | 12 | 0 | 14 |
@@ -105,6 +105,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 2026-10-07 | Voidbound-äquivalente Piraten-NPCs | Neun physische Korsaren-NPCs in zwei rivalisierenden Banden (5/4) ergänzt. Bis eigene Assets existieren verwenden sie Patrol-Rümpfe, tragen aber unterschiedliche Vektor-Abzeichen. Strategisch wählen sie verkehrsreiche Jagdreviere, vermeiden starke Piratenballung und Patrouillendruck, verfolgen Frachter/Miner/Berger und reisende Spieler, rauben nach gewonnenen NPC-Gefechten reale Fracht und nutzen die vorhandene Raumkampf-KI. Sicherheitspatrouillen priorisieren Piratenkontakte. Wie bei Voidbound bedeutet 0 Hülle nicht Tod: Spieler, Piraten, Patrouillen und zivile NPCs werden kampfunfähig, geborgen und repariert; die persistente Identität bleibt erhalten. |
 | 2026-10-07 | Selektives Mining, Sternkarten-Schiffsmaßstab und Local-Lighting | Analysierte Asteroiden können komplett oder gezielt nach 1–2 Ressourcen abgebaut werden; ungewählte Vorkommen schwinden dabei mit 50 % der individuellen Zielressourcenrate ohne Frachtertrag. Spieler-/NPC-Schiffe nutzen auf der Sternkarte dieselbe vergrößerte Maßstabsfunktion. Mining-, Bergungs- und Kampfmap erhalten stärkeres Richtungslicht, die Sternkarte unverändert. `mining.run` bleibt teilweise; keine Parity-Statusänderung. |
 | 2026-10-07 | Fix selektives Mining und Ressourcen-Reveal | Zielressourcen werden pro Asteroid persistent gespeichert; zwei Ressourcen lassen sich zuverlässig markieren/wechseln. Mining-Start analysiert unbekannte Vorkommen nicht mehr automatisch; ein Ressourcenname wird erst nach tatsächlich angenommener Frachtprobe sichtbar, Nahbereichsscan identifiziert weiterhin alle Vorkommen. Keine Parity-Statusänderung. |
+| 2026-10-07 | PR #93 · Voidbound-Bergungsereignisse und Werftforschung | Maximal drei zeitlich begrenzte Bergungsevents (davon höchstens ein Hilferuf) erscheinen als dynamische Sternkartenziele. Sonderwracks liefern ausschließlich modifizierbare Schiffssysteme; normale Wracks keine Schiffskomponenten mehr. Hilferufe unterstützen Diagnose, Reparatur, Abschleppen, Evakuierung und Boarding-Hinterhalte. Spieler und Salvager-NPCs können Sonderkomponenten bergen und an Werften verkaufen; der gemeinsame Forschungsstand schaltet verbesserte Werftvarianten frei. `salvage.special_events`, `salvage.component_value` und `ship.salvage_research` → umgesetzt; `salvage.distress_rescue` → teilweise. |
 
 ## Vollständige Matrix
 
@@ -262,7 +263,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Feature-ID | Voidbound-Feature | Sojourn-Bewertung | Entscheidung |
 |---|---|---|---|---|
-| ⬜ Offen | `salvage.distress_rescue` | Salvage ships receive distress calls with variable technical damage, best-technician diagnosis, repair or physical towing, critical evacuation and rare zone-weighted corsair boarding traps | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| 🟨 Teilweise | `salvage.distress_rescue` | Salvage ships receive distress calls with variable technical damage, best-technician diagnosis, repair or physical towing, critical evacuation and rare zone-weighted corsair boarding traps | Dynamische Hilferufe erzeugen variable Schadenslagen mit Diagnose über Engineering, Reparatur, Abschleppentscheidung, kritischer Evakuierung und seltenem taktischem Boarding-Hinterhalt. Voidbounds physische Schleppreise/volle Zonengewichtung ist noch nicht vollständig portiert. | übernehmen |
 
 ### npc
 
@@ -302,7 +303,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `ship.port_service_lock` | Refuel/repair/shipyard actions reject travel/chase/combat/deep space | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `ship.hull_purchase` | Hull purchase migrates crew stations and capacities safely | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `ship.loose_components` | Loose ship components occupy cargo and can be stored | Salvage-Komponenten-Inventar vorhanden; Voidbounds Component-as-Cargo/Storage-Modell noch nicht vollständig. | offen |
-| ⬜ Offen | `ship.salvage_research` | Salvaged special components unlock meaningful variants | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
+| ✅ Umgesetzt | `ship.salvage_research` | Salvaged special components unlock meaningful variants | Verkauf modifizierter Bergungskomponenten an einer Werft speichert pro Mk-Stufe den besten bekannten Effizienz-/Schadensbonus und schaltet daraus kaufbare Werftvarianten frei; Spieler und NPCs speisen denselben Forschungsstand. | übernehmen |
 | ✅ Umgesetzt | `ship.cargo_capacity` | Normal and special cargo capacities remain enforced | Physische Cargo-Kapazitäten werden von Handel, Mining, Salvage und NPC-Arbeit genutzt. | offen |
 | ✅ Umgesetzt | `ship.art` | Player/enemy hull art resolves to actual ship type | Player/NPC Renderer verwenden reale Rollen-/Variantenschiffsassets. | offen |
 
@@ -369,11 +370,11 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | 🟨 Teilweise | `mining.dynamic_events` | Mining shifts can pause for persistent decision events with safe/risky choices, yield/time/damage consequences, rare inclusions, deeper signatures and competitor pressure | Mining-Events mit Entscheidungen existieren; Claims/Deep-Inclusions/Competitor-Stack fehlt. | offen |
 | ⬜ Offen | `salvage.standard` | Standard salvage cycles consume time and generate salvage | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | 🟨 Teilweise | `salvage.progression` | Routine salvage has increased baseline yield and dedicated special-cargo capacity so progression does not depend only on rare jackpot wrecks | Routine-Salvage und physische Bergung existieren; Special-Cargo/Progression-Tuning ist unvollständig. | offen |
-| 🟨 Teilweise | `salvage.special_events` | Timed special salvage signals can spawn and be pursued | Salvage-Event/Wreck-System vorhanden; Voidbounds zeitlich begrenzte Signalverfolgung nicht vollständig. | offen |
+| ✅ Umgesetzt | `salvage.special_events` | Timed special salvage signals can spawn and be pursued | Zeitlich begrenzte Bergungssignale erscheinen als dynamische Sternkartenziele, können direkt angeflogen werden, öffnen eine persistente Event-Wrackkarte und werden nach Abschluss entfernt. Maximal drei Bergungsereignisse sind gleichzeitig aktiv. | übernehmen |
 | 🟨 Teilweise | `salvage.sensor_wrecks` | Sensor wreck detection depends on range/officer state | Die exakte sensorabhängige Wrackreichweite ist portiert; der lokale Wrackscan existiert, aber sektorweite versteckte/dynamische Wrackentdeckung fehlt noch. | übernehmen |
 | 🟨 Teilweise | `salvage.boarding_wreck` | Boardable wrecks can spawn and enter boarding flow | Tactical-Boarding-Foundation vorhanden; Live-Wrack→Boarding-Integration ist unvollständig. | offen |
 | ⬜ Offen | `salvage.component_extract` | Wreck component extraction advances world time | Physische Schiffskomponenten können aus Wracks geborgen werden. | offen |
-| 🟨 Teilweise | `salvage.component_value` | Better salvaged components have higher intrinsic value | Komponentenkatalog hat Tier/Kosten; vollständige Appraisal-/Value-Mechanik fehlt. | offen |
+| ✅ Umgesetzt | `salvage.component_value` | Better salvaged components have higher intrinsic value | Geborgene Komponenten werden aus Basiswert, Seltenheit und realem Effizienz-/Schadensbonus bewertet; bessere Sondervarianten erzielen entsprechend höhere Werftwerte. | übernehmen |
 | 🟨 Teilweise | `salvage.component_install` | Salvaged components can be retained/installed under capacity rules | Recovered Components + Loadout-Unterbau vorhanden; vollständiger Retain/Install/Capacity-Flow fehlt. | offen |
 | ⬜ Offen | `salvage.relics` | Relics can be sold or turned in to their faction | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 | ⬜ Offen | `salvage.departure_protection` | Completed special salvage grants short encounter protection | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |

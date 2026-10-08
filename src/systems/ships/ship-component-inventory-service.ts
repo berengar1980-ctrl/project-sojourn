@@ -18,11 +18,13 @@ export function looseComponentCargoTons(tier: number): number {
 export interface ShipComponentInventoryService {
   list(): readonly LooseShipComponent[];
   cargoUsedTons(): number;
+  take(uid: string): LooseShipComponent | null;
   store(
     type: ShipComponentType,
     componentId: string,
     sourceWreckId: string,
-    cargoCapacityTons: number
+    cargoCapacityTons: number,
+    source?: 'salvage' | 'removed' | 'purchased'
   ): LooseShipComponent | null;
 }
 
@@ -41,7 +43,18 @@ export function createShipComponentInventoryService(
       return components.reduce((sum, component) => sum + component.cargoTons, 0);
     },
 
-    store(type, componentId, sourceWreckId, cargoCapacityTons) {
+    take(uid) {
+      const index = components.findIndex((component) => component.uid === uid);
+      if (index < 0) return null;
+      const [removed] = components.splice(index, 1);
+      player.reservedCargoTons = Math.max(
+        0,
+        finiteTons(player.reservedCargoTons ?? 0) - (removed?.cargoTons ?? 0)
+      );
+      return removed ?? null;
+    },
+
+    store(type, componentId, sourceWreckId, cargoCapacityTons, source = 'salvage') {
       const definition = getShipComponent(type, componentId);
       if (!definition) return null;
       const cargoTons = looseComponentCargoTons(definition.tier);
@@ -57,6 +70,7 @@ export function createShipComponentInventoryService(
         tier: definition.tier,
         cargoTons,
         sourceWreckId,
+        source,
       };
       components.push(recovered);
       player.reservedCargoTons = finiteTons(player.reservedCargoTons ?? 0) + cargoTons;
