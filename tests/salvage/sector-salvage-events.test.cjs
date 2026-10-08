@@ -155,6 +155,10 @@ assert(diagnosis?.success, 'distress call must support technical diagnosis');
 assert.equal(distressEvents.event(distress.id)?.distressStage, 'diagnosed');
 
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerEvents = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-events.ts'),
+  'utf8'
+);
 const starController = fs.readFileSync(
   path.join(root, 'src/app/game-controller-star-map.ts'),
   'utf8'
@@ -165,9 +169,10 @@ const npcEvents = fs.readFileSync(
   'utf8'
 );
 assert(
-  controller.includes('mountControllerBoarding') &&
-    controller.includes('createCrewBoardingEncounter') &&
-    controller.includes('boardingRequired'),
+  controller.includes('controllerSalvageEventCallbacks') &&
+    controllerEvents.includes('mountControllerBoarding') &&
+    controllerEvents.includes('createCrewBoardingEncounter') &&
+    controllerEvents.includes('boardingRequired'),
   'distress traps must enter the real tactical crew boarding flow'
 );
 assert(
