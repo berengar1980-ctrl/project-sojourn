@@ -59,9 +59,7 @@ assert(
   'deep-space ambience must remain the full ~152 second loop'
 );
 
-const rcs = fs.readFileSync(
-  path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg')
-);
+const rcs = fs.readFileSync(path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg'));
 assert.equal(rcs.subarray(0, 4).toString('ascii'), 'OggS');
 assert(
   opusDurationSeconds(rcs) > 1 && opusDurationSeconds(rcs) < 1.2,
