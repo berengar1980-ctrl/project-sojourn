@@ -595,11 +595,7 @@ export class SalvageSpaceRenderer {
     }
   }
 
-  private drawPlayerSalvageEffect(
-    width: number,
-    height: number,
-    timeSeconds: number
-  ): void {
+  private drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
