@@ -133,9 +133,7 @@ export class NpcShipMapRenderer {
         )
       : 0;
     const turnRate =
-      elapsed > 0.001 && elapsed < 0.5
-        ? Math.max(-1.15, Math.min(1.15, delta / elapsed))
-        : 0;
+      elapsed > 0.001 && elapsed < 0.5 ? Math.max(-1.15, Math.min(1.15, delta / elapsed)) : 0;
     this.priorHeading.set(npcId, { angle: headingRadians, time: timeSeconds });
     const demand = {
       turnRateRadiansPerSecond: turnRate,
