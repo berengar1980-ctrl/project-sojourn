@@ -53,11 +53,8 @@ export function sectorEventLocation(
 }
 
 export function advanceEconomyDay(
-  previousId: string | null,
-  currentId: string | null,
   context: ControllerRuntimeContext
 ): void {
-  if (currentId === null || previousId === currentId) return;
   const economy = context.economy;
   economy.situations.advanceNextDay();
   economy.simulation.advanceNextDay();
@@ -66,7 +63,7 @@ export function advanceEconomyDay(
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
-    context.state.activeShip.role === 'salvage'
+    true
   );
 }
 
