@@ -42,9 +42,10 @@ assert.deepEqual(
   ['sulfur', 'silica'],
   'selecting a third resource must replace the oldest target instead of being blocked'
 );
-assert.deepEqual(selector.toggleMiningResourceSelection(['sulfur', 'silica'], 'sulfur'), [
-  'silica',
-]);
+assert.deepEqual(
+  selector.toggleMiningResourceSelection(['sulfur', 'silica'], 'sulfur'),
+  ['silica']
+);
 assert.equal(selector.toggleMiningResourceSelection(['silica'], 'silica'), null);
 
 assert(panel.includes('MiningResourceSelector'));
