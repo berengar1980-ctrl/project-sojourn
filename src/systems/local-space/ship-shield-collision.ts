@@ -28,7 +28,10 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
 }
 
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
-  const geometry = createShieldWorldGeometry(body.ship.sprite.hardpoints, body.ship.nominalLengthMeters);
+  const geometry = createShieldWorldGeometry(
+    body.ship.sprite.hardpoints,
+    body.ship.nominalLengthMeters
+  );
   const offset = rotate(geometry.centerOffset, body.state.headingRadians);
   return {
     x: body.state.position.x + offset.x,
@@ -37,7 +40,10 @@ function shieldCenter(body: LocalShieldShipBody): WorldPoint {
 }
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
-  const geometry = createShieldWorldGeometry(body.ship.sprite.hardpoints, body.ship.nominalLengthMeters);
+  const geometry = createShieldWorldGeometry(
+    body.ship.sprite.hardpoints,
+    body.ship.nominalLengthMeters
+  );
   const direction = rotate(directionWorld, -body.state.headingRadians);
   const length = Math.max(0.0001, Math.hypot(direction.x, direction.y));
   const ux = direction.x / length;
@@ -49,7 +55,12 @@ function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): n
   return denominator > 0 ? 1 / denominator : Math.max(geometry.radiusX, geometry.radiusY);
 }
 
-function collisionPoint(a: WorldPoint, b: WorldPoint, normal: WorldPoint, radius: number): WorldPoint {
+function collisionPoint(
+  a: WorldPoint,
+  b: WorldPoint,
+  normal: WorldPoint,
+  radius: number
+): WorldPoint {
   return {
     x: a.x + normal.x * radius,
     y: a.y + normal.y * radius,
@@ -70,8 +81,7 @@ export function resolveShipShieldCollisions(
       const dx = secondCenter.x - firstCenter.x;
       const dy = secondCenter.y - firstCenter.y;
       const distance = Math.hypot(dx, dy);
-      const normal =
-        distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+      const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
       const firstRadius = supportRadius(first, normal);
       const secondRadius = supportRadius(second, { x: -normal.x, y: -normal.y });
       const required = firstRadius + secondRadius;
@@ -105,7 +115,6 @@ export function resolveShipShieldCollisions(
 
   return impacts;
 }
-
 
 export interface ShieldCircleObstacle {
   readonly id: string;
