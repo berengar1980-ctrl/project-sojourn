@@ -403,10 +403,7 @@ export class TopdownMapRenderer {
 
   private shouldDrawLabel(location: StarMapLocationView): boolean {
     if (location.isSelected || location.isCurrent) return true;
-    if (
-      location.id.startsWith('salvage-special-') ||
-      location.id.startsWith('salvage-distress-')
-    ) {
+    if (location.id.startsWith('salvage-special-') || location.id.startsWith('salvage-distress-')) {
       return true;
     }
     const zoom = this.camera.getRelativeZoom();
