@@ -76,12 +76,7 @@ export class NpcShipMapRenderer {
     return hits;
   }
 
-  drawPursuitLine(
-    model: StarMapViewModel,
-    camera: MapCamera,
-    width: number,
-    height: number
-  ): void {
+  drawPursuitLine(model: StarMapViewModel, camera: MapCamera, width: number, height: number): void {
     const targetId = model.navigation.pursuitTargetId;
     if (!targetId) return;
     const target = model.npcShips.find((npc) => npc.id === targetId);
