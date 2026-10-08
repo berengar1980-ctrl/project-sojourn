@@ -417,7 +417,6 @@ export class SalvageSpaceRenderer {
     this.context.restore();
   }
 
-
   private drawNpcScan(
     shipPoint: ScreenPoint,
     targetWorld: { readonly x: number; readonly y: number },
