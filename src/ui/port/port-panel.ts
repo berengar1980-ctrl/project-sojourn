@@ -27,6 +27,7 @@ interface PortPanelOptions {
   readonly onAssignCrew: (stationId: string, crewId: string | null) => void;
   readonly onSellLooseComponent: (uid: string) => void;
   readonly onBuyShipyardVariant: (type: ShipComponentType, componentId: string) => void;
+  readonly onBuyShip: (id: string) => void;
 }
 
 function credits(value: number): string {
@@ -406,6 +407,9 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
         button.dataset.buyYardId ?? ''
       )
     );
+  }
+  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
+    button.addEventListener('click', () => options.onBuyShip(button.dataset.buyShipId ?? ''));
   }
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
     button.addEventListener('click', () => options.onHireCrew(button.dataset.hireCrewId ?? ''));
