@@ -400,8 +400,7 @@ export class ProceduralStationRenderer {
 
   private drawWear(width: number, height: number, phase: number, type: StationType): void {
     const context = this.spriteContext;
-    context.strokeStyle =
-      type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
+    context.strokeStyle = type === 'pirate' ? 'rgba(167, 96, 55, .42)' : 'rgba(132, 82, 53, .22)';
     context.lineWidth = 1;
     for (let index = 0; index < 3; index += 1) {
       const x = Math.sin(phase + index * 1.7) * width * 0.34;
