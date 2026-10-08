@@ -412,14 +412,9 @@ export class ProceduralStationRenderer {
     }
   }
 
-  private drawServiceDetails(
-    layout: StationLayout,
-    radius: number,
-    type: StationType
-  ): void {
+  private drawServiceDetails(layout: StationLayout, radius: number, type: StationType): void {
     const context = this.spriteContext;
-    context.strokeStyle =
-      type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
+    context.strokeStyle = type === 'pirate' ? 'rgba(163, 94, 56, .55)' : 'rgba(79, 124, 132, .62)';
     context.lineWidth = Math.max(1, radius * 0.012);
 
     for (let index = 0; index < layout.modules.length - 1; index += 2) {
