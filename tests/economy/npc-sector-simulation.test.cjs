@@ -137,7 +137,8 @@ const rendererSource = fs.readFileSync(
 );
 assert(
   controllerSource.includes('economy.sectorNpcs.livePosition(npc)') &&
-    rendererSource.includes('drawNpcShips'),
+    rendererSource.includes('NpcShipMapRenderer') &&
+    rendererSource.includes('this.npcShips'),
   'physical NPC traffic must be exposed on the live star map'
 );
 
