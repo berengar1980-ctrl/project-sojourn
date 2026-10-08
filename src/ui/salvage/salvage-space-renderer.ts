@@ -599,9 +599,10 @@ export class SalvageSpaceRenderer {
     const geometry = this.shipGeometry(width, height);
     const target = this.camera.worldToScreen(wreck.position, width, height);
     const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
-    const origin = hardpoints.length > 0
-      ? projectHardpoint(hardpoints[0]!, this.model.ship.hardpoints, geometry)
-      : geometry.center;
+    const origin =
+      hardpoints.length > 0
+        ? projectHardpoint(hardpoints[0]!, this.model.ship.hardpoints, geometry)
+        : geometry.center;
     const dx = target.x - origin.x;
     const dy = target.y - origin.y;
     const distance = Math.hypot(dx, dy);
