@@ -189,25 +189,11 @@ export class LocalSpaceRenderer {
     this.drawNavigationRoute(width, height);
     this.drawLongRangeScan(width, height, timeSeconds);
     this.drawShortRangeScan(width, height, timeSeconds);
-    this.miningEffects.drawTractorFields(
-      this.model,
-      geometry,
-      width,
-      height,
-      timeSeconds,
-      'below'
-    );
+    this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'below');
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'below');
     this.drawShip(geometry, timeSeconds);
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'above');
-    this.miningEffects.drawTractorFields(
-      this.model,
-      geometry,
-      width,
-      height,
-      timeSeconds,
-      'above'
-    );
+    this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'above');
     if (this.debugHardpoints) {
       this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
     }
@@ -300,13 +286,21 @@ export class LocalSpaceRenderer {
         this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
         this.context.lineWidth = 2;
         this.context.beginPath();
-        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.arc(
+          point.x,
+          point.y,
+          Math.max(geometry.width, geometry.height) * 0.65 + 7,
+          0,
+          Math.PI * 2
+        );
         this.context.stroke();
         this.context.restore();
       }
 
       if (npc.targetAsteroidId) {
-        const target = this.model.asteroids.find((asteroid) => asteroid.id === npc.targetAsteroidId);
+        const target = this.model.asteroids.find(
+          (asteroid) => asteroid.id === npc.targetAsteroidId
+        );
         if (target && npc.phase === 'scanning') {
           this.drawNpcMinerScan(
             point,
@@ -466,7 +460,6 @@ export class LocalSpaceRenderer {
     this.context.restore();
   }
 
-
   private drawNpcMinerScan(
     shipPoint: ScreenPoint,
     targetWorld: { readonly x: number; readonly y: number },
@@ -596,9 +589,7 @@ export class LocalSpaceRenderer {
         .map((deposit) => deposit.resourceName!.toUpperCase());
     }
     if (asteroid.scanLevel === 'surveyed') {
-      return asteroid.deposits.map(
-        (deposit) => deposit.resourceName?.toUpperCase() ?? '???'
-      );
+      return asteroid.deposits.map((deposit) => deposit.resourceName?.toUpperCase() ?? '???');
     }
 
     return asteroid.deposits.map((deposit) => {
@@ -664,22 +655,8 @@ export class LocalSpaceRenderer {
       longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
     };
 
-    this.engineEffects.draw(
-      this.context,
-      source,
-      geometry,
-      engineIntensity,
-      timeSeconds,
-      'below'
-    );
-    this.maneuverEffects.draw(
-      this.context,
-      source,
-      geometry,
-      maneuverDemand,
-      timeSeconds,
-      'below'
-    );
+    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds, 'below');
+    this.maneuverEffects.draw(this.context, source, geometry, maneuverDemand, timeSeconds, 'below');
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
@@ -701,29 +678,12 @@ export class LocalSpaceRenderer {
 
     this.context.restore();
 
-    this.engineEffects.draw(
-      this.context,
-      source,
-      geometry,
-      engineIntensity,
-      timeSeconds,
-      'above'
-    );
-    this.maneuverEffects.draw(
-      this.context,
-      source,
-      geometry,
-      maneuverDemand,
-      timeSeconds,
-      'above'
-    );
+    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds, 'above');
+    this.maneuverEffects.draw(this.context, source, geometry, maneuverDemand, timeSeconds, 'above');
 
     this.shieldImpacts.draw(
       this.context,
-      [
-        ...this.model.shieldImpacts,
-        ...(this.model.combat?.attacker.shieldImpacts ?? []),
-      ],
+      [...this.model.shieldImpacts, ...(this.model.combat?.attacker.shieldImpacts ?? [])],
       source,
       geometry
     );
