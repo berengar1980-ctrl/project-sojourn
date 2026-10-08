@@ -24,7 +24,7 @@ export interface ShipComponentDefinition {
   readonly baseId?: string;
   readonly specialSalvage?: boolean;
   readonly shipyardVariant?: boolean;
-  readonly salvageModifier?: 'efficiency' | 'damage';
+  readonly salvageModifier?: 'efficiency' | 'damage' | 'performance';
   readonly salvageModifierPct?: number;
 }
 
