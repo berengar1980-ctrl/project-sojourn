@@ -6,7 +6,10 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const components = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-component-service.ts');
+const components = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-component-service.ts'
+);
 const id = (type, base, bonus) => components.createShipyardVariantId(type, base, bonus, 10);
 
 for (const [type, base] of [
