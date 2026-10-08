@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       job_number:
-        description: "CircleCI job number (leave empty for 3 latest failed jobs)"
+        description: 'CircleCI job number (leave empty for 3 latest failed jobs)'
         required: false
         type: string
 
