@@ -23,7 +23,8 @@
     "check:quick": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:quick",
     "check:full": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:full && npm run build",
     "hardpoints:edit": "vite --open /tools/hardpoint-editor.html",
-    "parity:check": "node scripts/check-feature-parity.cjs"
+    "parity:check": "node scripts/check-feature-parity.cjs",
+    "audio:import-originals": "node scripts/import-original-audio.cjs"
   },
   "engines": {
     "node": ">=20"
