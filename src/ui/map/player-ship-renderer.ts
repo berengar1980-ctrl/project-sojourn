@@ -76,8 +76,7 @@ export class PlayerShipRenderer {
     };
 
     const maneuverDemand: ManeuverDemand = {
-      turnRateRadiansPerSecond:
-        idle?.turnRateRadiansPerSecond ?? ship.turnRateRadiansPerSecond,
+      turnRateRadiansPerSecond: idle?.turnRateRadiansPerSecond ?? ship.turnRateRadiansPerSecond,
       angularThrust: idle?.angularThrust ?? ship.angularThrust,
       lateralThrust: idle?.lateralThrust ?? ship.lateralThrust,
       longitudinalThrust: longitudinalManeuverDemand(idle?.speed ?? 0),
