@@ -1,12 +1,14 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
 const shipRenderer = fs.readFileSync(path.join(root, 'src/ui/map/player-ship-renderer.ts'), 'utf8');
-const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const mapRenderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const mapInput = fs.readFileSync(path.join(root, 'src/ui/map/star-map-input.ts'), 'utf8');
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const shipLighting = fs.readFileSync(
@@ -53,7 +55,10 @@ assert(
     shipLighting.includes('if (width < 72) return 0.84;'),
   'shared ship rendering must reduce internal resolution only at small screen sizes'
 );
-assert(shipRenderer.includes('const BASE_SHIP_WIDTH = 32;'), 'star-map ship must stay compact');
+assert(
+  shipRenderer.includes('starMapShipWidth('),
+  'star-map ship must use the shared physical length scale'
+);
 assert(
   shipRenderer.includes('updateIdleStationKeeping'),
   'stationary star-map ship must reuse local-space station keeping'

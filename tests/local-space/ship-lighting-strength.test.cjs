@@ -1,19 +1,15 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const lighting = fs.readFileSync(path.join(root, 'src/ui/ships/ship-lighting-renderer.ts'), 'utf8');
-const local = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-renderer.ts'),
-  'utf8'
-);
-const salvage = fs.readFileSync(
-  path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'),
-  'utf8'
-);
+const local = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
+const salvage = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 const combat = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'

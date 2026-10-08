@@ -1,12 +1,12 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const { readModuleSource } = require('../module-source.cjs');
+const read = (file) => readModuleSource(root, file);
 
 const data = read('src/data/economy/sector-npc-economy.ts');
 const sector = read('src/systems/npcs/npc-sector-service.ts');
@@ -80,7 +80,7 @@ assert(
 );
 
 assert(
-  engagement.includes('function scanForPiratePlayerAttack()') &&
+  engagement.includes('function scanForPiratePlayerAttack(') &&
     engagement.includes("'Korsaren-Abfangkurs'") &&
     engagement.includes('npcIsPiratePrey(candidate)') &&
     engagement.includes('function transferPirateLoot(') &&
@@ -89,7 +89,7 @@ assert(
 );
 
 assert(
-  sector.includes('function beginCombatRecovery(') &&
+  sector.includes('private beginCombatRecovery = (') &&
     sector.includes("npc.activityId = 'repair'") &&
     engagement.includes('KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'),
   'pirates and civilians must survive defeat as disabled ships and recover instead of dying'

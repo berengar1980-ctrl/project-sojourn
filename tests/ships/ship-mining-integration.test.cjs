@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -55,7 +57,7 @@ assert.equal(baseline.available, true, 'a standard miner must have a usable mini
 assert.equal(baseline.laserCount, 3);
 assert.equal(baseline.yieldMultiplier, 1);
 assert.equal(baseline.cycleSeconds, 0.42, 'three Mk I lasers must preserve current mining pace');
-assert.equal(baseline.cargoCapacityTons, 360);
+assert.equal(baseline.cargoCapacityTons, 390);
 assert.equal(baseline.reactorOutput, 40);
 assert.equal(baseline.continuousPowerUsed, 22);
 
@@ -110,12 +112,9 @@ assert.equal(
   'mining modules above the hull component tier must not become operational'
 );
 
-const service = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-service.ts'),
-  'utf8'
-);
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-mining.ts'), 'utf8');
-const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
+const service = readModuleSource(root, 'src/systems/local-space/local-space-service.ts');
+const controller = readModuleSource(root, 'src/app/game-controller-mining.ts');
+const panel = readModuleSource(root, 'src/ui/local-space/local-space-panel.ts');
 
 assert(service.includes('miningAvailable: this.miningEnabled'));
 assert(
@@ -129,7 +128,10 @@ assert(
 assert(
   controller.includes('runtime.mining.yieldMultiplier * runtime.crewEffects.mining.yieldMultiplier')
 );
-assert(service.includes('this.miningYieldMultiplier'));
+assert(
+  service.includes('this.yieldMultiplier') && service.includes('options.mining?.yieldMultiplier'),
+  'mining yield must flow from ship setup into resource extraction'
+);
 assert(controller.includes('runtime.cargoCapacityTons'));
 assert(panel.includes('!model.miningAvailable'));
 

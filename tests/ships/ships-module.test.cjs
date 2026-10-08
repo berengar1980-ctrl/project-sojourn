@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -7,7 +9,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '../..');
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'src/app/bootstrap.ts'), 'utf8');
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
 
 const roles = [
   { key: 'patrol', folder: 'patrol', length: 60, width: 260, role: 'patrol' },
@@ -62,10 +64,18 @@ for (const spec of roles) {
       base + ' canvas height mismatch'
     );
     assert(hardpoints.engines.length >= 2, base + ' needs engine hardpoints');
-    assert.equal(hardpoints.maneuverThrusters.length, 4, base + ' needs four RCS hardpoints');
+    assert.equal(
+      hardpoints.maneuverThrusters.length,
+      6,
+      base + ' needs six RCS hardpoints including reverse thrust'
+    );
     assert.equal(hardpoints.shield.maxHp, 100, base + ' starter shield must have 100 HP');
     if (spec.key === 'miner') {
-      assert.equal(hardpoints.miningLasers.length, 3, base + ' must expose three mining lasers');
+      assert.equal(
+        hardpoints.miningLasers.length,
+        [3, 4, 2, 3, 4, 3, 3][index],
+        base + ' must retain its variant-specific mining emitters'
+      );
     } else {
       assert.equal(hardpoints.miningLasers.length, 0, base + ' must not expose mining lasers');
     }

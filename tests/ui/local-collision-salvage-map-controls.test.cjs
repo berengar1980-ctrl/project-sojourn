@@ -1,24 +1,20 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
-const mapRenderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
-const miningNpc = fs.readFileSync(
-  path.join(root, 'src/systems/npcs/npc-local-mining-service.ts'),
-  'utf8'
-);
+const mapRenderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
+const miningNpc = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
 const salvageNpc = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'
 );
-const salvagePanel = fs.readFileSync(
-  path.join(root, 'src/ui/salvage/salvage-space-panel.ts'),
-  'utf8'
-);
+const salvagePanel = readModuleSource(root, 'src/ui/salvage/salvage-space-panel.ts');
 
 assert(
   mapPanel.includes('NAMEN // AN') &&

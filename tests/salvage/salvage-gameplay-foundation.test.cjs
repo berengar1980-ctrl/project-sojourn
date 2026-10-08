@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const path = require('node:path');
@@ -61,7 +63,7 @@ const baseline = capability.resolveShipSalvageSetup(salvager);
 assert.equal(baseline.available, true);
 assert.equal(baseline.yieldMultiplier, 1);
 assert.equal(baseline.chanceBonus, 0);
-assert.equal(baseline.cargoCapacityTons, 260);
+assert.equal(baseline.cargoCapacityTons, 290);
 assert.equal(capability.resolveShipSalvageSetup(createShip('freighter')).available, false);
 
 const upgraded = capability.resolveShipSalvageSetup(salvager, {
@@ -141,11 +143,7 @@ assert.equal(before - after, recovered.recovered);
 assert(Object.keys(player.cargo).length > 0);
 assert.equal(pool, 100 - recovered.recovered, 'salvage must draw from the physical resource pool');
 
-const fs = require('node:fs');
-const salvageRenderer = fs.readFileSync(
-  path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'),
-  'utf8'
-);
+const salvageRenderer = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 assert(
   salvageRenderer.includes('drawPlayerSalvageEffect') &&
     salvageRenderer.includes("this.model.phase !== 'stripping'") &&

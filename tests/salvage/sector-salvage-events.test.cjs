@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -154,16 +156,10 @@ const diagnosis = distressEvents.diagnoseDistress(distress.id);
 assert(diagnosis?.success, 'distress call must support technical diagnosis');
 assert.equal(distressEvents.event(distress.id)?.distressStage, 'diagnosed');
 
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const controllerEvents = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-events.ts'),
-  'utf8'
-);
-const starController = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-star-map.ts'),
-  'utf8'
-);
-const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const controllerEvents = readModuleSource(root, 'src/app/game-controller-events.ts');
+const starController = readModuleSource(root, 'src/app/game-controller-star-map.ts');
+const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
 const npcEvents = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-salvage-event-service.ts'),
   'utf8'

@@ -8,9 +8,7 @@ function percent(value: number): string {
   return Math.round(value * 100) + '%';
 }
 
-export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
-  document.querySelector('.settings-menu')?.remove();
-
+function createSettingsShell(): HTMLDivElement {
   const shell = document.createElement('div');
   shell.className = 'settings-menu';
   shell.innerHTML = `
@@ -67,6 +65,14 @@ export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
   `;
 
   document.body.append(shell);
+
+  return shell;
+}
+
+export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
+  document.querySelector('.settings-menu')?.remove();
+
+  const shell = createSettingsShell();
 
   const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;

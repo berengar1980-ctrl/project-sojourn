@@ -1,7 +1,8 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -67,7 +68,7 @@ assert.equal(
   12,
   'unmanned sensor station must retain the existing automation fallback'
 );
-assert.equal(baseline.cargoCapacityTons, 360);
+assert.equal(baseline.cargoCapacityTons, 390);
 assert.equal(
   baseline.mining.cargoCapacityTons,
   baseline.cargoCapacityTons,
@@ -146,11 +147,8 @@ assert.equal(systemSnapshot.shield.currentHp, 0);
 assert.equal(systemSnapshot.hull.currentHp, 30, 'shield overflow must damage hull');
 assert.equal(systemSnapshot.reactor.continuousFree, 27);
 
-const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
-const miningController = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-mining.ts'),
-  'utf8'
-);
+const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
+const miningController = readModuleSource(root, 'src/app/game-controller-mining.ts');
 assert(portController.includes('canShipCarryResource(ship, resourceId)'));
 assert(portController.includes('runtime.cargoCapacityTons'));
 assert(miningController.includes('systems: {'));

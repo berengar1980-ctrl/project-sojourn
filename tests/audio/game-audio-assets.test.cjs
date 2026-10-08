@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
+const nodeCrypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -50,7 +50,7 @@ const ambience = Buffer.from(ambienceChunks.join('').trim(), 'base64');
 
 assert.equal(ambience.subarray(0, 4).toString('ascii'), 'OggS');
 assert.equal(
-  crypto.createHash('sha256').update(ambience).digest('hex'),
+  nodeCrypto.createHash('sha256').update(ambience).digest('hex'),
   'ae563895f5877cf4f9fc12cfd46e84483f90d1550be6e0e1f8af1e7cbe57e694',
   'chunked ambience must rebuild to the verified full encoded asset'
 );

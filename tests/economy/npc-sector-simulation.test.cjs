@@ -1,7 +1,8 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -140,14 +141,8 @@ assert.equal(
   'NPC component upgrades must respect a completed-run cooldown'
 );
 
-const controllerSource = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-star-map.ts'),
-  'utf8'
-);
-const rendererSource = fs.readFileSync(
-  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
-  'utf8'
-);
+const controllerSource = readModuleSource(root, 'src/app/game-controller-star-map.ts');
+const rendererSource = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 assert(
   controllerSource.includes('economy.sectorNpcs.livePosition(npc)') &&
     rendererSource.includes('NpcShipMapRenderer') &&

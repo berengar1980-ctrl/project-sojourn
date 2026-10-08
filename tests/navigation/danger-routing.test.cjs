@@ -1,7 +1,8 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -91,10 +92,7 @@ const sectorMap = loadStandaloneTypeScriptModule(
 ).narrowsSector;
 assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger regions');
 
-const rendererSource = fs.readFileSync(
-  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
-  'utf8'
-);
+const rendererSource = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 assert(
   !rendererSource.includes('this.drawRegions(width, height);'),
   'danger regions must influence routing without being rendered on the star map'

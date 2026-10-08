@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -39,10 +41,7 @@ assert(
 const cameraSource = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf8');
 const scaleSource = fs.readFileSync(path.join(root, 'src/ui/map/map-visual-scale.ts'), 'utf8');
 const shipSource = fs.readFileSync(path.join(root, 'src/ui/map/player-ship-renderer.ts'), 'utf8');
-const rendererSource = fs.readFileSync(
-  path.join(root, 'src/ui/map/topdown-map-renderer.ts'),
-  'utf8'
-);
+const rendererSource = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 
 assert(
   cameraSource.includes('MIN_RELATIVE_ZOOM = 1') &&
@@ -52,8 +51,7 @@ assert(
   'fully zoomed-out view must stay locked to the fitted system after viewport changes'
 );
 assert(
-  scaleSource.includes('Math.pow(relativeZoom, 0.45)') &&
-    shipSource.includes('BASE_SHIP_WIDTH = 15'),
+  scaleSource.includes('Math.pow(relativeZoom, 0.45)') && shipSource.includes('starMapShipWidth('),
   'strategic ship scale must remain much smaller than planets at close zoom'
 );
 assert(

@@ -1,11 +1,13 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
-const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const camera = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf8');
 
 assert(
@@ -19,8 +21,8 @@ assert(
   'planet symbols must stay compact while preserving size differences'
 );
 assert(
-  camera.includes('const MAX_RELATIVE_ZOOM = 4.25;') &&
-    camera.includes('this.maximumZoom = this.fitZoom * MAX_RELATIVE_ZOOM;'),
+  camera.includes('const MAX_RELATIVE_ZOOM = 4.6;') &&
+    camera.includes('this.maximumZoom = fitZoom * MAX_RELATIVE_ZOOM;'),
   'star-map zoom must stop before spacing changes outlive useful symbol growth'
 );
 assert(

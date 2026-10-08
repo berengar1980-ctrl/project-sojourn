@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -9,11 +11,8 @@ const background = fs.readFileSync(
   path.join(root, 'src/ui/space/space-background-renderer.ts'),
   'utf8'
 );
-const starMap = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
-const localSpace = fs.readFileSync(
-  path.join(root, 'src/ui/local-space/local-space-renderer.ts'),
-  'utf8'
-);
+const starMap = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
+const localSpace = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
 const camera = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf8');
 
 assert(background.includes('drawMilkyWay'), 'space background must render a milky-way layer');

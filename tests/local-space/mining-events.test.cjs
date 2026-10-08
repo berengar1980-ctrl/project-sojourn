@@ -1,5 +1,7 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -92,10 +94,7 @@ function sequence(values) {
   assert.equal(target.deposits[0].oreRemaining, 60);
 }
 
-const service = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-service.ts'),
-  'utf8'
-);
+const service = readModuleSource(root, 'src/systems/local-space/local-space-service.ts');
 const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/mining-event-panel.ts'), 'utf8');
 assert(service.includes('this.miningEvents.pauseExtraction(asteroid, deltaSeconds)'));
 assert(service.includes('this.shipSystems.damageHullFraction'));

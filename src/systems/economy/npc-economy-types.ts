@@ -1,0 +1,44 @@
+import type { EconomyResourceId, NpcEconomyState } from '../../core/economy-types';
+
+import { type EconomyPoint } from './npc-resource-side-trade';
+
+export interface PhysicalResourceAllocator {
+  createMinedResource(resourceId: EconomyResourceId, amount: number): number;
+  allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+}
+
+export interface TradeRoute {
+  readonly resourceId: EconomyResourceId;
+  readonly destinationId: string;
+  readonly quantity: number;
+  readonly margin: number;
+  readonly observedDay: number;
+  readonly score: number;
+}
+
+export interface NpcEconomyService {
+  readonly npcs: readonly NpcEconomyState[];
+  mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  salvageLocal(
+    npc: NpcEconomyState,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number
+  ): number;
+  dispatchLoadedWorker(npc: NpcEconomyState): boolean;
+  tick(deltaSeconds: number): void;
+  advanceDay(day: number): void;
+  advanceNextDay(): void;
+}
+
+export interface NpcEconomyServiceOptions {
+  readonly positions?: Readonly<Record<string, EconomyPoint>>;
+  readonly travel?: {
+    readonly requestTravel: (
+      npc: NpcEconomyState,
+      destinationId: string,
+      reason: string
+    ) => boolean;
+    readonly requestPatrol?: (npc: NpcEconomyState) => boolean;
+    readonly isTravelling: (npc: NpcEconomyState) => boolean;
+  };
+}

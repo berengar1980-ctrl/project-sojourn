@@ -167,37 +167,38 @@ function recoveryAmount(npc: SectorNpcState, wreck: SalvageWreck): number {
   );
 }
 
-export function createNpcLocalSalvageService(
-  options: NpcLocalSalvageOptions
-): NpcLocalSalvageService {
-  const ships: LocalNpcSalvagerState[] = [];
-  const byId = new Map(options.salvagers.map((npc) => [npc.id, npc] as const));
-  const events = new Map(
-    options.salvagers.map((npc) => [
-      npc.id,
-      createSalvageEventController(hashId(options.locationId + ':' + npc.id)),
-    ])
-  );
-
-  function beginExit(ship: LocalNpcSalvagerState): void {
+class LocalSalvageService implements NpcLocalSalvageService {
+  readonly ships: LocalNpcSalvagerState[] = [];
+  private readonly byId: Map<string, SectorNpcState>;
+  private readonly events: Map<string, ReturnType<typeof createSalvageEventController>>;
+  constructor(private readonly options: NpcLocalSalvageOptions) {
+    this.byId = new Map(options.salvagers.map((npc) => [npc.id, npc]));
+    this.events = new Map(
+      options.salvagers.map((npc) => [
+        npc.id,
+        createSalvageEventController(hashId(options.locationId + ':' + npc.id)),
+      ])
+    );
+    this.syncArrivals();
+  }
+  private beginExit = (ship: LocalNpcSalvagerState): void => {
     ship.phase = 'exiting';
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
     ship.exitPoint = edgePoint(
       ship.npcId + ':exit',
-      options.field.width,
-      options.field.height,
+      this.options.field.width,
+      this.options.field.height,
       true
     );
-  }
-
-  function syncArrivals(): void {
-    const active = new Set(ships.map((ship) => ship.npcId));
-    for (const npc of options.salvagers) {
-      if (active.has(npc.id) || !eligible(npc, options.locationId)) continue;
-      const entry = edgePoint(npc.id, options.field.width, options.field.height);
-      ships.push({
+  };
+  private syncArrivals = (): void => {
+    const active = new Set(this.ships.map((ship) => ship.npcId));
+    for (const npc of this.options.salvagers) {
+      if (active.has(npc.id) || !eligible(npc, this.options.locationId)) continue;
+      const entry = edgePoint(npc.id, this.options.field.width, this.options.field.height);
+      this.ships.push({
         npcId: npc.id,
         name: npc.name,
         shipId: npc.shipId,
@@ -209,35 +210,38 @@ export function createNpcLocalSalvageService(
         salvageActive: false,
         scanProgress: 0,
         workAccumulator: 0,
-        exitPoint: edgePoint(npc.id + ':exit', options.field.width, options.field.height, true),
+        exitPoint: edgePoint(
+          npc.id + ':exit',
+          this.options.field.width,
+          this.options.field.height,
+          true
+        ),
       });
     }
-  }
-
-  function assignTarget(ship: LocalNpcSalvagerState, npc: SectorNpcState): boolean {
+  };
+  private assignTarget = (ship: LocalNpcSalvagerState, npc: SectorNpcState): boolean => {
     const occupied = new Set(
-      ships
+      this.ships
         .filter((candidate) => candidate.npcId !== ship.npcId && candidate.targetWreckId)
         .map((candidate) => candidate.targetWreckId as string)
     );
-    const wreck = chooseWreck(npc, options.field, occupied);
+    const wreck = chooseWreck(npc, this.options.field, occupied);
     if (!wreck) {
-      beginExit(ship);
+      this.beginExit(ship);
       return false;
     }
     ship.targetWreckId = wreck.id;
-    ship.phase = 'entering';
+    ship.phase = 'approaching';
     ship.salvageActive = false;
     ship.scanProgress = 0;
     return true;
-  }
-
-  function resolveEvent(
+  };
+  private resolveEvent = (
     ship: LocalNpcSalvagerState,
     npc: SectorNpcState,
     wreck: SalvageWreck
-  ): void {
-    const controller = events.get(npc.id);
+  ): void => {
+    const controller = this.events.get(npc.id);
     const pending = controller?.inspect(wreck);
     if (!controller || !pending) return;
     const choice = chooseEventChoice(npc, pending.choices);
@@ -254,40 +258,40 @@ export function createNpcLocalSalvageService(
     npc.activityId = 'salvage-event';
     npc.activity = `${result.title} · ${choice.riskLabel}`;
     ship.workAccumulator = -controller.recoverySeconds;
-  }
-
-  function recover(ship: LocalNpcSalvagerState, npc: SectorNpcState, wreck: SalvageWreck): void {
+  };
+  private recover = (
+    ship: LocalNpcSalvagerState,
+    npc: SectorNpcState,
+    wreck: SalvageWreck
+  ): void => {
     const deposit = [...wreck.resources]
       .filter((entry) => entry.remainingAmount > 0)
       .sort((a, b) => b.remainingAmount - a.remainingAmount)[0];
     if (!deposit) {
-      assignTarget(ship, npc);
+      this.assignTarget(ship, npc);
       return;
     }
     const requested = Math.min(recoveryAmount(npc, wreck), deposit.remainingAmount);
-    const accepted = options.recover(npc, deposit.resourceId, requested);
+    const accepted = this.options.recover(npc, deposit.resourceId, requested);
     if (accepted > 0) deposit.remainingAmount = Math.max(0, deposit.remainingAmount - accepted);
 
     if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
-      beginExit(ship);
+      this.beginExit(ship);
     } else if (wreckRemaining(wreck) <= 0) {
-      assignTarget(ship, npc);
+      this.assignTarget(ship, npc);
     }
-  }
-
-  syncArrivals();
-
-  function syncCombatPose(
+  };
+  syncCombatPose = (
     npcId: string,
     position: WorldPoint,
     headingRadians: number,
     speed: number
-  ): void {
-    const ship = ships.find((entry) => entry.npcId === npcId);
+  ): void => {
+    const ship = this.ships.find((entry) => entry.npcId === npcId);
     if (!ship) return;
     ship.position = {
-      x: Math.max(0, Math.min(options.field.width, position.x)),
-      y: Math.max(0, Math.min(options.field.height, position.y)),
+      x: Math.max(0, Math.min(this.options.field.width, position.x)),
+      y: Math.max(0, Math.min(this.options.field.height, position.y)),
     };
     ship.headingRadians = headingRadians;
     ship.speed = Math.max(0, speed);
@@ -295,120 +299,143 @@ export function createNpcLocalSalvageService(
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
-  }
-
-  return {
-    ships,
-    syncCombatPose,
-    tick(deltaSeconds) {
-      const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
-      if (dt <= 0) return;
-      syncArrivals();
-
-      for (let index = ships.length - 1; index >= 0; index -= 1) {
-        const ship = ships[index]!;
-        const npc = byId.get(ship.npcId);
-        if (
-          !npc ||
-          npc.hullHp <= 0 ||
-          (npc.combatRecoverySeconds ?? 0) > 0 ||
-          npc.locationId !== options.locationId
-        ) {
-          ships.splice(index, 1);
-          continue;
-        }
-
-        if (ship.phase === 'entering') {
-          if (!assignTarget(ship, npc)) continue;
-        }
-
-        if (ship.phase === 'approaching') {
-          const wreck = options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
-          if (!wreck || wreckRemaining(wreck) <= 0) {
-            assignTarget(ship, npc);
-            continue;
-          }
-          if (moveToward(ship, workPoint(npc.id, wreck), FLIGHT_SPEED, dt)) {
-            ship.phase = 'scanning';
-            ship.speed = 0;
-            ship.scanProgress = 0;
-            ship.headingRadians = Math.atan2(
-              wreck.position.y - ship.position.y,
-              wreck.position.x - ship.position.x
-            );
-          }
-          continue;
-        }
-
-        if (ship.phase === 'scanning') {
-          const wreck = options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
-          if (!wreck) {
-            beginExit(ship);
-            continue;
-          }
-          ship.speed = 0;
-          ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
-          if (ship.scanProgress < 1) continue;
-          resolveEvent(ship, npc, wreck);
-          ship.phase = 'salvaging';
-          ship.salvageActive = true;
-          npc.activityId = 'salvage';
-          npc.activity = 'Bergung nach Wrackscan';
-          continue;
-        }
-
-        if (ship.phase === 'salvaging') {
-          const wreck = options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
-          if (!wreck) {
-            beginExit(ship);
-            continue;
-          }
-          ship.speed = 0;
-          ship.salvageActive = true;
-          ship.headingRadians = Math.atan2(
-            wreck.position.y - ship.position.y,
-            wreck.position.x - ship.position.x
-          );
-          ship.workAccumulator += dt;
-          if (ship.workAccumulator < 0) continue;
-          while (ship.workAccumulator >= BASE_CYCLE_SECONDS && ship.phase === 'salvaging') {
-            ship.workAccumulator -= BASE_CYCLE_SECONDS;
-            recover(ship, npc, wreck);
-          }
-          continue;
-        }
-
-        ship.salvageActive = false;
-        if (moveToward(ship, ship.exitPoint, FLIGHT_SPEED * 1.15, dt)) {
-          ships.splice(index, 1);
-          options.depart(npc);
-        }
-      }
-
-      const playerState = options.getPlayerShipState?.();
-      const bodies: LocalShieldShipBody[] = ships.flatMap((local) => {
-        const definition = getShipDefinition(local.shipId);
-        return definition
-          ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }]
-          : [];
-      });
-      if (playerState && options.playerShip) {
-        bodies.unshift({
-          id: 'player',
-          ship: options.playerShip,
-          state: playerState,
-          pushWeight: 2.4,
-        });
-      }
-      resolveShipShieldCollisions(bodies);
-      resolveShipShieldObstacleCollisions(
-        bodies,
-        options.field.wrecks.map((wreck) => ({
-          id: wreck.id,
-          position: wreck.position,
-          radius: wreck.radius,
-        }))
-      );
-    },
   };
+  private advanceApproaching = (
+    ship: LocalNpcSalvagerState,
+    npc: SectorNpcState,
+    dt: number
+  ): void => {
+    const wreck = this.options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
+    if (!wreck || wreckRemaining(wreck) <= 0) {
+      this.assignTarget(ship, npc);
+      return;
+    }
+    if (moveToward(ship, workPoint(npc.id, wreck), FLIGHT_SPEED, dt)) {
+      ship.phase = 'scanning';
+      ship.speed = 0;
+      ship.scanProgress = 0;
+      ship.headingRadians = Math.atan2(
+        wreck.position.y - ship.position.y,
+        wreck.position.x - ship.position.x
+      );
+    }
+    return;
+  };
+  private advanceScanning = (
+    ship: LocalNpcSalvagerState,
+    npc: SectorNpcState,
+    dt: number
+  ): void => {
+    const wreck = this.options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
+    if (!wreck) {
+      this.beginExit(ship);
+      return;
+    }
+    ship.speed = 0;
+    ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
+    if (ship.scanProgress < 1) return;
+    this.resolveEvent(ship, npc, wreck);
+    ship.phase = 'salvaging';
+    ship.salvageActive = true;
+    npc.activityId = 'salvage';
+    npc.activity = 'Bergung nach Wrackscan';
+    return;
+  };
+  private advanceSalvaging = (
+    ship: LocalNpcSalvagerState,
+    npc: SectorNpcState,
+    dt: number
+  ): void => {
+    const wreck = this.options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
+    if (!wreck) {
+      this.beginExit(ship);
+      return;
+    }
+    ship.speed = 0;
+    ship.salvageActive = true;
+    ship.headingRadians = Math.atan2(
+      wreck.position.y - ship.position.y,
+      wreck.position.x - ship.position.x
+    );
+    ship.workAccumulator += dt;
+    if (ship.workAccumulator < 0) return;
+    while (ship.workAccumulator >= BASE_CYCLE_SECONDS && ship.phase === 'salvaging') {
+      ship.workAccumulator -= BASE_CYCLE_SECONDS;
+      this.recover(ship, npc, wreck);
+    }
+    return;
+  };
+  tick = (deltaSeconds: number): void => {
+    const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
+    if (dt <= 0) return;
+    this.syncArrivals();
+
+    for (let index = this.ships.length - 1; index >= 0; index -= 1) {
+      const ship = this.ships[index]!;
+      const npc = this.byId.get(ship.npcId);
+      if (
+        !npc ||
+        npc.hullHp <= 0 ||
+        (npc.combatRecoverySeconds ?? 0) > 0 ||
+        npc.locationId !== this.options.locationId
+      ) {
+        this.ships.splice(index, 1);
+        continue;
+      }
+
+      if (ship.phase === 'entering') {
+        if (!this.assignTarget(ship, npc)) continue;
+      }
+
+      if (ship.phase === 'approaching') {
+        this.advanceApproaching(ship, npc, dt);
+        continue;
+      }
+
+      if (ship.phase === 'scanning') {
+        this.advanceScanning(ship, npc, dt);
+        continue;
+      }
+
+      if (ship.phase === 'salvaging') {
+        this.advanceSalvaging(ship, npc, dt);
+        continue;
+      }
+
+      ship.salvageActive = false;
+      if (moveToward(ship, ship.exitPoint, FLIGHT_SPEED * 1.15, dt)) {
+        this.ships.splice(index, 1);
+        this.options.depart(npc);
+      }
+    }
+
+    const playerState = this.options.getPlayerShipState?.();
+    const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
+      const definition = getShipDefinition(local.shipId);
+      return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
+    });
+    if (playerState && this.options.playerShip) {
+      bodies.unshift({
+        id: 'player',
+        ship: this.options.playerShip,
+        state: playerState,
+        pushWeight: 2.4,
+      });
+    }
+    resolveShipShieldCollisions(bodies);
+    resolveShipShieldObstacleCollisions(
+      bodies,
+      this.options.field.wrecks.map((wreck) => ({
+        id: wreck.id,
+        position: wreck.position,
+        radius: wreck.radius,
+      }))
+    );
+  };
+}
+
+export function createNpcLocalSalvageService(
+  options: NpcLocalSalvageOptions
+): NpcLocalSalvageService {
+  return new LocalSalvageService(options);
 }

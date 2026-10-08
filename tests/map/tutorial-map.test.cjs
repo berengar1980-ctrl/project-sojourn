@@ -1,12 +1,14 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
-const data = fs.readFileSync(path.join(root, 'src/data/maps/narrows-sector.ts'), 'utf8');
-const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
+const data = readModuleSource(root, 'src/data/maps/narrows-sector.ts');
+const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const navRenderer = fs.readFileSync(path.join(root, 'src/ui/map/nav-map-renderer.ts'), 'utf8');
 const panel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 
@@ -25,7 +27,10 @@ assert(data.includes('mine: true'), 'sector needs mining locations');
 assert(data.includes('salvage: true'), 'sector needs salvage locations');
 assert(data.includes("id: 'blackjaw-outpost'"), 'sector needs a pirate port');
 assert(data.includes("id: 'gallows-anchor'"), 'sector needs more than one pirate port');
-assert(data.includes('regions: []'), 'decorative danger regions must stay off the sector map');
+assert(
+  !renderer.includes('this.drawRegions(') && !navRenderer.includes('this.drawRegions('),
+  'danger regions must remain routing-only, without decorative map overlays'
+);
 assert(renderer.includes('drawStar'), 'renderer must draw the system star');
 assert(renderer.includes('drawOrbits'), 'renderer must support orbital structure');
 assert(

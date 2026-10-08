@@ -48,7 +48,7 @@ function distanceToSelectedNpc(model: StarMapViewModel): number {
   );
 }
 
-export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
+function createStarMapControls(options: StarMapPanelOptions) {
   const shell = document.createElement('section');
   shell.className = 'star-map-shell';
   shell.innerHTML = `
@@ -96,61 +96,28 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     throw new Error('Star map UI is incomplete.');
   }
 
-  let model = options.model;
-  const renderer = new TopdownMapRenderer(canvas, model);
-  const applyDisplayMode = (mode: StarMapDisplayMode): void => {
-    preferredDisplayMode = mode;
-    shell.classList.toggle('is-nav-mode', mode === 'nav');
-    modeToggle.textContent = mode === 'nav' ? 'ANSICHT // NAV' : 'ANSICHT // PHYSISCH';
-    renderer.setDisplayMode(mode);
+  return {
+    shell,
+    canvas,
+    card,
+    travelButton,
+    dockButton,
+    attackButton,
+    travelStatus,
+    modeToggle,
+    labelToggle,
   };
-  modeToggle.addEventListener('click', () =>
-    applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
-  );
-  labelToggle.addEventListener('click', () => {
-    preferredLabelsVisible = !preferredLabelsVisible;
-    labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
-    labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
-    renderer.setLabelsVisible(preferredLabelsVisible);
-  });
-  applyDisplayMode(preferredDisplayMode);
-  labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
-  labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
-  renderer.setLabelsVisible(preferredLabelsVisible);
-  const systemLog = createSystemLogPanel({
-    root: shell,
-    log: options.log,
-    header: 'SYS // NAVIGATION',
-    placementClass: 'star-system-log',
-  });
+}
 
-  const updateTravelStatus = (): void => {
-    travelStatus.hidden = !model.navigation.isTravelling;
-    if (!model.navigation.isTravelling) return;
-
-    if (model.navigation.isPursuing) {
-      const target = model.npcShips.find((npc) => npc.id === model.navigation.pursuitTargetId);
-      const distance = target
-        ? Math.hypot(
-            target.position.x - model.playerShip.position.x,
-            target.position.y - model.playerShip.position.y
-          )
-        : 0;
-      travelStatus.textContent =
-        'VERFOLGUNG · ' +
-        (target?.name.toUpperCase() ?? 'KONTAKT') +
-        ' · ' +
-        Math.round(distance) +
-        ' u';
-      return;
-    }
-
-    const percent = Math.round(model.navigation.progress * 100);
-    travelStatus.textContent =
-      'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
-  };
-
+function createSelectionUpdater(
+  getModel: () => StarMapViewModel,
+  card: HTMLElement,
+  travelButton: HTMLButtonElement,
+  dockButton: HTMLButtonElement,
+  attackButton: HTMLButtonElement
+) {
   const updateLocationSelection = (): boolean => {
+    const model = getModel();
     const selected = model.locations.find((location) => location.isSelected);
     if (!selected) return false;
 
@@ -173,6 +140,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   };
 
   const updateNpcSelection = (): boolean => {
+    const model = getModel();
     const selected = model.npcShips.find((npc) => npc.isSelected);
     if (!selected) return false;
 
@@ -201,8 +169,86 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     return true;
   };
 
+  return { updateLocationSelection, updateNpcSelection };
+}
+
+function updateTravelStatus(model: StarMapViewModel, travelStatus: HTMLElement): void {
+  travelStatus.hidden = !model.navigation.isTravelling;
+  if (!model.navigation.isTravelling) return;
+
+  if (model.navigation.isPursuing) {
+    const target = model.npcShips.find((npc) => npc.id === model.navigation.pursuitTargetId);
+    const distance = target
+      ? Math.hypot(
+          target.position.x - model.playerShip.position.x,
+          target.position.y - model.playerShip.position.y
+        )
+      : 0;
+    travelStatus.textContent =
+      'VERFOLGUNG · ' +
+      (target?.name.toUpperCase() ?? 'KONTAKT') +
+      ' · ' +
+      Math.round(distance) +
+      ' u';
+    return;
+  }
+
+  const percent = Math.round(model.navigation.progress * 100);
+  travelStatus.textContent =
+    'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
+}
+
+export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
+  const {
+    shell,
+    canvas,
+    card,
+    travelButton,
+    dockButton,
+    attackButton,
+    travelStatus,
+    modeToggle,
+    labelToggle,
+  } = createStarMapControls(options);
+
+  let model = options.model;
+  const renderer = new TopdownMapRenderer(canvas, model);
+  const applyDisplayMode = (mode: StarMapDisplayMode): void => {
+    preferredDisplayMode = mode;
+    shell.classList.toggle('is-nav-mode', mode === 'nav');
+    modeToggle.textContent = mode === 'nav' ? 'ANSICHT // NAV' : 'ANSICHT // PHYSISCH';
+    renderer.setDisplayMode(mode);
+  };
+  modeToggle.addEventListener('click', () =>
+    applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
+  );
+  labelToggle.addEventListener('click', () => {
+    preferredLabelsVisible = !preferredLabelsVisible;
+    labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+    labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+    renderer.setLabelsVisible(preferredLabelsVisible);
+  });
+  applyDisplayMode(preferredDisplayMode);
+  labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+  labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+  renderer.setLabelsVisible(preferredLabelsVisible);
+  const systemLog = createSystemLogPanel({
+    root: shell,
+    log: options.log,
+    header: 'SYS // NAVIGATION',
+    placementClass: 'star-system-log',
+  });
+
+  const { updateLocationSelection, updateNpcSelection } = createSelectionUpdater(
+    () => model,
+    card,
+    travelButton,
+    dockButton,
+    attackButton
+  );
+
   const updateSelection = (): void => {
-    updateTravelStatus();
+    updateTravelStatus(model, travelStatus);
     const hasSelection = updateNpcSelection() || updateLocationSelection();
     card.hidden = !hasSelection;
   };

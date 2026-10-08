@@ -1,12 +1,14 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const panel = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-panel.ts'), 'utf8');
+const panel = readModuleSource(root, 'src/ui/local-space/local-space-panel.ts');
 const selectorSource = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-resource-selector.ts'),
   'utf8'
@@ -15,17 +17,11 @@ const selector = loadStandaloneTypeScriptModule(
   root,
   'src/ui/local-space/mining-resource-selector.ts'
 );
-const actions = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-local-actions.ts'),
-  'utf8'
-);
-const service = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/local-space-service.ts'),
-  'utf8'
-);
-const resourceRuntime = fs.readFileSync(
-  path.join(root, 'src/systems/local-space/mining-resource-runtime.ts'),
-  'utf8'
+const actions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
+const service = readModuleSource(root, 'src/systems/local-space/local-space-service.ts');
+const resourceRuntime = readModuleSource(
+  root,
+  'src/systems/local-space/mining-resource-runtime.ts'
 );
 
 assert.deepEqual(selector.toggleMiningResourceSelection(null, 'ferrite'), ['ferrite']);

@@ -1,7 +1,8 @@
 'use strict';
 
+const { readModuleSource } = require('../module-source.cjs');
+
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -68,13 +69,10 @@ assert.equal(service.getSnapshot().phase, 'navigating');
 for (let index = 0; index < 400; index += 1) service.tick(0.05);
 assert.equal(service.getSnapshot().phase, 'idle');
 
-const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-const scene = fs.readFileSync(path.join(root, 'src/app/game-controller-salvage.ts'), 'utf8');
-const panel = fs.readFileSync(path.join(root, 'src/ui/salvage/salvage-space-panel.ts'), 'utf8');
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'),
-  'utf8'
-);
+const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const scene = readModuleSource(root, 'src/app/game-controller-salvage.ts');
+const panel = readModuleSource(root, 'src/ui/salvage/salvage-space-panel.ts');
+const renderer = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 
 assert(controller.includes("mode === 'salvage-space'"));
 assert(controller.includes('salvageLocationById'));

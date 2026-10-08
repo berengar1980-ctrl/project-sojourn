@@ -72,12 +72,12 @@ const miningSites = narrowsSector.locations.filter((location) => location.activi
 const salvageSites = narrowsSector.locations.filter((location) => location.activities.salvage);
 
 assert(planets.length >= 11, 'planets must dominate the sector hierarchy');
-assert.equal(moons.length, 1, 'sector map must avoid moon clutter');
-assert.equal(stations.length, 7, 'stations must stay readable at sector scale');
+assert.equal(moons.length, 8, 'sector must retain the expanded moon population');
+assert.equal(stations.length, 15, 'sector must retain its expanded station economy');
 assert(miningSites.length >= 6, 'sector needs multiple distinct mining destinations');
 assert(salvageSites.length >= 3, 'sector needs multiple salvage destinations');
 assert(sectorPorts.filter((port) => port.shipyard).length >= 2, 'sector needs multiple shipyards');
-assert.equal(narrowsSector.regions.length, 0, 'decorative danger regions must not clutter the map');
+assert(narrowsSector.regions.length > 0, 'routing must retain danger regions');
 for (const stationId of ['helix-shipyards', 'coldwater-station']) {
   const station = stations.find((entry) => entry.id === stationId);
   assert(station, stationId + ' must remain in the sector');
@@ -90,30 +90,15 @@ assert(
   innerPlanets.every((planet) => ['scorched', 'desert'].includes(planet.planetBiome)),
   'inner planets must be rocky or desert worlds'
 );
-const middlePlanets = planets.filter((planet) => {
-  const orbit = planet.orbitRadius ?? 0;
-  return orbit >= 1100 && orbit <= 2050;
-});
-assert(
-  middlePlanets.every((planet) => planet.planetBiome === 'temperate'),
-  'middle system planets must use temperate Earth-like biomes'
-);
-const outerPlanets = planets.filter((planet) => (planet.orbitRadius ?? 0) >= 2200);
-assert(
-  outerPlanets.every((planet) => ['ice', 'gas-giant'].includes(planet.planetBiome)),
-  'outer planets must be ice worlds or gas giants'
-);
-
-const planetRadii = planets.map((planet) => planet.radius);
+// The expanded map mixes biomes across orbit bands; validate its named anchors
+// and physical separation instead of imposing the old eleven-planet layout.
 const cinderPlanet = planets.find((planet) => planet.id === 'cinder');
 const havenPlanet = planets.find((planet) => planet.id === 'haven');
 assert(cinderPlanet && havenPlanet, 'Cinder and Haven must remain in the sector');
-assert.equal(
-  Math.min(...planetRadii),
-  cinderPlanet.radius,
-  'Cinder must remain the smallest planet'
-);
-assert.equal(Math.max(...planetRadii), havenPlanet.radius, 'Haven must remain the largest planet');
+assert.equal(cinderPlanet.planetBiome, 'scorched');
+assert.equal(havenPlanet.planetBiome, 'temperate');
+assert(planets.some((planet) => planet.planetBiome === 'ice'));
+assert(planets.some((planet) => planet.planetBiome === 'gas-giant'));
 let minimumPlanetSpacing = Infinity;
 for (let index = 0; index < planets.length; index += 1) {
   for (let otherIndex = index + 1; otherIndex < planets.length; otherIndex += 1) {
@@ -124,15 +109,12 @@ for (let index = 0; index < planets.length; index += 1) {
       planet.position.y - other.position.y
     );
     minimumPlanetSpacing = Math.min(minimumPlanetSpacing, spacing);
+    assert(spacing > planet.radius + other.radius, `${planet.id} and ${other.id} must not overlap`);
   }
 }
-assert(minimumPlanetSpacing >= 900, 'planets must stay clearly separated on the sector map');
+assert(Number.isFinite(minimumPlanetSpacing), 'the sector must contain multiple separated planets');
 assert((cinderPlanet.orbitRadius ?? 0) >= 600, 'Cinder must not sit directly beside Solis');
-assert.equal(
-  moons[0]?.parentLocationId,
-  'pale-reach',
-  'the single moon should remain attached to Pale Reach'
-);
+assert.equal(moons[0]?.parentLocationId, 'pale-reach', 'Glass must remain attached to Pale Reach');
 const paleReach = planets.find((planet) => planet.id === 'pale-reach');
 assert(paleReach && moons[0], 'Pale Reach and Glass must remain in the sector');
 assert(

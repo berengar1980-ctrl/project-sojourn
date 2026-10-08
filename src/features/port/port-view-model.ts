@@ -1,15 +1,19 @@
 import type { CrewMember } from '../../core/crew-types';
+
 import type {
   EconomyMarketState,
   PlayerEconomyState,
   ResourceLegality,
 } from '../../core/economy-types';
+
 import type { PortDefinition, PortTab } from '../../core/port-types';
+
 import type {
   ShipDefinition,
   ShipStationDefinition,
   ShipStationSkill,
 } from '../../core/ship-types';
+
 import type {
   PlanetBiome,
   PlanetRingStyle,
@@ -17,8 +21,11 @@ import type {
   WorldLocation,
   WorldPoint,
 } from '../../core/world-types';
+
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
+
 import { playerSaleUnitPrice } from '../../systems/economy/player-trade-service';
+
 import {
   componentSlots,
   shipyardView,
@@ -28,6 +35,9 @@ import {
   type PortShipyardStateInput,
   type PortShipyardVariantView,
 } from './port-ship-view-model';
+
+import { type PortCrewView, crewMemberView } from './port-crew-view';
+
 export type {
   PortShipComponentSlotView,
   PortShipStateInput,
@@ -35,6 +45,8 @@ export type {
   PortShipyardStateInput,
   PortShipyardVariantView,
 } from './port-ship-view-model';
+
+export type { PortCrewView } from './port-crew-view';
 
 export interface PortMarketRowView {
   readonly id: string;
@@ -87,20 +99,6 @@ export interface PortCargoSaleView {
   readonly bestAgeDays: number;
   readonly bestDistance: number;
   readonly bestIsHere: boolean;
-}
-
-export interface PortCrewView {
-  readonly id: string;
-  readonly name: string;
-  readonly initials: string;
-  readonly role: string;
-  readonly skills: readonly string[];
-  readonly traits: readonly string[];
-  readonly ranged: number;
-  readonly melee: number;
-  readonly share: number;
-  readonly elite: boolean;
-  readonly equipment: readonly string[];
 }
 
 export interface PortStationView {
@@ -178,37 +176,6 @@ export interface PortViewModel {
     readonly shieldMaxHp: number;
   };
 }
-
-const SOCIAL_LABELS: Readonly<Record<string, string>> = {
-  loyalty: 'Loyal',
-  order: 'Ordnung',
-  duty: 'Pflicht',
-  risk: 'Risiko',
-  empathy: 'Empathie',
-  faith: 'Glaube',
-  cunning: 'List',
-  trust: 'Vertrauen',
-};
-
-const SKILL_LABELS: Readonly<Record<ShipStationSkill, string>> = {
-  piloting: 'STEUER',
-  sensors: 'SENSOR',
-  weapons: 'WAFFEN',
-  engineering: 'TECH',
-  salvage: 'BERGUNG',
-  mining: 'MINING',
-  logistics: 'LOGISTIK',
-};
-
-const SKILL_ORDER = [
-  'piloting',
-  'sensors',
-  'weapons',
-  'engineering',
-  'salvage',
-  'mining',
-  'logistics',
-] as const satisfies readonly ShipStationSkill[];
 
 const STATION_LABELS: Readonly<Record<string, string>> = {
   helm: 'Brücke',
@@ -387,44 +354,6 @@ function cargoSaleRows(
       };
     })
     .sort((a, b) => b.localProfit - a.localProfit);
-}
-
-function crewInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part[0] ?? '')
-    .join('');
-}
-
-function equipmentLabels(equipment: CrewMember['personalEquipment']): readonly string[] {
-  return [
-    equipment.ranged,
-    equipment.melee,
-    equipment.armor,
-    equipment.gear1,
-    equipment.gear2,
-  ].filter((value): value is string => Boolean(value));
-}
-
-function crewMemberView(member: CrewMember): PortCrewView {
-  return {
-    id: member.id,
-    name: member.name,
-    initials: crewInitials(member.name),
-    role: member.title,
-    skills: SKILL_ORDER.map((skill) => `${SKILL_LABELS[skill]} ${member.skills[skill]}`),
-    traits: Object.entries(member.socialTraits)
-      .filter(([, value]) => value !== 0)
-      .sort((first, second) => Math.abs(second[1]) - Math.abs(first[1]))
-      .slice(0, 3)
-      .map(([axis, value]) => `${SOCIAL_LABELS[axis] ?? axis} ${value > 0 ? '+' : ''}${value}`),
-    ranged: member.combatSkills.ranged,
-    melee: member.combatSkills.melee,
-    share: member.share,
-    elite: member.elite,
-    equipment: equipmentLabels(member.personalEquipment),
-  };
 }
 
 function resourceName(id: string): string {

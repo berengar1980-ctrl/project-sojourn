@@ -4,7 +4,7 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
-import { mapSymbolScale, shipSymbolScale } from './map-visual-scale';
+import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';

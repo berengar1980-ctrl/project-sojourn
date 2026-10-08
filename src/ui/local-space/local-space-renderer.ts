@@ -2,70 +2,49 @@ import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
+import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
-import {
-  projectHardpoint,
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
-import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
-import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
+import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
-import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
+import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
+import {
+  type AsteroidHitArea,
+  LocalSpaceSceneLayers,
+  type NpcHitArea,
+} from './local-space-scene-layers';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
-
-interface AsteroidHitArea {
-  readonly id: string;
-  readonly point: ScreenPoint;
-  readonly radius: number;
-}
-
-interface NpcHitArea {
-  readonly id: string;
-  readonly point: ScreenPoint;
-  readonly radius: number;
-}
-
-function hashId(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-export class LocalSpaceRenderer {
-  private readonly context: CanvasRenderingContext2D;
-  private readonly camera: MapCamera;
-  private readonly miningEffects: MiningEffectsRenderer;
-  private readonly engineEffects = new ShipEngineEffectsRenderer();
-  private readonly hardpointDebug = new ShipHardpointDebugRenderer();
-  private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
-  private readonly shipLighting = new ShipLightingRenderer();
-  private readonly shieldImpacts = new ShieldImpactRenderer();
-  private readonly backgroundRenderer: SpaceBackgroundRenderer;
-  private readonly spaceBodies: ProceduralSpaceBodyRenderer;
-  private readonly shipImage = new Image();
-  private readonly npcImages = new Map<string, HTMLImageElement>();
-  private model: LocalSpaceViewModel;
-  private combatImpactSerial = -1;
-  private combatImpactAge = 1;
-  private hitAreas: readonly AsteroidHitArea[] = [];
-  private npcHitAreas: readonly NpcHitArea[] = [];
-  private loadedShipUrl = '';
-  private hasFitted = false;
-  private debugHardpoints = false;
-  private scanLabelsVisible = true;
-
+export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
+  protected readonly context: CanvasRenderingContext2D;
+  protected readonly camera: MapCamera;
+  protected readonly miningEffects: MiningEffectsRenderer;
+  protected readonly engineEffects = new ShipEngineEffectsRenderer();
+  protected readonly hardpointDebug = new ShipHardpointDebugRenderer();
+  protected readonly maneuverEffects = new ShipManeuverEffectsRenderer();
+  protected readonly shipLighting = new ShipLightingRenderer();
+  protected readonly shieldImpacts = new ShieldImpactRenderer();
+  protected readonly backgroundRenderer: SpaceBackgroundRenderer;
+  protected readonly spaceBodies: ProceduralSpaceBodyRenderer;
+  protected readonly shipImage = new Image();
+  protected readonly npcImages = new Map<string, HTMLImageElement>();
+  protected model: LocalSpaceViewModel;
+  protected combatImpactSerial = -1;
+  protected combatImpactAge = 1;
+  protected hitAreas: readonly AsteroidHitArea[] = [];
+  protected npcHitAreas: readonly NpcHitArea[] = [];
+  protected loadedShipUrl = '';
+  protected hasFitted = false;
+  protected debugHardpoints = false;
+  protected scanLabelsVisible = true;
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: LocalSpaceViewModel
   ) {
+    super();
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Local-space canvas context unavailable.');
 
@@ -77,7 +56,6 @@ export class LocalSpaceRenderer {
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.resize();
   }
-
   update(model: LocalSpaceViewModel): void {
     const impact = model.combat?.lastImpact;
     if (impact && impact.serial !== this.combatImpactSerial) {
@@ -91,7 +69,6 @@ export class LocalSpaceRenderer {
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
-
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -109,34 +86,28 @@ export class LocalSpaceRenderer {
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
-
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
   }
-
   zoomAt(deltaY: number, x: number, y: number): void {
     const rect = this.canvas.getBoundingClientRect();
     const factor = Math.exp(-deltaY * 0.00135);
     this.camera.zoomAt(factor, { x, y }, rect.width, rect.height);
     this.draw();
   }
-
   toggleHardpointDebug(): void {
     this.debugHardpoints = !this.debugHardpoints;
     this.draw();
   }
-
   setScanLabelsVisible(visible: boolean): void {
     this.scanLabelsVisible = visible;
     this.draw();
   }
-
   worldPointAt(x: number, y: number): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
-
   pickNpc(x: number, y: number): string | null {
     let best: NpcHitArea | null = null;
     for (const area of this.npcHitAreas) {
@@ -145,7 +116,6 @@ export class LocalSpaceRenderer {
     }
     return best?.id ?? null;
   }
-
   pickAsteroid(x: number, y: number): string | null {
     let best: AsteroidHitArea | null = null;
     for (const area of this.hitAreas) {
@@ -154,15 +124,13 @@ export class LocalSpaceRenderer {
     }
     return best?.id ?? null;
   }
-
-  private ensureShipImage(url: string): void {
+  protected ensureShipImage(url: string): void {
     if (this.loadedShipUrl === url) return;
     this.loadedShipUrl = url;
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-
-  private draw(): void {
+  protected draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -198,8 +166,7 @@ export class LocalSpaceRenderer {
       this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
     }
   }
-
-  private ensureNpcImage(url: string): HTMLImageElement {
+  protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
     if (existing) return existing;
     const image = new Image();
@@ -208,311 +175,7 @@ export class LocalSpaceRenderer {
     this.npcImages.set(url, image);
     return image;
   }
-
-  private drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
-    const hits: NpcHitArea[] = [];
-    for (const npc of this.model.npcShips) {
-      const point = this.camera.worldToScreen(npc.position, width, height);
-      const shipWidth = this.camera.scale(npc.nominalLengthMeters);
-      const geometry: ShipScreenGeometry = {
-        center: point,
-        width: shipWidth,
-        height: shipWidth / npc.spriteAspectRatio,
-        angle: npc.headingRadians,
-      };
-      const image = this.ensureNpcImage(npc.spriteUrl);
-      const engineIntensity = npc.speed > 1 ? Math.max(0.35, Math.min(1, npc.speed / 110)) : 0;
-
-      if (engineIntensity > 0) {
-        this.engineEffects.draw(
-          this.context,
-          npc.hardpoints,
-          geometry,
-          engineIntensity,
-          timeSeconds,
-          'below'
-        );
-      }
-
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(npc.headingRadians);
-      if (image.complete && image.naturalWidth > 0) {
-        const offset = spriteDrawOffset(npc.hardpoints, geometry);
-        this.shipLighting.draw(this.context, {
-          image,
-          width: geometry.width,
-          height: geometry.height,
-          angle: npc.headingRadians,
-          light: { x: -0.72, y: -0.56 },
-          offsetX: offset.x,
-          offsetY: offset.y,
-          directionalStrength: 2.05,
-        });
-      } else {
-        this.context.fillStyle = '#8597a1';
-        this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
-      }
-      this.context.restore();
-
-      if (engineIntensity > 0) {
-        this.engineEffects.draw(
-          this.context,
-          npc.hardpoints,
-          geometry,
-          engineIntensity,
-          timeSeconds,
-          'above'
-        );
-      }
-      const combatDefender =
-        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
-      if (combatDefender) {
-        this.shieldImpacts.draw(
-          this.context,
-          combatDefender.shieldImpacts,
-          npc.hardpoints,
-          geometry
-        );
-      }
-
-      hits.push({
-        id: npc.id,
-        point,
-        radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
-      });
-      if (npc.isSelected) {
-        this.context.save();
-        this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
-        this.context.lineWidth = 2;
-        this.context.beginPath();
-        this.context.arc(
-          point.x,
-          point.y,
-          Math.max(geometry.width, geometry.height) * 0.65 + 7,
-          0,
-          Math.PI * 2
-        );
-        this.context.stroke();
-        this.context.restore();
-      }
-
-      if (npc.targetAsteroidId) {
-        const target = this.model.asteroids.find(
-          (asteroid) => asteroid.id === npc.targetAsteroidId
-        );
-        if (target && npc.phase === 'scanning') {
-          this.drawNpcMinerScan(
-            point,
-            target.position,
-            width,
-            height,
-            npc.scanProgress ?? 0,
-            timeSeconds
-          );
-        } else if (target && npc.laserActive) {
-          this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds);
-        }
-      }
-
-      const zoom = this.camera.getRelativeZoom();
-      if (zoom >= 1.55) {
-        this.context.fillStyle = 'rgba(184, 210, 216, .78)';
-        this.context.font = '9px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
-      }
-    }
-    return hits;
-  }
-
-  private drawCombat(width: number, height: number): void {
-    const combat = this.model.combat;
-    if (!combat) return;
-
-    for (const mine of combat.mines) {
-      if (mine.detection === 'hidden') continue;
-      const point = this.camera.worldToScreen(mine.position, width, height);
-      this.context.save();
-      this.context.strokeStyle = mine.armed
-        ? 'rgba(226, 108, 82, .82)'
-        : 'rgba(166, 175, 177, .55)';
-      this.context.fillStyle = 'rgba(42, 47, 50, .92)';
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
-      this.context.fill();
-      this.context.stroke();
-      this.context.restore();
-    }
-
-    for (const beam of combat.beams) {
-      const source =
-        beam.owner === 'attacker'
-          ? {
-              hardpoints: this.model.ship.hardpoints,
-              geometry: this.shipGeometry(width, height),
-            }
-          : (() => {
-              const npc = this.model.npcShips.find((entry) => entry.id === combat.defender.id);
-              if (!npc) return null;
-              const center = this.camera.worldToScreen(npc.position, width, height);
-              const shipWidth = this.camera.scale(npc.nominalLengthMeters);
-              return {
-                hardpoints: npc.hardpoints,
-                geometry: {
-                  center,
-                  width: shipWidth,
-                  height: shipWidth / npc.spriteAspectRatio,
-                  angle: npc.headingRadians,
-                } satisfies ShipScreenGeometry,
-              };
-            })();
-      if (!source) continue;
-      const weaponHardpoints = source.hardpoints.weaponLasers ?? [];
-      const hardpoint =
-        weaponHardpoints.length > 0
-          ? weaponHardpoints[beam.weaponIndex % weaponHardpoints.length]
-          : null;
-      const from = hardpoint
-        ? projectHardpoint(hardpoint, source.hardpoints, source.geometry)
-        : source.geometry.center;
-      const to = this.camera.worldToScreen(beam.end, width, height);
-      const alpha = Math.max(0, Math.min(1, beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds)));
-      this.context.save();
-      this.context.lineCap = 'round';
-      if (beam.kind === 'laser') {
-        this.context.shadowColor = 'rgba(67, 185, 255, .95)';
-        this.context.shadowBlur = 10;
-        this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
-        this.context.lineWidth = 4.5;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-        this.context.shadowBlur = 3;
-        this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
-        this.context.lineWidth = 1.15;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      } else {
-        this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
-        this.context.lineWidth = 1.3;
-        this.context.setLineDash([18, 5]);
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      }
-      this.context.restore();
-    }
-
-    for (const projectile of combat.projectiles) {
-      const point = this.camera.worldToScreen(projectile.position, width, height);
-      const target = this.camera.worldToScreen(projectile.target, width, height);
-      const angle = Math.atan2(target.y - point.y, target.x - point.x);
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(angle);
-      if (projectile.kind === 'missile') {
-        this.context.fillStyle = '#e7d7b0';
-        this.context.fillRect(-7, -2, 12, 4);
-        this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
-        this.context.lineWidth = 3;
-        this.context.beginPath();
-        this.context.moveTo(-8, 0);
-        this.context.lineTo(-22, 0);
-        this.context.stroke();
-      } else if (projectile.kind === 'plasma') {
-        this.context.fillStyle = 'rgba(118, 225, 255, .95)';
-        this.context.shadowColor = 'rgba(81, 194, 255, .95)';
-        this.context.shadowBlur = 10;
-        this.context.beginPath();
-        this.context.arc(0, 0, 5, 0, Math.PI * 2);
-        this.context.fill();
-      } else {
-        this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-        this.context.fillRect(-2, -1, 5, 2);
-      }
-      this.context.restore();
-    }
-
-    const impact = combat.lastImpact;
-    if (
-      !impact ||
-      (impact.layer !== 'hull' && impact.layer !== 'obstacle') ||
-      this.combatImpactAge >= 1
-    ) {
-      return;
-    }
-    const point = this.camera.worldToScreen(impact.position, width, height);
-    const alpha = 1 - this.combatImpactAge;
-    const radius = 10 + this.combatImpactAge * 34;
-    this.context.save();
-    this.context.fillStyle =
-      impact.layer === 'obstacle'
-        ? `rgba(196, 185, 160, ${alpha * 0.6})`
-        : `rgba(255, 139, 68, ${alpha * 0.8})`;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
-    this.context.fill();
-    this.context.restore();
-  }
-
-  private drawNpcMinerScan(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    progress: number,
-    timeSeconds: number
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const radius = 10 + progress * 28;
-    this.context.save();
-    this.context.strokeStyle = `rgba(116, 235, 248, ${0.52 + Math.sin(timeSeconds * 10) * 0.16})`;
-    this.context.lineWidth = 1.2;
-    this.context.beginPath();
-    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.setLineDash([4, 5]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private drawNpcMiningBeam(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    timeSeconds: number
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const pulse = 0.68 + Math.sin(timeSeconds * 13) * 0.18;
-    this.context.save();
-    this.context.strokeStyle = `rgba(121, 214, 235, ${pulse})`;
-    this.context.lineWidth = 1.4;
-    this.context.shadowColor = 'rgba(86, 205, 235, .7)';
-    this.context.shadowBlur = 7;
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-
-    this.context.strokeStyle = `rgba(160, 228, 241, ${pulse * 0.35})`;
-    this.context.lineWidth = 8;
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
-  }
-
-  private drawAsteroid(
+  protected drawAsteroid(
     asteroid: LocalAsteroidView,
     width: number,
     height: number
@@ -559,8 +222,7 @@ export class LocalSpaceRenderer {
 
     return { id: asteroid.id, point, radius: radius + 10 };
   }
-
-  private drawScanMarker(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
+  protected drawScanMarker(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
     if (asteroid.scanLevel === 'unscanned') return;
 
     this.context.save();
@@ -580,8 +242,7 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
-  private scanCalloutLines(asteroid: LocalAsteroidView): readonly string[] {
+  protected scanCalloutLines(asteroid: LocalAsteroidView): readonly string[] {
     if (asteroid.surveyResult === 'empty') return ['LEER'];
     if (asteroid.scanLevel === 'unscanned') {
       return asteroid.deposits
@@ -598,8 +259,7 @@ export class LocalSpaceRenderer {
       return name + ' · ~' + amount;
     });
   }
-
-  private drawScanCallout(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
+  protected drawScanCallout(asteroid: LocalAsteroidView, point: ScreenPoint, radius: number): void {
     if (!this.scanLabelsVisible) return;
     const lines = this.scanCalloutLines(asteroid);
     if (lines.length === 0) return;
@@ -628,8 +288,7 @@ export class LocalSpaceRenderer {
     });
     this.context.restore();
   }
-
-  private shipGeometry(width: number, height: number): ShipScreenGeometry {
+  protected shipGeometry(width: number, height: number): ShipScreenGeometry {
     const center = this.camera.worldToScreen(this.model.ship.position, width, height);
     const shipWidth = this.camera.scale(this.model.ship.nominalLengthMeters);
     const aspectRatio =
@@ -644,8 +303,7 @@ export class LocalSpaceRenderer {
       angle: this.model.ship.headingRadians,
     };
   }
-
-  private drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
+  protected drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
     const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 240));
     const maneuverDemand = {
@@ -688,8 +346,7 @@ export class LocalSpaceRenderer {
       geometry
     );
   }
-
-  private drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
+  protected drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.shortRangeScanProgress;
     const target = this.model.scanTarget;
     if (progress == null || !target) return;
@@ -748,8 +405,7 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
-  private drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
+  protected drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress == null) return;
 
@@ -773,8 +429,7 @@ export class LocalSpaceRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
-  private drawNavigationRoute(width: number, height: number): void {
+  protected drawNavigationRoute(width: number, height: number): void {
     const route = this.model.navigationRoute;
     const target = this.model.navigationTarget;
     if (!target || route.length === 0) return;
@@ -808,18 +463,5 @@ export class LocalSpaceRenderer {
     this.context.lineTo(point.x, point.y + radius + 5);
     this.context.stroke();
     this.context.restore();
-  }
-
-  private drawChunks(width: number, height: number): void {
-    for (const chunk of this.model.chunks) {
-      const point = this.camera.worldToScreen(chunk.position, width, height);
-      if (point.x < -8 || point.y < -8 || point.x > width + 8 || point.y > height + 8) continue;
-      const variation = (hashId(chunk.id) % 100) / 100;
-      const radius = 1.5 + variation * 2.2;
-      this.context.fillStyle = '#a88f73';
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-      this.context.fill();
-    }
   }
 }
