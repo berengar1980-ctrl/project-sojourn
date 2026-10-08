@@ -7,6 +7,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const controllerRuntimeTypes = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-runtime-types.ts'),
+  'utf8'
+);
 const portController = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
@@ -174,7 +178,7 @@ assert(
   'docked visuals must preserve the star-map identity, biome, rings and star-relative lighting'
 );
 assert(
-  controller.includes("'port'") && controller.includes("'boarding'"),
+  controllerRuntimeTypes.includes("'port'") && controllerRuntimeTypes.includes("'boarding'"),
   'port must be a dedicated application scene'
 );
 assert(
