@@ -94,8 +94,8 @@ function variantDefinition(
 
   const special = parsed.source === 'special';
   const weapon = variantWeapon(base, parsed.modifier, parsed.pct);
-  const boost = (value: number | undefined, minimum = 0): number | undefined =>
-    value === undefined ? undefined : Math.round((value === 0 ? minimum : value * (1 + parsed.pct / 100)) * 100) / 100;
+  const boost = (value: number, minimum = 0): number =>
+    Math.round((value === 0 ? minimum : value * (1 + parsed.pct / 100)) * 100) / 100;
   const performance = parsed.modifier === 'performance';
   return {
     ...base,
