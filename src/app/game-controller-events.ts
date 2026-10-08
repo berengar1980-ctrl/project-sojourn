@@ -55,7 +55,10 @@ export function sectorEventLocation(
 const WORLD_DAY_SECONDS = 180;
 const controllerDayElapsed = new WeakMap<ControllerRuntimeContext, number>();
 
-export function advanceEconomyTime(context: ControllerRuntimeContext, deltaSeconds: number): void {
+export function advanceEconomyTime(
+  context: ControllerRuntimeContext,
+  deltaSeconds: number
+): void {
   const elapsed = (controllerDayElapsed.get(context) ?? 0) + Math.max(0, deltaSeconds);
   const days = Math.floor(elapsed / WORLD_DAY_SECONDS);
   controllerDayElapsed.set(context, elapsed - days * WORLD_DAY_SECONDS);
