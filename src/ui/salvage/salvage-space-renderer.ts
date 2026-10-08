@@ -250,10 +250,16 @@ export class SalvageSpaceRenderer {
       });
       if (npc.isSelected) {
         this.context.save();
-        this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
+        this.context.strokeStyle = 'rgba(235, 91, 76, 0.95)';
         this.context.lineWidth = 2;
         this.context.beginPath();
-        this.context.arc(point.x, point.y, Math.max(geometry.width, geometry.height) * 0.65 + 7, 0, Math.PI * 2);
+        this.context.arc(
+          point.x,
+          point.y,
+          Math.max(geometry.width, geometry.height) * 0.65 + 7,
+          0,
+          Math.PI * 2
+        );
         this.context.stroke();
         this.context.restore();
       }
@@ -268,7 +274,7 @@ export class SalvageSpaceRenderer {
       }
 
       if (this.camera.getRelativeZoom() >= 1.55) {
-        this.context.fillStyle = 'rgba(215, 202, 168, .8)';
+        this.context.fillStyle = 'rgba(215, 202, 168, 0.8)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
@@ -286,9 +292,9 @@ export class SalvageSpaceRenderer {
       const point = this.camera.worldToScreen(mine.position, width, height);
       this.context.save();
       this.context.strokeStyle = mine.armed
-        ? 'rgba(226, 108, 82, .82)'
-        : 'rgba(166, 175, 177, .55)';
-      this.context.fillStyle = 'rgba(42, 47, 50, .92)';
+        ? 'rgba(226, 108, 82, 0.82)'
+        : 'rgba(166, 175, 177, 0.55)';
+      this.context.fillStyle = 'rgba(42, 47, 50, 0.92)';
       this.context.beginPath();
       this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
       this.context.fill();
@@ -332,7 +338,7 @@ export class SalvageSpaceRenderer {
       this.context.save();
       this.context.lineCap = 'round';
       if (beam.kind === 'laser') {
-        this.context.shadowColor = 'rgba(67, 185, 255, .95)';
+        this.context.shadowColor = 'rgba(67, 185, 255, 0.95)';
         this.context.shadowBlur = 10;
         this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
         this.context.lineWidth = 4.5;
@@ -369,21 +375,21 @@ export class SalvageSpaceRenderer {
       if (projectile.kind === 'missile') {
         this.context.fillStyle = '#e7d7b0';
         this.context.fillRect(-7, -2, 12, 4);
-        this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
+        this.context.strokeStyle = 'rgba(230, 133, 73, 0.72)';
         this.context.lineWidth = 3;
         this.context.beginPath();
         this.context.moveTo(-8, 0);
         this.context.lineTo(-22, 0);
         this.context.stroke();
       } else if (projectile.kind === 'plasma') {
-        this.context.fillStyle = 'rgba(118, 225, 255, .95)';
-        this.context.shadowColor = 'rgba(81, 194, 255, .95)';
+        this.context.fillStyle = 'rgba(118, 225, 255, 0.95)';
+        this.context.shadowColor = 'rgba(81, 194, 255, 0.95)';
         this.context.shadowBlur = 10;
         this.context.beginPath();
         this.context.arc(0, 0, 5, 0, Math.PI * 2);
         this.context.fill();
       } else {
-        this.context.fillStyle = 'rgba(245, 211, 156, .95)';
+        this.context.fillStyle = 'rgba(245, 211, 156, 0.95)';
         this.context.fillRect(-2, -1, 5, 2);
       }
       this.context.restore();
@@ -410,7 +416,6 @@ export class SalvageSpaceRenderer {
     this.context.fill();
     this.context.restore();
   }
-
 
   private drawNpcScan(
     shipPoint: ScreenPoint,
@@ -487,8 +492,8 @@ export class SalvageSpaceRenderer {
     if (wreck.isSelected || wreck.isWorkTarget) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
-        ? 'rgba(232, 184, 96, .95)'
-        : 'rgba(130, 206, 224, .86)';
+        ? 'rgba(232, 184, 96, 0.95)'
+        : 'rgba(130, 206, 224, 0.86)';
       this.context.lineWidth = 1.5;
       this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
       this.context.beginPath();
@@ -509,7 +514,7 @@ export class SalvageSpaceRenderer {
     gradient.addColorStop(0.48, '#70777a');
     gradient.addColorStop(1, '#24292d');
     context.fillStyle = gradient;
-    context.strokeStyle = 'rgba(201, 210, 210, .22)';
+    context.strokeStyle = 'rgba(201, 210, 210, 0.22)';
     context.lineWidth = Math.max(0.8, radius * 0.018);
 
     context.beginPath();
@@ -537,7 +542,7 @@ export class SalvageSpaceRenderer {
     context.restore();
 
     this.drawKindDetails(wreck, radius);
-    context.strokeStyle = 'rgba(6, 8, 10, .86)';
+    context.strokeStyle = 'rgba(6, 8, 10, 0.86)';
     context.lineWidth = Math.max(1.2, radius * 0.055);
     context.beginPath();
     context.moveTo(-radius * 0.08, -height * 0.65);
@@ -547,7 +552,7 @@ export class SalvageSpaceRenderer {
 
   private drawKindDetails(wreck: SalvageWreckView, radius: number): void {
     const context = this.context;
-    context.fillStyle = 'rgba(26, 31, 34, .92)';
+    context.fillStyle = 'rgba(26, 31, 34, 0.92)';
     if (wreck.kind === 'freighter') {
       for (let index = -2; index <= 1; index += 1) {
         context.fillRect(
@@ -577,7 +582,7 @@ export class SalvageSpaceRenderer {
   private drawWreckDebris(id: string, radius: number): void {
     const context = this.context;
     const hash = hashId(id);
-    context.fillStyle = 'rgba(124, 126, 122, .72)';
+    context.fillStyle = 'rgba(124, 126, 122, 0.72)';
     for (let index = 0; index < 7; index += 1) {
       const angle = ((hash % 719) * 0.01 + index * 2.31) % (Math.PI * 2);
       const spread = radius * (0.9 + ((hash >> (index % 12)) & 7) * 0.08);
@@ -616,8 +621,8 @@ export class SalvageSpaceRenderer {
     this.context.lineCap = 'round';
     for (const emitter of emitters) {
       this.context.shadowColor = component
-        ? 'rgba(110, 214, 255, .8)'
-        : 'rgba(235, 180, 83, .78)';
+        ? 'rgba(110, 214, 255, 0.8)'
+        : 'rgba(235, 180, 83, 0.78)';
       this.context.shadowBlur = 8 + pulse * 5;
       this.context.strokeStyle = component
         ? `rgba(128, 220, 255, ${0.34 + pulse * 0.28})`
@@ -677,7 +682,7 @@ export class SalvageSpaceRenderer {
   private drawRoute(width: number, height: number): void {
     if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
     this.context.save();
-    this.context.strokeStyle = 'rgba(224, 177, 88, .68)';
+    this.context.strokeStyle = 'rgba(224, 177, 88, 0.68)';
     this.context.lineWidth = 1.25;
     this.context.setLineDash([6, 6]);
     this.context.beginPath();
