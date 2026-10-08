@@ -60,7 +60,9 @@ function variantCost(
   special: boolean
 ): number {
   if (special) return base.cost;
-  if (type !== 'weapon') return Math.round((Math.max(200000, base.cost) * (1 + pct * 0.025)) / 5000) * 5000;
+  if (type !== 'weapon') {
+    return Math.round((Math.max(200000, base.cost) * (1 + pct * 0.025)) / 5000) * 5000;
+  }
   const multiplier = modifier === 'efficiency' ? 1 + pct * 0.02 : 1 + pct * 0.03;
   return Math.round((Math.max(350000, base.cost) * multiplier) / 5000) * 5000;
 }
@@ -111,17 +113,33 @@ function variantDefinition(
       parsed.modifier === 'efficiency'
         ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100)))
         : base.power,
-    ...(weapon ? { weapon: performance ? {
-      ...weapon,
-      shieldDamage: boost(weapon.shieldDamage)!,
-      hullDamage: boost(weapon.hullDamage)!,
-    } : weapon } : {}),
+    ...(weapon
+      ? {
+          weapon: performance
+            ? {
+                ...weapon,
+                shieldDamage: boost(weapon.shieldDamage),
+                hullDamage: boost(weapon.hullDamage),
+              }
+            : weapon,
+        }
+      : {}),
     ...(performance && base.output !== undefined ? { output: boost(base.output) } : {}),
-    ...(performance && base.speed !== undefined ? { speed: boost(base.speed, parsed.pct / 100) } : {}),
-    ...(performance && base.bonus !== undefined ? { bonus: boost(base.bonus, parsed.pct) } : {}),
-    ...(performance && base.range !== undefined ? { range: boost(base.range, parsed.pct / 100) } : {}),
-    ...(performance && base.yield !== undefined ? { yield: boost(base.yield, parsed.pct / 100) } : {}),
-    ...(performance && base.chance !== undefined ? { chance: boost(base.chance, parsed.pct) } : {}),
+    ...(performance && base.speed !== undefined
+      ? { speed: boost(base.speed, parsed.pct / 100) }
+      : {}),
+    ...(performance && base.bonus !== undefined
+      ? { bonus: boost(base.bonus, parsed.pct) }
+      : {}),
+    ...(performance && base.range !== undefined
+      ? { range: boost(base.range, parsed.pct / 100) }
+      : {}),
+    ...(performance && base.yield !== undefined
+      ? { yield: boost(base.yield, parsed.pct / 100) }
+      : {}),
+    ...(performance && base.chance !== undefined
+      ? { chance: boost(base.chance, parsed.pct) }
+      : {}),
   };
 }
 
