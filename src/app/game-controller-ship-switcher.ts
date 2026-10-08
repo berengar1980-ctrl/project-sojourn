@@ -9,17 +9,16 @@ export function createControllerShipSwitcher(
   root: HTMLElement,
   activeShip: ShipDefinition,
   navigation: NavigationService,
-  onSwitch: (ship: ShipDefinition) => void,
-  ownedShipIds: ReadonlySet<string>
+  onSwitch: (ship: ShipDefinition) => void
 ): ShipTestSwitcher {
   return createShipTestSwitcher({
     root,
-    ships: getAllShipDefinitions().filter((ship) => ownedShipIds.has(ship.id)),
+    ships: getAllShipDefinitions(),
     activeShipId: activeShip.id,
     disabled: navigation.getSnapshot().isTravelling,
     onSelect: (shipId) => {
       const nextShip = getShipDefinition(shipId);
-      if (!nextShip || !ownedShipIds.has(shipId) || nextShip.id === activeShip.id) return;
+      if (!nextShip || nextShip.id === activeShip.id) return;
       navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
       onSwitch(nextShip);
     },
