@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const { narrowsSector } = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/maps/narrows-sector.ts'
-);
+const { narrowsSector } = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-sector.ts');
 
 const byId = (id) => {
   const location = narrowsSector.locations.find((entry) => entry.id === id);
@@ -31,10 +28,7 @@ assert(
 assert.equal(pale.ringStyle, 'broad', 'Pale Reach must keep its broad rings');
 assert.equal(leviathan.ringStyle, 'thin', 'Leviathan must keep its thin rings');
 assert(
-  Math.hypot(
-    pale.position.x - leviathan.position.x,
-    pale.position.y - leviathan.position.y
-  ) > 3500,
+  Math.hypot(pale.position.x - leviathan.position.x, pale.position.y - leviathan.position.y) > 3500,
   'the two ringed gas giants must remain spatially distinct'
 );
 
@@ -42,18 +36,11 @@ const surfaces = fs.readFileSync(
   path.join(root, 'src/ui/space/procedural-surface-textures.ts'),
   'utf8'
 );
-const lighting = fs.readFileSync(
-  path.join(root, 'src/ui/ships/ship-lighting-renderer.ts'),
-  'utf8'
-);
-const npcShips = fs.readFileSync(
-  path.join(root, 'src/ui/map/npc-ship-map-renderer.ts'),
-  'utf8'
-);
+const lighting = fs.readFileSync(path.join(root, 'src/ui/ships/ship-lighting-renderer.ts'), 'utf8');
+const npcShips = fs.readFileSync(path.join(root, 'src/ui/map/npc-ship-map-renderer.ts'), 'utf8');
 
 assert(
-  surfaces.includes('paintPaleReachGasGiantPixel') &&
-    surfaces.includes("id === 'pale-reach'"),
+  surfaces.includes('paintPaleReachGasGiantPixel') && surfaces.includes("id === 'pale-reach'"),
   'Pale Reach must use a distinct gas-giant texture instead of Leviathan banding'
 );
 assert(
