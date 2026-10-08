@@ -39,8 +39,7 @@ export function detectShipMine(
     };
   }
 
-  const level =
-    detectionMargin >= 25 ? 'identified' : detectionMargin >= 10 ? 'mine' : 'unknown';
+  const level = detectionMargin >= 25 ? 'identified' : detectionMargin >= 10 ? 'mine' : 'unknown';
   return {
     level,
     detectionScore,
