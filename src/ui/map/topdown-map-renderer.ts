@@ -6,6 +6,7 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
+import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
@@ -369,20 +370,7 @@ export class TopdownMapRenderer {
     } else if (location.kind === 'wreck') this.drawWreck(point, radius);
     else this.drawPlanet(location, point, radius, light);
 
-    if (
-      location.id.startsWith('salvage-special-') ||
-      location.id.startsWith('salvage-distress-')
-    ) {
-      const distress = location.id.startsWith('salvage-distress-');
-      this.context.save();
-      this.context.strokeStyle = distress ? '#ff9d60' : '#6de2e8';
-      this.context.lineWidth = 2;
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius + 6, 0, Math.PI * 2);
-      this.context.stroke();
-      this.context.fillText(distress ? '!' : '◆', point.x, point.y - radius - 15);
-      this.context.restore();
-    }
+    drawSectorEventMarker(this.context, location.id, point, radius);
 
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
