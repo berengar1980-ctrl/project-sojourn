@@ -246,9 +246,8 @@ export function controllerSalvageEventCallbacks(
         actions.mountSalvage(true);
         return;
       }
-      context.navigation.selectDestination(result.towDestinationId);
-      context.navigation.startTravel();
-      runSceneZoomTransition(context.root, actions.mountStarMap);
+      context.systemLog.write('SCHLEPPEN > MANUELL ZUM MARKIERTEN AUSGANG FLIEGEN');
+      actions.mountSalvage(true);
     },
     onEvacuateDistress: (eventId: string) => {
       const result = economy.salvageEvents.evacuateDistress(eventId);
