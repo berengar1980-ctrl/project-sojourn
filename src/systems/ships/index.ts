@@ -77,3 +77,8 @@ export type {
 } from './station-performance';
 
 export type { ShipyardResearchService, SalvageModifierKind } from './shipyard-research-service';
+
+export { createShipProgressionSnapshot } from './ship-progression-snapshot';
+export type { ShipProgressionSnapshot } from './ship-progression-snapshot';
+export type { ShipLoadoutSnapshot } from './ship-loadout-service';
+export type { ShipComponentInventorySnapshot } from './ship-component-inventory-service';
