@@ -1,3 +1,4 @@
+import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import type { WorldPoint } from '../../core/world-types';
 import type { MapCamera } from '../map/map-camera';
 
@@ -22,6 +23,19 @@ export class DistressDamageParticles {
   private lastTime = 0;
   private readonly emissions = [0, 0, 0];
   private seed = 14752;
+  drawScene(
+    now: number, model: SalvageSpaceViewModel, camera: MapCamera,
+    ctx: CanvasRenderingContext2D, width: number, height: number
+  ): void {
+    const damaged = model.wrecks.find((wreck) => wreck.id.startsWith('event-wreck-'));
+    if (model.sectorEvent?.type !== 'distress-rescue' || !damaged) return;
+    if (model.distressRepairing && !this.fading) this.beginExtinguish();
+    this.update(
+      now, model.distressTow?.position ?? damaged.position,
+      model.distressTow?.headingRadians ?? damaged.rotation,
+      model.ship.nominalLengthMeters, camera, ctx, width, height
+    );
+  }
   beginExtinguish(): void { this.fading = true; }
   get intensity(): number { return this.fade; }
 
