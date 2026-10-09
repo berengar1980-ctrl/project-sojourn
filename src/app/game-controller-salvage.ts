@@ -33,6 +33,7 @@ import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/s
 
 export interface SalvageSceneController {
   beginDistressTow(event: SectorSalvageEvent): void;
+  beginDistressRepair(): void;
   tick(deltaSeconds: number): void;
   finishCombat(snapshot: StrategicCombatSnapshot): void;
   destroy(): void;
@@ -89,6 +90,7 @@ interface SalvageSceneState {
   activeSectorEvent: SectorSalvageEvent | null;
   distressTow: DistressTowState | null;
   distressRamming: DistressRammingState | null;
+  distressRepairing: boolean;
   panel: SalvageSpacePanel | null;
 }
 
@@ -157,7 +159,8 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     options.getCombat?.() ?? null,
     state.activeSectorEvent,
     state.distressTow,
-    state.distressRamming
+    state.distressRamming,
+    state.distressRepairing
   );
 }
 
@@ -382,6 +385,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
+      distressRepairing: false,
       activeSectorEvent: options.sectorEvent ?? null,
       distressRamming: options.sectorEvent?.type === 'distress-rescue'
         ? createDistressRammingState(service.getSnapshot().ship.position)
@@ -401,6 +405,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
+    beginDistressRepair() {
+      context.state.distressRepairing = true;
+      refreshSalvageScene(context);
+    },
     beginDistressTow(event) {
       context.state.activeSectorEvent = event;
       const wreck = context.field.wrecks[0];
