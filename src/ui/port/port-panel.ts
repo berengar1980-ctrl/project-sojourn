@@ -2,6 +2,8 @@ import type { PortTab } from '../../core/port-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import type { PortViewModel } from '../../features/port/port-view-model';
 import { PortLocationRenderer } from './port-location-renderer';
+import './port-shipyard.css';
+import { bindShipyardBrowser } from './port-shipyard-browser';
 import { crewPane, equipmentPane, shipPane, shipyardPane } from './port-secondary-panes';
 
 export interface PortPanel {
@@ -437,6 +439,7 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
 
   bindSystemMarketFilter(shell);
   bindTradeViews(shell);
+  bindShipyardBrowser(shell);
   returnButton.addEventListener('click', options.onReturnToStarMap);
   const lastButton = tabs.find((button) => button.dataset.portTab === lastPortTab);
   if (!lastButton || lastButton.disabled) lastPortTab = 'trade';

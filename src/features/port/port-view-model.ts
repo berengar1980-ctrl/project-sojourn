@@ -155,6 +155,15 @@ export interface PortViewModel {
       role: string;
       price: number;
       owned: boolean;
+      spriteUrl: string;
+      lengthMeters: number;
+      cargoCapacityTons: number;
+      speed: number;
+      hullMaxHp: number;
+      shieldMaxHp: number;
+      weaponSlots: number;
+      crewBerths: number;
+      maxComponentTier: number;
     }[];
   };
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
