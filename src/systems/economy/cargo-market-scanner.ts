@@ -31,7 +31,12 @@ export interface CargoMarketScanner {
 export function scanCargoMarkets(options: {
   player: PlayerEconomyState;
   intel: MarketIntelService;
-  locations: readonly { readonly id: string; readonly name: string; readonly position: WorldPoint; readonly activities: { readonly trade?: boolean } }[];
+  locations: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly position: WorldPoint;
+    readonly activities: { readonly trade?: boolean };
+  }[];
   origin: WorldPoint;
   currentDay: number;
 }): CargoMarketScanner {
@@ -60,16 +65,22 @@ export function scanCargoMarkets(options: {
         locationId: location.id,
         name: location.name,
         revenue,
-        distance: Math.hypot(location.position.x - options.origin.x, location.position.y - options.origin.y),
+        distance: Math.hypot(
+          location.position.x - options.origin.x,
+          location.position.y - options.origin.y
+        ),
         observedDay,
         coveredQuantity,
         totalQuantity,
       };
     })
     .filter((quote) => quote.coveredQuantity > 0)
-    .sort((a, b) =>
-      Number(b.coveredQuantity === b.totalQuantity) - Number(a.coveredQuantity === a.totalQuantity) ||
-      b.revenue - a.revenue || a.distance - b.distance
+    .sort(
+      (a, b) =>
+        Number(b.coveredQuantity === b.totalQuantity) -
+          Number(a.coveredQuantity === a.totalQuantity) ||
+        b.revenue - a.revenue ||
+        a.distance - b.distance
     );
   const resources = cargo.map((item): CargoResourceQuote => {
     const matches = options.locations
@@ -77,14 +88,22 @@ export function scanCargoMarkets(options: {
       .flatMap((location) => {
         const entry = options.intel.entry(location.id, item.resourceId);
         if (!entry) return [];
-        return [{
-          locationId: location.id, name: location.name,
-          revenue: playerSaleUnitPrice(entry.price) * item.quantity,
-          distance: Math.hypot(location.position.x - options.origin.x, location.position.y - options.origin.y),
-          observedDay: entry.observedDay,
-          coveredQuantity: item.quantity, totalQuantity: item.quantity,
-        }];
-      }).sort((a, b) => b.revenue - a.revenue || a.distance - b.distance);
+        return [
+          {
+            locationId: location.id,
+            name: location.name,
+            revenue: playerSaleUnitPrice(entry.price) * item.quantity,
+            distance: Math.hypot(
+              location.position.x - options.origin.x,
+              location.position.y - options.origin.y
+            ),
+            observedDay: entry.observedDay,
+            coveredQuantity: item.quantity,
+            totalQuantity: item.quantity,
+          },
+        ];
+      })
+      .sort((a, b) => b.revenue - a.revenue || a.distance - b.distance);
     return { ...item, best: matches[0] ?? null, markets: matches };
   });
   return { resources, markets, currentDay: options.currentDay };
