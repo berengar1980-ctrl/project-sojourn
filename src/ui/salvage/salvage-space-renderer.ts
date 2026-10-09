@@ -314,7 +314,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-
     const geometry = this.shipGeometry(width, height);
     const target = this.camera.worldToScreen(wreck.position, width, height);
     const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
@@ -326,13 +325,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     const dy = target.y - origin.y;
     const distance = Math.hypot(dx, dy);
     if (distance < 1) return;
-
     const angle = Math.atan2(dy, dx);
     const halfAngle = Math.PI / 9;
     const progress = Math.max(0, Math.min(1, this.model.operationProgress ?? 0));
     const pulse = 0.55 + Math.sin(timeSeconds * 9) * 0.12;
     const sweepAngle = angle - halfAngle + 2 * halfAngle * progress;
-
     this.context.save();
     this.context.beginPath();
     this.context.moveTo(origin.x, origin.y);
@@ -343,7 +340,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.strokeStyle = `rgba(130, 242, 255, ${0.35 + pulse * 0.3})`;
     this.context.lineWidth = 1.2;
     this.context.stroke();
-
     this.context.beginPath();
     this.context.moveTo(origin.x, origin.y);
     this.context.lineTo(
@@ -359,7 +355,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-
     const geometry = this.shipGeometry(width, height);
     const wreckPoint = this.camera.worldToScreen(wreck.position, width, height);
     const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
@@ -372,7 +367,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     const progress = this.model.operationProgress ?? 0;
     const pulse = 0.68 + Math.sin(timeSeconds * 7.5) * 0.2;
     const component = this.model.phase === 'extracting-component';
-
     this.context.save();
     this.context.lineCap = 'round';
     for (const emitter of emitters) {
@@ -388,7 +382,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.moveTo(emitter.x, emitter.y);
       this.context.lineTo(wreckPoint.x, wreckPoint.y);
       this.context.stroke();
-
       this.context.shadowBlur = 2;
       this.context.strokeStyle = component
         ? `rgba(220, 248, 255, ${0.64 + pulse * 0.25})`
