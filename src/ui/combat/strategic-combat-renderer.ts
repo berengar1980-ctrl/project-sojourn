@@ -130,6 +130,7 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
+    this.drawEscapeGate(width, height);
 
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
@@ -139,6 +140,23 @@ export class StrategicCombatRenderer {
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
+  private drawEscapeGate(width: number, height: number): void {
+    const gate = this.screen(this.model.exitPoint, width, height);
+    const ctx = this.context;
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#77e0ff';
+    ctx.fillStyle = 'rgba(65, 184, 235, 0.16)';
+    ctx.beginPath();
+    ctx.arc(gate.x, gate.y, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#b5efff';
+    ctx.fillText('FLUCHTPUNKT', gate.x, gate.y - 36);
+    ctx.restore();
+  }
   private drawBackground(width: number, height: number): void {
     const gradient = this.context.createRadialGradient(
       width * 0.5,
