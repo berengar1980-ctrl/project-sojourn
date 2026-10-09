@@ -266,7 +266,12 @@ export function controllerSalvageEventCallbacks(
         return;
       }
       context.systemLog.write('SCHLEPPEN > MANUELL ZUM MARKIERTEN AUSGANG FLIEGEN');
-      actions.mountSalvage(true);
+      const event = economy.salvageEvents.event(eventId);
+      if (event && context.state.salvageScene) {
+        context.state.salvageScene.beginDistressTow(event);
+      } else {
+        actions.mountSalvage(true);
+      }
     },
     onEvacuateDistress: (eventId: string) => {
       const result = economy.salvageEvents.evacuateDistress(eventId);
