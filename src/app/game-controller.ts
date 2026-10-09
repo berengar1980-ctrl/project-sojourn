@@ -22,6 +22,7 @@ import type {
 
 import {
   tickEconomy,
+  completeDistressTowOnArrival,
   controllerSalvageEventCallbacks,
   destroyControllerBoarding,
   destroyControllerCombat,
@@ -427,6 +428,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   resolveControllerCombat(context);
 
   const currentLocationId = navigationSnapshot.currentLocationId;
+  if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
+    completeDistressTowOnArrival(context, currentLocationId);
+  }
   handleControllerLocationEntry(context, currentLocationId);
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
