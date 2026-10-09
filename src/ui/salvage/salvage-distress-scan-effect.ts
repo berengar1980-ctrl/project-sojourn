@@ -35,7 +35,7 @@ export function drawDistressShipSprite(
   context: CanvasRenderingContext2D,
   event: SectorSalvageEvent | null,
   wreckId: string,
-  radius: number,
+  pixelsPerMeter: number,
   loadImage: (url: string) => HTMLImageElement
 ): boolean {
   if (!event || event.type !== 'distress-rescue' || !wreckId.startsWith('event-wreck-')) {
@@ -55,6 +55,7 @@ export function drawDistressShipSprite(
   const image = loadImage(ship.sprite.assetUrl);
   if (!image.complete || image.naturalWidth <= 0) return false;
   const aspect = image.naturalWidth / image.naturalHeight;
-  context.drawImage(image, -radius, -radius / aspect, radius * 2, (radius * 2) / aspect);
+  const shipWidth = ship.nominalLengthMeters * pixelsPerMeter;
+  context.drawImage(image, -shipWidth / 2, -shipWidth / (2 * aspect), shipWidth, shipWidth / aspect);
   return true;
 }
