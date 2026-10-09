@@ -421,7 +421,9 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
-    renderSectorEvent(model, ui.sectorEventContainer);
+    if (!ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')) {
+      renderSectorEvent(model, ui.sectorEventContainer);
+    }
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
