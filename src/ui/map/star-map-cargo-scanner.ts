@@ -3,7 +3,8 @@ import type { StarMapViewModel } from '../../features/star-map/star-map-view-mod
 function renderBuyerHints(
   scanner: StarMapViewModel['cargoScanner'],
   selectedResource: string,
-  container: HTMLElement
+  container: HTMLElement,
+  onNavigate: (locationId: string) => void
 ): void {
   const hints = (scanner?.hints ?? []).filter((hint) => {
     if (selectedResource === 'all') return true;
@@ -13,9 +14,22 @@ function renderBuyerHints(
     const heading = document.createElement('p');
     heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
     container.append(heading);
+    if (selectedResource === 'all' && hints.length > 0) {
+      const best = hints[0];
+      const summary = document.createElement('strong');
+      summary.textContent = best
+        ? `BESTER VERMUTETER GESAMTMARKT: ${best.name} (${best.matchedQuantity} t mit besonderer Nachfrage)`
+        : '';
+      container.append(summary);
+    }
     for (const hint of hints.slice(0, 5)) {
       const item = document.createElement('div');
       item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
+      const route = document.createElement('button');
+      route.type = 'button';
+      route.textContent = 'ROUTE SETZEN';
+      route.addEventListener('click', () => onNavigate(hint.locationId));
+      item.append(' ', route);
       container.append(item);
     }
   }
@@ -29,7 +43,8 @@ export function bindCargoMarketScanner(
   cargoToggle: HTMLButtonElement,
   cargoPanel: HTMLElement,
   cargoSelect: HTMLSelectElement,
-  cargoContent: HTMLElement
+  cargoContent: HTMLElement,
+  onNavigate: (locationId: string) => void
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
@@ -66,7 +81,15 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
-    renderBuyerHints(scanner, preferredCargoResource, cargoContent);
+    if (preferredCargoResource === 'all') {
+      const complete = quotes.find((quote) => quote.coveredQuantity === quote.totalQuantity);
+      if (complete) {
+        const recommendation = document.createElement('strong');
+        recommendation.textContent = `BESTER BEKANNTER GESAMTVERKAUF: ${complete.name} · ${formatCredits(complete.revenue)}`;
+        cargoContent.append(recommendation);
+      }
+    }
+    renderBuyerHints(scanner, preferredCargoResource, cargoContent, onNavigate);
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
@@ -95,7 +118,11 @@ export function bindCargoMarketScanner(
       const price = document.createElement('strong');
       price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
       price.textContent = formatCredits(quote.revenue);
-      row.append(info, price);
+      const route = document.createElement('button');
+      route.type = 'button';
+      route.textContent = 'ROUTE';
+      route.addEventListener('click', () => onNavigate(quote.locationId));
+      row.append(info, price, route);
       cargoContent.append(row);
     }
   };
