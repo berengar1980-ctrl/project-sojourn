@@ -129,8 +129,9 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   acceptForPlayer(id: string): boolean {
     const event = this.event(id);
-    if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay)
+    if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay) {
       return false;
+    }
     if (!event.playerAccepted) event.playerDeadlineDay += 3;
     event.playerAccepted = true;
     return true;
@@ -311,8 +312,9 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       event.distressStage === 'towing' ||
       this.currentDay < event.playerDeadlineDay ||
       (event.claimedByNpcId && event.claimedByNpcId !== npcId)
-    )
+    ) {
       return false;
+    }
     event.claimedByNpcId = npcId;
     return true;
   }
