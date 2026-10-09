@@ -134,7 +134,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   get playerVisible(): readonly SectorSalvageEvent[] {
     return this.active.filter(
-      (event) => event.playerAccepted || this.currentDay < event.playerDeadlineDay
+      (event) => event.distressStage === 'towing' || this.currentDay < event.playerDeadlineDay
     );
   }
 
@@ -142,6 +142,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     const event = this.event(id);
     if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay)
       return false;
+    if (!event.playerAccepted) event.playerDeadlineDay += 3;
     event.playerAccepted = true;
     return true;
   }
@@ -153,6 +154,11 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void {
     this.currentDay = day;
+    for (const event of this.events) {
+      if (event.playerDeadlineDay <= day && event.distressStage !== 'towing') {
+        event.playerAccepted = false;
+      }
+    }
     this.prune(day);
     if (!playerHasSalvager) return;
     if (day >= this.nextSpecialDay) {
@@ -313,6 +319,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     if (
       !event ||
       event.playerAccepted ||
+      event.distressStage === 'towing' ||
       this.currentDay < event.playerDeadlineDay ||
       (event.claimedByNpcId && event.claimedByNpcId !== npcId)
     )
