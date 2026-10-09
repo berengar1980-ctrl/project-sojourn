@@ -90,6 +90,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
+| 2026-10-09 | Sternkarten-Fracht: Gesamtmarkt und Routenwahl | Voidbound-Parität geprüft: keine Statusänderung. Sojourn-spezifische Anzeige des besten bekannten Gesamterlöses beziehungsweise einer ausdrücklich unbepreisten Nachfrageempfehlung; Käufer und Märkte sind direkt als Navigationsziel anwählbar. |
 | 2026-10-09 | Erweiterung Frachthandel: niedriger Grundankauf und Nachfragehinweise | Voidbound-Parität geprüft: keine Statusänderung. Sojourn-eigene Ergänzung der Hafenmärkte für legale Waren und strukturierte Käuferhinweise ohne fingierte Livepreise. |
 | 2026-10-09 | Sichtbarkeit des Sternkarten-Frachtbuttons (Nacharbeit zu PR #170) | Voidbound-Parität geprüft: keine Statusänderung. Ausschließlich CSS-Positionierung des bereits vorhandenen optionalen Frachtmarkt-Scanners; keine Änderung an Handels- oder Navigationslogik. |
 | 2026-10-09 | PR #170 · Sternkarten-Frachtmarkt-Scanner | Voidbound-Parität geprüft: keine Statusänderung. Die optionale Fracht- und Verkaufsortanalyse auf der Sternkarte ist eine Sojourn-spezifische Erweiterung auf Basis vorhandener Markt-Intel, Verkaufspreise und Frachtdaten. Keine neue Voidbound-Feature-ID; Handel erfolgt weiterhin beim Andocken. |
