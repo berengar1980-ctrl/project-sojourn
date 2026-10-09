@@ -98,6 +98,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     'hull',
     'sensor',
     'weapon',
+    'mine',
     'cargo',
     'mining',
     'salvage',
