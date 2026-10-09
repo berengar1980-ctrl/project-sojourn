@@ -6,8 +6,8 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
-import { drawSectorEventMarker } from './sector-event-marker';
 import { drawCargoMarketMarker } from './cargo-market-marker';
+import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
@@ -401,7 +401,6 @@ export class TopdownMapRenderer {
       radius: radius + 12,
     };
   }
-
   private locationVisualRadius(location: StarMapLocationView): number {
     if (location.kind === 'asteroid-field') return 24;
     if (location.kind === 'station') return Math.min(18, Math.max(10, location.radius * 0.72));
