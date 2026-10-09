@@ -20,7 +20,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 assert(read('src/app/game-controller-local-actions.ts').includes('playerAtLocalExit('));
 assert(read('src/app/game-controller-salvage.ts').includes('playerAtLocalExit('));
 assert(read('src/app/game-controller-events.ts').includes('controllerSalvageExitAction'));
-assert(!read('src/app/game-controller-events.ts').includes('context.navigation.startTravel();\n      runSceneZoomTransition(context.root, actions.mountStarMap)'));
+assert(
+  !read('src/app/game-controller-events.ts').includes(
+    'context.navigation.startTravel();\\n      runSceneZoomTransition(context.root, actions.mountStarMap)'
+  )
+);
 assert(read('src/ui/local-space/local-space-renderer.ts').includes('drawLocalSpaceExitGate('));
 assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawLocalSpaceExitGate('));
 assert(
