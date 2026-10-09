@@ -41,7 +41,8 @@ export class DistressDamageParticles {
 
   update(
     now: number, position: WorldPoint, heading: number, length: number,
-    camera: MapCamera, ctx: CanvasRenderingContext2D, width: number, height: number
+    camera: MapCamera, ctx: CanvasRenderingContext2D, width: number, height: number,
+    hullFraction = 0
   ): void {
     const dt = this.lastTime ? Math.max(0, Math.min(0.05, now - this.lastTime)) : 0;
     this.lastTime = now;
@@ -53,6 +54,10 @@ export class DistressDamageParticles {
     this.previous = { ...position };
     const cos = Math.cos(heading), sin = Math.sin(heading);
     for (const [i, source] of SOURCES.entries()) {
+      const enabled = i === 0 ? hullFraction <= 0.85
+        : i === 2 ? hullFraction <= 0.65 : hullFraction <= 0.25;
+      if (!enabled) { this.emissions[i] = 0; continue; }
+      const fireActive = source.fire && hullFraction <= 0.45;
       const x = position.x + (source.x * cos - source.y * sin) * length;
       const y = position.y + (source.x * sin + source.y * cos) * length;
       this.emissions[i]! += source.smoke * dt * this.fade;
@@ -62,7 +67,7 @@ export class DistressDamageParticles {
           this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
           return this.seed / 4294967296;
         };
-        const kind: Particle['kind'] = source.fire && random() < 0.45 ? 'fire' : 'smoke';
+        const kind: Particle['kind'] = fireActive && random() < 0.45 ? 'fire' : 'smoke';
         const life = kind === 'fire' ? 0.3 + random() * 0.55 : 1.4 + random() * 2.1;
         this.particles.push({
           x, y, vx: vx * 0.55 + (random() - 0.5) * 18,
@@ -71,7 +76,7 @@ export class DistressDamageParticles {
           kind,
         });
       }
-      if (source.fire && this.fade > 0.2 && randomSpark(this.seed++, now, i)) {
+      if (fireActive && this.fade > 0.2 && randomSpark(this.seed++, now, i)) {
         this.particles.push({
           x, y, vx: vx * 0.55 + Math.cos(now * 13 + i) * 50,
           vy: vy * 0.55 + Math.sin(now * 11 + i) * 50,
