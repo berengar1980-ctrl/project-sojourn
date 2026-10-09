@@ -18,6 +18,7 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
     x: Math.max(0, Math.min(points.sourceWidth, points.pivot.x + points.sourceWidth * 0.24)),
     y: points.pivot.y,
     width: 3,
+    layer: 'above',
   };
   return {
     ...definition,
