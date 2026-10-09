@@ -4,7 +4,8 @@ function renderBuyerHints(
   scanner: StarMapViewModel['cargoScanner'],
   selectedResource: string,
   container: HTMLElement,
-  onNavigate: (locationId: string) => void
+  onNavigate: (locationId: string) => void,
+  selectedDestinationId: string | null
 ): void {
   const hints = (scanner?.hints ?? []).filter((hint) => {
     if (selectedResource === 'all') return true;
@@ -27,7 +28,7 @@ function renderBuyerHints(
       item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = 'ROUTE SETZEN';
+      route.textContent = hint.locationId === selectedDestinationId ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
       route.className = 'cargo-route-button';
       route.title = 'Navigationsziel auf der Sternkarte auswählen';
       route.addEventListener('click', (event) => {
@@ -98,7 +99,13 @@ export function bindCargoMarketScanner(
         cargoContent.append(recommendation);
       }
     }
-    renderBuyerHints(scanner, preferredCargoResource, cargoContent, onNavigate);
+    renderBuyerHints(
+      scanner,
+      preferredCargoResource,
+      cargoContent,
+      onNavigate,
+      getModel().navigation.selectedDestinationId
+    );
     const markers = new Map<string, 'best' | 'good' | 'low'>();
     const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
     for (const quote of quotes) {
@@ -112,6 +119,10 @@ export function bindCargoMarketScanner(
       if (!markers.has(hint.locationId)) markers.set(hint.locationId, index === 0 ? 'best' : 'good');
     });
     onVisualization(markers);
+    const legend = document.createElement('p');
+    legend.className = 'cargo-market-legend';
+    legend.textContent = '● GRÜN: beste Chance  ·  ● GELB: weitere Käufer  ·  ● ROT: niedriger Erlös';
+    cargoContent.append(legend);
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
@@ -142,7 +153,9 @@ export function bindCargoMarketScanner(
       price.textContent = formatCredits(quote.revenue);
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = 'ROUTE SETZEN';
+      route.textContent = quote.locationId === getModel().navigation.selectedDestinationId
+        ? 'ZIEL AUSGEWÄHLT'
+        : 'ROUTE SETZEN';
       route.className = 'cargo-route-button';
       route.title = 'Navigationsziel auf der Sternkarte auswählen';
       route.addEventListener('click', (event) => {
