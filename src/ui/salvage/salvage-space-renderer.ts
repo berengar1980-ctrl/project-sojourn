@@ -2,8 +2,10 @@ import type {
   SalvageSpaceViewModel,
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
-import { getShipsByRole } from '../../systems/ships';
-import { drawDistressScanEffect } from './salvage-distress-scan-effect';
+import {
+  drawDistressScanEffect,
+  drawDistressShipSprite,
+} from './salvage-distress-scan-effect';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
@@ -186,18 +188,14 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.translate(point.x, point.y);
     this.context.rotate(wreck.rotation);
     this.context.globalAlpha = wreck.depleted ? 0.38 : 0.95;
-    const event = this.model.sectorEvent;
-    const role = event?.wreckKind === 'salvager' ? 'salvage' : event?.wreckKind === 'miner'
-      ? 'mining' : event?.wreckKind === 'patrol' ? 'patrol' : 'freighter';
-    const variants = getShipsByRole(role);
-    const ship = event?.type === 'distress-rescue' && wreck.id.startsWith('event-wreck-')
-      ? variants[(event.fieldSeed >>> 0) % variants.length]
-      : undefined;
-    const image = ship ? this.ensureNpcImage(ship.sprite.assetUrl) : null;
-    if (image?.complete && image.naturalWidth > 0) {
-      const aspect = image.naturalWidth / image.naturalHeight;
-      this.context.drawImage(image, -radius, -radius / aspect, radius * 2, radius * 2 / aspect);
-    } else {
+    const drewShip = drawDistressShipSprite(
+      this.context,
+      this.model.sectorEvent,
+      wreck.id,
+      radius,
+      (url) => this.ensureNpcImage(url)
+    );
+    if (!drewShip) {
       this.drawHullFragments(wreck, radius);
       this.drawWreckDebris(wreck.id, radius);
     }
