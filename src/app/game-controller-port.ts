@@ -275,10 +275,9 @@ function createShipyardCallbacks(
     },
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
-      const baseOffer = getCompatibleShipComponents(
-        type,
-        context.gameplay.maxComponentTier
-      ).some((entry) => entry.id === componentId);
+      const baseOffer = getCompatibleShipComponents(type, context.gameplay.maxComponentTier).some(
+        (entry) => entry.id === componentId
+      );
       const discovered = context.shipyardResearch
         .variants(type, context.gameplay.maxComponentTier)
         .some((entry) => entry.id === componentId);
