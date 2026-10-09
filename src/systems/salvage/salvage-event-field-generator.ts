@@ -1,3 +1,4 @@
+import { getShipsByRole } from '../ships';
 import type {
   SalvageComponentCandidate,
   SalvageField,
@@ -76,6 +77,12 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
   const height = 1900;
   const component = sectorSalvageEventComponent(event);
   const quality = event.specialComponent ? 3 : event.salvageRights ? 2 : 1;
+  const role = event.wreckKind === 'salvager' ? 'salvage'
+    : event.wreckKind === 'miner' ? 'mining'
+      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+  const candidates = getShipsByRole(role);
+  const ship = candidates[(event.fieldSeed >>> 0) % candidates.length];
+  const distressRadius = (ship?.nominalLengthMeters ?? 80) * 0.38;
   const wreck: SalvageWreck = {
     id: `event-wreck-${event.id}`,
     name:
@@ -87,7 +94,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
     kind: event.wreckKind,
     quality,
     position: { x: width * 0.55, y: height * 0.5 },
-    radius: 58 + random() * 24,
+    radius: event.type === 'distress-rescue' ? distressRadius : 58 + random() * 24,
     rotation: random() * Math.PI * 2,
     integrity: Math.round(48 + random() * 42),
     resources:
