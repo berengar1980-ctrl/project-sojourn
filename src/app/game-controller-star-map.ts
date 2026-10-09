@@ -117,7 +117,7 @@ export function createControllerStarModel(
     ];
   });
 
-  const eventLocations = economy.salvageEvents.active.map((event) => ({
+  const eventLocations = economy.salvageEvents.playerVisible.map((event) => ({
     id: event.id,
     name: event.title,
     kind: 'wreck' as const,
