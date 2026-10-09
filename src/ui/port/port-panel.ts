@@ -348,7 +348,6 @@ function bindTradeViews(shell: HTMLElement): void {
   activate('cargo');
 }
 
-
 export function createPortPanel(options: PortPanelOptions): PortPanel {
   const shell = document.createElement('section');
   shell.className = 'port-shell';
