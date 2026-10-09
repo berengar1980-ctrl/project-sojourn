@@ -1,3 +1,4 @@
+import type { CargoMarketScanner } from '../../systems/economy/cargo-market-scanner';
 import type { NpcCombatMovementMode } from '../../core/npc-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
@@ -71,6 +72,7 @@ export interface PlayerShipMapView {
 export interface StarMapViewModel {
   readonly worldId: string;
   readonly title: string;
+  readonly cargoScanner?: CargoMarketScanner;
   readonly width: number;
   readonly height: number;
   readonly star: StarBody;
