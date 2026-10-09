@@ -110,8 +110,18 @@ function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
 
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
   return {
-    attacker: snapshot(runtime.attacker),
-    defender: snapshot(runtime.defender),
+    attacker: {
+      ...snapshot(runtime.attacker),
+      tractorLocked: runtime.attacker.shieldHp <= 0 && runtime.defender.hullHp > 0 &&
+        distance(runtime.attacker.position, runtime.defender.position) <=
+          (runtime.defender.setup.tractorRangeMeters ?? 0),
+    },
+    defender: {
+      ...snapshot(runtime.defender),
+      tractorLocked: runtime.defender.shieldHp <= 0 && runtime.attacker.hullHp > 0 &&
+        distance(runtime.defender.position, runtime.attacker.position) <=
+          (runtime.attacker.setup.tractorRangeMeters ?? 0),
+    },
     elapsedSeconds: runtime.elapsedSeconds,
     winner: runtime.winner,
     lastEvent: runtime.lastEvent,
