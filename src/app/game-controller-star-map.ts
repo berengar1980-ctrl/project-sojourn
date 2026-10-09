@@ -137,12 +137,12 @@ export function createControllerStarModel(
   });
   return {
     ...createStarMapViewModel(
-    narrowsSector,
-    navigationSnapshot,
-    ship,
-    npcShips,
-    selectedNpcId,
-    eventLocations
+      narrowsSector,
+      navigationSnapshot,
+      ship,
+      npcShips,
+      selectedNpcId,
+      eventLocations
     ),
     cargoScanner,
   };
