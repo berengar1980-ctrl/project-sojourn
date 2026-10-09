@@ -234,7 +234,9 @@ export function controllerSalvageEventCallbacks(
       applyDistressOutcome(context, result);
       if (result?.boardingRequired) {
         context.systemLog.write('BOARDING > NOTRUFFALLE ERKANNT · ENTERKAMPF');
-        runSceneZoomTransition(context.root, () => mountControllerBoarding(context, eventId, actions));
+        runSceneZoomTransition(context.root, () =>
+          mountControllerBoarding(context, eventId, actions)
+        );
       } else {
         actions.mountSalvage(true);
       }
