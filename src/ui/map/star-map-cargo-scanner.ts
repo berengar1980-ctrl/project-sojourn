@@ -42,6 +42,31 @@ function renderBuyerHints(
   }
 }
 
+function cargoMarkers(
+  scanner: StarMapViewModel['cargoScanner'],
+  selectedResource: string,
+  quotes: readonly { readonly locationId: string; readonly revenue: number }[]
+): ReadonlyMap<string, 'best' | 'good' | 'low'> {
+  const markers = new Map<string, 'best' | 'good' | 'low'>();
+  const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
+  for (const quote of quotes) {
+    const fraction = bestRevenue > 0 ? quote.revenue / bestRevenue : 0;
+    const rating = fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low';
+    markers.set(quote.locationId, rating);
+  }
+  const relevantHints = (scanner?.hints ?? []).filter((hint) => {
+    if (selectedResource === 'all') return true;
+    return hint.resourceIds.includes(selectedResource);
+  });
+  relevantHints.forEach((hint, index) => {
+    if (!markers.has(hint.locationId)) {
+    markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+    }
+  });
+  return markers;
+}
+
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -108,23 +133,7 @@ export function bindCargoMarketScanner(
       onNavigate,
       getModel().navigation.selectedDestinationId
     );
-    const markers = new Map<string, 'best' | 'good' | 'low'>();
-    const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
-    for (const quote of quotes) {
-      const fraction = bestRevenue > 0 ? quote.revenue / bestRevenue : 0;
-      const rating = fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low';
-      markers.set(quote.locationId, rating);
-    }
-    const relevantHints = (scanner?.hints ?? []).filter((hint) => {
-      if (preferredCargoResource === 'all') return true;
-      return hint.resourceIds.includes(preferredCargoResource);
-    });
-    relevantHints.forEach((hint, index) => {
-      if (!markers.has(hint.locationId)) {
-        markers.set(hint.locationId, index === 0 ? 'best' : 'good');
-      }
-    });
-    onVisualization(markers);
+    onVisualization(cargoMarkers(scanner, preferredCargoResource, quotes));
     const legend = document.createElement('p');
     legend.className = 'cargo-market-legend';
     legend.textContent =
