@@ -46,9 +46,7 @@ export function createPlayerCombatant(
     mines,
     tractorRangeMeters: Math.max(
       0,
-      ...(runtime.installed.tractor ?? []).map(
-        (id) => getShipComponent('tractor', id)?.range ?? 0
-      )
+      ...(runtime.installed.tractor ?? []).map((id) => getShipComponent('tractor', id)?.range ?? 0)
     ),
     sensorCrewSkill: runtime.sensorCrewSkill,
     sensorTier: sensor?.tier ?? 0,
