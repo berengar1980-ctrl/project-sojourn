@@ -1,4 +1,5 @@
 import type { DistressDamageType } from '../../core/salvage-types';
+import type { WorldMap, WorldPoint } from '../../core/world-types';
 
 export interface DistressProfile {
   readonly id: DistressDamageType;
@@ -111,4 +112,21 @@ export function pickDistressProfile(
     profile = DISTRESS_PROFILES.find((candidate) => candidate.id !== previous) ?? profile;
   }
   return profile;
+}
+
+export function pointDanger(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
+  let danger: 0 | 1 | 2 | 3 = 0;
+  for (const region of world.regions) {
+    const distance = Math.hypot(point.x - region.center.x, point.y - region.center.y);
+    if (distance <= region.radius) {
+      danger = Math.max(danger, region.dangerLevel) as 0 | 1 | 2 | 3;
+    }
+  }
+  return danger;
+}
+
+export function distressTrapChance(danger: 0 | 1 | 2 | 3): number {
+  if (danger >= 3) return 0.15;
+  if (danger === 2) return 0.08;
+  return 0.03;
 }
