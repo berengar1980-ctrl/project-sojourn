@@ -133,7 +133,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
     });
-
     const hitAreas: WreckHitArea[] = [];
     for (const wreck of this.model.wrecks) {
       const hit = this.drawWreck(wreck, width, height);
@@ -187,7 +186,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     ) {
       return null;
     }
-
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(wreck.rotation);
@@ -204,7 +202,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.drawWreckDebris(wreck.id, radius);
     }
     this.context.restore();
-
     if (wreck.isSelected || wreck.isWorkTarget) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
