@@ -61,7 +61,8 @@ function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint {
   const dx = ship.position.x - wreck.position.x;
   const dy = ship.position.y - wreck.position.y;
   const length = Math.hypot(dx, dy) || 1;
-  const range = wreck.radius + WORK_STANDOFF;
+  const range = wreck.radius +
+    (wreck.id.startsWith('event-wreck-salvage-distress-') ? 12 : WORK_STANDOFF);
   return {
     x: wreck.position.x + (dx / length) * range,
     y: wreck.position.y + (dy / length) * range,
