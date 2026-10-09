@@ -45,15 +45,6 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
-    if (preferredCargoResource !== 'all') {
-      const item = items.find((entry) => entry.resourceId === preferredCargoResource);
-      if (!item?.best) {
-        const empty = document.createElement('p');
-        empty.textContent = 'Keine bekannten Marktpreise für diese Ware.';
-        cargoContent.append(empty);
-        return;
-      }
-    }
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
@@ -94,7 +85,6 @@ export function bindCargoMarketScanner(
     preferredCargoResource = cargoSelect.value;
     renderCargoScanner();
   });
-
 
   renderCargoScanner();
   return renderCargoScanner;
