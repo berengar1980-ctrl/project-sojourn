@@ -26,7 +26,9 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
       ...definition.sprite,
       hardpoints: {
         ...points,
-        tractorBeams: points.tractorBeams?.length ? points.tractorBeams : [{ ...mount, id: 'utility-tractor' }],
+        tractorBeams: points.tractorBeams?.length
+          ? points.tractorBeams
+          : [{ ...mount, id: 'utility-tractor' }],
         grapplingHooks: points.grapplingHooks?.length ? points.grapplingHooks : [mount],
       },
     },
