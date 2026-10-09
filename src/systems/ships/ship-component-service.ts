@@ -102,6 +102,15 @@ function performanceFields(
           },
         }
       : {}),
+    ...(base.mine
+      ? {
+          mine: {
+            ...base.mine,
+            shieldDamage: boost(base.mine.shieldDamage),
+            hullDamage: boost(base.mine.hullDamage),
+          },
+        }
+      : {}),
   };
 }
 
