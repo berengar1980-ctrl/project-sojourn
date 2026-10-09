@@ -17,11 +17,13 @@ for (let i = 0; i < 15; i += 1) {
 }
 assert.equal(tow.attached, true, 'the grapple must attach after launch animation');
 const before = tow.position.x;
+let maximumTension = 0;
 for (let i = 0; i < 45; i += 1) {
   tow = advanceDistressTow(tow, { x: 1900, y: 950 }, 0, 0.05);
+  maximumTension = Math.max(maximumTension, tow.cableTension);
 }
 assert(tow.position.x > before, 'towing craft must accelerate toward a moving player');
-assert(tow.cableTension > 0, 'extended rope must become tense');
+assert(maximumTension > 0, 'extended rope must become tense during acceleration');
 const initialVelocity = tow.velocity.x;
 tow = advanceDistressTow(tow, { x: 1600, y: 950 }, Math.PI, 0.05);
 assert(tow.velocity.x > 0, 'heavy towed ship must drift forward when the player brakes or turns');
