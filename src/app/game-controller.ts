@@ -8,12 +8,9 @@ import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel'
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
-
 import { createPlayerCombatant } from './game-controller-combat';
 import { returnFromCombat, startCombatBoarding } from './game-controller-combat-boarding';
-
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
-
 import { createControllerStarPanel } from './game-controller-star-map';
 
 import type {
