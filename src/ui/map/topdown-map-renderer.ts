@@ -6,6 +6,7 @@ import type {
 import { MapCamera } from './map-camera';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
+import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
 import { PlayerShipRenderer } from './player-ship-renderer';
@@ -15,7 +16,6 @@ import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
-
 export interface StarMapPick {
   readonly kind: 'location' | 'npc';
   readonly id: string;
@@ -40,6 +40,7 @@ export class TopdownMapRenderer {
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
   private labelsVisible = true;
+  private cargoOverlay: ReadonlyMap<string, 'best' | 'good' | 'low'> = new Map();
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
@@ -104,6 +105,11 @@ export class TopdownMapRenderer {
   setLabelsVisible(visible: boolean): void {
     if (this.labelsVisible === visible) return;
     this.labelsVisible = visible;
+    this.draw();
+  }
+
+  setCargoOverlay(markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void {
+    this.cargoOverlay = markers;
     this.draw();
   }
 
@@ -371,6 +377,8 @@ export class TopdownMapRenderer {
     else this.drawPlanet(location, point, radius, light);
 
     drawSectorEventMarker(this.context, location.id, point, radius);
+    const cargoRating = this.cargoOverlay.get(location.id);
+    if (cargoRating) drawCargoMarketMarker(this.context, point, radius, cargoRating);
 
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
@@ -392,7 +400,6 @@ export class TopdownMapRenderer {
       radius: radius + 12,
     };
   }
-
   private locationVisualRadius(location: StarMapLocationView): number {
     if (location.kind === 'asteroid-field') return 24;
     if (location.kind === 'station') return Math.min(18, Math.max(10, location.radius * 0.72));

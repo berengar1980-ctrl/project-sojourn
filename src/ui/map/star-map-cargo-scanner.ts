@@ -4,7 +4,8 @@ function renderBuyerHints(
   scanner: StarMapViewModel['cargoScanner'],
   selectedResource: string,
   container: HTMLElement,
-  onNavigate: (locationId: string) => void
+  onNavigate: (locationId: string) => void,
+  selectedDestinationId: string | null
 ): void {
   const hints = (scanner?.hints ?? []).filter((hint) => {
     if (selectedResource === 'all') return true;
@@ -27,11 +28,85 @@ function renderBuyerHints(
       item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = 'ROUTE SETZEN';
-      route.addEventListener('click', () => onNavigate(hint.locationId));
+      route.textContent =
+        hint.locationId === selectedDestinationId ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
+      route.className = 'cargo-route-button';
+      route.title = 'Navigationsziel auf der Sternkarte auswählen';
+      route.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onNavigate(hint.locationId);
+      });
       item.append(' ', route);
       container.append(item);
     }
+  }
+}
+
+function cargoMarkers(
+  scanner: StarMapViewModel['cargoScanner'],
+  selectedResource: string,
+  quotes: readonly { readonly locationId: string; readonly revenue: number }[]
+): ReadonlyMap<string, 'best' | 'good' | 'low'> {
+  const markers = new Map<string, 'best' | 'good' | 'low'>();
+  const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
+  for (const quote of quotes) {
+    const fraction = bestRevenue > 0 ? quote.revenue / bestRevenue : 0;
+    const rating = fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low';
+    markers.set(quote.locationId, rating);
+  }
+  const relevantHints = (scanner?.hints ?? []).filter((hint) => {
+    if (selectedResource === 'all') return true;
+    return hint.resourceIds.includes(selectedResource);
+  });
+  relevantHints.forEach((hint, index) => {
+    if (!markers.has(hint.locationId)) {
+      markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+    }
+  });
+  return markers;
+}
+
+function renderMarketQuotes(
+  quotes: NonNullable<StarMapViewModel['cargoScanner']>['markets'],
+  currentDay: number,
+  selectedDestinationId: string | null,
+  cargoContent: HTMLElement,
+  onNavigate: (locationId: string) => void,
+  formatCredits: (value: number) => string
+): void {
+  for (const quote of quotes.slice(0, 8)) {
+    const row = document.createElement('div');
+    row.style.cssText =
+      'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
+    const info = document.createElement('div');
+    const name = document.createElement('div');
+    name.textContent = quote.name;
+    name.style.fontWeight = 'bold';
+    const detail = document.createElement('small');
+    detail.style.color = '#9baebb';
+    detail.textContent =
+      'Distanz ' +
+      Math.round(quote.distance) +
+      ' u · Daten ' +
+      (currentDay - quote.observedDay) +
+      ' Tage alt' +
+      (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
+    info.append(name, detail);
+    const price = document.createElement('strong');
+    price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
+    price.textContent = formatCredits(quote.revenue);
+    const route = document.createElement('button');
+    route.type = 'button';
+    const selected = quote.locationId === selectedDestinationId;
+    route.textContent = selected ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
+    route.className = 'cargo-route-button';
+    route.title = 'Navigationsziel auf der Sternkarte auswählen';
+    route.addEventListener('click', (event) => {
+      event.stopPropagation();
+      onNavigate(quote.locationId);
+    });
+    row.append(info, price, route);
+    cargoContent.append(row);
   }
 }
 
@@ -44,7 +119,8 @@ export function bindCargoMarketScanner(
   cargoPanel: HTMLElement,
   cargoSelect: HTMLSelectElement,
   cargoContent: HTMLElement,
-  onNavigate: (locationId: string) => void
+  onNavigate: (locationId: string) => void,
+  onVisualization: (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
@@ -52,7 +128,10 @@ export function bindCargoMarketScanner(
     const scanner = getModel().cargoScanner;
     cargoPanel.hidden = !preferredCargoVisible;
     cargoToggle.textContent = preferredCargoVisible ? 'FRACHT // AN' : 'FRACHT // AUS';
-    if (!preferredCargoVisible) return;
+    if (!preferredCargoVisible) {
+      onVisualization(new Map());
+      return;
+    }
     const items = scanner?.resources ?? [];
     const previous = preferredCargoResource;
     cargoSelect.replaceChildren();
@@ -89,7 +168,19 @@ export function bindCargoMarketScanner(
         cargoContent.append(recommendation);
       }
     }
-    renderBuyerHints(scanner, preferredCargoResource, cargoContent, onNavigate);
+    renderBuyerHints(
+      scanner,
+      preferredCargoResource,
+      cargoContent,
+      onNavigate,
+      getModel().navigation.selectedDestinationId
+    );
+    onVisualization(cargoMarkers(scanner, preferredCargoResource, quotes));
+    const legend = document.createElement('p');
+    legend.className = 'cargo-market-legend';
+    legend.textContent =
+      '● GRÜN: beste Chance  ·  ● GELB: weitere Käufer  ·  ● ROT: niedriger Erlös';
+    cargoContent.append(legend);
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
@@ -97,34 +188,14 @@ export function bindCargoMarketScanner(
       cargoContent.append(empty);
       return;
     }
-    for (const quote of quotes.slice(0, 8)) {
-      const row = document.createElement('div');
-      row.style.cssText =
-        'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
-      const info = document.createElement('div');
-      const name = document.createElement('div');
-      name.textContent = quote.name;
-      name.style.fontWeight = 'bold';
-      const detail = document.createElement('small');
-      detail.style.color = '#9baebb';
-      detail.textContent =
-        'Distanz ' +
-        Math.round(quote.distance) +
-        ' u · Daten ' +
-        (scanner!.currentDay - quote.observedDay) +
-        ' Tage alt' +
-        (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
-      info.append(name, detail);
-      const price = document.createElement('strong');
-      price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
-      price.textContent = formatCredits(quote.revenue);
-      const route = document.createElement('button');
-      route.type = 'button';
-      route.textContent = 'ROUTE';
-      route.addEventListener('click', () => onNavigate(quote.locationId));
-      row.append(info, price, route);
-      cargoContent.append(row);
-    }
+    renderMarketQuotes(
+      quotes,
+      scanner?.currentDay ?? 0,
+      getModel().navigation.selectedDestinationId,
+      cargoContent,
+      onNavigate,
+      formatCredits
+    );
   };
   cargoToggle.addEventListener('click', () => {
     preferredCargoVisible = !preferredCargoVisible;
