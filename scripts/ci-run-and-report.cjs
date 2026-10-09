@@ -95,11 +95,19 @@ function extractDiagnosticLines(output, primary, maxLines = 5) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  const relevant = candidates.filter((line) =>
-    /^(?:FAIL\s|\[warn\]\s+.+\.(?:ts|tsx|js|cjs|mjs|json|md|yml|yaml|html)$|.*\.(?:ts|tsx)\(\d+,\d+\):\s+error TS\d+:|.*\berror\b|.*\bAssertionError\b|.*\bExpected values to be strictly equal\b|.*\bactual:|.*\bexpected:|.*\bnot ok\b|.*\bfailed\b)/i.test(
-      line
-    )
-  );
+  const patterns = [
+    /^FAIL\s/,
+    /^\[warn\]\s+.+\.(?:ts|tsx|js|cjs|mjs|json|md|yml|yaml|html)$/,
+    /\.(?:ts|tsx)\(\d+,\d+\):\s+error TS\d+:/,
+    /\berror\b/i,
+    /AssertionError/,
+    /Expected values to be strictly equal/,
+    /\bactual:/,
+    /\bexpected:/,
+    /\bnot ok\b/i,
+    /\bfailed\b/i,
+  ];
+  const relevant = candidates.filter((line) => patterns.some((pattern) => pattern.test(line)));
   const unique = [];
   const seen = new Set([compact(primary)]);
   for (const line of relevant) {
