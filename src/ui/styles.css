@@ -3338,10 +3338,7 @@ body {
   border: 1px solid rgba(101, 189, 205, 0.64);
   background: rgba(6, 38, 49, 0.94);
   color: #a7e6ee;
-  font:
-    10px "Courier New",
-    ui-monospace,
-    monospace;
+  font: 10px "Courier New", ui-monospace, monospace;
   letter-spacing: 0.07em;
   cursor: pointer;
 }
