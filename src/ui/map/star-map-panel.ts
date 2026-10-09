@@ -277,9 +277,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     addOption('all', 'GESAMTE FRACHT');
     for (const item of items) addOption(item.resourceId, item.name + ' (' + item.quantity + ')');
     preferredCargoResource =
-      previous !== 'all' && items.some((item) => item.resourceId === previous)
-        ? previous
-        : 'all';
+      previous !== 'all' && items.some((item) => item.resourceId === previous) ? previous : 'all';
     cargoSelect.value = preferredCargoResource;
     cargoContent.replaceChildren();
     if (!items.length) {
@@ -313,7 +311,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     }
     for (const quote of quotes.slice(0, 8)) {
       const row = document.createElement('div');
-      row.style.cssText = 'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
+      row.style.cssText =
+        'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
       const info = document.createElement('div');
       const name = document.createElement('div');
       name.textContent = quote.name;
@@ -329,8 +328,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
         (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
       info.append(name, detail);
       const price = document.createElement('strong');
-      price.style.color =
-        quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
+      price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
       price.textContent = formatCredits(quote.revenue);
       row.append(info, price);
       cargoContent.append(row);
