@@ -74,8 +74,8 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
           : 'fight',
     combatSpeed:
       npc.job === 'patrol' || npc.pirate
-      ? Math.max(185, Math.min(320, ship.navigation.cruiseSpeed * 0.48))
-      : Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
+        ? Math.max(185, Math.min(320, ship.navigation.cruiseSpeed * 0.48))
+        : Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
     turnRateRadiansPerSecond: Math.max(
       0.4,
       Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)
