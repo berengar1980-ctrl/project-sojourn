@@ -1,3 +1,4 @@
+import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceShieldImpacts } from '../shields/shield-service';
 
 import type {
@@ -130,6 +131,9 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
     elapsedSeconds: runtime.elapsedSeconds,
     exitPoint: runtime.arena.exitPoint!,
     winner: runtime.winner,
+    boardingInitiator: runtime.boardingInitiator,
+    grapple: runtime.grapple,
+    grappleUsed: { ...runtime.grappleUsed },
     lastEvent: runtime.lastEvent,
     projectiles: runtime.projectiles.map((projectile) => ({
       id: projectile.id,
@@ -181,6 +185,27 @@ function tickStrategicCombat(
   }
   const dt = Math.min(deltaSeconds, 0.08);
   runtime.elapsedSeconds += dt;
+  if (runtime.grapple) {
+    const initiator = runtimeCombatant(runtime, runtime.grapple.owner);
+    const victim = runtimeEnemy(runtime, runtime.grapple.owner);
+    runtime.grapple = advanceCombatGrapple(runtime.grapple, initiator.position, victim.position, dt);
+    if (runtime.grapple.success) {
+      const fraction = Math.min(1, dt * 2.6);
+      victim.position.x += (initiator.position.x - victim.position.x) * fraction;
+      victim.position.y += (initiator.position.y - victim.position.y) * fraction;
+      victim.speed = 0;
+      initiator.speed = 0;
+      if (distance(initiator.position, victim.position) <= 140) {
+        runtime.boardingInitiator = runtime.grapple.owner;
+        runtime.winner = runtime.grapple.owner;
+        runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
+      }
+    } else if (runtime.grapple.resolved) {
+      runtime.lastEvent = 'GREIFHAKEN > AM RUMPF ABGEPRALLT';
+      runtime.grapple = null;
+    }
+    return runtimeSnapshot(runtime);
+  }
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
@@ -254,6 +279,9 @@ function createStrategicCombatRuntime(
     mines: [],
     elapsedSeconds: 0,
     winner: null,
+    boardingInitiator: null,
+    grapple: null,
+    grappleUsed: { attacker: false, defender: false },
     lastEvent: 'Kampfkontakt hergestellt',
     projectileSerial: 0,
     beamSerial: 0,
@@ -272,6 +300,22 @@ export function createStrategicCombatService(
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
   return {
     getSnapshot: () => runtimeSnapshot(runtime),
+    fireGrapple(side) {
+      if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
+      const attacker = runtimeCombatant(runtime, side);
+      const victim = runtimeEnemy(runtime, side);
+      const launched = fireCombatGrapple(
+        side, attacker.position, victim.position, victim.shieldHp,
+        victim.hullHp, victim.hullMaxHp, false, runtime.random
+      );
+      if (!launched) return false;
+      runtime.grappleUsed[side] = true;
+      runtime.grapple = launched;
+      runtime.lastEvent = launched.success
+        ? 'GREIFHAKEN > TREFFER · ZIEL WIRD HERANGEZOGEN'
+        : 'GREIFHAKEN > WURF ABGEFEUERT';
+      return true;
+    },
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
       combatant.tactic = tactic;
