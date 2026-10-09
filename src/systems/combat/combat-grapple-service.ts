@@ -31,7 +31,7 @@ export function fireCombatGrapple(
     owner: side,
     success: random() < chance,
     elapsed: 0,
-    duration: 0.85,
+    duration: success ? 0.65 : 1.1,
     origin: { ...attacker },
     target: { ...defender },
     resolved: false,
