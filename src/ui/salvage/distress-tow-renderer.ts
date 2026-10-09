@@ -41,9 +41,15 @@ export function drawDistressTow(
     context.fill();
   } else {
     const slack = Math.max(0, 1 - tow.cableTension);
-    const sway = Math.min(36, distance * 0.09) * slack * Math.sin(time * 3.2);
-    const bend = { x: -dy / distance * sway, y: dx / distance * sway };
-    const middle = { x: (anchor.x + cargo.x) / 2 + bend.x, y: (anchor.y + cargo.y) / 2 + bend.y };
+    const lateralDrift = -Math.sin(model.ship.headingRadians) * tow.velocity.x +
+      Math.cos(model.ship.headingRadians) * tow.velocity.y;
+    const sway = Math.max(-65, Math.min(65, lateralDrift * 0.15)) +
+      Math.min(24, distance * 0.07) * slack * Math.sin(time * 3.2);
+    const bend = { x: (-dy / distance) * sway, y: (dx / distance) * sway };
+    const middle = {
+      x: (anchor.x + cargo.x) / 2 + bend.x,
+      y: (anchor.y + cargo.y) / 2 + bend.y,
+    };
     context.strokeStyle = tow.cableTension > 0.65 ? '#ffc88d' : '#b5cbd1';
     context.lineWidth = 2.6;
     context.beginPath();
