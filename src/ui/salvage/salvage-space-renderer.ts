@@ -214,7 +214,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.drawWreckDebris(wreck.id, radius);
     }
     this.context.restore();
-    if (wreck.isSelected || wreck.isWorkTarget) {
+    if ((wreck.isSelected || wreck.isWorkTarget) &&
+        !wreck.id.startsWith('event-wreck-salvage-distress-')) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
         ? 'rgba(232, 184, 96, 0.95)'
