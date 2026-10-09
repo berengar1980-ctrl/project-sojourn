@@ -3,6 +3,7 @@ import type {
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
 import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
+import { drawDistressTow } from './distress-tow-renderer';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
@@ -135,6 +136,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     });
     const hitAreas: WreckHitArea[] = [];
     for (const wreck of this.model.wrecks) {
+      if (this.model.distressTow && wreck.id.startsWith('event-wreck-')) continue;
       const hit = this.drawWreck(wreck, width, height);
       if (hit) hitAreas.push(hit);
     }
@@ -153,7 +155,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     this.drawDistressDiagnosis(width, height, timeSeconds);
-    this.drawShip(this.shipGeometry(width, height), timeSeconds);
+    const geometry = this.shipGeometry(width, height);
+    this.drawShip(geometry, timeSeconds);
+    drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
+      this.ensureNpcImage(url)
+    );
   }
   protected drawDistressDiagnosis(width: number, height: number, now: number): void {
     drawDistressScanEffect(
