@@ -1,5 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
-import { MapCamera } from './map-camera';
+import type { MapCamera } from './map-camera';
 
 export function localSpaceExitPoint(width: number, height: number): WorldPoint {
   return { x: width - 180, y: height * 0.5 };
