@@ -38,7 +38,7 @@ assert(!player.includes("getShipMine('mine-ion-'"));
 assert(!npc.includes("getShipMine('mine-ion-'"));
 assert(ship.includes("mine: ['']"), 'ship starts with empty dedicated mine slot');
 assert(port.includes("'mine'"), 'mine modules must appear in shipyard catalog');
-assert(localNpc.includes('wreck.componentStatus = \'recovered\''));
+assert(localNpc.includes('salvage.recoverComponent(wreck.id)'));
 assert(localNpc.includes('npc.salvageComponents = stored'));
 assert(port.includes('if (removed) componentInventory.take(removed.uid)'));
 assert(port.includes('if (selected)'), 'failed swaps must restore selected inventory parts');
