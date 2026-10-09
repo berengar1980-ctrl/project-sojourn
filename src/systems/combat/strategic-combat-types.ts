@@ -124,6 +124,7 @@ export interface StrategicCombatSnapshot {
   readonly attacker: StrategicCombatantSnapshot;
   readonly defender: StrategicCombatantSnapshot;
   readonly elapsedSeconds: number;
+  readonly exitPoint: CombatPoint;
   readonly winner: StrategicCombatSide | null;
   readonly lastEvent: string;
   readonly projectiles: readonly CombatProjectileSnapshot[];
@@ -148,6 +149,7 @@ export interface StrategicCombatArenaOptions {
   readonly attackerPosition?: CombatPoint;
   readonly defenderPosition?: CombatPoint;
   readonly obstacles?: readonly StrategicCombatObstacle[];
+  readonly exitPoint?: CombatPoint;
 }
 
 export interface StrategicCombatService {
