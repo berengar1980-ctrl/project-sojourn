@@ -242,12 +242,15 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         refresh();
         return;
       }
-      if (options.sectorEvent?.distressStage === 'towing' &&
-          (!state.distressTow || !towShipAtExit(
+      if (
+        options.sectorEvent?.distressStage === 'towing' &&
+        (!state.distressTow ||
+          !towShipAtExit(
             snapshot.ship.position,
             state.distressTow,
             localSpaceExitPoint(width, height)
-          ))) {
+          ))
+      ) {
         options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
         return;
       }
@@ -353,9 +356,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
-      distressTow: options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
-        ? createDistressTowState(field.wrecks[0].position)
-        : null,
+      distressTow:
+        options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
+          ? createDistressTowState(field.wrecks[0].position)
+          : null,
       panel: null,
     },
   };
