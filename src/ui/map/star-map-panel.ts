@@ -329,7 +329,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
         (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
       info.append(name, detail);
       const price = document.createElement('strong');
-      price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
+      price.style.color =
+        quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
       price.textContent = formatCredits(quote.revenue);
       row.append(info, price);
       cargoContent.append(row);
