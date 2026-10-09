@@ -1,7 +1,10 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
-import { createCrewBoardingEncounter } from '../systems/boarding/crew-boarding-adapter';
+import {
+  createCrewBoardingEncounter,
+  crewBoardingUnits,
+} from '../systems/boarding/crew-boarding-adapter';
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -34,7 +37,7 @@ export function startCombatBoarding(
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
   context.engagements.finishPlayerCombat();
-  if (context.crew.list().length === 0) {
+  if (crewBoardingUnits(context.crew).length === 0) {
     context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
     runSceneZoomTransition(context.root, returnToMap);
     return;
