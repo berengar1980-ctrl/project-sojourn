@@ -162,10 +162,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     this.drawDistressDiagnosis(width, height, timeSeconds);
     const geometry = this.shipGeometry(width, height);
-    this.drawShip(geometry, timeSeconds);
     drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
       this.ensureNpcImage(url)
     );
+    this.drawShip(geometry, timeSeconds);
   }
   protected drawDistressDiagnosis(width: number, height: number, now: number): void {
     drawDistressScanEffect(
