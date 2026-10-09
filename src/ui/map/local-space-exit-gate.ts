@@ -5,11 +5,7 @@ export function localSpaceExitPoint(width: number, height: number): WorldPoint {
   return { x: width - 180, y: height * 0.5 };
 }
 
-export function playerAtLocalExit(
-  position: WorldPoint,
-  width: number,
-  height: number
-): boolean {
+export function playerAtLocalExit(position: WorldPoint, width: number, height: number): boolean {
   const target = localSpaceExitPoint(width, height);
   return Math.hypot(position.x - target.x, position.y - target.y) <= 150;
 }
