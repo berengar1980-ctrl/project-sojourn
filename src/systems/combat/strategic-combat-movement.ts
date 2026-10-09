@@ -269,7 +269,9 @@ export function moveCombatant(
 
   const baseSpeed = Math.max(65, combatant.setup.combatSpeed ?? 120);
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
-  const tractorLocked = combatant.shieldHp <= 0 && enemy.hullHp > 0 &&
+  const tractorLocked =
+    combatant.shieldHp <= 0 &&
+    enemy.hullHp > 0 &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0);
   const desiredSpeed = tractorLocked
     ? Math.min(baseSpeed * targetSpeedFactor * alignment, 25)
