@@ -50,6 +50,7 @@ export function createStrategicCombatPanel(
       <button type="button" data-tactic="flee">FLUCHT</button>
     </div>
     <div class="strategic-combat-event"></div>
+    <button class="strategic-combat-grapple" type="button">GREIFHAKEN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
   options.root.replaceChildren(shell);
@@ -59,11 +60,13 @@ export function createStrategicCombatPanel(
   const enemyHud = shell.querySelector<HTMLElement>('.combat-hud--enemy');
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
+  const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
   const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
   }
 
+  grappleButton?.addEventListener('click', () => options.combat.fireGrapple('attacker'));
   const renderer = new StrategicCombatRenderer(canvas, options.combat.getSnapshot());
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
@@ -81,6 +84,15 @@ export function createStrategicCombatPanel(
     enemyHud.innerHTML = combatantHud(model.defender);
     event.textContent = model.lastEvent;
     returnButton.hidden = model.winner === null;
+    returnButton.textContent = model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
+    if (grappleButton) {
+      grappleButton.disabled = model.winner !== null || model.grapple !== null ||
+        model.grappleUsed.attacker || model.defender.shieldHp > 0 ||
+        Math.hypot(model.attacker.position.x - model.defender.position.x,
+          model.attacker.position.y - model.defender.position.y) > 900;
+      grappleButton.textContent = model.grappleUsed.attacker
+        ? 'GREIFHAKEN VERBRAUCHT' : 'GREIFHAKEN ABSCHIESSEN';
+    }
     for (const button of tacticButtons) {
       button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);
       button.disabled = model.winner !== null;
