@@ -216,6 +216,25 @@ function buyShipAtShipyard(context: ActivePortContext, id: string): void {
   context.onChangeShip(next);
 }
 
+function rollbackShipyardSwap(
+  context: ActivePortContext,
+  type: ShipComponentType,
+  removedUid: string | null,
+  selected: ReturnType<ShipComponentInventoryService['take']>
+): void {
+  const { componentInventory, runtime } = context;
+  if (removedUid) componentInventory.take(removedUid);
+  if (selected) {
+    componentInventory.store(
+      type,
+      selected.componentId,
+      selected.sourceWreckId,
+      runtime.cargoCapacityTons,
+      selected.source
+    );
+  }
+}
+
 function setShipyardComponentSlot(
   context: ActivePortContext,
   type: ShipComponentType,
@@ -239,16 +258,7 @@ function setShipyardComponentSlot(
       )
     : null;
   if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
-    if (removed) componentInventory.take(removed.uid);
-    if (selected) {
-      componentInventory.store(
-        type,
-        selected.componentId,
-        selected.sourceWreckId,
-        runtime.cargoCapacityTons,
-        selected.source
-      );
-    }
+    rollbackShipyardSwap(context, type, removed?.uid ?? null, selected);
     log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
     return;
   }
