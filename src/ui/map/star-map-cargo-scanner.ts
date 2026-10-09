@@ -66,7 +66,6 @@ function cargoMarkers(
   return markers;
 }
 
-
 function renderMarketQuotes(
   quotes: NonNullable<StarMapViewModel['cargoScanner']>['markets'],
   currentDay: number,
