@@ -160,7 +160,7 @@ export function getShipComponent(
 export function createSpecialSalvageComponentId(
   type: ShipComponentType,
   baseId: string,
-  modifier: 'efficiency' | 'damage',
+  modifier: 'efficiency' | 'damage' | 'performance',
   percent: number
 ): string | null {
   const pct = Math.max(1, Math.min(100, Math.round(percent)));
@@ -195,7 +195,7 @@ export function salvagedComponentAppraisal(
   const rare = Boolean(component.specialSalvage);
   const pct = Math.max(0, Number(component.salvageModifierPct ?? 0));
   const premium =
-    component.salvageModifier === 'damage'
+    component.salvageModifier === 'damage' || component.salvageModifier === 'performance'
       ? Math.min(0.75, pct * 0.06)
       : component.salvageModifier === 'efficiency'
         ? Math.min(0.75, pct * 0.04)
