@@ -22,6 +22,16 @@ jobs:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
+          name: Export salvage-test Prettier patch
+          when: always
+          command: |
+            mkdir -p /tmp/salvage-prettier
+            npx prettier --write tests/salvage/sector-salvage-events.test.cjs
+            git diff -- tests/salvage/sector-salvage-events.test.cjs > /tmp/salvage-prettier/prettier.patch
+      - store_artifacts:
+          path: /tmp/salvage-prettier
+          destination: salvage-prettier
+      - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
