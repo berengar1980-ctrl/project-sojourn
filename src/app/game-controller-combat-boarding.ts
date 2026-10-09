@@ -53,7 +53,9 @@ export function startCombatBoarding(
     armor: 2,
     rangedSkill: 48 + index * 5,
     meleeSkill: 46 + index * 5,
-    weapon: index % 2 ? boardingRangedWeapons.rifle : boardingRangedWeapons.sidearm,
+    weapon: index % 2
+      ? { ...boardingRangedWeapons.rifle, id: 'boltgun', name: 'Bolter' }
+      : { ...boardingRangedWeapons.sidearm, id: 'off_autopistol', name: 'Kompakte Autopistole' },
     meleeWeapon: boardingMeleeWeapons.baton,
   }));
   const encounter = createCrewBoardingEncounter({
