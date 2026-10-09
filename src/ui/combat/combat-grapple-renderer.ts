@@ -29,10 +29,14 @@ export function drawCombatGrapple(
   context.rotate(Math.atan2(destination.y - origin.y, destination.x - origin.x));
   context.fillStyle = grapple.success ? '#d0f3ff' : '#e6c5a8';
   context.beginPath();
-  context.moveTo(9, 0);
-  context.lineTo(-6, -6);
-  context.lineTo(-2, 0);
-  context.lineTo(-6, 6);
+  context.moveTo(11, 0);
+  context.lineTo(-3, -4);
+  context.lineTo(-9, -10);
+  context.lineTo(-13, -7);
+  context.lineTo(-7, 1);
+  context.lineTo(-13, 7);
+  context.lineTo(-9, 10);
+  context.lineTo(-3, 4);
   context.closePath();
   context.fill();
   if (!grapple.success && grapple.elapsed > 0.65) {
