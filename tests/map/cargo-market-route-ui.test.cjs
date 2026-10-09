@@ -18,5 +18,5 @@ assert(ui.includes('ZIEL AUSGEWÄHLT'));
 assert(ui.includes('onVisualization(cargoMarkers('));
 const renderer = fs.readFileSync(path.join(root, 'src/ui/map/topdown-map-renderer.ts'), 'utf8');
 assert(renderer.includes('setCargoOverlay'));
-assert(renderer.includes('drawCargoMarker'));
+assert(renderer.includes('drawCargoMarketMarker'));
 console.log('PASS cargo market recommendations and route selection controls');
