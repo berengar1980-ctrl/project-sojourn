@@ -77,6 +77,7 @@ interface SalvageSceneOptions {
   readonly onSectorEventResolved?: (eventId: string) => void;
   readonly isCombatActive?: () => boolean;
   readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
+  readonly onCombatGrapple?: () => void;
 }
 
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
@@ -197,6 +198,10 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     },
     onAttackNpc(id) {
       attackSalvageNpc(context, id);
+    },
+    onCombatGrapple() {
+      options.onCombatGrapple?.();
+      refresh();
     },
     onCombatTactic(tactic) {
       options.onCombatTactic?.(tactic);
