@@ -67,6 +67,50 @@ function cargoMarkers(
 }
 
 
+function renderMarketQuotes(
+  quotes: NonNullable<StarMapViewModel['cargoScanner']>['markets'],
+  currentDay: number,
+  selectedDestinationId: string | null,
+  cargoContent: HTMLElement,
+  onNavigate: (locationId: string) => void,
+  formatCredits: (value: number) => string
+): void {
+  for (const quote of quotes.slice(0, 8)) {
+    const row = document.createElement('div');
+    row.style.cssText =
+      'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
+    const info = document.createElement('div');
+    const name = document.createElement('div');
+    name.textContent = quote.name;
+    name.style.fontWeight = 'bold';
+    const detail = document.createElement('small');
+    detail.style.color = '#9baebb';
+    detail.textContent =
+      'Distanz ' +
+      Math.round(quote.distance) +
+      ' u · Daten ' +
+      (currentDay - quote.observedDay) +
+      ' Tage alt' +
+      (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
+    info.append(name, detail);
+    const price = document.createElement('strong');
+    price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
+    price.textContent = formatCredits(quote.revenue);
+    const route = document.createElement('button');
+    route.type = 'button';
+    const selected = quote.locationId === selectedDestinationId;
+    route.textContent = selected ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
+    route.className = 'cargo-route-button';
+    route.title = 'Navigationsziel auf der Sternkarte auswählen';
+    route.addEventListener('click', (event) => {
+      event.stopPropagation();
+      onNavigate(quote.locationId);
+    });
+    row.append(info, price, route);
+    cargoContent.append(row);
+  }
+}
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -146,40 +190,14 @@ export function bindCargoMarketScanner(
       cargoContent.append(empty);
       return;
     }
-    for (const quote of quotes.slice(0, 8)) {
-      const row = document.createElement('div');
-      row.style.cssText =
-        'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
-      const info = document.createElement('div');
-      const name = document.createElement('div');
-      name.textContent = quote.name;
-      name.style.fontWeight = 'bold';
-      const detail = document.createElement('small');
-      detail.style.color = '#9baebb';
-      detail.textContent =
-        'Distanz ' +
-        Math.round(quote.distance) +
-        ' u · Daten ' +
-        (scanner!.currentDay - quote.observedDay) +
-        ' Tage alt' +
-        (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
-      info.append(name, detail);
-      const price = document.createElement('strong');
-      price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
-      price.textContent = formatCredits(quote.revenue);
-      const route = document.createElement('button');
-      route.type = 'button';
-      const selected = quote.locationId === getModel().navigation.selectedDestinationId;
-      route.textContent = selected ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
-      route.className = 'cargo-route-button';
-      route.title = 'Navigationsziel auf der Sternkarte auswählen';
-      route.addEventListener('click', (event) => {
-        event.stopPropagation();
-        onNavigate(quote.locationId);
-      });
-      row.append(info, price, route);
-      cargoContent.append(row);
-    }
+    renderMarketQuotes(
+      quotes,
+      scanner?.currentDay ?? 0,
+      getModel().navigation.selectedDestinationId,
+      cargoContent,
+      onNavigate,
+      formatCredits
+    );
   };
   cargoToggle.addEventListener('click', () => {
     preferredCargoVisible = !preferredCargoVisible;
