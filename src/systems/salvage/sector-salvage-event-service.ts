@@ -197,6 +197,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     event.distressTechSkill = skill;
     event.distressCanRepair = profile.repairable && skill >= profile.skill;
     if (!event.distressCanRepair || profile.critical) {
+      event.distressStage = 'tow_required';
       return emptyResult('Notreparatur nicht möglich. Das Schiff muss abgeschleppt werden.');
     }
     const chance = Math.min(0.95, Math.max(0.58, 0.58 + (skill - profile.skill) * 0.012));
