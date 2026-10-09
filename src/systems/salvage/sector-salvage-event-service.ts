@@ -93,6 +93,7 @@ function emptyResult(text: string, success = false): DistressActionResult {
 export interface SectorSalvageEventService {
   readonly active: readonly SectorSalvageEvent[];
   readonly playerVisible: readonly SectorSalvageEvent[];
+  readonly currentDay: number;
   acceptForPlayer(id: string): boolean;
   event(id: string | null): SectorSalvageEvent | null;
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void;
@@ -115,7 +116,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private nextSpecialDay: number;
   private nextDistressDay: number;
   private serial = 0;
-  private currentDay = 0;
+  currentDay = 0;
   private lastDistressDamage: DistressDamageType | null = null;
 
   constructor(
