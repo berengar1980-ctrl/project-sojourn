@@ -17,6 +17,7 @@ const UPGRADE_TYPES: readonly ShipComponentType[] = [
   'hull',
   'sensor',
   'weapon',
+  'mine',
   'cargo',
   'mining',
   'salvage',
@@ -111,6 +112,7 @@ function rolePriority(npc: SectorNpcState, type: ShipComponentType): number {
     if (type === 'engine') return 2;
   } else if (npc.job === 'patrol') {
     if (type === 'weapon') return 4;
+    if (type === 'mine') return 2;
     if (type === 'shield') return 3;
     if (type === 'engine') return 2;
   }
