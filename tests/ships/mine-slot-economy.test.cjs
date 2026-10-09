@@ -10,10 +10,7 @@ const components = loadStandaloneTypeScriptModule(
   root,
   'src/systems/ships/ship-component-service.ts'
 );
-const catalog = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/ships/ship-component-catalog.ts'
-);
+const catalog = loadStandaloneTypeScriptModule(root, 'src/data/ships/ship-component-catalog.ts');
 const mines = catalog.SHIP_COMPONENT_CATALOG.mine;
 assert.equal(mines.length, 18, 'three mine families must have all six Mk tiers');
 for (const mine of mines) {
