@@ -398,6 +398,7 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
 
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
+  economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   economy.sectorNpcs.tick(deltaSeconds);
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
