@@ -387,6 +387,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
         !event.resolved &&
         event.expiresDay <= day &&
         !event.salvageRights &&
+        !event.claimedByNpcId &&
         !event.playerAccepted &&
         event.distressStage !== 'towing'
       ) {
