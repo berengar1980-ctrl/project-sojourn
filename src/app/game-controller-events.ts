@@ -121,7 +121,7 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
-    true
+    context.state.activeShip.role === 'salvage'
   );
   for (const event of economy.salvageEvents.playerVisible) {
     if (!before.has(event.id))
