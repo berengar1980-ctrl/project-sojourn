@@ -214,19 +214,35 @@ function createStrategicCombatRuntime(
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
   };
-  const escapeSide = seed >>> 0;
   const margin = EDGE_PADDING;
+  const along = 0.35 + (((seed >>> 5) % 101) / 100) * 0.3;
+  const candidates = [
+    { x: margin, y: arena.height * along },
+    { x: arena.width - margin, y: arena.height * along },
+    { x: arena.width * along, y: margin },
+    { x: arena.width * along, y: arena.height - margin },
+  ];
+  const attackerPosition = arenaOptions?.attackerPosition ?? {
+    x: arena.width * 0.35,
+    y: arena.height * 0.5,
+  };
+  const defenderPosition = arenaOptions?.defenderPosition ?? {
+    x: arena.width * 0.65,
+    y: arena.height * 0.5,
+  };
+  const playerFlees = attackerSetup.preferredTactic === 'flee' ||
+    defenderSetup.preferredTactic !== 'flee';
+  const runner = playerFlees ? attackerPosition : defenderPosition;
+  const pursuer = playerFlees ? defenderPosition : attackerPosition;
+  const preferredGate = candidates
+    .map((point, index) => ({
+      point,
+      score: distance(point, pursuer) - distance(point, runner) * 0.4 + ((seed + index) % 4) * 2,
+    }))
+    .sort((a, b) => b.score - a.score)[0]!.point;
   const escapeArena: StrategicCombatArenaOptions = {
     ...arena,
-    exitPoint:
-      arenaOptions?.exitPoint ??
-      (escapeSide % 4 === 0
-        ? { x: margin, y: arena.height * 0.5 }
-        : escapeSide % 4 === 1
-          ? { x: arena.width - margin, y: arena.height * 0.5 }
-          : escapeSide % 4 === 2
-            ? { x: arena.width * 0.5, y: margin }
-            : { x: arena.width * 0.5, y: arena.height - margin }),
+    exitPoint: arenaOptions?.exitPoint ?? preferredGate,
   };
   return {
     arena: escapeArena,
