@@ -242,7 +242,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
 
   private claimNextEvent(npc: SectorNpcState): void {
     const target = this.options.events.active
-      .filter((event) => !event.claimedByNpcId)
+      .filter((event) => !event.claimedByNpcId && !event.playerAccepted && event.playerDeadlineDay <= this.options.events.currentDay)
       .sort((a, b) => a.expiresDay - b.expiresDay)[0];
     if (!target) return;
     if (!this.options.events.claimForNpc(target.id, npc.id)) return;
