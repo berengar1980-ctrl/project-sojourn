@@ -156,7 +156,9 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
           ? `−${definition.salvageModifierPct ?? 0} % Energie`
           : definition?.salvageModifier === 'damage'
             ? `+${definition.salvageModifierPct ?? 0} % Schaden`
-            : null;
+            : definition?.salvageModifier === 'performance'
+              ? `+${definition.salvageModifierPct ?? 0} % Leistung`
+              : null;
       return {
         uid: item.uid,
         name: definition?.name ?? item.name,
@@ -178,7 +180,9 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
       modifierLabel:
         component.salvageModifier === 'efficiency'
           ? `−${component.salvageModifierPct ?? 0} % Energie`
-          : `+${component.salvageModifierPct ?? 0} % Leistung`,
+          : component.salvageModifier === 'performance'
+            ? `+${component.salvageModifierPct ?? 0} % Leistung`
+            : 'Ohne Bonus',
     })),
     variants: state.variants.map((component) => ({
       id: component.id,
