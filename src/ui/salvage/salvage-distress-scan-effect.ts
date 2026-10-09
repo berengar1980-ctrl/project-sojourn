@@ -11,22 +11,37 @@ export function drawDistressScanEffect(
   width: number,
   height: number
 ): void {
-  if (elapsed < 0 || elapsed > 1.25 || !model.sectorEvent) return;
+  if (elapsed < 0 || elapsed > 3 || !model.sectorEvent) return;
   const target = model.wrecks[0];
   if (!target) return;
   const point = camera.worldToScreen(target.position, width, height);
-  const source = camera.worldToScreen(model.ship.position, width, height);
-  const progress = Math.min(1, elapsed / 1.05);
+  const player = camera.worldToScreen(model.ship.position, width, height);
+  const dx = point.x - player.x;
+  const dy = point.y - player.y;
+  const distance = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx);
+  const progress = elapsed / 3;
+  const halfAngle = Math.PI / 9;
+  const sweepAngle = angle - halfAngle + halfAngle * 2 * progress;
+  const pulse = 0.55 + Math.sin(elapsed * 12) * 0.12;
   context.save();
-  context.strokeStyle = 'rgba(112, 221, 245, ' + (0.9 - progress * 0.7) + ')';
-  context.lineWidth = 2.5;
   context.beginPath();
-  context.arc(point.x, point.y, 18 + 140 * progress, 0, Math.PI * 2);
+  context.moveTo(player.x, player.y);
+  context.arc(player.x, player.y, distance, angle - halfAngle, angle + halfAngle);
+  context.closePath();
+  context.fillStyle = 'rgba(95, 223, 237, ' + (0.10 + pulse * 0.1) + ')';
+  context.fill();
+  context.strokeStyle = 'rgba(130, 242, 255, ' + (0.35 + pulse * 0.3) + ')';
+  context.lineWidth = 1.2;
   context.stroke();
-  context.setLineDash([6, 9]);
   context.beginPath();
-  context.moveTo(source.x, source.y);
-  context.lineTo(point.x, point.y);
+  context.moveTo(player.x, player.y);
+  context.lineTo(
+    player.x + Math.cos(sweepAngle) * distance,
+    player.y + Math.sin(sweepAngle) * distance
+  );
+  context.strokeStyle = 'rgba(210, 253, 255, 0.85)';
+  context.lineWidth = 2;
   context.stroke();
   context.restore();
 }
