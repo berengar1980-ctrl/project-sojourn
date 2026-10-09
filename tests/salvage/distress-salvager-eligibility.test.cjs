@@ -35,6 +35,16 @@ assert.equal(available.claimForNpc(eligible.id, 'npc-salvager'), false);
 available.setPlayerSalvageEligible(false);
 assert.equal(available.claimForNpc(eligible.id, 'npc-salvager'), true);
 
+const switched = createSectorSalvageEventService(narrowsSector, 321);
+switched.advanceDay(0, { x: 3500, y: 3000 }, true);
+const pending = switched.active.find((entry) => entry.type === 'distress-rescue');
+assert(switched.playerVisible.some((entry) => entry.id === pending.id));
+switched.setPlayerSalvageEligible(false);
+assert(!switched.playerVisible.some((entry) => entry.id === pending.id));
+switched.setPlayerSalvageEligible(true);
+assert(switched.playerVisible.some((entry) => entry.id === pending.id),
+  'switching test ship back to salvage must restore unclaimed events');
+
 const field = generateSectorSalvageEventField(event);
 const type = event.wreckKind === 'salvager' ? 'salvage'
   : event.wreckKind === 'miner' ? 'mining'
