@@ -38,6 +38,41 @@ export interface CargoMarketScanner {
   readonly currentDay: number;
 }
 
+function marketBuyerHints(
+  locations: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly position: WorldPoint;
+    readonly activities: { readonly trade?: boolean };
+  }[],
+  cargo: readonly { readonly resourceId: string; readonly quantity: number }[],
+  origin: WorldPoint
+): CargoMarketHint[] {
+  const hints = locations
+    .filter((location) => location.activities.trade)
+    .flatMap((location) => {
+      const profile = sectorPortProfiles.find((port) => port.locationId === location.id);
+      if (!profile) return [];
+      const matched = cargo.filter((item) => profile.needs.includes(item.resourceId));
+      const matchedQuantity = matched.reduce((sum, item) => sum + item.quantity, 0);
+      if (matchedQuantity === 0) return [];
+      return [
+        {
+          locationId: location.id,
+          name: location.name,
+          matchedQuantity,
+          resourceIds: matched.map((item) => item.resourceId),
+          distance: Math.hypot(
+            location.position.x - origin.x,
+            location.position.y - origin.y
+          ),
+        },
+      ];
+    })
+    .sort((a, b) => b.matchedQuantity - a.matchedQuantity || a.distance - b.distance);
+  return hints;
+}
+
 export function scanCargoMarkets(options: {
   player: PlayerEconomyState;
   intel: MarketIntelService;
@@ -116,27 +151,6 @@ export function scanCargoMarkets(options: {
       .sort((a, b) => b.revenue - a.revenue || a.distance - b.distance);
     return { ...item, best: matches[0] ?? null, markets: matches };
   });
-  const hints = options.locations
-    .filter((location) => location.activities.trade)
-    .flatMap((location) => {
-      const profile = sectorPortProfiles.find((port) => port.locationId === location.id);
-      if (!profile) return [];
-      const matched = cargo.filter((item) => profile.needs.includes(item.resourceId));
-      const matchedQuantity = matched.reduce((sum, item) => sum + item.quantity, 0);
-      if (matchedQuantity === 0) return [];
-      return [
-        {
-          locationId: location.id,
-          name: location.name,
-          matchedQuantity,
-          resourceIds: matched.map((item) => item.resourceId),
-          distance: Math.hypot(
-            location.position.x - options.origin.x,
-            location.position.y - options.origin.y
-          ),
-        },
-      ];
-    })
-    .sort((a, b) => b.matchedQuantity - a.matchedQuantity || a.distance - b.distance);
+  const hints = marketBuyerHints(options.locations, cargo, options.origin);
   return { resources, markets, hints, currentDay: options.currentDay };
 }
