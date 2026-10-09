@@ -286,12 +286,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     cargoContent.append(lead);
     const quotes = preferredCargoResource === 'all'
       ? scanner?.markets ?? []
-      : items.find((item) => item.resourceId === preferredCargoResource)?.best
-        ? (scanner?.markets ?? []).map((market) => {
-            const intel = options.model.cargoScanner;
-            void intel;
-            return market;
-          }) : [];
+      : items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? [];
     if (preferredCargoResource !== 'all') {
       const item = items.find((entry) => entry.resourceId === preferredCargoResource);
       if (!item?.best) {
@@ -300,12 +295,6 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
         cargoContent.append(empty);
         return;
       }
-      const best = document.createElement('p');
-      best.textContent = 'Bester bekannter Markt: ' + item.best.name + ' · ' +
-        formatCredits(item.best.revenue) + ' · Datenalter ' +
-        (scanner!.currentDay - item.best.observedDay) + ' Tage';
-      cargoContent.append(best);
-      return;
     }
     if (!quotes.length) {
       const empty = document.createElement('p');
