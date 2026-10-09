@@ -28,7 +28,12 @@ function renderBuyerHints(
       const route = document.createElement('button');
       route.type = 'button';
       route.textContent = 'ROUTE SETZEN';
-      route.addEventListener('click', () => onNavigate(hint.locationId));
+      route.className = 'cargo-route-button';
+      route.title = 'Navigationsziel auf der Sternkarte auswählen';
+      route.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onNavigate(hint.locationId);
+      });
       item.append(' ', route);
       container.append(item);
     }
@@ -44,7 +49,8 @@ export function bindCargoMarketScanner(
   cargoPanel: HTMLElement,
   cargoSelect: HTMLSelectElement,
   cargoContent: HTMLElement,
-  onNavigate: (locationId: string) => void
+  onNavigate: (locationId: string) => void,
+  onVisualization: (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
@@ -52,7 +58,10 @@ export function bindCargoMarketScanner(
     const scanner = getModel().cargoScanner;
     cargoPanel.hidden = !preferredCargoVisible;
     cargoToggle.textContent = preferredCargoVisible ? 'FRACHT // AN' : 'FRACHT // AUS';
-    if (!preferredCargoVisible) return;
+    if (!preferredCargoVisible) {
+      onVisualization(new Map());
+      return;
+    }
     const items = scanner?.resources ?? [];
     const previous = preferredCargoResource;
     cargoSelect.replaceChildren();
@@ -90,6 +99,19 @@ export function bindCargoMarketScanner(
       }
     }
     renderBuyerHints(scanner, preferredCargoResource, cargoContent, onNavigate);
+    const markers = new Map<string, 'best' | 'good' | 'low'>();
+    const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
+    for (const quote of quotes) {
+      const fraction = bestRevenue > 0 ? quote.revenue / bestRevenue : 0;
+      markers.set(quote.locationId, fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low');
+    }
+    const relevantHints = (scanner?.hints ?? []).filter((hint) =>
+      preferredCargoResource === 'all' || hint.resourceIds.includes(preferredCargoResource)
+    );
+    relevantHints.forEach((hint, index) => {
+      if (!markers.has(hint.locationId)) markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+    });
+    onVisualization(markers);
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
@@ -120,8 +142,13 @@ export function bindCargoMarketScanner(
       price.textContent = formatCredits(quote.revenue);
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = 'ROUTE';
-      route.addEventListener('click', () => onNavigate(quote.locationId));
+      route.textContent = 'ROUTE SETZEN';
+      route.className = 'cargo-route-button';
+      route.title = 'Navigationsziel auf der Sternkarte auswählen';
+      route.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onNavigate(quote.locationId);
+      });
       row.append(info, price, route);
       cargoContent.append(row);
     }
