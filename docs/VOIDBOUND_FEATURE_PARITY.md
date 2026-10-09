@@ -90,6 +90,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Datum | PR/Änderung | Ergebnis |
 |---|---|---|
+| 2026-10-09 | Sichtbarkeit des Sternkarten-Frachtbuttons (Nacharbeit zu PR #170) | Voidbound-Parität geprüft: keine Statusänderung. Ausschließlich CSS-Positionierung des bereits vorhandenen optionalen Frachtmarkt-Scanners; keine Änderung an Handels- oder Navigationslogik. |
 | 2026-10-09 | PR #170 · Sternkarten-Frachtmarkt-Scanner | Voidbound-Parität geprüft: keine Statusänderung. Die optionale Fracht- und Verkaufsortanalyse auf der Sternkarte ist eine Sojourn-spezifische Erweiterung auf Basis vorhandener Markt-Intel, Verkaufspreise und Frachtdaten. Keine neue Voidbound-Feature-ID; Handel erfolgt weiterhin beim Andocken. |
 | 2026-10-09 | PR #169 · Werft-Navigation und Schiffsvorschau | Voidbound-Parität geprüft: keine Statusänderung. Die getrennte Schiffskauf-/Komponentenansicht, Rollenfilter und Schiffsdatenvorschau sind Sojourn-spezifische UI-Erweiterungen; bestehende Voidbound-Feature-IDs bleiben unverändert. |
 | 2026-10-06 | Baseline-Migration der Voidbound-Feature-Matrix | 241 Features erstmals gegen Sojourn main klassifiziert: 33 umgesetzt, 47 teilweise, 159 offen, 2 bewusst anders. |
