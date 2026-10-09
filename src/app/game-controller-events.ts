@@ -253,7 +253,8 @@ export function controllerSalvageEventCallbacks(
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
       applyDistressOutcome(context, result);
       if (result?.success) {
-        runSceneZoomTransition(context.root, actions.mountStarMap);
+        state.salvageScene?.beginDistressRepair();
+        setTimeout(() => runSceneZoomTransition(context.root, actions.mountStarMap), 5500);
       } else {
         actions.mountSalvage(true);
       }
