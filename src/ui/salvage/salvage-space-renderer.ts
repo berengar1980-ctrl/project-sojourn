@@ -200,7 +200,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context,
       this.model.sectorEvent,
       wreck.id,
-      radius,
+      this.camera.scale(1),
       (url) => this.ensureNpcImage(url)
     );
     if (!drewShip) {
