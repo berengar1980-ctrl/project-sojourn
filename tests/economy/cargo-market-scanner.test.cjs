@@ -41,11 +41,7 @@ const run = () =>
 
 const result = run();
 assert.equal(result.resources.length, 2);
-assert.equal(
-  result.resources[0].best.locationId,
-  'c',
-  'best single commodity ignores other cargo'
-);
+assert.equal(result.resources[0].best.locationId, 'c');
 assert.equal(result.markets[0].locationId, 'b');
 assert.equal(result.markets[0].revenue, 1166);
 assert.equal(result.markets[0].coveredQuantity, 14);
