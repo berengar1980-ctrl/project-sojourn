@@ -101,7 +101,7 @@ export interface SectorSalvageEventService {
   diagnoseDistress(id: string, engineeringSkill?: number): DistressActionResult | null;
   repairDistress(id: string, engineeringSkill: number): DistressActionResult | null;
   towDistress(id: string): DistressActionResult | null;
-  finishTowAtLocation(locationId: string | null): DistressActionResult | null;
+  finishTowAtLocation(locationId: string | null, eventId?: string): DistressActionResult | null;
   evacuateDistress(id: string): DistressActionResult | null;
   resolveBoarding(id: string, victory: boolean): DistressActionResult | null;
   grantSalvageRights(id: string): boolean;
@@ -242,11 +242,12 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     };
   }
 
-  finishTowAtLocation(locationId: string | null): DistressActionResult | null {
+  finishTowAtLocation(locationId: string | null, eventId?: string): DistressActionResult | null {
     if (!locationId) return null;
     const event = this.live().find(
       (candidate) =>
         candidate.type === 'distress-rescue' &&
+        (!eventId || candidate.id === eventId) &&
         candidate.distressStage === 'towing' &&
         candidate.distressTowDestinationId === locationId
     );
