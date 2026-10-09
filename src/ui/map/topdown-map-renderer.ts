@@ -16,7 +16,6 @@ import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
-
 export interface StarMapPick {
   readonly kind: 'location' | 'npc';
   readonly id: string;
