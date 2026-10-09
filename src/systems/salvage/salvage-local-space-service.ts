@@ -275,7 +275,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.navigationRoute = distress
       ? routeAroundDistressShip(
           this.ship.position, target, distress.position,
-          distress.radius + this.options.setup.nominalLengthMeters * 0.42 + 15
+          distress.radius + 60
         )
       : [{ ...this.ship.position }, target];
     this.routeIndex = 1;
