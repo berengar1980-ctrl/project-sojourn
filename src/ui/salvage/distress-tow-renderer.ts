@@ -37,8 +37,21 @@ export function drawDistressTow(
     context.setLineDash([]);
     context.fillStyle = '#efffff';
     context.beginPath();
-    context.arc(tip.x, tip.y, 5, 0, Math.PI * 2);
+    context.translate(tip.x, tip.y);
+    context.rotate(Math.atan2(dy, dx));
+    context.beginPath();
+    context.moveTo(9, 0);
+    context.lineTo(-3, -3);
+    context.lineTo(-9, -9);
+    context.lineTo(-13, -6);
+    context.lineTo(-6, 0);
+    context.lineTo(-13, 6);
+    context.lineTo(-9, 9);
+    context.lineTo(-3, 3);
+    context.closePath();
     context.fill();
+    context.rotate(-Math.atan2(dy, dx));
+    context.translate(-tip.x, -tip.y);
   } else {
     const slack = Math.max(0, 1 - tow.cableTension);
     const lateralDrift = -Math.sin(model.ship.headingRadians) * tow.velocity.x +
