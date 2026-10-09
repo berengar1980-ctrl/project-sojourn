@@ -185,7 +185,12 @@ export function controllerSalvageEventCallbacks(
       );
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
       applyDistressOutcome(context, result);
-      actions.mountSalvage(true);
+      if (result?.boardingRequired) {
+        context.systemLog.write('BOARDING > NOTRUFFALLE ERKANNT · ENTERKAMPF');
+        runSceneZoomTransition(context.root, () => mountControllerBoarding(context, eventId, actions));
+      } else {
+        actions.mountSalvage(true);
+      }
     },
     onRepairDistress: (eventId: string) => {
       const runtime = resolveShipRuntimeSetup(state.activeShip, {
