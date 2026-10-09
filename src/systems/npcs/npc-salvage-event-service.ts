@@ -198,9 +198,17 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
         ? this.resolveDistress(npc, event)
         : this.resolveSpecialWreck(npc, event);
 
-    if (event.distressStage === 'towing' && event.distressTowDestinationId) {
-      startReturnTravel(npc, this.options.world, event.position, event.distressTowDestinationId, 'Havarist zum Übergabehafen abschleppen');
-      return;
+    const updatedEvent = this.options.events.event(event.id);
+    if (updatedEvent?.distressStage === 'towing' && updatedEvent.distressTowDestinationId) {
+      const started = startReturnTravel(
+        npc,
+        this.options.world,
+        event.position,
+        updatedEvent.distressTowDestinationId,
+        'Havarist zum Übergabehafen abschleppen'
+      );
+      if (!started) this.options.events.resolve(event.id);
+      else return;
     }
     delete npc.salvageEventId;
     if (!recovered) {
