@@ -115,6 +115,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-10-08 | Kampf-Flucht an Kartenrändern | Parity-Review für `combat.flee`: Fliehende Schiffe werden am Arenarand nicht mehr durch normale Randvermeidung zurückgelenkt; bei ausreichendem Abstand beendet das Erreichen des Randes die Flucht. `combat.flee` bleibt umgesetzt; keine Statusänderung. |
 
+| 2026-10-08 | Werft: Schiffshandel, Komponenten Mk I–VI und einzelner Kaufbonus | Parity-Review: Kaufbare Schiffsrümpfe werden gegen Credits freigeschaltet; Mk-I–VI-Komponenten erhalten beim Kauf genau eine gewählte Effizienz- oder Leistungsvariante und werden über das Komponenten-Inventar ausgerüstet. Bestehende Forschungs-/Bergungskomponenten bleiben getrennt; `ship.salvage_research` bleibt umgesetzt, übrige Schiffsausrüstung erhält neue Sojourn-Funktionalität ohne Statusänderung der bestehenden Matrix. |
+
 ## Vollständige Matrix
 
 ### runtime

@@ -31,6 +31,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     sensor: ['sensor1'],
     cargo: ['cargo1'],
     weapon: Array.from({ length: stats.weaponSlots }, () => 'weapon1'),
+    mine: [''],
   };
 
   if (ship.role === 'mining') return { ...common, mining: ['mining1'] };

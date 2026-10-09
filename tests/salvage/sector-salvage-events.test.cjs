@@ -68,63 +68,75 @@ assert.equal(
 );
 const specialCandidate = specialField.wrecks[0].component;
 assert(specialCandidate, 'special wreck event must expose a recoverable ship component');
-assert(
-  specialCandidate.componentId.startsWith('special_'),
-  'special wreck component must use the Voidbound-style special variant id'
-);
 const specialDefinition = componentModule.getShipComponent(
   specialCandidate.type,
   specialCandidate.componentId
 );
-assert(
-  specialDefinition?.specialSalvage,
-  'special component must resolve to a real dynamic definition'
-);
-assert(
-  specialDefinition.salvageModifier === 'efficiency' ||
-    specialDefinition.salvageModifier === 'damage',
-  'special component must have a real efficiency or damage modifier'
-);
-const specialBase = componentModule.getShipComponent(
-  specialCandidate.type,
-  specialDefinition.baseId
-);
-assert(specialBase, 'special component must retain its base component');
-if (specialDefinition.salvageModifier === 'efficiency') {
-  assert(
-    specialDefinition.power < specialBase.power,
-    'efficiency salvage must reduce real component power demand'
-  );
-}
-if (specialDefinition.salvageModifier === 'damage') {
-  assert(
-    specialDefinition.weapon.shieldDamage > specialBase.weapon.shieldDamage ||
-      specialDefinition.weapon.hullDamage > specialBase.weapon.hullDamage,
-    'damage salvage must increase real weapon damage'
-  );
-}
-
+assert(specialDefinition, 'recovered component must resolve to a real component definition');
+assert(specialDefinition.tier >= 1 && specialDefinition.tier <= 6);
 const research = researchModule.createShipyardResearchService();
-assert.equal(
-  research.registerComponent(specialCandidate.type, specialCandidate.componentId),
-  true,
-  'selling a new special salvage component must advance shipyard research'
-);
-const researchedTier = research.snapshot()[specialDefinition.tier];
-assert(
-  researchedTier[specialDefinition.salvageModifier] >= specialDefinition.salvageModifierPct,
-  'shipyard research must remember the best percentage for that Mk tier'
-);
-const variants = research.variants(specialCandidate.type, specialDefinition.tier);
-assert(
-  variants.some(
-    (variant) =>
-      variant.id.startsWith('yard_') &&
-      variant.tier === specialDefinition.tier &&
-      variant.salvageModifier === specialDefinition.salvageModifier
-  ),
-  'researched salvage must become a purchasable yard variant for the same Mk tier'
-);
+if (specialDefinition.specialSalvage) {
+  assert(
+    specialDefinition.salvageModifier === 'efficiency' ||
+      specialDefinition.salvageModifier === 'performance',
+    'a salvaged bonus must be efficiency or performance'
+  );
+  assert(
+    specialDefinition.salvageModifierPct >= 1 && specialDefinition.salvageModifierPct <= 25,
+    'a salvaged bonus must be between 1 and 25 percent'
+  );
+  const specialBase = componentModule.getShipComponent(
+    specialCandidate.type,
+    specialDefinition.baseId
+  );
+  assert(specialBase, 'bonus component must retain its exact original model');
+  if (specialDefinition.salvageModifier === 'efficiency') {
+    assert(specialBase.power > 0, 'passive components cannot have an efficiency bonus');
+    assert(
+      specialDefinition.power <= specialBase.power,
+      'efficiency salvage must not increase component energy demand'
+    );
+  } else if (specialBase.weapon) {
+    assert(
+      specialDefinition.weapon.shieldDamage >= specialBase.weapon.shieldDamage &&
+        specialDefinition.weapon.hullDamage >= specialBase.weapon.hullDamage,
+      'performance salvage must improve weapon damage'
+    );
+  }
+  assert.equal(
+    research.registerComponent(specialCandidate.type, specialCandidate.componentId),
+    true,
+    'selling a new bonus component must advance shared research'
+  );
+  const key = specialCandidate.type + ':' + specialBase.id;
+  assert.equal(
+    research.snapshot()[key][specialDefinition.salvageModifier],
+    specialDefinition.salvageModifierPct,
+    'research must remember the best bonus for this exact model and Mk tier'
+  );
+  assert(
+    research
+      .variants(specialCandidate.type, specialDefinition.tier)
+      .some(
+        (variant) =>
+          variant.baseId === specialBase.id &&
+          variant.salvageModifier === specialDefinition.salvageModifier &&
+          variant.salvageModifierPct === specialDefinition.salvageModifierPct
+      ),
+    'discovered bonus must be available for the exact same component model'
+  );
+} else {
+  assert.equal(
+    specialDefinition.salvageModifier,
+    undefined,
+    'ordinary salvaged components must not have a bonus modifier'
+  );
+  assert.equal(
+    research.registerComponent(specialCandidate.type, specialCandidate.componentId),
+    false,
+    'selling a normal component must not unlock a bonus'
+  );
+}
 
 const navigation = navigationModule.createNavigationService(narrowsSector, 'haven', 420);
 const eventPoint = { x: 4175, y: 3140 };

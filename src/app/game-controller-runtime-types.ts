@@ -28,6 +28,7 @@ export interface ControllerPanels {
 
 export interface ControllerRuntimeState {
   activeShip: ShipDefinition;
+  ownedShipIds: Set<string>;
   mode: SceneMode;
   readonly panels: ControllerPanels;
   shipSwitcher: ShipTestSwitcher | null;

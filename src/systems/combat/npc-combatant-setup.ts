@@ -1,7 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
 
-import { getShipMine } from '../../data/combat/ship-mines';
-
 import {
   pilotingDodgeChance,
   sensorWeaponHitChanceBonus,
@@ -15,7 +13,6 @@ import {
   componentShieldBonus,
   getShipComponent,
   getShipDefinition,
-  resolveShipGameplayStats,
   shipHullMaxHp,
   shipShieldMaxHp,
   type InstalledShipComponents,
@@ -51,15 +48,10 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   const sensor = (installed.sensor ?? [])
     .map((id) => getShipComponent('sensor', id))
     .find((component) => component !== null);
-  const mineTier = Math.max(1, Math.min(6, resolveShipGameplayStats(ship).maxComponentTier));
-  const mineCopies = npc.job === 'patrol' || npc.pirate ? 2 : 1;
-  const mines = Array.from({ length: mineCopies }).flatMap(() =>
-    [
-      getShipMine('mine-ion-' + mineTier),
-      getShipMine('mine-shaped-charge-' + mineTier),
-      getShipMine('mine-hunter-' + mineTier),
-    ].filter((mine): mine is NonNullable<typeof mine> => mine !== null)
-  );
+  const mines = (installed.mine ?? []).flatMap((id) => {
+    const component = getShipComponent('mine', id);
+    return component?.mine ? [component.mine, component.mine, component.mine] : [];
+  });
 
   return {
     id: npc.id,

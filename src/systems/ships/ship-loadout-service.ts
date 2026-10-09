@@ -4,7 +4,10 @@ import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
 import { resolveShipGameplayStats } from './ship-stats';
 
+export type ShipLoadoutSnapshot = Readonly<Record<string, InstalledShipComponents>>;
+
 export interface ShipLoadoutService {
+  snapshot(): ShipLoadoutSnapshot;
   get(ship: ShipDefinition): InstalledShipComponents;
   setSlot(
     ship: ShipDefinition,
@@ -24,6 +27,7 @@ function cloneInstalled(installed: InstalledShipComponents): InstalledShipCompon
 
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
   if (type === 'weapon') return resolveShipGameplayStats(ship).weaponSlots;
+  if (type === 'mine') return 1;
   if (type === 'mining') return ship.role === 'mining' ? 1 : 0;
   if (type === 'salvage') return ship.role === 'salvage' ? 1 : 0;
   return 1;
@@ -42,6 +46,11 @@ export function createShipLoadoutService(): ShipLoadoutService {
 
   return {
     get,
+    snapshot() {
+      return Object.fromEntries(
+        [...byShipId].map(([id, installed]) => [id, cloneInstalled(installed)])
+      );
+    },
     setSlot(ship, type, index, componentId) {
       const limit = slotLimit(ship, type);
       if (index < 0 || index >= limit) return false;

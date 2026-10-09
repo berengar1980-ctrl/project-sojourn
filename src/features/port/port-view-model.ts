@@ -148,6 +148,14 @@ export interface PortViewModel {
   readonly shipyard: {
     readonly loose: readonly PortShipyardLooseComponentView[];
     readonly variants: readonly PortShipyardVariantView[];
+    readonly catalog: readonly PortShipyardVariantView[];
+    readonly ships: readonly {
+      id: string;
+      name: string;
+      role: string;
+      price: number;
+      owned: boolean;
+    }[];
   };
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
   readonly market: readonly PortMarketRowView[];

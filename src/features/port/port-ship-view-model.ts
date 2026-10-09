@@ -51,11 +51,27 @@ export interface PortShipyardVariantView {
 export interface PortShipyardStateInput {
   readonly loose: readonly LooseShipComponent[];
   readonly variants: readonly ShipComponentDefinition[];
+  readonly catalog?: readonly ShipComponentDefinition[];
+  readonly ships?: readonly {
+    id: string;
+    name: string;
+    role: string;
+    price: number;
+    owned: boolean;
+  }[];
 }
 
 export interface PortShipyardView {
   readonly loose: readonly PortShipyardLooseComponentView[];
   readonly variants: readonly PortShipyardVariantView[];
+  readonly catalog: readonly PortShipyardVariantView[];
+  readonly ships: readonly {
+    id: string;
+    name: string;
+    role: string;
+    price: number;
+    owned: boolean;
+  }[];
 }
 
 const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
@@ -65,13 +81,22 @@ const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
   hull: 'Hüllenverstärkung',
   sensor: 'Sensoren',
   weapon: 'Waffe',
+  mine: 'Minen',
   cargo: 'Frachtmodul',
   mining: 'Mining-System',
   salvage: 'Bergungssystem',
 };
 
 function componentTypesForShip(ship: ShipDefinition): ShipComponentType[] {
-  const types: ShipComponentType[] = ['reactor', 'engine', 'shield', 'hull', 'sensor', 'cargo'];
+  const types: ShipComponentType[] = [
+    'reactor',
+    'engine',
+    'shield',
+    'hull',
+    'sensor',
+    'cargo',
+    'mine',
+  ];
   if (ship.role === 'mining') types.push('mining');
   if (ship.role === 'salvage') types.push('salvage');
   return types;
@@ -139,7 +164,9 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
           ? `−${definition.salvageModifierPct ?? 0} % Energie`
           : definition?.salvageModifier === 'damage'
             ? `+${definition.salvageModifierPct ?? 0} % Schaden`
-            : null;
+            : definition?.salvageModifier === 'performance'
+              ? `+${definition.salvageModifierPct ?? 0} % Leistung`
+              : null;
       return {
         uid: item.uid,
         name: definition?.name ?? item.name,
@@ -151,6 +178,20 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
         modifierLabel,
       };
     }),
+    ships: state.ships ?? [],
+    catalog: (state.catalog ?? []).map((component) => ({
+      id: component.id,
+      type: component.type,
+      name: component.name,
+      tier: component.tier,
+      cost: component.cost,
+      modifierLabel:
+        component.salvageModifier === 'efficiency'
+          ? `−${component.salvageModifierPct ?? 0} % Energie`
+          : component.salvageModifier === 'performance'
+            ? `+${component.salvageModifierPct ?? 0} % Leistung`
+            : 'Ohne Bonus',
+    })),
     variants: state.variants.map((component) => ({
       id: component.id,
       type: component.type,

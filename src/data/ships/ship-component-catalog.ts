@@ -1,3 +1,6 @@
+import type { ShipMineDefinition } from '../../core/combat-types';
+import { SHIP_MINE_CATALOG } from '../combat/ship-mines';
+
 import type {
   ShipComponentType,
   ShipWeaponFamily,
@@ -21,10 +24,11 @@ export interface ShipComponentDefinition {
   readonly yield?: number;
   readonly chance?: number;
   readonly weapon?: ShipWeaponProfile;
+  readonly mine?: ShipMineDefinition;
   readonly baseId?: string;
   readonly specialSalvage?: boolean;
   readonly shipyardVariant?: boolean;
-  readonly salvageModifier?: 'efficiency' | 'damage';
+  readonly salvageModifier?: 'efficiency' | 'damage' | 'performance';
   readonly salvageModifierPct?: number;
 }
 
@@ -292,6 +296,15 @@ export const SHIP_COMPONENT_CATALOG: Readonly<
     'range'
   ),
   weapon: WEAPON_FAMILIES.flatMap(weaponDefinitions),
+  mine: SHIP_MINE_CATALOG.map((mine) => ({
+    id: mine.id,
+    type: 'mine' as const,
+    name: mine.name,
+    tier: mine.tier,
+    power: 0,
+    cost: mine.cost,
+    mine,
+  })),
   cargo: definitions(
     'cargo',
     [

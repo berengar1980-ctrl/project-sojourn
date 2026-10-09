@@ -20,13 +20,13 @@ export interface ShipEnergySnapshot {
 
 interface ParsedVariantId {
   readonly source: 'special' | 'yard';
-  readonly modifier: 'efficiency' | 'damage';
+  readonly modifier: 'efficiency' | 'damage' | 'performance';
   readonly pct: number;
   readonly baseId: string;
 }
 
 function parseVariantId(id: string): ParsedVariantId | null {
-  const match = /^(special|yard)_(efficiency|damage)_(\d+)_(.+)$/.exec(id);
+  const match = /^(special|yard)_(efficiency|damage|performance)_(\d+)_(.+)$/.exec(id);
   if (!match) return null;
   const [, source, modifier, rawPct, baseId] = match;
   const pct = Number(rawPct);
@@ -59,7 +59,10 @@ function variantCost(
   pct: number,
   special: boolean
 ): number {
-  if (special || type !== 'weapon') return base.cost;
+  if (special) return base.cost;
+  if (type !== 'weapon') {
+    return Math.round((Math.max(200000, base.cost) * (1 + pct * 0.025)) / 5000) * 5000;
+  }
   const multiplier = modifier === 'efficiency' ? 1 + pct * 0.02 : 1 + pct * 0.03;
   return Math.round((Math.max(350000, base.cost) * multiplier) / 5000) * 5000;
 }
@@ -73,7 +76,42 @@ function variantName(
   if (modifier === 'efficiency') {
     return `${base.name} – ${special ? 'Effiziente Ausführung' : 'Effizient'} (−${pct} % Energie)`;
   }
+  if (modifier === 'performance') return `${base.name} – Leistungsoptimiert (+${pct} %)`;
   return `${base.name} – ${special ? 'Überladene Ausführung' : 'Leistungsoptimiert'} (+${pct} % Schaden)`;
+}
+
+function performanceFields(
+  base: ShipComponentDefinition,
+  pct: number
+): Partial<ShipComponentDefinition> {
+  const boost = (value: number, minimum = 0): number =>
+    Math.round((value === 0 ? minimum : value * (1 + pct / 100)) * 100) / 100;
+  return {
+    ...(base.output !== undefined ? { output: boost(base.output) } : {}),
+    ...(base.speed !== undefined ? { speed: boost(base.speed, pct / 100) } : {}),
+    ...(base.bonus !== undefined ? { bonus: boost(base.bonus, pct) } : {}),
+    ...(base.range !== undefined ? { range: boost(base.range, pct / 100) } : {}),
+    ...(base.yield !== undefined ? { yield: boost(base.yield, pct / 100) } : {}),
+    ...(base.chance !== undefined ? { chance: boost(base.chance, pct) } : {}),
+    ...(base.weapon
+      ? {
+          weapon: {
+            ...base.weapon,
+            shieldDamage: boost(base.weapon.shieldDamage),
+            hullDamage: boost(base.weapon.hullDamage),
+          },
+        }
+      : {}),
+    ...(base.mine
+      ? {
+          mine: {
+            ...base.mine,
+            shieldDamage: boost(base.mine.shieldDamage),
+            hullDamage: boost(base.mine.hullDamage),
+          },
+        }
+      : {}),
+  };
 }
 
 function variantDefinition(
@@ -91,7 +129,6 @@ function variantDefinition(
   if (parsed.modifier === 'efficiency' && base.power <= 0) return null;
 
   const special = parsed.source === 'special';
-  const weapon = variantWeapon(base, parsed.modifier, parsed.pct);
   return {
     ...base,
     id,
@@ -106,7 +143,8 @@ function variantDefinition(
       parsed.modifier === 'efficiency'
         ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100)))
         : base.power,
-    ...(weapon ? { weapon } : {}),
+    ...(base.weapon ? { weapon: variantWeapon(base, parsed.modifier, parsed.pct) } : {}),
+    ...(parsed.modifier === 'performance' ? performanceFields(base, parsed.pct) : {}),
   };
 }
 
@@ -131,7 +169,7 @@ export function getShipComponent(
 export function createSpecialSalvageComponentId(
   type: ShipComponentType,
   baseId: string,
-  modifier: 'efficiency' | 'damage',
+  modifier: 'efficiency' | 'damage' | 'performance',
   percent: number
 ): string | null {
   const pct = Math.max(1, Math.min(100, Math.round(percent)));
@@ -142,7 +180,7 @@ export function createSpecialSalvageComponentId(
 export function createShipyardVariantId(
   type: ShipComponentType,
   baseId: string,
-  modifier: 'efficiency' | 'damage',
+  modifier: 'efficiency' | 'damage' | 'performance',
   percent: number
 ): string | null {
   const pct = Math.max(1, Math.min(100, Math.round(percent)));
@@ -166,7 +204,7 @@ export function salvagedComponentAppraisal(
   const rare = Boolean(component.specialSalvage);
   const pct = Math.max(0, Number(component.salvageModifierPct ?? 0));
   const premium =
-    component.salvageModifier === 'damage'
+    component.salvageModifier === 'damage' || component.salvageModifier === 'performance'
       ? Math.min(0.75, pct * 0.06)
       : component.salvageModifier === 'efficiency'
         ? Math.min(0.75, pct * 0.04)

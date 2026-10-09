@@ -15,7 +15,13 @@ export function looseComponentCargoTons(tier: number): number {
   return 8 + Math.max(1, Math.floor(tier)) * 4;
 }
 
+export interface ShipComponentInventorySnapshot {
+  readonly serial: number;
+  readonly components: readonly LooseShipComponent[];
+}
+
 export interface ShipComponentInventoryService {
+  snapshot(): ShipComponentInventorySnapshot;
   list(): readonly LooseShipComponent[];
   cargoUsedTons(): number;
   take(uid: string): LooseShipComponent | null;
@@ -35,8 +41,11 @@ export function createShipComponentInventoryService(
   let serial = 0;
 
   return {
+    snapshot() {
+      return { serial, components: components.map((component) => ({ ...component })) };
+    },
     list() {
-      return [...components];
+      return components.map((component) => ({ ...component }));
     },
 
     cargoUsedTons() {

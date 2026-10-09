@@ -4,12 +4,14 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
+import { createSalvageFieldService } from '../salvage/salvage-field-service';
 import {
   resolveShipShieldCollisions,
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
+import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 export type LocalNpcSalvagePhase =
   'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
@@ -120,7 +122,9 @@ function chooseWreck(
   occupied: ReadonlySet<string>
 ): SalvageWreck | null {
   const candidates = field.wrecks.filter(
-    (wreck) => !occupied.has(wreck.id) && wreckRemaining(wreck) > 0
+    (wreck) =>
+      !occupied.has(wreck.id) &&
+      (wreckRemaining(wreck) > 0 || wreck.componentStatus === 'available')
   );
   if (candidates.length === 0) return null;
   return (
@@ -259,6 +263,36 @@ class LocalSalvageService implements NpcLocalSalvageService {
     npc.activity = `${result.title} · ${choice.riskLabel}`;
     ship.workAccumulator = -controller.recoverySeconds;
   };
+  private recoverComponent = (npc: SectorNpcState, wreck: SalvageWreck): boolean => {
+    const component = wreck.component;
+    if (!component || wreck.componentStatus !== 'available') return false;
+    const stored = npc.salvageComponents ?? [];
+    const cargo = stored.reduce(
+      (sum, entry) => sum + 8 + 4 * Number(entry.componentId.match(/\\d+/)?.[0] ?? 1),
+      0
+    );
+    if (cargoUsed(npc) + cargo + component.cargoTons > npc.cargoCapacity) return false;
+    const ship = getShipDefinition(npc.shipId);
+    if (!ship) return false;
+    const salvage = createSalvageFieldService({
+      field: this.options.field,
+      setup: resolveShipRuntimeSetup(ship, { installed: ensureNpcInstalledComponents(npc) })
+        .salvage,
+      crewSkill: Math.min(90, 32 + npc.successfulRuns * 2),
+      collect: () => 0,
+      collectComponent: () => {
+        stored.push({ type: component.type, componentId: component.componentId });
+        npc.salvageComponents = stored;
+        return true;
+      },
+    });
+    salvage.inspectWreck(wreck.id);
+    const result = salvage.recoverComponent(wreck.id);
+    if (result?.outcome !== 'recovered') return false;
+    npc.activityId = 'salvage-component';
+    npc.activity = 'Schiffskomponente geborgen';
+    return true;
+  };
   private recover = (
     ship: LocalNpcSalvagerState,
     npc: SectorNpcState,
@@ -268,7 +302,11 @@ class LocalSalvageService implements NpcLocalSalvageService {
       .filter((entry) => entry.remainingAmount > 0)
       .sort((a, b) => b.remainingAmount - a.remainingAmount)[0];
     if (!deposit) {
-      this.assignTarget(ship, npc);
+      if (!this.recoverComponent(npc, wreck) && wreck.componentStatus === 'available') {
+        this.beginExit(ship);
+      } else {
+        this.assignTarget(ship, npc);
+      }
       return;
     }
     const requested = Math.min(recoveryAmount(npc, wreck), deposit.remainingAmount);
@@ -278,6 +316,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
       this.beginExit(ship);
     } else if (wreckRemaining(wreck) <= 0) {
+      this.recoverComponent(npc, wreck);
       this.assignTarget(ship, npc);
     }
   };
@@ -306,7 +345,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     dt: number
   ): void => {
     const wreck = this.options.field.wrecks.find((entry) => entry.id === ship.targetWreckId);
-    if (!wreck || wreckRemaining(wreck) <= 0) {
+    if (!wreck || (wreckRemaining(wreck) <= 0 && wreck.componentStatus !== 'available')) {
       this.assignTarget(ship, npc);
       return;
     }

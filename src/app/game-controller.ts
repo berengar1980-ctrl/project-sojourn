@@ -1,21 +1,12 @@
 import { createGameAudioService } from '../systems/audio/game-audio-service';
-
 import { createCrewRosterService } from '../systems/crew';
-
 import { createStarMapEngagementService } from '../systems/combat';
-
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
-
 import { createShipLoadoutService } from '../systems/ships';
-
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
-
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
-
 import { runSceneZoomTransition } from '../ui/scene-transition';
-
 import { createSettingsMenu } from '../ui/settings/settings-menu';
-
 import { createControllerEconomy } from './game-controller-economy';
 
 import { createPlayerCombatant } from './game-controller-combat';
@@ -170,7 +161,12 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     economy.situations.currentDay,
     () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
     () => mountControllerPort(context, false),
-    context.systemLog
+    context.systemLog,
+    state.ownedShipIds,
+    (nextShip) => {
+      state.activeShip = nextShip;
+      mountControllerPort(context, false);
+    }
   );
   if (!state.panels.port) return;
   state.mode = 'port';
@@ -441,6 +437,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 export function createGameController(options: GameControllerOptions): GameController {
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
+    ownedShipIds: new Set([options.ship.id]),
     mode: 'star-map',
     panels: { star: null, local: null, port: null },
     shipSwitcher: null,

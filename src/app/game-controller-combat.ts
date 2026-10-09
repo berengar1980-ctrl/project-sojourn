@@ -1,9 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
-import {
-  createCombatShieldGeometry,
-  getShipMine,
-  type StrategicCombatantSetup,
-} from '../systems/combat';
+import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
   resolveShipRuntimeSetup,
@@ -22,12 +18,10 @@ export function createPlayerCombatant(
   const sensor = (runtime.installed.sensor ?? [])
     .map((id) => getShipComponent('sensor', id))
     .find((component) => component !== null);
-  const mineTier = Math.max(1, Math.min(6, runtime.stats.maxComponentTier));
-  const mines = [
-    getShipMine('mine-ion-' + mineTier),
-    getShipMine('mine-shaped-charge-' + mineTier),
-    getShipMine('mine-hunter-' + mineTier),
-  ].filter((mine): mine is NonNullable<typeof mine> => mine !== null);
+  const mines = (runtime.installed.mine ?? []).flatMap((id) => {
+    const component = getShipComponent('mine', id);
+    return component?.mine ? [component.mine, component.mine, component.mine] : [];
+  });
 
   return {
     id: 'player',

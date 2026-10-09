@@ -29,10 +29,14 @@ function randomFrom(seed: number): () => number {
 }
 
 function componentType(event: SectorSalvageEvent, random: () => number): ShipComponentType {
-  if (event.wreckKind === 'miner') return random() < 0.72 ? 'mining' : 'engine';
-  if (event.wreckKind === 'salvager') return random() < 0.72 ? 'salvage' : 'sensor';
-  if (event.wreckKind === 'patrol') return random() < 0.62 ? 'weapon' : 'shield';
-  return random() < 0.65 ? 'engine' : 'sensor';
+  const choices: Record<SalvageWreck['kind'], readonly ShipComponentType[]> = {
+    miner: ['mining', 'mining', 'engine', 'cargo', 'reactor', 'sensor'],
+    salvager: ['salvage', 'salvage', 'sensor', 'cargo', 'hull', 'reactor'],
+    patrol: ['weapon', 'weapon', 'mine', 'shield', 'hull', 'reactor'],
+    freighter: ['cargo', 'cargo', 'engine', 'shield', 'sensor', 'hull'],
+  };
+  const types = choices[event.wreckKind];
+  return types[Math.floor(random() * types.length)] ?? 'engine';
 }
 
 export function sectorSalvageEventComponent(
@@ -41,18 +45,18 @@ export function sectorSalvageEventComponent(
   if (!event.specialComponent && !event.salvageRights) return null;
   const random = randomFrom(event.fieldSeed ^ hash(event.id));
   const type = componentType(event, random);
-  const tier = Math.max(1, Math.min(6, 1 + Math.floor(random() * 3)));
-  const bases = (SHIP_COMPONENT_CATALOG[type] ?? [])
-    .filter((component) => component.tier <= tier && !component.baseId)
-    .sort((a, b) => a.tier - b.tier || a.cost - b.cost);
-  const base = bases[bases.length - 1];
+  const tier = 1 + Math.floor(random() * 6);
+  const bases = (SHIP_COMPONENT_CATALOG[type] ?? []).filter(
+    (component) => component.tier === tier && !component.baseId
+  );
+  const base = bases[Math.floor(random() * bases.length)];
   if (!base) return null;
 
   let componentId = base.id;
-  if (event.specialComponent) {
-    const damage = type === 'weapon' && random() < 0.42;
-    const modifier = damage ? 'damage' : 'efficiency';
-    const pct = damage ? 3 + Math.floor(random() * 8) : 5 + Math.floor(random() * 11);
+  // A component may have no bonus; otherwise it has one 1–25% modifier.
+  if (random() < 0.5) {
+    const modifier = random() < 0.5 && base.power > 0 ? 'efficiency' : 'performance';
+    const pct = 1 + Math.floor(random() * 25);
     componentId = createSpecialSalvageComponentId(type, base.id, modifier, pct) ?? base.id;
   }
   const definition = getShipComponent(type, componentId) ?? base;

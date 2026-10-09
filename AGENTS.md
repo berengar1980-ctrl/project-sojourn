@@ -16,3 +16,17 @@ These rules apply to all automated coding work in this repository, including new
 CircleCI runs the project checks. GitHub Actions are known to be billing-blocked; do not propose them as a diagnostic path. Use authorized CircleCI job logs or request the failing step output from the user. Never request, display, or commit CI secrets.
 
 When troubleshooting this private repository, use authorized repository integrations; do not substitute public web search for private CI logs.
+
+## Mutable game state and future persistence (mandatory)
+
+Project Sojourn does **not** support savegame persistence yet. Do not introduce save/load UI, browser storage, file saves, old-save compatibility, or migrations unless explicitly requested.
+
+1. Every new persistent-in-principle gameplay value (ownership, equipment, cargo, discoveries, credits, NPC equipment, or progression) must have one clearly identified domain owner. Avoid mutating it through HTML, DOM datasets, or view models.
+2. When adding or changing such state, update its service's detached, JSON-compatible `snapshot()` or document why the data is transient. Keep snapshots observational: never expose the original mutable arrays, sets, or maps.
+3. Add **behavioral** regression tests for snapshots and gameplay transactions. Test failed purchases/swaps leave state unchanged, consumed inventory components cannot be duplicated, and higher salvage bonuses replace only the same model and bonus kind. String-search tests alone are insufficient.
+4. Player and NPC equipment, salvaging, and shipyard market rules must use the same canonical component definitions and shared research state; preserve real Mk tiers and distinct model IDs.
+5. The ship test switcher is a development tool; **do not** restrict it based on ship ownership.
+6. Run the existing `npm run check:quick` and `npm run build` gates. If a changed state owner has no snapshot or a new state field is absent from the relevant snapshot, treat the implementation as incomplete even when the build is green.
+7. Keep the snapshot APIs separate from any future versioned savegame schema. Their existence does not imply backwards compatibility.
+
+Reference: `docs/SHIP_STATE_BOUNDARIES.md`. Update the document and tests when new state owners are introduced.

@@ -6,63 +6,53 @@ import {
   getShipComponent,
 } from './ship-component-service';
 
-export type SalvageModifierKind = 'efficiency' | 'damage';
+export type SalvageModifierKind = 'efficiency' | 'performance';
 
 export interface ShipyardResearchTier {
   readonly efficiency: number;
-  readonly damage: number;
+  readonly performance: number;
 }
 
 export interface ShipyardResearchService {
-  snapshot(): Readonly<Record<number, ShipyardResearchTier>>;
+  snapshot(): Readonly<Record<string, ShipyardResearchTier>>;
   registerComponent(type: ShipComponentType, componentId: string): boolean;
   variants(type: ShipComponentType, maxTier: number): readonly ShipComponentDefinition[];
 }
 
 export function createShipyardResearchService(): ShipyardResearchService {
-  const research: Record<number, { efficiency: number; damage: number }> = Object.fromEntries(
-    Array.from({ length: 6 }, (_, index) => [index + 1, { efficiency: 0, damage: 0 }])
-  );
+  // Keyed by actual component model (including tier and weapon family), not by global Mk tier.
+  const discovered = new Map<string, { efficiency: number; performance: number }>();
 
   return {
     snapshot() {
-      return Object.fromEntries(
-        Object.entries(research).map(([tier, value]) => [Number(tier), { ...value }])
-      );
+      return Object.fromEntries([...discovered].map(([id, value]) => [id, { ...value }]));
     },
 
     registerComponent(type, componentId) {
       const component = getShipComponent(type, componentId);
-      if (
-        !component?.specialSalvage ||
-        !component.salvageModifier ||
-        !component.salvageModifierPct
-      ) {
-        return false;
-      }
-      const tier = Math.max(1, Math.min(6, component.tier));
-      const current = research[tier]![component.salvageModifier];
-      if (component.salvageModifierPct <= current) return false;
-      research[tier]![component.salvageModifier] = component.salvageModifierPct;
+      if (!component?.specialSalvage || !component.salvageModifierPct) return false;
+      const modifier = component.salvageModifier;
+      if (modifier !== 'efficiency' && modifier !== 'performance') return false;
+      const baseId = component.baseId;
+      if (!baseId) return false;
+      const key = type + ':' + baseId;
+      const current = discovered.get(key) ?? { efficiency: 0, performance: 0 };
+      if (component.salvageModifierPct <= current[modifier]) return false;
+      discovered.set(key, { ...current, [modifier]: component.salvageModifierPct });
       return true;
     },
 
     variants(type, maxTier) {
       return getCompatibleShipComponents(type, maxTier).flatMap((base) => {
-        const tier = research[base.tier];
-        if (!tier || base.baseId || base.specialSalvage || base.shipyardVariant) return [];
-        const ids: string[] = [];
-        if (tier.efficiency > 0 && base.power > 0) {
-          const id = createShipyardVariantId(type, base.id, 'efficiency', tier.efficiency);
-          if (id) ids.push(id);
-        }
-        if (tier.damage > 0 && type === 'weapon') {
-          const id = createShipyardVariantId(type, base.id, 'damage', tier.damage);
-          if (id) ids.push(id);
-        }
-        return ids
-          .map((id) => getShipComponent(type, id))
-          .filter((component): component is ShipComponentDefinition => component !== null);
+        const highest = discovered.get(type + ':' + base.id);
+        if (!highest) return [];
+        return (['efficiency', 'performance'] as const).flatMap((modifier) => {
+          const pct = highest[modifier];
+          if (pct <= 0) return [];
+          const id = createShipyardVariantId(type, base.id, modifier, pct);
+          const component = id ? getShipComponent(type, id) : null;
+          return component ? [component] : [];
+        });
       });
     },
   };
