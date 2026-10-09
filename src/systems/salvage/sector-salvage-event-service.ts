@@ -125,14 +125,15 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     );
   }
   setPlayerSalvageEligible(eligible: boolean): void {
-    this.playerSalvageEligible = eligible;
-    if (!eligible) {
+    if (eligible && !this.playerSalvageEligible) {
       for (const event of this.events) {
-        if (!event.playerAccepted && event.distressStage !== 'towing') {
-          event.playerDeadlineDay = Math.min(event.playerDeadlineDay, this.currentDay);
+        if (!event.resolved && !event.claimedByNpcId &&
+            !event.playerAccepted && event.distressStage !== 'towing') {
+          event.playerDeadlineDay = Math.max(event.playerDeadlineDay, this.currentDay + 3);
         }
       }
     }
+    this.playerSalvageEligible = eligible;
   }
   acceptForPlayer(id: string): boolean {
     if (!this.playerSalvageEligible) return false;
@@ -314,7 +315,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       !event ||
       event.playerAccepted ||
       event.distressStage === 'towing' ||
-      this.currentDay < event.playerDeadlineDay ||
+      (this.playerSalvageEligible && this.currentDay < event.playerDeadlineDay) ||
       (event.claimedByNpcId && event.claimedByNpcId !== npcId)
     ) {
       return false;
