@@ -82,7 +82,8 @@ body {
 }
 
 .map-mode-toggle,
-.map-label-toggle {
+.map-label-toggle,
+.map-cargo-toggle {
   position: absolute;
   right: 22px;
   bottom: 42px;
@@ -102,8 +103,14 @@ body {
   bottom: 42px;
 }
 
+.map-cargo-toggle {
+  right: 248px;
+  bottom: 42px;
+}
+
 .map-mode-toggle:hover,
-.map-label-toggle:hover {
+.map-label-toggle:hover,
+.map-cargo-toggle:hover {
   border-color: rgba(114, 210, 151, 0.52);
   color: #a9e7c1;
 }
