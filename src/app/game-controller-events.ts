@@ -11,6 +11,35 @@ export interface ControllerEventActions {
   readonly mountSalvage: (reuseSeed?: boolean) => void;
 }
 
+function showDistressReward(context: ControllerRuntimeContext, result: DistressActionResult): void {
+  if (result.rewardCredits <= 0) return;
+  const notification = document.createElement('div');
+  notification.setAttribute('role', 'status');
+  notification.className = 'distress-reward-notice';
+  notification.textContent =
+    'NOTRUF ABGESCHLOSSEN · BELOHNUNG: +' +
+    result.rewardCredits.toLocaleString('de-DE') +
+    ' Credits' +
+    (result.workHours > 0 ? ' · Einsatzzeit: ' + result.workHours + ' h' : '');
+  Object.assign(notification.style, {
+    position: 'fixed',
+    left: '50%',
+    top: '14%',
+    transform: 'translateX(-50%)',
+    zIndex: '900',
+    padding: '18px 24px',
+    background: 'rgba(10, 30, 40, 0.96)',
+    border: '1px solid #69d8eb',
+    borderRadius: '8px',
+    color: '#c4f9ff',
+    fontWeight: '700',
+    textAlign: 'center',
+    pointerEvents: 'none',
+  });
+  context.root.append(notification);
+  setTimeout(() => notification.remove(), 6500);
+}
+
 function applyDistressOutcome(
   context: ControllerRuntimeContext,
   result: DistressActionResult | null
@@ -18,6 +47,7 @@ function applyDistressOutcome(
   if (!result) return;
   if (result.rewardCredits > 0) {
     context.economy.trade.player.credits += result.rewardCredits;
+    showDistressReward(context, result);
     context.systemLog.write(
       'NOTRUF > BELOHNUNG +' + result.rewardCredits.toLocaleString('de-DE') + ' CR'
     );
