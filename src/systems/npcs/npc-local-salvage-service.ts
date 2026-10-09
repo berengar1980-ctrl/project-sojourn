@@ -4,12 +4,14 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
+import { createSalvageFieldService } from '../salvage/salvage-field-service';
 import {
   resolveShipShieldCollisions,
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
 import { getShipComponent, getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
+import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 export type LocalNpcSalvagePhase =
   'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
@@ -266,9 +268,22 @@ class LocalSalvageService implements NpcLocalSalvageService {
     const stored = npc.salvageComponents ?? [];
     const cargo = stored.reduce((sum, entry) => sum + 8 + 4 * Number(entry.componentId.match(/\\d+/)?.[0] ?? 1), 0);
     if (cargoUsed(npc) + cargo + component.cargoTons > npc.cargoCapacity) return false;
-    stored.push({ type: component.type, componentId: component.componentId });
-    npc.salvageComponents = stored;
-    wreck.componentStatus = 'recovered';
+    const ship = getShipDefinition(npc.shipId);
+    if (!ship) return false;
+    const salvage = createSalvageFieldService({
+      field: this.options.field,
+      setup: resolveShipRuntimeSetup(ship, { installed: ensureNpcInstalledComponents(npc) }).salvage,
+      crewSkill: Math.min(90, 32 + npc.successfulRuns * 2),
+      collect: () => 0,
+      collectComponent: () => {
+        stored.push({ type: component.type, componentId: component.componentId });
+        npc.salvageComponents = stored;
+        return true;
+      },
+    });
+    salvage.inspectWreck(wreck.id);
+    const result = salvage.recoverComponent(wreck.id);
+    if (result?.outcome !== 'recovered') return false;
     npc.activityId = 'salvage-component';
     npc.activity = 'Schiffskomponente geborgen';
     return true;
