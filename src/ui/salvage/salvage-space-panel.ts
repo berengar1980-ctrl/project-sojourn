@@ -42,8 +42,12 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
       ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
       : stage === 'diagnosed'
         ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button><button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
-        : stage === 'salvage_rights'
-          ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
+        : stage === 'tow_required'
+          ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
+          : stage === 'towing'
+            ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
+            : stage === 'salvage_rights'
+              ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
           : '<span>EINSATZ ABGESCHLOSSEN</span>';
   container.innerHTML =
     '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
