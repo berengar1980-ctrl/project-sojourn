@@ -1,3 +1,4 @@
+import { routeAroundDistressShip } from './distress-navigation';
 import type {
   SalvageLocalPhase,
   SalvageLocalSpaceSnapshot,
@@ -268,7 +269,15 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.phase = phase;
     this.elapsed = 0;
     this.navigationTarget = target;
-    this.navigationRoute = [{ ...this.ship.position }, target];
+    const distress = this.options.field.wrecks.find((wreck) =>
+      wreck.id.startsWith('event-wreck-salvage-distress-')
+    );
+    this.navigationRoute = distress
+      ? routeAroundDistressShip(
+          this.ship.position, target, distress.position,
+          distress.radius + this.options.setup.nominalLengthMeters * 0.42 + 15
+        )
+      : [{ ...this.ship.position }, target];
     this.routeIndex = 1;
   }
 
