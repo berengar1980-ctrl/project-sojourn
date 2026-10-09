@@ -253,6 +253,10 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   state.localNpcMining = null;
   const currentLocationId = context.navigation.getSnapshot().currentLocationId;
   const sectorEvent = context.economy.salvageEvents.event(currentLocationId);
+  if (sectorEvent && state.activeShip.role !== 'salvage') {
+    context.systemLog.write('BERGUNG > HILFERUF NUR MIT BERGUNGSSCHIFF VERFÜGBAR');
+    return mountControllerStarMap(context);
+  }
   const location =
     salvageLocationById(currentLocationId) ?? sectorEventLocation(context, currentLocationId);
   if (!location) return mountControllerStarMap(context);
