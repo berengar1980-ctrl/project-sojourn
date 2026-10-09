@@ -136,6 +136,8 @@ export interface SectorSalvageEvent {
   readonly fieldSeed: number;
   readonly createdDay: number;
   expiresDay: number;
+  playerDeadlineDay: number;
+  playerAccepted: boolean;
   resolved: boolean;
   claimedByNpcId: string | null;
   readonly specialComponent: boolean;
