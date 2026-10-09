@@ -1,8 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
-import {
-  createCombatShieldGeometry,
-  type StrategicCombatantSetup,
-} from '../systems/combat';
+import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
   resolveShipRuntimeSetup,
