@@ -60,7 +60,7 @@ function cargoMarkers(
   });
   relevantHints.forEach((hint, index) => {
     if (!markers.has(hint.locationId)) {
-    markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+      markers.set(hint.locationId, index === 0 ? 'best' : 'good');
     }
   });
   return markers;
