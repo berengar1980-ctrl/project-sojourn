@@ -24,8 +24,8 @@ function findDistress(predicate) {
   throw new Error('No matching distress profile in deterministic world-event seeds');
 }
 
-const tow = findDistress((event) =>
-  event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control'
+const tow = findDistress(
+  (event) => event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control'
 );
 assert(tow.event.distressRequiredEngineering > 0);
 const diagnosis = tow.service.diagnoseDistress(tow.event.id, 0);
@@ -52,7 +52,9 @@ assert.equal(repaired.success, true);
 assert(repaired.rewardCredits > 0);
 assert.equal(repair.service.event(repair.event.id), null);
 
-const evacuation = findDistress((event) => event.distressDamage === 'total_loss' && !event.distressTrap);
+const evacuation = findDistress(
+  (event) => event.distressDamage === 'total_loss' && !event.distressTrap
+);
 evacuation.service.diagnoseDistress(evacuation.event.id, 100);
 const evacuated = evacuation.service.evacuateDistress(evacuation.event.id);
 assert.equal(evacuated.success, true);
@@ -63,4 +65,6 @@ const callbacks = fs.readFileSync(path.join(root, 'src/app/game-controller-event
 assert(controller.includes('completeDistressTowOnArrival(context, currentLocationId)'));
 assert(callbacks.includes('finishTowAtLocation(currentLocationId)'));
 assert(callbacks.includes('applyDistressOutcome(context, result)'));
-console.log('PASS distress diagnosis, repair, tow delivery, evacuation, payment and arrival wiring');
+console.log(
+  'PASS distress diagnosis, repair, tow delivery, evacuation, payment and arrival wiring'
+);
