@@ -57,7 +57,7 @@ export class DistressDamageParticles {
       const y = position.y + (source.x * sin + source.y * cos) * length;
       this.emissions[i]! += source.smoke * dt * this.fade;
       while (this.emissions[i]! >= 1) {
-        this.emissions[i]!--;
+        this.emissions[i] = this.emissions[i]! - 1;
         const random = () => {
           this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
           return this.seed / 4294967296;
