@@ -92,6 +92,8 @@ function emptyResult(text: string, success = false): DistressActionResult {
 
 export interface SectorSalvageEventService {
   readonly active: readonly SectorSalvageEvent[];
+  readonly playerVisible: readonly SectorSalvageEvent[];
+  acceptForPlayer(id: string): boolean;
   event(id: string | null): SectorSalvageEvent | null;
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void;
   resolve(id: string): boolean;
@@ -113,6 +115,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private nextSpecialDay: number;
   private nextDistressDay: number;
   private serial = 0;
+  private currentDay = 0;
   private lastDistressDamage: DistressDamageType | null = null;
 
   constructor(
@@ -128,12 +131,24 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     return this.live().map(cloneEvent);
   }
 
+  get playerVisible(): readonly SectorSalvageEvent[] {
+    return this.active.filter((event) => event.playerAccepted || this.currentDay < event.playerDeadlineDay);
+  }
+
+  acceptForPlayer(id: string): boolean {
+    const event = this.event(id);
+    if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay) return false;
+    event.playerAccepted = true;
+    return true;
+  }
+
   event(id: string | null): SectorSalvageEvent | null {
     if (!id) return null;
     return this.events.find((entry) => entry.id === id && !entry.resolved) ?? null;
   }
 
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void {
+    this.currentDay = day;
     this.prune(day);
     if (!playerHasSalvager) return;
     if (day >= this.nextSpecialDay) {
@@ -290,7 +305,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   claimForNpc(id: string, npcId: string): boolean {
     const event = this.event(id);
-    if (!event || (event.claimedByNpcId && event.claimedByNpcId !== npcId)) return false;
+    if (!event || event.playerAccepted || this.currentDay < event.playerDeadlineDay || (event.claimedByNpcId && event.claimedByNpcId !== npcId)) return false;
     event.claimedByNpcId = npcId;
     return true;
   }
@@ -371,6 +386,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
         !event.resolved &&
         event.expiresDay <= day &&
         !event.salvageRights &&
+        !event.playerAccepted &&
         event.distressStage !== 'towing'
       ) {
         event.resolved = true;
@@ -392,7 +408,9 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: kind,
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      expiresDay: day + 2 + Math.floor(this.random() * 2),
+      playerDeadlineDay: day + 3,
+      playerAccepted: false,
+      expiresDay: day + 8,
       resolved: false,
       claimedByNpcId: null,
       specialComponent: true,
@@ -431,7 +449,9 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: WRECK_KINDS[Math.floor(this.random() * WRECK_KINDS.length)] ?? 'freighter',
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      expiresDay: day + 3 + Math.floor(this.random() * 2),
+      playerDeadlineDay: day + 3,
+      playerAccepted: false,
+      expiresDay: day + 8,
       resolved: false,
       claimedByNpcId: null,
       specialComponent: false,
