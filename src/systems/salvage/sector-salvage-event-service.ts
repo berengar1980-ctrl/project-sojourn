@@ -81,6 +81,7 @@ export interface SectorSalvageEventService {
   readonly active: readonly SectorSalvageEvent[];
   readonly playerVisible: readonly SectorSalvageEvent[];
   readonly currentDay: number;
+  setPlayerSalvageEligible(eligible: boolean): void;
   acceptForPlayer(id: string): boolean;
   event(id: string | null): SectorSalvageEvent | null;
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void;
@@ -105,6 +106,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private serial = 0;
   currentDay = 0;
   private lastDistressDamage: DistressDamageType | null = null;
+  private playerSalvageEligible = false;
 
   constructor(
     private readonly world: WorldMap,
@@ -121,11 +123,24 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   get playerVisible(): readonly SectorSalvageEvent[] {
     return this.active.filter(
-      (event) => event.distressStage === 'towing' || this.currentDay < event.playerDeadlineDay
+      (event) => event.distressStage === 'towing' ||
+        (this.playerSalvageEligible && this.currentDay < event.playerDeadlineDay)
     );
   }
 
+  setPlayerSalvageEligible(eligible: boolean): void {
+    this.playerSalvageEligible = eligible;
+    if (!eligible) {
+      for (const event of this.events) {
+        if (!event.playerAccepted && event.distressStage !== 'towing') {
+          event.playerDeadlineDay = Math.min(event.playerDeadlineDay, this.currentDay);
+        }
+      }
+    }
+  }
+
   acceptForPlayer(id: string): boolean {
+    if (!this.playerSalvageEligible) return false;
     const event = this.event(id);
     if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay) {
       return false;
@@ -142,13 +157,13 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void {
     this.currentDay = day;
+    this.setPlayerSalvageEligible(playerHasSalvager);
     for (const event of this.events) {
       if (event.playerDeadlineDay <= day && event.distressStage !== 'towing') {
         event.playerAccepted = false;
       }
     }
     this.prune(day);
-    if (!playerHasSalvager) return;
     if (day >= this.nextSpecialDay) {
       this.spawnSpecial(day, playerPosition);
       this.nextSpecialDay = day + 1 + Math.floor(this.random() * 2);
@@ -423,7 +438,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: kind,
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      playerDeadlineDay: day + 3,
+      playerDeadlineDay: this.playerSalvageEligible ? day + 3 : day,
       playerAccepted: false,
       expiresDay: day + 8,
       resolved: false,
