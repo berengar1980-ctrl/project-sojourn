@@ -53,30 +53,21 @@ const researchModule = loadStandaloneTypeScriptModule(
 );
 const research = researchModule.createShipyardResearchService();
 assert.equal(research.variants('weapon', 6).length, 0, 'no free bonus offers before research');
-assert.equal(
-  research.registerComponent('weapon', 'special_performance_6_weapon1'),
-  true
-);
+assert.equal(research.registerComponent('weapon', 'special_performance_6_weapon1'), true);
 assert.equal(
   research.registerComponent('weapon', 'special_performance_3_weapon1'),
   false,
   'lower discovered values must not replace the best one'
 );
 assert.equal(research.variants('weapon', 6)[0].salvageModifierPct, 6);
-assert.equal(
-  research.registerComponent('weapon', 'special_performance_15_weapon1'),
-  true
-);
+assert.equal(research.registerComponent('weapon', 'special_performance_15_weapon1'), true);
 assert.equal(research.variants('weapon', 6)[0].salvageModifierPct, 15);
 assert.equal(
   research.variants('weapon', 6).filter((item) => item.baseId === 'weapon2').length,
   0,
   'a discovered bonus must not leak to higher Mk tiers'
 );
-assert.equal(
-  research.registerComponent('weapon', 'special_efficiency_3_weapon1'),
-  true
-);
+assert.equal(research.registerComponent('weapon', 'special_efficiency_3_weapon1'), true);
 assert.equal(research.variants('weapon', 6).length, 2, 'bonus types remain alternative offers');
 
 const port = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
