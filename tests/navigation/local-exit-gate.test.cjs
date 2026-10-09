@@ -23,8 +23,16 @@ assert(read('src/app/game-controller-events.ts').includes('controllerSalvageExit
 assert(!read('src/app/game-controller-events.ts').includes('context.navigation.startTravel();\n      runSceneZoomTransition(context.root, actions.mountStarMap)'));
 assert(read('src/ui/local-space/local-space-renderer.ts').includes('drawLocalSpaceExitGate('));
 assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawLocalSpaceExitGate('));
-assert(read('src/systems/combat/strategic-combat-service.ts').includes('distance(combatant.position, arena.exitPoint) <= 90'));
-assert(read('src/systems/combat/strategic-combat-movement.ts').includes('arena.exitPoint.x - combatant.position.x'));
+assert(
+  read('src/systems/combat/strategic-combat-service.ts').includes(
+    'distance(combatant.position, arena.exitPoint) <= 90'
+  )
+);
+assert(
+  read('src/systems/combat/strategic-combat-movement.ts').includes(
+    'arena.exitPoint.x - combatant.position.x'
+  )
+);
 assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('FLUCHTPUNKT'));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));
 assert(read('src/systems/ships/ship-registry.ts').includes('ensureUtilityHardpoints'));
