@@ -262,15 +262,8 @@ function createShipyardCallbacks(
   PortPanelOptions,
   'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant' | 'onBuyShip'
 > {
-  const {
-    componentInventory,
-    shipyardResearch,
-    trade,
-    runtime,
-    location,
-    log,
-    onRefresh,
-  } = context;
+  const { componentInventory, shipyardResearch, trade, runtime, location, log, onRefresh } =
+    context;
 
   return {
     onSetComponentSlot: (type, index, uid) => setShipyardComponentSlot(context, type, index, uid),
