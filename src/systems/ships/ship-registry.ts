@@ -23,6 +23,7 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
   const grappleMount: ShipHardpoint = {
     ...mount,
     id: 'utility-grapple',
+    layer: 'below',
     x: Math.max(0, Math.min(points.sourceWidth, points.pivot.x - points.sourceWidth * 0.24)),
   };
   return {
