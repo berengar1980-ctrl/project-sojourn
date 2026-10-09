@@ -112,11 +112,13 @@ export function bindCargoMarketScanner(
     const bestRevenue = Math.max(0, ...quotes.map((quote) => quote.revenue));
     for (const quote of quotes) {
       const fraction = bestRevenue > 0 ? quote.revenue / bestRevenue : 0;
-      markers.set(quote.locationId, fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low');
+      const rating = fraction >= 0.95 ? 'best' : fraction >= 0.7 ? 'good' : 'low';
+      markers.set(quote.locationId, rating);
     }
-    const relevantHints = (scanner?.hints ?? []).filter((hint) =>
-      preferredCargoResource === 'all' || hint.resourceIds.includes(preferredCargoResource)
-    );
+    const relevantHints = (scanner?.hints ?? []).filter((hint) => {
+      if (preferredCargoResource === 'all') return true;
+      return hint.resourceIds.includes(preferredCargoResource);
+    });
     relevantHints.forEach((hint, index) => {
       if (!markers.has(hint.locationId)) {
         markers.set(hint.locationId, index === 0 ? 'best' : 'good');
@@ -158,9 +160,8 @@ export function bindCargoMarketScanner(
       price.textContent = formatCredits(quote.revenue);
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = quote.locationId === getModel().navigation.selectedDestinationId
-        ? 'ZIEL AUSGEWÄHLT'
-        : 'ROUTE SETZEN';
+      const selected = quote.locationId === getModel().navigation.selectedDestinationId;
+      route.textContent = selected ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
       route.className = 'cargo-route-button';
       route.title = 'Navigationsziel auf der Sternkarte auswählen';
       route.addEventListener('click', (event) => {
