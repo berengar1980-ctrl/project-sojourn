@@ -45,17 +45,17 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
-    const hints = (scanner?.hints ?? []).filter(
-      (hint) => preferredCargoResource === 'all' || hint.resourceIds.includes(preferredCargoResource)
-    );
+    const hints = (scanner?.hints ?? []).filter((hint) => {
+      if (preferredCargoResource === 'all') return true;
+      return hint.resourceIds.includes(preferredCargoResource);
+    });
     if (hints.length) {
       const heading = document.createElement('p');
       heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
       cargoContent.append(heading);
       for (const hint of hints.slice(0, 5)) {
         const item = document.createElement('div');
-        item.textContent =
-          hint.name + ' · Nachfrage für ' + hint.matchedQuantity + ' t deiner Fracht';
+        item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
         cargoContent.append(item);
       }
     }
