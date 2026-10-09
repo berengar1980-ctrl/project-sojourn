@@ -9,7 +9,7 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
+import { getShipComponent, getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 
 export type LocalNpcSalvagePhase =
   'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
@@ -282,8 +282,11 @@ class LocalSalvageService implements NpcLocalSalvageService {
       .filter((entry) => entry.remainingAmount > 0)
       .sort((a, b) => b.remainingAmount - a.remainingAmount)[0];
     if (!deposit) {
-      this.recoverComponent(npc, wreck);
-      this.assignTarget(ship, npc);
+      if (!this.recoverComponent(npc, wreck) && wreck.componentStatus === 'available') {
+        this.beginExit(ship);
+      } else {
+        this.assignTarget(ship, npc);
+      }
       return;
     }
     const requested = Math.min(recoveryAmount(npc, wreck), deposit.remainingAmount);
