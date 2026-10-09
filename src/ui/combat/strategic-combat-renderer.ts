@@ -195,9 +195,9 @@ export class StrategicCombatRenderer {
     this.context.lineCap = 'round';
     if (beam.kind === 'laser') {
       this.context.shadowColor = 'rgba(67, 185, 255, .95)';
-      this.context.shadowBlur = 10;
-      this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
-      this.context.lineWidth = 4.5;
+      this.context.shadowBlur = 4;
+      this.context.strokeStyle = `rgba(108, 214, 255, ${0.25 + alpha * 0.5})`;
+      this.context.lineWidth = 1.8;
       this.context.beginPath();
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
@@ -205,11 +205,18 @@ export class StrategicCombatRenderer {
 
       this.context.shadowBlur = 3;
       this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
-      this.context.lineWidth = 1.15;
+      this.context.lineWidth = 0.65;
       this.context.beginPath();
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
       this.context.stroke();
+
+      // Brief muzzle flare anchors each shot visually to the firing hardpoint.
+      this.context.shadowBlur = 5;
+      this.context.fillStyle = `rgba(202, 244, 255, ${alpha * 0.9})`;
+      this.context.beginPath();
+      this.context.arc(start.x, start.y, 1.3 + alpha * 1.1, 0, Math.PI * 2);
+      this.context.fill();
     } else {
       this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
       this.context.lineWidth = 1.3;

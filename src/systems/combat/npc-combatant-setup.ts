@@ -72,13 +72,20 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
         : (npc.job === 'patrol' || npc.pirate) && npc.aggression >= 82
           ? 'kite'
           : 'fight',
-    combatSpeed: Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
+    combatSpeed:
+      npc.job === 'patrol' || npc.pirate
+        ? Math.max(185, Math.min(320, ship.navigation.cruiseSpeed * 0.48))
+        : Math.max(78, Math.min(145, ship.navigation.cruiseSpeed * 0.27)),
     turnRateRadiansPerSecond: Math.max(
       0.4,
       Math.min(0.82, 0.98 - ship.nominalLengthMeters * 0.006)
     ),
     accelerationMetersPerSecond2: Math.max(18, Math.min(36, 44 - ship.nominalLengthMeters * 0.18)),
     mines,
+    tractorRangeMeters: Math.max(
+      0,
+      ...(installed.tractor ?? []).map((id) => getShipComponent('tractor', id)?.range ?? 0)
+    ),
     sensorCrewSkill: skill,
     sensorTier: sensor?.tier ?? 0,
     sensorRangeMeters: sensor ? 1000 : 0,

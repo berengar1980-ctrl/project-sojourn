@@ -46,6 +46,7 @@ export interface StrategicCombatantSetup {
   readonly turnRateRadiansPerSecond?: number;
   readonly accelerationMetersPerSecond2?: number;
   readonly mines?: readonly ShipMineDefinition[];
+  readonly tractorRangeMeters?: number;
   readonly sensorCrewSkill?: number;
   readonly sensorTier?: number;
   readonly sensorRangeMeters?: number;
@@ -70,6 +71,7 @@ export interface StrategicCombatantSnapshot {
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
   readonly tactic: CombatTactic;
+  readonly tractorLocked?: boolean;
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly shieldImpacts: readonly ShieldImpactEffect[];

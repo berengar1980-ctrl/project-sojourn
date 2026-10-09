@@ -59,7 +59,11 @@ assert.equal(baseline.yieldMultiplier, 1);
 assert.equal(baseline.cycleSeconds, 0.42, 'three Mk I lasers must preserve current mining pace');
 assert.equal(baseline.cargoCapacityTons, 390);
 assert.equal(baseline.reactorOutput, 40);
-assert.equal(baseline.continuousPowerUsed, 22);
+assert.equal(
+  baseline.continuousPowerUsed,
+  27,
+  'mining and installed tractor beam both draw reactor power'
+);
 
 const freighter = mining.resolveShipMiningSetup(createShip('freighter', 0));
 assert.equal(freighter.available, false, 'ships without mining hardpoints must not mine');

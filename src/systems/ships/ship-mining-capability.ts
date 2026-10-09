@@ -32,6 +32,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     cargo: ['cargo1'],
     weapon: Array.from({ length: stats.weaponSlots }, () => 'weapon1'),
     mine: [''],
+    tractor: [ship.role === 'mining' || ship.role === 'salvage' ? 'tractor1' : ''],
   };
 
   if (ship.role === 'mining') return { ...common, mining: ['mining1'] };
