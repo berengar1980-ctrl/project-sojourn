@@ -222,7 +222,7 @@ function tickStrategicCombat(
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
-  if (runtime.defender.setup.aiControlled &&
+  if (runtime.defender.setup.aiControlled && !runtime.attacker.setup.aiControlled &&
       !runtime.grappleUsed.defender && !runtime.grapple &&
       runtime.attacker.shieldHp <= 0 && runtime.attacker.hullHp > 0 &&
       runtime.defender.hullHp > 0 &&
