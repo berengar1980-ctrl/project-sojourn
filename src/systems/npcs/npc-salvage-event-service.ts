@@ -147,6 +147,18 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
     if (npc.hullHp <= 0 || npc.combatMovement) return;
     this.sellAtShipyard(npc);
     if (npc.salvageEventId) {
+      const event = this.options.events.event(npc.salvageEventId);
+      if (event?.distressStage === 'towing' && !npc.travel && npc.locationId === event.distressTowDestinationId) {
+        const outcome = this.options.events.finishTowAtLocation(npc.locationId, event.id);
+        if (outcome?.success) {
+          npc.credits += outcome.rewardCredits;
+          npc.successfulRuns += 1;
+          npc.activityId = 'salvage-event-complete';
+          npc.activity = 'Havarist im Zielhafen übergeben';
+        }
+        delete npc.salvageEventId;
+        return;
+      }
       this.progressClaimedEvent(npc);
       return;
     }
@@ -186,6 +198,10 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
         ? this.resolveDistress(npc, event)
         : this.resolveSpecialWreck(npc, event);
 
+    if (event.distressStage === 'towing' && event.distressTowDestinationId) {
+      startReturnTravel(npc, this.options.world, event.position, event.distressTowDestinationId, 'Havarist zum Übergabehafen abschleppen');
+      return;
+    }
     delete npc.salvageEventId;
     if (!recovered) {
       npc.activityId = 'salvage-event-complete';
