@@ -4,7 +4,10 @@ import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
 import { resolveShipGameplayStats } from './ship-stats';
 
+export type ShipLoadoutSnapshot = Readonly<Record<string, InstalledShipComponents>>;
+
 export interface ShipLoadoutService {
+  snapshot(): ShipLoadoutSnapshot;
   get(ship: ShipDefinition): InstalledShipComponents;
   setSlot(
     ship: ShipDefinition,
@@ -43,6 +46,9 @@ export function createShipLoadoutService(): ShipLoadoutService {
 
   return {
     get,
+    snapshot() {
+      return Object.fromEntries([...byShipId].map(([id, installed]) => [id, cloneInstalled(installed)]));
+    },
     setSlot(ship, type, index, componentId) {
       const limit = slotLimit(ship, type);
       if (index < 0 || index >= limit) return false;
