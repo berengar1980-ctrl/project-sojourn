@@ -433,6 +433,15 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
       button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
     }
+    const hookButton = ui.combatTactics.querySelector<HTMLButtonElement>('[data-grapple]');
+    if (hookButton) {
+      const combat = model.combat;
+      hookButton.disabled = !combat || combat.winner !== null || combat.grapple !== null ||
+        combat.grappleUsed.attacker || combat.defender.shieldHp > 0 ||
+        Math.hypot(combat.attacker.position.x - combat.defender.position.x,
+          combat.attacker.position.y - combat.defender.position.y) > 900;
+      hookButton.textContent = combat?.grappleUsed.attacker ? 'GREIFHAKEN VERBRAUCHT' : 'GREIFHAKEN';
+    }
     renderSelection(model, ui);
     trackRecovery(model);
   };
