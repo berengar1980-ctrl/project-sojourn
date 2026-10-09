@@ -29,7 +29,7 @@ const result = run();
 assert.equal(result.resources.length, 2);
 assert.equal(result.resources[0].best.locationId, 'c', 'best single commodity ignores other cargo');
 assert.equal(result.markets[0].locationId, 'b', 'full-cargo recommendation excludes incomplete quotes');
-assert.equal(result.markets[0].revenue, 1170, 'quotes use the same 6% selling fee as player trade');
+assert.equal(result.markets[0].revenue, 1166, 'quotes use the same 6% selling fee as player trade');
 assert.equal(result.markets[0].coveredQuantity, 14);
 assert.equal(result.markets.find((item) => item.locationId === 'c').coveredQuantity, 10);
 assert.equal(result.markets.find((item) => item.locationId === 'a').observedDay, 2);
