@@ -2,6 +2,8 @@ import type {
   SalvageSpaceViewModel,
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
+import { getShipsByRole } from '../../systems/ships';
+import { drawDistressScanEffect } from './salvage-distress-scan-effect';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -147,25 +149,14 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
   }
   protected drawDistressDiagnosis(width: number, height: number, now: number): void {
-    const elapsed = now - this.diagnosisStartedAt;
-    if (elapsed < 0 || elapsed > 1.25 || !this.model.sectorEvent) return;
-    const target = this.model.wrecks[0];
-    if (!target) return;
-    const point = this.camera.worldToScreen(target.position, width, height);
-    const source = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const progress = Math.min(1, elapsed / 1.05);
-    this.context.save();
-    this.context.strokeStyle = 'rgba(112, 221, 245, ' + (0.9 - progress * 0.7) + ')';
-    this.context.lineWidth = 2.5;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, 18 + 140 * progress, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.setLineDash([6, 9]);
-    this.context.beginPath();
-    this.context.moveTo(source.x, source.y);
-    this.context.lineTo(point.x, point.y);
-    this.context.stroke();
-    this.context.restore();
+    drawDistressScanEffect(
+      this.context,
+      this.camera,
+      this.model,
+      now - this.diagnosisStartedAt,
+      width,
+      height
+    );
   }
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
@@ -193,8 +184,21 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.translate(point.x, point.y);
     this.context.rotate(wreck.rotation);
     this.context.globalAlpha = wreck.depleted ? 0.38 : 0.95;
-    this.drawHullFragments(wreck, radius);
-    this.drawWreckDebris(wreck.id, radius);
+    const event = this.model.sectorEvent;
+    const role = event?.wreckKind === 'salvager' ? 'salvage' : event?.wreckKind === 'miner'
+      ? 'mining' : event?.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+    const variants = getShipsByRole(role);
+    const ship = event?.type === 'distress-rescue' && wreck.id.startsWith('event-wreck-')
+      ? variants[(event.fieldSeed >>> 0) % variants.length]
+      : undefined;
+    const image = ship ? this.ensureNpcImage(ship.sprite.assetUrl) : null;
+    if (image?.complete && image.naturalWidth > 0) {
+      const aspect = image.naturalWidth / image.naturalHeight;
+      this.context.drawImage(image, -radius, -radius / aspect, radius * 2, radius * 2 / aspect);
+    } else {
+      this.drawHullFragments(wreck, radius);
+      this.drawWreckDebris(wreck.id, radius);
+    }
     this.context.restore();
 
     if (wreck.isSelected || wreck.isWorkTarget) {
