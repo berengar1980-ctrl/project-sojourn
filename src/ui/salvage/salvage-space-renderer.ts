@@ -493,5 +493,19 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       source,
       geometry
     );
+    const impact = this.model.distressRamming;
+    if (impact?.impactPoint && impact.impactAge < 0.8) {
+      const point = this.camera.worldToScreen(impact.impactPoint, this.canvas.clientWidth, this.canvas.clientHeight);
+      const progress = impact.impactAge / 0.8;
+      this.context.save();
+      this.context.strokeStyle = 'rgba(91, 221, 255, ' + (0.95 * (1 - progress)) + ')';
+      this.context.lineWidth = 5 * (1 - progress) + 1;
+      this.context.shadowColor = '#83e6ff';
+      this.context.shadowBlur = 20 * (1 - progress);
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 8 + progress * 35, -1.4, 1.4);
+      this.context.stroke();
+      this.context.restore();
+    }
   }
 }
