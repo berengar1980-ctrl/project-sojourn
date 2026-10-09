@@ -22,6 +22,16 @@ jobs:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
+          name: Export final Prettier patch
+          when: always
+          command: |
+            mkdir -p /tmp/final-prettier
+            npx prettier --write src/app/game-controller-port.ts src/systems/npcs/npc-local-salvage-service.ts
+            git diff -- src/app/game-controller-port.ts src/systems/npcs/npc-local-salvage-service.ts > /tmp/final-prettier/prettier.patch
+      - store_artifacts:
+          path: /tmp/final-prettier
+          destination: final-prettier
+      - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
