@@ -148,7 +148,11 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
     this.sellAtShipyard(npc);
     if (npc.salvageEventId) {
       const event = this.options.events.event(npc.salvageEventId);
-      if (event?.distressStage === 'towing' && !npc.travel && npc.locationId === event.distressTowDestinationId) {
+      if (
+        event?.distressStage === 'towing' &&
+        !npc.travel &&
+        npc.locationId === event.distressTowDestinationId
+      ) {
         const outcome = this.options.events.finishTowAtLocation(npc.locationId, event.id);
         if (outcome?.success) {
           npc.credits += outcome.rewardCredits;
@@ -265,7 +269,12 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
 
   private claimNextEvent(npc: SectorNpcState): void {
     const target = this.options.events.active
-      .filter((event) => !event.claimedByNpcId && !event.playerAccepted && event.playerDeadlineDay <= this.options.events.currentDay)
+      .filter(
+        (event) =>
+          !event.claimedByNpcId &&
+          !event.playerAccepted &&
+          event.playerDeadlineDay <= this.options.events.currentDay
+      )
       .sort((a, b) => a.expiresDay - b.expiresDay)[0];
     if (!target) return;
     if (!this.options.events.claimForNpc(target.id, npc.id)) return;
