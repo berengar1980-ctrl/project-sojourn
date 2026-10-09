@@ -10,11 +10,7 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import {
-  getShipDefinition,
-  resolveShipRuntimeSetup,
-  stationFactor,
-} from '../ships';
+import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 export type LocalNpcSalvagePhase =
