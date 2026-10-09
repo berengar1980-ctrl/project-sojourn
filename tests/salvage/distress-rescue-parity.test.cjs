@@ -31,6 +31,8 @@ priority.service.advanceDay(priority.event.playerDeadlineDay, { x: 3500, y: 3000
 assert(!priority.service.playerVisible.some((event) => event.id === priority.event.id));
 assert.equal(priority.service.claimForNpc(priority.event.id, 'npc-1'), true);
 assert.equal(priority.service.claimForNpc(priority.event.id, 'npc-2'), false);
+priority.service.advanceDay(priority.event.playerDeadlineDay + 10, { x: 3500, y: 3000 }, true);
+assert(priority.service.event(priority.event.id), 'NPC-claimed jobs must survive long journeys');
 
 const accepted = findDistress(() => true);
 assert.equal(accepted.service.acceptForPlayer(accepted.event.id), true);
