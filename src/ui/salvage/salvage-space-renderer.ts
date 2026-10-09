@@ -38,6 +38,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
   protected hasFitted = false;
+  protected diagnosisStartedAt = -1;
+  startDistressDiagnosis(): void {
+    this.diagnosisStartedAt = performance.now() / 1000;
+    this.draw();
+  }
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: SalvageSpaceViewModel
@@ -138,7 +143,29 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawRoute(width, height);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
+    this.drawDistressDiagnosis(width, height, timeSeconds);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
+  }
+  protected drawDistressDiagnosis(width: number, height: number, now: number): void {
+    const elapsed = now - this.diagnosisStartedAt;
+    if (elapsed < 0 || elapsed > 1.25 || !this.model.sectorEvent) return;
+    const target = this.model.wrecks[0];
+    if (!target) return;
+    const point = this.camera.worldToScreen(target.position, width, height);
+    const source = this.camera.worldToScreen(this.model.ship.position, width, height);
+    const progress = Math.min(1, elapsed / 1.05);
+    this.context.save();
+    this.context.strokeStyle = 'rgba(112, 221, 245, ' + (0.9 - progress * 0.7) + ')';
+    this.context.lineWidth = 2.5;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, 18 + 140 * progress, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.setLineDash([6, 9]);
+    this.context.beginPath();
+    this.context.moveTo(source.x, source.y);
+    this.context.lineTo(point.x, point.y);
+    this.context.stroke();
+    this.context.restore();
   }
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
