@@ -48,7 +48,7 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
             ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
             : stage === 'salvage_rights'
               ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
-          : '<span>EINSATZ ABGESCHLOSSEN</span>';
+              : '<span>EINSATZ ABGESCHLOSSEN</span>';
   container.innerHTML =
     '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
     damage +
@@ -421,7 +421,9 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
-    if (!ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')) {
+    if (
+      !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
+    ) {
       renderSectorEvent(model, ui.sectorEventContainer);
     }
     renderCargo(model, ui.cargoTotal, ui.cargoList);
