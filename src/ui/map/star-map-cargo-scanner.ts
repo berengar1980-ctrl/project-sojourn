@@ -1,5 +1,6 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 
+// prettier-ignore
 function renderBuyerHints(
   scanner: StarMapViewModel['cargoScanner'],
   selectedResource: string,
@@ -42,6 +43,7 @@ function renderBuyerHints(
   }
 }
 
+// prettier-ignore
 function cargoMarkers(
   scanner: StarMapViewModel['cargoScanner'],
   selectedResource: string,
@@ -66,6 +68,7 @@ function cargoMarkers(
   return markers;
 }
 
+// prettier-ignore
 function renderMarketQuotes(
   quotes: NonNullable<StarMapViewModel['cargoScanner']>['markets'],
   currentDay: number,
@@ -113,6 +116,7 @@ function renderMarketQuotes(
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
+// prettier-ignore
 export function bindCargoMarketScanner(
   getModel: () => StarMapViewModel,
   cargoToggle: HTMLButtonElement,
