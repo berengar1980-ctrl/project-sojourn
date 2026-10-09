@@ -272,7 +272,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
     const component = wreck.component;
     if (!component || wreck.componentStatus !== 'available') return false;
     const stored = npc.salvageComponents ?? [];
-    const cargo = stored.reduce((sum, entry) => sum + 8 + 4 * Number(entry.componentId.match(/\\d+/)?.[0] ?? 1), 0);
+    const cargo = stored.reduce(
+      (sum, entry) => sum + 8 + 4 * Number(entry.componentId.match(/\\d+/)?.[0] ?? 1),
+      0
+    );
     if (cargoUsed(npc) + cargo + component.cargoTons > npc.cargoCapacity) return false;
     const ship = getShipDefinition(npc.shipId);
     if (!ship) return false;
