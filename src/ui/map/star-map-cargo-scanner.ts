@@ -14,10 +14,12 @@ function renderBuyerHints(
     const heading = document.createElement('p');
     heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
     container.append(heading);
-    if (selectedResource === 'all') {
+    if (selectedResource === 'all' && hints.length > 0) {
       const best = hints[0];
       const summary = document.createElement('strong');
-      summary.textContent = `BESTER VERMUTETER GESAMTMARKT: ${best.name} (${best.matchedQuantity} t mit besonderer Nachfrage)`;
+      summary.textContent = best
+        ? `BESTER VERMUTETER GESAMTMARKT: ${best.name} (${best.matchedQuantity} t mit besonderer Nachfrage)`
+        : '';
       container.append(summary);
     }
     for (const hint of hints.slice(0, 5)) {
