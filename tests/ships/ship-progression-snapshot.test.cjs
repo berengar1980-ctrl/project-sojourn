@@ -11,6 +11,10 @@ const loadouts = load('src/systems/ships/ship-loadout-service.ts');
 const research = load('src/systems/ships/shipyard-research-service.ts');
 const snapshots = load('src/systems/ships/ship-progression-snapshot.ts');
 
+const registry = load('src/systems/ships/ship-registry.ts');
+const ship = registry.getAllShipDefinitions()[0];
+assert(ship, 'a ship fixture must exist for loadout invariants');
+
 const player = { cargo: {}, reservedCargoTons: 0 };
 const owned = new Set(['miner', 'patrol']);
 const bag = inventory.createShipComponentInventoryService(player);
@@ -18,6 +22,18 @@ const part = bag.store('mine', 'mine-ion-1', 'wreck-1', 200, 'salvage');
 assert(part);
 const loads = loadouts.createShipLoadoutService();
 const found = research.createShipyardResearchService();
+const installed = loads.get(ship);
+const loadoutSnapshot = loads.snapshot();
+assert(loadoutSnapshot[ship.id], 'loadout snapshot must include initialized ships');
+const firstType = Object.keys(installed)[0];
+assert(firstType, 'fixture must have a component slot');
+const firstId = loadoutSnapshot[ship.id][firstType][0];
+loadoutSnapshot[ship.id][firstType][0] = 'tampered-component';
+assert.equal(loads.get(ship)[firstType][0], firstId, 'snapshot arrays must be detached');
+assert.equal(loads.setSlot(ship, 'mine', 1, 'mine-ion-1'), false);
+assert.equal(loads.get(ship).mine[0], '', 'invalid slot index must not mutate loadout');
+
+
 assert(found.registerComponent('weapon', 'special_performance_12_weapon1'));
 const initial = snapshots.createShipProgressionSnapshot('miner', owned, loads, bag, found);
 
