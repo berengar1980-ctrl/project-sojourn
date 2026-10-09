@@ -347,7 +347,7 @@ export class StrategicCombatRenderer {
     };
     particles.update(
       now, geometry.center, geometry.angle, geometry.width,
-      camera as never, this.context, width, height, fraction
+      camera, this.context, width, height, fraction
     );
   }
 
