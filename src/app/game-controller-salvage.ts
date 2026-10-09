@@ -1,3 +1,10 @@
+import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
+import {
+  advanceDistressTow,
+  createDistressTowState,
+  towShipAtExit,
+  type DistressTowState,
+} from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
@@ -76,6 +83,7 @@ type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
 interface SalvageSceneState {
   selectedNpcId: string | null;
   sectorEventResolved: boolean;
+  distressTow: DistressTowState | null;
   panel: SalvageSpacePanel | null;
 }
 
@@ -142,7 +150,8 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     salvageNpcShips(npcSalvage),
     state.selectedNpcId,
     options.getCombat?.() ?? null,
-    options.sectorEvent ?? null
+    options.sectorEvent ?? null,
+    state.distressTow
   );
 }
 
@@ -233,6 +242,15 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         refresh();
         return;
       }
+      if (options.sectorEvent?.distressStage === 'towing' &&
+          (!state.distressTow || !towShipAtExit(
+            snapshot.ship.position,
+            state.distressTow,
+            localSpaceExitPoint(width, height)
+          ))) {
+        options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
+        return;
+      }
       options.onReturnToStarMap();
     },
   });
@@ -262,6 +280,15 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
     service.tick(deltaSeconds);
+    if (context.state.distressTow) {
+      const player = service.getSnapshot().ship;
+      context.state.distressTow = advanceDistressTow(
+        context.state.distressTow,
+        player.position,
+        player.headingRadians,
+        deltaSeconds
+      );
+    }
     options.audio.updatePlayerRcs(
       options.ship.sprite.hardpoints,
       service.getSnapshot().ship,
@@ -318,6 +345,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
+      distressTow: options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
+        ? createDistressTowState(field.wrecks[0].position)
+        : null,
       panel: null,
     },
   };
