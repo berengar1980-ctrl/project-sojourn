@@ -37,6 +37,10 @@ assert.equal(accepted.service.acceptForPlayer(accepted.event.id), true);
 accepted.service.advanceDay(accepted.event.playerDeadlineDay, { x: 3500, y: 3000 }, true);
 assert(accepted.service.playerVisible.some((event) => event.id === accepted.event.id));
 assert.equal(accepted.service.claimForNpc(accepted.event.id, 'npc-1'), false);
+const completionDeadline = accepted.service.event(accepted.event.id).playerDeadlineDay;
+accepted.service.advanceDay(completionDeadline, { x: 3500, y: 3000 }, true);
+assert(!accepted.service.playerVisible.some((event) => event.id === accepted.event.id));
+assert.equal(accepted.service.claimForNpc(accepted.event.id, 'npc-1'), true);
 
 const tow = findDistress(
   (event) => event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control'
