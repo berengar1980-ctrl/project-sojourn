@@ -4,12 +4,12 @@ import { createStarMapEngagementService } from '../systems/combat';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import { createShipLoadoutService } from '../systems/ships';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
-import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { createPlayerCombatant } from './game-controller-combat';
-import { returnFromCombat, startCombatBoarding } from './game-controller-combat-boarding';
+import { startCombatBoarding } from './game-controller-combat-boarding';
+import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 import { createControllerStarPanel } from './game-controller-star-map';
 
@@ -113,28 +113,6 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
     onAcceptEvent: (id) => context.economy.salvageEvents.acceptForPlayer(id),
   });
   mountControllerSwitcher(context);
-}
-
-function mountControllerCombat(context: ControllerRuntimeContext): void {
-  const combat = context.engagements.activePlayerCombat();
-  if (!combat) return;
-  const { state } = context;
-  destroyScenePanels(state.panels);
-  destroyControllerSalvage(context);
-  destroyControllerCombat(context);
-  destroyControllerBoarding(context);
-  state.localSpace = null;
-  state.localNpcMining = null;
-  state.embeddedCombat = null;
-  state.mode = 'combat';
-  context.audio.clearPlayerRcs();
-  state.combatPanel = createStrategicCombatPanel({
-    root: context.root,
-    combat,
-    onReturn: () => returnFromCombat(context, combat, () => mountControllerStarMap(context)),
-  });
-  state.shipSwitcher?.destroy();
-  state.shipSwitcher = null;
 }
 
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
@@ -341,7 +319,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
   if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
-    mountControllerCombat(context);
+    mountCombatScene(context, () => mountControllerStarMap(context));
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
