@@ -41,7 +41,13 @@ const tractor = getShipComponent('tractor', 'tractor1');
 assert(tractor);
 assert.equal(tractor.type, 'tractor');
 assert(tractor.range > 0);
-const mockShip = (role) => ({ role, gameplayOverrides: {}, sprite: { hardpoints: {} } });
+const mockShip = (role) => ({
+  role,
+  gameplayOverrides: {},
+  cargoCapacityTons: 100,
+  navigation: { cruiseSpeed: 200 },
+  sprite: { hardpoints: {} },
+});
 assert.deepEqual(defaultInstalledShipComponents(mockShip('mining')).tractor, ['tractor1']);
 assert.deepEqual(defaultInstalledShipComponents(mockShip('salvage')).tractor, ['tractor1']);
 assert.deepEqual(defaultInstalledShipComponents(mockShip('patrol')).tractor, ['']);
