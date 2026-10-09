@@ -3345,11 +3345,13 @@ body {
   letter-spacing: 0.07em;
   cursor: pointer;
 }
+
 .map-cargo-scanner .cargo-route-button:hover,
 .map-cargo-scanner .cargo-route-button:focus-visible {
   border-color: #8cd7da;
   background: rgba(19, 84, 93, 0.96);
 }
+
 .map-cargo-scanner .cargo-route-button:active {
   background: #326a73;
 }
