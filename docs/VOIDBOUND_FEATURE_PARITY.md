@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-09 | Diagnosebutton für Notrufereignisse | Voidbound-Parität geprüft: keine Statusänderung. Sojourn-Bergungsoberfläche verarbeitet Diagnose, Notreparatur, Abschleppen und Evakuierung konsistent über `pointerdown` mit unterbundener Ereignisweitergabe, damit lokale Szeneneingaben den Einsatz nicht überlagern. `salvage.distress_rescue` bleibt teilweise. |
+
 | 2026-10-09 | PR #177 · Notruf-Parität und zeitgesteuerte Sektor-Events | Voidbound-Parität geprüft: `salvage.distress_rescue` bleibt **teilweise**, da trotz erweiterten Schadenprofilen, Crew-Diagnose, physischer Abschleppfahrt zur Werft, Auszahlung bei Übergabe und NPC-Rettungsabschlüssen noch nicht alle Voidbound-Einsatzvarianten und Integrationen nachgewiesen sind; `salvage.special_events` bleibt **umgesetzt**. Spieler erhalten eine Annahme- und Bearbeitungsfrist, danach verschwinden unvollständige Signale aus der Spielerkarte und werden NPC-Salvagern freigegeben. Die Erweiterung betrifft keine anderen Voidbound-Feature-IDs; keine Statusänderung. Siehe `tests/salvage/distress-rescue-parity.test.cjs` und `tests/salvage/sector-salvage-events.test.cjs`. |
 
 | Datum | PR/Änderung | Ergebnis |
