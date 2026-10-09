@@ -19,8 +19,23 @@ export function drawDistressTow(
   const mount = mounts.grapplingHooks?.[0];
   const anchor = mount ? projectHardpoint(mount, mounts, geometry) : geometry.center;
   const cargo = camera.worldToScreen(tow.position, width, height);
-  const dx = cargo.x - anchor.x;
-  const dy = cargo.y - anchor.y;
+  const role = event.wreckKind === 'salvager' ? 'salvage'
+    : event.wreckKind === 'miner' ? 'mining'
+      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+  const variants = getShipsByRole(role);
+  const ship = variants[(event.fieldSeed >>> 0) % variants.length];
+  const image = ship ? loadImage(ship.sprite.assetUrl) : null;
+  const shipWidth = ship ? camera.scale(ship.nominalLengthMeters) : 90;
+  const ratio = image?.naturalHeight ? image.naturalWidth / image.naturalHeight : 2;
+  const wreckMounts = ship?.sprite.hardpoints;
+  const wreckHook = wreckMounts?.grapplingHooks?.[0];
+  const attachment = wreckMounts && wreckHook
+    ? projectHardpoint(wreckHook, wreckMounts, {
+        center: cargo, width: shipWidth, height: shipWidth / ratio,
+        angle: tow.headingRadians,
+      }) : cargo;
+  const dx = attachment.x - anchor.x;
+  const dy = attachment.y - anchor.y;
   const distance = Math.max(1, Math.hypot(dx, dy));
   const time = tow.elapsedSeconds;
   context.save();
@@ -29,13 +44,13 @@ export function drawDistressTow(
     const tip = { x: anchor.x + dx * progress, y: anchor.y + dy * progress };
     context.setLineDash([8, 5]);
     context.lineWidth = 2;
-    context.strokeStyle = '#c1f7ff';
+    context.strokeStyle = '#606a70';
     context.beginPath();
     context.moveTo(anchor.x, anchor.y);
     context.lineTo(tip.x, tip.y);
     context.stroke();
     context.setLineDash([]);
-    context.fillStyle = '#efffff';
+    context.fillStyle = '#a5adb2';
     context.beginPath();
     context.translate(tip.x, tip.y);
     context.rotate(Math.atan2(dy, dx));
@@ -63,27 +78,20 @@ export function drawDistressTow(
       x: (anchor.x + cargo.x) / 2 + bend.x,
       y: (anchor.y + cargo.y) / 2 + bend.y,
     };
-    context.strokeStyle = tow.cableTension > 0.65 ? '#ffc88d' : '#b5cbd1';
-    context.lineWidth = 2.6;
+    context.strokeStyle = tow.cableTension > 0.65 ? '#919b9f' : '#636c72';
+    context.lineWidth = 2.2;
     context.beginPath();
     context.moveTo(anchor.x, anchor.y);
-    context.quadraticCurveTo(middle.x, middle.y, cargo.x, cargo.y);
+    context.quadraticCurveTo(middle.x, middle.y, attachment.x, attachment.y);
     context.stroke();
-    context.strokeStyle = 'rgba(210, 244, 255, 0.38)';
-    context.lineWidth = 1;
+    context.strokeStyle = 'rgba(210, 214, 215, 0.22)';
+    context.lineWidth = 0.65;
     context.stroke();
   }
-  const role = event.wreckKind === 'salvager' ? 'salvage'
-    : event.wreckKind === 'miner' ? 'mining'
-      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
-  const variants = getShipsByRole(role);
-  const ship = variants[(event.fieldSeed >>> 0) % variants.length];
-  const image = ship ? loadImage(ship.sprite.assetUrl) : null;
   context.translate(cargo.x, cargo.y);
   context.rotate(tow.headingRadians);
   if (image?.complete && image.naturalWidth > 0 && ship) {
     const ratio = image.naturalWidth / image.naturalHeight;
-    const shipWidth = camera.scale(ship.nominalLengthMeters);
     context.globalAlpha = 0.88;
     context.drawImage(image, -shipWidth / 2, -shipWidth / (2 * ratio), shipWidth, shipWidth / ratio);
   } else {
