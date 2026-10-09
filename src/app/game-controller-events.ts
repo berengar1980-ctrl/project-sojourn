@@ -87,11 +87,15 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
   economy.marketIntel.recordHistory(economy.situations.currentDay);
+  const before = new Set(economy.salvageEvents.playerVisible.map((event) => event.id));
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
     true
   );
+  for (const event of economy.salvageEvents.playerVisible) {
+    if (!before.has(event.id)) context.systemLog.write('SEKTOR-EVENT > ' + event.title.toUpperCase() + ' · STERNKARTE · 3 TAGE EXKLUSIV');
+  }
 }
 
 export function completeDistressTowOnArrival(
