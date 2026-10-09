@@ -6,7 +6,13 @@ import type {
 } from '../../core/salvage-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
-import { distressTrapChance, pickDistressProfile, pointDanger, profileFor, type DistressProfile } from './distress-profiles';
+import {
+  distressTrapChance,
+  pickDistressProfile,
+  pointDanger,
+  profileFor,
+  type DistressProfile,
+} from './distress-profiles';
 
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
