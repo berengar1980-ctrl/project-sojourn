@@ -122,6 +122,7 @@ export interface SalvageSpaceViewModel {
   readonly sectorEvent: SectorSalvageEvent | null;
   readonly distressTow: DistressTowState | null;
   readonly distressRamming: DistressRammingState | null;
+  readonly distressRepairing: boolean;
 }
 
 function wreckKindLabel(kind: SalvageWreckKind): string {
@@ -247,7 +248,8 @@ export function createSalvageSpaceViewModel(
   combat: StrategicCombatSnapshot | null = null,
   sectorEvent: SectorSalvageEvent | null = null,
   distressTow: DistressTowState | null = null,
-  distressRamming: DistressRammingState | null = null
+  distressRamming: DistressRammingState | null = null,
+  distressRepairing = false
 ): SalvageSpaceViewModel {
   const wrecks = wreckViews(snapshot);
   const cargoResources = cargoView(player);
@@ -289,5 +291,6 @@ export function createSalvageSpaceViewModel(
     sectorEvent,
     distressTow,
     distressRamming,
+    distressRepairing,
   };
 }
