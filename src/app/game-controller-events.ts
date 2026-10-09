@@ -94,7 +94,10 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
     true
   );
   for (const event of economy.salvageEvents.playerVisible) {
-    if (!before.has(event.id)) context.systemLog.write('SEKTOR-EVENT > ' + event.title.toUpperCase() + ' · STERNKARTE · 3 TAGE EXKLUSIV');
+    if (!before.has(event.id))
+      context.systemLog.write(
+        'SEKTOR-EVENT > ' + event.title.toUpperCase() + ' · STERNKARTE · 3 TAGE EXKLUSIV'
+      );
   }
 }
 
