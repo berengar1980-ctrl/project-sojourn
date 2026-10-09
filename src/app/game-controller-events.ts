@@ -36,7 +36,7 @@ function showDistressReward(context: ControllerRuntimeContext, result: DistressA
     textAlign: 'center',
     pointerEvents: 'none',
   });
-  context.root.append(notification);
+  context.root.ownerDocument.body.append(notification);
   setTimeout(() => notification.remove(), 6500);
 }
 
