@@ -76,6 +76,8 @@ function runtimeCombatantEscaped(
   arena: StrategicCombatArenaOptions
 ): boolean {
   if (combatant.tactic !== 'flee') return false;
+  if (combatant.shieldHp <= 0 && enemy.hullHp > 0 &&
+      distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)) return false;
   const atEdge =
     combatant.position.x <= EDGE_PADDING + 8 ||
     combatant.position.x >= arena.width - EDGE_PADDING - 8 ||
