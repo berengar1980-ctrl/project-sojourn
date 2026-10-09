@@ -22,6 +22,16 @@ jobs:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
+          name: Export state snapshot Prettier patch
+          when: always
+          command: |
+            mkdir -p /tmp/state-prettier
+            npx prettier --write src/systems/ships/ship-loadout-service.ts src/systems/ships/ship-component-inventory-service.ts src/systems/ships/ship-progression-snapshot.ts src/systems/ships/index.ts tests/ships/ship-progression-snapshot.test.cjs
+            git diff -- src/systems/ships/ship-loadout-service.ts src/systems/ships/ship-component-inventory-service.ts src/systems/ships/ship-progression-snapshot.ts src/systems/ships/index.ts tests/ships/ship-progression-snapshot.test.cjs > /tmp/state-prettier/prettier.patch
+      - store_artifacts:
+          path: /tmp/state-prettier
+          destination: state-prettier
+      - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
