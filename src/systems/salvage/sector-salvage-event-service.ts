@@ -124,8 +124,8 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     seed: number
   ) {
     this.random = randomFrom(seed);
-    this.nextSpecialDay = 1 + Math.floor(this.random() * 2);
-    this.nextDistressDay = 2 + Math.floor(this.random() * 2);
+    this.nextSpecialDay = 0;
+    this.nextDistressDay = 0;
   }
 
   get active(): readonly SectorSalvageEvent[] {
