@@ -88,6 +88,38 @@ function extractDetail(output, primary) {
   return errorLine ? truncate(errorLine) : null;
 }
 
+// GitHub commit status descriptions are limited to 140 characters.
+// Publish a small, bounded set of distinct error lines as separate check contexts.
+function extractDiagnosticLines(output, primary, maxLines = 5) {
+  const candidates = output
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const patterns = [
+    /^FAIL\s/,
+    /^\[warn\]\s+.+\.(?:ts|tsx|js|cjs|mjs|json|md|yml|yaml|html)$/,
+    /\.(?:ts|tsx)\(\d+,\d+\):\s+error TS\d+:/,
+    /\berror\b/i,
+    /AssertionError/,
+    /Expected values to be strictly equal/,
+    /\bactual:/,
+    /\bexpected:/,
+    /\bnot ok\b/i,
+    /\bfailed\b/i,
+  ];
+  const relevant = candidates.filter((line) => patterns.some((pattern) => pattern.test(line)));
+  const unique = [];
+  const seen = new Set([compact(primary)]);
+  for (const line of relevant) {
+    const clean = truncate(normalizeFile(line));
+    if (seen.has(clean) || !clean) continue;
+    seen.add(clean);
+    unique.push(clean);
+    if (unique.length >= maxLines) break;
+  }
+  return unique;
+}
+
 async function postStatus(state, label, description) {
   const token = process.env.SOJOURN_GITHUB_STATUS_TOKEN;
   const owner = process.env.CIRCLE_PROJECT_USERNAME;
@@ -182,7 +214,11 @@ async function run() {
   const diagnostic = extractDiagnostic(captured, label);
   await postStatus('failure', label, diagnostic);
   const detail = extractDetail(captured, diagnostic);
-  if (detail) await postStatus('failure', label + ' detail', detail);
+  const lines = extractDiagnosticLines(captured, diagnostic);
+  if (detail && !lines.includes(detail)) lines.unshift(detail);
+  for (const [index, line] of lines.slice(0, 5).entries()) {
+    await postStatus('failure', label + ' error ' + (index + 1) + ': ' + truncate(line, 72), line);
+  }
   process.exitCode = exitCode;
 }
 
@@ -203,4 +239,9 @@ if (require.main === module) {
   });
 }
 
-module.exports = { extractDiagnostic, extractDetail, truncate };
+module.exports = {
+  extractDiagnostic,
+  extractDetail,
+  extractDiagnosticLines,
+  truncate,
+};
