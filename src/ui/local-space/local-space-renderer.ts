@@ -156,7 +156,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
-    drawLocalSpaceExitGate(this.context, this.camera, width, height, this.model.width, this.model.height);
+    drawLocalSpaceExitGate(
+      this.context,
+      this.camera,
+      width,
+      height,
+      this.model.width,
+      this.model.height
+    );
     this.drawLongRangeScan(width, height, timeSeconds);
     this.drawShortRangeScan(width, height, timeSeconds);
     this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'below');
