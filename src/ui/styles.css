@@ -5,7 +5,7 @@
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
-    "Segoe UI",
+    'Segoe UI',
     sans-serif;
   color: #dce6ee;
   background: #03060a;
@@ -93,7 +93,7 @@ body {
   background: rgba(5, 13, 18, 0.78);
   color: #8eaab6;
   cursor: pointer;
-  font-family: "Courier New", ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
   font-size: 8px;
   letter-spacing: 0.12em;
 }
@@ -131,7 +131,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 2;
-  content: "";
+  content: '';
   pointer-events: none;
   opacity: 0.18;
   background: repeating-linear-gradient(
@@ -436,11 +436,11 @@ body {
   background: rgba(139, 91, 34, 0.3);
 }
 
-.local-mining-event__actions button[data-risk="high_risk"] {
+.local-mining-event__actions button[data-risk='high_risk'] {
   border-color: rgba(201, 91, 74, 0.48);
 }
 
-.local-mining-event__actions button[data-risk="risky"] {
+.local-mining-event__actions button[data-risk='risky'] {
   border-color: rgba(205, 147, 69, 0.45);
 }
 
@@ -516,11 +516,11 @@ body {
   background: rgba(139, 91, 34, 0.3);
 }
 
-.salvage-event__actions button[data-risk="high_risk"] {
+.salvage-event__actions button[data-risk='high_risk'] {
   border-color: rgba(201, 91, 74, 0.48);
 }
 
-.salvage-event__actions button[data-risk="risky"] {
+.salvage-event__actions button[data-risk='risky'] {
   border-color: rgba(205, 147, 69, 0.45);
 }
 
@@ -843,7 +843,7 @@ body {
     inset 0 0 28px rgba(43, 175, 67, 0.06),
     0 0 12px rgba(69, 213, 92, 0.08);
   color: #72ff91;
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: 'Courier New', ui-monospace, SFMono-Regular, Consolas, monospace;
   pointer-events: none;
   text-shadow:
     0 0 4px rgba(88, 255, 119, 0.38),
@@ -855,7 +855,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 2;
-  content: "";
+  content: '';
   pointer-events: none;
 }
 
@@ -901,7 +901,7 @@ body {
 .system-log-header::after {
   margin-left: 8px;
   color: rgba(119, 255, 141, 0.42);
-  content: "▮";
+  content: '▮';
   animation: system-log-cursor 1.05s infinite steps(1, end);
 }
 
@@ -997,6 +997,7 @@ body {
     background-position-y: 12px;
   }
 }
+
 @keyframes system-log-glitch-band {
   0%,
   38%,
@@ -1389,7 +1390,7 @@ body {
   height: 2px;
   background: #70d7e8;
   box-shadow: 0 0 8px rgba(112, 215, 232, 0.6);
-  content: "";
+  content: '';
 }
 
 .port-tabs button:disabled {
@@ -1997,6 +1998,7 @@ body {
   align-items: center;
   gap: 7px;
 }
+
 .port-legality {
   padding: 2px 4px;
   border: 1px solid rgba(107, 149, 163, 0.2);
@@ -2536,7 +2538,7 @@ body {
   border: 1px solid rgba(182, 101, 85, 0.26);
   background: rgba(13, 11, 12, 0.78);
   color: #d9aaa0;
-  font-family: "Courier New", ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
   text-align: center;
@@ -2995,7 +2997,8 @@ body {
   background: rgba(8, 13, 16, 0.9);
   color: #d8e0df;
   font-size: 10px;
-  letter-spacing: 0.05em;}
+  letter-spacing: 0.05em;
+}
 
 .sector-salvage-event[hidden] {
   display: none !important;
@@ -3186,7 +3189,7 @@ body {
   top: 16px;
   right: 18px;
   z-index: 1000;
-  font-family: "Courier New", ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
 }
 
 .settings-menu__toggle,
@@ -3329,26 +3332,4 @@ body {
   gap: 4px;
   padding-top: 12px;
   border-top: 1px solid rgba(92, 148, 166, 0.14);
-}
-
-/* Cargo trading is an optional map overlay, not a permanent sidebar. */
-.map-cargo-scanner .cargo-route-button {
-  margin: 5px 0 0 7px;
-  padding: 4px 7px;
-  border: 1px solid rgba(101, 189, 205, 0.64);
-  background: rgba(6, 38, 49, 0.94);
-  color: #a7e6ee;
-  font: 10px "Courier New", ui-monospace, monospace;
-  letter-spacing: 0.07em;
-  cursor: pointer;
-}
-
-.map-cargo-scanner .cargo-route-button:hover,
-.map-cargo-scanner .cargo-route-button:focus-visible {
-  border-color: #8cd7da;
-  background: rgba(19, 84, 93, 0.96);
-}
-
-.map-cargo-scanner .cargo-route-button:active {
-  background: #326a73;
 }
