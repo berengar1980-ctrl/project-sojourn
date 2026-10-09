@@ -277,6 +277,19 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
       )
       .sort((a, b) => a.expiresDay - b.expiresDay)[0];
     if (!target) return;
+    const contenders = this.options.sector.npcs
+      .filter((other) =>
+        other.job === 'salvager' && other.hullHp > 0 &&
+        !other.combatMovement && !other.travel && !other.salvageEventId
+      )
+      .sort((first, second) => {
+        const a = this.options.sector.livePosition(first);
+        const c = this.options.sector.livePosition(second);
+        const distanceA = Math.hypot(a.x - target.position.x, a.y - target.position.y);
+        const distanceB = Math.hypot(c.x - target.position.x, c.y - target.position.y);
+        return distanceA - distanceB || first.id.localeCompare(second.id);
+      });
+    if (contenders[0]?.id !== npc.id) return;
     if (!this.options.events.claimForNpc(target.id, npc.id)) return;
 
     const started = startEventTravel(
