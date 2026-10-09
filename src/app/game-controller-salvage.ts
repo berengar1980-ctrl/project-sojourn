@@ -31,6 +31,7 @@ import {
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
+  beginDistressTow(event: SectorSalvageEvent): void;
   tick(deltaSeconds: number): void;
   finishCombat(snapshot: StrategicCombatSnapshot): void;
   destroy(): void;
@@ -83,6 +84,7 @@ type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
 interface SalvageSceneState {
   selectedNpcId: string | null;
   sectorEventResolved: boolean;
+  activeSectorEvent: SectorSalvageEvent | null;
   distressTow: DistressTowState | null;
   panel: SalvageSpacePanel | null;
 }
@@ -150,7 +152,7 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     salvageNpcShips(npcSalvage),
     state.selectedNpcId,
     options.getCombat?.() ?? null,
-    options.sectorEvent ?? null,
+    state.activeSectorEvent,
     state.distressTow
   );
 }
@@ -243,7 +245,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         return;
       }
       if (
-        options.sectorEvent?.distressStage === 'towing' &&
+        state.activeSectorEvent?.distressStage === 'towing' &&
         (!state.distressTow ||
           !towShipAtExit(
             snapshot.ship.position,
@@ -356,6 +358,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
+      activeSectorEvent: options.sectorEvent ?? null,
       distressTow:
         options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
           ? createDistressTowState(field.wrecks[0].position)
@@ -371,6 +374,13 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
+    beginDistressTow(event) {
+      context.state.activeSectorEvent = event;
+      const wreck = context.field.wrecks[0];
+      if (wreck) context.state.distressTow = createDistressTowState(wreck.position);
+      options.log.write('SCHLEPPEN > GREIFHAKEN ABGESCHOSSEN');
+      refreshSalvageScene(context);
+    },
     finishCombat(snapshot) {
       finishSalvageCombat(context, snapshot);
     },
