@@ -46,6 +46,8 @@ const renderer = fs.readFileSync(path.join(root, 'src/ui/salvage/distress-tow-re
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-salvage.ts'), 'utf8');
 assert(renderer.includes('grapplingHooks'));
 assert(renderer.includes('quadraticCurveTo'));
+const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
+assert(registry.includes('points.pivot.x - points.sourceWidth * 0.24'));
 assert(controller.includes('advanceDistressTow('));
 assert(controller.includes('towShipAtExit('));
 console.log('PASS grapple launch, inertial tow drift, cable tension and two-ship exit gate');
