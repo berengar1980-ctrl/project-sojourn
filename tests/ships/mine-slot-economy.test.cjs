@@ -37,6 +37,7 @@ assert(ship.includes("mine: ['']"), 'ship starts with empty dedicated mine slot'
 assert(port.includes("'mine'"), 'mine modules must appear in shipyard catalog');
 assert(localNpc.includes('salvage.recoverComponent(wreck.id)'));
 assert(localNpc.includes('npc.salvageComponents = stored'));
-assert(port.includes('if (removed) componentInventory.take(removed.uid)'));
+assert(port.includes('if (removedUid) componentInventory.take(removedUid)'));
+assert(port.includes('rollbackShipyardSwap(context, type, removed?.uid ?? null, selected)'));
 assert(port.includes('if (selected)'), 'failed swaps must restore selected inventory parts');
 console.log('PASS mine modules, NPC salvage, and shipyard rollback wiring');
