@@ -230,7 +230,13 @@ function setShipyardComponentSlot(
   const selected = item ? componentInventory.take(item.uid) : null;
   if (item && !selected) return;
   const removed = before
-    ? componentInventory.store(type, before, 'removed-' + ship.id, runtime.cargoCapacityTons, 'removed')
+    ? componentInventory.store(
+        type,
+        before,
+        'removed-' + ship.id,
+        runtime.cargoCapacityTons,
+        'removed'
+      )
     : null;
   if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
     if (removed) componentInventory.take(removed.uid);
@@ -257,8 +263,6 @@ function createShipyardCallbacks(
   'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant' | 'onBuyShip'
 > {
   const {
-    ship,
-    loadouts,
     componentInventory,
     shipyardResearch,
     trade,
