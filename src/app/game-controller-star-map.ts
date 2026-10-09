@@ -24,6 +24,7 @@ export function createControllerStarPanel(options: {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
+  readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
   ) => { readonly position: { readonly x: number; readonly y: number } } | null;
@@ -47,7 +48,10 @@ export function createControllerStarPanel(options: {
         }
       }
       const event = options.eventById?.(id);
-      if (event) options.navigation.selectPointDestination(id, event.position);
+      if (event) {
+        options.onAcceptEvent?.(id);
+        options.navigation.selectPointDestination(id, event.position);
+      }
       else options.navigation.selectDestination(id);
       panel?.update(options.getModel());
     },
