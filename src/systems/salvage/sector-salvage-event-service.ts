@@ -277,8 +277,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     const event = this.distress(id);
     if (!event || event.distressStage !== 'diagnosed') return null;
     const profile = profileFor(event.distressDamage);
-    if (!profile.critical)
-      return emptyResult('Evakuierung ist bei diesem Schaden nicht erforderlich.');
     if (event.distressTrap) {
       return {
         ...emptyResult('Der Hilferuf ist ein Hinterhalt. Enterkampf ausgelöst.'),
