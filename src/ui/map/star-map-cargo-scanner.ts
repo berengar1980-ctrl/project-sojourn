@@ -1,5 +1,26 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 
+function renderBuyerHints(
+  scanner: StarMapViewModel['cargoScanner'],
+  selectedResource: string,
+  container: HTMLElement
+): void {
+  const hints = (scanner?.hints ?? []).filter((hint) => {
+    if (selectedResource === 'all') return true;
+    return hint.resourceIds.includes(selectedResource);
+  });
+  if (hints.length) {
+    const heading = document.createElement('p');
+    heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
+    container.append(heading);
+    for (const hint of hints.slice(0, 5)) {
+      const item = document.createElement('div');
+      item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
+      container.append(item);
+    }
+  }
+}
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -45,10 +66,11 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
+    renderBuyerHints(scanner, preferredCargoResource, cargoContent);
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
-        'Noch keine Marktdaten bekannt. Sensoren oder Hafenbesuche liefern Preisinformationen.';
+        'Noch keine bestätigten Verkaufspreise bekannt. Die Käuferhinweise oben basieren auf Nachfrageprofilen.';
       cargoContent.append(empty);
       return;
     }
