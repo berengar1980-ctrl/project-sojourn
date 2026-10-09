@@ -1,6 +1,6 @@
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { PortCommodityDefinition, PortDefinition } from '../../core/port-types';
-import { economyResourceById } from '../economy/economy-resources';
+import { economyResourceById, economyResources } from '../economy/economy-resources';
 import { sectorPortProfiles, type PortProfile } from './sector-port-profiles';
 
 function clamp(value: number, min: number, max: number): number {
@@ -31,9 +31,9 @@ function commodity(
   }
   return {
     id,
-    stock: clamp(Math.round(baseline * 1.05), 28, 7600),
-    demand: 0.55,
-    production: 0.08,
+    stock: clamp(Math.round(baseline * 2), 28, 7600),
+    demand: 0.12,
+    production: 0.02,
   };
 }
 
@@ -41,7 +41,12 @@ function makePort(profile: PortProfile): PortDefinition {
   const produced = new Set(profile.produces);
   const needed = new Set(profile.needs);
   const commodityIds = [
-    ...new Set([...profile.produces, ...profile.needs, ...(profile.trades ?? [])]),
+    ...new Set([
+      ...profile.produces,
+      ...profile.needs,
+      ...(profile.trades ?? []),
+      ...economyResources.filter((resource) => resource.legality === 'legal').map((resource) => resource.id),
+    ]),
   ];
   return {
     locationId: profile.locationId,
