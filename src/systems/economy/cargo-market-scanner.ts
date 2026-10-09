@@ -19,6 +19,7 @@ export interface CargoResourceQuote {
   readonly name: string;
   readonly quantity: number;
   readonly best: CargoSaleQuote | null;
+  readonly markets: readonly CargoSaleQuote[];
 }
 
 export interface CargoMarketScanner {
@@ -84,7 +85,7 @@ export function scanCargoMarkets(options: {
           coveredQuantity: item.quantity, totalQuantity: item.quantity,
         }];
       }).sort((a, b) => b.revenue - a.revenue || a.distance - b.distance);
-    return { ...item, best: matches[0] ?? null };
+    return { ...item, best: matches[0] ?? null, markets: matches };
   });
   return { resources, markets, currentDay: options.currentDay };
 }
