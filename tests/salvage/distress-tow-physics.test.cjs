@@ -12,6 +12,15 @@ const { createDistressTowState, advanceDistressTow, towShipAtExit } = loadStanda
 );
 let tow = createDistressTowState({ x: 1250, y: 950 });
 assert.equal(tow.attached, false, 'the hook must fly before connecting');
+const starting = createDistressTowState({ x: 1250, y: 950 });
+const singleFrame = advanceDistressTow(starting, { x: 1750, y: 950 }, 0, 0.2);
+let stepped = starting;
+for (let i = 0; i < 8; i += 1) {
+  stepped = advanceDistressTow(stepped, { x: 1750, y: 950 }, 0, 0.025);
+}
+assert(Math.abs(singleFrame.position.x - stepped.position.x) < 0.01);
+assert.equal(singleFrame.attached, stepped.attached);
+
 for (let i = 0; i < 15; i += 1) {
   tow = advanceDistressTow(tow, { x: 1500, y: 950 }, 0, 0.05);
 }
