@@ -216,6 +216,40 @@ function buyShipAtShipyard(context: ActivePortContext, id: string): void {
   context.onChangeShip(next);
 }
 
+function setShipyardComponentSlot(
+  context: ActivePortContext,
+  type: ShipComponentType,
+  index: number,
+  uid: string | null
+): void {
+  const { componentInventory, loadouts, ship, runtime, log, onRefresh } = context;
+  const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
+  if (uid && (!item || item.type !== type)) return;
+  const before = loadouts.get(ship)[type]?.[index] ?? null;
+  if (before === (item?.componentId ?? null)) return;
+  const selected = item ? componentInventory.take(item.uid) : null;
+  if (item && !selected) return;
+  const removed = before
+    ? componentInventory.store(type, before, 'removed-' + ship.id, runtime.cargoCapacityTons, 'removed')
+    : null;
+  if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
+    if (removed) componentInventory.take(removed.uid);
+    if (selected) {
+      componentInventory.store(
+        type,
+        selected.componentId,
+        selected.sourceWreckId,
+        runtime.cargoCapacityTons,
+        selected.source
+      );
+    }
+    log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
+    return;
+  }
+  log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
+  onRefresh();
+}
+
 function createShipyardCallbacks(
   context: ActivePortContext
 ): Pick<
@@ -235,39 +269,7 @@ function createShipyardCallbacks(
   } = context;
 
   return {
-    onSetComponentSlot: (type: ShipComponentType, index: number, uid: string | null) => {
-      const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
-      if (uid && (!item || item.type !== type)) return;
-      const before = loadouts.get(ship)[type]?.[index] ?? null;
-      if (before === (item?.componentId ?? null)) return;
-      const selected = item ? componentInventory.take(item.uid) : null;
-      if (item && !selected) return;
-      const removed = before
-        ? componentInventory.store(
-            type,
-            before,
-            'removed-' + ship.id,
-            runtime.cargoCapacityTons,
-            'removed'
-          )
-        : null;
-      if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
-        if (removed) componentInventory.take(removed.uid);
-        if (selected) {
-          componentInventory.store(
-            type,
-            selected.componentId,
-            selected.sourceWreckId,
-            runtime.cargoCapacityTons,
-            selected.source
-          );
-        }
-        log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
-        return;
-      }
-      log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
-      onRefresh();
-    },
+    onSetComponentSlot: (type, index, uid) => setShipyardComponentSlot(context, type, index, uid),
     onSellLooseComponent: (uid) => {
       const item = componentInventory.list().find((component) => component.uid === uid);
       if (!item) return;
