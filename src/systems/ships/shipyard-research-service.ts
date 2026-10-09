@@ -25,9 +25,7 @@ export function createShipyardResearchService(): ShipyardResearchService {
 
   return {
     snapshot() {
-      return Object.fromEntries(
-        [...discovered].map(([id, value]) => [id, { ...value }])
-      );
+      return Object.fromEntries([...discovered].map(([id, value]) => [id, { ...value }]));
     },
 
     registerComponent(type, componentId) {
