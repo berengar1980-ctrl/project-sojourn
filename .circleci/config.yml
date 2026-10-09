@@ -22,6 +22,16 @@ jobs:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
+          name: Export integration Prettier patch
+          when: always
+          command: |
+            mkdir -p /tmp/integration-prettier
+            npx prettier --write src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts tests/ships/mine-slot-economy.test.cjs
+            git diff -- src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts tests/ships/mine-slot-economy.test.cjs > /tmp/integration-prettier/prettier.patch
+      - store_artifacts:
+          path: /tmp/integration-prettier
+          destination: integration-prettier
+      - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
