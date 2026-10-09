@@ -112,6 +112,40 @@ export function equipmentPane(): string {
   `;
 }
 
+const SHIP_ROLE_NAMES: Readonly<Record<string, string>> = {
+  patrol: 'PATROUILLE',
+  mining: 'MINING',
+  salvage: 'BERGUNG',
+  freighter: 'FRACHTER',
+};
+
+function shipyardShipOffers(model: PortViewModel): string {
+  return model.shipyard.ships
+    .map(
+      (offer) => `
+        <article class="port-yard-ship" data-yard-ship="${offer.id}" data-yard-role="${offer.role}" hidden>
+          <div class="port-yard-preview">
+            <img src="${offer.spriteUrl}" alt="${offer.name}" loading="lazy">
+            <div class="port-yard-preview-label"><span>${SHIP_ROLE_NAMES[offer.role] ?? offer.role.toUpperCase()}</span><strong>${offer.name}</strong><small>${offer.lengthMeters} METER · MK I–${['', 'I', 'II', 'III', 'IV', 'V', 'VI'][offer.maxComponentTier] ?? offer.maxComponentTier}</small></div>
+          </div>
+          <div class="port-yard-specifications">
+            <div><span>HÜLLE</span><strong>${offer.hullMaxHp}</strong></div>
+            <div><span>SCHILD</span><strong>${offer.shieldMaxHp}</strong></div>
+            <div><span>REISEGESCHWINDIGKEIT</span><strong>${offer.speed}</strong></div>
+            <div><span>FRACHTRAUM</span><strong>${offer.cargoCapacityTons} t</strong></div>
+            <div><span>WAFFENSLOTS</span><strong>${offer.weaponSlots}</strong></div>
+            <div><span>CREW-KOJEN</span><strong>${offer.crewBerths}</strong></div>
+          </div>
+          <div class="port-yard-buy-footer">
+            <div><small>${offer.owned ? 'BEREITS IN BESITZ' : 'KAUFPREIS'}</small><strong>${offer.owned ? 'EIGENES SCHIFF' : offer.price.toLocaleString('de-DE') + ' CR'}</strong></div>
+            <button type="button" data-buy-ship-id="${offer.id}" ${!offer.owned && model.player.credits < offer.price ? 'disabled' : ''}>${offer.owned ? 'SCHIFF AUSWÄHLEN' : 'SCHIFF KAUFEN'}</button>
+          </div>
+        </article>
+      `
+    )
+    .join('');
+}
+
 export function shipyardPane(model: PortViewModel): string {
   const loose =
     model.shipyard.loose.length === 0
@@ -144,21 +178,30 @@ export function shipyardPane(model: PortViewModel): string {
   return `
     <section class="port-pane" data-port-pane="shipyard" hidden>
       <div class="port-wide-panel">
-        <div class="port-panel-heading"><span>WERFT</span><small>BERGUNGSTECHNOLOGIE</small></div>
-        <div class="port-ship-overview"><img src="${model.ship.spriteUrl}" alt=""><div><span>AKTIVER RUMPF</span><strong>${model.ship.name}</strong><small>Geborgene Sonderkomponenten können verkauft und analysiert werden.</small></div></div>
-        <div class="port-panel-heading"><span>SCHIFFSHANDEL</span><small>KAUF / BESITZ</small></div>
-        <div class="port-shipyard-list">
-          ${model.shipyard.ships
-            .map(
-              (offer) => `
-            <div class="port-shipyard-row">
-              <div><strong>${offer.name}</strong><small>${offer.role.toUpperCase()}</small></div>
-              <span>${offer.owned ? 'IN BESITZ' : offer.price.toLocaleString('de-DE') + ' CR'}</span>
-              <button type="button" data-buy-ship-id="${offer.id}" ${!offer.owned && model.player.credits < offer.price ? 'disabled' : ''}>${offer.owned ? 'AUSWÄHLEN' : 'KAUFEN'}</button>
-            </div>`
-            )
-            .join('')}
+        <div class="port-panel-heading"><span>WERFT</span><small>SCHIFFSKAUF / KOMPONENTEN</small></div>
+        <nav class="port-yard-tabs" aria-label="Werftbereiche">
+          <button type="button" class="is-active" data-yard-view="ships">SCHIFFSKAUF</button>
+          <button type="button" data-yard-view="components">KOMPONENTEN & UPGRADES</button>
+        </nav>
+        <div class="port-yard-section" data-yard-section="ships">
+          <div class="port-panel-heading"><span>SCHIFFSKATALOG</span><small>RUMPF / TECHNISCHE DATEN / KAUF</small></div>
+          <div class="port-yard-browse">
+            <label>SCHIFFSTYP
+              <select data-yard-role-select>
+                <option value="patrol">PATROUILLE</option>
+                <option value="mining">MINING</option>
+                <option value="salvage">BERGUNG</option>
+                <option value="freighter">FRACHTER</option>
+              </select>
+            </label>
+            <label>MODELL
+              <select data-yard-ship-select></select>
+            </label>
+            <span data-yard-ship-count></span>
+          </div>
+          <div class="port-yard-ship-stage">${shipyardShipOffers(model)}</div>
         </div>
+        <div class="port-yard-section" data-yard-section="components" hidden>
         <div class="port-panel-heading"><span>KOMPONENTENMARKT MK I–VI</span><small>GENAU EIN BONUS</small></div>
         <div class="port-shipyard-row">
           <select data-yard-catalog>
@@ -176,6 +219,7 @@ export function shipyardPane(model: PortViewModel): string {
         <div class="port-shipyard-list">${loose}</div>
         <div class="port-panel-heading"><span>FREIGESCHALTETE WERFTVARIANTEN</span><small>GEMEINSAMER FORSCHUNGSSTAND</small></div>
         <div class="port-shipyard-list">${variants}</div>
+        </div>
       </div>
     </section>
   `;
