@@ -136,8 +136,6 @@ export class StrategicCombatRenderer {
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
     this.drawBeams(width, height);
-    this.drawShip(this.model.attacker, width, height, timeSeconds);
-    this.drawShip(this.model.defender, width, height, timeSeconds);
     drawCombatGrapple(
       this.context,
       this.model,
@@ -150,6 +148,8 @@ export class StrategicCombatRenderer {
         return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
       }
     );
+    this.drawShip(this.model.attacker, width, height, timeSeconds);
+    this.drawShip(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
