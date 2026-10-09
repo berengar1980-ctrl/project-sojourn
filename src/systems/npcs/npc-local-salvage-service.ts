@@ -10,7 +10,12 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import { getShipComponent, getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
+import {
+  getShipComponent,
+  getShipDefinition,
+  resolveShipRuntimeSetup,
+  stationFactor,
+} from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 export type LocalNpcSalvagePhase =
@@ -122,7 +127,8 @@ function chooseWreck(
   occupied: ReadonlySet<string>
 ): SalvageWreck | null {
   const candidates = field.wrecks.filter(
-    (wreck) => !occupied.has(wreck.id) &&
+    (wreck) =>
+      !occupied.has(wreck.id) &&
       (wreckRemaining(wreck) > 0 || wreck.componentStatus === 'available')
   );
   if (candidates.length === 0) return null;
@@ -272,7 +278,8 @@ class LocalSalvageService implements NpcLocalSalvageService {
     if (!ship) return false;
     const salvage = createSalvageFieldService({
       field: this.options.field,
-      setup: resolveShipRuntimeSetup(ship, { installed: ensureNpcInstalledComponents(npc) }).salvage,
+      setup: resolveShipRuntimeSetup(ship, { installed: ensureNpcInstalledComponents(npc) })
+        .salvage,
       crewSkill: Math.min(90, 32 + npc.successfulRuns * 2),
       collect: () => 0,
       collectComponent: () => {
