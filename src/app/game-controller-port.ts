@@ -200,6 +200,21 @@ function createTradeCallbacks(
   };
 }
 
+function buyShipAtShipyard(context: ActivePortContext, id: string): void {
+  const next = getAllShipDefinitions().find((entry) => entry.id === id);
+  if (!next || !context.port.shipyard) return;
+  if (context.ownedShipIds.has(id)) {
+    context.onChangeShip(next);
+    return;
+  }
+  const price = Math.round(next.nominalLengthMeters * 12000);
+  if (context.trade.player.credits < price) return;
+  context.trade.player.credits -= price;
+  context.ownedShipIds.add(id);
+  context.log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
+  context.onChangeShip(next);
+}
+
 function createShipyardCallbacks(
   context: ActivePortContext
 ): Pick<
@@ -259,20 +274,7 @@ function createShipyardCallbacks(
       );
       onRefresh();
     },
-    onBuyShip: (id) => {
-      const next = getAllShipDefinitions().find((entry) => entry.id === id);
-      if (!next || !context.port.shipyard) return;
-      if (context.ownedShipIds.has(id)) {
-        context.onChangeShip(next);
-        return;
-      }
-      const price = Math.round(next.nominalLengthMeters * 12000);
-      if (trade.player.credits < price) return;
-      trade.player.credits -= price;
-      context.ownedShipIds.add(id);
-      log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
-      context.onChangeShip(next);
-    },
+    onBuyShip: (id) => buyShipAtShipyard(context, id),
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
       const baseOffer = getCompatibleShipComponents(type, context.gameplay.maxComponentTier).some(
