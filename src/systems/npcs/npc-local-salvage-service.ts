@@ -11,7 +11,6 @@ import {
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
 import {
-  getShipComponent,
   getShipDefinition,
   resolveShipRuntimeSetup,
   stationFactor,
