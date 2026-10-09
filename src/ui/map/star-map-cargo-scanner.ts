@@ -164,8 +164,7 @@ export function bindCargoMarketScanner(
       const complete = quotes.find((quote) => quote.coveredQuantity === quote.totalQuantity);
       if (complete) {
         const recommendation = document.createElement('strong');
-        recommendation.textContent =
-          `BESTER BEKANNTER GESAMTVERKAUF: ${complete.name} · ${formatCredits(complete.revenue)}`;
+        recommendation.textContent = `BESTER BEKANNTER GESAMTVERKAUF: ${complete.name} · ${formatCredits(complete.revenue)}`;
         cargoContent.append(recommendation);
       }
     }
