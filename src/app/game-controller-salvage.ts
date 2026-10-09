@@ -1,3 +1,4 @@
+import { advanceDistressRamming, createDistressRammingState, type DistressRammingState } from '../systems/salvage/distress-ramming-physics';
 import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
@@ -87,6 +88,7 @@ interface SalvageSceneState {
   sectorEventResolved: boolean;
   activeSectorEvent: SectorSalvageEvent | null;
   distressTow: DistressTowState | null;
+  distressRamming: DistressRammingState | null;
   panel: SalvageSpacePanel | null;
 }
 
@@ -154,7 +156,8 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     state.selectedNpcId,
     options.getCombat?.() ?? null,
     state.activeSectorEvent,
-    state.distressTow
+    state.distressTow,
+    state.distressRamming
   );
 }
 
@@ -290,6 +293,22 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
     service.tick(deltaSeconds);
+    if (context.state.distressRamming && !context.state.distressTow) {
+      const snapshot = service.getSnapshot();
+      const wreck = context.field.wrecks[0];
+      if (wreck) {
+        const result = advanceDistressRamming(
+          context.state.distressRamming,
+          snapshot.ship.position,
+          wreck.position,
+          options.ship.nominalLengthMeters * 0.42,
+          wreck.radius,
+          deltaSeconds
+        );
+        context.state.distressRamming = result.state;
+        context.field.wrecks[0] = { ...wreck, position: result.position };
+      }
+    }
     if (context.state.distressTow) {
       const player = service.getSnapshot().ship;
       context.state.distressTow = advanceDistressTow(
@@ -364,6 +383,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
       activeSectorEvent: options.sectorEvent ?? null,
+      distressRamming: options.sectorEvent?.type === 'distress-rescue'
+        ? createDistressRammingState(service.getSnapshot().ship.position)
+        : null,
       distressTow:
         options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
           ? createDistressTowState(field.wrecks[0].position)
