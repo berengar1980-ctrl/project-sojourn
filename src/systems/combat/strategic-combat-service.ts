@@ -222,6 +222,13 @@ function tickStrategicCombat(
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
+  if (runtime.defender.setup.aiControlled &&
+      !runtime.grappleUsed.defender && !runtime.grapple &&
+      runtime.attacker.shieldHp <= 0 && runtime.attacker.hullHp > 0 &&
+      runtime.defender.hullHp > 0 &&
+      distance(runtime.attacker.position, runtime.defender.position) <= 900) {
+    tryFireGrapple(runtime, 'defender');
+  }
   resolveRuntimeWinner(runtime);
   return runtimeSnapshot(runtime);
 }
@@ -291,6 +298,27 @@ function createStrategicCombatRuntime(
   };
 }
 
+function tryFireGrapple(
+  runtime: StrategicCombatRuntime,
+  side: 'attacker' | 'defender'
+): boolean {
+  if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
+  const attacker = runtimeCombatant(runtime, side);
+  const victim = runtimeEnemy(runtime, side);
+  if (distance(attacker.position, victim.position) > 900) return false;
+  const launched = fireCombatGrapple(
+    side, attacker.position, victim.position, victim.shieldHp,
+    victim.hullHp, victim.hullMaxHp, false, runtime.random
+  );
+  if (!launched) return false;
+  runtime.grappleUsed[side] = true;
+  runtime.grapple = launched;
+  runtime.lastEvent = launched.success
+    ? 'GREIFHAKEN > TREFFER · ZIEL WIRD HERANGEZOGEN'
+    : 'GREIFHAKEN > WURF ABGEFEUERT';
+  return true;
+}
+
 export function createStrategicCombatService(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
@@ -300,22 +328,7 @@ export function createStrategicCombatService(
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
   return {
     getSnapshot: () => runtimeSnapshot(runtime),
-    fireGrapple(side) {
-      if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
-      const attacker = runtimeCombatant(runtime, side);
-      const victim = runtimeEnemy(runtime, side);
-      const launched = fireCombatGrapple(
-        side, attacker.position, victim.position, victim.shieldHp,
-        victim.hullHp, victim.hullMaxHp, false, runtime.random
-      );
-      if (!launched) return false;
-      runtime.grappleUsed[side] = true;
-      runtime.grapple = launched;
-      runtime.lastEvent = launched.success
-        ? 'GREIFHAKEN > TREFFER · ZIEL WIRD HERANGEZOGEN'
-        : 'GREIFHAKEN > WURF ABGEFEUERT';
-      return true;
-    },
+    fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
       combatant.tactic = tactic;
