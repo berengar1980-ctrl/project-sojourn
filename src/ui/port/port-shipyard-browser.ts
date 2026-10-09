@@ -50,4 +50,3 @@ export function bindShipyardBrowser(shell: HTMLElement): void {
   shipSelect.addEventListener('change', updateShip);
   updateRole();
 }
-
