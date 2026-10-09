@@ -216,17 +216,20 @@ function createStrategicCombatRuntime(
   };
   const escapeSide = seed >>> 0;
   const margin = EDGE_PADDING;
-  arena.exitPoint = arenaOptions?.exitPoint ?? (escapeSide % 4 === 0
+  const escapeArena: StrategicCombatArenaOptions = {
+    ...arena,
+    exitPoint: arenaOptions?.exitPoint ?? (escapeSide % 4 === 0
     ? { x: margin, y: arena.height * 0.5 }
     : escapeSide % 4 === 1
       ? { x: arena.width - margin, y: arena.height * 0.5 }
       : escapeSide % 4 === 2
         ? { x: arena.width * 0.5, y: margin }
-        : { x: arena.width * 0.5, y: arena.height - margin });
+        : { x: arena.width * 0.5, y: arena.height - margin }),
+  };
   return {
-    arena,
-    attacker: createCombatant(attackerSetup, 'attacker', arena),
-    defender: createCombatant(defenderSetup, 'defender', arena),
+    arena: escapeArena,
+    attacker: createCombatant(attackerSetup, 'attacker', escapeArena),
+    defender: createCombatant(defenderSetup, 'defender', escapeArena),
     random: createRng(seed),
     projectiles: [],
     beams: [],
