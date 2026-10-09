@@ -6,6 +6,7 @@ import { getShipsByRole } from '../../systems/ships';
 import { drawDistressScanEffect } from './salvage-distress-scan-effect';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
@@ -143,6 +144,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.drawRoute(width, height);
+    drawLocalSpaceExitGate(this.context, this.camera, width, height, this.model.width, this.model.height);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     this.drawDistressDiagnosis(width, height, timeSeconds);
