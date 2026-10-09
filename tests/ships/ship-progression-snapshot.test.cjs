@@ -33,7 +33,6 @@ assert.equal(loads.get(ship)[firstType][0], firstId, 'snapshot arrays must be de
 assert.equal(loads.setSlot(ship, 'mine', 1, 'mine-ion-1'), false);
 assert.equal(loads.get(ship).mine[0], '', 'invalid slot index must not mutate loadout');
 
-
 assert(found.registerComponent('weapon', 'special_performance_12_weapon1'));
 const initial = snapshots.createShipProgressionSnapshot('miner', owned, loads, bag, found);
 
@@ -58,7 +57,11 @@ const current = snapshots.createShipProgressionSnapshot('miner', owned, loads, b
 assert.equal(current.inventory.components.length, 0, 'mutating snapshot must not create cargo');
 assert(!current.ownedShipIds.includes('fake'), 'snapshot mutation must not change ship ownership');
 assert.equal(current.discoveredBonuses['weapon:weapon1'].performance, 20);
-assert.equal(current.inventory.serial, 1, 'removed inventory entries must preserve the UID counter');
+assert.equal(
+  current.inventory.serial,
+  1,
+  'removed inventory entries must preserve the UID counter'
+);
 
 const rejected = bag.store('mine', 'mine-ion-1', 'wreck-2', 0, 'salvage');
 assert.equal(rejected, null, 'failed storage must not add inventory');
