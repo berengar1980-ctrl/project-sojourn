@@ -1,6 +1,7 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { economyResourceById } from '../../data/economy/economy-resources';
+import { sectorPortProfiles } from '../../data/ports/sector-port-profiles';
 import { playerSaleUnitPrice } from './player-trade-service';
 import type { MarketIntelService } from './market-intel-service';
 
@@ -22,7 +23,15 @@ export interface CargoResourceQuote {
   readonly markets: readonly CargoSaleQuote[];
 }
 
+export interface CargoMarketHint {
+  readonly locationId: string;
+  readonly name: string;
+  readonly distance: number;
+  readonly matchedQuantity: number;
+}
+
 export interface CargoMarketScanner {
+  readonly hints: readonly CargoMarketHint[];
   readonly resources: readonly CargoResourceQuote[];
   readonly markets: readonly CargoSaleQuote[];
   readonly currentDay: number;
@@ -106,5 +115,25 @@ export function scanCargoMarkets(options: {
       .sort((a, b) => b.revenue - a.revenue || a.distance - b.distance);
     return { ...item, best: matches[0] ?? null, markets: matches };
   });
-  return { resources, markets, currentDay: options.currentDay };
+  const hints = options.locations
+    .filter((location) => location.activities.trade)
+    .flatMap((location) => {
+      const profile = sectorPortProfiles.find((port) => port.locationId === location.id);
+      if (!profile) return [];
+      const matchedQuantity = cargo
+        .filter((item) => profile.needs.includes(item.resourceId))
+        .reduce((sum, item) => sum + item.quantity, 0);
+      if (matchedQuantity === 0) return [];
+      return [{
+        locationId: location.id,
+        name: location.name,
+        matchedQuantity,
+        distance: Math.hypot(
+          location.position.x - options.origin.x,
+          location.position.y - options.origin.y
+        ),
+      }];
+    })
+    .sort((a, b) => b.matchedQuantity - a.matchedQuantity || a.distance - b.distance);
+  return { resources, markets, hints, currentDay: options.currentDay };
 }
