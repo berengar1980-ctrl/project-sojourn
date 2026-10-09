@@ -472,7 +472,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,
-    true
+    state.activeShip.role === 'salvage'
   );
   createSettingsMenu(context.audio);
   mountControllerStarMap(context);
