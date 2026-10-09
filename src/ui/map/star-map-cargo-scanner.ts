@@ -45,9 +45,8 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
-    const hints = (scanner?.hints ?? []).filter((hint) =>
-      preferredCargoResource === 'all' ||
-      (scanner?.resources.find((item) => item.resourceId === preferredCargoResource)?.quantity ?? 0) > 0
+    const hints = (scanner?.hints ?? []).filter(
+      (hint) => preferredCargoResource === 'all' || hint.resourceIds.includes(preferredCargoResource)
     );
     if (hints.length) {
       const heading = document.createElement('p');
