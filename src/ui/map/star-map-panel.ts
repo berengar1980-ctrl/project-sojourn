@@ -62,12 +62,12 @@ function createStarMapControls(options: StarMapPanelOptions) {
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <button class="map-label-toggle" type="button">NAMEN // AN</button>
     <button class="map-cargo-toggle" type="button">FRACHT // AUS</button>
-    <aside class="map-cargo-scanner" hidden style="position:absolute;right:16px;top:92px;width:min(340px,calc(100% - 32px));max-height:58%;overflow:auto;background:rgba(5,14,23,.94);border:1px solid #526b78;border-radius:7px;padding:14px;color:#dfe8f3;z-index:5;font:12px system-ui;box-shadow:0 12px 32px #0009">
+    <div class="map-cargo-scanner" hidden style="position:absolute;right:16px;top:92px;width:min(340px,calc(100% - 32px));max-height:58%;overflow:auto;background:rgba(5,14,23,.94);border:1px solid #526b78;border-radius:7px;padding:14px;color:#dfe8f3;z-index:5;font:12px system-ui;box-shadow:0 12px 32px #0009">
       <strong>FRACHTMARKT // ANALYSE</strong>
       <div style="margin:9px 0"><label for="cargo-resource-select">ANZEIGE </label><select id="cargo-resource-select" class="map-cargo-resource" style="max-width:210px;background:#132531;color:#dfe8f3;border:1px solid #526b78;padding:5px"></select></div>
       <div class="map-cargo-content"></div>
       <small style="display:block;margin-top:8px;color:#9baebb">Prognose auf Basis bekannter Marktdaten. Tatsächliche Preise können sich ändern. Verkauf nur im Hafen.</small>
-    </aside>
+    </div>
     <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
