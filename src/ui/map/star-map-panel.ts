@@ -1,5 +1,6 @@
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
+import { bindCargoMarketScanner } from './star-map-cargo-scanner';
 import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
@@ -60,6 +61,13 @@ function createStarMapControls(options: StarMapPanelOptions) {
     <div class="travel-status" hidden></div>
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <button class="map-label-toggle" type="button">NAMEN // AN</button>
+    <button class="map-cargo-toggle" type="button">FRACHT // AUS</button>
+    <div class="map-cargo-scanner" hidden style="position:absolute;right:16px;top:92px;width:min(340px,calc(100% - 32px));max-height:58%;overflow:auto;background:rgba(5,14,23,.94);border:1px solid #526b78;border-radius:7px;padding:14px;color:#dfe8f3;z-index:5;font:12px system-ui;box-shadow:0 12px 32px #0009">
+      <strong>FRACHTMARKT // ANALYSE</strong>
+      <div style="margin:9px 0"><label for="cargo-resource-select">ANZEIGE </label><select id="cargo-resource-select" class="map-cargo-resource" style="max-width:210px;background:#132531;color:#dfe8f3;border:1px solid #526b78;padding:5px"></select></div>
+      <div class="map-cargo-content"></div>
+      <small style="display:block;margin-top:8px;color:#9baebb">Prognose auf Basis bekannter Marktdaten. Tatsächliche Preise können sich ändern. Verkauf nur im Hafen.</small>
+    </div>
     <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
@@ -83,6 +91,10 @@ function createStarMapControls(options: StarMapPanelOptions) {
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
   const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
+  const cargoToggle = shell.querySelector<HTMLButtonElement>('.map-cargo-toggle');
+  const cargoPanel = shell.querySelector<HTMLElement>('.map-cargo-scanner');
+  const cargoSelect = shell.querySelector<HTMLSelectElement>('.map-cargo-resource');
+  const cargoContent = shell.querySelector<HTMLElement>('.map-cargo-content');
   if (
     !canvas ||
     !card ||
@@ -91,7 +103,11 @@ function createStarMapControls(options: StarMapPanelOptions) {
     !attackButton ||
     !travelStatus ||
     !modeToggle ||
-    !labelToggle
+    !labelToggle ||
+    !cargoToggle ||
+    !cargoPanel ||
+    !cargoSelect ||
+    !cargoContent
   ) {
     throw new Error('Star map UI is incomplete.');
   }
@@ -106,6 +122,10 @@ function createStarMapControls(options: StarMapPanelOptions) {
     travelStatus,
     modeToggle,
     labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
   };
 }
 
@@ -209,6 +229,10 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     travelStatus,
     modeToggle,
     labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
   } = createStarMapControls(options);
 
   let model = options.model;
@@ -232,6 +256,15 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
   labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
   renderer.setLabelsVisible(preferredLabelsVisible);
+
+  const renderCargoScanner = bindCargoMarketScanner(
+    () => model,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent
+  );
+
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
@@ -270,12 +303,12 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   });
 
   updateSelection();
-
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
       updateSelection();
+      renderCargoScanner();
       systemLog.update();
     },
     destroy(): void {

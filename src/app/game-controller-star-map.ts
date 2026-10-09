@@ -1,3 +1,4 @@
+import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -127,12 +128,22 @@ export function createControllerStarModel(
     dangerLevel:
       event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
   }));
-  return createStarMapViewModel(
-    narrowsSector,
-    navigationSnapshot,
-    ship,
-    npcShips,
-    selectedNpcId,
-    eventLocations
-  );
+  const cargoScanner = scanCargoMarkets({
+    player: economy.trade.player,
+    intel: economy.marketIntel,
+    locations: narrowsSector.locations,
+    origin: navigationSnapshot.currentPosition,
+    currentDay: economy.situations.currentDay,
+  });
+  return {
+    ...createStarMapViewModel(
+      narrowsSector,
+      navigationSnapshot,
+      ship,
+      npcShips,
+      selectedNpcId,
+      eventLocations
+    ),
+    cargoScanner,
+  };
 }
