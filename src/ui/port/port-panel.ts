@@ -359,7 +359,8 @@ function bindShipyardBrowser(shell: HTMLElement): void {
   const count = shell.querySelector<HTMLElement>('[data-yard-ship-count]');
   const activate = (view: 'ships' | 'components'): void => {
     lastYardView = view;
-    for (const button of tabs) button.classList.toggle('is-active', button.dataset.yardView === view);
+    for (const button of tabs)
+      button.classList.toggle('is-active', button.dataset.yardView === view);
     for (const section of sections) section.hidden = section.dataset.yardSection !== view;
   };
   for (const button of tabs) {
