@@ -295,6 +295,7 @@ function bindSalvagePanelActions(
   options: SalvageSpacePanelOptions,
   getModel: () => SalvageSpaceViewModel
 ): () => void {
+  let diagnosisTimer: ReturnType<typeof setTimeout> | null = null;
   const unbindInput = bindSalvageSpaceInput({
     canvas: ui.canvas,
     renderer,
@@ -330,7 +331,14 @@ function bindSalvagePanelActions(
     const id = model.sectorEvent.id;
     switch (button.dataset.distressAction) {
       case 'diagnose':
-        options.onDiagnoseDistress?.(id);
+        if (diagnosisTimer) break;
+        button.disabled = true;
+        button.textContent = 'TECHNISCHE DIAGNOSE LÄUFT…';
+        renderer.startDistressDiagnosis();
+        diagnosisTimer = setTimeout(() => {
+          diagnosisTimer = null;
+          options.onDiagnoseDistress?.(id);
+        }, 1100);
         break;
       case 'repair':
         options.onRepairDistress?.(id);
@@ -359,7 +367,10 @@ function bindSalvagePanelActions(
   });
   ui.cancelButton.addEventListener('click', options.onCancel);
   ui.backButton.addEventListener('click', options.onReturnToStarMap);
-  return unbindInput;
+  return () => {
+    if (diagnosisTimer) clearTimeout(diagnosisTimer);
+    unbindInput();
+  };
 }
 
 export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
