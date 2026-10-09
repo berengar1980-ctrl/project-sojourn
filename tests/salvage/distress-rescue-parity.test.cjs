@@ -45,7 +45,8 @@ assert(!accepted.service.playerVisible.some((event) => event.id === accepted.eve
 assert.equal(accepted.service.claimForNpc(accepted.event.id, 'npc-1'), true);
 
 const tow = findDistress(
-  (event) => (event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control') &&
+  (event) =>
+    (event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control') &&
     !event.distressTrap
 );
 assert(tow.event.distressRequiredEngineering > 0);
