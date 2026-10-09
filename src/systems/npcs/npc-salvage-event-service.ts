@@ -231,7 +231,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
 
     const critical = event.distressRepairHours === 0;
     if (!critical) {
-      const repaired = this.options.events.repairDistress(event.id, engineeringSkill(npc));
+      const repaired = this.options.events.repairDistress(event.id, skill);
       if (!repaired?.success) this.options.events.towDistress(event.id);
       return false;
     }
