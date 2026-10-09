@@ -45,10 +45,24 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all'
         ? (scanner?.markets ?? [])
         : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
+    const hints = (scanner?.hints ?? []).filter((hint) =>
+      preferredCargoResource === 'all' ||
+      (scanner?.resources.find((item) => item.resourceId === preferredCargoResource)?.quantity ?? 0) > 0
+    );
+    if (hints.length) {
+      const heading = document.createElement('p');
+      heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
+      cargoContent.append(heading);
+      for (const hint of hints.slice(0, 5)) {
+        const item = document.createElement('div');
+        item.textContent = hint.name + ' · Nachfrage für ' + hint.matchedQuantity + ' t deiner Fracht';
+        cargoContent.append(item);
+      }
+    }
     if (!quotes.length) {
       const empty = document.createElement('p');
       empty.textContent =
-        'Noch keine Marktdaten bekannt. Sensoren oder Hafenbesuche liefern Preisinformationen.';
+        'Noch keine bestätigten Verkaufspreise bekannt. Die Käuferhinweise oben basieren auf Nachfrageprofilen.';
       cargoContent.append(empty);
       return;
     }
