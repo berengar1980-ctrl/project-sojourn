@@ -16,9 +16,7 @@ import {
 
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
-
 const WRECK_KINDS: readonly SalvageWreckKind[] = ['freighter', 'salvager', 'miner', 'patrol'];
-
 function randomFrom(seed: number): () => number {
   let state = seed >>> 0 || 1;
   return () => {
