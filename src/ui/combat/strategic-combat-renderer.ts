@@ -1,3 +1,4 @@
+import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
   CombatImpactSnapshot,
@@ -137,6 +138,7 @@ export class StrategicCombatRenderer {
     this.drawBeams(width, height);
     this.drawShip(this.model.attacker, width, height, timeSeconds);
     this.drawShip(this.model.defender, width, height, timeSeconds);
+    drawCombatGrapple(this.context, this.model, (point) => this.screen(point, width, height));
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
