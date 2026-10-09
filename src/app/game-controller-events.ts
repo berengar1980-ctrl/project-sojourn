@@ -23,7 +23,9 @@ function applyDistressOutcome(
     );
   }
   if (result.workHours > 0) {
-    context.systemLog.write('NOTRUF > EINSATZZEIT ' + result.workHours.toLocaleString('de-DE') + ' h');
+    context.systemLog.write(
+      'NOTRUF > EINSATZZEIT ' + result.workHours.toLocaleString('de-DE') + ' h'
+    );
   }
 }
 
