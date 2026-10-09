@@ -45,7 +45,9 @@ assert(!accepted.service.playerVisible.some((event) => event.id === accepted.eve
 assert.equal(accepted.service.claimForNpc(accepted.event.id, 'npc-1'), true);
 
 const tow = findDistress(
-  (event) => event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control'
+  (event) =>
+    (event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control') &&
+    !event.distressTrap
 );
 assert(tow.event.distressRequiredEngineering > 0);
 const diagnosis = tow.service.diagnoseDistress(tow.event.id, 0);
@@ -65,12 +67,18 @@ assert(delivered.success);
 assert(delivered.rewardCredits > 0, 'payment occurs only on delivery');
 assert.equal(tow.service.finishTowAtLocation(towing.towDestinationId), null, 'no duplicate reward');
 
-const repair = findDistress((event) => event.distressDamage === 'nav_bus');
+const repair = findDistress((event) => event.distressDamage === 'nav_bus' && !event.distressTrap);
 repair.service.diagnoseDistress(repair.event.id, 100);
 const repaired = repair.service.repairDistress(repair.event.id, 100);
 assert.equal(repaired.success, true);
 assert(repaired.rewardCredits > 0);
 assert.equal(repair.service.event(repair.event.id), null);
+
+const trap = findDistress((event) => event.distressTrap);
+const ambush = trap.service.diagnoseDistress(trap.event.id, 50);
+assert.equal(ambush.boardingRequired, true, 'fake distress signals must start tactical boarding');
+const defeated = trap.service.resolveBoarding(trap.event.id, true);
+assert(defeated.success, 'boarding victory must resolve the ambush');
 
 const evacuation = findDistress(
   (event) => event.distressDamage === 'total_loss' && !event.distressTrap

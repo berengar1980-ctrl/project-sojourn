@@ -2,8 +2,10 @@ import type {
   SalvageSpaceViewModel,
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
+import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
@@ -38,6 +40,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
   protected hasFitted = false;
+  protected diagnosisStartedAt = -1;
+  startDistressDiagnosis(): void {
+    this.diagnosisStartedAt = performance.now() / 1000;
+    this.draw();
+  }
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: SalvageSpaceViewModel
@@ -126,7 +133,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
     });
-
     const hitAreas: WreckHitArea[] = [];
     for (const wreck of this.model.wrecks) {
       const hit = this.drawWreck(wreck, width, height);
@@ -136,9 +142,28 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.drawRoute(width, height);
+    drawLocalSpaceExitGate(
+      this.context,
+      this.camera,
+      width,
+      height,
+      this.model.width,
+      this.model.height
+    );
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
+    this.drawDistressDiagnosis(width, height, timeSeconds);
     this.drawShip(this.shipGeometry(width, height), timeSeconds);
+  }
+  protected drawDistressDiagnosis(width: number, height: number, now: number): void {
+    drawDistressScanEffect(
+      this.context,
+      this.camera,
+      this.model,
+      now - this.diagnosisStartedAt,
+      width,
+      height
+    );
   }
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
@@ -161,15 +186,22 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     ) {
       return null;
     }
-
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(wreck.rotation);
     this.context.globalAlpha = wreck.depleted ? 0.38 : 0.95;
-    this.drawHullFragments(wreck, radius);
-    this.drawWreckDebris(wreck.id, radius);
+    const drewShip = drawDistressShipSprite(
+      this.context,
+      this.model.sectorEvent,
+      wreck.id,
+      radius,
+      (url) => this.ensureNpcImage(url)
+    );
+    if (!drewShip) {
+      this.drawHullFragments(wreck, radius);
+      this.drawWreckDebris(wreck.id, radius);
+    }
     this.context.restore();
-
     if (wreck.isSelected || wreck.isWorkTarget) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget

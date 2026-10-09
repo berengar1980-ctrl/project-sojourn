@@ -1,4 +1,5 @@
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
+import { playerAtLocalExit } from '../map/local-space-exit-gate';
 
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 
@@ -41,9 +42,13 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
       ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
       : stage === 'diagnosed'
         ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button><button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
-        : stage === 'salvage_rights'
-          ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
-          : '<span>EINSATZ ABGESCHLOSSEN</span>';
+        : stage === 'tow_required'
+          ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
+          : stage === 'towing'
+            ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
+            : stage === 'salvage_rights'
+              ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
+              : '<span>EINSATZ ABGESCHLOSSEN</span>';
   container.innerHTML =
     '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
     damage +
@@ -295,6 +300,7 @@ function bindSalvagePanelActions(
   options: SalvageSpacePanelOptions,
   getModel: () => SalvageSpaceViewModel
 ): () => void {
+  let diagnosisTimer: ReturnType<typeof setTimeout> | null = null;
   const unbindInput = bindSalvageSpaceInput({
     canvas: ui.canvas,
     renderer,
@@ -330,7 +336,14 @@ function bindSalvagePanelActions(
     const id = model.sectorEvent.id;
     switch (button.dataset.distressAction) {
       case 'diagnose':
-        options.onDiagnoseDistress?.(id);
+        if (diagnosisTimer) break;
+        button.disabled = true;
+        button.textContent = 'TECHNISCHE DIAGNOSE LÄUFT…';
+        renderer.startDistressDiagnosis();
+        diagnosisTimer = setTimeout(() => {
+          diagnosisTimer = null;
+          options.onDiagnoseDistress?.(id);
+        }, 1100);
         break;
       case 'repair':
         options.onRepairDistress?.(id);
@@ -359,7 +372,10 @@ function bindSalvagePanelActions(
   });
   ui.cancelButton.addEventListener('click', options.onCancel);
   ui.backButton.addEventListener('click', options.onReturnToStarMap);
-  return unbindInput;
+  return () => {
+    if (diagnosisTimer) clearTimeout(diagnosisTimer);
+    unbindInput();
+  };
 }
 
 export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
@@ -394,13 +410,22 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
       : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
     ui.cancelButton.hidden = model.phase === 'idle';
+    const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
     ui.backButton.disabled =
+      !atExit ||
       model.phase !== 'idle' ||
       model.salvageEvent !== null ||
       model.salvageEventRecoverySeconds > 0;
+    ui.backButton.title = atExit
+      ? 'Zur Sternkarte wechseln'
+      : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
-    renderSectorEvent(model, ui.sectorEventContainer);
+    if (
+      !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
+    ) {
+      renderSectorEvent(model, ui.sectorEventContainer);
+    }
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {

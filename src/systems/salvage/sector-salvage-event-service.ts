@@ -16,9 +16,7 @@ import {
 
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
-
 const WRECK_KINDS: readonly SalvageWreckKind[] = ['freighter', 'salvager', 'miner', 'patrol'];
-
 function randomFrom(seed: number): () => number {
   let state = seed >>> 0 || 1;
   return () => {
@@ -173,6 +171,12 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     if (!event || event.distressStage !== 'approach') return null;
     const profile = profileFor(event.distressDamage);
     event.distressStage = 'diagnosed';
+    if (event.distressTrap) {
+      return {
+        ...emptyResult('Sensoranalyse: Notsignal manipuliert! Korsaren greifen das Enterteam an.'),
+        boardingRequired: true,
+      };
+    }
     event.distressTechSkill = Math.max(0, Math.round(engineeringSkill));
     event.distressCanRepair = profile.repairable && event.distressTechSkill >= profile.skill;
     const guidance = profile.critical
@@ -469,7 +473,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       specialComponent: false,
       distressDamage: profile.id,
       distressStage: 'approach',
-      distressTrap: profile.critical && this.random() < distressTrapChance(danger),
+      distressTrap: this.random() < distressTrapChance(danger),
       salvageRights: false,
       distressDamageName: profile.name,
       distressSeverity: profile.severity,

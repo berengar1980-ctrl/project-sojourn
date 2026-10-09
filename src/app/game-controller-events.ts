@@ -11,6 +11,35 @@ export interface ControllerEventActions {
   readonly mountSalvage: (reuseSeed?: boolean) => void;
 }
 
+function showDistressReward(context: ControllerRuntimeContext, result: DistressActionResult): void {
+  if (result.rewardCredits <= 0) return;
+  const notification = document.createElement('div');
+  notification.setAttribute('role', 'status');
+  notification.className = 'distress-reward-notice';
+  notification.textContent =
+    'NOTRUF ABGESCHLOSSEN · BELOHNUNG: +' +
+    result.rewardCredits.toLocaleString('de-DE') +
+    ' Credits' +
+    (result.workHours > 0 ? ' · Einsatzzeit: ' + result.workHours + ' h' : '');
+  Object.assign(notification.style, {
+    position: 'fixed',
+    left: '50%',
+    top: '14%',
+    transform: 'translateX(-50%)',
+    zIndex: '900',
+    padding: '18px 24px',
+    background: 'rgba(10, 30, 40, 0.96)',
+    border: '1px solid #69d8eb',
+    borderRadius: '8px',
+    color: '#c4f9ff',
+    fontWeight: '700',
+    textAlign: 'center',
+    pointerEvents: 'none',
+  });
+  context.root.ownerDocument.body.append(notification);
+  setTimeout(() => notification.remove(), 6500);
+}
+
 function applyDistressOutcome(
   context: ControllerRuntimeContext,
   result: DistressActionResult | null
@@ -18,6 +47,7 @@ function applyDistressOutcome(
   if (!result) return;
   if (result.rewardCredits > 0) {
     context.economy.trade.player.credits += result.rewardCredits;
+    showDistressReward(context, result);
     context.systemLog.write(
       'NOTRUF > BELOHNUNG +' + result.rewardCredits.toLocaleString('de-DE') + ' CR'
     );
@@ -168,6 +198,23 @@ export function mountControllerBoarding(
   state.shipSwitcher = null;
 }
 
+export function controllerSalvageExitAction(
+  context: ControllerRuntimeContext,
+  mountStarMap: () => void
+): () => void {
+  return () => {
+    const event = context.economy.salvageEvents.event(
+      context.navigation.getSnapshot().currentLocationId
+    );
+    if (event?.distressStage === 'towing' && event.distressTowDestinationId) {
+      context.navigation.selectDestination(event.distressTowDestinationId);
+      context.navigation.startTravel();
+      context.systemLog.write('SCHLEPPEN > KARTENAUSGANG ERREICHT · TRANSFER ZUR WERFT');
+    }
+    runSceneZoomTransition(context.root, mountStarMap);
+  };
+}
+
 export function controllerSalvageEventCallbacks(
   context: ControllerRuntimeContext,
   actions: ControllerEventActions
@@ -185,7 +232,14 @@ export function controllerSalvageEventCallbacks(
       );
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
       applyDistressOutcome(context, result);
-      actions.mountSalvage(true);
+      if (result?.boardingRequired) {
+        context.systemLog.write('BOARDING > NOTRUFFALLE ERKANNT · ENTERKAMPF');
+        runSceneZoomTransition(context.root, () =>
+          mountControllerBoarding(context, eventId, actions)
+        );
+      } else {
+        actions.mountSalvage(true);
+      }
     },
     onRepairDistress: (eventId: string) => {
       const runtime = resolveShipRuntimeSetup(state.activeShip, {
@@ -211,9 +265,8 @@ export function controllerSalvageEventCallbacks(
         actions.mountSalvage(true);
         return;
       }
-      context.navigation.selectDestination(result.towDestinationId);
-      context.navigation.startTravel();
-      runSceneZoomTransition(context.root, actions.mountStarMap);
+      context.systemLog.write('SCHLEPPEN > MANUELL ZUM MARKIERTEN AUSGANG FLIEGEN');
+      actions.mountSalvage(true);
     },
     onEvacuateDistress: (eventId: string) => {
       const result = economy.salvageEvents.evacuateDistress(eventId);

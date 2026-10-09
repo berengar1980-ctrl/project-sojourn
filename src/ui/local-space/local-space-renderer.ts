@@ -4,6 +4,7 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { ShipHardpointDebugRenderer } from '../ships/ship-hardpoint-debug-renderer';
@@ -155,6 +156,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
+    drawLocalSpaceExitGate(
+      this.context,
+      this.camera,
+      width,
+      height,
+      this.model.width,
+      this.model.height
+    );
     this.drawLongRangeScan(width, height, timeSeconds);
     this.drawShortRangeScan(width, height, timeSeconds);
     this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'below');

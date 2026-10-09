@@ -1,3 +1,4 @@
+import { playerAtLocalExit } from '../map/local-space-exit-gate';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 
 import { type createMiningEventPanel } from './mining-event-panel';
@@ -117,6 +118,16 @@ interface LocalOverlayContext {
   readonly miningResourceSelector: MiningResourceSelector;
 }
 
+function updateLocalExitButton(
+  button: HTMLButtonElement,
+  model: LocalSpaceViewModel,
+  eventActive: boolean
+): void {
+  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
+  button.disabled = eventActive || !atExit;
+  button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
+}
+
 export function updateLocalOverlay(context: LocalOverlayContext): void {
   const {
     model,
@@ -159,7 +170,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   card.hidden = !selected && !selectedNpc;
   cancelButton.hidden = !miningActive;
   cancelButton.disabled = eventActive;
-  backButton.disabled = eventActive;
+  updateLocalExitButton(backButton, model, eventActive);
   renderCargo(model, cargoTotal, cargoList);
   longScanButton.disabled = eventActive || !model.scanAvailable || longScanActive;
   longScanButton.textContent = model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';

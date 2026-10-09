@@ -229,7 +229,12 @@ export function moveCombatant(
   let direction = toward;
   let targetSpeedFactor = 0.88;
   if (combatant.tactic === 'flee') {
-    direction = { x: -toward.x, y: -toward.y };
+    direction = arena.exitPoint
+      ? normalize(
+          arena.exitPoint.x - combatant.position.x,
+          arena.exitPoint.y - combatant.position.y
+        )
+      : { x: -toward.x, y: -toward.y };
     targetSpeedFactor = 1;
   } else if (range < desired * 0.72) {
     direction = normalize(

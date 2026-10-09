@@ -5,6 +5,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { GameAudioService } from '../systems/audio/game-audio-service';
 import type { WorldLocation } from '../core/world-types';
+import { playerAtLocalExit } from '../ui/map/local-space-exit-gate';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
@@ -224,7 +225,16 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       options.log.write('BERGUNG > VORGANG ABGEBROCHEN');
       refresh();
     },
-    onReturnToStarMap: options.onReturnToStarMap,
+    onReturnToStarMap() {
+      const snapshot = service.getSnapshot();
+      const { width, height } = snapshot.field;
+      if (!playerAtLocalExit(snapshot.ship.position, width, height)) {
+        options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
+        refresh();
+        return;
+      }
+      options.onReturnToStarMap();
+    },
   });
 }
 
