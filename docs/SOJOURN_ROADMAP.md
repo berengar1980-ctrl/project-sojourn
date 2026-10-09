@@ -5,6 +5,8 @@
 
 Dieses Dokument sammelt **neue, Sojourn-eigene Ideen**. Es ist ausdrücklich **keine Aufgabenfreigabe zur Umsetzung** und ergänzt die bestehende [Voidbound-Feature-Parity-Matrix](VOIDBOUND_FEATURE_PARITY.md), statt sie zu ersetzen.
 
+**Raumkampf-Feature-Matrix:** [SOJOURN_FEATURE_MATRIX.md](SOJOURN_FEATURE_MATRIX.md) — dort sind die zehn besprochenen Raumkampf-, Crew- und Werftkonzepte kompakt erfasst.
+
 ## Statussystem
 
 | Status | Bedeutung |
