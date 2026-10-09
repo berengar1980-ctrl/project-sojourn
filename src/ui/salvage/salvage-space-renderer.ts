@@ -494,7 +494,9 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       source,
       geometry
     );
-    drawDistressRammingShield(this.context, this.camera, this.model,
-      this.canvas.clientWidth, this.canvas.clientHeight);
+    drawDistressRammingShield(
+      this.context, this.camera, this.model,
+      this.canvas.clientWidth, this.canvas.clientHeight
+    );
   }
 }
