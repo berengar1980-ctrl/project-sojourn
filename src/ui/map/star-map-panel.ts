@@ -104,7 +104,11 @@ function createStarMapControls(options: StarMapPanelOptions) {
     !attackButton ||
     !travelStatus ||
     !modeToggle ||
-    !labelToggle || !cargoToggle || !cargoPanel || !cargoSelect || !cargoContent
+    !labelToggle ||
+    !cargoToggle ||
+    !cargoPanel ||
+    !cargoSelect ||
+    !cargoContent
   ) {
     throw new Error('Star map UI is incomplete.');
   }
@@ -272,21 +276,25 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     };
     addOption('all', 'GESAMTE FRACHT');
     for (const item of items) addOption(item.resourceId, item.name + ' (' + item.quantity + ')');
-    preferredCargoResource = previous !== 'all' && items.some((item) => item.resourceId === previous)
-      ? previous : 'all';
+    preferredCargoResource =
+      previous !== 'all' && items.some((item) => item.resourceId === previous)
+        ? previous
+        : 'all';
     cargoSelect.value = preferredCargoResource;
     cargoContent.replaceChildren();
     if (!items.length) {
-      cargoContent.textContent = 'Frachtraum leer. Nach dem Mining erscheinen hier deine Rohstoffe.';
+      cargoContent.textContent =
+        'Frachtraum leer. Nach dem Mining erscheinen hier deine Rohstoffe.';
       return;
     }
     const lead = document.createElement('div');
     lead.style.cssText = 'padding:6px 0;border-bottom:1px solid #344b58;margin-bottom:7px';
     lead.textContent = items.map((item) => item.name + ': ' + item.quantity).join(' · ');
     cargoContent.append(lead);
-    const quotes = preferredCargoResource === 'all'
-      ? scanner?.markets ?? []
-      : items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? [];
+    const quotes =
+      preferredCargoResource === 'all'
+        ? (scanner?.markets ?? [])
+        : (items.find((item) => item.resourceId === preferredCargoResource)?.markets ?? []);
     if (preferredCargoResource !== 'all') {
       const item = items.find((entry) => entry.resourceId === preferredCargoResource);
       if (!item?.best) {
@@ -298,7 +306,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     }
     if (!quotes.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'Noch keine Marktdaten bekannt. Sensoren oder Hafenbesuche liefern Preisinformationen.';
+      empty.textContent =
+        'Noch keine Marktdaten bekannt. Sensoren oder Hafenbesuche liefern Preisinformationen.';
       cargoContent.append(empty);
       return;
     }
@@ -311,8 +320,12 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       name.style.fontWeight = 'bold';
       const detail = document.createElement('small');
       detail.style.color = '#9baebb';
-      detail.textContent = 'Distanz ' + Math.round(quote.distance) + ' u · Daten ' +
-        (scanner!.currentDay - quote.observedDay) + ' Tage alt' +
+      detail.textContent =
+        'Distanz ' +
+        Math.round(quote.distance) +
+        ' u · Daten ' +
+        (scanner!.currentDay - quote.observedDay) +
+        ' Tage alt' +
         (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
       info.append(name, detail);
       const price = document.createElement('strong');
