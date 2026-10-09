@@ -288,6 +288,14 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
         player.headingRadians,
         deltaSeconds
       );
+      const wreck = context.field.wrecks[0];
+      if (wreck) {
+        context.field.wrecks[0] = {
+          ...wreck,
+          position: { ...context.state.distressTow.position },
+          rotation: context.state.distressTow.headingRadians,
+        };
+      }
     }
     options.audio.updatePlayerRcs(
       options.ship.sprite.hardpoints,
