@@ -208,6 +208,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     if (selected) options.onAttackNpc(selected.id);
   });
   combatTactics.addEventListener('click', (event) => {
+    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
+    if (grapple) { options.onCombatGrapple(); return; }
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
     const tactic = target.dataset.tactic as CombatTactic | undefined;
