@@ -24,6 +24,7 @@ import {
   tickEconomy,
   completeDistressTowOnArrival,
   controllerSalvageEventCallbacks,
+  controllerSalvageExitAction,
   destroyControllerBoarding,
   destroyControllerCombat,
   destroyControllerSalvage,
@@ -334,9 +335,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
       mountStarMap: () => mountControllerStarMap(context),
       mountSalvage: (preserveSeed = false) => mountControllerSalvage(context, preserveSeed),
     }),
-    onReturnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
-      mountControllerStarMap(context)
-    ),
+    onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
   mountControllerSwitcher(context);
 }
