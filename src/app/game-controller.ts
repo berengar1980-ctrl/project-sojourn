@@ -348,7 +348,6 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     mountControllerCombat(context);
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
-
   const snapshot = activeCombat.getSnapshot();
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   if (state.embeddedCombat === 'local-space') {
@@ -406,7 +405,6 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
     return;
   }
   if (state.mode !== 'local-space' || !state.localSpace) return;
-
   if (state.embeddedCombat !== 'local-space') {
     state.localSpace.tick(deltaSeconds);
     const localSnapshot = state.localSpace.getSnapshot();
@@ -426,11 +424,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
-
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
-
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
     completeDistressTowOnArrival(context, currentLocationId);
