@@ -126,6 +126,7 @@ export interface ShipHardpoints {
   readonly weaponLasers?: readonly ShipHardpoint[];
   readonly miningLasers: readonly ShipHardpoint[];
   readonly tractorBeams?: readonly ShipHardpoint[];
+  readonly grapplingHooks?: readonly ShipHardpoint[];
   readonly maneuverThrusters: readonly ShipManeuverThruster[];
   readonly shield: ShipShieldGeometry;
 }
