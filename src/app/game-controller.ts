@@ -383,6 +383,7 @@ function handleControllerLocationEntry(
     (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId) ||
       economy.salvageEvents.event(currentLocationId) !== null);
   if (enteredSalvage) {
+    if (economy.salvageEvents.event(currentLocationId)) economy.salvageEvents.acceptForPlayer(currentLocationId!);
     runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
   }
 }
