@@ -6,7 +6,7 @@ import type {
 } from '../../core/salvage-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
-import { DISTRESS_PROFILES, profileFor, type DistressProfile } from './distress-profiles';
+import { pickDistressProfile, profileFor, type DistressProfile } from './distress-profiles';
 
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
@@ -436,7 +436,8 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     if (this.live().length >= MAX_ACTIVE_SALVAGE_EVENTS) return;
     if (this.live().some((event) => event.type === 'distress-rescue')) return;
     this.serial += 1;
-    const profile = this.pickDistressProfile();
+    const profile = pickDistressProfile(this.random, this.lastDistressDamage);
+    this.lastDistressDamage = profile.id;
     const position = eventPosition(this.world, origin, this.random);
     const danger = pointDanger(this.world, position);
     this.events.push({
@@ -473,29 +474,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     });
   }
 
-  private pickDistressProfile(): DistressProfile {
-    const roll = this.random();
-    let profile =
-      roll < 0.22
-        ? DISTRESS_PROFILES[0]!
-        : roll < 0.44
-          ? DISTRESS_PROFILES[1]!
-          : roll < 0.63
-            ? DISTRESS_PROFILES[2]!
-            : roll < 0.77
-              ? DISTRESS_PROFILES[3]!
-              : roll < 0.87
-                ? DISTRESS_PROFILES[4]!
-                : roll < 0.95
-                  ? DISTRESS_PROFILES[5]!
-                  : DISTRESS_PROFILES[6]!;
-    if (profile.id === this.lastDistressDamage) {
-      profile =
-        DISTRESS_PROFILES.find((candidate) => candidate.id !== this.lastDistressDamage) ?? profile;
-    }
-    this.lastDistressDamage = profile.id;
-    return profile;
-  }
 }
 
 export function createSectorSalvageEventService(
