@@ -392,7 +392,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         : null,
       distressTow:
         options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
-          ? createDistressTowState(field.wrecks[0].position)
+          ? createDistressTowState(field.wrecks[0].position, field.wrecks[0].rotation)
           : null,
       panel: null,
     },
@@ -412,7 +412,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     beginDistressTow(event) {
       context.state.activeSectorEvent = event;
       const wreck = context.field.wrecks[0];
-      if (wreck) context.state.distressTow = createDistressTowState(wreck.position);
+      if (wreck) context.state.distressTow = createDistressTowState(wreck.position, wreck.rotation);
       options.log.write('SCHLEPPEN > GREIFHAKEN ABGESCHOSSEN');
       refreshSalvageScene(context);
     },
