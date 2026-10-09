@@ -146,6 +146,17 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         role: offer.role,
         price: Math.round(offer.nominalLengthMeters * 12000),
         owned: context.ownedShipIds.has(offer.id),
+        spriteUrl: offer.sprite.assetUrl,
+        lengthMeters: offer.nominalLengthMeters,
+        cargoCapacityTons: offer.cargoCapacityTons,
+        speed: resolveShipGameplayStats(offer).cruiseSpeed,
+        hullMaxHp: resolveShipGameplayStats(offer).hullPoints,
+        shieldMaxHp: Math.round(
+          offer.sprite.hardpoints.shield.maxHp * resolveShipGameplayStats(offer).shieldModifier
+        ),
+        weaponSlots: resolveShipGameplayStats(offer).weaponSlots,
+        crewBerths: resolveShipGameplayStats(offer).crewBerths,
+        maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
     }
   );
