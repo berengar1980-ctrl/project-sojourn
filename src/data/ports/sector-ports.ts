@@ -45,7 +45,9 @@ function makePort(profile: PortProfile): PortDefinition {
       ...profile.produces,
       ...profile.needs,
       ...(profile.trades ?? []),
-      ...economyResources.filter((resource) => resource.legality === 'legal').map((resource) => resource.id),
+      ...economyResources
+        .filter((resource) => resource.legality === 'legal')
+        .map((resource) => resource.id),
     ]),
   ];
   return {
