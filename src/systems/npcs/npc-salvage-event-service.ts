@@ -273,7 +273,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
         (event) =>
           !event.claimedByNpcId &&
           !event.playerAccepted &&
-          event.playerDeadlineDay <= this.options.events.currentDay
+          !this.options.events.playerVisible.some((visible) => visible.id === event.id)
       )
       .sort((a, b) => a.expiresDay - b.expiresDay)[0];
     if (!target) return;
