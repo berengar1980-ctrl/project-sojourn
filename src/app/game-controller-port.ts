@@ -16,7 +16,6 @@ import {
   getShipComponent,
   getAllShipDefinitions,
   getCompatibleShipComponents,
-  createShipyardVariantId,
   salvagedComponentAppraisal,
   type ShipComponentInventoryService,
   type ShipLoadoutService,
@@ -136,15 +135,10 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       variants: shipyardTypes.flatMap((type) =>
         context.shipyardResearch.variants(type, gameplay.maxComponentTier)
       ),
-      catalog: shipyardTypes.flatMap((type) =>
-        getCompatibleShipComponents(type, gameplay.maxComponentTier).flatMap((base) =>
-          (['performance', 'efficiency'] as const).flatMap((bonus) => {
-            const id = createShipyardVariantId(type, base.id, bonus, 10);
-            const item = id ? getShipComponent(type, id) : null;
-            return item ? [item] : [];
-          })
-        )
-      ),
+      catalog: shipyardTypes.flatMap((type) => [
+        ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
+        ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
+      ]),
       ships: getAllShipDefinitions().map((offer) => ({
         id: offer.id,
         name: offer.name,
@@ -277,8 +271,16 @@ function createShipyardCallbacks(
     },
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
+      const baseOffer = getCompatibleShipComponents(
+        type,
+        context.gameplay.maxComponentTier
+      ).some((entry) => entry.id === componentId);
+      const discovered = context.shipyardResearch
+        .variants(type, context.gameplay.maxComponentTier)
+        .some((entry) => entry.id === componentId);
       if (
-        !definition?.shipyardVariant ||
+        !definition ||
+        (!baseOffer && !discovered) ||
         trade.player.credits < definition.cost ||
         definition.tier > context.gameplay.maxComponentTier
       )
