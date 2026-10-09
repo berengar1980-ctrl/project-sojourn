@@ -225,12 +225,11 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
   }
 
   private resolveDistress(npc: SectorNpcState, event: SectorSalvageEvent): boolean {
-    this.options.events.diagnoseDistress(event.id);
+    const skill = engineeringSkill(npc);
+    this.options.events.diagnoseDistress(event.id, skill);
     if (!event.distressDamage) return false;
 
-    const critical = new Set(['main_drive', 'coolant', 'hull_breach', 'total_loss']).has(
-      event.distressDamage
-    );
+    const critical = event.distressRepairHours === 0;
     if (!critical) {
       const repaired = this.options.events.repairDistress(event.id, engineeringSkill(npc));
       if (!repaired?.success) this.options.events.towDistress(event.id);
