@@ -1,0 +1,22 @@
+/* Cargo trading is an optional map overlay, not a permanent sidebar. */
+.map-cargo-scanner .cargo-route-button {
+  margin: 5px 0 0 7px;
+  padding: 4px 7px;
+  border: 1px solid rgba(101, 189, 205, 0.64);
+  background: rgba(6, 38, 49, 0.94);
+  color: #a7e6ee;
+  font-size: 10px;
+  font-family: "Courier New", ui-monospace, monospace;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+}
+
+.map-cargo-scanner .cargo-route-button:hover,
+.map-cargo-scanner .cargo-route-button:focus-visible {
+  border-color: #8cd7da;
+  background: rgba(19, 84, 93, 0.96);
+}
+
+.map-cargo-scanner .cargo-route-button:active {
+  background: #326a73;
+}
