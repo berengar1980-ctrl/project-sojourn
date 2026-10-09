@@ -24,6 +24,20 @@ function findDistress(predicate) {
   throw new Error('No matching distress profile in deterministic world-event seeds');
 }
 
+const priority = findDistress(() => true);
+assert(priority.service.playerVisible.some((event) => event.id === priority.event.id));
+assert.equal(priority.service.claimForNpc(priority.event.id, 'npc-1'), false);
+priority.service.advanceDay(priority.event.playerDeadlineDay, { x: 3500, y: 3000 }, true);
+assert(!priority.service.playerVisible.some((event) => event.id === priority.event.id));
+assert.equal(priority.service.claimForNpc(priority.event.id, 'npc-1'), true);
+assert.equal(priority.service.claimForNpc(priority.event.id, 'npc-2'), false);
+
+const accepted = findDistress(() => true);
+assert.equal(accepted.service.acceptForPlayer(accepted.event.id), true);
+accepted.service.advanceDay(accepted.event.playerDeadlineDay, { x: 3500, y: 3000 }, true);
+assert(accepted.service.playerVisible.some((event) => event.id === accepted.event.id));
+assert.equal(accepted.service.claimForNpc(accepted.event.id, 'npc-1'), false);
+
 const tow = findDistress(
   (event) => event.distressDamage === 'power_grid' || event.distressDamage === 'drive_control'
 );
