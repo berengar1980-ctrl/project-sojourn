@@ -26,8 +26,8 @@ jobs:
           when: always
           command: |
             mkdir -p /tmp/integration-prettier
-            npx prettier --write src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts tests/ships/mine-slot-economy.test.cjs
-            git diff -- src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts tests/ships/mine-slot-economy.test.cjs > /tmp/integration-prettier/prettier.patch
+            npx prettier --write src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts src/systems/salvage/salvage-event-field-generator.ts tests/ships/mine-slot-economy.test.cjs
+            git diff -- src/app/game-controller-combat.ts src/app/game-controller-port.ts src/data/ships/ship-component-catalog.ts src/systems/combat/npc-combatant-setup.ts src/systems/npcs/npc-local-salvage-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-component-service.ts src/systems/salvage/salvage-event-field-generator.ts tests/ships/mine-slot-economy.test.cjs > /tmp/integration-prettier/prettier.patch
       - store_artifacts:
           path: /tmp/integration-prettier
           destination: integration-prettier
