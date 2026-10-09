@@ -235,28 +235,35 @@ function rollbackShipyardSwap(
   }
 }
 
+function storeRemovedShipyardComponent(
+  context: ActivePortContext,
+  type: ShipComponentType,
+  before: string | null
+): ReturnType<ShipComponentInventoryService['store']> {
+  if (!before) return null;
+  return context.componentInventory.store(
+    type,
+    before,
+    'removed-' + context.ship.id,
+    context.runtime.cargoCapacityTons,
+    'removed'
+  );
+}
+
 function setShipyardComponentSlot(
   context: ActivePortContext,
   type: ShipComponentType,
   index: number,
   uid: string | null
 ): void {
-  const { componentInventory, loadouts, ship, runtime, log, onRefresh } = context;
+  const { componentInventory, loadouts, ship, log, onRefresh } = context;
   const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
   if (uid && (!item || item.type !== type)) return;
   const before = loadouts.get(ship)[type]?.[index] ?? null;
   if (before === (item?.componentId ?? null)) return;
   const selected = item ? componentInventory.take(item.uid) : null;
   if (item && !selected) return;
-  const removed = before
-    ? componentInventory.store(
-        type,
-        before,
-        'removed-' + ship.id,
-        runtime.cargoCapacityTons,
-        'removed'
-      )
-    : null;
+  const removed = storeRemovedShipyardComponent(context, type, before);
   if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
     rollbackShipyardSwap(context, type, removed?.uid ?? null, selected);
     log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
