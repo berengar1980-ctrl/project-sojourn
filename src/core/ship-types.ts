@@ -10,7 +10,8 @@ export type ShipComponentType =
   | 'mine'
   | 'cargo'
   | 'mining'
-  | 'salvage';
+  | 'salvage'
+  | 'tractor';
 
 export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
 
