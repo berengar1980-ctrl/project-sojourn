@@ -198,6 +198,23 @@ export function mountControllerBoarding(
   state.shipSwitcher = null;
 }
 
+export function controllerSalvageExitAction(
+  context: ControllerRuntimeContext,
+  mountStarMap: () => void
+): () => void {
+  return () => {
+    const event = context.economy.salvageEvents.event(
+      context.navigation.getSnapshot().currentLocationId
+    );
+    if (event?.distressStage === 'towing' && event.distressTowDestinationId) {
+      context.navigation.selectDestination(event.distressTowDestinationId);
+      context.navigation.startTravel();
+      context.systemLog.write('SCHLEPPEN > KARTENAUSGANG ERREICHT · TRANSFER ZUR WERFT');
+    }
+    runSceneZoomTransition(context.root, mountStarMap);
+  };
+}
+
 export function controllerSalvageEventCallbacks(
   context: ControllerRuntimeContext,
   actions: ControllerEventActions
