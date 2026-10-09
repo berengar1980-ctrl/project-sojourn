@@ -230,8 +230,8 @@ function createStrategicCombatRuntime(
     x: arena.width * 0.65,
     y: arena.height * 0.5,
   };
-  const playerFlees = attackerSetup.preferredTactic === 'flee' ||
-    defenderSetup.preferredTactic !== 'flee';
+  const playerFlees =
+    attackerSetup.preferredTactic === 'flee' || defenderSetup.preferredTactic !== 'flee';
   const runner = playerFlees ? attackerPosition : defenderPosition;
   const pursuer = playerFlees ? defenderPosition : attackerPosition;
   const preferredGate = candidates
