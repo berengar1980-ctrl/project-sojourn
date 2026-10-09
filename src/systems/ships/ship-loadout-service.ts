@@ -47,7 +47,9 @@ export function createShipLoadoutService(): ShipLoadoutService {
   return {
     get,
     snapshot() {
-      return Object.fromEntries([...byShipId].map(([id, installed]) => [id, cloneInstalled(installed)]));
+      return Object.fromEntries(
+        [...byShipId].map(([id, installed]) => [id, cloneInstalled(installed)])
+      );
     },
     setSlot(ship, type, index, componentId) {
       const limit = slotLimit(ship, type);
