@@ -1,3 +1,4 @@
+import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
   SalvageSpaceViewModel,
@@ -34,6 +35,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly shipLighting = new ShipLightingRenderer();
   protected readonly shieldImpacts = new ShieldImpactRenderer();
   protected readonly shipImage = new Image();
+  protected readonly distressParticles = new DistressDamageParticles();
+  protected particleFadeStarted = false;
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: SalvageSpaceViewModel;
   protected combatImpactSerial = -1;
@@ -144,6 +147,18 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
+    const damaged = this.model.wrecks.find((wreck) => wreck.id.startsWith('event-wreck-'));
+    if (this.model.sectorEvent?.type === 'distress-rescue' && damaged) {
+      if (this.model.distressRepairing && !this.particleFadeStarted) {
+        this.distressParticles.beginExtinguish();
+        this.particleFadeStarted = true;
+      }
+      this.distressParticles.update(
+        timeSeconds, this.model.distressTow?.position ?? damaged.position,
+        this.model.distressTow?.headingRadians ?? damaged.rotation,
+        this.model.ship.nominalLengthMeters, this.camera, this.context, width, height
+      );
+    }
     this.drawRoute(width, height);
     drawLocalSpaceExitGate(
       this.context,
