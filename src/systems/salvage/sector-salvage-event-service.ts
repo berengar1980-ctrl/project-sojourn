@@ -460,7 +460,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: WRECK_KINDS[Math.floor(this.random() * WRECK_KINDS.length)] ?? 'freighter',
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      playerDeadlineDay: day + 3,
+      playerDeadlineDay: this.playerSalvageEligible ? day + 3 : day,
       playerAccepted: false,
       expiresDay: day + 8,
       resolved: false,
