@@ -1,5 +1,6 @@
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldPoint } from '../core/world-types';
+import { playerAtLocalExit } from '../ui/map/local-space-exit-gate';
 import {
   planMiningApproachRouteAsync,
   planPointRouteAsync,
@@ -100,6 +101,15 @@ export function createLocalPanelActions(context: LocalActionContext): LocalPanel
       context.getSpace()?.cancelMining();
       context.refresh();
     },
-    onReturnToStarMap: context.returnToStarMap,
+    onReturnToStarMap() {
+      const snapshot = context.getSpace()?.getSnapshot();
+      if (!snapshot) return;
+      const { width, height, ship } = snapshot.instance;
+      if (!playerAtLocalExit(ship.position, width, height)) {
+        context.systemLog.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
+        return;
+      }
+      context.returnToStarMap();
+    },
   };
 }
