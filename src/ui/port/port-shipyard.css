@@ -167,8 +167,17 @@
 }
 
 @media (max-width: 680px) {
-  .port-yard-preview { grid-template-columns: 1fr; }
-  .port-yard-specifications { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .port-yard-buy-footer { flex-direction: column; align-items: stretch; }
-  .port-yard-buy-footer button { min-width: 0; }
+  .port-yard-preview {
+    grid-template-columns: 1fr;
+  }
+  .port-yard-specifications {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .port-yard-buy-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .port-yard-buy-footer button {
+    min-width: 0;
+  }
 }
