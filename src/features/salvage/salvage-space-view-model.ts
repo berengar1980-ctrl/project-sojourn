@@ -1,3 +1,4 @@
+import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type {
@@ -118,6 +119,7 @@ export interface SalvageSpaceViewModel {
   readonly eventResolutionSerial: number;
   readonly combat: StrategicCombatSnapshot | null;
   readonly sectorEvent: SectorSalvageEvent | null;
+  readonly distressTow: DistressTowState | null;
 }
 
 function wreckKindLabel(kind: SalvageWreckKind): string {
@@ -241,7 +243,8 @@ export function createSalvageSpaceViewModel(
   npcShips: readonly SalvageNpcShipView[] = [],
   selectedNpcId: string | null = null,
   combat: StrategicCombatSnapshot | null = null,
-  sectorEvent: SectorSalvageEvent | null = null
+  sectorEvent: SectorSalvageEvent | null = null,
+  distressTow: DistressTowState | null = null
 ): SalvageSpaceViewModel {
   const wrecks = wreckViews(snapshot);
   const cargoResources = cargoView(player);
@@ -281,5 +284,6 @@ export function createSalvageSpaceViewModel(
     eventResolutionSerial: snapshot.eventResolutionSerial,
     combat,
     sectorEvent,
+    distressTow,
   };
 }
