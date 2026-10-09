@@ -221,7 +221,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
       this.context.restore();
     }
-
     return { id: wreck.id, point, radius: radius + 12 };
   }
   protected drawHullFragments(wreck: SalvageWreckView, radius: number): void {
@@ -235,7 +234,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.fillStyle = gradient;
     context.strokeStyle = 'rgba(201, 210, 210, 0.22)';
     context.lineWidth = Math.max(0.8, radius * 0.018);
-
     context.beginPath();
     context.moveTo(-length * 0.92, -height * 0.55);
     context.lineTo(-length * 0.08, -height * 0.7);
@@ -245,7 +243,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.closePath();
     context.fill();
     context.stroke();
-
     context.save();
     context.translate(length * 0.18, -height * 0.08);
     context.rotate(-0.12);
@@ -259,7 +256,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.fill();
     context.stroke();
     context.restore();
-
     this.drawKindDetails(wreck, radius);
     context.strokeStyle = 'rgba(6, 8, 10, 0.86)';
     context.lineWidth = Math.max(1.2, radius * 0.055);
@@ -396,7 +392,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
     }
     this.context.setLineDash([]);
-
     for (let index = 0; index < 9; index += 1) {
       const destination = emitters[index % emitters.length] ?? geometry.center;
       const phase = fractional(
@@ -418,7 +413,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.arc(x, y, component ? 2.2 : 1.5 + (index % 3) * 0.55, 0, Math.PI * 2);
       this.context.fill();
     }
-
     this.context.strokeStyle = component
       ? `rgba(146, 225, 255, ${0.42 + pulse * 0.24})`
       : `rgba(255, 194, 93, ${0.38 + pulse * 0.28})`;
@@ -468,7 +462,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     };
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
     this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
-
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
