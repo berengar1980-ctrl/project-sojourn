@@ -49,10 +49,10 @@ export function sectorSalvageEventComponent(
   if (!base) return null;
 
   let componentId = base.id;
-  if (event.specialComponent) {
-    const damage = type === 'weapon' && random() < 0.42;
-    const modifier = damage ? 'damage' : 'efficiency';
-    const pct = damage ? 3 + Math.floor(random() * 8) : 5 + Math.floor(random() * 11);
+  // A component may have no bonus; otherwise it has one 1–25% modifier.
+  if (random() < 0.5) {
+    const modifier = random() < 0.5 && base.power > 0 ? 'efficiency' : 'performance';
+    const pct = 1 + Math.floor(random() * 25);
     componentId = createSpecialSalvageComponentId(type, base.id, modifier, pct) ?? base.id;
   }
   const definition = getShipComponent(type, componentId) ?? base;
