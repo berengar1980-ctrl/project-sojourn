@@ -62,10 +62,7 @@ function marketBuyerHints(
           name: location.name,
           matchedQuantity,
           resourceIds: matched.map((item) => item.resourceId),
-          distance: Math.hypot(
-            location.position.x - origin.x,
-            location.position.y - origin.y
-          ),
+          distance: Math.hypot(location.position.x - origin.x, location.position.y - origin.y),
         },
       ];
     })
