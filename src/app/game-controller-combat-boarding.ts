@@ -1,4 +1,5 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { createCrewBoardingEncounter } from '../systems/boarding/crew-boarding-adapter';
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
@@ -78,4 +79,18 @@ export function startCombatBoarding(
       runSceneZoomTransition(context.root, returnToMap);
     },
   });
+}
+
+export function returnFromCombat(
+  context: ControllerRuntimeContext,
+  combat: StrategicCombatService,
+  returnToMap: () => void
+): void {
+  const snapshot = combat.getSnapshot();
+  if (snapshot.boardingInitiator) {
+    startCombatBoarding(context, snapshot, returnToMap);
+    return;
+  }
+  context.engagements.finishPlayerCombat();
+  runSceneZoomTransition(context.root, returnToMap);
 }
