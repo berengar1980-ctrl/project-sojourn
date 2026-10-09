@@ -28,6 +28,7 @@ export interface CargoMarketHint {
   readonly name: string;
   readonly distance: number;
   readonly matchedQuantity: number;
+  readonly resourceIds: readonly string[];
 }
 
 export interface CargoMarketScanner {
@@ -120,14 +121,14 @@ export function scanCargoMarkets(options: {
     .flatMap((location) => {
       const profile = sectorPortProfiles.find((port) => port.locationId === location.id);
       if (!profile) return [];
-      const matchedQuantity = cargo
-        .filter((item) => profile.needs.includes(item.resourceId))
-        .reduce((sum, item) => sum + item.quantity, 0);
+      const matched = cargo.filter((item) => profile.needs.includes(item.resourceId));
+      const matchedQuantity = matched.reduce((sum, item) => sum + item.quantity, 0);
       if (matchedQuantity === 0) return [];
       return [{
         locationId: location.id,
         name: location.name,
         matchedQuantity,
+        resourceIds: matched.map((item) => item.resourceId),
         distance: Math.hypot(
           location.position.x - options.origin.x,
           location.position.y - options.origin.y
