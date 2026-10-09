@@ -218,13 +218,15 @@ function createStrategicCombatRuntime(
   const margin = EDGE_PADDING;
   const escapeArena: StrategicCombatArenaOptions = {
     ...arena,
-    exitPoint: arenaOptions?.exitPoint ?? (escapeSide % 4 === 0
-    ? { x: margin, y: arena.height * 0.5 }
-    : escapeSide % 4 === 1
-      ? { x: arena.width - margin, y: arena.height * 0.5 }
-      : escapeSide % 4 === 2
-        ? { x: arena.width * 0.5, y: margin }
-        : { x: arena.width * 0.5, y: arena.height - margin }),
+    exitPoint:
+      arenaOptions?.exitPoint ??
+      (escapeSide % 4 === 0
+        ? { x: margin, y: arena.height * 0.5 }
+        : escapeSide % 4 === 1
+          ? { x: arena.width - margin, y: arena.height * 0.5 }
+          : escapeSide % 4 === 2
+            ? { x: arena.width * 0.5, y: margin }
+            : { x: arena.width * 0.5, y: arena.height - margin }),
   };
   return {
     arena: escapeArena,
