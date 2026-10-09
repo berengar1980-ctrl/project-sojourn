@@ -1,7 +1,7 @@
 export type ShipRole = 'mining' | 'freighter' | 'salvage' | 'patrol';
 
 export type ShipComponentType =
-  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'cargo' | 'mining' | 'salvage';
+  'reactor' | 'engine' | 'shield' | 'hull' | 'sensor' | 'weapon' | 'mine' | 'cargo' | 'mining' | 'salvage';
 
 export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
 
