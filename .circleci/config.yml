@@ -22,16 +22,6 @@ jobs:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
-          name: Export extracted browser Prettier patch
-          when: always
-          command: |
-            mkdir -p /tmp/browser-prettier
-            npx prettier --write src/ui/port/port-panel.ts src/ui/port/port-shipyard-browser.ts
-            git diff -- src/ui/port/port-panel.ts src/ui/port/port-shipyard-browser.ts > /tmp/browser-prettier/prettier.patch
-      - store_artifacts:
-          path: /tmp/browser-prettier
-          destination: browser-prettier
-      - run:
           name: Lint
           command: node scripts/ci-run-and-report.cjs lint -- npm run lint
       - run:
