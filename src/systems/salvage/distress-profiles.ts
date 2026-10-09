@@ -88,26 +88,27 @@ export function profileFor(damage: DistressDamageType | null): DistressProfile {
   return DISTRESS_PROFILES.find((profile) => profile.id === damage) ?? DISTRESS_PROFILES[2]!;
 }
 
-
-export function pickDistressProfile(random: () => number, previous: DistressDamageType | null): DistressProfile {
-    const roll = random();
-    let profile =
-      roll < 0.22
-        ? DISTRESS_PROFILES[0]!
-        : roll < 0.44
-          ? DISTRESS_PROFILES[1]!
-          : roll < 0.63
-            ? DISTRESS_PROFILES[2]!
-            : roll < 0.77
-              ? DISTRESS_PROFILES[3]!
-              : roll < 0.87
-                ? DISTRESS_PROFILES[4]!
-                : roll < 0.95
-                  ? DISTRESS_PROFILES[5]!
-                  : DISTRESS_PROFILES[6]!;
-    if (profile.id === previous) {
-      profile =
-        DISTRESS_PROFILES.find((candidate) => candidate.id !== previous) ?? profile;
-    }
-    return profile;
+export function pickDistressProfile(
+  random: () => number,
+  previous: DistressDamageType | null
+): DistressProfile {
+  const roll = random();
+  let profile =
+    roll < 0.22
+      ? DISTRESS_PROFILES[0]!
+      : roll < 0.44
+        ? DISTRESS_PROFILES[1]!
+        : roll < 0.63
+          ? DISTRESS_PROFILES[2]!
+          : roll < 0.77
+            ? DISTRESS_PROFILES[3]!
+            : roll < 0.87
+              ? DISTRESS_PROFILES[4]!
+              : roll < 0.95
+                ? DISTRESS_PROFILES[5]!
+                : DISTRESS_PROFILES[6]!;
+  if (profile.id === previous) {
+    profile = DISTRESS_PROFILES.find((candidate) => candidate.id !== previous) ?? profile;
   }
+  return profile;
+}
