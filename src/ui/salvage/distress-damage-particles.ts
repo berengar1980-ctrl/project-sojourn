@@ -41,8 +41,8 @@ export class DistressDamageParticles {
 
   update(
     now: number, position: WorldPoint, heading: number, length: number,
-    camera: MapCamera, ctx: CanvasRenderingContext2D, width: number, height: number,
-    hullFraction = 0
+    camera: Pick<MapCamera, 'worldToScreen' | 'scale'>,
+    ctx: CanvasRenderingContext2D, width: number, height: number, hullFraction = 0
   ): void {
     const dt = this.lastTime ? Math.max(0, Math.min(0.05, now - this.lastTime)) : 0;
     this.lastTime = now;
