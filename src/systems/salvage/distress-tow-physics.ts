@@ -10,11 +10,11 @@ export interface DistressTowState {
   readonly cableTension: number;
 }
 
-export function createDistressTowState(position: WorldPoint): DistressTowState {
+export function createDistressTowState(position: WorldPoint, headingRadians = 0): DistressTowState {
   return {
     position: { ...position },
     velocity: { x: 0, y: 0 },
-    headingRadians: 0,
+    headingRadians,
     elapsedSeconds: 0,
     attached: false,
     cableLength: 220,
