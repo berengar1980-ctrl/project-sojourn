@@ -1,3 +1,5 @@
+import type { SectorSalvageEvent } from '../../core/salvage-types';
+import { getShipsByRole } from '../../systems/ships';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import { MapCamera } from '../map/map-camera';
 
@@ -27,4 +29,27 @@ export function drawDistressScanEffect(
   context.lineTo(point.x, point.y);
   context.stroke();
   context.restore();
+}
+
+export function drawDistressShipSprite(
+  context: CanvasRenderingContext2D,
+  event: SectorSalvageEvent | null,
+  wreckId: string,
+  radius: number,
+  loadImage: (url: string) => HTMLImageElement
+): boolean {
+  if (!event || event.type !== 'distress-rescue' || !wreckId.startsWith('event-wreck-')) {
+    return false;
+  }
+  const role = event.wreckKind === 'salvager' ? 'salvage'
+    : event.wreckKind === 'miner' ? 'mining'
+      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+  const variants = getShipsByRole(role);
+  const ship = variants[(event.fieldSeed >>> 0) % variants.length];
+  if (!ship) return false;
+  const image = loadImage(ship.sprite.assetUrl);
+  if (!image.complete || image.naturalWidth <= 0) return false;
+  const aspect = image.naturalWidth / image.naturalHeight;
+  context.drawImage(image, -radius, -radius / aspect, radius * 2, radius * 2 / aspect);
+  return true;
 }
