@@ -1,3 +1,4 @@
+import type { DistressActionResult } from '../core/salvage-types';
 import type { WorldLocation } from '../core/world-types';
 import { createCrewBoardingEncounter } from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
@@ -8,6 +9,24 @@ import type { ControllerPanels, ControllerRuntimeContext } from './game-controll
 export interface ControllerEventActions {
   readonly mountStarMap: () => void;
   readonly mountSalvage: (reuseSeed?: boolean) => void;
+}
+
+function applyDistressOutcome(
+  context: ControllerRuntimeContext,
+  result: DistressActionResult | null
+): void {
+  if (!result) return;
+  if (result.rewardCredits > 0) {
+    context.economy.trade.player.credits += result.rewardCredits;
+    context.systemLog.write(
+      'NOTRUF > BELOHNUNG +' + result.rewardCredits.toLocaleString('de-DE') + ' CR'
+    );
+  }
+  if (result.workHours > 0) {
+    context.systemLog.write(
+      'NOTRUF > EINSATZZEIT ' + result.workHours.toLocaleString('de-DE') + ' h'
+    );
+  }
 }
 
 export function destroyScenePanels(panels: ControllerPanels): void {
@@ -68,11 +87,28 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
   economy.marketIntel.recordHistory(economy.situations.currentDay);
+  const before = new Set(economy.salvageEvents.playerVisible.map((event) => event.id));
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
     true
   );
+  for (const event of economy.salvageEvents.playerVisible) {
+    if (!before.has(event.id))
+      context.systemLog.write(
+        'SEKTOR-EVENT > ' + event.title.toUpperCase() + ' · STERNKARTE · 3 TAGE EXKLUSIV'
+      );
+  }
+}
+
+export function completeDistressTowOnArrival(
+  context: ControllerRuntimeContext,
+  currentLocationId: string | null
+): void {
+  const result = context.economy.salvageEvents.finishTowAtLocation(currentLocationId);
+  if (!result) return;
+  context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+  applyDistressOutcome(context, result);
 }
 
 export function mountControllerBoarding(
@@ -124,6 +160,7 @@ export function mountControllerBoarding(
       const victory = snapshot.outcome === 'player_win';
       const result = economy.salvageEvents.resolveBoarding(eventId, victory);
       context.systemLog.write('BOARDING > ' + (result?.text ?? 'ENTERKAMPF BEENDET').toUpperCase());
+      applyDistressOutcome(context, result);
       runSceneZoomTransition(context.root, actions.mountStarMap);
     },
   });
@@ -138,8 +175,16 @@ export function controllerSalvageEventCallbacks(
   const { state, economy } = context;
   return {
     onDiagnoseDistress: (eventId: string) => {
-      const result = economy.salvageEvents.diagnoseDistress(eventId);
+      const runtime = resolveShipRuntimeSetup(state.activeShip, {
+        ...context.crew.runtimeOptions(state.activeShip),
+        installed: context.loadouts.get(state.activeShip),
+      });
+      const result = economy.salvageEvents.diagnoseDistress(
+        eventId,
+        Math.round(runtime.stationSkills.engineering)
+      );
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+      applyDistressOutcome(context, result);
       actions.mountSalvage(true);
     },
     onRepairDistress: (eventId: string) => {
@@ -152,6 +197,7 @@ export function controllerSalvageEventCallbacks(
         Math.round(runtime.stationSkills.engineering)
       );
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+      applyDistressOutcome(context, result);
       if (result?.success) {
         runSceneZoomTransition(context.root, actions.mountStarMap);
       } else {
@@ -161,11 +207,18 @@ export function controllerSalvageEventCallbacks(
     onTowDistress: (eventId: string) => {
       const result = economy.salvageEvents.towDistress(eventId);
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+      if (!result?.success || !result.towDestinationId) {
+        actions.mountSalvage(true);
+        return;
+      }
+      context.navigation.selectDestination(result.towDestinationId);
+      context.navigation.startTravel();
       runSceneZoomTransition(context.root, actions.mountStarMap);
     },
     onEvacuateDistress: (eventId: string) => {
       const result = economy.salvageEvents.evacuateDistress(eventId);
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+      applyDistressOutcome(context, result);
       if (result?.boardingRequired) {
         context.systemLog.write('BOARDING > HINTERHALT ERKANNT · ENTERKAMPF');
         runSceneZoomTransition(context.root, () =>

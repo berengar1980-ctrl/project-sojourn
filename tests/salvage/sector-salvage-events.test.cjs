@@ -184,7 +184,7 @@ assert(
   'distress traps must enter the real tactical crew boarding flow'
 );
 assert(
-  starController.includes('economy.salvageEvents.active') &&
+  starController.includes('economy.salvageEvents.playerVisible') &&
     starController.includes('selectPointDestination'),
   'active salvage events must appear as selectable dynamic world-map targets'
 );

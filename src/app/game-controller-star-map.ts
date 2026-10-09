@@ -24,6 +24,7 @@ export function createControllerStarPanel(options: {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
+  readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
   ) => { readonly position: { readonly x: number; readonly y: number } } | null;
@@ -47,8 +48,10 @@ export function createControllerStarPanel(options: {
         }
       }
       const event = options.eventById?.(id);
-      if (event) options.navigation.selectPointDestination(id, event.position);
-      else options.navigation.selectDestination(id);
+      if (event) {
+        options.onAcceptEvent?.(id);
+        options.navigation.selectPointDestination(id, event.position);
+      } else options.navigation.selectDestination(id);
       panel?.update(options.getModel());
     },
     onSelectNpc: options.onSelectNpc,
@@ -117,7 +120,7 @@ export function createControllerStarModel(
     ];
   });
 
-  const eventLocations = economy.salvageEvents.active.map((event) => ({
+  const eventLocations = economy.salvageEvents.playerVisible.map((event) => ({
     id: event.id,
     name: event.title,
     kind: 'wreck' as const,

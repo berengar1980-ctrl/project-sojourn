@@ -147,6 +147,22 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
     if (npc.hullHp <= 0 || npc.combatMovement) return;
     this.sellAtShipyard(npc);
     if (npc.salvageEventId) {
+      const event = this.options.events.event(npc.salvageEventId);
+      if (
+        event?.distressStage === 'towing' &&
+        !npc.travel &&
+        npc.locationId === event.distressTowDestinationId
+      ) {
+        const outcome = this.options.events.finishTowAtLocation(npc.locationId, event.id);
+        if (outcome?.success) {
+          npc.credits += outcome.rewardCredits;
+          npc.successfulRuns += 1;
+          npc.activityId = 'salvage-event-complete';
+          npc.activity = 'Havarist im Zielhafen übergeben';
+        }
+        delete npc.salvageEventId;
+        return;
+      }
       this.progressClaimedEvent(npc);
       return;
     }
@@ -186,6 +202,18 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
         ? this.resolveDistress(npc, event)
         : this.resolveSpecialWreck(npc, event);
 
+    const updatedEvent = this.options.events.event(event.id);
+    if (updatedEvent?.distressStage === 'towing' && updatedEvent.distressTowDestinationId) {
+      const started = startReturnTravel(
+        npc,
+        this.options.world,
+        event.position,
+        updatedEvent.distressTowDestinationId,
+        'Havarist zum Übergabehafen abschleppen'
+      );
+      if (!started) this.options.events.resolve(event.id);
+      else return;
+    }
     delete npc.salvageEventId;
     if (!recovered) {
       npc.activityId = 'salvage-event-complete';
@@ -201,14 +229,13 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
   }
 
   private resolveDistress(npc: SectorNpcState, event: SectorSalvageEvent): boolean {
-    this.options.events.diagnoseDistress(event.id);
+    const skill = engineeringSkill(npc);
+    this.options.events.diagnoseDistress(event.id, skill);
     if (!event.distressDamage) return false;
 
-    const critical = new Set(['main_drive', 'coolant', 'hull_breach', 'total_loss']).has(
-      event.distressDamage
-    );
+    const critical = event.distressRepairHours === 0;
     if (!critical) {
-      const repaired = this.options.events.repairDistress(event.id, engineeringSkill(npc));
+      const repaired = this.options.events.repairDistress(event.id, skill);
       if (!repaired?.success) this.options.events.towDistress(event.id);
       return false;
     }
@@ -242,7 +269,12 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
 
   private claimNextEvent(npc: SectorNpcState): void {
     const target = this.options.events.active
-      .filter((event) => !event.claimedByNpcId)
+      .filter(
+        (event) =>
+          !event.claimedByNpcId &&
+          !event.playerAccepted &&
+          event.playerDeadlineDay <= this.options.events.currentDay
+      )
       .sort((a, b) => a.expiresDay - b.expiresDay)[0];
     if (!target) return;
     if (!this.options.events.claimForNpc(target.id, npc.id)) return;

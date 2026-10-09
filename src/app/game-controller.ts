@@ -22,6 +22,7 @@ import type {
 
 import {
   tickEconomy,
+  completeDistressTowOnArrival,
   controllerSalvageEventCallbacks,
   destroyControllerBoarding,
   destroyControllerCombat,
@@ -108,7 +109,9 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
-    eventById: (id) => context.economy.salvageEvents.event(id),
+    eventById: (id) =>
+      context.economy.salvageEvents.playerVisible.find((event) => event.id === id) ?? null,
+    onAcceptEvent: (id) => context.economy.salvageEvents.acceptForPlayer(id),
   });
   mountControllerSwitcher(context);
 }
@@ -345,7 +348,6 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     mountControllerCombat(context);
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
-
   const snapshot = activeCombat.getSnapshot();
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   if (state.embeddedCombat === 'local-space') {
@@ -382,6 +384,8 @@ function handleControllerLocationEntry(
     (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId) ||
       economy.salvageEvents.event(currentLocationId) !== null);
   if (enteredSalvage) {
+    if (economy.salvageEvents.event(currentLocationId))
+      economy.salvageEvents.acceptForPlayer(currentLocationId!);
     runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
   }
 }
@@ -401,7 +405,6 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
     return;
   }
   if (state.mode !== 'local-space' || !state.localSpace) return;
-
   if (state.embeddedCombat !== 'local-space') {
     state.localSpace.tick(deltaSeconds);
     const localSnapshot = state.localSpace.getSnapshot();
@@ -421,12 +424,13 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
-
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
-
   const currentLocationId = navigationSnapshot.currentLocationId;
+  if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
+    completeDistressTowOnArrival(context, currentLocationId);
+  }
   handleControllerLocationEntry(context, currentLocationId);
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
