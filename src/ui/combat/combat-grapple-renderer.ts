@@ -5,13 +5,13 @@ interface Point { readonly x: number; readonly y: number }
 export function drawCombatGrapple(
   context: CanvasRenderingContext2D,
   model: StrategicCombatSnapshot,
-  screen: (point: Point) => Point
+  screen: (point: Point) => Point,
+  sourceAnchor: (side: 'attacker' | 'defender') => Point
 ): void {
   const grapple = model.grapple;
   if (!grapple) return;
-  const source = grapple.owner === 'attacker' ? model.attacker : model.defender;
   const target = grapple.owner === 'attacker' ? model.defender : model.attacker;
-  const origin = screen(source.position);
+  const origin = sourceAnchor(grapple.owner);
   const destination = screen(target.position);
   const progress = Math.min(1, grapple.elapsed / 0.65);
   const tip = {
