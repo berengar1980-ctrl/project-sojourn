@@ -483,7 +483,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       distressPendingRewardCredits: 0,
     });
   }
-
 }
 
 export function createSectorSalvageEventService(
