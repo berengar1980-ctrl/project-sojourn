@@ -318,15 +318,30 @@ function bindSalvagePanelActions(
     }
     if (button.dataset.salvageAction === 'component') options.onRecoverComponent(wreckId);
   });
-  ui.sectorEventContainer.addEventListener('click', (event) => {
+  ui.sectorEventContainer.addEventListener('pointerdown', (event) => {
     const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-distress-action]');
+    if (!button || button.disabled || !ui.sectorEventContainer.contains(button)) return;
     const model = getModel();
-    if (!(target instanceof HTMLButtonElement) || !model.sectorEvent) return;
+    if (!model.sectorEvent) return;
+    event.preventDefault();
+    event.stopPropagation();
     const id = model.sectorEvent.id;
-    if (target.dataset.distressAction === 'diagnose') options.onDiagnoseDistress?.(id);
-    if (target.dataset.distressAction === 'repair') options.onRepairDistress?.(id);
-    if (target.dataset.distressAction === 'tow') options.onTowDistress?.(id);
-    if (target.dataset.distressAction === 'evacuate') options.onEvacuateDistress?.(id);
+    switch (button.dataset.distressAction) {
+      case 'diagnose':
+        options.onDiagnoseDistress?.(id);
+        break;
+      case 'repair':
+        options.onRepairDistress?.(id);
+        break;
+      case 'tow':
+        options.onTowDistress?.(id);
+        break;
+      case 'evacuate':
+        options.onEvacuateDistress?.(id);
+        break;
+    }
   });
   ui.inspectButton.addEventListener('click', () => {
     const wreck = getModel().selectedWreck;
