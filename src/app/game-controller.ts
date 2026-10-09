@@ -67,6 +67,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     context.navigation,
     (nextShip) => {
       state.activeShip = nextShip;
+      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (state.mode === 'local-space') mountControllerMining(context, true);
       else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
@@ -142,6 +143,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     state.ownedShipIds,
     (nextShip) => {
       state.activeShip = nextShip;
+      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     }
   );
