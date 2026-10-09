@@ -256,6 +256,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
         state.panels.local?.update(controllerLocalModel(context));
       }
     },
+    onCombatGrapple: () => { context.engagements.activePlayerCombat()?.fireGrapple('attacker'); },
     onCombatTactic: (tactic) => {
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
       state.panels.local?.update(controllerLocalModel(context));
@@ -323,6 +324,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
         ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
         : null,
     isCombatActive: () => state.embeddedCombat === 'salvage-space',
+    onCombatGrapple: () => { context.engagements.activePlayerCombat()?.fireGrapple('attacker'); },
     onCombatTactic: (tactic) => {
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
     },
