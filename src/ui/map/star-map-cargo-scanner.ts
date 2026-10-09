@@ -54,7 +54,8 @@ export function bindCargoMarketScanner(
       cargoContent.append(heading);
       for (const hint of hints.slice(0, 5)) {
         const item = document.createElement('div');
-        item.textContent = hint.name + ' · Nachfrage für ' + hint.matchedQuantity + ' t deiner Fracht';
+        item.textContent =
+          hint.name + ' · Nachfrage für ' + hint.matchedQuantity + ' t deiner Fracht';
         cargoContent.append(item);
       }
     }
