@@ -40,6 +40,7 @@ export class TopdownMapRenderer {
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'physical';
   private labelsVisible = true;
+  private cargoOverlay: ReadonlyMap<string, 'best' | 'good' | 'low'> = new Map();
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
 
@@ -104,6 +105,11 @@ export class TopdownMapRenderer {
   setLabelsVisible(visible: boolean): void {
     if (this.labelsVisible === visible) return;
     this.labelsVisible = visible;
+    this.draw();
+  }
+
+  setCargoOverlay(markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void {
+    this.cargoOverlay = markers;
     this.draw();
   }
 
@@ -371,6 +377,7 @@ export class TopdownMapRenderer {
     else this.drawPlanet(location, point, radius, light);
 
     drawSectorEventMarker(this.context, location.id, point, radius);
+    this.drawCargoMarker(location.id, point, radius);
 
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
@@ -391,6 +398,23 @@ export class TopdownMapRenderer {
       y: point.y,
       radius: radius + 12,
     };
+  }
+
+  private drawCargoMarker(id: string, point: WorldPoint, radius: number): void {
+    const rating = this.cargoOverlay.get(id);
+    if (!rating) return;
+    const color = rating === 'best' ? '#60dc9d' : rating === 'good' ? '#e8b558' : '#bc7c72';
+    this.context.save();
+    this.context.strokeStyle = color;
+    this.context.lineWidth = rating === 'best' ? 3 : 2;
+    this.context.beginPath();
+    this.context.arc(point.x, point.y, radius + 15, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.fillStyle = color;
+    this.context.beginPath();
+    this.context.arc(point.x + radius + 11, point.y - radius - 9, 4, 0, Math.PI * 2);
+    this.context.fill();
+    this.context.restore();
   }
 
   private locationVisualRadius(location: StarMapLocationView): number {
