@@ -82,13 +82,10 @@ function runtimeCombatantEscaped(
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   )
     return false;
-  const atEdge =
-    combatant.position.x <= EDGE_PADDING + 8 ||
-    combatant.position.x >= arena.width - EDGE_PADDING - 8 ||
-    combatant.position.y <= EDGE_PADDING + 8 ||
-    combatant.position.y >= arena.height - EDGE_PADDING - 8;
+  const atExit =
+    arena.exitPoint !== undefined && distance(combatant.position, arena.exitPoint) <= 90;
   const safeSeparation = Math.max(350, Math.min(600, arena.width * 0.2));
-  return atEdge && distance(combatant.position, enemy.position) > safeSeparation;
+  return atExit && distance(combatant.position, enemy.position) > safeSeparation;
 }
 
 function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
@@ -131,6 +128,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
     elapsedSeconds: runtime.elapsedSeconds,
+    exitPoint: runtime.arena.exitPoint!,
     winner: runtime.winner,
     lastEvent: runtime.lastEvent,
     projectiles: runtime.projectiles.map((projectile) => ({
@@ -216,6 +214,15 @@ function createStrategicCombatRuntime(
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
   };
+  const escapeSide = seed >>> 0;
+  const margin = EDGE_PADDING;
+  arena.exitPoint = arenaOptions?.exitPoint ?? (escapeSide % 4 === 0
+    ? { x: margin, y: arena.height * 0.5 }
+    : escapeSide % 4 === 1
+      ? { x: arena.width - margin, y: arena.height * 0.5 }
+      : escapeSide % 4 === 2
+        ? { x: arena.width * 0.5, y: margin }
+        : { x: arena.width * 0.5, y: arena.height - margin });
   return {
     arena,
     attacker: createCombatant(attackerSetup, 'attacker', arena),
