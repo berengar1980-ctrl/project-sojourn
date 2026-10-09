@@ -344,7 +344,7 @@ function bindSalvagePanelActions(
         diagnosisTimer = setTimeout(() => {
           diagnosisTimer = null;
           options.onDiagnoseDistress?.(id);
-        }, 1100);
+        }, 3000);
         break;
       case 'repair':
         options.onRepairDistress?.(id);
