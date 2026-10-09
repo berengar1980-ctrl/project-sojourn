@@ -10,7 +10,7 @@ import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 
 import { createPlayerCombatant } from './game-controller-combat';
-import { startCombatBoarding } from './game-controller-combat-boarding';
+import { returnFromCombat, startCombatBoarding } from './game-controller-combat-boarding';
 
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 
@@ -134,15 +134,7 @@ function mountControllerCombat(context: ControllerRuntimeContext): void {
   state.combatPanel = createStrategicCombatPanel({
     root: context.root,
     combat,
-    onReturn: () => {
-      const snapshot = combat.getSnapshot();
-      if (snapshot.boardingInitiator) {
-        startCombatBoarding(context, snapshot, () => mountControllerStarMap(context));
-        return;
-      }
-      context.engagements.finishPlayerCombat();
-      runSceneZoomTransition(context.root, () => mountControllerStarMap(context));
-    },
+    onReturn: () => returnFromCombat(context, combat, () => mountControllerStarMap(context)),
   });
   state.shipSwitcher?.destroy();
   state.shipSwitcher = null;
