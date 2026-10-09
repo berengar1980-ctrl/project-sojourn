@@ -51,8 +51,7 @@ export function createControllerStarPanel(options: {
       if (event) {
         options.onAcceptEvent?.(id);
         options.navigation.selectPointDestination(id, event.position);
-      }
-      else options.navigation.selectDestination(id);
+      } else options.navigation.selectDestination(id);
       panel?.update(options.getModel());
     },
     onSelectNpc: options.onSelectNpc,
