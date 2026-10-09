@@ -109,7 +109,8 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
-    eventById: (id) => context.economy.salvageEvents.playerVisible.find((event) => event.id === id) ?? null,
+    eventById: (id) =>
+      context.economy.salvageEvents.playerVisible.find((event) => event.id === id) ?? null,
     onAcceptEvent: (id) => context.economy.salvageEvents.acceptForPlayer(id),
   });
   mountControllerSwitcher(context);
@@ -384,7 +385,8 @@ function handleControllerLocationEntry(
     (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId) ||
       economy.salvageEvents.event(currentLocationId) !== null);
   if (enteredSalvage) {
-    if (economy.salvageEvents.event(currentLocationId)) economy.salvageEvents.acceptForPlayer(currentLocationId!);
+    if (economy.salvageEvents.event(currentLocationId))
+      economy.salvageEvents.acceptForPlayer(currentLocationId!);
     runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
   }
 }
