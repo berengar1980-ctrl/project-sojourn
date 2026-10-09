@@ -28,7 +28,8 @@ function renderBuyerHints(
       item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
       const route = document.createElement('button');
       route.type = 'button';
-      route.textContent = hint.locationId === selectedDestinationId ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
+      route.textContent =
+        hint.locationId === selectedDestinationId ? 'ZIEL AUSGEWÄHLT' : 'ROUTE SETZEN';
       route.className = 'cargo-route-button';
       route.title = 'Navigationsziel auf der Sternkarte auswählen';
       route.addEventListener('click', (event) => {
@@ -95,7 +96,8 @@ export function bindCargoMarketScanner(
       const complete = quotes.find((quote) => quote.coveredQuantity === quote.totalQuantity);
       if (complete) {
         const recommendation = document.createElement('strong');
-        recommendation.textContent = `BESTER BEKANNTER GESAMTVERKAUF: ${complete.name} · ${formatCredits(complete.revenue)}`;
+        recommendation.textContent =
+          `BESTER BEKANNTER GESAMTVERKAUF: ${complete.name} · ${formatCredits(complete.revenue)}`;
         cargoContent.append(recommendation);
       }
     }
@@ -116,12 +118,15 @@ export function bindCargoMarketScanner(
       preferredCargoResource === 'all' || hint.resourceIds.includes(preferredCargoResource)
     );
     relevantHints.forEach((hint, index) => {
-      if (!markers.has(hint.locationId)) markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+      if (!markers.has(hint.locationId)) {
+        markers.set(hint.locationId, index === 0 ? 'best' : 'good');
+      }
     });
     onVisualization(markers);
     const legend = document.createElement('p');
     legend.className = 'cargo-market-legend';
-    legend.textContent = '● GRÜN: beste Chance  ·  ● GELB: weitere Käufer  ·  ● ROT: niedriger Erlös';
+    legend.textContent =
+      '● GRÜN: beste Chance  ·  ● GELB: weitere Käufer  ·  ● ROT: niedriger Erlös';
     cargoContent.append(legend);
     if (!quotes.length) {
       const empty = document.createElement('p');
