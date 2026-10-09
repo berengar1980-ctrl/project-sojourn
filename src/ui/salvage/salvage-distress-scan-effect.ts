@@ -1,7 +1,7 @@
 import type { SectorSalvageEvent } from '../../core/salvage-types';
 import { getShipsByRole } from '../../systems/ships';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
-import { MapCamera } from '../map/map-camera';
+import type { MapCamera } from '../map/map-camera';
 
 export function drawDistressScanEffect(
   context: CanvasRenderingContext2D,
