@@ -19,15 +19,15 @@ export function drawCombatGrapple(
     y: origin.y + (destination.y - origin.y) * progress,
   };
   context.save();
-  context.lineWidth = 2.5;
-  context.strokeStyle = grapple.success ? '#b9dee7' : '#9ba4ab';
+  context.lineWidth = 2;
+  context.strokeStyle = grapple.success ? '#697379' : '#535c62';
   context.beginPath();
   context.moveTo(origin.x, origin.y);
   context.lineTo(tip.x, tip.y);
   context.stroke();
   context.translate(tip.x, tip.y);
   context.rotate(Math.atan2(destination.y - origin.y, destination.x - origin.x));
-  context.fillStyle = grapple.success ? '#d0f3ff' : '#e6c5a8';
+  context.fillStyle = grapple.success ? '#adb5b9' : '#8d969b';
   context.beginPath();
   context.moveTo(11, 0);
   context.lineTo(-3, -4);
