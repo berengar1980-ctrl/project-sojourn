@@ -68,10 +68,11 @@ export function drawDistressTow(
   const image = ship ? loadImage(ship.sprite.assetUrl) : null;
   context.translate(cargo.x, cargo.y);
   context.rotate(tow.headingRadians);
-  if (image?.complete && image.naturalWidth > 0) {
+  if (image?.complete && image.naturalWidth > 0 && ship) {
     const ratio = image.naturalWidth / image.naturalHeight;
+    const shipWidth = camera.scale(ship.nominalLengthMeters);
     context.globalAlpha = 0.88;
-    context.drawImage(image, -65, -65 / ratio, 130, 130 / ratio);
+    context.drawImage(image, -shipWidth / 2, -shipWidth / (2 * ratio), shipWidth, shipWidth / ratio);
   } else {
     context.strokeStyle = '#c6d4da';
     context.lineWidth = 3;
