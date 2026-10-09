@@ -14,9 +14,9 @@ function renderBuyerHints(
     heading.textContent = 'MÖGLICHE KÄUFER // NACHFRAGEPROFIL (KEINE LIVEPREISE)';
     container.append(heading);
     for (const hint of hints.slice(0, 5)) {
-    const item = document.createElement('div');
-    item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
-    container.append(item);
+      const item = document.createElement('div');
+      item.textContent = `${hint.name} · Nachfrage für ${hint.matchedQuantity} t deiner Fracht`;
+      container.append(item);
     }
   }
 }
