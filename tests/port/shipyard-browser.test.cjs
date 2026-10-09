@@ -32,12 +32,14 @@ for (const key of [
   'maxComponentTier',
 ]) {
   assert(markup.includes('offer.' + key), 'ship preview missing ' + key);
-  assert(view.includes(key + ': number') || (key === 'spriteUrl' && view.includes('spriteUrl: string')));
+  assert(
+    view.includes(key + ': number') || (key === 'spriteUrl' && view.includes('spriteUrl: string'))
+  );
   assert(controller.includes(key + ':'), 'ship data must originate from ship definitions');
 }
-assert(panel.includes("bindShipyardBrowser(shell)"));
-assert(panel.includes("lastYardView"));
-assert(panel.includes("lastYardRole"));
+assert(panel.includes('bindShipyardBrowser(shell)'));
+assert(panel.includes('lastYardView'));
+assert(panel.includes('lastYardRole'));
 assert(panel.includes('options.onBuyShip(button.dataset.buyShipId'));
 assert(markup.includes('data-yard-section="components"'));
 console.log('PASS shipyard tabs, role filtering, offer previews and purchasing wiring');
