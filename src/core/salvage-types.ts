@@ -124,12 +124,7 @@ export type DistressDamageType =
   | 'hull_breach'
   | 'total_loss';
 export type DistressStage =
-  | 'approach'
-  | 'diagnosed'
-  | 'tow_required'
-  | 'towing'
-  | 'salvage_rights'
-  | 'resolved';
+  'approach' | 'diagnosed' | 'tow_required' | 'towing' | 'salvage_rights' | 'resolved';
 
 export interface SectorSalvageEvent {
   readonly id: string;
