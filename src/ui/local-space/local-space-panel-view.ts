@@ -118,6 +118,16 @@ interface LocalOverlayContext {
   readonly miningResourceSelector: MiningResourceSelector;
 }
 
+function updateLocalExitButton(
+  button: HTMLButtonElement,
+  model: LocalSpaceViewModel,
+  eventActive: boolean
+): void {
+  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
+  button.disabled = eventActive || !atExit;
+  button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
+}
+
 export function updateLocalOverlay(context: LocalOverlayContext): void {
   const {
     model,
@@ -160,9 +170,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   card.hidden = !selected && !selectedNpc;
   cancelButton.hidden = !miningActive;
   cancelButton.disabled = eventActive;
-  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
-  backButton.disabled = eventActive || !atExit;
-  backButton.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
+  updateLocalExitButton(backButton, model, eventActive);
   renderCargo(model, cargoTotal, cargoList);
   longScanButton.disabled = eventActive || !model.scanAvailable || longScanActive;
   longScanButton.textContent = model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
