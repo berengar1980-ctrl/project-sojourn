@@ -1,3 +1,4 @@
+import type { CombatGrapple } from './combat-grapple-service';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import type { ShieldImpactEffect } from '../../core/shield-types';
@@ -126,6 +127,9 @@ export interface StrategicCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly exitPoint: CombatPoint;
   readonly winner: StrategicCombatSide | null;
+  readonly boardingInitiator: StrategicCombatSide | null;
+  readonly grapple: CombatGrapple | null;
+  readonly grappleUsed: Readonly<Record<StrategicCombatSide, boolean>>;
   readonly lastEvent: string;
   readonly projectiles: readonly CombatProjectileSnapshot[];
   readonly beams: readonly CombatBeamSnapshot[];
@@ -156,6 +160,7 @@ export interface StrategicCombatService {
   getSnapshot(): StrategicCombatSnapshot;
   tick(deltaSeconds: number): StrategicCombatSnapshot;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
+  fireGrapple(side: StrategicCombatSide): boolean;
 }
 
 export interface MutableCombatant {
@@ -227,6 +232,9 @@ export interface StrategicCombatRuntime {
   readonly mines: MutableMine[];
   elapsedSeconds: number;
   winner: StrategicCombatSide | null;
+  boardingInitiator: StrategicCombatSide | null;
+  grapple: CombatGrapple | null;
+  grappleUsed: Record<StrategicCombatSide, boolean>;
   lastEvent: string;
   projectileSerial: number;
   beamSerial: number;
