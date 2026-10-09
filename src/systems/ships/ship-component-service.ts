@@ -80,6 +80,31 @@ function variantName(
   return `${base.name} – ${special ? 'Überladene Ausführung' : 'Leistungsoptimiert'} (+${pct} % Schaden)`;
 }
 
+function performanceFields(
+  base: ShipComponentDefinition,
+  pct: number
+): Partial<ShipComponentDefinition> {
+  const boost = (value: number, minimum = 0): number =>
+    Math.round((value === 0 ? minimum : value * (1 + pct / 100)) * 100) / 100;
+  return {
+    ...(base.output !== undefined ? { output: boost(base.output) } : {}),
+    ...(base.speed !== undefined ? { speed: boost(base.speed, pct / 100) } : {}),
+    ...(base.bonus !== undefined ? { bonus: boost(base.bonus, pct) } : {}),
+    ...(base.range !== undefined ? { range: boost(base.range, pct / 100) } : {}),
+    ...(base.yield !== undefined ? { yield: boost(base.yield, pct / 100) } : {}),
+    ...(base.chance !== undefined ? { chance: boost(base.chance, pct) } : {}),
+    ...(base.weapon
+      ? {
+          weapon: {
+            ...base.weapon,
+            shieldDamage: boost(base.weapon.shieldDamage),
+            hullDamage: boost(base.weapon.hullDamage),
+          },
+        }
+      : {}),
+  };
+}
+
 function variantDefinition(
   type: ShipComponentType,
   id: string,
@@ -95,10 +120,6 @@ function variantDefinition(
   if (parsed.modifier === 'efficiency' && base.power <= 0) return null;
 
   const special = parsed.source === 'special';
-  const weapon = variantWeapon(base, parsed.modifier, parsed.pct);
-  const boost = (value: number, minimum = 0): number =>
-    Math.round((value === 0 ? minimum : value * (1 + parsed.pct / 100)) * 100) / 100;
-  const performance = parsed.modifier === 'performance';
   return {
     ...base,
     id,
@@ -113,29 +134,8 @@ function variantDefinition(
       parsed.modifier === 'efficiency'
         ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100)))
         : base.power,
-    ...(weapon
-      ? {
-          weapon: performance
-            ? {
-                ...weapon,
-                shieldDamage: boost(weapon.shieldDamage),
-                hullDamage: boost(weapon.hullDamage),
-              }
-            : weapon,
-        }
-      : {}),
-    ...(performance && base.output !== undefined ? { output: boost(base.output) } : {}),
-    ...(performance && base.speed !== undefined
-      ? { speed: boost(base.speed, parsed.pct / 100) }
-      : {}),
-    ...(performance && base.bonus !== undefined ? { bonus: boost(base.bonus, parsed.pct) } : {}),
-    ...(performance && base.range !== undefined
-      ? { range: boost(base.range, parsed.pct / 100) }
-      : {}),
-    ...(performance && base.yield !== undefined
-      ? { yield: boost(base.yield, parsed.pct / 100) }
-      : {}),
-    ...(performance && base.chance !== undefined ? { chance: boost(base.chance, parsed.pct) } : {}),
+    ...(base.weapon ? { weapon: variantWeapon(base, parsed.modifier, parsed.pct) } : {}),
+    ...(parsed.modifier === 'performance' ? performanceFields(base, parsed.pct) : {}),
   };
 }
 
