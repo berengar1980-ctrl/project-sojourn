@@ -6,7 +6,7 @@ import type {
 } from '../../core/salvage-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
-import { pickDistressProfile, profileFor, type DistressProfile } from './distress-profiles';
+import { distressTrapChance, pickDistressProfile, pointDanger, profileFor, type DistressProfile } from './distress-profiles';
 
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
@@ -37,23 +37,6 @@ function eventPosition(world: WorldMap, origin: WorldPoint, random: () => number
     x: origin.x + Math.cos(angle) * distance,
     y: origin.y + Math.sin(angle) * distance,
   });
-}
-
-function pointDanger(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = 0;
-  for (const region of world.regions) {
-    const distance = Math.hypot(point.x - region.center.x, point.y - region.center.y);
-    if (distance <= region.radius) {
-      danger = Math.max(danger, region.dangerLevel) as 0 | 1 | 2 | 3;
-    }
-  }
-  return danger;
-}
-
-function distressTrapChance(danger: 0 | 1 | 2 | 3): number {
-  if (danger >= 3) return 0.15;
-  if (danger === 2) return 0.08;
-  return 0.03;
 }
 
 function cloneEvent(event: SectorSalvageEvent): SectorSalvageEvent {
