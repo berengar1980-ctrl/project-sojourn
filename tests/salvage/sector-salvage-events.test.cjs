@@ -115,12 +115,14 @@ if (specialDefinition.specialSalvage) {
     'research must remember the best bonus for this exact model and Mk tier'
   );
   assert(
-    research.variants(specialCandidate.type, specialDefinition.tier).some(
-      (variant) =>
-        variant.baseId === specialBase.id &&
-        variant.salvageModifier === specialDefinition.salvageModifier &&
-        variant.salvageModifierPct === specialDefinition.salvageModifierPct
-    ),
+    research
+      .variants(specialCandidate.type, specialDefinition.tier)
+      .some(
+        (variant) =>
+          variant.baseId === specialBase.id &&
+          variant.salvageModifier === specialDefinition.salvageModifier &&
+          variant.salvageModifierPct === specialDefinition.salvageModifierPct
+      ),
     'discovered bonus must be available for the exact same component model'
   );
 } else {
