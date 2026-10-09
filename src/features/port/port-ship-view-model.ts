@@ -103,6 +103,7 @@ const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
   cargo: 'Frachtmodul',
   mining: 'Mining-System',
   salvage: 'Bergungssystem',
+  tractor: 'Traktorstrahl',
 };
 
 function componentTypesForShip(ship: ShipDefinition): ShipComponentType[] {
@@ -114,6 +115,7 @@ function componentTypesForShip(ship: ShipDefinition): ShipComponentType[] {
     'sensor',
     'cargo',
     'mine',
+    'tractor',
   ];
   if (ship.role === 'mining') types.push('mining');
   if (ship.role === 'salvage') types.push('salvage');

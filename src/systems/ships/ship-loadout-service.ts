@@ -27,7 +27,7 @@ function cloneInstalled(installed: InstalledShipComponents): InstalledShipCompon
 
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
   if (type === 'weapon') return resolveShipGameplayStats(ship).weaponSlots;
-  if (type === 'mine') return 1;
+  if (type === 'mine' || type === 'tractor') return 1;
   if (type === 'mining') return ship.role === 'mining' ? 1 : 0;
   if (type === 'salvage') return ship.role === 'salvage' ? 1 : 0;
   return 1;

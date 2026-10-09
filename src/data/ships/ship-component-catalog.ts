@@ -329,6 +329,18 @@ export const SHIP_COMPONENT_CATALOG: Readonly<
     ],
     'yield'
   ),
+  tractor: definitions(
+    'tractor',
+    [
+      ['tractor1', 'Tractor Beam Mk I', 1, 5, 0, 340],
+      ['tractor2', 'Tractor Beam Mk II', 2, 7, 650000, 420],
+      ['tractor3', 'Tractor Beam Mk III', 3, 10, 1350000, 510],
+      ['tractor4', 'Tractor Beam Mk IV', 4, 13, 2300000, 610],
+      ['tractor5', 'Tractor Beam Mk V', 5, 17, 4000000, 720],
+      ['tractor6', 'Tractor Beam Mk VI', 6, 22, 6800000, 840],
+    ],
+    'range'
+  ),
   salvage: definitions(
     'salvage',
     [

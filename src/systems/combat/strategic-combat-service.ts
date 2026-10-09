@@ -76,6 +76,12 @@ function runtimeCombatantEscaped(
   arena: StrategicCombatArenaOptions
 ): boolean {
   if (combatant.tactic !== 'flee') return false;
+  if (
+    combatant.shieldHp <= 0 &&
+    enemy.hullHp > 0 &&
+    distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
+  )
+    return false;
   const atEdge =
     combatant.position.x <= EDGE_PADDING + 8 ||
     combatant.position.x >= arena.width - EDGE_PADDING - 8 ||
@@ -108,8 +114,22 @@ function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
 
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
   return {
-    attacker: snapshot(runtime.attacker),
-    defender: snapshot(runtime.defender),
+    attacker: {
+      ...snapshot(runtime.attacker),
+      tractorLocked:
+        runtime.attacker.shieldHp <= 0 &&
+        runtime.defender.hullHp > 0 &&
+        distance(runtime.attacker.position, runtime.defender.position) <=
+          (runtime.defender.setup.tractorRangeMeters ?? 0),
+    },
+    defender: {
+      ...snapshot(runtime.defender),
+      tractorLocked:
+        runtime.defender.shieldHp <= 0 &&
+        runtime.attacker.hullHp > 0 &&
+        distance(runtime.defender.position, runtime.attacker.position) <=
+          (runtime.attacker.setup.tractorRangeMeters ?? 0),
+    },
     elapsedSeconds: runtime.elapsedSeconds,
     winner: runtime.winner,
     lastEvent: runtime.lastEvent,

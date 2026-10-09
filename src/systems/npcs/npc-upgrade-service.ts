@@ -21,6 +21,7 @@ const UPGRADE_TYPES: readonly ShipComponentType[] = [
   'cargo',
   'mining',
   'salvage',
+  'tractor',
 ];
 
 function mutableInstalled(
@@ -111,6 +112,7 @@ function rolePriority(npc: SectorNpcState, type: ShipComponentType): number {
     if (type === 'sensor') return 3;
     if (type === 'engine') return 2;
   } else if (npc.job === 'patrol') {
+    if (type === 'tractor') return 3.5;
     if (type === 'weapon') return 4;
     if (type === 'mine') return 2;
     if (type === 'shield') return 3;
