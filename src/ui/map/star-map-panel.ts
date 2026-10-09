@@ -11,6 +11,8 @@ export interface StarMapPanel {
 
 let preferredDisplayMode: StarMapDisplayMode = 'physical';
 let preferredLabelsVisible = true;
+let preferredCargoVisible = false;
+let preferredCargoResource = 'all';
 
 interface StarMapPanelOptions {
   readonly root: HTMLElement;
@@ -60,6 +62,13 @@ function createStarMapControls(options: StarMapPanelOptions) {
     <div class="travel-status" hidden></div>
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <button class="map-label-toggle" type="button">NAMEN // AN</button>
+    <button class="map-cargo-toggle" type="button">FRACHT // AUS</button>
+    <aside class="map-cargo-scanner" hidden style="position:absolute;right:16px;top:92px;width:min(340px,calc(100% - 32px));max-height:58%;overflow:auto;background:rgba(5,14,23,.94);border:1px solid #526b78;border-radius:7px;padding:14px;color:#dfe8f3;z-index:5;font:12px system-ui;box-shadow:0 12px 32px #0009">
+      <strong>FRACHTMARKT // ANALYSE</strong>
+      <div style="margin:9px 0"><label for="cargo-resource-select">ANZEIGE </label><select id="cargo-resource-select" class="map-cargo-resource" style="max-width:210px;background:#132531;color:#dfe8f3;border:1px solid #526b78;padding:5px"></select></div>
+      <div class="map-cargo-content"></div>
+      <small style="display:block;margin-top:8px;color:#9baebb">Prognose auf Basis bekannter Marktdaten. Tatsächliche Preise können sich ändern. Verkauf nur im Hafen.</small>
+    </aside>
     <div class="map-controls">DOPPELKLICK · ANSICHT ZURÜCKSETZEN &nbsp;&nbsp; MAUSRAD · ZOOM</div>
     <div class="selection-card" hidden>
       <div class="selection-kind"></div>
@@ -83,6 +92,10 @@ function createStarMapControls(options: StarMapPanelOptions) {
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
   const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
+  const cargoToggle = shell.querySelector<HTMLButtonElement>('.map-cargo-toggle');
+  const cargoPanel = shell.querySelector<HTMLElement>('.map-cargo-scanner');
+  const cargoSelect = shell.querySelector<HTMLSelectElement>('.map-cargo-resource');
+  const cargoContent = shell.querySelector<HTMLElement>('.map-cargo-content');
   if (
     !canvas ||
     !card ||
@@ -91,7 +104,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
     !attackButton ||
     !travelStatus ||
     !modeToggle ||
-    !labelToggle
+    !labelToggle || !cargoToggle || !cargoPanel || !cargoSelect || !cargoContent
   ) {
     throw new Error('Star map UI is incomplete.');
   }
@@ -106,6 +119,10 @@ function createStarMapControls(options: StarMapPanelOptions) {
     travelStatus,
     modeToggle,
     labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
   };
 }
 
@@ -209,6 +226,10 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     travelStatus,
     modeToggle,
     labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
   } = createStarMapControls(options);
 
   let model = options.model;
@@ -232,6 +253,95 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
   labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
   renderer.setLabelsVisible(preferredLabelsVisible);
+
+  const formatCredits = (value: number): string =>
+    Math.round(value).toLocaleString('de-DE') + ' Cr';
+  const renderCargoScanner = (): void => {
+    const scanner = model.cargoScanner;
+    cargoPanel.hidden = !preferredCargoVisible;
+    cargoToggle.textContent = preferredCargoVisible ? 'FRACHT // AN' : 'FRACHT // AUS';
+    if (!preferredCargoVisible) return;
+    const items = scanner?.resources ?? [];
+    const previous = preferredCargoResource;
+    cargoSelect.replaceChildren();
+    const addOption = (value: string, label: string): void => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      cargoSelect.append(option);
+    };
+    addOption('all', 'GESAMTE FRACHT');
+    for (const item of items) addOption(item.resourceId, item.name + ' (' + item.quantity + ')');
+    preferredCargoResource = previous !== 'all' && items.some((item) => item.resourceId === previous)
+      ? previous : 'all';
+    cargoSelect.value = preferredCargoResource;
+    cargoContent.replaceChildren();
+    if (!items.length) {
+      cargoContent.textContent = 'Frachtraum leer. Nach dem Mining erscheinen hier deine Rohstoffe.';
+      return;
+    }
+    const lead = document.createElement('div');
+    lead.style.cssText = 'padding:6px 0;border-bottom:1px solid #344b58;margin-bottom:7px';
+    lead.textContent = items.map((item) => item.name + ': ' + item.quantity).join(' · ');
+    cargoContent.append(lead);
+    const quotes = preferredCargoResource === 'all'
+      ? scanner?.markets ?? []
+      : items.find((item) => item.resourceId === preferredCargoResource)?.best
+        ? (scanner?.markets ?? []).map((market) => {
+            const intel = options.model.cargoScanner;
+            void intel;
+            return market;
+          }) : [];
+    if (preferredCargoResource !== 'all') {
+      const item = items.find((entry) => entry.resourceId === preferredCargoResource);
+      if (!item?.best) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Keine bekannten Marktpreise für diese Ware.';
+        cargoContent.append(empty);
+        return;
+      }
+      const best = document.createElement('p');
+      best.textContent = 'Bester bekannter Markt: ' + item.best.name + ' · ' +
+        formatCredits(item.best.revenue) + ' · Datenalter ' +
+        (scanner!.currentDay - item.best.observedDay) + ' Tage';
+      cargoContent.append(best);
+      return;
+    }
+    if (!quotes.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'Noch keine Marktdaten bekannt. Sensoren oder Hafenbesuche liefern Preisinformationen.';
+      cargoContent.append(empty);
+      return;
+    }
+    for (const quote of quotes.slice(0, 8)) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:8px 0;border-bottom:1px solid #273b46;display:flex;justify-content:space-between;gap:8px';
+      const info = document.createElement('div');
+      const name = document.createElement('div');
+      name.textContent = quote.name;
+      name.style.fontWeight = 'bold';
+      const detail = document.createElement('small');
+      detail.style.color = '#9baebb';
+      detail.textContent = 'Distanz ' + Math.round(quote.distance) + ' u · Daten ' +
+        (scanner!.currentDay - quote.observedDay) + ' Tage alt' +
+        (quote.coveredQuantity < quote.totalQuantity ? ' · UNVOLLSTÄNDIG' : '');
+      info.append(name, detail);
+      const price = document.createElement('strong');
+      price.style.color = quote.coveredQuantity === quote.totalQuantity ? '#83cba7' : '#dfb16d';
+      price.textContent = formatCredits(quote.revenue);
+      row.append(info, price);
+      cargoContent.append(row);
+    }
+  };
+  cargoToggle.addEventListener('click', () => {
+    preferredCargoVisible = !preferredCargoVisible;
+    renderCargoScanner();
+  });
+  cargoSelect.addEventListener('change', () => {
+    preferredCargoResource = cargoSelect.value;
+    renderCargoScanner();
+  });
+
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
@@ -270,12 +380,14 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   });
 
   updateSelection();
+  renderCargoScanner();
 
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
       updateSelection();
+      if (preferredCargoVisible) renderCargoScanner();
       systemLog.update();
     },
     destroy(): void {
