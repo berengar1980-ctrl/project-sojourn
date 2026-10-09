@@ -124,16 +124,18 @@ export function scanCargoMarkets(options: {
       const matched = cargo.filter((item) => profile.needs.includes(item.resourceId));
       const matchedQuantity = matched.reduce((sum, item) => sum + item.quantity, 0);
       if (matchedQuantity === 0) return [];
-      return [{
-        locationId: location.id,
-        name: location.name,
-        matchedQuantity,
-        resourceIds: matched.map((item) => item.resourceId),
-        distance: Math.hypot(
-          location.position.x - options.origin.x,
-          location.position.y - options.origin.y
-        ),
-      }];
+      return [
+        {
+          locationId: location.id,
+          name: location.name,
+          matchedQuantity,
+          resourceIds: matched.map((item) => item.resourceId),
+          distance: Math.hypot(
+            location.position.x - options.origin.x,
+            location.position.y - options.origin.y
+          ),
+        },
+      ];
     })
     .sort((a, b) => b.matchedQuantity - a.matchedQuantity || a.distance - b.distance);
   return { resources, markets, hints, currentDay: options.currentDay };
