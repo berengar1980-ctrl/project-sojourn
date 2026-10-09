@@ -223,20 +223,24 @@ function createShipyardCallbacks(
       const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
       if (uid && (!item || item.type !== type)) return;
       const before = loadouts.get(ship)[type]?.[index] ?? null;
-      if (
-        before &&
-        !componentInventory.store(
-          type,
-          before,
-          'removed-' + ship.id,
-          runtime.cargoCapacityTons,
-          'removed'
-        )
-      ) {
+      const removed = before
+        ? componentInventory.store(
+            type,
+            before,
+            'removed-' + ship.id,
+            runtime.cargoCapacityTons,
+            'removed'
+          )
+        : null;
+      if (before && !removed) {
         log.write('WERFT > ZU WENIG FRACHTRAUM FÜR AUSGEBAUTE KOMPONENTE');
         return;
       }
-      if (!loadouts.setSlot(ship, type, index, item?.componentId ?? null)) return;
+      if (!loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
+        if (removed) componentInventory.take(removed.uid);
+        log.write('WERFT > KOMPONENTE NICHT KOMPATIBEL');
+        return;
+      }
       if (item) componentInventory.take(item.uid);
       log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
       onRefresh();
