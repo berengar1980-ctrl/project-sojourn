@@ -308,10 +308,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     event.distressPendingRewardCredits = this.reward(profile, 1.35);
     event.expiresDay += 2;
     return {
-      ...emptyResult(
-        `Schleppverbindung hergestellt. Übergabeziel: ${destination.name}.`,
-        true
-      ),
+      ...emptyResult(`Schleppverbindung hergestellt. Übergabeziel: ${destination.name}.`, true),
       towDestinationId: destination.id,
     };
   }
@@ -343,7 +340,8 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     const event = this.distress(id);
     if (!event || event.distressStage !== 'diagnosed') return null;
     const profile = profileFor(event.distressDamage);
-    if (!profile.critical) return emptyResult('Evakuierung ist bei diesem Schaden nicht erforderlich.');
+    if (!profile.critical)
+      return emptyResult('Evakuierung ist bei diesem Schaden nicht erforderlich.');
     if (event.distressTrap) {
       return {
         ...emptyResult('Der Hilferuf ist ein Hinterhalt. Enterkampf ausgelöst.'),
@@ -423,7 +421,10 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     event.distressStage = 'resolved';
     event.resolved = true;
     return {
-      ...emptyResult(text + (insolvent ? ' Ersatzleistung wird als Geldwert verrechnet.' : ''), true),
+      ...emptyResult(
+        text + (insolvent ? ' Ersatzleistung wird als Geldwert verrechnet.' : ''),
+        true
+      ),
       rewardCredits: reward,
       workHours,
     };
@@ -453,7 +454,12 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   private prune(day: number): void {
     for (const event of this.events) {
-      if (!event.resolved && event.expiresDay <= day && !event.salvageRights && event.distressStage !== 'towing') {
+      if (
+        !event.resolved &&
+        event.expiresDay <= day &&
+        !event.salvageRights &&
+        event.distressStage !== 'towing'
+      ) {
         event.resolved = true;
       }
     }
