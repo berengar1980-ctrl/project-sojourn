@@ -87,6 +87,15 @@ function updateMiningButton(
   model: LocalSpaceViewModel,
   miningActive: boolean
 ): void {
+  const hookButton = combatTactics.querySelector<HTMLButtonElement>('[data-grapple]');
+  if (hookButton) {
+    const combat = model.combat;
+    hookButton.disabled = !combat || combat.winner !== null || combat.grapple !== null ||
+      combat.grappleUsed.attacker || combat.defender.shieldHp > 0 ||
+      Math.hypot(combat.attacker.position.x - combat.defender.position.x,
+        combat.attacker.position.y - combat.defender.position.y) > 900;
+    hookButton.textContent = combat?.grappleUsed.attacker ? 'GREIFHAKEN VERBRAUCHT' : 'GREIFHAKEN';
+  }
   const selected = model.selectedAsteroid;
   if (!selected) return;
 
