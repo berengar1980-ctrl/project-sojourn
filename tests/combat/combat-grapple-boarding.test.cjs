@@ -57,10 +57,18 @@ const npcFight = combat.createStrategicCombatService(
 npcFight.tick(0.08);
 assert.equal(npcFight.getSnapshot().grappleUsed.defender, true, 'NPC must also launch a grapple');
 
+const roster = loadStandaloneTypeScriptModule(
+  root, 'src/systems/crew/crew-roster-service.ts'
+).createCrewRosterService();
+assert.deepEqual(roster.boardingEquipment(), []);
+roster.grantBoardingEquipment('off_autopistol');
+assert.deepEqual(roster.boardingEquipment(), ['off_autopistol']);
+
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 assert(read('src/ui/combat/strategic-combat-panel.ts').includes("combat.fireGrapple('attacker')"));
 assert(read('src/ui/combat/combat-grapple-renderer.ts').includes('bounce'));
 assert(read('src/app/game-controller.ts').includes('startCombatBoarding(context, snapshot'));
 assert(read('src/app/game-controller-combat-boarding.ts').includes('grantBoardingEquipment('));
+assert(read('src/app/game-controller-combat-boarding.ts').includes("id: 'off_autopistol'"));
 assert(!read('src/systems/combat/star-map-engagement-service.ts').includes('grantBoardingEquipment('));
 console.log('PASS once-only combat hooks, 30–60% chance, NPC attack, boarding and gear-only-on-boarding');
