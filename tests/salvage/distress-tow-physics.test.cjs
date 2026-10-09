@@ -50,4 +50,7 @@ const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registr
 assert(registry.includes('points.pivot.x - points.sourceWidth * 0.24'));
 assert(controller.includes('advanceDistressTow('));
 assert(controller.includes('towShipAtExit('));
+assert(controller.includes('beginDistressTow(event)'));
+const callbacks = fs.readFileSync(path.join(root, 'src/app/game-controller-events.ts'), 'utf8');
+assert(callbacks.includes('context.state.salvageScene.beginDistressTow(event)'));
 console.log('PASS grapple launch, inertial tow drift, cable tension and two-ship exit gate');
