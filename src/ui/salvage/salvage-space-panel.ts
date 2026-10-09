@@ -1,4 +1,5 @@
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
+import { playerAtLocalExit } from '../map/local-space-exit-gate';
 
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 
@@ -405,10 +406,15 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
       : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
     ui.cancelButton.hidden = model.phase === 'idle';
+    const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
     ui.backButton.disabled =
+      !atExit ||
       model.phase !== 'idle' ||
       model.salvageEvent !== null ||
       model.salvageEventRecoverySeconds > 0;
+    ui.backButton.title = atExit
+      ? 'Zur Sternkarte wechseln'
+      : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
     renderSectorEvent(model, ui.sectorEventContainer);
