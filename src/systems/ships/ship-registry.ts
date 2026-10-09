@@ -35,7 +35,9 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
         tractorBeams: points.tractorBeams?.length
           ? points.tractorBeams
           : [{ ...mount, id: 'utility-tractor' }],
-        grapplingHooks: points.grapplingHooks?.length ? points.grapplingHooks : [grappleMount],
+        grapplingHooks: points.grapplingHooks?.length
+          ? points.grapplingHooks.map((point) => ({ ...point, layer: 'below' as const }))
+          : [grappleMount],
       },
     },
   };
