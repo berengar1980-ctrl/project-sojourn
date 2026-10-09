@@ -133,12 +133,15 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   }
 
   get playerVisible(): readonly SectorSalvageEvent[] {
-    return this.active.filter((event) => event.playerAccepted || this.currentDay < event.playerDeadlineDay);
+    return this.active.filter(
+      (event) => event.playerAccepted || this.currentDay < event.playerDeadlineDay
+    );
   }
 
   acceptForPlayer(id: string): boolean {
     const event = this.event(id);
-    if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay) return false;
+    if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay)
+      return false;
     event.playerAccepted = true;
     return true;
   }
@@ -307,7 +310,13 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
   claimForNpc(id: string, npcId: string): boolean {
     const event = this.event(id);
-    if (!event || event.playerAccepted || this.currentDay < event.playerDeadlineDay || (event.claimedByNpcId && event.claimedByNpcId !== npcId)) return false;
+    if (
+      !event ||
+      event.playerAccepted ||
+      this.currentDay < event.playerDeadlineDay ||
+      (event.claimedByNpcId && event.claimedByNpcId !== npcId)
+    )
+      return false;
     event.claimedByNpcId = npcId;
     return true;
   }
