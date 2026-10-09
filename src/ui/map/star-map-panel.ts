@@ -263,7 +263,8 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     cargoPanel,
     cargoSelect,
     cargoContent,
-    options.onSelectLocation
+    options.onSelectLocation,
+    (markers) => renderer.setCargoOverlay(markers)
   );
 
   const systemLog = createSystemLogPanel({
