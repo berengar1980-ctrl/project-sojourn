@@ -103,6 +103,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   });
   npcEconomy.advanceDay(0);
   const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
+  salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, true);
   const npcSalvageEvents = createNpcSalvageEventService({
     world: narrowsSector,
     sector: sectorNpcs,
