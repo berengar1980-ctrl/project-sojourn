@@ -275,7 +275,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   }
   evacuateDistress(id: string): DistressActionResult | null {
     const event = this.distress(id);
-    if (!event || event.distressStage !== 'diagnosed') return null;
+    if (!event || !['diagnosed', 'tow_required'].includes(event.distressStage ?? '')) return null;
     const profile = profileFor(event.distressDamage);
     if (event.distressTrap) {
       return {
