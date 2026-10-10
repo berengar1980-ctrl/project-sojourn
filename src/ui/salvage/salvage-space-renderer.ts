@@ -156,22 +156,19 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     );
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
-    this.drawDistressDiagnosis(width, height, timeSeconds);
+    drawDistressScanEffect(
+      this.context,
+      this.camera,
+      this.model,
+      timeSeconds - this.diagnosisStartedAt,
+      width,
+      height
+    );
     const geometry = this.shipGeometry(width, height);
     drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
       this.ensureNpcImage(url)
     );
     this.drawShip(geometry, timeSeconds);
-  }
-  protected drawDistressDiagnosis(width: number, height: number, now: number): void {
-    drawDistressScanEffect(
-      this.context,
-      this.camera,
-      this.model,
-      now - this.diagnosisStartedAt,
-      width,
-      height
-    );
   }
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
