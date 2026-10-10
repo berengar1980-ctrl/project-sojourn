@@ -19,6 +19,6 @@ Das Kampfmodell hält ein Ereignisprotokoll mit Zeitstempeln, Seitenzuordnung un
 
 Mit **KAMPFLOG EXPORTIEREN** im Kampfbildschirm kann man die vollständige JSON-Telemetrie einschließlich abschließendem Snapshot herunterladen. Die Simulation stellt zudem `getCombatLog()` zur Verfügung. Snapshot-Ansichten begrenzen die Logeinträge für ein flüssiges Rendering auf die neuesten 80, ohne den vollständigen Export zu beschneiden.
 
-Zur Analyse mehrerer Simulationen denselben Seed für Reproduzierbarkeit verwenden; für Balance andere Seeds und andere Schiffs-/Waffenkombinationen gegentesten. Testbare Qualitätsmetriken: Phasenwechsel pro Minute, Abstand zum Sollbereich, Schüsse und Treffer je Waffe, Schilddurchbrüche, Fluchterfolg und Kampfdauer.
+Für automatisierte Duelle `npm run combat:simulate -- 16` ausführen. Der CLI-Lauf simuliert 16 seeded Railgun-gegen-Breitseite-Gefechte und gibt JSON mit Gesamtdauer, verursachtem Schaden, Siegerverteilung und Einzelresultaten aus. Zur Analyse mehrerer Simulationen denselben Seed für Reproduzierbarkeit verwenden; für Balance andere Seeds und andere Schiffs-/Waffenkombinationen gegentesten. Testbare Qualitätsmetriken: Phasenwechsel pro Minute, Abstand zum Sollbereich, Schüsse und Treffer je Waffe, Schilddurchbrüche, Fluchterfolg und Kampfdauer.
 
 **Offen:** Feingranulare Geschoss-/Minenereignisse, vollständige Unterpläne für jede Doktrin und zusätzliche automatisierte Massen-Simulationen. Der vorliegende Ausbau etabliert den zentralen datengetriebenen Rahmen, ersetzt aber nicht sämtliche zukünftigen Verhaltensdetails.
