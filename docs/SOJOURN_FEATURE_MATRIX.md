@@ -20,6 +20,9 @@
 | SOJ-COMBAT-008 | Zeitverzerrungsbombe | Flächenexplosion; das eigene Schiff ist währenddessen zeitlich entkoppelt. | Idee |
 | SOJ-COMBAT-009 | Traktorstrahl als Kampfmittel | Asteroiden gegen Gegner bewegen und eventuell für Manöver nutzen. | Idee |
 | SOJ-COMBAT-010 | Physikalischer Positionskampf | Bewaffnung, Geschwindigkeit, Wendefähigkeit, Beschleunigung und Trägheit bestimmen den Verlauf. | Konzept |
+| SOJ-COMBAT-011 | Greifhaken, Seilwinde und Traktor-Unterstützung | Nach erfolgreichem Haken bleibt die Trägheit erhalten; Seilspannung und Winde bringen die Schiffe zusammen, ein Traktorstrahl unterstützt. | Konzept / Phase 1 |
+| SOJ-COMBAT-012 | Gezieltes Ausschalten von Komponenten | Bei ausgefallenen Schilden darf die KI Traktorstrahl oder Antrieb gezielt angreifen; Antrieb nur bei passender Position hinter dem Ziel. | Idee / nach Phase 1 |
+| SOJ-COMBAT-013 | Taktische Reaktion auf entdeckte Minen | KI wägt ab, die Mine zu zerstören, auszuweichen oder einen Treffer in Kauf zu nehmen, um den Gegner weiter anzugreifen. | Idee / nach Phase 1 |
 
 ---
 
@@ -264,6 +267,101 @@ Berücksichtigt werden sollen:
 
 ---
 
+## SOJ-COMBAT-011 – Enterhaken, Seilwinde und unterstützender Traktorstrahl
+
+### Was wir wollen
+
+Das **bereits bestehende Entern mit Greifhaken** soll an die neue Flugphysik angepasst werden. Ein erfolgreicher Greifhaken ist die **mechanische Verbindung** der beiden Schiffe. Er darf nicht einfach beide Schiffe abrupt zum Stillstand bringen und das Ziel anschließend ohne nachvollziehbare Bewegung zum Angreifer verschieben.
+
+Die Reihenfolge des Entervorgangs:
+
+1. **Haken wird abgeschossen und trifft** den ungeschützten Gegner. Die bestehenden Bedingungen für Enterversuch, Schildzustand, Trefferchance und die Begrenzung auf einen Versuch bleiben erhalten.
+2. **Seil wird verbunden und spannt sich.** Die Schiffe behalten zunächst ihre vorhandene Geschwindigkeit und Bewegungsrichtung. Wenn das Seil straff ist, wirkt die Zugkraft auf **beide Schiffe**, nicht nur auf das Ziel.
+3. **Schiffe beeinflussen sich gegenseitig.** Bremst oder dreht eines der Schiffe, kann das andere durch seine Trägheit ausschwingen und hinterhergezogen werden. Es soll kein starres, sofortiges Nebeneinanderteleportieren geben.
+4. **Seilwinde holt ein.** Die Verbindung wird schrittweise kürzer; die Schiffe kommen kontrolliert näher, bis der für den Enterkampf nötige Kopplungsabstand erreicht ist.
+5. **Vorhandener Traktorstrahl unterstützt das Einholen.** Hat das angreifende Schiff einen nutzbaren Traktorstrahl, liefert er zusätzliche Zugkraft; bei ansonsten gleicher Lage erfolgt das Einholen schneller. **Der Traktorstrahl allein ersetzt nie den erfolgreichen Greifhaken.**
+
+Der visuelle Greifhaken und das gespannte, metallische Seil bleiben an ihren jeweiligen Hardpoints verankert, auch während beide Schiffe sich drehen oder driften.
+
+### Konsequenzen und Grenzen
+
+- Die Lösung soll eine **einfache nachvollziehbare Seilspannungs-/Zugkraftsimulation** verwenden, nicht eine unnötig aufwendige Segment-für-Segment-Seilphysik.
+- Spieler und NPCs verwenden **dieselbe Enterphysik** und dieselbe Traktor-Unterstützung, sofern die Ausrüstung vorhanden ist.
+- Der Haken bleibt bei einem **Fehlschlag** ohne dauerhafte Verbindung und prallt wie bisher ab.
+- Wenn ein Traktorstrahl nicht vorhanden oder außer Funktion ist, muss das **Einziehen per Seilwinde weiterhin funktionieren**.
+
+**Noch offen:** Konkrete Winden-Zugkraft, Stärke der zusätzlichen Traktorunterstützung, Schwung-/Dämpfungsverhalten, Absicherung gegen Durchdringen von Asteroiden/Wracks und ob eine der beiden Parteien während des Einholens weiter aktiv steuern kann.
+
+**Einordnung:** Dieser Punkt gehört zur **Phase 1 (Bewegungsphysik)**. Eine Aufnahme in die Matrix bedeutet **nicht**, dass die beschriebene vollständige Seilphysik bereits eingebaut wurde.
+
+## SOJ-COMBAT-012 – Gezieltes Ausschalten gegnerischer Komponenten
+
+### Was wir wollen
+
+**Erst wenn die gegnerischen Schilde ausgefallen sind**, soll eine Kampf-KI entscheiden können, statt der gesamten Hülle **bestimmte Schiffskomponenten** anzuvisieren. Der Zweck ist eine **taktische Funktionsstörung**: den Gegner an der Flucht hindern, einen Traktorstrahl außer Gefecht setzen oder die eigene Lage verbessern. Die KI darf nicht blind bei jeder Gelegenheit auf eine Komponente schießen, wenn allgemeiner Hüllenschaden sinnvoller ist.
+
+### Zunächst nur zwei anvisierbare Ziele
+
+| Ziel | Wann/aus welcher Position | Beabsichtigter taktischer Effekt |
+|---|---|---|
+| **Traktorstrahl** | Bei ausgefallenen Schilden **aus jeder relativen Anflugrichtung anvisierbar**, sofern die tatsächliche Waffe das Ziel grundsätzlich erreichen kann; er ist nicht auf einen Heckangriff beschränkt. | Den gegnerischen Traktorstrahl ausschalten bzw. seine Funktion beeinträchtigen. Das ist insbesondere sinnvoll, wenn er die eigene Flucht verhindert oder beim Entern zusätzliche Zugkraft liefert. |
+| **Hauptantrieb** | Bei ausgefallenen Schilden nur, wenn die KI **hinter das gegnerische Schiff gelangt**, sodass sie dessen Heck erreichen kann; vorzugsweise in einer Verfolgungs- oder Abfangsituation. | Die Antriebsleistung des Gegners beeinträchtigen, um ihn **langsamer zu machen oder zum Stillstand zu bringen** und damit eine Flucht zu verhindern. |
+
+### KI-Entscheidungen anhand konkreter Kampfsituationen
+
+**Beispiel A – Gegner versucht zu fliehen:** Seine Schilde sind unten. Ein verfolgendes Schiff gelangt in seinen hinteren Schussbereich. Statt ausschließlich die Hülle zu beschießen, kann die KI den **Antrieb als Ziel** auswählen, um den Gegner auszubremsen. Dafür muss sie selbst passend zum Heck positioniert sein; sie darf nicht aus einer beliebigen Richtung behaupten, einen Heckantrieb getroffen zu haben.
+
+**Beispiel B – Railgun ist geladen:** Die eigene Railgun hat hohe Reichweite und lange Nachladezeit. Die KI kann abwägen, ob ein gezielter Schuss **auf den von hinten erreichbaren Antrieb** sinnvoller ist als ein normaler schwerer Hüllentreffer, wenn das Ziel flieht. Der Treffer ist nicht garantiert und die Railgun erhält dadurch keinen Sonderbonus, der nicht begründet ist. Das schließt an **SOJ-COMBAT-003** an: Ein Schuss kann für den kritischen Moment aufgehoben werden.
+
+**Beispiel C – Traktorstrahl verhindert Flucht oder unterstützt gegnerisches Entern:** Die KI darf den **Traktorstrahl gezielt bekämpfen**, sobald die Schilde unten sind, ohne erst hinter den Gegner fliegen zu müssen. Die normalen Waffenreichweiten und Waffen-Schusswinkel gelten trotzdem. Ob ein bereits verbundenes Enterseil bestehen bleibt, ist davon getrennt: **Traktorstrahl und Enterhaken sind unterschiedliche Systeme**.
+
+**Beispiel D – Gegner kämpft einfach weiter:** Ein Komponentenangriff soll nicht erzwungen werden. Der direkte Beschuss der Hülle kann die bessere Wahl sein, wenn eine Komponente gerade keinen taktischen Vorteil bietet.
+
+### Klare Grenzen für die erste Ausbaustufe
+
+- **Noch nicht auf Waffen oder Enterhaken zielen.** Diese Komponentenziele bleiben ausdrücklich für eine spätere Erweiterung reserviert.
+- **Keine garantierte sofortige Abschaltung durch einen beliebigen Treffer.** Wie gezielter Schaden, Schutz/Komponentenhaltbarkeit und Auswirkungen auf laufende Aktionen berechnet werden, ist noch zu spezifizieren.
+- Spieler-KI und NPC-KI erhalten dieselben Möglichkeiten; die Wahl richtet sich nach Situation, eigener Bewaffnung, relativer Position und taktischem Ziel.
+
+**Noch offen:** Genaue Trefferzonen/Hardpoints, Regeln für Genauigkeit und Fehlschüsse, Komponentenschaden und Reparierbarkeit, Auswirkungen eines beschädigten statt zerstörten Antriebs, ob gezielte Treffer auch Hüllenschaden erzeugen und wie schnell ein Antriebsausfall die bereits vorhandene Trägheit abbaut. **Insbesondere darf ein Antriebsausfall nicht automatisch die vorhandene Geschwindigkeit auf null setzen**, wenn wir echte Trägheit wollen.
+
+**Umsetzungsreihenfolge:** Nach stabiler **Phase 1**, im Zuge von **Waffenschusswinkeln/KI-Zielwahl** und einem klaren Modell für Komponentenschäden. Derzeit **Idee**, keine direkte Implementierungsfreigabe.
+
+## SOJ-COMBAT-013 – Kampf-KI reagiert auf erkannte feindliche Minen
+
+### Was wir wollen
+
+**Wird eine gegnerische Mine als Gefahr erkannt**, soll die jeweilige Kampf-KI aktiv zwischen **drei sinnvollen Reaktionen** abwägen. Keine pauschale Regel „jede Mine sofort zerstören“ und kein automatischer Ausweichbefehl, der den Angriff immer unterbricht.
+
+1. **Mine beschießen:** Die KI richtet eine geeignete Waffe auf die Mine, **sofern sie in Reichweite und Schusswinkel liegt** und vor der möglichen Auslösung rechtzeitig getroffen werden kann. Der Schuss fehlt dann möglicherweise im Kampf gegen das gegnerische Schiff.
+2. **Mine umfliegen:** Die KI passt ihre Flugbahn so an, dass sie außerhalb der Gefahrenzone bleibt. Das kann Zeit kosten, die Bewaffnung kurz ungünstig ausrichten oder dem Gegner eine Flucht ermöglichen.
+3. **Schaden bewusst riskieren:** Die KI fliegt ihren Angriffskurs weiter und beschießt das feindliche Schiff, wenn das Ausweichen oder Bekämpfen der Mine taktisch nachteiliger erscheint als der voraussichtliche Minenschaden.
+
+### Entscheidende Faktoren der KI
+
+- **Minenkontakt:** Nur **erkannte** Gefahren können gezielt bekämpft oder planmäßig umflogen werden. Die vorhandene Sensor- und Minenerkennung bleibt relevant; eine verborgene Mine löst nicht plötzlich „hellseherische“ Abwehr aus.
+- **Voraussichtliche Gefahr:** Entfernung, eigener Kurs, Auslösebereich und verfügbare Reaktionszeit sowie soweit bekannt der Minentyp.
+- **Eigener Zustand:** Verbleibende Schilde/Hülle. Dasselbe Risiko kann für ein intaktes Schiff vertretbar, für ein beschädigtes Schiff aber tödlich sein.
+- **Eigene Möglichkeiten:** Verfügbare Waffen, deren Schusswinkel, Reichweite, Nachladezeit und die erforderliche Kursänderung für ein Ausweichmanöver.
+- **Aktuelle Taktik:** Bei einer **Flucht** sollte der Weg zum Ausgang vorrangig bleiben; beim **Angriff** kann es sinnvoll sein, ein gewisses Risiko für einen entscheidenden Treffer einzugehen.
+
+### Beispiele
+
+**Beispiel A – Sichere Abwehr:** Die Mine liegt auf dem geplanten Kurs, ist erkannt und befindet sich in Reichweite eines geeigneten, einsatzbereiten Geschützes. Die KI kann sie zerstören, statt ein kostspieliges Ausweichmanöver zu fliegen.
+
+**Beispiel B – Hoher strategischer Preis des Ausweichens:** Der Gegner ist beinahe kampfunfähig oder kurz davor zu entkommen. Das eigene Schiff hat noch ausreichend Schutz. Die KI darf **bewusst das Minenrisiko akzeptieren**, um weiter auf den Gegner zu feuern.
+
+**Beispiel C – Bedrohte Flucht:** Das eigene Schiff ist schwer beschädigt, eine Mine blockiert die Route zum Ausgang. Ein Ausweichmanöver kann besser sein als der riskante Versuch, während der Flucht erst die Mine abzuschießen.
+
+### Was erst vor der Umsetzung festgelegt werden muss
+
+- **Beschießbarkeit:** Welche Waffentypen Minen tatsächlich treffen können, welche Treffer-/Schadensregeln gelten, wie Zielwahl und Schusswinkel berücksichtigt werden.
+- **Zerstörung:** Wird eine beschossene Mine entschärft, zerstört oder **vorzeitig zur Explosion gebracht**? Eine Explosion in Schiffsnähe könnte das Abschießen gefährlicher machen. Das ist **noch offen**, kein bereits beschlossener Effekt.
+- **Minenarten:** Unterschiedliche Reaktion auf Ionen-, Hohlladungs-, Jäger- und die vorgeschlagene seismische Zeitmine (SOJ-COMBAT-007), sobald letztere umgesetzt wird.
+- **Priorisierung:** Die drei Handlungen müssen vergleichbar sein, ohne die KI in ständige Kurswechsel, Zielwechsel oder sinnloses Schießen zu treiben.
+
+**Umsetzungsreihenfolge:** Nach den Grundlagen für **KI-Zielwahl**, **Schusswinkel**, **Minenerkennung** und **beschießbare Minen**. Der vorhandene Minen-Ausweichmechanismus ist **nicht gleichbedeutend mit dieser vollständigen Entscheidung zwischen Schießen, Ausweichen und Risiko**. Die Erweiterung soll für Spieler-KI und NPC-KI gleichermaßen gelten.
+
 ## Vorhandene Ausgangsbasis – nicht mit den neuen Ideen verwechseln
 
 In Sojourn existieren bereits acht Waffenfamilien (**Impulslaser, Plasmabatterie, Lenkraketen, Ionenlaser, Ionenkanone, Autokanone, Railgun und HE-Sprengraketen**) sowie drei Minenfamilien (**Ionenmine, Hohlladungsmine, Jägermine**), jeweils mit Mk-Stufen. Ebenso gibt es bereits Schiffstypen mit unterschiedlichen Werten, eine automatische Raumkampf-KI und Traktorstrahlkomponenten.
@@ -277,5 +375,8 @@ In Sojourn existieren bereits acht Waffenfamilien (**Impulslaser, Plasmabatterie
 3. **Crew-Balance:** Welche Einzelwerte bis zu 30 % profitieren und wie sich Crew- und Werftboni gegenseitig beeinflussen.
 4. **Taktik-KI:** Wann eine Railgun zurückgehalten wird, wann sie trotzdem früh feuert und wann ein KI-Schiff seine Positionierungsstrategie wechselt.
 5. **Spezialwaffen:** Explosion, Reichweite, Asteroidenphysik und Risiken für die eigene Seite.
+6. **Komponentenziele:** Beschädigungsmodell, konkrete Heck-Trefferzone, Treffergenauigkeit und Verhalten des Schiffs bei Antriebsausfall.
+7. **Minen-KI:** Wann Abschießen statt Ausweichen sinnvoll ist, welche Waffen Minen treffen können und ob Beschuss eine Mine vorzeitig detonieren lässt.
+8. **Enterhaken-Physik:** Stärke von Seilwinde und Traktor-Unterstützung sowie das Verhalten bei Schiffsmanövern und Hindernissen.
 
 **Keine Gameplay-Implementierung oder Freigabe zum Merge durch dieses Dokument. Die nächste Phase beginnt nur auf ausdrücklichen Auftrag.**
