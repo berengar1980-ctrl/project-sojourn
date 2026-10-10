@@ -22,6 +22,7 @@ import {
 } from '../../systems/crew/crew-skill-effects';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
+import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
 
 interface DuelDraft {
   shipId: string;
@@ -74,7 +75,7 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
       option.textContent = component.name;
       select.append(option);
     }
-    if (!draft.weapons[mount.slotIndex]) {
+    if (draft.weapons[mount.slotIndex] === undefined) {
       draft.weapons[mount.slotIndex] = select.options[1]?.value ?? '';
     }
     select.value = draft.weapons[mount.slotIndex] ?? '';
@@ -190,6 +191,21 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       crewId: crewDefinitions[1]!.id,
     },
   ];
+  let selectedEncounter = '';
+  const encounterLabel = document.createElement('label');
+  encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
+  const encounterSelect = document.createElement('select');
+  const manual = document.createElement('option');
+  manual.value = '';
+  manual.textContent = 'Freies Duell · eigene Konfiguration';
+  encounterSelect.append(manual);
+  for (const encounter of DUEL_ENCOUNTERS) {
+    const option = document.createElement('option');
+    option.value = encounter.id;
+    option.textContent = encounter.title + ' — ' + encounter.purpose;
+    encounterSelect.append(option);
+  }
+  encounterLabel.append(encounterSelect);
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
   const title = document.createElement('h1');
@@ -207,7 +223,20 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const fight = document.createElement('button');
   fight.textContent = 'Duell starten';
   actions.append(back, fight);
-  shell.append(title, description, cards, actions);
+  encounterSelect.addEventListener('change', () => {
+    selectedEncounter = encounterSelect.value;
+    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
+    if (scenario) {
+      const configured = resolveDuelPreset(scenario, ships);
+      configured.forEach((entry, index) => {
+        drafts[index]!.shipId = entry.shipId;
+        drafts[index]!.weapons = [...entry.weapons];
+        drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
+      });
+    }
+    render();
+  });
+  shell.append(title, description, encounterLabel, cards, actions);
   root.replaceChildren(shell);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
@@ -224,11 +253,13 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
         ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
       )
     );
-    const duelSeed = Math.floor(Math.random() * 0x7fffffff);
+    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
+    const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(setups[0]!, setups[1]!, duelSeed);
     activePanel = createStrategicCombatPanel({
       root,
       combat,
+      ...(scenario ? { encounterName: scenario.title } : {}),
       onReturn: () => {
         cancelAnimationFrame(frame);
         activePanel?.destroy();
