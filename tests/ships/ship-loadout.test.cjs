@@ -27,18 +27,19 @@ for (const ship of ships.getAllShipDefinitions()) {
   const weaponSlots = stats.weaponSlots;
   assert.equal(installed.weapon?.length, weaponSlots);
   for (const id of installed.weapon ?? []) {
-    assert.equal(components.getShipComponent('weapon', id).tier, 1);
+    if (id) assert.equal(components.getShipComponent('weapon', id).tier, 1);
   }
 
   if (ship.role === 'mining') assert.equal(installed.mining?.[0], 'mining1');
   if (ship.role === 'salvage') assert.equal(installed.salvage?.[0], 'salvage1');
 
-  if (weaponSlots > 0) {
-    assert.equal(service.setSlot(ship, 'weapon', 0, null), true);
-    assert.equal(service.get(ship).weapon[0], '', 'weapon slot must become visibly empty');
-    assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon1'), true);
-    assert.equal(service.get(ship).weapon[0], 'weapon1', 'Mk I weapon must mount into the slot');
-  }
+  assert.equal(weaponSlots, ship.role === 'patrol' ? 5 : 4);
+  assert.equal(service.setSlot(ship, 'weapon', 3, null), true);
+  assert.equal(service.get(ship).weapon[3], '', 'turret slot must become visibly empty');
+  assert.equal(service.setSlot(ship, 'weapon', 3, 'weapon1'), true);
+  assert.equal(service.get(ship).weapon[3], 'weapon1', 'pulse laser belongs on turret mount');
+  assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon1'), false);
+  assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon-railgun-1'), true);
 }
 
-console.log('PASS all player ships start with complete Mk I loadouts and mountable weapons');
+console.log('PASS all player ships expose configured directional mounts and valid starter loadouts');
