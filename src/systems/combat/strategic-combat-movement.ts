@@ -312,10 +312,7 @@ function choosePlanDirection(
     direction = normalize(perpendicular.x + toward.x * 0.18, perpendicular.y + toward.y * 0.18);
     targetSpeedFactor = combatant.tactic === 'kite' ? 0.78 : 0.62;
   } else if (combatant.tactic === 'kite' && range < desired * 1.5) {
-    direction = normalize(
-      -toward.x * 0.45 + perpendicular.x,
-      -toward.y * 0.45 + perpendicular.y
-    );
+    direction = normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y);
     targetSpeedFactor = 0.8;
   }
 
