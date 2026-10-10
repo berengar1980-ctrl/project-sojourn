@@ -21,7 +21,7 @@ export interface CombatSubsystemHealth {
 export interface CombatStrategyPlan {
   readonly targetSubsystem?: CombatTargetSubsystem;
   readonly broadsideFacing?: 'port' | 'starboard';
-  readonly kind: 'frontal' | 'broadside' | 'skirmish' | 'minefield' | 'approach' | 'escape';
+  readonly kind: 'frontal' | 'broadside' | 'skirmish' | 'minefield' | 'tractor_lock' | 'approach' | 'escape';
   readonly focus: 'forward' | 'broadside' | 'turret' | 'mine';
   readonly desiredRange: number;
   readonly score: number;
