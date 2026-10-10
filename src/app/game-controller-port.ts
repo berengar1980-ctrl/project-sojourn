@@ -16,6 +16,7 @@ import {
   getShipComponent,
   getAllShipDefinitions,
   getCompatibleShipComponents,
+  shipCanFitWeapon,
   salvagedComponentAppraisal,
   type ShipComponentInventoryService,
   type ShipLoadoutService,
@@ -136,10 +137,12 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       variants: shipyardTypes.flatMap((type) =>
         context.shipyardResearch.variants(type, gameplay.maxComponentTier)
       ),
-      catalog: shipyardTypes.flatMap((type) => [
-        ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
-        ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
-      ]),
+      catalog: shipyardTypes.flatMap((type) =>
+        [
+          ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
+          ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
+        ].filter((component) => type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon)))
+      ),
       ships: getAllShipDefinitions().map((offer) => ({
         id: offer.id,
         name: offer.name,
