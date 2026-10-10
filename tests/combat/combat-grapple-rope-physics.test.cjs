@@ -89,6 +89,16 @@ const farTarget = ship('defender', 900);
 const noAssist = advanceCombatGrappleTether(attached, outOfRange, farTarget, 0.08);
 assert(!noAssist.tractorAssisted, 'distant tractor cannot assist the winch');
 
+const disabledTractor = ship('disabled-tractor', 300, 800);
+disabledTractor.subsystems.tractor = 0;
+const disabledAssist = advanceCombatGrappleTether(
+  attached,
+  disabledTractor,
+  ship('target', 900),
+  0.08
+);
+assert(!disabledAssist.tractorAssisted, 'destroyed tractor can never assist boarding');
+
 const missed = fireCombatGrapple(
   'attacker',
   sourcePoint,
