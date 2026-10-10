@@ -29,6 +29,17 @@
     }
   ],
   "weaponLasers": [],
+  "weaponMounts": [
+    {
+      "id": "weapon-slot-1",
+      "slotIndex": 0,
+      "x": 215,
+      "y": 61,
+      "width": 6,
+      "facing": "port",
+      "layer": "above"
+    }
+  ],
   "miningLasers": [
     {
       "id": "mining-laser-upper",

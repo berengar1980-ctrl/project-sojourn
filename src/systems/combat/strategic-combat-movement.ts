@@ -249,6 +249,37 @@ function applyInertialThrust(
   combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
 }
 
+/**
+ * Heavy side guns dictate the preferred heading, while the main movement
+ * routine remains responsible for thrust, inertia and obstacle avoidance.
+ */
+function broadsideSteering(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  dx: number,
+  dy: number
+): CombatPoint | null {
+  if (combatant.tactic === 'flee') return null;
+  const sideGun = combatant.setup.weapons
+    .map((weapon, index) => ({ weapon, index }))
+    .filter(
+      (entry) =>
+        entry.weapon.weapon?.mount === 'broadside' && range <= entry.weapon.weapon.rangeMeters * 1.2
+    )
+    .sort((a, b) =>
+      enemy.shieldHp > 0
+        ? (b.weapon.weapon?.shieldDamage ?? 0) - (a.weapon.weapon?.shieldDamage ?? 0)
+        : (b.weapon.weapon?.hullDamage ?? 0) - (a.weapon.weapon?.hullDamage ?? 0)
+    )[0];
+  if (!sideGun) return null;
+  const facing = combatant.setup.weaponMounts?.find(
+    (mount) => mount.slotIndex === sideGun.index
+  )?.facing;
+  const heading = Math.atan2(dy, dx) + (facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
+  return { x: Math.cos(heading), y: Math.sin(heading) };
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -318,6 +349,12 @@ export function moveCombatant(
       targetSpeedFactor,
       Math.max(0.38, 0.76 - boundary.strength * 0.34)
     );
+  }
+
+  const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
+  if (broadsideDirection) {
+    direction = broadsideDirection;
+    targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
   }
 
   const desiredHeading = Math.atan2(direction.y, direction.x);

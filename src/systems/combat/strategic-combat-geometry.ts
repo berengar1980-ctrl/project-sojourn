@@ -22,7 +22,9 @@ export const EDGE_WARNING_DISTANCE = 650;
 
 export const MINE_DROP_COOLDOWN = 7.5;
 
-export const COMBAT_DAMAGE_SCALE = 0.09;
+// Shared sequential fire-control pulses replace simultaneous per-gun fire. Preserve
+// observable 30–60 s battles by accounting for the lower total shot throughput.
+export const COMBAT_DAMAGE_SCALE = 0.18;
 
 export const DEFAULT_TURN_RATE = 0.72;
 
@@ -107,6 +109,12 @@ export function createCombatant(
     shieldHp: Math.max(0, setup.shieldHp),
     hullHp: Math.max(1, setup.hullHp),
     cooldowns: setup.weapons.map((_, index) => 0.7 + index * 0.18),
+    fireControl: {
+      max: Math.max(1, setup.weapons.length),
+      charges: Math.max(1, setup.weapons.length),
+      nextRechargeAt: 0,
+      lastShotAt: -10000,
+    },
     position: { x: startX, y: startY },
     velocity: { x: 0, y: 0 },
     headingRadians: side === 'attacker' ? 0 : Math.PI,
@@ -133,6 +141,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     velocity: { ...combatant.velocity },
     headingRadians: combatant.headingRadians,
     speed: combatant.speed,
+    fireControl: { ...combatant.fireControl },
     turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
     angularThrust: combatant.angularThrust,
     tactic: combatant.tactic,

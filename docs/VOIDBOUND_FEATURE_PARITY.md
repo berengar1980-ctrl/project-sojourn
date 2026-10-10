@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 40 |
+| ✅ Umgesetzt | 41 |
 | 🟨 Teilweise | 50 |
-| ⬜ Offen | 149 |
+| ⬜ Offen | 148 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -66,7 +66,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | operations | 2 | 8 | 9 | 0 | 19 |
 | patrol | 0 | 1 | 6 | 0 | 7 |
 | customs | 0 | 0 | 10 | 0 | 10 |
-| combat | 1 | 1 | 12 | 0 | 14 |
+| combat | 2 | 1 | 11 | 0 | 14 |
 | boarding | 0 | 3 | 3 | 0 | 6 |
 | save | 0 | 0 | 5 | 0 | 5 |
 | audio | 0 | 1 | 1 | 0 | 2 |
@@ -87,6 +87,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 8. **Salvage Depth:** Distress-Rescue, Relics, Boarding-Wreck-Integration und Progression.
 
 ## Review-Log
+
+| 2026-10-10 | Voidbound Feuerleit-Impulse und taktische Waffenmontagen | `combat.fire_control` offen → **umgesetzt**: gemeinsame schiffweite Feuerleit-Impulse, sequenzielles Laden, freie Auswahl derselben verfügbaren Waffe und Mindestschussabstand bei weiterhin eigener Lafettenladezeit. `combat.weapon_fire` bleibt **teilweise** (keine persistente Munitionsverwaltung und keine vollständige Kampf-Energieüberlastung). Neue Sojourn-spezifische feste Front- und Backbord-/Steuerbord-Schusswinkel, echte Waffenhardpoints aller 28 Schiffvarianten, ungelenkte kinetische Geschosse, lenkende Raketen, angepasste Railgun-/Autokanonenbalance, taktische Ausrichtung beider Schiffs-Autopiloten und abgetrennte Feuerleit-Snapshots. |
 
 | 2026-10-10 | Raumkampf Phase 1B – Enterseilphysik | Voidbound-Parität geprüft: **keine Statusänderung**. Der einmalige Combat-Greifhakenversuch sowie die bestehende Schild- und Trefferchance bleiben unverändert. Nach erfolgreichem Haken zieht eine Winde das Seil ein, Seilspannung überträgt gleich große entgegengesetzte Impulse bei weiterlaufender Trägheit und ein verfügbarer Traktorstrahl erhöht die Einholgeschwindigkeit; Fehlschläge koppeln nicht. Spieler/NPC-Verhalten und Snapshots sind symmetrisch. Nur der Sojourn-Raumkampf wird erweitert, nicht das Voidbound-Missionsbergungssystem. |
 
@@ -467,7 +469,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `combat.patrol_defeat_recovery` | Patrol hull defeats use a softer credits, cargo and tow-hull recovery curve while civilian defeat penalties retain legacy severity | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.realtime_timer` | Combat timer/watchdog repairs stalled runtime combat | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | 🟨 Teilweise | `combat.weapon_fire` | Player weapon fire consumes fire-control/cooldown and deals damage | Der strategische Kampf feuert montierte Waffen automatisch nach ihren Cooldowns und wendet Schild-/Hüllenschaden, Trefferchance, Crew-Boni und Krits an; Voidbounds Fire-Control-Impulse, Überlastungslogik und vollständige Munitionspersistenz fehlen noch. | übernehmen |
-| ⬜ Offen | `combat.fire_control` | Fire-control impulse count follows weapon slots | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
+| ✅ Umgesetzt | `combat.fire_control` | Fire-control impulse count follows weapon slots | Der räumliche Sojourn-Kampf besitzt pro Schiff einen gemeinsamen Feuerleit-Impulsvorrat entsprechend der installierten Waffen. Schüsse verbrauchen Impulse unabhängig vom gewählten Waffentyp, Aufladung erfolgt nacheinander (0,90/0,80/0,72/0,68 s), Mindestabstand 450 ms; eigene Waffenladezeiten, Schusswinkel, Snapshots und Spieler-/NPC-Parität sind umgesetzt. | übernehmen |
 | ⬜ Offen | `combat.shield_window` | Shield break opens temporary hull-damage window | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ⬜ Offen | `combat.pause` | Combat pause freezes cooldown/overload deadlines | Der strategische Voidbound-Schiffskampf ist in Sojourn noch nicht umgesetzt. | offen |
 | ✅ Umgesetzt | `combat.flee` | Flee/retreat can resolve without corrupting navigation | Räumlicher Raumkampf unterstützt Flucht als echte Taktik: Schiffe brechen aus dem Gefechtsraum aus, der Kampf wird sauber beendet und bei lokalen Gefechten wird die Endposition in Mining-/Bergungsraum zurückgeschrieben. | übernehmen |

@@ -14,6 +14,8 @@ export type ShipComponentType =
   | 'tractor';
 
 export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
+export type ShipWeaponMountKind = 'turret' | 'broadside' | 'forward' | 'guided';
+export type ShipWeaponFacing = 'port' | 'starboard' | 'forward';
 
 export type ShipWeaponFamily =
   | 'pulse_laser'
@@ -34,6 +36,8 @@ export interface ShipWeaponProfile {
   readonly cooldownSeconds: number;
   readonly heat: number;
   readonly ammoPerShot: number;
+  readonly mount?: ShipWeaponMountKind;
+  readonly arcDegrees?: number;
 }
 
 export interface LooseShipComponent {
@@ -99,6 +103,11 @@ export interface ShipHardpoint {
   readonly layer?: ShipEffectLayer;
 }
 
+export interface ShipWeaponHardpoint extends ShipHardpoint {
+  readonly slotIndex: number;
+  readonly facing: ShipWeaponFacing;
+}
+
 export interface ShipPivot {
   readonly x: number;
   readonly y: number;
@@ -124,6 +133,7 @@ export interface ShipHardpoints {
   readonly pivot: ShipPivot;
   readonly engines: readonly ShipHardpoint[];
   readonly weaponLasers?: readonly ShipHardpoint[];
+  readonly weaponMounts?: readonly ShipWeaponHardpoint[];
   readonly miningLasers: readonly ShipHardpoint[];
   readonly tractorBeams?: readonly ShipHardpoint[];
   readonly grapplingHooks?: readonly ShipHardpoint[];

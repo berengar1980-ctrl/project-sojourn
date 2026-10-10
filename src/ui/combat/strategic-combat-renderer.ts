@@ -196,16 +196,9 @@ export class StrategicCombatRenderer {
   }
 
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
-    const source = beam.owner === 'attacker' ? this.model.attacker : this.model.defender;
-    const definition = getShipDefinition(source.shipId);
-    const geometry = this.shipGeometry(source, width, height);
-    const hardpoints = definition?.sprite.hardpoints.weaponLasers ?? [];
-    const hardpoint =
-      hardpoints.length > 0 ? hardpoints[beam.weaponIndex % hardpoints.length] : null;
-    const start =
-      hardpoint && definition
-        ? projectHardpoint(hardpoint, definition.sprite.hardpoints, geometry)
-        : geometry.center;
+    // The beam origin is captured at fire time, so it cannot slide with a
+    // turning or translating ship while the brief beam effect is visible.
+    const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
 

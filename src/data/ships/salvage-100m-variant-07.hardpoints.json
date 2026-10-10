@@ -50,6 +50,17 @@
     }
   ],
   "weaponLasers": [],
+  "weaponMounts": [
+    {
+      "id": "weapon-slot-1",
+      "slotIndex": 0,
+      "x": 268,
+      "y": 78,
+      "width": 6,
+      "facing": "port",
+      "layer": "above"
+    }
+  ],
   "miningLasers": [],
   "tractorBeams": [
     {
