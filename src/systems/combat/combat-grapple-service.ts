@@ -1,15 +1,10 @@
-import type { CombatPoint, StrategicCombatSide } from './strategic-combat-types';
+import type {
+  CombatGrapple,
+  CombatPoint,
+  StrategicCombatSide,
+} from './strategic-combat-types';
 
-export interface CombatGrapple {
-  readonly owner: StrategicCombatSide;
-  readonly success: boolean;
-  readonly elapsed: number;
-  readonly duration: number;
-  readonly origin: CombatPoint;
-  readonly target: CombatPoint;
-  readonly resolved: boolean;
-}
-
+export type { CombatGrapple } from './strategic-combat-types';
 export function grappleChance(hull: number, hullMax: number): number {
   const percent = Math.max(0, Math.min(1, hull / Math.max(1, hullMax)));
   return Math.min(0.6, 0.3 + (1 - percent) * (0.3 / 0.85));
