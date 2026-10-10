@@ -79,6 +79,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
         facing: mount.facing,
         arcDegrees: mount.arcDegrees,
         allowedMounts: mount.allowedMounts,
+        allowedFamilies: mount.allowedFamilies,
       };
     }),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
