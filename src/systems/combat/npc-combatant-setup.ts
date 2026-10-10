@@ -81,9 +81,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
           y: (mount.y - points.pivot.y) * scale,
           facing: mount.facing,
           ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-
           ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-
           ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
         };
       }),
