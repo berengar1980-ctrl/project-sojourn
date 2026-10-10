@@ -34,9 +34,7 @@ export function advanceCombatGrappleTether(
     (target.velocity.y - source.velocity.y) * normalY;
   const stretched = Math.max(0, separation - ropeLength);
   const tension =
-    stretched > 0
-      ? Math.min(130, stretched * 0.9 + Math.max(0, separatingSpeed) * 1.3)
-      : 0;
+    stretched > 0 ? Math.min(130, stretched * 0.9 + Math.max(0, separatingSpeed) * 1.3) : 0;
 
   // Both ships receive equal and opposite longitudinal impulses. Their lateral
   // momentum remains intact, allowing the target to swing during course changes.
