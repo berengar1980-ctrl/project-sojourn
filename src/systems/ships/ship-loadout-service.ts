@@ -31,7 +31,7 @@ export function fitsWeaponHardpoint(
   weapon: ShipWeaponProfile
 ): boolean {
   const mounts = ship.sprite.hardpoints.weaponMounts;
-  if (!mounts?.length) return true;
+  if (!mounts) return true;
   const point = mounts.find((mount) => mount.slotIndex === index);
   if (!point) return false;
   return !point.allowedMounts || point.allowedMounts.includes(weapon.mount ?? 'turret');
