@@ -397,7 +397,12 @@ function tickStrategicCombat(
   return runtimeSnapshot(runtime);
 }
 
-function buildCombatArena(attackerSetup: StrategicCombatantSetup, defenderSetup: StrategicCombatantSetup, seed: number, arenaOptions?: StrategicCombatArenaOptions): StrategicCombatArenaOptions {
+function buildCombatArena(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed: number,
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatArenaOptions {
   const arena: StrategicCombatArenaOptions = {
     width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),

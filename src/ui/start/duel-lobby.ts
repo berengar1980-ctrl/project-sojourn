@@ -181,7 +181,12 @@ function duelCombatant(
   };
 }
 
-function attachEncounterSelector(select: HTMLSelectElement, ships: readonly ShipDefinition[], drafts: [DuelDraft, DuelDraft], onSelected: (id: string) => void): void {
+function attachEncounterSelector(
+  select: HTMLSelectElement,
+  ships: readonly ShipDefinition[],
+  drafts: [DuelDraft, DuelDraft],
+  onSelected: (id: string) => void
+): void {
   select.addEventListener('change', () => {
     const selectedEncounter = select.value;
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
@@ -239,7 +244,10 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const fight = document.createElement('button');
   fight.textContent = 'Duell starten';
   actions.append(back, fight);
-  attachEncounterSelector(encounterSelect, ships, drafts, (id) => { selectedEncounter = id; render(); });
+  attachEncounterSelector(encounterSelect, ships, drafts, (id) => {
+    selectedEncounter = id;
+    render();
+  });
   shell.append(title, description, encounterLabel, cards, actions);
   root.replaceChildren(shell);
 
