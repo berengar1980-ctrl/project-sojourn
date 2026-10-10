@@ -1,8 +1,4 @@
-import type {
-  CombatGrapple,
-  CombatPoint,
-  StrategicCombatSide,
-} from './strategic-combat-types';
+import type { CombatGrapple, CombatPoint, StrategicCombatSide } from './strategic-combat-types';
 
 export type { CombatGrapple } from './strategic-combat-types';
 export function grappleChance(hull: number, hullMax: number): number {
