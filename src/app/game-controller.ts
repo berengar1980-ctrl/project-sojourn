@@ -73,7 +73,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
       else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
       else if (state.mode === 'port') mountControllerPort(context);
       else mountControllerStarMap(context);
-    }
+    },
   );
 }
 
@@ -145,7 +145,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       state.activeShip = nextShip;
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
-    }
+    },
   );
   if (!state.panels.port) return;
   state.mode = 'port';
@@ -187,7 +187,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     state.localSpaceSeed,
     economy.mining,
     location,
-    controllerShipRuntimeOptions(context, state.activeShip)
+    controllerShipRuntimeOptions(context, state.activeShip),
   );
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
@@ -203,7 +203,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
   });
   context.systemLog.write(
-    reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
+    reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase(),
   );
   state.panels.local = createLocalSpacePanel({
     root: context.root,
@@ -338,13 +338,13 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     state.localSpace?.syncCombatPose(
       snapshot.attacker.position,
       snapshot.attacker.headingRadians,
-      snapshot.attacker.speed
+      snapshot.attacker.speed,
     );
     state.localNpcMining?.syncCombatPose(
       snapshot.defender.id,
       snapshot.defender.position,
       snapshot.defender.headingRadians,
-      snapshot.defender.speed
+      snapshot.defender.speed,
     );
   } else {
     state.salvageScene?.finishCombat(snapshot);
@@ -395,7 +395,7 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
     context.audio.updatePlayerRcs(
       state.activeShip.sprite.hardpoints,
       localSnapshot.instance.ship,
-      performance.now() / 1000
+      performance.now() / 1000,
     );
     state.localNpcMining?.tick(deltaSeconds);
   }
@@ -472,7 +472,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,
-    state.activeShip.role === 'salvage'
+    state.activeShip.role === 'salvage',
   );
   createSettingsMenu(context.audio);
   mountControllerStarMap(context);
