@@ -72,9 +72,12 @@ assert.equal(first.strategy.kind, 'tractor_lock',
   'intact tractor can intercept an unshielded escaping target');
 assert.equal(first.strategy.targetSubsystem, 'engine',
   'escape makes enemy engines the preferred subsystem');
+assert.equal(targeting.canEngagePreferredSubsystem(first, second), true);
 assert.equal(targeting.effectiveTargetSubsystem(first, second), 'engine',
   'shoot fleeing engines from the side or behind');
 first.position = { x: 1100, y: 550 };
+assert.equal(targeting.canEngagePreferredSubsystem(first, second), false,
+  'hold fire on a fleeing ship until an engine is exposed');
 assert.equal(targeting.effectiveTargetSubsystem(first, second), 'hull',
   'engine cannot be shot from the front');
 
