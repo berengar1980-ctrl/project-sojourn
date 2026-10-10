@@ -145,3 +145,18 @@
 @media (max-width: 760px) {
   .harrow-duel__cards { grid-template-columns: 1fr; }
 }
+.harrow-options__slider {
+  display: grid;
+  grid-template-columns: 180px minmax(120px, 300px) 55px;
+  align-items: center;
+  gap: 16px;
+  max-width: 650px;
+  margin: 18px 0;
+  padding: 10px 14px;
+  background: rgba(8, 14, 20, .86);
+}
+.harrow-options__slider input { accent-color: #d8bc52; }
+.harrow-options__slider output { text-align: right; }
+@media (max-width: 550px) {
+  .harrow-options__slider { grid-template-columns: 1fr; }
+}
