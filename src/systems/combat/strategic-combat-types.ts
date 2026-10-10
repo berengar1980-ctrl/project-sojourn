@@ -171,6 +171,7 @@ export interface CombatImpactSnapshot {
   readonly serial: number;
   readonly target: StrategicCombatSide;
   readonly layer: CombatImpactLayer;
+  readonly subsystem?: CombatTargetSubsystem;
   readonly position: CombatPoint;
   readonly damage: number;
 }
