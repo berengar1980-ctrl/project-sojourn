@@ -1,0 +1,81 @@
+.harrow-start {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #05080d url('/startscreen-background.webp') center center / cover no-repeat;
+  overflow: auto;
+  color: #dce1e6;
+}
+.harrow-start__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(3, 6, 10, .9), rgba(3, 6, 10, .68) 44%, rgba(3, 6, 10, .34)),
+    linear-gradient(0deg, rgba(2, 4, 7, .62), transparent 55%, rgba(2, 4, 7, .35));
+}
+.harrow-start__layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 365px minmax(0, 890px);
+  grid-template-rows: auto 1fr;
+  gap: 24px 18px;
+  min-height: 100vh;
+  padding: 56px clamp(28px, 6vw, 110px) 34px;
+  align-content: start;
+}
+.harrow-start__brand {
+  grid-column: 1 / -1;
+  max-width: 620px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(199, 164, 91, .75);
+}
+.harrow-start__brand h1 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 74px);
+  font-weight: 700;
+  letter-spacing: .14em;
+  line-height: 1.1;
+  color: #e5e7e4;
+  text-shadow: 0 2px 18px #000;
+}
+.harrow-start__nav {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  gap: 10px;
+}
+.harrow-start__nav button {
+  position: relative;
+  min-height: 64px;
+  padding: 0 28px;
+  text-align: left;
+  font: inherit;
+  font-size: 20px;
+  letter-spacing: .035em;
+  background: rgba(8, 14, 20, .86);
+  border: 1px solid #4a5662;
+  color: #dce1e6;
+  box-shadow: 0 7px 22px rgba(0, 0, 0, .22);
+  cursor: pointer;
+}
+.harrow-start__nav button:hover:not(:disabled),
+.harrow-start__nav button:focus-visible {
+  border-color: #c5a94f;
+  background: rgba(43, 42, 25, .84);
+  color: #efd66b;
+  box-shadow: inset 4px 0 0 #d8bc52, 0 7px 22px rgba(0, 0, 0, .3);
+}
+.harrow-start__nav button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+@media (max-width: 660px) {
+  .harrow-start__layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 35px 24px;
+  }
+  .harrow-start__brand { grid-column: 1; }
+  .harrow-start__nav button { min-height: 54px; font-size: 16px; }
+}
