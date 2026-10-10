@@ -4,6 +4,7 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { StrategicCombatRenderer } from './strategic-combat-renderer';
+import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 
 export interface StrategicCombatPanel {
   update(): void;
@@ -73,6 +74,7 @@ export function createStrategicCombatPanel(
       format: 'harrowdrift-combat-log-v1',
       snapshot: options.combat.getSnapshot(),
       events: options.combat.getCombatLog(),
+      analysis: analyzeCombatLog(options.combat.getCombatLog()),
     }, null, 2);
     const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
     const link = document.createElement('a');
