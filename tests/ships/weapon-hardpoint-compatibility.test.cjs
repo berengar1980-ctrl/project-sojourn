@@ -35,6 +35,7 @@ const hardpoints = {
       layer: 'above',
       facing: 'forward',
       allowedMounts: ['forward'],
+      allowedFamilies: ['railgun'],
       arcDegrees: 20,
     },
     {
@@ -46,6 +47,7 @@ const hardpoints = {
       layer: 'above',
       facing: 'port',
       allowedMounts: ['turret'],
+      allowedFamilies: ['pulse_laser'],
       arcDegrees: 90,
     },
   ],
