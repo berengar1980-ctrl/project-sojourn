@@ -87,52 +87,53 @@ export class DistressDamageParticles {
     length: number,
     dt: number,
     vx: number,
-    vy: number
+    vy: number,
+    hullFraction: number
   ): void {
-  const cos = Math.cos(heading),
-    sin = Math.sin(heading);
-  for (const [i, source] of SOURCES.entries()) {
-    const enabled =
-      i === 0 ? hullFraction <= 0.85 : i === 2 ? hullFraction <= 0.65 : hullFraction <= 0.25;
-    if (!enabled) {
-      this.emissions[i] = 0;
-      continue;
-    }
-    const fireActive = source.fire && hullFraction <= 0.45;
-    const x = position.x + (source.x * cos - source.y * sin) * length;
-    const y = position.y + (source.x * sin + source.y * cos) * length;
-    this.emissions[i]! += source.smoke * dt * this.fade;
-    while (this.emissions[i]! >= 1) {
-      this.emissions[i] = this.emissions[i]! - 1;
-      const random = () => {
-        this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
-        return this.seed / 4294967296;
-      };
-      const kind: Particle['kind'] = fireActive && random() < 0.45 ? 'fire' : 'smoke';
-      const life = kind === 'fire' ? 0.3 + random() * 0.55 : 1.4 + random() * 2.1;
-      this.particles.push({
-        x,
-        y,
-        vx: vx * 0.55 + (random() - 0.5) * 18,
-        vy: vy * 0.55 + (random() - 0.5) * 18,
-        life,
-        maxLife: life,
-        radius: kind === 'fire' ? 2.2 : 3.5 + random() * 3,
-        kind,
-      });
-    }
-    if (fireActive && this.fade > 0.2 && randomSpark(this.seed++, now, i)) {
-      this.particles.push({
-        x,
-        y,
-        vx: vx * 0.55 + Math.cos(now * 13 + i) * 50,
-        vy: vy * 0.55 + Math.sin(now * 11 + i) * 50,
-        life: 0.5,
-        maxLife: 0.5,
-        radius: 1.5,
-        kind: 'spark',
-      });
-    }
+    const cos = Math.cos(heading),
+      sin = Math.sin(heading);
+    for (const [i, source] of SOURCES.entries()) {
+      const enabled =
+        i === 0 ? hullFraction <= 0.85 : i === 2 ? hullFraction <= 0.65 : hullFraction <= 0.25;
+      if (!enabled) {
+        this.emissions[i] = 0;
+        continue;
+      }
+      const fireActive = source.fire && hullFraction <= 0.45;
+      const x = position.x + (source.x * cos - source.y * sin) * length;
+      const y = position.y + (source.x * sin + source.y * cos) * length;
+      this.emissions[i]! += source.smoke * dt * this.fade;
+      while (this.emissions[i]! >= 1) {
+        this.emissions[i] = this.emissions[i]! - 1;
+        const random = () => {
+          this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
+          return this.seed / 4294967296;
+        };
+        const kind: Particle['kind'] = fireActive && random() < 0.45 ? 'fire' : 'smoke';
+        const life = kind === 'fire' ? 0.3 + random() * 0.55 : 1.4 + random() * 2.1;
+        this.particles.push({
+          x,
+          y,
+          vx: vx * 0.55 + (random() - 0.5) * 18,
+          vy: vy * 0.55 + (random() - 0.5) * 18,
+          life,
+          maxLife: life,
+          radius: kind === 'fire' ? 2.2 : 3.5 + random() * 3,
+          kind,
+        });
+      }
+      if (fireActive && this.fade > 0.2 && randomSpark(this.seed++, now, i)) {
+        this.particles.push({
+          x,
+          y,
+          vx: vx * 0.55 + Math.cos(now * 13 + i) * 50,
+          vy: vy * 0.55 + Math.sin(now * 11 + i) * 50,
+          life: 0.5,
+          maxLife: 0.5,
+          radius: 1.5,
+          kind: 'spark',
+        });
+      }
   }
   }
 
@@ -143,23 +144,23 @@ export class DistressDamageParticles {
     width: number,
     height: number
   ): void {
-  ctx.save();
-  for (const p of this.particles) {
-    p.life -= dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vx *= Math.exp(-0.19 * dt);
-    p.vy *= Math.exp(-0.19 * dt);
-    if (p.life <= 0) continue;
-    const screen = camera.worldToScreen(p, width, height);
-    const progress = 1 - p.life / p.maxLife;
-    const radius = camera.scale(p.radius * (1 + progress * (p.kind === 'smoke' ? 2.2 : 0.5)));
-    const alpha = Math.min(0.7, p.life / p.maxLife) * (p.kind === 'smoke' ? 0.4 : 0.9);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = p.kind === 'smoke' ? '#6b7172' : p.kind === 'spark' ? '#ffda86' : '#ff7b2e';
-    ctx.beginPath();
-    ctx.arc(screen.x, screen.y, Math.max(0.4, radius), 0, Math.PI * 2);
-    ctx.fill();
+    ctx.save();
+    for (const p of this.particles) {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.exp(-0.19 * dt);
+      p.vy *= Math.exp(-0.19 * dt);
+      if (p.life <= 0) continue;
+      const screen = camera.worldToScreen(p, width, height);
+      const progress = 1 - p.life / p.maxLife;
+      const radius = camera.scale(p.radius * (1 + progress * (p.kind === 'smoke' ? 2.2 : 0.5)));
+      const alpha = Math.min(0.7, p.life / p.maxLife) * (p.kind === 'smoke' ? 0.4 : 0.9);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.kind === 'smoke' ? '#6b7172' : p.kind === 'spark' ? '#ffda86' : '#ff7b2e';
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, Math.max(0.4, radius), 0, Math.PI * 2);
+      ctx.fill();
   }
   ctx.restore();
   this.particles = this.particles.filter((p) => p.life > 0).slice(-260);
