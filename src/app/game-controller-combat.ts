@@ -19,9 +19,7 @@ function combatWeaponMounts(ship: ShipDefinition, slots: readonly number[]) {
       y: (mount.y - points.pivot.y) * scale,
       facing: mount.facing,
       ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-
       ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-
       ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
     }));
 }
