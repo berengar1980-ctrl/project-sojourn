@@ -4,7 +4,7 @@ import type {
 } from './strategic-combat-types';
 
 /** Engines are exposed only from flank or stern; hull and tractor can be targeted anywhere. */
-export function engineShotAvailable(source: MutableCombatant, target: MutableCombatant): boolean {
+export function engineShotAvailable(source: Pick<MutableCombatant, 'position'>, target: MutableCombatant): boolean {
   const bearing = Math.atan2(
     source.position.y - target.position.y,
     source.position.x - target.position.x
