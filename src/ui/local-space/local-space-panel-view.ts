@@ -88,7 +88,6 @@ function updateMiningButton(
   model: LocalSpaceViewModel,
   miningActive: boolean
 ): void {
-  updateCombatGrappleButton(combatTactics, model.combat);
   const selected = model.selectedAsteroid;
   if (!selected) return;
 
@@ -159,6 +158,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
 
   const selectedNpc = model.npcShips.find((npc) => npc.isSelected);
   combatTactics.hidden = model.combat === null;
+  updateCombatGrappleButton(combatTactics, model.combat);
   for (const button of combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
     button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
   }
