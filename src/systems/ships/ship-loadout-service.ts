@@ -25,7 +25,7 @@ function cloneInstalled(installed: InstalledShipComponents): InstalledShipCompon
   return copy;
 }
 
-function fitsWeaponHardpoint(
+export function fitsWeaponHardpoint(
   ship: ShipDefinition,
   index: number,
   weapon: ShipWeaponProfile
@@ -35,6 +35,12 @@ function fitsWeaponHardpoint(
   const point = mounts.find((mount) => mount.slotIndex === index);
   if (!point) return false;
   return !point.allowedMounts || point.allowedMounts.includes(weapon.mount ?? 'turret');
+}
+
+export function shipCanFitWeapon(ship: ShipDefinition, weapon: ShipWeaponProfile): boolean {
+  const slots = ship.sprite.hardpoints.weaponMounts;
+  if (!slots?.length) return resolveShipGameplayStats(ship).weaponSlots > 0;
+  return slots.some((slot) => fitsWeaponHardpoint(ship, slot.slotIndex, weapon));
 }
 
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
