@@ -29,6 +29,10 @@ export interface CombatGrapple {
   readonly origin: CombatPoint;
   readonly target: CombatPoint;
   readonly resolved: boolean;
+  /** Maximum separation allowed by the winch after the hook attaches. */
+  readonly ropeLength: number;
+  readonly tension: number;
+  readonly tractorAssisted: boolean;
 }
 
 export interface CombatShieldGeometry {

@@ -126,18 +126,13 @@ export class StrategicCombatRenderer {
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
     this.drawBeams(width, height);
-    drawCombatGrapple(
-      this.context,
-      this.model,
-      (point) => this.screen(point, width, height),
-      (side) => {
-        const combatant = this.model[side];
-        const geometry = this.shipGeometry(combatant, width, height);
-        const points = getShipDefinition(combatant.shipId)?.sprite.hardpoints;
-        const mount = points?.grapplingHooks?.[0];
-        return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
-      }
-    );
+    drawCombatGrapple(this.context, this.model, (side) => {
+      const combatant = this.model[side];
+      const geometry = this.shipGeometry(combatant, width, height);
+      const points = getShipDefinition(combatant.shipId)?.sprite.hardpoints;
+      const mount = points?.grapplingHooks?.[0];
+      return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
+    });
     this.drawShip(this.model.attacker, width, height, timeSeconds);
     this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
     this.drawShip(this.model.defender, width, height, timeSeconds);

@@ -27,6 +27,9 @@ export function fireCombatGrapple(
     origin: { ...attacker },
     target: { ...defender },
     resolved: false,
+    ropeLength: Math.max(140, Math.hypot(defender.x - attacker.x, defender.y - attacker.y)),
+    tension: 0,
+    tractorAssisted: false,
   };
 }
 
@@ -36,11 +39,19 @@ export function advanceCombatGrapple(
   defender: CombatPoint,
   dt: number
 ): CombatGrapple {
+  const elapsed = Math.min(hook.duration, hook.elapsed + Math.max(0, dt));
+  const resolved = elapsed >= hook.duration;
   return {
     ...hook,
-    elapsed: Math.min(hook.duration, hook.elapsed + Math.max(0, dt)),
+    elapsed,
     origin: { ...attacker },
     target: { ...defender },
-    resolved: hook.elapsed + Math.max(0, dt) >= hook.duration,
+    resolved,
+    // The rope attaches at the ships' current distance, not at the distance
+    // recorded when the hook was fired while both ships were still moving.
+    ropeLength:
+      hook.success && resolved && !hook.resolved
+        ? Math.max(140, Math.hypot(defender.x - attacker.x, defender.y - attacker.y))
+        : hook.ropeLength,
   };
 }

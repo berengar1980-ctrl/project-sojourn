@@ -1,4 +1,5 @@
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
+import { advanceCombatGrappleTether } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
 
 import type {
@@ -132,7 +133,13 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
     exitPoint: runtime.arena.exitPoint!,
     winner: runtime.winner,
     boardingInitiator: runtime.boardingInitiator,
-    grapple: runtime.grapple,
+    grapple: runtime.grapple
+      ? {
+          ...runtime.grapple,
+          origin: { ...runtime.grapple.origin },
+          target: { ...runtime.grapple.target },
+        }
+      : null,
     grappleUsed: { ...runtime.grappleUsed },
     lastEvent: runtime.lastEvent,
     projectiles: runtime.projectiles.map((projectile) => ({
@@ -194,17 +201,24 @@ function tickStrategicCombat(
       victim.position,
       dt
     );
+    // The ships keep maneuvering while the hook flies and after it attaches.
+    // Momentum is never cleared simply because a grapple was fired.
+    moveCombatant(initiator, victim, runtime.grapple.owner, dt, runtime.arena, runtime.mines);
+    const victimSide = runtime.grapple.owner === 'attacker' ? 'defender' : 'attacker';
+    moveCombatant(victim, initiator, victimSide, dt, runtime.arena, runtime.mines);
     if (runtime.grapple.success && runtime.grapple.resolved) {
-      const fraction = Math.min(1, dt * 2.6);
-      victim.position.x += (initiator.position.x - victim.position.x) * fraction;
-      victim.position.y += (initiator.position.y - victim.position.y) * fraction;
-      victim.speed = 0;
-      initiator.speed = 0;
-      victim.velocity.x = 0;
-      victim.velocity.y = 0;
-      initiator.velocity.x = 0;
-      initiator.velocity.y = 0;
+      runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
       if (distance(initiator.position, victim.position) <= 140) {
+        // Match the ships' drift at the moment of docking rather than stopping
+        // both vessels instantaneously in the middle of space.
+        const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;
+        const sharedY = (initiator.velocity.y + victim.velocity.y) / 2;
+        initiator.velocity.x = sharedX;
+        initiator.velocity.y = sharedY;
+        victim.velocity.x = sharedX;
+        victim.velocity.y = sharedY;
+        initiator.speed = Math.hypot(sharedX, sharedY);
+        victim.speed = initiator.speed;
         runtime.boardingInitiator = runtime.grapple.owner;
         runtime.winner = runtime.grapple.owner;
         runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
@@ -213,6 +227,9 @@ function tickStrategicCombat(
       runtime.lastEvent = 'GREIFHAKEN > AM RUMPF ABGEPRALLT';
       runtime.grapple = null;
     }
+    resolveCombatantCollision(runtime.attacker, runtime.defender);
+    resolveArenaObstacles(runtime.attacker, runtime.arena);
+    resolveArenaObstacles(runtime.defender, runtime.arena);
     return runtimeSnapshot(runtime);
   }
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
