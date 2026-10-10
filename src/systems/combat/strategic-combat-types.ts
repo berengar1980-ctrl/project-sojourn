@@ -10,7 +10,17 @@ export type StrategicCombatSide = 'attacker' | 'defender';
 
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
+export type CombatTargetSubsystem = 'hull' | 'engine' | 'tractor';
+
+export interface CombatSubsystemHealth {
+  readonly engine: number;
+  readonly tractor: number;
+  readonly maximum: number;
+}
+
 export interface CombatStrategyPlan {
+  readonly targetSubsystem?: CombatTargetSubsystem;
+  readonly broadsideFacing?: 'port' | 'starboard';
   readonly kind: 'frontal' | 'broadside' | 'skirmish' | 'minefield' | 'approach' | 'escape';
   readonly focus: 'forward' | 'broadside' | 'turret' | 'mine';
   readonly desiredRange: number;
@@ -105,6 +115,7 @@ export interface StrategicCombatantSnapshot {
   readonly shieldMaxHp: number;
   readonly hullHp: number;
   readonly hullMaxHp: number;
+  readonly subsystems: CombatSubsystemHealth;
   readonly position: CombatPoint;
   readonly velocity: CombatPoint;
   readonly headingRadians: number;
@@ -228,6 +239,7 @@ export interface MutableCombatant {
   nextStrategyReviewAt: number;
   shieldHp: number;
   hullHp: number;
+  subsystems: { engine: number; tractor: number; maximum: number };
   shieldImpacts: ShieldImpactEffect[];
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
