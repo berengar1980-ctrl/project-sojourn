@@ -43,8 +43,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     const maneuverFactor =
       focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.72, ownTurn / Math.max(0.4, enemyTurn)));
     plans.push({
-      kind:
-        focus === 'forward' ? 'frontal' : focus === 'broadside' ? 'broadside' : 'skirmish',
+      kind: focus === 'forward' ? 'frontal' : focus === 'broadside' ? 'broadside' : 'skirmish',
       focus,
       desiredRange: Math.max(180, bestRange * (bestRange > enemyRange ? 0.78 : 0.65)),
       score: score * distanceAdvantage * maneuverFactor * Math.min(1.2, mobility),
