@@ -192,7 +192,7 @@ function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: numb
 function recordCombatLog(
   runtime: StrategicCombatRuntime,
   side: 'attacker' | 'defender' | 'system',
-  event: 'start' | 'plan' | 'phase' | 'impact' | 'result',
+  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result',
   detail: string
 ): void {
   runtime.combatLog.push({
@@ -320,6 +320,21 @@ function tickStrategicCombat(
   ) {
     tryFireGrapple(runtime, 'defender');
   }
+  const sampleSecond = Math.floor(runtime.elapsedSeconds);
+  if (sampleSecond > runtime.lastLoggedSampleSecond) {
+    runtime.lastLoggedSampleSecond = sampleSecond;
+    const range = Math.round(distance(runtime.attacker.position, runtime.defender.position));
+    for (const [side, ship] of [
+      ['attacker', runtime.attacker],
+      ['defender', runtime.defender],
+    ] as const) {
+      recordCombatLog(runtime, side, 'state',
+        'Abstand ' + range + 'm · Tempo ' + Math.round(ship.speed) +
+        'm/s · Schild ' + Math.round(ship.shieldHp) +
+        ' · Hülle ' + Math.round(ship.hullHp) +
+        ' · Phase ' + (ship.strategy?.phase ?? 'Standardtaktik'));
+    }
+  }
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
     runtime.lastLoggedImpact = runtime.lastImpact.serial;
@@ -391,6 +406,7 @@ function createStrategicCombatRuntime(
     combatLog: [],
     firstPlanner: seed % 2 === 0 ? 'attacker' : 'defender',
     lastLoggedImpact: 0,
+    lastLoggedSampleSecond: -1,
     projectileSerial: 0,
     beamSerial: 0,
     mineSerial: 0,
