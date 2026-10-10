@@ -173,13 +173,14 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
 export function reviewCombatStrategy(
   ship: MutableCombatant,
   enemy: MutableCombatant,
-  side: StrategicCombatSide,
+  _side: StrategicCombatSide,
   elapsed: number
 ): void {
   if (elapsed + 0.00001 < ship.nextStrategyReviewAt || ship.hullHp <= 0) return;
-  ship.nextStrategyReviewAt =
-    (side === 'attacker' ? 0 : 4) +
-    (Math.floor((elapsed - (side === 'attacker' ? 0 : 4)) / PERIOD) + 1) * PERIOD;
+  // The first planning side is selected per fight. Keep each ship's own
+  // eight-second cadence, without using attacker/defender as the fixed offset.
+  ship.nextStrategyReviewAt +=
+    (Math.floor((elapsed - ship.nextStrategyReviewAt) / PERIOD) + 1) * PERIOD;
   if (ship.tactic === 'flee') {
     ship.strategy = {
       kind: 'escape',
