@@ -1,4 +1,8 @@
-import { advanceDistressRamming, createDistressRammingState, type DistressRammingState } from '../systems/salvage/distress-ramming-physics';
+import {
+  advanceDistressRamming,
+  createDistressRammingState,
+  type DistressRammingState,
+} from '../systems/salvage/distress-ramming-physics';
 import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
