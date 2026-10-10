@@ -27,6 +27,7 @@ export function weaponInArc(
   }
   const mount = source.setup.weaponMounts?.find((point) => point.slotIndex === slot);
   if (mount?.allowedMounts && !mount.allowedMounts.includes(kind)) return false;
+  if (mount?.allowedFamilies && !mount.allowedFamilies.includes(profile.family)) return false;
   const weaponArc = profile.arcDegrees ?? (kind === 'forward' ? 60 : 90);
   const degrees = Math.min(weaponArc, mount?.arcDegrees ?? 360);
   if (degrees >= 360) return true;
