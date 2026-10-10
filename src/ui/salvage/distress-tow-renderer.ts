@@ -126,7 +126,9 @@ function drawTowCable(
   }
 }
 
-function wreckRole(kind: NonNullable<SalvageSpaceViewModel['sectorEvent']>['wreckKind']): 'salvage' | 'mining' | 'patrol' | 'freighter' {
+function wreckRole(
+  kind: NonNullable<SalvageSpaceViewModel['sectorEvent']>['wreckKind']
+): 'salvage' | 'mining' | 'patrol' | 'freighter' {
   if (kind === 'salvager') return 'salvage';
   if (kind === 'miner') return 'mining';
   if (kind === 'patrol') return 'patrol';
