@@ -108,6 +108,11 @@ export function createCombatant(
     hullMaxHp: Math.max(1, setup.hullHp),
     shieldHp: Math.max(0, setup.shieldHp),
     hullHp: Math.max(1, setup.hullHp),
+    subsystems: {
+      engine: Math.max(1, setup.hullHp),
+      tractor: setup.tractorRangeMeters ? Math.max(1, setup.hullHp) : 0,
+      maximum: Math.max(1, setup.hullHp),
+    },
     cooldowns: setup.weapons.map((_, index) => 0.7 + index * 0.18),
     fireControl: {
       max: Math.max(1, setup.weapons.length),
@@ -139,6 +144,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     shieldMaxHp: combatant.shieldMaxHp,
     hullHp: combatant.hullHp,
     hullMaxHp: combatant.hullMaxHp,
+    subsystems: { ...combatant.subsystems },
     position: { ...combatant.position },
     velocity: { ...combatant.velocity },
     headingRadians: combatant.headingRadians,
