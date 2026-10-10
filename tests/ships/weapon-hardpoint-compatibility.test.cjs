@@ -94,13 +94,15 @@ assert.equal(weaponInArc(shooter, { x: 100, y: 40 }, 0, rail.weapon), false);
 assert.equal(weaponInArc(shooter, { x: 0, y: -100 }, 1, laser.weapon), true);
 assert.equal(weaponInArc(shooter, { x: 100, y: 0 }, 1, laser.weapon), false);
 assert.equal(weaponInArc(shooter, { x: 100, y: 0 }, 0, laser.weapon), false);
+const legacyTurret = { ...laser.weapon, arcDegrees: undefined };
 assert.equal(
-  weaponInArc(shooter, { x: -100, y: 0 }, 1, { ...laser.weapon, arcDegrees: undefined }),
+  weaponInArc(shooter, { x: -100, y: 0 }, 1, legacyTurret),
   false,
   'hardpoint must still restrict a turret whose profile omits arcDegrees'
 );
+const unmountedShooter = { ...shooter, setup: { weaponMounts: [] } };
 assert.equal(
-  weaponInArc({ ...shooter, setup: { weaponMounts: [] } }, { x: -100, y: 0 }, 1, { ...laser.weapon, arcDegrees: undefined }),
+  weaponInArc(unmountedShooter, { x: -100, y: 0 }, 1, legacyTurret),
   true,
   'legacy turret with no arc uses full-circle firing'
 );
