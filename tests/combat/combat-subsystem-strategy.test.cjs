@@ -67,6 +67,11 @@ assert.equal(first.strategy.kind, initial, 'no strategy thrashing before next re
 
 second.headingRadians = 0;
 second.tactic = 'flee';
+planner.reviewCombatStrategy(first, second, 'attacker', 8);
+assert.equal(first.strategy.kind, 'tractor_lock',
+  'intact tractor can intercept an unshielded escaping target');
+assert.equal(first.strategy.targetSubsystem, 'engine',
+  'escape makes enemy engines the preferred subsystem');
 assert.equal(targeting.effectiveTargetSubsystem(first, second), 'engine',
   'shoot fleeing engines from the side or behind');
 first.position = { x: 1100, y: 550 };
