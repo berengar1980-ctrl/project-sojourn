@@ -204,6 +204,18 @@ export function reviewCombatStrategy(
     };
     return;
   }
+  // A selected minefield tactic is an instruction, not a low-scoring weapon plan.
+  // Keep deploying while there is stock and an operational main engine.
+  if (ship.tactic === 'minefield' && ship.mineStock.length > 0 && ship.subsystems.engine > 0) {
+    ship.strategy = {
+      kind: 'minefield',
+      focus: 'mine',
+      desiredRange: 460,
+      score: 999,
+      reason: 'Angewiesene Minentaktik ausführen',
+    };
+    return;
+  }
   const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
   const best = options[0]!;
   const current = ship.strategy;
