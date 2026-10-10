@@ -50,7 +50,8 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <label>Hardpoint-Typ</label>
 <div class="type-grid" id="typeGrid">
 <button data-type="engines">Engines</button>
-<button data-type="weaponLasers">Laser</button>
+<button data-type="weaponLasers">Laser-Effekte</button>
+<button data-type="weaponMounts">Waffen-Slots</button>
 <button data-type="miningLasers" class="active">Mining-Laser</button>
 <button data-type="maneuverThrusters">RCS Burst</button>
 <button data-type="tractorBeams">Traktorstrahl</button>
@@ -67,6 +68,7 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <label>Legende</label>
 <div class="legend">
 <span><i class="dot" style="background:#ffb347"></i>Laser</span>
+<span><i class="dot" style="background:#b987ff"></i>Waffen-Slot</span>
 <span><i class="dot" style="background:#ff4d4d"></i>Mining</span>
 <span><i class="dot" style="background:#f4f7fb"></i>RCS</span>
 <span><i class="dot" style="background:#54ef8d"></i>Traktor</span>
@@ -89,6 +91,11 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <div><label>Y</label><input id="fieldY" type="number" step="1"></div>
 <div><label>Breite</label><input id="fieldWidth" type="number" min="1" step="1"></div>
 <div><label>Layer</label><select id="fieldLayer"><option value="below">unter Schiff</option><option value="above">über Schiff</option></select></div>
+<div id="weaponFacingWrap" class="wide" hidden><label>Schussrichtung</label><select id="fieldFacing"><option value="forward">Bug (vorne)</option><option value="port">Backbord (oben)</option><option value="starboard">Steuerbord (unten)</option></select></div>
+<div id="weaponArcWrap" hidden><label>Max. Feuerwinkel (°)</label><input id="fieldArcDegrees" type="number" min="1" max="360" step="1"></div>
+<div id="weaponTypesWrap" class="wide" hidden><label>Zulässige Waffen-Montagen</label>
+<div class="type-grid"><label><input type="checkbox" class="weaponAllowed" value="forward"> Front</label><label><input type="checkbox" class="weaponAllowed" value="broadside"> Breitseite</label><label><input type="checkbox" class="weaponAllowed" value="turret"> Rundumturm</label><label><input type="checkbox" class="weaponAllowed" value="guided"> Lenkwaffen</label></div>
+<p class="muted">Nur ausgewählte Montagen sind im Spiel in diesem Slot einbaubar. Alte Slots ohne Angabe bleiben bis zur Kalibrierung kompatibel.</p></div>
 <div id="forceXWrap"><label>Force X</label><input id="fieldForceX" type="number" step=".1"></div>
 <div id="forceYWrap"><label>Force Y</label><input id="fieldForceY" type="number" step=".1"></div>
 </div>
@@ -122,11 +129,12 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 const TYPES={
  engines:{label:"Engine",color:"#4da3ff"},
  weaponLasers:{label:"Laser",color:"#ffb347"},
+ weaponMounts:{label:"Waffen-Slot",color:"#b987ff"},
  miningLasers:{label:"Mining-Laser",color:"#ff4d4d"},
  maneuverThrusters:{label:"RCS Burst",color:"#f4f7fb"},
  tractorBeams:{label:"Traktorstrahl",color:"#54ef8d"}
 };
-const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","modeGrid","hardpointControls","pointSection","hardpointEditorSection","shieldEditorSection","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","shieldCenterX","shieldCenterY","shieldRadiusX","shieldRadiusY","shieldMaxHp","shieldModifier","meta"].map(id=>[id,document.getElementById(id)]));
+const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","modeGrid","hardpointControls","pointSection","hardpointEditorSection","shieldEditorSection","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","fieldFacing","fieldArcDegrees","weaponFacingWrap","weaponArcWrap","weaponTypesWrap","shieldCenterX","shieldCenterY","shieldRadiusX","shieldRadiusY","shieldMaxHp","shieldModifier","meta"].map(id=>[id,document.getElementById(id)]));
 const ctx=els.canvas.getContext("2d");
 const SHIP_IDS=[
  "freighter-120m-variant-01","freighter-120m-variant-02","freighter-120m-variant-03","freighter-120m-variant-04",
@@ -202,6 +210,8 @@ function renderEditor(){
  const hp=points()[state.selected];const has=Boolean(hp);els.editor.hidden=!has;els.emptySelection.hidden=has;if(!has)return;
  els.fieldId.value=hp.id;els.fieldX.value=hp.x;els.fieldY.value=hp.y;els.fieldWidth.value=hp.width;els.fieldLayer.value=hp.layer||"below";
  const rcs=state.type==="maneuverThrusters";els.forceXWrap.hidden=!rcs;els.forceYWrap.hidden=!rcs;els.fieldForceX.value=hp.forceX??0;els.fieldForceY.value=hp.forceY??0;
+ const weapon=state.type==="weaponMounts";els.weaponFacingWrap.hidden=!weapon;els.weaponArcWrap.hidden=!weapon;els.weaponTypesWrap.hidden=!weapon;
+ if(weapon){els.fieldFacing.value=hp.facing||"forward";els.fieldArcDegrees.value=hp.arcDegrees??360;for(const input of document.querySelectorAll(".weaponAllowed"))input.checked=(hp.allowedMounts||["forward","broadside","turret","guided"]).includes(input.value)}
 }
 function renderShieldEditor(){
  if(!state.ship)return;
@@ -228,16 +238,18 @@ function applyFields(){
  const hp=points()[state.selected];if(!hp)return;
  hp.id=els.fieldId.value.trim()||hp.id;hp.x=Number(els.fieldX.value)||0;hp.y=Number(els.fieldY.value)||0;hp.width=Math.max(1,Number(els.fieldWidth.value)||1);hp.layer=els.fieldLayer.value;
  if(state.type==="maneuverThrusters"){hp.forceX=Number(els.fieldForceX.value)||0;hp.forceY=Number(els.fieldForceY.value)||0}
+ if(state.type==="weaponMounts"){hp.facing=els.fieldFacing.value;hp.arcDegrees=Math.max(1,Math.min(360,Number(els.fieldArcDegrees.value)||360));hp.allowedMounts=[...document.querySelectorAll(".weaponAllowed:checked")].map(input=>input.value)}
  markDirty();renderList();draw();
 }
 function addPoint(){
  if(!state.ship)return;const list=points();const n=list.length+1;const data=state.ship.data;
  const hp={id:state.type.replace(/s$/,"")+"-"+n,x:data.pivot.x,y:data.pivot.y,width:7,layer:"below"};
  if(state.type==="maneuverThrusters"){hp.forceX=0;hp.forceY=1}
+ if(state.type==="weaponMounts"){hp.slotIndex=list.length;hp.facing="forward";hp.arcDegrees=60;hp.allowedMounts=["forward"];hp.layer="above"}
  list.push(hp);state.selected=list.length-1;markDirty();renderList();renderEditor();draw();
 }
 function deletePoint(){
- const list=points();if(state.selected==null||!list[state.selected])return;list.splice(state.selected,1);state.selected=null;markDirty();renderList();renderEditor();draw();
+ const list=points();if(state.selected==null||!list[state.selected])return;list.splice(state.selected,1);if(state.type==="weaponMounts")list.forEach((hp,i)=>hp.slotIndex=i);state.selected=null;markDirty();renderList();renderEditor();draw();
 }
 async function saveShip(ship){
  const response=await fetch("/__sojourn/hardpoints/save",{
@@ -297,7 +309,7 @@ function draw(){
   ctx.restore();
  }else{
   for(const [type,meta] of Object.entries(TYPES))for(const hp of state.ship.data[type]||[])drawMarker(hp,meta.color,hp.id+" · "+(hp.layer||"below"),t);
-  const hp=points()[state.selected];if(hp){const p=screenPoint(hp,t);ctx.beginPath();ctx.arc(p.x,p.y,10,0,Math.PI*2);ctx.strokeStyle="#55d6c2";ctx.lineWidth=2;ctx.stroke()}
+  const hp=points()[state.selected];if(hp){if(state.type==="weaponMounts"){const p=screenPoint(hp,t),a=(hp.facing==="port"?-Math.PI/2:hp.facing==="starboard"?Math.PI/2:0),half=(hp.arcDegrees??360)*Math.PI/360,radius=110*t.scale;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,radius,a-half,a+half);ctx.closePath();ctx.fillStyle="rgba(185,135,255,.10)";ctx.fill();ctx.strokeStyle="#b987ff";ctx.stroke()}const p=screenPoint(hp,t);ctx.beginPath();ctx.arc(p.x,p.y,10,0,Math.PI*2);ctx.strokeStyle="#55d6c2";ctx.lineWidth=2;ctx.stroke()}
  }
 }
 function nearest(x,y){
@@ -348,7 +360,7 @@ els.saveBtn.onclick=saveCurrent;els.saveAllBtn.onclick=saveAll;els.shipSelect.on
 els.modeGrid.onclick=e=>{const b=e.target.closest("button[data-mode]");if(!b)return;state.mode=b.dataset.mode;state.selected=null;for(const button of els.modeGrid.querySelectorAll("button"))button.classList.toggle("active",button.dataset.mode===state.mode);const shield=state.mode==="shield";els.hardpointControls.hidden=shield;els.pointSection.hidden=shield;els.hardpointEditorSection.hidden=shield;els.shieldEditorSection.hidden=!shield;renderEditor();renderShieldEditor();draw()};
 els.typeGrid.onclick=e=>{const b=e.target.closest("button[data-type]");if(!b)return;state.type=b.dataset.type;state.selected=null;syncTypeButtons();renderList();renderEditor();draw()};
 els.addBtn.onclick=addPoint;els.deleteBtn.onclick=deletePoint;
-for(const el of [els.fieldId,els.fieldX,els.fieldY,els.fieldWidth,els.fieldLayer,els.fieldForceX,els.fieldForceY])el.addEventListener("input",applyFields);
+for(const el of [els.fieldId,els.fieldX,els.fieldY,els.fieldWidth,els.fieldLayer,els.fieldForceX,els.fieldForceY,els.fieldFacing,els.fieldArcDegrees,...document.querySelectorAll(".weaponAllowed")])el.addEventListener("input",applyFields);
 for(const el of [els.shieldCenterX,els.shieldCenterY,els.shieldRadiusX,els.shieldRadiusY,els.shieldMaxHp,els.shieldModifier])el.addEventListener("input",applyShieldFields);
 els.canvas.addEventListener("pointerdown",pointerDown);els.canvas.addEventListener("pointermove",pointerMove);els.canvas.addEventListener("pointerup",pointerUp);els.canvas.addEventListener("pointercancel",pointerUp);
 els.canvas.addEventListener("wheel",e=>{e.preventDefault();state.zoom=Math.max(.35,Math.min(5,state.zoom*Math.exp(-e.deltaY*.001)));draw()},{passive:false});
