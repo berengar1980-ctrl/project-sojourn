@@ -37,11 +37,17 @@ export function maybeDropRuntimeMine(
   deltaSeconds: number
 ): void {
   source.mineCooldown = Math.max(0, source.mineCooldown - deltaSeconds);
-  if (source.tactic !== 'minefield' || source.mineStock.length === 0 || source.mineCooldown > 0) {
-    return;
-  }
-  if (distance(source.position, target.position) > 720) return;
-  const definition = chooseRuntimeMine(source, target);
+  const range = distance(source.position, target.position);
+  const defensiveMine = source.tactic === 'flee' && range <= 640 && target.subsystems.engine > 0;
+  if (
+    (source.tactic !== 'minefield' && !defensiveMine) ||
+    source.mineStock.length === 0 ||
+    source.mineCooldown > 0
+  ) return;
+  if (range > 720) return;
+  const definition = defensiveMine
+    ? source.mineStock.find((mine) => mine.kind === 'hunter') ?? chooseRuntimeMine(source, target)
+    : chooseRuntimeMine(source, target);
   if (!definition) return;
   const stockIndex = source.mineStock.findIndex((mine) => mine.id === definition.id);
   if (stockIndex >= 0) source.mineStock.splice(stockIndex, 1);
