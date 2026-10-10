@@ -37,7 +37,7 @@
       "y": 169,
       "width": 6,
       "facing": "forward",
-      "layer": "above",
+      "layer": "below",
       "arcDegrees": 60,
       "allowedMounts": [
         "forward"
@@ -53,7 +53,7 @@
       "y": 88,
       "width": 6,
       "facing": "port",
-      "layer": "above",
+      "layer": "below",
       "arcDegrees": 90,
       "allowedMounts": [
         "broadside"
@@ -71,7 +71,7 @@
       "y": 249,
       "width": 6,
       "facing": "starboard",
-      "layer": "above",
+      "layer": "below",
       "arcDegrees": 90,
       "allowedMounts": [
         "broadside"
@@ -89,7 +89,7 @@
       "y": 169,
       "width": 6,
       "facing": "forward",
-      "layer": "above",
+      "layer": "below",
       "arcDegrees": 360,
       "allowedMounts": [
         "turret"
