@@ -36,6 +36,7 @@ import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 import {
   effectiveTargetSubsystem,
   engineShotAvailable,
+  canEngagePreferredSubsystem,
 } from './combat-subsystem-targeting';
 
 function fireRuntimeInstantWeapon(
@@ -234,6 +235,7 @@ export function advanceRuntimeWeapons(
         weapon?.weapon &&
         (source.cooldowns[index] ?? 0) <= 0 &&
         distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+        canEngagePreferredSubsystem(source, target) &&
         weaponInArc(source, target.position, index, weapon.weapon) &&
         !(
           weapon.weapon.family === 'railgun' &&
