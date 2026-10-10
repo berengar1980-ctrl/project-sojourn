@@ -21,6 +21,73 @@ function targetSubsystem(
   return 'hull';
 }
 
+type WeaponGroup = {
+  readonly focus: 'forward' | 'broadside' | 'turret';
+  readonly facing?: 'port' | 'starboard';
+};
+
+function scoreWeaponGroup(
+  ship: MutableCombatant,
+  group: WeaponGroup,
+  enemyRange: number,
+  currentRange: number,
+  speedRatio: number,
+  turnRatio: number,
+  enemyShielded: boolean,
+  targetSubsystemChoice: 'hull' | 'engine' | 'tractor'
+): CombatStrategyPlan | null {
+  const guns = ship.setup.weapons.flatMap((component, index) => {
+    const weapon = component.weapon;
+    if (!weapon) return [];
+    const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
+    const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
+    const weaponMount =
+      weapon.mount ??
+      (weapon.family === 'railgun'
+        ? 'forward'
+        : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
+          ? 'broadside'
+          : 'turret');
+    const matching =
+      group.focus === 'turret'
+        ? weaponMount === 'turret' || weaponMount === 'guided'
+        : group.focus === 'forward'
+          ? weaponMount === 'forward' && facing === 'forward'
+          : weaponMount === 'broadside' && facing === group.facing;
+    return matching ? [weapon] : [];
+  });
+  if (!guns.length) return null;
+  const range = Math.max(...guns.map((weapon) => weapon.rangeMeters));
+  const dps = guns.reduce(
+    (total, weapon) =>
+      total +
+      (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
+        Math.max(0.45, weapon.cooldownSeconds),
+    0
+  );
+  const maintainRange = range > enemyRange && speedRatio >= 1.02;
+  const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
+  const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
+  const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
+  const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));
+  return {
+    kind:
+      group.focus === 'forward'
+        ? 'frontal'
+        : group.focus === 'broadside'
+          ? 'broadside'
+          : 'skirmish',
+    focus: group.focus,
+    ...(group.facing ? { broadsideFacing: group.facing } : {}),
+    targetSubsystem: targetSubsystemChoice,
+    desiredRange: effectiveRange,
+    score: dps * travelPenalty * relativeMobility * turnFactor * (maintainRange ? 1.2 : 1),
+    reason: enemyShielded
+      ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
+      : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
+};
+}
+
 function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
   const enemyRange = Math.max(
     0,
@@ -43,66 +110,18 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     (ship.setup.turnRateRadiansPerSecond ?? 1) /
     Math.max(0.4, enemy.setup.turnRateRadiansPerSecond ?? 1);
   const plans: CombatStrategyPlan[] = [];
-  const groups: readonly {
-    readonly focus: 'forward' | 'broadside' | 'turret';
-    readonly facing?: 'port' | 'starboard';
-  }[] = [
+  const groups: readonly WeaponGroup[] = [
     { focus: 'forward' },
     { focus: 'broadside', facing: 'port' },
     { focus: 'broadside', facing: 'starboard' },
     { focus: 'turret' },
   ];
   for (const group of groups) {
-    const guns = ship.setup.weapons.flatMap((component, index) => {
-      const weapon = component.weapon;
-      if (!weapon) return [];
-      const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
-      const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
-      const weaponMount =
-        weapon.mount ??
-        (weapon.family === 'railgun'
-          ? 'forward'
-          : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
-            ? 'broadside'
-            : 'turret');
-      const matching =
-        group.focus === 'turret'
-          ? weaponMount === 'turret' || weaponMount === 'guided'
-          : group.focus === 'forward'
-            ? weaponMount === 'forward' && facing === 'forward'
-            : weaponMount === 'broadside' && facing === group.facing;
-      return matching ? [weapon] : [];
-    });
-    if (!guns.length) continue;
-    const range = Math.max(...guns.map((weapon) => weapon.rangeMeters));
-    const dps = guns.reduce(
-      (total, weapon) =>
-        total +
-        (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
-          Math.max(0.45, weapon.cooldownSeconds),
-      0
+    const plan = scoreWeaponGroup(
+      ship, group, enemyRange, currentRange, speedRatio,
+      turnRatio, enemyShielded, targetSubsystemChoice
     );
-    const maintainRange = range > enemyRange && speedRatio >= 1.02;
-    const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
-    const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
-    const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
-    const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));
-    plans.push({
-      kind:
-        group.focus === 'forward'
-          ? 'frontal'
-          : group.focus === 'broadside'
-            ? 'broadside'
-            : 'skirmish',
-      focus: group.focus,
-      ...(group.facing ? { broadsideFacing: group.facing } : {}),
-      targetSubsystem: targetSubsystemChoice,
-      desiredRange: effectiveRange,
-      score: dps * travelPenalty * relativeMobility * turnFactor * (maintainRange ? 1.2 : 1),
-      reason: enemyShielded
-        ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
-        : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
-    });
+    if (plan) plans.push(plan);
   }
   if (
     ship.subsystems.tractor > 0 &&
