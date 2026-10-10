@@ -14,7 +14,9 @@ const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
   'src/data/ships/ship-component-catalog.ts'
 );
 
-const cannon = SHIP_COMPONENT_CATALOG.weapon.find((weapon) => weapon.id === 'weapon-autocannon-1');
+const cannon = SHIP_COMPONENT_CATALOG.weapon.find(
+  (weapon) => weapon.id === 'weapon-autocannon-1'
+);
 const turret = SHIP_COMPONENT_CATALOG.weapon.find((weapon) => weapon.id === 'weapon1');
 assert(cannon && turret);
 
