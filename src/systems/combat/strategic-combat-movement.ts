@@ -334,6 +334,24 @@ function choosePlanDirection(
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
   }
+  if (
+    combatant.tactic !== 'flee' &&
+    enemy.tactic === 'flee' &&
+    enemy.subsystems.engine > 0 &&
+    combatant.subsystems.engine > 0
+  ) {
+    // Approach the fleeing ship's stern instead of indefinitely tailing its bow.
+    const offset = Math.min(220, Math.max(90, range * 0.28));
+    const stern = {
+      x: enemy.position.x - Math.cos(enemy.headingRadians) * offset,
+      y: enemy.position.y - Math.sin(enemy.headingRadians) * offset,
+    };
+    direction = normalize(
+      stern.x - combatant.position.x,
+      stern.y - combatant.position.y
+    );
+    targetSpeedFactor = 1;
+  }
   return { direction, targetSpeedFactor };
 }
 
