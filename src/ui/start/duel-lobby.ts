@@ -181,6 +181,22 @@ function duelCombatant(
   };
 }
 
+function attachEncounterSelector(select: HTMLSelectElement, ships: readonly ShipDefinition[], drafts: [DuelDraft, DuelDraft], onSelected: (id: string) => void): void {
+  select.addEventListener('change', () => {
+    const selectedEncounter = select.value;
+    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
+    if (scenario) {
+      const configured = resolveDuelPreset(scenario, ships);
+      configured.forEach((entry, index) => {
+        drafts[index]!.shipId = entry.shipId;
+        drafts[index]!.weapons = [...entry.weapons];
+        drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
+      });
+    }
+    onSelected(selectedEncounter);
+  });
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -223,19 +239,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const fight = document.createElement('button');
   fight.textContent = 'Duell starten';
   actions.append(back, fight);
-  encounterSelect.addEventListener('change', () => {
-    selectedEncounter = encounterSelect.value;
-    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
-    if (scenario) {
-      const configured = resolveDuelPreset(scenario, ships);
-      configured.forEach((entry, index) => {
-        drafts[index]!.shipId = entry.shipId;
-        drafts[index]!.weapons = [...entry.weapons];
-        drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
-      });
-    }
-    render();
-  });
+  attachEncounterSelector(encounterSelect, ships, drafts, (id) => { selectedEncounter = id; render(); });
   shell.append(title, description, encounterLabel, cards, actions);
   root.replaceChildren(shell);
 
