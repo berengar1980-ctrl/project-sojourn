@@ -23,6 +23,7 @@ export function advanceCombatGrappleTether(
   const normalY = dy / separation;
   const tractorAssisted =
     source.hullHp > 0 &&
+    source.subsystems.tractor > 0 &&
     target.shieldHp <= 0 &&
     (source.setup.tractorRangeMeters ?? 0) > 0 &&
     separation <= (source.setup.tractorRangeMeters ?? 0);
