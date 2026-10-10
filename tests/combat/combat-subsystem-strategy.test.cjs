@@ -65,6 +65,7 @@ const initial = first.strategy.kind;
 planner.reviewCombatStrategy(first, second, 'attacker', 2);
 assert.equal(first.strategy.kind, initial, 'no strategy thrashing before next review');
 
+second.headingRadians = 0;
 second.tactic = 'flee';
 assert.equal(targeting.effectiveTargetSubsystem(first, second), 'engine',
   'shoot fleeing engines from the side or behind');
