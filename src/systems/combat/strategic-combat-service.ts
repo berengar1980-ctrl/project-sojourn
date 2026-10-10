@@ -270,7 +270,10 @@ function recordCombatMotion(runtime: StrategicCombatRuntime): void {
   }
 }
 
-function reviewShieldBreakthroughs(runtime: StrategicCombatRuntime, previous: readonly number[]): void {
+function reviewShieldBreakthroughs(
+  runtime: StrategicCombatRuntime,
+  previous: readonly number[]
+): void {
   // Important tactical milestones can transition to the next doctrine immediately.
   if (previous[0]! > 0 && runtime.attacker.shieldHp <= 0) {
     runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
@@ -290,7 +293,6 @@ function reviewShieldBreakthroughs(runtime: StrategicCombatRuntime, previous: re
       'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten'
     );
   }
-
 }
 
 function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
@@ -306,7 +308,6 @@ function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
   ) {
     tryFireGrapple(runtime, 'defender');
   }
-
 }
 
 function tickStrategicCombat(

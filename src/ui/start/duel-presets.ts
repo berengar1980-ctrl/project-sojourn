@@ -36,33 +36,78 @@ const missile: WeaponChoice = ['guided_missile', 2];
 const heavyMissile: WeaponChoice = ['he_missile', 2];
 
 export const DUEL_ENCOUNTERS: readonly DuelEncounter[] = [
-  { id: 'alpha', title: 'Alpha · Front gegen Front', purpose: 'Railguns, Abstand und Frontalwinkel',
-    seed: 1001, first: side('patrol', 1, [rail, cannon, cannon, laser, missile], 0),
-    second: side('patrol', 2, [rail, cannon, cannon, laser, missile], 1) },
-  { id: 'beta', title: 'Beta · Schildbrecher', purpose: 'Ionenwaffen gegen Panzerungswaffen',
-    seed: 1002, first: side('patrol', 3, [rail, ion, ion, ionLaser, missile], 2),
-    second: side('patrol', 4, [rail, cannon, cannon, laser, heavyMissile], 3) },
-  { id: 'gamma', title: 'Gamma · Breitseiten', purpose: 'Backbord- und Steuerbord-Orientierung',
-    seed: 1003, first: side('salvage', 1, [rail, plasma, plasma, laser], 4),
-    second: side('salvage', 2, [rail, cannon, cannon, laser], 5) },
-  { id: 'delta', title: 'Delta · Reichweite', purpose: 'Railgun gegen kurze Kanonenreichweite',
-    seed: 1004, first: side('patrol', 5, [rail, cannon, cannon, laser, missile], 6),
-    second: side('freighter', 1, [rail, cannon, cannon, laser], 7) },
-  { id: 'epsilon', title: 'Epsilon · Traktor', purpose: 'Bergungsschiff gegen Patrouille',
-    seed: 1005, first: side('salvage', 3, [rail, ion, plasma, laser], 8),
-    second: side('patrol', 6, [rail, plasma, cannon, laser, missile], 9) },
-  { id: 'zeta', title: 'Zeta · Miner', purpose: 'Bergbauplattform gegen Kampfschiff',
-    seed: 1006, first: side('miner', 1, [rail, plasma, cannon, ionLaser], 10),
-    second: side('patrol', 7, [rail, cannon, plasma, laser, heavyMissile], 11) },
-  { id: 'eta', title: 'Eta · Frachterflucht', purpose: 'Langsamer Frachter und Abfangschiff',
-    seed: 1007, first: side('freighter', 2, [rail, ion, cannon, laser], 12),
-    second: side('patrol', 1, [rail, cannon, cannon, laser, missile], 13) },
-  { id: 'theta', title: 'Theta · Turmgefecht', purpose: 'Bewegungsfreiheit und Rundumlaser',
-    seed: 1008, first: side('miner', 2, [rail, ion, ion, ionLaser], 14),
-    second: side('freighter', 3, [rail, cannon, cannon, laser], 15) },
-  { id: 'iota', title: 'Iota · Hüllenduell', purpose: 'Schilddurchbruch und Folgeziel Hülle',
-    seed: 1009, first: side('patrol', 2, [rail, cannon, cannon, laser, heavyMissile], 16),
-    second: side('salvage', 4, [rail, ion, plasma, ionLaser], 17) },
+  {
+    id: 'alpha',
+    title: 'Alpha · Front gegen Front',
+    purpose: 'Railguns, Abstand und Frontalwinkel',
+    seed: 1001,
+    first: side('patrol', 1, [rail, cannon, cannon, laser, missile], 0),
+    second: side('patrol', 2, [rail, cannon, cannon, laser, missile], 1),
+  },
+  {
+    id: 'beta',
+    title: 'Beta · Schildbrecher',
+    purpose: 'Ionenwaffen gegen Panzerungswaffen',
+    seed: 1002,
+    first: side('patrol', 3, [rail, ion, ion, ionLaser, missile], 2),
+    second: side('patrol', 4, [rail, cannon, cannon, laser, heavyMissile], 3),
+  },
+  {
+    id: 'gamma',
+    title: 'Gamma · Breitseiten',
+    purpose: 'Backbord- und Steuerbord-Orientierung',
+    seed: 1003,
+    first: side('salvage', 1, [rail, plasma, plasma, laser], 4),
+    second: side('salvage', 2, [rail, cannon, cannon, laser], 5),
+  },
+  {
+    id: 'delta',
+    title: 'Delta · Reichweite',
+    purpose: 'Railgun gegen kurze Kanonenreichweite',
+    seed: 1004,
+    first: side('patrol', 5, [rail, cannon, cannon, laser, missile], 6),
+    second: side('freighter', 1, [rail, cannon, cannon, laser], 7),
+  },
+  {
+    id: 'epsilon',
+    title: 'Epsilon · Traktor',
+    purpose: 'Bergungsschiff gegen Patrouille',
+    seed: 1005,
+    first: side('salvage', 3, [rail, ion, plasma, laser], 8),
+    second: side('patrol', 6, [rail, plasma, cannon, laser, missile], 9),
+  },
+  {
+    id: 'zeta',
+    title: 'Zeta · Miner',
+    purpose: 'Bergbauplattform gegen Kampfschiff',
+    seed: 1006,
+    first: side('miner', 1, [rail, plasma, cannon, ionLaser], 10),
+    second: side('patrol', 7, [rail, cannon, plasma, laser, heavyMissile], 11),
+  },
+  {
+    id: 'eta',
+    title: 'Eta · Frachterflucht',
+    purpose: 'Langsamer Frachter und Abfangschiff',
+    seed: 1007,
+    first: side('freighter', 2, [rail, ion, cannon, laser], 12),
+    second: side('patrol', 1, [rail, cannon, cannon, laser, missile], 13),
+  },
+  {
+    id: 'theta',
+    title: 'Theta · Turmgefecht',
+    purpose: 'Bewegungsfreiheit und Rundumlaser',
+    seed: 1008,
+    first: side('miner', 2, [rail, ion, ion, ionLaser], 14),
+    second: side('freighter', 3, [rail, cannon, cannon, laser], 15),
+  },
+  {
+    id: 'iota',
+    title: 'Iota · Hüllenduell',
+    purpose: 'Schilddurchbruch und Folgeziel Hülle',
+    seed: 1009,
+    first: side('patrol', 2, [rail, cannon, cannon, laser, heavyMissile], 16),
+    second: side('salvage', 4, [rail, ion, plasma, ionLaser], 17),
+  },
 ];
 
 export function resolveDuelPreset(
@@ -74,9 +119,11 @@ export function resolveDuelPreset(
     const ship = roleShips[choice.variant - 1] ?? roleShips[0] ?? ships[0]!;
     const weapons = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount, index) => {
       const [family, tier] = choice.weapons[index] ?? choice.weapons[0]!;
-      const candidate = SHIP_COMPONENT_CATALOG.weapon.find((component) =>
-        component.weapon?.family === family && component.tier === tier &&
-        fitsWeaponHardpoint(ship, mount.slotIndex, component.weapon)
+      const candidate = SHIP_COMPONENT_CATALOG.weapon.find(
+        (component) =>
+          component.weapon?.family === family &&
+          component.tier === tier &&
+          fitsWeaponHardpoint(ship, mount.slotIndex, component.weapon)
       );
       return candidate?.id ?? '';
     });

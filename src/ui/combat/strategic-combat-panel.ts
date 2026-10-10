@@ -76,7 +76,7 @@ export function createStrategicCombatPanel(
       const payload = JSON.stringify(
         {
           format: 'harrowdrift-combat-log-v1',
-      encounter: options.encounterName ?? 'Freies Duell',
+          encounter: options.encounterName ?? 'Freies Duell',
           snapshot: options.combat.getSnapshot(),
           events: options.combat.getCombatLog(),
           analysis: analyzeCombatLog(options.combat.getCombatLog()),
@@ -88,10 +88,10 @@ export function createStrategicCombatPanel(
       const link = document.createElement('a');
       link.href = url;
       const slug = (options.encounterName ?? 'freies-duell')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    link.download = 'harrowdrift-' + slug + '-kampflog.json';
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      link.download = 'harrowdrift-' + slug + '-kampflog.json';
       link.click();
       URL.revokeObjectURL(url);
     });
@@ -119,8 +119,11 @@ export function createStrategicCombatPanel(
     const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
     if (timer) {
       const seconds = Math.floor(model.elapsedSeconds);
-      timer.textContent = (options.encounterName ?? 'Freies Duell') + ' · ' +
-        String(Math.floor(seconds / 60)).padStart(2, '0') + ':' +
+      timer.textContent =
+        (options.encounterName ?? 'Freies Duell') +
+        ' · ' +
+        String(Math.floor(seconds / 60)).padStart(2, '0') +
+        ':' +
         String(seconds % 60).padStart(2, '0');
     }
     returnButton.hidden = model.winner === null;
