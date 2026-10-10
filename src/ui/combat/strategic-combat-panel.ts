@@ -87,7 +87,11 @@ export function createStrategicCombatPanel(
       const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'harrowdrift-combat-log.json';
+      const slug = (options.encounterName ?? 'freies-duell')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    link.download = 'harrowdrift-' + slug + '-kampflog.json';
       link.click();
       URL.revokeObjectURL(url);
     });
