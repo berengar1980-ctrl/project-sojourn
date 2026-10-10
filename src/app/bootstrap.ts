@@ -1,5 +1,6 @@
 import { createStartMenu, type StartMenuAction } from '../ui/start/start-menu';
 import { createDuelLobby } from '../ui/start/duel-lobby';
+import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
 import { getShipDefinition } from '../systems/ships';
@@ -59,15 +60,49 @@ function showMainMenu(root: HTMLElement): void {
 }
 
 function showStartOptions(root: HTMLElement, back: () => void): void {
+  const audio = createGameAudioService();
   const screen = document.createElement('section');
   screen.className = 'harrow-duel';
   const title = document.createElement('h1');
   title.textContent = 'HARROWDRIFT · OPTIONEN';
   const description = document.createElement('p');
-  description.textContent = 'Die Lautstärke von Umgebung und RCS stellst du nach Spielstart über SETTINGS ein.';
+  description.textContent = 'Audioeinstellungen gelten auch im Kampagnenspiel.';
+  screen.append(title, description);
+  const addSlider = (
+    label: string,
+    volume: number,
+    onChange: (value: number) => void
+  ): void => {
+    const row = document.createElement('label');
+    row.className = 'harrow-options__slider';
+    row.textContent = label;
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '100';
+    input.value = String(Math.round(volume * 100));
+    const output = document.createElement('output');
+    output.textContent = input.value + '%';
+    input.addEventListener('input', () => {
+      onChange(Number(input.value) / 100);
+      output.textContent = input.value + '%';
+    });
+    row.append(input, output);
+    screen.append(row);
+  };
+  const settings = audio.getSettings();
+  addSlider('Umgebungslautstärke', settings.ambienceVolume, (value) =>
+    audio.setAmbienceVolume(value)
+  );
+  addSlider('RCS-Lautstärke', settings.rcsVolume, (value) =>
+    audio.setRcsVolume(value)
+  );
   const button = document.createElement('button');
   button.textContent = 'Zurück zum Hauptmenü';
-  button.addEventListener('click', back);
-  screen.append(title, description, button);
+  button.addEventListener('click', () => {
+    audio.destroy();
+    back();
+  });
+  screen.append(button);
   root.replaceChildren(screen);
 }
