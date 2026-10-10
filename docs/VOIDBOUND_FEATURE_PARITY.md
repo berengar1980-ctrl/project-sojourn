@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | Standard-Waffenplätze für 28 Schiffe | Voidbound-Parität überprüft: **keine Statusänderung**. Alle 28 Sojourn-Schiffsvarianten definieren per JSON Front-Railgun (60°), je eine Backbord- und Steuerbord-Breitseite (90°) und einen Laserturm (360°); sieben Patrouillen erhalten zusätzlich einen Lenkwaffenplatz (360°). Einbau und Schusswinkel gelten durch den JSON-Hardpoint-Mechanismus; nur passende Starterwaffen sind vorinstalliert. Die Feinpositionierung an den jeweiligen Sprites bleibt im Editor überprüfbar. |
+
+
 | 2026-10-10 | Waffen-Hardpoints im Editor und Werft-Kompatibilität | Voidbound-Parität geprüft: **keine Statusänderung**. Sojourn-Schiffs-JSONs sind nun die autoritative Grundlage für Waffen-Slots, erlaubte Montageklassen und maximale Feuerwinkel. Der Hardpoint-Editor kann Position, Richtung, Winkel und erlaubte Klassen kalibrieren; Werftangebote und Einbau prüfen die tatsächlichen Einbauplätze, Kampfprojektion nutzt JSON-Limits, leere Waffenslots verschieben keine Mündungen. Bestehende JSONs ohne explizite Erlaubnisliste behalten vorläufig ihr bisheriges kompatibles Verhalten bis zur Neukalibrierung. `combat.weapon_fire` bleibt teilweise. |
 
 
