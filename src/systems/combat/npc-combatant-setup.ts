@@ -29,9 +29,9 @@ import {
 } from './strategic-combat-service';
 
 function npcWeaponComponents(installed: InstalledShipComponents) {
-  return (installed.weapon ?? []).flatMap((id) => {
+  return (installed.weapon ?? []).flatMap((id, slotIndex) => {
     const component = getShipComponent('weapon', id);
-    return component?.weapon ? [component] : [];
+    return component?.weapon ? [{ component, slotIndex }] : [];
   });
 }
 
@@ -44,6 +44,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
   const movement = resolveShipCombatMovementStats(ship);
+  const equippedWeapons = npcWeaponComponents(installed);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
@@ -62,15 +63,19 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     shieldHp: Math.max(1, shieldMax),
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
-    weapons: npcWeaponComponents(installed),
-    weaponMounts: (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
+    weapons: equippedWeapons.map((entry) => entry.component),
+    weaponMounts: (ship.sprite.hardpoints.weaponMounts ?? [])
+      .filter((mount) => equippedWeapons.some((entry) => entry.slotIndex === mount.slotIndex))
+      .map((mount) => {
       const points = ship.sprite.hardpoints;
       const scale = ship.nominalLengthMeters / points.sourceWidth;
       return {
-        slotIndex: mount.slotIndex,
+        slotIndex: equippedWeapons.findIndex((entry) => entry.slotIndex === mount.slotIndex),
         x: (mount.x - points.pivot.x) * scale,
         y: (mount.y - points.pivot.y) * scale,
         facing: mount.facing,
+        arcDegrees: mount.arcDegrees,
+        allowedMounts: mount.allowedMounts,
       };
     }),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
