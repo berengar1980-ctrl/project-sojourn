@@ -1,4 +1,11 @@
-import type { LooseShipComponent, ShipComponentType, ShipDefinition } from '../../core/ship-types';
+import type {
+  LooseShipComponent,
+  ShipComponentType,
+  ShipDefinition,
+  ShipWeaponHardpoint,
+  ShipWeaponMountKind,
+  ShipWeaponFamily,
+} from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import {
   getShipComponent,
@@ -16,6 +23,9 @@ export interface PortShipComponentSlotView {
   readonly tier: number | null;
   readonly power: number;
   readonly weaponSlot: boolean;
+  readonly mountInfo?: string;
+  readonly allowedMounts?: readonly ShipWeaponMountKind[];
+  readonly allowedFamilies?: readonly ShipWeaponFamily[];
 }
 
 export interface PortShipStateInput {
@@ -37,6 +47,8 @@ export interface PortShipyardLooseComponentView {
   readonly sellValue: number;
   readonly special: boolean;
   readonly modifierLabel: string | null;
+  readonly weaponMount?: ShipWeaponMountKind;
+  readonly weaponFamily?: ShipWeaponFamily;
 }
 
 export interface PortShipyardVariantView {
@@ -137,7 +149,8 @@ function componentSlotView(
   index: number,
   componentId: string | null,
   typeLabel: string,
-  weaponSlot: boolean
+  weaponSlot: boolean,
+  mount?: ShipWeaponHardpoint
 ): PortShipComponentSlotView {
   const definition = componentId ? getShipComponent(type, componentId) : null;
   return {
@@ -150,6 +163,20 @@ function componentSlotView(
     tier: definition?.tier ?? null,
     power: definition?.power ?? 0,
     weaponSlot,
+    ...(mount
+      ? {
+          mountInfo:
+            (mount.facing === 'port'
+              ? 'BACKBORD'
+              : mount.facing === 'starboard'
+                ? 'STEUERBORD'
+                : 'BUG') +
+            ' · ' +
+            (mount.arcDegrees ? mount.arcDegrees + '° MAX.' : 'WAFFENWINKEL'),
+          allowedMounts: mount.allowedMounts,
+          allowedFamilies: mount.allowedFamilies,
+        }
+      : {}),
   };
 }
 
@@ -167,7 +194,8 @@ export function componentSlots(
         index,
         installedComponentId(state, 'weapon', index),
         `Waffenhalterung ${index + 1}`,
-        true
+        true,
+        ship.sprite.hardpoints.weaponMounts?.find((mount) => mount.slotIndex === index)
       )
     );
   }
@@ -196,6 +224,12 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
         sellValue: appraisal.sell,
         special: Boolean(definition?.specialSalvage),
         modifierLabel,
+        ...(definition?.weapon
+          ? {
+              weaponMount: definition.weapon.mount,
+              weaponFamily: definition.weapon.family,
+            }
+          : {}),
       };
     }),
     ships: state.ships ?? [],

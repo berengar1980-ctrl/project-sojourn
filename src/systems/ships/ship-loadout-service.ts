@@ -1,4 +1,4 @@
-import type { ShipComponentType, ShipDefinition } from '../../core/ship-types';
+import type { ShipComponentType, ShipDefinition, ShipWeaponProfile } from '../../core/ship-types';
 import type { InstalledShipComponents } from './ship-component-service';
 import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
@@ -25,8 +25,32 @@ function cloneInstalled(installed: InstalledShipComponents): InstalledShipCompon
   return copy;
 }
 
+export function fitsWeaponHardpoint(
+  ship: ShipDefinition,
+  index: number,
+  weapon: ShipWeaponProfile
+): boolean {
+  const mounts = ship.sprite.hardpoints.weaponMounts;
+  if (!mounts) return true;
+  const point = mounts.find((mount) => mount.slotIndex === index);
+  if (!point) return false;
+  return (
+    (!point.allowedMounts || point.allowedMounts.includes(weapon.mount ?? 'turret')) &&
+    (!point.allowedFamilies || point.allowedFamilies.includes(weapon.family))
+  );
+}
+
+export function shipCanFitWeapon(ship: ShipDefinition, weapon: ShipWeaponProfile): boolean {
+  const slots = ship.sprite.hardpoints.weaponMounts;
+  if (!slots?.length) return resolveShipGameplayStats(ship).weaponSlots > 0;
+  return slots.some((slot) => fitsWeaponHardpoint(ship, slot.slotIndex, weapon));
+}
+
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
-  if (type === 'weapon') return resolveShipGameplayStats(ship).weaponSlots;
+  if (type === 'weapon')
+    return (
+      ship.sprite.hardpoints.weaponMounts?.length ?? resolveShipGameplayStats(ship).weaponSlots
+    );
   if (type === 'mine' || type === 'tractor') return 1;
   if (type === 'mining') return ship.role === 'mining' ? 1 : 0;
   if (type === 'salvage') return ship.role === 'salvage' ? 1 : 0;
@@ -58,6 +82,12 @@ export function createShipLoadoutService(): ShipLoadoutService {
       if (componentId) {
         const component = getShipComponent(type, componentId);
         if (!component || component.tier > resolveShipGameplayStats(ship).maxComponentTier) {
+          return false;
+        }
+        if (
+          type === 'weapon' &&
+          (!component.weapon || !fitsWeaponHardpoint(ship, index, component.weapon))
+        ) {
           return false;
         }
       }

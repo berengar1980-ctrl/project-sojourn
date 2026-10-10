@@ -23,13 +23,23 @@ export function shipPane(model: PortViewModel): string {
             .map(
               (slot) => `
                 <article class="port-component-slot ${slot.weaponSlot ? 'port-component-slot--weapon' : ''}">
-                  <div><span>${slot.typeLabel.toUpperCase()}</span><strong>${slot.name}</strong></div>
+                  <div><span>${slot.typeLabel.toUpperCase()}</span><strong>${slot.name}</strong>${slot.mountInfo ? `<small>${slot.mountInfo}</small>` : ''}</div>
                   <b>${slot.tier ? 'MK ' + ['', 'I', 'II', 'III', 'IV', 'V', 'VI'][slot.tier] : 'LEER'}</b>
                   <small>${slot.power > 0 ? slot.power + ' ENERGIE' : 'PASSIV'}</small>
                   <select data-component-slot-select="${slot.key}">
                     <option value="">${slot.componentId ? 'AUSBAUEN' : 'LEER'}</option>
                     ${model.shipyard.loose
-                      .filter((part) => part.type === slot.type)
+                      .filter(
+                        (part) =>
+                          part.type === slot.type &&
+                          (!slot.weaponSlot ||
+                            ((!slot.allowedMounts ||
+                              (part.weaponMount &&
+                                slot.allowedMounts.includes(part.weaponMount))) &&
+                              (!slot.allowedFamilies ||
+                                (part.weaponFamily &&
+                                  slot.allowedFamilies.includes(part.weaponFamily)))))
+                      )
                       .map(
                         (part) =>
                           `<option value="${part.uid}">${part.name} · MK ${part.tier}</option>`

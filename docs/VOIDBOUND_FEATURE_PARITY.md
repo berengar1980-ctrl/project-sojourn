@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | Waffen-Hardpoints im Editor und Werft-Kompatibilität | Voidbound-Parität geprüft: **keine Statusänderung**. Sojourn-Schiffs-JSONs sind nun die autoritative Grundlage für Waffen-Slots, erlaubte Montageklassen und maximale Feuerwinkel. Der Hardpoint-Editor kann Position, Richtung, Winkel und erlaubte Klassen kalibrieren; Werftangebote und Einbau prüfen die tatsächlichen Einbauplätze, Kampfprojektion nutzt JSON-Limits, leere Waffenslots verschieben keine Mündungen. Bestehende JSONs ohne explizite Erlaubnisliste behalten vorläufig ihr bisheriges kompatibles Verhalten bis zur Neukalibrierung. `combat.weapon_fire` bleibt teilweise. |
+
+
 | 2026-10-10 | PR #188 · Strategieplanung im Raumkampf | Voidbound-Parität geprüft: **keine Statusänderung**. Sojourn-eigene strategische Kampfplanung: Spieler- und NPC-Kampfseite beurteilen Bewaffnung, Schild-/Hüllenlage, Reichweite, Geschwindigkeit und Wendigkeit in unabhängigen achtsekündigen Zyklen mit vier Sekunden Phasenversatz. Bestehende Pläne werden mit Wechselhysterese bevorzugt; Flugsteuerung führt die gewählte Front-, Breitseiten-, Distanz- oder Minenstrategie kontinuierlich aus. `combat.weapon_fire` bleibt teilweise und `combat.flee` umgesetzt. Keine neue Voidbound-Feature-ID. |
 
 

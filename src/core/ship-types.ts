@@ -106,6 +106,12 @@ export interface ShipHardpoint {
 export interface ShipWeaponHardpoint extends ShipHardpoint {
   readonly slotIndex: number;
   readonly facing: ShipWeaponFacing;
+  /** Authoritative fitting policy for this mount. Legacy JSON without this field accepts all types. */
+  readonly allowedMounts?: readonly ShipWeaponMountKind[];
+  /** Optional whitelist of the eight catalog weapon families. */
+  readonly allowedFamilies?: readonly ShipWeaponFamily[];
+  /** Maximum firing arc in degrees, additionally limited by the installed weapon's own arc. */
+  readonly arcDegrees?: number;
 }
 
 export interface ShipPivot {

@@ -27,7 +27,11 @@ export {
   createShipComponentInventoryService,
   looseComponentCargoTons,
 } from './ship-component-inventory-service';
-export { createShipLoadoutService } from './ship-loadout-service';
+export {
+  createShipLoadoutService,
+  fitsWeaponHardpoint,
+  shipCanFitWeapon,
+} from './ship-loadout-service';
 export { createShipyardResearchService } from './shipyard-research-service';
 export { resolveShipRuntimeSetup } from './ship-runtime';
 export {

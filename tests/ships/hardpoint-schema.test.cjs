@@ -18,11 +18,40 @@ for (const name of files) {
   assert(Array.isArray(data.engines), name + ': engines must be an array');
   assert(Array.isArray(data.weaponLasers), name + ': weaponLasers must be an array');
   assert(Array.isArray(data.weaponMounts), name + ': weaponMounts must be an array');
-  const expectedSlots = name.startsWith('patrol') ? 3 : name.startsWith('freighter') ? 2 : 1;
-  assert.equal(data.weaponMounts.length, expectedSlots, name + ': weapon mount count');
   for (const [index, mount] of data.weaponMounts.entries()) {
     assert.equal(mount.slotIndex, index, name + ': stable slot mapping');
     assert(['port', 'starboard', 'forward'].includes(mount.facing), name + ': gun facing');
+    if (mount.allowedMounts !== undefined) {
+      assert(Array.isArray(mount.allowedMounts), name + ': allowedMounts must be an array');
+      assert(
+        mount.allowedMounts.every((kind) =>
+          ['forward', 'broadside', 'turret', 'guided'].includes(kind)
+        ),
+        name + ': invalid weapon mount kind'
+      );
+    }
+    if (mount.allowedFamilies !== undefined) {
+      assert(Array.isArray(mount.allowedFamilies), name + ': allowedFamilies must be an array');
+      assert(
+        mount.allowedFamilies.every((family) =>
+          [
+            'pulse_laser',
+            'ion_laser',
+            'plasma_battery',
+            'ion_cannon',
+            'autocannon',
+            'railgun',
+            'guided_missile',
+            'he_missile',
+          ].includes(family)
+        ),
+        name + ': invalid weapon family'
+      );
+    }
+    if (mount.arcDegrees !== undefined) {
+      assert(Number.isFinite(mount.arcDegrees), name + ': invalid weapon arc');
+      assert(mount.arcDegrees >= 1 && mount.arcDegrees <= 360, name + ': arc outside range');
+    }
     assert(mount.x >= 0 && mount.x <= data.sourceWidth, name + ': mount outside sprite X');
     assert(mount.y >= 0 && mount.y <= data.sourceHeight, name + ': mount outside sprite Y');
   }

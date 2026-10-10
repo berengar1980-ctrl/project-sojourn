@@ -30,7 +30,13 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     hull: ['hull1'],
     sensor: ['sensor1'],
     cargo: ['cargo1'],
-    weapon: Array.from({ length: stats.weaponSlots }, () => 'weapon1'),
+    weapon: Array.from({ length: stats.weaponSlots }, (_, index) => {
+      const mount = ship.sprite.hardpoints.weaponMounts?.find((slot) => slot.slotIndex === index);
+      return (!mount?.allowedMounts || mount.allowedMounts.includes('turret')) &&
+        (!mount?.allowedFamilies || mount.allowedFamilies.includes('pulse_laser'))
+        ? 'weapon1'
+        : '';
+    }),
     mine: [''],
     tractor: [ship.role === 'mining' || ship.role === 'salvage' ? 'tractor1' : ''],
   };

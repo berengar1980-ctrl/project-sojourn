@@ -30,6 +30,14 @@ assert(
   editor.includes('engines:{label:"Engine"'),
   'engines must participate in editor selection and dragging'
 );
+assert(editor.includes('data-type="weaponMounts"'), 'editor must expose combat weapon hardpoints');
+assert(editor.includes('fieldFacing'), 'editor must allow front / port / starboard calibration');
+assert(editor.includes('fieldArcDegrees'), 'editor must allow hardpoint cone calibration');
+assert(editor.includes('weaponAllowed'), 'editor must configure compatible weapon mount types');
+assert(
+  editor.includes('weaponFamily'),
+  'editor must configure individual weapon family restrictions'
+);
 assert(editor.includes('weaponLasers'), 'editor must expose weapon laser hardpoints');
 assert(editor.includes('miningLasers'), 'editor must expose mining laser hardpoints');
 assert(editor.includes('maneuverThrusters'), 'editor must expose RCS hardpoints');

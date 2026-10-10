@@ -53,6 +53,7 @@ const mountOwner = {
     weaponMounts: [
       { slotIndex: 0, x: 10, y: -12, facing: 'port' },
       { slotIndex: 1, x: 10, y: 12, facing: 'starboard' },
+      { slotIndex: 2, x: 20, y: 0, facing: 'forward' },
     ],
   },
 };
@@ -63,8 +64,9 @@ assert(geometry.weaponInArc(mountOwner, { x: 100, y: -200 }, 0, broadside));
 assert(!geometry.weaponInArc(mountOwner, { x: 100, y: 400 }, 0, broadside));
 assert(geometry.weaponInArc(mountOwner, { x: 100, y: 400 }, 1, broadside));
 assert(!geometry.weaponInArc(mountOwner, { x: 100, y: -200 }, 1, broadside));
-assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, railgun));
-assert(!geometry.weaponInArc(mountOwner, { x: 100, y: -200 }, 0, railgun));
+assert(!geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, railgun));
+assert(geometry.weaponInArc(mountOwner, { x: 100, y: -200 }, 0, railgun));
+assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 2, railgun));
 assert(geometry.weaponInArc(mountOwner, { x: -200, y: 100 }, 0, turret));
 mountOwner.headingRadians = Math.PI / 2;
 const muzzle = geometry.weaponMuzzle(mountOwner, 0);

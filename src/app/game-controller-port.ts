@@ -16,6 +16,7 @@ import {
   getShipComponent,
   getAllShipDefinitions,
   getCompatibleShipComponents,
+  shipCanFitWeapon,
   salvagedComponentAppraisal,
   type ShipComponentInventoryService,
   type ShipLoadoutService,
@@ -134,12 +135,22 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     {
       loose: context.componentInventory.list(),
       variants: shipyardTypes.flatMap((type) =>
-        context.shipyardResearch.variants(type, gameplay.maxComponentTier)
+        context.shipyardResearch
+          .variants(type, gameplay.maxComponentTier)
+          .filter(
+            (component) =>
+              type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon))
+          )
       ),
-      catalog: shipyardTypes.flatMap((type) => [
-        ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
-        ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
-      ]),
+      catalog: shipyardTypes.flatMap((type) =>
+        [
+          ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
+          ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
+        ].filter(
+          (component) =>
+            type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon))
+        )
+      ),
       ships: getAllShipDefinitions().map((offer) => ({
         id: offer.id,
         name: offer.name,
@@ -320,6 +331,8 @@ function createShipyardCallbacks(
         .some((entry) => entry.id === componentId);
       if (
         !definition ||
+        (type === 'weapon' &&
+          (!definition.weapon || !shipCanFitWeapon(context.ship, definition.weapon))) ||
         (!baseOffer && !discovered) ||
         trade.player.credits < definition.cost ||
         definition.tier > context.gameplay.maxComponentTier

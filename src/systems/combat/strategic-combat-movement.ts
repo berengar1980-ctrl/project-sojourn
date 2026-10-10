@@ -277,7 +277,9 @@ function broadsideSteering(
   const facing = combatant.setup.weaponMounts?.find(
     (mount) => mount.slotIndex === sideGun.index
   )?.facing;
-  const heading = Math.atan2(dy, dx) + (facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
+  const heading =
+    Math.atan2(dy, dx) +
+    (facing === 'starboard' ? -Math.PI / 2 : facing === 'port' ? Math.PI / 2 : 0);
   return { x: Math.cos(heading), y: Math.sin(heading) };
 }
 

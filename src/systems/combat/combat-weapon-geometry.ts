@@ -12,6 +12,16 @@ export function weaponMuzzle(source: MutableCombatant, slot: number): CombatPoin
   };
 }
 
+function supportedWeaponMount(
+  mount: NonNullable<MutableCombatant['setup']['weaponMounts']>[number] | undefined,
+  kind: NonNullable<ShipWeaponProfile['mount']>,
+  profile: ShipWeaponProfile
+): boolean {
+  if (mount?.allowedMounts && !mount.allowedMounts.includes(kind)) return false;
+  if (mount?.allowedFamilies && !mount.allowedFamilies.includes(profile.family)) return false;
+  return true;
+}
+
 export function weaponInArc(
   source: MutableCombatant,
   target: CombatPoint,
@@ -25,15 +35,18 @@ export function weaponInArc(
       kind = 'broadside';
     } else kind = 'turret';
   }
-  if (kind === 'turret' || kind === 'guided') return true;
+  const mount = source.setup.weaponMounts?.find((point) => point.slotIndex === slot);
+  if (!supportedWeaponMount(mount, kind, profile)) return false;
+  const defaultArc = kind === 'forward' ? 60 : kind === 'broadside' ? 90 : 360;
+  const weaponArc = profile.arcDegrees ?? defaultArc;
+  const degrees = Math.min(weaponArc, mount?.arcDegrees ?? 360);
+  if (degrees >= 360) return true;
   const muzzle = weaponMuzzle(source, slot);
-  const side = source.setup.weaponMounts?.find((mount) => mount.slotIndex === slot)?.facing;
+  const side = mount?.facing ?? (kind === 'broadside' ? 'port' : 'forward');
   const facing =
-    kind === 'forward'
-      ? source.headingRadians
-      : source.headingRadians + (side === 'starboard' ? Math.PI / 2 : -Math.PI / 2);
+    source.headingRadians +
+    (side === 'starboard' ? Math.PI / 2 : side === 'port' ? -Math.PI / 2 : 0);
   const bearing = Math.atan2(target.y - muzzle.y, target.x - muzzle.x);
   const delta = Math.atan2(Math.sin(bearing - facing), Math.cos(bearing - facing));
-  const degrees = profile.arcDegrees ?? (kind === 'forward' ? 60 : 90);
   return Math.abs(delta) <= (degrees * Math.PI) / 360 + 0.000001;
 }
