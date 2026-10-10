@@ -42,6 +42,7 @@ function ship(id, x, tractorRangeMeters = 0) {
     speed: 0,
     shieldHp: 0,
     hullHp: 100,
+    subsystems: { engine: 100, tractor: tractorRangeMeters > 0 ? 100 : 0, maximum: 100 },
   };
 }
 
