@@ -42,4 +42,6 @@ for (const ship of ships.getAllShipDefinitions()) {
   assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon-railgun-1'), true);
 }
 
-console.log('PASS all player ships expose configured directional mounts and valid starter loadouts');
+console.log(
+  'PASS all player ships expose configured directional mounts and valid starter loadouts'
+);
