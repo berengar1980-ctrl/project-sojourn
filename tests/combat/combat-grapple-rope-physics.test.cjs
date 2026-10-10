@@ -146,9 +146,7 @@ for (const owner of ['attacker', 'defender']) {
           separation <= snap.grapple.ropeLength + 0.001,
           'the engaged tether must remain taut under both ship AIs'
         );
-        if (snap.attacker.speed > 0 && snap.defender.speed > 0) {
-          hadMotionWhileAttached = true;
-        }
+        hadMotionWhileAttached ||= snap.attacker.speed > 0 && snap.defender.speed > 0;
       }
     }
     assert(hadMotionWhileAttached, 'both ships should move during the attached phase');
