@@ -172,7 +172,7 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     name: 'Railgun',
     role: 'hull',
     shieldDamage: 5,
-    hullDamage: 85,
+    hullDamage: 300,
     rangeMeters: 1550,
     cooldownSeconds: 7.2,
     heat: 10,

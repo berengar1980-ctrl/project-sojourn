@@ -72,7 +72,7 @@ function fireRuntimeInstantWeapon(
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
-  addRuntimeBeam(runtime, side, kind, weapon.weapon.family, source.position, beamEnd, weaponIndex);
+  addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, beamEnd, weaponIndex);
   if (!hit) {
     noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint);
     return source.setup.name + ': ' + weapon.name + ' verfehlt';

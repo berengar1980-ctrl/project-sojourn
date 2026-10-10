@@ -94,14 +94,14 @@ for (const family of expectedFamilies) {
   assert(ion?.weapon && railgun?.weapon);
 
   const eliteProfile = weaponCombat.crewAdjustedShipWeaponProfile(ion, 100, 100);
-  assert.equal(eliteProfile.shieldDamage, Math.round(46 * 1.2));
+  assert.equal(eliteProfile.shieldDamage, Math.round(50 * 1.2));
   assert.equal(eliteProfile.hullDamage, Math.round(3 * 1.2));
-  assert.equal(eliteProfile.cooldownSeconds, 1.8 * 0.88);
+  assert.equal(eliteProfile.cooldownSeconds, 2.9 * 0.88);
   assert.equal(eliteProfile.criticalChance, 0.1);
   assert.equal(eliteProfile.hitChanceBonus, 0.15);
 
   const ionHit = weaponCombat.resolveShipWeaponHit(ion, { shieldHp: 100, hullHp: 100 });
-  assert.equal(ionHit.shieldDamage, 46);
+  assert.equal(ionHit.shieldDamage, 50);
   assert.equal(ionHit.hullDamage, 0);
   assert.equal(ionHit.hullRemaining, 100);
 
@@ -117,7 +117,7 @@ for (const family of expectedFamilies) {
     hullHp: 100,
   });
   assert.equal(exposedRailgun.shieldDamage, 0);
-  assert.equal(exposedRailgun.hullDamage, 48);
+  assert.equal(exposedRailgun.hullDamage, 100);
 }
 
 assert.equal(mineCatalog.SHIP_MINE_CATALOG.length, 18, 'three mine kinds need Mk I-VI');

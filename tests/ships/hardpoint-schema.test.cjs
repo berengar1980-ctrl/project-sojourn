@@ -17,12 +17,22 @@ for (const name of files) {
   const data = JSON.parse(fs.readFileSync(path.join(shipsDir, name), 'utf8'));
   assert(Array.isArray(data.engines), name + ': engines must be an array');
   assert(Array.isArray(data.weaponLasers), name + ': weaponLasers must be an array');
+  assert(Array.isArray(data.weaponMounts), name + ': weaponMounts must be an array');
+  const expectedSlots = name.startsWith('patrol') ? 3 : name.startsWith('freighter') ? 2 : 1;
+  assert.equal(data.weaponMounts.length, expectedSlots, name + ': weapon mount count');
+  for (const [index, mount] of data.weaponMounts.entries()) {
+    assert.equal(mount.slotIndex, index, name + ': stable slot mapping');
+    assert(['port', 'starboard', 'forward'].includes(mount.facing), name + ': gun facing');
+    assert(mount.x >= 0 && mount.x <= data.sourceWidth, name + ': mount outside sprite X');
+    assert(mount.y >= 0 && mount.y <= data.sourceHeight, name + ': mount outside sprite Y');
+  }
   assert(Array.isArray(data.tractorBeams), name + ': tractorBeams must be an array');
   assert(Array.isArray(data.maneuverThrusters), name + ': maneuverThrusters must be an array');
 
   for (const hardpoint of [
     ...data.engines,
     ...data.weaponLasers,
+    ...data.weaponMounts,
     ...data.miningLasers,
     ...data.tractorBeams,
     ...data.maneuverThrusters,

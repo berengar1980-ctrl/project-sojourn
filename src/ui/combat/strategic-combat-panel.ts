@@ -30,6 +30,7 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
     <span>HÜLLE ${Math.round(combatant.hullHp)} / ${combatant.hullMaxHp}</span>
     <div class="combat-hud-bar combat-hud-bar--hull"><i data-layer="hull" style="width:${hull}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s</small>
+    <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
   `;
 }
 
