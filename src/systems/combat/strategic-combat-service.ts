@@ -192,7 +192,7 @@ function tickStrategicCombat(
       runtime.grapple,
       initiator.position,
       victim.position,
-      dt,
+      dt
     );
     if (runtime.grapple.success && runtime.grapple.resolved) {
       const fraction = Math.min(1, dt * 2.6);
@@ -227,11 +227,16 @@ function tickStrategicCombat(
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
-  if (runtime.defender.setup.aiControlled && !runtime.attacker.setup.aiControlled &&
-      !runtime.grappleUsed.defender && !runtime.grapple &&
-      runtime.attacker.shieldHp <= 0 && runtime.attacker.hullHp > 0 &&
-      runtime.defender.hullHp > 0 &&
-      distance(runtime.attacker.position, runtime.defender.position) <= 900) {
+  if (
+    runtime.defender.setup.aiControlled &&
+    !runtime.attacker.setup.aiControlled &&
+    !runtime.grappleUsed.defender &&
+    !runtime.grapple &&
+    runtime.attacker.shieldHp <= 0 &&
+    runtime.attacker.hullHp > 0 &&
+    runtime.defender.hullHp > 0 &&
+    distance(runtime.attacker.position, runtime.defender.position) <= 900
+  ) {
     tryFireGrapple(runtime, 'defender');
   }
   resolveRuntimeWinner(runtime);
@@ -303,10 +308,7 @@ function createStrategicCombatRuntime(
   };
 }
 
-function tryFireGrapple(
-  runtime: StrategicCombatRuntime,
-  side: 'attacker' | 'defender',
-): boolean {
+function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'defender'): boolean {
   if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
   const attacker = runtimeCombatant(runtime, side);
   const victim = runtimeEnemy(runtime, side);
@@ -319,7 +321,7 @@ function tryFireGrapple(
     victim.hullHp,
     victim.hullMaxHp,
     false,
-    runtime.random,
+    runtime.random
   );
   if (!launched) return false;
   runtime.grappleUsed[side] = true;

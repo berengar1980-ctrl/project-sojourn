@@ -147,7 +147,12 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.distressParticles.drawScene(
-      timeSeconds, this.model, this.camera, this.context, width, height
+      timeSeconds,
+      this.model,
+      this.camera,
+      this.context,
+      width,
+      height
     );
     this.drawRoute(width, height);
     drawLocalSpaceExitGate(
@@ -214,7 +219,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.drawWreckDebris(wreck.id, radius);
     }
     this.context.restore();
-    if ((wreck.isSelected || wreck.isWorkTarget) && !wreck.id.startsWith('event-wreck-salvage-distress-')) {
+    if (
+      (wreck.isSelected || wreck.isWorkTarget) &&
+      !wreck.id.startsWith('event-wreck-salvage-distress-')
+    ) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
         ? 'rgba(232, 184, 96, 0.95)'
@@ -493,8 +501,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       geometry
     );
     drawDistressRammingShield(
-      this.context, this.camera, this.model,
-      this.canvas.clientWidth, this.canvas.clientHeight
+      this.context,
+      this.camera,
+      this.model,
+      this.canvas.clientWidth,
+      this.canvas.clientHeight
     );
   }
 }

@@ -12,7 +12,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 export function startCombatBoarding(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  returnToMap: () => void,
+  returnToMap: () => void
 ): void {
   if (!snapshot.boardingInitiator) return;
   const enemyName = snapshot.defender.name;
@@ -53,9 +53,10 @@ export function startCombatBoarding(
     armor: 2,
     rangedSkill: 48 + index * 5,
     meleeSkill: 46 + index * 5,
-    weapon: index % 2
-      ? { ...boardingRangedWeapons.rifle, id: 'boltgun', name: 'Bolter' }
-      : { ...boardingRangedWeapons.sidearm, id: 'off_autopistol', name: 'Kompakte Autopistole' },
+    weapon:
+      index % 2
+        ? { ...boardingRangedWeapons.rifle, id: 'boltgun', name: 'Bolter' }
+        : { ...boardingRangedWeapons.sidearm, id: 'off_autopistol', name: 'Kompakte Autopistole' },
     meleeWeapon: boardingMeleeWeapons.baton,
   }));
   const encounter = createCrewBoardingEncounter({
@@ -64,9 +65,10 @@ export function startCombatBoarding(
     enemyUnits,
   });
   context.systemLog.write(
-    'BOARDING > ' + (snapshot.boardingInitiator === 'attacker'
-      ? 'ENTERANGRIFF AUF ' + enemyName
-      : 'VERTEIDIGUNG DES EIGENEN SCHIFFS'),
+    'BOARDING > ' +
+      (snapshot.boardingInitiator === 'attacker'
+        ? 'ENTERANGRIFF AUF ' + enemyName
+        : 'VERTEIDIGUNG DES EIGENEN SCHIFFS')
   );
   state.boardingPanel = createBoardingTacticalPanel({
     root: context.root,
@@ -89,7 +91,7 @@ export function startCombatBoarding(
 export function returnFromCombat(
   context: ControllerRuntimeContext,
   combat: StrategicCombatService,
-  returnToMap: () => void,
+  returnToMap: () => void
 ): void {
   const snapshot = combat.getSnapshot();
   if (snapshot.boardingInitiator) {

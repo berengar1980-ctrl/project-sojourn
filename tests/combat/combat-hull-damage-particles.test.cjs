@@ -6,7 +6,8 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { DistressDamageParticles } = loadStandaloneTypeScriptModule(
-  root, 'src/ui/salvage/distress-damage-particles.ts'
+  root,
+  'src/ui/salvage/distress-damage-particles.ts'
 );
 const camera = { worldToScreen: (p) => p, scale: (n) => n };
 
@@ -15,19 +16,21 @@ function simulate(hullFraction) {
   let smoke = 0;
   let fire = 0;
   const context = {
-    save() {}, restore() {}, beginPath() {}, arc() {},
+    save() {},
+    restore() {},
+    beginPath() {},
+    arc() {},
     set globalAlpha(_) {},
-    set fillStyle(value) { this.color = value; },
+    set fillStyle(value) {
+      this.color = value;
+    },
     fill() {
       if (this.color === '#6b7172') smoke += 1;
       if (this.color === '#ff7b2e') fire += 1;
     },
   };
   for (let i = 1; i <= 100; i += 1) {
-    system.update(
-      i * 0.05, { x: i * 2, y: 300 }, 0, 80,
-      camera, context, 800, 600, hullFraction
-    );
+    system.update(i * 0.05, { x: i * 2, y: 300 }, 0, 80, camera, context, 800, 600, hullFraction);
   }
   return { smoke, fire };
 }
@@ -44,7 +47,8 @@ assert(burning.fire > 0, 'the large source burns from 45% hull');
 assert(critical.smoke > burning.smoke, 'third small smoke source starts at 25%');
 
 const render = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'), 'utf8'
+  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  'utf8'
 );
 assert(render.includes('this.drawCombatDamage(this.model.attacker'));
 assert(render.includes('this.drawCombatDamage(this.model.defender'));

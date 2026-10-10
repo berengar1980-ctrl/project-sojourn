@@ -86,12 +86,18 @@ export function createStrategicCombatPanel(
     returnButton.hidden = model.winner === null;
     returnButton.textContent = model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
     if (grappleButton) {
-      grappleButton.disabled = model.winner !== null || model.grapple !== null ||
-        model.grappleUsed.attacker || model.defender.shieldHp > 0 ||
-        Math.hypot(model.attacker.position.x - model.defender.position.x,
-          model.attacker.position.y - model.defender.position.y) > 900;
+      grappleButton.disabled =
+        model.winner !== null ||
+        model.grapple !== null ||
+        model.grappleUsed.attacker ||
+        model.defender.shieldHp > 0 ||
+        Math.hypot(
+          model.attacker.position.x - model.defender.position.x,
+          model.attacker.position.y - model.defender.position.y
+        ) > 900;
       grappleButton.textContent = model.grappleUsed.attacker
-        ? 'GREIFHAKEN VERBRAUCHT' : 'GREIFHAKEN ABSCHIESSEN';
+        ? 'GREIFHAKEN VERBRAUCHT'
+        : 'GREIFHAKEN ABSCHIESSEN';
     }
     for (const button of tacticButtons) {
       button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);

@@ -91,7 +91,9 @@ export function towShipAtExit(
   exit: WorldPoint,
   range = 150
 ): boolean {
-  return tow.attached &&
+  return (
+    tow.attached &&
     Math.hypot(ship.x - exit.x, ship.y - exit.y) <= range &&
-    Math.hypot(tow.position.x - exit.x, tow.position.y - exit.y) <= range + 380;
+    Math.hypot(tow.position.x - exit.x, tow.position.y - exit.y) <= range + 380
+  );
 }

@@ -20,7 +20,5 @@ export function updateCombatGrappleButton(
     combat.defender.shieldHp > 0 ||
     combat.defender.hullHp <= 0 ||
     range > 900;
-  button.textContent = combat?.grappleUsed.attacker
-    ? 'GREIFHAKEN VERBRAUCHT'
-    : 'GREIFHAKEN';
+  button.textContent = combat?.grappleUsed.attacker ? 'GREIFHAKEN VERBRAUCHT' : 'GREIFHAKEN';
 }

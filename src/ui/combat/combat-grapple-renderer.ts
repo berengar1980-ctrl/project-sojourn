@@ -1,6 +1,9 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 
-interface Point { readonly x: number; readonly y: number }
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
 
 export function drawCombatGrapple(
   context: CanvasRenderingContext2D,

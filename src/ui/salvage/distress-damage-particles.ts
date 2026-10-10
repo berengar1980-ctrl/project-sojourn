@@ -3,8 +3,13 @@ import type { WorldPoint } from '../../core/world-types';
 import type { MapCamera } from '../map/map-camera';
 
 interface Particle {
-  x: number; y: number; vx: number; vy: number;
-  life: number; maxLife: number; radius: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  radius: number;
   kind: 'smoke' | 'fire' | 'spark';
 }
 const SOURCES = [
@@ -24,25 +29,44 @@ export class DistressDamageParticles {
   private readonly emissions = [0, 0, 0];
   private seed = 14752;
   drawScene(
-    now: number, model: SalvageSpaceViewModel, camera: MapCamera,
-    ctx: CanvasRenderingContext2D, width: number, height: number
+    now: number,
+    model: SalvageSpaceViewModel,
+    camera: MapCamera,
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
   ): void {
     const damaged = model.wrecks.find((wreck) => wreck.id.startsWith('event-wreck-'));
     if (model.sectorEvent?.type !== 'distress-rescue' || !damaged) return;
     if (model.distressRepairing && !this.fading) this.beginExtinguish();
     this.update(
-      now, model.distressTow?.position ?? damaged.position,
+      now,
+      model.distressTow?.position ?? damaged.position,
       model.distressTow?.headingRadians ?? damaged.rotation,
-      model.ship.nominalLengthMeters, camera, ctx, width, height
+      model.ship.nominalLengthMeters,
+      camera,
+      ctx,
+      width,
+      height
     );
   }
-  beginExtinguish(): void { this.fading = true; }
-  get intensity(): number { return this.fade; }
+  beginExtinguish(): void {
+    this.fading = true;
+  }
+  get intensity(): number {
+    return this.fade;
+  }
 
   update(
-    now: number, position: WorldPoint, heading: number, length: number,
+    now: number,
+    position: WorldPoint,
+    heading: number,
+    length: number,
     camera: Pick<MapCamera, 'worldToScreen' | 'scale'>,
-    ctx: CanvasRenderingContext2D, width: number, height: number, hullFraction = 0
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    hullFraction = 0
   ): void {
     const dt = this.lastTime ? Math.max(0, Math.min(0.05, now - this.lastTime)) : 0;
     this.lastTime = now;
@@ -52,11 +76,15 @@ export class DistressDamageParticles {
     const vx = this.previous ? (position.x - this.previous.x) / dt : 0;
     const vy = this.previous ? (position.y - this.previous.y) / dt : 0;
     this.previous = { ...position };
-    const cos = Math.cos(heading), sin = Math.sin(heading);
+    const cos = Math.cos(heading),
+      sin = Math.sin(heading);
     for (const [i, source] of SOURCES.entries()) {
-      const enabled = i === 0 ? hullFraction <= 0.85
-        : i === 2 ? hullFraction <= 0.65 : hullFraction <= 0.25;
-      if (!enabled) { this.emissions[i] = 0; continue; }
+      const enabled =
+        i === 0 ? hullFraction <= 0.85 : i === 2 ? hullFraction <= 0.65 : hullFraction <= 0.25;
+      if (!enabled) {
+        this.emissions[i] = 0;
+        continue;
+      }
       const fireActive = source.fire && hullFraction <= 0.45;
       const x = position.x + (source.x * cos - source.y * sin) * length;
       const y = position.y + (source.x * sin + source.y * cos) * length;
@@ -70,17 +98,26 @@ export class DistressDamageParticles {
         const kind: Particle['kind'] = fireActive && random() < 0.45 ? 'fire' : 'smoke';
         const life = kind === 'fire' ? 0.3 + random() * 0.55 : 1.4 + random() * 2.1;
         this.particles.push({
-          x, y, vx: vx * 0.55 + (random() - 0.5) * 18,
+          x,
+          y,
+          vx: vx * 0.55 + (random() - 0.5) * 18,
           vy: vy * 0.55 + (random() - 0.5) * 18,
-          life, maxLife: life, radius: kind === 'fire' ? 2.2 : 3.5 + random() * 3,
+          life,
+          maxLife: life,
+          radius: kind === 'fire' ? 2.2 : 3.5 + random() * 3,
           kind,
         });
       }
       if (fireActive && this.fade > 0.2 && randomSpark(this.seed++, now, i)) {
         this.particles.push({
-          x, y, vx: vx * 0.55 + Math.cos(now * 13 + i) * 50,
+          x,
+          y,
+          vx: vx * 0.55 + Math.cos(now * 13 + i) * 50,
           vy: vy * 0.55 + Math.sin(now * 11 + i) * 50,
-          life: 0.5, maxLife: 0.5, radius: 1.5, kind: 'spark',
+          life: 0.5,
+          maxLife: 0.5,
+          radius: 1.5,
+          kind: 'spark',
         });
       }
     }

@@ -331,7 +331,9 @@ export class StrategicCombatRenderer {
 
   private drawCombatDamage(
     combatant: StrategicCombatSnapshot['attacker'],
-    width: number, height: number, now: number
+    width: number,
+    height: number,
+    now: number
   ): void {
     const fraction = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     if (fraction > 0.85 && !this.damageParticles.has(combatant.id)) return;
@@ -346,8 +348,15 @@ export class StrategicCombatRenderer {
       scale: (meters: number) => meters,
     };
     particles.update(
-      now, geometry.center, geometry.angle, geometry.width,
-      camera, this.context, width, height, fraction
+      now,
+      geometry.center,
+      geometry.angle,
+      geometry.width,
+      camera,
+      this.context,
+      width,
+      height,
+      fraction
     );
   }
 

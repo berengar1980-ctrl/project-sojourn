@@ -15,9 +15,10 @@ export function routeAroundDistressShip(
   const dy = target.y - from.y;
   const lengthSquared = dx * dx + dy * dy;
   if (lengthSquared < 1) return [from, target];
-  const factor = Math.max(0, Math.min(1,
-    ((wreck.x - from.x) * dx + (wreck.y - from.y) * dy) / lengthSquared
-  ));
+  const factor = Math.max(
+    0,
+    Math.min(1, ((wreck.x - from.x) * dx + (wreck.y - from.y) * dy) / lengthSquared)
+  );
   const closest = { x: from.x + dx * factor, y: from.y + dy * factor };
   const safeRadius = Math.max(1, clearance);
   if (factor <= 0 || factor >= 1 || distance(closest, wreck) >= safeRadius) {

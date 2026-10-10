@@ -29,7 +29,7 @@ export function drawDistressScanEffect(
   context.moveTo(player.x, player.y);
   context.arc(player.x, player.y, distance, angle - halfAngle, angle + halfAngle);
   context.closePath();
-  context.fillStyle = 'rgba(95, 223, 237, ' + (0.10 + pulse * 0.1) + ')';
+  context.fillStyle = 'rgba(95, 223, 237, ' + (0.1 + pulse * 0.1) + ')';
   context.fill();
   context.strokeStyle = 'rgba(130, 242, 255, ' + (0.35 + pulse * 0.3) + ')';
   context.lineWidth = 1.2;
@@ -71,6 +71,12 @@ export function drawDistressShipSprite(
   if (!image.complete || image.naturalWidth <= 0) return false;
   const aspect = image.naturalWidth / image.naturalHeight;
   const shipWidth = ship.nominalLengthMeters * pixelsPerMeter;
-  context.drawImage(image, -shipWidth / 2, -shipWidth / (2 * aspect), shipWidth, shipWidth / aspect);
+  context.drawImage(
+    image,
+    -shipWidth / 2,
+    -shipWidth / (2 * aspect),
+    shipWidth,
+    shipWidth / aspect
+  );
   return true;
 }

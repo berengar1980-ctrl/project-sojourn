@@ -45,10 +45,9 @@ export function advanceDistressRamming(
     x: (player.x - state.previousPlayerPosition.x) / dt,
     y: (player.y - state.previousPlayerPosition.y) / dt,
   };
-  const closingSpeed = (playerVelocity.x - velocity.x) * nx +
-    (playerVelocity.y - velocity.y) * ny;
-  const colliding = separation < playerRadius + wreckRadius &&
-    closingSpeed > 2 && state.cooldown <= 0;
+  const closingSpeed = (playerVelocity.x - velocity.x) * nx + (playerVelocity.y - velocity.y) * ny;
+  const colliding =
+    separation < playerRadius + wreckRadius && closingSpeed > 2 && state.cooldown <= 0;
   if (colliding) {
     const impulse = Math.min(300, Math.max(22, closingSpeed * 0.48));
     velocity.x += nx * impulse;

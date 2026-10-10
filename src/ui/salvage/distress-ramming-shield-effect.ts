@@ -13,7 +13,7 @@ export function drawDistressRammingShield(
   const point = camera.worldToScreen(impact.impactPoint, width, height);
   const progress = impact.impactAge / 0.8;
   context.save();
-  context.strokeStyle = 'rgba(91, 221, 255, ' + (0.95 * (1 - progress)) + ')';
+  context.strokeStyle = 'rgba(91, 221, 255, ' + 0.95 * (1 - progress) + ')';
   context.lineWidth = 5 * (1 - progress) + 1;
   context.shadowColor = '#83e6ff';
   context.shadowBlur = 20 * (1 - progress);

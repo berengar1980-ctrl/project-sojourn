@@ -19,9 +19,14 @@ export function drawDistressTow(
   const mount = mounts.grapplingHooks?.[0];
   const anchor = mount ? projectHardpoint(mount, mounts, geometry) : geometry.center;
   const cargo = camera.worldToScreen(tow.position, width, height);
-  const role = event.wreckKind === 'salvager' ? 'salvage'
-    : event.wreckKind === 'miner' ? 'mining'
-      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+  const role =
+    event.wreckKind === 'salvager'
+      ? 'salvage'
+      : event.wreckKind === 'miner'
+        ? 'mining'
+        : event.wreckKind === 'patrol'
+          ? 'patrol'
+          : 'freighter';
   const variants = getShipsByRole(role);
   const ship = variants[(event.fieldSeed >>> 0) % variants.length];
   const image = ship ? loadImage(ship.sprite.assetUrl) : null;
@@ -29,11 +34,15 @@ export function drawDistressTow(
   const ratio = image?.naturalHeight ? image.naturalWidth / image.naturalHeight : 2;
   const wreckMounts = ship?.sprite.hardpoints;
   const wreckHook = wreckMounts?.grapplingHooks?.[0];
-  const attachment = wreckMounts && wreckHook
-    ? projectHardpoint(wreckHook, wreckMounts, {
-        center: cargo, width: shipWidth, height: shipWidth / ratio,
-        angle: tow.headingRadians,
-      }) : cargo;
+  const attachment =
+    wreckMounts && wreckHook
+      ? projectHardpoint(wreckHook, wreckMounts, {
+          center: cargo,
+          width: shipWidth,
+          height: shipWidth / ratio,
+          angle: tow.headingRadians,
+        })
+      : cargo;
   const dx = attachment.x - anchor.x;
   const dy = attachment.y - anchor.y;
   const distance = Math.max(1, Math.hypot(dx, dy));
@@ -69,9 +78,11 @@ export function drawDistressTow(
     context.translate(-tip.x, -tip.y);
   } else {
     const slack = Math.max(0, 1 - tow.cableTension);
-    const lateralDrift = -Math.sin(model.ship.headingRadians) * tow.velocity.x +
+    const lateralDrift =
+      -Math.sin(model.ship.headingRadians) * tow.velocity.x +
       Math.cos(model.ship.headingRadians) * tow.velocity.y;
-    const sway = Math.max(-65, Math.min(65, lateralDrift * 0.15)) +
+    const sway =
+      Math.max(-65, Math.min(65, lateralDrift * 0.15)) +
       Math.min(24, distance * 0.07) * slack * Math.sin(time * 3.2);
     const bend = { x: (-dy / distance) * sway, y: (dx / distance) * sway };
     const middle = {
@@ -93,7 +104,13 @@ export function drawDistressTow(
   if (image?.complete && image.naturalWidth > 0 && ship) {
     const ratio = image.naturalWidth / image.naturalHeight;
     context.globalAlpha = 0.88;
-    context.drawImage(image, -shipWidth / 2, -shipWidth / (2 * ratio), shipWidth, shipWidth / ratio);
+    context.drawImage(
+      image,
+      -shipWidth / 2,
+      -shipWidth / (2 * ratio),
+      shipWidth,
+      shipWidth / ratio
+    );
   } else {
     context.strokeStyle = '#c6d4da';
     context.lineWidth = 3;

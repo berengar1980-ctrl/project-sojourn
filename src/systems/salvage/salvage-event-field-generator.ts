@@ -77,9 +77,14 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
   const height = 1900;
   const component = sectorSalvageEventComponent(event);
   const quality = event.specialComponent ? 3 : event.salvageRights ? 2 : 1;
-  const role = event.wreckKind === 'salvager' ? 'salvage'
-    : event.wreckKind === 'miner' ? 'mining'
-      : event.wreckKind === 'patrol' ? 'patrol' : 'freighter';
+  const role =
+    event.wreckKind === 'salvager'
+      ? 'salvage'
+      : event.wreckKind === 'miner'
+        ? 'mining'
+        : event.wreckKind === 'patrol'
+          ? 'patrol'
+          : 'freighter';
   const candidates = getShipsByRole(role);
   const ship = candidates[(event.fieldSeed >>> 0) % candidates.length];
   const distressRadius = (ship?.nominalLengthMeters ?? 80) * 0.38;

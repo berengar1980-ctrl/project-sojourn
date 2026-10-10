@@ -6,12 +6,18 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { DistressDamageParticles } = loadStandaloneTypeScriptModule(
-  root, 'src/ui/salvage/distress-damage-particles.ts'
+  root,
+  'src/ui/salvage/distress-damage-particles.ts'
 );
 const particles = new DistressDamageParticles();
 const context = {
-  save() {}, restore() {}, beginPath() {}, arc() {}, fill() {},
-  set globalAlpha(_) {}, set fillStyle(_) {},
+  save() {},
+  restore() {},
+  beginPath() {},
+  arc() {},
+  fill() {},
+  set globalAlpha(_) {},
+  set fillStyle(_) {},
 };
 const camera = { worldToScreen: (p) => p, scale: (n) => n };
 for (let i = 1; i <= 80; i++) {

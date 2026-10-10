@@ -8,10 +8,7 @@ import {
   destroyScenePanels,
 } from './game-controller-events';
 
-export function mountCombatScene(
-  context: ControllerRuntimeContext,
-  returnToMap: () => void,
-): void {
+export function mountCombatScene(context: ControllerRuntimeContext, returnToMap: () => void): void {
   const combat = context.engagements.activePlayerCombat();
   if (!combat) return;
   const { state } = context;

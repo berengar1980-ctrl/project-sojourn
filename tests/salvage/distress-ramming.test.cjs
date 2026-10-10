@@ -6,16 +6,29 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const physics = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/distress-ramming-physics.ts');
+const physics = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/distress-ramming-physics.ts'
+);
 const initial = physics.createDistressRammingState({ x: 100, y: 100 });
 const impact = physics.advanceDistressRamming(
-  initial, { x: 130, y: 100 }, { x: 182, y: 100 }, 35, 30, 0.05
+  initial,
+  { x: 130, y: 100 },
+  { x: 182, y: 100 },
+  35,
+  30,
+  0.05
 );
 assert(impact.state.velocity.x > 0, 'collision must transfer momentum to the drifting vessel');
 assert.equal(impact.state.impactAge, 0, 'ramming starts a fresh shield effect');
 assert(impact.position.x > 182, 'the target must physically move from its starting position');
 const after = physics.advanceDistressRamming(
-  impact.state, { x: 130, y: 100 }, impact.position, 35, 30, 0.05
+  impact.state,
+  { x: 130, y: 100 },
+  impact.position,
+  35,
+  30,
+  0.05
 );
 assert(after.position.x > impact.position.x, 'damaged vessel must continue to drift after impact');
 assert(after.state.impactAge > 0);

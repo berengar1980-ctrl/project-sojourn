@@ -120,15 +120,20 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   }
   get playerVisible(): readonly SectorSalvageEvent[] {
     return this.active.filter(
-      (event) => event.distressStage === 'towing' ||
+      (event) =>
+        event.distressStage === 'towing' ||
         (this.playerSalvageEligible && this.currentDay < event.playerDeadlineDay)
     );
   }
   setPlayerSalvageEligible(eligible: boolean): void {
     if (eligible && !this.playerSalvageEligible) {
       for (const event of this.events) {
-        if (!event.resolved && !event.claimedByNpcId &&
-            !event.playerAccepted && event.distressStage !== 'towing') {
+        if (
+          !event.resolved &&
+          !event.claimedByNpcId &&
+          !event.playerAccepted &&
+          event.distressStage !== 'towing'
+        ) {
           event.playerDeadlineDay = Math.max(event.playerDeadlineDay, this.currentDay + 3);
         }
       }

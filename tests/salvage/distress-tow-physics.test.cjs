@@ -6,10 +6,8 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const { createDistressTowState, advanceDistressTow, towShipAtExit } = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/salvage/distress-tow-physics.ts'
-);
+const { createDistressTowState, advanceDistressTow, towShipAtExit } =
+  loadStandaloneTypeScriptModule(root, 'src/systems/salvage/distress-tow-physics.ts');
 let tow = createDistressTowState({ x: 1250, y: 950 });
 assert.equal(tow.attached, false, 'the hook must fly before connecting');
 const starting = createDistressTowState({ x: 1250, y: 950 });
@@ -51,7 +49,10 @@ assert.equal(
   false
 );
 
-const renderer = fs.readFileSync(path.join(root, 'src/ui/salvage/distress-tow-renderer.ts'), 'utf8');
+const renderer = fs.readFileSync(
+  path.join(root, 'src/ui/salvage/distress-tow-renderer.ts'),
+  'utf8'
+);
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-salvage.ts'), 'utf8');
 assert(renderer.includes('grapplingHooks'));
 assert(renderer.includes('quadraticCurveTo'));
