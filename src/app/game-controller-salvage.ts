@@ -375,7 +375,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
         options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
-        null,
+        null
       );
     },
     approachSpeed: 85,
