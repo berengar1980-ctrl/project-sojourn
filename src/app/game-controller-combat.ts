@@ -2,6 +2,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
+  fitsWeaponHardpoint,
   resolveShipRuntimeSetup,
   resolveShipCombatMovementStats,
   type ShipRuntimeOptions,
@@ -28,7 +29,9 @@ export function createPlayerCombatant(
   const movement = resolveShipCombatMovementStats(ship);
   const equippedWeapons = (runtime.installed.weapon ?? []).flatMap((id, slotIndex) => {
     const component = getShipComponent('weapon', id);
-    return component?.weapon ? [{ component, slotIndex }] : [];
+    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
+      ? [{ component, slotIndex }]
+      : [];
   });
   const weapons = equippedWeapons.map((entry) => entry.component);
   const sensor = (runtime.installed.sensor ?? [])
