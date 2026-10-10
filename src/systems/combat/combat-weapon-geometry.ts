@@ -37,7 +37,8 @@ export function weaponInArc(
   }
   const mount = source.setup.weaponMounts?.find((point) => point.slotIndex === slot);
   if (!supportedWeaponMount(mount, kind, profile)) return false;
-  const weaponArc = profile.arcDegrees ?? (kind === 'forward' ? 60 : kind === 'broadside' ? 90 : 360);
+  const defaultArc = kind === 'forward' ? 60 : kind === 'broadside' ? 90 : 360;
+  const weaponArc = profile.arcDegrees ?? defaultArc;
   const degrees = Math.min(weaponArc, mount?.arcDegrees ?? 360);
   if (degrees >= 360) return true;
   const muzzle = weaponMuzzle(source, slot);
