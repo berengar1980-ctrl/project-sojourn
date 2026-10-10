@@ -16,6 +16,19 @@ export function engineShotAvailable(source: Pick<MutableCombatant, 'position'>, 
   return Math.abs(relative) >= Math.PI / 3;
 }
 
+/** Hold weapon fire on a fleeing ship until its exposed engines can be targeted. */
+export function canEngagePreferredSubsystem(
+  source: MutableCombatant,
+  target: MutableCombatant
+): boolean {
+  return (
+    target.shieldHp > 0 ||
+    target.tactic !== 'flee' ||
+    target.subsystems.engine <= 0 ||
+    engineShotAvailable(source, target)
+  );
+}
+
 export function effectiveTargetSubsystem(
   source: MutableCombatant,
   target: MutableCombatant
