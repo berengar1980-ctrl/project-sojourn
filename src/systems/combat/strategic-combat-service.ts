@@ -305,15 +305,21 @@ function createStrategicCombatRuntime(
 
 function tryFireGrapple(
   runtime: StrategicCombatRuntime,
-  side: 'attacker' | 'defender'
+  side: 'attacker' | 'defender',
 ): boolean {
   if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
   const attacker = runtimeCombatant(runtime, side);
   const victim = runtimeEnemy(runtime, side);
   if (distance(attacker.position, victim.position) > 900) return false;
   const launched = fireCombatGrapple(
-    side, attacker.position, victim.position, victim.shieldHp,
-    victim.hullHp, victim.hullMaxHp, false, runtime.random
+    side,
+    attacker.position,
+    victim.position,
+    victim.shieldHp,
+    victim.hullHp,
+    victim.hullMaxHp,
+    false,
+    runtime.random,
   );
   if (!launched) return false;
   runtime.grappleUsed[side] = true;
