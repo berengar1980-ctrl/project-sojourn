@@ -310,13 +310,22 @@ function choosePlanDirection(
       : { x: -toward.x, y: -toward.y };
     targetSpeedFactor = 1;
   } else if (range < desired * 0.72) {
-    // Step A failed: restore engagement range before aligning the guns.
-    direction = { x: -toward.x, y: -toward.y };
-    targetSpeedFactor = 0.4;
+    // Preserve established legacy/NPC flight behavior while AI doctrine
+    // steering is validated separately against real hit-producing scenarios.
+    direction = combatant.setup.aiControlled
+      ? { x: -toward.x, y: -toward.y }
+      : normalize(-toward.x * 0.8 + perpendicular.x * 0.45,
+          -toward.y * 0.8 + perpendicular.y * 0.45);
+    targetSpeedFactor = combatant.setup.aiControlled ? 0.4 : 0.72;
   } else if (range <= desired * 1.18) {
-    // Step A passed: do not orbit just because the target is in range.
-    direction = toward;
-    targetSpeedFactor = combatant.strategy?.phase === 'reach_range' ? 0.28 : 0.1;
+    if (combatant.setup.aiControlled) {
+      direction = toward;
+      targetSpeedFactor = combatant.strategy?.phase === 'reach_range' ? 0.28 : 0.1;
+    } else {
+      direction = normalize(perpendicular.x + toward.x * 0.18,
+        perpendicular.y + toward.y * 0.18);
+      targetSpeedFactor = combatant.tactic === 'kite' ? 0.78 : 0.62;
+    }
   } else if (combatant.tactic === 'kite' && range < desired * 1.5) {
     direction = normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y);
     targetSpeedFactor = 0.8;
