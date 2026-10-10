@@ -27,9 +27,10 @@ export function fireCombatGrapple(
 ): CombatGrapple | null {
   if (alreadyUsed || targetShield > 0 || targetHull <= 0) return null;
   const chance = grappleChance(targetHull, targetHullMax);
+  const success = random() < chance;
   return {
     owner: side,
-    success: random() < chance,
+    success,
     elapsed: 0,
     duration: success ? 0.65 : 1.1,
     origin: { ...attacker },
