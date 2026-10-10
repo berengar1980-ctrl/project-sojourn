@@ -224,7 +224,8 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
         ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
       )
     );
-    const combat = createStrategicCombatService(setups[0]!, setups[1]!);
+    const duelSeed = Math.floor(Math.random() * 0x7fffffff);
+    const combat = createStrategicCombatService(setups[0]!, setups[1]!, duelSeed);
     activePanel = createStrategicCombatPanel({
       root,
       combat,
