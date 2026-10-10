@@ -20,16 +20,7 @@ const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
 
 const sourcePoint = { x: 300, y: 400 };
 const targetPoint = { x: 900, y: 400 };
-const hook = fireCombatGrapple(
-  'attacker',
-  sourcePoint,
-  targetPoint,
-  0,
-  100,
-  100,
-  false,
-  () => 0
-);
+const hook = fireCombatGrapple('attacker', sourcePoint, targetPoint, 0, 100, 100, false, () => 0);
 assert(hook && hook.success);
 const attached = advanceCombatGrapple(hook, sourcePoint, targetPoint, 0.65);
 assert(attached.resolved);
@@ -49,7 +40,7 @@ function ship(id, x, tractorRangeMeters = 0) {
 const attacker = ship('attacker', 300);
 const defender = ship('defender', 900);
 defender.velocity.y = 34;
-let rope = advanceCombatGrappleTether(attached, attacker, defender, 0.08);
+const rope = advanceCombatGrappleTether(attached, attacker, defender, 0.08);
 assert(rope.ropeLength < attached.ropeLength, 'winch must reel in the rope');
 assert(rope.tension > 0, 'a shortening taut rope must exert tension');
 assert(attacker.velocity.x > 0 && defender.velocity.x < 0, 'both ships must be pulled');

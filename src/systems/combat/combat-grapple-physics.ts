@@ -26,8 +26,7 @@ export function advanceCombatGrappleTether(
     target.shieldHp <= 0 &&
     (source.setup.tractorRangeMeters ?? 0) > 0 &&
     separation <= (source.setup.tractorRangeMeters ?? 0);
-  const reelRate =
-    WINCH_REEL_METERS_PER_SECOND + (tractorAssisted ? TRACTOR_REEL_BONUS : 0);
+  const reelRate = WINCH_REEL_METERS_PER_SECOND + (tractorAssisted ? TRACTOR_REEL_BONUS : 0);
   const ropeLength = Math.max(COUPLING_DISTANCE, grapple.ropeLength - reelRate * deltaSeconds);
 
   const separatingSpeed =
