@@ -192,6 +192,7 @@ export function shouldReserveRailgun(
   railRange: number
 ): boolean {
   if (target.shieldHp > 0 || target.tactic !== 'flee' || source.tactic === 'flee') return false;
+  if (target.subsystems?.engine > 0 && engineShotAvailable(source, target)) return false;
   const dx = target.position.x - source.position.x;
   const dy = target.position.y - source.position.y;
   const range = Math.hypot(dx, dy);
