@@ -265,8 +265,7 @@ function broadsideSteering(
     .map((weapon, index) => ({ weapon, index }))
     .filter(
       (entry) =>
-        entry.weapon.weapon?.mount === 'broadside' &&
-        range <= entry.weapon.weapon.rangeMeters * 1.2
+        entry.weapon.weapon?.mount === 'broadside' && range <= entry.weapon.weapon.rangeMeters * 1.2
     )
     .sort((a, b) =>
       enemy.shieldHp > 0
