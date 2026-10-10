@@ -26,11 +26,12 @@ import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
 
 import {
   mineDetection,
-  updateAiTactic,
   moveCombatant,
   resolveCombatantCollision,
   resolveArenaObstacles,
 } from './strategic-combat-movement';
+
+import { reviewCombatStrategy } from './combat-strategy-planner';
 
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
 
@@ -235,8 +236,8 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  updateAiTactic(runtime.attacker, runtime.defender, runtime.elapsedSeconds);
-  updateAiTactic(runtime.defender, runtime.attacker, runtime.elapsedSeconds);
+  reviewCombatStrategy(runtime.attacker, runtime.defender, 'attacker', runtime.elapsedSeconds);
+  reviewCombatStrategy(runtime.defender, runtime.attacker, 'defender', runtime.elapsedSeconds);
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
   moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   resolveCombatantCollision(runtime.attacker, runtime.defender);
