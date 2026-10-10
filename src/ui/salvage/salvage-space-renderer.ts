@@ -1,3 +1,4 @@
+import { pickNearestHitArea } from './salvage-hit-test';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -104,20 +105,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
   pickNpc(x: number, y: number): string | null {
-    let best: NpcHitArea | null = null;
-    for (const area of this.npcHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.npcHitAreas, x, y);
   }
   pickWreck(x: number, y: number): string | null {
-    let best: WreckHitArea | null = null;
-    for (const area of this.hitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.hitAreas, x, y);
   }
   protected ensureShipImage(url: string): void {
     if (url === this.loadedShipUrl) return;
