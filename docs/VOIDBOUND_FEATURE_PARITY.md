@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | HARROWDRIFT Startmenü / PvP-Duell | Voidbound-Startscreen in `js/ui/character.js` und `style.css` geprüft: linksbündige Navigation, dunkle Flächen, goldener Selektionsakzent, Originalhintergrund `assets/ui/startscreen-background.webp`. Harrowdrift öffnet beim Boot ein Hauptmenü, führt über Kampagnenspiel in das bisherige Sojourn-Spiel und bietet ein lokales Zwei-Spieler-Duell auf Basis des bestehenden Strategiekampfes. Kampagnenverwaltung und Spielstände sind sichtbar deaktiviert, da keine Persistenz vorhanden ist. Menü-Asset muss binär separat übernommen werden. |
+
+
 | 2026-10-10 | Kampfstrategie und Komponentenziele | Voidbound-Parität überprüft: **keine Statusänderung**. Sojourn erweitert waffenbasierte, um vier Sekunden versetzte Acht-Sekunden-Kampfpläne um Front-/Backbord-/Steuerbord-Reichweitenbewertung und anvisierbare Hülle, Hauptantrieb und Traktorstrahl. Nach zerstörtem Hauptantrieb kein Schub, RCS-Drehung bleibt möglich; zerstörter Traktor kann keine Traktorunterstützung mehr leisten. Spezialziele werden erst nach Schildabbau getroffen, Triebwerke nur von Seite/Heck. `combat.weapon_fire` bleibt teilweise. |
 
 
