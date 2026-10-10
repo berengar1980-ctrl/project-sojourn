@@ -164,7 +164,7 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     state.activeSectorEvent,
     state.distressTow,
     state.distressRamming,
-    state.distressRepairing
+    state.distressRepairing,
   );
 }
 
@@ -289,7 +289,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   const complete = snapshot.field.wrecks.every(
     (wreck) =>
       wreck.resources.every((resource) => resource.remainingAmount <= 0) &&
-      wreck.componentStatus !== 'available'
+      wreck.componentStatus !== 'available',
   );
   if (!complete) return;
   state.sectorEventResolved = true;
@@ -310,7 +310,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
           wreck.position,
           options.ship.nominalLengthMeters * 0.42,
           wreck.radius,
-          deltaSeconds
+          deltaSeconds,
         );
         context.state.distressRamming = result.state;
         context.field.wrecks[0] = { ...wreck, position: result.position };
@@ -322,7 +322,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
         context.state.distressTow,
         player.position,
         player.headingRadians,
-        deltaSeconds
+        deltaSeconds,
       );
       const wreck = context.field.wrecks[0];
       if (wreck) {
@@ -336,7 +336,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     options.audio.updatePlayerRcs(
       options.ship.sprite.hardpoints,
       service.getSnapshot().ship,
-      performance.now() / 1000
+      performance.now() / 1000,
     );
     npcSalvage.tick(deltaSeconds);
     resolveCompletedSectorEvent(context);
@@ -351,13 +351,13 @@ function finishSalvageCombat(
   context.service.syncCombatPose(
     snapshot.attacker.position,
     snapshot.attacker.headingRadians,
-    snapshot.attacker.speed
+    snapshot.attacker.speed,
   );
   context.npcSalvage.syncCombatPose(
     snapshot.defender.id,
     snapshot.defender.position,
     snapshot.defender.headingRadians,
-    snapshot.defender.speed
+    snapshot.defender.speed,
   );
   refreshSalvageScene(context);
 }
@@ -375,7 +375,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
         options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
-        null
+        null,
       );
     },
     approachSpeed: 85,
