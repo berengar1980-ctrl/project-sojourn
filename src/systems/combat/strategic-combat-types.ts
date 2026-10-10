@@ -21,6 +21,20 @@ export interface CombatPoint {
   readonly y: number;
 }
 
+export interface CombatWeaponMount {
+  readonly slotIndex: number;
+  readonly x: number;
+  readonly y: number;
+  readonly facing: 'port' | 'starboard' | 'forward';
+}
+
+export interface CombatFireControl {
+  readonly max: number;
+  readonly charges: number;
+  readonly nextRechargeAt: number;
+  readonly lastShotAt: number;
+}
+
 export interface CombatGrapple {
   readonly owner: StrategicCombatSide;
   readonly success: boolean;
@@ -50,6 +64,7 @@ export interface StrategicCombatantSetup {
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
   readonly weapons: readonly ShipComponentDefinition[];
+  readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
   readonly dodgeChance: number;
   readonly damageMultiplier: number;
@@ -90,6 +105,7 @@ export interface StrategicCombatantSnapshot {
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly shieldImpacts: readonly ShieldImpactEffect[];
+  readonly fireControl: CombatFireControl;
 }
 
 export interface CombatProjectileSnapshot {
@@ -182,6 +198,12 @@ export interface MutableCombatant {
   readonly shieldMaxHp: number;
   readonly hullMaxHp: number;
   readonly cooldowns: number[];
+  fireControl: {
+    max: number;
+    charges: number;
+    nextRechargeAt: number;
+    lastShotAt: number;
+  };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   headingRadians: number;
@@ -204,6 +226,7 @@ export interface MutableProjectile {
   position: { x: number; y: number };
   target: StrategicCombatSide;
   speed: number;
+  direction: { x: number; y: number };
   ttlSeconds: number;
   shieldDamage: number;
   hullDamage: number;
