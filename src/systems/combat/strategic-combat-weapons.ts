@@ -191,12 +191,16 @@ export function shouldReserveRailgun(
   if (range < 1 || range >= railRange * 0.85) return false;
   const separatingSpeed =
     ((target.velocity.x - source.velocity.x) * dx +
-      (target.velocity.y - source.velocity.y) * dy) / range;
+      (target.velocity.y - source.velocity.y) * dy) /
+    range;
   if (separatingSpeed <= 5) return false;
   return source.setup.weapons.some(({ weapon }) =>
-    Boolean(weapon && weapon.mount !== 'forward' &&
-      weapon.rangeMeters < railRange * 0.85 &&
-      weapon.rangeMeters >= range)
+    Boolean(
+      weapon &&
+        weapon.mount !== 'forward' &&
+        weapon.rangeMeters < railRange * 0.85 &&
+        weapon.rangeMeters >= range
+    )
   );
 }
 
@@ -224,7 +228,10 @@ export function advanceRuntimeWeapons(
         (source.cooldowns[index] ?? 0) <= 0 &&
         distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
         weaponInArc(source, target.position, index, weapon.weapon) &&
-        !(weapon.weapon.family === 'railgun' && shouldReserveRailgun(source, target, weapon.weapon.rangeMeters))
+        !(
+          weapon.weapon.family === 'railgun' &&
+          shouldReserveRailgun(source, target, weapon.weapon.rangeMeters)
+        )
       )
     )
     .sort((a, b) => {
