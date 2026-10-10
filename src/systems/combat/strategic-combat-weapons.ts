@@ -179,6 +179,30 @@ function fireRuntimeWeapon(
   );
 }
 
+export function shouldReserveRailgun(
+  source: MutableCombatant,
+  target: MutableCombatant,
+  railRange: number
+): boolean {
+  if (target.shieldHp > 0 || target.tactic !== 'flee' || source.tactic === 'flee') return false;
+  const dx = target.position.x - source.position.x;
+  const dy = target.position.y - source.position.y;
+  const range = Math.hypot(dx, dy);
+  if (range < 1 || range >= railRange * 0.85) return false;
+  const separatingSpeed =
+    ((target.velocity.x - source.velocity.x) * dx + (target.velocity.y - source.velocity.y) * dy) /
+    range;
+  if (separatingSpeed <= 5) return false;
+  return source.setup.weapons.some(({ weapon }) =>
+    Boolean(
+      weapon &&
+      weapon.mount !== 'forward' &&
+      weapon.rangeMeters < railRange * 0.85 &&
+      weapon.rangeMeters >= range
+    )
+  );
+}
+
 export function advanceRuntimeWeapons(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -202,7 +226,11 @@ export function advanceRuntimeWeapons(
         weapon?.weapon &&
         (source.cooldowns[index] ?? 0) <= 0 &&
         distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
-        weaponInArc(source, target.position, index, weapon.weapon)
+        weaponInArc(source, target.position, index, weapon.weapon) &&
+        !(
+          weapon.weapon.family === 'railgun' &&
+          shouldReserveRailgun(source, target, weapon.weapon.rangeMeters)
+        )
       )
     )
     .sort((a, b) => {
