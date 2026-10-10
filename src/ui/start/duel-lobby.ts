@@ -174,7 +174,7 @@ function duelCombatant(
     cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
     preferredTactic: 'fight',
     ...resolveShipCombatMovementStats(ship),
-    tractorRangeMeters: points.tractorBeams.length ? 400 : 0,
+    tractorRangeMeters: (points.tractorBeams?.length ?? 0) > 0 ? 400 : 0,
     aiControlled: true,
     aiAggression: 90,
   };
