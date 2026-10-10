@@ -92,6 +92,7 @@ function fireRuntimeInstantWeapon(
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
+    ...(result.subsystem ? { subsystem: result.subsystem } : {}),
     damage: result.damage,
     position: { ...result.point },
   };
@@ -100,7 +101,7 @@ function fireRuntimeInstantWeapon(
     ': ' +
     weapon.name +
     ' trifft ' +
-    (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+    (result.layer === 'shield' ? 'Schild' : result.subsystem === 'engine' ? 'Triebwerk' : result.subsystem === 'tractor' ? 'Traktorstrahl' : 'Hülle') +
     ' -' +
     Math.round(result.damage)
   );
