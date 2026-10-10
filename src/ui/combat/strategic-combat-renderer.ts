@@ -347,7 +347,8 @@ export class StrategicCombatRenderer {
     const geometry = this.shipGeometry(combatant, width, height);
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     const hardpoints = definition?.sprite.hardpoints;
-    const engineIntensity = Math.max(0, Math.min(1, combatant.speed / 120));
+    const engineIntensity =
+      combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;
     const maneuverDemand = {
       turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
       angularThrust: combatant.angularThrust,
