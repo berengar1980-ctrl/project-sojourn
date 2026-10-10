@@ -80,55 +80,55 @@ function drawTowCable(
   distance: number,
   time: number
 ): void {
-if (!tow.attached) {
-  const progress = Math.min(1, time / 0.65);
-  const tip = { x: anchor.x + dx * progress, y: anchor.y + dy * progress };
-  context.setLineDash([8, 5]);
-  context.lineWidth = 2;
-  context.strokeStyle = '#606a70';
-  context.beginPath();
-  context.moveTo(anchor.x, anchor.y);
-  context.lineTo(tip.x, tip.y);
-  context.stroke();
-  context.setLineDash([]);
-  context.fillStyle = '#a5adb2';
-  context.beginPath();
-  context.translate(tip.x, tip.y);
-  context.rotate(Math.atan2(dy, dx));
-  context.beginPath();
-  context.moveTo(9, 0);
-  context.lineTo(-3, -3);
-  context.lineTo(-9, -9);
-  context.lineTo(-13, -6);
-  context.lineTo(-6, 0);
-  context.lineTo(-13, 6);
-  context.lineTo(-9, 9);
-  context.lineTo(-3, 3);
-  context.closePath();
-  context.fill();
-  context.rotate(-Math.atan2(dy, dx));
-  context.translate(-tip.x, -tip.y);
-} else {
-  const slack = Math.max(0, 1 - tow.cableTension);
-  const lateralDrift =
-    -Math.sin(model.ship.headingRadians) * tow.velocity.x +
-    Math.cos(model.ship.headingRadians) * tow.velocity.y;
-  const sway =
-    Math.max(-65, Math.min(65, lateralDrift * 0.15)) +
-    Math.min(24, distance * 0.07) * slack * Math.sin(time * 3.2);
-  const bend = { x: (-dy / distance) * sway, y: (dx / distance) * sway };
-  const middle = {
-    x: (anchor.x + cargo.x) / 2 + bend.x,
-    y: (anchor.y + cargo.y) / 2 + bend.y,
-  };
-  context.strokeStyle = tow.cableTension > 0.65 ? '#919b9f' : '#636c72';
-  context.lineWidth = 2.2;
-  context.beginPath();
-  context.moveTo(anchor.x, anchor.y);
-  context.quadraticCurveTo(middle.x, middle.y, attachment.x, attachment.y);
-  context.stroke();
-  context.strokeStyle = 'rgba(210, 214, 215, 0.22)';
-  context.lineWidth = 0.65;
-  context.stroke();
+  if (!tow.attached) {
+    const progress = Math.min(1, time / 0.65);
+    const tip = { x: anchor.x + dx * progress, y: anchor.y + dy * progress };
+    context.setLineDash([8, 5]);
+    context.lineWidth = 2;
+    context.strokeStyle = '#606a70';
+    context.beginPath();
+    context.moveTo(anchor.x, anchor.y);
+    context.lineTo(tip.x, tip.y);
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = '#a5adb2';
+    context.beginPath();
+    context.translate(tip.x, tip.y);
+    context.rotate(Math.atan2(dy, dx));
+    context.beginPath();
+    context.moveTo(9, 0);
+    context.lineTo(-3, -3);
+    context.lineTo(-9, -9);
+    context.lineTo(-13, -6);
+    context.lineTo(-6, 0);
+    context.lineTo(-13, 6);
+    context.lineTo(-9, 9);
+    context.lineTo(-3, 3);
+    context.closePath();
+    context.fill();
+    context.rotate(-Math.atan2(dy, dx));
+    context.translate(-tip.x, -tip.y);
+  } else {
+    const slack = Math.max(0, 1 - tow.cableTension);
+    const lateralDrift =
+      -Math.sin(model.ship.headingRadians) * tow.velocity.x +
+      Math.cos(model.ship.headingRadians) * tow.velocity.y;
+    const sway =
+      Math.max(-65, Math.min(65, lateralDrift * 0.15)) +
+      Math.min(24, distance * 0.07) * slack * Math.sin(time * 3.2);
+    const bend = { x: (-dy / distance) * sway, y: (dx / distance) * sway };
+    const middle = {
+      x: (anchor.x + cargo.x) / 2 + bend.x,
+      y: (anchor.y + cargo.y) / 2 + bend.y,
+    };
+    context.strokeStyle = tow.cableTension > 0.65 ? '#919b9f' : '#636c72';
+    context.lineWidth = 2.2;
+    context.beginPath();
+    context.moveTo(anchor.x, anchor.y);
+    context.quadraticCurveTo(middle.x, middle.y, attachment.x, attachment.y);
+    context.stroke();
+    context.strokeStyle = 'rgba(210, 214, 215, 0.22)';
+    context.lineWidth = 0.65;
+    context.stroke();
 }
 }
