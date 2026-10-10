@@ -190,16 +190,15 @@ export function shouldReserveRailgun(
   const range = Math.hypot(dx, dy);
   if (range < 1 || range >= railRange * 0.85) return false;
   const separatingSpeed =
-    ((target.velocity.x - source.velocity.x) * dx +
-      (target.velocity.y - source.velocity.y) * dy) /
+    ((target.velocity.x - source.velocity.x) * dx + (target.velocity.y - source.velocity.y) * dy) /
     range;
   if (separatingSpeed <= 5) return false;
   return source.setup.weapons.some(({ weapon }) =>
     Boolean(
       weapon &&
-        weapon.mount !== 'forward' &&
-        weapon.rangeMeters < railRange * 0.85 &&
-        weapon.rangeMeters >= range
+      weapon.mount !== 'forward' &&
+      weapon.rangeMeters < railRange * 0.85 &&
+      weapon.rangeMeters >= range
     )
   );
 }
