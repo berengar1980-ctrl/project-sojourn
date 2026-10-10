@@ -40,6 +40,34 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
   `;
 }
 
+function attachCombatLogExport(shell: HTMLElement, options: StrategicCombatPanelOptions): void {
+  shell
+    .querySelector<HTMLButtonElement>('.strategic-combat-log-export')
+    ?.addEventListener('click', () => {
+      const payload = JSON.stringify(
+        {
+          format: 'harrowdrift-combat-log-v1',
+          encounter: options.encounterName ?? 'Freies Duell',
+          snapshot: options.combat.getSnapshot(),
+          events: options.combat.getCombatLog(),
+          analysis: analyzeCombatLog(options.combat.getCombatLog()),
+        },
+        null,
+        2
+      );
+      const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const slug = (options.encounterName ?? 'freies-duell')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      link.download = 'harrowdrift-' + slug + '-kampflog.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+}
+
 export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
@@ -70,31 +98,7 @@ export function createStrategicCombatPanel(
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
   const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
   const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
-  shell
-    .querySelector<HTMLButtonElement>('.strategic-combat-log-export')
-    ?.addEventListener('click', () => {
-      const payload = JSON.stringify(
-        {
-          format: 'harrowdrift-combat-log-v1',
-          encounter: options.encounterName ?? 'Freies Duell',
-          snapshot: options.combat.getSnapshot(),
-          events: options.combat.getCombatLog(),
-          analysis: analyzeCombatLog(options.combat.getCombatLog()),
-        },
-        null,
-        2
-      );
-      const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      const slug = (options.encounterName ?? 'freies-duell')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-      link.download = 'harrowdrift-' + slug + '-kampflog.json';
-      link.click();
-      URL.revokeObjectURL(url);
-    });
+  attachCombatLogExport(shell, options);
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
   }
