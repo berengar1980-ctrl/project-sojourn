@@ -94,4 +94,14 @@ assert.equal(weaponInArc(shooter, { x: 100, y: 40 }, 0, rail.weapon), false);
 assert.equal(weaponInArc(shooter, { x: 0, y: -100 }, 1, laser.weapon), true);
 assert.equal(weaponInArc(shooter, { x: 100, y: 0 }, 1, laser.weapon), false);
 assert.equal(weaponInArc(shooter, { x: 100, y: 0 }, 0, laser.weapon), false);
+assert.equal(
+  weaponInArc(shooter, { x: -100, y: 0 }, 1, { ...laser.weapon, arcDegrees: undefined }),
+  false,
+  'hardpoint must still restrict a turret whose profile omits arcDegrees'
+);
+assert.equal(
+  weaponInArc({ ...shooter, setup: { weaponMounts: [] } }, { x: -100, y: 0 }, 1, { ...laser.weapon, arcDegrees: undefined }),
+  true,
+  'legacy turret with no arc uses full-circle firing'
+);
 console.log('PASS JSON weapon fitting slots and hardpoint firing arcs');
