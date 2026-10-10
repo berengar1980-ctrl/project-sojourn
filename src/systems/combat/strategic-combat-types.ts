@@ -36,6 +36,7 @@ export interface CombatWeaponMount {
   readonly facing: 'port' | 'starboard' | 'forward';
   readonly arcDegrees?: number;
   readonly allowedMounts?: readonly ('forward' | 'broadside' | 'turret' | 'guided')[];
+  readonly allowedFamilies?: readonly ShipWeaponFamily[];
 }
 
 export interface CombatFireControl {
