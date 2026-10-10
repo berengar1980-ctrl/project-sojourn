@@ -7,64 +7,160 @@ import type {
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
 
-function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
-  const weapons = ship.setup.weapons.flatMap((component, slotIndex) =>
-    component.weapon ? [{ ...component.weapon, slotIndex }] : []
-  );
-  const enemyWeapons = enemy.setup.weapons.flatMap((component) =>
-    component.weapon ? [component.weapon] : []
-  );
-  const enemyRange = Math.max(0, ...enemyWeapons.map((weapon) => weapon.rangeMeters));
-  const hp = ship.hullHp / ship.hullMaxHp;
-  const enemyShielded = enemy.shieldHp > 0;
-  const ownSpeed = ship.setup.combatSpeed ?? 120;
-  const enemySpeed = enemy.setup.combatSpeed ?? 120;
-  const ownTurn = ship.setup.turnRateRadiansPerSecond ?? 1;
-  const enemyTurn = enemy.setup.turnRateRadiansPerSecond ?? 1;
-  const plans: CombatStrategyPlan[] = [];
+function targetSubsystem(
+  ship: MutableCombatant,
+  enemy: MutableCombatant
+): 'hull' | 'tractor' | 'engine' {
+  if (enemy.tactic === 'flee' && enemy.subsystems.engine > 0) return 'engine';
+  if (
+    ship.shieldHp <= 0 &&
+    enemy.subsystems.tractor > 0 &&
+    (enemy.setup.tractorRangeMeters ?? 0) > 0
+  )
+    return 'tractor';
+  return 'hull';
+}
 
-  for (const focus of ['forward', 'broadside', 'turret'] as const) {
-    const relevant = weapons.filter((weapon) =>
-      focus === 'turret'
-        ? weapon.mount === 'turret' || weapon.mount === 'guided'
-        : weapon.mount === focus
+type WeaponGroup = {
+  readonly focus: 'forward' | 'broadside' | 'turret';
+  readonly facing?: 'port' | 'starboard';
+};
+
+function scoreWeaponGroup(
+  ship: MutableCombatant,
+  group: WeaponGroup,
+  enemyRange: number,
+  currentRange: number,
+  speedRatio: number,
+  turnRatio: number,
+  enemyShielded: boolean,
+  targetSubsystemChoice: 'hull' | 'engine' | 'tractor'
+): CombatStrategyPlan | null {
+  const guns = ship.setup.weapons.flatMap((component, index) => {
+    const weapon = component.weapon;
+    if (!weapon) return [];
+    const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
+    const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
+    const weaponMount =
+      weapon.mount ??
+      (weapon.family === 'railgun'
+        ? 'forward'
+        : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
+          ? 'broadside'
+          : 'turret');
+    const matching =
+      group.focus === 'turret'
+        ? weaponMount === 'turret' || weaponMount === 'guided'
+        : group.focus === 'forward'
+          ? weaponMount === 'forward' && facing === 'forward'
+          : weaponMount === 'broadside' && facing === group.facing;
+    return matching ? [weapon] : [];
+  });
+  if (!guns.length) return null;
+  const range = Math.max(...guns.map((weapon) => weapon.rangeMeters));
+  const dps = guns.reduce(
+    (total, weapon) =>
+      total +
+      (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
+        Math.max(0.45, weapon.cooldownSeconds),
+    0
+  );
+  const maintainRange = range > enemyRange && speedRatio >= 1.02;
+  const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
+  const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
+  const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
+  const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));
+  return {
+    kind:
+      group.focus === 'forward'
+        ? 'frontal'
+        : group.focus === 'broadside'
+          ? 'broadside'
+          : 'skirmish',
+    focus: group.focus,
+    ...(group.facing ? { broadsideFacing: group.facing } : {}),
+    targetSubsystem: targetSubsystemChoice,
+    desiredRange: effectiveRange,
+    score: dps * travelPenalty * relativeMobility * turnFactor * (maintainRange ? 1.2 : 1),
+    reason: enemyShielded
+      ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
+      : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
+  };
+}
+
+function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
+  const enemyRange = Math.max(
+    0,
+    ...enemy.setup.weapons.flatMap((component) =>
+      component.weapon ? [component.weapon.rangeMeters] : []
+    )
+  );
+  const currentRange = Math.hypot(
+    ship.position.x - enemy.position.x,
+    ship.position.y - enemy.position.y
+  );
+  const targetSubsystemChoice = targetSubsystem(ship, enemy);
+  const enemyShielded = enemy.shieldHp > 0;
+  const speedRatio =
+    ship.subsystems.engine > 0
+      ? (ship.setup.combatSpeed ?? 120) /
+        Math.max(65, enemy.subsystems.engine > 0 ? (enemy.setup.combatSpeed ?? 120) : 1)
+      : 0.35;
+  const turnRatio =
+    (ship.setup.turnRateRadiansPerSecond ?? 1) /
+    Math.max(0.4, enemy.setup.turnRateRadiansPerSecond ?? 1);
+  const plans: CombatStrategyPlan[] = [];
+  const groups: readonly WeaponGroup[] = [
+    { focus: 'forward' },
+    { focus: 'broadside', facing: 'port' },
+    { focus: 'broadside', facing: 'starboard' },
+    { focus: 'turret' },
+  ];
+  for (const group of groups) {
+    const plan = scoreWeaponGroup(
+      ship,
+      group,
+      enemyRange,
+      currentRange,
+      speedRatio,
+      turnRatio,
+      enemyShielded,
+      targetSubsystemChoice
     );
-    if (!relevant.length) continue;
-    const bestRange = Math.max(...relevant.map((weapon) => weapon.rangeMeters));
-    const score = relevant.reduce(
-      (total, weapon) =>
-        total +
-        (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
-          Math.max(0.45, weapon.cooldownSeconds),
-      0
-    );
-    const mobility = ownSpeed / Math.max(65, enemySpeed);
-    const distanceAdvantage = bestRange > enemyRange ? 1.22 : 1;
-    const maneuverFactor =
-      focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.72, ownTurn / Math.max(0.4, enemyTurn)));
+    if (plan) plans.push(plan);
+  }
+  if (
+    ship.subsystems.tractor > 0 &&
+    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
+    enemy.shieldHp <= 0 &&
+    enemy.tactic === 'flee'
+  ) {
     plans.push({
-      kind: focus === 'forward' ? 'frontal' : focus === 'broadside' ? 'broadside' : 'skirmish',
-      focus,
-      desiredRange: Math.max(180, bestRange * (bestRange > enemyRange ? 0.78 : 0.65)),
-      score: score * distanceAdvantage * maneuverFactor * Math.min(1.2, mobility),
-      reason: enemyShielded
-        ? 'Schilde mit geeigneter Bewaffnung abbauen'
-        : 'Hülle gezielt beschädigen',
+      kind: 'tractor_lock',
+      focus: 'turret',
+      targetSubsystem: targetSubsystemChoice,
+      desiredRange: Math.max(160, (ship.setup.tractorRangeMeters ?? 0) * 0.7),
+      score: Math.max(1, ...plans.map((plan) => plan.score)) * 1.4,
+      reason: 'Flucht mit intaktem Traktorstrahl unterbinden',
     });
   }
-  if (ship.mineStock.length) {
+  if (ship.mineStock.length && ship.subsystems.engine > 0) {
     plans.push({
       kind: 'minefield',
       focus: 'mine',
+      targetSubsystem: targetSubsystemChoice,
       desiredRange: 460,
-      score: (hp < 0.55 ? 1.5 : 0.65) * Math.max(1, ...plans.map((plan) => plan.score)),
-      reason: 'Minen zur Distanzkontrolle einsetzen',
+      score:
+        (ship.hullHp / ship.hullMaxHp < 0.55 ? 1.4 : 0.6) *
+        Math.max(1, ...plans.map((plan) => plan.score)),
+      reason: 'Minen als Rückzugs- und Distanzkontrolle einsetzen',
     });
   }
   if (!plans.length) {
     plans.push({
       kind: 'approach',
       focus: 'turret',
+      targetSubsystem: targetSubsystemChoice,
       desiredRange: 300,
       score: 1,
       reason: 'Waffenposition suchen',
@@ -108,10 +204,24 @@ export function reviewCombatStrategy(
     };
     return;
   }
+  // A selected minefield tactic is an instruction, not a low-scoring weapon plan.
+  // Keep deploying while there is stock and an operational main engine.
+  if (ship.tactic === 'minefield' && ship.mineStock.length > 0 && ship.subsystems.engine > 0) {
+    ship.strategy = {
+      kind: 'minefield',
+      focus: 'mine',
+      desiredRange: 460,
+      score: 999,
+      reason: 'Angewiesene Minentaktik ausführen',
+    };
+    return;
+  }
   const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
   const best = options[0]!;
   const current = ship.strategy;
-  const equivalent = options.find((option) => option.kind === current?.kind);
+  const equivalent = options.find(
+    (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
+  );
   if (equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)) {
     ship.strategy = { ...equivalent, reason: current!.reason };
   } else {

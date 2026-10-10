@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | Kampfstrategie und Komponentenziele | Voidbound-Parität überprüft: **keine Statusänderung**. Sojourn erweitert waffenbasierte, um vier Sekunden versetzte Acht-Sekunden-Kampfpläne um Front-/Backbord-/Steuerbord-Reichweitenbewertung und anvisierbare Hülle, Hauptantrieb und Traktorstrahl. Nach zerstörtem Hauptantrieb kein Schub, RCS-Drehung bleibt möglich; zerstörter Traktor kann keine Traktorunterstützung mehr leisten. Spezialziele werden erst nach Schildabbau getroffen, Triebwerke nur von Seite/Heck. `combat.weapon_fire` bleibt teilweise. |
+
+
 | 2026-10-10 | Standard-Waffenplätze für 28 Schiffe | Voidbound-Parität überprüft: **keine Statusänderung**. Alle 28 Sojourn-Schiffsvarianten definieren per JSON Front-Railgun (60°), je eine Backbord- und Steuerbord-Breitseite (90°) und einen Laserturm (360°); sieben Patrouillen erhalten zusätzlich einen Lenkwaffenplatz (360°). Einbau und Schusswinkel gelten durch den JSON-Hardpoint-Mechanismus; nur passende Starterwaffen sind vorinstalliert. Die Feinpositionierung an den jeweiligen Sprites bleibt im Editor überprüfbar. |
 
 

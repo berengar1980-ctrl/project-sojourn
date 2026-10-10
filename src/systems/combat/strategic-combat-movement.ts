@@ -205,6 +205,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   return (
     combatant.shieldHp <= 0 &&
     enemy.hullHp > 0 &&
+    enemy.subsystems.tractor > 0 &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   );
 }
@@ -266,7 +267,11 @@ function broadsideSteering(
     .map((weapon, index) => ({ weapon, index }))
     .filter(
       (entry) =>
-        entry.weapon.weapon?.mount === 'broadside' && range <= entry.weapon.weapon.rangeMeters * 1.2
+        entry.weapon.weapon?.mount === 'broadside' &&
+        range <= entry.weapon.weapon.rangeMeters * 1.2 &&
+        (!combatant.strategy?.broadsideFacing ||
+          combatant.setup.weaponMounts?.find((mount) => mount.slotIndex === entry.index)?.facing ===
+            combatant.strategy.broadsideFacing)
     )
     .sort((a, b) =>
       enemy.shieldHp > 0
@@ -328,6 +333,21 @@ function choosePlanDirection(
     // Approach with the bow facing the target: velocity still obeys inertia.
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
+  }
+  if (
+    combatant.tactic !== 'flee' &&
+    enemy.tactic === 'flee' &&
+    enemy.subsystems.engine > 0 &&
+    combatant.subsystems.engine > 0
+  ) {
+    // Approach the fleeing ship's stern instead of indefinitely tailing its bow.
+    const offset = Math.min(220, Math.max(90, range * 0.28));
+    const stern = {
+      x: enemy.position.x - Math.cos(enemy.headingRadians) * offset,
+      y: enemy.position.y - Math.sin(enemy.headingRadians) * offset,
+    };
+    direction = normalize(stern.x - combatant.position.x, stern.y - combatant.position.y);
+    targetSpeedFactor = 1;
   }
   return { direction, targetSpeedFactor };
 }
@@ -404,6 +424,21 @@ export function moveCombatant(
     12,
     combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
+  if (combatant.subsystems.engine <= 0) {
+    // With no main engine the ship keeps drifting; only RCS can turn its bow.
+    combatant.position.x = clamp(
+      combatant.position.x + combatant.velocity.x * deltaSeconds,
+      EDGE_PADDING,
+      arena.width - EDGE_PADDING
+    );
+    combatant.position.y = clamp(
+      combatant.position.y + combatant.velocity.y * deltaSeconds,
+      EDGE_PADDING,
+      arena.height - EDGE_PADDING
+    );
+    resolveArenaObstacles(combatant, arena);
+    return;
+  }
   applyInertialThrust(
     combatant,
     headingError,

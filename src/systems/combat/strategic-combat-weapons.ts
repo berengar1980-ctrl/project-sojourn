@@ -33,6 +33,11 @@ import {
   fireControlReady,
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
+import {
+  effectiveTargetSubsystem,
+  engineShotAvailable,
+  canEngagePreferredSubsystem,
+} from './combat-subsystem-targeting';
 
 function fireRuntimeInstantWeapon(
   runtime: StrategicCombatRuntime,
@@ -84,12 +89,14 @@ function fireRuntimeInstantWeapon(
     muzzle,
     'laser',
     runtime.impactSerial,
-    shieldHit ?? undefined
+    shieldHit ?? undefined,
+    effectiveTargetSubsystem(source, target)
   );
   runtime.lastImpact = {
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
+    ...(result.subsystem ? { subsystem: result.subsystem } : {}),
     damage: result.damage,
     position: { ...result.point },
   };
@@ -98,7 +105,13 @@ function fireRuntimeInstantWeapon(
     ': ' +
     weapon.name +
     ' trifft ' +
-    (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+    (result.layer === 'shield'
+      ? 'Schild'
+      : result.subsystem === 'engine'
+        ? 'Triebwerk'
+        : result.subsystem === 'tractor'
+          ? 'Traktorstrahl'
+          : 'Hülle') +
     ' -' +
     Math.round(result.damage)
   );
@@ -134,6 +147,7 @@ function fireRuntimeProjectileWeapon(
     shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
     hullDamage: hit ? weapon.weapon.hullDamage : 0,
     critical: hit && critical,
+    targetSubsystem: effectiveTargetSubsystem(source, target),
   });
   return source.setup.name + ': ' + weapon.name + ' abgefeuert' + (critical ? ' · KRITISCH' : '');
 }
@@ -185,6 +199,7 @@ export function shouldReserveRailgun(
   railRange: number
 ): boolean {
   if (target.shieldHp > 0 || target.tactic !== 'flee' || source.tactic === 'flee') return false;
+  if (target.subsystems?.engine > 0 && engineShotAvailable(source, target)) return false;
   const dx = target.position.x - source.position.x;
   const dy = target.position.y - source.position.y;
   const range = Math.hypot(dx, dy);
@@ -226,6 +241,7 @@ export function advanceRuntimeWeapons(
         weapon?.weapon &&
         (source.cooldowns[index] ?? 0) <= 0 &&
         distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+        canEngagePreferredSubsystem(source, target) &&
         weaponInArc(source, target.position, index, weapon.weapon) &&
         !(
           weapon.weapon.family === 'railgun' &&
@@ -264,7 +280,10 @@ function recordProjectileDamage(
     projectile.position,
     projectile.kind === 'missile' ? 'missile' : 'laser',
     runtime.impactSerial,
-    shieldHit
+    shieldHit,
+    projectile.targetSubsystem === 'engine' && !engineShotAvailable(projectile, target)
+      ? 'hull'
+      : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
   runtime.lastImpact = {

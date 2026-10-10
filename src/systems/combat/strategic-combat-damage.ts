@@ -9,6 +9,7 @@ import type {
   ShieldSegmentHit,
   CombatImpactLayer,
   CombatProjectileKind,
+  CombatTargetSubsystem,
   StrategicCombatObstacle,
 } from './strategic-combat-types';
 
@@ -95,8 +96,14 @@ export function applyDamage(
   sourcePosition: CombatPoint,
   source: ShieldDamageSource,
   impactId: number,
-  shieldImpact?: ShieldSegmentHit
-): { layer: CombatImpactLayer; damage: number; point: CombatPoint } {
+  shieldImpact?: ShieldSegmentHit,
+  targetSubsystem: CombatTargetSubsystem = 'hull'
+): {
+  layer: CombatImpactLayer;
+  damage: number;
+  point: CombatPoint;
+  subsystem?: CombatTargetSubsystem;
+} {
   if (target.shieldHp > 0) {
     const geometry = combatShieldGeometry(target);
     const state = {
@@ -123,9 +130,20 @@ export function applyDamage(
     return { layer: 'shield', damage: result.absorbedDamage, point: impactPoint };
   }
 
-  const damage = Math.min(target.hullHp, scaledDamage(hullDamage, attacker, critical));
-  target.hullHp = Math.max(0, target.hullHp - damage);
-  return { layer: 'hull', damage, point: { ...target.position } };
+  const directed = targetSubsystem !== 'hull' && target.subsystems[targetSubsystem] > 0;
+  const damage = Math.min(
+    directed ? target.subsystems[targetSubsystem] : target.hullHp,
+    scaledDamage(hullDamage, attacker, critical)
+  );
+  if (directed)
+    target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);
+  else target.hullHp = Math.max(0, target.hullHp - damage);
+  return {
+    layer: 'hull',
+    damage,
+    point: { ...target.position },
+    ...(directed ? { subsystem: targetSubsystem } : {}),
+  };
 }
 
 export function projectileSpeed(kind: CombatProjectileKind): number {
