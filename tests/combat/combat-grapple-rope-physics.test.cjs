@@ -55,7 +55,8 @@ assert(
   Math.hypot(
     defender.position.x - attacker.position.x,
     defender.position.y - attacker.position.y
-  ) <= rope.ropeLength + 1e-8,
+  ) <=
+    rope.ropeLength + 1e-8,
   'the taut rope must constrain the ships to the reeled-in length'
 );
 assert(attacker.velocity.x > 0 && defender.velocity.x < 0, 'both ships must be pulled');
