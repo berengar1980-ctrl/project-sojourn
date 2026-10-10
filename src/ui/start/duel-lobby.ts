@@ -75,7 +75,10 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
       select.append(option);
     }
     if (!draft.weapons[mount.slotIndex]) {
-      draft.weapons[mount.slotIndex] = select.options[1]?.value ?? '';
+      // Guided missiles are opt-in, not an automatic default on every patrol ship.
+      draft.weapons[mount.slotIndex] = (mount.allowedMounts?.includes('guided') ?? false)
+        ? ''
+        : (select.options[1]?.value ?? '');
     }
     select.value = draft.weapons[mount.slotIndex] ?? '';
     select.addEventListener('change', () => {
