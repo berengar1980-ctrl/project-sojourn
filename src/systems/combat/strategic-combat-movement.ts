@@ -329,6 +329,14 @@ export function moveCombatant(
     targetSpeedFactor = 0.8;
   }
 
+  // Choose the weapon-facing posture before safety steering: neither a broadside
+  // nor a pursuit maneuver may discard a necessary collision correction.
+  const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
+  if (broadsideDirection) {
+    direction = broadsideDirection;
+    targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
+  }
+
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
   if (mineAvoidance) {
     direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
@@ -349,12 +357,6 @@ export function moveCombatant(
       targetSpeedFactor,
       Math.max(0.38, 0.76 - boundary.strength * 0.34)
     );
-  }
-
-  const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
-  if (broadsideDirection) {
-    direction = broadsideDirection;
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
   }
 
   const desiredHeading = Math.atan2(direction.y, direction.x);
