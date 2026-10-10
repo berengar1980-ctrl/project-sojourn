@@ -35,6 +35,21 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
         tractorBeams: points.tractorBeams?.length
           ? points.tractorBeams
           : [{ ...mount, id: 'utility-tractor' }],
+        weaponMounts: points.weaponMounts?.length
+          ? points.weaponMounts
+          : Array.from(
+              { length: definition.role === 'patrol' ? 3 : definition.role === 'freighter' ? 2 : 1 },
+              (_, index) => ({
+                id: 'weapon-slot-' + (index + 1),
+                slotIndex: index,
+                x: Math.round(points.sourceWidth * (index === 2 ? 0.83 : 0.62)),
+                y: Math.round(points.sourceHeight * (index === 0 ? 0.26 : index === 1 ? 0.74 : 0.5)),
+                width: 6,
+                facing: (index === 0 ? 'port' : index === 1 ? 'starboard' : 'forward') as
+                  'port' | 'starboard' | 'forward',
+                layer: 'above' as const,
+              })
+            ),
         grapplingHooks: points.grapplingHooks?.length
           ? points.grapplingHooks.map((point) => ({ ...point, layer: 'below' as const }))
           : [grappleMount],

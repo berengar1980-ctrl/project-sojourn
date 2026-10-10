@@ -7,6 +7,17 @@ import {
   type ShipRuntimeOptions,
 } from '../systems/ships';
 
+function combatWeaponMounts(ship: ShipDefinition) {
+  const points = ship.sprite.hardpoints;
+  const scale = ship.nominalLengthMeters / points.sourceWidth;
+  return (points.weaponMounts ?? []).map((mount) => ({
+    slotIndex: mount.slotIndex,
+    x: (mount.x - points.pivot.x) * scale,
+    y: (mount.y - points.pivot.y) * scale,
+    facing: mount.facing,
+  }));
+}
+
 export function createPlayerCombatant(
   ship: ShipDefinition,
   options: ShipRuntimeOptions
@@ -33,6 +44,7 @@ export function createPlayerCombatant(
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
     weapons,
+    weaponMounts: combatWeaponMounts(ship),
     hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
     dodgeChance: runtime.crewEffects.piloting.dodgeChance,
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,

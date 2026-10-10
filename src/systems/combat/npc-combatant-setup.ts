@@ -63,6 +63,16 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
     weapons: npcWeaponComponents(installed),
+    weaponMounts: (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
+      const points = ship.sprite.hardpoints;
+      const scale = ship.nominalLengthMeters / points.sourceWidth;
+      return {
+        slotIndex: mount.slotIndex,
+        x: (mount.x - points.pivot.x) * scale,
+        y: (mount.y - points.pivot.y) * scale,
+        facing: mount.facing,
+      };
+    }),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
     dodgeChance: pilotingDodgeChance(skill),
     damageMultiplier: weaponDamageMultiplier(skill),
