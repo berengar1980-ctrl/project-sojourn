@@ -12,6 +12,7 @@ import {
   componentHullBonus,
   componentShieldBonus,
   getShipComponent,
+  fitsWeaponHardpoint,
   getShipDefinition,
   resolveShipCombatMovementStats,
   shipHullMaxHp,
@@ -28,10 +29,12 @@ import {
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
-function npcWeaponComponents(installed: InstalledShipComponents) {
+function npcWeaponComponents(installed: InstalledShipComponents, ship: NonNullable<ReturnType<typeof getShipDefinition>>) {
   return (installed.weapon ?? []).flatMap((id, slotIndex) => {
     const component = getShipComponent('weapon', id);
-    return component?.weapon ? [{ component, slotIndex }] : [];
+    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
+      ? [{ component, slotIndex }]
+      : [];
   });
 }
 
@@ -44,7 +47,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
   const movement = resolveShipCombatMovementStats(ship);
-  const equippedWeapons = npcWeaponComponents(installed);
+  const equippedWeapons = npcWeaponComponents(installed, ship);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
