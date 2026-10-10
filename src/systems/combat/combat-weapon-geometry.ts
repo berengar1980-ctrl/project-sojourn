@@ -31,7 +31,7 @@ export function weaponInArc(
   const degrees = Math.min(weaponArc, mount?.arcDegrees ?? 360);
   if (degrees >= 360) return true;
   const muzzle = weaponMuzzle(source, slot);
-  const side = mount?.facing;
+  const side = mount?.facing ?? (kind === 'broadside' ? 'port' : 'forward');
   const facing =
     source.headingRadians +
     (side === 'starboard' ? Math.PI / 2 : side === 'port' ? -Math.PI / 2 : 0);
