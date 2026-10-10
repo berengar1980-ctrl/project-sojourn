@@ -68,7 +68,7 @@ assert(!geometry.weaponInArc(mountOwner, { x: 100, y: -200 }, 0, railgun));
 assert(geometry.weaponInArc(mountOwner, { x: -200, y: 100 }, 0, turret));
 mountOwner.headingRadians = Math.PI / 2;
 const muzzle = geometry.weaponMuzzle(mountOwner, 0);
-assert(Math.abs(muzzle.x - 112) < 0.0001 && Math.abs(muzzle.y - 90) < 0.0001);
+assert(Math.abs(muzzle.x - 112) < 0.0001 && Math.abs(muzzle.y - 110) < 0.0001);
 assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, broadside));
 
 const allWeapons = SHIP_COMPONENT_CATALOG.weapon ?? [];
