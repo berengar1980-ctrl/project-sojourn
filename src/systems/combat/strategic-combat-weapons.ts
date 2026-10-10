@@ -33,7 +33,10 @@ import {
   fireControlReady,
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
-import { effectiveTargetSubsystem } from './combat-subsystem-targeting';
+import {
+  effectiveTargetSubsystem,
+  engineShotAvailable,
+} from './combat-subsystem-targeting';
 
 function fireRuntimeInstantWeapon(
   runtime: StrategicCombatRuntime,
@@ -269,7 +272,9 @@ function recordProjectileDamage(
     projectile.kind === 'missile' ? 'missile' : 'laser',
     runtime.impactSerial,
     shieldHit,
-    projectile.targetSubsystem ?? 'hull'
+    projectile.targetSubsystem === 'engine' && !engineShotAvailable(projectile, target)
+      ? 'hull'
+      : projectile.targetSubsystem ?? 'hull'
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
   runtime.lastImpact = {
