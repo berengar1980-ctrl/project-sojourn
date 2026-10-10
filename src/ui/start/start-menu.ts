@@ -37,9 +37,10 @@ export function createStartMenu(
     button.textContent = entry.label;
     button.disabled = !entry.action;
     if (!entry.action) {
-      button.title = entry.label === 'Kampagnen'
-        ? 'Kampagnenverwaltung folgt in einer späteren Version'
-        : 'Spielstände sind noch nicht implementiert';
+      button.title =
+        entry.label === 'Kampagnen'
+          ? 'Kampagnenverwaltung folgt in einer späteren Version'
+          : 'Spielstände sind noch nicht implementiert';
     } else {
       button.dataset.action = entry.action;
       button.addEventListener('click', () => onAction(entry.action!));

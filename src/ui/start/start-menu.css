@@ -11,8 +11,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(3, 6, 10, .9), rgba(3, 6, 10, .68) 44%, rgba(3, 6, 10, .34)),
-    linear-gradient(0deg, rgba(2, 4, 7, .62), transparent 55%, rgba(2, 4, 7, .35));
+    linear-gradient(90deg, rgba(3, 6, 10, 0.9), rgba(3, 6, 10, 0.68) 44%, rgba(3, 6, 10, 0.34)),
+    linear-gradient(0deg, rgba(2, 4, 7, 0.62), transparent 55%, rgba(2, 4, 7, 0.35));
 }
 .harrow-start__layout {
   position: relative;
@@ -29,13 +29,13 @@
   grid-column: 1 / -1;
   max-width: 620px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(199, 164, 91, .75);
+  border-bottom: 1px solid rgba(199, 164, 91, 0.75);
 }
 .harrow-start__brand h1 {
   margin: 0;
   font-size: clamp(36px, 5vw, 74px);
   font-weight: 700;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
   line-height: 1.1;
   color: #e5e7e4;
   text-shadow: 0 2px 18px #000;
@@ -53,22 +53,24 @@
   text-align: left;
   font: inherit;
   font-size: 20px;
-  letter-spacing: .035em;
-  background: rgba(8, 14, 20, .86);
+  letter-spacing: 0.035em;
+  background: rgba(8, 14, 20, 0.86);
   border: 1px solid #4a5662;
   color: #dce1e6;
-  box-shadow: 0 7px 22px rgba(0, 0, 0, .22);
+  box-shadow: 0 7px 22px rgba(0, 0, 0, 0.22);
   cursor: pointer;
 }
 .harrow-start__nav button:hover:not(:disabled),
 .harrow-start__nav button:focus-visible {
   border-color: #c5a94f;
-  background: rgba(43, 42, 25, .84);
+  background: rgba(43, 42, 25, 0.84);
   color: #efd66b;
-  box-shadow: inset 4px 0 0 #d8bc52, 0 7px 22px rgba(0, 0, 0, .3);
+  box-shadow:
+    inset 4px 0 0 #d8bc52,
+    0 7px 22px rgba(0, 0, 0, 0.3);
 }
 .harrow-start__nav button:disabled {
-  opacity: .35;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 @media (max-width: 660px) {
@@ -76,8 +78,13 @@
     grid-template-columns: minmax(0, 1fr);
     padding: 35px 24px;
   }
-  .harrow-start__brand { grid-column: 1; }
-  .harrow-start__nav button { min-height: 54px; font-size: 16px; }
+  .harrow-start__brand {
+    grid-column: 1;
+  }
+  .harrow-start__nav button {
+    min-height: 54px;
+    font-size: 16px;
+  }
 }
 
 .harrow-duel {
@@ -92,12 +99,12 @@
   margin: 0 0 16px;
   color: #e5e7e4;
   font-size: clamp(22px, 3vw, 42px);
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
 }
 .harrow-duel > p {
   max-width: 640px;
   padding: 10px 15px;
-  background: rgba(3, 6, 10, .84);
+  background: rgba(3, 6, 10, 0.84);
   color: #afbdca;
 }
 .harrow-duel__cards {
@@ -109,7 +116,7 @@
 }
 .harrow-duel__card {
   padding: 22px;
-  background: rgba(8, 14, 20, .92);
+  background: rgba(8, 14, 20, 0.92);
   border: 1px solid #4a5662;
 }
 .harrow-duel__card h2 {
@@ -122,7 +129,7 @@
   margin: 12px 0;
   color: #aab2bc;
   font-size: 13px;
-  letter-spacing: .05em;
+  letter-spacing: 0.05em;
 }
 .harrow-duel select {
   width: 100%;
@@ -141,9 +148,13 @@
   background: #171b1c;
   border: 1px solid #8b7941;
 }
-.harrow-duel button:hover { background: #303027; }
+.harrow-duel button:hover {
+  background: #303027;
+}
 @media (max-width: 760px) {
-  .harrow-duel__cards { grid-template-columns: 1fr; }
+  .harrow-duel__cards {
+    grid-template-columns: 1fr;
+  }
 }
 .harrow-options__slider {
   display: grid;
@@ -153,10 +164,16 @@
   max-width: 650px;
   margin: 18px 0;
   padding: 10px 14px;
-  background: rgba(8, 14, 20, .86);
+  background: rgba(8, 14, 20, 0.86);
 }
-.harrow-options__slider input { accent-color: #d8bc52; }
-.harrow-options__slider output { text-align: right; }
+.harrow-options__slider input {
+  accent-color: #d8bc52;
+}
+.harrow-options__slider output {
+  text-align: right;
+}
 @media (max-width: 550px) {
-  .harrow-options__slider { grid-template-columns: 1fr; }
+  .harrow-options__slider {
+    grid-template-columns: 1fr;
+  }
 }

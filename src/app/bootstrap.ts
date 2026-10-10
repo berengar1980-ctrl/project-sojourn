@@ -12,7 +12,6 @@ export function bootstrap(root: HTMLElement | null): void {
 }
 
 function launchCampaign(root: HTMLElement): void {
-
   const ship = getShipDefinition('salvage-100m-variant-01');
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
@@ -68,11 +67,7 @@ function showStartOptions(root: HTMLElement, back: () => void): void {
   const description = document.createElement('p');
   description.textContent = 'Audioeinstellungen gelten auch im Kampagnenspiel.';
   screen.append(title, description);
-  const addSlider = (
-    label: string,
-    volume: number,
-    onChange: (value: number) => void
-  ): void => {
+  const addSlider = (label: string, volume: number, onChange: (value: number) => void): void => {
     const row = document.createElement('label');
     row.className = 'harrow-options__slider';
     row.textContent = label;
@@ -94,9 +89,7 @@ function showStartOptions(root: HTMLElement, back: () => void): void {
   addSlider('Umgebungslautstärke', settings.ambienceVolume, (value) =>
     audio.setAmbienceVolume(value)
   );
-  addSlider('RCS-Lautstärke', settings.rcsVolume, (value) =>
-    audio.setRcsVolume(value)
-  );
+  addSlider('RCS-Lautstärke', settings.rcsVolume, (value) => audio.setRcsVolume(value));
   const button = document.createElement('button');
   button.textContent = 'Zurück zum Hauptmenü';
   button.addEventListener('click', () => {

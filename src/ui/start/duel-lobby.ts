@@ -90,8 +90,15 @@ function crewSelector(draft: DuelDraft): HTMLLabelElement {
   for (const member of crewDefinitions) {
     const option = document.createElement('option');
     option.value = member.id;
-    option.textContent = member.name + ' · ' + member.title +
-      ' (Pilot ' + member.skills.piloting + ', Waffen ' + member.skills.weapons + ')';
+    option.textContent =
+      member.name +
+      ' · ' +
+      member.title +
+      ' (Pilot ' +
+      member.skills.piloting +
+      ', Waffen ' +
+      member.skills.weapons +
+      ')';
     select.append(option);
   }
   select.value = draft.crewId;
@@ -134,15 +141,17 @@ function duelCombatant(
   const mounts = equipped.flatMap((entry, slotIndex) => {
     const mount = points.weaponMounts?.find((point) => point.slotIndex === entry.slotIndex);
     return mount
-      ? [{
-          slotIndex,
-          x: (mount.x - points.pivot.x) * scale,
-          y: (mount.y - points.pivot.y) * scale,
-          facing: mount.facing,
-          ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-          ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-          ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-        }]
+      ? [
+          {
+            slotIndex,
+            x: (mount.x - points.pivot.x) * scale,
+            y: (mount.y - points.pivot.y) * scale,
+            facing: mount.facing,
+            ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
+            ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
+            ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
+          },
+        ]
       : [];
   });
   const crew = crewDefinitionById(draft.crewId);
@@ -175,14 +184,19 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
     { shipId: ships[0]!.id, weapons: [], crewId: crewDefinitions[0]!.id },
-    { shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id, weapons: [], crewId: crewDefinitions[1]!.id },
+    {
+      shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id,
+      weapons: [],
+      crewId: crewDefinitions[1]!.id,
+    },
   ];
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
   const title = document.createElement('h1');
   title.textContent = 'HARROWDRIFT · LOKALES DUELL';
   const description = document.createElement('p');
-  description.textContent = 'Zwei Schiffe mit individuellen Waffen und Crewmitgliedern. Danach übernehmen die Kampf-KIs.';
+  description.textContent =
+    'Zwei Schiffe mit individuellen Waffen und Crewmitgliedern. Danach übernehmen die Kampf-KIs.';
   const cards = document.createElement('div');
   cards.className = 'harrow-duel__cards';
   const actions = document.createElement('div');
@@ -203,9 +217,13 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     cards.replaceChildren(...drafts.map((draft, index) => playerCard(index, draft, ships, render)));
   };
   fight.addEventListener('click', () => {
-    const setups = drafts.map((draft) => duelCombatant(
-      drafts.indexOf(draft), draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
-    ));
+    const setups = drafts.map((draft) =>
+      duelCombatant(
+        drafts.indexOf(draft),
+        draft,
+        ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
+      )
+    );
     const combat = createStrategicCombatService(setups[0]!, setups[1]!);
     activePanel = createStrategicCombatPanel({
       root,

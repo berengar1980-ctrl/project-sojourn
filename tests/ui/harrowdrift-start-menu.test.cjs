@@ -26,7 +26,8 @@ for (const title of [
   'Speichern / Laden',
   'Optionen',
   'Beenden',
-]) assert(menu.includes(title), 'missing menu entry: ' + title);
+])
+  assert(menu.includes(title), 'missing menu entry: ' + title);
 assert(menu.includes('button.disabled = !entry.action'), 'future features must be disabled');
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
