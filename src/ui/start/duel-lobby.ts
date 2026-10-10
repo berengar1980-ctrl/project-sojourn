@@ -21,22 +21,161 @@ interface DuelDraft {
   crew: number;
 }
 
+function createLabel(text: string, control: HTMLElement): HTMLLabelElement {
+  const label = document.createElement('label');
+  label.textContent = text;
+  label.append(control);
+  return label;
+}
+
+function shipSelector(
+  draft: DuelDraft,
+  ships: readonly ShipDefinition[],
+  rerender: () => void
+): HTMLLabelElement {
+  const select = document.createElement('select');
+  for (const ship of ships) {
+    const option = document.createElement('option');
+    option.value = ship.id;
+    option.textContent = ship.name;
+    select.append(option);
+  }
+  select.value = draft.shipId;
+  select.addEventListener('change', () => {
+    draft.shipId = select.value;
+    draft.weapons = [];
+    rerender();
+  });
+  return createLabel('Schiff', select);
+}
+
+function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelElement[] {
+  const catalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
+  return (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
+    const select = document.createElement('select');
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = 'Nicht ausgerüstet';
+    select.append(empty);
+    for (const component of catalog) {
+      if (!component.weapon || !fitsWeaponHardpoint(ship, mount.slotIndex, component.weapon)) {
+        continue;
+      }
+      const option = document.createElement('option');
+      option.value = component.id;
+      option.textContent = component.name;
+      select.append(option);
+    }
+    if (!draft.weapons[mount.slotIndex]) {
+      draft.weapons[mount.slotIndex] = select.options[1]?.value ?? '';
+    }
+    select.value = draft.weapons[mount.slotIndex] ?? '';
+    select.addEventListener('change', () => {
+      draft.weapons[mount.slotIndex] = select.value;
+    });
+    return createLabel('Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + mount.facing, select);
+  });
+}
+
+function crewSelector(draft: DuelDraft): HTMLLabelElement {
+  const select = document.createElement('select');
+  for (const [value, label] of [
+    [25, 'Rekruten'],
+    [50, 'Erfahren'],
+    [75, 'Veteranen'],
+    [95, 'Elite'],
+  ] as const) {
+    const option = document.createElement('option');
+    option.value = String(value);
+    option.textContent = label;
+    select.append(option);
+  }
+  select.value = String(draft.crew);
+  select.addEventListener('change', () => {
+    draft.crew = Number(select.value);
+  });
+  return createLabel('Crew-Erfahrung', select);
+}
+
+function playerCard(
+  index: number,
+  draft: DuelDraft,
+  ships: readonly ShipDefinition[],
+  rerender: () => void
+): HTMLElement {
+  const card = document.createElement('section');
+  card.className = 'harrow-duel__card';
+  const heading = document.createElement('h2');
+  heading.textContent = 'Spieler ' + (index + 1);
+  const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
+  card.append(heading, shipSelector(draft, ships, rerender));
+  card.append(...weaponSelectors(draft, ship));
+  card.append(crewSelector(draft));
+  return card;
+}
+
+function duelCombatant(
+  index: number,
+  draft: DuelDraft,
+  ship: ShipDefinition
+): StrategicCombatantSetup {
+  const points = ship.sprite.hardpoints;
+  const scale = ship.nominalLengthMeters / points.sourceWidth;
+  const equipped = draft.weapons.flatMap((id, slotIndex) => {
+    const component = getShipComponent('weapon', id);
+    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
+      ? [{ component, slotIndex }]
+      : [];
+  });
+  const mounts = equipped.flatMap((entry, slotIndex) => {
+    const mount = points.weaponMounts?.find((point) => point.slotIndex === entry.slotIndex);
+    return mount
+      ? [{
+          slotIndex,
+          x: (mount.x - points.pivot.x) * scale,
+          y: (mount.y - points.pivot.y) * scale,
+          facing: mount.facing,
+          ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
+          ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
+          ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
+        }]
+      : [];
+  });
+  const experience = draft.crew / 100;
+  return {
+    id: 'duelist-' + index,
+    name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
+    shipId: ship.id,
+    shieldHp: shipShieldMaxHp(ship),
+    shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
+    hullHp: shipHullMaxHp(ship),
+    weapons: equipped.map((entry) => entry.component),
+    weaponMounts: mounts,
+    hitChance: 0.58 + experience * 0.24,
+    dodgeChance: experience * 0.13,
+    damageMultiplier: 0.95 + experience * 0.16,
+    criticalChance: experience * 0.12,
+    cycleTimeMultiplier: 1.12 - experience * 0.18,
+    preferredTactic: 'fight',
+    ...resolveShipCombatMovementStats(ship),
+    tractorRangeMeters: points.tractorBeams.length ? 400 : 0,
+    aiControlled: true,
+    aiAggression: 90,
+  };
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
-  const weapons = SHIP_COMPONENT_CATALOG.weapon ?? [];
   const drafts: [DuelDraft, DuelDraft] = [
     { shipId: ships[0]!.id, weapons: [], crew: 50 },
     { shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id, weapons: [], crew: 50 },
   ];
-  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
-  let canceled = false;
-  let frame = 0;
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
   const title = document.createElement('h1');
   title.textContent = 'HARROWDRIFT · LOKALES DUELL';
   const description = document.createElement('p');
-  description.textContent = 'Beide Spieler konfigurieren ihre Schiffe und Crews. Im Gefecht übernimmt jeweils die Kampf-KI.';
+  description.textContent = 'Zwei Schiffe mit individuellen Waffen und Crew-Erfahrung. Danach übernehmen die Kampf-KIs.';
   const cards = document.createElement('div');
   cards.className = 'harrow-duel__cards';
   const actions = document.createElement('div');
@@ -50,126 +189,17 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   shell.append(title, description, cards, actions);
   root.replaceChildren(shell);
 
-  const shipFor = (index: number): ShipDefinition =>
-    ships.find((ship) => ship.id === drafts[index]!.shipId) ?? ships[0]!;
-
-  const configure = (index: number): void => {
-    const draft = drafts[index]!;
-    const card = document.createElement('section');
-    card.className = 'harrow-duel__card';
-    const heading = document.createElement('h2');
-    heading.textContent = 'Spieler ' + (index + 1);
-    const shipLabel = document.createElement('label');
-    shipLabel.textContent = 'Schiff';
-    const shipSelect = document.createElement('select');
-    for (const ship of ships) {
-      const option = document.createElement('option');
-      option.value = ship.id;
-      option.textContent = ship.name;
-      shipSelect.append(option);
-    }
-    shipSelect.value = draft.shipId;
-    shipSelect.addEventListener('change', () => {
-      draft.shipId = shipSelect.value;
-      draft.weapons = [];
-      render();
-    });
-    shipLabel.append(shipSelect);
-    card.append(heading, shipLabel);
-    const current = shipFor(index);
-    for (const mount of current.sprite.hardpoints.weaponMounts ?? []) {
-      const label = document.createElement('label');
-      label.textContent = 'Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + mount.facing;
-      const select = document.createElement('select');
-      const empty = document.createElement('option');
-      empty.value = '';
-      empty.textContent = 'Nicht ausgerüstet';
-      select.append(empty);
-      for (const weapon of weapons) {
-        if (!weapon.weapon || !fitsWeaponHardpoint(current, mount.slotIndex, weapon.weapon)) {
-          continue;
-        }
-        const option = document.createElement('option');
-        option.value = weapon.id;
-        option.textContent = weapon.name;
-        select.append(option);
-      }
-      if (!draft.weapons[mount.slotIndex]) {
-        draft.weapons[mount.slotIndex] = select.options[1]?.value ?? '';
-      }
-      select.value = draft.weapons[mount.slotIndex] ?? '';
-      select.addEventListener('change', () => { draft.weapons[mount.slotIndex] = select.value; });
-      label.append(select);
-      card.append(label);
-    }
-    const crewLabel = document.createElement('label');
-    crewLabel.textContent = 'Crew-Erfahrung';
-    const crew = document.createElement('select');
-    for (const [value, name] of [[25, 'Rekruten'], [50, 'Erfahren'], [75, 'Veteranen'], [95, 'Elite']] as const) {
-      const option = document.createElement('option');
-      option.value = String(value);
-      option.textContent = name;
-      crew.append(option);
-    }
-    crew.value = String(draft.crew);
-    crew.addEventListener('change', () => { draft.crew = Number(crew.value); });
-    crewLabel.append(crew);
-    card.append(crewLabel);
-    cards.append(card);
-  };
-
+  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
+  let canceled = false;
+  let frame = 0;
   const render = (): void => {
-    cards.replaceChildren();
-    configure(0);
-    configure(1);
+    cards.replaceChildren(...drafts.map((draft, index) => playerCard(index, draft, ships, render)));
   };
-
-  const combatant = (index: number): StrategicCombatantSetup => {
-    const draft = drafts[index]!;
-    const ship = shipFor(index);
-    const hardpoints = ship.sprite.hardpoints;
-    const scale = ship.nominalLengthMeters / hardpoints.sourceWidth;
-    const selected = draft.weapons.flatMap((id, slotIndex) => {
-      const component = getShipComponent('weapon', id);
-      return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
-        ? [{ component, slotIndex }] : [];
-    });
-    const crew = draft.crew / 100;
-    return {
-      id: 'duelist-' + index,
-      name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
-      shipId: ship.id,
-      shieldHp: shipShieldMaxHp(ship),
-      shieldGeometry: createCombatShieldGeometry(hardpoints, ship.nominalLengthMeters),
-      hullHp: shipHullMaxHp(ship, 0),
-      weapons: selected.map((entry) => entry.component),
-      weaponMounts: selected.flatMap((entry, slotIndex) => {
-        const mount = hardpoints.weaponMounts?.find((point) => point.slotIndex === entry.slotIndex);
-        return mount ? [{
-          slotIndex,
-          x: (mount.x - hardpoints.pivot.x) * scale,
-          y: (mount.y - hardpoints.pivot.y) * scale,
-          facing: mount.facing,
-          ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-          ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-          ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-        }] : [];
-      }),
-      hitChance: 0.58 + crew * 0.24,
-      dodgeChance: crew * 0.13,
-      damageMultiplier: 0.95 + crew * 0.16,
-      criticalChance: crew * 0.12,
-      cycleTimeMultiplier: 1.12 - crew * 0.18,
-      preferredTactic: 'fight',
-      ...resolveShipCombatMovementStats(ship),
-      tractorRangeMeters: hardpoints.tractorBeams.length ? 400 : 0,
-      aiControlled: true,
-      aiAggression: 90,
-    };
-  };
-
   fight.addEventListener('click', () => {
-    const combat = createStrategicCombatService(combatant(0), combatant(1));
+    const setups = drafts.map((draft) => duelCombatant(
+      drafts.indexOf(draft), draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
+    ));
+    const combat = createStrategicCombatService(setups[0]!, setups[1]!);
     activePanel = createStrategicCombatPanel({
       root,
       combat,
@@ -191,7 +221,6 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     };
     frame = requestAnimationFrame(tick);
   });
-
   render();
   return {
     destroy() {
