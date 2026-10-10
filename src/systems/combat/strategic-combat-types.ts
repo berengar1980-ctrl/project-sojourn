@@ -1,4 +1,3 @@
-import type { CombatGrapple } from './combat-grapple-service';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import type { ShieldImpactEffect } from '../../core/shield-types';
@@ -20,6 +19,16 @@ export type CombatBeamKind = 'laser' | 'rail';
 export interface CombatPoint {
   readonly x: number;
   readonly y: number;
+}
+
+export interface CombatGrapple {
+  readonly owner: StrategicCombatSide;
+  readonly success: boolean;
+  readonly elapsed: number;
+  readonly duration: number;
+  readonly origin: CombatPoint;
+  readonly target: CombatPoint;
+  readonly resolved: boolean;
 }
 
 export interface CombatShieldGeometry {
