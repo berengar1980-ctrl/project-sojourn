@@ -147,7 +147,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       : null,
     grappleUsed: { ...runtime.grappleUsed },
     lastEvent: runtime.lastEvent,
-    combatLog: runtime.combatLog.map((entry) => ({ ...entry })),
+    combatLog: runtime.combatLog.slice(-80).map((entry) => ({ ...entry })),
     projectiles: runtime.projectiles.map((projectile) => ({
       id: projectile.id,
       owner: projectile.owner,
