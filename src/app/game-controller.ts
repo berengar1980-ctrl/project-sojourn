@@ -4,15 +4,13 @@ import { createStarMapEngagementService } from '../systems/combat';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import { createShipLoadoutService } from '../systems/ships';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
-import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
-
 import { createPlayerCombatant } from './game-controller-combat';
-
+import { startCombatBoarding } from './game-controller-combat-boarding';
+import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
-
 import { createControllerStarPanel } from './game-controller-star-map';
 
 import type {
@@ -69,6 +67,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     context.navigation,
     (nextShip) => {
       state.activeShip = nextShip;
+      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (state.mode === 'local-space') mountControllerMining(context, true);
       else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
@@ -117,31 +116,6 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   mountControllerSwitcher(context);
 }
 
-function mountControllerCombat(context: ControllerRuntimeContext): void {
-  const combat = context.engagements.activePlayerCombat();
-  if (!combat) return;
-  const { state } = context;
-  destroyScenePanels(state.panels);
-  destroyControllerSalvage(context);
-  destroyControllerCombat(context);
-  destroyControllerBoarding(context);
-  state.localSpace = null;
-  state.localNpcMining = null;
-  state.embeddedCombat = null;
-  state.mode = 'combat';
-  context.audio.clearPlayerRcs();
-  state.combatPanel = createStrategicCombatPanel({
-    root: context.root,
-    combat,
-    onReturn: () => {
-      context.engagements.finishPlayerCombat();
-      runSceneZoomTransition(context.root, () => mountControllerStarMap(context));
-    },
-  });
-  state.shipSwitcher?.destroy();
-  state.shipSwitcher = null;
-}
-
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
@@ -169,6 +143,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     state.ownedShipIds,
     (nextShip) => {
       state.activeShip = nextShip;
+      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     }
   );
@@ -261,6 +236,9 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
         state.panels.local?.update(controllerLocalModel(context));
       }
     },
+    onCombatGrapple: () => {
+      context.engagements.activePlayerCombat()?.fireGrapple('attacker');
+    },
     onCombatTactic: (tactic) => {
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
       state.panels.local?.update(controllerLocalModel(context));
@@ -279,6 +257,10 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
   state.localNpcMining = null;
   const currentLocationId = context.navigation.getSnapshot().currentLocationId;
   const sectorEvent = context.economy.salvageEvents.event(currentLocationId);
+  if (sectorEvent && state.activeShip.role !== 'salvage') {
+    context.systemLog.write('BERGUNG > HILFERUF NUR MIT BERGUNGSSCHIFF VERFÜGBAR');
+    return mountControllerStarMap(context);
+  }
   const location =
     salvageLocationById(currentLocationId) ?? sectorEventLocation(context, currentLocationId);
   if (!location) return mountControllerStarMap(context);
@@ -328,6 +310,9 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
         ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
         : null,
     isCombatActive: () => state.embeddedCombat === 'salvage-space',
+    onCombatGrapple: () => {
+      context.engagements.activePlayerCombat()?.fireGrapple('attacker');
+    },
     onCombatTactic: (tactic) => {
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
     },
@@ -344,10 +329,14 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
   if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
-    mountControllerCombat(context);
+    mountCombatScene(context, () => mountControllerStarMap(context));
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
+  if (snapshot.boardingInitiator) {
+    startCombatBoarding(context, snapshot, () => mountControllerStarMap(context));
+    return;
+  }
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   if (state.embeddedCombat === 'local-space') {
     state.localSpace?.syncCombatPose(
@@ -419,6 +408,7 @@ function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: nu
 
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
+  economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   economy.sectorNpcs.tick(deltaSeconds);
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
@@ -486,7 +476,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,
-    true
+    state.activeShip.role === 'salvage'
   );
   createSettingsMenu(context.audio);
   mountControllerStarMap(context);

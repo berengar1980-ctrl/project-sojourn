@@ -121,7 +121,7 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     context.navigation.getSnapshot().currentPosition,
-    true
+    context.state.activeShip.role === 'salvage'
   );
   for (const event of economy.salvageEvents.playerVisible) {
     if (!before.has(event.id))
@@ -253,7 +253,8 @@ export function controllerSalvageEventCallbacks(
       if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
       applyDistressOutcome(context, result);
       if (result?.success) {
-        runSceneZoomTransition(context.root, actions.mountStarMap);
+        state.salvageScene?.beginDistressRepair();
+        setTimeout(() => runSceneZoomTransition(context.root, actions.mountStarMap), 5500);
       } else {
         actions.mountSalvage(true);
       }
@@ -266,7 +267,12 @@ export function controllerSalvageEventCallbacks(
         return;
       }
       context.systemLog.write('SCHLEPPEN > MANUELL ZUM MARKIERTEN AUSGANG FLIEGEN');
-      actions.mountSalvage(true);
+      const event = economy.salvageEvents.event(eventId);
+      if (event && context.state.salvageScene) {
+        context.state.salvageScene.beginDistressTow(event);
+      } else {
+        actions.mountSalvage(true);
+      }
     },
     onEvacuateDistress: (eventId: string) => {
       const result = economy.salvageEvents.evacuateDistress(eventId);

@@ -14,6 +14,7 @@ export interface SalvageSpacePanelOptions {
   readonly onSelectNpc: (id: string | null) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onCombatTactic: (tactic: CombatTactic) => void;
+  readonly onCombatGrapple: () => void;
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
@@ -62,7 +63,8 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button type="button" data-tactic="fight">KAMPF</button>',
     '<button type="button" data-tactic="kite">DISTANZ</button>',
     '<button type="button" data-tactic="minefield">MINEN</button>',
-    '<button type="button" data-tactic="flee">FLUCHT</button></div>',
+    '<button type="button" data-tactic="flee">FLUCHT</button>',
+    '<button type="button" data-grapple>GREIFHAKEN</button></div>',
     '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
     '<aside class="sector-salvage-event" hidden></aside>',
     '<aside class="salvage-event" hidden></aside>',

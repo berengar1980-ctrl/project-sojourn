@@ -1,3 +1,15 @@
+import {
+  advanceDistressRamming,
+  createDistressRammingState,
+  type DistressRammingState,
+} from '../systems/salvage/distress-ramming-physics';
+import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
+import {
+  advanceDistressTow,
+  createDistressTowState,
+  towShipAtExit,
+  type DistressTowState,
+} from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
@@ -24,6 +36,8 @@ import {
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
+  beginDistressTow(event: SectorSalvageEvent): void;
+  beginDistressRepair(): void;
   tick(deltaSeconds: number): void;
   finishCombat(snapshot: StrategicCombatSnapshot): void;
   destroy(): void;
@@ -69,6 +83,7 @@ interface SalvageSceneOptions {
   readonly onSectorEventResolved?: (eventId: string) => void;
   readonly isCombatActive?: () => boolean;
   readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
+  readonly onCombatGrapple?: () => void;
 }
 
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
@@ -76,6 +91,10 @@ type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
 interface SalvageSceneState {
   selectedNpcId: string | null;
   sectorEventResolved: boolean;
+  activeSectorEvent: SectorSalvageEvent | null;
+  distressTow: DistressTowState | null;
+  distressRamming: DistressRammingState | null;
+  distressRepairing: boolean;
   panel: SalvageSpacePanel | null;
 }
 
@@ -142,7 +161,10 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     salvageNpcShips(npcSalvage),
     state.selectedNpcId,
     options.getCombat?.() ?? null,
-    options.sectorEvent ?? null
+    state.activeSectorEvent,
+    state.distressTow,
+    state.distressRamming,
+    state.distressRepairing
   );
 }
 
@@ -186,6 +208,10 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     },
     onAttackNpc(id) {
       attackSalvageNpc(context, id);
+    },
+    onCombatGrapple() {
+      options.onCombatGrapple?.();
+      refresh();
     },
     onCombatTactic(tactic) {
       options.onCombatTactic?.(tactic);
@@ -233,6 +259,18 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         refresh();
         return;
       }
+      if (
+        state.activeSectorEvent?.distressStage === 'towing' &&
+        (!state.distressTow ||
+          !towShipAtExit(
+            snapshot.ship.position,
+            state.distressTow,
+            localSpaceExitPoint(width, height)
+          ))
+      ) {
+        options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
+        return;
+      }
       options.onReturnToStarMap();
     },
   });
@@ -262,6 +300,39 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
     service.tick(deltaSeconds);
+    if (context.state.distressRamming && !context.state.distressTow) {
+      const snapshot = service.getSnapshot();
+      const wreck = context.field.wrecks[0];
+      if (wreck) {
+        const result = advanceDistressRamming(
+          context.state.distressRamming,
+          snapshot.ship.position,
+          wreck.position,
+          options.ship.nominalLengthMeters * 0.42,
+          wreck.radius,
+          deltaSeconds
+        );
+        context.state.distressRamming = result.state;
+        context.field.wrecks[0] = { ...wreck, position: result.position };
+      }
+    }
+    if (context.state.distressTow) {
+      const player = service.getSnapshot().ship;
+      context.state.distressTow = advanceDistressTow(
+        context.state.distressTow,
+        player.position,
+        player.headingRadians,
+        deltaSeconds
+      );
+      const wreck = context.field.wrecks[0];
+      if (wreck) {
+        context.field.wrecks[0] = {
+          ...wreck,
+          position: { ...context.state.distressTow.position },
+          rotation: context.state.distressTow.headingRadians,
+        };
+      }
+    }
     options.audio.updatePlayerRcs(
       options.ship.sprite.hardpoints,
       service.getSnapshot().ship,
@@ -318,6 +389,16 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
+      distressRepairing: false,
+      activeSectorEvent: options.sectorEvent ?? null,
+      distressRamming:
+        options.sectorEvent?.type === 'distress-rescue'
+          ? createDistressRammingState(service.getSnapshot().ship.position)
+          : null,
+      distressTow:
+        options.sectorEvent?.distressStage === 'towing' && field.wrecks[0]
+          ? createDistressTowState(field.wrecks[0].position, field.wrecks[0].rotation)
+          : null,
       panel: null,
     },
   };
@@ -329,6 +410,17 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
+    beginDistressRepair() {
+      context.state.distressRepairing = true;
+      refreshSalvageScene(context);
+    },
+    beginDistressTow(event) {
+      context.state.activeSectorEvent = event;
+      const wreck = context.field.wrecks[0];
+      if (wreck) context.state.distressTow = createDistressTowState(wreck.position, wreck.rotation);
+      options.log.write('SCHLEPPEN > GREIFHAKEN ABGESCHOSSEN');
+      refreshSalvageScene(context);
+    },
     finishCombat(snapshot) {
       finishSalvageCombat(context, snapshot);
     },

@@ -15,6 +15,7 @@ export interface LocalSpacePanelOptions {
   readonly onSelectNpc: (id: string | null) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onCombatTactic: (tactic: CombatTactic) => void;
+  readonly onCombatGrapple: () => void;
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
@@ -73,7 +74,8 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
     '<button type="button" data-tactic="fight">KAMPF</button>',
     '<button type="button" data-tactic="kite">DISTANZ</button>',
     '<button type="button" data-tactic="minefield">MINEN</button>',
-    '<button type="button" data-tactic="flee">FLUCHT</button></div>',
+    '<button type="button" data-tactic="flee">FLUCHT</button>',
+    '<button type="button" data-grapple>GREIFHAKEN</button></div>',
     '<div class="local-mining-status" hidden></div>',
     '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
     '<aside class="local-mining-event" hidden></aside>',

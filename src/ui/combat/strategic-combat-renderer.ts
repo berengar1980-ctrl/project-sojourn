@@ -1,3 +1,6 @@
+import { hash, clamp01 } from './strategic-combat-renderer-math';
+import { DistressDamageParticles } from '../salvage/distress-damage-particles';
+import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
   CombatImpactSnapshot,
@@ -22,22 +25,10 @@ interface Point {
   readonly y: number;
 }
 
-function hash(value: string): number {
-  let result = 2166136261;
-  for (const char of value) {
-    result ^= char.charCodeAt(0);
-    result = Math.imul(result, 16777619);
-  }
-  return result >>> 0;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly images = new Map<string, HTMLImageElement>();
+  private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly lighting = new ShipLightingRenderer();
@@ -135,8 +126,22 @@ export class StrategicCombatRenderer {
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
     this.drawBeams(width, height);
+    drawCombatGrapple(
+      this.context,
+      this.model,
+      (point) => this.screen(point, width, height),
+      (side) => {
+        const combatant = this.model[side];
+        const geometry = this.shipGeometry(combatant, width, height);
+        const points = getShipDefinition(combatant.shipId)?.sprite.hardpoints;
+        const mount = points?.grapplingHooks?.[0];
+        return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
+      }
+    );
     this.drawShip(this.model.attacker, width, height, timeSeconds);
+    this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
     this.drawShip(this.model.defender, width, height, timeSeconds);
+    this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
@@ -310,6 +315,37 @@ export class StrategicCombatRenderer {
       this.context.stroke();
     }
     this.context.restore();
+  }
+
+  private drawCombatDamage(
+    combatant: StrategicCombatSnapshot['attacker'],
+    width: number,
+    height: number,
+    now: number
+  ): void {
+    const fraction = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
+    if (fraction > 0.85 && !this.damageParticles.has(combatant.id)) return;
+    let particles = this.damageParticles.get(combatant.id);
+    if (!particles) {
+      particles = new DistressDamageParticles();
+      this.damageParticles.set(combatant.id, particles);
+    }
+    const geometry = this.shipGeometry(combatant, width, height);
+    const camera = {
+      worldToScreen: (point: Point) => point,
+      scale: (meters: number) => meters,
+    };
+    particles.update(
+      now,
+      geometry.center,
+      geometry.angle,
+      geometry.width,
+      camera,
+      this.context,
+      width,
+      height,
+      fraction
+    );
   }
 
   private drawShip(

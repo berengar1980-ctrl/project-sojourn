@@ -1,3 +1,4 @@
+import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
 
@@ -343,7 +344,7 @@ function bindSalvagePanelActions(
         diagnosisTimer = setTimeout(() => {
           diagnosisTimer = null;
           options.onDiagnoseDistress?.(id);
-        }, 1100);
+        }, 3000);
         break;
       case 'repair':
         options.onRepairDistress?.(id);
@@ -365,6 +366,11 @@ function bindSalvagePanelActions(
     if (selected) options.onAttackNpc(selected.id);
   });
   ui.combatTactics.addEventListener('click', (event) => {
+    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
+    if (grapple) {
+      options.onCombatGrapple();
+      return;
+    }
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
     const tactic = target.dataset.tactic as CombatTactic | undefined;
@@ -431,6 +437,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
       button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
     }
+    updateCombatGrappleButton(ui.combatTactics, model.combat);
     renderSelection(model, ui);
     trackRecovery(model);
   };

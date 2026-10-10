@@ -21,6 +21,16 @@ export interface CombatPoint {
   readonly y: number;
 }
 
+export interface CombatGrapple {
+  readonly owner: StrategicCombatSide;
+  readonly success: boolean;
+  readonly elapsed: number;
+  readonly duration: number;
+  readonly origin: CombatPoint;
+  readonly target: CombatPoint;
+  readonly resolved: boolean;
+}
+
 export interface CombatShieldGeometry {
   readonly centerOffset: CombatPoint;
   readonly radiusX: number;
@@ -126,6 +136,9 @@ export interface StrategicCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly exitPoint: CombatPoint;
   readonly winner: StrategicCombatSide | null;
+  readonly boardingInitiator: StrategicCombatSide | null;
+  readonly grapple: CombatGrapple | null;
+  readonly grappleUsed: Readonly<Record<StrategicCombatSide, boolean>>;
   readonly lastEvent: string;
   readonly projectiles: readonly CombatProjectileSnapshot[];
   readonly beams: readonly CombatBeamSnapshot[];
@@ -156,6 +169,7 @@ export interface StrategicCombatService {
   getSnapshot(): StrategicCombatSnapshot;
   tick(deltaSeconds: number): StrategicCombatSnapshot;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
+  fireGrapple(side: StrategicCombatSide): boolean;
 }
 
 export interface MutableCombatant {
@@ -227,6 +241,9 @@ export interface StrategicCombatRuntime {
   readonly mines: MutableMine[];
   elapsedSeconds: number;
   winner: StrategicCombatSide | null;
+  boardingInitiator: StrategicCombatSide | null;
+  grapple: CombatGrapple | null;
+  grappleUsed: Record<StrategicCombatSide, boolean>;
   lastEvent: string;
   projectileSerial: number;
   beamSerial: number;

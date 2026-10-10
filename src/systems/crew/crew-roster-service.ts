@@ -16,6 +16,8 @@ import {
 
 export interface CrewRosterService {
   list(): readonly CrewMember[];
+  boardingEquipment(): readonly string[];
+  grantBoardingEquipment(itemId: string): void;
   member(id: string): CrewMember | null;
   availableDefinitions(): readonly CrewDefinition[];
   hire(id: string, ship: ShipDefinition): CrewMember | null;
@@ -228,6 +230,7 @@ function createRosterTraining(
 
 export function createCrewRosterService(): CrewRosterService {
   const members: CrewMember[] = [];
+  const boardingEquipment: string[] = [];
   const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
 
   function assignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
@@ -250,6 +253,10 @@ export function createCrewRosterService(): CrewRosterService {
     activeManningCount,
   };
   return {
+    boardingEquipment: () => [...boardingEquipment],
+    grantBoardingEquipment(itemId) {
+      if (itemId) boardingEquipment.push(itemId);
+    },
     ...createRosterManagement(context),
     ...createRosterAssignments(context),
     ...createRosterTraining(context),

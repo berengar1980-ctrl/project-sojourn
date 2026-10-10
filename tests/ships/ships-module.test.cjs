@@ -29,8 +29,8 @@ assert(registry.includes('minerVariantShips'), 'registry must expose miner varia
 assert(registry.includes('salvageVariantShips'), 'registry must expose salvage variants');
 assert(registry.includes('freighterVariantShips'), 'registry must expose freighter variants');
 assert(
-  bootstrap.includes("getShipDefinition('miner-80m-variant-01')"),
-  'the first sprite-sheet miner must be the default test ship'
+  bootstrap.includes("getShipDefinition('salvage-100m-variant-01')"),
+  'the first sprite-sheet salvager must be the default test ship'
 );
 assert(
   controller.includes('getAllShipDefinitions()'),

@@ -81,6 +81,7 @@ export interface SectorSalvageEventService {
   readonly active: readonly SectorSalvageEvent[];
   readonly playerVisible: readonly SectorSalvageEvent[];
   readonly currentDay: number;
+  setPlayerSalvageEligible(eligible: boolean): void;
   acceptForPlayer(id: string): boolean;
   event(id: string | null): SectorSalvageEvent | null;
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void;
@@ -105,7 +106,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private serial = 0;
   currentDay = 0;
   private lastDistressDamage: DistressDamageType | null = null;
-
+  private playerSalvageEligible = false;
   constructor(
     private readonly world: WorldMap,
     seed: number
@@ -114,18 +115,33 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     this.nextSpecialDay = 0;
     this.nextDistressDay = 0;
   }
-
   get active(): readonly SectorSalvageEvent[] {
     return this.live().map(cloneEvent);
   }
-
   get playerVisible(): readonly SectorSalvageEvent[] {
     return this.active.filter(
-      (event) => event.distressStage === 'towing' || this.currentDay < event.playerDeadlineDay
+      (event) =>
+        event.distressStage === 'towing' ||
+        (this.playerSalvageEligible && this.currentDay < event.playerDeadlineDay)
     );
   }
-
+  setPlayerSalvageEligible(eligible: boolean): void {
+    if (eligible && !this.playerSalvageEligible) {
+      for (const event of this.events) {
+        if (
+          !event.resolved &&
+          !event.claimedByNpcId &&
+          !event.playerAccepted &&
+          event.distressStage !== 'towing'
+        ) {
+          event.playerDeadlineDay = Math.max(event.playerDeadlineDay, this.currentDay + 3);
+        }
+      }
+    }
+    this.playerSalvageEligible = eligible;
+  }
   acceptForPlayer(id: string): boolean {
+    if (!this.playerSalvageEligible) return false;
     const event = this.event(id);
     if (!event || event.claimedByNpcId || this.currentDay >= event.playerDeadlineDay) {
       return false;
@@ -134,21 +150,19 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     event.playerAccepted = true;
     return true;
   }
-
   event(id: string | null): SectorSalvageEvent | null {
     if (!id) return null;
     return this.events.find((entry) => entry.id === id && !entry.resolved) ?? null;
   }
-
   advanceDay(day: number, playerPosition: WorldPoint, playerHasSalvager: boolean): void {
     this.currentDay = day;
+    this.setPlayerSalvageEligible(playerHasSalvager);
     for (const event of this.events) {
       if (event.playerDeadlineDay <= day && event.distressStage !== 'towing') {
         event.playerAccepted = false;
       }
     }
     this.prune(day);
-    if (!playerHasSalvager) return;
     if (day >= this.nextSpecialDay) {
       this.spawnSpecial(day, playerPosition);
       this.nextSpecialDay = day + 1 + Math.floor(this.random() * 2);
@@ -158,14 +172,12 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       this.nextDistressDay = day + 2 + Math.floor(this.random() * 3);
     }
   }
-
   resolve(id: string): boolean {
     const event = this.events.find((entry) => entry.id === id);
     if (!event || event.resolved) return false;
     event.resolved = true;
     return true;
   }
-
   diagnoseDistress(id: string, engineeringSkill = 20): DistressActionResult | null {
     const event = this.distress(id);
     if (!event || event.distressStage !== 'approach') return null;
@@ -192,7 +204,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       workHours: 1.5,
     };
   }
-
   repairDistress(id: string, engineeringSkill: number): DistressActionResult | null {
     const event = this.distress(id);
     if (!event || event.distressStage !== 'diagnosed') return null;
@@ -222,7 +233,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       profile.hours
     );
   }
-
   towDistress(id: string): DistressActionResult | null {
     const event = this.distress(id);
     if (!event || !['diagnosed', 'tow_required'].includes(event.distressStage ?? '')) return null;
@@ -245,7 +255,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       towDestinationId: destination.id,
     };
   }
-
   finishTowAtLocation(locationId: string | null, eventId?: string): DistressActionResult | null {
     if (!locationId) return null;
     const event = this.live().find(
@@ -269,13 +278,10 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       rewardCredits: reward,
     };
   }
-
   evacuateDistress(id: string): DistressActionResult | null {
     const event = this.distress(id);
-    if (!event || event.distressStage !== 'diagnosed') return null;
+    if (!event || !['diagnosed', 'tow_required'].includes(event.distressStage ?? '')) return null;
     const profile = profileFor(event.distressDamage);
-    if (!profile.critical)
-      return emptyResult('Evakuierung ist bei diesem Schaden nicht erforderlich.');
     if (event.distressTrap) {
       return {
         ...emptyResult('Der Hilferuf ist ein Hinterhalt. Enterkampf ausgelöst.'),
@@ -285,7 +291,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     }
     return this.completeDistress(event, `Evakuierung erfolgreich: ${profile.name}.`, 1.25, 3, true);
   }
-
   resolveBoarding(id: string, victory: boolean): DistressActionResult | null {
     const event = this.distress(id);
     if (!event) return null;
@@ -301,21 +306,19 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       2
     );
   }
-
   grantSalvageRights(id: string): boolean {
     const event = this.distress(id);
     if (!event) return false;
     this.applySalvageRights(event);
     return true;
   }
-
   claimForNpc(id: string, npcId: string): boolean {
     const event = this.event(id);
     if (
       !event ||
       event.playerAccepted ||
       event.distressStage === 'towing' ||
-      this.currentDay < event.playerDeadlineDay ||
+      (this.playerSalvageEligible && this.currentDay < event.playerDeadlineDay) ||
       (event.claimedByNpcId && event.claimedByNpcId !== npcId)
     ) {
       return false;
@@ -323,12 +326,10 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     event.claimedByNpcId = npcId;
     return true;
   }
-
   releaseNpcClaim(id: string, npcId: string): void {
     const event = this.event(id);
     if (event?.claimedByNpcId === npcId) event.claimedByNpcId = null;
   }
-
   resolveForNpc(id: string, npc: SectorNpcState): boolean {
     const event = this.event(id);
     if (!event || event.claimedByNpcId !== npc.id) return false;
@@ -338,7 +339,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
     npc.activity = `Bergungsereignis abgeschlossen · ${event.title}`;
     return true;
   }
-
   private completeDistress(
     event: SectorSalvageEvent,
     text: string,
@@ -371,7 +371,6 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       workHours,
     };
   }
-
   private applySalvageRights(event: SectorSalvageEvent): void {
     event.salvageRights = true;
     event.distressStage = 'salvage_rights';
@@ -423,7 +422,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: kind,
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      playerDeadlineDay: day + 3,
+      playerDeadlineDay: this.playerSalvageEligible ? day + 3 : day,
       playerAccepted: false,
       expiresDay: day + 8,
       resolved: false,
@@ -465,7 +464,7 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
       wreckKind: WRECK_KINDS[Math.floor(this.random() * WRECK_KINDS.length)] ?? 'freighter',
       fieldSeed: Math.floor(this.random() * 0x7fffffff),
       createdDay: day,
-      playerDeadlineDay: day + 3,
+      playerDeadlineDay: this.playerSalvageEligible ? day + 3 : day,
       playerAccepted: false,
       expiresDay: day + 8,
       resolved: false,

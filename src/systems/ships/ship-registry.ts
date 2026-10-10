@@ -20,6 +20,12 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
     width: 3,
     layer: 'above',
   };
+  const grappleMount: ShipHardpoint = {
+    ...mount,
+    id: 'utility-grapple',
+    layer: 'below',
+    x: Math.max(0, Math.min(points.sourceWidth, points.pivot.x - points.sourceWidth * 0.24)),
+  };
   return {
     ...definition,
     sprite: {
@@ -29,7 +35,9 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
         tractorBeams: points.tractorBeams?.length
           ? points.tractorBeams
           : [{ ...mount, id: 'utility-tractor' }],
-        grapplingHooks: points.grapplingHooks?.length ? points.grapplingHooks : [mount],
+        grapplingHooks: points.grapplingHooks?.length
+          ? points.grapplingHooks.map((point) => ({ ...point, layer: 'below' as const }))
+          : [grappleMount],
       },
     },
   };

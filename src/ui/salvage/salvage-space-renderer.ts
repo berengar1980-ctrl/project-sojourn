@@ -1,8 +1,12 @@
+import { pickNearestHitArea } from './salvage-hit-test';
+import { DistressDamageParticles } from './distress-damage-particles';
+import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
   SalvageSpaceViewModel,
   SalvageWreckView,
 } from '../../features/salvage/salvage-space-view-model';
 import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
+import { drawDistressTow } from './distress-tow-renderer';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
@@ -32,6 +36,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly shipLighting = new ShipLightingRenderer();
   protected readonly shieldImpacts = new ShieldImpactRenderer();
   protected readonly shipImage = new Image();
+  protected readonly distressParticles = new DistressDamageParticles();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: SalvageSpaceViewModel;
   protected combatImpactSerial = -1;
@@ -100,20 +105,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
   pickNpc(x: number, y: number): string | null {
-    let best: NpcHitArea | null = null;
-    for (const area of this.npcHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.npcHitAreas, x, y);
   }
   pickWreck(x: number, y: number): string | null {
-    let best: WreckHitArea | null = null;
-    for (const area of this.hitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.hitAreas, x, y);
   }
   protected ensureShipImage(url: string): void {
     if (url === this.loadedShipUrl) return;
@@ -135,12 +130,21 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     });
     const hitAreas: WreckHitArea[] = [];
     for (const wreck of this.model.wrecks) {
+      if (this.model.distressTow && wreck.id.startsWith('event-wreck-')) continue;
       const hit = this.drawWreck(wreck, width, height);
       if (hit) hitAreas.push(hit);
     }
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.drawCombat(width, height);
+    this.distressParticles.drawScene(
+      timeSeconds,
+      this.model,
+      this.camera,
+      this.context,
+      width,
+      height
+    );
     this.drawRoute(width, height);
     drawLocalSpaceExitGate(
       this.context,
@@ -152,18 +156,19 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     );
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
-    this.drawDistressDiagnosis(width, height, timeSeconds);
-    this.drawShip(this.shipGeometry(width, height), timeSeconds);
-  }
-  protected drawDistressDiagnosis(width: number, height: number, now: number): void {
     drawDistressScanEffect(
       this.context,
       this.camera,
       this.model,
-      now - this.diagnosisStartedAt,
+      timeSeconds - this.diagnosisStartedAt,
       width,
       height
     );
+    const geometry = this.shipGeometry(width, height);
+    drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
+      this.ensureNpcImage(url)
+    );
+    this.drawShip(geometry, timeSeconds);
   }
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
@@ -194,7 +199,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context,
       this.model.sectorEvent,
       wreck.id,
-      radius,
+      this.camera.scale(1),
       (url) => this.ensureNpcImage(url)
     );
     if (!drewShip) {
@@ -202,7 +207,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.drawWreckDebris(wreck.id, radius);
     }
     this.context.restore();
-    if (wreck.isSelected || wreck.isWorkTarget) {
+    if (
+      (wreck.isSelected || wreck.isWorkTarget) &&
+      !wreck.id.startsWith('event-wreck-salvage-distress-')
+    ) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
         ? 'rgba(232, 184, 96, 0.95)'
@@ -214,7 +222,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
       this.context.restore();
     }
-
     return { id: wreck.id, point, radius: radius + 12 };
   }
   protected drawHullFragments(wreck: SalvageWreckView, radius: number): void {
@@ -228,7 +235,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.fillStyle = gradient;
     context.strokeStyle = 'rgba(201, 210, 210, 0.22)';
     context.lineWidth = Math.max(0.8, radius * 0.018);
-
     context.beginPath();
     context.moveTo(-length * 0.92, -height * 0.55);
     context.lineTo(-length * 0.08, -height * 0.7);
@@ -238,7 +244,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.closePath();
     context.fill();
     context.stroke();
-
     context.save();
     context.translate(length * 0.18, -height * 0.08);
     context.rotate(-0.12);
@@ -252,7 +257,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     context.fill();
     context.stroke();
     context.restore();
-
     this.drawKindDetails(wreck, radius);
     context.strokeStyle = 'rgba(6, 8, 10, 0.86)';
     context.lineWidth = Math.max(1.2, radius * 0.055);
@@ -308,7 +312,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-
     const geometry = this.shipGeometry(width, height);
     const target = this.camera.worldToScreen(wreck.position, width, height);
     const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
@@ -320,13 +323,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     const dy = target.y - origin.y;
     const distance = Math.hypot(dx, dy);
     if (distance < 1) return;
-
     const angle = Math.atan2(dy, dx);
     const halfAngle = Math.PI / 9;
     const progress = Math.max(0, Math.min(1, this.model.operationProgress ?? 0));
     const pulse = 0.55 + Math.sin(timeSeconds * 9) * 0.12;
     const sweepAngle = angle - halfAngle + 2 * halfAngle * progress;
-
     this.context.save();
     this.context.beginPath();
     this.context.moveTo(origin.x, origin.y);
@@ -337,7 +338,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.strokeStyle = `rgba(130, 242, 255, ${0.35 + pulse * 0.3})`;
     this.context.lineWidth = 1.2;
     this.context.stroke();
-
     this.context.beginPath();
     this.context.moveTo(origin.x, origin.y);
     this.context.lineTo(
@@ -353,7 +353,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-
     const geometry = this.shipGeometry(width, height);
     const wreckPoint = this.camera.worldToScreen(wreck.position, width, height);
     const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
@@ -366,7 +365,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     const progress = this.model.operationProgress ?? 0;
     const pulse = 0.68 + Math.sin(timeSeconds * 7.5) * 0.2;
     const component = this.model.phase === 'extracting-component';
-
     this.context.save();
     this.context.lineCap = 'round';
     for (const emitter of emitters) {
@@ -382,7 +380,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.moveTo(emitter.x, emitter.y);
       this.context.lineTo(wreckPoint.x, wreckPoint.y);
       this.context.stroke();
-
       this.context.shadowBlur = 2;
       this.context.strokeStyle = component
         ? `rgba(220, 248, 255, ${0.64 + pulse * 0.25})`
@@ -396,7 +393,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
     }
     this.context.setLineDash([]);
-
     for (let index = 0; index < 9; index += 1) {
       const destination = emitters[index % emitters.length] ?? geometry.center;
       const phase = fractional(
@@ -418,7 +414,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.arc(x, y, component ? 2.2 : 1.5 + (index % 3) * 0.55, 0, Math.PI * 2);
       this.context.fill();
     }
-
     this.context.strokeStyle = component
       ? `rgba(146, 225, 255, ${0.42 + pulse * 0.24})`
       : `rgba(255, 194, 93, ${0.38 + pulse * 0.28})`;
@@ -468,7 +463,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     };
     this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
     this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
-
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
@@ -493,6 +487,13 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.model.combat?.attacker.shieldImpacts ?? [],
       source,
       geometry
+    );
+    drawDistressRammingShield(
+      this.context,
+      this.camera,
+      this.model,
+      this.canvas.clientWidth,
+      this.canvas.clientHeight
     );
   }
 }
