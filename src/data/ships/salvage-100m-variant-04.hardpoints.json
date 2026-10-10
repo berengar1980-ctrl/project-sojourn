@@ -52,13 +52,73 @@
   "weaponLasers": [],
   "weaponMounts": [
     {
-      "id": "weapon-slot-1",
+      "id": "weapon-front",
       "slotIndex": 0,
+      "x": 354,
+      "y": 151,
+      "width": 6,
+      "facing": "forward",
+      "layer": "above",
+      "arcDegrees": 60,
+      "allowedMounts": [
+        "forward"
+      ],
+      "allowedFamilies": [
+        "railgun"
+      ]
+    },
+    {
+      "id": "weapon-port",
+      "slotIndex": 1,
       "x": 268,
       "y": 79,
       "width": 6,
       "facing": "port",
-      "layer": "above"
+      "layer": "above",
+      "arcDegrees": 90,
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
+    },
+    {
+      "id": "weapon-starboard",
+      "slotIndex": 2,
+      "x": 255,
+      "y": 223,
+      "width": 6,
+      "facing": "starboard",
+      "layer": "above",
+      "arcDegrees": 90,
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
+    },
+    {
+      "id": "weapon-turret",
+      "slotIndex": 3,
+      "x": 203,
+      "y": 151,
+      "width": 6,
+      "facing": "forward",
+      "layer": "above",
+      "arcDegrees": 360,
+      "allowedMounts": [
+        "turret"
+      ],
+      "allowedFamilies": [
+        "pulse_laser",
+        "ion_laser"
+      ]
     }
   ],
   "miningLasers": [],
