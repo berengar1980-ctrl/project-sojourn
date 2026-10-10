@@ -24,7 +24,11 @@ for (const id of ['patrol-60m-variant-01', 'salvage-75m-variant-01']) {
   const stats = resolveShipCombatMovementStats(ship);
   assert(stats.combatSpeed > 0 && stats.accelerationMetersPerSecond2 > 0);
   assert(stats.turnRateRadiansPerSecond > 0);
-  assert.deepEqual(resolveShipCombatMovementStats(ship), stats, 'performance must be deterministic');
+  assert.deepEqual(
+    resolveShipCombatMovementStats(ship),
+    stats,
+    'performance must be deterministic'
+  );
 }
 
 function ship(id) {
@@ -58,9 +62,11 @@ let forward = combat.getSnapshot();
 assert.deepEqual(forward.attacker.velocity, { x: 0, y: 0 });
 for (let step = 0; step < 35; step += 1) forward = combat.tick(0.08);
 assert(forward.attacker.velocity.x > 30, 'the ship needs real forward momentum');
-assert(Math.abs(forward.attacker.speed - Math.hypot(
-  forward.attacker.velocity.x, forward.attacker.velocity.y
-)) < 1e-8, 'displayed speed must be the velocity magnitude');
+const velocityMagnitude = Math.hypot(forward.attacker.velocity.x, forward.attacker.velocity.y);
+assert(
+  Math.abs(forward.attacker.speed - velocityMagnitude) < 1e-8,
+  'displayed speed must be the velocity magnitude'
+);
 
 const beforeTurn = forward.attacker;
 combat.setTactic('attacker', 'flee');

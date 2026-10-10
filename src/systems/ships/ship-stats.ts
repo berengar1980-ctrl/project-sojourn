@@ -36,10 +36,7 @@ export function resolveShipCombatMovementStats(ship: ShipDefinition): {
       0.4,
       Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)
     ),
-    accelerationMetersPerSecond2: Math.max(
-      20,
-      Math.min(38, 46 - ship.nominalLengthMeters * 0.18)
-    ),
+    accelerationMetersPerSecond2: Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18)),
   };
 }
 

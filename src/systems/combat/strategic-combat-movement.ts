@@ -227,7 +227,10 @@ function applyInertialThrust(
   const dy = Math.sin(combatant.headingRadians) * targetSpeed - combatant.velocity.y;
   const change = Math.hypot(dx, dy);
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
-  const fraction = Math.min(1, (acceleration * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change));
+  const fraction = Math.min(
+    1,
+    (acceleration * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+  );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
   const speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
