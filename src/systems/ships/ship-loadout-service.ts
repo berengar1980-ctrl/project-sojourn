@@ -47,7 +47,10 @@ export function shipCanFitWeapon(ship: ShipDefinition, weapon: ShipWeaponProfile
 }
 
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
-  if (type === 'weapon') return ship.sprite.hardpoints.weaponMounts?.length ?? resolveShipGameplayStats(ship).weaponSlots;
+  if (type === 'weapon')
+    return (
+      ship.sprite.hardpoints.weaponMounts?.length ?? resolveShipGameplayStats(ship).weaponSlots
+    );
   if (type === 'mine' || type === 'tractor') return 1;
   if (type === 'mining') return ship.role === 'mining' ? 1 : 0;
   if (type === 'salvage') return ship.role === 'salvage' ? 1 : 0;
@@ -81,7 +84,10 @@ export function createShipLoadoutService(): ShipLoadoutService {
         if (!component || component.tier > resolveShipGameplayStats(ship).maxComponentTier) {
           return false;
         }
-        if (type === 'weapon' && (!component.weapon || !fitsWeaponHardpoint(ship, index, component.weapon))) {
+        if (
+          type === 'weapon' &&
+          (!component.weapon || !fitsWeaponHardpoint(ship, index, component.weapon))
+        ) {
           return false;
         }
       }

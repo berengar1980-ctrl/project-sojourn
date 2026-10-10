@@ -34,9 +34,11 @@ export function shipPane(model: PortViewModel): string {
                           part.type === slot.type &&
                           (!slot.weaponSlot ||
                             ((!slot.allowedMounts ||
-                              (part.weaponMount && slot.allowedMounts.includes(part.weaponMount))) &&
+                              (part.weaponMount &&
+                                slot.allowedMounts.includes(part.weaponMount))) &&
                               (!slot.allowedFamilies ||
-                                (part.weaponFamily && slot.allowedFamilies.includes(part.weaponFamily)))))
+                                (part.weaponFamily &&
+                                  slot.allowedFamilies.includes(part.weaponFamily)))))
                       )
                       .map(
                         (part) =>

@@ -23,18 +23,30 @@ for (const name of files) {
     assert(['port', 'starboard', 'forward'].includes(mount.facing), name + ': gun facing');
     if (mount.allowedMounts !== undefined) {
       assert(Array.isArray(mount.allowedMounts), name + ': allowedMounts must be an array');
-      assert(mount.allowedMounts.every((kind) =>
-        ['forward', 'broadside', 'turret', 'guided'].includes(kind)
-      ), name + ': invalid weapon mount kind');
+      assert(
+        mount.allowedMounts.every((kind) =>
+          ['forward', 'broadside', 'turret', 'guided'].includes(kind)
+        ),
+        name + ': invalid weapon mount kind'
+      );
     }
     if (mount.allowedFamilies !== undefined) {
       assert(Array.isArray(mount.allowedFamilies), name + ': allowedFamilies must be an array');
-      assert(mount.allowedFamilies.every((family) =>
-        [
-          'pulse_laser', 'ion_laser', 'plasma_battery', 'ion_cannon',
-          'autocannon', 'railgun', 'guided_missile', 'he_missile',
-        ].includes(family)
-      ), name + ': invalid weapon family');
+      assert(
+        mount.allowedFamilies.every((family) =>
+          [
+            'pulse_laser',
+            'ion_laser',
+            'plasma_battery',
+            'ion_cannon',
+            'autocannon',
+            'railgun',
+            'guided_missile',
+            'he_missile',
+          ].includes(family)
+        ),
+        name + ': invalid weapon family'
+      );
     }
     if (mount.arcDegrees !== undefined) {
       assert(Number.isFinite(mount.arcDegrees), name + ': invalid weapon arc');

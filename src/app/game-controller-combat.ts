@@ -11,15 +11,17 @@ import {
 function combatWeaponMounts(ship: ShipDefinition, slots: readonly number[]) {
   const points = ship.sprite.hardpoints;
   const scale = ship.nominalLengthMeters / points.sourceWidth;
-  return (points.weaponMounts ?? []).filter((mount) => slots.includes(mount.slotIndex)).map((mount) => ({
-    slotIndex: slots.indexOf(mount.slotIndex),
-    x: (mount.x - points.pivot.x) * scale,
-    y: (mount.y - points.pivot.y) * scale,
-    facing: mount.facing,
-    arcDegrees: mount.arcDegrees,
-    allowedMounts: mount.allowedMounts,
-    allowedFamilies: mount.allowedFamilies,
-  }));
+  return (points.weaponMounts ?? [])
+    .filter((mount) => slots.includes(mount.slotIndex))
+    .map((mount) => ({
+      slotIndex: slots.indexOf(mount.slotIndex),
+      x: (mount.x - points.pivot.x) * scale,
+      y: (mount.y - points.pivot.y) * scale,
+      facing: mount.facing,
+      arcDegrees: mount.arcDegrees,
+      allowedMounts: mount.allowedMounts,
+      allowedFamilies: mount.allowedFamilies,
+    }));
 }
 
 export function createPlayerCombatant(
@@ -51,7 +53,10 @@ export function createPlayerCombatant(
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
     weapons,
-    weaponMounts: combatWeaponMounts(ship, equippedWeapons.map((entry) => entry.slotIndex)),
+    weaponMounts: combatWeaponMounts(
+      ship,
+      equippedWeapons.map((entry) => entry.slotIndex)
+    ),
     hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
     dodgeChance: runtime.crewEffects.piloting.dodgeChance,
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,

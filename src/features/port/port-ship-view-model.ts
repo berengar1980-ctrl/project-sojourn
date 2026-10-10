@@ -1,4 +1,11 @@
-import type { LooseShipComponent, ShipComponentType, ShipDefinition, ShipWeaponHardpoint, ShipWeaponMountKind, ShipWeaponFamily } from '../../core/ship-types';
+import type {
+  LooseShipComponent,
+  ShipComponentType,
+  ShipDefinition,
+  ShipWeaponHardpoint,
+  ShipWeaponMountKind,
+  ShipWeaponFamily,
+} from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import {
   getShipComponent,

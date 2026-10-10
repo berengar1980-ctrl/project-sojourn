@@ -29,7 +29,10 @@ import {
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
-function npcWeaponComponents(installed: InstalledShipComponents, ship: NonNullable<ReturnType<typeof getShipDefinition>>) {
+function npcWeaponComponents(
+  installed: InstalledShipComponents,
+  ship: NonNullable<ReturnType<typeof getShipDefinition>>
+) {
   return (installed.weapon ?? []).flatMap((id, slotIndex) => {
     const component = getShipComponent('weapon', id);
     return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
@@ -70,18 +73,18 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     weaponMounts: (ship.sprite.hardpoints.weaponMounts ?? [])
       .filter((mount) => equippedWeapons.some((entry) => entry.slotIndex === mount.slotIndex))
       .map((mount) => {
-      const points = ship.sprite.hardpoints;
-      const scale = ship.nominalLengthMeters / points.sourceWidth;
-      return {
-        slotIndex: equippedWeapons.findIndex((entry) => entry.slotIndex === mount.slotIndex),
-        x: (mount.x - points.pivot.x) * scale,
-        y: (mount.y - points.pivot.y) * scale,
-        facing: mount.facing,
-        arcDegrees: mount.arcDegrees,
-        allowedMounts: mount.allowedMounts,
-        allowedFamilies: mount.allowedFamilies,
-      };
-    }),
+        const points = ship.sprite.hardpoints;
+        const scale = ship.nominalLengthMeters / points.sourceWidth;
+        return {
+          slotIndex: equippedWeapons.findIndex((entry) => entry.slotIndex === mount.slotIndex),
+          x: (mount.x - points.pivot.x) * scale,
+          y: (mount.y - points.pivot.y) * scale,
+          facing: mount.facing,
+          arcDegrees: mount.arcDegrees,
+          allowedMounts: mount.allowedMounts,
+          allowedFamilies: mount.allowedFamilies,
+        };
+      }),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
     dodgeChance: pilotingDodgeChance(skill),
     damageMultiplier: weaponDamageMultiplier(skill),
