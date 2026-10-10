@@ -48,6 +48,38 @@ export function drawDistressTow(
   const distance = Math.max(1, Math.hypot(dx, dy));
   const time = tow.elapsedSeconds;
   context.save();
+  drawTowCable(context, model, tow, anchor, cargo, attachment, dx, dy, distance, time);
+  context.translate(cargo.x, cargo.y);
+  context.rotate(tow.headingRadians);
+  if (image?.complete && image.naturalWidth > 0 && ship) {
+    context.globalAlpha = 0.88;
+    context.drawImage(
+      image,
+      -shipWidth / 2,
+      -shipWidth / (2 * ratio),
+      shipWidth,
+      shipWidth / ratio
+    );
+  } else {
+    context.strokeStyle = '#c6d4da';
+    context.lineWidth = 3;
+    context.strokeRect(-55, -20, 110, 40);
+  }
+  context.restore();
+}
+
+function drawTowCable(
+  context: CanvasRenderingContext2D,
+  model: SalvageSpaceViewModel,
+  tow: NonNullable<SalvageSpaceViewModel['distressTow']>,
+  anchor: { x: number; y: number },
+  cargo: { x: number; y: number },
+  attachment: { x: number; y: number },
+  dx: number,
+  dy: number,
+  distance: number,
+  time: number
+): void {
   if (!tow.attached) {
     const progress = Math.min(1, time / 0.65);
     const tip = { x: anchor.x + dx * progress, y: anchor.y + dy * progress };
@@ -99,22 +131,4 @@ export function drawDistressTow(
     context.lineWidth = 0.65;
     context.stroke();
   }
-  context.translate(cargo.x, cargo.y);
-  context.rotate(tow.headingRadians);
-  if (image?.complete && image.naturalWidth > 0 && ship) {
-    const ratio = image.naturalWidth / image.naturalHeight;
-    context.globalAlpha = 0.88;
-    context.drawImage(
-      image,
-      -shipWidth / 2,
-      -shipWidth / (2 * ratio),
-      shipWidth,
-      shipWidth / ratio
-    );
-  } else {
-    context.strokeStyle = '#c6d4da';
-    context.lineWidth = 3;
-    context.strokeRect(-55, -20, 110, 40);
-  }
-  context.restore();
 }
