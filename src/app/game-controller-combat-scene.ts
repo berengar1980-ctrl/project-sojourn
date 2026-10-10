@@ -10,7 +10,7 @@ import {
 
 export function mountCombatScene(
   context: ControllerRuntimeContext,
-  returnToMap: () => void
+  returnToMap: () => void,
 ): void {
   const combat = context.engagements.activePlayerCombat();
   if (!combat) return;
