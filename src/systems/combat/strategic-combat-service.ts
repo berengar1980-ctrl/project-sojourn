@@ -270,6 +270,45 @@ function recordCombatMotion(runtime: StrategicCombatRuntime): void {
   }
 }
 
+function reviewShieldBreakthroughs(runtime: StrategicCombatRuntime, previous: readonly number[]): void {
+  // Important tactical milestones can transition to the next doctrine immediately.
+  if (previous[0]! > 0 && runtime.attacker.shieldHp <= 0) {
+    runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
+  }
+  if (previous[1]! > 0 && runtime.defender.shieldHp <= 0) {
+    runtime.attacker.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
+  }
+
+}
+
+function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
+  if (
+    runtime.defender.setup.aiControlled &&
+    !runtime.attacker.setup.aiControlled &&
+    !runtime.grappleUsed.defender &&
+    !runtime.grapple &&
+    runtime.attacker.shieldHp <= 0 &&
+    runtime.attacker.hullHp > 0 &&
+    runtime.defender.hullHp > 0 &&
+    distance(runtime.attacker.position, runtime.defender.position) <= 900
+  ) {
+    tryFireGrapple(runtime, 'defender');
+  }
+
+}
+
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number
@@ -336,37 +375,8 @@ function tickStrategicCombat(
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
-  // Important tactical milestones can transition to the next doctrine immediately.
-  if (previousShields[0]! > 0 && runtime.attacker.shieldHp <= 0) {
-    runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
-    recordCombatLog(
-      runtime,
-      'system',
-      'phase',
-      'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten'
-    );
-  }
-  if (previousShields[1]! > 0 && runtime.defender.shieldHp <= 0) {
-    runtime.attacker.nextStrategyReviewAt = runtime.elapsedSeconds;
-    recordCombatLog(
-      runtime,
-      'system',
-      'phase',
-      'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten'
-    );
-  }
-  if (
-    runtime.defender.setup.aiControlled &&
-    !runtime.attacker.setup.aiControlled &&
-    !runtime.grappleUsed.defender &&
-    !runtime.grapple &&
-    runtime.attacker.shieldHp <= 0 &&
-    runtime.attacker.hullHp > 0 &&
-    runtime.defender.hullHp > 0 &&
-    distance(runtime.attacker.position, runtime.defender.position) <= 900
-  ) {
-    tryFireGrapple(runtime, 'defender');
-  }
+  reviewShieldBreakthroughs(runtime, previousShields);
+  maybeAttemptBoarding(runtime);
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
