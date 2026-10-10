@@ -233,6 +233,24 @@ function reviewAndExecute(
   }
 }
 
+function recordCombatMotion(runtime: StrategicCombatRuntime): void {
+  const sampleSecond = Math.floor(runtime.elapsedSeconds);
+  if (sampleSecond > runtime.lastLoggedSampleSecond) {
+    runtime.lastLoggedSampleSecond = sampleSecond;
+    const range = Math.round(distance(runtime.attacker.position, runtime.defender.position));
+    for (const [side, ship] of [
+      ['attacker', runtime.attacker],
+      ['defender', runtime.defender],
+    ] as const) {
+      recordCombatLog(runtime, side, 'state',
+        'Abstand ' + range + 'm · Tempo ' + Math.round(ship.speed) +
+        'm/s · Schild ' + Math.round(ship.shieldHp) +
+        ' · Hülle ' + Math.round(ship.hullHp) +
+        ' · Phase ' + (ship.strategy?.phase ?? 'Standardtaktik'));
+    }
+  }
+}
+
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number
@@ -320,21 +338,7 @@ function tickStrategicCombat(
   ) {
     tryFireGrapple(runtime, 'defender');
   }
-  const sampleSecond = Math.floor(runtime.elapsedSeconds);
-  if (sampleSecond > runtime.lastLoggedSampleSecond) {
-    runtime.lastLoggedSampleSecond = sampleSecond;
-    const range = Math.round(distance(runtime.attacker.position, runtime.defender.position));
-    for (const [side, ship] of [
-      ['attacker', runtime.attacker],
-      ['defender', runtime.defender],
-    ] as const) {
-      recordCombatLog(runtime, side, 'state',
-        'Abstand ' + range + 'm · Tempo ' + Math.round(ship.speed) +
-        'm/s · Schild ' + Math.round(ship.shieldHp) +
-        ' · Hülle ' + Math.round(ship.hullHp) +
-        ' · Phase ' + (ship.strategy?.phase ?? 'Standardtaktik'));
-    }
-  }
+  recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
     runtime.lastLoggedImpact = runtime.lastImpact.serial;
