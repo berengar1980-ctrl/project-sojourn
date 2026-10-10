@@ -82,6 +82,7 @@ function runtimeCombatantEscaped(
   if (
     combatant.shieldHp <= 0 &&
     enemy.hullHp > 0 &&
+    enemy.subsystems.tractor > 0 &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   )
     return false;
@@ -119,6 +120,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       tractorLocked:
         runtime.attacker.shieldHp <= 0 &&
         runtime.defender.hullHp > 0 &&
+        runtime.defender.subsystems.tractor > 0 &&
         distance(runtime.attacker.position, runtime.defender.position) <=
           (runtime.defender.setup.tractorRangeMeters ?? 0),
     },
@@ -127,6 +129,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       tractorLocked:
         runtime.defender.shieldHp <= 0 &&
         runtime.attacker.hullHp > 0 &&
+        runtime.attacker.subsystems.tractor > 0 &&
         distance(runtime.defender.position, runtime.attacker.position) <=
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
