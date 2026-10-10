@@ -27,7 +27,7 @@ assert(
 assert(renderer.includes('drawPursuitLine'), 'active pursuit must be visible on the star map');
 assert(
   controller.includes('createStarMapEngagementService') &&
-    controller.includes('mountControllerCombat'),
+    controller.includes('mountCombatScene'),
   'controller must connect pursuit contact to combat scene'
 );
 
