@@ -97,6 +97,21 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
         : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
     });
   }
+  if (
+    ship.subsystems.tractor > 0 &&
+    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
+    enemy.shieldHp <= 0 &&
+    enemy.tactic === 'flee'
+  ) {
+    plans.push({
+      kind: 'tractor_lock',
+      focus: 'turret',
+      targetSubsystem: targetSubsystemChoice,
+      desiredRange: Math.max(160, (ship.setup.tractorRangeMeters ?? 0) * 0.7),
+      score: Math.max(1, ...plans.map((plan) => plan.score)) * 1.4,
+      reason: 'Flucht mit intaktem Traktorstrahl unterbinden',
+    });
+  }
   if (ship.mineStock.length && ship.subsystems.engine > 0) {
     plans.push({
       kind: 'minefield',
