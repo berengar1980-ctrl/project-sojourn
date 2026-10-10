@@ -174,6 +174,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       root,
       combat,
       onReturn: () => {
+        cancelAnimationFrame(frame);
         activePanel?.destroy();
         activePanel = null;
         root.replaceChildren(shell);
