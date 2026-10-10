@@ -19,13 +19,13 @@ const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
 );
 
 for (const id of ['patrol-60m-variant-01', 'salvage-75m-variant-01']) {
-  const ship = getShipDefinition(id);
-  if (!ship) continue;
-  const stats = resolveShipCombatMovementStats(ship);
+  const definition = getShipDefinition(id);
+  if (!definition) continue;
+  const stats = resolveShipCombatMovementStats(definition);
   assert(stats.combatSpeed > 0 && stats.accelerationMetersPerSecond2 > 0);
   assert(stats.turnRateRadiansPerSecond > 0);
   assert.deepEqual(
-    resolveShipCombatMovementStats(ship),
+    resolveShipCombatMovementStats(definition),
     stats,
     'performance must be deterministic'
   );
