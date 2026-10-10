@@ -134,7 +134,7 @@ export class DistressDamageParticles {
           kind: 'spark',
         });
       }
-  }
+    }
   }
 
   private renderParticles(
@@ -161,9 +161,9 @@ export class DistressDamageParticles {
       ctx.beginPath();
       ctx.arc(screen.x, screen.y, Math.max(0.4, radius), 0, Math.PI * 2);
       ctx.fill();
-  }
-  ctx.restore();
-  this.particles = this.particles.filter((p) => p.life > 0).slice(-260);
+    }
+    ctx.restore();
+    this.particles = this.particles.filter((p) => p.life > 0).slice(-260);
   }
 }
 function randomSpark(seed: number, now: number, index: number): boolean {
