@@ -80,7 +80,15 @@ export class DistressDamageParticles {
     this.renderParticles(dt, camera, ctx, width, height);
   }
 
-  private emitSources(now: number, position: WorldPoint, heading: number, length: number, dt: number, vx: number, vy: number): void {
+  private emitSources(
+    now: number,
+    position: WorldPoint,
+    heading: number,
+    length: number,
+    dt: number,
+    vx: number,
+    vy: number
+  ): void {
     const cos = Math.cos(heading),
       sin = Math.sin(heading);
     for (const [i, source] of SOURCES.entries()) {
@@ -128,7 +136,13 @@ export class DistressDamageParticles {
     }
   }
 
-  private renderParticles(dt: number, camera: Pick<MapCamera, 'worldToScreen' | 'scale'>, ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  private renderParticles(
+    dt: number,
+    camera: Pick<MapCamera, 'worldToScreen' | 'scale'>,
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ): void {
     ctx.save();
     for (const p of this.particles) {
       p.life -= dt;
