@@ -24,31 +24,90 @@
   "weaponLasers": [],
   "weaponMounts": [
     {
-      "id": "weapon-slot-1",
+      "id": "weapon-front",
       "slotIndex": 0,
-      "x": 161,
-      "y": 47,
-      "width": 6,
-      "facing": "port",
-      "layer": "above"
-    },
-    {
-      "id": "weapon-slot-2",
-      "slotIndex": 1,
-      "x": 161,
-      "y": 133,
-      "width": 6,
-      "facing": "starboard",
-      "layer": "above"
-    },
-    {
-      "id": "weapon-slot-3",
-      "slotIndex": 2,
       "x": 216,
       "y": 90,
       "width": 6,
       "facing": "forward",
-      "layer": "above"
+      "layer": "above",
+      "arcDegrees": 60,
+      "allowedMounts": [
+        "forward"
+      ],
+      "allowedFamilies": [
+        "railgun"
+      ]
+    },
+    {
+      "id": "weapon-port",
+      "slotIndex": 1,
+      "x": 161,
+      "y": 47,
+      "width": 6,
+      "facing": "port",
+      "layer": "above",
+      "arcDegrees": 90,
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
+    },
+    {
+      "id": "weapon-starboard",
+      "slotIndex": 2,
+      "x": 161,
+      "y": 133,
+      "width": 6,
+      "facing": "starboard",
+      "layer": "above",
+      "arcDegrees": 90,
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
+    },
+    {
+      "id": "weapon-turret",
+      "slotIndex": 3,
+      "x": 122,
+      "y": 90,
+      "width": 6,
+      "facing": "forward",
+      "layer": "above",
+      "arcDegrees": 360,
+      "allowedMounts": [
+        "turret"
+      ],
+      "allowedFamilies": [
+        "pulse_laser",
+        "ion_laser"
+      ]
+    },
+    {
+      "id": "weapon-missile",
+      "slotIndex": 4,
+      "x": 179,
+      "y": 65,
+      "width": 6,
+      "facing": "forward",
+      "layer": "above",
+      "arcDegrees": 360,
+      "allowedMounts": [
+        "guided"
+      ],
+      "allowedFamilies": [
+        "guided_missile",
+        "he_missile"
+      ]
     }
   ],
   "miningLasers": [],
