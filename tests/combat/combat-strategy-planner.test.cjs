@@ -72,7 +72,7 @@ assert.equal(snap.attacker.strategy.kind, attackerKind, 'strategy is stable betw
 assert.equal(snap.attacker.nextStrategyReviewAt, 8);
 for (let i = 0; i < 52; i += 1) snap = fight.tick(0.08);
 assert.equal(snap.attacker.nextStrategyReviewAt, 16, 'attacker reviews at eight seconds');
-assert.equal(snap.defender.nextStrategyReviewAt, 12, 'defender reviews four seconds later');
+assert.equal(snap.defender.nextStrategyReviewAt, 20, 'defender reviewed at twelve seconds');
 const original = snap.attacker.strategy.kind;
 snap.attacker.strategy.kind = 'escape';
 assert.equal(fight.getSnapshot().attacker.strategy.kind, original, 'strategy snapshot is detached');
