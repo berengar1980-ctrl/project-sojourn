@@ -22,6 +22,35 @@
     }
   ],
   "weaponLasers": [],
+  "weaponMounts": [
+    {
+      "id": "weapon-slot-1",
+      "slotIndex": 0,
+      "x": 161,
+      "y": 44,
+      "width": 6,
+      "facing": "port",
+      "layer": "above"
+    },
+    {
+      "id": "weapon-slot-2",
+      "slotIndex": 1,
+      "x": 161,
+      "y": 127,
+      "width": 6,
+      "facing": "starboard",
+      "layer": "above"
+    },
+    {
+      "id": "weapon-slot-3",
+      "slotIndex": 2,
+      "x": 216,
+      "y": 86,
+      "width": 6,
+      "facing": "forward",
+      "layer": "above"
+    }
+  ],
   "miningLasers": [],
   "tractorBeams": [],
   "maneuverThrusters": [
