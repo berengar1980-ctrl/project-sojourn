@@ -35,41 +35,23 @@ import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executo
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
 
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
-
 export type { StrategicCombatSide } from './strategic-combat-types';
-
 export type { CombatTactic } from './strategic-combat-types';
-
 export type { CombatImpactLayer } from './strategic-combat-types';
-
 export type { CombatProjectileKind } from './strategic-combat-types';
-
 export type { CombatBeamKind } from './strategic-combat-types';
-
 export type { CombatPoint } from './strategic-combat-types';
-
 export type { CombatShieldGeometry } from './strategic-combat-types';
-
 export type { StrategicCombatantSetup } from './strategic-combat-types';
-
 export type { StrategicCombatantSnapshot } from './strategic-combat-types';
-
 export type { CombatProjectileSnapshot } from './strategic-combat-types';
-
 export type { CombatBeamSnapshot } from './strategic-combat-types';
-
 export type { CombatMineSnapshot } from './strategic-combat-types';
-
 export type { CombatImpactSnapshot } from './strategic-combat-types';
-
 export type { StrategicCombatSnapshot } from './strategic-combat-types';
-
 export type { StrategicCombatObstacle } from './strategic-combat-types';
-
 export type { StrategicCombatArenaOptions } from './strategic-combat-types';
-
 export type { StrategicCombatService } from './strategic-combat-types';
-
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
 
 function runtimeCombatantEscaped(
