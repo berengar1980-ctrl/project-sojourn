@@ -27,6 +27,8 @@ import {
 } from './strategic-combat-runtime';
 
 import { distance, clamp, weaponKind, normalize } from './strategic-combat-geometry';
+import { consumeFireControl, rechargeFireControl, fireControlReady } from './combat-weapon-fire-control';
+import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 
 function fireRuntimeInstantWeapon(
   runtime: StrategicCombatRuntime,
@@ -40,6 +42,7 @@ function fireRuntimeInstantWeapon(
   critical: boolean
 ): string {
   if (!weapon.weapon) return '';
+  const muzzle = weaponMuzzle(source, weaponIndex);
   const shield = combatShieldGeometry(target);
   const center = combatShieldCenter(target);
   const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
@@ -50,9 +53,9 @@ function fireRuntimeInstantWeapon(
         x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
         y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
       };
-  const shieldHit = hit ? segmentShieldHit(source.position, targetPoint, target) : null;
+  const shieldHit = hit ? segmentShieldHit(muzzle, targetPoint, target) : null;
   const beamEnd = shieldHit?.point ?? targetPoint;
-  const obstacle = firstObstacleHit(source.position, beamEnd, runtime.arena.obstacles ?? []);
+  const obstacle = firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? []);
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
@@ -61,7 +64,7 @@ function fireRuntimeInstantWeapon(
       side,
       kind,
       weapon.weapon.family,
-      source.position,
+      muzzle,
       obstacle.point,
       weaponIndex
     );
@@ -82,7 +85,7 @@ function fireRuntimeInstantWeapon(
     weapon.weapon.hullDamage,
     source,
     critical,
-    source.position,
+    muzzle,
     'laser',
     runtime.impactSerial,
     shieldHit ?? undefined
@@ -111,18 +114,21 @@ function fireRuntimeProjectileWeapon(
   source: MutableCombatant,
   target: MutableCombatant,
   weapon: ShipComponentDefinition,
+  weaponIndex: number,
   kind: CombatProjectileKind,
   hit: boolean,
   critical: boolean
 ): string {
   if (!weapon.weapon) return '';
+  const muzzle = weaponMuzzle(source, weaponIndex);
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,
     owner: side,
     kind,
     family: weapon.weapon.family,
-    position: { ...source.position },
+    position: muzzle,
+    direction: normalize(target.position.x - muzzle.x, target.position.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
     speed: projectileSpeed(kind),
     ttlSeconds: Math.max(
@@ -164,7 +170,17 @@ function fireRuntimeWeapon(
       critical
     );
   }
-  return fireRuntimeProjectileWeapon(runtime, side, source, target, weapon, kind, hit, critical);
+  return fireRuntimeProjectileWeapon(
+    runtime,
+    side,
+    source,
+    target,
+    weapon,
+    weaponIndex,
+    kind,
+    hit,
+    critical
+  );
 }
 
 export function advanceRuntimeWeapons(
@@ -174,18 +190,44 @@ export function advanceRuntimeWeapons(
   target: MutableCombatant,
   deltaSeconds: number
 ): void {
+  const now = runtime.elapsedSeconds;
+  rechargeFireControl(source, now);
   for (let index = 0; index < source.setup.weapons.length; index += 1) {
     source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
-    if ((source.cooldowns[index] ?? 0) > 0 || target.hullHp <= 0) continue;
-    const weapon = source.setup.weapons[index];
-    if (!weapon?.weapon || distance(source.position, target.position) > weapon.weapon.rangeMeters) {
-      continue;
-    }
-    const event = fireRuntimeWeapon(runtime, side, source, target, weapon, index);
-    source.cooldowns[index] =
-      weapon.weapon.cooldownSeconds * clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
-    if (event) runtime.lastEvent = event;
   }
+  if (target.hullHp <= 0 || !fireControlReady(source.fireControl, now)) return;
+
+  // The current target layer determines weapon priority. A heavy gun cannot
+  // fire through the opposite side of the hull simply because it is loaded.
+  const candidates = source.setup.weapons
+    .map((weapon, index) => ({ weapon, index }))
+    .filter(({ weapon, index }) =>
+      Boolean(
+        weapon?.weapon &&
+          (source.cooldowns[index] ?? 0) <= 0 &&
+          distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+          weaponInArc(source, target.position, index, weapon.weapon)
+      )
+    )
+    .sort((a, b) => {
+      const score = (weapon: ShipComponentDefinition): number =>
+        target.shieldHp > 0 ? (weapon.weapon?.shieldDamage ?? 0) : (weapon.weapon?.hullDamage ?? 0);
+      return score(b.weapon) - score(a.weapon);
+    });
+  const candidate = candidates[0];
+  if (!candidate || !consumeFireControl(source, now)) return;
+  const event = fireRuntimeWeapon(
+    runtime,
+    side,
+    source,
+    target,
+    candidate.weapon,
+    candidate.index
+  );
+  source.cooldowns[candidate.index] =
+    (candidate.weapon.weapon?.cooldownSeconds ?? 1) *
+    clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
+  if (event) runtime.lastEvent = event;
 }
 
 function recordProjectileDamage(
@@ -233,16 +275,19 @@ function advanceRuntimeProjectile(
 
   const dx = target.position.x - projectile.position.x;
   const dy = target.position.y - projectile.position.y;
-  const remaining = Math.hypot(dx, dy);
   const step = projectile.speed * deltaSeconds;
   projectile.ttlSeconds -= deltaSeconds;
-  const direction =
-    projectile.shieldDamage <= 0 && projectile.hullDamage <= 0
-      ? normalize(dx - dy * 0.14, dy + dx * 0.14)
-      : normalize(dx, dy);
+  if (projectile.kind === 'missile') {
+    const desired = Math.atan2(dy, dx);
+    const current = Math.atan2(projectile.direction.y, projectile.direction.x);
+    const error = Math.atan2(Math.sin(desired - current), Math.cos(desired - current));
+    const turn = clamp(error, -2.8 * deltaSeconds, 2.8 * deltaSeconds);
+    projectile.direction = { x: Math.cos(current + turn), y: Math.sin(current + turn) };
+  }
+  // Plasma bolts and autocannon slugs retain their launch vector.
   const next = {
-    x: projectile.position.x + direction.x * step,
-    y: projectile.position.y + direction.y * step,
+    x: projectile.position.x + projectile.direction.x * step,
+    y: projectile.position.y + projectile.direction.y * step,
   };
   const shieldHit =
     projectile.shieldDamage > 0 || projectile.hullDamage > 0
@@ -279,7 +324,21 @@ function advanceRuntimeProjectile(
     runtime.projectiles.splice(index, 1);
     return;
   }
-  if (remaining <= Math.max(18, step) || projectile.ttlSeconds <= 0) {
+  const segmentX = next.x - projectile.position.x;
+  const segmentY = next.y - projectile.position.y;
+  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
+  const fraction = clamp(
+    ((target.position.x - projectile.position.x) * segmentX +
+      (target.position.y - projectile.position.y) * segmentY) / Math.max(0.001, lengthSquared),
+    0,
+    1
+  );
+  const closest = {
+    x: projectile.position.x + fraction * segmentX,
+    y: projectile.position.y + fraction * segmentY,
+  };
+  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
+  if (distance(closest, target.position) <= hitRadius) {
     const result = recordProjectileDamage(runtime, projectile, source, target);
     runtime.lastEvent =
       source.setup.name +
@@ -293,6 +352,7 @@ function advanceRuntimeProjectile(
     return;
   }
   projectile.position = next;
+  if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
 }
 
 export function advanceRuntimeProjectiles(

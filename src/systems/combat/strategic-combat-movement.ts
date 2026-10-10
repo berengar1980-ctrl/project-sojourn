@@ -320,6 +320,33 @@ export function moveCombatant(
     );
   }
 
+  // Broadside ships steer to expose the side where their heavy gun is
+  // physically mounted. Turrets and missiles do not constrain the heading.
+  if (combatant.tactic !== 'flee') {
+    const sideGun = combatant.setup.weapons
+      .map((weapon, index) => ({ weapon, index }))
+      .filter(
+        (entry) =>
+          entry.weapon.weapon?.mount === 'broadside' &&
+          range <= entry.weapon.weapon.rangeMeters * 1.2
+      )
+      .sort(
+        (a, b) =>
+          (enemy.shieldHp > 0
+            ? (b.weapon.weapon?.shieldDamage ?? 0) - (a.weapon.weapon?.shieldDamage ?? 0)
+            : (b.weapon.weapon?.hullDamage ?? 0) - (a.weapon.weapon?.hullDamage ?? 0))
+      )[0];
+    if (sideGun) {
+      const facing = combatant.setup.weaponMounts?.find(
+        (mount) => mount.slotIndex === sideGun.index
+      )?.facing;
+      const broadsideHeading =
+        Math.atan2(dy, dx) + (facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
+      direction = { x: Math.cos(broadsideHeading), y: Math.sin(broadsideHeading) };
+      targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
+    }
+  }
+
   const desiredHeading = Math.atan2(direction.y, direction.x);
   const headingError = wrapAngle(desiredHeading - combatant.headingRadians);
   const maxTurn = Math.max(0.25, combatant.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
