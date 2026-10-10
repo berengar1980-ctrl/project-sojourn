@@ -12,13 +12,21 @@ import {
   createStrategicCombatService,
   type StrategicCombatantSetup,
 } from '../../systems/combat';
+import { crewDefinitions, crewDefinitionById } from '../../data/crew/crew-definitions';
+import {
+  pilotingDodgeChance,
+  sensorWeaponHitChanceBonus,
+  weaponDamageMultiplier,
+  weaponCriticalChance,
+  weaponCycleTimeMultiplier,
+} from '../../systems/crew/crew-skill-effects';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 
 interface DuelDraft {
   shipId: string;
   weapons: string[];
-  crew: number;
+  crewId: string;
 }
 
 function createLabel(text: string, control: HTMLElement): HTMLLabelElement {
@@ -79,22 +87,18 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
 
 function crewSelector(draft: DuelDraft): HTMLLabelElement {
   const select = document.createElement('select');
-  for (const [value, label] of [
-    [25, 'Rekruten'],
-    [50, 'Erfahren'],
-    [75, 'Veteranen'],
-    [95, 'Elite'],
-  ] as const) {
+  for (const member of crewDefinitions) {
     const option = document.createElement('option');
-    option.value = String(value);
-    option.textContent = label;
+    option.value = member.id;
+    option.textContent = member.name + ' · ' + member.title +
+      ' (Pilot ' + member.skills.piloting + ', Waffen ' + member.skills.weapons + ')';
     select.append(option);
   }
-  select.value = String(draft.crew);
+  select.value = draft.crewId;
   select.addEventListener('change', () => {
-    draft.crew = Number(select.value);
+    draft.crewId = select.value;
   });
-  return createLabel('Crew-Erfahrung', select);
+  return createLabel('Crew / Kommandant', select);
 }
 
 function playerCard(
@@ -141,7 +145,10 @@ function duelCombatant(
         }]
       : [];
   });
-  const experience = draft.crew / 100;
+  const crew = crewDefinitionById(draft.crewId);
+  const pilotSkill = crew?.skills.piloting ?? 50;
+  const weaponSkill = crew?.skills.weapons ?? 50;
+  const sensorSkill = crew?.skills.sensors ?? 50;
   return {
     id: 'duelist-' + index,
     name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
@@ -151,11 +158,11 @@ function duelCombatant(
     hullHp: shipHullMaxHp(ship),
     weapons: equipped.map((entry) => entry.component),
     weaponMounts: mounts,
-    hitChance: 0.58 + experience * 0.24,
-    dodgeChance: experience * 0.13,
-    damageMultiplier: 0.95 + experience * 0.16,
-    criticalChance: experience * 0.12,
-    cycleTimeMultiplier: 1.12 - experience * 0.18,
+    hitChance: 0.68 + sensorWeaponHitChanceBonus(sensorSkill),
+    dodgeChance: pilotingDodgeChance(pilotSkill),
+    damageMultiplier: weaponDamageMultiplier(weaponSkill),
+    criticalChance: weaponCriticalChance(weaponSkill),
+    cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
     preferredTactic: 'fight',
     ...resolveShipCombatMovementStats(ship),
     tractorRangeMeters: points.tractorBeams.length ? 400 : 0,
@@ -167,15 +174,15 @@ function duelCombatant(
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
-    { shipId: ships[0]!.id, weapons: [], crew: 50 },
-    { shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id, weapons: [], crew: 50 },
+    { shipId: ships[0]!.id, weapons: [], crewId: crewDefinitions[0]!.id },
+    { shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id, weapons: [], crewId: crewDefinitions[1]!.id },
   ];
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
   const title = document.createElement('h1');
   title.textContent = 'HARROWDRIFT · LOKALES DUELL';
   const description = document.createElement('p');
-  description.textContent = 'Zwei Schiffe mit individuellen Waffen und Crew-Erfahrung. Danach übernehmen die Kampf-KIs.';
+  description.textContent = 'Zwei Schiffe mit individuellen Waffen und Crewmitgliedern. Danach übernehmen die Kampf-KIs.';
   const cards = document.createElement('div');
   cards.className = 'harrow-duel__cards';
   const actions = document.createElement('div');
