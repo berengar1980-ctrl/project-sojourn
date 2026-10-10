@@ -54,12 +54,17 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
       if (!weapon) return [];
       const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
       const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
+      const weaponMount = weapon.mount ?? (weapon.family === 'railgun'
+        ? 'forward'
+        : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
+          ? 'broadside'
+          : 'turret');
       const matching =
         group.focus === 'turret'
-          ? weapon.mount === 'turret' || weapon.mount === 'guided'
+          ? weaponMount === 'turret' || weaponMount === 'guided'
           : group.focus === 'forward'
-            ? weapon.mount === 'forward' && facing === 'forward'
-            : weapon.mount === 'broadside' && facing === group.facing;
+            ? weaponMount === 'forward' && facing === 'forward'
+            : weaponMount === 'broadside' && facing === group.facing;
       return matching ? [weapon] : [];
     });
     if (!guns.length) continue;
