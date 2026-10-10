@@ -129,7 +129,6 @@ export class StrategicCombatRenderer {
     drawCombatGrapple(
       this.context,
       this.model,
-      (point) => this.screen(point, width, height),
       (side) => {
         const combatant = this.model[side];
         const geometry = this.shipGeometry(combatant, width, height);

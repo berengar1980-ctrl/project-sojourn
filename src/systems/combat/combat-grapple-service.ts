@@ -27,6 +27,9 @@ export function fireCombatGrapple(
     origin: { ...attacker },
     target: { ...defender },
     resolved: false,
+    ropeLength: Math.max(140, Math.hypot(defender.x - attacker.x, defender.y - attacker.y)),
+    tension: 0,
+    tractorAssisted: false,
   };
 }
 

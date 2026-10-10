@@ -8,26 +8,33 @@ interface Point {
 export function drawCombatGrapple(
   context: CanvasRenderingContext2D,
   model: StrategicCombatSnapshot,
-  screen: (point: Point) => Point,
   sourceAnchor: (side: 'attacker' | 'defender') => Point
 ): void {
   const grapple = model.grapple;
   if (!grapple) return;
-  const target = grapple.owner === 'attacker' ? model.defender : model.attacker;
   const origin = sourceAnchor(grapple.owner);
-  const destination = screen(target.position);
-  const progress = Math.min(1, grapple.elapsed / 0.65);
+  const targetSide = grapple.owner === 'attacker' ? 'defender' : 'attacker';
+  const destination = sourceAnchor(targetSide);
+  const progress = grapple.resolved ? 1 : Math.min(1, grapple.elapsed / 0.65);
   const tip = {
     x: origin.x + (destination.x - origin.x) * progress,
     y: origin.y + (destination.y - origin.y) * progress,
   };
   context.save();
-  context.lineWidth = 2;
+  context.lineWidth = grapple.tension > 0 ? 2.6 : 2;
   context.strokeStyle = grapple.success ? '#697379' : '#535c62';
   context.beginPath();
   context.moveTo(origin.x, origin.y);
   context.lineTo(tip.x, tip.y);
   context.stroke();
+  if (grapple.resolved && grapple.tractorAssisted) {
+    context.strokeStyle = 'rgba(105, 218, 196, 0.38)';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(origin.x, origin.y);
+    context.lineTo(destination.x, destination.y);
+    context.stroke();
+  }
   context.translate(tip.x, tip.y);
   context.rotate(Math.atan2(destination.y - origin.y, destination.x - origin.x));
   context.fillStyle = grapple.success ? '#adb5b9' : '#8d969b';
