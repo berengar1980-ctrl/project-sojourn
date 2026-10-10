@@ -33,9 +33,8 @@ export function weaponInArc(
   const muzzle = weaponMuzzle(source, slot);
   const side = mount?.facing;
   const facing =
-    kind === 'forward'
-      ? source.headingRadians
-      : source.headingRadians + (side === 'starboard' ? Math.PI / 2 : side === 'port' ? -Math.PI / 2 : 0);
+    source.headingRadians +
+    (side === 'starboard' ? Math.PI / 2 : side === 'port' ? -Math.PI / 2 : 0);
   const bearing = Math.atan2(target.y - muzzle.y, target.x - muzzle.x);
   const delta = Math.atan2(Math.sin(bearing - facing), Math.cos(bearing - facing));
   return Math.abs(delta) <= (degrees * Math.PI) / 360 + 0.000001;
