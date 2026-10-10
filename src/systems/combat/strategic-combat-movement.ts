@@ -261,6 +261,7 @@ function broadsideSteering(
   dy: number
 ): CombatPoint | null {
   if (combatant.tactic === 'flee') return null;
+  if (combatant.strategy && combatant.strategy.focus !== 'broadside') return null;
   const sideGun = combatant.setup.weapons
     .map((weapon, index) => ({ weapon, index }))
     .filter(
@@ -303,7 +304,7 @@ export function moveCombatant(
   const toward = normalize(dx, dy);
   const perpendicular =
     side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
-  const desired = preferredRange(combatant);
+  const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
 
   let direction = toward;
   let targetSpeedFactor = 0.88;
@@ -335,6 +336,10 @@ export function moveCombatant(
   if (broadsideDirection) {
     direction = broadsideDirection;
     targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
+  } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
+    // Approach with the bow facing the target: velocity still obeys inertia.
+    direction = toward;
+    targetSpeedFactor = range > desired ? 0.9 : 0.4;
   }
 
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
