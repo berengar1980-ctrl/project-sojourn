@@ -261,6 +261,7 @@ function broadsideSteering(
   dy: number
 ): CombatPoint | null {
   if (combatant.tactic === 'flee') return null;
+  if (combatant.strategy && combatant.strategy.focus !== 'broadside') return null;
   const sideGun = combatant.setup.weapons
     .map((weapon, index) => ({ weapon, index }))
     .filter(
@@ -280,31 +281,17 @@ function broadsideSteering(
   return { x: Math.cos(heading), y: Math.sin(heading) };
 }
 
-export function moveCombatant(
+function choosePlanDirection(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
-  side: StrategicCombatSide,
-  deltaSeconds: number,
   arena: StrategicCombatArenaOptions,
-  activeMines: readonly MutableMine[]
-): void {
-  if (combatant.hullHp <= 0) {
-    combatant.velocity.x = 0;
-    combatant.velocity.y = 0;
-    combatant.speed = 0;
-    combatant.turnRateRadiansPerSecond = 0;
-    combatant.angularThrust = 0;
-    return;
-  }
-
-  const dx = enemy.position.x - combatant.position.x;
-  const dy = enemy.position.y - combatant.position.y;
-  const range = Math.max(1, Math.hypot(dx, dy));
-  const toward = normalize(dx, dy);
-  const perpendicular =
-    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
-  const desired = preferredRange(combatant);
-
+  range: number,
+  desired: number,
+  toward: CombatPoint,
+  perpendicular: CombatPoint,
+  dx: number,
+  dy: number
+): { direction: CombatPoint; targetSpeedFactor: number } {
   let direction = toward;
   let targetSpeedFactor = 0.88;
   if (combatant.tactic === 'flee') {
@@ -335,7 +322,50 @@ export function moveCombatant(
   if (broadsideDirection) {
     direction = broadsideDirection;
     targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
+  } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
+    // Approach with the bow facing the target: velocity still obeys inertia.
+    direction = toward;
+    targetSpeedFactor = range > desired ? 0.9 : 0.4;
   }
+  return { direction, targetSpeedFactor };
+}
+
+export function moveCombatant(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  side: StrategicCombatSide,
+  deltaSeconds: number,
+  arena: StrategicCombatArenaOptions,
+  activeMines: readonly MutableMine[]
+): void {
+  if (combatant.hullHp <= 0) {
+    combatant.velocity.x = 0;
+    combatant.velocity.y = 0;
+    combatant.speed = 0;
+    combatant.turnRateRadiansPerSecond = 0;
+    combatant.angularThrust = 0;
+    return;
+  }
+
+  const dx = enemy.position.x - combatant.position.x;
+  const dy = enemy.position.y - combatant.position.y;
+  const range = Math.max(1, Math.hypot(dx, dy));
+  const toward = normalize(dx, dy);
+  const perpendicular =
+    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
+  const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
+
+  let { direction, targetSpeedFactor } = choosePlanDirection(
+    combatant,
+    enemy,
+    arena,
+    range,
+    desired,
+    toward,
+    perpendicular,
+    dx,
+    dy
+  );
 
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
   if (mineAvoidance) {
