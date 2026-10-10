@@ -34,7 +34,10 @@ export function fitsWeaponHardpoint(
   if (!mounts) return true;
   const point = mounts.find((mount) => mount.slotIndex === index);
   if (!point) return false;
-  return !point.allowedMounts || point.allowedMounts.includes(weapon.mount ?? 'turret');
+  return (
+    (!point.allowedMounts || point.allowedMounts.includes(weapon.mount ?? 'turret')) &&
+    (!point.allowedFamilies || point.allowedFamilies.includes(weapon.family))
+  );
 }
 
 export function shipCanFitWeapon(ship: ShipDefinition, weapon: ShipWeaponProfile): boolean {
