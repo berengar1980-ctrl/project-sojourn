@@ -18,7 +18,8 @@ export function rechargeFireControl(state: MutableCombatant, now: number): void 
   }
   const recharge = fireControlRechargeSeconds(control.max);
   if (control.nextRechargeAt <= 0) control.nextRechargeAt = now + recharge;
-  while (control.charges < control.max && now >= control.nextRechargeAt) {
+  // Floating-point rounding must not delay a charge at the exact deadline.
+  while (control.charges < control.max && now + 0.000001 >= control.nextRechargeAt) {
     control.charges += 1;
     control.nextRechargeAt = control.charges < control.max ? control.nextRechargeAt + recharge : 0;
   }
