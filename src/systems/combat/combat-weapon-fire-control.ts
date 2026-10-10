@@ -20,8 +20,7 @@ export function rechargeFireControl(state: MutableCombatant, now: number): void 
   if (control.nextRechargeAt <= 0) control.nextRechargeAt = now + recharge;
   while (control.charges < control.max && now >= control.nextRechargeAt) {
     control.charges += 1;
-    control.nextRechargeAt =
-      control.charges < control.max ? control.nextRechargeAt + recharge : 0;
+    control.nextRechargeAt = control.charges < control.max ? control.nextRechargeAt + recharge : 0;
   }
 }
 

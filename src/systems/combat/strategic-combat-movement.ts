@@ -330,11 +330,10 @@ export function moveCombatant(
           entry.weapon.weapon?.mount === 'broadside' &&
           range <= entry.weapon.weapon.rangeMeters * 1.2
       )
-      .sort(
-        (a, b) =>
-          (enemy.shieldHp > 0
-            ? (b.weapon.weapon?.shieldDamage ?? 0) - (a.weapon.weapon?.shieldDamage ?? 0)
-            : (b.weapon.weapon?.hullDamage ?? 0) - (a.weapon.weapon?.hullDamage ?? 0))
+      .sort((a, b) =>
+        enemy.shieldHp > 0
+          ? (b.weapon.weapon?.shieldDamage ?? 0) - (a.weapon.weapon?.shieldDamage ?? 0)
+          : (b.weapon.weapon?.hullDamage ?? 0) - (a.weapon.weapon?.hullDamage ?? 0)
       )[0];
     if (sideGun) {
       const facing = combatant.setup.weaponMounts?.find(

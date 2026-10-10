@@ -170,4 +170,6 @@ function testProjectile(kind, targetY) {
 assert.equal(testProjectile('plasma', 400).position.y, 100, 'plasma must stay ballistic');
 assert(testProjectile('missile', 400).position.y > 100, 'missiles must steer toward the target');
 
-console.log('PASS shared fire impulses, 450ms command gap, gun arcs, AI fire, snapshot, projectile steering');
+console.log(
+  'PASS shared fire impulses, 450ms command gap, gun arcs, AI fire, snapshot, projectile steering'
+);

@@ -27,7 +27,11 @@ import {
 } from './strategic-combat-runtime';
 
 import { distance, clamp, weaponKind, normalize } from './strategic-combat-geometry';
-import { consumeFireControl, rechargeFireControl, fireControlReady } from './combat-weapon-fire-control';
+import {
+  consumeFireControl,
+  rechargeFireControl,
+  fireControlReady,
+} from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 
 function fireRuntimeInstantWeapon(
@@ -59,15 +63,7 @@ function fireRuntimeInstantWeapon(
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
-    addRuntimeBeam(
-      runtime,
-      side,
-      kind,
-      weapon.weapon.family,
-      muzzle,
-      obstacle.point,
-      weaponIndex
-    );
+    addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, obstacle.point, weaponIndex);
     noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point);
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
@@ -204,9 +200,9 @@ export function advanceRuntimeWeapons(
     .filter(({ weapon, index }) =>
       Boolean(
         weapon?.weapon &&
-          (source.cooldowns[index] ?? 0) <= 0 &&
-          distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
-          weaponInArc(source, target.position, index, weapon.weapon)
+        (source.cooldowns[index] ?? 0) <= 0 &&
+        distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+        weaponInArc(source, target.position, index, weapon.weapon)
       )
     )
     .sort((a, b) => {
@@ -216,14 +212,7 @@ export function advanceRuntimeWeapons(
     });
   const candidate = candidates[0];
   if (!candidate || !consumeFireControl(source, now)) return;
-  const event = fireRuntimeWeapon(
-    runtime,
-    side,
-    source,
-    target,
-    candidate.weapon,
-    candidate.index
-  );
+  const event = fireRuntimeWeapon(runtime, side, source, target, candidate.weapon, candidate.index);
   source.cooldowns[candidate.index] =
     (candidate.weapon.weapon?.cooldownSeconds ?? 1) *
     clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
@@ -329,7 +318,8 @@ function advanceRuntimeProjectile(
   const lengthSquared = segmentX * segmentX + segmentY * segmentY;
   const fraction = clamp(
     ((target.position.x - projectile.position.x) * segmentX +
-      (target.position.y - projectile.position.y) * segmentY) / Math.max(0.001, lengthSquared),
+      (target.position.y - projectile.position.y) * segmentY) /
+      Math.max(0.001, lengthSquared),
     0,
     1
   );
