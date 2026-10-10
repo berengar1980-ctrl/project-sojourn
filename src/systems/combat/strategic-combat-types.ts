@@ -27,7 +27,7 @@ export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regrou
 export interface CombatLogEntry {
   readonly timeSeconds: number;
   readonly side: StrategicCombatSide | 'system';
-  readonly event: 'start' | 'plan' | 'phase' | 'impact' | 'result';
+  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result';
   readonly detail: string;
 }
 
@@ -324,6 +324,7 @@ export interface StrategicCombatRuntime {
   combatLog: CombatLogEntry[];
   firstPlanner: StrategicCombatSide;
   lastLoggedImpact: number;
+  lastLoggedSampleSecond: number;
   projectileSerial: number;
   beamSerial: number;
   mineSerial: number;
