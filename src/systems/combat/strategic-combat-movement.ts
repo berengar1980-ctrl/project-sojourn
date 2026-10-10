@@ -136,7 +136,9 @@ export function resolveArenaObstacles(
     const normal = range > 0.001 ? { x: dx / range, y: dy / range } : { x: 1, y: 0 };
     combatant.position.x = obstacle.position.x + normal.x * required;
     combatant.position.y = obstacle.position.y + normal.y * required;
-    combatant.speed *= 0.35;
+    combatant.velocity.x *= 0.35;
+    combatant.velocity.y *= 0.35;
+    combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
   }
 }
 
@@ -152,8 +154,12 @@ export function resolveCombatantCollision(first: MutableCombatant, second: Mutab
   first.position.y -= normal.y * overlap * 0.5;
   second.position.x += normal.x * overlap * 0.5;
   second.position.y += normal.y * overlap * 0.5;
-  first.speed *= 0.6;
-  second.speed *= 0.6;
+  first.velocity.x *= 0.6;
+  first.velocity.y *= 0.6;
+  second.velocity.x *= 0.6;
+  second.velocity.y *= 0.6;
+  first.speed = Math.hypot(first.velocity.x, first.velocity.y);
+  second.speed = Math.hypot(second.velocity.x, second.velocity.y);
 }
 
 export function mineDetection(
@@ -203,6 +209,46 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   );
 }
 
+/** Apply limited thrust to velocity; turning the bow does not rotate existing momentum. */
+function applyInertialThrust(
+  combatant: MutableCombatant,
+  headingError: number,
+  targetSpeedFactor: number,
+  baseSpeed: number,
+  acceleration: number,
+  tractorLocked: boolean,
+  dt: number,
+  arena: StrategicCombatArenaOptions
+): void {
+  const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
+  const requested = baseSpeed * targetSpeedFactor * alignment;
+  const targetSpeed = tractorLocked ? Math.min(requested, 25) : requested;
+  const dx = Math.cos(combatant.headingRadians) * targetSpeed - combatant.velocity.x;
+  const dy = Math.sin(combatant.headingRadians) * targetSpeed - combatant.velocity.y;
+  const change = Math.hypot(dx, dy);
+  const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
+  const fraction = Math.min(
+    1,
+    (acceleration * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+  );
+  combatant.velocity.x += dx * fraction;
+  combatant.velocity.y += dy * fraction;
+  const speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
+  const limit = tractorLocked ? 25 : baseSpeed * 1.05;
+  if (speed > limit) {
+    combatant.velocity.x *= limit / speed;
+    combatant.velocity.y *= limit / speed;
+  }
+
+  const nextX = combatant.position.x + combatant.velocity.x * dt;
+  const nextY = combatant.position.y + combatant.velocity.y * dt;
+  combatant.position.x = clamp(nextX, EDGE_PADDING, arena.width - EDGE_PADDING);
+  combatant.position.y = clamp(nextY, EDGE_PADDING, arena.height - EDGE_PADDING);
+  if (nextX !== combatant.position.x) combatant.velocity.x = 0;
+  if (nextY !== combatant.position.y) combatant.velocity.y = 0;
+  combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -212,6 +258,8 @@ export function moveCombatant(
   activeMines: readonly MutableMine[]
 ): void {
   if (combatant.hullHp <= 0) {
+    combatant.velocity.x = 0;
+    combatant.velocity.y = 0;
     combatant.speed = 0;
     combatant.turnRateRadiansPerSecond = 0;
     combatant.angularThrust = 0;
@@ -281,31 +329,19 @@ export function moveCombatant(
   combatant.angularThrust = clamp(headingError / Math.max(0.1, maxTurn), -1, 1);
 
   const baseSpeed = Math.max(65, combatant.setup.combatSpeed ?? 120);
-  const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
-  const tractorLocked = isTractorLocked(combatant, enemy);
-  const desiredSpeed = tractorLocked
-    ? Math.min(baseSpeed * targetSpeedFactor * alignment, 25)
-    : baseSpeed * targetSpeedFactor * alignment;
   const acceleration = Math.max(
     12,
     combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
-  const speedDelta = clamp(
-    desiredSpeed - combatant.speed,
-    -acceleration * 1.35 * deltaSeconds,
-    acceleration * deltaSeconds
-  );
-  combatant.speed = clamp(combatant.speed + speedDelta, 0, baseSpeed * 1.05);
-
-  combatant.position.x = clamp(
-    combatant.position.x + Math.cos(combatant.headingRadians) * combatant.speed * deltaSeconds,
-    EDGE_PADDING,
-    arena.width - EDGE_PADDING
-  );
-  combatant.position.y = clamp(
-    combatant.position.y + Math.sin(combatant.headingRadians) * combatant.speed * deltaSeconds,
-    EDGE_PADDING,
-    arena.height - EDGE_PADDING
+  applyInertialThrust(
+    combatant,
+    headingError,
+    targetSpeedFactor,
+    baseSpeed,
+    acceleration,
+    isTractorLocked(combatant, enemy),
+    deltaSeconds,
+    arena
   );
   resolveArenaObstacles(combatant, arena);
 }
