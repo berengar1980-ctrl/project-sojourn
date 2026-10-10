@@ -85,7 +85,7 @@ function scoreWeaponGroup(
     reason: enemyShielded
       ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
       : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
-};
+  };
 }
 
 function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
@@ -118,8 +118,14 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
   ];
   for (const group of groups) {
     const plan = scoreWeaponGroup(
-      ship, group, enemyRange, currentRange, speedRatio,
-      turnRatio, enemyShielded, targetSubsystemChoice
+      ship,
+      group,
+      enemyRange,
+      currentRange,
+      speedRatio,
+      turnRatio,
+      enemyShielded,
+      targetSubsystemChoice
     );
     if (plan) plans.push(plan);
   }
