@@ -76,7 +76,7 @@ export class DistressDamageParticles {
     const vx = this.previous ? (position.x - this.previous.x) / dt : 0;
     const vy = this.previous ? (position.y - this.previous.y) / dt : 0;
     this.previous = { ...position };
-    this.emitSources(now, position, heading, length, dt, vx, vy);
+    this.emitSources(now, position, heading, length, dt, vx, vy, hullFraction);
     this.renderParticles(dt, camera, ctx, width, height);
   }
 
