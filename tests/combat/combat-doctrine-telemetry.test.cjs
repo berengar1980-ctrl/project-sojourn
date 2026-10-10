@@ -5,7 +5,8 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/strategic-combat-service.ts'
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
 );
 const weapon = {
   id: 'test-rail',
@@ -15,16 +16,32 @@ const weapon = {
   power: 1,
   cost: 0,
   weapon: {
-    family: 'railgun', mount: 'forward', rangeMeters: 1550,
-    shieldDamage: 10, hullDamage: 20, cooldownSeconds: 6,
-    heat: 0, ammoPerShot: 1, arcDegrees: 60,
+    family: 'railgun',
+    mount: 'forward',
+    rangeMeters: 1550,
+    shieldDamage: 10,
+    hullDamage: 20,
+    cooldownSeconds: 6,
+    heat: 0,
+    ammoPerShot: 1,
+    arcDegrees: 60,
   },
 };
 const setup = (id) => ({
-  id, name: id, shipId: 'patrol', shieldHp: 100, hullHp: 100,
-  weapons: [weapon], hitChance: 0.7, dodgeChance: 0, damageMultiplier: 1,
-  criticalChance: 0, cycleTimeMultiplier: 1, combatSpeed: 110,
-  aiControlled: true, aiAggression: 90,
+  id,
+  name: id,
+  shipId: 'patrol',
+  shieldHp: 100,
+  hullHp: 100,
+  weapons: [weapon],
+  hitChance: 0.7,
+  dodgeChance: 0,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  combatSpeed: 110,
+  aiControlled: true,
+  aiAggression: 90,
 });
 for (const [seed, first, second] of [
   [70, 'attacker', 'defender'],
@@ -34,7 +51,9 @@ for (const [seed, first, second] of [
   let state = fight.getSnapshot();
   assert.equal(state[first].nextStrategyReviewAt, 0);
   assert.equal(state[second].nextStrategyReviewAt, 4);
-  assert(state.combatLog.some((entry) => entry.event === 'start' && entry.detail.includes('Railgun I')));
+  assert(
+    state.combatLog.some((entry) => entry.event === 'start' && entry.detail.includes('Railgun I'))
+  );
   state = fight.tick(0.08);
   assert(state[first].strategy);
   assert.equal(state[second].strategy, null);
@@ -45,8 +64,10 @@ for (const [seed, first, second] of [
   assert(state[second].strategy);
   assert.equal(state[second].nextStrategyReviewAt, 12);
   const log = fight.getCombatLog();
-  assert(log.some((entry) => entry.event === 'state' && entry.detail.includes('Abstand')),
-    'movement telemetry must expose distance and current plan phase');
+  assert(
+    log.some((entry) => entry.event === 'state' && entry.detail.includes('Abstand')),
+    'movement telemetry must expose distance and current plan phase'
+  );
   log[0].detail = 'corrupted';
   assert.notEqual(fight.getCombatLog()[0].detail, 'corrupted', 'logs must be detached');
 }

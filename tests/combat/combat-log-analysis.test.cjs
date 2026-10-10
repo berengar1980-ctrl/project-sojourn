@@ -6,7 +6,8 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const { analyzeCombatLog } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/combat-log-analysis.ts'
+  root,
+  'src/systems/combat/combat-log-analysis.ts'
 );
 const log = [
   { timeSeconds: 0, side: 'system', event: 'start', detail: 'Seed 70' },

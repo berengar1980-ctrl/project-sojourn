@@ -69,20 +69,26 @@ export function createStrategicCombatPanel(
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
   const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
   const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
-  shell.querySelector<HTMLButtonElement>('.strategic-combat-log-export')?.addEventListener('click', () => {
-    const payload = JSON.stringify({
-      format: 'harrowdrift-combat-log-v1',
-      snapshot: options.combat.getSnapshot(),
-      events: options.combat.getCombatLog(),
-      analysis: analyzeCombatLog(options.combat.getCombatLog()),
-    }, null, 2);
-    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'harrowdrift-combat-log.json';
-    link.click();
-    URL.revokeObjectURL(url);
-  });
+  shell
+    .querySelector<HTMLButtonElement>('.strategic-combat-log-export')
+    ?.addEventListener('click', () => {
+      const payload = JSON.stringify(
+        {
+          format: 'harrowdrift-combat-log-v1',
+          snapshot: options.combat.getSnapshot(),
+          events: options.combat.getCombatLog(),
+          analysis: analyzeCombatLog(options.combat.getCombatLog()),
+        },
+        null,
+        2
+      );
+      const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'harrowdrift-combat-log.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
   }

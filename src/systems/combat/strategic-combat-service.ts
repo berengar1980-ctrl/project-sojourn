@@ -217,12 +217,21 @@ function reviewAndExecute(
       doctrine: classifyCombatDoctrine(ship, enemy),
     };
     recordCombatLog(
-      runtime, side, 'plan',
-      ship.strategy.doctrine + ' · ' + ship.strategy.reason +
-        ' · Distanz ' + Math.round(ship.strategy.desiredRange) + 'm' +
-        ' · Fokus ' + ship.strategy.focus +
-        ' · Gegner Schild ' + Math.round(enemy.shieldHp) +
-        ' · Hülle ' + Math.round(enemy.hullHp)
+      runtime,
+      side,
+      'plan',
+      ship.strategy.doctrine +
+        ' · ' +
+        ship.strategy.reason +
+        ' · Distanz ' +
+        Math.round(ship.strategy.desiredRange) +
+        'm' +
+        ' · Fokus ' +
+        ship.strategy.focus +
+        ' · Gegner Schild ' +
+        Math.round(enemy.shieldHp) +
+        ' · Hülle ' +
+        Math.round(enemy.hullHp)
     );
   }
   if (!ship.strategy) return;
@@ -242,11 +251,21 @@ function recordCombatMotion(runtime: StrategicCombatRuntime): void {
       ['attacker', runtime.attacker],
       ['defender', runtime.defender],
     ] as const) {
-      recordCombatLog(runtime, side, 'state',
-        'Abstand ' + range + 'm · Tempo ' + Math.round(ship.speed) +
-        'm/s · Schild ' + Math.round(ship.shieldHp) +
-        ' · Hülle ' + Math.round(ship.hullHp) +
-        ' · Phase ' + (ship.strategy?.phase ?? 'Standardtaktik'));
+      recordCombatLog(
+        runtime,
+        side,
+        'state',
+        'Abstand ' +
+          range +
+          'm · Tempo ' +
+          Math.round(ship.speed) +
+          'm/s · Schild ' +
+          Math.round(ship.shieldHp) +
+          ' · Hülle ' +
+          Math.round(ship.hullHp) +
+          ' · Phase ' +
+          (ship.strategy?.phase ?? 'Standardtaktik')
+      );
     }
   }
 }
@@ -320,11 +339,21 @@ function tickStrategicCombat(
   // Important tactical milestones can transition to the next doctrine immediately.
   if (previousShields[0]! > 0 && runtime.attacker.shieldHp <= 0) {
     runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
-    recordCombatLog(runtime, 'system', 'phase', 'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten');
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
   }
   if (previousShields[1]! > 0 && runtime.defender.shieldHp <= 0) {
     runtime.attacker.nextStrategyReviewAt = runtime.elapsedSeconds;
-    recordCombatLog(runtime, 'system', 'phase', 'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten');
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
   }
   if (
     runtime.defender.setup.aiControlled &&
@@ -342,9 +371,16 @@ function tickStrategicCombat(
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
     runtime.lastLoggedImpact = runtime.lastImpact.serial;
-    recordCombatLog(runtime, runtime.lastImpact.target, 'impact',
-      runtime.lastImpact.layer + ' · ' + Math.round(runtime.lastImpact.damage) +
-      ' HP' + (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : ''));
+    recordCombatLog(
+      runtime,
+      runtime.lastImpact.target,
+      'impact',
+      runtime.lastImpact.layer +
+        ' · ' +
+        Math.round(runtime.lastImpact.damage) +
+        ' HP' +
+        (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : '')
+    );
   }
   if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
   return runtimeSnapshot(runtime);
@@ -452,19 +488,34 @@ export function createStrategicCombatService(
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
-  recordCombatLog(runtime, 'system', 'start',
-    'Seed ' + seed + ' · erste Analyse ' + runtime.firstPlanner);
+  recordCombatLog(
+    runtime,
+    'system',
+    'start',
+    'Seed ' + seed + ' · erste Analyse ' + runtime.firstPlanner
+  );
   for (const [side, setup] of [
     ['attacker', attackerSetup],
     ['defender', defenderSetup],
   ] as const) {
-    recordCombatLog(runtime, side, 'start',
-      setup.name + ' · Schiff ' + setup.shipId +
-      ' · Tempo ' + (setup.combatSpeed ?? 120) +
-      ' · Schild ' + setup.shieldHp + ' · Hülle ' + setup.hullHp +
-      ' · Waffen ' + setup.weapons.map((weapon) =>
-        weapon.name + ' (' + (weapon.weapon?.rangeMeters ?? 0) + 'm)'
-      ).join(', '));
+    recordCombatLog(
+      runtime,
+      side,
+      'start',
+      setup.name +
+        ' · Schiff ' +
+        setup.shipId +
+        ' · Tempo ' +
+        (setup.combatSpeed ?? 120) +
+        ' · Schild ' +
+        setup.shieldHp +
+        ' · Hülle ' +
+        setup.hullHp +
+        ' · Waffen ' +
+        setup.weapons
+          .map((weapon) => weapon.name + ' (' + (weapon.weapon?.rangeMeters ?? 0) + 'm)')
+          .join(', ')
+    );
   }
   return {
     getSnapshot: () => runtimeSnapshot(runtime),

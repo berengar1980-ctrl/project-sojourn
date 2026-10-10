@@ -1,11 +1,10 @@
-import type {
-  CombatDoctrine,
-  CombatPlanPhase,
-  MutableCombatant,
-} from './strategic-combat-types';
+import type { CombatDoctrine, CombatPlanPhase, MutableCombatant } from './strategic-combat-types';
 import { distance, wrapAngle } from './strategic-combat-geometry';
 
-export function classifyCombatDoctrine(ship: MutableCombatant, enemy: MutableCombatant): CombatDoctrine {
+export function classifyCombatDoctrine(
+  ship: MutableCombatant,
+  enemy: MutableCombatant
+): CombatDoctrine {
   const plan = ship.strategy;
   if (ship.tactic === 'flee' || plan?.kind === 'escape') return 'escape';
   if (plan?.kind === 'minefield') return 'minefield';
@@ -17,7 +16,10 @@ export function classifyCombatDoctrine(ship: MutableCombatant, enemy: MutableCom
 }
 
 /** Evaluate prerequisite conditions continuously, without changing the strategic doctrine. */
-export function executeCombatPlan(ship: MutableCombatant, enemy: MutableCombatant): CombatPlanPhase {
+export function executeCombatPlan(
+  ship: MutableCombatant,
+  enemy: MutableCombatant
+): CombatPlanPhase {
   const plan = ship.strategy;
   if (!plan) return 'regroup';
   const separation = distance(ship.position, enemy.position);
@@ -30,9 +32,12 @@ export function executeCombatPlan(ship: MutableCombatant, enemy: MutableCombatan
     enemy.position.y - ship.position.y,
     enemy.position.x - ship.position.x
   );
-  const mountFacing = plan.focus === 'broadside'
-    ? plan.broadsideFacing === 'starboard' ? Math.PI / 2 : -Math.PI / 2
-    : 0;
+  const mountFacing =
+    plan.focus === 'broadside'
+      ? plan.broadsideFacing === 'starboard'
+        ? Math.PI / 2
+        : -Math.PI / 2
+      : 0;
   const error = wrapAngle(bearing - ship.headingRadians - mountFacing);
   return Math.abs(error) > 0.35 ? 'align_weapons' : 'fire';
 }

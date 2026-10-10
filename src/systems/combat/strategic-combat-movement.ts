@@ -327,7 +327,10 @@ function choosePlanDirection(
   const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
   if (broadsideDirection) {
     direction = broadsideDirection;
-    targetSpeedFactor = Math.min(targetSpeedFactor, combatant.strategy?.phase === 'reach_range' ? 0.5 : 0.12);
+    targetSpeedFactor = Math.min(
+      targetSpeedFactor,
+      combatant.strategy?.phase === 'reach_range' ? 0.5 : 0.12
+    );
   } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
     // Approach with the bow facing the target: velocity still obeys inertia.
     direction = toward;

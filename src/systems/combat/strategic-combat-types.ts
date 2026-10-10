@@ -19,8 +19,14 @@ export interface CombatSubsystemHealth {
 }
 
 export type CombatDoctrine =
-  | 'shield_breaker' | 'hull_breaker' | 'range_control' | 'broadside'
-  | 'engine_intercept' | 'minefield' | 'tractor_intercept' | 'escape';
+  | 'shield_breaker'
+  | 'hull_breaker'
+  | 'range_control'
+  | 'broadside'
+  | 'engine_intercept'
+  | 'minefield'
+  | 'tractor_intercept'
+  | 'escape';
 
 export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup';
 

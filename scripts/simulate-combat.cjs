@@ -6,13 +6,16 @@ const { loadStandaloneTypeScriptModule } = require('../tests/ts-module-loader.cj
 
 const root = path.resolve(__dirname, '..');
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/strategic-combat-service.ts'
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
 );
 const { analyzeCombatLog } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/combat-log-analysis.ts'
+  root,
+  'src/systems/combat/combat-log-analysis.ts'
 );
 const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
-  root, 'src/data/ships/ship-component-catalog.ts'
+  root,
+  'src/data/ships/ship-component-catalog.ts'
 );
 const catalog = SHIP_COMPONENT_CATALOG.weapon;
 const railgun = catalog.find((entry) => entry.id === 'weapon-railgun-1');
@@ -62,14 +65,20 @@ function simulate(seed) {
 const count = Math.max(1, Math.min(200, Number(process.argv[2] ?? 16) || 16));
 const results = Array.from({ length: count }, (_, index) => simulate(index + 100));
 const average = (key) => results.reduce((sum, entry) => sum + entry[key], 0) / count;
-process.stdout.write(JSON.stringify({
-  scenarios: count,
-  averageDurationSeconds: Number(average('durationSeconds').toFixed(2)),
-  averageDamage: Number(average('totalDamage').toFixed(2)),
-  winners: {
-    attacker: results.filter((entry) => entry.winner?.includes('A gewinnt')).length,
-    defender: results.filter((entry) => entry.winner?.includes('B gewinnt')).length,
-    unresolved: results.filter((entry) => !entry.winner).length,
-  },
-  results,
-}, null, 2) + '\n');
+process.stdout.write(
+  JSON.stringify(
+    {
+      scenarios: count,
+      averageDurationSeconds: Number(average('durationSeconds').toFixed(2)),
+      averageDamage: Number(average('totalDamage').toFixed(2)),
+      winners: {
+        attacker: results.filter((entry) => entry.winner?.includes('A gewinnt')).length,
+        defender: results.filter((entry) => entry.winner?.includes('B gewinnt')).length,
+        unresolved: results.filter((entry) => !entry.winner).length,
+      },
+      results,
+    },
+    null,
+    2
+  ) + '\n'
+);
