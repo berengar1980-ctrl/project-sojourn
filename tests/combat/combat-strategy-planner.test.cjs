@@ -45,7 +45,7 @@ function ship(id, weapon) {
     aiAggression: 90,
   };
 }
-const fight = createStrategicCombatService(ship('A', rail), ship('B', side), 71, {
+const fight = createStrategicCombatService(ship('A', rail), ship('B', side), 70, {
   width: 2200,
   height: 1400,
   attackerPosition: { x: 700, y: 700 },
