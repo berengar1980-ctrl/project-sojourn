@@ -12,6 +12,7 @@ export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGame
   return {
     ...role,
     ...overrides,
+    weaponSlots: ship.sprite.hardpoints.weaponMounts?.length ?? role.weaponSlots,
     stations: role.stations,
     specialCargo:
       overrides && 'specialCargo' in overrides
