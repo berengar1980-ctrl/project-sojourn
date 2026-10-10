@@ -32,6 +32,7 @@ import {
 } from './strategic-combat-movement';
 
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
 
@@ -146,6 +147,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       : null,
     grappleUsed: { ...runtime.grappleUsed },
     lastEvent: runtime.lastEvent,
+    combatLog: runtime.combatLog.map((entry) => ({ ...entry })),
     projectiles: runtime.projectiles.map((projectile) => ({
       id: projectile.id,
       owner: projectile.owner,
@@ -184,6 +186,50 @@ function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: numb
   for (let index = runtime.beams.length - 1; index >= 0; index -= 1) {
     runtime.beams[index]!.ttlSeconds -= deltaSeconds;
     if (runtime.beams[index]!.ttlSeconds <= 0) runtime.beams.splice(index, 1);
+  }
+}
+
+function recordCombatLog(
+  runtime: StrategicCombatRuntime,
+  side: 'attacker' | 'defender' | 'system',
+  event: 'start' | 'plan' | 'phase' | 'impact' | 'result',
+  detail: string
+): void {
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event,
+    detail,
+  });
+}
+
+function reviewAndExecute(
+  runtime: StrategicCombatRuntime,
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  side: 'attacker' | 'defender'
+): void {
+  const previous = ship.strategy;
+  reviewCombatStrategy(ship, enemy, side, runtime.elapsedSeconds);
+  if (previous !== ship.strategy && ship.strategy) {
+    ship.strategy = {
+      ...ship.strategy,
+      doctrine: classifyCombatDoctrine(ship, enemy),
+    };
+    recordCombatLog(
+      runtime, side, 'plan',
+      ship.strategy.doctrine + ' · ' + ship.strategy.reason +
+        ' · Distanz ' + Math.round(ship.strategy.desiredRange) + 'm' +
+        ' · Fokus ' + ship.strategy.focus +
+        ' · Gegner Schild ' + Math.round(enemy.shieldHp) +
+        ' · Hülle ' + Math.round(enemy.hullHp)
+    );
+  }
+  if (!ship.strategy) return;
+  const nextPhase = executeCombatPlan(ship, enemy);
+  if (ship.strategy.phase !== nextPhase) {
+    ship.strategy = { ...ship.strategy, phase: nextPhase };
+    recordCombatLog(runtime, side, 'phase', nextPhase);
   }
 }
 
@@ -239,8 +285,8 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  reviewCombatStrategy(runtime.attacker, runtime.defender, 'attacker', runtime.elapsedSeconds);
-  reviewCombatStrategy(runtime.defender, runtime.attacker, 'defender', runtime.elapsedSeconds);
+  reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
+  reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
   moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   resolveCombatantCollision(runtime.attacker, runtime.defender);
@@ -265,6 +311,13 @@ function tickStrategicCombat(
     tryFireGrapple(runtime, 'defender');
   }
   resolveRuntimeWinner(runtime);
+  if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
+    runtime.lastLoggedImpact = runtime.lastImpact.serial;
+    recordCombatLog(runtime, runtime.lastImpact.target, 'impact',
+      runtime.lastImpact.layer + ' · ' + Math.round(runtime.lastImpact.damage) +
+      ' HP' + (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : ''));
+  }
+  if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
   return runtimeSnapshot(runtime);
 }
 
@@ -325,6 +378,9 @@ function createStrategicCombatRuntime(
     grapple: null,
     grappleUsed: { attacker: false, defender: false },
     lastEvent: 'Kampfkontakt hergestellt',
+    combatLog: [],
+    firstPlanner: seed % 2 === 0 ? 'attacker' : 'defender',
+    lastLoggedImpact: 0,
     projectileSerial: 0,
     beamSerial: 0,
     mineSerial: 0,
@@ -364,8 +420,25 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
+  runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
+  runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
+  recordCombatLog(runtime, 'system', 'start',
+    'Seed ' + seed + ' · erste Analyse ' + runtime.firstPlanner);
+  for (const [side, setup] of [
+    ['attacker', attackerSetup],
+    ['defender', defenderSetup],
+  ] as const) {
+    recordCombatLog(runtime, side, 'start',
+      setup.name + ' · Schiff ' + setup.shipId +
+      ' · Tempo ' + (setup.combatSpeed ?? 120) +
+      ' · Schild ' + setup.shieldHp + ' · Hülle ' + setup.hullHp +
+      ' · Waffen ' + setup.weapons.map((weapon) =>
+        weapon.name + ' (' + (weapon.weapon?.rangeMeters ?? 0) + 'm)'
+      ).join(', '));
+  }
   return {
     getSnapshot: () => runtimeSnapshot(runtime),
+    getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
