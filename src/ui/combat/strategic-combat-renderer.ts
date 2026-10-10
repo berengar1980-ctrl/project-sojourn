@@ -1,3 +1,4 @@
+import { hash, clamp01 } from './strategic-combat-renderer-math';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
@@ -22,19 +23,6 @@ import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 interface Point {
   readonly x: number;
   readonly y: number;
-}
-
-function hash(value: string): number {
-  let result = 2166136261;
-  for (const char of value) {
-    result ^= char.charCodeAt(0);
-    result = Math.imul(result, 16777619);
-  }
-  return result >>> 0;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 export class StrategicCombatRenderer {
