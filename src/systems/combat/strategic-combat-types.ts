@@ -10,6 +10,14 @@ export type StrategicCombatSide = 'attacker' | 'defender';
 
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
+export interface CombatStrategyPlan {
+  readonly kind: 'frontal' | 'broadside' | 'skirmish' | 'minefield' | 'approach' | 'escape';
+  readonly focus: 'forward' | 'broadside' | 'turret' | 'mine';
+  readonly desiredRange: number;
+  readonly score: number;
+  readonly reason: string;
+}
+
 export type CombatImpactLayer = 'shield' | 'hull' | 'miss' | 'obstacle';
 
 export type CombatProjectileKind = 'plasma' | 'missile' | 'autocannon';
@@ -101,6 +109,8 @@ export interface StrategicCombatantSnapshot {
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
   readonly tactic: CombatTactic;
+  readonly strategy: CombatStrategyPlan | null;
+  readonly nextStrategyReviewAt: number;
   readonly tractorLocked?: boolean;
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';
@@ -211,6 +221,8 @@ export interface MutableCombatant {
   turnRateRadiansPerSecond: number;
   angularThrust: number;
   tactic: CombatTactic;
+  strategy: CombatStrategyPlan | null;
+  nextStrategyReviewAt: number;
   shieldHp: number;
   hullHp: number;
   shieldImpacts: ShieldImpactEffect[];
