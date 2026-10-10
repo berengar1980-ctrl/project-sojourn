@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | Raumkampf Phase 1 – gemeinsame Bewegungswerte und Trägheit | Voidbound-Parität geprüft: **keine Statusänderung**. Kampfbewegungswerte werden für Spieler/NPC aus demselben Schiffstyp abgeleitet; die physikalische Kampfbewegung nutzt eine gespeicherte Geschwindigkeitsrichtung, die beim Drehen nicht sofort rotiert. Kollisionsdämpfung, Traktorsperre und Snapshot werden konsistent aktualisiert. `combat.flee` bleibt umgesetzt; `combat.weapon_fire` bleibt teilweise. Sojourn-eigene physikalische Grundlage für zukünftige Waffenwinkel und Crew-/Werftboni. |
+
 | 2026-10-09 | Paket D · Combat Grapple und Boarding | Bei Schild 0 kann jedes Schiff pro Gefecht genau einen Greifhakenversuch bei höchstens 900 m Entfernung unternehmen: Erfolgswahrscheinlichkeit 30 % bei voller Hülle, linear auf 60 % bis 15 % Hülle. Misserfolg zeigt Haken und Abpraller; Erfolg koppelt die Schiffe, beendet den Raumkampf und führt zum taktischen Enterkampf. NPCs handeln symmetrisch, der Spieler verteidigt gegen NPC-Enterangriffe. Persönliche Ausrüstung wird nur nach gewonnenem Enterkampf erbeutet und im Crew-Inventar registriert, nicht bei gewöhnlichen Raumkampfsiegen. Neue Regressionstests. Keine Änderung an bestehenden Schiffshardpoints. |
 
 | 2026-10-09 | Paket C · Schleppphysik-Feinschliff | Voidbound-Parität überprüft: keine Statusänderung. Paket-C-Schleppbewegung verwendet feste Simulations-Teilschritte für stabileres Verhalten bei schwankender Framerate; die Drehung des schweren Havaristen folgt seiner Bewegungsrichtung verzögert, statt sofort einzurasten. Regressionstest vergleicht variable und konstante Zeitschritte. |

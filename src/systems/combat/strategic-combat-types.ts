@@ -76,6 +76,7 @@ export interface StrategicCombatantSnapshot {
   readonly hullHp: number;
   readonly hullMaxHp: number;
   readonly position: CombatPoint;
+  readonly velocity: CombatPoint;
   readonly headingRadians: number;
   readonly speed: number;
   readonly turnRateRadiansPerSecond: number;
@@ -178,6 +179,7 @@ export interface MutableCombatant {
   readonly hullMaxHp: number;
   readonly cooldowns: number[];
   position: { x: number; y: number };
+  velocity: { x: number; y: number };
   headingRadians: number;
   speed: number;
   turnRateRadiansPerSecond: number;

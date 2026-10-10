@@ -3,6 +3,7 @@ import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../sys
 import {
   getShipComponent,
   resolveShipRuntimeSetup,
+  resolveShipCombatMovementStats,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 
@@ -11,6 +12,7 @@ export function createPlayerCombatant(
   options: ShipRuntimeOptions
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
+  const movement = resolveShipCombatMovementStats(ship);
   const weapons = (runtime.installed.weapon ?? []).flatMap((id) => {
     const component = getShipComponent('weapon', id);
     return component?.weapon ? [component] : [];
@@ -37,12 +39,7 @@ export function createPlayerCombatant(
     criticalChance: runtime.crewEffects.weapons.criticalChance,
     cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
     preferredTactic: 'fight',
-    combatSpeed: Math.max(82, Math.min(150, ship.navigation.cruiseSpeed * 0.28)),
-    turnRateRadiansPerSecond: Math.max(
-      0.42,
-      Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)
-    ),
-    accelerationMetersPerSecond2: Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18)),
+    ...movement,
     mines,
     tractorRangeMeters: Math.max(
       0,

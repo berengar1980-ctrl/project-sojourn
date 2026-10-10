@@ -38,6 +38,7 @@ export {
 } from './station-performance';
 export {
   resolveShipGameplayStats,
+  resolveShipCombatMovementStats,
   shipHullMaxHp,
   shipRoleGameplayProfile,
   shipShieldMaxHp,

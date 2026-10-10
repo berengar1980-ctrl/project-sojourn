@@ -200,6 +200,10 @@ function tickStrategicCombat(
       victim.position.y += (initiator.position.y - victim.position.y) * fraction;
       victim.speed = 0;
       initiator.speed = 0;
+      victim.velocity.x = 0;
+      victim.velocity.y = 0;
+      initiator.velocity.x = 0;
+      initiator.velocity.y = 0;
       if (distance(initiator.position, victim.position) <= 140) {
         runtime.boardingInitiator = runtime.grapple.owner;
         runtime.winner = runtime.grapple.owner;
