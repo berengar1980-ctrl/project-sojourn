@@ -9,14 +9,8 @@ const geometry = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-geometry.ts'
 );
-const mines = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/combat/strategic-combat-mines.ts'
-);
-const { getShipMine } = loadStandaloneTypeScriptModule(
-  root,
-  'src/data/combat/ship-mines.ts'
-);
+const mines = loadStandaloneTypeScriptModule(root, 'src/systems/combat/strategic-combat-mines.ts');
+const { getShipMine } = loadStandaloneTypeScriptModule(root, 'src/data/combat/ship-mines.ts');
 const hunter = getShipMine('mine-hunter-1');
 assert(hunter);
 const setup = (id, mineStock) => ({

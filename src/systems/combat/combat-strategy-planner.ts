@@ -7,13 +7,17 @@ import type {
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
 
-function targetSubsystem(ship: MutableCombatant, enemy: MutableCombatant): 'hull' | 'tractor' | 'engine' {
+function targetSubsystem(
+  ship: MutableCombatant,
+  enemy: MutableCombatant
+): 'hull' | 'tractor' | 'engine' {
   if (enemy.tactic === 'flee' && enemy.subsystems.engine > 0) return 'engine';
   if (
     ship.shieldHp <= 0 &&
     enemy.subsystems.tractor > 0 &&
     (enemy.setup.tractorRangeMeters ?? 0) > 0
-  ) return 'tractor';
+  )
+    return 'tractor';
   return 'hull';
 }
 
@@ -30,13 +34,13 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
   );
   const targetSubsystemChoice = targetSubsystem(ship, enemy);
   const enemyShielded = enemy.shieldHp > 0;
-  const speedRatio = ship.subsystems.engine > 0
-    ? (ship.setup.combatSpeed ?? 120) / Math.max(
-        65,
-        enemy.subsystems.engine > 0 ? enemy.setup.combatSpeed ?? 120 : 1
-      )
-    : 0.35;
-  const turnRatio = (ship.setup.turnRateRadiansPerSecond ?? 1) /
+  const speedRatio =
+    ship.subsystems.engine > 0
+      ? (ship.setup.combatSpeed ?? 120) /
+        Math.max(65, enemy.subsystems.engine > 0 ? (enemy.setup.combatSpeed ?? 120) : 1)
+      : 0.35;
+  const turnRatio =
+    (ship.setup.turnRateRadiansPerSecond ?? 1) /
     Math.max(0.4, enemy.setup.turnRateRadiansPerSecond ?? 1);
   const plans: CombatStrategyPlan[] = [];
   const groups: readonly {
@@ -54,11 +58,13 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
       if (!weapon) return [];
       const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
       const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
-      const weaponMount = weapon.mount ?? (weapon.family === 'railgun'
-        ? 'forward'
-        : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
-          ? 'broadside'
-          : 'turret');
+      const weaponMount =
+        weapon.mount ??
+        (weapon.family === 'railgun'
+          ? 'forward'
+          : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
+            ? 'broadside'
+            : 'turret');
       const matching =
         group.focus === 'turret'
           ? weaponMount === 'turret' || weaponMount === 'guided'
@@ -71,7 +77,8 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     const range = Math.max(...guns.map((weapon) => weapon.rangeMeters));
     const dps = guns.reduce(
       (total, weapon) =>
-        total + (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
+        total +
+        (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
           Math.max(0.45, weapon.cooldownSeconds),
       0
     );
@@ -79,19 +86,19 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
     const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
     const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
-    const turnFactor = group.focus === 'turret'
-      ? 1
-      : Math.min(1.2, Math.max(0.75, turnRatio));
+    const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));
     plans.push({
-      kind: group.focus === 'forward'
-        ? 'frontal'
-        : group.focus === 'broadside' ? 'broadside' : 'skirmish',
+      kind:
+        group.focus === 'forward'
+          ? 'frontal'
+          : group.focus === 'broadside'
+            ? 'broadside'
+            : 'skirmish',
       focus: group.focus,
       ...(group.facing ? { broadsideFacing: group.facing } : {}),
       targetSubsystem: targetSubsystemChoice,
       desiredRange: effectiveRange,
-      score: dps * travelPenalty * relativeMobility * turnFactor *
-        (maintainRange ? 1.2 : 1),
+      score: dps * travelPenalty * relativeMobility * turnFactor * (maintainRange ? 1.2 : 1),
       reason: enemyShielded
         ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
         : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
@@ -118,7 +125,8 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
       focus: 'mine',
       targetSubsystem: targetSubsystemChoice,
       desiredRange: 460,
-      score: (ship.hullHp / ship.hullMaxHp < 0.55 ? 1.4 : 0.6) *
+      score:
+        (ship.hullHp / ship.hullMaxHp < 0.55 ? 1.4 : 0.6) *
         Math.max(1, ...plans.map((plan) => plan.score)),
       reason: 'Minen als Rückzugs- und Distanzkontrolle einsetzen',
     });
@@ -174,8 +182,8 @@ export function reviewCombatStrategy(
   const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
   const best = options[0]!;
   const current = ship.strategy;
-  const equivalent = options.find((option) =>
-    option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
+  const equivalent = options.find(
+    (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
   );
   if (equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)) {
     ship.strategy = { ...equivalent, reason: current!.reason };

@@ -105,7 +105,13 @@ function fireRuntimeInstantWeapon(
     ': ' +
     weapon.name +
     ' trifft ' +
-    (result.layer === 'shield' ? 'Schild' : result.subsystem === 'engine' ? 'Triebwerk' : result.subsystem === 'tractor' ? 'Traktorstrahl' : 'Hülle') +
+    (result.layer === 'shield'
+      ? 'Schild'
+      : result.subsystem === 'engine'
+        ? 'Triebwerk'
+        : result.subsystem === 'tractor'
+          ? 'Traktorstrahl'
+          : 'Hülle') +
     ' -' +
     Math.round(result.damage)
   );
@@ -277,7 +283,7 @@ function recordProjectileDamage(
     shieldHit,
     projectile.targetSubsystem === 'engine' && !engineShotAvailable(projectile, target)
       ? 'hull'
-      : projectile.targetSubsystem ?? 'hull'
+      : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
   runtime.lastImpact = {

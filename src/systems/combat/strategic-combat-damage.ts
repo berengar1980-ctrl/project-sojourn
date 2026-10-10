@@ -98,7 +98,12 @@ export function applyDamage(
   impactId: number,
   shieldImpact?: ShieldSegmentHit,
   targetSubsystem: CombatTargetSubsystem = 'hull'
-): { layer: CombatImpactLayer; damage: number; point: CombatPoint; subsystem?: CombatTargetSubsystem } {
+): {
+  layer: CombatImpactLayer;
+  damage: number;
+  point: CombatPoint;
+  subsystem?: CombatTargetSubsystem;
+} {
   if (target.shieldHp > 0) {
     const geometry = combatShieldGeometry(target);
     const state = {
@@ -130,9 +135,15 @@ export function applyDamage(
     directed ? target.subsystems[targetSubsystem] : target.hullHp,
     scaledDamage(hullDamage, attacker, critical)
   );
-  if (directed) target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);
+  if (directed)
+    target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);
   else target.hullHp = Math.max(0, target.hullHp - damage);
-  return { layer: 'hull', damage, point: { ...target.position }, ...(directed ? { subsystem: targetSubsystem } : {}) };
+  return {
+    layer: 'hull',
+    damage,
+    point: { ...target.position },
+    ...(directed ? { subsystem: targetSubsystem } : {}),
+  };
 }
 
 export function projectileSpeed(kind: CombatProjectileKind): number {

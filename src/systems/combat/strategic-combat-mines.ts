@@ -43,10 +43,11 @@ export function maybeDropRuntimeMine(
     (source.tactic !== 'minefield' && !defensiveMine) ||
     source.mineStock.length === 0 ||
     source.mineCooldown > 0
-  ) return;
+  )
+    return;
   if (range > 720) return;
   const definition = defensiveMine
-    ? source.mineStock.find((mine) => mine.kind === 'hunter') ?? chooseRuntimeMine(source, target)
+    ? (source.mineStock.find((mine) => mine.kind === 'hunter') ?? chooseRuntimeMine(source, target))
     : chooseRuntimeMine(source, target);
   if (!definition) return;
   const stockIndex = source.mineStock.findIndex((mine) => mine.id === definition.id);

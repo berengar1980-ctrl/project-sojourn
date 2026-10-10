@@ -346,10 +346,7 @@ function choosePlanDirection(
       x: enemy.position.x - Math.cos(enemy.headingRadians) * offset,
       y: enemy.position.y - Math.sin(enemy.headingRadians) * offset,
     };
-    direction = normalize(
-      stern.x - combatant.position.x,
-      stern.y - combatant.position.y
-    );
+    direction = normalize(stern.x - combatant.position.x, stern.y - combatant.position.y);
     targetSpeedFactor = 1;
   }
   return { direction, targetSpeedFactor };

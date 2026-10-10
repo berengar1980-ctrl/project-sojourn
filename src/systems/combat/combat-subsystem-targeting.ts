@@ -1,10 +1,10 @@
-import type {
-  CombatTargetSubsystem,
-  MutableCombatant,
-} from './strategic-combat-types';
+import type { CombatTargetSubsystem, MutableCombatant } from './strategic-combat-types';
 
 /** Engines are exposed only from flank or stern; hull and tractor can be targeted anywhere. */
-export function engineShotAvailable(source: Pick<MutableCombatant, 'position'>, target: MutableCombatant): boolean {
+export function engineShotAvailable(
+  source: Pick<MutableCombatant, 'position'>,
+  target: MutableCombatant
+): boolean {
   const bearing = Math.atan2(
     source.position.y - target.position.y,
     source.position.x - target.position.x
@@ -39,9 +39,7 @@ export function effectiveTargetSubsystem(
   }
   const selected = source.strategy?.targetSubsystem ?? 'hull';
   if (selected === 'engine') {
-    return target.subsystems.engine > 0 && engineShotAvailable(source, target)
-      ? 'engine'
-      : 'hull';
+    return target.subsystems.engine > 0 && engineShotAvailable(source, target) ? 'engine' : 'hull';
   }
   if (selected === 'tractor') return target.subsystems.tractor > 0 ? 'tractor' : 'hull';
   return 'hull';
