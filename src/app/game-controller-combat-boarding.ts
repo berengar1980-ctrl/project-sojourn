@@ -12,7 +12,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 export function startCombatBoarding(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  returnToMap: () => void
+  returnToMap: () => void,
 ): void {
   if (!snapshot.boardingInitiator) return;
   const enemyName = snapshot.defender.name;
@@ -66,7 +66,7 @@ export function startCombatBoarding(
   context.systemLog.write(
     'BOARDING > ' + (snapshot.boardingInitiator === 'attacker'
       ? 'ENTERANGRIFF AUF ' + enemyName
-      : 'VERTEIDIGUNG DES EIGENEN SCHIFFS')
+      : 'VERTEIDIGUNG DES EIGENEN SCHIFFS'),
   );
   state.boardingPanel = createBoardingTacticalPanel({
     root: context.root,
@@ -89,7 +89,7 @@ export function startCombatBoarding(
 export function returnFromCombat(
   context: ControllerRuntimeContext,
   combat: StrategicCombatService,
-  returnToMap: () => void
+  returnToMap: () => void,
 ): void {
   const snapshot = combat.getSnapshot();
   if (snapshot.boardingInitiator) {
