@@ -294,10 +294,20 @@ function tickStrategicCombat(
   resolveArenaObstacles(runtime.defender, runtime.arena);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
   advanceRuntimeWeapons(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
+  // Important tactical milestones can transition to the next doctrine immediately.
+  if (previousShields[0]! > 0 && runtime.attacker.shieldHp <= 0) {
+    runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(runtime, 'system', 'phase', 'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten');
+  }
+  if (previousShields[1]! > 0 && runtime.defender.shieldHp <= 0) {
+    runtime.attacker.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(runtime, 'system', 'phase', 'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten');
+  }
   if (
     runtime.defender.setup.aiControlled &&
     !runtime.attacker.setup.aiControlled &&
