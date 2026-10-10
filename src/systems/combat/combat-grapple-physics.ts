@@ -36,13 +36,27 @@ export function advanceCombatGrappleTether(
   const tension =
     stretched > 0 ? Math.min(130, stretched * 0.9 + Math.max(0, separatingSpeed) * 1.3) : 0;
 
-  // Both ships receive equal and opposite longitudinal impulses. Their lateral
-  // momentum remains intact, allowing the target to swing during course changes.
-  const impulse = (tension * deltaSeconds) / 2;
-  source.velocity.x += normalX * impulse;
-  source.velocity.y += normalY * impulse;
-  target.velocity.x -= normalX * impulse;
-  target.velocity.y -= normalY * impulse;
+  if (stretched > 0) {
+    // A taut rope cannot be longer than the length reached by the winch.
+    // Correct both positions equally: neither ship gets teleported onto
+    // the other, and the pair's center of mass stays in the same place.
+    const correction = stretched / 2;
+    source.position.x += normalX * correction;
+    source.position.y += normalY * correction;
+    target.position.x -= normalX * correction;
+    target.position.y -= normalY * correction;
+
+    // Constraint impulse also removes separating radial velocity. Without
+    // this, normal combat steering can continually pull the ships apart
+    // faster than the spring force closes the gap.
+    const constraintImpulse = Math.max(0, (separatingSpeed + reelRate) / 2);
+    const impulse = Math.max(constraintImpulse, (tension * deltaSeconds) / 2);
+    source.velocity.x += normalX * impulse;
+    source.velocity.y += normalY * impulse;
+    target.velocity.x -= normalX * impulse;
+    target.velocity.y -= normalY * impulse;
+  }
+  // Tangential momentum is unaffected, so the captured ship can swing.
   source.speed = Math.hypot(source.velocity.x, source.velocity.y);
   target.speed = Math.hypot(target.velocity.x, target.velocity.y);
 

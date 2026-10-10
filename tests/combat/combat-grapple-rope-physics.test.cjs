@@ -25,6 +25,14 @@ assert(hook && hook.success);
 const attached = advanceCombatGrapple(hook, sourcePoint, targetPoint, 0.65);
 assert(attached.resolved);
 
+const movingTarget = { x: 820, y: 460 };
+const attachmentAfterFlight = advanceCombatGrapple(hook, sourcePoint, movingTarget, 0.65);
+assert.equal(
+  attachmentAfterFlight.ropeLength,
+  Math.hypot(movingTarget.x - sourcePoint.x, movingTarget.y - sourcePoint.y),
+  'the rope must attach at the current separation after the hook flight'
+);
+
 function ship(id, x, tractorRangeMeters = 0) {
   return {
     setup: { tractorRangeMeters },
@@ -43,6 +51,13 @@ defender.velocity.y = 34;
 const rope = advanceCombatGrappleTether(attached, attacker, defender, 0.08);
 assert(rope.ropeLength < attached.ropeLength, 'winch must reel in the rope');
 assert(rope.tension > 0, 'a shortening taut rope must exert tension');
+assert(
+  Math.hypot(
+    defender.position.x - attacker.position.x,
+    defender.position.y - attacker.position.y
+  ) <= rope.ropeLength + 1e-8,
+  'the taut rope must constrain the ships to the reeled-in length'
+);
 assert(attacker.velocity.x > 0 && defender.velocity.x < 0, 'both ships must be pulled');
 assert.equal(defender.velocity.y, 34, 'the rope must preserve tangential drift');
 assert.equal(attacker.velocity.x + defender.velocity.x, 0, 'the tug must conserve pair momentum');
@@ -121,8 +136,18 @@ for (const owner of ['attacker', 'defender']) {
     let hadMotionWhileAttached = false;
     for (let n = 0; n < 350 && !snap.winner; n += 1) {
       snap = combat.tick(0.08);
-      if (snap.grapple?.resolved && snap.attacker.speed > 0 && snap.defender.speed > 0) {
-        hadMotionWhileAttached = true;
+      if (snap.grapple?.resolved) {
+        const separation = Math.hypot(
+          snap.attacker.position.x - snap.defender.position.x,
+          snap.attacker.position.y - snap.defender.position.y
+        );
+        assert(
+          separation <= snap.grapple.ropeLength + 0.001,
+          'the engaged tether must remain taut under both ship AIs'
+        );
+        if (snap.attacker.speed > 0 && snap.defender.speed > 0) {
+          hadMotionWhileAttached = true;
+        }
       }
     }
     assert(hadMotionWhileAttached, 'both ships should move during the attached phase');
