@@ -188,7 +188,12 @@ function tickStrategicCombat(
   if (runtime.grapple) {
     const initiator = runtimeCombatant(runtime, runtime.grapple.owner);
     const victim = runtimeEnemy(runtime, runtime.grapple.owner);
-    runtime.grapple = advanceCombatGrapple(runtime.grapple, initiator.position, victim.position, dt);
+    runtime.grapple = advanceCombatGrapple(
+      runtime.grapple,
+      initiator.position,
+      victim.position,
+      dt,
+    );
     if (runtime.grapple.success && runtime.grapple.resolved) {
       const fraction = Math.min(1, dt * 2.6);
       victim.position.x += (initiator.position.x - victim.position.x) * fraction;
