@@ -1,4 +1,8 @@
-import type { MutableCombatant, CombatStrategyPlan, StrategicCombatSide } from './strategic-combat-types';
+import type {
+  MutableCombatant,
+  CombatStrategyPlan,
+  StrategicCombatSide,
+} from './strategic-combat-types';
 
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
@@ -29,19 +33,24 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     const bestRange = Math.max(...relevant.map((weapon) => weapon.rangeMeters));
     const score = relevant.reduce(
       (total, weapon) =>
-        total + (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
+        total +
+        (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
           Math.max(0.45, weapon.cooldownSeconds),
       0
     );
     const mobility = ownSpeed / Math.max(65, enemySpeed);
     const distanceAdvantage = bestRange > enemyRange ? 1.22 : 1;
-    const maneuverFactor = focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.72, ownTurn / Math.max(0.4, enemyTurn)));
+    const maneuverFactor =
+      focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.72, ownTurn / Math.max(0.4, enemyTurn)));
     plans.push({
-      kind: focus === 'forward' ? 'frontal' : focus === 'broadside' ? 'broadside' : 'skirmish',
+      kind:
+        focus === 'forward' ? 'frontal' : focus === 'broadside' ? 'broadside' : 'skirmish',
       focus,
       desiredRange: Math.max(180, bestRange * (bestRange > enemyRange ? 0.78 : 0.65)),
       score: score * distanceAdvantage * maneuverFactor * Math.min(1.2, mobility),
-      reason: enemyShielded ? 'Schilde mit geeigneter Bewaffnung abbauen' : 'Hülle gezielt beschädigen',
+      reason: enemyShielded
+        ? 'Schilde mit geeigneter Bewaffnung abbauen'
+        : 'Hülle gezielt beschädigen',
     });
   }
   if (ship.mineStock.length) {
@@ -54,7 +63,13 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     });
   }
   if (!plans.length) {
-    plans.push({ kind: 'approach', focus: 'turret', desiredRange: 300, score: 1, reason: 'Waffenposition suchen' });
+    plans.push({
+      kind: 'approach',
+      focus: 'turret',
+      desiredRange: 300,
+      score: 1,
+      reason: 'Waffenposition suchen',
+    });
   }
   return plans;
 }
@@ -67,10 +82,17 @@ export function reviewCombatStrategy(
   elapsed: number
 ): void {
   if (elapsed + 0.00001 < ship.nextStrategyReviewAt || ship.hullHp <= 0) return;
-  ship.nextStrategyReviewAt = (side === 'attacker' ? 0 : 4) +
+  ship.nextStrategyReviewAt =
+    (side === 'attacker' ? 0 : 4) +
     (Math.floor((elapsed - (side === 'attacker' ? 0 : 4)) / PERIOD) + 1) * PERIOD;
   if (ship.tactic === 'flee') {
-    ship.strategy = { kind: 'escape', focus: 'turret', desiredRange: 1000, score: 999, reason: 'Flucht befohlen oder notwendig' };
+    ship.strategy = {
+      kind: 'escape',
+      focus: 'turret',
+      desiredRange: 1000,
+      score: 999,
+      reason: 'Flucht befohlen oder notwendig',
+    };
     return;
   }
 
@@ -78,7 +100,13 @@ export function reviewCombatStrategy(
   const aggression = Math.max(0, Math.min(100, ship.setup.aiAggression ?? 50));
   if (ship.setup.aiControlled && hp <= 0.3 && aggression < 88) {
     ship.tactic = 'flee';
-    ship.strategy = { kind: 'escape', focus: 'turret', desiredRange: 1000, score: 999, reason: 'Kritischer Hüllenschaden' };
+    ship.strategy = {
+      kind: 'escape',
+      focus: 'turret',
+      desiredRange: 1000,
+      score: 999,
+      reason: 'Kritischer Hüllenschaden',
+    };
     return;
   }
   const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
@@ -90,5 +118,10 @@ export function reviewCombatStrategy(
   } else {
     ship.strategy = best;
   }
-  ship.tactic = ship.strategy.kind === 'minefield' ? 'minefield' : ship.strategy.kind === 'skirmish' ? 'kite' : 'fight';
+  ship.tactic =
+    ship.strategy.kind === 'minefield'
+      ? 'minefield'
+      : ship.strategy.kind === 'skirmish'
+        ? 'kite'
+        : 'fight';
 }
