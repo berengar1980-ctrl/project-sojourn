@@ -397,12 +397,7 @@ function tickStrategicCombat(
   return runtimeSnapshot(runtime);
 }
 
-function createStrategicCombatRuntime(
-  attackerSetup: StrategicCombatantSetup,
-  defenderSetup: StrategicCombatantSetup,
-  seed: number,
-  arenaOptions?: StrategicCombatArenaOptions
-): StrategicCombatRuntime {
+function buildCombatArena(attackerSetup: StrategicCombatantSetup, defenderSetup: StrategicCombatantSetup, seed: number, arenaOptions?: StrategicCombatArenaOptions): StrategicCombatArenaOptions {
   const arena: StrategicCombatArenaOptions = {
     width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
@@ -440,6 +435,16 @@ function createStrategicCombatRuntime(
     ...arena,
     exitPoint: arenaOptions?.exitPoint ?? preferredGate,
   };
+  return escapeArena;
+}
+
+function createStrategicCombatRuntime(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed: number,
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatRuntime {
+  const escapeArena = buildCombatArena(attackerSetup, defenderSetup, seed, arenaOptions);
   return {
     arena: escapeArena,
     attacker: createCombatant(attackerSetup, 'attacker', escapeArena),
