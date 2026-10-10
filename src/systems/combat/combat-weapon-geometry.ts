@@ -12,6 +12,16 @@ export function weaponMuzzle(source: MutableCombatant, slot: number): CombatPoin
   };
 }
 
+function supportedWeaponMount(
+  mount: NonNullable<MutableCombatant['setup']['weaponMounts']>[number] | undefined,
+  kind: NonNullable<ShipWeaponProfile['mount']>,
+  profile: ShipWeaponProfile
+): boolean {
+  if (mount?.allowedMounts && !mount.allowedMounts.includes(kind)) return false;
+  if (mount?.allowedFamilies && !mount.allowedFamilies.includes(profile.family)) return false;
+  return true;
+}
+
 export function weaponInArc(
   source: MutableCombatant,
   target: CombatPoint,
@@ -26,8 +36,7 @@ export function weaponInArc(
     } else kind = 'turret';
   }
   const mount = source.setup.weaponMounts?.find((point) => point.slotIndex === slot);
-  if (mount?.allowedMounts && !mount.allowedMounts.includes(kind)) return false;
-  if (mount?.allowedFamilies && !mount.allowedFamilies.includes(profile.family)) return false;
+  if (!supportedWeaponMount(mount, kind, profile)) return false;
   const weaponArc = profile.arcDegrees ?? (kind === 'forward' ? 60 : 90);
   const degrees = Math.min(weaponArc, mount?.arcDegrees ?? 360);
   if (degrees >= 360) return true;
