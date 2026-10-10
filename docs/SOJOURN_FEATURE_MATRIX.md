@@ -18,10 +18,10 @@
 | SOJ-COMBAT-006 | Umbau einzelner Schiffswerte in der Werft | Individuelle Abweichungen von den Grundwerten eines Schiffmodells: je Wert bis zu +15 % oder −15 %. | Konzept |
 | SOJ-COMBAT-007 | Seismische Bombe als vierte Mine | Zeitzünder, kreisförmige Energiewelle und physische Asteroidenreaktionen. | Idee |
 | SOJ-COMBAT-008 | Zeitverzerrungsbombe | Flächenexplosion; das eigene Schiff ist währenddessen zeitlich entkoppelt. | Idee |
-| SOJ-COMBAT-009 | Traktorstrahl als Kampfmittel | Asteroiden gegen Gegner bewegen und eventuell für Manöver nutzen. | Idee |
+| SOJ-COMBAT-009 | Traktorstrahl als Kampfmittel | Kleinere Asteroiden mit dem Traktorstrahl beschleunigen und gezielt gegen gegnerische Schiffe schleudern; eventuell für Manöver nutzen. | Idee |
 | SOJ-COMBAT-010 | Physikalischer Positionskampf | Bewaffnung, Geschwindigkeit, Wendefähigkeit, Beschleunigung und Trägheit bestimmen den Verlauf. | Konzept |
 | SOJ-COMBAT-011 | Greifhaken, Seilwinde und Traktor-Unterstützung | Nach erfolgreichem Haken bleibt die Trägheit erhalten; Seilspannung und Winde bringen die Schiffe zusammen, ein Traktorstrahl unterstützt. | Konzept / Phase 1 |
-| SOJ-COMBAT-012 | Gezieltes Ausschalten von Komponenten | Bei ausgefallenen Schilden darf die KI Traktorstrahl oder Antrieb gezielt angreifen; Antrieb nur bei passender Position hinter dem Ziel. | Idee / nach Phase 1 |
+| SOJ-COMBAT-012 | KI wählt zwischen Hüllen- und Komponentenzielen | Bei ausgefallenen Schilden entscheidet die KI, ob sie die Hülle zerstört oder abhängig von Position, Schusswinkel und Kampfziel Antrieb bzw. Traktorstrahl ausschaltet. | Idee / nach Phase 1 |
 | SOJ-COMBAT-013 | Taktische Reaktion auf entdeckte Minen | KI wägt ab, die Mine zu zerstören, auszuweichen oder einen Treffer in Kauf zu nehmen, um den Gegner weiter anzugreifen. | Idee / nach Phase 1 |
 
 ---
@@ -231,14 +231,17 @@ Die Wirkung soll spektakulär und klar von normalen Raketenexplosionen abgegrenz
 
 Vor allem **Mining- und Bergungsschiffe** haben Traktorstrahlen als naheliegende Ausrüstung. Sie sollen perspektivisch nicht nur zum Bergen bzw. Arbeiten, sondern **auch taktisch im Kampf** nutzbar sein.
 
-- Einen Asteroiden **ziehen**, **ablenken** oder **abstoßen**.
-- Einen Brocken gezielt **in den Flugweg eines Gegners** bringen oder gegen ihn bewegen.
-- Der Asteroid bewegt sich räumlich weiter und kann **Schiffe, andere Asteroiden oder Wracks** treffen.
+- **Kleinere Asteroiden** sind die bevorzugten Geschosse: Mit dem Traktorstrahl aufnehmen, ziehen bzw. beschleunigen und **gezielt auf das gegnerische Schiff schleudern**. Das ist nicht bloß ein kosmetischer Strahleffekt.
+- Größere Asteroiden können gegebenenfalls **abgelenkt oder als Hindernisse verschoben** werden; ob sie sich überhaupt gezielt schleudern lassen, hängt von noch festzulegenden Grenzen für Masse und Traktorleistung ab.
+- Nach dem Schleudern bewegt sich der kleinere Asteroid mit **eigener Geschwindigkeit und Trägheit** weiter. Er kann das gegnerische Schiff oder andere Hindernisse treffen. Ein Treffer soll über die reale Kollision wirken, nicht als sofortiger unsichtbarer Waffenschaden.
+- **Die KI muss eine physikalisch geeignete Wurfbahn herstellen**: Asteroid erfassen, in eine geeignete Richtung beschleunigen und im richtigen Moment freigeben. Auch das gegnerische Schiff bewegt sich währenddessen weiter.
 - Als weitere **noch offene Möglichkeit** kann sich ein Schiff mit dem Strahl an großen Körpern entlangziehen, um bestimmte Kurven oder Manöver zu unterstützen.
 
 Das verleiht einem Miner oder Salvager eine Kampfmöglichkeit, die **nicht voraussetzt, dass er die gleiche schwere Bewaffnung wie ein Patrouillenschiff trägt**.
 
-**Noch offen:** Realistische Zug- oder Druckwirkung, Massenlimits, Reichweite, Kollisionsschaden, Sichtbarkeit und Einsatzentscheidungen der KI. Der schon existierende Traktorstrahl bedeutet **nicht**, dass diese Asteroidenfunktion bereits umgesetzt ist.
+**Noch offen:** Zug- oder Druckwirkung, erreichbare Beschleunigung in Abhängigkeit von Asteroidenmasse und Traktorleistung, Freigabezeitpunkt, Reichweite, Kollisionsschaden, Sichtbarkeit, mögliche Rückwirkung auf das schießende Schiff sowie Einsatzentscheidungen der KI. Der schon existierende Traktorstrahl bedeutet **nicht**, dass diese Asteroidenfunktion bereits umgesetzt ist.
+
+**Umsetzungszuordnung:** Als Erweiterung der **Objekt-/Kollisionsphysik** nach der grundlegenden Schiffsträgheit. Um die neuen Kampfmanöver glaubwürdig zu machen, müssten kleinere Asteroiden im lokalen Raumkampf als bewegliche physikalische Körper behandelt werden. Das ist mehr als die aktuell für Phase 1 begonnene Schiffsbewegungs- und Enterseilphysik und deshalb separat zu planen.
 
 ## SOJ-COMBAT-010 – Kampfpositionen entstehen aus echter Schiffsphysik
 
@@ -294,18 +297,21 @@ Der visuelle Greifhaken und das gespannte, metallische Seil bleiben an ihren jew
 
 **Einordnung:** Dieser Punkt gehört zur **Phase 1 (Bewegungsphysik)**. Eine Aufnahme in die Matrix bedeutet **nicht**, dass die beschriebene vollständige Seilphysik bereits eingebaut wurde.
 
-## SOJ-COMBAT-012 – Gezieltes Ausschalten gegnerischer Komponenten
+## SOJ-COMBAT-012 – KI-Zielwahl: Hülle zerstören oder gegnerische Komponenten ausschalten
 
 ### Was wir wollen
 
-**Erst wenn die gegnerischen Schilde ausgefallen sind**, soll eine Kampf-KI entscheiden können, statt der gesamten Hülle **bestimmte Schiffskomponenten** anzuvisieren. Der Zweck ist eine **taktische Funktionsstörung**: den Gegner an der Flucht hindern, einen Traktorstrahl außer Gefecht setzen oder die eigene Lage verbessern. Die KI darf nicht blind bei jeder Gelegenheit auf eine Komponente schießen, wenn allgemeiner Hüllenschaden sinnvoller ist.
+Die KI muss sich ausdrücklich zwischen **drei Zielabsichten** entscheiden: **(1) Hülle beschießen, um das Schiff kampfunfähig zu machen**, **(2) Antrieb angreifen, um das Ziel zu verlangsamen bzw. eine Flucht zu verhindern**, oder **(3) Traktorstrahl ausschalten, um dessen taktischen Einsatz zu unterbinden**. Angriffe auf einzelne Komponenten sind **erst nach Ausfall der gegnerischen Schilde** möglich. Bis dahin erfolgt die Bekämpfung wie bisher über die normalen Schutz- und Schadensregeln.
 
-### Zunächst nur zwei anvisierbare Ziele
+Die Entscheidung hängt von **eigener und gegnerischer Position, tatsächlichen Schusswinkeln der verfügbaren Waffen, erreichbarer Trefferzone, Reichweite, gegnerischem Verhalten und taktischem Ziel** ab. Die KI darf nicht blind bei jeder Gelegenheit auf eine Komponente schießen, wenn allgemeiner Hüllenschaden sinnvoller ist.
+
+### Drei Zieloptionen – keine weiteren Komponentenziele
 
 | Ziel | Wann/aus welcher Position | Beabsichtigter taktischer Effekt |
 |---|---|---|
-| **Traktorstrahl** | Bei ausgefallenen Schilden **aus jeder relativen Anflugrichtung anvisierbar**, sofern die tatsächliche Waffe das Ziel grundsätzlich erreichen kann; er ist nicht auf einen Heckangriff beschränkt. | Den gegnerischen Traktorstrahl ausschalten bzw. seine Funktion beeinträchtigen. Das ist insbesondere sinnvoll, wenn er die eigene Flucht verhindert oder beim Entern zusätzliche Zugkraft liefert. |
-| **Hauptantrieb** | Bei ausgefallenen Schilden nur, wenn die KI **hinter das gegnerische Schiff gelangt**, sodass sie dessen Heck erreichen kann; vorzugsweise in einer Verfolgungs- oder Abfangsituation. | Die Antriebsleistung des Gegners beeinträchtigen, um ihn **langsamer zu machen oder zum Stillstand zu bringen** und damit eine Flucht zu verhindern. |
+| **Hülle** | Normales Angriffsziel, insbesondere wenn ein schneller Abschuss möglich ist oder kein sinnvoll anvisierbarer Komponentenbereich erreicht wird. Vorhandene Schild- und Hüllenschadensregeln gelten weiter. | Gegner durch **Hüllenschaden kampfunfähig machen**; nicht nur seine Bewegung einschränken. |
+| **Traktorstrahl** | **Nur bei ausgefallenen Schilden.** Keine zusätzliche pauschale Heckpflicht, aber die eigene Waffe muss Reichweite, **Schusswinkel und die tatsächlich erreichbare Komponenten-Trefferzone** erfüllen. | Den gegnerischen Traktorstrahl ausschalten bzw. seine Funktion beeinträchtigen, besonders wenn er die eigene Flucht verhindert oder beim Entern Zugkraft liefert. |
+| **Hauptantrieb** | **Nur bei ausgefallenen Schilden** und wenn das Schiff die **hintere Trefferzone am gegnerischen Heck** aus einer geeigneten Position und mit passendem Waffen-Schusswinkel erreichen kann; besonders bei Verfolgung. | Antriebsleistung beeinträchtigen, um den Gegner zu bremsen, einzuholen oder eine Flucht zu verhindern. |
 
 ### KI-Entscheidungen anhand konkreter Kampfsituationen
 
@@ -315,13 +321,17 @@ Der visuelle Greifhaken und das gespannte, metallische Seil bleiben an ihren jew
 
 **Beispiel C – Traktorstrahl verhindert Flucht oder unterstützt gegnerisches Entern:** Die KI darf den **Traktorstrahl gezielt bekämpfen**, sobald die Schilde unten sind, ohne erst hinter den Gegner fliegen zu müssen. Die normalen Waffenreichweiten und Waffen-Schusswinkel gelten trotzdem. Ob ein bereits verbundenes Enterseil bestehen bleibt, ist davon getrennt: **Traktorstrahl und Enterhaken sind unterschiedliche Systeme**.
 
-**Beispiel D – Gegner kämpft einfach weiter:** Ein Komponentenangriff soll nicht erzwungen werden. Der direkte Beschuss der Hülle kann die bessere Wahl sein, wenn eine Komponente gerade keinen taktischen Vorteil bietet.
+**Beispiel D – Gegner kämpft einfach weiter:** Wenn der Gegner bereits angeschlagen ist und die eigene Feuerkraft ihn kampfunfähig machen kann, wählt die KI **Hülle zerstören**. Sie verschwendet dann nicht erst ihre Railgun-Ladung auf einen taktisch unwichtigen Traktorstrahl.
+
+**Beispiel E – Ungünstiger Anflugwinkel:** Der Gegner flieht, aber das eigene Schiff befindet sich vor ihm oder seitlich und kann seine hintere Antriebs-Trefferzone nicht erreichen. Dann ist **kein gezielter Antriebsschuss** möglich. Die KI kann den Angriffswinkel ändern, ein anderes zulässiges Ziel beschießen oder zunächst die Hülle bekämpfen.
 
 ### Klare Grenzen für die erste Ausbaustufe
 
 - **Noch nicht auf Waffen oder Enterhaken zielen.** Diese Komponentenziele bleiben ausdrücklich für eine spätere Erweiterung reserviert.
 - **Keine garantierte sofortige Abschaltung durch einen beliebigen Treffer.** Wie gezielter Schaden, Schutz/Komponentenhaltbarkeit und Auswirkungen auf laufende Aktionen berechnet werden, ist noch zu spezifizieren.
 - Spieler-KI und NPC-KI erhalten dieselben Möglichkeiten; die Wahl richtet sich nach Situation, eigener Bewaffnung, relativer Position und taktischem Ziel.
+- **Hüllenbeschuss bleibt eine gleichberechtigte, oft bevorzugte Entscheidung**; Komponentenbeschuss ist kein automatisches Upgrade der normalen Zielwahl.
+- Ein Angriff auf eine Komponente ist **nicht erlaubt**, wenn der tatsächliche eigene Feuerkegel bzw. die erreichbare Trefferzone nicht passt – auch dann nicht, wenn die KI die Komponente taktisch gern ausschalten würde.
 
 **Noch offen:** Genaue Trefferzonen/Hardpoints, Regeln für Genauigkeit und Fehlschüsse, Komponentenschaden und Reparierbarkeit, Auswirkungen eines beschädigten statt zerstörten Antriebs, ob gezielte Treffer auch Hüllenschaden erzeugen und wie schnell ein Antriebsausfall die bereits vorhandene Trägheit abbaut. **Insbesondere darf ein Antriebsausfall nicht automatisch die vorhandene Geschwindigkeit auf null setzen**, wenn wir echte Trägheit wollen.
 
@@ -374,8 +384,8 @@ In Sojourn existieren bereits acht Waffenfamilien (**Impulslaser, Plasmabatterie
 2. **Werft-Balance:** Exakte Kopplung der **bis zu +15 % / −15 % pro Wert** und erlaubte Umbaukombinationen.
 3. **Crew-Balance:** Welche Einzelwerte bis zu 30 % profitieren und wie sich Crew- und Werftboni gegenseitig beeinflussen.
 4. **Taktik-KI:** Wann eine Railgun zurückgehalten wird, wann sie trotzdem früh feuert und wann ein KI-Schiff seine Positionierungsstrategie wechselt.
-5. **Spezialwaffen:** Explosion, Reichweite, Asteroidenphysik und Risiken für die eigene Seite.
-6. **Komponentenziele:** Beschädigungsmodell, konkrete Heck-Trefferzone, Treffergenauigkeit und Verhalten des Schiffs bei Antriebsausfall.
+5. **Spezialwaffen:** Explosion, Reichweite, **Masse und Flugbahn kleiner mit Traktorstrahl geschleuderter Asteroiden**, Kollisionsschaden, allgemeine Asteroidenphysik und Risiken für die eigene Seite.
+6. **KI-Zielwahl:** Regeln für die Entscheidung zwischen **Hülle zerstören, Antrieb treffen und Traktorstrahl ausschalten**; Beschädigungsmodell, konkrete Trefferzonen, Waffenschusswinkel, Treffergenauigkeit und Verhalten des Schiffs bei Antriebsausfall.
 7. **Minen-KI:** Wann Abschießen statt Ausweichen sinnvoll ist, welche Waffen Minen treffen können und ob Beschuss eine Mine vorzeitig detonieren lässt.
 8. **Enterhaken-Physik:** Stärke von Seilwinde und Traktor-Unterstützung sowie das Verhalten bei Schiffsmanövern und Hindernissen.
 
