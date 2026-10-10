@@ -81,7 +81,7 @@ export const DUEL_ENCOUNTERS: readonly DuelEncounter[] = [
     title: 'Zeta · Miner',
     purpose: 'Bergbauplattform gegen Kampfschiff',
     seed: 1006,
-    first: side('miner', 1, [rail, plasma, cannon, ionLaser], 10),
+    first: side('mining', 1, [rail, plasma, cannon, ionLaser], 10),
     second: side('patrol', 7, [rail, cannon, plasma, laser, heavyMissile], 11),
   },
   {
@@ -97,7 +97,7 @@ export const DUEL_ENCOUNTERS: readonly DuelEncounter[] = [
     title: 'Theta · Turmgefecht',
     purpose: 'Bewegungsfreiheit und Rundumlaser',
     seed: 1008,
-    first: side('miner', 2, [rail, ion, ion, ionLaser], 14),
+    first: side('mining', 2, [rail, ion, ion, ionLaser], 14),
     second: side('freighter', 3, [rail, cannon, cannon, laser], 15),
   },
   {
@@ -119,7 +119,7 @@ export function resolveDuelPreset(
     const ship = roleShips[choice.variant - 1] ?? roleShips[0] ?? ships[0]!;
     const weapons = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount, index) => {
       const [family, tier] = choice.weapons[index] ?? choice.weapons[0]!;
-      const candidate = SHIP_COMPONENT_CATALOG.weapon.find(
+      const candidate = (SHIP_COMPONENT_CATALOG.weapon ?? []).find(
         (component) =>
           component.weapon?.family === family &&
           component.tier === tier &&
