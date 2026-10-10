@@ -13,6 +13,7 @@
     "test": "node tests/run-tests.cjs",
     "test:quick": "node tests/run-tests.cjs",
     "test:full": "node tests/run-tests.cjs full",
+    "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
