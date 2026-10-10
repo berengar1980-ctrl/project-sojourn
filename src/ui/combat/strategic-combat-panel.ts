@@ -15,6 +15,7 @@ interface StrategicCombatPanelOptions {
   readonly root: HTMLElement;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
+  readonly encounterName?: string;
 }
 
 function percent(current: number, maximum: number): number {
@@ -46,7 +47,7 @@ export function createStrategicCombatPanel(
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
     <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
-    <div class="combat-map-title">SOJOURN // RAUMKAMPF</div>
+    <div class="combat-map-title">HARROWDRIFT // RAUMKAMPF <span class="combat-encounter-time"></span></div>
     <aside class="combat-hud combat-hud--player"></aside>
     <aside class="combat-hud combat-hud--enemy"></aside>
     <div class="combat-tactics" aria-label="Kampftaktik">
@@ -75,6 +76,7 @@ export function createStrategicCombatPanel(
       const payload = JSON.stringify(
         {
           format: 'harrowdrift-combat-log-v1',
+      encounter: options.encounterName ?? 'Freies Duell',
           snapshot: options.combat.getSnapshot(),
           events: options.combat.getCombatLog(),
           analysis: analyzeCombatLog(options.combat.getCombatLog()),
@@ -110,6 +112,13 @@ export function createStrategicCombatPanel(
     playerHud.innerHTML = combatantHud(model.attacker);
     enemyHud.innerHTML = combatantHud(model.defender);
     event.textContent = model.lastEvent;
+    const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
+    if (timer) {
+      const seconds = Math.floor(model.elapsedSeconds);
+      timer.textContent = (options.encounterName ?? 'Freies Duell') + ' · ' +
+        String(Math.floor(seconds / 60)).padStart(2, '0') + ':' +
+        String(seconds % 60).padStart(2, '0');
+    }
     returnButton.hidden = model.winner === null;
     returnButton.textContent = model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
     if (grappleButton) {
