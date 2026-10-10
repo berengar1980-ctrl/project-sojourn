@@ -205,6 +205,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   return (
     combatant.shieldHp <= 0 &&
     enemy.hullHp > 0 &&
+    enemy.subsystems.tractor > 0 &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   );
 }
@@ -404,6 +405,21 @@ export function moveCombatant(
     12,
     combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
+  if (combatant.subsystems.engine <= 0) {
+    // With no main engine the ship keeps drifting; only RCS can turn its bow.
+    combatant.position.x = clamp(
+      combatant.position.x + combatant.velocity.x * deltaSeconds,
+      EDGE_PADDING,
+      arena.width - EDGE_PADDING
+    );
+    combatant.position.y = clamp(
+      combatant.position.y + combatant.velocity.y * deltaSeconds,
+      EDGE_PADDING,
+      arena.height - EDGE_PADDING
+    );
+    resolveArenaObstacles(combatant, arena);
+    return;
+  }
   applyInertialThrust(
     combatant,
     headingError,
