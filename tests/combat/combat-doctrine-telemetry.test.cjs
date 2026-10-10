@@ -45,6 +45,8 @@ for (const [seed, first, second] of [
   assert(state[second].strategy);
   assert.equal(state[second].nextStrategyReviewAt, 12);
   const log = fight.getCombatLog();
+  assert(log.some((entry) => entry.event === 'state' && entry.detail.includes('Abstand')),
+    'movement telemetry must expose distance and current plan phase');
   log[0].detail = 'corrupted';
   assert.notEqual(fight.getCombatLog()[0].detail, 'corrupted', 'logs must be detached');
 }
