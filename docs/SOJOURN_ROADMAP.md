@@ -5,26 +5,26 @@
 
 Dieses Dokument sammelt **neue, Sojourn-eigene Ideen**. Es ist ausdrücklich **keine Aufgabenfreigabe zur Umsetzung** und ergänzt die bestehende [Voidbound-Feature-Parity-Matrix](VOIDBOUND_FEATURE_PARITY.md), statt sie zu ersetzen.
 
-**Raumkampf-Feature-Matrix:** [SOJOURN_FEATURE_MATRIX.md](SOJOURN_FEATURE_MATRIX.md) — dort sind die zehn besprochenen Raumkampf-, Crew- und Werftkonzepte kompakt erfasst.
+**Raumkampf-Feature-Matrix:** [SOJOURN_FEATURE_MATRIX.md](SOJOURN_FEATURE_MATRIX.md) — dort sind die dreizehn beschriebenen Raumkampf-, Crew- und Werftkonzepte kompakt erfasst.
 
 ## Statussystem
 
-| Status | Bedeutung |
-|---|---|
-| 💡 Idee | Gesammelt; Funktionsumfang und Gestaltung noch offen |
-| 🧭 Konzept | Verhalten, Darstellung und Grenzen gemeinsam festgelegt |
-| 📋 Geplant | Zur späteren Umsetzung freigegeben und priorisiert |
-| 🚧 In Arbeit | Implementierung ausdrücklich beauftragt |
-| ✅ Umgesetzt | Eingebaut und geprüft |
-| ❌ Verworfen | Nicht für Sojourn vorgesehen |
+| Status       | Bedeutung                                               |
+| ------------ | ------------------------------------------------------- |
+| 💡 Idee      | Gesammelt; Funktionsumfang und Gestaltung noch offen    |
+| 🧭 Konzept   | Verhalten, Darstellung und Grenzen gemeinsam festgelegt |
+| 📋 Geplant   | Zur späteren Umsetzung freigegeben und priorisiert      |
+| 🚧 In Arbeit | Implementierung ausdrücklich beauftragt                 |
+| ✅ Umgesetzt | Eingebaut und geprüft                                   |
+| ❌ Verworfen | Nicht für Sojourn vorgesehen                            |
 
 ## Ideenübersicht
 
-| ID | Bereich | Idee | Status |
-|---|---|---|---|
-| SOJ-IDEA-001 | Raumkampf / Minen | Zeitgezündete seismische Bombe mit kreisförmiger Energiewelle | 💡 Idee |
+| ID           | Bereich                   | Idee                                                                           | Status  |
+| ------------ | ------------------------- | ------------------------------------------------------------------------------ | ------- |
+| SOJ-IDEA-001 | Raumkampf / Minen         | Zeitgezündete seismische Bombe mit kreisförmiger Energiewelle                  | 💡 Idee |
 | SOJ-IDEA-002 | Raumkampf / Spezialwaffen | Zeitverzerrungsbombe mit temporärer zeitlicher Entkopplung des eigenen Schiffs | 💡 Idee |
-| SOJ-IDEA-003 | Raumkampf / Umgebung | Asteroiden durch Traktorstrahl als physische Waffen einsetzen | 💡 Idee |
+| SOJ-IDEA-003 | Raumkampf / Umgebung      | Asteroiden durch Traktorstrahl als physische Waffen einsetzen                  | 💡 Idee |
 
 ## SOJ-IDEA-001 — Zeitgezündete seismische Bombe
 
@@ -34,6 +34,7 @@ Dieses Dokument sammelt **neue, Sojourn-eigene Ideen**. Es ist ausdrücklich **k
 **Grundidee:** Ein Schiff setzt die Bombe aus. Sie driftet im Raum und detoniert **nach einigen Sekunden**, nicht erst bei Annäherung eines Gegners. Als erster Richtwert wurden ungefähr **drei Sekunden** besprochen; der endgültige Zünder ist noch offen.
 
 **Visuelle Wirkung (Top-down):**
+
 - Kurzer, sehr heller Detonationsblitz.
 - Ein **scharf abgegrenzter, kreisförmiger Energiering** breitet sich schnell nach außen aus — kein gewöhnlicher Feuerball.
 - Der Ring trifft Schiffe, Wracks und insbesondere **Asteroiden**.
@@ -52,6 +53,7 @@ Dieses Dokument sammelt **neue, Sojourn-eigene Ideen**. Es ist ausdrücklich **k
 **Grundidee:** Eine extrem starke Flächenexplosion. **Das eigene Schiff ist während der Explosion aufgrund einer zeitlichen Verschiebung nicht im normalen Zeitablauf präsent** und entgeht ihr dadurch. Nicht einfach nur „Bombe abwerfen und schnell wegfliegen“: Die Zeitverzerrung ist das zentrale Alleinstellungsmerkmal.
 
 **Visuelle Wirkung (Top-down):**
+
 - Das eigene Schiff wird für einen kurzen Moment sichtbar zeitlich entkoppelt (konkrete Darstellung noch offen).
 - Eine gewaltige Explosion erfasst den umgebenden Raum, während das eigene Schiff zeitlich abwesend ist.
 - Danach erscheint das Schiff wieder in der normalen Zeit; der Zustand des Schlachtfelds hat sich verändert.
@@ -65,6 +67,7 @@ Dieses Dokument sammelt **neue, Sojourn-eigene Ideen**. Es ist ausdrücklich **k
 **Vorhandene Grundlage:** Traktorstrahlen existieren in Sojourn bereits als Schiffskomponenten. Ihre aktive Verwendung zum Schleudern/Abstoßen von Asteroiden im Raumkampf ist **eine Idee, kein bereits implementiertes Feature**.
 
 **Grundidee:**
+
 - Mining- und Bergungsschiffe können Asteroiden nicht nur sichern, sondern im Gefecht **ziehen, ablenken, abstoßen oder auf Gegner lenken**.
 - Asteroiden besitzen Impuls; sie können Schiffe, Wracks und andere Brocken treffen.
 - Mögliche ergänzende Anwendung: Traktorstrahl bei Manövern nutzen, indem das Schiff sich an großen Körpern entlangzieht.

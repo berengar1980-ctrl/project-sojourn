@@ -8,21 +8,21 @@
 
 ## Übersicht
 
-| ID | Feature | Kerngedanke | Status |
-|---|---|---|---|
-| SOJ-COMBAT-001 | Zwei unabhängige Kampf-KIs | Beide Schiffe versuchen, ihre eigene aus Ausrüstung und Situation abgeleitete Taktik durchzusetzen. | Konzept |
-| SOJ-COMBAT-002 | Schusswinkel und Waffenmontage | Railgun vorne, starke Hüllenwaffen eher seitlich, schwächere Waffen rundum. | Konzept |
-| SOJ-COMBAT-003 | Railgun als taktische Reserve | Hoher Hüllenschaden und lange Reichweite; Schuss gegebenenfalls für eine Flucht des Gegners aufheben. | Konzept |
-| SOJ-COMBAT-004 | Breitseiten und Verfolgung | Seitenwaffen erzwingen andere Flugpositionen und kosten beim Verfolgen Zeit. | Konzept |
-| SOJ-COMBAT-005 | Crew-Einfluss | Steuermann, Techniker, Waffenoffizier und Kampfstratege prägen konkrete Schiffsleistungen und KI-Entscheidungen. | Konzept |
-| SOJ-COMBAT-006 | Umbau einzelner Schiffswerte in der Werft | Individuelle Abweichungen von den Grundwerten eines Schiffmodells: je Wert bis zu +15 % oder −15 %. | Konzept |
-| SOJ-COMBAT-007 | Seismische Bombe als vierte Mine | Zeitzünder, kreisförmige Energiewelle und physische Asteroidenreaktionen. | Idee |
-| SOJ-COMBAT-008 | Zeitverzerrungsbombe | Flächenexplosion; das eigene Schiff ist währenddessen zeitlich entkoppelt. | Idee |
-| SOJ-COMBAT-009 | Traktorstrahl als Kampfmittel | Kleinere Asteroiden mit dem Traktorstrahl beschleunigen und gezielt gegen gegnerische Schiffe schleudern; eventuell für Manöver nutzen. | Idee |
-| SOJ-COMBAT-010 | Physikalischer Positionskampf | Bewaffnung, Geschwindigkeit, Wendefähigkeit, Beschleunigung und Trägheit bestimmen den Verlauf. | Konzept |
-| SOJ-COMBAT-011 | Greifhaken, Seilwinde und Traktor-Unterstützung | Nach erfolgreichem Haken bleibt die Trägheit erhalten; Seilspannung und Winde bringen die Schiffe zusammen, ein Traktorstrahl unterstützt. | Konzept / Phase 1 |
+| ID             | Feature                                         | Kerngedanke                                                                                                                                                             | Status              |
+| -------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| SOJ-COMBAT-001 | Zwei unabhängige Kampf-KIs                      | Beide Schiffe versuchen, ihre eigene aus Ausrüstung und Situation abgeleitete Taktik durchzusetzen.                                                                     | Konzept             |
+| SOJ-COMBAT-002 | Schusswinkel und Waffenmontage                  | Railgun vorne, starke Hüllenwaffen eher seitlich, schwächere Waffen rundum.                                                                                             | Konzept             |
+| SOJ-COMBAT-003 | Railgun als taktische Reserve                   | Hoher Hüllenschaden und lange Reichweite; Schuss gegebenenfalls für eine Flucht des Gegners aufheben.                                                                   | Konzept             |
+| SOJ-COMBAT-004 | Breitseiten und Verfolgung                      | Seitenwaffen erzwingen andere Flugpositionen und kosten beim Verfolgen Zeit.                                                                                            | Konzept             |
+| SOJ-COMBAT-005 | Crew-Einfluss                                   | Steuermann, Techniker, Waffenoffizier und Kampfstratege prägen konkrete Schiffsleistungen und KI-Entscheidungen.                                                        | Konzept             |
+| SOJ-COMBAT-006 | Umbau einzelner Schiffswerte in der Werft       | Individuelle Abweichungen von den Grundwerten eines Schiffmodells: je Wert bis zu +15 % oder −15 %.                                                                     | Konzept             |
+| SOJ-COMBAT-007 | Seismische Bombe als vierte Mine                | Zeitzünder, kreisförmige Energiewelle und physische Asteroidenreaktionen.                                                                                               | Idee                |
+| SOJ-COMBAT-008 | Zeitverzerrungsbombe                            | Flächenexplosion; das eigene Schiff ist währenddessen zeitlich entkoppelt.                                                                                              | Idee                |
+| SOJ-COMBAT-009 | Traktorstrahl als Kampfmittel                   | Kleinere Asteroiden mit dem Traktorstrahl beschleunigen und gezielt gegen gegnerische Schiffe schleudern; eventuell für Manöver nutzen.                                 | Idee                |
+| SOJ-COMBAT-010 | Physikalischer Positionskampf                   | Bewaffnung, Geschwindigkeit, Wendefähigkeit, Beschleunigung und Trägheit bestimmen den Verlauf.                                                                         | Konzept             |
+| SOJ-COMBAT-011 | Greifhaken, Seilwinde und Traktor-Unterstützung | Nach erfolgreichem Haken bleibt die Trägheit erhalten; Seilspannung und Winde bringen die Schiffe zusammen, ein Traktorstrahl unterstützt.                              | Konzept / Phase 1   |
 | SOJ-COMBAT-012 | KI wählt zwischen Hüllen- und Komponentenzielen | Bei ausgefallenen Schilden entscheidet die KI, ob sie die Hülle zerstört oder abhängig von Position, Schusswinkel und Kampfziel Antrieb bzw. Traktorstrahl ausschaltet. | Idee / nach Phase 1 |
-| SOJ-COMBAT-013 | Taktische Reaktion auf entdeckte Minen | KI wägt ab, die Mine zu zerstören, auszuweichen oder einen Treffer in Kauf zu nehmen, um den Gegner weiter anzugreifen. | Idee / nach Phase 1 |
+| SOJ-COMBAT-013 | Taktische Reaktion auf entdeckte Minen          | KI wägt ab, die Mine zu zerstören, auszuweichen oder einen Treffer in Kauf zu nehmen, um den Gegner weiter anzugreifen.                                                 | Idee / nach Phase 1 |
 
 ---
 
@@ -54,12 +54,12 @@ Eine KI soll nicht ohne taktischen Grund vom Gegner wegfliegen, wenn sie **kämp
 
 Nicht jede Waffe kann ungeachtet der Flugrichtung überallhin schießen. Die **Montage** und ihr begrenzter **Feuerwinkel** beeinflussen, wie die Kampf-KI das Schiff positionieren muss.
 
-| Waffenposition | Gewünschte Wirkung | Konsequenz für das Schiff |
-|---|---|---|
-| **Front, enger Schusswinkel** | Vor allem schwere Railgun; viel Reichweite und hoher Einzelschaden | Der Bug muss zum Ziel zeigen. Gegner können versuchen, seitlich aus dem Schussfeld zu kommen. |
+| Waffenposition                        | Gewünschte Wirkung                                                                                  | Konsequenz für das Schiff                                                                      |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Front, enger Schusswinkel**         | Vor allem schwere Railgun; viel Reichweite und hoher Einzelschaden                                  | Der Bug muss zum Ziel zeigen. Gegner können versuchen, seitlich aus dem Schussfeld zu kommen.  |
 | **Seitlich, begrenzter Schusswinkel** | Vorzugsweise schwere Waffen mit hohem Hüllenschaden, z. B. schwere Autokanonen oder Plasmabatterien | Das Schiff muss Backbord oder Steuerbord zum Gegner drehen bzw. seitlich an ihm vorbeifliegen. |
-| **Rundum, bis 360°** | Eher schwächere, flexible Waffen, z. B. leichte Impuls- oder Ionenlaser | Sie können auch während Wendemanövern oder bei ungünstiger Bugausrichtung weiterfeuern. |
-| **Lenkwaffen** | Raketen korrigieren nach dem Start ihre Flugrichtung | Müssen nicht denselben festen seitlichen oder vorderen Feuerkegel wie starre Geschütze haben. |
+| **Rundum, bis 360°**                  | Eher schwächere, flexible Waffen, z. B. leichte Impuls- oder Ionenlaser                             | Sie können auch während Wendemanövern oder bei ungünstiger Bugausrichtung weiterfeuern.        |
+| **Lenkwaffen**                        | Raketen korrigieren nach dem Start ihre Flugrichtung                                                | Müssen nicht denselben festen seitlichen oder vorderen Feuerkegel wie starre Geschütze haben.  |
 
 Das ist **eine bevorzugte Designaufteilung, noch keine abschließende Zuordnung aller acht vorhandenen Waffenfamilien**. Die exakten Winkel (z. B. +/-30°) sind nicht entschieden.
 
@@ -121,12 +121,12 @@ Das ist ein **natürlicher Ausrüstungsnachteil** von Seitenkanonen und soll nic
 
 Ein identisch gebautes Schiff kann sich mit einer anderen Besatzung **spürbar anders** verhalten. Als Diskussionsgröße wurden **bis zu 30 % Veränderung einzelner geeigneter Leistungswerte** genannt. Das ist **keine pauschale +30-%-Verbesserung für alles**.
 
-| Rolle | Konkrete Wirkung, die wir besprochen haben |
-|---|---|
-| **Steuermann** | Beeinflusst die **Wendegeschwindigkeit** des Schiffs. Eine gute Besatzung kann den Bug bzw. die bewaffnete Seite schneller neu ausrichten. |
-| **Techniker** | Beeinflusst **Beschleunigung** und **Höchstgeschwindigkeit**. Damit ändern sich Einholen, Abstandhalten und Fluchtmöglichkeiten. |
-| **Waffenoffizier** | Beeinflusst **Nachladezeiten** und **Treffergenauigkeit**. |
-| **Kampfstratege** | Beeinflusst die **Qualität der taktischen Entscheidungen** der Kampf-KI, z. B. wann die Railgun abgefeuert oder zurückgehalten wird und welche Kampfposition anzustreben ist. |
+| Rolle              | Konkrete Wirkung, die wir besprochen haben                                                                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Steuermann**     | Beeinflusst die **Wendegeschwindigkeit** des Schiffs. Eine gute Besatzung kann den Bug bzw. die bewaffnete Seite schneller neu ausrichten.                                    |
+| **Techniker**      | Beeinflusst **Beschleunigung** und **Höchstgeschwindigkeit**. Damit ändern sich Einholen, Abstandhalten und Fluchtmöglichkeiten.                                              |
+| **Waffenoffizier** | Beeinflusst **Nachladezeiten** und **Treffergenauigkeit**.                                                                                                                    |
+| **Kampfstratege**  | Beeinflusst die **Qualität der taktischen Entscheidungen** der Kampf-KI, z. B. wann die Railgun abgefeuert oder zurückgehalten wird und welche Kampfposition anzustreben ist. |
 
 Ein möglicher **direkter Schadensbonus** durch Crew wurde angesprochen, ist **nicht abschließend beschlossen**. Der besondere Nutzen des Kampfstrategen soll vor allem im **Verhalten der KI** liegen, nicht bloß in einem Schadensmultiplikator.
 
@@ -152,19 +152,20 @@ In der **Schiffswerft** soll der Spieler **einzelne Eigenschaften seines konkret
 
 ### Welche Schiffswerte sind gemeint?
 
-| Veränderbarer Wert | Was er konkret im Spiel verändern soll |
-|---|---|
-| **Höchstgeschwindigkeit** | Wie schnell das Schiff maximal fliegen kann; relevant für Einholen, Distanzhalten und Flucht. |
-| **Beschleunigung** | Wie schnell das Schiff Geschwindigkeit auf- oder abbaut bzw. nach Richtungswechseln wieder Fahrt gewinnt; relevant bei Positionswechseln. |
+| Veränderbarer Wert                            | Was er konkret im Spiel verändern soll                                                                                                                                                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Höchstgeschwindigkeit**                     | Wie schnell das Schiff maximal fliegen kann; relevant für Einholen, Distanzhalten und Flucht.                                                                                                                                                                                           |
+| **Beschleunigung**                            | Wie schnell das Schiff Geschwindigkeit auf- oder abbaut bzw. nach Richtungswechseln wieder Fahrt gewinnt; relevant bei Positionswechseln.                                                                                                                                               |
 | **Wendegeschwindigkeit / Manövrierfähigkeit** | Wie schnell das Schiff seinen **Bug und damit seine Front- oder Seitenwaffen** in eine neue Richtung drehen kann. „Manövrierfähigkeit“ ist hier **kein zusätzlicher unbestimmter Fantasiewert**, sondern muss bei einer Umsetzung klar auf die realen Bewegungswerte abgebildet werden. |
-| **Hüllenstärke / Hüllenpunkte** | Wie viel Hüllenschaden das Schiff aushält, bevor es kampfunfähig wird. |
-| **Eventuell Schildstärke** | Wie viel Schildschaden das Schiff aushält; **nur als mögliche Ergänzung besprochen**, noch nicht als veränderbarer Werftwert beschlossen. |
+| **Hüllenstärke / Hüllenpunkte**               | Wie viel Hüllenschaden das Schiff aushält, bevor es kampfunfähig wird.                                                                                                                                                                                                                  |
+| **Eventuell Schildstärke**                    | Wie viel Schildschaden das Schiff aushält; **nur als mögliche Ergänzung besprochen**, noch nicht als veränderbarer Werftwert beschlossen.                                                                                                                                               |
 
 Es sollen die **realen Simulationswerte** verändert werden, nicht nur angezeigte Zahlen. Die Schiffstypen **behalten ihre unterschiedlichen Ausgangsprofile**; Umbauten individualisieren ein bestimmtes Modell innerhalb dieser Grenzen.
 
 ### Beispiel für zwei Umbauten desselben Bergungsschiffs
 
 **Variante A – schnell und wendig:**
+
 - Höchstgeschwindigkeit **+15 %**
 - Wendegeschwindigkeit **+15 %**
 - Hüllenstärke **−15 %**
@@ -172,6 +173,7 @@ Es sollen die **realen Simulationswerte** verändert werden, nicht nur angezeigt
 Dieses Schiff kann besser Abstand gewinnen und schwer bewaffneten Gegnern ausweichen, hält aber weniger Treffer aus.
 
 **Variante B – widerstandsfähiger:**
+
 - Eine bewusst geringere Höchstgeschwindigkeit, zum Beispiel **−15 %**
 - Dafür eine entsprechend stärkere Hülle, beispielsweise **+15 %**
 
@@ -250,6 +252,7 @@ Das verleiht einem Miner oder Salvager eine Kampfmöglichkeit, die **nicht vorau
 Die beiden Kampf-KIs kämpfen **nicht nur mit Schadenswerten gegeneinander**. Sie versuchen, ihre unterschiedlichen Waffen unter tatsächlichen Bewegungsbedingungen einsetzen zu können.
 
 Berücksichtigt werden sollen:
+
 - **Höchstgeschwindigkeit:** Wer kann den anderen einholen oder sich lösen?
 - **Beschleunigung:** Wer erreicht den benötigten Kurs bzw. die nötige Geschwindigkeit schneller?
 - **Wendegeschwindigkeit:** Wie schnell lässt sich der Bug oder eine bewaffnete Schiffseite ausrichten?
@@ -307,11 +310,11 @@ Die Entscheidung hängt von **eigener und gegnerischer Position, tatsächlichen 
 
 ### Drei Zieloptionen – keine weiteren Komponentenziele
 
-| Ziel | Wann/aus welcher Position | Beabsichtigter taktischer Effekt |
-|---|---|---|
-| **Hülle** | Normales Angriffsziel, insbesondere wenn ein schneller Abschuss möglich ist oder kein sinnvoll anvisierbarer Komponentenbereich erreicht wird. Vorhandene Schild- und Hüllenschadensregeln gelten weiter. | Gegner durch **Hüllenschaden kampfunfähig machen**; nicht nur seine Bewegung einschränken. |
-| **Traktorstrahl** | **Nur bei ausgefallenen Schilden.** Keine zusätzliche pauschale Heckpflicht, aber die eigene Waffe muss Reichweite, **Schusswinkel und die tatsächlich erreichbare Komponenten-Trefferzone** erfüllen. | Den gegnerischen Traktorstrahl ausschalten bzw. seine Funktion beeinträchtigen, besonders wenn er die eigene Flucht verhindert oder beim Entern Zugkraft liefert. |
-| **Hauptantrieb** | **Nur bei ausgefallenen Schilden** und wenn das Schiff die **hintere Trefferzone am gegnerischen Heck** aus einer geeigneten Position und mit passendem Waffen-Schusswinkel erreichen kann; besonders bei Verfolgung. | Antriebsleistung beeinträchtigen, um den Gegner zu bremsen, einzuholen oder eine Flucht zu verhindern. |
+| Ziel              | Wann/aus welcher Position                                                                                                                                                                                             | Beabsichtigter taktischer Effekt                                                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hülle**         | Normales Angriffsziel, insbesondere wenn ein schneller Abschuss möglich ist oder kein sinnvoll anvisierbarer Komponentenbereich erreicht wird. Vorhandene Schild- und Hüllenschadensregeln gelten weiter.             | Gegner durch **Hüllenschaden kampfunfähig machen**; nicht nur seine Bewegung einschränken.                                                                        |
+| **Traktorstrahl** | **Nur bei ausgefallenen Schilden.** Keine zusätzliche pauschale Heckpflicht, aber die eigene Waffe muss Reichweite, **Schusswinkel und die tatsächlich erreichbare Komponenten-Trefferzone** erfüllen.                | Den gegnerischen Traktorstrahl ausschalten bzw. seine Funktion beeinträchtigen, besonders wenn er die eigene Flucht verhindert oder beim Entern Zugkraft liefert. |
+| **Hauptantrieb**  | **Nur bei ausgefallenen Schilden** und wenn das Schiff die **hintere Trefferzone am gegnerischen Heck** aus einer geeigneten Position und mit passendem Waffen-Schusswinkel erreichen kann; besonders bei Verfolgung. | Antriebsleistung beeinträchtigen, um den Gegner zu bremsen, einzuholen oder eine Flucht zu verhindern.                                                            |
 
 ### KI-Entscheidungen anhand konkreter Kampfsituationen
 
