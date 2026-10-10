@@ -19,14 +19,7 @@ export function drawDistressTow(
   const mount = mounts.grapplingHooks?.[0];
   const anchor = mount ? projectHardpoint(mount, mounts, geometry) : geometry.center;
   const cargo = camera.worldToScreen(tow.position, width, height);
-  const role =
-    event.wreckKind === 'salvager'
-      ? 'salvage'
-      : event.wreckKind === 'miner'
-        ? 'mining'
-        : event.wreckKind === 'patrol'
-          ? 'patrol'
-          : 'freighter';
+  const role = wreckRole(event.wreckKind);
   const variants = getShipsByRole(role);
   const ship = variants[(event.fieldSeed >>> 0) % variants.length];
   const image = ship ? loadImage(ship.sprite.assetUrl) : null;
@@ -130,5 +123,12 @@ function drawTowCable(
     context.strokeStyle = 'rgba(210, 214, 215, 0.22)';
     context.lineWidth = 0.65;
     context.stroke();
+  }
 }
+
+function wreckRole(kind: NonNullable<SalvageSpaceViewModel['sectorEvent']>['wreckKind']): 'salvage' | 'mining' | 'patrol' | 'freighter' {
+  if (kind === 'salvager') return 'salvage';
+  if (kind === 'miner') return 'mining';
+  if (kind === 'patrol') return 'patrol';
+  return 'freighter';
 }
