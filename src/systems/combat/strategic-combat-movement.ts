@@ -14,6 +14,7 @@ import type {
 
 import {
   clamp,
+  distance,
   EDGE_WARNING_DISTANCE,
   EDGE_PADDING,
   normalize,
