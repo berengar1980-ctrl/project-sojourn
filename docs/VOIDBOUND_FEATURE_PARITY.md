@@ -575,6 +575,10 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 |---|---|---|---|---|
 | ⬜ Offen | `ui.modal_inert_cleanup` | Blocking UI modals cannot leave the main content permanently inert after they close; tavern dialog renders in the global overlay layer | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden. | offen |
 
+## Review-Log: PR #196 (2026-10-11)
+
+**keine Statusänderung** an Voidbound-Feature-IDs. Harrowdrift-spezifische Optimierung der Breitseitensteuerung mit seitlichem RCS-Schub, Ausweichpläne nach ausbleibendem Schaden, KI-Enterentscheidungen und präzisere Minen-/Boarding-Telemetrie. Bestehende Voidbound-Paritätsbewertungen bleiben unverändert; die neuen KI-Verhaltensweisen sind noch nicht als vollständige Funktionsparität nachgewiesen.
+
 ## Pflege-Regel
 
 Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verworfen wird:
