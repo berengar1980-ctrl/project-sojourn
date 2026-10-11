@@ -196,6 +196,7 @@ export interface CombatImpactSnapshot {
   readonly subsystem?: CombatTargetSubsystem;
   readonly position: CombatPoint;
   readonly damage: number;
+  readonly weaponKind?: CombatProjectileKind | CombatBeamKind;
 }
 
 export interface StrategicCombatSnapshot {
