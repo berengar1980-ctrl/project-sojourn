@@ -1,3 +1,9 @@
+import {
+  advanceExchange,
+  initialExchange,
+  type CombatExchange,
+} from './combat-exchange-machine';
+import { planExchangeFlight, pilotExchangeShip, type ExchangeFlightPlan } from './combat-exchange-pilot';
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceCombatGrappleTether } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
@@ -276,9 +282,48 @@ function reviewShieldBreakthroughs(
   }
 }
 
+interface ActiveExchange {
+  exchange: CombatExchange;
+  flight: ExchangeFlightPlan | null;
+  attackerHp: number;
+  defenderHp: number;
+}
+
+function tickActionExchange(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  dt: number
+): void {
+  const current = state.exchange;
+  const initiator = current.initiative === 'attacker' ? runtime.attacker : runtime.defender;
+  const opponent = current.initiative === 'attacker' ? runtime.defender : runtime.attacker;
+  const context = {
+    frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
+    broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
+    guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
+    attackerDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
+    defenderDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
+    roll: runtime.random,
+  };
+  const next = advanceExchange(current, dt, context);
+  if (current.phase === 'choose' && next.action && next.reaction) {
+    state.flight = planExchangeFlight(initiator, opponent, next.action, next.reaction, next.quality);
+    state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
+    state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
+    runtime.lastEvent = next.action + ' / ' + next.reaction;
+    recordCombatLog(runtime, next.initiative, 'plan', runtime.lastEvent);
+  }
+  state.exchange = next;
+  if (current.phase === 'resolve') state.flight = null;
+  if (!state.flight || next.phase !== 'execute') return;
+  pilotExchangeShip(initiator, 'attacker', state.flight, runtime.arena, dt);
+  pilotExchangeShip(opponent, 'defender', state.flight, runtime.arena, dt);
+}
+
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
-  deltaSeconds: number
+  deltaSeconds: number,
+  actionState?: ActiveExchange
 ): StrategicCombatSnapshot {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
     return runtimeSnapshot(runtime);
@@ -334,10 +379,14 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
-  reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
-  moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
-  moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
+  if (actionState) {
+    tickActionExchange(runtime, actionState, dt);
+  } else {
+    reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
+    reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
+    moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
+    moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
+  }
   resolveCombatantCollision(runtime.attacker, runtime.defender);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
@@ -439,6 +488,12 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
+  const actionState: ActiveExchange | undefined = seed === 1001 ? {
+    exchange: initialExchange(runtime.firstPlanner),
+    flight: null,
+    attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
+    defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
+  } : undefined;
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
   recordCombatLog(
@@ -479,6 +534,6 @@ export function createStrategicCombatService(
       combatant.tactic = tactic;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
-    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
+    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),
   };
 }
