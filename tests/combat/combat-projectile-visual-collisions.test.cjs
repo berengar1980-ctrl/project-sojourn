@@ -14,6 +14,10 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
+const impactRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-hull-impact-renderer.ts'),
+  'utf8'
+);
 const types = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-types.ts'),
   'utf8'
@@ -48,7 +52,8 @@ assert(weapons.includes('missed: !hit'), 'projectiles keep their missed trajecto
 assert(weapons.includes("projectile.kind === 'missile' && !projectile.missed"));
 assert(weapons.includes('weaponKind: projectile.kind'), 'impact visuals know projectile type');
 assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKind'));
-assert(renderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
-assert(renderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
+assert(impactRenderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
+assert(impactRenderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
 assert(renderer.includes('this.context.lineTo(-8, 5)'), 'rocket fins distinguish its silhouette');
+assert(renderer.includes('drawCombatHullImpact('), 'combat renderer delegates explosions to the impact renderer');
 console.log('PASS projectile misses, shield contacts and distinctive missile impacts');
