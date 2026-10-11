@@ -2,7 +2,10 @@ import type { StrategicCombatRuntime, StrategicCombatSide } from './strategic-co
 import { distance } from './strategic-combat-geometry';
 import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
 
-export function maybeAttemptBoarding(runtime: StrategicCombatRuntime, attempt: (side: StrategicCombatSide) => boolean): void {
+export function maybeAttemptBoarding(
+  runtime: StrategicCombatRuntime,
+  attempt: (side: StrategicCombatSide) => boolean
+): void {
   if (runtime.grapple) return;
   for (const side of ['attacker', 'defender'] as const) {
     const ship = runtimeCombatant(runtime, side);

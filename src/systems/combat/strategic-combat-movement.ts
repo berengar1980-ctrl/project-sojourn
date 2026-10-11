@@ -235,8 +235,7 @@ function applyInertialThrust(
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const fraction = Math.min(
     1,
-    (acceleration * (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) /
-      Math.max(0.001, change)
+    (acceleration * (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
   );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
@@ -448,9 +447,10 @@ export function moveCombatant(
 
   // Aim the broadside independently of translation. Steering the engines along
   // the broadside heading made both ships orbit indefinitely without firing.
-  const gunHeading = !mineAvoidance && !obstacle && !boundary
-    ? broadsideSteering(combatant, enemy, range, dx, dy)
-    : null;
+  const gunHeading =
+    !mineAvoidance && !obstacle && !boundary
+      ? broadsideSteering(combatant, enemy, range, dx, dy)
+      : null;
   if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
     targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
   }

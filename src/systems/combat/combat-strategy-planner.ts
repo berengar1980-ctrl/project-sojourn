@@ -233,10 +233,12 @@ export function reviewCombatStrategy(
   }
   const options = candidatePlans(ship, enemy)
     .map((option) =>
-      option.kind === ship.stalledPlanKind &&
-      option.broadsideFacing === ship.stalledPlanFacing
-        ? { ...option, score: option.score * 0.15,
-            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt' }
+      option.kind === ship.stalledPlanKind && option.broadsideFacing === ship.stalledPlanFacing
+        ? {
+            ...option,
+            score: option.score * 0.15,
+            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt',
+          }
         : option
     )
     .sort((a, b) => b.score - a.score);
