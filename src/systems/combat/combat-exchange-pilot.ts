@@ -2,16 +2,15 @@ import type {
   CombatPoint,
   MutableCombatant,
   StrategicCombatArenaOptions,
-  StrategicCombatSide,
 } from './strategic-combat-types';
 import type { CombatAction, CombatReaction, CombatExchange } from './combat-exchange-machine';
 import { clamp, normalize, wrapAngle, DEFAULT_ACCELERATION, DEFAULT_TURN_RATE, EDGE_PADDING } from './strategic-combat-geometry';
 
 export interface ExchangeFlightPlan {
-  readonly attackerGoal: CombatPoint;
-  readonly defenderGoal: CombatPoint;
-  readonly attackerHeading: number;
-  readonly defenderHeading: number;
+  readonly initiatorGoal: CombatPoint;
+  readonly reactorGoal: CombatPoint;
+  readonly initiatorHeading: number;
+  readonly reactorHeading: number;
 }
 
 function offsetPoint(point: CombatPoint, toward: CombatPoint, forward: number, side: number): CombatPoint {
@@ -47,22 +46,22 @@ export function planExchangeFlight(
     ? Math.PI / 2
     : 0;
   return {
-    attackerGoal: attacking,
-    defenderGoal: defender,
-    attackerHeading: facing + broadside,
-    defenderHeading: facing + Math.PI + defendingBroadside,
+    initiatorGoal: attacking,
+    reactorGoal: defender,
+    initiatorHeading: facing + broadside,
+    reactorHeading: facing + Math.PI + defendingBroadside,
   };
 }
 
 export function pilotExchangeShip(
   ship: MutableCombatant,
-  side: StrategicCombatSide,
+  role: 'initiator' | 'reactor',
   plan: ExchangeFlightPlan,
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
-  const goal = side === 'attacker' ? plan.attackerGoal : plan.defenderGoal;
-  const facing = side === 'attacker' ? plan.attackerHeading : plan.defenderHeading;
+  const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const facing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);
