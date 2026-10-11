@@ -147,4 +147,19 @@ for (const initiative of ['attacker', 'defender']) {
   assert.equal(new Set(reactionGoals).size, reactions.length, 'reactions must yield distinct flight or heading orders');
 }
 
+
+// Simulate committed orders without replanning: trajectories must diverge.
+const trajectories = ['frontal_pass', 'broadside_pass', 'disengage_fire', 'flanking_pass'].map(
+  (action) => {
+    const initiator = ship(550, 650);
+    const reactor = ship(1100, 650);
+    const plan = pilot.planExchangeFlight(initiator, reactor, action, 'evade', 'strong');
+    for (let step = 0; step < 120; step += 1) {
+      pilot.pilotExchangeShip(initiator, 'initiator', plan, { width: 2400, height: 1600 }, 0.08);
+    }
+    return [Math.round(initiator.position.x), Math.round(initiator.position.y)].join(':');
+  }
+);
+assert.equal(new Set(trajectories).size, 4, 'four actions need distinct simulated flight paths');
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
