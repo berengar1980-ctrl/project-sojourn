@@ -33,7 +33,7 @@ export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regrou
 export interface CombatLogEntry {
   readonly timeSeconds: number;
   readonly side: StrategicCombatSide | 'system';
-  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result';
+  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'action' | 'result';
   readonly detail: string;
 }
 
