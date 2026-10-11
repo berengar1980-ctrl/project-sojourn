@@ -287,6 +287,7 @@ export interface MutableProjectile {
   shieldDamage: number;
   hullDamage: number;
   critical: boolean;
+  missed?: boolean;
   targetSubsystem?: CombatTargetSubsystem;
 }
 
