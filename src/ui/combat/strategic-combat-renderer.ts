@@ -482,7 +482,9 @@ export class StrategicCombatRenderer {
     }
     const point = this.screen(impact.position, width, height);
     const progress = this.impactAge;
-    const radius = 7 + progress * 29;
+    const explosive = impact.weaponKind === 'missile';
+    const plasma = impact.weaponKind === 'plasma';
+    const radius = (explosive ? 12 : plasma ? 9 : 7) + progress * (explosive ? 42 : 29);
     const alpha = 1 - progress;
 
     this.context.save();
@@ -492,8 +494,10 @@ export class StrategicCombatRenderer {
         : impact.layer === 'obstacle'
           ? `rgba(196, 185, 160, ${alpha * 0.6})`
           : `rgba(255, 147, 72, ${alpha * 0.85})`;
+    this.context.shadowColor = impact.layer === 'shield' ? '#77dcff' : '#ff973f';
+    this.context.shadowBlur = explosive ? 20 : 11;
     this.context.beginPath();
-    this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
+    this.context.arc(point.x, point.y, radius * (explosive ? 0.75 : 0.55), 0, Math.PI * 2);
     this.context.fill();
     if (impact.layer === 'hull' || impact.layer === 'shield') {
       this.context.strokeStyle =
