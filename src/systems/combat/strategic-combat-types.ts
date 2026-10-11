@@ -262,6 +262,10 @@ export interface MutableCombatant {
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
   nextStrategyReviewAt: number;
+  lastEnemyHpObserved?: number;
+  lastProgressAt?: number;
+  stalledPlanKind?: CombatStrategyPlan['kind'];
+  stalledPlanFacing?: CombatStrategyPlan['broadsideFacing'];
   shieldHp: number;
   hullHp: number;
   subsystems: { engine: number; tractor: number; maximum: number };
