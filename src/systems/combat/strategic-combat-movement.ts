@@ -493,7 +493,7 @@ export function moveCombatant(
     isTractorLocked(combatant, enemy),
     deltaSeconds,
     arena,
-    gunHeading ? direction : undefined
+    gunHeading && combatant.strategy?.phase !== 'reach_range' ? direction : undefined
   );
   resolveArenaObstacles(combatant, arena);
 }
