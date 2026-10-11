@@ -40,4 +40,23 @@ const winning = exchangeMachine.advanceExchange(second, 0, {
   defenderDamage: 0,
 });
 assert.equal(winning.initiative, 'attacker', 'tactical advantage retains initiative');
+
+let varied = exchangeMachine.initialExchange('attacker');
+const maneuverHistory = [];
+for (let cycle = 0; cycle < 6; cycle += 1) {
+  varied = exchangeMachine.advanceExchange(varied, 0, {
+    ...context,
+    frontWeapons: 3,
+    broadsideWeapons: 1,
+  });
+  maneuverHistory.push(varied.action);
+  varied = exchangeMachine.advanceExchange(varied, 20, context);
+  varied = exchangeMachine.advanceExchange(varied, 0, context);
+}
+assert(new Set(maneuverHistory).size >= 3, 'even front-heavy ships need at least three actions');
+for (let i = 2; i < maneuverHistory.length; i += 1) {
+  assert.notEqual(maneuverHistory[i], maneuverHistory[i - 1]);
+  assert.notEqual(maneuverHistory[i], maneuverHistory[i - 2]);
+}
+
 console.log('PASS exchange initiative, three reactions and varied maneuver selection');
