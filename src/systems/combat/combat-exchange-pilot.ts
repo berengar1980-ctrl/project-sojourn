@@ -44,26 +44,35 @@ export function planExchangeFlight(
     reactor.position.y - initiator.position.y
   );
   const side = quality === 'failed' ? -1 : 1;
-  const spacing = action === 'flanking_pass' ? 300 : action === 'broadside_pass' ? 220 : 120;
+  // Each action represents a distinct, committed flight trajectory.
   const attacking =
-    action === 'disengage_fire'
-      ? offsetPoint(initiator.position, toward, -420, 0)
-      : offsetPoint(
-          reactor.position,
-          toward,
-          action === 'frontal_pass' ? 150 : -80,
-          side * spacing
-        );
+    action === 'frontal_pass'
+      ? offsetPoint(reactor.position, toward, 230, 0)
+      : action === 'broadside_pass'
+        ? offsetPoint(reactor.position, toward, -60, side * 290)
+        : action === 'disengage_fire'
+          ? offsetPoint(initiator.position, toward, -460, side * 60)
+          : offsetPoint(reactor.position, toward, 170, side * 460);
   const defender =
-    reaction === 'evade' || reaction === 'accelerate_clear'
-      ? offsetPoint(reactor.position, toward, 0, -330 * side)
-      : reaction === 'extend_range'
-        ? offsetPoint(reactor.position, toward, 390, 0)
-        : reaction === 'break_contact'
-          ? offsetPoint(reactor.position, toward, 390, 180 * side)
-          : reaction === 'close_gap' || reaction === 'intercept' || reaction === 'pursue'
-            ? offsetPoint(reactor.position, toward, -350, 0)
-            : { ...reactor.position };
+    reaction === 'evade'
+      ? offsetPoint(reactor.position, toward, -80, -330 * side)
+      : reaction === 'accelerate_clear'
+        ? offsetPoint(reactor.position, toward, 300, -230 * side)
+        : reaction === 'extend_range'
+          ? offsetPoint(reactor.position, toward, 390, 0)
+          : reaction === 'break_contact'
+            ? offsetPoint(reactor.position, toward, 390, 180 * side)
+            : reaction === 'close_gap'
+              ? offsetPoint(reactor.position, toward, -350, 0)
+              : reaction === 'intercept'
+                ? offsetPoint(initiator.position, toward, 100, -130 * side)
+                : reaction === 'pursue'
+                  ? offsetPoint(initiator.position, toward, -140, 0)
+                  : reaction === 'cross_pass'
+                    ? offsetPoint(initiator.position, toward, -170, -240 * side)
+                    : reaction === 'counter_pass'
+                      ? offsetPoint(initiator.position, toward, 0, 250 * side)
+                      : { ...reactor.position };
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =
