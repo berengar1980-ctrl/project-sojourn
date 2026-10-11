@@ -276,17 +276,21 @@ function reviewShieldBreakthroughs(
 }
 
 function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
-  if (
-    runtime.defender.setup.aiControlled &&
-    !runtime.attacker.setup.aiControlled &&
-    !runtime.grappleUsed.defender &&
-    !runtime.grapple &&
-    runtime.attacker.shieldHp <= 0 &&
-    runtime.attacker.hullHp > 0 &&
-    runtime.defender.hullHp > 0 &&
-    distance(runtime.attacker.position, runtime.defender.position) <= 900
-  ) {
-    tryFireGrapple(runtime, 'defender');
+  if (runtime.grapple) return;
+  for (const side of ['attacker', 'defender'] as const) {
+    const ship = runtimeCombatant(runtime, side);
+    const enemy = runtimeEnemy(runtime, side);
+    if (!ship.setup.aiControlled || runtime.grappleUsed[side]) continue;
+    if (ship.hullHp <= 0 || enemy.hullHp <= 0 || enemy.shieldHp > 0) continue;
+    if (distance(ship.position, enemy.position) > 650) continue;
+    // Prevent automatic boarding of healthy enemies; favour capture when the
+    // target is already compromised, or when the attacker is badly damaged.
+    const compromised = enemy.hullHp / enemy.hullMaxHp <= 0.65;
+    const desperate = ship.hullHp / ship.hullMaxHp <= 0.3;
+    if (compromised || desperate) {
+      tryFireGrapple(runtime, side);
+      break;
+    }
   }
 }
 
