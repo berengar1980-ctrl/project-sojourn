@@ -64,7 +64,7 @@ export function maybeDropRuntimeMine(
     definition,
   });
   runtime.lastEvent = source.setup.name + ': ' + definition.name + ' gelegt';
-  runtime.combatLog.push({
+  runtime.combatLog?.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
@@ -127,7 +127,7 @@ function advanceRuntimeMine(
     (result.layer === 'shield' ? 'Schild' : 'Hülle') +
     ' -' +
     Math.round(result.damage);
-  runtime.combatLog.push({
+  runtime.combatLog?.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: mine.owner,
     event: 'action',
