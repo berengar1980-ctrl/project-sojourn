@@ -54,11 +54,33 @@ export function tickActionExchange(
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: next.initiative,
       event: 'plan',
-      detail: runtime.lastEvent,
+      detail:
+        runtime.lastEvent +
+        ' · Würfel ' +
+        next.roll +
+        ' · Qualität ' +
+        next.quality +
+        ' · Dauer ' +
+        next.duration +
+        's',
     });
   }
+  if (current.phase === 'resolve') {
+    runtime.combatLog.push({
+      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+      side: 'system',
+      event: 'phase',
+      detail:
+        'Manöver beendet · Schaden Angreifer ' +
+        Math.max(0, context.attackerDamage).toFixed(1) +
+        ' · Verteidiger ' +
+        Math.max(0, context.defenderDamage).toFixed(1) +
+        ' · Initiative ' +
+        next.initiative,
+    });
+    state.flight = null;
+  }
   state.exchange = next;
-  if (current.phase === 'resolve') state.flight = null;
   if (!state.flight || next.phase !== 'execute') return;
   pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt);
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
