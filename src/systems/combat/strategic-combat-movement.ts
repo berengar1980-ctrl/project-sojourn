@@ -458,8 +458,8 @@ export function moveCombatant(
   if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
     targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
   }
-  const headingDirection =
-    gunHeading && combatant.strategy?.phase !== 'reach_range' ? gunHeading : direction;
+  const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
+  const headingDirection = broadsideActive ? gunHeading! : direction;
   performCombatThrust(
     combatant,
     enemy,
@@ -467,6 +467,6 @@ export function moveCombatant(
     arena,
     headingDirection,
     targetSpeedFactor,
-    gunHeading && combatant.strategy?.phase !== 'reach_range' ? direction : undefined
+    broadsideActive ? direction : undefined
   );
 }
