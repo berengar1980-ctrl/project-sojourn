@@ -57,8 +57,10 @@ export function planExchangeFlight(
   const defender =
     reaction === 'evade' || reaction === 'accelerate_clear'
       ? offsetPoint(reactor.position, toward, 0, -330 * side)
-      : reaction === 'extend_range' || reaction === 'break_contact'
-        ? offsetPoint(reactor.position, toward, 0, 390)
+      : reaction === 'extend_range'
+        ? offsetPoint(reactor.position, toward, 390, 0)
+        : reaction === 'break_contact'
+          ? offsetPoint(reactor.position, toward, 390, 180 * side)
         : reaction === 'close_gap' || reaction === 'intercept' || reaction === 'pursue'
           ? offsetPoint(reactor.position, toward, -350, 0)
           : { ...reactor.position };
