@@ -17,7 +17,8 @@ export function maybeAttemptBoarding(
     // target is already compromised, or when the attacker is badly damaged.
     const compromised = enemy.hullHp / enemy.hullMaxHp <= 0.65;
     const desperate = ship.hullHp / ship.hullMaxHp <= 0.3;
-    if (compromised || desperate) {
+    const defensiveNpc = side === 'defender' && !enemy.setup.aiControlled;
+    if (compromised || desperate || defensiveNpc) {
       attempt(side);
       break;
     }
