@@ -299,6 +299,7 @@ function recordProjectileDamage(
     layer: result.layer,
     damage: result.damage,
     position: { ...result.point },
+    weaponKind: projectile.kind,
   };
   return result;
 }
