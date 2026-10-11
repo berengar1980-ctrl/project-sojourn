@@ -299,8 +299,10 @@ function combatRangePosture(
     return combatant.setup.aiControlled
       ? { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.4 }
       : {
-          direction: normalize(-toward.x * 0.8 + perpendicular.x * 0.45,
-            -toward.y * 0.8 + perpendicular.y * 0.45),
+          direction: normalize(
+            -toward.x * 0.8 + perpendicular.x * 0.45,
+            -toward.y * 0.8 + perpendicular.y * 0.45
+          ),
           targetSpeedFactor: 0.72,
         };
   }
@@ -311,15 +313,16 @@ function combatRangePosture(
           targetSpeedFactor: combatant.strategy?.phase === 'reach_range' ? 0.28 : 0.1,
         }
       : {
-          direction: normalize(perpendicular.x + toward.x * 0.18,
-            perpendicular.y + toward.y * 0.18),
+          direction: normalize(
+            perpendicular.x + toward.x * 0.18,
+            perpendicular.y + toward.y * 0.18
+          ),
           targetSpeedFactor: combatant.tactic === 'kite' ? 0.78 : 0.62,
         };
   }
   if (combatant.tactic === 'kite' && range < desired * 1.5) {
     return {
-      direction: normalize(-toward.x * 0.45 + perpendicular.x,
-        -toward.y * 0.45 + perpendicular.y),
+      direction: normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y),
       targetSpeedFactor: 0.8,
     };
   }
