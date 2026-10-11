@@ -1,9 +1,9 @@
 import { hash, clamp01 } from './strategic-combat-renderer-math';
+import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
-  CombatImpactSnapshot,
   CombatMineSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
@@ -476,43 +476,13 @@ export class StrategicCombatRenderer {
     );
   }
 
-  private drawHullImpact(impact: CombatImpactSnapshot | null, width: number, height: number): void {
-    if (!impact || this.impactAge >= 1 || impact.layer === 'miss') {
-      return;
-    }
-    const point = this.screen(impact.position, width, height);
-    const progress = this.impactAge;
-    const explosive = impact.weaponKind === 'missile';
-    const plasma = impact.weaponKind === 'plasma';
-    const radius = (explosive ? 12 : plasma ? 9 : 7) + progress * (explosive ? 42 : 29);
-    const alpha = 1 - progress;
-
-    this.context.save();
-    this.context.fillStyle =
-      impact.layer === 'shield'
-        ? `rgba(105, 210, 255, ${alpha * 0.75})`
-        : impact.layer === 'obstacle'
-          ? `rgba(196, 185, 160, ${alpha * 0.6})`
-          : `rgba(255, 147, 72, ${alpha * 0.85})`;
-    this.context.shadowColor = impact.layer === 'shield' ? '#77dcff' : '#ff973f';
-    this.context.shadowBlur = explosive ? 20 : 11;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius * (explosive ? 0.75 : 0.55), 0, Math.PI * 2);
-    this.context.fill();
-    if (impact.layer === 'hull' || impact.layer === 'shield') {
-      this.context.strokeStyle =
-        impact.layer === 'shield'
-          ? `rgba(176, 239, 255, ${alpha * 0.85})`
-          : `rgba(255, 218, 154, ${alpha * 0.8})`;
-      this.context.lineWidth = 1.4;
-      for (let index = 0; index < 5; index += 1) {
-        const angle = index * 1.37 + impact.serial;
-        this.context.beginPath();
-        this.context.moveTo(point.x, point.y);
-        this.context.lineTo(point.x + Math.cos(angle) * radius, point.y + Math.sin(angle) * radius);
-        this.context.stroke();
-      }
-    }
-    this.context.restore();
+  private drawHullImpact(
+    impact: StrategicCombatSnapshot['lastImpact'],
+    width: number,
+    height: number
+  ): void {
+    if (!impact) return;
+    drawCombatHullImpact(this.context, impact, this.impactAge, this.screen(impact.position, width, height));
   }
+
 }
