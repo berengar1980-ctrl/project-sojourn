@@ -3,12 +3,12 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
-const module = loadStandaloneTypeScriptModule(
+const exchangeMachine = loadStandaloneTypeScriptModule(
   path.resolve(__dirname, '../..'),
   'src/systems/combat/combat-exchange-machine.ts'
 );
 
-for (const [action, reactions] of Object.entries(module.REACTIONS)) {
+for (const [action, reactions] of Object.entries(exchangeMachine.REACTIONS)) {
   assert.equal(reactions.length, 3, action + ' must have three responses');
   assert.equal(new Set(reactions).size, 3, action + ' responses must differ');
 }
@@ -20,17 +20,17 @@ const context = {
   defenderDamage: 0,
   roll: () => 0.7,
 };
-const first = module.advanceExchange(module.initialExchange('attacker'), 0, context);
+const first = exchangeMachine.advanceExchange(exchangeMachine.initialExchange('attacker'), 0, context);
 assert.equal(first.phase, 'execute');
 assert.equal(first.action, 'frontal_pass');
-assert(module.REACTIONS[first.action].includes(first.reaction));
-const second = module.advanceExchange(first, 15, context);
+assert(exchangeMachine.REACTIONS[first.action].includes(first.reaction));
+const second = exchangeMachine.advanceExchange(first, 15, context);
 assert.equal(second.phase, 'resolve');
-const third = module.advanceExchange(second, 0, context);
+const third = exchangeMachine.advanceExchange(second, 0, context);
 assert.equal(third.initiative, 'defender', 'tied exchanges hand over initiative');
-const next = module.advanceExchange(third, 0, context);
+const next = exchangeMachine.advanceExchange(third, 0, context);
 assert.notEqual(next.action, first.action, 'previous action receives repeat penalty');
-const winning = module.advanceExchange(second, 0, {
+const winning = exchangeMachine.advanceExchange(second, 0, {
   ...context,
   attackerDamage: 30,
   defenderDamage: 0,
