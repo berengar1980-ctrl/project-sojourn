@@ -288,6 +288,47 @@ function broadsideSteering(
   return { x: Math.cos(heading), y: Math.sin(heading) };
 }
 
+function combatRangePosture(
+  combatant: MutableCombatant,
+  range: number,
+  desired: number,
+  toward: CombatPoint,
+  perpendicular: CombatPoint
+): { direction: CombatPoint; targetSpeedFactor: number } {
+  if (range < desired * 0.72) {
+    return combatant.setup.aiControlled
+      ? { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.4 }
+      : {
+          direction: normalize(
+            -toward.x * 0.8 + perpendicular.x * 0.45,
+            -toward.y * 0.8 + perpendicular.y * 0.45
+          ),
+          targetSpeedFactor: 0.72,
+        };
+  }
+  if (range <= desired * 1.18) {
+    return combatant.setup.aiControlled
+      ? {
+          direction: toward,
+          targetSpeedFactor: combatant.strategy?.phase === 'reach_range' ? 0.28 : 0.1,
+        }
+      : {
+          direction: normalize(
+            perpendicular.x + toward.x * 0.18,
+            perpendicular.y + toward.y * 0.18
+          ),
+          targetSpeedFactor: combatant.tactic === 'kite' ? 0.78 : 0.62,
+        };
+  }
+  if (combatant.tactic === 'kite' && range < desired * 1.5) {
+    return {
+      direction: normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y),
+      targetSpeedFactor: 0.8,
+    };
+  }
+  return { direction: toward, targetSpeedFactor: 0.88 };
+}
+
 function choosePlanDirection(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -299,8 +340,8 @@ function choosePlanDirection(
   dx: number,
   dy: number
 ): { direction: CombatPoint; targetSpeedFactor: number } {
-  let direction = toward;
-  let targetSpeedFactor = 0.88;
+  let direction: CombatPoint;
+  let targetSpeedFactor: number;
   if (combatant.tactic === 'flee') {
     direction = arena.exitPoint
       ? normalize(
@@ -309,18 +350,10 @@ function choosePlanDirection(
         )
       : { x: -toward.x, y: -toward.y };
     targetSpeedFactor = 1;
-  } else if (range < desired * 0.72) {
-    direction = normalize(
-      -toward.x * 0.8 + perpendicular.x * 0.45,
-      -toward.y * 0.8 + perpendicular.y * 0.45
-    );
-    targetSpeedFactor = 0.72;
-  } else if (range <= desired * 1.18) {
-    direction = normalize(perpendicular.x + toward.x * 0.18, perpendicular.y + toward.y * 0.18);
-    targetSpeedFactor = combatant.tactic === 'kite' ? 0.78 : 0.62;
-  } else if (combatant.tactic === 'kite' && range < desired * 1.5) {
-    direction = normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y);
-    targetSpeedFactor = 0.8;
+  } else {
+    const posture = combatRangePosture(combatant, range, desired, toward, perpendicular);
+    direction = posture.direction;
+    targetSpeedFactor = posture.targetSpeedFactor;
   }
 
   // Choose the weapon-facing posture before safety steering: neither a broadside
@@ -328,7 +361,10 @@ function choosePlanDirection(
   const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
   if (broadsideDirection) {
     direction = broadsideDirection;
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.68);
+    targetSpeedFactor = Math.min(
+      targetSpeedFactor,
+      combatant.strategy?.phase === 'reach_range' ? 0.5 : 0.12
+    );
   } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
     // Approach with the bow facing the target: velocity still obeys inertia.
     direction = toward;

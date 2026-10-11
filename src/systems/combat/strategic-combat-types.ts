@@ -18,7 +18,28 @@ export interface CombatSubsystemHealth {
   readonly maximum: number;
 }
 
+export type CombatDoctrine =
+  | 'shield_breaker'
+  | 'hull_breaker'
+  | 'range_control'
+  | 'broadside'
+  | 'engine_intercept'
+  | 'minefield'
+  | 'tractor_intercept'
+  | 'escape';
+
+export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup';
+
+export interface CombatLogEntry {
+  readonly timeSeconds: number;
+  readonly side: StrategicCombatSide | 'system';
+  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result';
+  readonly detail: string;
+}
+
 export interface CombatStrategyPlan {
+  readonly doctrine?: CombatDoctrine;
+  readonly phase?: CombatPlanPhase;
   readonly targetSubsystem?: CombatTargetSubsystem;
   readonly broadsideFacing?: 'port' | 'starboard';
   readonly kind:
@@ -187,6 +208,7 @@ export interface StrategicCombatSnapshot {
   readonly grapple: CombatGrapple | null;
   readonly grappleUsed: Readonly<Record<StrategicCombatSide, boolean>>;
   readonly lastEvent: string;
+  readonly combatLog: readonly CombatLogEntry[];
   readonly projectiles: readonly CombatProjectileSnapshot[];
   readonly beams: readonly CombatBeamSnapshot[];
   readonly mines: readonly CombatMineSnapshot[];
@@ -214,6 +236,7 @@ export interface StrategicCombatArenaOptions {
 
 export interface StrategicCombatService {
   getSnapshot(): StrategicCombatSnapshot;
+  getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
   fireGrapple(side: StrategicCombatSide): boolean;
@@ -304,6 +327,10 @@ export interface StrategicCombatRuntime {
   grapple: CombatGrapple | null;
   grappleUsed: Record<StrategicCombatSide, boolean>;
   lastEvent: string;
+  combatLog: CombatLogEntry[];
+  firstPlanner: StrategicCombatSide;
+  lastLoggedImpact: number;
+  lastLoggedSampleSecond: number;
   projectileSerial: number;
   beamSerial: number;
   mineSerial: number;

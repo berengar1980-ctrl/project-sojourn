@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-10 | Bedingungsabhängige Kampfpläne und Kampflog | Voidbound-Parität überprüft: **keine Statusänderung**. Harrowdrift erweitert den Kampfplan um Doktrin/Phasen, Seed-bestimmte Reihenfolge für initiale 0-/4-Sekunden-Analyse, 8-Sekunden-Kadenz, sofortige Umplanung nach Schilddurchbruch und maschinenlesbare Kampftelemetrie mit UI-Export. Folgeschritte: vollständige Doktrin-Unterpläne und reproduzierbare Massen-Balancings. |
+
+
 | 2026-10-10 | HARROWDRIFT Startmenü / PvP-Duell | Voidbound-Startscreen in `js/ui/character.js` und `style.css` geprüft: linksbündige Navigation, dunkle Flächen, goldener Selektionsakzent, Originalhintergrund `assets/ui/startscreen-background.webp`. Harrowdrift öffnet beim Boot ein Hauptmenü, führt über Kampagnenspiel in das bisherige Sojourn-Spiel und bietet ein lokales Zwei-Spieler-Duell auf Basis des bestehenden Strategiekampfes. Kampagnenverwaltung und Spielstände sind sichtbar deaktiviert, da keine Persistenz vorhanden ist. Menü-Asset muss binär separat übernommen werden. |
 
 

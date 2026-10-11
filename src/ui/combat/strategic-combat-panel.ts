@@ -4,6 +4,7 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { StrategicCombatRenderer } from './strategic-combat-renderer';
+import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 
 export interface StrategicCombatPanel {
   update(): void;
@@ -14,6 +15,7 @@ interface StrategicCombatPanelOptions {
   readonly root: HTMLElement;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
+  readonly encounterName?: string;
 }
 
 function percent(current: number, maximum: number): number {
@@ -38,6 +40,34 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
   `;
 }
 
+function attachCombatLogExport(shell: HTMLElement, options: StrategicCombatPanelOptions): void {
+  shell
+    .querySelector<HTMLButtonElement>('.strategic-combat-log-export')
+    ?.addEventListener('click', () => {
+      const payload = JSON.stringify(
+        {
+          format: 'harrowdrift-combat-log-v1',
+          encounter: options.encounterName ?? 'Freies Duell',
+          snapshot: options.combat.getSnapshot(),
+          events: options.combat.getCombatLog(),
+          analysis: analyzeCombatLog(options.combat.getCombatLog()),
+        },
+        null,
+        2
+      );
+      const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const slug = (options.encounterName ?? 'freies-duell')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      link.download = 'harrowdrift-' + slug + '-kampflog.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+}
+
 export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
@@ -45,7 +75,7 @@ export function createStrategicCombatPanel(
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
     <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
-    <div class="combat-map-title">SOJOURN // RAUMKAMPF</div>
+    <div class="combat-map-title">HARROWDRIFT // RAUMKAMPF <span class="combat-encounter-time"></span></div>
     <aside class="combat-hud combat-hud--player"></aside>
     <aside class="combat-hud combat-hud--enemy"></aside>
     <div class="combat-tactics" aria-label="Kampftaktik">
@@ -56,6 +86,7 @@ export function createStrategicCombatPanel(
     </div>
     <div class="strategic-combat-event"></div>
     <button class="strategic-combat-grapple" type="button">GREIFHAKEN</button>
+    <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
   options.root.replaceChildren(shell);
@@ -67,6 +98,7 @@ export function createStrategicCombatPanel(
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
   const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
   const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
+  attachCombatLogExport(shell, options);
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
   }
@@ -88,6 +120,16 @@ export function createStrategicCombatPanel(
     playerHud.innerHTML = combatantHud(model.attacker);
     enemyHud.innerHTML = combatantHud(model.defender);
     event.textContent = model.lastEvent;
+    const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
+    if (timer) {
+      const seconds = Math.floor(model.elapsedSeconds);
+      timer.textContent =
+        (options.encounterName ?? 'Freies Duell') +
+        ' · ' +
+        String(Math.floor(seconds / 60)).padStart(2, '0') +
+        ':' +
+        String(seconds % 60).padStart(2, '0');
+    }
     returnButton.hidden = model.winner === null;
     returnButton.textContent = model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
     if (grappleButton) {

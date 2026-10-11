@@ -12,17 +12,15 @@ import type {
 } from './strategic-combat-types';
 
 import {
-  EDGE_PADDING,
   distance,
   snapshot,
-  DEFAULT_ARENA_WIDTH,
-  DEFAULT_ARENA_HEIGHT,
   createCombatant,
   createRng,
   hashSeed,
 } from './strategic-combat-geometry';
 
 import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
+import { buildCombatArena } from './strategic-combat-arena';
 
 import {
   mineDetection,
@@ -32,45 +30,28 @@ import {
 } from './strategic-combat-movement';
 
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
 
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
-
 export type { StrategicCombatSide } from './strategic-combat-types';
-
 export type { CombatTactic } from './strategic-combat-types';
-
 export type { CombatImpactLayer } from './strategic-combat-types';
-
 export type { CombatProjectileKind } from './strategic-combat-types';
-
 export type { CombatBeamKind } from './strategic-combat-types';
-
 export type { CombatPoint } from './strategic-combat-types';
-
 export type { CombatShieldGeometry } from './strategic-combat-types';
-
 export type { StrategicCombatantSetup } from './strategic-combat-types';
-
 export type { StrategicCombatantSnapshot } from './strategic-combat-types';
-
 export type { CombatProjectileSnapshot } from './strategic-combat-types';
-
 export type { CombatBeamSnapshot } from './strategic-combat-types';
-
 export type { CombatMineSnapshot } from './strategic-combat-types';
-
 export type { CombatImpactSnapshot } from './strategic-combat-types';
-
 export type { StrategicCombatSnapshot } from './strategic-combat-types';
-
 export type { StrategicCombatObstacle } from './strategic-combat-types';
-
 export type { StrategicCombatArenaOptions } from './strategic-combat-types';
-
 export type { StrategicCombatService } from './strategic-combat-types';
-
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
 
 function runtimeCombatantEscaped(
@@ -146,6 +127,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       : null,
     grappleUsed: { ...runtime.grappleUsed },
     lastEvent: runtime.lastEvent,
+    combatLog: runtime.combatLog.slice(-80).map((entry) => ({ ...entry })),
     projectiles: runtime.projectiles.map((projectile) => ({
       id: projectile.id,
       owner: projectile.owner,
@@ -184,6 +166,127 @@ function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: numb
   for (let index = runtime.beams.length - 1; index >= 0; index -= 1) {
     runtime.beams[index]!.ttlSeconds -= deltaSeconds;
     if (runtime.beams[index]!.ttlSeconds <= 0) runtime.beams.splice(index, 1);
+  }
+}
+
+function recordCombatLog(
+  runtime: StrategicCombatRuntime,
+  side: 'attacker' | 'defender' | 'system',
+  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result',
+  detail: string
+): void {
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event,
+    detail,
+  });
+}
+
+function reviewAndExecute(
+  runtime: StrategicCombatRuntime,
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  side: 'attacker' | 'defender'
+): void {
+  const previous = ship.strategy;
+  reviewCombatStrategy(ship, enemy, side, runtime.elapsedSeconds);
+  if (previous !== ship.strategy && ship.strategy) {
+    ship.strategy = {
+      ...ship.strategy,
+      doctrine: classifyCombatDoctrine(ship, enemy),
+    };
+    recordCombatLog(
+      runtime,
+      side,
+      'plan',
+      ship.strategy.doctrine +
+        ' · ' +
+        ship.strategy.reason +
+        ' · Distanz ' +
+        Math.round(ship.strategy.desiredRange) +
+        'm' +
+        ' · Fokus ' +
+        ship.strategy.focus +
+        ' · Gegner Schild ' +
+        Math.round(enemy.shieldHp) +
+        ' · Hülle ' +
+        Math.round(enemy.hullHp)
+    );
+  }
+  if (!ship.strategy) return;
+  const nextPhase = executeCombatPlan(ship, enemy);
+  if (ship.strategy.phase !== nextPhase) {
+    ship.strategy = { ...ship.strategy, phase: nextPhase };
+    recordCombatLog(runtime, side, 'phase', nextPhase);
+  }
+}
+
+function recordCombatMotion(runtime: StrategicCombatRuntime): void {
+  const sampleSecond = Math.floor(runtime.elapsedSeconds);
+  if (sampleSecond > runtime.lastLoggedSampleSecond) {
+    runtime.lastLoggedSampleSecond = sampleSecond;
+    const range = Math.round(distance(runtime.attacker.position, runtime.defender.position));
+    for (const [side, ship] of [
+      ['attacker', runtime.attacker],
+      ['defender', runtime.defender],
+    ] as const) {
+      recordCombatLog(
+        runtime,
+        side,
+        'state',
+        'Abstand ' +
+          range +
+          'm · Tempo ' +
+          Math.round(ship.speed) +
+          'm/s · Schild ' +
+          Math.round(ship.shieldHp) +
+          ' · Hülle ' +
+          Math.round(ship.hullHp) +
+          ' · Phase ' +
+          (ship.strategy?.phase ?? 'Standardtaktik')
+      );
+    }
+  }
+}
+
+function reviewShieldBreakthroughs(
+  runtime: StrategicCombatRuntime,
+  previous: readonly number[]
+): void {
+  // Important tactical milestones can transition to the next doctrine immediately.
+  if (previous[0]! > 0 && runtime.attacker.shieldHp <= 0) {
+    runtime.defender.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Angreiferschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
+  }
+  if (previous[1]! > 0 && runtime.defender.shieldHp <= 0) {
+    runtime.attacker.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
+      'Verteidigerschild ausgefallen · Gegenplan jetzt neu bewerten'
+    );
+  }
+}
+
+function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
+  if (
+    runtime.defender.setup.aiControlled &&
+    !runtime.attacker.setup.aiControlled &&
+    !runtime.grappleUsed.defender &&
+    !runtime.grapple &&
+    runtime.attacker.shieldHp <= 0 &&
+    runtime.attacker.hullHp > 0 &&
+    runtime.defender.hullHp > 0 &&
+    distance(runtime.attacker.position, runtime.defender.position) <= 900
+  ) {
+    tryFireGrapple(runtime, 'defender');
   }
 }
 
@@ -239,8 +342,8 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  reviewCombatStrategy(runtime.attacker, runtime.defender, 'attacker', runtime.elapsedSeconds);
-  reviewCombatStrategy(runtime.defender, runtime.attacker, 'defender', runtime.elapsedSeconds);
+  reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
+  reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
   moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   resolveCombatantCollision(runtime.attacker, runtime.defender);
@@ -248,23 +351,29 @@ function tickStrategicCombat(
   resolveArenaObstacles(runtime.defender, runtime.arena);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
   advanceRuntimeWeapons(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
-  if (
-    runtime.defender.setup.aiControlled &&
-    !runtime.attacker.setup.aiControlled &&
-    !runtime.grappleUsed.defender &&
-    !runtime.grapple &&
-    runtime.attacker.shieldHp <= 0 &&
-    runtime.attacker.hullHp > 0 &&
-    runtime.defender.hullHp > 0 &&
-    distance(runtime.attacker.position, runtime.defender.position) <= 900
-  ) {
-    tryFireGrapple(runtime, 'defender');
-  }
+  reviewShieldBreakthroughs(runtime, previousShields);
+  maybeAttemptBoarding(runtime);
+  recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
+  if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
+    runtime.lastLoggedImpact = runtime.lastImpact.serial;
+    recordCombatLog(
+      runtime,
+      runtime.lastImpact.target,
+      'impact',
+      runtime.lastImpact.layer +
+        ' · ' +
+        Math.round(runtime.lastImpact.damage) +
+        ' HP' +
+        (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : '')
+    );
+  }
+  if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
   return runtimeSnapshot(runtime);
 }
 
@@ -274,43 +383,7 @@ function createStrategicCombatRuntime(
   seed: number,
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatRuntime {
-  const arena: StrategicCombatArenaOptions = {
-    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
-    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
-    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
-    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
-    ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
-  };
-  const margin = EDGE_PADDING;
-  const along = 0.35 + (((seed >>> 5) % 101) / 100) * 0.3;
-  const candidates = [
-    { x: margin, y: arena.height * along },
-    { x: arena.width - margin, y: arena.height * along },
-    { x: arena.width * along, y: margin },
-    { x: arena.width * along, y: arena.height - margin },
-  ];
-  const attackerPosition = arenaOptions?.attackerPosition ?? {
-    x: arena.width * 0.35,
-    y: arena.height * 0.5,
-  };
-  const defenderPosition = arenaOptions?.defenderPosition ?? {
-    x: arena.width * 0.65,
-    y: arena.height * 0.5,
-  };
-  const playerFlees =
-    attackerSetup.preferredTactic === 'flee' || defenderSetup.preferredTactic !== 'flee';
-  const runner = playerFlees ? attackerPosition : defenderPosition;
-  const pursuer = playerFlees ? defenderPosition : attackerPosition;
-  const preferredGate = candidates
-    .map((point, index) => ({
-      point,
-      score: distance(point, pursuer) - distance(point, runner) * 0.4 + ((seed + index) % 4) * 2,
-    }))
-    .sort((a, b) => b.score - a.score)[0]!.point;
-  const escapeArena: StrategicCombatArenaOptions = {
-    ...arena,
-    exitPoint: arenaOptions?.exitPoint ?? preferredGate,
-  };
+  const escapeArena = buildCombatArena(attackerSetup, defenderSetup, seed, arenaOptions);
   return {
     arena: escapeArena,
     attacker: createCombatant(attackerSetup, 'attacker', escapeArena),
@@ -325,6 +398,10 @@ function createStrategicCombatRuntime(
     grapple: null,
     grappleUsed: { attacker: false, defender: false },
     lastEvent: 'Kampfkontakt hergestellt',
+    combatLog: [],
+    firstPlanner: seed % 2 === 0 ? 'attacker' : 'defender',
+    lastLoggedImpact: 0,
+    lastLoggedSampleSecond: -1,
     projectileSerial: 0,
     beamSerial: 0,
     mineSerial: 0,
@@ -364,8 +441,40 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
+  runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
+  runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
+  recordCombatLog(
+    runtime,
+    'system',
+    'start',
+    'Seed ' + seed + ' · erste Analyse ' + runtime.firstPlanner
+  );
+  for (const [side, setup] of [
+    ['attacker', attackerSetup],
+    ['defender', defenderSetup],
+  ] as const) {
+    recordCombatLog(
+      runtime,
+      side,
+      'start',
+      setup.name +
+        ' · Schiff ' +
+        setup.shipId +
+        ' · Tempo ' +
+        (setup.combatSpeed ?? 120) +
+        ' · Schild ' +
+        setup.shieldHp +
+        ' · Hülle ' +
+        setup.hullHp +
+        ' · Waffen ' +
+        setup.weapons
+          .map((weapon) => weapon.name + ' (' + (weapon.weapon?.rangeMeters ?? 0) + 'm)')
+          .join(', ')
+    );
+  }
   return {
     getSnapshot: () => runtimeSnapshot(runtime),
+    getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
