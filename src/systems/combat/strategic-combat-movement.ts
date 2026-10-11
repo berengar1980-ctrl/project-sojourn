@@ -219,18 +219,24 @@ function applyInertialThrust(
   acceleration: number,
   tractorLocked: boolean,
   dt: number,
-  arena: StrategicCombatArenaOptions
+  arena: StrategicCombatArenaOptions,
+  rcsStrafe?: CombatPoint
 ): void {
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
   const requested = baseSpeed * targetSpeedFactor * alignment;
   const targetSpeed = tractorLocked ? Math.min(requested, 25) : requested;
-  const dx = Math.cos(combatant.headingRadians) * targetSpeed - combatant.velocity.x;
-  const dy = Math.sin(combatant.headingRadians) * targetSpeed - combatant.velocity.y;
+  const thrust = rcsStrafe ?? {
+    x: Math.cos(combatant.headingRadians),
+    y: Math.sin(combatant.headingRadians),
+  };
+  const dx = thrust.x * targetSpeed - combatant.velocity.x;
+  const dy = thrust.y * targetSpeed - combatant.velocity.y;
   const change = Math.hypot(dx, dy);
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const fraction = Math.min(
     1,
-    (acceleration * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+    (acceleration * (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) /
+      Math.max(0.001, change)
   );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
@@ -486,7 +492,8 @@ export function moveCombatant(
     acceleration,
     isTractorLocked(combatant, enemy),
     deltaSeconds,
-    arena
+    arena,
+    gunHeading ? direction : undefined
   );
   resolveArenaObstacles(combatant, arena);
 }
