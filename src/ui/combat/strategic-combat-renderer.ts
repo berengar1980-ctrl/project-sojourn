@@ -255,24 +255,52 @@ export class StrategicCombatRenderer {
     this.context.rotate(angle);
 
     if (projectile.kind === 'plasma') {
-      this.context.fillStyle = 'rgba(118, 225, 255, .92)';
-      this.context.shadowColor = 'rgba(81, 194, 255, .95)';
-      this.context.shadowBlur = 12;
+      this.context.shadowColor = '#73dfff';
+      this.context.shadowBlur = 14;
+      this.context.fillStyle = 'rgba(78, 177, 241, 0.45)';
       this.context.beginPath();
-      this.context.arc(0, 0, 5, 0, Math.PI * 2);
+      this.context.arc(0, 0, 7, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.fillStyle = '#e1f9ff';
+      this.context.beginPath();
+      this.context.arc(0, 0, 3, 0, Math.PI * 2);
       this.context.fill();
     } else if (projectile.kind === 'missile') {
-      this.context.fillStyle = '#e7d7b0';
-      this.context.fillRect(-7, -2, 12, 4);
-      this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
-      this.context.lineWidth = 3;
+      // A pointed missile with a short exhaust plume, rather than a flat
+      // rectangle dragging an oversized orange line across the arena.
+      this.context.shadowColor = '#ffad57';
+      this.context.shadowBlur = 7;
+      this.context.fillStyle = 'rgba(240, 112, 36, 0.45)';
       this.context.beginPath();
-      this.context.moveTo(-8, 0);
-      this.context.lineTo(-23, 0);
+      this.context.moveTo(-7, 0);
+      this.context.lineTo(-17, -3);
+      this.context.lineTo(-14, 0);
+      this.context.lineTo(-17, 3);
+      this.context.closePath();
+      this.context.fill();
+      this.context.shadowBlur = 0;
+      this.context.fillStyle = '#c1ced2';
+      this.context.beginPath();
+      this.context.moveTo(9, 0);
+      this.context.lineTo(2, -3);
+      this.context.lineTo(-7, -2.5);
+      this.context.lineTo(-7, 2.5);
+      this.context.lineTo(2, 3);
+      this.context.closePath();
+      this.context.fill();
+      this.context.fillStyle = '#536674';
+      this.context.fillRect(-5, -1, 8, 2);
+      this.context.strokeStyle = '#87969a';
+      this.context.lineWidth = 1;
+      this.context.beginPath();
+      this.context.moveTo(-4, -3);
+      this.context.lineTo(-8, -5);
+      this.context.moveTo(-4, 3);
+      this.context.lineTo(-8, 5);
       this.context.stroke();
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-      this.context.fillRect(-2, -1, 5, 2);
+      this.context.fillRect(-3, -1, 6, 2);
     }
     this.context.restore();
   }
