@@ -45,4 +45,3 @@ export function updateAiTactic(
   }
   combatant.tactic = combatant.setup.preferredTactic ?? 'fight';
 }
-
