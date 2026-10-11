@@ -1,5 +1,13 @@
-import type { StrategicCombatArenaOptions, StrategicCombatantSetup } from './strategic-combat-types';
-import { DEFAULT_ARENA_WIDTH, DEFAULT_ARENA_HEIGHT, EDGE_PADDING, distance } from './strategic-combat-geometry';
+import type {
+  StrategicCombatArenaOptions,
+  StrategicCombatantSetup,
+} from './strategic-combat-types';
+import {
+  DEFAULT_ARENA_WIDTH,
+  DEFAULT_ARENA_HEIGHT,
+  EDGE_PADDING,
+  distance,
+} from './strategic-combat-geometry';
 
 export function buildCombatArena(
   attackerSetup: StrategicCombatantSetup,
@@ -46,4 +54,3 @@ export function buildCombatArena(
   };
   return escapeArena;
 }
-
