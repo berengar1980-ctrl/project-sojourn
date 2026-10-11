@@ -127,4 +127,24 @@ assert(strafeShip.velocity.y > 0, 'RCS permits sideways course corrections');
 assert(strafeShip.velocity.y <= 30 * 0.35, 'sideways acceleration stays below main thrust');
 assert.equal(strafeShip.headingRadians, 0, 'RCS does not require turning the hull');
 
+
+// Different orders must not collapse into the same static flight goal.
+for (const initiative of ['attacker', 'defender']) {
+  const attacker = ship(550, 650);
+  const defender = ship(1100, 650);
+  const initiator = initiative === 'attacker' ? attacker : defender;
+  const reactor = initiative === 'attacker' ? defender : attacker;
+  const actions = ['frontal_pass', 'broadside_pass', 'disengage_fire', 'flanking_pass'];
+  const goals = actions.map((action) =>
+    pilot.planExchangeFlight(initiator, reactor, action, 'evade', 'strong').initiatorGoal
+  );
+  assert.equal(new Set(goals.map((goal) => goal.x + ':' + goal.y)).size, 4);
+  const reactions = Object.values(exchange.REACTIONS).flat();
+  const reactionGoals = reactions.map((reaction) => {
+    const plan = pilot.planExchangeFlight(initiator, reactor, 'frontal_pass', reaction, 'strong');
+    return [plan.reactorGoal.x, plan.reactorGoal.y, plan.reactorHeading].join(':');
+  });
+  assert.equal(new Set(reactionGoals).size, reactions.length, 'reactions must yield distinct flight or heading orders');
+}
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
