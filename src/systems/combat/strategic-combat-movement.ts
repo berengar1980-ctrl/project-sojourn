@@ -442,7 +442,9 @@ export function moveCombatant(
 
   // Aim the broadside independently of translation. Steering the engines along
   // the broadside heading made both ships orbit indefinitely without firing.
-  const gunHeading = broadsideSteering(combatant, enemy, range, dx, dy);
+  const gunHeading = !mineAvoidance && !obstacle && !boundary
+    ? broadsideSteering(combatant, enemy, range, dx, dy)
+    : null;
   if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
     targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
   }
