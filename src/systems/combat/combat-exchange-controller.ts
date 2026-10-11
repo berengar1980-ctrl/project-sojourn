@@ -50,6 +50,6 @@ export function tickActionExchange(
   state.exchange = next;
   if (current.phase === 'resolve') state.flight = null;
   if (!state.flight || next.phase !== 'execute') return;
-  pilotExchangeShip(initiator, 'attacker', state.flight, runtime.arena, dt);
-  pilotExchangeShip(opponent, 'defender', state.flight, runtime.arena, dt);
+  pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt);
+  pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
 }
