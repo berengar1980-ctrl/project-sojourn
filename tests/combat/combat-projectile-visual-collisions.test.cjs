@@ -35,11 +35,7 @@ const target = {
     },
   },
 };
-const shieldHit = segmentShieldHit(
-  { x: 320, y: 200 },
-  { x: 400, y: 200 },
-  target
-);
+const shieldHit = segmentShieldHit({ x: 320, y: 200 }, { x: 400, y: 200 }, target);
 assert(shieldHit, 'approaching missile must first intersect the shield');
 assert(Math.abs(shieldHit.point.x - 355) < 0.001, 'shield contact is on its near surface');
 assert.equal(
@@ -54,5 +50,5 @@ assert(weapons.includes('weaponKind: projectile.kind'), 'impact visuals know pro
 assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKind'));
 assert(renderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
 assert(renderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
-assert(renderer.includes("this.context.lineTo(-8, 5)"), 'rocket fins distinguish its silhouette');
+assert(renderer.includes('this.context.lineTo(-8, 5)'), 'rocket fins distinguish its silhouette');
 console.log('PASS projectile misses, shield contacts and distinctive missile impacts');

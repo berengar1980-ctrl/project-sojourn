@@ -3,11 +3,7 @@
  * and damage application run continuously while an exchange is executing.
  * No movement commands are issued by this module.
  */
-export type CombatAction =
-  | 'frontal_pass'
-  | 'broadside_pass'
-  | 'disengage_fire'
-  | 'flanking_pass';
+export type CombatAction = 'frontal_pass' | 'broadside_pass' | 'disengage_fire' | 'flanking_pass';
 export type CombatReaction =
   | 'evade'
   | 'counterfire'
@@ -42,11 +38,9 @@ export interface ExchangeContext {
   readonly defenderDamage: number;
   readonly roll: () => number;
 }
-export const REACTIONS: Readonly<Record<CombatAction, readonly [
-  CombatReaction,
-  CombatReaction,
-  CombatReaction,
-]>> = {
+export const REACTIONS: Readonly<
+  Record<CombatAction, readonly [CombatReaction, CombatReaction, CombatReaction]>
+> = {
   frontal_pass: ['evade', 'counterfire', 'cross_pass'],
   broadside_pass: ['close_gap', 'extend_range', 'counter_pass'],
   disengage_fire: ['pursue', 'hold_fire', 'break_contact'],
@@ -67,10 +61,7 @@ export function initialExchange(initiative: ExchangeSide): CombatExchange {
   };
 }
 
-function chooseAction(
-  context: ExchangeContext,
-  previous: CombatAction | null
-): CombatAction {
+function chooseAction(context: ExchangeContext, previous: CombatAction | null): CombatAction {
   const actions: CombatAction[] = [
     'frontal_pass',
     'broadside_pass',
@@ -123,8 +114,13 @@ export function advanceExchange(
   }
   const difference = context.attackerDamage - context.defenderDamage;
   const initiative =
-    difference > 0 ? 'attacker' : difference < 0 ? 'defender' :
-      current.initiative === 'attacker' ? 'defender' : 'attacker';
+    difference > 0
+      ? 'attacker'
+      : difference < 0
+        ? 'defender'
+        : current.initiative === 'attacker'
+          ? 'defender'
+          : 'attacker';
   return {
     ...initialExchange(initiative),
     previousAction: current.action,
