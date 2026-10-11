@@ -1,6 +1,8 @@
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import { detectShipMine } from './mine-detection-service';
+import { preferredRange } from './combat-tactic-choice';
+export { updateAiTactic } from './combat-tactic-choice';
 
 import type {
   MutableCombatant,
@@ -20,51 +22,6 @@ import {
   DEFAULT_TURN_RATE,
   DEFAULT_ACCELERATION,
 } from './strategic-combat-geometry';
-
-function preferredRange(combatant: MutableCombatant): number {
-  const ranges = combatant.setup.weapons.flatMap((weapon) =>
-    weapon.weapon ? [weapon.weapon.rangeMeters] : []
-  );
-  if (ranges.length === 0) return 300;
-  const max = Math.max(...ranges);
-  const min = Math.min(...ranges);
-  if (combatant.tactic === 'kite') return Math.max(520, max * 0.84);
-  if (combatant.tactic === 'minefield') return Math.max(430, min * 0.78);
-  return Math.max(340, min * 0.72);
-}
-
-export function updateAiTactic(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  elapsedSeconds: number
-): void {
-  if (!combatant.setup.aiControlled || combatant.hullHp <= 0) return;
-  const hullRatio = combatant.hullHp / Math.max(1, combatant.hullMaxHp);
-  const shieldRatio =
-    combatant.shieldMaxHp <= 0 ? 0 : combatant.shieldHp / Math.max(1, combatant.shieldMaxHp);
-  const aggression = clamp(combatant.setup.aiAggression ?? 50, 0, 100);
-  const range = distance(combatant.position, enemy.position);
-
-  if (hullRatio <= 0.3 && aggression < 88) {
-    combatant.tactic = 'flee';
-    return;
-  }
-  if (
-    combatant.mineStock.length > 0 &&
-    elapsedSeconds >= 5 &&
-    range <= 700 &&
-    aggression >= 58 &&
-    Math.floor(elapsedSeconds / 10) % 2 === 0
-  ) {
-    combatant.tactic = 'minefield';
-    return;
-  }
-  if (shieldRatio <= 0.25 && hullRatio > 0.45 && aggression < 78) {
-    combatant.tactic = 'kite';
-    return;
-  }
-  combatant.tactic = combatant.setup.preferredTactic ?? 'fight';
-}
 
 function arenaBoundaryAvoidance(
   combatant: MutableCombatant,
@@ -219,18 +176,23 @@ function applyInertialThrust(
   acceleration: number,
   tractorLocked: boolean,
   dt: number,
-  arena: StrategicCombatArenaOptions
+  arena: StrategicCombatArenaOptions,
+  rcsStrafe?: CombatPoint
 ): void {
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
   const requested = baseSpeed * targetSpeedFactor * alignment;
   const targetSpeed = tractorLocked ? Math.min(requested, 25) : requested;
-  const dx = Math.cos(combatant.headingRadians) * targetSpeed - combatant.velocity.x;
-  const dy = Math.sin(combatant.headingRadians) * targetSpeed - combatant.velocity.y;
+  const thrust = rcsStrafe ?? {
+    x: Math.cos(combatant.headingRadians),
+    y: Math.sin(combatant.headingRadians),
+  };
+  const dx = thrust.x * targetSpeed - combatant.velocity.x;
+  const dy = thrust.y * targetSpeed - combatant.velocity.y;
   const change = Math.hypot(dx, dy);
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const fraction = Math.min(
     1,
-    (acceleration * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+    (acceleration * (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
   );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
@@ -336,9 +298,7 @@ function choosePlanDirection(
   range: number,
   desired: number,
   toward: CombatPoint,
-  perpendicular: CombatPoint,
-  dx: number,
-  dy: number
+  perpendicular: CombatPoint
 ): { direction: CombatPoint; targetSpeedFactor: number } {
   let direction: CombatPoint;
   let targetSpeedFactor: number;
@@ -358,14 +318,7 @@ function choosePlanDirection(
 
   // Choose the weapon-facing posture before safety steering: neither a broadside
   // nor a pursuit maneuver may discard a necessary collision correction.
-  const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
-  if (broadsideDirection) {
-    direction = broadsideDirection;
-    targetSpeedFactor = Math.min(
-      targetSpeedFactor,
-      combatant.strategy?.phase === 'reach_range' ? 0.5 : 0.12
-    );
-  } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
+  if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
     // Approach with the bow facing the target: velocity still obeys inertia.
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
@@ -388,66 +341,16 @@ function choosePlanDirection(
   return { direction, targetSpeedFactor };
 }
 
-export function moveCombatant(
+function performCombatThrust(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
-  side: StrategicCombatSide,
   deltaSeconds: number,
   arena: StrategicCombatArenaOptions,
-  activeMines: readonly MutableMine[]
+  headingDirection: CombatPoint,
+  targetSpeedFactor: number,
+  strafeDirection?: CombatPoint
 ): void {
-  if (combatant.hullHp <= 0) {
-    combatant.velocity.x = 0;
-    combatant.velocity.y = 0;
-    combatant.speed = 0;
-    combatant.turnRateRadiansPerSecond = 0;
-    combatant.angularThrust = 0;
-    return;
-  }
-
-  const dx = enemy.position.x - combatant.position.x;
-  const dy = enemy.position.y - combatant.position.y;
-  const range = Math.max(1, Math.hypot(dx, dy));
-  const toward = normalize(dx, dy);
-  const perpendicular =
-    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
-  const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
-
-  let { direction, targetSpeedFactor } = choosePlanDirection(
-    combatant,
-    enemy,
-    arena,
-    range,
-    desired,
-    toward,
-    perpendicular,
-    dx,
-    dy
-  );
-
-  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
-  if (mineAvoidance) {
-    direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
-  }
-  const obstacle = obstacleAvoidance(combatant, arena);
-  if (obstacle) {
-    direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
-  }
-
-  const boundary = arenaBoundaryAvoidance(combatant, arena);
-  if (boundary && combatant.tactic !== 'flee') {
-    const steeringWeight = 1.8 + boundary.strength * 4.2;
-    direction = normalize(
-      direction.x + boundary.x * steeringWeight,
-      direction.y + boundary.y * steeringWeight
-    );
-    targetSpeedFactor = Math.min(
-      targetSpeedFactor,
-      Math.max(0.38, 0.76 - boundary.strength * 0.34)
-    );
-  }
-
-  const desiredHeading = Math.atan2(direction.y, direction.x);
+  const desiredHeading = Math.atan2(headingDirection.y, headingDirection.x);
   const headingError = wrapAngle(desiredHeading - combatant.headingRadians);
   const maxTurn = Math.max(0.25, combatant.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const turn = clamp(headingError, -maxTurn * deltaSeconds, maxTurn * deltaSeconds);
@@ -483,7 +386,87 @@ export function moveCombatant(
     acceleration,
     isTractorLocked(combatant, enemy),
     deltaSeconds,
-    arena
+    arena,
+    strafeDirection
   );
   resolveArenaObstacles(combatant, arena);
+}
+
+export function moveCombatant(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  side: StrategicCombatSide,
+  deltaSeconds: number,
+  arena: StrategicCombatArenaOptions,
+  activeMines: readonly MutableMine[]
+): void {
+  if (combatant.hullHp <= 0) {
+    combatant.velocity.x = 0;
+    combatant.velocity.y = 0;
+    combatant.speed = 0;
+    combatant.turnRateRadiansPerSecond = 0;
+    combatant.angularThrust = 0;
+    return;
+  }
+
+  const dx = enemy.position.x - combatant.position.x;
+  const dy = enemy.position.y - combatant.position.y;
+  const range = Math.max(1, Math.hypot(dx, dy));
+  const toward = normalize(dx, dy);
+  const perpendicular =
+    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
+  const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
+
+  let { direction, targetSpeedFactor } = choosePlanDirection(
+    combatant,
+    enemy,
+    arena,
+    range,
+    desired,
+    toward,
+    perpendicular
+  );
+
+  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
+  if (mineAvoidance) {
+    direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
+  }
+  const obstacle = obstacleAvoidance(combatant, arena);
+  if (obstacle) {
+    direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
+  }
+
+  const boundary = arenaBoundaryAvoidance(combatant, arena);
+  if (boundary && combatant.tactic !== 'flee') {
+    const steeringWeight = 1.8 + boundary.strength * 4.2;
+    direction = normalize(
+      direction.x + boundary.x * steeringWeight,
+      direction.y + boundary.y * steeringWeight
+    );
+    targetSpeedFactor = Math.min(
+      targetSpeedFactor,
+      Math.max(0.38, 0.76 - boundary.strength * 0.34)
+    );
+  }
+
+  // Aim the broadside independently of translation. Steering the engines along
+  // the broadside heading made both ships orbit indefinitely without firing.
+  const gunHeading =
+    !mineAvoidance && !obstacle && !boundary
+      ? broadsideSteering(combatant, enemy, range, dx, dy)
+      : null;
+  if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
+    targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
+  }
+  const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
+  const headingDirection = broadsideActive ? gunHeading! : direction;
+  performCombatThrust(
+    combatant,
+    enemy,
+    deltaSeconds,
+    arena,
+    headingDirection,
+    targetSpeedFactor,
+    broadsideActive ? direction : undefined
+  );
 }

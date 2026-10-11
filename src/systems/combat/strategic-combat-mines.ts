@@ -64,6 +64,12 @@ export function maybeDropRuntimeMine(
     definition,
   });
   runtime.lastEvent = source.setup.name + ': ' + definition.name + ' gelegt';
+  runtime.combatLog?.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event: 'action',
+    detail: 'MINE_DEPLOY ' + definition.id,
+  });
 }
 
 function advanceRuntimeMine(
@@ -121,6 +127,13 @@ function advanceRuntimeMine(
     (result.layer === 'shield' ? 'Schild' : 'Hülle') +
     ' -' +
     Math.round(result.damage);
+  runtime.combatLog?.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side: mine.owner,
+    event: 'action',
+    detail:
+      'MINE_DETONATE ' + mine.definition.id + ' ' + result.layer + ' ' + Math.round(result.damage),
+  });
   runtime.mines.splice(index, 1);
 }
 

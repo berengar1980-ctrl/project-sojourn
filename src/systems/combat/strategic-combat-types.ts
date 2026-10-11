@@ -33,7 +33,7 @@ export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regrou
 export interface CombatLogEntry {
   readonly timeSeconds: number;
   readonly side: StrategicCombatSide | 'system';
-  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result';
+  readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'action' | 'result';
   readonly detail: string;
 }
 
@@ -262,6 +262,10 @@ export interface MutableCombatant {
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
   nextStrategyReviewAt: number;
+  lastEnemyHpObserved?: number;
+  lastProgressAt?: number;
+  stalledPlanKind?: CombatStrategyPlan['kind'];
+  stalledPlanFacing?: CombatStrategyPlan['broadsideFacing'];
   shieldHp: number;
   hullHp: number;
   subsystems: { engine: number; tractor: number; maximum: number };

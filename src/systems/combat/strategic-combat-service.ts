@@ -30,6 +30,7 @@ import {
 } from './strategic-combat-movement';
 
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { maybeAttemptBoarding } from './combat-boarding-ai';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
@@ -275,21 +276,6 @@ function reviewShieldBreakthroughs(
   }
 }
 
-function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
-  if (
-    runtime.defender.setup.aiControlled &&
-    !runtime.attacker.setup.aiControlled &&
-    !runtime.grappleUsed.defender &&
-    !runtime.grapple &&
-    runtime.attacker.shieldHp <= 0 &&
-    runtime.attacker.hullHp > 0 &&
-    runtime.defender.hullHp > 0 &&
-    distance(runtime.attacker.position, runtime.defender.position) <= 900
-  ) {
-    tryFireGrapple(runtime, 'defender');
-  }
-}
-
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number
@@ -328,6 +314,12 @@ function tickStrategicCombat(
         victim.speed = initiator.speed;
         runtime.boardingInitiator = runtime.grapple.owner;
         runtime.winner = runtime.grapple.owner;
+        runtime.combatLog.push({
+          timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+          side: runtime.grapple.owner,
+          event: 'action',
+          detail: 'BOARDING_COUPLED',
+        });
         runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
       }
     } else if (runtime.grapple.resolved) {
@@ -357,7 +349,7 @@ function tickStrategicCombat(
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
-  maybeAttemptBoarding(runtime);
+  maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
@@ -428,6 +420,12 @@ function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'def
   if (!launched) return false;
   runtime.grappleUsed[side] = true;
   runtime.grapple = launched;
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event: 'action',
+    detail: 'BOARDING_ATTEMPT',
+  });
   runtime.lastEvent = launched.success
     ? 'GREIFHAKEN > TREFFER · ZIEL WIRD HERANGEZOGEN'
     : 'GREIFHAKEN > WURF ABGEFEUERT';
