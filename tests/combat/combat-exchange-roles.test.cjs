@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const pilot = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/combat/combat-exchange-pilot.ts'
-);
+const pilot = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-exchange-pilot.ts');
 const exchange = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-exchange-machine.ts'
@@ -49,13 +46,7 @@ for (const initiative of ['attacker', 'defender']) {
   const defender = ship(900, 500);
   const initiator = initiative === 'attacker' ? attacker : defender;
   const reactor = initiative === 'attacker' ? defender : attacker;
-  const plan = pilot.planExchangeFlight(
-    initiator,
-    reactor,
-    'frontal_pass',
-    'evade',
-    'strong'
-  );
+  const plan = pilot.planExchangeFlight(initiator, reactor, 'frontal_pass', 'evade', 'strong');
 
   assert.notDeepEqual(plan.initiatorGoal, plan.reactorGoal);
   const firstDistance = Math.hypot(
@@ -71,11 +62,15 @@ for (const initiative of ['attacker', 'defender']) {
   pilot.pilotExchangeShip(reactor, 'reactor', plan, { width: 2000, height: 2000 }, 0.08);
 
   assert(
-    Math.hypot(plan.initiatorGoal.x - initiator.position.x, plan.initiatorGoal.y - initiator.position.y) < firstDistance,
+    Math.hypot(
+      plan.initiatorGoal.x - initiator.position.x,
+      plan.initiatorGoal.y - initiator.position.y
+    ) < firstDistance,
     initiative + ': initiator advances toward its own goal'
   );
   assert(
-    Math.hypot(plan.reactorGoal.x - reactor.position.x, plan.reactorGoal.y - reactor.position.y) < secondDistance,
+    Math.hypot(plan.reactorGoal.x - reactor.position.x, plan.reactorGoal.y - reactor.position.y) <
+      secondDistance,
     initiative + ': reactor advances toward its own goal'
   );
 }

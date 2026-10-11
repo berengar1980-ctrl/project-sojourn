@@ -1,4 +1,8 @@
-import { createActionExchange, tickActionExchange, type ActiveExchange } from './combat-exchange-controller';
+import {
+  createActionExchange,
+  tickActionExchange,
+  type ActiveExchange,
+} from './combat-exchange-controller';
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceCombatGrappleTether } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
@@ -445,7 +449,8 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
-  const actionState: ActiveExchange | undefined = seed === 1001 ? createActionExchange(runtime) : undefined;
+  const actionState: ActiveExchange | undefined =
+    seed === 1001 ? createActionExchange(runtime) : undefined;
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
   recordCombatLog(

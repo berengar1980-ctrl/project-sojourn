@@ -1,6 +1,10 @@
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
-import { planExchangeFlight, pilotExchangeShip, type ExchangeFlightPlan } from './combat-exchange-pilot';
+import {
+  planExchangeFlight,
+  pilotExchangeShip,
+  type ExchangeFlightPlan,
+} from './combat-exchange-pilot';
 
 export interface ActiveExchange {
   exchange: CombatExchange;
@@ -36,7 +40,13 @@ export function tickActionExchange(
   };
   const next = advanceExchange(current, dt, context);
   if (current.phase === 'choose' && next.action && next.reaction) {
-    state.flight = planExchangeFlight(initiator, opponent, next.action, next.reaction, next.quality);
+    state.flight = planExchangeFlight(
+      initiator,
+      opponent,
+      next.action,
+      next.reaction,
+      next.quality
+    );
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
     runtime.lastEvent = next.action + ' / ' + next.reaction;
