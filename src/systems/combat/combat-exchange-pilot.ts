@@ -76,14 +76,15 @@ export function planExchangeFlight(
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =
-    reaction === 'counter_pass' || reaction === 'counterfire' || reaction === 'turn_to_face'
+    reaction === 'counter_pass' || reaction === 'counterfire'
       ? Math.PI / 2
       : 0;
   return {
     initiatorGoal: attacking,
     reactorGoal: defender,
     initiatorHeading: facing + broadside,
-    reactorHeading: facing + Math.PI + defendingBroadside,
+    reactorHeading:
+      facing + Math.PI + defendingBroadside + (reaction === 'turn_to_face' ? 0.12 : 0),
   };
 }
 
