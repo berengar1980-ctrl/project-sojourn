@@ -55,5 +55,8 @@ assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKi
 assert(impactRenderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
 assert(impactRenderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
 assert(renderer.includes('this.context.lineTo(-8, 5)'), 'rocket fins distinguish its silhouette');
-assert(renderer.includes('drawCombatHullImpact('), 'combat renderer delegates explosions to the impact renderer');
+assert(
+  renderer.includes('drawCombatHullImpact('),
+  'combat renderer delegates explosions to the impact renderer'
+);
 console.log('PASS projectile misses, shield contacts and distinctive missile impacts');
