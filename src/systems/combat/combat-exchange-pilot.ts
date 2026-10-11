@@ -61,9 +61,9 @@ export function planExchangeFlight(
         ? offsetPoint(reactor.position, toward, 390, 0)
         : reaction === 'break_contact'
           ? offsetPoint(reactor.position, toward, 390, 180 * side)
-        : reaction === 'close_gap' || reaction === 'intercept' || reaction === 'pursue'
-          ? offsetPoint(reactor.position, toward, -350, 0)
-          : { ...reactor.position };
+          : reaction === 'close_gap' || reaction === 'intercept' || reaction === 'pursue'
+            ? offsetPoint(reactor.position, toward, -350, 0)
+            : { ...reactor.position };
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =

@@ -48,7 +48,13 @@ for (const initiative of ['attacker', 'defender']) {
   const reactor = initiative === 'attacker' ? defender : attacker;
   const plan = pilot.planExchangeFlight(initiator, reactor, 'frontal_pass', 'evade', 'strong');
 
-  const extend = pilot.planExchangeFlight(initiator, reactor, 'broadside_pass', 'extend_range', 'strong');
+  const extend = pilot.planExchangeFlight(
+    initiator,
+    reactor,
+    'broadside_pass',
+    'extend_range',
+    'strong'
+  );
   const retreatVectorX = extend.reactorGoal.x - reactor.position.x;
   const retreatVectorY = extend.reactorGoal.y - reactor.position.y;
   assert(
