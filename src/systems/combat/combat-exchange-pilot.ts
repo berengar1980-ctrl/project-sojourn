@@ -106,13 +106,20 @@ export function pilotExchangeShip(
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
   const desiredX = distance < 12 ? 0 : direction.x * targetSpeed;
   const desiredY = distance < 12 ? 0 : direction.y * targetSpeed;
+  // Main drive accelerates along the bow. RCS provides weaker lateral
+  // corrections and limited reverse thrust while preserving existing momentum.
   const changeX = desiredX - ship.velocity.x;
   const changeY = desiredY - ship.velocity.y;
-  const magnitude = Math.hypot(changeX, changeY);
-  const fraction = Math.min(1, (acceleration * dt) / Math.max(0.001, magnitude));
+  const forwardX = Math.cos(ship.headingRadians);
+  const forwardY = Math.sin(ship.headingRadians);
+  const longitudinal = changeX * forwardX + changeY * forwardY;
+  const lateral = -changeX * forwardY + changeY * forwardX;
+  const mainStep = acceleration * dt;
+  const forwardStep = clamp(longitudinal, -mainStep * 0.25, mainStep);
+  const lateralStep = clamp(lateral, -mainStep * 0.35, mainStep * 0.35);
   if (ship.subsystems.engine > 0) {
-    ship.velocity.x += changeX * fraction;
-    ship.velocity.y += changeY * fraction;
+    ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
+    ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
   }
   const nextX = ship.position.x + ship.velocity.x * dt;
   const nextY = ship.position.y + ship.velocity.y * dt;
