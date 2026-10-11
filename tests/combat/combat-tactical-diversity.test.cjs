@@ -17,7 +17,8 @@ const get = (id) => SHIP_COMPONENT_CATALOG.weapon.find((item) => item.id === id)
 const ion = get('weapon-ion-laser-1');
 const cannon = get('weapon-autocannon-1');
 const turret = get('weapon1');
-assert(ion && cannon && turret);
+const sideIon = get('weapon-ion-cannon-1');
+assert(ion && cannon && turret && sideIon);
 
 function combatant(weapons, x) {
   return {
@@ -37,7 +38,7 @@ function combatant(weapons, x) {
     mineStock: [], tactic: 'fight', strategy: null, nextStrategyReviewAt: 0,
   };
 }
-const ship = combatant([ion, cannon], 600);
+const ship = combatant([ion, sideIon], 600);
 const enemy = combatant([turret], 1000);
 reviewCombatStrategy(ship, enemy, 'attacker', 0);
 const firstKind = ship.strategy.kind;
@@ -47,12 +48,7 @@ assert(
   ship.stalledPlanKind,
   'after 24 seconds of no damage the tactical planner must flag its failed posture'
 );
-assert(
-  ship.strategy.kind !== firstKind ||
-    ship.strategy.reason.includes('Ausweichplan') ||
-    ship.strategy.broadsideFacing !== undefined,
-  'a stalled plan must retain a possible fallback or record its fallback posture'
-);
+assert.notEqual(ship.strategy.kind, firstKind, 'stalled primary posture should yield to secondary weapon group');
 
 function setup(id, guns, facing) {
   return {
