@@ -482,7 +482,11 @@ export class StrategicCombatRenderer {
     height: number
   ): void {
     if (!impact) return;
-    drawCombatHullImpact(this.context, impact, this.impactAge, this.screen(impact.position, width, height));
+    drawCombatHullImpact(
+      this.context,
+      impact,
+      this.impactAge,
+      this.screen(impact.position, width, height)
+    );
   }
-
 }
