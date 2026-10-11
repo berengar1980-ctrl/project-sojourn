@@ -301,8 +301,8 @@ function tickActionExchange(
     frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
     broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
     guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
-    attackerDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
-    defenderDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
+    attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
+    defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
     roll: runtime.random,
   };
   const next = advanceExchange(current, dt, context);
