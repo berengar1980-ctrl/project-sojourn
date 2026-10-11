@@ -358,14 +358,7 @@ function choosePlanDirection(
 
   // Choose the weapon-facing posture before safety steering: neither a broadside
   // nor a pursuit maneuver may discard a necessary collision correction.
-  const broadsideDirection = broadsideSteering(combatant, enemy, range, dx, dy);
-  if (broadsideDirection) {
-    direction = broadsideDirection;
-    targetSpeedFactor = Math.min(
-      targetSpeedFactor,
-      combatant.strategy?.phase === 'reach_range' ? 0.5 : 0.12
-    );
-  } else if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
+  if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
     // Approach with the bow facing the target: velocity still obeys inertia.
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
@@ -447,7 +440,15 @@ export function moveCombatant(
     );
   }
 
-  const desiredHeading = Math.atan2(direction.y, direction.x);
+  // Aim the broadside independently of translation. Steering the engines along
+  // the broadside heading made both ships orbit indefinitely without firing.
+  const gunHeading = broadsideSteering(combatant, enemy, range, dx, dy);
+  if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
+    targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
+  }
+  const headingDirection =
+    gunHeading && combatant.strategy?.phase !== 'reach_range' ? gunHeading : direction;
+  const desiredHeading = Math.atan2(headingDirection.y, headingDirection.x);
   const headingError = wrapAngle(desiredHeading - combatant.headingRadians);
   const maxTurn = Math.max(0.25, combatant.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const turn = clamp(headingError, -maxTurn * deltaSeconds, maxTurn * deltaSeconds);
