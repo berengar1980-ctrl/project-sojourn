@@ -115,4 +115,16 @@ for (const [attackerDamage, defenderDamage, expected] of [
   assert.equal(state.initiative, expected, 'initiative follows damage dealt, not damage received');
 }
 
+const strafeShip = ship(500, 500);
+const strafePlan = {
+  initiatorGoal: { x: 500, y: 900 },
+  reactorGoal: { x: 1000, y: 500 },
+  initiatorHeading: 0,
+  reactorHeading: 0,
+};
+pilot.pilotExchangeShip(strafeShip, 'initiator', strafePlan, { width: 2000, height: 2000 }, 1);
+assert(strafeShip.velocity.y > 0, 'RCS permits sideways course corrections');
+assert(strafeShip.velocity.y <= 30 * 0.35, 'sideways acceleration stays below main thrust');
+assert.equal(strafeShip.headingRadians, 0, 'RCS does not require turning the hull');
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
