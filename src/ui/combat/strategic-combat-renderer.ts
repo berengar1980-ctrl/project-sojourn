@@ -449,28 +449,29 @@ export class StrategicCombatRenderer {
   }
 
   private drawHullImpact(impact: CombatImpactSnapshot | null, width: number, height: number): void {
-    if (
-      !impact ||
-      this.impactAge >= 1 ||
-      (impact.layer !== 'hull' && impact.layer !== 'obstacle')
-    ) {
+    if (!impact || this.impactAge >= 1 || impact.layer === 'miss') {
       return;
     }
     const point = this.screen(impact.position, width, height);
     const progress = this.impactAge;
-    const radius = 8 + progress * 24;
+    const radius = 7 + progress * 29;
     const alpha = 1 - progress;
 
     this.context.save();
     this.context.fillStyle =
-      impact.layer === 'obstacle'
-        ? `rgba(196, 185, 160, ${alpha * 0.6})`
-        : `rgba(255, 147, 72, ${alpha * 0.85})`;
+      impact.layer === 'shield'
+        ? `rgba(105, 210, 255, ${alpha * 0.75})`
+        : impact.layer === 'obstacle'
+          ? `rgba(196, 185, 160, ${alpha * 0.6})`
+          : `rgba(255, 147, 72, ${alpha * 0.85})`;
     this.context.beginPath();
     this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
     this.context.fill();
-    if (impact.layer === 'hull') {
-      this.context.strokeStyle = `rgba(255, 218, 154, ${alpha * 0.8})`;
+    if (impact.layer === 'hull' || impact.layer === 'shield') {
+      this.context.strokeStyle =
+        impact.layer === 'shield'
+          ? `rgba(176, 239, 255, ${alpha * 0.85})`
+          : `rgba(255, 218, 154, ${alpha * 0.8})`;
       this.context.lineWidth = 1.4;
       for (let index = 0; index < 5; index += 1) {
         const angle = index * 1.37 + impact.serial;
