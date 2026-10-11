@@ -48,6 +48,16 @@ for (const initiative of ['attacker', 'defender']) {
   const reactor = initiative === 'attacker' ? defender : attacker;
   const plan = pilot.planExchangeFlight(initiator, reactor, 'frontal_pass', 'evade', 'strong');
 
+  const extend = pilot.planExchangeFlight(initiator, reactor, 'broadside_pass', 'extend_range', 'strong');
+  const retreatVectorX = extend.reactorGoal.x - reactor.position.x;
+  const retreatVectorY = extend.reactorGoal.y - reactor.position.y;
+  assert(
+    retreatVectorX * (reactor.position.x - initiator.position.x) +
+      retreatVectorY * (reactor.position.y - initiator.position.y) >
+      0,
+    initiative + ': extend_range must move away from initiator'
+  );
+
   assert.notDeepEqual(plan.initiatorGoal, plan.reactorGoal);
   const firstDistance = Math.hypot(
     plan.initiatorGoal.x - initiator.position.x,
