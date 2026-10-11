@@ -30,6 +30,7 @@ import {
 } from './strategic-combat-movement';
 
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { maybeAttemptBoarding } from './combat-boarding-ai';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
@@ -275,24 +276,6 @@ function reviewShieldBreakthroughs(
   }
 }
 
-function maybeAttemptBoarding(runtime: StrategicCombatRuntime): void {
-  if (runtime.grapple) return;
-  for (const side of ['attacker', 'defender'] as const) {
-    const ship = runtimeCombatant(runtime, side);
-    const enemy = runtimeEnemy(runtime, side);
-    if (!ship.setup.aiControlled || runtime.grappleUsed[side]) continue;
-    if (ship.hullHp <= 0 || enemy.hullHp <= 0 || enemy.shieldHp > 0) continue;
-    if (distance(ship.position, enemy.position) > 650) continue;
-    // Prevent automatic boarding of healthy enemies; favour capture when the
-    // target is already compromised, or when the attacker is badly damaged.
-    const compromised = enemy.hullHp / enemy.hullMaxHp <= 0.65;
-    const desperate = ship.hullHp / ship.hullMaxHp <= 0.3;
-    if (compromised || desperate) {
-      tryFireGrapple(runtime, side);
-      break;
-    }
-  }
-}
 
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
@@ -362,7 +345,7 @@ function tickStrategicCombat(
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
-  maybeAttemptBoarding(runtime);
+  maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
