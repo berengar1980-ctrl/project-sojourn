@@ -217,7 +217,29 @@ export function reviewCombatStrategy(
     };
     return;
   }
-  const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
+  // Reassess a doctrine that has dealt no meaningful damage for 24 seconds.
+  // Penalize only that weapon posture; a fallback can be selected at the
+  // normal eight-second strategic review rather than on every motion tick.
+  const enemyHp = enemy.shieldHp + enemy.hullHp;
+  if (ship.lastEnemyHpObserved === undefined || enemyHp < ship.lastEnemyHpObserved - 1) {
+    ship.lastProgressAt = elapsed;
+    ship.stalledPlanKind = undefined;
+    ship.stalledPlanFacing = undefined;
+  }
+  ship.lastEnemyHpObserved = enemyHp;
+  if (elapsed - (ship.lastProgressAt ?? elapsed) >= 24 && ship.strategy) {
+    ship.stalledPlanKind = ship.strategy.kind;
+    ship.stalledPlanFacing = ship.strategy.broadsideFacing;
+  }
+  const options = candidatePlans(ship, enemy)
+    .map((option) =>
+      option.kind === ship.stalledPlanKind &&
+      option.broadsideFacing === ship.stalledPlanFacing
+        ? { ...option, score: option.score * 0.15,
+            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt' }
+        : option
+    )
+    .sort((a, b) => b.score - a.score);
   const best = options[0]!;
   const current = ship.strategy;
   const equivalent = options.find(
