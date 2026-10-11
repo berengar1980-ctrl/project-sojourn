@@ -340,8 +340,8 @@ function choosePlanDirection(
   dx: number,
   dy: number
 ): { direction: CombatPoint; targetSpeedFactor: number } {
-  let direction = toward;
-  let targetSpeedFactor = 0.88;
+  let direction: CombatPoint;
+  let targetSpeedFactor: number;
   if (combatant.tactic === 'flee') {
     direction = arena.exitPoint
       ? normalize(
