@@ -20,7 +20,11 @@ const context = {
   defenderDamage: 0,
   roll: () => 0.7,
 };
-const first = exchangeMachine.advanceExchange(exchangeMachine.initialExchange('attacker'), 0, context);
+const first = exchangeMachine.advanceExchange(
+  exchangeMachine.initialExchange('attacker'),
+  0,
+  context
+);
 assert.equal(first.phase, 'execute');
 assert.equal(first.action, 'frontal_pass');
 assert(exchangeMachine.REACTIONS[first.action].includes(first.reaction));
