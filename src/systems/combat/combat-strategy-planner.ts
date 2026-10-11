@@ -223,8 +223,8 @@ export function reviewCombatStrategy(
   const enemyHp = enemy.shieldHp + enemy.hullHp;
   if (ship.lastEnemyHpObserved === undefined || enemyHp < ship.lastEnemyHpObserved - 1) {
     ship.lastProgressAt = elapsed;
-    ship.stalledPlanKind = undefined;
-    ship.stalledPlanFacing = undefined;
+    delete ship.stalledPlanKind;
+    delete ship.stalledPlanFacing;
   }
   ship.lastEnemyHpObserved = enemyHp;
   if (elapsed - (ship.lastProgressAt ?? elapsed) >= 24 && ship.strategy) {
