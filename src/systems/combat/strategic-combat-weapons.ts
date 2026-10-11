@@ -130,6 +130,12 @@ function fireRuntimeProjectileWeapon(
 ): string {
   if (!weapon.weapon) return '';
   const muzzle = weaponMuzzle(source, weaponIndex);
+  const targetPoint = hit
+    ? target.position
+    : {
+        x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
+        y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
+      };
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,
@@ -137,7 +143,7 @@ function fireRuntimeProjectileWeapon(
     kind,
     family: weapon.weapon.family,
     position: muzzle,
-    direction: normalize(target.position.x - muzzle.x, target.position.y - muzzle.y),
+    direction: normalize(targetPoint.x - muzzle.x, targetPoint.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
     speed: projectileSpeed(kind),
     ttlSeconds: Math.max(
@@ -148,6 +154,7 @@ function fireRuntimeProjectileWeapon(
     hullDamage: hit ? weapon.weapon.hullDamage : 0,
     critical: hit && critical,
     targetSubsystem: effectiveTargetSubsystem(source, target),
+    missed: !hit,
   });
   return source.setup.name + ': ' + weapon.name + ' abgefeuert' + (critical ? ' · KRITISCH' : '');
 }
@@ -313,7 +320,7 @@ function advanceRuntimeProjectile(
   const dy = target.position.y - projectile.position.y;
   const step = projectile.speed * deltaSeconds;
   projectile.ttlSeconds -= deltaSeconds;
-  if (projectile.kind === 'missile') {
+  if (projectile.kind === 'missile' && !projectile.missed) {
     const desired = Math.atan2(dy, dx);
     const current = Math.atan2(projectile.direction.y, projectile.direction.x);
     const error = Math.atan2(Math.sin(desired - current), Math.cos(desired - current));
