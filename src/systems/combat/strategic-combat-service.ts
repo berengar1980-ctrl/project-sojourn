@@ -332,6 +332,7 @@ function tickStrategicCombat(
         victim.speed = initiator.speed;
         runtime.boardingInitiator = runtime.grapple.owner;
         runtime.winner = runtime.grapple.owner;
+        runtime.combatLog.push({ timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)), side: runtime.grapple.owner, event: 'action', detail: 'BOARDING_COUPLED' });
         runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
       }
     } else if (runtime.grapple.resolved) {
@@ -432,6 +433,7 @@ function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'def
   if (!launched) return false;
   runtime.grappleUsed[side] = true;
   runtime.grapple = launched;
+  runtime.combatLog.push({ timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)), side, event: 'action', detail: 'BOARDING_ATTEMPT' });
   runtime.lastEvent = launched.success
     ? 'GREIFHAKEN > TREFFER · ZIEL WIRD HERANGEZOGEN'
     : 'GREIFHAKEN > WURF ABGEFEUERT';
