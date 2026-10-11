@@ -29,6 +29,7 @@ export interface CombatExchange {
   readonly duration: number;
   readonly elapsed: number;
   readonly previousAction: CombatAction | null;
+  readonly actionBeforePrevious: CombatAction | null;
 }
 export interface ExchangeContext {
   readonly frontWeapons: number;
@@ -58,10 +59,15 @@ export function initialExchange(initiative: ExchangeSide): CombatExchange {
     duration: 0,
     elapsed: 0,
     previousAction: null,
+    actionBeforePrevious: null,
   };
 }
 
-function chooseAction(context: ExchangeContext, previous: CombatAction | null): CombatAction {
+function chooseAction(
+  context: ExchangeContext,
+  previous: CombatAction | null,
+  beforePrevious: CombatAction | null
+): CombatAction {
   const actions: CombatAction[] = [
     'frontal_pass',
     'broadside_pass',
@@ -77,7 +83,10 @@ function chooseAction(context: ExchangeContext, previous: CombatAction | null): 
           : action === 'disengage_fire'
             ? context.guidedWeapons * 2
             : 2;
-    return { action, score: weaponScore + (action === previous ? -4 : 0) };
+    return {
+      action,
+      score: weaponScore - (action === previous ? 100 : 0) - (action === beforePrevious ? 50 : 0),
+    };
   });
   scores.sort((a, b) => b.score - a.score);
   return scores[0]!.action;
@@ -89,7 +98,7 @@ export function advanceExchange(
   context: ExchangeContext
 ): CombatExchange {
   if (current.phase === 'choose') {
-    const action = chooseAction(context, current.previousAction);
+    const action = chooseAction(context, current.previousAction, current.actionBeforePrevious);
     const reactions = REACTIONS[action];
     const roll = 1 + Math.min(19, Math.floor(context.roll() * 20));
     const reaction = reactions[Math.floor(context.roll() * reactions.length)]!;
@@ -124,5 +133,6 @@ export function advanceExchange(
   return {
     ...initialExchange(initiative),
     previousAction: current.action,
+    actionBeforePrevious: current.previousAction,
   };
 }
