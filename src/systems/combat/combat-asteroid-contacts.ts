@@ -57,16 +57,27 @@ export function resolveCombatAsteroidContacts(
       ship.velocity.y -= hit.normal.y * impulse;
       ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
     }
-    // Separate the shield from the rock, rather than repeatedly applying
-    // contact damage while the ship remains embedded in a massive asteroid.
+    // Resolve penetration using the shield's directional ellipse, not its
+    // largest axis as a circle. The old circle pushed ships away visibly
+    // before their narrow-side shield had reached the asteroid.
     if (rock) {
-      const offsetX = rock.position.x - ship.position.x;
-      const offsetY = rock.position.y - ship.position.y;
-      const separation = Math.hypot(offsetX, offsetY);
-      const radius = rock.radius + Math.max(geometry?.radiusX ?? 30, geometry?.radiusY ?? 20);
-      const overlap = Math.max(0, radius - separation + 2);
-      ship.position.x -= hit.normal.x * overlap;
-      ship.position.y -= hit.normal.y * overlap;
+      const heading = ship.headingRadians;
+      const cos = Math.cos(heading);
+      const sin = Math.sin(heading);
+      const offset = geometry?.centerOffset ?? { x: 0, y: 0 };
+      const shieldX = ship.position.x + offset.x * cos - offset.y * sin;
+      const shieldY = ship.position.y + offset.x * sin + offset.y * cos;
+      const dx = rock.position.x - shieldX;
+      const dy = rock.position.y - shieldY;
+      const length = Math.max(0.001, Math.hypot(dx, dy));
+      const localX = (dx * cos + dy * sin) / length;
+      const localY = (-dx * sin + dy * cos) / length;
+      const rx = Math.max(1, geometry?.radiusX ?? 30);
+      const ry = Math.max(1, geometry?.radiusY ?? 20);
+      const shieldExtent = 1 / Math.hypot(localX / rx, localY / ry);
+      const penetration = Math.max(0, rock.radius + shieldExtent - length);
+      ship.position.x -= (dx / length) * penetration;
+      ship.position.y -= (dy / length) * penetration;
     }
     const damage = Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) / Math.max(0.1, geometry?.modifier ?? 1);
     if (damage <= 0) continue;
