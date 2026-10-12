@@ -265,6 +265,7 @@ export interface MutableCombatant {
   angularThrust: number;
   boostSeconds?: number;
   boostActive?: boolean;
+  boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
