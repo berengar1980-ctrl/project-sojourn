@@ -22,6 +22,16 @@ export function separateActionShips(runtime: StrategicCombatRuntime): void {
   defender.speed = Math.hypot(defender.velocity.x, defender.velocity.y);
 }
 
+function ramExposure(
+  heading: number,
+  contactDirectionX: number,
+  contactDirectionY: number
+): number {
+  const facing = Math.cos(heading) * contactDirectionX + Math.sin(heading) * contactDirectionY;
+  // The armored prow takes less damage than a vulnerable broadside.
+  return facing >= 0 ? 1.3 - 0.6 * facing : 1.3 - 0.3 * facing;
+}
+
 /** Apply one impact impulse, not continuous damage while hulls remain entangled. */
 export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
   const { attacker, defender } = runtime;
@@ -38,10 +48,21 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
   // Glancing, slow contact barely scratches shields; energetic impacts scale nonlinearly.
   const damage = closing < 35 ? 0.2 : Math.min(24, 0.2 + (closing - 35) ** 2 / 450);
-  for (const ship of [attacker, defender]) {
-    const shield = Math.min(ship.shieldHp, damage);
+  const firstDamage = damage * ramExposure(attacker.headingRadians, nx, ny);
+  const secondDamage = damage * ramExposure(defender.headingRadians, -nx, -ny);
+  for (const [ship, impact, contactX, contactY] of [
+    [attacker, firstDamage, nx, ny],
+    [defender, secondDamage, -nx, -ny],
+  ] as const) {
+    const shield = Math.min(ship.shieldHp, impact);
     ship.shieldHp -= shield;
-    ship.hullHp = Math.max(0, ship.hullHp - (damage - shield));
+    const overflow = impact - shield;
+    ship.hullHp = Math.max(0, ship.hullHp - overflow);
+    const facing =
+      Math.cos(ship.headingRadians) * contactX + Math.sin(ship.headingRadians) * contactY;
+    if (facing < -0.5 && overflow > 0) {
+      ship.subsystems.engine = Math.max(0, ship.subsystems.engine - overflow * 0.5);
+    }
   }
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
@@ -50,8 +71,10 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
     detail:
       'Rumpfkontakt · Annäherung ' +
       closing.toFixed(0) +
-      ' m/s · Schaden je Schiff ' +
-      damage.toFixed(1),
+      ' m/s · Schaden ' +
+      firstDamage.toFixed(1) +
+      ' / ' +
+      secondDamage.toFixed(1),
   });
   return damage;
 }

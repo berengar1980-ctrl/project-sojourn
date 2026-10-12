@@ -18,7 +18,7 @@ const controllerSource = fs.readFileSync(
 
 assert.match(
   controllerSource,
-  /pilotExchangeShip\(initiator, 'initiator', state\.flight, runtime\.arena, dt\)/,
+  /pilotExchangeShip\(\s*initiator,\s*'initiator',\s*state\.flight,\s*runtime\.arena,\s*dt,/,
   'actual initiative holder must receive initiator flight orders'
 );
 assert.match(

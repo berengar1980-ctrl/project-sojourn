@@ -33,6 +33,47 @@ function offsetPoint(
   };
 }
 
+function interceptPoint(chaser: MutableCombatant, target: MutableCombatant): CombatPoint {
+  const distance = Math.hypot(
+    target.position.x - chaser.position.x,
+    target.position.y - chaser.position.y
+  );
+  const speed = Math.max(65, chaser.setup.combatSpeed ?? 120);
+  const leadSeconds = clamp(distance / speed, 0.5, 5);
+  return {
+    x: target.position.x + target.velocity.x * leadSeconds,
+    y: target.position.y + target.velocity.y * leadSeconds,
+  };
+}
+
+function reactionGoal(
+  initiator: MutableCombatant,
+  reactor: MutableCombatant,
+  toward: CombatPoint,
+  side: number,
+  reaction: CombatReaction
+): CombatPoint {
+  return reaction === 'evade'
+    ? offsetPoint(reactor.position, toward, -80, -330 * side)
+    : reaction === 'accelerate_clear'
+      ? offsetPoint(reactor.position, toward, 300, -230 * side)
+      : reaction === 'extend_range'
+        ? offsetPoint(reactor.position, toward, 390, 0)
+        : reaction === 'break_contact'
+          ? offsetPoint(reactor.position, toward, 390, 180 * side)
+          : reaction === 'close_gap'
+            ? offsetPoint(reactor.position, toward, -350, 0)
+            : reaction === 'intercept'
+              ? interceptPoint(reactor, initiator)
+              : reaction === 'pursue'
+                ? offsetPoint(initiator.position, toward, -140, 0)
+                : reaction === 'cross_pass'
+                  ? offsetPoint(initiator.position, toward, -170, -240 * side)
+                  : reaction === 'counter_pass'
+                    ? offsetPoint(initiator.position, toward, 0, 250 * side)
+                    : { ...reactor.position };
+}
+
 export function planExchangeFlight(
   initiator: MutableCombatant,
   reactor: MutableCombatant,
@@ -48,43 +89,24 @@ export function planExchangeFlight(
   // Each action represents a distinct, committed flight trajectory.
   const attacking =
     action === 'frontal_pass'
-      ? offsetPoint(reactor.position, toward, 230, side * 120)
+      ? offsetPoint(reactor.position, toward, -110, 0)
       : action === 'broadside_pass'
         ? offsetPoint(reactor.position, toward, -60, side * 290)
         : action === 'disengage_fire'
           ? offsetPoint(initiator.position, toward, -460, side * 60)
           : offsetPoint(reactor.position, toward, 170, side * 460);
-  const defender =
-    reaction === 'evade'
-      ? offsetPoint(reactor.position, toward, -80, -330 * side)
-      : reaction === 'accelerate_clear'
-        ? offsetPoint(reactor.position, toward, 300, -230 * side)
-        : reaction === 'extend_range'
-          ? offsetPoint(reactor.position, toward, 390, 0)
-          : reaction === 'break_contact'
-            ? offsetPoint(reactor.position, toward, 390, 180 * side)
-            : reaction === 'close_gap'
-              ? offsetPoint(reactor.position, toward, -350, 0)
-              : reaction === 'intercept'
-                ? offsetPoint(initiator.position, toward, 100, -130 * side)
-                : reaction === 'pursue'
-                  ? offsetPoint(initiator.position, toward, -140, 0)
-                  : reaction === 'cross_pass'
-                    ? offsetPoint(initiator.position, toward, -170, -240 * side)
-                    : reaction === 'counter_pass'
-                      ? offsetPoint(initiator.position, toward, 0, 250 * side)
-                      : { ...reactor.position };
+  const defender = reactionGoal(initiator, reactor, toward, side, reaction);
   // Shared passing corridor: the two pilots use opposite WORLD-SIDE lanes.
   // This avoids the head-on case where both autonomous pilots dodge into each other.
   const lateral = { x: -toward.y, y: toward.x };
   const separation = 175;
   const attackingLane = {
-    x: attacking.x + lateral.x * separation,
-    y: attacking.y + lateral.y * separation,
+    x: attacking.x + lateral.x * (action === 'frontal_pass' ? 0 : separation),
+    y: attacking.y + lateral.y * (action === 'frontal_pass' ? 0 : separation),
   };
   const defenderLane = {
-    x: defender.x - lateral.x * separation,
-    y: defender.y - lateral.y * separation,
+    x: defender.x - lateral.x * (reaction === 'intercept' ? 0 : separation),
+    y: defender.y - lateral.y * (reaction === 'intercept' ? 0 : separation),
   };
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
@@ -205,19 +227,22 @@ export function pilotExchangeShip(
   role: 'initiator' | 'reactor',
   plan: ExchangeFlightPlan,
   arena: StrategicCombatArenaOptions,
-  dt: number
+  dt: number,
+  opponent?: MutableCombatant,
+  frontalApproach = false
 ): void {
   updateExchangeBoost(ship, dt);
   const boosting = ship.boostActive === true;
   if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
   else ship.boostRampSeconds = 0;
   const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const liveTarget = frontalApproach && opponent ? interceptPoint(ship, opponent) : planned;
   const goal =
     ship.tactic === 'flee' && arena.exitPoint
       ? arena.exitPoint
       : {
-          x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
-          y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+          x: clamp(liveTarget.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+          y: clamp(liveTarget.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
         };
   // Route is established before thrust. Follow a navigable waypoint rather than
   // cutting through a rock on the way to the tactical maneuver destination.

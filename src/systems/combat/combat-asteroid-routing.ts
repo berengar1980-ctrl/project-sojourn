@@ -7,7 +7,7 @@ import type {
 } from './strategic-combat-types';
 
 const ROUTE_REFRESH_SECONDS = 0.75;
-const REACHED_WAYPOINT_METERS = 100;
+const REACHED_WAYPOINT_METERS = 65;
 
 function routeObstacles(arena: StrategicCombatArenaOptions): LocalAsteroid[] {
   return (arena.asteroids ?? [])
@@ -53,7 +53,12 @@ export function combatRouteHeading(
 ): CombatPoint | null {
   if (!arena.obstacles?.length) return null;
   const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
-  if (!pathBlocked(ship.position, target, arena, clearance)) {
+  const prediction = {
+    x: ship.position.x + ship.velocity.x * 2,
+    y: ship.position.y + ship.velocity.y * 2,
+  };
+  const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
+  if (!immediateThreat && !pathBlocked(ship.position, target, arena, clearance)) {
     ship.asteroidRoute = [];
     return null;
   }
@@ -85,6 +90,9 @@ export function combatRouteHeading(
   }
   const waypoint = route[0];
   if (!waypoint) return null;
+  if (pathBlocked(ship.position, waypoint, arena, clearance)) {
+    ship.nextAsteroidRouteAt = 0;
+  }
   const dx = waypoint.x - ship.position.x;
   const dy = waypoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);
