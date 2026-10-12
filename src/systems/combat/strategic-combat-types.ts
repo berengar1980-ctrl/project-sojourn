@@ -205,6 +205,7 @@ export interface CombatImpactSnapshot {
   readonly position: CombatPoint;
   readonly damage: number;
   readonly weaponKind?: CombatProjectileKind | CombatBeamKind;
+  readonly source?: 'tractor_asteroid';
 }
 
 export interface ThrownAsteroidSnapshot {
