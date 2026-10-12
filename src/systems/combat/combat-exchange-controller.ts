@@ -146,7 +146,7 @@ export function tickActionExchange(
     separation,
     remaining
   );
-  useBoost(
+  useBoostForExchange(
     opponent,
     state.flight.reactorGoal,
     next.reaction === 'pursue' || next.reaction === 'accelerate_clear',
