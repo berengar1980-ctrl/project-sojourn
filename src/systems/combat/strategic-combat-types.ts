@@ -54,7 +54,7 @@ export type CombatImpactLayer = 'shield' | 'hull' | 'miss' | 'obstacle';
 
 export type CombatProjectileKind = 'plasma' | 'missile' | 'autocannon';
 
-export type CombatBeamKind = 'laser' | 'rail';
+export type CombatBeamKind = 'laser' | 'rail' | 'tractor';
 
 export interface CombatPoint {
   readonly x: number;
