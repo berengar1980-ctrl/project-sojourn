@@ -234,7 +234,9 @@ export class StrategicCombatRenderer {
   }
 
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    const angle = Math.atan2(target.y - point.y, target.x - point.x);
+    const angle = projectile.kind === 'missile'
+      ? Math.atan2(projectile.direction.y, projectile.direction.x)
+      : Math.atan2(target.y - point.y, target.x - point.x);
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);
@@ -257,31 +259,31 @@ export class StrategicCombatRenderer {
       this.context.shadowBlur = 7;
       this.context.fillStyle = 'rgba(240, 112, 36, 0.45)';
       this.context.beginPath();
-      this.context.moveTo(-7, 0);
-      this.context.lineTo(-17, -3);
+      this.context.moveTo(-9, 0);
+      this.context.lineTo(-16, -1.5);
       this.context.lineTo(-14, 0);
-      this.context.lineTo(-17, 3);
+      this.context.lineTo(-16, 1.5);
       this.context.closePath();
       this.context.fill();
       this.context.shadowBlur = 0;
       this.context.fillStyle = '#c1ced2';
       this.context.beginPath();
-      this.context.moveTo(9, 0);
-      this.context.lineTo(2, -3);
-      this.context.lineTo(-7, -2.5);
-      this.context.lineTo(-7, 2.5);
-      this.context.lineTo(2, 3);
+      this.context.moveTo(12, 0);
+      this.context.lineTo(3, -1.5);
+      this.context.lineTo(-9, -1.5);
+      this.context.lineTo(-9, 1.5);
+      this.context.lineTo(3, 1.5);
       this.context.closePath();
       this.context.fill();
       this.context.fillStyle = '#536674';
-      this.context.fillRect(-5, -1, 8, 2);
+      this.context.fillRect(-6, -0.5, 10, 1);
       this.context.strokeStyle = '#87969a';
       this.context.lineWidth = 1;
       this.context.beginPath();
-      this.context.moveTo(-4, -3);
-      this.context.lineTo(-8, -5);
-      this.context.moveTo(-4, 3);
-      this.context.lineTo(-8, 5);
+      this.context.moveTo(-5, -1.5);
+      this.context.lineTo(-8, -3);
+      this.context.moveTo(-5, 1.5);
+      this.context.lineTo(-8, 3);
       this.context.stroke();
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
