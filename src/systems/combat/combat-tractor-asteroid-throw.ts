@@ -72,7 +72,8 @@ export function maybeLaunchTractorAsteroid(
     origin: { ...ship.position },
   });
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
-  runtime.lastEvent = ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' : ': TRAKTOR ERFASST ASTEROID');
+  runtime.lastEvent =
+    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' : ': TRAKTOR ERFASST ASTEROID');
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
@@ -91,8 +92,14 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     const source = rock.owner === 'attacker' ? runtime.attacker : runtime.defender;
     runtime.impactSerial += 1;
     const result = applyDamage(
-      enemy, rock.mineDefinition.shieldDamage, rock.mineDefinition.hullDamage,
-      source, false, rock.position, 'missile', runtime.impactSerial
+      enemy,
+      rock.mineDefinition.shieldDamage,
+      rock.mineDefinition.hullDamage,
+      source,
+      false,
+      rock.position,
+      'missile',
+      runtime.impactSerial
     );
     runtime.lastImpact = {
       serial: runtime.impactSerial,
@@ -107,7 +114,13 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: rock.owner,
       event: 'action',
-      detail: 'MINE_DETONATE ' + rock.mineDefinition.id + ' ' + result.layer + ' ' + Math.round(result.damage),
+      detail:
+        'MINE_DETONATE ' +
+        rock.mineDefinition.id +
+        ' ' +
+        result.layer +
+        ' ' +
+        Math.round(result.damage),
     });
     return true;
   }
