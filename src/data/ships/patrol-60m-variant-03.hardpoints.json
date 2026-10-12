@@ -8,16 +8,30 @@
   "engines": [
     {
       "id": "engine-upper",
-      "x": 14,
-      "y": 61,
+      "x": 11,
+      "y": 52,
       "width": 12,
       "layer": "below"
     },
     {
       "id": "engine-lower",
-      "x": 14,
-      "y": 119,
+      "x": 11,
+      "y": 130,
       "width": 12,
+      "layer": "below"
+    },
+    {
+      "id": "engine-3",
+      "x": 17,
+      "y": 88,
+      "width": 7,
+      "layer": "below"
+    },
+    {
+      "id": "engine-4",
+      "x": 17,
+      "y": 92,
+      "width": 7,
       "layer": "below"
     }
   ],
@@ -32,8 +46,12 @@
       "facing": "forward",
       "layer": "below",
       "arcDegrees": 60,
-      "allowedMounts": ["forward"],
-      "allowedFamilies": ["railgun"]
+      "allowedMounts": [
+        "forward"
+      ],
+      "allowedFamilies": [
+        "railgun"
+      ]
     },
     {
       "id": "weapon-port",
@@ -44,8 +62,14 @@
       "facing": "port",
       "layer": "below",
       "arcDegrees": 90,
-      "allowedMounts": ["broadside"],
-      "allowedFamilies": ["plasma_battery", "ion_cannon", "autocannon"]
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
     },
     {
       "id": "weapon-starboard",
@@ -56,8 +80,14 @@
       "facing": "starboard",
       "layer": "below",
       "arcDegrees": 90,
-      "allowedMounts": ["broadside"],
-      "allowedFamilies": ["plasma_battery", "ion_cannon", "autocannon"]
+      "allowedMounts": [
+        "broadside"
+      ],
+      "allowedFamilies": [
+        "plasma_battery",
+        "ion_cannon",
+        "autocannon"
+      ]
     },
     {
       "id": "weapon-turret",
@@ -68,8 +98,13 @@
       "facing": "forward",
       "layer": "below",
       "arcDegrees": 360,
-      "allowedMounts": ["turret"],
-      "allowedFamilies": ["pulse_laser", "ion_laser"]
+      "allowedMounts": [
+        "turret"
+      ],
+      "allowedFamilies": [
+        "pulse_laser",
+        "ion_laser"
+      ]
     },
     {
       "id": "weapon-missile",
@@ -80,8 +115,13 @@
       "facing": "forward",
       "layer": "below",
       "arcDegrees": 360,
-      "allowedMounts": ["guided"],
-      "allowedFamilies": ["guided_missile", "he_missile"]
+      "allowedMounts": [
+        "guided"
+      ],
+      "allowedFamilies": [
+        "guided_missile",
+        "he_missile"
+      ]
     }
   ],
   "miningLasers": [],
@@ -89,8 +129,8 @@
   "maneuverThrusters": [
     {
       "id": "rcs-bow-upper",
-      "x": 203,
-      "y": 40,
+      "x": 208,
+      "y": 59,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -98,8 +138,8 @@
     },
     {
       "id": "rcs-bow-lower",
-      "x": 203,
-      "y": 140,
+      "x": 207,
+      "y": 121,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
@@ -107,8 +147,8 @@
     },
     {
       "id": "rcs-stern-upper",
-      "x": 62,
-      "y": 32,
+      "x": 43,
+      "y": 37,
       "width": 7,
       "forceX": 0,
       "forceY": 1,
@@ -116,8 +156,8 @@
     },
     {
       "id": "rcs-stern-lower",
-      "x": 62,
-      "y": 148,
+      "x": 43,
+      "y": 146,
       "width": 7,
       "forceX": 0,
       "forceY": -1,
