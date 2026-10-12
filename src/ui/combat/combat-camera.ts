@@ -1,4 +1,7 @@
-export interface CombatViewportPoint { readonly x: number; readonly y: number }
+export interface CombatViewportPoint {
+  readonly x: number;
+  readonly y: number;
+}
 
 export class CombatCamera {
   zoom = 1;
@@ -6,10 +9,19 @@ export class CombatCamera {
   offsetY = 0;
 
   scale(width: number, height: number, worldWidth: number, worldHeight: number): number {
-    return Math.min(Math.max(1, width - 140) / worldWidth, Math.max(1, height - 140) / worldHeight) * this.zoom;
+    return (
+      Math.min(Math.max(1, width - 140) / worldWidth, Math.max(1, height - 140) / worldHeight) *
+      this.zoom
+    );
   }
 
-  project(point: CombatViewportPoint, width: number, height: number, worldWidth: number, worldHeight: number): CombatViewportPoint {
+  project(
+    point: CombatViewportPoint,
+    width: number,
+    height: number,
+    worldWidth: number,
+    worldHeight: number
+  ): CombatViewportPoint {
     const baseX = 70 + (point.x / worldWidth) * (width - 140);
     const baseY = 70 + (point.y / worldHeight) * (height - 140);
     return {

@@ -69,7 +69,10 @@ function attachCombatLogExport(shell: HTMLElement, options: StrategicCombatPanel
     });
 }
 
-function bindCombatCamera(canvas: HTMLCanvasElement, renderer: StrategicCombatRenderer): () => void {
+function bindCombatCamera(
+  canvas: HTMLCanvasElement,
+  renderer: StrategicCombatRenderer
+): () => void {
   let previousDrag: { x: number; y: number } | null = null;
   const pointerDown = (pointerEvent: PointerEvent): void => {
     if (pointerEvent.button !== 0) return;
@@ -83,12 +86,17 @@ function bindCombatCamera(canvas: HTMLCanvasElement, renderer: StrategicCombatRe
   };
   const pointerUp = (pointerEvent: PointerEvent): void => {
     previousDrag = null;
-    if (canvas.hasPointerCapture(pointerEvent.pointerId)) canvas.releasePointerCapture(pointerEvent.pointerId);
+    if (canvas.hasPointerCapture(pointerEvent.pointerId))
+      canvas.releasePointerCapture(pointerEvent.pointerId);
   };
   const wheel = (wheelEvent: WheelEvent): void => {
     wheelEvent.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    renderer.zoomAt(wheelEvent.deltaY < 0 ? 1.12 : 1 / 1.12, wheelEvent.clientX - rect.left, wheelEvent.clientY - rect.top);
+    renderer.zoomAt(
+      wheelEvent.deltaY < 0 ? 1.12 : 1 / 1.12,
+      wheelEvent.clientX - rect.left,
+      wheelEvent.clientY - rect.top
+    );
   };
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointermove', pointerMove);

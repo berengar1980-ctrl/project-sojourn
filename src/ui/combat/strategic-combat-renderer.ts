@@ -93,7 +93,13 @@ export class StrategicCombatRenderer {
     this.draw();
   }
   private screen(point: Point, width: number, height: number): Point {
-    return this.camera.project(point, width, height, this.model.arena.width, this.model.arena.height);
+    return this.camera.project(
+      point,
+      width,
+      height,
+      this.model.arena.width,
+      this.model.arena.height
+    );
   }
   private shipGeometry(
     combatant: StrategicCombatSnapshot['attacker'],
@@ -103,7 +109,12 @@ export class StrategicCombatRenderer {
     const image = this.image(combatant.shipId);
     const definition = getShipDefinition(combatant.shipId);
     const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = this.camera.scale(width, height, this.model.arena.width, this.model.arena.height);
+    const canvasScale = this.camera.scale(
+      width,
+      height,
+      this.model.arena.width,
+      this.model.arena.height
+    );
     const shipWidth = nominalLength * canvasScale;
     const aspect =
       image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0

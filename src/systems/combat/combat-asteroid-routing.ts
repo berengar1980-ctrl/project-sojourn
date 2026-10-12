@@ -1,6 +1,10 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import { planPointRoute } from '../local-space/local-space-navigation';
-import type { CombatPoint, MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
+import type {
+  CombatPoint,
+  MutableCombatant,
+  StrategicCombatArenaOptions,
+} from './strategic-combat-types';
 
 const ROUTE_REFRESH_SECONDS = 2;
 const REACHED_WAYPOINT_METERS = 100;
@@ -24,7 +28,7 @@ export function combatRouteHeading(
   arena: StrategicCombatArenaOptions,
   deltaSeconds: number
 ): CombatPoint | null {
-  if (!(arena.obstacles?.length)) return null;
+  if (!arena.obstacles?.length) return null;
   ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
   if (ship.nextAsteroidRouteAt <= 0 || !ship.asteroidRoute?.length) {
     const plan = planPointRoute({
@@ -41,7 +45,11 @@ export function combatRouteHeading(
   const route = ship.asteroidRoute ?? [];
   while (route.length > 1) {
     const waypoint = route[0]!;
-    if (Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) > REACHED_WAYPOINT_METERS) break;
+    if (
+      Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) >
+      REACHED_WAYPOINT_METERS
+    )
+      break;
     route.shift();
   }
   const waypoint = route[0];

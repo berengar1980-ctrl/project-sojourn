@@ -82,7 +82,10 @@ function obstacleAvoidance(
   return weight > 0 ? normalize(x, y) : null;
 }
 
-export function resolveArenaObstacles(combatant: MutableCombatant, arena: StrategicCombatArenaOptions): void {
+export function resolveArenaObstacles(
+  combatant: MutableCombatant,
+  arena: StrategicCombatArenaOptions
+): void {
   resolveCombatAsteroidContacts(combatant, arena);
 }
 
