@@ -215,19 +215,22 @@ export function pilotExchangeShip(
   role: 'initiator' | 'reactor',
   plan: ExchangeFlightPlan,
   arena: StrategicCombatArenaOptions,
-  dt: number
+  dt: number,
+  opponent?: MutableCombatant,
+  frontalApproach = false
 ): void {
   updateExchangeBoost(ship, dt);
   const boosting = ship.boostActive === true;
   if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
   else ship.boostRampSeconds = 0;
   const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const liveTarget = frontalApproach && opponent ? interceptPoint(ship, opponent) : planned;
   const goal =
     ship.tactic === 'flee' && arena.exitPoint
       ? arena.exitPoint
       : {
-          x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
-          y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+          x: clamp(liveTarget.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+          y: clamp(liveTarget.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
         };
   // Route is established before thrust. Follow a navigable waypoint rather than
   // cutting through a rock on the way to the tactical maneuver destination.
