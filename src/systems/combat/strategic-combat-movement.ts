@@ -83,7 +83,8 @@ export function resolveArenaObstacles(
   combatant: MutableCombatant,
   arena: StrategicCombatArenaOptions
 ): void {
-  const shipRadius = 48;
+  const shield = combatant.setup.shieldGeometry;
+  const shipRadius = Math.max(12, shield ? Math.max(shield.radiusX, shield.radiusY) : 30);
   for (const obstacle of arena.obstacles ?? []) {
     const dx = combatant.position.x - obstacle.position.x;
     const dy = combatant.position.y - obstacle.position.y;
@@ -93,8 +94,20 @@ export function resolveArenaObstacles(
     const normal = range > 0.001 ? { x: dx / range, y: dy / range } : { x: 1, y: 0 };
     combatant.position.x = obstacle.position.x + normal.x * required;
     combatant.position.y = obstacle.position.y + normal.y * required;
-    combatant.velocity.x *= 0.35;
-    combatant.velocity.y *= 0.35;
+    // Resolve the velocity component directed into the moving obstacle.
+    const moving = arena.asteroids?.find((asteroid) => asteroid.id === obstacle.id);
+    const vx = moving?.velocity.x ?? 0;
+    const vy = moving?.velocity.y ?? 0;
+    const incoming = (combatant.velocity.x - vx) * normal.x + (combatant.velocity.y - vy) * normal.y;
+    if (incoming < 0) {
+      combatant.velocity.x -= normal.x * incoming * 1.35;
+      combatant.velocity.y -= normal.y * incoming * 1.35;
+      // Hard impacts damage shields first, then hull, as in the local-space collision model.
+      const impact = Math.min(12, Math.max(0, -incoming - 12) * 0.075);
+      const absorbed = Math.min(combatant.shieldHp, impact);
+      combatant.shieldHp -= absorbed;
+      combatant.hullHp = Math.max(0, combatant.hullHp - (impact - absorbed));
+    }
     combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
   }
 }
