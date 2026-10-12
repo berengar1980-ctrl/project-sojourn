@@ -224,6 +224,7 @@ export interface StrategicCombatSnapshot {
   readonly arena: {
     readonly width: number;
     readonly height: number;
+    readonly obstacles?: readonly StrategicCombatObstacle[];
   };
 }
 
