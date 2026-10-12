@@ -21,6 +21,7 @@ export function buildCombatArena(
     ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
+    ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };
   const margin = EDGE_PADDING;
   const along = 0.35 + (((seed >>> 5) % 101) / 100) * 0.3;
