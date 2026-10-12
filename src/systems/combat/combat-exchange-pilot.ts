@@ -145,7 +145,6 @@ export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
     (energy >= third * 2 ? (BOOST_DURATION_SECONDS - energy) * (3.5 / third) : 0);
 }
 
-
 function accelerateExchangeShip(
   ship: MutableCombatant,
   goal: CombatPoint,

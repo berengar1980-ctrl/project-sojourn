@@ -24,7 +24,6 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
   };
 }
 
-
 function updateExchangeIntents(
   initiator: StrategicCombatRuntime['attacker'],
   opponent: StrategicCombatRuntime['defender'],

@@ -323,7 +323,6 @@ function expireProjectile(
   runtime.projectiles.splice(index, 1);
 }
 
-
 function hitProjectileHull(
   runtime: StrategicCombatRuntime,
   projectile: MutableProjectile,
