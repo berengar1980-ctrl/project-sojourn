@@ -1,5 +1,5 @@
 import type { CombatVisualAsteroid } from '../../systems/combat/strategic-combat-types';
-import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
+import type { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 
 export function drawCombatAsteroids(
   renderer: ProceduralSpaceBodyRenderer,
