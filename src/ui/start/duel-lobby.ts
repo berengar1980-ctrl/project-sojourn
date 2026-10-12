@@ -21,12 +21,14 @@ import {
   weaponCycleTimeMultiplier,
 } from '../../systems/crew/crew-skill-effects';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
+import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
 
 interface DuelDraft {
   shipId: string;
   weapons: string[];
+  mines: string[];
   crewId: string;
 }
 
@@ -86,6 +88,27 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
   });
 }
 
+function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
+  return [0, 1, 2].map((index) => {
+    const select = document.createElement('select');
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = 'Keine Mine';
+    select.append(empty);
+    for (const mine of SHIP_MINE_CATALOG.filter((entry) => entry.tier === 2)) {
+      const option = document.createElement('option');
+      option.value = mine.id;
+      option.textContent = mine.name;
+      select.append(option);
+    }
+    select.value = draft.mines[index] ?? '';
+    select.addEventListener('change', () => {
+      draft.mines[index] = select.value;
+    });
+    return createLabel('Minenplatz ' + (index + 1), select);
+  });
+}
+
 function crewSelector(draft: DuelDraft): HTMLLabelElement {
   const select = document.createElement('select');
   for (const member of crewDefinitions) {
@@ -122,6 +145,7 @@ function playerCard(
   const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
   card.append(heading, shipSelector(draft, ships, rerender));
   card.append(...weaponSelectors(draft, ship));
+  card.append(...mineSelectors(draft));
   card.append(crewSelector(draft));
   return card;
 }
@@ -167,6 +191,10 @@ function duelCombatant(
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
     hullHp: shipHullMaxHp(ship),
     weapons: equipped.map((entry) => entry.component),
+    mines: draft.mines.flatMap((id) => {
+      const mine = SHIP_MINE_CATALOG.find((entry) => entry.id === id);
+      return mine ? [mine] : [];
+    }),
     weaponMounts: mounts,
     hitChance: 0.68 + sensorWeaponHitChanceBonus(sensorSkill),
     dodgeChance: pilotingDodgeChance(pilotSkill),
@@ -195,6 +223,9 @@ function attachEncounterSelector(
       configured.forEach((entry, index) => {
         drafts[index]!.shipId = entry.shipId;
         drafts[index]!.weapons = [...entry.weapons];
+        drafts[index]!.mines = selectedEncounter === 'alpha'
+          ? ['mine-ion-2', 'mine-hunter-2', 'mine-shaped-charge-2']
+          : [];
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });
     }
@@ -205,7 +236,7 @@ function attachEncounterSelector(
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
-    { shipId: ships[0]!.id, weapons: [], crewId: crewDefinitions[0]!.id },
+    { shipId: ships[0]!.id, weapons: [], mines: [], crewId: crewDefinitions[0]!.id },
     {
       shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id,
       weapons: [],
