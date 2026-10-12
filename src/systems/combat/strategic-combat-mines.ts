@@ -49,6 +49,20 @@ export function usefulMineCorridor(source: MutableCombatant, target: MutableComb
   return Math.hypot(closestX - source.position.x, closestY - source.position.y) < 240;
 }
 
+function canDeployMine(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  source: MutableCombatant,
+  justified: boolean
+): boolean {
+  if (!justified || source.mineStock.length === 0 || source.mineCooldown > 0) return false;
+  return !runtime.mines.some(
+    (mine) =>
+      mine.owner === side &&
+      distance(mine.position, source.position) < mine.definition.triggerRadiusMeters * 1.6
+  );
+}
+
 export function maybeDropRuntimeMine(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -69,15 +83,7 @@ export function maybeDropRuntimeMine(
       (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) <
       0;
   const zoneMine = source.tactic === 'minefield' && usefulMineCorridor(source, target);
-  const occupied = runtime.mines.some((mine) => mine.owner === side &&
-    distance(mine.position, source.position) < mine.definition.triggerRadiusMeters * 1.6);
-  if (
-    (!zoneMine && !defensiveMine && !tacticalMine) ||
-    occupied ||
-    source.mineStock.length === 0 ||
-    source.mineCooldown > 0
-  )
-    return;
+  if (!canDeployMine(runtime, side, source, zoneMine || defensiveMine || tacticalMine)) return;
   if (range > 720) return;
   const definition = defensiveMine
     ? (source.mineStock.find((mine) => mine.kind === 'hunter') ?? chooseRuntimeMine(source, target))
