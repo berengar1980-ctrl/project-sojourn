@@ -165,6 +165,7 @@ export interface CombatProjectileSnapshot {
   readonly position: CombatPoint;
   readonly target: CombatPoint;
   readonly ttlSeconds: number;
+  readonly direction: CombatPoint;
 }
 
 export interface CombatBeamSnapshot {
