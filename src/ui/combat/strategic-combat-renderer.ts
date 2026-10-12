@@ -468,11 +468,28 @@ export class StrategicCombatRenderer {
     height: number
   ): void {
     if (!impact) return;
-    drawCombatHullImpact(
-      this.context,
-      impact,
-      this.impactAge,
-      this.screen(impact.position, width, height)
-    );
+    const point = this.screen(impact.position, width, height);
+    drawCombatHullImpact(this.context, impact, this.impactAge, point);
+    if (impact.source === 'tractor_asteroid' && this.impactAge < 1) {
+      const progress = this.impactAge;
+      this.context.save();
+      this.context.globalAlpha = 1 - progress;
+      this.context.strokeStyle = '#b8f7e7';
+      this.context.shadowColor = '#7afae0';
+      this.context.shadowBlur = 24;
+      this.context.lineWidth = 5 * (1 - progress) + 0.5;
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, 12 + progress * 85, 0, Math.PI * 2);
+      this.context.stroke();
+      for (let i = 0; i < 12; i += 1) {
+        const angle = (i / 12) * Math.PI * 2 + impact.serial * 0.7;
+        const length = (15 + progress * 95) * (0.7 + (i % 4) * 0.14);
+        this.context.beginPath();
+        this.context.moveTo(point.x + Math.cos(angle) * 6, point.y + Math.sin(angle) * 6);
+        this.context.lineTo(point.x + Math.cos(angle) * length, point.y + Math.sin(angle) * length);
+        this.context.stroke();
+      }
+      this.context.restore();
+    }
   }
 }

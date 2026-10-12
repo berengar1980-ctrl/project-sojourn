@@ -650,3 +650,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log 2026-10-12: combat choreography resources
 
 **keine Statusänderung.** A new shield-gated tractor asteroid projectile is introduced with tests and visual effects. Existing mine deployment and the twelve exchange reaction pairings are documented in COMBAT_CHOREOGRAPHY.md; no broad feature parity is claimed from static checks.
+
+## Review-Log 2026-10-12: Traktor-Asteroidenwurf VFX
+
+**keine Statusänderung.** Die vorhandene Asteroidenwurf-Mechanik erhält getrennte Erfassungs-, Heranzieh-, Auflade-, Flug- und Einschlagsdarstellungen sowie einen Phasentest. Kein zusätzlicher Voidbound-Paritätsstatus wird beansprucht; visuelle Spielprüfung bleibt erforderlich.
