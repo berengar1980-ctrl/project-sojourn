@@ -33,6 +33,16 @@ function offsetPoint(
   };
 }
 
+function interceptPoint(chaser: MutableCombatant, target: MutableCombatant): CombatPoint {
+  const distance = Math.hypot(target.position.x - chaser.position.x, target.position.y - chaser.position.y);
+  const speed = Math.max(65, chaser.setup.combatSpeed ?? 120);
+  const leadSeconds = clamp(distance / speed, 0.5, 5);
+  return {
+    x: target.position.x + target.velocity.x * leadSeconds,
+    y: target.position.y + target.velocity.y * leadSeconds,
+  };
+}
+
 export function planExchangeFlight(
   initiator: MutableCombatant,
   reactor: MutableCombatant,
@@ -66,7 +76,7 @@ export function planExchangeFlight(
             : reaction === 'close_gap'
               ? offsetPoint(reactor.position, toward, -350, 0)
               : reaction === 'intercept'
-                ? offsetPoint(initiator.position, toward, 100, -130 * side)
+                ? interceptPoint(reactor, initiator)
                 : reaction === 'pursue'
                   ? offsetPoint(initiator.position, toward, -140, 0)
                   : reaction === 'cross_pass'
@@ -83,8 +93,8 @@ export function planExchangeFlight(
     y: attacking.y + lateral.y * separation,
   };
   const defenderLane = {
-    x: defender.x - lateral.x * separation,
-    y: defender.y - lateral.y * separation,
+    x: defender.x - lateral.x * (reaction === 'intercept' ? 0 : separation),
+    y: defender.y - lateral.y * (reaction === 'intercept' ? 0 : separation),
   };
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
