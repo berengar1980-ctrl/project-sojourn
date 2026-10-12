@@ -1,3 +1,4 @@
+import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { hash, clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
@@ -464,16 +465,12 @@ export class StrategicCombatRenderer {
     }
 
     this.drawShipCaption(combatant.name, hullRatio, geometry);
-    const barWidth = 48;
-    const barY = geometry.center.y + geometry.height * 0.8 + 23;
-    this.context.fillStyle = 'rgba(28, 40, 54, 0.9)';
-    this.context.fillRect(geometry.center.x - barWidth / 2, barY, barWidth, 4);
-    this.context.fillStyle = combatant.boostActive ? '#99e9ff' : '#579ac6';
-    this.context.fillRect(
-      geometry.center.x - barWidth / 2,
-      barY,
-      barWidth * Math.max(0, Math.min(1, combatant.boostSeconds / 3.5)),
-      4
+    drawCombatBoostMeter(
+      this.context,
+      geometry.center,
+      geometry.height,
+      combatant.boostSeconds,
+      combatant.boostActive
     );
   }
 
