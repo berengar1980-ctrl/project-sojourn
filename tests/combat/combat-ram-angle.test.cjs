@@ -15,6 +15,7 @@ const makeShip = (x, heading, velocity) => ({
   speed: Math.abs(velocity),
   shieldHp: 100,
   hullHp: 100,
+  subsystems: { engine: 100 },
 });
 function impact(aHeading, bHeading) {
   const attacker = makeShip(200, aHeading, 80);
@@ -27,4 +28,16 @@ const headOn = impact(0, Math.PI);
 assert(Math.abs(headOn[0] - headOn[1]) < 0.001, 'nose-to-nose deals equal damage');
 const flank = impact(0, Math.PI / 2);
 assert(flank[1] > flank[0], 'ramming broadside takes more damage than armored nose');
-console.log('PASS directional ram impact: nose-to-nose and nose-to-flank');
+const rear = impact(0, 0);
+assert(rear[1] > flank[1], 'stern receives more impact damage than broadside');
+const unshieldedAttacker = makeShip(200, 0, 180);
+const unshieldedDefender = makeShip(260, 0, -180);
+unshieldedDefender.shieldHp = 0;
+applyActionRamImpact({
+  attacker: unshieldedAttacker,
+  defender: unshieldedDefender,
+  elapsedSeconds: 2,
+  combatLog: [],
+});
+assert(unshieldedDefender.subsystems.engine < 100, 'unshielded stern impact damages engines');
+console.log('PASS directional ram impact: prow, flank, stern and exposed engine');
