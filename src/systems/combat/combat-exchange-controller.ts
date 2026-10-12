@@ -4,6 +4,7 @@ import {
   planExchangeFlight,
   pilotExchangeShip,
   activateExchangeBoost,
+  stopExchangeBoost,
   type ExchangeFlightPlan,
 } from './combat-exchange-pilot';
 
@@ -41,12 +42,6 @@ export function tickActionExchange(
   };
   const next = advanceExchange(current, dt, context);
   if (current.phase === 'choose' && next.action && next.reaction) {
-    if (next.action === 'disengage_fire' || next.action === 'frontal_pass') {
-      activateExchangeBoost(initiator);
-    }
-    if (next.reaction === 'pursue' || next.reaction === 'accelerate_clear') {
-      activateExchangeBoost(opponent);
-    }
     state.flight = planExchangeFlight(
       initiator,
       opponent,
@@ -89,6 +84,18 @@ export function tickActionExchange(
   }
   state.exchange = next;
   if (!state.flight || next.phase !== 'execute') return;
+  const remaining = next.duration - next.elapsed;
+  const useBoost = (ship: typeof initiator, goal: { x: number; y: number }, urgent: boolean) => {
+    const dx = goal.x - ship.position.x;
+    const dy = goal.y - ship.position.y;
+    const range = Math.hypot(dx, dy);
+    const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
+    const useful = urgent && range > 190 && aligned > range * 0.8 && remaining > 0.7;
+    if (useful) activateExchangeBoost(ship);
+    else stopExchangeBoost(ship);
+  };
+  useBoost(initiator, state.flight.initiatorGoal, next.action === 'disengage_fire' || next.action === 'frontal_pass');
+  useBoost(opponent, state.flight.reactorGoal, next.reaction === 'pursue' || next.reaction === 'accelerate_clear');
   pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt);
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
 }
