@@ -22,6 +22,12 @@ export function separateActionShips(runtime: StrategicCombatRuntime): void {
   defender.speed = Math.hypot(defender.velocity.x, defender.velocity.y);
 }
 
+function ramExposure(heading: number, contactDirectionX: number, contactDirectionY: number): number {
+  const facing = Math.cos(heading) * contactDirectionX + Math.sin(heading) * contactDirectionY;
+  // The armored prow takes less damage than a vulnerable broadside.
+  return 1.35 - 0.65 * Math.max(0, facing);
+}
+
 /** Apply one impact impulse, not continuous damage while hulls remain entangled. */
 export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
   const { attacker, defender } = runtime;
@@ -38,10 +44,12 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
   // Glancing, slow contact barely scratches shields; energetic impacts scale nonlinearly.
   const damage = closing < 35 ? 0.2 : Math.min(24, 0.2 + (closing - 35) ** 2 / 450);
-  for (const ship of [attacker, defender]) {
-    const shield = Math.min(ship.shieldHp, damage);
+  const firstDamage = damage * ramExposure(attacker.headingRadians, nx, ny);
+  const secondDamage = damage * ramExposure(defender.headingRadians, -nx, -ny);
+  for (const [ship, impact] of [[attacker, firstDamage], [defender, secondDamage]] as const) {
+    const shield = Math.min(ship.shieldHp, impact);
     ship.shieldHp -= shield;
-    ship.hullHp = Math.max(0, ship.hullHp - (damage - shield));
+    ship.hullHp = Math.max(0, ship.hullHp - (impact - shield));
   }
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
@@ -50,8 +58,8 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
     detail:
       'Rumpfkontakt · Annäherung ' +
       closing.toFixed(0) +
-      ' m/s · Schaden je Schiff ' +
-      damage.toFixed(1),
+      ' m/s · Schaden ' +
+      firstDamage.toFixed(1) + ' / ' + secondDamage.toFixed(1),
   });
   return damage;
 }
