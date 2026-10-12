@@ -3,7 +3,8 @@ import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-rend
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { hash, clamp01 } from './strategic-combat-renderer-math';
+import { clamp01 } from './strategic-combat-renderer-math';
+import { drawCombatBackground } from './combat-background-renderer';
 import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
@@ -121,7 +122,7 @@ export class StrategicCombatRenderer {
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
-    this.drawBackground(width, height);
+    drawCombatBackground(this.context, width, height, this.model.attacker.id, this.model.defender.id);
     drawCombatAsteroids(
       this.spaceBodies,
       this.model.arena.asteroids ?? [],
@@ -147,38 +148,6 @@ export class StrategicCombatRenderer {
     this.drawShip(this.model.defender, width, height, timeSeconds);
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
-  }
-  private drawBackground(width: number, height: number): void {
-    const gradient = this.context.createRadialGradient(
-      width * 0.5,
-      height * 0.46,
-      0,
-      width * 0.5,
-      height * 0.46,
-      Math.max(width, height) * 0.78
-    );
-    gradient.addColorStop(0, '#111b24');
-    gradient.addColorStop(0.52, '#071018');
-    gradient.addColorStop(1, '#020507');
-    this.context.fillStyle = gradient;
-    this.context.fillRect(0, 0, width, height);
-    const seed = hash(this.model.attacker.id + ':' + this.model.defender.id);
-    this.context.fillStyle = 'rgba(205, 225, 236, .62)';
-    for (let index = 0; index < 110; index += 1) {
-      const x = ((seed + index * 2654435761) >>> 0) % 10000;
-      const y = ((seed ^ (index * 2246822519)) >>> 0) % 10000;
-      this.context.globalAlpha = 0.26 + ((index * 37) % 48) / 100;
-      this.context.beginPath();
-      this.context.arc(
-        (x / 10000) * width,
-        (y / 10000) * height,
-        index % 11 === 0 ? 1.2 : 0.55,
-        0,
-        Math.PI * 2
-      );
-      this.context.fill();
-    }
-    this.context.globalAlpha = 1;
   }
   private drawBeams(width: number, height: number): void {
     for (const beam of this.model.beams) this.drawBeam(beam, width, height);
