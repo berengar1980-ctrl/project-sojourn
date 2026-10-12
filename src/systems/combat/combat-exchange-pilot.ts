@@ -159,7 +159,7 @@ export function pilotExchangeShip(
   const distance = Math.hypot(dx, dy);
   // Accelerate on the navigation heading first. Only rotate into a firing
   // posture after the ship has established real forward momentum.
-  const navigationHeading = Math.atan2(dy, dx);
+  const navigationHeading = distance < 95 ? ship.headingRadians : Math.atan2(dy, dx);
   const forwardVelocity =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
@@ -171,17 +171,21 @@ export function pilotExchangeShip(
   ship.headingRadians = wrapAngle(ship.headingRadians + turn);
   ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
   ship.angularThrust = clamp(error / turnRate, -1, 1);
-  const direction = normalize(dx, dy);
+  // Keep the established flight vector after crossing a waypoint;
+  // chasing a point behind the ship would cause a stationary spin.
+  const direction = distance < 95
+    ? normalize(ship.velocity.x || Math.cos(ship.headingRadians), ship.velocity.y || Math.sin(ship.headingRadians))
+    : normalize(dx, dy);
   const acceleration = Math.max(
     12,
     ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
   const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting ? 1.65 : 1);
-  const brakingSpeed = Math.sqrt(2 * acceleration * distance);
+  const brakingSpeed = distance < 95 ? speedLimit : Math.sqrt(2 * acceleration * distance);
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
   // Do not park at the waypoint during an exchange: continue a controlled pass.
-  const desiredX = direction.x * (distance < 65 ? Math.max(45, targetSpeed) : targetSpeed);
-  const desiredY = direction.y * (distance < 65 ? Math.max(45, targetSpeed) : targetSpeed);
+  const desiredX = direction.x * targetSpeed;
+  const desiredY = direction.y * targetSpeed;
   // Main drive accelerates along the bow. RCS provides weaker lateral
   // corrections and limited reverse thrust while preserving existing momentum.
   const changeX = desiredX - ship.velocity.x;
