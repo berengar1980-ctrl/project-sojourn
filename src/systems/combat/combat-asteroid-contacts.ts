@@ -45,6 +45,29 @@ export function resolveCombatAsteroidContacts(
     velocity.y = original.velocity.y + (body.physics.velocity.y - original.velocity.y) / resistance;
   });
   for (const hit of hits) {
+    // The shared campaign solver pushes the asteroid but never updates the ship.
+    // Resolve the equal-and-opposite ship response before applying damage.
+    const rock = arena.asteroids.find((asteroid) => asteroid.id === hit.asteroidId);
+    const approach =
+      (ship.velocity.x - (rock?.velocity.x ?? 0)) * hit.normal.x +
+      (ship.velocity.y - (rock?.velocity.y ?? 0)) * hit.normal.y;
+    if (approach > 0) {
+      const impulse = approach * 1.15;
+      ship.velocity.x -= hit.normal.x * impulse;
+      ship.velocity.y -= hit.normal.y * impulse;
+      ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
+    }
+    // Separate the shield from the rock, rather than repeatedly applying
+    // contact damage while the ship remains embedded in a massive asteroid.
+    if (rock) {
+      const offsetX = rock.position.x - ship.position.x;
+      const offsetY = rock.position.y - ship.position.y;
+      const separation = Math.hypot(offsetX, offsetY);
+      const radius = rock.radius + Math.max(geometry?.radiusX ?? 30, geometry?.radiusY ?? 20);
+      const overlap = Math.max(0, radius - separation + 2);
+      ship.position.x -= hit.normal.x * overlap;
+      ship.position.y -= hit.normal.y * overlap;
+    }
     const damage = Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) / Math.max(0.1, geometry?.modifier ?? 1);
     if (damage <= 0) continue;
     if (ship.shieldHp <= 0) {
