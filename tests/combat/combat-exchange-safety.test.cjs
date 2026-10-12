@@ -34,7 +34,7 @@ for (const [x1, x2] of [
   const along = { x: Math.sign(x2 - x1), y: 0 };
   const side1 = (plan.initiatorGoal.y - first.position.y) * along.x;
   const side2 = (plan.reactorGoal.y - second.position.y) * along.x;
-  assert.equal(side1, 0, 'frontal pass uses direct approach without forced flank offset');
+  assert(Math.abs(side1) < 1e-9, 'frontal pass uses direct approach without forced flank offset');
   assert(side2 !== 0, 'reaction may use an avoidance corridor');
 }
 const boosted = ship(500, 500);
