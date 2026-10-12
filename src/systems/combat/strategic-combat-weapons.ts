@@ -70,7 +70,7 @@ function fireRuntimeInstantWeapon(
 
   if (obstacle) {
     addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, obstacle.point, weaponIndex);
-    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point);
+    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point, kind);
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
@@ -405,7 +405,8 @@ function advanceRuntimeProjectile(
       projectile.owner === 'attacker' ? 'defender' : 'attacker',
       'obstacle',
       0,
-      obstacle.point
+      obstacle.point,
+      projectile.kind
     );
     runtime.lastEvent =
       source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
