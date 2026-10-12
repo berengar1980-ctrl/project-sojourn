@@ -1,3 +1,4 @@
+import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
@@ -124,7 +125,10 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
-    this.drawAsteroids(width, height);
+    drawCombatAsteroids(this.context, this.model.arena.obstacles ?? [],
+      Math.min(Math.max(1, width - 140) / this.model.arena.width,
+        Math.max(1, height - 140) / this.model.arena.height),
+      (point) => this.screen(point, width, height));
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
 
     this.drawMines(width, height);
@@ -142,36 +146,6 @@ export class StrategicCombatRenderer {
     this.drawShip(this.model.defender, width, height, timeSeconds);
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
-  }
-
-  private drawAsteroids(width: number, height: number): void {
-    const scale = Math.min(
-      Math.max(1, width - 140) / this.model.arena.width,
-      Math.max(1, height - 140) / this.model.arena.height
-    );
-    for (const obstacle of this.model.arena.obstacles ?? []) {
-      const center = this.screen(obstacle.position, width, height);
-      const radius = Math.max(3, obstacle.radius * scale);
-      const seed = hash(obstacle.id);
-      this.context.save();
-      this.context.translate(center.x, center.y);
-      this.context.beginPath();
-      for (let i = 0; i < 11; i += 1) {
-        const angle = (i / 11) * Math.PI * 2;
-        const variance = 0.78 + (((seed + i * 3719) >>> 0) % 100) / 260;
-        const x = Math.cos(angle) * radius * variance;
-        const y = Math.sin(angle) * radius * variance;
-        if (i === 0) this.context.moveTo(x, y);
-        else this.context.lineTo(x, y);
-      }
-      this.context.closePath();
-      this.context.fillStyle = '#43494b';
-      this.context.strokeStyle = '#737e81';
-      this.context.lineWidth = 1.2;
-      this.context.fill();
-      this.context.stroke();
-      this.context.restore();
-    }
   }
 
   private drawBackground(width: number, height: number): void {
