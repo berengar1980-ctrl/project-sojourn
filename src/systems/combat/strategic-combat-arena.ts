@@ -9,12 +9,7 @@ import {
   distance,
 } from './strategic-combat-geometry';
 
-export function buildCombatArena(
-  attackerSetup: StrategicCombatantSetup,
-  defenderSetup: StrategicCombatantSetup,
-  seed: number,
-  arenaOptions?: StrategicCombatArenaOptions
-): StrategicCombatArenaOptions {
+function createArenaOptions(arenaOptions?: StrategicCombatArenaOptions): StrategicCombatArenaOptions {
   const arena: StrategicCombatArenaOptions = {
     width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
@@ -23,6 +18,16 @@ export function buildCombatArena(
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };
+  return arena;
+}
+
+export function buildCombatArena(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed: number,
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatArenaOptions {
+  const arena = createArenaOptions(arenaOptions);
   const margin = EDGE_PADDING;
   const along = 0.35 + (((seed >>> 5) % 101) / 100) * 0.3;
   const candidates = [
