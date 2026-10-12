@@ -124,8 +124,8 @@ const strafePlan = {
 };
 pilot.pilotExchangeShip(strafeShip, 'initiator', strafePlan, { width: 2000, height: 2000 }, 1);
 assert(strafeShip.velocity.y > 0, 'RCS permits sideways course corrections');
-assert(strafeShip.velocity.y <= 30 * 0.35, 'sideways acceleration stays below main thrust');
-assert.equal(strafeShip.headingRadians, 0, 'RCS does not require turning the hull');
+assert(strafeShip.velocity.y <= 30, 'acceleration stays physically limited');
+assert(strafeShip.headingRadians > 0, 'pilot turns toward flight goal before broadside firing');
 
 
 // Different orders must not collapse into the same static flight goal.
@@ -161,5 +161,16 @@ const trajectories = ['frontal_pass', 'broadside_pass', 'disengage_fire', 'flank
   }
 );
 assert.equal(new Set(trajectories).size, 4, 'four actions need distinct simulated flight paths');
+
+const approach = ship(500, 500);
+const broadsideOrder = {
+  initiatorGoal: { x: 1000, y: 500 },
+  reactorGoal: { x: 300, y: 500 },
+  initiatorHeading: Math.PI / 2,
+  reactorHeading: Math.PI,
+};
+pilot.pilotExchangeShip(approach, 'initiator', broadsideOrder, { width: 2000, height: 2000 }, 1);
+assert(Math.abs(approach.headingRadians) < 0.001, 'broadside approach uses main-drive heading first');
+assert(approach.velocity.x > 0, 'broadside approach gains forward speed');
 
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
