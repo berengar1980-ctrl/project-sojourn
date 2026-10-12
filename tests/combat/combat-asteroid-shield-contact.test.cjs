@@ -29,6 +29,8 @@ const asteroid = {
 };
 resolveCombatAsteroidContacts(ship, { asteroids: [asteroid] });
 assert(asteroid.position.x > 274, 'native campaign collision displaces the asteroid');
+assert(ship.position.x < 200, 'impact also pushes the ship away from the asteroid');
+assert(ship.velocity.x < 30, 'collision applies a counter-impulse to ship velocity');
 assert(ship.shieldImpacts.length === 1, 'asteroid contact creates visible shield flash');
 assert(ship.shieldHp < 100, 'impact deals shield damage');
 const distantShip = {
