@@ -355,6 +355,8 @@ export interface MutableMine {
   position: { x: number; y: number };
   armedSeconds: number;
   pursuitRemaining: number;
+  tractorVelocity?: { x: number; y: number };
+  tractorFlightSeconds?: number;
   definition: ShipMineDefinition;
 }
 
