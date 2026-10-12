@@ -174,6 +174,21 @@ export class StrategicCombatRenderer {
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
+    const progress = 1 - alpha;
+    const segmentStart =
+      beam.kind === 'tractor'
+        ? start
+        : {
+            x: start.x + (end.x - start.x) * Math.max(0, progress - 0.32),
+            y: start.y + (end.y - start.y) * Math.max(0, progress - 0.32),
+          };
+    const segmentEnd =
+      beam.kind === 'tractor'
+        ? end
+        : {
+            x: start.x + (end.x - start.x) * Math.min(1, progress + 0.18),
+            y: start.y + (end.y - start.y) * Math.min(1, progress + 0.18),
+          };
     this.context.save();
     this.context.lineCap = 'round';
     if (beam.kind === 'tractor') {
@@ -181,8 +196,8 @@ export class StrategicCombatRenderer {
       this.context.lineWidth = 2.5;
       this.context.setLineDash([4, 5]);
       this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(end.x, end.y);
+      this.context.moveTo(segmentStart.x, segmentStart.y);
+      this.context.lineTo(segmentEnd.x, segmentEnd.y);
       this.context.stroke();
     } else if (beam.kind === 'laser') {
       this.context.shadowColor = 'rgba(67, 185, 255, .95)';
@@ -190,15 +205,15 @@ export class StrategicCombatRenderer {
       this.context.strokeStyle = `rgba(108, 214, 255, ${0.25 + alpha * 0.5})`;
       this.context.lineWidth = 1.8;
       this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(end.x, end.y);
+      this.context.moveTo(segmentStart.x, segmentStart.y);
+      this.context.lineTo(segmentEnd.x, segmentEnd.y);
       this.context.stroke();
       this.context.shadowBlur = 3;
       this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
       this.context.lineWidth = 0.65;
       this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(end.x, end.y);
+      this.context.moveTo(segmentStart.x, segmentStart.y);
+      this.context.lineTo(segmentEnd.x, segmentEnd.y);
       this.context.stroke();
       // Brief muzzle flare anchors each shot visually to the firing hardpoint.
       this.context.shadowBlur = 5;
@@ -211,8 +226,8 @@ export class StrategicCombatRenderer {
       this.context.lineWidth = 1.3;
       this.context.setLineDash([18, 5]);
       this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(end.x, end.y);
+      this.context.moveTo(segmentStart.x, segmentStart.y);
+      this.context.lineTo(segmentEnd.x, segmentEnd.y);
       this.context.stroke();
     }
     this.context.restore();
@@ -244,6 +259,7 @@ export class StrategicCombatRenderer {
       this.context.arc(0, 0, 3, 0, Math.PI * 2);
       this.context.fill();
     } else if (projectile.kind === 'missile') {
+      this.context.scale(this.camera.zoom, this.camera.zoom);
       drawCombatTorpedo(this.context);
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
