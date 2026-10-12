@@ -126,9 +126,12 @@ export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
     }
     ship.boostSeconds = energy;
   }
+  const energy = ship.boostSeconds ?? BOOST_DURATION_SECONDS;
+  const third = BOOST_DURATION_SECONDS / 3;
   ship.boostCooldownSeconds =
-    ((BOOST_DURATION_SECONDS - (ship.boostSeconds ?? 0)) / BOOST_DURATION_SECONDS) *
-    BOOST_COOLDOWN_SECONDS;
+    (energy < third ? (third - energy) * (6 / third) + 8 : 0) +
+    (energy >= third && energy < third * 2 ? (third * 2 - energy) * (4.5 / third) + 3.5 : 0) +
+    (energy >= third * 2 ? (BOOST_DURATION_SECONDS - energy) * (3.5 / third) : 0);
 }
 
 export function pilotExchangeShip(
