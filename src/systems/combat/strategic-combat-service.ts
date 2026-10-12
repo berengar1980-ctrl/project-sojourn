@@ -1,4 +1,4 @@
-import { separateActionShips } from './combat-exchange-collision';
+import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { runtimeCombatantEscaped } from './combat-escape-evaluation';
 import {
   createActionExchange,
@@ -338,6 +338,7 @@ function tickStrategicCombat(
     moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
     moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   }
+  if (actionState) applyActionRamImpact(runtime);
   resolveCombatantCollision(runtime.attacker, runtime.defender);
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
