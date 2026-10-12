@@ -173,4 +173,32 @@ pilot.pilotExchangeShip(approach, 'initiator', broadsideOrder, { width: 2000, he
 assert(Math.abs(approach.headingRadians) < 0.001, 'broadside approach uses main-drive heading first');
 assert(approach.velocity.x > 0, 'broadside approach gains forward speed');
 
+
+// Reloading a weapon must not alter a committed flight maneuver.
+// The flight pilot deliberately has no dependency on weapon cooldowns.
+function simulateCooldown(cooldownSeconds) {
+  const vessel = ship(500, 500);
+  vessel.cooldowns = [cooldownSeconds];
+  const order = {
+    initiatorGoal: { x: 1100, y: 620 },
+    reactorGoal: { x: 400, y: 500 },
+    initiatorHeading: Math.PI / 2,
+    reactorHeading: 0,
+  };
+  for (let step = 0; step < 80; step += 1) {
+    vessel.cooldowns[0] = Math.max(0, vessel.cooldowns[0] - 0.08);
+    pilot.pilotExchangeShip(vessel, 'initiator', order, { width: 2400, height: 1600 }, 0.08);
+  }
+  return {
+    position: vessel.position,
+    velocity: vessel.velocity,
+    headingRadians: vessel.headingRadians,
+  };
+}
+assert.deepEqual(
+  simulateCooldown(5),
+  simulateCooldown(0),
+  'railgun reload must never trigger turns or change a committed flight path'
+);
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
