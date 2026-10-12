@@ -31,6 +31,13 @@ export function maybeLaunchTractorAsteroid(
     target.position.x + target.velocity.x * lead - rock.position.x,
     target.position.y + target.velocity.y * lead - rock.position.y
   );
+  // Remove the captured rock from normal asteroid physics; it now has one
+  // authoritative projectile position instead of a duplicate stationary body.
+  const asteroids = runtime.arena.asteroids as import('./strategic-combat-types').CombatVisualAsteroid[] | undefined;
+  const obstacles = runtime.arena.obstacles as import('./strategic-combat-types').StrategicCombatObstacle[] | undefined;
+  asteroids?.splice(asteroids.indexOf(rock), 1);
+  const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
+  if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
   runtime.thrownAsteroids.push({
     owner: side,
     asteroidId: rock.id,
