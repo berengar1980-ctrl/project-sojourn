@@ -12,7 +12,6 @@ import {
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceCombatGrappleTether } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
-
 import type {
   MutableCombatant,
   StrategicCombatArenaOptions,
@@ -21,7 +20,6 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatService,
 } from './strategic-combat-types';
-
 import {
   distance,
   snapshot,
@@ -29,23 +27,18 @@ import {
   createRng,
   hashSeed,
 } from './strategic-combat-geometry';
-
 import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
 import { buildCombatArena } from './strategic-combat-arena';
-
 import {
   mineDetection,
   moveCombatant,
   resolveCombatantCollision,
   resolveArenaObstacles,
 } from './strategic-combat-movement';
-
 import { reviewCombatStrategy } from './combat-strategy-planner';
 import { maybeAttemptBoarding } from './combat-boarding-ai';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
-
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
-
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
 export type { StrategicCombatSide } from './strategic-combat-types';
 export type { CombatTactic } from './strategic-combat-types';
@@ -65,7 +58,6 @@ export type { StrategicCombatObstacle } from './strategic-combat-types';
 export type { StrategicCombatArenaOptions } from './strategic-combat-types';
 export type { StrategicCombatService } from './strategic-combat-types';
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
-
 function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
   if (runtime.winner) return;
   if (runtime.defender.hullHp <= 0) {
@@ -86,7 +78,6 @@ function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
     runtime.lastEvent = runtime.defender.setup.name + ' entkommt aus dem Gefecht';
   }
 }
-
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
   return {
     attacker: {
@@ -160,14 +151,12 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
     },
   };
 }
-
 function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: number): void {
   for (let index = runtime.beams.length - 1; index >= 0; index -= 1) {
     runtime.beams[index]!.ttlSeconds -= deltaSeconds;
     if (runtime.beams[index]!.ttlSeconds <= 0) runtime.beams.splice(index, 1);
   }
 }
-
 function recordCombatLog(
   runtime: StrategicCombatRuntime,
   side: 'attacker' | 'defender' | 'system',
@@ -181,7 +170,6 @@ function recordCombatLog(
     detail,
   });
 }
-
 function reviewAndExecute(
   runtime: StrategicCombatRuntime,
   ship: MutableCombatant,
@@ -221,7 +209,6 @@ function reviewAndExecute(
     recordCombatLog(runtime, side, 'phase', nextPhase);
   }
 }
-
 function recordCombatMotion(runtime: StrategicCombatRuntime): void {
   const sampleSecond = Math.floor(runtime.elapsedSeconds);
   if (sampleSecond > runtime.lastLoggedSampleSecond) {
@@ -255,7 +242,6 @@ function recordCombatMotion(runtime: StrategicCombatRuntime): void {
     }
   }
 }
-
 function reviewShieldBreakthroughs(
   runtime: StrategicCombatRuntime,
   previous: readonly number[]
@@ -280,7 +266,6 @@ function reviewShieldBreakthroughs(
     );
   }
 }
-
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -350,7 +335,8 @@ function tickStrategicCombat(
     moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   }
   if (actionState) applyActionRamImpact(runtime);
-  if (!actionState) reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
+  if (!actionState)
+    reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
   resolveCombatantCollision(runtime.attacker, runtime.defender);
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
@@ -385,7 +371,6 @@ function tickStrategicCombat(
   if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
   return runtimeSnapshot(runtime);
 }
-
 function createStrategicCombatRuntime(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
@@ -418,7 +403,6 @@ function createStrategicCombatRuntime(
     lastImpact: null,
   };
 }
-
 function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'defender'): boolean {
   if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
   const attacker = runtimeCombatant(runtime, side);
@@ -448,7 +432,6 @@ function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'def
     : 'GREIFHAKEN > WURF ABGEFEUERT';
   return true;
 }
-
 export function createStrategicCombatService(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
