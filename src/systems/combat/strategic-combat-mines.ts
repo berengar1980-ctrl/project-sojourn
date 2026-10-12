@@ -38,12 +38,15 @@ export function usefulMineCorridor(source: MutableCombatant, target: MutableComb
   const dy = source.position.y - target.position.y;
   const distanceToShip = Math.hypot(dx, dy);
   if (distanceToShip > 720 || distanceToShip < 135) return false;
-  const closing = (target.velocity.x - source.velocity.x) * dx +
-    (target.velocity.y - source.velocity.y) * dy;
+  const closing =
+    (target.velocity.x - source.velocity.x) * dx + (target.velocity.y - source.velocity.y) * dy;
   if (closing < 0) return false;
   const speed = Math.hypot(target.velocity.x, target.velocity.y);
   if (speed < 10) return distanceToShip < 400;
-  const approach = Math.max(0, Math.min(3, (dx * target.velocity.x + dy * target.velocity.y) / (speed * speed)));
+  const approach = Math.max(
+    0,
+    Math.min(3, (dx * target.velocity.x + dy * target.velocity.y) / (speed * speed))
+  );
   const closestX = target.position.x + target.velocity.x * approach;
   const closestY = target.position.y + target.velocity.y * approach;
   return Math.hypot(closestX - source.position.x, closestY - source.position.y) < 240;
@@ -107,7 +110,10 @@ export function maybeDropRuntimeMine(
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: 'MINE_DEPLOY ' + definition.id + (zoneMine ? ' ZONE_DENIAL' : defensiveMine ? ' REAR_GUARD' : ' CLOSE_PASS'),
+    detail:
+      'MINE_DEPLOY ' +
+      definition.id +
+      (zoneMine ? ' ZONE_DENIAL' : defensiveMine ? ' REAR_GUARD' : ' CLOSE_PASS'),
   });
 }
 

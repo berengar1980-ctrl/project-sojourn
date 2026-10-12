@@ -148,8 +148,9 @@ export function avoidDetectedMine(
       const safe = mine.definition.triggerRadiusMeters + 75;
       return { mine, along, lateral, safe };
     })
-    .filter((entry) => entry.along >= -40 && entry.along < 380 &&
-      Math.abs(entry.lateral) < entry.safe)
+    .filter(
+      (entry) => entry.along >= -40 && entry.along < 380 && Math.abs(entry.lateral) < entry.safe
+    )
     .sort((a, b) => a.along - b.along)[0];
   if (!threat) return null;
   const evadeSide = threat.lateral >= 0 ? -1 : 1;
