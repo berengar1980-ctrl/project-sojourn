@@ -175,14 +175,20 @@ export class StrategicCombatRenderer {
     const end = this.screen(beam.end, width, height);
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
     const progress = 1 - alpha;
-    const segmentStart = beam.kind === 'tractor' ? start : {
-      x: start.x + (end.x - start.x) * Math.max(0, progress - 0.32),
-      y: start.y + (end.y - start.y) * Math.max(0, progress - 0.32),
-    };
-    const segmentEnd = beam.kind === 'tractor' ? end : {
-      x: start.x + (end.x - start.x) * Math.min(1, progress + 0.18),
-      y: start.y + (end.y - start.y) * Math.min(1, progress + 0.18),
-    };
+    const segmentStart =
+      beam.kind === 'tractor'
+        ? start
+        : {
+            x: start.x + (end.x - start.x) * Math.max(0, progress - 0.32),
+            y: start.y + (end.y - start.y) * Math.max(0, progress - 0.32),
+          };
+    const segmentEnd =
+      beam.kind === 'tractor'
+        ? end
+        : {
+            x: start.x + (end.x - start.x) * Math.min(1, progress + 0.18),
+            y: start.y + (end.y - start.y) * Math.min(1, progress + 0.18),
+          };
     this.context.save();
     this.context.lineCap = 'round';
     if (beam.kind === 'tractor') {

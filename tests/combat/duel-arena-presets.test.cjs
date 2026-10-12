@@ -28,7 +28,10 @@ assert(
 assert(dense.asteroids.length > dense.obstacles.length, 'small debris is visual only');
 assert(sparse.obstacles.length > 5, 'scattered map contains obstacles');
 assert(dense.obstacles.length > sparse.obstacles.length, 'dense map has more asteroids');
-assert(dense.width * dense.height < sparse.width * sparse.height * 0.6, 'dense preset packs native asteroids into a smaller playable region');
+assert(
+  dense.width * dense.height < sparse.width * sparse.height * 0.6,
+  'dense preset packs native asteroids into a smaller playable region'
+);
 assert.deepEqual(createDuelArena('asteroid_field', 1001), dense, 'seed makes layouts reproducible');
 for (const map of [sparse, dense]) {
   for (const asteroid of map.obstacles) {
