@@ -127,7 +127,6 @@ assert(strafeShip.velocity.y > 0, 'RCS permits sideways course corrections');
 assert(strafeShip.velocity.y <= 30, 'acceleration stays physically limited');
 assert(strafeShip.headingRadians > 0, 'pilot turns toward flight goal before broadside firing');
 
-
 // Different orders must not collapse into the same static flight goal.
 for (const initiative of ['attacker', 'defender']) {
   const attacker = ship(550, 650);
@@ -135,8 +134,9 @@ for (const initiative of ['attacker', 'defender']) {
   const initiator = initiative === 'attacker' ? attacker : defender;
   const reactor = initiative === 'attacker' ? defender : attacker;
   const actions = ['frontal_pass', 'broadside_pass', 'disengage_fire', 'flanking_pass'];
-  const goals = actions.map((action) =>
-    pilot.planExchangeFlight(initiator, reactor, action, 'evade', 'strong').initiatorGoal
+  const goals = actions.map(
+    (action) =>
+      pilot.planExchangeFlight(initiator, reactor, action, 'evade', 'strong').initiatorGoal
   );
   assert.equal(new Set(goals.map((goal) => goal.x + ':' + goal.y)).size, 4);
   const reactions = Object.values(exchange.REACTIONS).flat();
@@ -144,9 +144,12 @@ for (const initiative of ['attacker', 'defender']) {
     const plan = pilot.planExchangeFlight(initiator, reactor, 'frontal_pass', reaction, 'strong');
     return [plan.reactorGoal.x, plan.reactorGoal.y, plan.reactorHeading].join(':');
   });
-  assert.equal(new Set(reactionGoals).size, reactions.length, 'reactions must yield distinct flight or heading orders');
+  assert.equal(
+    new Set(reactionGoals).size,
+    reactions.length,
+    'reactions must yield distinct flight or heading orders'
+  );
 }
-
 
 // Simulate committed orders without replanning: trajectories must diverge.
 const trajectories = ['frontal_pass', 'broadside_pass', 'disengage_fire', 'flanking_pass'].map(
@@ -170,9 +173,11 @@ const broadsideOrder = {
   reactorHeading: Math.PI,
 };
 pilot.pilotExchangeShip(approach, 'initiator', broadsideOrder, { width: 2000, height: 2000 }, 1);
-assert(Math.abs(approach.headingRadians) < 0.001, 'broadside approach uses main-drive heading first');
+assert(
+  Math.abs(approach.headingRadians) < 0.001,
+  'broadside approach uses main-drive heading first'
+);
 assert(approach.velocity.x > 0, 'broadside approach gains forward speed');
-
 
 // Reloading a weapon must not alter a committed flight maneuver.
 // The flight pilot deliberately has no dependency on weapon cooldowns.
@@ -200,7 +205,6 @@ assert.deepEqual(
   simulateCooldown(0),
   'railgun reload must never trigger turns or change a committed flight path'
 );
-
 
 const boostShip = ship(500, 500);
 boostShip.boostSeconds = 3.5;
@@ -231,11 +235,13 @@ const middleThirdGain = boostShip.boostSeconds - 1.5;
 boostShip.boostSeconds = 2.7;
 pilot.updateExchangeBoost(boostShip, 1);
 const lastThirdGain = boostShip.boostSeconds - 2.7;
-assert(firstThirdGain < middleThirdGain && middleThirdGain < lastThirdGain, 'recharge increases in each third');
+assert(
+  firstThirdGain < middleThirdGain && middleThirdGain < lastThirdGain,
+  'recharge increases in each third'
+);
 boostShip.boostSeconds = 0;
 pilot.stopExchangeBoost(boostShip);
 pilot.updateExchangeBoost(boostShip, 14);
 assert(Math.abs(boostShip.boostSeconds - 3.5) < 0.0001, 'empty boost replenishes in 14 seconds');
-
 
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');

@@ -76,9 +76,7 @@ export function planExchangeFlight(
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =
-    reaction === 'counter_pass' || reaction === 'counterfire'
-      ? Math.PI / 2
-      : 0;
+    reaction === 'counter_pass' || reaction === 'counterfire' ? Math.PI / 2 : 0;
   return {
     initiatorGoal: attacking,
     reactorGoal: defender,
@@ -92,7 +90,8 @@ export const BOOST_DURATION_SECONDS = 3.5;
 export const BOOST_COOLDOWN_SECONDS = 14;
 
 export function activateExchangeBoost(ship: MutableCombatant): boolean {
-  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? BOOST_DURATION_SECONDS) <= 0) return false;
+  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? BOOST_DURATION_SECONDS) <= 0)
+    return false;
   ship.boostActive = true;
   return true;
 }
@@ -155,9 +154,7 @@ export function pilotExchangeShip(
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
   const facing =
-    distance < 90 || (forwardVelocity >= 45 && distance < 260)
-      ? weaponFacing
-      : navigationHeading;
+    distance < 90 || (forwardVelocity >= 45 && distance < 260) ? weaponFacing : navigationHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);

@@ -469,7 +469,11 @@ export class StrategicCombatRenderer {
     );
   }
 
-  private drawHullImpact(impact: StrategicCombatSnapshot['lastImpact'], width: number, height: number): void {
+  private drawHullImpact(
+    impact: StrategicCombatSnapshot['lastImpact'],
+    width: number,
+    height: number
+  ): void {
     if (!impact) return;
     drawCombatHullImpact(
       this.context,

@@ -19,4 +19,3 @@ export function runtimeCombatantEscaped(
   const safeSeparation = Math.max(350, Math.min(600, arena.width * 0.2));
   return atExit && distance(combatant.position, enemy.position) > safeSeparation;
 }
-

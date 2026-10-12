@@ -29,7 +29,8 @@ export class ShipEngineEffectsRenderer {
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
-      const length = baseWidth * (0.58 + normalizedIntensity * 0.92) * flicker * (boosted ? 2.3 : 1);
+      const length =
+        baseWidth * (0.58 + normalizedIntensity * 0.92) * flicker * (boosted ? 2.3 : 1);
       const thickness = baseWidth * (0.34 + normalizedIntensity * 0.13) * (boosted ? 1.65 : 1);
       const backwards = {
         x: -Math.cos(geometry.angle),

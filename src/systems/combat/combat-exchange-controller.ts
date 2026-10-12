@@ -94,8 +94,16 @@ export function tickActionExchange(
     if (useful) activateExchangeBoost(ship);
     else stopExchangeBoost(ship);
   };
-  useBoost(initiator, state.flight.initiatorGoal, next.action === 'disengage_fire' || next.action === 'frontal_pass');
-  useBoost(opponent, state.flight.reactorGoal, next.reaction === 'pursue' || next.reaction === 'accelerate_clear');
+  useBoost(
+    initiator,
+    state.flight.initiatorGoal,
+    next.action === 'disengage_fire' || next.action === 'frontal_pass'
+  );
+  useBoost(
+    opponent,
+    state.flight.reactorGoal,
+    next.reaction === 'pursue' || next.reaction === 'accelerate_clear'
+  );
   pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt);
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
 }
