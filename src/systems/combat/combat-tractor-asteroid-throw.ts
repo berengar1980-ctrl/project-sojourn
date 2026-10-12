@@ -1,6 +1,8 @@
 import { distance, normalize } from './strategic-combat-geometry';
 import type {
   MutableCombatant,
+  CombatVisualAsteroid,
+  StrategicCombatObstacle,
   MutableThrownAsteroid,
   StrategicCombatRuntime,
   StrategicCombatSide,
@@ -33,8 +35,8 @@ export function maybeLaunchTractorAsteroid(
   );
   // Remove the captured rock from normal asteroid physics; it now has one
   // authoritative projectile position instead of a duplicate stationary body.
-  const asteroids = runtime.arena.asteroids as import('./strategic-combat-types').CombatVisualAsteroid[] | undefined;
-  const obstacles = runtime.arena.obstacles as import('./strategic-combat-types').StrategicCombatObstacle[] | undefined;
+  const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
+  const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
   asteroids?.splice(asteroids.indexOf(rock), 1);
   const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
   if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
