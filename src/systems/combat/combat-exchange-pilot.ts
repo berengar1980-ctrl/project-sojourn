@@ -73,6 +73,14 @@ export function planExchangeFlight(
                     : reaction === 'counter_pass'
                       ? offsetPoint(initiator.position, toward, 0, 250 * side)
                       : { ...reactor.position };
+  // Shared passing corridor: the two pilots use opposite WORLD-SIDE lanes.
+  // This avoids the head-on case where both autonomous pilots dodge into each other.
+  const lateral = { x: -toward.y, y: toward.x };
+  const separation = 175;
+  attacking.x += lateral.x * separation;
+  attacking.y += lateral.y * separation;
+  defender.x -= lateral.x * separation;
+  defender.y -= lateral.y * separation;
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =
@@ -142,6 +150,8 @@ export function pilotExchangeShip(
 ): void {
   updateExchangeBoost(ship, dt);
   const boosting = ship.boostActive === true;
+  if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
+  else ship.boostRampSeconds = 0;
   const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
@@ -169,8 +179,9 @@ export function pilotExchangeShip(
   const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting ? 1.65 : 1);
   const brakingSpeed = Math.sqrt(2 * acceleration * distance);
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
-  const desiredX = distance < 12 ? 0 : direction.x * targetSpeed;
-  const desiredY = distance < 12 ? 0 : direction.y * targetSpeed;
+  // Do not park at the waypoint during an exchange: continue a controlled pass.
+  const desiredX = direction.x * (distance < 65 ? Math.max(45, targetSpeed) : targetSpeed);
+  const desiredY = direction.y * (distance < 65 ? Math.max(45, targetSpeed) : targetSpeed);
   // Main drive accelerates along the bow. RCS provides weaker lateral
   // corrections and limited reverse thrust while preserving existing momentum.
   const changeX = desiredX - ship.velocity.x;
@@ -179,7 +190,8 @@ export function pilotExchangeShip(
   const forwardY = Math.sin(ship.headingRadians);
   const longitudinal = changeX * forwardX + changeY * forwardY;
   const lateral = -changeX * forwardY + changeY * forwardX;
-  const mainStep = acceleration * dt * (boosting ? 2.2 : 1);
+  const boostStrength = boosting ? 1 + 2.5 * Math.min(1, (ship.boostRampSeconds ?? 0) / 2) : 1;
+  const mainStep = acceleration * dt * boostStrength;
   const forwardStep = clamp(longitudinal, -mainStep * 0.25, mainStep);
   const lateralStep = clamp(lateral, -mainStep * 0.12, mainStep * 0.12);
   if (ship.subsystems.engine > 0) {
