@@ -51,7 +51,13 @@ assert.equal(
   0,
   'launched asteroid removed from stationary collision world'
 );
-for (let i = 0; i < 20; i += 1) advanceThrownAsteroids(runtime, 0.08);
+assert.equal(runtime.thrownAsteroids[0].phase, 'capture');
+for (let i = 0; i < 9; i += 1) advanceThrownAsteroids(runtime, 0.08);
+assert.equal(runtime.thrownAsteroids[0].phase, 'charge');
+for (let i = 0; i < 11; i += 1) advanceThrownAsteroids(runtime, 0.08);
+assert.equal(runtime.thrownAsteroids[0].phase, 'flight');
+assert.equal(defender.shieldHp, 120, 'no damage before projectile physically arrives');
+for (let i = 0; i < 28; i += 1) advanceThrownAsteroids(runtime, 0.08);
 assert.equal(runtime.thrownAsteroids.length, 0, 'asteroid hit or left field');
 assert(defender.shieldHp < 120, 'throw delivers substantial shield damage');
 assert(defender.hullHp < 300, 'overwhelming rock collision also reaches hull');
