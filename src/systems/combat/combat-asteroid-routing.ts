@@ -22,10 +22,11 @@ export function combatRouteHeading(
   ship: MutableCombatant,
   target: CombatPoint,
   arena: StrategicCombatArenaOptions,
-  elapsed: number
+  deltaSeconds: number
 ): CombatPoint | null {
   if (!(arena.obstacles?.length)) return null;
-  if (elapsed >= (ship.nextAsteroidRouteAt ?? 0) || !ship.asteroidRoute?.length) {
+  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
+  if (ship.nextAsteroidRouteAt <= 0 || !ship.asteroidRoute?.length) {
     const plan = planPointRoute({
       start: ship.position,
       target,
@@ -35,7 +36,7 @@ export function combatRouteHeading(
       height: arena.height,
     });
     ship.asteroidRoute = plan.route.slice(1).map((point) => ({ ...point }));
-    ship.nextAsteroidRouteAt = elapsed + ROUTE_REFRESH_SECONDS;
+    ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
   while (ship.asteroidRoute.length > 1) {
     const waypoint = ship.asteroidRoute[0]!;
