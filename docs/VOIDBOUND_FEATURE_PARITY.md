@@ -630,3 +630,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): PvP-Kampfbild und Asteroidendichte
 
 **keine Statusänderung.** Das PvP nutzt weiterhin die vorhandenen Asteroidenmodelle und die gemeinsame Physik. Der dichte Karten-Preset nutzt einen kleineren Raumausschnitt; die Bildschirmdarstellung von Laserimpulsen und Torpedos wurde an die Kameraskalierung angepasst.
+
+## Review-Log (2026-10-12): Dichteres Duellfeld und Torpedogröße
+
+**keine Statusänderung.** Für den dichten PvP-Preset werden zwei reproduzierbare Aufrufe des bestehenden Kampagnen-Asteroidengenerators kombiniert; die vorhandene Physik bleibt zuständig. Die Bildskalierung des Torpedos wurde auf ein Drittel des vorherigen Wertes reduziert.
