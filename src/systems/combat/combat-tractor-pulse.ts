@@ -15,7 +15,7 @@ export function pulseCombatTractor(
 ): void {
   ship.tractorPulseCooldown = Math.max(0, (ship.tractorPulseCooldown ?? 0) - dt);
   const range = ship.setup.tractorRangeMeters ?? 0;
-  if (range <= 0 || ship.subsystems.tractor <= 0 || enemy.hullHp <= 0) return;
+  if (range <= 0 || ship.shieldHp > 0 || ship.subsystems.tractor <= 0 || enemy.hullHp <= 0) return;
   const separation = distance(ship.position, enemy.position);
   if (separation < 130 || separation > range || (ship.tractorPulseCooldown ?? 0) > 0) return;
   if (ship.tactic === 'flee') return;

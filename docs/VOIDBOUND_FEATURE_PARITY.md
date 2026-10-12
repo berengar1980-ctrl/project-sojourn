@@ -646,3 +646,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Alpha-Laufzeit und Navigation
 
 **keine Statusänderung.** Das Alpha-Analysegefecht verwendet weniger Waffenschaden und keine automatischen Minen, ohne die globale Kampfbalance anzupassen. Die Kampfnavigation prüft die vorausberechnete Bewegung und blockierte Wegpunkte. Die bereits akzeptierte Asteroidenverteilung und die vom Nutzer korrigierten Startscreen-Assets bleiben unverändert.
+
+## Review-Log 2026-10-12: combat choreography resources
+
+**keine Statusänderung.** A new shield-gated tractor asteroid projectile is introduced with tests and visual effects. Existing mine deployment and the twelve exchange reaction pairings are documented in COMBAT_CHOREOGRAPHY.md; no broad feature parity is claimed from static checks.

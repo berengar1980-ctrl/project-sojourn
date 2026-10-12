@@ -5,6 +5,10 @@ import { separateActionShips, applyActionRamImpact } from './combat-exchange-col
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
+  maybeLaunchTractorAsteroid,
+  advanceThrownAsteroids,
+} from './combat-tractor-asteroid-throw';
+import {
   createActionExchange,
   tickActionExchange,
   type ActiveExchange,
@@ -106,6 +110,11 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       ...beam,
       origin: { ...beam.origin },
       end: { ...beam.end },
+    })),
+    thrownAsteroids: runtime.thrownAsteroids.map((rock) => ({
+      ...rock,
+      position: { ...rock.position },
+      velocity: { ...rock.velocity },
     })),
     mines: runtime.mines.map((mine) => ({
       id: mine.id,
@@ -246,6 +255,13 @@ function reviewShieldBreakthroughs(
     );
   }
 }
+function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number): void {
+  maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
+  maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
+  advanceThrownAsteroids(runtime, dt);
+  pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+}
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -321,8 +337,7 @@ function tickStrategicCombat(
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
-  pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
-  pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  updateCombatAsteroidThrows(runtime, dt);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
@@ -366,6 +381,7 @@ function createStrategicCombatRuntime(
     projectiles: [],
     beams: [],
     mines: [],
+    thrownAsteroids: [],
     elapsedSeconds: 0,
     winner: null,
     boardingInitiator: null,

@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
@@ -145,6 +146,12 @@ export class StrategicCombatRenderer {
     drawCombatAsteroids(
       this.spaceBodies,
       this.model.arena.asteroids ?? [],
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+      (point) => this.screen(point, width, height)
+    );
+    drawTractorThrows(
+      this.context,
+      this.model.thrownAsteroids,
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height)
     );
