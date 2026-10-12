@@ -130,8 +130,17 @@ function advanceRuntimeMine(
     runtime.mines.splice(index, 1);
     return;
   }
+  if (mine.tractorVelocity) {
+    mine.position.x += mine.tractorVelocity.x * deltaSeconds;
+    mine.position.y += mine.tractorVelocity.y * deltaSeconds;
+    mine.tractorFlightSeconds = (mine.tractorFlightSeconds ?? 0) + deltaSeconds;
+    if (mine.tractorFlightSeconds > 8) {
+      runtime.mines.splice(index, 1);
+      return;
+    }
+  }
   if (
-    mine.armedSeconds <= 0 &&
+    !mine.tractorVelocity && mine.armedSeconds <= 0 &&
     mine.pursuitRemaining > 0 &&
     mine.definition.pursuitSpeedMetersPerSecond > 0
   ) {
