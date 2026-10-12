@@ -26,10 +26,24 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
   const asteroids = sourceAsteroids
     .filter((asteroid) => kind === 'asteroid_field' || asteroid.kind === 'resource')
     .filter((asteroid, index) => kind === 'asteroid_field' || index % 5 === 0)
-    .map((asteroid) => ({
+    .map((asteroid, index) => ({
       id: asteroid.id,
       kind: asteroid.kind,
-      position: { x: asteroid.position.x * factorX, y: asteroid.position.y * factorY },
+      position:
+        kind === 'asteroid_field'
+          ? {
+              x:
+                asteroid.radius * scale +
+                20 +
+                ((index * 0.618033988749895 + seed * 0.000123) % 1) *
+                  (width - 2 * (asteroid.radius * scale + 20)),
+              y:
+                asteroid.radius * scale +
+                20 +
+                ((index * 0.754877666246693 + seed * 0.000217) % 1) *
+                  (height - 2 * (asteroid.radius * scale + 20)),
+            }
+          : { x: asteroid.position.x * factorX, y: asteroid.position.y * factorY },
       radius: asteroid.radius * scale,
       rotation: asteroid.rotation,
       velocity: {

@@ -11,8 +11,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(3, 6, 10, 0.9), rgba(3, 6, 10, 0.68) 44%, rgba(3, 6, 10, 0.34)),
-    linear-gradient(0deg, rgba(2, 4, 7, 0.62), transparent 55%, rgba(2, 4, 7, 0.35));
+    linear-gradient(90deg, rgba(3, 6, 10, 0.7), rgba(3, 6, 10, 0.35) 44%, rgba(3, 6, 10, 0.12)),
+    linear-gradient(0deg, rgba(2, 4, 7, 0.3), transparent 55%, rgba(2, 4, 7, 0.12));
 }
 .harrow-start__layout {
   position: relative;
