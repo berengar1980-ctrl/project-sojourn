@@ -323,6 +323,46 @@ function expireProjectile(
   runtime.projectiles.splice(index, 1);
 }
 
+
+function hitProjectileHull(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  next: { x: number; y: number },
+  index: number
+): boolean {
+  const segmentX = next.x - projectile.position.x;
+  const segmentY = next.y - projectile.position.y;
+  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
+  const fraction = clamp(
+    ((target.position.x - projectile.position.x) * segmentX +
+      (target.position.y - projectile.position.y) * segmentY) /
+      Math.max(0.001, lengthSquared),
+    0,
+    1
+  );
+  const closest = {
+    x: projectile.position.x + fraction * segmentX,
+    y: projectile.position.y + fraction * segmentY,
+  };
+  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
+  if (distance(closest, target.position) <= hitRadius) {
+    const result = recordProjectileDamage(runtime, projectile, source, target);
+    runtime.lastEvent =
+      source.setup.name +
+      ': ' +
+      projectile.family.replaceAll('_', ' ') +
+      ' trifft ' +
+      (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+      ' -' +
+      Math.round(result.damage);
+    runtime.projectiles.splice(index, 1);
+    return true;
+  }
+  return false;
+}
+
 function advanceRuntimeProjectile(
   runtime: StrategicCombatRuntime,
   projectile: MutableProjectile,
@@ -387,34 +427,7 @@ function advanceRuntimeProjectile(
     runtime.projectiles.splice(index, 1);
     return;
   }
-  const segmentX = next.x - projectile.position.x;
-  const segmentY = next.y - projectile.position.y;
-  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
-  const fraction = clamp(
-    ((target.position.x - projectile.position.x) * segmentX +
-      (target.position.y - projectile.position.y) * segmentY) /
-      Math.max(0.001, lengthSquared),
-    0,
-    1
-  );
-  const closest = {
-    x: projectile.position.x + fraction * segmentX,
-    y: projectile.position.y + fraction * segmentY,
-  };
-  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
-  if (distance(closest, target.position) <= hitRadius) {
-    const result = recordProjectileDamage(runtime, projectile, source, target);
-    runtime.lastEvent =
-      source.setup.name +
-      ': ' +
-      projectile.family.replaceAll('_', ' ') +
-      ' trifft ' +
-      (result.layer === 'shield' ? 'Schild' : 'Hülle') +
-      ' -' +
-      Math.round(result.damage);
-    runtime.projectiles.splice(index, 1);
-    return;
-  }
+  if (hitProjectileHull(runtime, projectile, source, target, next, index)) return;
   projectile.position = next;
   if (
     projectile.kind === 'missile' &&
