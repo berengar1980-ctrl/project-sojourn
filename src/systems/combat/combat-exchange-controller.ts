@@ -148,6 +148,6 @@ export function tickActionExchange(
     state.flight.reactorGoal,
     next.reaction === 'pursue' || next.reaction === 'accelerate_clear'
   );
-  pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt);
+  pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt, opponent, next.action === 'frontal_pass');
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
 }
