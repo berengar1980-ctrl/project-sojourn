@@ -109,13 +109,22 @@ export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
     if (ship.boostSeconds === 0) ship.boostActive = false;
   } else {
     ship.boostActive = false;
-    // Recharge is slower at low charge and fastest in the upper third.
-    const fraction = charge / BOOST_DURATION_SECONDS;
-    const rate = fraction < 1 / 3 ? 0.55 : fraction < 2 / 3 ? 1 : 1.45;
-    ship.boostSeconds = Math.min(
-      BOOST_DURATION_SECONDS,
-      charge + (BOOST_DURATION_SECONDS / BOOST_COOLDOWN_SECONDS) * rate * dt
-    );
+    // A completely depleted tank takes 14 seconds to refill:
+    // first third 6s, middle third 4.5s, final third 3.5s.
+    const third = BOOST_DURATION_SECONDS / 3;
+    let remaining = Math.max(0, dt);
+    let energy = charge;
+    while (remaining > 0 && energy < BOOST_DURATION_SECONDS) {
+      const stage = energy < third ? 0 : energy < third * 2 ? 1 : 2;
+      const boundary = stage === 0 ? third : stage === 1 ? third * 2 : BOOST_DURATION_SECONDS;
+      const secondsPerThird = stage === 0 ? 6 : stage === 1 ? 4.5 : 3.5;
+      const rate = third / secondsPerThird;
+      const timeToBoundary = (boundary - energy) / rate;
+      const elapsed = Math.min(remaining, timeToBoundary);
+      energy = Math.min(boundary, energy + elapsed * rate);
+      remaining -= elapsed;
+    }
+    ship.boostSeconds = energy;
   }
   ship.boostCooldownSeconds =
     ((BOOST_DURATION_SECONDS - (ship.boostSeconds ?? 0)) / BOOST_DURATION_SECONDS) *
