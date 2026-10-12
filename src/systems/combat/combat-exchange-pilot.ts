@@ -152,7 +152,13 @@ export function pilotExchangeShip(
   const boosting = ship.boostActive === true;
   if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
   else ship.boostRampSeconds = 0;
-  const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const goal = ship.tactic === 'flee' && arena.exitPoint
+    ? arena.exitPoint
+    : {
+        x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+        y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+      };
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
   const dy = goal.y - ship.position.y;
