@@ -231,9 +231,11 @@ export interface StrategicCombatSnapshot {
 
 export interface CombatVisualAsteroid {
   readonly id: string;
-  readonly position: CombatPoint;
+  readonly position: { x: number; y: number };
+  readonly velocity: CombatPoint;
+  readonly angularVelocity: number;
   readonly radius: number;
-  readonly rotation: number;
+  rotation: number;
   readonly kind: 'resource' | 'debris';
 }
 
