@@ -235,6 +235,20 @@ function attachEncounterSelector(
   });
 }
 
+function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLSelectElement } {
+  const mapLabel = document.createElement('label');
+  mapLabel.textContent = 'Kampfkarte';
+  const mapSelect = document.createElement('select');
+  for (const map of DUEL_MAPS) {
+    const option = document.createElement('option');
+    option.value = map.id;
+    option.textContent = map.title;
+    mapSelect.append(option);
+  }
+  mapLabel.append(mapSelect);
+  return { mapLabel, mapSelect };
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -247,16 +261,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     },
   ];
   let selectedEncounter = '';
-  const mapLabel = document.createElement('label');
-  mapLabel.textContent = 'Kampfkarte';
-  const mapSelect = document.createElement('select');
-  for (const map of DUEL_MAPS) {
-    const option = document.createElement('option');
-    option.value = map.id;
-    option.textContent = map.title;
-    mapSelect.append(option);
-  }
-  mapLabel.append(mapSelect);
+  const { mapLabel, mapSelect } = createDuelMapSelector();
   const encounterLabel = document.createElement('label');
   encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
   const encounterSelect = document.createElement('select');
