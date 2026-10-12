@@ -6,7 +6,7 @@ export function drawCombatHullImpact(
   impactAge: number,
   point: { readonly x: number; readonly y: number }
 ): void {
-  if (!impact || impactAge >= 1 || impact.layer === 'miss') {
+  if (!impact || impactAge >= 1 || (impact.layer === 'miss' && impact.weaponKind !== 'missile')) {
     return;
   }
   const progress = impactAge;
