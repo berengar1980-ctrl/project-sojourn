@@ -1,5 +1,6 @@
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { runtimeCombatantEscaped } from './combat-escape-evaluation';
+import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
   createActionExchange,
   tickActionExchange,
@@ -343,6 +344,8 @@ function tickStrategicCombat(
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
+  pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
