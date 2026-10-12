@@ -28,7 +28,7 @@ assert(
 assert(read('src/ui/local-space/local-space-renderer.ts').includes('drawLocalSpaceExitGate('));
 assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawLocalSpaceExitGate('));
 assert(
-  read('src/systems/combat/strategic-combat-service.ts').includes(
+  read('src/systems/combat/combat-escape-evaluation.ts').includes(
     'distance(combatant.position, arena.exitPoint) <= 90'
   )
 );
@@ -37,7 +37,8 @@ assert(
     'arena.exitPoint.x - combatant.position.x'
   )
 );
-assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('FLUCHTPUNKT'));
+assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNKT'));
+assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('drawCombatEscapeGate('));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));
 assert(read('src/systems/ships/ship-registry.ts').includes('ensureUtilityHardpoints'));
 assert(read('src/ui/salvage/salvage-space-panel.ts').includes('TECHNISCHE DIAGNOSE LÄUFT'));
