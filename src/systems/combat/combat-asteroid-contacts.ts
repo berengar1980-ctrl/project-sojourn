@@ -1,5 +1,4 @@
 import { applyShieldHit } from '../shields/shield-service';
-import { damageFromImpactEnergy } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
@@ -46,7 +45,8 @@ export function resolveCombatAsteroidContacts(
     velocity.y = original.velocity.y + (body.physics.velocity.y - original.velocity.y) / resistance;
   });
   for (const hit of hits) {
-    const damage = damageFromImpactEnergy(hit.kineticEnergy, geometry?.modifier ?? 1);
+    const damage = Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) / Math.max(0.1, geometry?.modifier ?? 1);
+    if (damage <= 0) continue;
     if (ship.shieldHp <= 0) {
       ship.hullHp = Math.max(0, ship.hullHp - damage);
       continue;
