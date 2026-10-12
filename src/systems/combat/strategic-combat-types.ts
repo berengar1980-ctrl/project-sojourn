@@ -225,7 +225,17 @@ export interface StrategicCombatSnapshot {
     readonly width: number;
     readonly height: number;
     readonly obstacles?: readonly StrategicCombatObstacle[];
+    readonly asteroids?: readonly CombatVisualAsteroid[];
+  readonly asteroids?: readonly CombatVisualAsteroid[];
   };
+}
+
+export interface CombatVisualAsteroid {
+  readonly id: string;
+  readonly position: CombatPoint;
+  readonly radius: number;
+  readonly rotation: number;
+  readonly kind: 'resource' | 'debris';
 }
 
 export interface StrategicCombatObstacle {
