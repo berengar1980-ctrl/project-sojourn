@@ -85,12 +85,16 @@ export function tickActionExchange(
   state.exchange = next;
   if (!state.flight || next.phase !== 'execute') return;
   const remaining = next.duration - next.elapsed;
+  const separation = Math.hypot(
+    initiator.position.x - opponent.position.x,
+    initiator.position.y - opponent.position.y
+  );
   const useBoost = (ship: typeof initiator, goal: { x: number; y: number }, urgent: boolean) => {
     const dx = goal.x - ship.position.x;
     const dy = goal.y - ship.position.y;
     const range = Math.hypot(dx, dy);
     const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
-    const useful = urgent && range > 190 && aligned > range * 0.8 && remaining > 0.7;
+    const useful = urgent && separation > 300 && range > 250 && aligned > range * 0.8 && remaining > 0.7;
     if (useful) activateExchangeBoost(ship);
     else stopExchangeBoost(ship);
   };
