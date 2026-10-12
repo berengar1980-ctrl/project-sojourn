@@ -1,6 +1,7 @@
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import { detectShipMine } from './mine-detection-service';
+import { collisionThreat } from './combat-contact-review';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
 
@@ -443,6 +444,13 @@ export function moveCombatant(
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
   if (mineAvoidance) {
     direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
+  }
+  // Override the long-range approach with evasive thrust before the predicted impact.
+  if (collisionThreat(combatant, enemy)) {
+    const sideSign = side === 'attacker' ? 1 : -1;
+    const lateral = { x: -toward.y * sideSign, y: toward.x * sideSign };
+    direction = normalize(lateral.x * 2 - toward.x, lateral.y * 2 - toward.y);
+    targetSpeedFactor = Math.max(0.7, targetSpeedFactor);
   }
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
