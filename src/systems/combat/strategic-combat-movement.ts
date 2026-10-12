@@ -406,6 +406,22 @@ function performCombatThrust(
   resolveArenaObstacles(combatant, arena);
 }
 
+function predictedCollisionEvasion(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  side: StrategicCombatSide,
+  toward: CombatPoint,
+  speedFactor: number
+): { direction: CombatPoint; speedFactor: number } | null {
+  if (!collisionThreat(combatant, enemy)) return null;
+  const sign = side === 'attacker' ? 1 : -1;
+  const lateral = { x: -toward.y * sign, y: toward.x * sign };
+  return {
+    direction: normalize(lateral.x * 2 - toward.x, lateral.y * 2 - toward.y),
+    speedFactor: Math.max(0.7, speedFactor),
+  };
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -445,13 +461,12 @@ export function moveCombatant(
   if (mineAvoidance) {
     direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
   }
-  // Override the long-range approach with evasive thrust before the predicted impact.
-  if (collisionThreat(combatant, enemy)) {
-    const sideSign = side === 'attacker' ? 1 : -1;
-    const lateral = { x: -toward.y * sideSign, y: toward.x * sideSign };
-    direction = normalize(lateral.x * 2 - toward.x, lateral.y * 2 - toward.y);
-    targetSpeedFactor = Math.max(0.7, targetSpeedFactor);
+  const evasion = predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
+  if (evasion) {
+    direction = evasion.direction;
+    targetSpeedFactor = evasion.speedFactor;
   }
+
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
