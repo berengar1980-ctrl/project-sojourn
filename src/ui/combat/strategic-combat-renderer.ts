@@ -106,7 +106,7 @@ export class StrategicCombatRenderer {
     const definition = getShipDefinition(combatant.shipId);
     const nominalLength = definition?.nominalLengthMeters ?? 60;
     const canvasScale = Math.min(width / this.model.arena.width, height / this.model.arena.height);
-    const shipWidth = Math.max(44, Math.min(150, nominalLength * canvasScale * 3.2));
+    const shipWidth = Math.max(12, Math.min(150, nominalLength * canvasScale));
     const aspect =
       image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
         ? image.naturalWidth / image.naturalHeight
