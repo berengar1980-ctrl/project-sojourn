@@ -11,6 +11,8 @@ import type {
 const MAX_RADIUS = 35;
 const THROW_SPEED = 420;
 const COOLDOWN_SECONDS = 16;
+const CAPTURE_SECONDS = 0.65;
+const CHARGE_SECONDS = 0.85;
 
 export function maybeLaunchTractorAsteroid(
   runtime: StrategicCombatRuntime,
@@ -49,9 +51,11 @@ export function maybeLaunchTractorAsteroid(
     radius: rock.radius,
     velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
     ageSeconds: 0,
+    phase: 'capture',
+    origin: { ...ship.position },
   });
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
-  runtime.lastEvent = ship.setup.name + ': ASTEROID GESCHLEUDERT';
+  runtime.lastEvent = ship.setup.name + ': TRAKTOR ERFASST ASTEROID';
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
@@ -89,16 +93,41 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
   return true;
 }
 
+function advanceRockPhase(rock: MutableThrownAsteroid, dt: number): void {
+  rock.ageSeconds += dt;
+  if (rock.phase === 'capture') {
+    const dx = rock.origin.x - rock.position.x;
+    const dy = rock.origin.y - rock.position.y;
+    const length = Math.hypot(dx, dy);
+    if (length > 110) {
+      const movement = Math.min(length - 110, 150 * dt);
+      rock.position.x += (dx / length) * movement;
+      rock.position.y += (dy / length) * movement;
+    }
+    if (rock.ageSeconds >= CAPTURE_SECONDS) rock.phase = 'charge';
+    return;
+  }
+  if (rock.phase === 'charge') {
+    if (rock.ageSeconds >= CAPTURE_SECONDS + CHARGE_SECONDS) {
+      rock.phase = 'flight';
+      rock.ageSeconds = 0;
+    }
+    return;
+  }
+  rock.position.x += rock.velocity.x * dt;
+  rock.position.y += rock.velocity.y * dt;
+}
+
 export function advanceThrownAsteroids(runtime: StrategicCombatRuntime, dt: number): void {
   for (const ship of [runtime.attacker, runtime.defender]) {
     ship.tractorThrowCooldown = Math.max(0, (ship.tractorThrowCooldown ?? 0) - dt);
   }
   for (let index = runtime.thrownAsteroids.length - 1; index >= 0; index -= 1) {
     const rock = runtime.thrownAsteroids[index]!;
-    rock.ageSeconds += dt;
-    rock.position.x += rock.velocity.x * dt;
-    rock.position.y += rock.velocity.y * dt;
-    if (hitThrownAsteroid(runtime, rock) || rock.ageSeconds > 8) {
+    const wasFlying = rock.phase === 'flight';
+    advanceRockPhase(rock, dt);
+    if (rock.phase !== 'flight') continue;
+    if ((wasFlying && hitThrownAsteroid(runtime, rock)) || rock.ageSeconds > 8) {
       runtime.thrownAsteroids.splice(index, 1);
     }
   }
