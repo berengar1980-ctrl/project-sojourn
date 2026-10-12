@@ -425,7 +425,7 @@ export function moveCombatant(
   }
 
   const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
-  if (waypoint) direction = waypoint;
+  direction = waypoint ?? direction;
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
