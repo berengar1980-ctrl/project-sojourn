@@ -4,7 +4,10 @@ import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
-import { maybeLaunchTractorAsteroid, advanceThrownAsteroids } from './combat-tractor-asteroid-throw';
+import {
+  maybeLaunchTractorAsteroid,
+  advanceThrownAsteroids,
+} from './combat-tractor-asteroid-throw';
 import {
   createActionExchange,
   tickActionExchange,
@@ -108,7 +111,11 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       origin: { ...beam.origin },
       end: { ...beam.end },
     })),
-    thrownAsteroids: runtime.thrownAsteroids.map((rock) => ({ ...rock, position: { ...rock.position }, velocity: { ...rock.velocity } })),
+    thrownAsteroids: runtime.thrownAsteroids.map((rock) => ({
+      ...rock,
+      position: { ...rock.position },
+      velocity: { ...rock.velocity },
+    })),
     mines: runtime.mines.map((mine) => ({
       id: mine.id,
       owner: mine.owner,

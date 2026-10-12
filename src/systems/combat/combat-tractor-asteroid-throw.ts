@@ -25,7 +25,9 @@ export function maybeLaunchTractorAsteroid(
   const rock = (runtime.arena.asteroids ?? [])
     .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
     .filter((candidate) => distance(ship.position, candidate.position) <= reach)
-    .filter((candidate) => !runtime.thrownAsteroids.some((thrown) => thrown.asteroidId === candidate.id))
+    .filter(
+      (candidate) => !runtime.thrownAsteroids.some((thrown) => thrown.asteroidId === candidate.id)
+    )
     .sort((a, b) => distance(ship.position, a.position) - distance(ship.position, b.position))[0];
   if (!rock) return;
   const lead = distance(rock.position, target.position) / THROW_SPEED;
@@ -60,10 +62,9 @@ export function maybeLaunchTractorAsteroid(
 
 function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownAsteroid): boolean {
   const enemy = rock.owner === 'attacker' ? runtime.defender : runtime.attacker;
-  const hitRadius = rock.radius + Math.max(
-    enemy.setup.shieldGeometry?.radiusX ?? 30,
-    enemy.setup.shieldGeometry?.radiusY ?? 20
-  );
+  const hitRadius =
+    rock.radius +
+    Math.max(enemy.setup.shieldGeometry?.radiusX ?? 30, enemy.setup.shieldGeometry?.radiusY ?? 20);
   if (distance(rock.position, enemy.position) > hitRadius) return false;
   const shieldDamage = Math.min(enemy.shieldHp, 130);
   enemy.shieldHp -= shieldDamage;

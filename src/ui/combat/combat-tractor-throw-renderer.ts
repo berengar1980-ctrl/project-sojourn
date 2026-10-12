@@ -1,6 +1,9 @@
 import type { ThrownAsteroidSnapshot } from '../../systems/combat/strategic-combat-types';
 
-interface Point { readonly x: number; readonly y: number }
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
 
 export function drawTractorThrows(
   ctx: CanvasRenderingContext2D,

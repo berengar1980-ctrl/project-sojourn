@@ -14,21 +14,43 @@ function ship(x, shieldHp) {
     shieldHp,
     hullHp: 300,
     subsystems: { tractor: 100 },
-    setup: { name: 'Test ship', tractorRangeMeters: 500, shieldGeometry: { radiusX: 25, radiusY: 20 } },
+    setup: {
+      name: 'Test ship',
+      tractorRangeMeters: 500,
+      shieldGeometry: { radiusX: 25, radiusY: 20 },
+    },
     tactic: 'fight',
   };
 }
 const attacker = ship(200, 100);
 const defender = ship(650, 120);
-const asteroid = { id: 'throwable', kind: 'debris', radius: 12, position: { x: 250, y: 250 }, velocity: { x: 0, y: 0 } };
+const asteroid = {
+  id: 'throwable',
+  kind: 'debris',
+  radius: 12,
+  position: { x: 250, y: 250 },
+  velocity: { x: 0, y: 0 },
+};
 const arena = { asteroids: [asteroid], obstacles: [] };
-const runtime = { arena, attacker, defender, thrownAsteroids: [], elapsedSeconds: 0, combatLog: [], impactSerial: 0 };
+const runtime = {
+  arena,
+  attacker,
+  defender,
+  thrownAsteroids: [],
+  elapsedSeconds: 0,
+  combatLog: [],
+  impactSerial: 0,
+};
 maybeLaunchTractorAsteroid(runtime, 'attacker', attacker, defender);
 assert.equal(runtime.thrownAsteroids.length, 0, 'live own shield prohibits tractor throw');
 attacker.shieldHp = 0;
 maybeLaunchTractorAsteroid(runtime, 'attacker', attacker, defender);
 assert.equal(runtime.thrownAsteroids.length, 1, 'shield down enables nearby tractor throw');
-assert.equal(arena.asteroids.length, 0, 'launched asteroid removed from stationary collision world');
+assert.equal(
+  arena.asteroids.length,
+  0,
+  'launched asteroid removed from stationary collision world'
+);
 for (let i = 0; i < 20; i += 1) advanceThrownAsteroids(runtime, 0.08);
 assert.equal(runtime.thrownAsteroids.length, 0, 'asteroid hit or left field');
 assert(defender.shieldHp < 120, 'throw delivers substantial shield damage');

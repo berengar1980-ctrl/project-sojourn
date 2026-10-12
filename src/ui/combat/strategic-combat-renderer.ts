@@ -149,7 +149,12 @@ export class StrategicCombatRenderer {
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height)
     );
-    drawTractorThrows(this.context, this.model.thrownAsteroids, this.camera.scale(width, height, this.model.arena.width, this.model.arena.height), (point) => this.screen(point, width, height));
+    drawTractorThrows(
+      this.context,
+      this.model.thrownAsteroids,
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+      (point) => this.screen(point, width, height)
+    );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
     this.drawProjectiles(width, height);

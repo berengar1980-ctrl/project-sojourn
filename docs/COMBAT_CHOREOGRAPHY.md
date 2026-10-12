@@ -3,12 +3,12 @@
 A combat exchange is a dynamic flight commitment, not a scripted animation.
 Flight goals are subject to ship inertia, acceleration, heading, asteroid routing, weapon arcs and damage.
 
-| Initiator's action | Reactor's possible reactions | Tactical goal |
-| --- | --- | --- |
-| Frontal pass | Evade, counterfire, cross-pass | Approach along a revised enemy intercept; evade changes lane, counterfire holds facing, cross-pass crosses the attack line |
-| Broadside pass | Close gap, extend range, counter-pass | Bring port/starboard weapons into firing arc; reaction either closes range, opens range or answers with its own broadside |
-| Disengage fire | Pursue, hold fire, break contact | Gain separation under fire; defender may chase, hold position or also withdraw |
-| Flanking pass | Intercept, turn to face, accelerate clear | Approach enemy side; defender cuts projected path, rotates to meet threat or accelerates clear |
+| Initiator's action | Reactor's possible reactions              | Tactical goal                                                                                                              |
+| ------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Frontal pass       | Evade, counterfire, cross-pass            | Approach along a revised enemy intercept; evade changes lane, counterfire holds facing, cross-pass crosses the attack line |
+| Broadside pass     | Close gap, extend range, counter-pass     | Bring port/starboard weapons into firing arc; reaction either closes range, opens range or answers with its own broadside  |
+| Disengage fire     | Pursue, hold fire, break contact          | Gain separation under fire; defender may chase, hold position or also withdraw                                             |
+| Flanking pass      | Intercept, turn to face, accelerate clear | Approach enemy side; defender cuts projected path, rotates to meet threat or accelerates clear                             |
 
 ## Mines
 
