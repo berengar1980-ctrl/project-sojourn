@@ -336,6 +336,7 @@ export interface StrategicCombatRuntime {
   readonly beams: MutableBeam[];
   readonly mines: MutableMine[];
   elapsedSeconds: number;
+  lastRamImpactAt?: number;
   winner: StrategicCombatSide | null;
   boardingInitiator: StrategicCombatSide | null;
   grapple: CombatGrapple | null;
