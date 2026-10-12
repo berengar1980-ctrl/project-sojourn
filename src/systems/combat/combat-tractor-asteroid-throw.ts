@@ -82,6 +82,7 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     damage: shieldDamage + hullDamage,
     position: { ...rock.position },
     weaponKind: 'missile',
+    source: 'tractor_asteroid',
   };
   runtime.lastEvent = 'ASTEROIDENTREFFER · ' + Math.round(shieldDamage + hullDamage) + ' HP';
   runtime.combatLog.push({
