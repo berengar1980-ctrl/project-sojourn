@@ -9,8 +9,8 @@ export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
 ];
 
 export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
-  const width = 4200;
-  const height = 2600;
+  const width = kind === 'asteroid_field' ? 3000 : 4200;
+  const height = kind === 'asteroid_field' ? 1900 : 2600;
   if (kind === 'empty') return { width, height, obstacles: [], asteroids: [] };
   // Use the SAME source as the actual mining field, including rock shape IDs and rotation.
   const field = generateMiningSpace('duel', seed);
