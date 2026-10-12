@@ -2,6 +2,7 @@ import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-typ
 
 import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
+import { combatRouteHeading } from './combat-asteroid-routing';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
@@ -423,6 +424,8 @@ export function moveCombatant(
     targetSpeedFactor = evasion.speedFactor;
   }
 
+  const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
+  if (waypoint) direction = waypoint;
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
