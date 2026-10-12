@@ -2,7 +2,7 @@ import { describeCombatIntent } from './combat-intent-labels';
 import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
-import { runtimeCombatantEscaped } from './combat-escape-evaluation';
+import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
   createActionExchange,
@@ -58,26 +58,6 @@ export type { StrategicCombatObstacle } from './strategic-combat-types';
 export type { StrategicCombatArenaOptions } from './strategic-combat-types';
 export type { StrategicCombatService } from './strategic-combat-types';
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
-function resolveRuntimeWinner(runtime: StrategicCombatRuntime): void {
-  if (runtime.winner) return;
-  if (runtime.defender.hullHp <= 0) {
-    runtime.winner = 'attacker';
-    runtime.lastEvent = runtime.attacker.setup.name + ' gewinnt das Gefecht';
-    return;
-  }
-  if (runtime.attacker.hullHp <= 0) {
-    runtime.winner = 'defender';
-    runtime.lastEvent = runtime.defender.setup.name + ' gewinnt das Gefecht';
-    return;
-  }
-  if (runtimeCombatantEscaped(runtime.attacker, runtime.defender, runtime.arena)) {
-    runtime.winner = 'defender';
-    runtime.lastEvent = runtime.attacker.setup.name + ' entkommt aus dem Gefecht';
-  } else if (runtimeCombatantEscaped(runtime.defender, runtime.attacker, runtime.arena)) {
-    runtime.winner = 'attacker';
-    runtime.lastEvent = runtime.defender.setup.name + ' entkommt aus dem Gefecht';
-  }
-}
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
   return {
     attacker: {
