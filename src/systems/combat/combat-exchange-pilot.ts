@@ -58,7 +58,7 @@ export function planExchangeFlight(
   // Each action represents a distinct, committed flight trajectory.
   const attacking =
     action === 'frontal_pass'
-      ? offsetPoint(reactor.position, toward, 230, side * 120)
+      ? offsetPoint(reactor.position, toward, -110, 0)
       : action === 'broadside_pass'
         ? offsetPoint(reactor.position, toward, -60, side * 290)
         : action === 'disengage_fire'
@@ -89,8 +89,8 @@ export function planExchangeFlight(
   const lateral = { x: -toward.y, y: toward.x };
   const separation = 175;
   const attackingLane = {
-    x: attacking.x + lateral.x * separation,
-    y: attacking.y + lateral.y * separation,
+    x: attacking.x + lateral.x * (action === 'frontal_pass' ? 0 : separation),
+    y: attacking.y + lateral.y * (action === 'frontal_pass' ? 0 : separation),
   };
   const defenderLane = {
     x: defender.x - lateral.x * (reaction === 'intercept' ? 0 : separation),
