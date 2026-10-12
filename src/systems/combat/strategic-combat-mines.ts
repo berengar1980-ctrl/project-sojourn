@@ -29,6 +29,26 @@ function chooseRuntimeMine(
   );
 }
 
+/** A minefield ship waits until its present track intersects the enemy's
+ * predicted approach, so inventory creates a real route denial rather than
+ * an arbitrary trail of mines.
+ */
+export function usefulMineCorridor(source: MutableCombatant, target: MutableCombatant): boolean {
+  const dx = source.position.x - target.position.x;
+  const dy = source.position.y - target.position.y;
+  const distanceToShip = Math.hypot(dx, dy);
+  if (distanceToShip > 720 || distanceToShip < 135) return false;
+  const closing = (target.velocity.x - source.velocity.x) * dx +
+    (target.velocity.y - source.velocity.y) * dy;
+  if (closing < 0) return false;
+  const speed = Math.hypot(target.velocity.x, target.velocity.y);
+  if (speed < 10) return distanceToShip < 400;
+  const approach = Math.max(0, Math.min(3, (dx * target.velocity.x + dy * target.velocity.y) / (speed * speed)));
+  const closestX = target.position.x + target.velocity.x * approach;
+  const closestY = target.position.y + target.velocity.y * approach;
+  return Math.hypot(closestX - source.position.x, closestY - source.position.y) < 240;
+}
+
 export function maybeDropRuntimeMine(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -48,8 +68,12 @@ export function maybeDropRuntimeMine(
     (target.velocity.x - source.velocity.x) * (target.position.x - source.position.x) +
       (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) <
       0;
+  const zoneMine = source.tactic === 'minefield' && usefulMineCorridor(source, target);
+  const occupied = runtime.mines.some((mine) => mine.owner === side &&
+    distance(mine.position, source.position) < mine.definition.triggerRadiusMeters * 1.6);
   if (
-    (source.tactic !== 'minefield' && !defensiveMine && !tacticalMine) ||
+    (!zoneMine && !defensiveMine && !tacticalMine) ||
+    occupied ||
     source.mineStock.length === 0 ||
     source.mineCooldown > 0
   )
@@ -77,7 +101,7 @@ export function maybeDropRuntimeMine(
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: 'MINE_DEPLOY ' + definition.id,
+    detail: 'MINE_DEPLOY ' + definition.id + (zoneMine ? ' ZONE_DENIAL' : defensiveMine ? ' REAR_GUARD' : ' CLOSE_PASS'),
   });
 }
 
