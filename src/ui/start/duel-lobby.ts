@@ -323,6 +323,13 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       )
     );
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
+    // Analysis-only durability: preserve damage simulation but allow time to observe maneuvers.
+    if (scenario?.id === 'alpha') {
+      for (const setup of setups) {
+        setup.shieldHp *= 3;
+        setup.hullHp *= 2;
+      }
+    }
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
       setups[0]!,
