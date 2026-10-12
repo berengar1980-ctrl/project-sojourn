@@ -441,9 +441,7 @@ export function moveCombatant(
   }
 
   const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
-  direction = mineAvoidance
-    ? applyMineAvoidance(waypoint ?? direction, mineAvoidance)
-    : (waypoint ?? direction);
+  direction = applyMineAvoidance(waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
