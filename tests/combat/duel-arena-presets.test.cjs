@@ -35,6 +35,10 @@ assert(
   dense.width * dense.height < sparse.width * sparse.height * 0.6,
   'dense preset packs native asteroids into a smaller playable region'
 );
+const middleRocks = dense.obstacles.filter(
+  (rock) => rock.position.x > dense.width * 0.4 && rock.position.x < dense.width * 0.6
+);
+assert(middleRocks.length >= 10, 'dense asteroid field must fill the central corridor');
 assert.deepEqual(createDuelArena('asteroid_field', 1001), dense, 'seed makes layouts reproducible');
 for (const map of [sparse, dense]) {
   for (const asteroid of map.obstacles) {
