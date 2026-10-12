@@ -60,7 +60,7 @@ export function combatRouteHeading(
     return null;
   }
   ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  if (immediateThreat || ship.nextAsteroidRouteAt <= 0 || !ship.asteroidRoute?.length) {
+  if (ship.nextAsteroidRouteAt <= 0 || !ship.asteroidRoute?.length) {
     const plan = planPointRoute({
       start: ship.position,
       target,
@@ -87,6 +87,9 @@ export function combatRouteHeading(
   }
   const waypoint = route[0];
   if (!waypoint) return null;
+  if (pathBlocked(ship.position, waypoint, arena, clearance)) {
+    ship.nextAsteroidRouteAt = 0;
+  }
   const dx = waypoint.x - ship.position.x;
   const dy = waypoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);
