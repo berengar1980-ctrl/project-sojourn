@@ -207,6 +207,15 @@ export interface CombatImpactSnapshot {
   readonly weaponKind?: CombatProjectileKind | CombatBeamKind;
 }
 
+export interface ThrownAsteroidSnapshot {
+  readonly owner: StrategicCombatSide;
+  readonly asteroidId: string;
+  readonly position: CombatPoint;
+  readonly radius: number;
+  readonly velocity: CombatPoint;
+  readonly ageSeconds: number;
+}
+
 export interface StrategicCombatSnapshot {
   readonly attacker: StrategicCombatantSnapshot;
   readonly defender: StrategicCombatantSnapshot;
@@ -221,6 +230,7 @@ export interface StrategicCombatSnapshot {
   readonly projectiles: readonly CombatProjectileSnapshot[];
   readonly beams: readonly CombatBeamSnapshot[];
   readonly mines: readonly CombatMineSnapshot[];
+  readonly thrownAsteroids: readonly ThrownAsteroidSnapshot[];
   readonly lastImpact: CombatImpactSnapshot | null;
   readonly arena: {
     readonly width: number;
@@ -350,6 +360,15 @@ export interface ShieldSegmentHit {
   readonly t: number;
 }
 
+export interface MutableThrownAsteroid {
+  owner: StrategicCombatSide;
+  asteroidId: string;
+  position: { x: number; y: number };
+  radius: number;
+  velocity: CombatPoint;
+  ageSeconds: number;
+}
+
 export interface StrategicCombatRuntime {
   readonly arena: StrategicCombatArenaOptions;
   readonly attacker: MutableCombatant;
@@ -358,6 +377,7 @@ export interface StrategicCombatRuntime {
   readonly projectiles: MutableProjectile[];
   readonly beams: MutableBeam[];
   readonly mines: MutableMine[];
+  readonly thrownAsteroids: MutableThrownAsteroid[];
   elapsedSeconds: number;
   lastRamImpactAt?: number;
   winner: StrategicCombatSide | null;
