@@ -14,10 +14,16 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
   if (kind === 'empty') return { width, height, obstacles: [], asteroids: [] };
   // Use the SAME source as the actual mining field, including rock shape IDs and rotation.
   const field = generateMiningSpace('duel', seed);
+  const extra = kind === 'asteroid_field' ? generateMiningSpace('duel-dense', seed + 7919) : null;
   const factorX = width / field.width;
   const factorY = height / field.height;
   const scale = Math.min(factorX, factorY);
-  const asteroids = field.asteroids
+  // Both layers come directly from the campaign generator. The second layer
+  // adds solid rocks without doubling the small visual-only debris.
+  const sourceAsteroids = extra
+    ? [...field.asteroids, ...extra.asteroids.filter((asteroid) => asteroid.kind === 'resource')]
+    : field.asteroids;
+  const asteroids = sourceAsteroids
     .filter((asteroid) => kind === 'asteroid_field' || asteroid.kind === 'resource')
     .filter((asteroid, index) => kind === 'asteroid_field' || index % 5 === 0)
     .map((asteroid) => ({
@@ -43,7 +49,7 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
       [0.35, 0.65].every(
         (x) =>
           Math.hypot(asteroid.position.x - width * x, asteroid.position.y - height * 0.5) >
-          asteroid.radius + 340
+          asteroid.radius + (kind === 'asteroid_field' ? 145 : 340)
       )
     );
   return {
