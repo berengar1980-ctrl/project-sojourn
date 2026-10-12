@@ -15,7 +15,6 @@ const COOLDOWN_SECONDS = 16;
 const CAPTURE_SECONDS = 0.65;
 const CHARGE_SECONDS = 0.85;
 
-
 function selectThrowable(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -40,7 +39,6 @@ function selectThrowable(
       )
     : undefined;
   return { rock, mine };
-
 }
 
 function removeCapturedThrowable(
