@@ -13,12 +13,17 @@ function setup(owner = 'attacker', armedSeconds = 0) {
     velocity: { x: 0, y: 0 },
     shieldHp: shields,
     hullHp: 300,
+    shieldMaxHp: 120,
+    hullMaxHp: 300,
+    shieldImpacts: [],
+    headingRadians: 0,
     tactic: 'minefield',
-    subsystems: { tractor: 100 },
+    subsystems: { tractor: 100, engine: 100, maximum: 100 },
     setup: {
       name: 'Tester',
       tractorRangeMeters: 600,
-      shieldGeometry: { radiusX: 25, radiusY: 20 },
+      damageMultiplier: 1,
+      shieldGeometry: { centerOffset: { x: 0, y: 0 }, radiusX: 25, radiusY: 20, modifier: 1 },
     },
   });
   const attacker = ship(200, 0);
