@@ -654,3 +654,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log 2026-10-12: Traktor-Asteroidenwurf VFX
 
 **keine Statusänderung.** Die vorhandene Asteroidenwurf-Mechanik erhält getrennte Erfassungs-, Heranzieh-, Auflade-, Flug- und Einschlagsdarstellungen sowie einen Phasentest. Kein zusätzlicher Voidbound-Paritätsstatus wird beansprucht; visuelle Spielprüfung bleibt erforderlich.
+
+## Review-Log 2026-10-12: taktische Minen-Korridore
+
+**keine Statusänderung.** Vorhandene Minen erhalten eine Prüfung der gegnerischen Anflugbahn, Abwurf ohne redundante Nahcluster und seitliches Ausweichen vor erkannten Minen. Es werden keine Minenvorräte erfunden; die Kollision und Zündung bleiben bei den bestehenden Minentypen. Ein gezieltes Traktor-Hineindrücken in Minenzonen ist hier noch nicht umgesetzt. Voidbound-Paritätsstatus unverändert.
