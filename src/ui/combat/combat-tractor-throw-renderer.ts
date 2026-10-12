@@ -99,7 +99,18 @@ export function drawTractorThrows(
       ctx.arc(0, 0, radius * (1.6 + charge), 0, Math.PI * 2 * charge);
       ctx.stroke();
     }
-    drawRock(ctx, radius, rock.ageSeconds);
+    if (rock.mineDefinition) {
+      ctx.rotate(rock.ageSeconds * 5);
+      ctx.fillStyle = '#c7b9a2';
+      ctx.strokeStyle = '#ee987a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      drawRock(ctx, radius, rock.ageSeconds);
+    }
     ctx.restore();
   }
 }
