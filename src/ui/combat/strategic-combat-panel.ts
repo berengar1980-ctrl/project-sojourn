@@ -106,6 +106,31 @@ export function createStrategicCombatPanel(
 
   grappleButton?.addEventListener('click', () => options.combat.fireGrapple('attacker'));
   const renderer = new StrategicCombatRenderer(canvas, options.combat.getSnapshot());
+  let previousDrag: { x: number; y: number } | null = null;
+  const pointerDown = (event: PointerEvent): void => {
+    if (event.button !== 0) return;
+    previousDrag = { x: event.clientX, y: event.clientY };
+    canvas.setPointerCapture(event.pointerId);
+  };
+  const pointerMove = (event: PointerEvent): void => {
+    if (!previousDrag) return;
+    renderer.pan(event.clientX - previousDrag.x, event.clientY - previousDrag.y);
+    previousDrag = { x: event.clientX, y: event.clientY };
+  };
+  const pointerUp = (event: PointerEvent): void => {
+    previousDrag = null;
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  };
+  const wheel = (event: WheelEvent): void => {
+    event.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    renderer.zoomAt(event.deltaY < 0 ? 1.12 : 1 / 1.12, event.clientX - rect.left, event.clientY - rect.top);
+  };
+  canvas.addEventListener('pointerdown', pointerDown);
+  canvas.addEventListener('pointermove', pointerMove);
+  canvas.addEventListener('pointerup', pointerUp);
+  canvas.addEventListener('pointercancel', pointerUp);
+  canvas.addEventListener('wheel', wheel, { passive: false });
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
@@ -170,6 +195,11 @@ export function createStrategicCombatPanel(
     update: render,
     destroy() {
       resizeObserver.disconnect();
+      canvas.removeEventListener('pointerdown', pointerDown);
+      canvas.removeEventListener('pointermove', pointerMove);
+      canvas.removeEventListener('pointerup', pointerUp);
+      canvas.removeEventListener('pointercancel', pointerUp);
+      canvas.removeEventListener('wheel', wheel);
       shell.remove();
     },
   };
