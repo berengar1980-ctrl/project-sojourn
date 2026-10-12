@@ -232,5 +232,10 @@ boostShip.boostSeconds = 2.7;
 pilot.updateExchangeBoost(boostShip, 1);
 const lastThirdGain = boostShip.boostSeconds - 2.7;
 assert(firstThirdGain < middleThirdGain && middleThirdGain < lastThirdGain, 'recharge increases in each third');
+boostShip.boostSeconds = 0;
+pilot.stopExchangeBoost(boostShip);
+pilot.updateExchangeBoost(boostShip, 14);
+assert(Math.abs(boostShip.boostSeconds - 3.5) < 0.0001, 'empty boost replenishes in 14 seconds');
+
 
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
