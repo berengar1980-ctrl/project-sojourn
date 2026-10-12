@@ -15,16 +15,13 @@ const COOLDOWN_SECONDS = 16;
 const CAPTURE_SECONDS = 0.65;
 const CHARGE_SECONDS = 0.85;
 
-export function maybeLaunchTractorAsteroid(
+
+function selectThrowable(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
   ship: MutableCombatant,
-  target: MutableCombatant
-): void {
-  if (ship.shieldHp > 0 || ship.subsystems.tractor <= 0 || ship.tactic === 'flee') return;
-  if ((ship.tractorThrowCooldown ?? 0) > 0 || target.hullHp <= 0) return;
-  const reach = Math.min(700, ship.setup.tractorRangeMeters ?? 0);
-  if (reach <= 0 || distance(ship.position, target.position) > 1200) return;
+  reach: number
+): { rock?: CombatVisualAsteroid; mine?: StrategicCombatRuntime['mines'][number] } {
   const rock = (runtime.arena.asteroids ?? [])
     .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
     .filter((candidate) => distance(ship.position, candidate.position) <= reach)
@@ -42,6 +39,37 @@ export function maybeLaunchTractorAsteroid(
           distance(ship.position, candidate.position) <= reach
       )
     : undefined;
+  return { rock, mine };
+
+}
+
+function removeCapturedThrowable(
+  runtime: StrategicCombatRuntime,
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
+  if (rock) {
+    const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
+    const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
+    asteroids?.splice(asteroids.indexOf(rock), 1);
+    const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
+    if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
+  } else if (mine) {
+    runtime.mines.splice(runtime.mines.indexOf(mine), 1);
+  }
+}
+
+export function maybeLaunchTractorAsteroid(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  target: MutableCombatant
+): void {
+  if (ship.shieldHp > 0 || ship.subsystems.tractor <= 0 || ship.tactic === 'flee') return;
+  if ((ship.tractorThrowCooldown ?? 0) > 0 || target.hullHp <= 0) return;
+  const reach = Math.min(700, ship.setup.tractorRangeMeters ?? 0);
+  if (reach <= 0 || distance(ship.position, target.position) > 1200) return;
+  const { rock, mine } = selectThrowable(runtime, side, ship, reach);
   if (!rock && !mine) return;
   const position = rock?.position ?? mine!.position;
   const lead = distance(position, target.position) / THROW_SPEED;
@@ -51,15 +79,7 @@ export function maybeLaunchTractorAsteroid(
   );
   // Remove the captured rock from normal asteroid physics; it now has one
   // authoritative projectile position instead of a duplicate stationary body.
-  const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
-  const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
-  if (rock) {
-    asteroids?.splice(asteroids.indexOf(rock), 1);
-    const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
-    if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
-  } else {
-    runtime.mines.splice(runtime.mines.indexOf(mine!), 1);
-  }
+  removeCapturedThrowable(runtime, rock, mine);
   runtime.thrownAsteroids.push({
     owner: side,
     asteroidId: rock?.id ?? 'mine-' + mine!.id,
