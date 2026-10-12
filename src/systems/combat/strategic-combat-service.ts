@@ -1,4 +1,5 @@
 import { describeCombatIntent } from './combat-intent-labels';
+import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { runtimeCombatantEscaped } from './combat-escape-evaluation';
 import { pulseCombatTractor } from './combat-tractor-pulse';
@@ -289,6 +290,7 @@ function tickStrategicCombat(
   }
   const dt = Math.min(deltaSeconds, 0.08);
   runtime.elapsedSeconds += dt;
+  advanceCombatAsteroids(runtime.arena, dt);
   if (runtime.grapple) {
     const initiator = runtimeCombatant(runtime, runtime.grapple.owner);
     const victim = runtimeEnemy(runtime, runtime.grapple.owner);
