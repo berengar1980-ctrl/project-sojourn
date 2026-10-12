@@ -12,6 +12,10 @@ const empty = createDuelArena('empty', 1001);
 const sparse = createDuelArena('scattered', 1001);
 const dense = createDuelArena('asteroid_field', 1001);
 assert.equal(empty.obstacles.length, 0, 'empty map stays clear');
+assert.equal(empty.asteroids.length, 0, 'empty map contains no drawn asteroids');
+assert(dense.asteroids.some((rock) => rock.kind === 'debris'), 'dense field includes native debris');
+assert(dense.asteroids.some((rock) => rock.kind === 'resource'), 'dense field includes native mining rocks');
+assert(dense.asteroids.length > dense.obstacles.length, 'small debris is visual only');
 assert(sparse.obstacles.length > 5, 'scattered map contains obstacles');
 assert(dense.obstacles.length > sparse.obstacles.length, 'dense map has more asteroids');
 assert.deepEqual(createDuelArena('asteroid_field', 1001), dense, 'seed makes layouts reproducible');
@@ -29,6 +33,10 @@ for (const map of [sparse, dense]) {
     }
   }
 }
+const arenaSource = fs.readFileSync(path.join(root, 'src/systems/combat/duel-arena-presets.ts'), 'utf8');
+const asteroidRenderer = fs.readFileSync(path.join(root, 'src/ui/combat/combat-asteroid-renderer.ts'), 'utf8');
+assert(arenaSource.includes('generateMiningSpace'), 'reuse mining field generator');
+assert(asteroidRenderer.includes('ProceduralSpaceBodyRenderer'), 'reuse real asteroid renderer');
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
 assert(lobby.includes('mapSelect.value as DuelMapKind'), 'selected map reaches simulation');
 console.log('PASS three selectable deterministic PvP combat maps');
