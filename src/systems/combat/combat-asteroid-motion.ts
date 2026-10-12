@@ -9,7 +9,7 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
       mass: Math.max(1, Math.PI * asteroid.radius ** 2),
       centerOfMassOffset: { x: 0, y: 0 },
       velocity: asteroid.velocity,
-      angularVelocity: asteroid.angularVelocity,
+      angularVelocity: asteroid.angularVelocity ?? 0,
       momentOfInertia: Math.max(1, 0.5 * Math.PI * asteroid.radius ** 4),
     };
     return {
@@ -18,11 +18,11 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
       routeBlocking: asteroid.kind === 'resource',
       position: asteroid.position,
       radius: asteroid.radius,
-      rotation: asteroid.rotation,
+      rotation: asteroid.rotation ?? 0,
       physics,
       deposits: [],
-      scanLevel: 'none',
-    } as LocalAsteroid;
+      scanLevel: 'unscanned',
+    } satisfies LocalAsteroid;
   });
 }
 
