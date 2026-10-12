@@ -147,6 +147,7 @@ export interface StrategicCombatantSnapshot {
   readonly boostSeconds: number;
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
+  readonly combatIntent?: string;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
   readonly nextStrategyReviewAt: number;
@@ -266,6 +267,7 @@ export interface MutableCombatant {
   angularThrust: number;
   boostSeconds?: number;
   boostActive?: boolean;
+  combatIntent?: string;
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
