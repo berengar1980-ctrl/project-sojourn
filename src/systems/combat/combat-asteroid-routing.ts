@@ -38,12 +38,13 @@ export function combatRouteHeading(
     ship.asteroidRoute = plan.route.slice(1).map((point) => ({ ...point }));
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
-  while (ship.asteroidRoute.length > 1) {
-    const waypoint = ship.asteroidRoute[0]!;
+  const route = ship.asteroidRoute ?? [];
+  while (route.length > 1) {
+    const waypoint = route[0]!;
     if (Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) > REACHED_WAYPOINT_METERS) break;
-    ship.asteroidRoute.shift();
+    route.shift();
   }
-  const waypoint = ship.asteroidRoute[0];
+  const waypoint = route[0];
   if (!waypoint) return null;
   const dx = waypoint.x - ship.position.x;
   const dy = waypoint.y - ship.position.y;
