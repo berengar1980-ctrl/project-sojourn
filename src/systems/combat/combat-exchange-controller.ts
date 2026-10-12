@@ -1,4 +1,5 @@
 import type { StrategicCombatRuntime } from './strategic-combat-types';
+import { combatRouteHeading } from './combat-asteroid-routing';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -80,6 +81,9 @@ export function tickActionExchange(
       next.reaction,
       next.quality
     );
+    // Preplan both routes at the moment the exchange is chosen, before any thrust.
+    combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
+    combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
     runtime.lastEvent = next.action + ' / ' + next.reaction;
