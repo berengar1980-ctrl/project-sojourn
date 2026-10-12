@@ -157,6 +157,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     angularThrust: combatant.angularThrust,
     boostSeconds: combatant.boostSeconds ?? 3.5,
     boostActive: combatant.boostActive === true,
+    combatIntent: combatant.combatIntent,
     boostCooldownSeconds: combatant.boostCooldownSeconds ?? 0,
     tactic: combatant.tactic,
     strategy: combatant.strategy ? { ...combatant.strategy } : null,
