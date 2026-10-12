@@ -43,6 +43,29 @@ function interceptPoint(chaser: MutableCombatant, target: MutableCombatant): Com
   };
 }
 
+function reactionGoal(initiator: MutableCombatant, reactor: MutableCombatant, toward: CombatPoint, side: number, reaction: CombatReaction): CombatPoint {
+  return (
+    reaction === 'evade'
+      ? offsetPoint(reactor.position, toward, -80, -330 * side)
+      : reaction === 'accelerate_clear'
+        ? offsetPoint(reactor.position, toward, 300, -230 * side)
+        : reaction === 'extend_range'
+          ? offsetPoint(reactor.position, toward, 390, 0)
+          : reaction === 'break_contact'
+            ? offsetPoint(reactor.position, toward, 390, 180 * side)
+            : reaction === 'close_gap'
+              ? offsetPoint(reactor.position, toward, -350, 0)
+              : reaction === 'intercept'
+                ? interceptPoint(reactor, initiator)
+                : reaction === 'pursue'
+                  ? offsetPoint(initiator.position, toward, -140, 0)
+                  : reaction === 'cross_pass'
+                    ? offsetPoint(initiator.position, toward, -170, -240 * side)
+                    : reaction === 'counter_pass'
+                      ? offsetPoint(initiator.position, toward, 0, 250 * side)
+                      : { ...reactor.position };
+}
+
 export function planExchangeFlight(
   initiator: MutableCombatant,
   reactor: MutableCombatant,
@@ -64,7 +87,7 @@ export function planExchangeFlight(
         : action === 'disengage_fire'
           ? offsetPoint(initiator.position, toward, -460, side * 60)
           : offsetPoint(reactor.position, toward, 170, side * 460);
-  const defender =
+  const defender = reactionGoal(initiator, reactor, toward, side, reaction);
     reaction === 'evade'
       ? offsetPoint(reactor.position, toward, -80, -330 * side)
       : reaction === 'accelerate_clear'
