@@ -4,6 +4,7 @@ import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
+import { maybeThrowTractorMine } from './combat-tractor-mine-throw';
 import {
   maybeLaunchTractorAsteroid,
   advanceThrownAsteroids,
@@ -256,6 +257,8 @@ function reviewShieldBreakthroughs(
   }
 }
 function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number): void {
+  maybeThrowTractorMine(runtime, 'attacker', runtime.attacker, runtime.defender);
+  maybeThrowTractorMine(runtime, 'defender', runtime.defender, runtime.attacker);
   maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
   maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
   advanceThrownAsteroids(runtime, dt);
