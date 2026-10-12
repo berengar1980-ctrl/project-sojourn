@@ -145,43 +145,17 @@ export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
     (energy >= third * 2 ? (BOOST_DURATION_SECONDS - energy) * (3.5 / third) : 0);
 }
 
-export function pilotExchangeShip(
+
+function accelerateExchangeShip(
   ship: MutableCombatant,
-  role: 'initiator' | 'reactor',
-  plan: ExchangeFlightPlan,
+  goal: CombatPoint,
+  distance: number,
+  boosting: boolean,
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
-  updateExchangeBoost(ship, dt);
-  const boosting = ship.boostActive === true;
-  if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
-  else ship.boostRampSeconds = 0;
-  const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
-  const goal =
-    ship.tactic === 'flee' && arena.exitPoint
-      ? arena.exitPoint
-      : {
-          x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
-          y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
-        };
-  const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
   const dy = goal.y - ship.position.y;
-  const distance = Math.hypot(dx, dy);
-  // Accelerate on the navigation heading first. Only rotate into a firing
-  // posture after the ship has established real forward momentum.
-  const navigationHeading = distance < 95 ? ship.headingRadians : Math.atan2(dy, dx);
-  const forwardVelocity =
-    ship.velocity.x * Math.cos(ship.headingRadians) +
-    ship.velocity.y * Math.sin(ship.headingRadians);
-  const facing =
-    distance < 90 || (forwardVelocity >= 45 && distance < 260) ? weaponFacing : navigationHeading;
-  const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
-  const error = wrapAngle(facing - ship.headingRadians);
-  const turn = clamp(error, -turnRate * dt, turnRate * dt);
-  ship.headingRadians = wrapAngle(ship.headingRadians + turn);
-  ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
-  ship.angularThrust = clamp(error / turnRate, -1, 1);
   // Keep the established flight vector after crossing a waypoint;
   // chasing a point behind the ship would cause a stationary spin.
   const direction =
@@ -224,4 +198,44 @@ export function pilotExchangeShip(
   if (ship.position.x !== nextX) ship.velocity.x = 0;
   if (ship.position.y !== nextY) ship.velocity.y = 0;
   ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
+}
+
+export function pilotExchangeShip(
+  ship: MutableCombatant,
+  role: 'initiator' | 'reactor',
+  plan: ExchangeFlightPlan,
+  arena: StrategicCombatArenaOptions,
+  dt: number
+): void {
+  updateExchangeBoost(ship, dt);
+  const boosting = ship.boostActive === true;
+  if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
+  else ship.boostRampSeconds = 0;
+  const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
+  const goal =
+    ship.tactic === 'flee' && arena.exitPoint
+      ? arena.exitPoint
+      : {
+          x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+          y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+        };
+  const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
+  const dx = goal.x - ship.position.x;
+  const dy = goal.y - ship.position.y;
+  const distance = Math.hypot(dx, dy);
+  // Accelerate on the navigation heading first. Only rotate into a firing
+  // posture after the ship has established real forward momentum.
+  const navigationHeading = distance < 95 ? ship.headingRadians : Math.atan2(dy, dx);
+  const forwardVelocity =
+    ship.velocity.x * Math.cos(ship.headingRadians) +
+    ship.velocity.y * Math.sin(ship.headingRadians);
+  const facing =
+    distance < 90 || (forwardVelocity >= 45 && distance < 260) ? weaponFacing : navigationHeading;
+  const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
+  const error = wrapAngle(facing - ship.headingRadians);
+  const turn = clamp(error, -turnRate * dt, turnRate * dt);
+  ship.headingRadians = wrapAngle(ship.headingRadians + turn);
+  ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
+  ship.angularThrust = clamp(error / turnRate, -1, 1);
+  accelerateExchangeShip(ship, goal, distance, boosting, arena, dt);
 }
