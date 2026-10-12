@@ -123,28 +123,39 @@ export function mineDetection(
   }).level;
 }
 
-function avoidDetectedMine(
+/** Pick a lateral escape corridor from a detected mine, not a radial reversal.
+ * Prediction uses closest approach along current drift and the planned heading.
+ */
+export function avoidDetectedMine(
   combatant: MutableCombatant,
   side: StrategicCombatSide,
-  mines: readonly MutableMine[]
+  mines: readonly MutableMine[],
+  desired: CombatPoint
 ): CombatPoint | null {
   if (!combatant.setup.aiControlled) return null;
+  const heading = normalize(
+    combatant.velocity.x + desired.x * 65,
+    combatant.velocity.y + desired.y * 65
+  );
   const threat = mines
     .filter((mine) => mine.owner !== side)
-    .map((mine) => ({
-      mine,
-      level: mineDetection(mine.definition, combatant, mine.position),
-      range: distance(combatant.position, mine.position),
-    }))
-    .filter(
-      (entry) =>
-        entry.level !== 'hidden' && entry.range <= entry.mine.definition.triggerRadiusMeters * 2.4
-    )
-    .sort((a, b) => a.range - b.range)[0];
+    .filter((mine) => mineDetection(mine.definition, combatant, mine.position) !== 'hidden')
+    .map((mine) => {
+      const dx = mine.position.x - combatant.position.x;
+      const dy = mine.position.y - combatant.position.y;
+      const along = dx * heading.x + dy * heading.y;
+      const lateral = dx * -heading.y + dy * heading.x;
+      const safe = mine.definition.triggerRadiusMeters + 75;
+      return { mine, along, lateral, safe };
+    })
+    .filter((entry) => entry.along >= -40 && entry.along < 380 &&
+      Math.abs(entry.lateral) < entry.safe)
+    .sort((a, b) => a.along - b.along)[0];
   if (!threat) return null;
+  const evadeSide = threat.lateral >= 0 ? -1 : 1;
   return normalize(
-    combatant.position.x - threat.mine.position.x,
-    combatant.position.y - threat.mine.position.y
+    heading.x * 0.45 - heading.y * evadeSide,
+    heading.y * 0.45 + heading.x * evadeSide
   );
 }
 
@@ -422,7 +433,7 @@ export function moveCombatant(
     perpendicular
   );
 
-  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
+  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
   direction = applyMineAvoidance(direction, mineAvoidance);
   const evasion = predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
@@ -431,7 +442,7 @@ export function moveCombatant(
   }
 
   const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
-  direction = waypoint ?? direction;
+  direction = mineAvoidance ? applyMineAvoidance(waypoint ?? direction, mineAvoidance) : (waypoint ?? direction);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
