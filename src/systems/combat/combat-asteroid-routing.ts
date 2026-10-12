@@ -6,7 +6,7 @@ import type {
   StrategicCombatArenaOptions,
 } from './strategic-combat-types';
 
-const ROUTE_REFRESH_SECONDS = 2;
+const ROUTE_REFRESH_SECONDS = 0.75;
 const REACHED_WAYPOINT_METERS = 100;
 
 function routeObstacles(arena: StrategicCombatArenaOptions): LocalAsteroid[] {
@@ -43,11 +43,11 @@ export function combatRouteHeading(
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
   const route = ship.asteroidRoute ?? [];
-  while (route.length > 1) {
+  while (route.length > 0) {
     const waypoint = route[0]!;
     if (
       Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) >
-      REACHED_WAYPOINT_METERS
+      Math.max(32, Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5))
     )
       break;
     route.shift();
