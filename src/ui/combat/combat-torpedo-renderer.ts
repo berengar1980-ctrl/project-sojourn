@@ -1,23 +1,23 @@
-/** Narrow, finless torpedo silhouette; the nose points along the actual velocity. */
+/** Compact dark-grey torpedo, with a restrained exhaust and no fins. */
 export function drawCombatTorpedo(context: CanvasRenderingContext2D): void {
   context.save();
-  context.shadowColor = 'rgba(103, 184, 228, 0.55)';
-  context.shadowBlur = 3;
-  context.fillStyle = '#899ba8';
+  context.fillStyle = '#343a40';
+  context.strokeStyle = '#77818a';
+  context.lineWidth = 0.7;
   context.beginPath();
-  context.moveTo(13, 0);
-  context.lineTo(8, -1.1);
-  context.lineTo(-10, -1.1);
-  context.lineTo(-12, -0.65);
-  context.lineTo(-12, 0.65);
-  context.lineTo(-10, 1.1);
-  context.lineTo(8, 1.1);
+  context.moveTo(8, 0);
+  context.lineTo(4.5, -1.65);
+  context.lineTo(-6.5, -1.65);
+  context.lineTo(-8, -1);
+  context.lineTo(-8, 1);
+  context.lineTo(-6.5, 1.65);
+  context.lineTo(4.5, 1.65);
   context.closePath();
   context.fill();
-  context.shadowBlur = 0;
-  context.fillStyle = '#d8e7ed';
-  context.fillRect(-5, -0.6, 9, 1.2);
-  context.fillStyle = '#f2c28a';
-  context.fillRect(-15, -0.55, 3, 1.1);
+  context.stroke();
+  context.fillStyle = '#555e67';
+  context.fillRect(-3.5, -0.85, 5.5, 1.7);
+  context.fillStyle = 'rgba(122, 170, 191, .8)';
+  context.fillRect(-10, -0.65, 2, 1.3);
   context.restore();
 }
