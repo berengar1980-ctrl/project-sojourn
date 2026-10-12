@@ -1,3 +1,4 @@
+import type { AsteroidPhysics } from '../../core/local-space-types';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import type { ShieldImpactEffect } from '../../core/shield-types';
@@ -234,6 +235,7 @@ export interface CombatVisualAsteroid {
   readonly position: { x: number; y: number };
   readonly velocity: CombatPoint;
   readonly angularVelocity: number;
+  readonly physics?: AsteroidPhysics;
   readonly radius: number;
   rotation: number;
   readonly kind: 'resource' | 'debris';
