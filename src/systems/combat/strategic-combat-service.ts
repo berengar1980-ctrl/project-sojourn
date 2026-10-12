@@ -245,7 +245,13 @@ function recordCombatMotion(runtime: StrategicCombatRuntime): void {
           range +
           'm · Tempo ' +
           Math.round(ship.speed) +
-          'm/s · Schild ' +
+          'm/s · Bug ' +
+          Math.round((ship.headingRadians * 180) / Math.PI) +
+          '° · Flugrichtung ' +
+          Math.round((Math.atan2(ship.velocity.y, ship.velocity.x) * 180) / Math.PI) +
+          '° · Boost ' +
+          (ship.boostSeconds ?? 0).toFixed(1) +
+          's · Schild ' +
           Math.round(ship.shieldHp) +
           ' · Hülle ' +
           Math.round(ship.hullHp) +
