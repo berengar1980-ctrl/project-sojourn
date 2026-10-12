@@ -201,4 +201,30 @@ assert.deepEqual(
   'railgun reload must never trigger turns or change a committed flight path'
 );
 
+
+const boostShip = ship(500, 500);
+assert.equal(pilot.activateExchangeBoost(boostShip), true, 'boost activates once');
+assert.equal(pilot.activateExchangeBoost(boostShip), false, 'boost cannot be stacked');
+const boostOrder = {
+  initiatorGoal: { x: 1700, y: 500 },
+  reactorGoal: { x: 400, y: 500 },
+  initiatorHeading: 0,
+  reactorHeading: 0,
+};
+const normalShip = ship(500, 500);
+for (let i = 0; i < 20; i += 1) {
+  pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
+  pilot.pilotExchangeShip(normalShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
+}
+assert(boostShip.speed > normalShip.speed, 'boost materially increases speed');
+for (let i = 0; i < 30; i += 1) {
+  pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
+}
+assert.equal(boostShip.boostSeconds, 0, 'boost expires after 3.5 seconds');
+assert.equal(pilot.activateExchangeBoost(boostShip), false, 'recovery period blocks reactivation');
+for (let i = 0; i < 150; i += 1) {
+  pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
+}
+assert.equal(pilot.activateExchangeBoost(boostShip), true, 'boost recharges after cooldown');
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
