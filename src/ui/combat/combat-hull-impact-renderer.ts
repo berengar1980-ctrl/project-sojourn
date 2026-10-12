@@ -8,8 +8,9 @@ function impactRadius(impact: Impact, progress: number): number {
   if (impact.layer === 'obstacle') {
     return (explosive ? 12 : rail ? 5 : 4) + progress * (explosive ? 39 : rail ? 19 : 12);
   }
-  return (explosive ? 12 : impact.weaponKind === 'plasma' ? 9 : 7) +
-    progress * (explosive ? 42 : 29);
+  return (
+    (explosive ? 12 : impact.weaponKind === 'plasma' ? 9 : 7) + progress * (explosive ? 42 : 29)
+  );
 }
 
 function impactFill(impact: Impact, alpha: number): string {

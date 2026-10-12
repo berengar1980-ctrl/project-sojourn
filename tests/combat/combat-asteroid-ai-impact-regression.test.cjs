@@ -13,13 +13,28 @@ const physics = read('src/systems/combat/combat-asteroid-contacts.ts');
 const renderer = read('src/ui/combat/combat-hull-impact-renderer.ts');
 const weapons = read('src/systems/combat/strategic-combat-weapons.ts');
 
-assert(controller.includes('combatRouteHeading(initiator'), 'plan attacker route before exchange flight');
-assert(controller.includes('combatRouteHeading(opponent'), 'plan defender route before exchange flight');
+assert(
+  controller.includes('combatRouteHeading(initiator'),
+  'plan attacker route before exchange flight'
+);
+assert(
+  controller.includes('combatRouteHeading(opponent'),
+  'plan defender route before exchange flight'
+);
 assert(pilot.includes('combatRouteHeading(ship, goal'), 'pilot follows current route');
 assert(routing.includes('pathBlocked('), 'direct line checks asteroid clearance');
 assert(physics.includes('resistance'), 'large rocks resist ship-contact displacement');
 assert(renderer.includes("impact.layer === 'obstacle'"), 'obstacle impacts have a visual effect');
-assert(renderer.includes("impact.weaponKind === 'missile'"), 'missile impact has specific visual treatment');
-assert(renderer.includes("impact.weaponKind === 'rail'"), 'rail impact has specific visual treatment');
-assert(weapons.includes("noteRuntimeImpact(runtime"), 'weapon collisions emit impact notifications');
+assert(
+  renderer.includes("impact.weaponKind === 'missile'"),
+  'missile impact has specific visual treatment'
+);
+assert(
+  renderer.includes("impact.weaponKind === 'rail'"),
+  'rail impact has specific visual treatment'
+);
+assert(
+  weapons.includes('noteRuntimeImpact(runtime'),
+  'weapon collisions emit impact notifications'
+);
 console.log('PASS asteroid route and impact integration guards');

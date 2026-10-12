@@ -11,7 +11,10 @@ export function resolveCombatAsteroidContacts(
   if (!arena.asteroids?.length) return;
   const geometry = ship.setup.shieldGeometry;
   const native = nativeCombatAsteroids(arena);
-  const previous = native.map((body) => ({ ...body.position, velocity: { ...body.physics.velocity } }));
+  const previous = native.map((body) => ({
+    ...body.position,
+    velocity: { ...body.physics.velocity },
+  }));
   const hits = resolveShieldCollisions(
     {
       position: ship.position,

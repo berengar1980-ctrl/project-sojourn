@@ -31,9 +31,13 @@ function pathBlocked(
   const dy = target.y - start.y;
   const lengthSquared = Math.max(1, dx * dx + dy * dy);
   return (arena.obstacles ?? []).some((rock) => {
-    const t = Math.max(0, Math.min(1,
-      ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared
-    ));
+    const t = Math.max(
+      0,
+      Math.min(
+        1,
+        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared
+      )
+    );
     const x = start.x + t * dx - rock.position.x;
     const y = start.y + t * dy - rock.position.y;
     return x * x + y * y < (rock.radius + clearance) ** 2;
@@ -71,7 +75,10 @@ export function combatRouteHeading(
     const waypoint = route[0]!;
     if (
       Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) >
-      Math.max(32, Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5))
+      Math.max(
+        32,
+        Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
+      )
     )
       break;
     route.shift();
