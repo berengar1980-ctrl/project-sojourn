@@ -33,6 +33,7 @@ import {
   fireControlReady,
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
+import { hasClearCombatShot } from './combat-line-of-sight';
 import {
   effectiveTargetSubsystem,
   engineShotAvailable,
@@ -250,6 +251,7 @@ export function advanceRuntimeWeapons(
         distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
         canEngagePreferredSubsystem(source, target) &&
         weaponInArc(source, target.position, index, weapon.weapon) &&
+        hasClearCombatShot(source, target, index, runtime.arena) &&
         !(
           weapon.weapon.family === 'railgun' &&
           shouldReserveRailgun(source, target, weapon.weapon.rangeMeters)

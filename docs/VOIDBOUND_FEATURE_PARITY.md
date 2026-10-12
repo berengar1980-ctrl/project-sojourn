@@ -618,3 +618,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 - `docs/ECONOMY_PORT_PLAN.md`
 - Runtime unter `src/`
 - Regressionstests unter `tests/`
+
+## Review-Log (2026-10-12): PvP Asteroiden, Kamera und Navigation
+
+**keine Statusänderung.** Der PvP-Kampf nutzt die Routenplanung aus `local-space-navigation.ts`, ergänzt elliptische Schildkontakte mit Treffer-Effekt und unterstützt Maus-Zoom sowie Kameraverschiebung. Die vollständige Gleichheit der dynamischen Asteroidenphysik mit der Kampagne ist weiterhin durch Laufzeittests zu verifizieren.

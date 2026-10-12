@@ -1,0 +1,17 @@
+'use strict';
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+const root = path.resolve(__dirname, '../..');
+const { CombatCamera } = loadStandaloneTypeScriptModule(root, 'src/ui/combat/combat-camera.ts');
+const camera = new CombatCamera();
+const center = camera.project({ x: 2100, y: 1300 }, 1600, 900, 4200, 2600);
+assert.equal(center.x, 800);
+assert.equal(center.y, 450);
+camera.zoomAt(2, 800, 450, 1600, 900);
+assert.equal(camera.zoom, 2);
+assert.equal(camera.project({ x: 2100, y: 1300 }, 1600, 900, 4200, 2600).x, 800);
+camera.pan(110, -50);
+assert.equal(camera.project({ x: 2100, y: 1300 }, 1600, 900, 4200, 2600).x, 910);
+assert.equal(camera.project({ x: 2100, y: 1300 }, 1600, 900, 4200, 2600).y, 400);
+console.log('PASS combat viewport zoom and mouse pan');

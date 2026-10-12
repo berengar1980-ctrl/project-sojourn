@@ -69,9 +69,50 @@ function attachCombatLogExport(shell: HTMLElement, options: StrategicCombatPanel
     });
 }
 
-export function createStrategicCombatPanel(
-  options: StrategicCombatPanelOptions
-): StrategicCombatPanel {
+function bindCombatCamera(
+  canvas: HTMLCanvasElement,
+  renderer: StrategicCombatRenderer
+): () => void {
+  let previousDrag: { x: number; y: number } | null = null;
+  const pointerDown = (pointerEvent: PointerEvent): void => {
+    if (pointerEvent.button !== 0) return;
+    previousDrag = { x: pointerEvent.clientX, y: pointerEvent.clientY };
+    canvas.setPointerCapture(pointerEvent.pointerId);
+  };
+  const pointerMove = (pointerEvent: PointerEvent): void => {
+    if (!previousDrag) return;
+    renderer.pan(pointerEvent.clientX - previousDrag.x, pointerEvent.clientY - previousDrag.y);
+    previousDrag = { x: pointerEvent.clientX, y: pointerEvent.clientY };
+  };
+  const pointerUp = (pointerEvent: PointerEvent): void => {
+    previousDrag = null;
+    if (canvas.hasPointerCapture(pointerEvent.pointerId))
+      canvas.releasePointerCapture(pointerEvent.pointerId);
+  };
+  const wheel = (wheelEvent: WheelEvent): void => {
+    wheelEvent.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    renderer.zoomAt(
+      wheelEvent.deltaY < 0 ? 1.12 : 1 / 1.12,
+      wheelEvent.clientX - rect.left,
+      wheelEvent.clientY - rect.top
+    );
+  };
+  canvas.addEventListener('pointerdown', pointerDown);
+  canvas.addEventListener('pointermove', pointerMove);
+  canvas.addEventListener('pointerup', pointerUp);
+  canvas.addEventListener('pointercancel', pointerUp);
+  canvas.addEventListener('wheel', wheel, { passive: false });
+  return () => {
+    canvas.removeEventListener('pointerdown', pointerDown);
+    canvas.removeEventListener('pointermove', pointerMove);
+    canvas.removeEventListener('pointerup', pointerUp);
+    canvas.removeEventListener('pointercancel', pointerUp);
+    canvas.removeEventListener('wheel', wheel);
+  };
+}
+
+function makeCombatShell(root: HTMLElement): HTMLElement {
   const shell = document.createElement('section');
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
@@ -90,7 +131,15 @@ export function createStrategicCombatPanel(
     <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
-  options.root.replaceChildren(shell);
+  root.replaceChildren(shell);
+
+  return shell;
+}
+
+export function createStrategicCombatPanel(
+  options: StrategicCombatPanelOptions
+): StrategicCombatPanel {
+  const shell = makeCombatShell(options.root);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -106,6 +155,7 @@ export function createStrategicCombatPanel(
 
   grappleButton?.addEventListener('click', () => options.combat.fireGrapple('attacker'));
   const renderer = new StrategicCombatRenderer(canvas, options.combat.getSnapshot());
+  const unbindCamera = bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
@@ -170,6 +220,7 @@ export function createStrategicCombatPanel(
     update: render,
     destroy() {
       resizeObserver.disconnect();
+      unbindCamera();
       shell.remove();
     },
   };
