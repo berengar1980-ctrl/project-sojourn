@@ -150,7 +150,8 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           : mineDetection(mine.definition, runtime.attacker, mine.position),
     })),
     lastImpact: runtime.lastImpact,
-    arena: { width: runtime.arena.width, height: runtime.arena.height },
+    arena: { width: runtime.arena.width, height: runtime.arena.height,
+      obstacles: runtime.arena.obstacles ?? [] },
   };
 }
 
