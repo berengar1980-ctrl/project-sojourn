@@ -86,7 +86,8 @@ export function maybeDropRuntimeMine(
       (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) <
       0;
   const zoneMine = source.tactic === 'minefield' && usefulMineCorridor(source, target);
-  if (!canDeployMine(runtime, side, source, Boolean(zoneMine || defensiveMine || tacticalMine))) return;
+  if (!canDeployMine(runtime, side, source, Boolean(zoneMine || defensiveMine || tacticalMine)))
+    return;
   if (range > 720) return;
   const definition = defensiveMine
     ? (source.mineStock.find((mine) => mine.kind === 'hunter') ?? chooseRuntimeMine(source, target))
