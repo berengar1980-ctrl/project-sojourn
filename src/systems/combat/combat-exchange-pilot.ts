@@ -157,12 +157,13 @@ export function pilotExchangeShip(
   if (boosting) ship.boostRampSeconds = Math.min(2, (ship.boostRampSeconds ?? 0) + dt);
   else ship.boostRampSeconds = 0;
   const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
-  const goal = ship.tactic === 'flee' && arena.exitPoint
-    ? arena.exitPoint
-    : {
-        x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
-        y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
-      };
+  const goal =
+    ship.tactic === 'flee' && arena.exitPoint
+      ? arena.exitPoint
+      : {
+          x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+          y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+        };
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
   const dy = goal.y - ship.position.y;
@@ -183,9 +184,13 @@ export function pilotExchangeShip(
   ship.angularThrust = clamp(error / turnRate, -1, 1);
   // Keep the established flight vector after crossing a waypoint;
   // chasing a point behind the ship would cause a stationary spin.
-  const direction = distance < 95
-    ? normalize(ship.velocity.x || Math.cos(ship.headingRadians), ship.velocity.y || Math.sin(ship.headingRadians))
-    : normalize(dx, dy);
+  const direction =
+    distance < 95
+      ? normalize(
+          ship.velocity.x || Math.cos(ship.headingRadians),
+          ship.velocity.y || Math.sin(ship.headingRadians)
+        )
+      : normalize(dx, dy);
   const acceleration = Math.max(
     12,
     ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION

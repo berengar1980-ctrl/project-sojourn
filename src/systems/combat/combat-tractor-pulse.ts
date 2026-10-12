@@ -1,4 +1,8 @@
-import type { MutableCombatant, StrategicCombatRuntime, StrategicCombatSide } from './strategic-combat-types';
+import type {
+  MutableCombatant,
+  StrategicCombatRuntime,
+  StrategicCombatSide,
+} from './strategic-combat-types';
 import { distance, normalize } from './strategic-combat-geometry';
 
 /** A limited tractor pulse disrupts a nearby target without teleporting it. */
@@ -17,8 +21,8 @@ export function pulseCombatTractor(
   if (ship.tactic === 'flee') return;
   // Use the beam when it can slow a fleeing enemy or improve a close pursuit.
   const away = normalize(enemy.position.x - ship.position.x, enemy.position.y - ship.position.y);
-  const radial = (enemy.velocity.x - ship.velocity.x) * away.x +
-    (enemy.velocity.y - ship.velocity.y) * away.y;
+  const radial =
+    (enemy.velocity.x - ship.velocity.x) * away.x + (enemy.velocity.y - ship.velocity.y) * away.y;
   if (radial < 18 && separation > 350) return;
   ship.tractorPulseCooldown = 6;
   const impulse = Math.min(22, Math.max(6, radial * 0.18));

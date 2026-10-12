@@ -40,10 +40,14 @@ export function maybeDropRuntimeMine(
   const range = distance(source.position, target.position);
   const defensiveMine = source.tactic === 'flee' && range <= 640 && target.subsystems.engine > 0;
   // Armed AI ships can also deploy an opportunistic mine during a close pass.
-  const tacticalMine = source.setup.aiControlled && source.tactic === 'fight' &&
-    range >= 155 && range <= 470 &&
+  const tacticalMine =
+    source.setup.aiControlled &&
+    source.tactic === 'fight' &&
+    range >= 155 &&
+    range <= 470 &&
     (target.velocity.x - source.velocity.x) * (target.position.x - source.position.x) +
-      (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) < 0;
+      (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) <
+      0;
   if (
     (source.tactic !== 'minefield' && !defensiveMine && !tacticalMine) ||
     source.mineStock.length === 0 ||

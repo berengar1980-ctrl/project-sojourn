@@ -304,7 +304,11 @@ function recordProjectileDamage(
   return result;
 }
 
-function expireProjectile(runtime: StrategicCombatRuntime, projectile: MutableProjectile, index: number): void {
+function expireProjectile(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  index: number
+): void {
   if (projectile.kind === 'missile') {
     runtime.impactSerial += 1;
     runtime.lastImpact = {
@@ -412,8 +416,11 @@ function advanceRuntimeProjectile(
     return;
   }
   projectile.position = next;
-  if (projectile.kind === 'missile' && !projectile.missed &&
-      dx * projectile.direction.x + dy * projectile.direction.y < -55) {
+  if (
+    projectile.kind === 'missile' &&
+    !projectile.missed &&
+    dx * projectile.direction.x + dy * projectile.direction.y < -55
+  ) {
     // A torpedo that has overshot continues on its vector before detonating.
     projectile.missed = true;
     projectile.shieldDamage = 0;

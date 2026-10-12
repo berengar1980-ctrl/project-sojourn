@@ -6,7 +6,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const pilot = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-exchange-pilot.ts');
-const collision = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-exchange-collision.ts');
+const collision = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-exchange-collision.ts'
+);
 
 const ship = (x, y, headingRadians = 0) => ({
   position: { x, y },
@@ -21,7 +24,10 @@ const ship = (x, y, headingRadians = 0) => ({
   subsystems: { engine: 100 },
 });
 
-for (const [x1, x2] of [[500, 1400], [1400, 500]]) {
+for (const [x1, x2] of [
+  [500, 1400],
+  [1400, 500],
+]) {
   const first = ship(x1, 600, x1 < x2 ? 0 : Math.PI);
   const second = ship(x2, 600, x1 < x2 ? Math.PI : 0);
   const plan = pilot.planExchangeFlight(first, second, 'frontal_pass', 'close_gap', 'strong');
@@ -57,10 +63,17 @@ const collide = (closing) => {
   first.velocity.x = closing / 2;
   second.velocity.x = -closing / 2;
   const runtime = {
-    attacker: first, defender: second, elapsedSeconds: 1, combatLog: [],
+    attacker: first,
+    defender: second,
+    elapsedSeconds: 1,
+    combatLog: [],
   };
   const damage = collision.applyActionRamImpact(runtime);
-  assert.equal(collision.applyActionRamImpact(runtime), 0, 'contact cannot deal repeated damage each frame');
+  assert.equal(
+    collision.applyActionRamImpact(runtime),
+    0,
+    'contact cannot deal repeated damage each frame'
+  );
   return damage;
 };
 assert(collide(12) < 1, 'slow contact inflicts minimal damage');

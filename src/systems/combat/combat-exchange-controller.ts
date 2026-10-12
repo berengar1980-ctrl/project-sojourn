@@ -90,15 +90,23 @@ export function tickActionExchange(
     flanking_pass: 'FLANKIEREN',
   };
   const reactionNames: Record<string, string> = {
-    evade: 'AUSWEICHEN', accelerate_clear: 'BESCHLEUNIGEN',
-    extend_range: 'ABSTAND HALTEN', break_contact: 'KONTAKT LÖSEN',
-    close_gap: 'ANNÄHERN', intercept: 'ABFANGEN', pursue: 'VERFOLGEN',
-    cross_pass: 'KREUZEN', counter_pass: 'GEGENPASSAGE',
-    counterfire: 'GEGENFEUER', turn_to_face: 'ZIEL ANVISIEREN',
+    evade: 'AUSWEICHEN',
+    accelerate_clear: 'BESCHLEUNIGEN',
+    extend_range: 'ABSTAND HALTEN',
+    break_contact: 'KONTAKT LÖSEN',
+    close_gap: 'ANNÄHERN',
+    intercept: 'ABFANGEN',
+    pursue: 'VERFOLGEN',
+    cross_pass: 'KREUZEN',
+    counter_pass: 'GEGENPASSAGE',
+    counterfire: 'GEGENFEUER',
+    turn_to_face: 'ZIEL ANVISIEREN',
     hold_fire: 'POSITION HALTEN',
   };
-  initiator.combatIntent = initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
-  opponent.combatIntent = opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
+  initiator.combatIntent =
+    initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
+  opponent.combatIntent =
+    opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
   if (!state.flight || next.phase !== 'execute') return;
   const remaining = next.duration - next.elapsed;
   const separation = Math.hypot(
@@ -110,7 +118,8 @@ export function tickActionExchange(
     const dy = goal.y - ship.position.y;
     const range = Math.hypot(dx, dy);
     const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
-    const useful = urgent && separation > 300 && range > 250 && aligned > range * 0.8 && remaining > 0.7;
+    const useful =
+      urgent && separation > 300 && range > 250 && aligned > range * 0.8 && remaining > 0.7;
     if (useful) activateExchangeBoost(ship);
     else stopExchangeBoost(ship);
   };

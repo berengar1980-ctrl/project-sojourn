@@ -253,9 +253,17 @@ const escapePlan = {
   initiatorHeading: 0,
   reactorHeading: Math.PI,
 };
-pilot.pilotExchangeShip(escapeShip, 'initiator', escapePlan, {
-  width: 2200, height: 1400, exitPoint: escapeGoal,
-}, 0.08);
+pilot.pilotExchangeShip(
+  escapeShip,
+  'initiator',
+  escapePlan,
+  {
+    width: 2200,
+    height: 1400,
+    exitPoint: escapeGoal,
+  },
+  0.08
+);
 assert(escapeShip.velocity.y > 0, 'escaping ship navigates toward exit instead of combat waypoint');
 
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');

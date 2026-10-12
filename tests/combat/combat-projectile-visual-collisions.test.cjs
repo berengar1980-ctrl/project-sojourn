@@ -58,7 +58,10 @@ const torpedoRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),
   'utf8'
 );
-assert(renderer.includes('drawCombatTorpedo(this.context)'), 'combat renderer uses torpedo silhouette');
+assert(
+  renderer.includes('drawCombatTorpedo(this.context)'),
+  'combat renderer uses torpedo silhouette'
+);
 assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
 assert(!torpedoRenderer.includes('lineTo(-8, 5)'), 'torpedo has no rocket fins');
 assert(

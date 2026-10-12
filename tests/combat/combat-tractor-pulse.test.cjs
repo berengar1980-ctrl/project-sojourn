@@ -5,7 +5,8 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { pulseCombatTractor } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/combat-tractor-pulse.ts'
+  root,
+  'src/systems/combat/combat-tractor-pulse.ts'
 );
 const mkShip = (range) => ({
   position: { x: 500, y: 500 },

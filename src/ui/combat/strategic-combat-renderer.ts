@@ -235,9 +235,10 @@ export class StrategicCombatRenderer {
   }
 
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    const angle = projectile.kind === 'missile'
-      ? Math.atan2(projectile.direction.y, projectile.direction.x)
-      : Math.atan2(target.y - point.y, target.x - point.x);
+    const angle =
+      projectile.kind === 'missile'
+        ? Math.atan2(projectile.direction.y, projectile.direction.x)
+        : Math.atan2(target.y - point.y, target.x - point.x);
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);

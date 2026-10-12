@@ -223,9 +223,10 @@ function attachEncounterSelector(
       configured.forEach((entry, index) => {
         drafts[index]!.shipId = entry.shipId;
         drafts[index]!.weapons = [...entry.weapons];
-        drafts[index]!.mines = selectedEncounter === 'alpha'
-          ? ['mine-ion-2', 'mine-hunter-2', 'mine-shaped-charge-2']
-          : [];
+        drafts[index]!.mines =
+          selectedEncounter === 'alpha'
+            ? ['mine-ion-2', 'mine-hunter-2', 'mine-shaped-charge-2']
+            : [];
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });
     }

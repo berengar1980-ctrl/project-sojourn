@@ -149,9 +149,14 @@ export function createStrategicCombatPanel(
     }
     for (const button of tacticButtons) {
       button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);
-      button.disabled = model.winner !== null || (button.dataset.tactic === 'minefield' && model.attacker.mineCount === 0);
+      button.disabled =
+        model.winner !== null ||
+        (button.dataset.tactic === 'minefield' && model.attacker.mineCount === 0);
       if (button.dataset.tactic === 'minefield') {
-        button.title = model.attacker.mineCount === 0 ? 'Keine Minen ausgerüstet' : model.attacker.mineCount + ' Minen vorhanden';
+        button.title =
+          model.attacker.mineCount === 0
+            ? 'Keine Minen ausgerüstet'
+            : model.attacker.mineCount + ' Minen vorhanden';
         button.textContent = 'MINEN (' + model.attacker.mineCount + ')';
       }
     }

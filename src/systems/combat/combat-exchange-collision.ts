@@ -31,12 +31,13 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
   if (range > 86 || runtime.elapsedSeconds - (runtime.lastRamImpactAt ?? -100) < 0.9) return 0;
   const nx = range > 0.001 ? dx / range : 1;
   const ny = range > 0.001 ? dy / range : 0;
-  const closing = (attacker.velocity.x - defender.velocity.x) * nx +
+  const closing =
+    (attacker.velocity.x - defender.velocity.x) * nx +
     (attacker.velocity.y - defender.velocity.y) * ny;
   if (closing <= 0) return 0;
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
   // Glancing, slow contact barely scratches shields; energetic impacts scale nonlinearly.
-  const damage = closing < 35 ? 0.2 : Math.min(24, 0.2 + ((closing - 35) ** 2) / 450);
+  const damage = closing < 35 ? 0.2 : Math.min(24, 0.2 + (closing - 35) ** 2 / 450);
   for (const ship of [attacker, defender]) {
     const shield = Math.min(ship.shieldHp, damage);
     ship.shieldHp -= shield;
@@ -46,8 +47,11 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: 'system',
     event: 'impact',
-    detail: 'Rumpfkontakt · Annäherung ' + closing.toFixed(0) +
-      ' m/s · Schaden je Schiff ' + damage.toFixed(1),
+    detail:
+      'Rumpfkontakt · Annäherung ' +
+      closing.toFixed(0) +
+      ' m/s · Schaden je Schiff ' +
+      damage.toFixed(1),
   });
   return damage;
 }
