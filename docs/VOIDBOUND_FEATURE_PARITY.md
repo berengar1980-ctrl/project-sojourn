@@ -658,3 +658,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log 2026-10-12: taktische Minen-Korridore
 
 **keine Statusänderung.** Vorhandene Minen erhalten eine Prüfung der gegnerischen Anflugbahn, Abwurf ohne redundante Nahcluster und seitliches Ausweichen vor erkannten Minen. Es werden keine Minenvorräte erfunden; die Kollision und Zündung bleiben bei den bestehenden Minentypen. Ein gezieltes Traktor-Hineindrücken in Minenzonen ist hier noch nicht umgesetzt. Voidbound-Paritätsstatus unverändert.
+
+## Review-Log (2026-10-12): Eigene Minen im bestehenden Traktorwurf
+
+**keine Statusänderung.** Die vorhandene fünfphasige Asteroidenwurf-Pipeline akzeptiert alternativ ausschließlich bereits ausgelegte, scharfe **eigene** Minen. Gegnerminen sind ausdrücklich ausgeschlossen. Voraussetzung bleibt eigener Schildausfall, funktionierender Traktor, Reichweite und bestehender Cooldown. Minen nutzen ihre vorhandenen Schadenswerte; neue Minentypen oder ein separates Traktorsystem entstehen nicht. Die Voidbound-Feature-Parität bleibt unverändert.

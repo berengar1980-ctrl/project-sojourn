@@ -1,3 +1,4 @@
+import { applyDamage } from './strategic-combat-damage';
 import { distance, normalize } from './strategic-combat-geometry';
 import type {
   MutableCombatant,
@@ -14,6 +15,73 @@ const COOLDOWN_SECONDS = 16;
 const CAPTURE_SECONDS = 0.65;
 const CHARGE_SECONDS = 0.85;
 
+function selectThrowable(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  reach: number
+): {
+  rock: CombatVisualAsteroid | undefined;
+  mine: StrategicCombatRuntime['mines'][number] | undefined;
+} {
+  const rock = (runtime.arena.asteroids ?? [])
+    .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
+    .filter((candidate) => distance(ship.position, candidate.position) <= reach)
+    .filter(
+      (candidate) => !runtime.thrownAsteroids.some((thrown) => thrown.asteroidId === candidate.id)
+    )
+    .sort((a, b) => distance(ship.position, a.position) - distance(ship.position, b.position))[0];
+  // Reuse the same five-phase throw for an existing, armed OWN mine.
+  // Never capture an opposing mine or fabricate ammunition.
+  const mine = !rock
+    ? runtime.mines.find(
+        (candidate) =>
+          candidate.owner === side &&
+          candidate.armedSeconds <= 0 &&
+          distance(ship.position, candidate.position) <= reach
+      )
+    : undefined;
+  return { rock, mine };
+}
+
+function removeCapturedThrowable(
+  runtime: StrategicCombatRuntime,
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
+  if (rock) {
+    const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
+    const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
+    asteroids?.splice(asteroids.indexOf(rock), 1);
+    const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
+    if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
+  } else if (mine) {
+    runtime.mines.splice(runtime.mines.indexOf(mine), 1);
+  }
+}
+
+function queueTractorThrow(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  position: { x: number; y: number },
+  aim: { x: number; y: number },
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
+  runtime.thrownAsteroids.push({
+    owner: side,
+    asteroidId: rock?.id ?? 'mine-' + mine!.id,
+    ...(mine ? { mineDefinition: mine.definition } : {}),
+    position: { ...position },
+    radius: rock?.radius ?? 9,
+    velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
+    ageSeconds: 0,
+    phase: 'capture',
+    origin: { ...ship.position },
+  });
+}
+
 export function maybeLaunchTractorAsteroid(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -24,43 +92,26 @@ export function maybeLaunchTractorAsteroid(
   if ((ship.tractorThrowCooldown ?? 0) > 0 || target.hullHp <= 0) return;
   const reach = Math.min(700, ship.setup.tractorRangeMeters ?? 0);
   if (reach <= 0 || distance(ship.position, target.position) > 1200) return;
-  const rock = (runtime.arena.asteroids ?? [])
-    .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
-    .filter((candidate) => distance(ship.position, candidate.position) <= reach)
-    .filter(
-      (candidate) => !runtime.thrownAsteroids.some((thrown) => thrown.asteroidId === candidate.id)
-    )
-    .sort((a, b) => distance(ship.position, a.position) - distance(ship.position, b.position))[0];
-  if (!rock) return;
-  const lead = distance(rock.position, target.position) / THROW_SPEED;
+  const { rock, mine } = selectThrowable(runtime, side, ship, reach);
+  if (!rock && !mine) return;
+  const position = rock?.position ?? mine!.position;
+  const lead = distance(position, target.position) / THROW_SPEED;
   const aim = normalize(
-    target.position.x + target.velocity.x * lead - rock.position.x,
-    target.position.y + target.velocity.y * lead - rock.position.y
+    target.position.x + target.velocity.x * lead - position.x,
+    target.position.y + target.velocity.y * lead - position.y
   );
   // Remove the captured rock from normal asteroid physics; it now has one
   // authoritative projectile position instead of a duplicate stationary body.
-  const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
-  const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
-  asteroids?.splice(asteroids.indexOf(rock), 1);
-  const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
-  if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
-  runtime.thrownAsteroids.push({
-    owner: side,
-    asteroidId: rock.id,
-    position: { ...rock.position },
-    radius: rock.radius,
-    velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
-    ageSeconds: 0,
-    phase: 'capture',
-    origin: { ...ship.position },
-  });
+  removeCapturedThrowable(runtime, rock, mine);
+  queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
-  runtime.lastEvent = ship.setup.name + ': TRAKTOR ERFASST ASTEROID';
+  runtime.lastEvent =
+    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' : ': TRAKTOR ERFASST ASTEROID');
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: 'TRACTOR_ASTEROID_THROW ' + rock.id,
+    detail: (mine ? 'TRACTOR_MINE_THROW ' : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
   });
 }
 
@@ -70,6 +121,42 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     rock.radius +
     Math.max(enemy.setup.shieldGeometry?.radiusX ?? 30, enemy.setup.shieldGeometry?.radiusY ?? 20);
   if (distance(rock.position, enemy.position) > hitRadius) return false;
+  if (rock.mineDefinition) {
+    const source = rock.owner === 'attacker' ? runtime.attacker : runtime.defender;
+    runtime.impactSerial += 1;
+    const result = applyDamage(
+      enemy,
+      rock.mineDefinition.shieldDamage,
+      rock.mineDefinition.hullDamage,
+      source,
+      false,
+      rock.position,
+      'missile',
+      runtime.impactSerial
+    );
+    runtime.lastImpact = {
+      serial: runtime.impactSerial,
+      target: rock.owner === 'attacker' ? 'defender' : 'attacker',
+      layer: result.layer,
+      damage: result.damage,
+      position: { ...rock.position },
+      weaponKind: 'missile',
+    };
+    runtime.lastEvent = 'TRAKTORMINE DETONIERT · ' + Math.round(result.damage) + ' HP';
+    runtime.combatLog.push({
+      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+      side: rock.owner,
+      event: 'action',
+      detail:
+        'MINE_DETONATE ' +
+        rock.mineDefinition.id +
+        ' ' +
+        result.layer +
+        ' ' +
+        Math.round(result.damage),
+    });
+    return true;
+  }
   const shieldDamage = Math.min(enemy.shieldHp, 130);
   enemy.shieldHp -= shieldDamage;
   const hullDamage = enemy.shieldHp <= 0 ? 95 : 0;

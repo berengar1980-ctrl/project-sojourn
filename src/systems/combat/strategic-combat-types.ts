@@ -211,6 +211,7 @@ export interface CombatImpactSnapshot {
 export interface ThrownAsteroidSnapshot {
   readonly owner: StrategicCombatSide;
   readonly asteroidId: string;
+  readonly mineDefinition?: ShipMineDefinition;
   readonly position: CombatPoint;
   readonly radius: number;
   readonly velocity: CombatPoint;
@@ -367,6 +368,7 @@ export interface ShieldSegmentHit {
 export interface MutableThrownAsteroid {
   owner: StrategicCombatSide;
   asteroidId: string;
+  mineDefinition?: ShipMineDefinition;
   position: { x: number; y: number };
   radius: number;
   velocity: CombatPoint;
