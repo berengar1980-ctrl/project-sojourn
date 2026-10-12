@@ -21,3 +21,33 @@ export function separateActionShips(runtime: StrategicCombatRuntime): void {
   attacker.speed = Math.hypot(attacker.velocity.x, attacker.velocity.y);
   defender.speed = Math.hypot(defender.velocity.x, defender.velocity.y);
 }
+
+/** Apply one impact impulse, not continuous damage while hulls remain entangled. */
+export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
+  const { attacker, defender } = runtime;
+  const dx = defender.position.x - attacker.position.x;
+  const dy = defender.position.y - attacker.position.y;
+  const range = Math.hypot(dx, dy);
+  if (range > 86 || runtime.elapsedSeconds - (runtime.lastRamImpactAt ?? -100) < 0.9) return 0;
+  const nx = range > 0.001 ? dx / range : 1;
+  const ny = range > 0.001 ? dy / range : 0;
+  const closing = (attacker.velocity.x - defender.velocity.x) * nx +
+    (attacker.velocity.y - defender.velocity.y) * ny;
+  if (closing <= 0) return 0;
+  runtime.lastRamImpactAt = runtime.elapsedSeconds;
+  // Glancing, slow contact barely scratches shields; energetic impacts scale nonlinearly.
+  const damage = closing < 35 ? 0.2 : Math.min(24, 0.2 + ((closing - 35) ** 2) / 450);
+  for (const ship of [attacker, defender]) {
+    const shield = Math.min(ship.shieldHp, damage);
+    ship.shieldHp -= shield;
+    ship.hullHp = Math.max(0, ship.hullHp - (damage - shield));
+  }
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side: 'system',
+    event: 'impact',
+    detail: 'Rumpfkontakt · Annäherung ' + closing.toFixed(0) +
+      ' m/s · Schaden je Schiff ' + damage.toFixed(1),
+  });
+  return damage;
+}
