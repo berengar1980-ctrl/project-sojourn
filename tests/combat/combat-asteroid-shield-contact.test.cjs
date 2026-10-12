@@ -28,7 +28,7 @@ const asteroid = {
   radius: 30,
 };
 resolveCombatAsteroidContacts(ship, { asteroids: [asteroid] });
-assert(ship.position.x < 200, 'actual contact pushes the ship away from the asteroid');
+assert(asteroid.position.x > 274, 'native campaign collision displaces the asteroid');
 assert(ship.shieldImpacts.length === 1, 'asteroid contact creates visible shield flash');
 assert(ship.shieldHp < 100, 'impact deals shield damage');
 const distantShip = {

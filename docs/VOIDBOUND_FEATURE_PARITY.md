@@ -622,3 +622,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): PvP Asteroiden, Kamera und Navigation
 
 **keine Statusänderung.** Der PvP-Kampf nutzt die Routenplanung aus `local-space-navigation.ts`, ergänzt elliptische Schildkontakte mit Treffer-Effekt und unterstützt Maus-Zoom sowie Kameraverschiebung. Die vollständige Gleichheit der dynamischen Asteroidenphysik mit der Kampagne ist weiterhin durch Laufzeittests zu verifizieren.
+
+## Review-Log (2026-10-12): PvP-Asteroidenphysik
+
+**keine Statusänderung.** Der PvP-Raumkampf wird an die bestehenden Kampagnenfunktionen `integrateAsteroids`, `resolveAsteroidCollisions` und `resolveShieldCollisions` angebunden. Die allgemeine Voidbound-Feature-Parität ändert sich dadurch nicht. Verifikation von Schildtreffern und Asteroidenimpulsen bleibt Teil der PR-Prüfung.
