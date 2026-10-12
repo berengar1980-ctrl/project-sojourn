@@ -642,3 +642,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Asteroiden-KI, Impakte, Alpha, Verteilung
 
 **keine Statusänderung.** Dichtes PvP-Feld mit deterministisch unregelmäßiger Verteilung; der eigene Action/Reaction-Pilot übernimmt Kampagnen-Routenplanung vor dem ersten Schub und verfolgt Hindernis-Wegpunkte. Masse großer Brocken erhöht, Waffenart bei Asteroiden-Treffern zur Effektanzeige transportiert und Alpha-Lebensdauer nur im Preset angehoben. Das vom Nutzer gelieferte Original-Startbild muss als Binärdatei noch in `public/startscreen-background.webp` übernommen werden.
+
+## Review-Log (2026-10-12): Alpha-Laufzeit und Navigation
+
+**keine Statusänderung.** Das Alpha-Analysegefecht verwendet weniger Waffenschaden und keine automatischen Minen, ohne die globale Kampfbalance anzupassen. Die Kampfnavigation prüft die vorausberechnete Bewegung und blockierte Wegpunkte. Die bereits akzeptierte Asteroidenverteilung und die vom Nutzer korrigierten Startscreen-Assets bleiben unverändert.
