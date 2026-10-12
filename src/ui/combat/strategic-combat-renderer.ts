@@ -24,12 +24,10 @@ import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-
 interface Point {
   readonly x: number;
   readonly y: number;
 }
-
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
@@ -42,7 +40,6 @@ export class StrategicCombatRenderer {
   private model: StrategicCombatSnapshot;
   private seenImpactSerial = -1;
   private impactAge = 1;
-
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: StrategicCombatSnapshot
@@ -54,7 +51,6 @@ export class StrategicCombatRenderer {
     this.model = model;
     this.resize();
   }
-
   update(model: StrategicCombatSnapshot): void {
     if (model.lastImpact && model.lastImpact.serial !== this.seenImpactSerial) {
       this.seenImpactSerial = model.lastImpact.serial;
@@ -65,7 +61,6 @@ export class StrategicCombatRenderer {
     this.model = model;
     this.draw();
   }
-
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -74,7 +69,6 @@ export class StrategicCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-
   private image(shipId: string): HTMLImageElement | null {
     const definition = getShipDefinition(shipId);
     if (!definition) return null;
@@ -86,7 +80,6 @@ export class StrategicCombatRenderer {
     this.images.set(shipId, image);
     return image;
   }
-
   private screen(point: Point, width: number, height: number): Point {
     const padding = 70;
     const usableWidth = Math.max(1, width - padding * 2);
@@ -96,7 +89,6 @@ export class StrategicCombatRenderer {
       y: padding + (point.y / this.model.arena.height) * usableHeight,
     };
   }
-
   private shipGeometry(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -123,7 +115,6 @@ export class StrategicCombatRenderer {
       angle: combatant.headingRadians,
     };
   }
-
   private draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
@@ -141,7 +132,6 @@ export class StrategicCombatRenderer {
       (point) => this.screen(point, width, height)
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
-
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
     this.drawBeams(width, height);
@@ -158,7 +148,6 @@ export class StrategicCombatRenderer {
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
-
   private drawBackground(width: number, height: number): void {
     const gradient = this.context.createRadialGradient(
       width * 0.5,
@@ -173,7 +162,6 @@ export class StrategicCombatRenderer {
     gradient.addColorStop(1, '#020507');
     this.context.fillStyle = gradient;
     this.context.fillRect(0, 0, width, height);
-
     const seed = hash(this.model.attacker.id + ':' + this.model.defender.id);
     this.context.fillStyle = 'rgba(205, 225, 236, .62)';
     for (let index = 0; index < 110; index += 1) {
@@ -192,18 +180,15 @@ export class StrategicCombatRenderer {
     }
     this.context.globalAlpha = 1;
   }
-
   private drawBeams(width: number, height: number): void {
     for (const beam of this.model.beams) this.drawBeam(beam, width, height);
   }
-
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
     // The beam origin is captured at fire time, so it cannot slide with a
     // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
-
     this.context.save();
     this.context.lineCap = 'round';
     if (beam.kind === 'tractor') {
@@ -223,7 +208,6 @@ export class StrategicCombatRenderer {
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
       this.context.stroke();
-
       this.context.shadowBlur = 3;
       this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
       this.context.lineWidth = 0.65;
@@ -231,7 +215,6 @@ export class StrategicCombatRenderer {
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
       this.context.stroke();
-
       // Brief muzzle flare anchors each shot visually to the firing hardpoint.
       this.context.shadowBlur = 5;
       this.context.fillStyle = `rgba(202, 244, 255, ${alpha * 0.9})`;
@@ -249,7 +232,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawProjectiles(width: number, height: number): void {
     for (const projectile of this.model.projectiles) {
       const point = this.screen(projectile.position, width, height);
@@ -257,7 +239,6 @@ export class StrategicCombatRenderer {
       this.drawProjectile(projectile, point, target);
     }
   }
-
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
     const angle =
       projectile.kind === 'missile'
@@ -266,7 +247,6 @@ export class StrategicCombatRenderer {
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);
-
     if (projectile.kind === 'plasma') {
       this.context.shadowColor = '#73dfff';
       this.context.shadowBlur = 14;
@@ -286,7 +266,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawMines(width: number, height: number): void {
     for (const mine of this.model.mines) {
       if (mine.detection === 'hidden') continue;
@@ -294,7 +273,6 @@ export class StrategicCombatRenderer {
       this.drawMine(mine, point);
     }
   }
-
   private drawMine(mine: CombatMineSnapshot, point: Point): void {
     this.context.save();
     this.context.translate(point.x, point.y);
@@ -314,7 +292,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawCombatDamage(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -345,7 +322,6 @@ export class StrategicCombatRenderer {
       fraction
     );
   }
-
   private drawShipBody(
     combatant: StrategicCombatSnapshot['attacker'],
     geometry: ShipScreenGeometry,
@@ -389,7 +365,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -408,7 +383,6 @@ export class StrategicCombatRenderer {
       lateralThrust: 0,
       longitudinalThrust: 0,
     };
-
     if (hardpoints) {
       this.engineEffects.drawExhaust(
         this.context,
@@ -428,13 +402,10 @@ export class StrategicCombatRenderer {
         'below'
       );
     }
-
     this.drawShipBody(combatant, geometry, hullRatio);
-
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
     }
-
     if (hardpoints) {
       this.engineEffects.drawGlow(
         this.context,
@@ -454,7 +425,6 @@ export class StrategicCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-
     this.drawShipCaption(combatant.name, hullRatio, geometry);
     if (combatant.combatIntent) {
       this.context.font = 'bold 10px ui-monospace, monospace';
@@ -474,7 +444,6 @@ export class StrategicCombatRenderer {
       combatant.boostActive
     );
   }
-
   private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
     this.context.fillStyle = hullRatio > 0.35 ? 'rgba(220, 232, 238, .78)' : '#d88673';
     this.context.font = '10px ui-monospace, monospace';
@@ -485,7 +454,6 @@ export class StrategicCombatRenderer {
       geometry.center.y + geometry.height * 0.8 + 18
     );
   }
-
   private drawHullImpact(
     impact: StrategicCombatSnapshot['lastImpact'],
     width: number,
