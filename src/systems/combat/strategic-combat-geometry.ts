@@ -170,7 +170,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
   };
 }
 
-export function weaponKind(family: ShipWeaponFamily): CombatProjectileKind | CombatBeamKind {
+export function weaponKind(family: ShipWeaponFamily): CombatProjectileKind | Exclude<CombatBeamKind, 'tractor'> {
   if (family === 'guided_missile' || family === 'he_missile') return 'missile';
   if (family === 'plasma_battery') return 'plasma';
   if (family === 'railgun') return 'rail';
