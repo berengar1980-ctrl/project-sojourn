@@ -1,7 +1,7 @@
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import { detectShipMine } from './mine-detection-service';
-import { collisionThreat } from './combat-contact-review';
+import { predictedCollisionEvasion } from './combat-collision-evasion';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
 
@@ -404,22 +404,6 @@ function performCombatThrust(
     strafeDirection
   );
   resolveArenaObstacles(combatant, arena);
-}
-
-function predictedCollisionEvasion(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  side: StrategicCombatSide,
-  toward: CombatPoint,
-  speedFactor: number
-): { direction: CombatPoint; speedFactor: number } | null {
-  if (!collisionThreat(combatant, enemy)) return null;
-  const sign = side === 'attacker' ? 1 : -1;
-  const lateral = { x: -toward.y * sign, y: toward.x * sign };
-  return {
-    direction: normalize(lateral.x * 2 - toward.x, lateral.y * 2 - toward.y),
-    speedFactor: Math.max(0.7, speedFactor),
-  };
 }
 
 export function moveCombatant(
