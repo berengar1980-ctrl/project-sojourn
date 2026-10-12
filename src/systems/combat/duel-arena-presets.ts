@@ -33,7 +33,10 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
       angularVelocity: asteroid.physics.angularVelocity,
       physics: {
         ...asteroid.physics,
-        velocity: { x: asteroid.physics.velocity.x * factorX, y: asteroid.physics.velocity.y * factorY },
+        velocity: {
+          x: asteroid.physics.velocity.x * factorX,
+          y: asteroid.physics.velocity.y * factorY,
+        },
       },
     }))
     .filter((asteroid) =>

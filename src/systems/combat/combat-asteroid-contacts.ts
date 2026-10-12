@@ -12,8 +12,14 @@ export function resolveCombatAsteroidContacts(
   const geometry = ship.setup.shieldGeometry;
   const native = nativeCombatAsteroids(arena);
   const hits = resolveShieldCollisions(
-    { position: ship.position, headingRadians: ship.headingRadians, speed: ship.speed,
-      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond, angularThrust: ship.angularThrust, lateralThrust: 0 },
+    {
+      position: ship.position,
+      headingRadians: ship.headingRadians,
+      speed: ship.speed,
+      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
+      angularThrust: ship.angularThrust,
+      lateralThrust: 0,
+    },
     ship.velocity,
     native,
     {
@@ -39,8 +45,13 @@ export function resolveCombatAsteroidContacts(
     }
     const effect = applyShieldHit(
       { maxHp: Math.max(1, ship.shieldMaxHp), modifier: 1, currentHp: ship.shieldHp },
-      { source: 'asteroid', point: hit.point, normal: hit.normal,
-        surfaceAnchor: hit.surfaceAnchor, directDamage: damage },
+      {
+        source: 'asteroid',
+        point: hit.point,
+        normal: hit.normal,
+        surfaceAnchor: hit.surfaceAnchor,
+        directDamage: damage,
+      },
       Math.floor((ship.shieldImpacts.length + 1) * 100000 + hit.impactSpeed * 100)
     );
     ship.shieldHp -= effect.absorbedDamage;
