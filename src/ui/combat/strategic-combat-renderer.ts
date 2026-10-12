@@ -392,7 +392,7 @@ export class StrategicCombatRenderer {
         engineIntensity,
         timeSeconds,
         'below',
-        combatant.boostSeconds > 0
+        combatant.boostActive
       );
       this.maneuverEffects.drawExhaust(
         this.context,
@@ -464,6 +464,17 @@ export class StrategicCombatRenderer {
     }
 
     this.drawShipCaption(combatant.name, hullRatio, geometry);
+    const barWidth = 48;
+    const barY = geometry.center.y + geometry.height * 0.8 + 23;
+    this.context.fillStyle = 'rgba(28, 40, 54, 0.9)';
+    this.context.fillRect(geometry.center.x - barWidth / 2, barY, barWidth, 4);
+    this.context.fillStyle = combatant.boostActive ? '#99e9ff' : '#579ac6';
+    this.context.fillRect(
+      geometry.center.x - barWidth / 2,
+      barY,
+      barWidth * Math.max(0, Math.min(1, combatant.boostSeconds / 3.5)),
+      4
+    );
   }
 
   private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
