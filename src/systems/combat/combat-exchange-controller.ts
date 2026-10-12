@@ -3,6 +3,7 @@ import { advanceExchange, initialExchange, type CombatExchange } from './combat-
 import {
   planExchangeFlight,
   pilotExchangeShip,
+  activateExchangeBoost,
   type ExchangeFlightPlan,
 } from './combat-exchange-pilot';
 
@@ -40,6 +41,12 @@ export function tickActionExchange(
   };
   const next = advanceExchange(current, dt, context);
   if (current.phase === 'choose' && next.action && next.reaction) {
+    if (next.action === 'disengage_fire' || next.action === 'frontal_pass') {
+      activateExchangeBoost(initiator);
+    }
+    if (next.reaction === 'pursue' || next.reaction === 'accelerate_clear') {
+      activateExchangeBoost(opponent);
+    }
     state.flight = planExchangeFlight(
       initiator,
       opponent,
