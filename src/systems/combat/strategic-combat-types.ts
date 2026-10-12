@@ -314,6 +314,7 @@ export interface MutableCombatant {
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
   tractorPulseCooldown?: number;
+  tractorThrowCooldown?: number;
 }
 
 export interface MutableProjectile {
