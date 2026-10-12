@@ -99,7 +99,8 @@ export function resolveArenaObstacles(
     const moving = arena.asteroids?.find((asteroid) => asteroid.id === obstacle.id);
     const vx = moving?.velocity.x ?? 0;
     const vy = moving?.velocity.y ?? 0;
-    const incoming = (combatant.velocity.x - vx) * normal.x + (combatant.velocity.y - vy) * normal.y;
+    const incoming =
+      (combatant.velocity.x - vx) * normal.x + (combatant.velocity.y - vy) * normal.y;
     if (incoming < 0) {
       combatant.velocity.x -= normal.x * incoming * 1.35;
       combatant.velocity.y -= normal.y * incoming * 1.35;

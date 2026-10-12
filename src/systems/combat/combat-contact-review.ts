@@ -1,4 +1,8 @@
-import type { MutableCombatant, StrategicCombatRuntime, StrategicCombatSide } from './strategic-combat-types';
+import type {
+  MutableCombatant,
+  StrategicCombatRuntime,
+  StrategicCombatSide,
+} from './strategic-combat-types';
 
 export function collisionThreat(first: MutableCombatant, second: MutableCombatant): boolean {
   const dx = second.position.x - first.position.x;

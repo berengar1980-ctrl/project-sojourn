@@ -122,7 +122,13 @@ export class StrategicCombatRenderer {
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
-    drawCombatBackground(this.context, width, height, this.model.attacker.id, this.model.defender.id);
+    drawCombatBackground(
+      this.context,
+      width,
+      height,
+      this.model.attacker.id,
+      this.model.defender.id
+    );
     drawCombatAsteroids(
       this.spaceBodies,
       this.model.arena.asteroids ?? [],

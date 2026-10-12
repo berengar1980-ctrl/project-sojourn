@@ -10,12 +10,20 @@ const { advanceCombatAsteroids } = loadStandaloneTypeScriptModule(
 );
 const position = { x: 100, y: 100 };
 const asteroid = {
-  id: 'moving-rock', position, radius: 32, kind: 'resource', rotation: 0,
-  velocity: { x: 12, y: -4 }, angularVelocity: 0.2,
+  id: 'moving-rock',
+  position,
+  radius: 32,
+  kind: 'resource',
+  rotation: 0,
+  velocity: { x: 12, y: -4 },
+  angularVelocity: 0.2,
 };
-const arena = { width: 4200, height: 2600, asteroids: [asteroid], obstacles: [
-  { id: asteroid.id, position, radius: asteroid.radius },
-] };
+const arena = {
+  width: 4200,
+  height: 2600,
+  asteroids: [asteroid],
+  obstacles: [{ id: asteroid.id, position, radius: asteroid.radius }],
+};
 advanceCombatAsteroids(arena, 2);
 assert.equal(asteroid.position.x, 124);
 assert.equal(asteroid.position.y, 92);

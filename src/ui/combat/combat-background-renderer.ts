@@ -7,7 +7,14 @@ export function drawCombatBackground(
   attackerId: string,
   defenderId: string
 ): void {
-  const gradient = context.createRadialGradient(width * 0.5, height * 0.46, 0, width * 0.5, height * 0.46, Math.max(width, height) * 0.78);
+  const gradient = context.createRadialGradient(
+    width * 0.5,
+    height * 0.46,
+    0,
+    width * 0.5,
+    height * 0.46,
+    Math.max(width, height) * 0.78
+  );
   gradient.addColorStop(0, '#111b24');
   gradient.addColorStop(0.52, '#071018');
   gradient.addColorStop(1, '#020507');
@@ -20,7 +27,13 @@ export function drawCombatBackground(
     const y = ((seed ^ (index * 2246822519)) >>> 0) % 10000;
     context.globalAlpha = 0.26 + ((index * 37) % 48) / 100;
     context.beginPath();
-    context.arc((x / 10000) * width, (y / 10000) * height, index % 11 === 0 ? 1.2 : 0.55, 0, Math.PI * 2);
+    context.arc(
+      (x / 10000) * width,
+      (y / 10000) * height,
+      index % 11 === 0 ? 1.2 : 0.55,
+      0,
+      Math.PI * 2
+    );
     context.fill();
   }
   context.globalAlpha = 1;
