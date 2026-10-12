@@ -88,7 +88,7 @@ function bindCombatCamera(canvas: HTMLCanvasElement, renderer: StrategicCombatRe
   const wheel = (wheelEvent: WheelEvent): void => {
     wheelEvent.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    renderer.zoomAt(wheelEvent.deltaY < 0 ? 1.12 : 1 / 1.12, pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top);
+    renderer.zoomAt(wheelEvent.deltaY < 0 ? 1.12 : 1 / 1.12, wheelEvent.clientX - rect.left, wheelEvent.clientY - rect.top);
   };
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointermove', pointerMove);
@@ -104,9 +104,7 @@ function bindCombatCamera(canvas: HTMLCanvasElement, renderer: StrategicCombatRe
   };
 }
 
-export function createStrategicCombatPanel(
-  options: StrategicCombatPanelOptions
-): StrategicCombatPanel {
+function makeCombatShell(root: HTMLElement): HTMLElement {
   const shell = document.createElement('section');
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
@@ -125,7 +123,15 @@ export function createStrategicCombatPanel(
     <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
-  options.root.replaceChildren(shell);
+  root.replaceChildren(shell);
+
+  return shell;
+}
+
+export function createStrategicCombatPanel(
+  options: StrategicCombatPanelOptions
+): StrategicCombatPanel {
+  const shell = makeCombatShell(options.root);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
