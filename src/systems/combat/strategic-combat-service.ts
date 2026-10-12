@@ -248,6 +248,11 @@ function reviewShieldBreakthroughs(
     );
   }
 }
+function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number): void {
+  maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
+  maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
+  advanceThrownAsteroids(runtime, dt);
+}
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -323,9 +328,7 @@ function tickStrategicCombat(
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
-  maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
-  maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
-  advanceThrownAsteroids(runtime, dt);
+  updateCombatAsteroidThrows(runtime, dt);
   pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
