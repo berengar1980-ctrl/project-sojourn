@@ -34,7 +34,10 @@ function offsetPoint(
 }
 
 function interceptPoint(chaser: MutableCombatant, target: MutableCombatant): CombatPoint {
-  const distance = Math.hypot(target.position.x - chaser.position.x, target.position.y - chaser.position.y);
+  const distance = Math.hypot(
+    target.position.x - chaser.position.x,
+    target.position.y - chaser.position.y
+  );
   const speed = Math.max(65, chaser.setup.combatSpeed ?? 120);
   const leadSeconds = clamp(distance / speed, 0.5, 5);
   return {
@@ -43,28 +46,32 @@ function interceptPoint(chaser: MutableCombatant, target: MutableCombatant): Com
   };
 }
 
-function reactionGoal(initiator: MutableCombatant, reactor: MutableCombatant, toward: CombatPoint, side: number, reaction: CombatReaction): CombatPoint {
-  return (
-    reaction === 'evade'
-      ? offsetPoint(reactor.position, toward, -80, -330 * side)
-      : reaction === 'accelerate_clear'
-        ? offsetPoint(reactor.position, toward, 300, -230 * side)
-        : reaction === 'extend_range'
-          ? offsetPoint(reactor.position, toward, 390, 0)
-          : reaction === 'break_contact'
-            ? offsetPoint(reactor.position, toward, 390, 180 * side)
-            : reaction === 'close_gap'
-              ? offsetPoint(reactor.position, toward, -350, 0)
-              : reaction === 'intercept'
-                ? interceptPoint(reactor, initiator)
-                : reaction === 'pursue'
-                  ? offsetPoint(initiator.position, toward, -140, 0)
-                  : reaction === 'cross_pass'
-                    ? offsetPoint(initiator.position, toward, -170, -240 * side)
-                    : reaction === 'counter_pass'
-                      ? offsetPoint(initiator.position, toward, 0, 250 * side)
-                      : { ...reactor.position }
-  );
+function reactionGoal(
+  initiator: MutableCombatant,
+  reactor: MutableCombatant,
+  toward: CombatPoint,
+  side: number,
+  reaction: CombatReaction
+): CombatPoint {
+  return reaction === 'evade'
+    ? offsetPoint(reactor.position, toward, -80, -330 * side)
+    : reaction === 'accelerate_clear'
+      ? offsetPoint(reactor.position, toward, 300, -230 * side)
+      : reaction === 'extend_range'
+        ? offsetPoint(reactor.position, toward, 390, 0)
+        : reaction === 'break_contact'
+          ? offsetPoint(reactor.position, toward, 390, 180 * side)
+          : reaction === 'close_gap'
+            ? offsetPoint(reactor.position, toward, -350, 0)
+            : reaction === 'intercept'
+              ? interceptPoint(reactor, initiator)
+              : reaction === 'pursue'
+                ? offsetPoint(initiator.position, toward, -140, 0)
+                : reaction === 'cross_pass'
+                  ? offsetPoint(initiator.position, toward, -170, -240 * side)
+                  : reaction === 'counter_pass'
+                    ? offsetPoint(initiator.position, toward, 0, 250 * side)
+                    : { ...reactor.position };
 }
 
 export function planExchangeFlight(

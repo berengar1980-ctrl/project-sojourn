@@ -59,5 +59,8 @@ const sideRock = {
   radius: 30,
 };
 resolveCombatAsteroidContacts(sideShip, { asteroids: [sideRock] });
-assert(sideShip.position.y > 190, 'narrow shield side does not trigger oversized circular displacement');
+assert(
+  sideShip.position.y > 190,
+  'narrow shield side does not trigger oversized circular displacement'
+);
 console.log('PASS elliptical shield asteroid contact and visual impact');

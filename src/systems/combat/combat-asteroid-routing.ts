@@ -53,7 +53,10 @@ export function combatRouteHeading(
 ): CombatPoint | null {
   if (!arena.obstacles?.length) return null;
   const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
-  const prediction = { x: ship.position.x + ship.velocity.x * 2, y: ship.position.y + ship.velocity.y * 2 };
+  const prediction = {
+    x: ship.position.x + ship.velocity.x * 2,
+    y: ship.position.y + ship.velocity.y * 2,
+  };
   const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
   if (!immediateThreat && !pathBlocked(ship.position, target, arena, clearance)) {
     ship.asteroidRoute = [];

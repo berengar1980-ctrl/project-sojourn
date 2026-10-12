@@ -9,5 +9,8 @@ const source = fs.readFileSync(
 );
 assert(source.includes('hit.impactSpeed - 7'), 'damage scales with closing speed');
 assert(source.includes('Math.min(14,'), 'individual impacts have a small cap');
-assert(!source.includes('damageFromImpactEnergy('), 'mass-scaled global formula is excluded from combat');
+assert(
+  !source.includes('damageFromImpactEnergy('),
+  'mass-scaled global formula is excluded from combat'
+);
 console.log('PASS combat asteroid damage follows closing speed, not inflated asteroid mass');

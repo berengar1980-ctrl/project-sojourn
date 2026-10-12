@@ -268,7 +268,12 @@ function tuneAlphaSetups(
   isAlpha: boolean
 ): StrategicCombatantSetup[] {
   return isAlpha
-    ? setups.map((setup) => ({ ...setup, shieldHp: setup.shieldHp * 8, hullHp: setup.hullHp * 5, damageMultiplier: setup.damageMultiplier * 0.25 }))
+    ? setups.map((setup) => ({
+        ...setup,
+        shieldHp: setup.shieldHp * 8,
+        hullHp: setup.hullHp * 5,
+        damageMultiplier: setup.damageMultiplier * 0.25,
+      }))
     : setups;
 }
 

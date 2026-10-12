@@ -56,18 +56,30 @@ function updateExchangeIntents(
     opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
 }
 
-function useBoostForExchange(ship: StrategicCombatRuntime['attacker'], goal: { x: number; y: number }, urgent: boolean, separation: number, remaining: number): void {
-    const dx = goal.x - ship.position.x;
-    const dy = goal.y - ship.position.y;
-    const range = Math.hypot(dx, dy);
-    const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
-    const forwardSpeed = ship.velocity.x * Math.cos(ship.headingRadians) +
-      ship.velocity.y * Math.sin(ship.headingRadians);
-    const useful =
-      urgent && separation > 300 && range > 250 && aligned > range * 0.92 &&
-      forwardSpeed >= 0 && !ship.asteroidRoute?.length && remaining > 0.7;
-    if (useful) activateExchangeBoost(ship);
-    else stopExchangeBoost(ship);
+function useBoostForExchange(
+  ship: StrategicCombatRuntime['attacker'],
+  goal: { x: number; y: number },
+  urgent: boolean,
+  separation: number,
+  remaining: number
+): void {
+  const dx = goal.x - ship.position.x;
+  const dy = goal.y - ship.position.y;
+  const range = Math.hypot(dx, dy);
+  const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
+  const forwardSpeed =
+    ship.velocity.x * Math.cos(ship.headingRadians) +
+    ship.velocity.y * Math.sin(ship.headingRadians);
+  const useful =
+    urgent &&
+    separation > 300 &&
+    range > 250 &&
+    aligned > range * 0.92 &&
+    forwardSpeed >= 0 &&
+    !ship.asteroidRoute?.length &&
+    remaining > 0.7;
+  if (useful) activateExchangeBoost(ship);
+  else stopExchangeBoost(ship);
 }
 
 export function tickActionExchange(
@@ -153,6 +165,14 @@ export function tickActionExchange(
     separation,
     remaining
   );
-  pilotExchangeShip(initiator, 'initiator', state.flight, runtime.arena, dt, opponent, next.action === 'frontal_pass');
+  pilotExchangeShip(
+    initiator,
+    'initiator',
+    state.flight,
+    runtime.arena,
+    dt,
+    opponent,
+    next.action === 'frontal_pass'
+  );
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
 }

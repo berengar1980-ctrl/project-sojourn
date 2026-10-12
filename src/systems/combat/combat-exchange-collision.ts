@@ -22,7 +22,11 @@ export function separateActionShips(runtime: StrategicCombatRuntime): void {
   defender.speed = Math.hypot(defender.velocity.x, defender.velocity.y);
 }
 
-function ramExposure(heading: number, contactDirectionX: number, contactDirectionY: number): number {
+function ramExposure(
+  heading: number,
+  contactDirectionX: number,
+  contactDirectionY: number
+): number {
   const facing = Math.cos(heading) * contactDirectionX + Math.sin(heading) * contactDirectionY;
   // The armored prow takes less damage than a vulnerable broadside.
   return facing >= 0 ? 1.3 - 0.6 * facing : 1.3 - 0.3 * facing;
@@ -54,8 +58,8 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
     ship.shieldHp -= shield;
     const overflow = impact - shield;
     ship.hullHp = Math.max(0, ship.hullHp - overflow);
-    const facing = Math.cos(ship.headingRadians) * contactX +
-      Math.sin(ship.headingRadians) * contactY;
+    const facing =
+      Math.cos(ship.headingRadians) * contactX + Math.sin(ship.headingRadians) * contactY;
     if (facing < -0.5 && overflow > 0) {
       ship.subsystems.engine = Math.max(0, ship.subsystems.engine - overflow * 0.5);
     }
@@ -68,7 +72,9 @@ export function applyActionRamImpact(runtime: StrategicCombatRuntime): number {
       'Rumpfkontakt · Annäherung ' +
       closing.toFixed(0) +
       ' m/s · Schaden ' +
-      firstDamage.toFixed(1) + ' / ' + secondDamage.toFixed(1),
+      firstDamage.toFixed(1) +
+      ' / ' +
+      secondDamage.toFixed(1),
   });
   return damage;
 }

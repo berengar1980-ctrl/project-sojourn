@@ -79,4 +79,6 @@ const collide = (closing) => {
 };
 assert(collide(12) < 1, 'slow contact inflicts minimal damage');
 assert(collide(140) > collide(12) * 10, 'high-speed ramming scales with impact speed');
-console.log('PASS frontal approach, reactive lane, boosted thrust ramp and velocity-based ram damage');
+console.log(
+  'PASS frontal approach, reactive lane, boosted thrust ramp and velocity-based ram damage'
+);
