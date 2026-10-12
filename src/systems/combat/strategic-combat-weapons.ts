@@ -130,6 +130,12 @@ function fireRuntimeProjectileWeapon(
 ): string {
   if (!weapon.weapon) return '';
   const muzzle = weaponMuzzle(source, weaponIndex);
+  const targetPoint = hit
+    ? target.position
+    : {
+        x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
+        y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
+      };
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,
@@ -137,7 +143,7 @@ function fireRuntimeProjectileWeapon(
     kind,
     family: weapon.weapon.family,
     position: muzzle,
-    direction: normalize(target.position.x - muzzle.x, target.position.y - muzzle.y),
+    direction: normalize(targetPoint.x - muzzle.x, targetPoint.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
     speed: projectileSpeed(kind),
     ttlSeconds: Math.max(
@@ -148,6 +154,7 @@ function fireRuntimeProjectileWeapon(
     hullDamage: hit ? weapon.weapon.hullDamage : 0,
     critical: hit && critical,
     targetSubsystem: effectiveTargetSubsystem(source, target),
+    missed: !hit,
   });
   return source.setup.name + ': ' + weapon.name + ' abgefeuert' + (critical ? ' · KRITISCH' : '');
 }
@@ -292,8 +299,67 @@ function recordProjectileDamage(
     layer: result.layer,
     damage: result.damage,
     position: { ...result.point },
+    weaponKind: projectile.kind,
   };
   return result;
+}
+
+function expireProjectile(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  index: number
+): void {
+  if (projectile.kind === 'missile') {
+    runtime.impactSerial += 1;
+    runtime.lastImpact = {
+      serial: runtime.impactSerial,
+      target: projectile.target,
+      layer: 'miss',
+      damage: 0,
+      position: { ...projectile.position },
+      weaponKind: 'missile',
+    };
+  }
+  runtime.projectiles.splice(index, 1);
+}
+
+function hitProjectileHull(
+  runtime: StrategicCombatRuntime,
+  projectile: MutableProjectile,
+  source: MutableCombatant,
+  target: MutableCombatant,
+  next: { x: number; y: number },
+  index: number
+): boolean {
+  const segmentX = next.x - projectile.position.x;
+  const segmentY = next.y - projectile.position.y;
+  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
+  const fraction = clamp(
+    ((target.position.x - projectile.position.x) * segmentX +
+      (target.position.y - projectile.position.y) * segmentY) /
+      Math.max(0.001, lengthSquared),
+    0,
+    1
+  );
+  const closest = {
+    x: projectile.position.x + fraction * segmentX,
+    y: projectile.position.y + fraction * segmentY,
+  };
+  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
+  if (distance(closest, target.position) <= hitRadius) {
+    const result = recordProjectileDamage(runtime, projectile, source, target);
+    runtime.lastEvent =
+      source.setup.name +
+      ': ' +
+      projectile.family.replaceAll('_', ' ') +
+      ' trifft ' +
+      (result.layer === 'shield' ? 'Schild' : 'Hülle') +
+      ' -' +
+      Math.round(result.damage);
+    runtime.projectiles.splice(index, 1);
+    return true;
+  }
+  return false;
 }
 
 function advanceRuntimeProjectile(
@@ -313,11 +379,11 @@ function advanceRuntimeProjectile(
   const dy = target.position.y - projectile.position.y;
   const step = projectile.speed * deltaSeconds;
   projectile.ttlSeconds -= deltaSeconds;
-  if (projectile.kind === 'missile') {
+  if (projectile.kind === 'missile' && !projectile.missed) {
     const desired = Math.atan2(dy, dx);
     const current = Math.atan2(projectile.direction.y, projectile.direction.x);
     const error = Math.atan2(Math.sin(desired - current), Math.cos(desired - current));
-    const turn = clamp(error, -2.8 * deltaSeconds, 2.8 * deltaSeconds);
+    const turn = clamp(error, -0.85 * deltaSeconds, 0.85 * deltaSeconds);
     projectile.direction = { x: Math.cos(current + turn), y: Math.sin(current + turn) };
   }
   // Plasma bolts and autocannon slugs retain their launch vector.
@@ -346,7 +412,7 @@ function advanceRuntimeProjectile(
   }
   if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0) {
     projectile.position = next;
-    if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
+    if (projectile.ttlSeconds <= 0) expireProjectile(runtime, projectile, index);
     return;
   }
   if (shieldHit) {
@@ -360,35 +426,19 @@ function advanceRuntimeProjectile(
     runtime.projectiles.splice(index, 1);
     return;
   }
-  const segmentX = next.x - projectile.position.x;
-  const segmentY = next.y - projectile.position.y;
-  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
-  const fraction = clamp(
-    ((target.position.x - projectile.position.x) * segmentX +
-      (target.position.y - projectile.position.y) * segmentY) /
-      Math.max(0.001, lengthSquared),
-    0,
-    1
-  );
-  const closest = {
-    x: projectile.position.x + fraction * segmentX,
-    y: projectile.position.y + fraction * segmentY,
-  };
-  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
-  if (distance(closest, target.position) <= hitRadius) {
-    const result = recordProjectileDamage(runtime, projectile, source, target);
-    runtime.lastEvent =
-      source.setup.name +
-      ': ' +
-      projectile.family.replaceAll('_', ' ') +
-      ' trifft ' +
-      (result.layer === 'shield' ? 'Schild' : 'Hülle') +
-      ' -' +
-      Math.round(result.damage);
-    runtime.projectiles.splice(index, 1);
-    return;
-  }
+  if (hitProjectileHull(runtime, projectile, source, target, next, index)) return;
   projectile.position = next;
+  if (
+    projectile.kind === 'missile' &&
+    !projectile.missed &&
+    dx * projectile.direction.x + dy * projectile.direction.y < -55
+  ) {
+    // A torpedo that has overshot continues on its vector before detonating.
+    projectile.missed = true;
+    projectile.shieldDamage = 0;
+    projectile.hullDamage = 0;
+    projectile.ttlSeconds = Math.min(projectile.ttlSeconds, 0.65);
+  }
   if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
 }
 

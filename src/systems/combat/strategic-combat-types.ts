@@ -144,6 +144,12 @@ export interface StrategicCombatantSnapshot {
   readonly speed: number;
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
+  readonly boostSeconds: number;
+  readonly boostActive: boolean;
+  readonly boostCooldownSeconds: number;
+  readonly combatIntent?: string;
+  readonly mineCount: number;
+  readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
   readonly nextStrategyReviewAt: number;
@@ -162,6 +168,7 @@ export interface CombatProjectileSnapshot {
   readonly position: CombatPoint;
   readonly target: CombatPoint;
   readonly ttlSeconds: number;
+  readonly direction: CombatPoint;
 }
 
 export interface CombatBeamSnapshot {
@@ -196,6 +203,7 @@ export interface CombatImpactSnapshot {
   readonly subsystem?: CombatTargetSubsystem;
   readonly position: CombatPoint;
   readonly damage: number;
+  readonly weaponKind?: CombatProjectileKind | CombatBeamKind;
 }
 
 export interface StrategicCombatSnapshot {
@@ -259,6 +267,11 @@ export interface MutableCombatant {
   speed: number;
   turnRateRadiansPerSecond: number;
   angularThrust: number;
+  boostSeconds?: number;
+  boostActive?: boolean;
+  combatIntent?: string;
+  boostRampSeconds?: number;
+  boostCooldownSeconds?: number;
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
   nextStrategyReviewAt: number;
@@ -272,6 +285,7 @@ export interface MutableCombatant {
   shieldImpacts: ShieldImpactEffect[];
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
+  tractorPulseCooldown?: number;
 }
 
 export interface MutableProjectile {
@@ -287,6 +301,7 @@ export interface MutableProjectile {
   shieldDamage: number;
   hullDamage: number;
   critical: boolean;
+  missed?: boolean;
   targetSubsystem?: CombatTargetSubsystem;
 }
 
@@ -326,6 +341,7 @@ export interface StrategicCombatRuntime {
   readonly beams: MutableBeam[];
   readonly mines: MutableMine[];
   elapsedSeconds: number;
+  lastRamImpactAt?: number;
   winner: StrategicCombatSide | null;
   boardingInitiator: StrategicCombatSide | null;
   grapple: CombatGrapple | null;

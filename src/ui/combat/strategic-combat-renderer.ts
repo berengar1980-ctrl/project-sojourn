@@ -1,9 +1,12 @@
+import { drawCombatTorpedo } from './combat-torpedo-renderer';
+import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
+import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { hash, clamp01 } from './strategic-combat-renderer-math';
+import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
-  CombatImpactSnapshot,
   CombatMineSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
@@ -121,7 +124,7 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
-    this.drawEscapeGate(width, height);
+    drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
 
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
@@ -140,23 +143,6 @@ export class StrategicCombatRenderer {
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
 
-  private drawEscapeGate(width: number, height: number): void {
-    const gate = this.screen(this.model.exitPoint, width, height);
-    const ctx = this.context;
-    ctx.save();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#77e0ff';
-    ctx.fillStyle = 'rgba(65, 184, 235, 0.16)';
-    ctx.beginPath();
-    ctx.arc(gate.x, gate.y, 26, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#b5efff';
-    ctx.fillText('FLUCHTPUNKT', gate.x, gate.y - 36);
-    ctx.restore();
-  }
   private drawBackground(width: number, height: number): void {
     const gradient = this.context.createRadialGradient(
       width * 0.5,
@@ -249,30 +235,30 @@ export class StrategicCombatRenderer {
   }
 
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    const angle = Math.atan2(target.y - point.y, target.x - point.x);
+    const angle =
+      projectile.kind === 'missile'
+        ? Math.atan2(projectile.direction.y, projectile.direction.x)
+        : Math.atan2(target.y - point.y, target.x - point.x);
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);
 
     if (projectile.kind === 'plasma') {
-      this.context.fillStyle = 'rgba(118, 225, 255, .92)';
-      this.context.shadowColor = 'rgba(81, 194, 255, .95)';
-      this.context.shadowBlur = 12;
+      this.context.shadowColor = '#73dfff';
+      this.context.shadowBlur = 14;
+      this.context.fillStyle = 'rgba(78, 177, 241, 0.45)';
       this.context.beginPath();
-      this.context.arc(0, 0, 5, 0, Math.PI * 2);
+      this.context.arc(0, 0, 7, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.fillStyle = '#e1f9ff';
+      this.context.beginPath();
+      this.context.arc(0, 0, 3, 0, Math.PI * 2);
       this.context.fill();
     } else if (projectile.kind === 'missile') {
-      this.context.fillStyle = '#e7d7b0';
-      this.context.fillRect(-7, -2, 12, 4);
-      this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
-      this.context.lineWidth = 3;
-      this.context.beginPath();
-      this.context.moveTo(-8, 0);
-      this.context.lineTo(-23, 0);
-      this.context.stroke();
+      drawCombatTorpedo(this.context);
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-      this.context.fillRect(-2, -1, 5, 2);
+      this.context.fillRect(-3, -1, 6, 2);
     }
     this.context.restore();
   }
@@ -336,45 +322,14 @@ export class StrategicCombatRenderer {
     );
   }
 
-  private drawShip(
+  private drawShipBody(
     combatant: StrategicCombatSnapshot['attacker'],
-    width: number,
-    height: number,
-    timeSeconds: number
+    geometry: ShipScreenGeometry,
+    hullRatio: number
   ): void {
     const image = this.image(combatant.shipId);
     const definition = getShipDefinition(combatant.shipId);
-    const geometry = this.shipGeometry(combatant, width, height);
-    const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     const hardpoints = definition?.sprite.hardpoints;
-    const engineIntensity =
-      combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;
-    const maneuverDemand = {
-      turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
-      angularThrust: combatant.angularThrust,
-      lateralThrust: 0,
-      longitudinalThrust: 0,
-    };
-
-    if (hardpoints) {
-      this.engineEffects.drawExhaust(
-        this.context,
-        hardpoints,
-        geometry,
-        engineIntensity,
-        timeSeconds,
-        'below'
-      );
-      this.maneuverEffects.drawExhaust(
-        this.context,
-        hardpoints,
-        geometry,
-        maneuverDemand,
-        timeSeconds,
-        'below'
-      );
-    }
-
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
@@ -409,6 +364,48 @@ export class StrategicCombatRenderer {
       );
     }
     this.context.restore();
+  }
+
+  private drawShip(
+    combatant: StrategicCombatSnapshot['attacker'],
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    const definition = getShipDefinition(combatant.shipId);
+    const geometry = this.shipGeometry(combatant, width, height);
+    const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
+    const hardpoints = definition?.sprite.hardpoints;
+    const engineIntensity =
+      combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;
+    const maneuverDemand = {
+      turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
+      angularThrust: combatant.angularThrust,
+      lateralThrust: 0,
+      longitudinalThrust: 0,
+    };
+
+    if (hardpoints) {
+      this.engineEffects.drawExhaust(
+        this.context,
+        hardpoints,
+        geometry,
+        engineIntensity,
+        timeSeconds,
+        'below',
+        combatant.boostActive
+      );
+      this.maneuverEffects.drawExhaust(
+        this.context,
+        hardpoints,
+        geometry,
+        maneuverDemand,
+        timeSeconds,
+        'below'
+      );
+    }
+
+    this.drawShipBody(combatant, geometry, hullRatio);
 
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
@@ -435,6 +432,23 @@ export class StrategicCombatRenderer {
     }
 
     this.drawShipCaption(combatant.name, hullRatio, geometry);
+    if (combatant.combatIntent) {
+      this.context.font = 'bold 10px ui-monospace, monospace';
+      this.context.textAlign = 'center';
+      this.context.fillStyle = combatant.combatIntent === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
+      this.context.fillText(
+        combatant.combatIntent + (combatant.boostActive ? ' · BOOST' : ''),
+        geometry.center.x,
+        geometry.center.y - geometry.height * 0.8 - 13
+      );
+    }
+    drawCombatBoostMeter(
+      this.context,
+      geometry.center,
+      geometry.height,
+      combatant.boostSeconds,
+      combatant.boostActive
+    );
   }
 
   private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
@@ -448,38 +462,17 @@ export class StrategicCombatRenderer {
     );
   }
 
-  private drawHullImpact(impact: CombatImpactSnapshot | null, width: number, height: number): void {
-    if (
-      !impact ||
-      this.impactAge >= 1 ||
-      (impact.layer !== 'hull' && impact.layer !== 'obstacle')
-    ) {
-      return;
-    }
-    const point = this.screen(impact.position, width, height);
-    const progress = this.impactAge;
-    const radius = 8 + progress * 24;
-    const alpha = 1 - progress;
-
-    this.context.save();
-    this.context.fillStyle =
-      impact.layer === 'obstacle'
-        ? `rgba(196, 185, 160, ${alpha * 0.6})`
-        : `rgba(255, 147, 72, ${alpha * 0.85})`;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius * 0.55, 0, Math.PI * 2);
-    this.context.fill();
-    if (impact.layer === 'hull') {
-      this.context.strokeStyle = `rgba(255, 218, 154, ${alpha * 0.8})`;
-      this.context.lineWidth = 1.4;
-      for (let index = 0; index < 5; index += 1) {
-        const angle = index * 1.37 + impact.serial;
-        this.context.beginPath();
-        this.context.moveTo(point.x, point.y);
-        this.context.lineTo(point.x + Math.cos(angle) * radius, point.y + Math.sin(angle) * radius);
-        this.context.stroke();
-      }
-    }
-    this.context.restore();
+  private drawHullImpact(
+    impact: StrategicCombatSnapshot['lastImpact'],
+    width: number,
+    height: number
+  ): void {
+    if (!impact) return;
+    drawCombatHullImpact(
+      this.context,
+      impact,
+      this.impactAge,
+      this.screen(impact.position, width, height)
+    );
   }
 }

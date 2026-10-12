@@ -579,6 +579,10 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 **keine Statusänderung** an Voidbound-Feature-IDs. Harrowdrift-spezifische Optimierung der Breitseitensteuerung mit seitlichem RCS-Schub, Ausweichpläne nach ausbleibendem Schaden, KI-Enterentscheidungen und präzisere Minen-/Boarding-Telemetrie. Bestehende Voidbound-Paritätsbewertungen bleiben unverändert; die neuen KI-Verhaltensweisen sind noch nicht als vollständige Funktionsparität nachgewiesen.
 
+## Review-Log: Kampf-Neuaufbau, Prototyp (2026-10-11)
+
+**keine Statusänderung** der Voidbound-Feature-IDs. Erste isolierte Aktions-/Reaktions-Zustandsmaschine mit vier visuell unterschiedlichen Manövertypen und jeweils drei Reaktionen sowie erste Korrekturen an Projektilflugbahnen, Raketenoptik und Schildtreffern. Die neue Maschine ist noch nicht mit der laufenden Raumkampfsteuerung verbunden; die bestehende Voidbound-Paritätsbewertung wird daher nicht angehoben.
+
 ## Pflege-Regel
 
 Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verworfen wird:

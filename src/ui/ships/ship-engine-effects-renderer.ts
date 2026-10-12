@@ -18,7 +18,8 @@ export class ShipEngineEffectsRenderer {
     geometry: ShipScreenGeometry,
     intensity: number,
     timeSeconds: number,
-    layer: ShipEffectLayer = 'below'
+    layer: ShipEffectLayer = 'below',
+    boosted = false
   ): void {
     if (intensity <= 0) return;
     const normalizedIntensity = Math.min(1, Math.max(0, intensity));
@@ -28,8 +29,9 @@ export class ShipEngineEffectsRenderer {
       const nozzle = projectHardpoint(hardpoint, source, geometry);
       const flicker = engineFlicker(timeSeconds, index);
       const baseWidth = Math.max(2, (hardpoint.width / source.sourceWidth) * geometry.width);
-      const length = baseWidth * (0.58 + normalizedIntensity * 0.92) * flicker;
-      const thickness = baseWidth * (0.34 + normalizedIntensity * 0.13);
+      const length =
+        baseWidth * (0.58 + normalizedIntensity * 0.92) * flicker * (boosted ? 2.3 : 1);
+      const thickness = baseWidth * (0.34 + normalizedIntensity * 0.13) * (boosted ? 1.65 : 1);
       const backwards = {
         x: -Math.cos(geometry.angle),
         y: -Math.sin(geometry.angle),
