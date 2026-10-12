@@ -658,3 +658,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log 2026-10-12: taktische Minen-Korridore
 
 **keine Statusänderung.** Vorhandene Minen erhalten eine Prüfung der gegnerischen Anflugbahn, Abwurf ohne redundante Nahcluster und seitliches Ausweichen vor erkannten Minen. Es werden keine Minenvorräte erfunden; die Kollision und Zündung bleiben bei den bestehenden Minentypen. Ein gezieltes Traktor-Hineindrücken in Minenzonen ist hier noch nicht umgesetzt. Voidbound-Paritätsstatus unverändert.
+
+## Review-Log (2026-10-12): Traktorunterstützte Minenfallen
+
+**keine Statusänderung.** Harrowdrift ergänzt die vorhandene Traktorimpuls-Logik um seitliche Geschwindigkeitsänderungen in Richtung einer eigenen, bereits scharfen Mine. Auslösebedingungen bleiben eigener Schildausfall, intakter Traktor, Reichweite und Cooldown. Nur kinematisch erreichbare Minenkorridore werden berücksichtigt; fremde Minen, unscharfe Minen und aussichtslose Fallen werden ausgeschlossen. Die vorhandene Minendetonation und das physikalische Flugmodell bleiben unverändert; vollständige Voidbound-Parität wird nicht behauptet.
