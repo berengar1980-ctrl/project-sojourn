@@ -244,4 +244,18 @@ pilot.stopExchangeBoost(boostShip);
 pilot.updateExchangeBoost(boostShip, 14);
 assert(Math.abs(boostShip.boostSeconds - 3.5) < 0.0001, 'empty boost replenishes in 14 seconds');
 
+const escapeShip = ship(500, 500);
+escapeShip.tactic = 'flee';
+const escapeGoal = { x: 300, y: 900 };
+const escapePlan = {
+  initiatorGoal: { x: 1700, y: 500 },
+  reactorGoal: { x: 1700, y: 500 },
+  initiatorHeading: 0,
+  reactorHeading: Math.PI,
+};
+pilot.pilotExchangeShip(escapeShip, 'initiator', escapePlan, {
+  width: 2200, height: 1400, exitPoint: escapeGoal,
+}, 0.08);
+assert(escapeShip.velocity.y > 0, 'escaping ship navigates toward exit instead of combat waypoint');
+
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
