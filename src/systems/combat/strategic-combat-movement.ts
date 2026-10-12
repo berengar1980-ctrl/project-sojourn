@@ -379,6 +379,11 @@ function performCombatThrust(
   resolveArenaObstacles(combatant, arena);
 }
 
+function applyMineAvoidance(direction: CombatPoint, avoidance: CombatPoint | null): CombatPoint {
+  if (!avoidance) return direction;
+  return normalize(direction.x + avoidance.x * 2, direction.y + avoidance.y * 2);
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -415,9 +420,7 @@ export function moveCombatant(
   );
 
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines);
-  if (mineAvoidance) {
-    direction = normalize(direction.x + mineAvoidance.x * 2, direction.y + mineAvoidance.y * 2);
-  }
+  direction = applyMineAvoidance(direction, mineAvoidance);
   const evasion = predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
     direction = evasion.direction;
