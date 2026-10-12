@@ -203,8 +203,8 @@ assert.deepEqual(
 
 
 const boostShip = ship(500, 500);
-assert.equal(pilot.activateExchangeBoost(boostShip), true, 'boost activates once');
-assert.equal(pilot.activateExchangeBoost(boostShip), false, 'boost cannot be stacked');
+boostShip.boostSeconds = 3.5;
+assert.equal(pilot.activateExchangeBoost(boostShip), true, 'boost can be activated');
 const boostOrder = {
   initiatorGoal: { x: 1700, y: 500 },
   reactorGoal: { x: 400, y: 500 },
@@ -216,15 +216,21 @@ for (let i = 0; i < 20; i += 1) {
   pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
   pilot.pilotExchangeShip(normalShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
 }
-assert(boostShip.speed > normalShip.speed, 'boost materially increases speed');
-for (let i = 0; i < 30; i += 1) {
-  pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
-}
-assert.equal(boostShip.boostSeconds, 0, 'boost expires after 3.5 seconds');
-assert.equal(pilot.activateExchangeBoost(boostShip), false, 'recovery period blocks reactivation');
-for (let i = 0; i < 150; i += 1) {
-  pilot.pilotExchangeShip(boostShip, 'initiator', boostOrder, { width: 2200, height: 1400 }, 0.08);
-}
-assert.equal(pilot.activateExchangeBoost(boostShip), true, 'boost recharges after cooldown');
+assert(boostShip.speed > normalShip.speed, 'boost increases speed');
+pilot.stopExchangeBoost(boostShip);
+const saved = boostShip.boostSeconds;
+pilot.updateExchangeBoost(boostShip, 1);
+assert(boostShip.boostSeconds > saved, 'charge regenerates when no longer boosting');
+boostShip.boostSeconds = 0.4;
+pilot.stopExchangeBoost(boostShip);
+pilot.updateExchangeBoost(boostShip, 1);
+const firstThirdGain = boostShip.boostSeconds - 0.4;
+boostShip.boostSeconds = 1.5;
+pilot.updateExchangeBoost(boostShip, 1);
+const middleThirdGain = boostShip.boostSeconds - 1.5;
+boostShip.boostSeconds = 2.7;
+pilot.updateExchangeBoost(boostShip, 1);
+const lastThirdGain = boostShip.boostSeconds - 2.7;
+assert(firstThirdGain < middleThirdGain && middleThirdGain < lastThirdGain, 'recharge increases in each third');
 
 console.log('PASS exchange initiator/reactor flight roles and damage-based initiative');
