@@ -359,7 +359,8 @@ function tickStrategicCombat(
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
-  maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
+  // The Alpha reference duel tests flight and weapons, not boarding transitions.
+  if (!actionState) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
