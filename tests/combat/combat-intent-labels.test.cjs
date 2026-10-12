@@ -1,0 +1,15 @@
+'use strict';
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+const root = path.resolve(__dirname, '../..');
+const { describeCombatIntent } = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-intent-labels.ts');
+const base = { tactic: 'fight', strategy: { kind: 'broadside' } };
+assert.equal(describeCombatIntent(base), 'BREITSEITE');
+assert.equal(describeCombatIntent({ ...base, tactic: 'flee' }), 'FLIEHEN');
+assert.equal(describeCombatIntent({ tactic: 'fight', strategy: { kind: 'approach' } }), 'ANNÄHERN');
+assert.equal(describeCombatIntent({ tactic: 'fight', strategy: null }), 'KAMPFPOSITION SUCHEN');
+const fs = require('node:fs');
+const source = fs.readFileSync(path.join(root, 'src/systems/combat/strategic-combat-service.ts'), 'utf8');
+assert(source.includes('ship.combatIntent = describeCombatIntent(ship)'), 'non-Alpha battles update the ship intent');
+console.log('PASS combat intent labels for all duels');
