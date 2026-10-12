@@ -213,7 +213,7 @@ assert.equal(
   blockedCombat.getSnapshot().defender.shieldMaxHp,
   'wrecks and asteroids must block direct laser fire'
 );
-assert(sawBlockedBeam, 'blocked beam should report the obstacle hit');
+assert.equal(sawBlockedBeam, false, 'AI must hold fire rather than wasting beams on known obstacles');
 
 const shieldSideCombat = combatModule.createStrategicCombatService(
   laserOnly('left-attacker'),
