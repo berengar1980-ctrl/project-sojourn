@@ -290,6 +290,7 @@ export interface MutableCombatant {
   nextStrategyReviewAt: number;
   lastEnemyHpObserved?: number;
   lastProgressAt?: number;
+  lastContactReviewAt?: number;
   stalledPlanKind?: CombatStrategyPlan['kind'];
   stalledPlanFacing?: CombatStrategyPlan['broadsideFacing'];
   shieldHp: number;
