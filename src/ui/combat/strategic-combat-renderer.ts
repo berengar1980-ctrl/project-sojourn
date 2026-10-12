@@ -391,7 +391,8 @@ export class StrategicCombatRenderer {
         geometry,
         engineIntensity,
         timeSeconds,
-        'below'
+        'below',
+        combatant.boostSeconds > 0
       );
       this.maneuverEffects.drawExhaust(
         this.context,
