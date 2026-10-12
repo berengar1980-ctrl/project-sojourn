@@ -28,7 +28,8 @@ export function noteRuntimeImpact(
   target: StrategicCombatSide,
   layer: CombatImpactLayer,
   damage: number,
-  point: CombatPoint
+  point: CombatPoint,
+  weaponKind?: CombatBeamKind | 'plasma' | 'missile' | 'autocannon'
 ): void {
   runtime.impactSerial += 1;
   runtime.lastImpact = {
@@ -37,6 +38,7 @@ export function noteRuntimeImpact(
     layer,
     damage,
     position: { ...point },
+    ...(weaponKind ? { weaponKind } : {}),
   };
 }
 
