@@ -252,6 +252,8 @@ function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number)
   maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
   maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
   advanceThrownAsteroids(runtime, dt);
+  pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
 }
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
@@ -329,8 +331,6 @@ function tickStrategicCombat(
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
   updateCombatAsteroidThrows(runtime, dt);
-  pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
-  pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
