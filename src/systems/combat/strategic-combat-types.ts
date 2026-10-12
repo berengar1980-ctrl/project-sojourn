@@ -214,6 +214,8 @@ export interface ThrownAsteroidSnapshot {
   readonly radius: number;
   readonly velocity: CombatPoint;
   readonly ageSeconds: number;
+  readonly phase: 'capture' | 'charge' | 'flight';
+  readonly origin: CombatPoint;
 }
 
 export interface StrategicCombatSnapshot {
@@ -368,6 +370,8 @@ export interface MutableThrownAsteroid {
   radius: number;
   velocity: CombatPoint;
   ageSeconds: number;
+  phase: 'capture' | 'charge' | 'flight';
+  origin: CombatPoint;
 }
 
 export interface StrategicCombatRuntime {
