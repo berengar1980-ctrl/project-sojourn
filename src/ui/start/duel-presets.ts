@@ -41,8 +41,8 @@ export const DUEL_ENCOUNTERS: readonly DuelEncounter[] = [
     title: 'Alpha · Front gegen Front',
     purpose: 'Railguns, Abstand und Frontalwinkel',
     seed: 1001,
-    first: side('patrol', 1, [rail, cannon, cannon, laser, missile], 0),
-    second: side('patrol', 2, [rail, cannon, cannon, laser, missile], 1),
+    first: side('patrol', 1, [rail, cannon, cannon, laser], 0),
+    second: side('patrol', 2, [rail, cannon, cannon, laser], 1),
   },
   {
     id: 'beta',
