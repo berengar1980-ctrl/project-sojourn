@@ -20,7 +20,7 @@ function selectThrowable(
   side: StrategicCombatSide,
   ship: MutableCombatant,
   reach: number
-): { rock?: CombatVisualAsteroid; mine?: StrategicCombatRuntime['mines'][number] } {
+): { rock: CombatVisualAsteroid | undefined; mine: StrategicCombatRuntime['mines'][number] | undefined } {
   const rock = (runtime.arena.asteroids ?? [])
     .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
     .filter((candidate) => distance(ship.position, candidate.position) <= reach)
@@ -57,6 +57,28 @@ function removeCapturedThrowable(
   }
 }
 
+function queueTractorThrow(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  position: { x: number; y: number },
+  aim: { x: number; y: number },
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
+  runtime.thrownAsteroids.push({
+    owner: side,
+    asteroidId: rock?.id ?? 'mine-' + mine!.id,
+    ...(mine ? { mineDefinition: mine.definition } : {}),
+    position: { ...position },
+    radius: rock?.radius ?? 9,
+    velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
+    ageSeconds: 0,
+    phase: 'capture',
+    origin: { ...ship.position },
+  });
+}
+
 export function maybeLaunchTractorAsteroid(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -78,17 +100,7 @@ export function maybeLaunchTractorAsteroid(
   // Remove the captured rock from normal asteroid physics; it now has one
   // authoritative projectile position instead of a duplicate stationary body.
   removeCapturedThrowable(runtime, rock, mine);
-  runtime.thrownAsteroids.push({
-    owner: side,
-    asteroidId: rock?.id ?? 'mine-' + mine!.id,
-    ...(mine ? { mineDefinition: mine.definition } : {}),
-    position: { ...position },
-    radius: rock?.radius ?? 9,
-    velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
-    ageSeconds: 0,
-    phase: 'capture',
-    origin: { ...ship.position },
-  });
+  queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
   runtime.lastEvent =
     ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' : ': TRAKTOR ERFASST ASTEROID');
