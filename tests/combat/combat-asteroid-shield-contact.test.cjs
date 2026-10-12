@@ -43,4 +43,21 @@ const distantShip = {
 asteroid.position.y = 270;
 resolveCombatAsteroidContacts(distantShip, { asteroids: [asteroid] });
 assert.equal(distantShip.position.x, 200, 'no invisible circular wall outside narrow shield axis');
+const sideShip = {
+  ...ship,
+  position: { x: 200, y: 200 },
+  velocity: { x: 0, y: 30 },
+  speed: 30,
+  shieldHp: 100,
+  shieldImpacts: [],
+};
+const sideRock = {
+  id: 'side-rock',
+  kind: 'resource',
+  position: { x: 200, y: 248 },
+  velocity: { x: 0, y: 0 },
+  radius: 30,
+};
+resolveCombatAsteroidContacts(sideShip, { asteroids: [sideRock] });
+assert(sideShip.position.y > 190, 'narrow shield side does not trigger oversized circular displacement');
 console.log('PASS elliptical shield asteroid contact and visual impact');
