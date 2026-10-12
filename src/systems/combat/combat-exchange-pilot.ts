@@ -4,6 +4,7 @@ import type {
   StrategicCombatArenaOptions,
 } from './strategic-combat-types';
 import type { CombatAction, CombatReaction, CombatExchange } from './combat-exchange-machine';
+import { combatRouteHeading } from './combat-asteroid-routing';
 import {
   clamp,
   normalize,
@@ -218,9 +219,15 @@ export function pilotExchangeShip(
           x: clamp(planned.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
           y: clamp(planned.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
         };
+  // Route is established before thrust. Follow a navigable waypoint rather than
+  // cutting through a rock on the way to the tactical maneuver destination.
+  const route = combatRouteHeading(ship, goal, arena, dt);
+  const safeGoal = route
+    ? { x: ship.position.x + route.x * 200, y: ship.position.y + route.y * 200 }
+    : goal;
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
-  const dx = goal.x - ship.position.x;
-  const dy = goal.y - ship.position.y;
+  const dx = safeGoal.x - ship.position.x;
+  const dy = safeGoal.y - ship.position.y;
   const distance = Math.hypot(dx, dy);
   // Accelerate on the navigation heading first. Only rotate into a firing
   // posture after the ship has established real forward momentum.
@@ -229,12 +236,14 @@ export function pilotExchangeShip(
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
   const facing =
-    distance < 90 || (forwardVelocity >= 45 && distance < 260) ? weaponFacing : navigationHeading;
+    !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
+      ? weaponFacing
+      : navigationHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);
   ship.headingRadians = wrapAngle(ship.headingRadians + turn);
   ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
   ship.angularThrust = clamp(error / turnRate, -1, 1);
-  accelerateExchangeShip(ship, goal, distance, boosting, arena, dt);
+  accelerateExchangeShip(ship, safeGoal, distance, boosting && !route, arena, dt);
 }

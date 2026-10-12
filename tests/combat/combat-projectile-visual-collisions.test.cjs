@@ -53,6 +53,20 @@ assert(weapons.includes("projectile.kind === 'missile' && !projectile.missed"));
 assert(weapons.includes('weaponKind: projectile.kind'), 'impact visuals know projectile type');
 assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKind'));
 assert(impactRenderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
+assert(
+  weapons.includes('obstacle.point, kind'),
+  'beam impact carries its weapon category to the renderer'
+);
+assert(
+  weapons.includes('projectile.kind\n    );'),
+  'projectile impact carries its weapon category to the renderer'
+);
+assert(impactRenderer.includes("impact.layer === 'obstacle'"), 'solid rocks get hit effects');
+assert(
+  impactRenderer.includes("impact.weaponKind === 'rail'"),
+  'kinetic rock impacts are distinct'
+);
+
 assert(impactRenderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
 const torpedoRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),

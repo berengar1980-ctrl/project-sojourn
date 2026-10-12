@@ -34,14 +34,14 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
           ? {
               x:
                 asteroid.radius * scale +
-                20 +
-                ((index * 0.618033988749895 + seed * 0.000123) % 1) *
-                  (width - 2 * (asteroid.radius * scale + 20)),
+                24 +
+                ((((Math.sin((index + 1) * 127.1 + seed * 0.73) * 43758.5453) % 1) + 1) % 1) *
+                  (width - 2 * (asteroid.radius * scale + 24)),
               y:
                 asteroid.radius * scale +
-                20 +
-                ((index * 0.754877666246693 + seed * 0.000217) % 1) *
-                  (height - 2 * (asteroid.radius * scale + 20)),
+                24 +
+                ((((Math.sin((index + 1) * 311.7 + seed * 1.13) * 23871.8321) % 1) + 1) % 1) *
+                  (height - 2 * (asteroid.radius * scale + 24)),
             }
           : { x: asteroid.position.x * factorX, y: asteroid.position.y * factorY },
       radius: asteroid.radius * scale,

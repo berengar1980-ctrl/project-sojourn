@@ -11,6 +11,10 @@ export function resolveCombatAsteroidContacts(
   if (!arena.asteroids?.length) return;
   const geometry = ship.setup.shieldGeometry;
   const native = nativeCombatAsteroids(arena);
+  const previous = native.map((body) => ({
+    ...body.position,
+    velocity: { ...body.physics.velocity },
+  }));
   const hits = resolveShieldCollisions(
     {
       position: ship.position,
@@ -31,11 +35,15 @@ export function resolveCombatAsteroidContacts(
   // The shared solver changes asteroid positions and impulses, not the player's ship position.
   native.forEach((body, index) => {
     const visual = arena.asteroids![index]!;
-    visual.position.x = body.position.x;
-    visual.position.y = body.position.y;
+    // A ship cannot teleport a massive rock out of its way: limit impulse response
+    // and penetration correction. Small debris retains its original solver behavior.
+    const original = previous[index]!;
+    const resistance = visual.kind === 'resource' ? Math.max(12, visual.radius / 2) : 1;
+    visual.position.x = original.x + (body.position.x - original.x) / resistance;
+    visual.position.y = original.y + (body.position.y - original.y) / resistance;
     const velocity = visual.velocity as { x: number; y: number };
-    velocity.x = body.physics.velocity.x;
-    velocity.y = body.physics.velocity.y;
+    velocity.x = original.velocity.x + (body.physics.velocity.x - original.velocity.x) / resistance;
+    velocity.y = original.velocity.y + (body.physics.velocity.y - original.velocity.y) / resistance;
   });
   for (const hit of hits) {
     const damage = damageFromImpactEnergy(hit.kineticEnergy, geometry?.modifier ?? 1);

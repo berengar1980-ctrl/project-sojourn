@@ -638,3 +638,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Duellfeld-Mitte, Alpha-Analyse, Startbild
 
 **keine Statusänderung.** Der dichte PvP-Preset verteilt weiterhin die originalen Kampagnen-Asteroiden über die gesamte Arena einschließlich der Mitte; Alpha erhält analysefreundlichere Startreserven und verzichtet auf gelenkte Raketen. Das vorhandene Startmenü-Bild bleibt unverändert, nur die Überlagerung wurde transparenter.
+
+## Review-Log (2026-10-12): Asteroiden-KI, Impakte, Alpha, Verteilung
+
+**keine Statusänderung.** Dichtes PvP-Feld mit deterministisch unregelmäßiger Verteilung; der eigene Action/Reaction-Pilot übernimmt Kampagnen-Routenplanung vor dem ersten Schub und verfolgt Hindernis-Wegpunkte. Masse großer Brocken erhöht, Waffenart bei Asteroiden-Treffern zur Effektanzeige transportiert und Alpha-Lebensdauer nur im Preset angehoben. Das vom Nutzer gelieferte Original-Startbild muss als Binärdatei noch in `public/startscreen-background.webp` übernommen werden.
