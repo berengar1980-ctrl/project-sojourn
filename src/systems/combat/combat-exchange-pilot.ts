@@ -77,17 +77,21 @@ export function planExchangeFlight(
   // This avoids the head-on case where both autonomous pilots dodge into each other.
   const lateral = { x: -toward.y, y: toward.x };
   const separation = 175;
-  attacking.x += lateral.x * separation;
-  attacking.y += lateral.y * separation;
-  defender.x -= lateral.x * separation;
-  defender.y -= lateral.y * separation;
+  const attackingLane = {
+    x: attacking.x + lateral.x * separation,
+    y: attacking.y + lateral.y * separation,
+  };
+  const defenderLane = {
+    x: defender.x - lateral.x * separation,
+    y: defender.y - lateral.y * separation,
+  };
   const facing = Math.atan2(toward.y, toward.x);
   const broadside = action === 'broadside_pass' ? Math.PI / 2 : 0;
   const defendingBroadside =
     reaction === 'counter_pass' || reaction === 'counterfire' ? Math.PI / 2 : 0;
   return {
-    initiatorGoal: attacking,
-    reactorGoal: defender,
+    initiatorGoal: attackingLane,
+    reactorGoal: defenderLane,
     initiatorHeading: facing + broadside,
     reactorHeading:
       facing + Math.PI + defendingBroadside + (reaction === 'turn_to_face' ? 0.12 : 0),
