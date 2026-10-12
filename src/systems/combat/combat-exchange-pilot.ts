@@ -92,10 +92,34 @@ export const BOOST_DURATION_SECONDS = 3.5;
 export const BOOST_COOLDOWN_SECONDS = 14;
 
 export function activateExchangeBoost(ship: MutableCombatant): boolean {
-  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? 0) > 0 || (ship.boostCooldownSeconds ?? 0) > 0) return false;
-  ship.boostSeconds = BOOST_DURATION_SECONDS;
-  ship.boostCooldownSeconds = BOOST_COOLDOWN_SECONDS;
+  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? BOOST_DURATION_SECONDS) <= 0) return false;
+  ship.boostActive = true;
   return true;
+}
+
+export function stopExchangeBoost(ship: MutableCombatant): void {
+  ship.boostActive = false;
+}
+
+export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
+  const charge = ship.boostSeconds ?? BOOST_DURATION_SECONDS;
+  const active = ship.boostActive === true && ship.subsystems.engine > 0 && charge > 0;
+  if (active) {
+    ship.boostSeconds = Math.max(0, charge - dt);
+    if (ship.boostSeconds === 0) ship.boostActive = false;
+  } else {
+    ship.boostActive = false;
+    // Recharge is slower at low charge and fastest in the upper third.
+    const fraction = charge / BOOST_DURATION_SECONDS;
+    const rate = fraction < 1 / 3 ? 0.55 : fraction < 2 / 3 ? 1 : 1.45;
+    ship.boostSeconds = Math.min(
+      BOOST_DURATION_SECONDS,
+      charge + (BOOST_DURATION_SECONDS / BOOST_COOLDOWN_SECONDS) * rate * dt
+    );
+  }
+  ship.boostCooldownSeconds =
+    ((BOOST_DURATION_SECONDS - (ship.boostSeconds ?? 0)) / BOOST_DURATION_SECONDS) *
+    BOOST_COOLDOWN_SECONDS;
 }
 
 export function pilotExchangeShip(
@@ -105,9 +129,8 @@ export function pilotExchangeShip(
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
-  ship.boostSeconds = Math.max(0, (ship.boostSeconds ?? 0) - dt);
-  ship.boostCooldownSeconds = Math.max(0, (ship.boostCooldownSeconds ?? 0) - dt);
-  const boosting = (ship.boostSeconds ?? 0) > 0 && ship.subsystems.engine > 0;
+  updateExchangeBoost(ship, dt);
+  const boosting = ship.boostActive === true;
   const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
