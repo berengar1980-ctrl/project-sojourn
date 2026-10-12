@@ -634,3 +634,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Dichteres Duellfeld und Torpedogröße
 
 **keine Statusänderung.** Für den dichten PvP-Preset werden zwei reproduzierbare Aufrufe des bestehenden Kampagnen-Asteroidengenerators kombiniert; die vorhandene Physik bleibt zuständig. Die Bildskalierung des Torpedos wurde auf ein Drittel des vorherigen Wertes reduziert.
+
+## Review-Log (2026-10-12): Duellfeld-Mitte, Alpha-Analyse, Startbild
+
+**keine Statusänderung.** Der dichte PvP-Preset verteilt weiterhin die originalen Kampagnen-Asteroiden über die gesamte Arena einschließlich der Mitte; Alpha erhält analysefreundlichere Startreserven und verzichtet auf gelenkte Raketen. Das vorhandene Startmenü-Bild bleibt unverändert, nur die Überlagerung wurde transparenter.
