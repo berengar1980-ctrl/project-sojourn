@@ -24,7 +24,11 @@ import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog'
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
-import { createDuelArena, DUEL_MAPS, type DuelMapKind } from '../../systems/combat/duel-arena-presets';
+import {
+  createDuelArena,
+  DUEL_MAPS,
+  type DuelMapKind,
+} from '../../systems/combat/duel-arena-presets';
 
 interface DuelDraft {
   shipId: string;
@@ -321,7 +325,9 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
-      setups[0]!, setups[1]!, duelSeed,
+      setups[0]!,
+      setups[1]!,
+      duelSeed,
       createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
     );
     activePanel = createStrategicCombatPanel({

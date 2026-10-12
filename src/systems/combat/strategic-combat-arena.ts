@@ -9,7 +9,9 @@ import {
   distance,
 } from './strategic-combat-geometry';
 
-function createArenaOptions(arenaOptions?: StrategicCombatArenaOptions): StrategicCombatArenaOptions {
+function createArenaOptions(
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatArenaOptions {
   const arena: StrategicCombatArenaOptions = {
     width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),

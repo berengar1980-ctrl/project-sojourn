@@ -128,10 +128,15 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
-    drawCombatAsteroids(this.spaceBodies, this.model.arena.asteroids ?? [],
-      Math.min(Math.max(1, width - 140) / this.model.arena.width,
-        Math.max(1, height - 140) / this.model.arena.height),
-      (point) => this.screen(point, width, height));
+    drawCombatAsteroids(
+      this.spaceBodies,
+      this.model.arena.asteroids ?? [],
+      Math.min(
+        Math.max(1, width - 140) / this.model.arena.width,
+        Math.max(1, height - 140) / this.model.arena.height
+      ),
+      (point) => this.screen(point, width, height)
+    );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
 
     this.drawMines(width, height);

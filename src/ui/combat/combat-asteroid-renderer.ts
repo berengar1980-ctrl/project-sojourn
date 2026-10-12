@@ -5,7 +5,10 @@ export function drawCombatAsteroids(
   renderer: ProceduralSpaceBodyRenderer,
   asteroids: readonly CombatVisualAsteroid[],
   scale: number,
-  project: (point: { readonly x: number; readonly y: number }) => { readonly x: number; readonly y: number }
+  project: (point: { readonly x: number; readonly y: number }) => {
+    readonly x: number;
+    readonly y: number;
+  }
 ): void {
   for (const asteroid of asteroids) {
     const center = project(asteroid.position);
