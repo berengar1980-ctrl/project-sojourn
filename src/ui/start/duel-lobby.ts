@@ -249,6 +249,19 @@ function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLS
   return { mapLabel, mapSelect };
 }
 
+function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
+  const manual = document.createElement('option');
+  manual.value = '';
+  manual.textContent = 'Freies Duell · eigene Konfiguration';
+  encounterSelect.append(manual);
+  for (const encounter of DUEL_ENCOUNTERS) {
+    const option = document.createElement('option');
+    option.value = encounter.id;
+    option.textContent = encounter.title + ' — ' + encounter.purpose;
+    encounterSelect.append(option);
+  }
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -265,16 +278,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const encounterLabel = document.createElement('label');
   encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
   const encounterSelect = document.createElement('select');
-  const manual = document.createElement('option');
-  manual.value = '';
-  manual.textContent = 'Freies Duell · eigene Konfiguration';
-  encounterSelect.append(manual);
-  for (const encounter of DUEL_ENCOUNTERS) {
-    const option = document.createElement('option');
-    option.value = encounter.id;
-    option.textContent = encounter.title + ' — ' + encounter.purpose;
-    encounterSelect.append(option);
-  }
+  populateEncounterOptions(encounterSelect);
   encounterLabel.append(encounterSelect);
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
