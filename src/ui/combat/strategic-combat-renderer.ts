@@ -451,6 +451,16 @@ export class StrategicCombatRenderer {
     }
 
     this.drawShipCaption(combatant.name, hullRatio, geometry);
+    if (combatant.combatIntent) {
+      this.context.font = 'bold 10px ui-monospace, monospace';
+      this.context.textAlign = 'center';
+      this.context.fillStyle = combatant.combatIntent === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
+      this.context.fillText(
+        combatant.combatIntent + (combatant.boostActive ? ' · BOOST' : ''),
+        geometry.center.x,
+        geometry.center.y - geometry.height * 0.8 - 13
+      );
+    }
     drawCombatBoostMeter(
       this.context,
       geometry.center,
