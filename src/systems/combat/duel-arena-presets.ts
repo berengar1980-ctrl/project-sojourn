@@ -46,6 +46,12 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
       },
     }))
     .filter((asteroid) =>
+      asteroid.position.x > asteroid.radius &&
+      asteroid.position.x < width - asteroid.radius &&
+      asteroid.position.y > asteroid.radius &&
+      asteroid.position.y < height - asteroid.radius
+    )
+    .filter((asteroid) =>
       [0.35, 0.65].every(
         (x) =>
           Math.hypot(asteroid.position.x - width * x, asteroid.position.y - height * 0.5) >
