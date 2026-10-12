@@ -20,7 +20,10 @@ function selectThrowable(
   side: StrategicCombatSide,
   ship: MutableCombatant,
   reach: number
-): { rock: CombatVisualAsteroid | undefined; mine: StrategicCombatRuntime['mines'][number] | undefined } {
+): {
+  rock: CombatVisualAsteroid | undefined;
+  mine: StrategicCombatRuntime['mines'][number] | undefined;
+} {
   const rock = (runtime.arena.asteroids ?? [])
     .filter((candidate) => candidate.radius >= 5 && candidate.radius <= MAX_RADIUS)
     .filter((candidate) => distance(ship.position, candidate.position) <= reach)
