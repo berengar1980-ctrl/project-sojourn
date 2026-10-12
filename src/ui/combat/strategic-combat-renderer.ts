@@ -1,3 +1,4 @@
+import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { hash, clamp01 } from './strategic-combat-renderer-math';
@@ -253,38 +254,7 @@ export class StrategicCombatRenderer {
       this.context.arc(0, 0, 3, 0, Math.PI * 2);
       this.context.fill();
     } else if (projectile.kind === 'missile') {
-      // A pointed missile with a short exhaust plume, rather than a flat
-      // rectangle dragging an oversized orange line across the arena.
-      this.context.shadowColor = '#ffad57';
-      this.context.shadowBlur = 7;
-      this.context.fillStyle = 'rgba(240, 112, 36, 0.45)';
-      this.context.beginPath();
-      this.context.moveTo(-9, 0);
-      this.context.lineTo(-16, -1.5);
-      this.context.lineTo(-14, 0);
-      this.context.lineTo(-16, 1.5);
-      this.context.closePath();
-      this.context.fill();
-      this.context.shadowBlur = 0;
-      this.context.fillStyle = '#c1ced2';
-      this.context.beginPath();
-      this.context.moveTo(12, 0);
-      this.context.lineTo(3, -1.5);
-      this.context.lineTo(-9, -1.5);
-      this.context.lineTo(-9, 1.5);
-      this.context.lineTo(3, 1.5);
-      this.context.closePath();
-      this.context.fill();
-      this.context.fillStyle = '#536674';
-      this.context.fillRect(-6, -0.5, 10, 1);
-      this.context.strokeStyle = '#87969a';
-      this.context.lineWidth = 1;
-      this.context.beginPath();
-      this.context.moveTo(-5, -1.5);
-      this.context.lineTo(-8, -3);
-      this.context.moveTo(-5, 1.5);
-      this.context.lineTo(-8, 3);
-      this.context.stroke();
+      drawCombatTorpedo(this.context);
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
       this.context.fillRect(-3, -1, 6, 2);
