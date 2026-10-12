@@ -226,7 +226,6 @@ export interface StrategicCombatSnapshot {
     readonly height: number;
     readonly obstacles?: readonly StrategicCombatObstacle[];
     readonly asteroids?: readonly CombatVisualAsteroid[];
-  readonly asteroids?: readonly CombatVisualAsteroid[];
   };
 }
 
