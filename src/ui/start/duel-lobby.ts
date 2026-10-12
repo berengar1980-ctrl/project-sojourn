@@ -266,6 +266,15 @@ function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
   }
 }
 
+function tuneAlphaSetups(
+  setups: StrategicCombatantSetup[],
+  isAlpha: boolean
+): StrategicCombatantSetup[] {
+  return isAlpha
+    ? setups.map((setup) => ({ ...setup, shieldHp: setup.shieldHp * 3, hullHp: setup.hullHp * 2 }))
+    : setups;
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -324,9 +333,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     );
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Analysis-only durability: preserve damage mechanics, extend observation time.
-    const tunedSetups = scenario?.id === 'alpha'
-      ? setups.map((setup) => ({ ...setup, shieldHp: setup.shieldHp * 3, hullHp: setup.hullHp * 2 }))
-      : setups;
+    const tunedSetups = tuneAlphaSetups(setups, scenario?.id === 'alpha');
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
       tunedSetups[0]!,
