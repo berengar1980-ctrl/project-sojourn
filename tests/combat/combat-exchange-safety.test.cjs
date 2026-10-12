@@ -34,7 +34,8 @@ for (const [x1, x2] of [
   const along = { x: Math.sign(x2 - x1), y: 0 };
   const side1 = (plan.initiatorGoal.y - first.position.y) * along.x;
   const side2 = (plan.reactorGoal.y - second.position.y) * along.x;
-  assert(side1 * side2 < 0, 'head-on passes use opposing world-side avoidance corridors');
+  assert.equal(side1, 0, 'frontal pass uses direct approach without forced flank offset');
+  assert(side2 !== 0, 'reaction may use an avoidance corridor');
 }
 const boosted = ship(500, 500);
 assert(pilot.activateExchangeBoost(boosted));
@@ -78,4 +79,4 @@ const collide = (closing) => {
 };
 assert(collide(12) < 1, 'slow contact inflicts minimal damage');
 assert(collide(140) > collide(12) * 10, 'high-speed ramming scales with impact speed');
-console.log('PASS coordinated passing lanes, boosted thrust ramp and velocity-based ram damage');
+console.log('PASS frontal approach, reactive lane, boosted thrust ramp and velocity-based ram damage');
