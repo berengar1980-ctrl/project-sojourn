@@ -349,6 +349,17 @@ function tickStrategicCombat(
     moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   }
   if (actionState) applyActionRamImpact(runtime);
+  if (!actionState && distance(runtime.attacker.position, runtime.defender.position) < 86) {
+    for (const [side, ship, enemy] of [
+      ['attacker', runtime.attacker, runtime.defender],
+      ['defender', runtime.defender, runtime.attacker],
+    ] as const) {
+      if (runtime.elapsedSeconds - (ship.lastContactReviewAt ?? -100) < 2) continue;
+      ship.lastContactReviewAt = runtime.elapsedSeconds;
+      ship.nextStrategyReviewAt = runtime.elapsedSeconds;
+      reviewAndExecute(runtime, ship, enemy, side);
+    }
+  }
   resolveCombatantCollision(runtime.attacker, runtime.defender);
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
