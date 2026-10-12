@@ -38,9 +38,10 @@ export function resolveCombatAsteroidContacts(ship: MutableCombatant, arena: Str
     ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
     const damage = Math.min(12, Math.max(0, incoming - 12) * 0.075);
     if (damage <= 0) continue;
+    const anchor = rotate(nx, ny, -ship.headingRadians);
     const hit = applyShieldHit(
       { maxHp: Math.max(1, ship.shieldMaxHp), modifier: geometry?.modifier ?? 1, currentHp: ship.shieldHp },
-      { source: 'asteroid', point: { x: center.x + nx * radiusX, y: center.y + ny * radiusY }, normal: { x: nx, y: ny }, surfaceAnchor: { x: nx, y: ny }, directDamage: damage },
+      { source: 'asteroid', point: { x: center.x + nx * radiusX, y: center.y + ny * radiusY }, normal: { x: nx, y: ny }, surfaceAnchor: anchor, directDamage: damage },
       Math.floor((ship.shieldImpacts.length + 1) * 100000 + incoming * 100)
     );
     ship.shieldHp -= hit.absorbedDamage;
