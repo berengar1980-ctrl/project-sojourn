@@ -259,7 +259,7 @@ export class StrategicCombatRenderer {
       this.context.arc(0, 0, 3, 0, Math.PI * 2);
       this.context.fill();
     } else if (projectile.kind === 'missile') {
-      this.context.scale(this.camera.zoom, this.camera.zoom);
+      this.context.scale(this.camera.zoom / 3, this.camera.zoom / 3);
       drawCombatTorpedo(this.context);
     } else {
       this.context.fillStyle = 'rgba(245, 211, 156, .95)';
