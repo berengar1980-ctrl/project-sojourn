@@ -1,4 +1,5 @@
-import type { StrategicCombatArenaOptions, StrategicCombatObstacle } from './strategic-combat-types';
+import { generateMiningSpace } from '../local-space/local-space-generator';
+import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 
 export type DuelMapKind = 'empty' | 'scattered' | 'asteroid_field';
 export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
@@ -10,30 +11,40 @@ export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
 export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
   const width = 4200;
   const height = 2600;
-  if (kind === 'empty') return { width, height, obstacles: [] };
-  let random = (seed ^ (kind === 'scattered' ? 0x2bad : 0x5eed)) >>> 0;
-  const next = (): number => {
-    random = (Math.imul(random, 1664525) + 1013904223) >>> 0;
-    return random / 4294967296;
+  if (kind === 'empty') return { width, height, obstacles: [], asteroids: [] };
+  // Use the SAME source as the actual mining field, including rock shape IDs and rotation.
+  const field = generateMiningSpace('duel', seed);
+  const factorX = width / field.width;
+  const factorY = height / field.height;
+  const scale = Math.min(factorX, factorY);
+  const asteroids = field.asteroids
+    .filter((asteroid) => kind === 'asteroid_field' || asteroid.kind === 'resource')
+    .filter((asteroid, index) => kind === 'asteroid_field' || index % 5 === 0)
+    .map((asteroid) => ({
+      id: asteroid.id,
+      kind: asteroid.kind,
+      position: { x: asteroid.position.x * factorX, y: asteroid.position.y * factorY },
+      radius: asteroid.radius * scale,
+      rotation: asteroid.rotation,
+    }))
+    .filter((asteroid) =>
+      [0.35, 0.65].every(
+        (x) =>
+          Math.hypot(asteroid.position.x - width * x, asteroid.position.y - height * 0.5) >
+          asteroid.radius + 340
+      )
+    );
+  return {
+    width,
+    height,
+    asteroids,
+    // Small drifting debris is visual-only, exactly as in the local asteroid field.
+    obstacles: asteroids
+      .filter((asteroid) => asteroid.kind === 'resource')
+      .map((asteroid) => ({
+        id: asteroid.id,
+        position: asteroid.position,
+        radius: asteroid.radius,
+      })),
   };
-  const count = kind === 'scattered' ? 12 : 56;
-  const obstacles: StrategicCombatObstacle[] = [];
-  for (let attempt = 0; attempt < count * 35 && obstacles.length < count; attempt += 1) {
-    const radius = kind === 'scattered' ? 38 + next() * 145 : 22 + next() * 105;
-    const position = {
-      x: 180 + radius + next() * (width - 360 - radius * 2),
-      y: 150 + radius + next() * (height - 300 - radius * 2),
-    };
-    const clearOfSpawn = [0.35, 0.65].every(
-      (x) => Math.hypot(position.x - width * x, position.y - height * 0.5) > radius + 340
-    );
-    const clearOfRocks = obstacles.every(
-      (obstacle) =>
-        Math.hypot(position.x - obstacle.position.x, position.y - obstacle.position.y) >
-        radius + obstacle.radius + 28
-    );
-    if (!clearOfSpawn || !clearOfRocks) continue;
-    obstacles.push({ id: 'duel-rock-' + obstacles.length, position, radius });
-  }
-  return { width, height, obstacles };
 }
