@@ -325,7 +325,7 @@ function advanceRuntimeProjectile(
     const desired = Math.atan2(dy, dx);
     const current = Math.atan2(projectile.direction.y, projectile.direction.x);
     const error = Math.atan2(Math.sin(desired - current), Math.cos(desired - current));
-    const turn = clamp(error, -2.8 * deltaSeconds, 2.8 * deltaSeconds);
+    const turn = clamp(error, -0.85 * deltaSeconds, 0.85 * deltaSeconds);
     projectile.direction = { x: Math.cos(current + turn), y: Math.sin(current + turn) };
   }
   // Plasma bolts and autocannon slugs retain their launch vector.
@@ -397,6 +397,14 @@ function advanceRuntimeProjectile(
     return;
   }
   projectile.position = next;
+  if (projectile.kind === 'missile' && !projectile.missed &&
+      dx * projectile.direction.x + dy * projectile.direction.y < -55) {
+    // A torpedo that has overshot continues on its vector before detonating.
+    projectile.missed = true;
+    projectile.shieldDamage = 0;
+    projectile.hullDamage = 0;
+    projectile.ttlSeconds = Math.min(projectile.ttlSeconds, 0.65);
+  }
   if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
 }
 
