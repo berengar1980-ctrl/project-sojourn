@@ -47,7 +47,7 @@ export function planExchangeFlight(
   // Each action represents a distinct, committed flight trajectory.
   const attacking =
     action === 'frontal_pass'
-      ? offsetPoint(reactor.position, toward, 230, 0)
+      ? offsetPoint(reactor.position, toward, 230, side * 120)
       : action === 'broadside_pass'
         ? offsetPoint(reactor.position, toward, -60, side * 290)
         : action === 'disengage_fire'
@@ -96,16 +96,26 @@ export function pilotExchangeShip(
   dt: number
 ): void {
   const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
-  const facing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
+  const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
+  const dx = goal.x - ship.position.x;
+  const dy = goal.y - ship.position.y;
+  const distance = Math.hypot(dx, dy);
+  // Accelerate on the navigation heading first. Only rotate into a firing
+  // posture after the ship has established real forward momentum.
+  const navigationHeading = Math.atan2(dy, dx);
+  const forwardVelocity =
+    ship.velocity.x * Math.cos(ship.headingRadians) +
+    ship.velocity.y * Math.sin(ship.headingRadians);
+  const facing =
+    distance < 90 || (forwardVelocity >= 45 && distance < 260)
+      ? weaponFacing
+      : navigationHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);
   ship.headingRadians = wrapAngle(ship.headingRadians + turn);
   ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
   ship.angularThrust = clamp(error / turnRate, -1, 1);
-  const dx = goal.x - ship.position.x;
-  const dy = goal.y - ship.position.y;
-  const distance = Math.hypot(dx, dy);
   const direction = normalize(dx, dy);
   const acceleration = Math.max(
     12,
@@ -126,7 +136,7 @@ export function pilotExchangeShip(
   const lateral = -changeX * forwardY + changeY * forwardX;
   const mainStep = acceleration * dt;
   const forwardStep = clamp(longitudinal, -mainStep * 0.25, mainStep);
-  const lateralStep = clamp(lateral, -mainStep * 0.35, mainStep * 0.35);
+  const lateralStep = clamp(lateral, -mainStep * 0.12, mainStep * 0.12);
   if (ship.subsystems.engine > 0) {
     ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
     ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
