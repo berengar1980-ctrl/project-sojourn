@@ -24,6 +24,38 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
   };
 }
 
+
+function updateExchangeIntents(
+  initiator: StrategicCombatRuntime['attacker'],
+  opponent: StrategicCombatRuntime['defender'],
+  next: CombatExchange
+): void {
+  const actionNames: Record<string, string> = {
+    frontal_pass: 'FRONTALANFLUG',
+    broadside_pass: 'BREITSEITENPASSAGE',
+    disengage_fire: 'ABSTAND GEWINNEN',
+    flanking_pass: 'FLANKIEREN',
+  };
+  const reactionNames: Record<string, string> = {
+    evade: 'AUSWEICHEN',
+    accelerate_clear: 'BESCHLEUNIGEN',
+    extend_range: 'ABSTAND HALTEN',
+    break_contact: 'KONTAKT LÖSEN',
+    close_gap: 'ANNÄHERN',
+    intercept: 'ABFANGEN',
+    pursue: 'VERFOLGEN',
+    cross_pass: 'KREUZEN',
+    counter_pass: 'GEGENPASSAGE',
+    counterfire: 'GEGENFEUER',
+    turn_to_face: 'ZIEL ANVISIEREN',
+    hold_fire: 'POSITION HALTEN',
+  };
+  initiator.combatIntent =
+    initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
+  opponent.combatIntent =
+    opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
+}
+
 export function tickActionExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -83,30 +115,7 @@ export function tickActionExchange(
     state.flight = null;
   }
   state.exchange = next;
-  const actionNames: Record<string, string> = {
-    frontal_pass: 'FRONTALANFLUG',
-    broadside_pass: 'BREITSEITENPASSAGE',
-    disengage_fire: 'ABSTAND GEWINNEN',
-    flanking_pass: 'FLANKIEREN',
-  };
-  const reactionNames: Record<string, string> = {
-    evade: 'AUSWEICHEN',
-    accelerate_clear: 'BESCHLEUNIGEN',
-    extend_range: 'ABSTAND HALTEN',
-    break_contact: 'KONTAKT LÖSEN',
-    close_gap: 'ANNÄHERN',
-    intercept: 'ABFANGEN',
-    pursue: 'VERFOLGEN',
-    cross_pass: 'KREUZEN',
-    counter_pass: 'GEGENPASSAGE',
-    counterfire: 'GEGENFEUER',
-    turn_to_face: 'ZIEL ANVISIEREN',
-    hold_fire: 'POSITION HALTEN',
-  };
-  initiator.combatIntent =
-    initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
-  opponent.combatIntent =
-    opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
+  updateExchangeIntents(initiator, opponent, next);
   if (!state.flight || next.phase !== 'execute') return;
   const remaining = next.duration - next.elapsed;
   const separation = Math.hypot(
