@@ -12,7 +12,6 @@ export function describeCombatIntent(ship: MutableCombatant): string {
     case 'escape': return 'FLIEHEN';
     case 'tractor_lock': return 'TRAKTOR POSITIONIEREN';
     case 'minefield': return 'MINEN POSITIONIEREN';
-    case 'regroup': return 'NEU FORM IEREN';
     default: return 'KAMPFPOSITION SUCHEN';
   }
 }
