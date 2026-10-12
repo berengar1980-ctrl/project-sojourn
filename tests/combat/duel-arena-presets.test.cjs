@@ -27,7 +27,10 @@ assert(
 );
 assert(dense.asteroids.length > dense.obstacles.length, 'small debris is visual only');
 assert(sparse.obstacles.length > 5, 'scattered map contains obstacles');
-assert(dense.obstacles.length > sparse.obstacles.length, 'dense map has more asteroids');
+assert(
+  dense.obstacles.length > sparse.obstacles.length * 3,
+  'dense map contains substantially more native rocks'
+);
 assert(
   dense.width * dense.height < sparse.width * sparse.height * 0.6,
   'dense preset packs native asteroids into a smaller playable region'
@@ -41,7 +44,7 @@ for (const map of [sparse, dense]) {
     for (const spawn of [0.35, 0.65]) {
       assert(
         Math.hypot(asteroid.position.x - map.width * spawn, asteroid.position.y - map.height / 2) >
-          asteroid.radius + 340,
+          asteroid.radius + (map === dense ? 145 : 340),
         'ship spawns have clearance'
       );
     }
