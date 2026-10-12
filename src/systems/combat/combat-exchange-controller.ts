@@ -130,8 +130,11 @@ export function tickActionExchange(
     const dy = goal.y - ship.position.y;
     const range = Math.hypot(dx, dy);
     const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
+    const forwardSpeed = ship.velocity.x * Math.cos(ship.headingRadians) +
+      ship.velocity.y * Math.sin(ship.headingRadians);
     const useful =
-      urgent && separation > 300 && range > 250 && aligned > range * 0.8 && remaining > 0.7;
+      urgent && separation > 300 && range > 250 && aligned > range * 0.92 &&
+      forwardSpeed >= 0 && !ship.asteroidRoute?.length && remaining > 0.7;
     if (useful) activateExchangeBoost(ship);
     else stopExchangeBoost(ship);
   };
