@@ -240,6 +240,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     {
       shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id,
       weapons: [],
+      mines: [],
       crewId: crewDefinitions[1]!.id,
     },
   ];
