@@ -37,6 +37,7 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
     <span>TRAKTOR ${tractor} / ${combatant.subsystems.maximum} ${tractor <= 0 ? '· DEFEKT / NICHT VORHANDEN' : ''}</span>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
     <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
+    <span>MINEN ${combatant.mineCount} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
   `;
 }
 
@@ -148,7 +149,11 @@ export function createStrategicCombatPanel(
     }
     for (const button of tacticButtons) {
       button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);
-      button.disabled = model.winner !== null;
+      button.disabled = model.winner !== null || (button.dataset.tactic === 'minefield' && model.attacker.mineCount === 0);
+      if (button.dataset.tactic === 'minefield') {
+        button.title = model.attacker.mineCount === 0 ? 'Keine Minen ausgerüstet' : model.attacker.mineCount + ' Minen vorhanden';
+        button.textContent = 'MINEN (' + model.attacker.mineCount + ')';
+      }
     }
     renderer.update(model);
   };

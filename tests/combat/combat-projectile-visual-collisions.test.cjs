@@ -54,7 +54,13 @@ assert(weapons.includes('weaponKind: projectile.kind'), 'impact visuals know pro
 assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKind'));
 assert(impactRenderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
 assert(impactRenderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
-assert(renderer.includes('this.context.lineTo(-8, 5)'), 'rocket fins distinguish its silhouette');
+const torpedoRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),
+  'utf8'
+);
+assert(renderer.includes('drawCombatTorpedo(this.context)'), 'combat renderer uses torpedo silhouette');
+assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
+assert(!torpedoRenderer.includes('lineTo(-8, 5)'), 'torpedo has no rocket fins');
 assert(
   renderer.includes('drawCombatHullImpact('),
   'combat renderer delegates explosions to the impact renderer'

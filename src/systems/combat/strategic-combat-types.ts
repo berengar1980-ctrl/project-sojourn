@@ -148,6 +148,8 @@ export interface StrategicCombatantSnapshot {
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
   readonly combatIntent?: string;
+  readonly mineCount: number;
+  readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
   readonly nextStrategyReviewAt: number;
@@ -283,6 +285,7 @@ export interface MutableCombatant {
   shieldImpacts: ShieldImpactEffect[];
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
+  tractorPulseCooldown?: number;
 }
 
 export interface MutableProjectile {
