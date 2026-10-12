@@ -88,6 +88,16 @@ export function planExchangeFlight(
   };
 }
 
+export const BOOST_DURATION_SECONDS = 3.5;
+export const BOOST_COOLDOWN_SECONDS = 14;
+
+export function activateExchangeBoost(ship: MutableCombatant): boolean {
+  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? 0) > 0 || (ship.boostCooldownSeconds ?? 0) > 0) return false;
+  ship.boostSeconds = BOOST_DURATION_SECONDS;
+  ship.boostCooldownSeconds = BOOST_COOLDOWN_SECONDS;
+  return true;
+}
+
 export function pilotExchangeShip(
   ship: MutableCombatant,
   role: 'initiator' | 'reactor',
@@ -95,6 +105,9 @@ export function pilotExchangeShip(
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
+  ship.boostSeconds = Math.max(0, (ship.boostSeconds ?? 0) - dt);
+  ship.boostCooldownSeconds = Math.max(0, (ship.boostCooldownSeconds ?? 0) - dt);
+  const boosting = (ship.boostSeconds ?? 0) > 0 && ship.subsystems.engine > 0;
   const goal = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
   const weaponFacing = role === 'initiator' ? plan.initiatorHeading : plan.reactorHeading;
   const dx = goal.x - ship.position.x;
@@ -121,7 +134,7 @@ export function pilotExchangeShip(
     12,
     ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
-  const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120);
+  const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting ? 1.65 : 1);
   const brakingSpeed = Math.sqrt(2 * acceleration * distance);
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
   const desiredX = distance < 12 ? 0 : direction.x * targetSpeed;
@@ -134,7 +147,7 @@ export function pilotExchangeShip(
   const forwardY = Math.sin(ship.headingRadians);
   const longitudinal = changeX * forwardX + changeY * forwardY;
   const lateral = -changeX * forwardY + changeY * forwardX;
-  const mainStep = acceleration * dt;
+  const mainStep = acceleration * dt * (boosting ? 2.2 : 1);
   const forwardStep = clamp(longitudinal, -mainStep * 0.25, mainStep);
   const lateralStep = clamp(lateral, -mainStep * 0.12, mainStep * 0.12);
   if (ship.subsystems.engine > 0) {
