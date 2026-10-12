@@ -4,6 +4,7 @@ import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
+import { maybeLaunchTractorAsteroid, advanceThrownAsteroids } from './combat-tractor-asteroid-throw';
 import {
   createActionExchange,
   tickActionExchange,
@@ -107,6 +108,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       origin: { ...beam.origin },
       end: { ...beam.end },
     })),
+    thrownAsteroids: runtime.thrownAsteroids.map((rock) => ({ ...rock, position: { ...rock.position }, velocity: { ...rock.velocity } })),
     mines: runtime.mines.map((mine) => ({
       id: mine.id,
       owner: mine.owner,
@@ -321,6 +323,9 @@ function tickStrategicCombat(
   if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
+  maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
+  maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
+  advanceThrownAsteroids(runtime, dt);
   pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
@@ -366,6 +371,7 @@ function createStrategicCombatRuntime(
     projectiles: [],
     beams: [],
     mines: [],
+    thrownAsteroids: [],
     elapsedSeconds: 0,
     winner: null,
     boardingInitiator: null,
