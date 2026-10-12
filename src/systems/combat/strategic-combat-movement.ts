@@ -434,7 +434,6 @@ export function moveCombatant(
   );
 
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
-  direction = applyMineAvoidance(direction, mineAvoidance);
   const evasion = predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
     direction = evasion.direction;
@@ -442,7 +441,9 @@ export function moveCombatant(
   }
 
   const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
-  direction = mineAvoidance ? applyMineAvoidance(waypoint ?? direction, mineAvoidance) : (waypoint ?? direction);
+  direction = mineAvoidance
+    ? applyMineAvoidance(waypoint ?? direction, mineAvoidance)
+    : (waypoint ?? direction);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
