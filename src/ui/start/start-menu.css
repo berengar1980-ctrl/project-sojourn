@@ -88,8 +88,10 @@
 }
 
 .harrow-duel {
-  min-height: 100vh;
-  overflow: auto;
+  box-sizing: border-box;
+  height: 100vh;
+  min-height: 0;
+  overflow-y: auto;
   padding: clamp(24px, 5vw, 75px);
   background: #05080d url('/startscreen-background.webp') center center / cover fixed;
   color: #dce1e6;
@@ -106,6 +108,16 @@
   padding: 10px 15px;
   background: rgba(3, 6, 10, 0.84);
   color: #afbdca;
+}
+.harrow-duel__actions {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 12px 0;
+  background: rgba(5, 8, 13, 0.96);
+  border: 1px solid #4a5662;
 }
 .harrow-duel__cards {
   display: grid;

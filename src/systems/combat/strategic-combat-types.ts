@@ -54,7 +54,7 @@ export type CombatImpactLayer = 'shield' | 'hull' | 'miss' | 'obstacle';
 
 export type CombatProjectileKind = 'plasma' | 'missile' | 'autocannon';
 
-export type CombatBeamKind = 'laser' | 'rail';
+export type CombatBeamKind = 'laser' | 'rail' | 'tractor';
 
 export interface CombatPoint {
   readonly x: number;
@@ -224,7 +224,19 @@ export interface StrategicCombatSnapshot {
   readonly arena: {
     readonly width: number;
     readonly height: number;
+    readonly obstacles?: readonly StrategicCombatObstacle[];
+    readonly asteroids?: readonly CombatVisualAsteroid[];
   };
+}
+
+export interface CombatVisualAsteroid {
+  readonly id: string;
+  readonly position: { x: number; y: number };
+  readonly velocity: CombatPoint;
+  readonly angularVelocity: number;
+  readonly radius: number;
+  rotation: number;
+  readonly kind: 'resource' | 'debris';
 }
 
 export interface StrategicCombatObstacle {
@@ -239,6 +251,7 @@ export interface StrategicCombatArenaOptions {
   readonly attackerPosition?: CombatPoint;
   readonly defenderPosition?: CombatPoint;
   readonly obstacles?: readonly StrategicCombatObstacle[];
+  readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
 }
 
@@ -277,6 +290,7 @@ export interface MutableCombatant {
   nextStrategyReviewAt: number;
   lastEnemyHpObserved?: number;
   lastProgressAt?: number;
+  lastContactReviewAt?: number;
   stalledPlanKind?: CombatStrategyPlan['kind'];
   stalledPlanFacing?: CombatStrategyPlan['broadsideFacing'];
   shieldHp: number;

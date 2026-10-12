@@ -1,7 +1,10 @@
+import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { hash, clamp01 } from './strategic-combat-renderer-math';
+import { clamp01 } from './strategic-combat-renderer-math';
+import { drawCombatBackground } from './combat-background-renderer';
 import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
@@ -22,14 +25,13 @@ import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-
 interface Point {
   readonly x: number;
   readonly y: number;
 }
-
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
+  private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -39,7 +41,6 @@ export class StrategicCombatRenderer {
   private model: StrategicCombatSnapshot;
   private seenImpactSerial = -1;
   private impactAge = 1;
-
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: StrategicCombatSnapshot
@@ -47,10 +48,10 @@ export class StrategicCombatRenderer {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
     this.context = context;
+    this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.model = model;
     this.resize();
   }
-
   update(model: StrategicCombatSnapshot): void {
     if (model.lastImpact && model.lastImpact.serial !== this.seenImpactSerial) {
       this.seenImpactSerial = model.lastImpact.serial;
@@ -61,7 +62,6 @@ export class StrategicCombatRenderer {
     this.model = model;
     this.draw();
   }
-
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.max(1, window.devicePixelRatio || 1);
@@ -70,7 +70,6 @@ export class StrategicCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-
   private image(shipId: string): HTMLImageElement | null {
     const definition = getShipDefinition(shipId);
     if (!definition) return null;
@@ -82,7 +81,6 @@ export class StrategicCombatRenderer {
     this.images.set(shipId, image);
     return image;
   }
-
   private screen(point: Point, width: number, height: number): Point {
     const padding = 70;
     const usableWidth = Math.max(1, width - padding * 2);
@@ -92,7 +90,6 @@ export class StrategicCombatRenderer {
       y: padding + (point.y / this.model.arena.height) * usableHeight,
     };
   }
-
   private shipGeometry(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -101,8 +98,11 @@ export class StrategicCombatRenderer {
     const image = this.image(combatant.shipId);
     const definition = getShipDefinition(combatant.shipId);
     const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = Math.min(width / this.model.arena.width, height / this.model.arena.height);
-    const shipWidth = Math.max(44, Math.min(150, nominalLength * canvasScale * 3.2));
+    const canvasScale = Math.min(
+      Math.max(1, width - 140) / this.model.arena.width,
+      Math.max(1, height - 140) / this.model.arena.height
+    );
+    const shipWidth = nominalLength * canvasScale;
     const aspect =
       image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
         ? image.naturalWidth / image.naturalHeight
@@ -116,16 +116,29 @@ export class StrategicCombatRenderer {
       angle: combatant.headingRadians,
     };
   }
-
   private draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
-    this.drawBackground(width, height);
+    drawCombatBackground(
+      this.context,
+      width,
+      height,
+      this.model.attacker.id,
+      this.model.defender.id
+    );
+    drawCombatAsteroids(
+      this.spaceBodies,
+      this.model.arena.asteroids ?? [],
+      Math.min(
+        Math.max(1, width - 140) / this.model.arena.width,
+        Math.max(1, height - 140) / this.model.arena.height
+      ),
+      (point) => this.screen(point, width, height)
+    );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
-
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
     this.drawBeams(width, height);
@@ -142,55 +155,26 @@ export class StrategicCombatRenderer {
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawHullImpact(this.model.lastImpact, width, height);
   }
-
-  private drawBackground(width: number, height: number): void {
-    const gradient = this.context.createRadialGradient(
-      width * 0.5,
-      height * 0.46,
-      0,
-      width * 0.5,
-      height * 0.46,
-      Math.max(width, height) * 0.78
-    );
-    gradient.addColorStop(0, '#111b24');
-    gradient.addColorStop(0.52, '#071018');
-    gradient.addColorStop(1, '#020507');
-    this.context.fillStyle = gradient;
-    this.context.fillRect(0, 0, width, height);
-
-    const seed = hash(this.model.attacker.id + ':' + this.model.defender.id);
-    this.context.fillStyle = 'rgba(205, 225, 236, .62)';
-    for (let index = 0; index < 110; index += 1) {
-      const x = ((seed + index * 2654435761) >>> 0) % 10000;
-      const y = ((seed ^ (index * 2246822519)) >>> 0) % 10000;
-      this.context.globalAlpha = 0.26 + ((index * 37) % 48) / 100;
-      this.context.beginPath();
-      this.context.arc(
-        (x / 10000) * width,
-        (y / 10000) * height,
-        index % 11 === 0 ? 1.2 : 0.55,
-        0,
-        Math.PI * 2
-      );
-      this.context.fill();
-    }
-    this.context.globalAlpha = 1;
-  }
-
   private drawBeams(width: number, height: number): void {
     for (const beam of this.model.beams) this.drawBeam(beam, width, height);
   }
-
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
     // The beam origin is captured at fire time, so it cannot slide with a
     // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
-
     this.context.save();
     this.context.lineCap = 'round';
-    if (beam.kind === 'laser') {
+    if (beam.kind === 'tractor') {
+      this.context.strokeStyle = `rgba(113, 220, 190, ${0.35 + alpha * 0.6})`;
+      this.context.lineWidth = 2.5;
+      this.context.setLineDash([4, 5]);
+      this.context.beginPath();
+      this.context.moveTo(start.x, start.y);
+      this.context.lineTo(end.x, end.y);
+      this.context.stroke();
+    } else if (beam.kind === 'laser') {
       this.context.shadowColor = 'rgba(67, 185, 255, .95)';
       this.context.shadowBlur = 4;
       this.context.strokeStyle = `rgba(108, 214, 255, ${0.25 + alpha * 0.5})`;
@@ -199,7 +183,6 @@ export class StrategicCombatRenderer {
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
       this.context.stroke();
-
       this.context.shadowBlur = 3;
       this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
       this.context.lineWidth = 0.65;
@@ -207,7 +190,6 @@ export class StrategicCombatRenderer {
       this.context.moveTo(start.x, start.y);
       this.context.lineTo(end.x, end.y);
       this.context.stroke();
-
       // Brief muzzle flare anchors each shot visually to the firing hardpoint.
       this.context.shadowBlur = 5;
       this.context.fillStyle = `rgba(202, 244, 255, ${alpha * 0.9})`;
@@ -225,7 +207,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawProjectiles(width: number, height: number): void {
     for (const projectile of this.model.projectiles) {
       const point = this.screen(projectile.position, width, height);
@@ -233,7 +214,6 @@ export class StrategicCombatRenderer {
       this.drawProjectile(projectile, point, target);
     }
   }
-
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
     const angle =
       projectile.kind === 'missile'
@@ -242,7 +222,6 @@ export class StrategicCombatRenderer {
     this.context.save();
     this.context.translate(point.x, point.y);
     this.context.rotate(angle);
-
     if (projectile.kind === 'plasma') {
       this.context.shadowColor = '#73dfff';
       this.context.shadowBlur = 14;
@@ -262,7 +241,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawMines(width: number, height: number): void {
     for (const mine of this.model.mines) {
       if (mine.detection === 'hidden') continue;
@@ -270,7 +248,6 @@ export class StrategicCombatRenderer {
       this.drawMine(mine, point);
     }
   }
-
   private drawMine(mine: CombatMineSnapshot, point: Point): void {
     this.context.save();
     this.context.translate(point.x, point.y);
@@ -290,7 +267,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawCombatDamage(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -321,7 +297,6 @@ export class StrategicCombatRenderer {
       fraction
     );
   }
-
   private drawShipBody(
     combatant: StrategicCombatSnapshot['attacker'],
     geometry: ShipScreenGeometry,
@@ -365,7 +340,6 @@ export class StrategicCombatRenderer {
     }
     this.context.restore();
   }
-
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -384,7 +358,6 @@ export class StrategicCombatRenderer {
       lateralThrust: 0,
       longitudinalThrust: 0,
     };
-
     if (hardpoints) {
       this.engineEffects.drawExhaust(
         this.context,
@@ -404,13 +377,10 @@ export class StrategicCombatRenderer {
         'below'
       );
     }
-
     this.drawShipBody(combatant, geometry, hullRatio);
-
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
     }
-
     if (hardpoints) {
       this.engineEffects.drawGlow(
         this.context,
@@ -430,7 +400,6 @@ export class StrategicCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-
     this.drawShipCaption(combatant.name, hullRatio, geometry);
     if (combatant.combatIntent) {
       this.context.font = 'bold 10px ui-monospace, monospace';
@@ -450,7 +419,6 @@ export class StrategicCombatRenderer {
       combatant.boostActive
     );
   }
-
   private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
     this.context.fillStyle = hullRatio > 0.35 ? 'rgba(220, 232, 238, .78)' : '#d88673';
     this.context.font = '10px ui-monospace, monospace';
@@ -461,7 +429,6 @@ export class StrategicCombatRenderer {
       geometry.center.y + geometry.height * 0.8 + 18
     );
   }
-
   private drawHullImpact(
     impact: StrategicCombatSnapshot['lastImpact'],
     width: number,

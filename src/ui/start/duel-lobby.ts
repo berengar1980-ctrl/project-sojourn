@@ -24,6 +24,11 @@ import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog'
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
+import {
+  createDuelArena,
+  DUEL_MAPS,
+  type DuelMapKind,
+} from '../../systems/combat/duel-arena-presets';
 
 interface DuelDraft {
   shipId: string;
@@ -234,6 +239,33 @@ function attachEncounterSelector(
   });
 }
 
+function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLSelectElement } {
+  const mapLabel = document.createElement('label');
+  mapLabel.textContent = 'Kampfkarte';
+  const mapSelect = document.createElement('select');
+  for (const map of DUEL_MAPS) {
+    const option = document.createElement('option');
+    option.value = map.id;
+    option.textContent = map.title;
+    mapSelect.append(option);
+  }
+  mapLabel.append(mapSelect);
+  return { mapLabel, mapSelect };
+}
+
+function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
+  const manual = document.createElement('option');
+  manual.value = '';
+  manual.textContent = 'Freies Duell · eigene Konfiguration';
+  encounterSelect.append(manual);
+  for (const encounter of DUEL_ENCOUNTERS) {
+    const option = document.createElement('option');
+    option.value = encounter.id;
+    option.textContent = encounter.title + ' — ' + encounter.purpose;
+    encounterSelect.append(option);
+  }
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -246,19 +278,11 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     },
   ];
   let selectedEncounter = '';
+  const { mapLabel, mapSelect } = createDuelMapSelector();
   const encounterLabel = document.createElement('label');
   encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
   const encounterSelect = document.createElement('select');
-  const manual = document.createElement('option');
-  manual.value = '';
-  manual.textContent = 'Freies Duell · eigene Konfiguration';
-  encounterSelect.append(manual);
-  for (const encounter of DUEL_ENCOUNTERS) {
-    const option = document.createElement('option');
-    option.value = encounter.id;
-    option.textContent = encounter.title + ' — ' + encounter.purpose;
-    encounterSelect.append(option);
-  }
+  populateEncounterOptions(encounterSelect);
   encounterLabel.append(encounterSelect);
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
@@ -281,7 +305,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     selectedEncounter = id;
     render();
   });
-  shell.append(title, description, encounterLabel, cards, actions);
+  shell.append(title, description, encounterLabel, mapLabel, actions, cards);
   root.replaceChildren(shell);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
@@ -300,7 +324,12 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     );
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
-    const combat = createStrategicCombatService(setups[0]!, setups[1]!, duelSeed);
+    const combat = createStrategicCombatService(
+      setups[0]!,
+      setups[1]!,
+      duelSeed,
+      createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
+    );
     activePanel = createStrategicCombatPanel({
       root,
       combat,

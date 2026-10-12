@@ -583,6 +583,14 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 **keine Statusänderung** der Voidbound-Feature-IDs. Erste isolierte Aktions-/Reaktions-Zustandsmaschine mit vier visuell unterschiedlichen Manövertypen und jeweils drei Reaktionen sowie erste Korrekturen an Projektilflugbahnen, Raketenoptik und Schildtreffern. Die neue Maschine ist noch nicht mit der laufenden Raumkampfsteuerung verbunden; die bestehende Voidbound-Paritätsbewertung wird daher nicht angehoben.
 
+## Review-Log: PvP-Asteroiden und Traktor-Sichtbarkeit (2026-10-12)
+
+**keine Statusänderung** der Voidbound-Feature-IDs. Die drei PvP-Testkarten verwenden die bestehende Harrowdrift-Asteroidenfeld-Generierung und den bestehenden prozeduralen Asteroidenrenderer; Kollisions-Asteroiden und rein optische Trümmer bleiben getrennt. Außerdem erscheinen Traktorimpulse visuell und die Duell-Lobby behält einen erreichbaren Startknopf. Es wurde keine weitere vollständige Voidbound-Funktionsparität behauptet.
+
+## Review-Log: Kollisionsbedingte Neuplanung (2026-10-12)
+
+**keine Statusänderung** der Voidbound-Feature-IDs. Ein direkter Schiffskontakt löst in Harrowdrift eine sofortige taktische Neubewertung außerhalb des regulären 8-Sekunden-Intervalls aus; Wiederholungen werden gedrosselt. Regressionstest ergänzt, ohne vollständige Voidbound-Parität zu behaupten.
+
 ## Pflege-Regel
 
 Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verworfen wird:
