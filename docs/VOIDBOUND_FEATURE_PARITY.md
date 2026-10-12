@@ -626,3 +626,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): PvP-Asteroidenphysik
 
 **keine Statusänderung.** Der PvP-Raumkampf wird an die bestehenden Kampagnenfunktionen `integrateAsteroids`, `resolveAsteroidCollisions` und `resolveShieldCollisions` angebunden. Die allgemeine Voidbound-Feature-Parität ändert sich dadurch nicht. Verifikation von Schildtreffern und Asteroidenimpulsen bleibt Teil der PR-Prüfung.
+
+## Review-Log (2026-10-12): PvP-Kampfbild und Asteroidendichte
+
+**keine Statusänderung.** Das PvP nutzt weiterhin die vorhandenen Asteroidenmodelle und die gemeinsame Physik. Der dichte Karten-Preset nutzt einen kleineren Raumausschnitt; die Bildschirmdarstellung von Laserimpulsen und Torpedos wurde an die Kameraskalierung angepasst.
