@@ -1,3 +1,4 @@
+import { describeCombatIntent } from './combat-intent-labels';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { runtimeCombatantEscaped } from './combat-escape-evaluation';
 import { pulseCombatTractor } from './combat-tractor-pulse';
@@ -205,29 +206,7 @@ function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
-  ship.combatIntent = ship.tactic === 'flee'
-    ? 'FLIEHEN'
-    : ship.tactic === 'minefield'
-      ? 'MINEN LEGEN'
-      : ship.tactic === 'kite'
-        ? 'ABSTAND HALTEN'
-        : ship.strategy?.kind === 'frontal'
-          ? 'FRONTALANGRIFF'
-          : ship.strategy?.kind === 'broadside'
-            ? 'BREITSEITE'
-            : ship.strategy?.kind === 'skirmish'
-              ? 'GEFECHT AUF DISTANZ'
-              : ship.strategy?.kind === 'approach'
-                ? 'ANNÄHERN'
-                : ship.strategy?.kind === 'escape'
-                  ? 'FLIEHEN'
-                  : ship.strategy?.kind === 'tractor_lock'
-                    ? 'TRAKTOR POSITIONIEREN'
-                    : ship.strategy?.kind === 'minefield'
-                      ? 'MINEN POSITIONIEREN'
-                      : ship.strategy?.kind === 'regroup'
-                        ? 'NEU FORM IEREN'
-                        : 'KAMPFPOSITION SUCHEN';
+  ship.combatIntent = describeCombatIntent(ship);
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
   if (ship.strategy.phase !== nextPhase) {
