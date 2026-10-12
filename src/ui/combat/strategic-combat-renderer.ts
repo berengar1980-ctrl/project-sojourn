@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
@@ -32,6 +33,7 @@ interface Point {
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
+  private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -81,14 +83,17 @@ export class StrategicCombatRenderer {
     this.images.set(shipId, image);
     return image;
   }
+  pan(dx: number, dy: number): void {
+    this.camera.pan(dx, dy);
+    this.draw();
+  }
+  zoomAt(factor: number, x: number, y: number): void {
+    const rect = this.canvas.getBoundingClientRect();
+    this.camera.zoomAt(factor, x, y, rect.width, rect.height);
+    this.draw();
+  }
   private screen(point: Point, width: number, height: number): Point {
-    const padding = 70;
-    const usableWidth = Math.max(1, width - padding * 2);
-    const usableHeight = Math.max(1, height - padding * 2);
-    return {
-      x: padding + (point.x / this.model.arena.width) * usableWidth,
-      y: padding + (point.y / this.model.arena.height) * usableHeight,
-    };
+    return this.camera.project(point, width, height, this.model.arena.width, this.model.arena.height);
   }
   private shipGeometry(
     combatant: StrategicCombatSnapshot['attacker'],
@@ -98,10 +103,7 @@ export class StrategicCombatRenderer {
     const image = this.image(combatant.shipId);
     const definition = getShipDefinition(combatant.shipId);
     const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = Math.min(
-      Math.max(1, width - 140) / this.model.arena.width,
-      Math.max(1, height - 140) / this.model.arena.height
-    );
+    const canvasScale = this.camera.scale(width, height, this.model.arena.width, this.model.arena.height);
     const shipWidth = nominalLength * canvasScale;
     const aspect =
       image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
@@ -132,10 +134,7 @@ export class StrategicCombatRenderer {
     drawCombatAsteroids(
       this.spaceBodies,
       this.model.arena.asteroids ?? [],
-      Math.min(
-        Math.max(1, width - 140) / this.model.arena.width,
-        Math.max(1, height - 140) / this.model.arena.height
-      ),
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height)
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
