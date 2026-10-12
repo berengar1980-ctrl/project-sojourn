@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
@@ -31,6 +32,7 @@ interface Point {
 
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
+  private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -48,6 +50,7 @@ export class StrategicCombatRenderer {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
     this.context = context;
+    this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.model = model;
     this.resize();
   }
@@ -125,7 +128,7 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     this.context.clearRect(0, 0, width, height);
     this.drawBackground(width, height);
-    drawCombatAsteroids(this.context, this.model.arena.obstacles ?? [],
+    drawCombatAsteroids(this.spaceBodies, this.model.arena.asteroids ?? [],
       Math.min(Math.max(1, width - 140) / this.model.arena.width,
         Math.max(1, height - 140) / this.model.arena.height),
       (point) => this.screen(point, width, height));
