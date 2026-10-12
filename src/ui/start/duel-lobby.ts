@@ -292,7 +292,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     selectedEncounter = id;
     render();
   });
-  shell.append(title, description, encounterLabel, mapLabel, cards, actions);
+  shell.append(title, description, encounterLabel, mapLabel, actions, cards);
   root.replaceChildren(shell);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
