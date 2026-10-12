@@ -304,6 +304,21 @@ function recordProjectileDamage(
   return result;
 }
 
+function expireProjectile(runtime: StrategicCombatRuntime, projectile: MutableProjectile, index: number): void {
+  if (projectile.kind === 'missile') {
+    runtime.impactSerial += 1;
+    runtime.lastImpact = {
+      serial: runtime.impactSerial,
+      target: projectile.target,
+      layer: 'miss',
+      damage: 0,
+      position: { ...projectile.position },
+      weaponKind: 'missile',
+    };
+  }
+  runtime.projectiles.splice(index, 1);
+}
+
 function advanceRuntimeProjectile(
   runtime: StrategicCombatRuntime,
   projectile: MutableProjectile,
@@ -354,7 +369,7 @@ function advanceRuntimeProjectile(
   }
   if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0) {
     projectile.position = next;
-    if (projectile.ttlSeconds <= 0) runtime.projectiles.splice(index, 1);
+    if (projectile.ttlSeconds <= 0) expireProjectile(runtime, projectile, index);
     return;
   }
   if (shieldHit) {
