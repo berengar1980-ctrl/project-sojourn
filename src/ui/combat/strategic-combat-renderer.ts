@@ -190,7 +190,15 @@ export class StrategicCombatRenderer {
 
     this.context.save();
     this.context.lineCap = 'round';
-    if (beam.kind === 'laser') {
+    if (beam.kind === 'tractor') {
+      this.context.strokeStyle = `rgba(113, 220, 190, ${0.35 + alpha * 0.6})`;
+      this.context.lineWidth = 2.5;
+      this.context.setLineDash([4, 5]);
+      this.context.beginPath();
+      this.context.moveTo(start.x, start.y);
+      this.context.lineTo(end.x, end.y);
+      this.context.stroke();
+    } else if (beam.kind === 'laser') {
       this.context.shadowColor = 'rgba(67, 185, 255, .95)';
       this.context.shadowBlur = 4;
       this.context.strokeStyle = `rgba(108, 214, 255, ${0.25 + alpha * 0.5})`;
