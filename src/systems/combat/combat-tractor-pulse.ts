@@ -29,6 +29,18 @@ export function pulseCombatTractor(
   enemy.velocity.x -= away.x * impulse;
   enemy.velocity.y -= away.y * impulse;
   enemy.speed = Math.hypot(enemy.velocity.x, enemy.velocity.y);
+  runtime.beamSerial += 1;
+  runtime.beams.push({
+    id: runtime.beamSerial,
+    owner: side,
+    kind: 'tractor',
+    family: 'pulse_laser',
+    origin: { ...ship.position },
+    end: { ...enemy.position },
+    weaponIndex: -1,
+    ttlSeconds: 0.38,
+    maxTtlSeconds: 0.38,
+  });
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
