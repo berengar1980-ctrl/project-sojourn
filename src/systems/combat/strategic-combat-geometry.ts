@@ -157,7 +157,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     angularThrust: combatant.angularThrust,
     boostSeconds: combatant.boostSeconds ?? 3.5,
     boostActive: combatant.boostActive === true,
-    combatIntent: combatant.combatIntent,
+    ...(combatant.combatIntent !== undefined ? { combatIntent: combatant.combatIntent } : {}),
     mineCount: combatant.mineStock.length,
     tractorRangeMeters: combatant.setup.tractorRangeMeters ?? 0,
     boostCooldownSeconds: combatant.boostCooldownSeconds ?? 0,
