@@ -347,7 +347,8 @@ function choosePlanDirection(
       (combatant.velocity.x - enemy.velocity.x) * toward.x +
       (combatant.velocity.y - enemy.velocity.y) * toward.y;
     const acceleration = Math.max(
-      12, combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
+      12,
+      combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
     );
     const brakingDistance = Math.max(0, relativeClosing) ** 2 / (2 * acceleration * 0.45);
     if (range - desired < brakingDistance + 130 && relativeClosing > 20) {
