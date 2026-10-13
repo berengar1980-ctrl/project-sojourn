@@ -61,11 +61,19 @@ assert.equal(
   false
 );
 assert.equal(
-  escapeLogic.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena),
+  escapeLogic.runtimeCombatantEscaped(
+    { ...fleeing, position: { x: 1800, y: 800 } },
+    pursuer,
+    arena
+  ),
   false
 );
 assert.equal(
-  escapeLogic.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena),
+  escapeLogic.runtimeCombatantEscaped(
+    fleeing,
+    { ...pursuer, position: { x: 1850, y: 800 } },
+    arena
+  ),
   false,
   'ship too close to pursuing opponent cannot escape'
 );
