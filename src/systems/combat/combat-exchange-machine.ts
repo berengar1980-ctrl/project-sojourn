@@ -123,14 +123,18 @@ export function advanceExchange(
       phase: elapsed >= current.duration ? 'resolve' : 'execute',
     };
   }
-  const geometryResult = context.actionSucceeded === true && context.reactionSucceeded !== true
-    ? current.initiative
-    : context.reactionSucceeded === true && context.actionSucceeded !== true
-      ? current.initiative === 'attacker' ? 'defender' : 'attacker'
-      : null;
+  const geometryResult =
+    context.actionSucceeded === true && context.reactionSucceeded !== true
+      ? current.initiative
+      : context.reactionSucceeded === true && context.actionSucceeded !== true
+        ? current.initiative === 'attacker'
+          ? 'defender'
+          : 'attacker'
+        : null;
   const difference = context.attackerDamage - context.defenderDamage;
-  const initiative = geometryResult ?? (
-    difference > 0
+  const initiative =
+    geometryResult ??
+    (difference > 0
       ? 'attacker'
       : difference < 0
         ? 'defender'

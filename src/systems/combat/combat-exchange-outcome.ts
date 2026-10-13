@@ -34,8 +34,9 @@ function actionSucceeded(
 ): boolean {
   const targetAngle = facingTarget(initiator, reactor);
   if (action === 'frontal_pass') {
-    return geometry.closestRange < 320 &&
-      distance(initiator.position, geometry.initiatorStart) > 130;
+    return (
+      geometry.closestRange < 320 && distance(initiator.position, geometry.initiatorStart) > 130
+    );
   }
   if (action === 'broadside_pass') {
     return endRange < 650 && Math.abs(targetAngle - Math.PI / 2) < 0.65;
@@ -44,8 +45,11 @@ function actionSucceeded(
     return endRange > geometry.startingRange + 120;
   }
   // Flanking requires a reachable rear or lateral firing position, not a timer.
-  return endRange < 650 && facingTarget(reactor, initiator) > Math.PI * 0.55 &&
-    targetAngle < Math.PI * 0.6;
+  return (
+    endRange < 650 &&
+    facingTarget(reactor, initiator) > Math.PI * 0.55 &&
+    targetAngle < Math.PI * 0.6
+  );
 }
 
 function reactionSucceeded(
@@ -69,8 +73,7 @@ function reactionSucceeded(
     return reactorAngle < Math.PI * 0.4 && endRange < 850;
   }
   if (reaction === 'hold_fire') return Math.abs(change) < 110;
-  return geometry.closestRange < 440 &&
-    distance(reactor.position, geometry.reactorStart) > 110;
+  return geometry.closestRange < 440 && distance(reactor.position, geometry.reactorStart) > 110;
 }
 
 export function evaluateExchangeOutcome(

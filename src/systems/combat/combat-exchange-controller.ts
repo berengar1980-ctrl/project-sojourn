@@ -93,9 +93,16 @@ export function tickActionExchange(
   const current = state.exchange;
   const initiator = current.initiative === 'attacker' ? runtime.attacker : runtime.defender;
   const opponent = current.initiative === 'attacker' ? runtime.defender : runtime.attacker;
-  const outcome = current.phase === 'resolve' && current.action && current.reaction && state.geometry
-    ? evaluateExchangeOutcome(current.action, current.reaction, initiator, opponent, state.geometry)
-    : null;
+  const outcome =
+    current.phase === 'resolve' && current.action && current.reaction && state.geometry
+      ? evaluateExchangeOutcome(
+          current.action,
+          current.reaction,
+          initiator,
+          opponent,
+          state.geometry
+        )
+      : null;
   const context = {
     frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
     broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
@@ -103,11 +110,16 @@ export function tickActionExchange(
     attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
     defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
     roll: runtime.random,
-    ...(outcome ? { actionSucceeded: outcome.actionSucceeded, reactionSucceeded: outcome.reactionSucceeded } : {}),
+    ...(outcome
+      ? { actionSucceeded: outcome.actionSucceeded, reactionSucceeded: outcome.reactionSucceeded }
+      : {}),
   };
   const next = advanceExchange(current, dt, context);
   if (current.phase === 'choose' && next.action && next.reaction) {
-    const range = Math.hypot(initiator.position.x - opponent.position.x, initiator.position.y - opponent.position.y);
+    const range = Math.hypot(
+      initiator.position.x - opponent.position.x,
+      initiator.position.y - opponent.position.y
+    );
     state.geometry = {
       startingRange: range,
       closestRange: range,
@@ -143,16 +155,27 @@ export function tickActionExchange(
     });
   }
   if (current.phase === 'resolve') {
-    if (outcome) runtime.combatLog.push({
-      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-      side: 'system',
-      event: 'result',
-      detail: 'EXCHANGE_OUTCOME ' + current.action + '/' + current.reaction +
-        ' action=' + (outcome.actionSucceeded ? 'success' : 'failed') +
-        ' reaction=' + (outcome.reactionSucceeded ? 'success' : 'failed') +
-        ' range=' + Math.round(outcome.startingRange) + '->' + Math.round(outcome.finalRange) +
-        ' closest=' + Math.round(outcome.closestRange),
-    });
+    if (outcome)
+      runtime.combatLog.push({
+        timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+        side: 'system',
+        event: 'result',
+        detail:
+          'EXCHANGE_OUTCOME ' +
+          current.action +
+          '/' +
+          current.reaction +
+          ' action=' +
+          (outcome.actionSucceeded ? 'success' : 'failed') +
+          ' reaction=' +
+          (outcome.reactionSucceeded ? 'success' : 'failed') +
+          ' range=' +
+          Math.round(outcome.startingRange) +
+          '->' +
+          Math.round(outcome.finalRange) +
+          ' closest=' +
+          Math.round(outcome.closestRange),
+      });
     runtime.combatLog.push({
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: 'system',
@@ -173,8 +196,14 @@ export function tickActionExchange(
   if (!state.flight || next.phase !== 'execute') return;
   const remaining = next.duration - next.elapsed;
   if (state.geometry) {
-    const closest = Math.hypot(initiator.position.x - opponent.position.x, initiator.position.y - opponent.position.y);
-    state.geometry = { ...state.geometry, closestRange: Math.min(state.geometry.closestRange, closest) };
+    const closest = Math.hypot(
+      initiator.position.x - opponent.position.x,
+      initiator.position.y - opponent.position.y
+    );
+    state.geometry = {
+      ...state.geometry,
+      closestRange: Math.min(state.geometry.closestRange, closest),
+    };
   }
   const separation = Math.hypot(
     initiator.position.x - opponent.position.x,
