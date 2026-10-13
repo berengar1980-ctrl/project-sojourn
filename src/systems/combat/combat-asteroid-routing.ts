@@ -1,5 +1,3 @@
-import type { LocalAsteroid } from '../../core/local-space-types';
-import { planPointRoute } from '../local-space/local-space-navigation';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -9,16 +7,81 @@ import type {
 const ROUTE_REFRESH_SECONDS = 0.75;
 const REACHED_WAYPOINT_METERS = 65;
 
-function routeObstacles(arena: StrategicCombatArenaOptions): LocalAsteroid[] {
-  return (arena.asteroids ?? [])
-    .filter((asteroid) => asteroid.kind === 'resource')
-    .map((asteroid) => ({
-      id: asteroid.id,
-      kind: asteroid.kind,
-      routeBlocking: true,
-      position: asteroid.position,
-      radius: asteroid.radius,
-    })) as LocalAsteroid[];
+// Local steering for combat: bounded obstacle checks instead of a full grid A*.
+const MAX_DETOUR_HOPS = 5;
+
+function nearestBlocker(
+  start: CombatPoint,
+  end: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  clearance: number
+): NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = Math.max(1, dx * dx + dy * dy);
+  let nearest = Infinity;
+  let blocker: NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null = null;
+  for (const rock of arena.obstacles ?? []) {
+    const t = Math.max(0, Math.min(1,
+      ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared));
+    const offsetX = start.x + dx * t - rock.position.x;
+    const offsetY = start.y + dy * t - rock.position.y;
+    if (offsetX * offsetX + offsetY * offsetY >= (rock.radius + clearance) ** 2 || t >= nearest) continue;
+    nearest = t;
+    blocker = rock;
+  }
+  return blocker;
+}
+
+function detourPoint(
+  start: CombatPoint,
+  end: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  clearance: number
+): CombatPoint | null {
+  const rock = nearestBlocker(start, end, arena, clearance);
+  if (!rock) return null;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const clearanceRadius = rock.radius + clearance + 35;
+  const candidates = [1, -1].map((sign) => ({
+    x: Math.max(EDGE_MARGIN, Math.min(arena.width - EDGE_MARGIN,
+      rock.position.x - sign * dy / length * clearanceRadius)),
+    y: Math.max(EDGE_MARGIN, Math.min(arena.height - EDGE_MARGIN,
+      rock.position.y + sign * dx / length * clearanceRadius)),
+  }));
+  // Prefer a collision-free first leg; consider the target leg as a tie breaker.
+  candidates.sort((left, right) => {
+    const score = (point: CombatPoint): number =>
+      (pathBlocked(start, point, arena, clearance) ? 100000 : 0) +
+      (pathBlocked(point, end, arena, clearance) ? 1000 : 0) +
+      Math.hypot(point.x - start.x, point.y - start.y) +
+      Math.hypot(end.x - point.x, end.y - point.y);
+    return score(left) - score(right);
+  });
+  return candidates[0] ?? null;
+}
+
+const EDGE_MARGIN = 55;
+
+function fastCombatRoute(
+  start: CombatPoint,
+  end: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  clearance: number
+): CombatPoint[] {
+  const route: CombatPoint[] = [];
+  let position = start;
+  for (let hop = 0; hop < MAX_DETOUR_HOPS; hop += 1) {
+    const waypoint = detourPoint(position, end, arena, clearance);
+    if (!waypoint) break;
+    if (Math.hypot(position.x - waypoint.x, position.y - waypoint.y) < 15) break;
+    route.push(waypoint);
+    position = waypoint;
+  }
+  route.push(end);
+  return route;
 }
 
 function pathBlocked(
@@ -63,16 +126,8 @@ export function combatRouteHeading(
     return null;
   }
   ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  if (ship.nextAsteroidRouteAt <= 0 || !ship.asteroidRoute?.length) {
-    const plan = planPointRoute({
-      start: ship.position,
-      target,
-      asteroids: routeObstacles(arena),
-      clearance,
-      width: arena.width,
-      height: arena.height,
-    });
-    ship.asteroidRoute = plan.route.slice(1).map((point) => ({ ...point }));
+  if (ship.nextAsteroidRouteAt <= 0) {
+    ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
   const route = ship.asteroidRoute ?? [];
