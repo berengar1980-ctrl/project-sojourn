@@ -166,6 +166,15 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
       reason: 'Waffenposition suchen',
     });
   }
+  // A disabled opponent cannot sustain a chase: close to the optimal weapon envelope
+  // rather than endlessly kiting at the far edge of the nominal range.
+  if (enemy.subsystems.engine <= 0 && ship.subsystems.engine > 0) {
+    return plans.map((plan) => ({
+      ...plan,
+      desiredRange: Math.min(plan.desiredRange, Math.max(180, plan.desiredRange * 0.75)),
+      reason: plan.reason + ' · Gegner ohne Hauptantrieb',
+    }));
+  }
   return plans;
 }
 
