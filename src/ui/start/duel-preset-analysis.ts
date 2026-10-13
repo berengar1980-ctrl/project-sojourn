@@ -6,7 +6,7 @@ import {
   formatDuelTelemetry,
   type DuelTelemetry,
 } from '../../systems/combat/combat-duel-telemetry';
-import { duelCombatant } from './duel-lobby';
+import { duelCombatant } from './duel-combatant-setup';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
 
 export function analyzeDuelPreset(
