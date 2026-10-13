@@ -190,8 +190,6 @@ function accelerateExchangeShip(
   dt: number,
   opponent?: MutableCombatant
 ): void {
-  const dx = goal.x - ship.position.x;
-  const dy = goal.y - ship.position.y;
   // Control velocity rather than preserving drift after passing a waypoint.
   // The desired speed falls as stopping distance approaches the remaining gap.
 
