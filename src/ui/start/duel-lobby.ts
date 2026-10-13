@@ -245,6 +245,17 @@ function attachAnalysisControls(
   });
 }
 
+function logSlowDuelFrame(simulationStart: number, renderStart: number, encounter: string, elapsedSeconds: number): void {
+  const finished = performance.now();
+  if (finished - simulationStart <= 80) return;
+  console.warn('[Harrowdrift combat performance]', {
+    simulationMs: Math.round(renderStart - simulationStart),
+    renderMs: Math.round(finished - renderStart),
+    encounter,
+    elapsedSeconds: Math.round(elapsedSeconds),
+  });
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -339,15 +350,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat.tick(dt);
       const renderStart = performance.now();
       activePanel.update();
-      const finished = performance.now();
-      if (finished - simulationStart > 80) {
-        console.warn('[Harrowdrift combat performance]', {
-          simulationMs: Math.round(renderStart - simulationStart),
-          renderMs: Math.round(finished - renderStart),
-          encounter: scenario?.id ?? 'custom',
-          elapsedSeconds: Math.round(combat.getSnapshot().elapsedSeconds),
-        });
-      }
+      logSlowDuelFrame(simulationStart, renderStart, scenario?.id ?? 'custom', combat.getSnapshot().elapsedSeconds);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
