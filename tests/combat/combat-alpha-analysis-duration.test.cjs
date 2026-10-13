@@ -11,8 +11,8 @@ const routing = fs.readFileSync(
 );
 
 assert(lobby.includes("scenario?.id === 'alpha'"), 'analysis changes are Alpha-specific');
-assert(lobby.includes('damageMultiplier: setup.damageMultiplier * 0.25'), 'Alpha damage reduced');
-assert(lobby.includes('shieldHp: setup.shieldHp * 8'), 'Alpha shields increased');
+assert(lobby.includes('damageMultiplier: setup.damageMultiplier * 0.75'), 'Alpha damage reduced');
+assert(lobby.includes('shieldHp: setup.shieldHp * 2'), 'Alpha shields increased');
 assert(lobby.includes('drafts[index]!.mines = []'), 'Alpha does not open with lethal mines');
 assert(
   routing.includes('const immediateThreat = pathBlocked('),
