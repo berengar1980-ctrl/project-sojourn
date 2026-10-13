@@ -335,8 +335,19 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       if (canceled || !activePanel || generation !== duelGeneration) return;
       const dt = Math.min((now - previous) / 1000, 0.08);
       previous = now;
+      const simulationStart = performance.now();
       combat.tick(dt);
+      const renderStart = performance.now();
       activePanel.update();
+      const finished = performance.now();
+      if (finished - simulationStart > 80) {
+        console.warn('[Harrowdrift combat performance]', {
+          simulationMs: Math.round(renderStart - simulationStart),
+          renderMs: Math.round(finished - renderStart),
+          encounter: scenario?.id ?? 'custom',
+          elapsedSeconds: Math.round(combat.getSnapshot().elapsedSeconds),
+        });
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
