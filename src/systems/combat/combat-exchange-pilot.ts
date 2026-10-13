@@ -238,7 +238,8 @@ export function pilotExchangeShip(
   arena: StrategicCombatArenaOptions,
   dt: number,
   opponent?: MutableCombatant,
-  frontalApproach = false
+  frontalApproach = false,
+  trackTarget = false
 ): void {
   updateExchangeBoost(ship, dt);
   const boosting = ship.boostActive === true;
@@ -269,8 +270,11 @@ export function pilotExchangeShip(
   const forwardVelocity =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
-  const facing =
-    !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
+  // Tracking must use the opponent's CURRENT position on every tick;
+  // the maneuver's originally selected heading can become stale.
+  const facing = trackTarget && opponent
+    ? Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x)
+    : !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
       ? weaponFacing
       : navigationHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
