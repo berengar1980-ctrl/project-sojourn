@@ -245,9 +245,26 @@ function attachAnalysisControls(
   });
 }
 
-export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
-  const ships = getAllShipDefinitions();
-  const drafts: [DuelDraft, DuelDraft] = [
+function logSlowDuelFrame(
+  simulationStart: number,
+  renderStart: number,
+  encounter: string,
+  elapsedSeconds: number
+): void {
+  const finished = performance.now();
+  if (finished - simulationStart <= 80) return;
+  console.warn('[Harrowdrift combat performance]', {
+    simulationMs: Math.round(renderStart - simulationStart),
+    renderMs: Math.round(finished - renderStart),
+    encounter,
+    elapsedSeconds: Math.round(elapsedSeconds),
+  });
+}
+
+function initialDuelDrafts(
+  ships: ReturnType<typeof getAllShipDefinitions>
+): [DuelDraft, DuelDraft] {
+  return [
     { shipId: ships[0]!.id, weapons: [], mines: [], crewId: crewDefinitions[0]!.id },
     {
       shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id,
@@ -256,6 +273,20 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       crewId: crewDefinitions[1]!.id,
     },
   ];
+}
+
+function duelSetups(
+  drafts: [DuelDraft, DuelDraft],
+  ships: ReturnType<typeof getAllShipDefinitions>
+) {
+  return drafts.map((draft, index) =>
+    duelCombatant(index, draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!)
+  );
+}
+
+export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+  const ships = getAllShipDefinitions();
+  const drafts = initialDuelDrafts(ships);
   let selectedEncounter = '';
   const { mapLabel, mapSelect } = createDuelMapSelector();
   const encounterLabel = document.createElement('label');
@@ -291,17 +322,17 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
   let canceled = false;
   let frame = 0;
+  let duelGeneration = 0;
   const render = (): void => {
     cards.replaceChildren(...drafts.map((draft, index) => playerCard(index, draft, ships, render)));
   };
   fight.addEventListener('click', () => {
-    const setups = drafts.map((draft) =>
-      duelCombatant(
-        drafts.indexOf(draft),
-        draft,
-        ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
-      )
-    );
+    // Invalidate any existing animation callback before creating another duel.
+    duelGeneration += 1;
+    cancelAnimationFrame(frame);
+    activePanel?.destroy();
+    const generation = duelGeneration;
+    const setups = duelSetups(drafts, ships);
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Analysis-only durability: preserve damage mechanics, extend observation time.
     const tunedSetups = setups;
@@ -317,6 +348,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat,
       ...(scenario ? { encounterName: scenario.title } : {}),
       onReturn: () => {
+        duelGeneration += 1;
         cancelAnimationFrame(frame);
         activePanel?.destroy();
         activePanel = null;
@@ -325,11 +357,19 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     });
     let previous = performance.now();
     const tick = (now: number): void => {
-      if (canceled || !activePanel) return;
+      if (canceled || !activePanel || generation !== duelGeneration) return;
       const dt = Math.min((now - previous) / 1000, 0.08);
       previous = now;
+      const simulationStart = performance.now();
       combat.tick(dt);
+      const renderStart = performance.now();
       activePanel.update();
+      logSlowDuelFrame(
+        simulationStart,
+        renderStart,
+        scenario?.id ?? 'custom',
+        combat.getSnapshot().elapsedSeconds
+      );
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -338,6 +378,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   return {
     destroy() {
       canceled = true;
+      duelGeneration += 1;
       cancelAnimationFrame(frame);
       activePanel?.destroy();
       shell.remove();

@@ -405,9 +405,13 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(ui.canvas);
 
+  let lastHudUpdate = -Infinity;
   const update = (next: SalvageSpaceViewModel): void => {
     model = next;
     renderer.update(model);
+    const now = performance.now();
+    if (now - lastHudUpdate < 100) return;
+    lastHudUpdate = now;
     const status = statusText(model);
     ui.status.hidden = status.length === 0;
     ui.status.textContent = status;

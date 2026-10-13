@@ -304,14 +304,19 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     if (selected) options.onAttackNpc(selected.id);
   });
 
+  let lastAuxiliaryUpdate = -Infinity;
   updateSelection();
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
       updateSelection();
-      renderCargoScanner();
-      systemLog.update();
+      const now = performance.now();
+      if (now - lastAuxiliaryUpdate >= 150) {
+        lastAuxiliaryUpdate = now;
+        renderCargoScanner();
+        systemLog.update();
+      }
     },
     destroy(): void {
       unbindInput();
