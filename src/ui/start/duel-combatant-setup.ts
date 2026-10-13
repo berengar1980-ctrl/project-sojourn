@@ -1,7 +1,20 @@
-import { getShipComponent, fitsWeaponHardpoint, resolveShipCombatMovementStats, shipHullMaxHp, shipShieldMaxHp, type ShipDefinition } from '../../systems/ships';
+import {
+  getShipComponent,
+  fitsWeaponHardpoint,
+  resolveShipCombatMovementStats,
+  shipHullMaxHp,
+  shipShieldMaxHp,
+  type ShipDefinition,
+} from '../../systems/ships';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../../systems/combat';
 import { crewDefinitionById } from '../../data/crew/crew-definitions';
-import { pilotingDodgeChance, sensorWeaponHitChanceBonus, weaponDamageMultiplier, weaponCriticalChance, weaponCycleTimeMultiplier } from '../../systems/crew/crew-skill-effects';
+import {
+  pilotingDodgeChance,
+  sensorWeaponHitChanceBonus,
+  weaponDamageMultiplier,
+  weaponCriticalChance,
+  weaponCycleTimeMultiplier,
+} from '../../systems/crew/crew-skill-effects';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 
 export interface DuelDraft {
@@ -69,4 +82,3 @@ export function duelCombatant(
     aiAggression: 90,
   };
 }
-

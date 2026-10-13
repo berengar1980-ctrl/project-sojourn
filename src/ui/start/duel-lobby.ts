@@ -4,9 +4,7 @@ import {
   fitsWeaponHardpoint,
   type ShipDefinition,
 } from '../../systems/ships';
-import {
-  createStrategicCombatService,
-} from '../../systems/combat';
+import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
@@ -19,7 +17,6 @@ import {
   DUEL_MAPS,
   type DuelMapKind,
 } from '../../systems/combat/duel-arena-presets';
-
 
 function createLabel(text: string, control: HTMLElement): HTMLLabelElement {
   const label = document.createElement('label');
@@ -138,7 +135,6 @@ function playerCard(
   card.append(crewSelector(draft));
   return card;
 }
-
 
 function attachEncounterSelector(
   select: HTMLSelectElement,
