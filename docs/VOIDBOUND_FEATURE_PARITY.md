@@ -706,3 +706,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Duell-Performance / Frame-Diagnose
 
 **keine Statusänderung.** In Duellen läuft die Canvas-Animation weiter mit jedem Frame, während HUD-DOM-Aktualisierungen auf maximal zehn pro Simulationssekunde gedrosselt werden. Neue Duelle invalidieren vorherige Animationsschleifen und räumen Panels auf. Ein Warnhinweis für Frames über 80 ms trennt Simulationszeit und Renderzeit in der Browser-Konsole, um Hänger zu diagnostizieren. Kampfphysik, Waffen-Balance und Asteroidenverteilung sind unverändert. Regressionstest für Lebenszyklus und Instrumentierung ergänzt.
+
+## Review-Log (2026-10-13): Sternkarte, Asteroiden-/Kampf- und Bergungskarte
+
+**keine Statusänderung.** Die Sternkarte zeichnet weiter bei jeder Modellaktualisierung, begrenzt aber Frachtmarkt- und Systemlog-Neuaufbau auf höchstens etwa 6–7×/Sekunde. Die Asteroiden-/lokale Kampfkarte zeichnet ebenso weiterhin voll, aktualisiert das Overlay jedoch höchstens 10×/Sekunde. Die Bergungskarte zeichnet den Canvas weiter voll, baut ihre Status-/Fracht-/Ereignis-DOM-Strukturen höchstens 10×/Sekunde auf. Bedienungseingaben und physikalische Simulation bleiben unverändert. Regressionstest bestätigt, dass Canvas-Updates vor der HUD-Drosselung stattfinden. Reale Performancegewinne sind noch im Browser zu messen.
