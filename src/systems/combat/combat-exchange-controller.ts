@@ -1,4 +1,8 @@
-import { evaluateExchangeOutcome, type ExchangeGeometry, type ExchangeOutcome } from './combat-exchange-outcome';
+import {
+  evaluateExchangeOutcome,
+  type ExchangeGeometry,
+  type ExchangeOutcome,
+} from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
