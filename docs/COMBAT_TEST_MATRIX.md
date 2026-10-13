@@ -21,3 +21,11 @@ Die neuen Tests liegen in:
 - `tests/combat/combat-logic-end-to-end-invariants.test.cjs`
 
 Die Testmatrix dokumentiert eine **Ausbaustufe**. Aussagen zu Prozentwerten der Testabdeckung erfordern instrumentierte Branch-/Line-Coverage. Die vorhandenen Tests werden weiterhin durch `npm test` ausgeführt.
+
+## 2026-10-13 – kombinierte Gefechtsszenarien (PR-Erweiterung)
+
+- `combat-combined-battle-replay`: Drei Seeds, simultan Laser/Torpedos/Minen, Asteroidenhindernis; deterministische Zustandsfolge und gültige Positionen/HP.
+- `combat-combined-subsystem-damage`: Antrieb und Traktor zerstört, Trägheitsflug weiterhin vorhanden, keine sofortige Niederlage ohne Hüllenschaden.
+- `combat-combined-long-duel-seeds`: Drei 48-Sekunden-Duelle, gleiche Seed-Ergebnisse und gültige Telemetrie über mehrere Strategiezyklen.
+
+**Noch offen:** Erzwungene Treffersequenzen mit allen Waffenfamilien, Minenzündung gegen bewegte Asteroiden, automatisierter Browser-FPS-Test und vollständige Branch-Coverage. Die langen Duelle verwenden absichtlich unbewaffnete Setups und testen Zeit-/Seed-Stabilität, nicht Waffenbalance.

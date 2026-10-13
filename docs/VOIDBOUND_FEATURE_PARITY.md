@@ -718,3 +718,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Breitere Kampflogik-Regressionstests
 
 **keine Statusänderung.** Zusätzliche automatische Verhaltenstests für Feuerleitimpulse, Aufladung, Flucht und Traktorblockade, Siegerermittlung, Exchange-Manöverzeiten, Initiative, Seed-Replay und endliche physikalische Zustände. Die Testmatrix `docs/COMBAT_TEST_MATRIX.md` markiert bestehende Abdeckung und offene Integrationsfälle. Keine Änderung an Kampfmechanik, Waffenbalance oder UI.
+
+## Review-Log (2026-10-13): Kombinierte Gefechtstests
+
+**keine Statusänderung.** Neue Regressionstests für gemischte Waffen-/Minen-/Asteroidengefechte über mehrere Seeds, kombinierte Antriebs-/Traktorschäden und 48-Sekunden-Duelltelemetrie; keine Gameplay- oder Balanceänderung. Zusätzliche noch ungetestete Wechselwirkungen in `docs/COMBAT_TEST_MATRIX.md`.
