@@ -686,3 +686,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): RCS-Gegenschub, Relativgeschwindigkeit und sichtbare Bremsdüsen
 
 **keine Statusänderung.** Exchange-Flugsteuerung: höherer begrenzter Gegenschub (0,65) und seitlicher RCS-Schub (0,40), bei geringer Feinddistanz Relativgeschwindigkeit als Sollwert statt hartem Geschwindigkeitswechsel. Neue Telemetrie longitudinalThrust/lateralThrust im Combatant-Snapshot und Renderer statt festem Nullwert; vordere RCS können dadurch tatsächliches Bremsen darstellen. Initiator und Reaktor berücksichtigen beide den Gegner. Regressionstest für Gegenschub, Seitenschub, Snapshot und relative Bewegung. Keine Waffenschadensänderung; Qualität und Kampfdauer anhand Alpha-Bericht zu prüfen.
+
+## Review-Log (2026-10-13): Alpha-Schadenskalierung korrigiert
+
+**keine Statusänderung.** Alpha hatte als Beobachtungs-Preset achtfache Schilde, fünffache Hülle und 0,25-fachen Schaden; dadurch wurden in 45 Sekunden trotz Schusswechsel nur wenige Schildpunkte abgetragen. Für die weitere 45–60-s-Auswertung werden Alpha-Schilde auf Faktor 2, Hülle auf Faktor 3 und Schaden auf Faktor 0,75 gesetzt, gleichermaßen für sichtbares Duell und exportierte Preset-Analyse. Keine globale Waffen-Balanceänderung; reale Dauer und Trefferquote bleiben per Log zu messen.
