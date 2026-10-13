@@ -678,3 +678,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Analyse für neun Duell-Presets
 
 **keine Statusänderung.** Alpha–Iota werden anhand ihrer echten Schiffe, Ausrüstung, Crew und festen Seeds (1001–1009) reproduzierbar ausgewertet. Das Duellmenü bietet einzelne Analysen mit optionalem Seed-Override und einen Lauf aller neun Testgefechte; Berichte werden als Text mit Zeitmarken exportiert. Die Arena-Auswahl wird berücksichtigt und Alpha verwendet dieselbe Analyse-Balance wie der reguläre Presetstart. Ohne manuelle Freigabe wird nichts nach main gemergt.
+
+## Review-Log (2026-10-13): Austauschflug-Bremsen und RCS
+
+**keine Statusänderung.** Der Exchange-Pilot reduziert seine Zielgeschwindigkeit vor nahen Wegpunkten, statt unterhalb von 95 Metern unbegrenzt den bisherigen Drift fortzusetzen. Konservativer Bremsweg berücksichtigt schwächere Gegen- und Seitentriebwerke. Erhöhte, weiterhin begrenzte RCS-Korrektur verringert Überflug und seitlichen Drift. Die reguläre strategische Flugsteuerung bleibt unverändert, nachdem eine zusätzliche Bremsregel den bestehenden Sternkarten-Kampftest blockierte. Keine Änderungen an Waffenschaden oder Seed-Logik. Die tatsächliche Trefferquote und Alpha-Dauer müssen mit den Duellberichten überprüft werden.

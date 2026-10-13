@@ -178,23 +178,19 @@ function accelerateExchangeShip(
 ): void {
   const dx = goal.x - ship.position.x;
   const dy = goal.y - ship.position.y;
-  // Keep the established flight vector after crossing a waypoint;
-  // chasing a point behind the ship would cause a stationary spin.
-  const direction =
-    distance < 95
-      ? normalize(
-          ship.velocity.x || Math.cos(ship.headingRadians),
-          ship.velocity.y || Math.sin(ship.headingRadians)
-        )
-      : normalize(dx, dy);
+  // Control velocity rather than preserving drift after passing a waypoint.
+  // The desired speed falls as stopping distance approaches the remaining gap.
+  const direction = distance < 1 ? { x: 0, y: 0 } : normalize(dx, dy);
   const acceleration = Math.max(
     12,
     ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
   const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting ? 1.65 : 1);
-  const brakingSpeed = distance < 95 ? speedLimit : Math.sqrt(2 * acceleration * distance);
+  // Account for limited reverse and lateral RCS: high closing speed requires
+  // an earlier braking phase than main-drive acceleration would suggest.
+  const conservativeBraking = acceleration * 0.32;
+  const brakingSpeed = Math.sqrt(2 * conservativeBraking * Math.max(0, distance - 35));
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
-  // Do not park at the waypoint during an exchange: continue a controlled pass.
   const desiredX = direction.x * targetSpeed;
   const desiredY = direction.y * targetSpeed;
   // Main drive accelerates along the bow. RCS provides weaker lateral
@@ -207,8 +203,8 @@ function accelerateExchangeShip(
   const lateral = -changeX * forwardY + changeY * forwardX;
   const boostStrength = boosting ? 1 + 2.5 * Math.min(1, (ship.boostRampSeconds ?? 0) / 2) : 1;
   const mainStep = acceleration * dt * boostStrength;
-  const forwardStep = clamp(longitudinal, -mainStep * 0.25, mainStep);
-  const lateralStep = clamp(lateral, -mainStep * 0.12, mainStep * 0.12);
+  const forwardStep = clamp(longitudinal, -mainStep * 0.4, mainStep);
+  const lateralStep = clamp(lateral, -mainStep * 0.24, mainStep * 0.24);
   if (ship.subsystems.engine > 0) {
     ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
     ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
