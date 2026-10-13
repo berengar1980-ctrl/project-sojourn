@@ -16,19 +16,33 @@ const controllerSource = fs.readFileSync(
   'utf8'
 );
 
-assert(controllerSource.includes('const initiativeSide = next.initiative;'),
-  'runtime initiative is authoritative');
-assert(controllerSource.includes("const opposingSide = initiativeSide === 'attacker' ? 'defender' : 'attacker';"),
-  'opposing side keeps the reactor role');
-assert(controllerSource.includes('initiatorGoal: initiatorOverride ?? state.flight.initiatorGoal'),
-  'reactive initiator goal keeps its own lane');
-assert(controllerSource.includes('reactorGoal: opponentOverride ?? state.flight.reactorGoal'),
-  'reactive reactor goal keeps its own lane');
-assert.match(controllerSource,
+assert(
+  controllerSource.includes('const initiativeSide = next.initiative;'),
+  'runtime initiative is authoritative'
+);
+assert(
+  controllerSource.includes(
+    "const opposingSide = initiativeSide === 'attacker' ? 'defender' : 'attacker';"
+  ),
+  'opposing side keeps the reactor role'
+);
+assert(
+  controllerSource.includes('initiatorGoal: initiatorOverride ?? state.flight.initiatorGoal'),
+  'reactive initiator goal keeps its own lane'
+);
+assert(
+  controllerSource.includes('reactorGoal: opponentOverride ?? state.flight.reactorGoal'),
+  'reactive reactor goal keeps its own lane'
+);
+assert.match(
+  controllerSource,
   /pilotExchangeShip\(\s*initiator,\s*'initiator',\s*flight,\s*runtime\.arena,\s*dt,/,
-  'initiative holder receives initiator flight orders');
-assert(controllerSource.includes("pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt)"),
-  'opposing ship receives reactor flight orders');
+  'initiative holder receives initiator flight orders'
+);
+assert(
+  controllerSource.includes("pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt)"),
+  'opposing ship receives reactor flight orders'
+);
 
 function ship(x, y) {
   return {
