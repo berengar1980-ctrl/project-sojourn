@@ -22,10 +22,6 @@ export const EDGE_WARNING_DISTANCE = 650;
 
 export const MINE_DROP_COOLDOWN = 7.5;
 
-// Shared sequential fire-control pulses replace simultaneous per-gun fire. Preserve
-// observable 30–60 s battles by accounting for the lower total shot throughput.
-export const COMBAT_DAMAGE_SCALE = 0.18;
-
 export const DEFAULT_TURN_RATE = 0.72;
 
 export const DEFAULT_ACCELERATION = 34;
