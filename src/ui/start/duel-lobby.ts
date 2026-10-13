@@ -245,7 +245,12 @@ function attachAnalysisControls(
   });
 }
 
-function logSlowDuelFrame(simulationStart: number, renderStart: number, encounter: string, elapsedSeconds: number): void {
+function logSlowDuelFrame(
+  simulationStart: number,
+  renderStart: number,
+  encounter: string,
+  elapsedSeconds: number
+): void {
   const finished = performance.now();
   if (finished - simulationStart <= 80) return;
   console.warn('[Harrowdrift combat performance]', {
@@ -256,7 +261,9 @@ function logSlowDuelFrame(simulationStart: number, renderStart: number, encounte
   });
 }
 
-function initialDuelDrafts(ships: ReturnType<typeof getAllShipDefinitions>): [DuelDraft, DuelDraft] {
+function initialDuelDrafts(
+  ships: ReturnType<typeof getAllShipDefinitions>
+): [DuelDraft, DuelDraft] {
   return [
     { shipId: ships[0]!.id, weapons: [], mines: [], crewId: crewDefinitions[0]!.id },
     {
@@ -354,7 +361,12 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat.tick(dt);
       const renderStart = performance.now();
       activePanel.update();
-      logSlowDuelFrame(simulationStart, renderStart, scenario?.id ?? 'custom', combat.getSnapshot().elapsedSeconds);
+      logSlowDuelFrame(
+        simulationStart,
+        renderStart,
+        scenario?.id ?? 'custom',
+        combat.getSnapshot().elapsedSeconds
+      );
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
