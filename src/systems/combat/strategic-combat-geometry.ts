@@ -155,6 +155,8 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     fireControl: { ...combatant.fireControl },
     turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
     angularThrust: combatant.angularThrust,
+    lateralThrust: combatant.lateralThrust ?? 0,
+    longitudinalThrust: combatant.longitudinalThrust ?? 0,
     boostSeconds: combatant.boostSeconds ?? 3.5,
     boostActive: combatant.boostActive === true,
     ...(combatant.combatIntent !== undefined ? { combatIntent: combatant.combatIntent } : {}),
