@@ -694,3 +694,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Alpha-Sonderfaktoren vollständig entfernt
 
 **keine Statusänderung.** Auf Nutzerwunsch werden Alpha-Schild, Alpha-Hülle und Alpha-Waffenschaden nicht mehr mit einem Sonderfaktor multipliziert (Faktor 1 = Originalwerte). Das gilt gleichermaßen für das spielbare Alpha-Duell und die Preset-Telemetrie. Andere vorhandene schiffsspezifische Werte und globale Spielmechaniken bleiben unverändert. Frühere Balanceversuche mit Faktoren 8/5/0,25 und 2/3/0,75 sind hiermit überholt.
+
+## Review-Log (2026-10-13): Ziel anvisieren / Nachführwinkel
+
+**keine Statusänderung.** Bei der Exchange-Reaktion `turn_to_face` wird der Soll-Bugwinkel jetzt in jedem Simulationstick aus der aktuellen Gegnerposition berechnet, statt den beim Manöverstart fixierten Winkel beziehungsweise die Wegpunktrichtung zu übernehmen. Der physikalische Drehgeschwindigkeitsgrenzwert bleibt bestehen, RCS und Trägheit laufen weiter. Testet die Nachführung bei bewegtem Ziel und das Drehgeschwindigkeitslimit.
