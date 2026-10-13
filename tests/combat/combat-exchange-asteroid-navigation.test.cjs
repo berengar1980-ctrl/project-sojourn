@@ -25,5 +25,7 @@ assert(
   'ship accelerates toward a navigable waypoint instead of an obstacle'
 );
 assert(routing.includes('pathBlocked('), 'avoid only actual obstructed trajectories');
+assert(routing.includes('MAX_DETOUR_HOPS = 5'), 'combat detours have a strict work budget');
+assert(!routing.includes('planPointRoute('), 'combat does not perform full-grid A* per exchange');
 assert(asteroid.includes('mass: physics.mass *'), 'massive rocks resist small-ship impulses');
 console.log('PASS preflight asteroid routing and massive-rock inertia contracts');
