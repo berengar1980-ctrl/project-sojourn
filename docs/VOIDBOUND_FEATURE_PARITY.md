@@ -714,3 +714,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Begrenzte Asteroidenroute im Duell
 
 **keine Statusänderung.** Die Gefechtsnavigation verwendet bei blockierter Direktverbindung eine einfache lokale Hindernisumfahrung mit höchstens fünf Ausweichpunkten anstelle mehrfacher vollständiger A*-Rasterdurchläufe mit reduzierten Sicherheitsabständen. Bei temporär blockierten Wegpunkten gilt der 0,75-s-Neuplanungsabstand; keine Rechenlawine pro Frame. Kampagnen-Routenplanung und Asteroidenzahl unverändert. Weiter zu validieren: dichte Felder, Sackgassen, Sicherheitsabstand und tatsächliche Startdauer im Browser.
+
+## Review-Log (2026-10-13): Breitere Kampflogik-Regressionstests
+
+**keine Statusänderung.** Zusätzliche automatische Verhaltenstests für Feuerleitimpulse, Aufladung, Flucht und Traktorblockade, Siegerermittlung, Exchange-Manöverzeiten, Initiative, Seed-Replay und endliche physikalische Zustände. Die Testmatrix `docs/COMBAT_TEST_MATRIX.md` markiert bestehende Abdeckung und offene Integrationsfälle. Keine Änderung an Kampfmechanik, Waffenbalance oder UI.
