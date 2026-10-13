@@ -275,7 +275,10 @@ function initialDuelDrafts(
   ];
 }
 
-function duelSetups(drafts: [DuelDraft, DuelDraft], ships: ReturnType<typeof getAllShipDefinitions>) {
+function duelSetups(
+  drafts: [DuelDraft, DuelDraft],
+  ships: ReturnType<typeof getAllShipDefinitions>
+) {
   return drafts.map((draft, index) =>
     duelCombatant(index, draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!)
   );
