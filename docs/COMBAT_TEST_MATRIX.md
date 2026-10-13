@@ -29,3 +29,10 @@ Die Testmatrix dokumentiert eine **Ausbaustufe**. Aussagen zu Prozentwerten der 
 - `combat-combined-long-duel-seeds`: Drei 48-Sekunden-Duelle, gleiche Seed-Ergebnisse und gültige Telemetrie über mehrere Strategiezyklen.
 
 **Noch offen:** Erzwungene Treffersequenzen mit allen Waffenfamilien, Minenzündung gegen bewegte Asteroiden, automatisierter Browser-FPS-Test und vollständige Branch-Coverage. Die langen Duelle verwenden absichtlich unbewaffnete Setups und testen Zeit-/Seed-Stabilität, nicht Waffenbalance.
+
+## 2026-10-13 – Kombinierte Treffer- und Hindernisinteraktionen
+
+- `combat-interaction-mixed-hit-order`: aufeinanderfolgende Laser-/Torpedotreffer, Schild vor Hülle, eigenständige Trefferwirkungen.
+- `combat-interaction-moving-rock-tractor-mine`: bewegter Asteroid tritt in/aus Schusslinie; Traktorwirkwurf bei gleichzeitig aktivem Minenobjekt ohne versehentlichen Verlust der Mine.
+
+Offen: erzwungene Minenzündung durch bewegte Asteroiden und gemeinsamer Trefferzeitpunkt mehrerer Projektilarten im vollständigen Gefechtsloop. Diese Tests prüfen unabhängige Ereignispfade, nicht die noch nicht vorhandene Interaktion jedes denkbaren Objektpaars.
