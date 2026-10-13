@@ -4,35 +4,83 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/strategic-combat-service.ts'
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
 );
 const { getShipMine } = loadStandaloneTypeScriptModule(root, 'src/data/combat/ship-mines.ts');
 const laser = {
-  id: 'integration-laser', type: 'weapon', name: 'Pulse laser', tier: 1, power: 1, cost: 0,
-  weapon: { family: 'pulse_laser', role: 'balanced', shieldDamage: 16, hullDamage: 14,
-    rangeMeters: 900, cooldownSeconds: 0.35, heat: 1, ammoPerShot: 0 },
+  id: 'integration-laser',
+  type: 'weapon',
+  name: 'Pulse laser',
+  tier: 1,
+  power: 1,
+  cost: 0,
+  weapon: {
+    family: 'pulse_laser',
+    role: 'balanced',
+    shieldDamage: 16,
+    hullDamage: 14,
+    rangeMeters: 900,
+    cooldownSeconds: 0.35,
+    heat: 1,
+    ammoPerShot: 0,
+  },
 };
 const missile = {
-  id: 'integration-missile', type: 'weapon', name: 'Torpedo', tier: 1, power: 1, cost: 0,
-  weapon: { family: 'guided_missile', role: 'balanced', shieldDamage: 22, hullDamage: 28,
-    rangeMeters: 1300, cooldownSeconds: 0.8, heat: 1, ammoPerShot: 1 },
+  id: 'integration-missile',
+  type: 'weapon',
+  name: 'Torpedo',
+  tier: 1,
+  power: 1,
+  cost: 0,
+  weapon: {
+    family: 'guided_missile',
+    role: 'balanced',
+    shieldDamage: 22,
+    hullDamage: 28,
+    rangeMeters: 1300,
+    cooldownSeconds: 0.8,
+    heat: 1,
+    ammoPerShot: 1,
+  },
 };
 const setup = (id, tactic) => ({
-  id, name: id, shipId: 'patrol-60m-variant-01', shieldHp: 90, hullHp: 120,
-  weapons: [laser, missile], mines: [getShipMine('mine-ion-1')].filter(Boolean),
-  hitChance: 0.9, dodgeChance: 0, damageMultiplier: 1, criticalChance: 0,
-  cycleTimeMultiplier: 1, preferredTactic: tactic, aiControlled: true,
-  combatSpeed: 100, turnRateRadiansPerSecond: 0.65,
-  accelerationMetersPerSecond2: 28, sensorCrewSkill: 80,
-  sensorTier: 2, sensorRangeMeters: 1000, sensorRangeMultiplier: 1,
+  id,
+  name: id,
+  shipId: 'patrol-60m-variant-01',
+  shieldHp: 90,
+  hullHp: 120,
+  weapons: [laser, missile],
+  mines: [getShipMine('mine-ion-1')].filter(Boolean),
+  hitChance: 0.9,
+  dodgeChance: 0,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  preferredTactic: tactic,
+  aiControlled: true,
+  combatSpeed: 100,
+  turnRateRadiansPerSecond: 0.65,
+  accelerationMetersPerSecond2: 28,
+  sensorCrewSkill: 80,
+  sensorTier: 2,
+  sensorRangeMeters: 1000,
+  sensorRangeMultiplier: 1,
 });
 const arena = {
-  width: 2000, height: 1300,
-  attackerPosition: { x: 600, y: 650 }, defenderPosition: { x: 1400, y: 650 },
+  width: 2000,
+  height: 1300,
+  attackerPosition: { x: 600, y: 650 },
+  defenderPosition: { x: 1400, y: 650 },
   obstacles: [{ id: 'test-rock', position: { x: 1000, y: 650 }, radius: 135 }],
 };
 function simulate(seed) {
-  const combat = createStrategicCombatService(setup('miner', 'minefield'), setup('hunter', 'fight'), seed, arena);
+  const combat = createStrategicCombatService(
+    setup('miner', 'minefield'),
+    setup('hunter', 'fight'),
+    seed,
+    arena
+  );
   const trace = [];
   for (let frame = 0; frame < 180; frame += 1) {
     const snapshot = combat.tick(0.08);
@@ -50,10 +98,17 @@ function simulate(seed) {
       assert(Number.isFinite(mine.position.x) && Number.isFinite(mine.position.y));
     }
     trace.push([
-      snapshot.elapsedSeconds, snapshot.winner, snapshot.attacker.position.x,
-      snapshot.attacker.position.y, snapshot.defender.position.x, snapshot.defender.position.y,
-      snapshot.attacker.shieldHp, snapshot.defender.shieldHp,
-      snapshot.projectiles.length, snapshot.mines.length, snapshot.lastEvent,
+      snapshot.elapsedSeconds,
+      snapshot.winner,
+      snapshot.attacker.position.x,
+      snapshot.attacker.position.y,
+      snapshot.defender.position.x,
+      snapshot.defender.position.y,
+      snapshot.attacker.shieldHp,
+      snapshot.defender.shieldHp,
+      snapshot.projectiles.length,
+      snapshot.mines.length,
+      snapshot.lastEvent,
     ]);
     if (snapshot.winner) break;
   }
