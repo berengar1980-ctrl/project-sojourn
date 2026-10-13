@@ -155,7 +155,7 @@ function playerCard(
   return card;
 }
 
-function duelCombatant(
+export function duelCombatant(
   index: number,
   draft: DuelDraft,
   ship: ShipDefinition
