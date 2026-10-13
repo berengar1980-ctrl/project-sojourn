@@ -738,3 +738,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Vorbereitung auf Entfernung des globalen Schadensfaktors
 
 **keine Statusänderung.** Unabhängige Goldwert-Regressionen über alle acht Waffenfamilien und sechs Waffenstufen sowie alle Minenstufen angelegt. Vor einer produktiven Migration müssen die bisherigen 0,18-Schadenswerte mit den Nebenverwendungen der ursprünglichen Waffen-/Minenprofile abgeglichen werden; insbesondere direkter Asteroidenschaden und der außerhalb des Raumkampf-ApplyDamage verwendete Minenschaden dürfen nicht mit skaliert werden. Noch keine Änderung an Kampfwerten oder Schadensfunktion.
+
+## Review-Log (2026-10-13): Schadensberechnung auf feste Kampfkatalogwerte umgestellt
+
+**keine Statusänderung.** Globaler `COMBAT_DAMAGE_SCALE` aus der Trefferroutine entfernt. Für alle acht Waffenfamilien mit sechs Stufen und alle drei Minenfamilien mit sechs Stufen sind effektive 0,18-Balancewerte ausdrücklich im separaten Combat-Damage-Katalog hinterlegt. Diese Werte gelten nur bei tatsächlichen Raumkampftreffern; ursprüngliche Waffen- und Minenprofile bleiben für andere Verwender unangetastet. Direkte Asteroidenkollisionen und die übrigen eigenen Schadenwege unverändert. Unbekannte Custom-Komponenten benutzen native Damagewerte ohne automatische Umrechnung. Golden Tests prüfen jedes reguläre Schadensprofil gegen eingefrorene Legacy-Basisdaten; realistische Gesamtgefechte und CI müssen vor dem Merge bestätigt werden.
