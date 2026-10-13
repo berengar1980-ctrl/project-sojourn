@@ -340,6 +340,20 @@ function choosePlanDirection(
     direction = normalize(stern.x - combatant.position.x, stern.y - combatant.position.y);
     targetSpeedFactor = 1;
   }
+  // Brake based on radial closing speed before entering the preferred weapon
+  // range. Keep fleeing and emergency maneuvers free to accelerate.
+  if (combatant.tactic !== 'flee' && enemy.tactic !== 'flee') {
+    const relativeClosing =
+      (combatant.velocity.x - enemy.velocity.x) * toward.x +
+      (combatant.velocity.y - enemy.velocity.y) * toward.y;
+    const acceleration = Math.max(
+      12, combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
+    );
+    const brakingDistance = Math.max(0, relativeClosing) ** 2 / (2 * acceleration * 0.45);
+    if (range - desired < brakingDistance + 130 && relativeClosing > 20) {
+      targetSpeedFactor = Math.min(targetSpeedFactor, range > desired ? 0.18 : 0.08);
+    }
+  }
   return { direction, targetSpeedFactor };
 }
 
