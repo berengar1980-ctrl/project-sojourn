@@ -57,6 +57,14 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
       component.id + ': precomputed weapon damage differs from pre-migration raw value');
     assert(Math.abs(hit.damage - expected(raw, crew, critical)) < 0.000001,
       component.id + ': hull damage differs from original balance');
+    const shieldTarget = ship('shield-target', 'defender', 2000, 1);
+    const shieldHit = applyDamage(shieldTarget, profile.shieldDamage, profile.hullDamage,
+      attacker, critical, attacker.position, 'laser', 2);
+    const shieldRaw = referenceRaw(weaponBase[component.weapon.family][0], component.tier);
+    assert.equal(shieldHit.layer, 'shield');
+    assert(Math.abs(shieldHit.damage - expected(shieldRaw, crew, critical)) < 0.000001,
+      component.id + ': shield damage differs from original balance');
+    assert.equal(shieldTarget.hullHp, 2000, 'shield hits cannot bypass hull protection');
   }
 }
 for (const mine of SHIP_MINE_CATALOG) {
