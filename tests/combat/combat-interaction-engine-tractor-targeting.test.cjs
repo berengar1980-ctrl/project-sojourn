@@ -48,7 +48,7 @@ assert.equal(
 );
 const shieldImpact = damage.applyDamage(
   enemy,
-  80,
+  400,
   80,
   source,
   false,
@@ -76,7 +76,7 @@ assert.equal(
 const engineHit = damage.applyDamage(
   enemy,
   0,
-  200,
+  600,
   source,
   false,
   source.position,
@@ -98,7 +98,7 @@ assert.equal(
 const tractorHit = damage.applyDamage(
   enemy,
   0,
-  200,
+  600,
   source,
   false,
   source.position,
