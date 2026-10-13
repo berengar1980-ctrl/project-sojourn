@@ -7,7 +7,7 @@ const fire = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-weapon-fire-control.ts'
 );
-const escape = loadStandaloneTypeScriptModule(
+const escapeLogic = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-escape-evaluation.ts'
 );
@@ -55,32 +55,32 @@ const pursuer = {
   hullHp: 80,
   subsystems: { tractor: 100 },
 };
-assert.equal(escape.runtimeCombatantEscaped(fleeing, pursuer, arena), true);
+assert.equal(escapeLogic.runtimeCombatantEscaped(fleeing, pursuer, arena), true);
 assert.equal(
-  escape.runtimeCombatantEscaped({ ...fleeing, tactic: 'fight' }, pursuer, arena),
+  escapeLogic.runtimeCombatantEscaped({ ...fleeing, tactic: 'fight' }, pursuer, arena),
   false
 );
 assert.equal(
-  escape.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena),
+  escapeLogic.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena),
   false
 );
 assert.equal(
-  escape.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena),
+  escapeLogic.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena),
   false,
   'ship too close to pursuing opponent cannot escape'
 );
 const tractorPursuer = {
   ...pursuer,
-  position: { x: 1700, y: 800 },
-  setup: { name: 'Chaser', tractorRangeMeters: 500 },
+  position: { x: 1600, y: 800 },
+  setup: { name: 'Chaser', tractorRangeMeters: 550 },
 };
 assert.equal(
-  escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, tractorPursuer, arena),
+  escapeLogic.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, tractorPursuer, arena),
   false,
   'active tractor prevents unshielded ship from leaving'
 );
 assert.equal(
-  escape.runtimeCombatantEscaped(
+  escapeLogic.runtimeCombatantEscaped(
     { ...fleeing, shieldHp: 0 },
     { ...tractorPursuer, subsystems: { tractor: 0 } },
     arena
