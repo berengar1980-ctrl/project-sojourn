@@ -1,3 +1,4 @@
+import { chooseReactiveDecision, commitReactiveDecision, initialReactionMemory, type ReactionMemory } from './combat-exchange-reactions';
 import {
   evaluateExchangeOutcome,
   type ExchangeGeometry,
@@ -18,6 +19,7 @@ export interface ActiveExchange {
   exchange: CombatExchange;
   flight: ExchangeFlightPlan | null;
   geometry: ExchangeGeometry | null;
+  reactions: { attacker: ReactionMemory; defender: ReactionMemory };
   attackerHp: number;
   defenderHp: number;
 }
@@ -27,6 +29,7 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
     exchange: initialExchange(runtime.firstPlanner),
     flight: null,
     geometry: null,
+    reactions: { attacker: initialReactionMemory(runtime.attacker, runtime), defender: initialReactionMemory(runtime.defender, runtime) },
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
   };
@@ -136,6 +139,28 @@ function resolveExchange(
   }
 }
 
+function reactToCombatEvents(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  side: 'attacker' | 'defender',
+  ship: StrategicCombatRuntime['attacker'],
+  enemy: StrategicCombatRuntime['defender']
+): { x: number; y: number } | null {
+  const memory = state.reactions[side];
+  const event = chooseReactiveDecision(runtime, ship, enemy, side, memory);
+  const accepted = commitReactiveDecision(memory, event, runtime.elapsedSeconds);
+  memory.shieldHp = ship.shieldHp;
+  memory.lastTractorCount = runtime.thrownAsteroids.length;
+  if (!event || !accepted) return null;
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event: 'action',
+    detail: 'REACTIVE_' + event.kind.toUpperCase() + ' priority=' + event.priority,
+  });
+  return event.goal;
+}
+
 function flyExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -174,16 +199,25 @@ function flyExchange(
     separation,
     remaining
   );
+  const initiativeSide = next.initiative;
+  const opposingSide = initiativeSide === 'attacker' ? 'defender' : 'attacker';
+  const initiatorOverride = reactToCombatEvents(runtime, state, initiativeSide, initiator, opponent);
+  const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
+  const flight = {
+    ...state.flight,
+    initiatorGoal: initiatorOverride ?? state.flight.initiatorGoal,
+    reactorGoal: opponentOverride ?? state.flight.reactorGoal,
+  };
   pilotExchangeShip(
     initiator,
     'initiator',
-    state.flight,
+    flight,
     runtime.arena,
     dt,
     opponent,
     next.action === 'frontal_pass'
   );
-  pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
+  pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt);
 }
 
 export function tickActionExchange(
