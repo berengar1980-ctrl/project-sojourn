@@ -275,6 +275,12 @@ function initialDuelDrafts(
   ];
 }
 
+function duelSetups(drafts: [DuelDraft, DuelDraft], ships: ReturnType<typeof getAllShipDefinitions>) {
+  return drafts.map((draft, index) =>
+    duelCombatant(index, draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!)
+  );
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
@@ -323,13 +329,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     cancelAnimationFrame(frame);
     activePanel?.destroy();
     const generation = duelGeneration;
-    const setups = drafts.map((draft) =>
-      duelCombatant(
-        drafts.indexOf(draft),
-        draft,
-        ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!
-      )
-    );
+    const setups = duelSetups(drafts, ships);
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Analysis-only durability: preserve damage mechanics, extend observation time.
     const tunedSetups = setups;
