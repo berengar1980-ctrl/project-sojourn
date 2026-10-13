@@ -10,7 +10,7 @@ const routing = fs.readFileSync(
   'utf8'
 );
 
-assert(lobby.includes("scenario?.id === 'alpha'"), 'analysis changes are Alpha-specific');
+assert(lobby.includes('const tunedSetups = setups;'), 'Alpha uses the regular combat setup');
 assert(!lobby.includes('damageMultiplier: setup.damageMultiplier *'), 'Alpha damage uses normal value');
 assert(!lobby.includes('shieldHp: setup.shieldHp *'), 'Alpha shields use normal value');
 assert(lobby.includes('drafts[index]!.mines = []'), 'Alpha does not open with lethal mines');
