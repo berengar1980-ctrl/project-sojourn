@@ -291,10 +291,16 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
   let canceled = false;
   let frame = 0;
+  let duelGeneration = 0;
   const render = (): void => {
     cards.replaceChildren(...drafts.map((draft, index) => playerCard(index, draft, ships, render)));
   };
   fight.addEventListener('click', () => {
+    // Invalidate any existing animation callback before creating another duel.
+    duelGeneration += 1;
+    cancelAnimationFrame(frame);
+    activePanel?.destroy();
+    const generation = duelGeneration;
     const setups = drafts.map((draft) =>
       duelCombatant(
         drafts.indexOf(draft),
@@ -317,6 +323,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat,
       ...(scenario ? { encounterName: scenario.title } : {}),
       onReturn: () => {
+        duelGeneration += 1;
         cancelAnimationFrame(frame);
         activePanel?.destroy();
         activePanel = null;
@@ -325,7 +332,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     });
     let previous = performance.now();
     const tick = (now: number): void => {
-      if (canceled || !activePanel) return;
+      if (canceled || !activePanel || generation !== duelGeneration) return;
       const dt = Math.min((now - previous) / 1000, 0.08);
       previous = now;
       combat.tick(dt);
@@ -338,6 +345,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   return {
     destroy() {
       canceled = true;
+      duelGeneration += 1;
       cancelAnimationFrame(frame);
       activePanel?.destroy();
       shell.remove();
