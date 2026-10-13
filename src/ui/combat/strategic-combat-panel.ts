@@ -166,8 +166,14 @@ export function createStrategicCombatPanel(
     });
   }
 
+  let lastHudTime = -Infinity;
   const render = (): void => {
     const model = options.combat.getSnapshot();
+    renderer.update(model);
+    // Canvas follows every frame; rebuilding HTML/HUD controls at 60 FPS causes
+    // avoidable layout and garbage-collection work during longer duels.
+    if (model.elapsedSeconds - lastHudTime < 0.1 && model.winner === null) return;
+    lastHudTime = model.elapsedSeconds;
     playerHud.innerHTML = combatantHud(model.attacker);
     enemyHud.innerHTML = combatantHud(model.defender);
     event.textContent = model.lastEvent;
@@ -210,7 +216,6 @@ export function createStrategicCombatPanel(
         button.textContent = 'MINEN (' + model.attacker.mineCount + ')';
       }
     }
-    renderer.update(model);
   };
 
   returnButton.addEventListener('click', options.onReturn);
