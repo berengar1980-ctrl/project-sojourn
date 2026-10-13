@@ -40,7 +40,7 @@ assert.match(
   'initiative holder receives initiator flight orders'
 );
 assert(
-  controllerSource.includes("pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt)"),
+  controllerSource.includes("pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt, initiator)"),
   'opposing ship receives reactor flight orders'
 );
 
