@@ -21,6 +21,12 @@ export interface DuelTelemetry {
   readonly winner: StrategicCombatSide | null;
   readonly timedOut: boolean;
   readonly exchanges: number;
+  readonly planChanges: number;
+  readonly shieldHits: number;
+  readonly hullHits: number;
+  readonly subsystemHits: number;
+  readonly subsystemFailures: number;
+  readonly obstacleEvents: number;
   readonly reactions: Readonly<Record<string, number>>;
   readonly minimumSeparation: number;
   readonly maximumSeparation: number;
@@ -69,6 +75,12 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
     durationSeconds: Number(final.elapsedSeconds.toFixed(2)),
     winner: final.winner,
     timedOut: final.winner === null,
+    planChanges: log.filter((entry) => entry.event === 'plan').length,
+    shieldHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('shield')).length,
+    hullHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('hull')).length,
+    subsystemHits: log.filter((entry) => entry.event === 'impact' && /engine|tractor/.test(entry.detail)).length,
+    subsystemFailures: log.filter((entry) => entry.event === 'phase' && entry.detail.includes('ausgefallen')).length,
+    obstacleEvents: log.filter((entry) => /Hindernis|Asteroid|Kollision/.test(entry.detail)).length,
     exchanges: log.filter(
       (entry) => entry.event === 'result' && entry.detail.startsWith('EXCHANGE_OUTCOME')
     ).length,
@@ -93,6 +105,12 @@ export function formatDuelTelemetry(result: DuelTelemetry): string {
     'Duration: ' + result.durationSeconds + ' s (' + range + ')',
     'Winner: ' + (result.winner ?? 'none / time limit'),
     'Exchanges: ' + result.exchanges,
+    'Plan changes: ' + result.planChanges,
+    'Shield hits: ' + result.shieldHits,
+    'Hull hits: ' + result.hullHits,
+    'Subsystem hits: ' + result.subsystemHits,
+    'Subsystem failure alerts: ' + result.subsystemFailures,
+    'Obstacle / collision events: ' + result.obstacleEvents,
     'Range: ' + result.minimumSeparation + '–' + result.maximumSeparation + ' m',
     'Reactions: ' + JSON.stringify(result.reactions),
     'Final shields: ' + result.finalShields.join(' / '),
