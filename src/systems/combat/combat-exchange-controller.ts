@@ -1,4 +1,9 @@
-import { chooseReactiveDecision, commitReactiveDecision, initialReactionMemory, type ReactionMemory } from './combat-exchange-reactions';
+import {
+  chooseReactiveDecision,
+  commitReactiveDecision,
+  initialReactionMemory,
+  type ReactionMemory,
+} from './combat-exchange-reactions';
 import {
   evaluateExchangeOutcome,
   type ExchangeGeometry,
@@ -20,7 +25,10 @@ export interface ActiveExchange {
   flight: ExchangeFlightPlan | null;
   geometry: ExchangeGeometry | null;
   reactions: { attacker: ReactionMemory; defender: ReactionMemory };
-  reactiveGoals: { attacker: { x: number; y: number } | null; defender: { x: number; y: number } | null };
+  reactiveGoals: {
+    attacker: { x: number; y: number } | null;
+    defender: { x: number; y: number } | null;
+  };
   attackerHp: number;
   defenderHp: number;
 }
@@ -30,7 +38,10 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
     exchange: initialExchange(runtime.firstPlanner),
     flight: null,
     geometry: null,
-    reactions: { attacker: initialReactionMemory(runtime.attacker, runtime), defender: initialReactionMemory(runtime.defender, runtime) },
+    reactions: {
+      attacker: initialReactionMemory(runtime.attacker, runtime),
+      defender: initialReactionMemory(runtime.defender, runtime),
+    },
     reactiveGoals: { attacker: null, defender: null },
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
@@ -206,7 +217,13 @@ function flyExchange(
   );
   const initiativeSide = next.initiative;
   const opposingSide = initiativeSide === 'attacker' ? 'defender' : 'attacker';
-  const initiatorOverride = reactToCombatEvents(runtime, state, initiativeSide, initiator, opponent);
+  const initiatorOverride = reactToCombatEvents(
+    runtime,
+    state,
+    initiativeSide,
+    initiator,
+    opponent
+  );
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
   const flight = {
     ...state.flight,
