@@ -662,3 +662,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Eigene Minen im bestehenden Traktorwurf
 
 **keine Statusänderung.** Die vorhandene fünfphasige Asteroidenwurf-Pipeline akzeptiert alternativ ausschließlich bereits ausgelegte, scharfe **eigene** Minen. Gegnerminen sind ausdrücklich ausgeschlossen. Voraussetzung bleibt eigener Schildausfall, funktionierender Traktor, Reichweite und bestehender Cooldown. Minen nutzen ihre vorhandenen Schadenswerte; neue Minentypen oder ein separates Traktorsystem entstehen nicht. Die Voidbound-Feature-Parität bleibt unverändert.
+
+## Review-Log (2026-10-12): Geometrische Kampfauswertung
+
+**keine Statusänderung.** Die zwölf bestehenden Aktions-/Reaktions-Konstellationen werden anhand realer Fluggeometrie ausgewertet: Anfangs- und Enddistanz, geringster Abstand, Position und Blickwinkel. Erfolg und Fehlschlag werden mit Zeitmarke protokolliert und können die nächste Initiative beeinflussen. Die bewährte Trägheits- und RCS-Flugsteuerung bleibt erhalten; eine vollständige Voidbound-Parität wird nicht behauptet.

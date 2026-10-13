@@ -1,3 +1,8 @@
+import {
+  evaluateExchangeOutcome,
+  type ExchangeGeometry,
+  type ExchangeOutcome,
+} from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
@@ -12,6 +17,7 @@ import {
 export interface ActiveExchange {
   exchange: CombatExchange;
   flight: ExchangeFlightPlan | null;
+  geometry: ExchangeGeometry | null;
   attackerHp: number;
   defenderHp: number;
 }
@@ -20,6 +26,7 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
   return {
     exchange: initialExchange(runtime.firstPlanner),
     flight: null,
+    geometry: null,
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
   };
@@ -82,53 +89,36 @@ function useBoostForExchange(
   else stopExchangeBoost(ship);
 }
 
-export function tickActionExchange(
+function resolveExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
-  dt: number
+  current: CombatExchange,
+  next: CombatExchange,
+  context: { attackerDamage: number; defenderDamage: number },
+  outcome: ExchangeOutcome | null
 ): void {
-  const current = state.exchange;
-  const initiator = current.initiative === 'attacker' ? runtime.attacker : runtime.defender;
-  const opponent = current.initiative === 'attacker' ? runtime.defender : runtime.attacker;
-  const context = {
-    frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
-    broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
-    guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
-    attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
-    defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
-    roll: runtime.random,
-  };
-  const next = advanceExchange(current, dt, context);
-  if (current.phase === 'choose' && next.action && next.reaction) {
-    state.flight = planExchangeFlight(
-      initiator,
-      opponent,
-      next.action,
-      next.reaction,
-      next.quality
-    );
-    // Preplan both routes at the moment the exchange is chosen, before any thrust.
-    combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
-    combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
-    state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
-    state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
-    runtime.lastEvent = next.action + ' / ' + next.reaction;
-    runtime.combatLog.push({
-      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-      side: next.initiative,
-      event: 'plan',
-      detail:
-        runtime.lastEvent +
-        ' · Würfel ' +
-        next.roll +
-        ' · Qualität ' +
-        next.quality +
-        ' · Dauer ' +
-        next.duration +
-        's',
-    });
-  }
   if (current.phase === 'resolve') {
+    if (outcome)
+      runtime.combatLog.push({
+        timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+        side: 'system',
+        event: 'result',
+        detail:
+          'EXCHANGE_OUTCOME ' +
+          current.action +
+          '/' +
+          current.reaction +
+          ' action=' +
+          (outcome.actionSucceeded ? 'success' : 'failed') +
+          ' reaction=' +
+          (outcome.reactionSucceeded ? 'success' : 'failed') +
+          ' range=' +
+          Math.round(outcome.startingRange) +
+          '->' +
+          Math.round(outcome.finalRange) +
+          ' closest=' +
+          Math.round(outcome.closestRange),
+      });
     runtime.combatLog.push({
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: 'system',
@@ -142,11 +132,30 @@ export function tickActionExchange(
         next.initiative,
     });
     state.flight = null;
+    state.geometry = null;
   }
-  state.exchange = next;
-  updateExchangeIntents(initiator, opponent, next);
+}
+
+function flyExchange(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  initiator: StrategicCombatRuntime['attacker'],
+  opponent: StrategicCombatRuntime['defender'],
+  next: CombatExchange,
+  dt: number
+): void {
   if (!state.flight || next.phase !== 'execute') return;
   const remaining = next.duration - next.elapsed;
+  if (state.geometry) {
+    const closest = Math.hypot(
+      initiator.position.x - opponent.position.x,
+      initiator.position.y - opponent.position.y
+    );
+    state.geometry = {
+      ...state.geometry,
+      closestRange: Math.min(state.geometry.closestRange, closest),
+    };
+  }
   const separation = Math.hypot(
     initiator.position.x - opponent.position.x,
     initiator.position.y - opponent.position.y
@@ -175,4 +184,79 @@ export function tickActionExchange(
     next.action === 'frontal_pass'
   );
   pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
+}
+
+export function tickActionExchange(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  dt: number
+): void {
+  const current = state.exchange;
+  const initiator = current.initiative === 'attacker' ? runtime.attacker : runtime.defender;
+  const opponent = current.initiative === 'attacker' ? runtime.defender : runtime.attacker;
+  const outcome =
+    current.phase === 'resolve' && current.action && current.reaction && state.geometry
+      ? evaluateExchangeOutcome(
+          current.action,
+          current.reaction,
+          initiator,
+          opponent,
+          state.geometry
+        )
+      : null;
+  const context = {
+    frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
+    broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
+    guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
+    attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
+    defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
+    roll: runtime.random,
+    ...(outcome
+      ? { actionSucceeded: outcome.actionSucceeded, reactionSucceeded: outcome.reactionSucceeded }
+      : {}),
+  };
+  const next = advanceExchange(current, dt, context);
+  if (current.phase === 'choose' && next.action && next.reaction) {
+    const range = Math.hypot(
+      initiator.position.x - opponent.position.x,
+      initiator.position.y - opponent.position.y
+    );
+    state.geometry = {
+      startingRange: range,
+      closestRange: range,
+      initiatorStart: { ...initiator.position },
+      reactorStart: { ...opponent.position },
+    };
+    state.flight = planExchangeFlight(
+      initiator,
+      opponent,
+      next.action,
+      next.reaction,
+      next.quality
+    );
+    // Preplan both routes at the moment the exchange is chosen, before any thrust.
+    combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
+    combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
+    state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
+    state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
+    runtime.lastEvent = next.action + ' / ' + next.reaction;
+    runtime.combatLog.push({
+      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+      side: next.initiative,
+      event: 'plan',
+      detail:
+        runtime.lastEvent +
+        ' · Würfel ' +
+        next.roll +
+        ' · Qualität ' +
+        next.quality +
+        ' · Dauer ' +
+        next.duration +
+        's',
+    });
+  }
+  if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
+  state.exchange = next;
+  updateExchangeIntents(initiator, opponent, next);
+  flyExchange(runtime, state, initiator, opponent, next, dt);
 }

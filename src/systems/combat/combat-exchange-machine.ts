@@ -38,6 +38,8 @@ export interface ExchangeContext {
   readonly attackerDamage: number;
   readonly defenderDamage: number;
   readonly roll: () => number;
+  readonly actionSucceeded?: boolean;
+  readonly reactionSucceeded?: boolean;
 }
 export const REACTIONS: Readonly<
   Record<CombatAction, readonly [CombatReaction, CombatReaction, CombatReaction]>
@@ -121,15 +123,24 @@ export function advanceExchange(
       phase: elapsed >= current.duration ? 'resolve' : 'execute',
     };
   }
+  const geometryResult =
+    context.actionSucceeded === true && context.reactionSucceeded !== true
+      ? current.initiative
+      : context.reactionSucceeded === true && context.actionSucceeded !== true
+        ? current.initiative === 'attacker'
+          ? 'defender'
+          : 'attacker'
+        : null;
   const difference = context.attackerDamage - context.defenderDamage;
   const initiative =
-    difference > 0
+    geometryResult ??
+    (difference > 0
       ? 'attacker'
       : difference < 0
         ? 'defender'
         : current.initiative === 'attacker'
           ? 'defender'
-          : 'attacker';
+          : 'attacker');
   return {
     ...initialExchange(initiative),
     previousAction: current.action,
