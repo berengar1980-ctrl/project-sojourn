@@ -136,6 +136,56 @@ function resolveExchange(
   }
 }
 
+function flyExchange(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  initiator: StrategicCombatRuntime['attacker'],
+  opponent: StrategicCombatRuntime['defender'],
+  next: CombatExchange,
+  dt: number
+): void {
+  if (!state.flight || next.phase !== 'execute') return;
+  const remaining = next.duration - next.elapsed;
+  if (state.geometry) {
+    const closest = Math.hypot(
+      initiator.position.x - opponent.position.x,
+      initiator.position.y - opponent.position.y
+    );
+    state.geometry = {
+      ...state.geometry,
+      closestRange: Math.min(state.geometry.closestRange, closest),
+    };
+  }
+  const separation = Math.hypot(
+    initiator.position.x - opponent.position.x,
+    initiator.position.y - opponent.position.y
+  );
+  useBoostForExchange(
+    initiator,
+    state.flight.initiatorGoal,
+    next.action === 'disengage_fire' || next.action === 'frontal_pass',
+    separation,
+    remaining
+  );
+  useBoostForExchange(
+    opponent,
+    state.flight.reactorGoal,
+    next.reaction === 'pursue' || next.reaction === 'accelerate_clear',
+    separation,
+    remaining
+  );
+  pilotExchangeShip(
+    initiator,
+    'initiator',
+    state.flight,
+    runtime.arena,
+    dt,
+    opponent,
+    next.action === 'frontal_pass'
+  );
+  pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
+}
+
 export function tickActionExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -208,44 +258,5 @@ export function tickActionExchange(
   if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
   state.exchange = next;
   updateExchangeIntents(initiator, opponent, next);
-  if (!state.flight || next.phase !== 'execute') return;
-  const remaining = next.duration - next.elapsed;
-  if (state.geometry) {
-    const closest = Math.hypot(
-      initiator.position.x - opponent.position.x,
-      initiator.position.y - opponent.position.y
-    );
-    state.geometry = {
-      ...state.geometry,
-      closestRange: Math.min(state.geometry.closestRange, closest),
-    };
-  }
-  const separation = Math.hypot(
-    initiator.position.x - opponent.position.x,
-    initiator.position.y - opponent.position.y
-  );
-  useBoostForExchange(
-    initiator,
-    state.flight.initiatorGoal,
-    next.action === 'disengage_fire' || next.action === 'frontal_pass',
-    separation,
-    remaining
-  );
-  useBoostForExchange(
-    opponent,
-    state.flight.reactorGoal,
-    next.reaction === 'pursue' || next.reaction === 'accelerate_clear',
-    separation,
-    remaining
-  );
-  pilotExchangeShip(
-    initiator,
-    'initiator',
-    state.flight,
-    runtime.arena,
-    dt,
-    opponent,
-    next.action === 'frontal_pass'
-  );
-  pilotExchangeShip(opponent, 'reactor', state.flight, runtime.arena, dt);
+  flyExchange(runtime, state, initiator, opponent, next, dt);
 }
