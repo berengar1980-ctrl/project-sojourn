@@ -272,11 +272,12 @@ export function pilotExchangeShip(
     ship.velocity.y * Math.sin(ship.headingRadians);
   // Tracking must use the opponent's CURRENT position on every tick;
   // the maneuver's originally selected heading can become stale.
-  const facing = trackTarget && opponent
-    ? Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x)
-    : !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
-      ? weaponFacing
-      : navigationHeading;
+  const facing =
+    trackTarget && opponent
+      ? Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x)
+      : !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
+        ? weaponFacing
+        : navigationHeading;
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);
