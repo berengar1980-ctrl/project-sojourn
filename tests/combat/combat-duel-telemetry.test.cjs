@@ -7,15 +7,25 @@ const { analyzeReproducibleDuel, formatDuelTelemetry, DUEL_ANALYSIS_STEP } =
   loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-duel-telemetry.ts');
 assert.equal(DUEL_ANALYSIS_STEP, 0.08);
 const setup = (id) => ({
-  id, name: id, shipId: 'patrol',
-  shieldHp: 100, hullHp: 200, weapons: [],
-  hitChance: 0.7, dodgeChance: 0.1, damageMultiplier: 1,
-  criticalChance: 0, cycleTimeMultiplier: 1,
-  aiControlled: true, combatSpeed: 120,
+  id,
+  name: id,
+  shipId: 'patrol',
+  shieldHp: 100,
+  hullHp: 200,
+  weapons: [],
+  hitChance: 0.7,
+  dodgeChance: 0.1,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  aiControlled: true,
+  combatSpeed: 120,
 });
 const input = {
-  name: 'Alpha analysis replay', seed: 1001,
-  attacker: setup('a'), defender: setup('b'),
+  name: 'Alpha analysis replay',
+  seed: 1001,
+  attacker: setup('a'),
+  defender: setup('b'),
   arena: { width: 2400, height: 1600, obstacles: [] },
   maximumSeconds: 2.4,
 };

@@ -6,9 +6,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { DUEL_ENCOUNTERS } = loadStandaloneTypeScriptModule(root, 'src/ui/start/duel-presets.ts');
 assert.equal(DUEL_ENCOUNTERS.length, 9);
-assert.deepEqual(DUEL_ENCOUNTERS.map((item) => item.seed), [
-  1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009,
-]);
+assert.deepEqual(
+  DUEL_ENCOUNTERS.map((item) => item.seed),
+  [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009]
+);
 const source = fs.readFileSync(path.join(root, 'src/ui/start/duel-preset-analysis.ts'), 'utf8');
 assert(source.includes('resolveDuelPreset(preset, ships)'), 'analysis uses real preset weapons');
 assert(source.includes('duelCombatant(index,'), 'analysis uses real lobby setups');

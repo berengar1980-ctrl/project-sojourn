@@ -35,7 +35,10 @@ export const DUEL_TARGET_MAX_SECONDS = 60;
 /** Fixed-step replay, isolated from browser frame rates. Never alters combat balance. */
 export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry {
   const combat = createStrategicCombatService(
-    input.attacker, input.defender, input.seed, input.arena
+    input.attacker,
+    input.defender,
+    input.seed,
+    input.arena
   );
   const limit = input.maximumSeconds ?? 90;
   const steps = Math.ceil(limit / DUEL_ANALYSIS_STEP);
@@ -66,8 +69,9 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
     durationSeconds: Number(final.elapsedSeconds.toFixed(2)),
     winner: final.winner,
     timedOut: final.winner === null,
-    exchanges: log.filter((entry) => entry.event === 'result' &&
-      entry.detail.startsWith('EXCHANGE_OUTCOME')).length,
+    exchanges: log.filter(
+      (entry) => entry.event === 'result' && entry.detail.startsWith('EXCHANGE_OUTCOME')
+    ).length,
     reactions,
     minimumSeparation: Number(closest.toFixed(1)),
     maximumSeparation: Number(farthest.toFixed(1)),
@@ -78,8 +82,11 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
 }
 
 export function formatDuelTelemetry(result: DuelTelemetry): string {
-  const range = result.durationSeconds >= DUEL_TARGET_MIN_SECONDS &&
-    result.durationSeconds <= DUEL_TARGET_MAX_SECONDS ? 'within target' : 'outside target';
+  const range =
+    result.durationSeconds >= DUEL_TARGET_MIN_SECONDS &&
+    result.durationSeconds <= DUEL_TARGET_MAX_SECONDS
+      ? 'within target'
+      : 'outside target';
   const summary = [
     '# ' + result.name,
     'Seed: ' + result.seed,
@@ -92,9 +99,17 @@ export function formatDuelTelemetry(result: DuelTelemetry): string {
     'Final hulls: ' + result.finalHulls.join(' / '),
     '',
     '## Timestamped events',
-    ...result.log.map((entry) =>
-      '[' + entry.timeSeconds.toFixed(2) + 's] ' + entry.side + ' ' +
-      entry.event + ': ' + entry.detail),
+    ...result.log.map(
+      (entry) =>
+        '[' +
+        entry.timeSeconds.toFixed(2) +
+        's] ' +
+        entry.side +
+        ' ' +
+        entry.event +
+        ': ' +
+        entry.detail
+    ),
   ];
   return summary.join('\n');
 }

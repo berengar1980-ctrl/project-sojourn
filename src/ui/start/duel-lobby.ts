@@ -307,8 +307,13 @@ function attachAnalysisControls(
         status.textContent = 'Analysiere ' + (index + 1) + '/' + ids.length + ': ' + id;
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
         const manualSeed = seedInput.value.trim();
-        reports.push(analyzeDuelPreset(id, mapSelect.value as DuelMapKind,
-          !batch && manualSeed ? Number(manualSeed) : undefined));
+        reports.push(
+          analyzeDuelPreset(
+            id,
+            mapSelect.value as DuelMapKind,
+            !batch && manualSeed ? Number(manualSeed) : undefined
+          )
+        );
       }
       const text = formatPresetAnalysis(reports);
       const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
@@ -325,8 +330,12 @@ function attachAnalysisControls(
       all.disabled = false;
     }
   };
-  run.addEventListener('click', () => { void execute(false); });
-  all.addEventListener('click', () => { void execute(true); });
+  run.addEventListener('click', () => {
+    void execute(false);
+  });
+  all.addEventListener('click', () => {
+    void execute(true);
+  });
 }
 
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
