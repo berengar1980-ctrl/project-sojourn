@@ -24,6 +24,7 @@ import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog'
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
+import { analyzeDuelPreset, formatPresetAnalysis } from './duel-preset-analysis';
 import {
   createDuelArena,
   DUEL_MAPS,
@@ -277,6 +278,57 @@ function tuneAlphaSetups(
     : setups;
 }
 
+function attachAnalysisControls(
+  actions: HTMLElement,
+  encounterSelect: HTMLSelectElement,
+  mapSelect: HTMLSelectElement
+): void {
+  const seedInput = document.createElement('input');
+  seedInput.type = 'number';
+  seedInput.placeholder = 'Seed (optional)';
+  seedInput.title = 'Leer = fester Preset-Seed';
+  const run = document.createElement('button');
+  run.textContent = 'Analyse exportieren';
+  const all = document.createElement('button');
+  all.textContent = 'Alle 9 analysieren';
+  const status = document.createElement('span');
+  actions.append(seedInput, run, all, status);
+  const execute = async (batch: boolean): Promise<void> => {
+    if (!batch && !encounterSelect.value) {
+      status.textContent = 'Bitte ein Testgefecht wählen.';
+      return;
+    }
+    run.disabled = true;
+    all.disabled = true;
+    const ids = batch ? DUEL_ENCOUNTERS.map((entry) => entry.id) : [encounterSelect.value];
+    const reports = [];
+    try {
+      for (const [index, id] of ids.entries()) {
+        status.textContent = 'Analysiere ' + (index + 1) + '/' + ids.length + ': ' + id;
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        const manualSeed = seedInput.value.trim();
+        reports.push(analyzeDuelPreset(id, mapSelect.value as DuelMapKind,
+          !batch && manualSeed ? Number(manualSeed) : undefined));
+      }
+      const text = formatPresetAnalysis(reports);
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'harrowdrift-duel-analysis-' + (batch ? 'all' : ids[0]) + '.txt';
+      link.click();
+      URL.revokeObjectURL(url);
+      status.textContent = 'Analyse abgeschlossen: ' + ids.length + ' Duelle.';
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : 'Analyse fehlgeschlagen';
+    } finally {
+      run.disabled = false;
+      all.disabled = false;
+    }
+  };
+  run.addEventListener('click', () => { void execute(false); });
+  all.addEventListener('click', () => { void execute(true); });
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts: [DuelDraft, DuelDraft] = [
@@ -312,6 +364,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const fight = document.createElement('button');
   fight.textContent = 'Duell starten';
   actions.append(back, fight);
+  attachAnalysisControls(actions, encounterSelect, mapSelect);
   attachEncounterSelector(encounterSelect, ships, drafts, (id) => {
     selectedEncounter = id;
     render();
