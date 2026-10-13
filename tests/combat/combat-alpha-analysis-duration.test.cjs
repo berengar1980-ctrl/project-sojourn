@@ -21,5 +21,5 @@ assert(
   routing.includes('const immediateThreat = pathBlocked('),
   'predict collision ahead of velocity'
 );
-assert(routing.includes('ship.nextAsteroidRouteAt = 0'), 'blocked waypoint triggers fresh routing');
+assert(routing.includes('ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS'), 'blocked paths respect a bounded route refresh interval');
 console.log('PASS Alpha-specific analysis tuning and predictive waypoint replanning');
