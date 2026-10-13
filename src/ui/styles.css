@@ -2650,6 +2650,14 @@ body {
   background: #be705e;
 }
 
+.combat-hud-bar--engine i {
+  background: #c69c5f;
+}
+
+.combat-hud-bar--tractor i {
+  background: #8fa4d4;
+}
+
 .combat-tactics {
   position: absolute;
   left: 20px;
