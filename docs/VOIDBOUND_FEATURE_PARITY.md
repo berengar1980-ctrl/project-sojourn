@@ -682,3 +682,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Austauschflug-Bremsen und RCS
 
 **keine Statusänderung.** Der Exchange-Pilot reduziert seine Zielgeschwindigkeit vor nahen Wegpunkten, statt unterhalb von 95 Metern unbegrenzt den bisherigen Drift fortzusetzen. Konservativer Bremsweg berücksichtigt schwächere Gegen- und Seitentriebwerke. Erhöhte, weiterhin begrenzte RCS-Korrektur verringert Überflug und seitlichen Drift. Die reguläre strategische Flugsteuerung bleibt unverändert, nachdem eine zusätzliche Bremsregel den bestehenden Sternkarten-Kampftest blockierte. Keine Änderungen an Waffenschaden oder Seed-Logik. Die tatsächliche Trefferquote und Alpha-Dauer müssen mit den Duellberichten überprüft werden.
+
+## Review-Log (2026-10-13): RCS-Gegenschub, Relativgeschwindigkeit und sichtbare Bremsdüsen
+
+**keine Statusänderung.** Exchange-Flugsteuerung: höherer begrenzter Gegenschub (0,65) und seitlicher RCS-Schub (0,40), bei geringer Feinddistanz Relativgeschwindigkeit als Sollwert statt hartem Geschwindigkeitswechsel. Neue Telemetrie longitudinalThrust/lateralThrust im Combatant-Snapshot und Renderer statt festem Nullwert; vordere RCS können dadurch tatsächliches Bremsen darstellen. Initiator und Reaktor berücksichtigen beide den Gegner. Regressionstest für Gegenschub, Seitenschub, Snapshot und relative Bewegung. Keine Waffenschadensänderung; Qualität und Kampfdauer anhand Alpha-Bericht zu prüfen.
