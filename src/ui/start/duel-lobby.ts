@@ -4,7 +4,7 @@ import {
   fitsWeaponHardpoint,
   type ShipDefinition,
 } from '../../systems/ships';
-import { createStrategicCombatService, type StrategicCombatantSetup } from '../../systems/combat';
+import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
