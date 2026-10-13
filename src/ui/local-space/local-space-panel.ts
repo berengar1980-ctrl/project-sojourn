@@ -222,11 +222,16 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
 
+  let lastOverlayUpdate = -Infinity;
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
-      updateOverlay();
+      const now = performance.now();
+      if (now - lastOverlayUpdate >= 100) {
+        lastOverlayUpdate = now;
+        updateOverlay();
+      }
     },
     destroy(): void {
       unbindInput();
