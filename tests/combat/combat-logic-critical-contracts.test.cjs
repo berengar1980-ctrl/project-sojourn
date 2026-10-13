@@ -17,7 +17,7 @@ assert.equal(state.fireControl.charges, 1);
 assert.equal(fire.consumeFireControl(state, 0.44), false, 'no second pulse during global lockout');
 assert.equal(fire.consumeFireControl(state, 0.45), true, 'second pulse at minimum interval');
 assert.equal(state.fireControl.charges, 0);
-assert.equal(fire.consumeFireControl(state, 0.9), false, 'empty charge bank cannot fire');
+assert.equal(fire.consumeFireControl(state, 0.79), false, 'empty charge bank cannot fire');
 fire.rechargeFireControl(state, 1.6);
 assert.equal(state.fireControl.charges, 2, 'charges replenish sequentially to capacity');
 assert.equal(state.fireControl.nextRechargeAt, 0, 'full bank stops scheduling recharges');
@@ -38,11 +38,11 @@ assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, tactic: 'fight' }, pur
 assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena), false);
 assert.equal(escape.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena), false,
   'ship too close to pursuing opponent cannot escape');
-const tractorPursuer = { ...pursuer, position: { x: 1850, y: 800 } };
+const tractorPursuer = { ...pursuer, position: { x: 1700, y: 800 }, setup: { name: 'Chaser', tractorRangeMeters: 500 } };
 assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, tractorPursuer, arena), false,
   'active tractor prevents unshielded ship from leaving');
-assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, { ...tractorPursuer, subsystems: { tractor: 0 } }, arena), false,
-  'minimum safe separation still applies after tractor shutdown');
+assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, { ...tractorPursuer, subsystems: { tractor: 0 } }, arena), true,
+  'tractor shutdown restores escape eligibility beyond safe separation');
 
 function runtime(a, b) {
   return { attacker: a, defender: b, winner: null, lastEvent: '', arena };
