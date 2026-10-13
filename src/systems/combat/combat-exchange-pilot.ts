@@ -174,7 +174,8 @@ function accelerateExchangeShip(
   distance: number,
   boosting: boolean,
   arena: StrategicCombatArenaOptions,
-  dt: number
+  dt: number,
+  opponent?: MutableCombatant
 ): void {
   const dx = goal.x - ship.position.x;
   const dy = goal.y - ship.position.y;
@@ -191,8 +192,14 @@ function accelerateExchangeShip(
   const conservativeBraking = acceleration * 0.32;
   const brakingSpeed = Math.sqrt(2 * conservativeBraking * Math.max(0, distance - 35));
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
-  const desiredX = direction.x * targetSpeed;
-  const desiredY = direction.y * targetSpeed;
+  // Match the nearby opponent's drift while settling into a firing lane.
+  // This is a desired velocity, not a direct change to momentum.
+  const relativeRange = opponent
+    ? Math.hypot(opponent.position.x - ship.position.x, opponent.position.y - ship.position.y)
+    : Infinity;
+  const match = relativeRange < 650 && ship.tactic !== 'flee' ? 0.65 : 0;
+  const desiredX = direction.x * targetSpeed + (opponent?.velocity.x ?? 0) * match;
+  const desiredY = direction.y * targetSpeed + (opponent?.velocity.y ?? 0) * match;
   // Main drive accelerates along the bow. RCS provides weaker lateral
   // corrections and limited reverse thrust while preserving existing momentum.
   const changeX = desiredX - ship.velocity.x;
@@ -203,8 +210,12 @@ function accelerateExchangeShip(
   const lateral = -changeX * forwardY + changeY * forwardX;
   const boostStrength = boosting ? 1 + 2.5 * Math.min(1, (ship.boostRampSeconds ?? 0) / 2) : 1;
   const mainStep = acceleration * dt * boostStrength;
-  const forwardStep = clamp(longitudinal, -mainStep * 0.4, mainStep);
-  const lateralStep = clamp(lateral, -mainStep * 0.24, mainStep * 0.24);
+  const forwardStep = clamp(longitudinal, -mainStep * 0.65, mainStep);
+  const lateralStep = clamp(lateral, -mainStep * 0.4, mainStep * 0.4);
+  ship.longitudinalThrust = ship.subsystems.engine > 0 && forwardStep < 0
+    ? clamp(forwardStep / (mainStep * 0.65), -1, 0) : 0;
+  ship.lateralThrust = ship.subsystems.engine > 0
+    ? clamp(lateralStep / (mainStep * 0.4), -1, 1) : 0;
   if (ship.subsystems.engine > 0) {
     ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
     ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
@@ -266,5 +277,5 @@ export function pilotExchangeShip(
   ship.headingRadians = wrapAngle(ship.headingRadians + turn);
   ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
   ship.angularThrust = clamp(error / turnRate, -1, 1);
-  accelerateExchangeShip(ship, safeGoal, distance, boosting && !route, arena, dt);
+  accelerateExchangeShip(ship, safeGoal, distance, boosting && !route, arena, dt, route ? undefined : opponent);
 }
