@@ -35,7 +35,7 @@ const attacker = geometry.createCombatant(setup('attacker'), 'attacker', arena);
 const defender = geometry.createCombatant(setup('defender'), 'defender', arena);
 const sources = [
   { source: 'laser', shield: 30, hull: 14 },
-  { source: 'missile', shield: 40, hull: 30 },
+  { source: 'missile', shield: 400, hull: 30 },
   { source: 'laser', shield: 20, hull: 35 },
 ];
 const initialHull = defender.hullHp;
