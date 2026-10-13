@@ -38,3 +38,10 @@ Die Testmatrix dokumentiert eine **Ausbaustufe**. Aussagen zu Prozentwerten der 
 Offen: erzwungene Minenzündung durch bewegte Asteroiden und gemeinsamer Trefferzeitpunkt mehrerer Projektilarten im vollständigen Gefechtsloop. Diese Tests prüfen unabhängige Ereignispfade, nicht die noch nicht vorhandene Interaktion jedes denkbaren Objektpaars.
 
 - `combat-interaction-engine-tractor-targeting`: gezielte Antriebs-/Traktorschäden, Schildpriorität, Flucht-Antriebsziel, Heck-/Frontwinkel, Zerstörung des Zielsystems und Hüllen-Fallback. Bereits vorhandene `combat-subsystem-strategy`-Tests bleiben bestehen.
+
+## 2026-10-13 – Verifikation der nativen Kampfschadenswerte
+
+- `combat-damage-migration-baseline.test.cjs` benutzt eingefrorene Legacy-Grundwerte und Tier-Multiplikatoren für 48 Waffentyp-/Stufenkombinationen und 18 Minenvarianten sowie drei Crew-/Crit-Kombinationen pro Waffe. Erwartung: gleiche effektive Hüllenschäden (Toleranz 1e-6) wie vor Entfernen des globalen Faktors.
+- Der Raumkampf bezieht Schaden aus der festen Tabelle `combat-native-damage.ts`; die ursprünglichen Katalogprofile bleiben bestehen, damit andere Nutzer dieser Profile – insbesondere `mine-damage-service` – ihre bisherige Bedeutung behalten.
+- Direkter Asteroidenwurf-Schaden ist absichtlich nicht konvertiert. Custom-Waffen und -Minen ohne Katalog-ID gelten als bereits nativ skaliert; sie brauchen bei Übernahme alter Rohwerte ausdrücklich eine Migration.
+- **Noch zu bestätigen:** unveränderte Langzeitduelle/Seed-Verläufe sowie exakte Test-Fixtures, die `applyDamage` bislang direkt mit alten unskalierten Werten aufgerufen haben. Merge erst nach grünem CircleCI-Gate.
