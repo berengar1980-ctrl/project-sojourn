@@ -18,6 +18,26 @@ const controllerSource = fs.readFileSync(
 
 assert.match(
   controllerSource,
+  /const initiativeSide = next\\.initiative;/,
+  'runtime initiative is the authoritative role assignment'
+);
+assert.match(
+  controllerSource,
+  /const opposingSide = initiativeSide === 'attacker' \\? 'defender' : 'attacker';/,
+  'defending role is the opposing side'
+);
+assert.match(
+  controllerSource,
+  /initiatorGoal: initiatorOverride \\?\\? state\\.flight\\.initiatorGoal/,
+  'reactive goal must preserve initiator lane'
+);
+assert.match(
+  controllerSource,
+  /reactorGoal: opponentOverride \\?\\? state\\.flight\\.reactorGoal/,
+  'reactive goal must preserve reactor lane'
+);
+assert.match(
+  controllerSource,
   /pilotExchangeShip\(\s*initiator,\s*'initiator',\s*state\.flight,\s*runtime\.arena,\s*dt,/,
   'actual initiative holder must receive initiator flight orders'
 );
