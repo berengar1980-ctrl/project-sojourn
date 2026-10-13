@@ -698,3 +698,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Ziel anvisieren / Nachführwinkel
 
 **keine Statusänderung.** Bei der Exchange-Reaktion `turn_to_face` wird der Soll-Bugwinkel jetzt in jedem Simulationstick aus der aktuellen Gegnerposition berechnet, statt den beim Manöverstart fixierten Winkel beziehungsweise die Wegpunktrichtung zu übernehmen. Der physikalische Drehgeschwindigkeitsgrenzwert bleibt bestehen, RCS und Trägheit laufen weiter. Testet die Nachführung bei bewegtem Ziel und das Drehgeschwindigkeitslimit.
+
+## Review-Log (2026-10-13): Kombinierter Antriebsimpuls
+
+**keine Statusänderung.** Bei gleichzeitigem Hauptschub und seitlichem RCS wird der Gesamtimpuls auf das physikalische Beschleunigungslimit begrenzt. Ein zusätzlicher Regressionstest kontrolliert den Vektorbetrag anstelle isolierter Achsenwerte. Keine Änderung an taktischen Zuständen oder Schiffsausrüstung.
