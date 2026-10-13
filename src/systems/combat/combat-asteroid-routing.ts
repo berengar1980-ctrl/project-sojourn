@@ -22,11 +22,17 @@ function nearestBlocker(
   let nearest = Infinity;
   let blocker: NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null = null;
   for (const rock of arena.obstacles ?? []) {
-    const t = Math.max(0, Math.min(1,
-      ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared));
+    const t = Math.max(
+      0,
+      Math.min(
+        1,
+        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared
+      )
+    );
     const offsetX = start.x + dx * t - rock.position.x;
     const offsetY = start.y + dy * t - rock.position.y;
-    if (offsetX * offsetX + offsetY * offsetY >= (rock.radius + clearance) ** 2 || t >= nearest) continue;
+    if (offsetX * offsetX + offsetY * offsetY >= (rock.radius + clearance) ** 2 || t >= nearest)
+      continue;
     nearest = t;
     blocker = rock;
   }
@@ -46,10 +52,20 @@ function detourPoint(
   const length = Math.max(1, Math.hypot(dx, dy));
   const clearanceRadius = rock.radius + clearance + 35;
   const candidates = [1, -1].map((sign) => ({
-    x: Math.max(EDGE_MARGIN, Math.min(arena.width - EDGE_MARGIN,
-      rock.position.x - sign * dy / length * clearanceRadius)),
-    y: Math.max(EDGE_MARGIN, Math.min(arena.height - EDGE_MARGIN,
-      rock.position.y + sign * dx / length * clearanceRadius)),
+    x: Math.max(
+      EDGE_MARGIN,
+      Math.min(
+        arena.width - EDGE_MARGIN,
+        rock.position.x - ((sign * dy) / length) * clearanceRadius
+      )
+    ),
+    y: Math.max(
+      EDGE_MARGIN,
+      Math.min(
+        arena.height - EDGE_MARGIN,
+        rock.position.y + ((sign * dx) / length) * clearanceRadius
+      )
+    ),
   }));
   // Prefer a collision-free first leg; consider the target leg as a tie breaker.
   candidates.sort((left, right) => {
