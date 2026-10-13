@@ -239,7 +239,7 @@ function flyExchange(
     opponent,
     next.action === 'frontal_pass'
   );
-  pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt);
+  pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt, initiator);
 }
 
 export function tickActionExchange(
