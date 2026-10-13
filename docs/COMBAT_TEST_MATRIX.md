@@ -2,19 +2,20 @@
 
 Stand: 2026-10-13. Ziel: Testverhalten und Lücken transparent halten. Ein bestandener Test ist **kein** Beweis für vollständige Pfad-/Balance- oder Branchabdeckung.
 
-| Subsystem | Bestehende Regressionstests | Neue Schwerpunktprüfungen | Weiter zu testen |
-| --- | --- | --- | --- |
-| Strategie und taktische Zustände | strategy-planner, doctrine-telemetry, tactical-diversity, contact-review | Festhalten an Exchange-Aktion/Reaktion bis zum Ablauf | Alle bedingten Planwechsel, asynchrone 4-/8-s-Takte unter Last |
-| Initiative / Action-Reaction | exchange-machine, exchange-roles, exchange-reactive-events, outcome | Ablaufgrenzen 10/14 s; geometrische Initiative vs. Schaden | Jede Action-Reaction-Kombination mit bewegten Zielen |
-| Flugphysik / RCS / Boost | inertia, exchange-braking, rcs-demand, intercept, safety, roles | End-to-End: endliche Koordinaten und Kartenbegrenzung | Energie-/Impulsbudget pro Frame, zerstörte Antriebe, variable dt |
-| Waffen / Feuerleitimpulse | weapon-fire-control-arcs, line-of-sight, railgun-reserve, projectile-visual-collisions | Sperrzeit und Aufladung von Ladungen | Alle Waffenfamilien/Hardpoints in jedem Schusswinkel, Hindernisocclusion, Streuung |
-| Schaden / Schild / Subsysteme | hull-damage-particles, subsystem-strategy, spatial-combat, shield-contact | Kampfende bei zerstörter Hülle | Rundenfehler, kritische Treffer, zerstörter Antrieb/Traktor unter simultanem Schaden |
-| Flucht / Traktor | tractor-pulse, tractor-own-mines, tractor-asteroid-throw, tractor-interdiction | Fluchtdistanz, Ausgang und Traktor-Sperre bei Schildausfall | Kombinierte Verfolgungs-/Fluchtmanöver und Traktorbedingungen |
-| Minen / Asteroiden | defensive-mines, tactical-mine-corridors, asteroid-impact, asteroid-motion, exchange-asteroid-navigation | Mehrfacher Seed-Durchlauf ohne ungültigen Simulationszustand | Dichtes Feld, Sackgassen, bewegte Hindernisse, Mine gegen Asteroid |
-| Boarding / Greifhaken | grapple-boarding, grapple-rope-physics | — | Kampf-zu-Boarding-Übergang mit gleichzeitigen Trefferereignissen |
-| Duell / NPC-Integration | duel-presets, duel-telemetry, star-map-engagement, npc-aggression, spatial-combat | Seed-Determinismus in Alpha und normalem Kampf | Viele Seeds über 45–60 s, Neuladen, Performance und Kampagnen-Einstieg |
+| Subsystem                        | Bestehende Regressionstests                                                                              | Neue Schwerpunktprüfungen                                    | Weiter zu testen                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Strategie und taktische Zustände | strategy-planner, doctrine-telemetry, tactical-diversity, contact-review                                 | Festhalten an Exchange-Aktion/Reaktion bis zum Ablauf        | Alle bedingten Planwechsel, asynchrone 4-/8-s-Takte unter Last                       |
+| Initiative / Action-Reaction     | exchange-machine, exchange-roles, exchange-reactive-events, outcome                                      | Ablaufgrenzen 10/14 s; geometrische Initiative vs. Schaden   | Jede Action-Reaction-Kombination mit bewegten Zielen                                 |
+| Flugphysik / RCS / Boost         | inertia, exchange-braking, rcs-demand, intercept, safety, roles                                          | End-to-End: endliche Koordinaten und Kartenbegrenzung        | Energie-/Impulsbudget pro Frame, zerstörte Antriebe, variable dt                     |
+| Waffen / Feuerleitimpulse        | weapon-fire-control-arcs, line-of-sight, railgun-reserve, projectile-visual-collisions                   | Sperrzeit und Aufladung von Ladungen                         | Alle Waffenfamilien/Hardpoints in jedem Schusswinkel, Hindernisocclusion, Streuung   |
+| Schaden / Schild / Subsysteme    | hull-damage-particles, subsystem-strategy, spatial-combat, shield-contact                                | Kampfende bei zerstörter Hülle                               | Rundenfehler, kritische Treffer, zerstörter Antrieb/Traktor unter simultanem Schaden |
+| Flucht / Traktor                 | tractor-pulse, tractor-own-mines, tractor-asteroid-throw, tractor-interdiction                           | Fluchtdistanz, Ausgang und Traktor-Sperre bei Schildausfall  | Kombinierte Verfolgungs-/Fluchtmanöver und Traktorbedingungen                        |
+| Minen / Asteroiden               | defensive-mines, tactical-mine-corridors, asteroid-impact, asteroid-motion, exchange-asteroid-navigation | Mehrfacher Seed-Durchlauf ohne ungültigen Simulationszustand | Dichtes Feld, Sackgassen, bewegte Hindernisse, Mine gegen Asteroid                   |
+| Boarding / Greifhaken            | grapple-boarding, grapple-rope-physics                                                                   | —                                                            | Kampf-zu-Boarding-Übergang mit gleichzeitigen Trefferereignissen                     |
+| Duell / NPC-Integration          | duel-presets, duel-telemetry, star-map-engagement, npc-aggression, spatial-combat                        | Seed-Determinismus in Alpha und normalem Kampf               | Viele Seeds über 45–60 s, Neuladen, Performance und Kampagnen-Einstieg               |
 
 Die neuen Tests liegen in:
+
 - `tests/combat/combat-logic-critical-contracts.test.cjs`
 - `tests/combat/combat-logic-exchange-lifecycle.test.cjs`
 - `tests/combat/combat-logic-end-to-end-invariants.test.cjs`

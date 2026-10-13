@@ -3,8 +3,14 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const fire = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-weapon-fire-control.ts');
-const escape = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-escape-evaluation.ts');
+const fire = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-weapon-fire-control.ts'
+);
+const escape = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-escape-evaluation.ts'
+);
 const winner = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-runtime-winner.ts');
 
 function fireState(charges = 2, max = 2) {
@@ -23,26 +29,65 @@ assert.equal(state.fireControl.charges, 2, 'charges replenish sequentially to ca
 assert.equal(state.fireControl.nextRechargeAt, 0, 'full bank stops scheduling recharges');
 fire.rechargeFireControl(state, 100);
 assert.equal(state.fireControl.charges, 2, 'charge bank never overfills');
-for (const [max, expected] of [[1, 0.9], [2, 0.8], [3, 0.72], [4, 0.68]]) {
+for (const [max, expected] of [
+  [1, 0.9],
+  [2, 0.8],
+  [3, 0.72],
+  [4, 0.68],
+]) {
   assert.equal(fire.fireControlRechargeSeconds(max), expected);
 }
 
 const arena = { width: 2400, height: 1600, exitPoint: { x: 2100, y: 800 } };
-const fleeing = { setup: { name: 'Runner' }, tactic: 'flee', position: { x: 2100, y: 800 },
-  shieldHp: 100, hullHp: 80, subsystems: { tractor: 0 } };
-const pursuer = { setup: { name: 'Chaser', tractorRangeMeters: 400 }, tactic: 'fight',
-  position: { x: 900, y: 800 }, shieldHp: 100, hullHp: 80,
-  subsystems: { tractor: 100 } };
+const fleeing = {
+  setup: { name: 'Runner' },
+  tactic: 'flee',
+  position: { x: 2100, y: 800 },
+  shieldHp: 100,
+  hullHp: 80,
+  subsystems: { tractor: 0 },
+};
+const pursuer = {
+  setup: { name: 'Chaser', tractorRangeMeters: 400 },
+  tactic: 'fight',
+  position: { x: 900, y: 800 },
+  shieldHp: 100,
+  hullHp: 80,
+  subsystems: { tractor: 100 },
+};
 assert.equal(escape.runtimeCombatantEscaped(fleeing, pursuer, arena), true);
-assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, tactic: 'fight' }, pursuer, arena), false);
-assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena), false);
-assert.equal(escape.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena), false,
-  'ship too close to pursuing opponent cannot escape');
-const tractorPursuer = { ...pursuer, position: { x: 1700, y: 800 }, setup: { name: 'Chaser', tractorRangeMeters: 500 } };
-assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, tractorPursuer, arena), false,
-  'active tractor prevents unshielded ship from leaving');
-assert.equal(escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, { ...tractorPursuer, subsystems: { tractor: 0 } }, arena), true,
-  'tractor shutdown restores escape eligibility beyond safe separation');
+assert.equal(
+  escape.runtimeCombatantEscaped({ ...fleeing, tactic: 'fight' }, pursuer, arena),
+  false
+);
+assert.equal(
+  escape.runtimeCombatantEscaped({ ...fleeing, position: { x: 1800, y: 800 } }, pursuer, arena),
+  false
+);
+assert.equal(
+  escape.runtimeCombatantEscaped(fleeing, { ...pursuer, position: { x: 1850, y: 800 } }, arena),
+  false,
+  'ship too close to pursuing opponent cannot escape'
+);
+const tractorPursuer = {
+  ...pursuer,
+  position: { x: 1700, y: 800 },
+  setup: { name: 'Chaser', tractorRangeMeters: 500 },
+};
+assert.equal(
+  escape.runtimeCombatantEscaped({ ...fleeing, shieldHp: 0 }, tractorPursuer, arena),
+  false,
+  'active tractor prevents unshielded ship from leaving'
+);
+assert.equal(
+  escape.runtimeCombatantEscaped(
+    { ...fleeing, shieldHp: 0 },
+    { ...tractorPursuer, subsystems: { tractor: 0 } },
+    arena
+  ),
+  true,
+  'tractor shutdown restores escape eligibility beyond safe separation'
+);
 
 function runtime(a, b) {
   return { attacker: a, defender: b, winner: null, lastEvent: '', arena };
