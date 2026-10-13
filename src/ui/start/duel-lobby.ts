@@ -185,20 +185,6 @@ function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
   }
 }
 
-function tuneAlphaSetups(
-  setups: StrategicCombatantSetup[],
-  isAlpha: boolean
-): StrategicCombatantSetup[] {
-  return isAlpha
-    ? setups.map((setup) => ({
-        ...setup,
-        shieldHp: setup.shieldHp * 2,
-        hullHp: setup.hullHp * 3,
-        damageMultiplier: setup.damageMultiplier * 0.75,
-      }))
-    : setups;
-}
-
 function attachAnalysisControls(
   actions: HTMLElement,
   encounterSelect: HTMLSelectElement,
@@ -318,7 +304,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     );
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Analysis-only durability: preserve damage mechanics, extend observation time.
-    const tunedSetups = tuneAlphaSetups(setups, scenario?.id === 'alpha');
+    const tunedSetups = setups;
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
       tunedSetups[0]!,
