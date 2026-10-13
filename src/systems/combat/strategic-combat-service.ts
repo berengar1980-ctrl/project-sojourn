@@ -255,6 +255,28 @@ function reviewShieldBreakthroughs(
     );
   }
 }
+function reviewSubsystemBreakthroughs(
+  runtime: StrategicCombatRuntime,
+  previous: readonly [number, number, number, number]
+): void {
+  const ships = [runtime.attacker, runtime.defender] as const;
+  for (let index = 0; index < ships.length; index += 1) {
+    const damaged = ships[index]!;
+    const opponent = ships[1 - index]!;
+    const beforeEngine = previous[index * 2]!;
+    const beforeTractor = previous[index * 2 + 1]!;
+    const engineLost = beforeEngine > 0 && damaged.subsystems.engine <= 0;
+    const tractorLost = beforeTractor > 0 && damaged.subsystems.tractor <= 0;
+    if (!engineLost && !tractorLost) continue;
+    opponent.nextStrategyReviewAt = runtime.elapsedSeconds;
+    damaged.nextStrategyReviewAt = runtime.elapsedSeconds;
+    recordCombatLog(runtime, 'system', 'phase',
+      (index === 0 ? 'Angreifer' : 'Verteidiger') +
+      (engineLost ? ' · Antrieb ausgefallen' : ' · Traktor ausgefallen') +
+      ' · beide Taktiken neu bewerten');
+  }
+}
+
 function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number): void {
   maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
   maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
@@ -341,11 +363,16 @@ function tickStrategicCombat(
   maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
+  const previousSubsystems: [number, number, number, number] = [
+    runtime.attacker.subsystems.engine, runtime.attacker.subsystems.tractor,
+    runtime.defender.subsystems.engine, runtime.defender.subsystems.tractor,
+  ];
   advanceRuntimeWeapons(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
+  reviewSubsystemBreakthroughs(runtime, previousSubsystems);
   // The Alpha reference duel tests flight and weapons, not boarding transitions.
   if (!actionState) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
