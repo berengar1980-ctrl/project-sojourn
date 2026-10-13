@@ -666,3 +666,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-12): Geometrische Kampfauswertung
 
 **keine Statusänderung.** Die zwölf bestehenden Aktions-/Reaktions-Konstellationen werden anhand realer Fluggeometrie ausgewertet: Anfangs- und Enddistanz, geringster Abstand, Position und Blickwinkel. Erfolg und Fehlschlag werden mit Zeitmarke protokolliert und können die nächste Initiative beeinflussen. Die bewährte Trägheits- und RCS-Flugsteuerung bleibt erhalten; eine vollständige Voidbound-Parität wird nicht behauptet.
+
+## Review-Log (2026-10-13): Ereignisgesteuerte Kampfreaktionen
+
+**keine Statusänderung.** Die Exchange-Steuerung überwacht Schildausfall, erkannte fremde Minen, prognostizierte Kollisionen, fliehende Gegner und neu gestartete Traktorwürfe. Kritische Gefahren priorisieren sofortige Ausweich-/Neuorientierungsziele; gewöhnliche Reaktionen besitzen eine 3-s-Sperrzeit. Das Ziel bleibt kurz erhalten, ohne die existierende Trägheitsphysik zu ersetzen. Neue Regressionstests prüfen fünf Ereignisfamilien und Sperrzeit.
