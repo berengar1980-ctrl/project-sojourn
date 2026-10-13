@@ -12,7 +12,7 @@ assert.deepEqual(
 );
 const source = fs.readFileSync(path.join(root, 'src/ui/start/duel-preset-analysis.ts'), 'utf8');
 assert(source.includes('resolveDuelPreset(preset, ships)'), 'analysis uses real preset weapons');
-assert(source.includes('duelCombatant(index,'), 'analysis uses real lobby setups');
+assert(/duelCombatant\s*\(\s*index\s*,/.test(source), 'analysis uses real lobby setups');
 assert(source.includes('createDuelArena(map, seed)'), 'seed controls deterministic arena');
 assert(source.includes("preset.id === 'alpha'"), 'Alpha analysis matches its lobby balance');
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
