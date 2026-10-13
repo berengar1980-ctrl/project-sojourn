@@ -212,10 +212,12 @@ function accelerateExchangeShip(
   const mainStep = acceleration * dt * boostStrength;
   const forwardStep = clamp(longitudinal, -mainStep * 0.65, mainStep);
   const lateralStep = clamp(lateral, -mainStep * 0.4, mainStep * 0.4);
-  ship.longitudinalThrust = ship.subsystems.engine > 0 && forwardStep < 0
-    ? clamp(forwardStep / (mainStep * 0.65), -1, 0) : 0;
-  ship.lateralThrust = ship.subsystems.engine > 0
-    ? clamp(lateralStep / (mainStep * 0.4), -1, 1) : 0;
+  ship.longitudinalThrust =
+    ship.subsystems.engine > 0 && forwardStep < 0
+      ? clamp(forwardStep / (mainStep * 0.65), -1, 0)
+      : 0;
+  ship.lateralThrust =
+    ship.subsystems.engine > 0 ? clamp(lateralStep / (mainStep * 0.4), -1, 1) : 0;
   if (ship.subsystems.engine > 0) {
     ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
     ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
@@ -277,5 +279,13 @@ export function pilotExchangeShip(
   ship.headingRadians = wrapAngle(ship.headingRadians + turn);
   ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
   ship.angularThrust = clamp(error / turnRate, -1, 1);
-  accelerateExchangeShip(ship, safeGoal, distance, boosting && !route, arena, dt, route ? undefined : opponent);
+  accelerateExchangeShip(
+    ship,
+    safeGoal,
+    distance,
+    boosting && !route,
+    arena,
+    dt,
+    route ? undefined : opponent
+  );
 }
