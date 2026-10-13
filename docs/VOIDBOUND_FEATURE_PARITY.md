@@ -734,3 +734,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Gezielte Angriffe auf Antrieb und Traktor
 
 **keine Statusänderung.** Integrationstest ergänzt, der die Zielentscheidung auf fliehenden Antrieb, Traktor nach Antriebszerstörung, Schilde vor Subsystemschaden sowie Winkel-/Hüllen-Fallback ausführt. Vorhandene Spiellogik unverändert; keine neue UI-Auswahlmöglichkeit implementiert.
+
+## Review-Log (2026-10-13): Vorbereitung auf Entfernung des globalen Schadensfaktors
+
+**keine Statusänderung.** Unabhängige Goldwert-Regressionen über alle acht Waffenfamilien und sechs Waffenstufen sowie alle Minenstufen angelegt. Vor einer produktiven Migration müssen die bisherigen 0,18-Schadenswerte mit den Nebenverwendungen der ursprünglichen Waffen-/Minenprofile abgeglichen werden; insbesondere direkter Asteroidenschaden und der außerhalb des Raumkampf-ApplyDamage verwendete Minenschaden dürfen nicht mit skaliert werden. Noch keine Änderung an Kampfwerten oder Schadensfunktion.
