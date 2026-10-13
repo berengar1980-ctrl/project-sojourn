@@ -144,6 +144,8 @@ const strafePlan = {
 pilot.pilotExchangeShip(strafeShip, 'initiator', strafePlan, { width: 2000, height: 2000 }, 1);
 assert(strafeShip.velocity.y > 0, 'RCS permits sideways course corrections');
 assert(strafeShip.velocity.y <= 30, 'acceleration stays physically limited');
+assert(Math.hypot(strafeShip.velocity.x, strafeShip.velocity.y) <= 30 + 1e-8,
+  'combined main thrust and RCS impulse respects total acceleration budget');
 assert(strafeShip.headingRadians > 0, 'pilot turns toward flight goal before broadside firing');
 
 // Different orders must not collapse into the same static flight goal.
