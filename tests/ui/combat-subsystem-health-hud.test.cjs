@@ -9,7 +9,7 @@ assert(panel.includes('data-layer="engine"'), 'engine integrity bar is rendered'
 assert(panel.includes('data-layer="tractor"'), 'tractor integrity bar is rendered');
 assert(panel.includes('enginePercent'), 'engine integrity uses subsystem health percentage');
 assert(panel.includes('tractorPercent'), 'tractor integrity uses subsystem health percentage');
-assert(panel.includes("tractorRangeMeters > 0"), 'missing tractor marked unmounted');
+assert(panel.includes('tractorRangeMeters > 0'), 'missing tractor marked unmounted');
 assert(panel.includes('playerHud.innerHTML = combatantHud(model.attacker)'));
 assert(panel.includes('enemyHud.innerHTML = combatantHud(model.defender)'));
 assert(css.includes('.combat-hud-bar--engine i'));
