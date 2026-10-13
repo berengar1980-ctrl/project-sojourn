@@ -145,6 +145,8 @@ export interface StrategicCombatantSnapshot {
   readonly speed: number;
   readonly turnRateRadiansPerSecond: number;
   readonly angularThrust: number;
+  readonly lateralThrust?: number;
+  readonly longitudinalThrust?: number;
   readonly boostSeconds: number;
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
@@ -296,6 +298,8 @@ export interface MutableCombatant {
   speed: number;
   turnRateRadiansPerSecond: number;
   angularThrust: number;
+  lateralThrust?: number;
+  longitudinalThrust?: number;
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
