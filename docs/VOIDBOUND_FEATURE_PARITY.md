@@ -670,3 +670,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Ereignisgesteuerte Kampfreaktionen
 
 **keine Statusänderung.** Die Exchange-Steuerung überwacht Schildausfall, erkannte fremde Minen, prognostizierte Kollisionen, fliehende Gegner und neu gestartete Traktorwürfe. Kritische Gefahren priorisieren sofortige Ausweich-/Neuorientierungsziele; gewöhnliche Reaktionen besitzen eine 3-s-Sperrzeit. Das Ziel bleibt kurz erhalten, ohne die existierende Trägheitsphysik zu ersetzen. Neue Regressionstests prüfen fünf Ereignisfamilien und Sperrzeit.
+
+## Review-Log (2026-10-13): Reproduzierbare Duell-Telemetrie
+
+**keine Statusänderung.** Festes Simulationsintervall (0,08 s), reproduzierbarer Seed, Kampflog mit Zeitmarken, Initiativ-/Exchange-Zählung, Reaktionszählung, Abstandsspanne, Restschilde/Hüllen sowie Textbericht für Duellanalysen. 45–60 s ist ein Auswertungsziel und keine künstlich erzwungene Kampfdauer. Der Runner akzeptiert explizite Schiffskonfigurationen und Arenen; eine vollständige Preset-Batch-Integration ist ein weiterer Schritt.
