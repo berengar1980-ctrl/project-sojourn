@@ -76,10 +76,16 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
     winner: final.winner,
     timedOut: final.winner === null,
     planChanges: log.filter((entry) => entry.event === 'plan').length,
-    shieldHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('shield')).length,
-    hullHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('hull')).length,
-    subsystemHits: log.filter((entry) => entry.event === 'impact' && /engine|tractor/.test(entry.detail)).length,
-    subsystemFailures: log.filter((entry) => entry.event === 'phase' && entry.detail.includes('ausgefallen')).length,
+    shieldHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('shield'))
+      .length,
+    hullHits: log.filter((entry) => entry.event === 'impact' && entry.detail.startsWith('hull'))
+      .length,
+    subsystemHits: log.filter(
+      (entry) => entry.event === 'impact' && /engine|tractor/.test(entry.detail)
+    ).length,
+    subsystemFailures: log.filter(
+      (entry) => entry.event === 'phase' && entry.detail.includes('ausgefallen')
+    ).length,
     obstacleEvents: log.filter((entry) => /Hindernis|Asteroid|Kollision/.test(entry.detail)).length,
     exchanges: log.filter(
       (entry) => entry.event === 'result' && entry.detail.startsWith('EXCHANGE_OUTCOME')

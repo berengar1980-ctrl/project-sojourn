@@ -270,10 +270,14 @@ function reviewSubsystemBreakthroughs(
     if (!engineLost && !tractorLost) continue;
     opponent.nextStrategyReviewAt = runtime.elapsedSeconds;
     damaged.nextStrategyReviewAt = runtime.elapsedSeconds;
-    recordCombatLog(runtime, 'system', 'phase',
+    recordCombatLog(
+      runtime,
+      'system',
+      'phase',
       (index === 0 ? 'Angreifer' : 'Verteidiger') +
-      (engineLost ? ' · Antrieb ausgefallen' : ' · Traktor ausgefallen') +
-      ' · beide Taktiken neu bewerten');
+        (engineLost ? ' · Antrieb ausgefallen' : ' · Traktor ausgefallen') +
+        ' · beide Taktiken neu bewerten'
+    );
   }
 }
 
@@ -364,8 +368,10 @@ function tickStrategicCombat(
   maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
   const previousSubsystems: [number, number, number, number] = [
-    runtime.attacker.subsystems.engine, runtime.attacker.subsystems.tractor,
-    runtime.defender.subsystems.engine, runtime.defender.subsystems.tractor,
+    runtime.attacker.subsystems.engine,
+    runtime.attacker.subsystems.tractor,
+    runtime.defender.subsystems.engine,
+    runtime.defender.subsystems.tractor,
   ];
   advanceRuntimeWeapons(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   advanceRuntimeWeapons(runtime, 'defender', runtime.defender, runtime.attacker, dt);

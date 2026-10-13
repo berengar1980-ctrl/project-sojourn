@@ -12,12 +12,24 @@ assert(service.includes('reviewSubsystemBreakthroughs(runtime, previousSubsystem
 assert(service.includes('damaged.subsystems.engine <= 0'));
 assert(service.includes('damaged.subsystems.tractor <= 0'));
 assert(service.includes('opponent.nextStrategyReviewAt = runtime.elapsedSeconds'));
-assert(planner.includes('enemy.subsystems.engine <= 0 && ship.subsystems.engine > 0'),
-  'weapons move into effective range after enemy engine loss');
-assert(routing.includes('const steeringPoint = pathBlocked('),
-  'pilot steers around drifting obstacles between scheduled replans');
-for (const metric of ['planChanges', 'shieldHits', 'hullHits', 'subsystemHits',
-  'subsystemFailures', 'obstacleEvents']) {
+assert(
+  planner.includes('enemy.subsystems.engine <= 0 && ship.subsystems.engine > 0'),
+  'weapons move into effective range after enemy engine loss'
+);
+assert(
+  routing.includes('const steeringPoint = pathBlocked('),
+  'pilot steers around drifting obstacles between scheduled replans'
+);
+for (const metric of [
+  'planChanges',
+  'shieldHits',
+  'hullHits',
+  'subsystemHits',
+  'subsystemFailures',
+  'obstacleEvents',
+]) {
   assert(telemetry.includes(metric), 'duel analysis reports ' + metric);
 }
-console.log('PASS subsystem-triggered strategy review, range exploitation, obstacle steering and telemetry');
+console.log(
+  'PASS subsystem-triggered strategy review, range exploitation, obstacle steering and telemetry'
+);
