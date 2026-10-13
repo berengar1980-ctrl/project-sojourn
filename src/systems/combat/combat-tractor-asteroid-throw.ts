@@ -1,3 +1,4 @@
+import { nativeMineDamage } from './combat-native-damage';
 import { applyDamage } from './strategic-combat-damage';
 import { distance, normalize } from './strategic-combat-geometry';
 import type {
@@ -126,8 +127,8 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     runtime.impactSerial += 1;
     const result = applyDamage(
       enemy,
-      rock.mineDefinition.shieldDamage,
-      rock.mineDefinition.hullDamage,
+      nativeMineDamage(rock.mineDefinition).shieldDamage,
+      nativeMineDamage(rock.mineDefinition).hullDamage,
       source,
       false,
       rock.position,
