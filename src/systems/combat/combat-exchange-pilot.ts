@@ -168,6 +168,19 @@ export function updateExchangeBoost(ship: MutableCombatant, dt: number): void {
     (energy >= third * 2 ? (BOOST_DURATION_SECONDS - energy) * (3.5 / third) : 0);
 }
 
+function desiredExchangeVelocity(ship: MutableCombatant, goal: CombatPoint, targetSpeed: number, opponent?: MutableCombatant): CombatPoint {
+  const range = opponent ? Math.hypot(opponent.position.x - ship.position.x, opponent.position.y - ship.position.y) : Infinity;
+  const match = range < 650 && ship.tactic !== 'flee' ? 0.65 : 0;
+  const direction = normalize(goal.x - ship.position.x, goal.y - ship.position.y);
+  return { x: direction.x * targetSpeed + (opponent?.velocity.x ?? 0) * match,
+    y: direction.y * targetSpeed + (opponent?.velocity.y ?? 0) * match };
+}
+
+function exchangeFacing(ship: MutableCombatant, opponent: MutableCombatant | undefined, trackTarget: boolean, route: CombatPoint | null, distance: number, forwardVelocity: number, weaponFacing: number, navigationHeading: number): number {
+  if (trackTarget && opponent) return Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x);
+  return !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260)) ? weaponFacing : navigationHeading;
+}
+
 function accelerateExchangeShip(
   ship: MutableCombatant,
   goal: CombatPoint,
@@ -181,7 +194,7 @@ function accelerateExchangeShip(
   const dy = goal.y - ship.position.y;
   // Control velocity rather than preserving drift after passing a waypoint.
   // The desired speed falls as stopping distance approaches the remaining gap.
-  const direction = distance < 1 ? { x: 0, y: 0 } : normalize(dx, dy);
+
   const acceleration = Math.max(
     12,
     ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
@@ -194,12 +207,7 @@ function accelerateExchangeShip(
   const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
   // Match the nearby opponent's drift while settling into a firing lane.
   // This is a desired velocity, not a direct change to momentum.
-  const relativeRange = opponent
-    ? Math.hypot(opponent.position.x - ship.position.x, opponent.position.y - ship.position.y)
-    : Infinity;
-  const match = relativeRange < 650 && ship.tactic !== 'flee' ? 0.65 : 0;
-  const desiredX = direction.x * targetSpeed + (opponent?.velocity.x ?? 0) * match;
-  const desiredY = direction.y * targetSpeed + (opponent?.velocity.y ?? 0) * match;
+  const { x: desiredX, y: desiredY } = desiredExchangeVelocity(ship, goal, targetSpeed, opponent);
   // Main drive accelerates along the bow. RCS provides weaker lateral
   // corrections and limited reverse thrust while preserving existing momentum.
   const changeX = desiredX - ship.velocity.x;
@@ -272,12 +280,7 @@ export function pilotExchangeShip(
     ship.velocity.y * Math.sin(ship.headingRadians);
   // Tracking must use the opponent's CURRENT position on every tick;
   // the maneuver's originally selected heading can become stale.
-  const facing =
-    trackTarget && opponent
-      ? Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x)
-      : !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
-        ? weaponFacing
-        : navigationHeading;
+  const facing = exchangeFacing(ship, opponent, trackTarget, route, distance, forwardVelocity, weaponFacing, navigationHeading);
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
   const error = wrapAngle(facing - ship.headingRadians);
   const turn = clamp(error, -turnRate * dt, turnRate * dt);
