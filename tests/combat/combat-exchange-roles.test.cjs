@@ -40,9 +40,7 @@ assert.match(
   'initiative holder receives initiator flight orders'
 );
 assert(
-  controllerSource.includes(
-    "pilotExchangeShip(opponent, 'reactor', flight, runtime.arena, dt, initiator, false, next.reaction === 'turn_to_face')"
-  ),
+  /pilotExchangeShip\\(opponent, 'reactor', flight, runtime\\.arena, dt, initiator, false, next\\.reaction === 'turn_to_face'\\)/.test(controllerSource.replace(/\\s+/g, ' ')),
   'opposing ship receives reactor flight orders'
 );
 
