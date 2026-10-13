@@ -4,7 +4,7 @@ import {
   fitsWeaponHardpoint,
   type ShipDefinition,
 } from '../../systems/ships';
-import { createStrategicCombatService, type StrategicCombatantSetup } from '../../systems/combat';
+import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
@@ -185,20 +185,6 @@ function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
   }
 }
 
-function tuneAlphaSetups(
-  setups: StrategicCombatantSetup[],
-  isAlpha: boolean
-): StrategicCombatantSetup[] {
-  return isAlpha
-    ? setups.map((setup) => ({
-        ...setup,
-        shieldHp: setup.shieldHp * 8,
-        hullHp: setup.hullHp * 5,
-        damageMultiplier: setup.damageMultiplier * 0.25,
-      }))
-    : setups;
-}
-
 function attachAnalysisControls(
   actions: HTMLElement,
   encounterSelect: HTMLSelectElement,
@@ -318,7 +304,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     );
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Analysis-only durability: preserve damage mechanics, extend observation time.
-    const tunedSetups = tuneAlphaSetups(setups, scenario?.id === 'alpha');
+    const tunedSetups = setups;
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
       tunedSetups[0]!,

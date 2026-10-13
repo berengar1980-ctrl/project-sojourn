@@ -14,7 +14,7 @@ const source = fs.readFileSync(path.join(root, 'src/ui/start/duel-preset-analysi
 assert(source.includes('resolveDuelPreset(preset, ships)'), 'analysis uses real preset weapons');
 assert(/duelCombatant\s*\(\s*index\s*,/.test(source), 'analysis uses real lobby setups');
 assert(source.includes('createDuelArena(map, seed)'), 'seed controls deterministic arena');
-assert(source.includes("preset.id === 'alpha'"), 'Alpha analysis matches its lobby balance');
+assert(!source.includes("preset.id === 'alpha'"), 'Alpha uses unmodified preset combat stats');
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
 assert(lobby.includes("'Alle 9 analysieren'"), 'batch analysis is accessible');
 assert(lobby.includes("'Analyse exportieren'"), 'single analysis can be downloaded');

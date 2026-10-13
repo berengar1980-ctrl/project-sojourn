@@ -682,3 +682,23 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Austauschflug-Bremsen und RCS
 
 **keine Statusänderung.** Der Exchange-Pilot reduziert seine Zielgeschwindigkeit vor nahen Wegpunkten, statt unterhalb von 95 Metern unbegrenzt den bisherigen Drift fortzusetzen. Konservativer Bremsweg berücksichtigt schwächere Gegen- und Seitentriebwerke. Erhöhte, weiterhin begrenzte RCS-Korrektur verringert Überflug und seitlichen Drift. Die reguläre strategische Flugsteuerung bleibt unverändert, nachdem eine zusätzliche Bremsregel den bestehenden Sternkarten-Kampftest blockierte. Keine Änderungen an Waffenschaden oder Seed-Logik. Die tatsächliche Trefferquote und Alpha-Dauer müssen mit den Duellberichten überprüft werden.
+
+## Review-Log (2026-10-13): RCS-Gegenschub, Relativgeschwindigkeit und sichtbare Bremsdüsen
+
+**keine Statusänderung.** Exchange-Flugsteuerung: höherer begrenzter Gegenschub (0,65) und seitlicher RCS-Schub (0,40), bei geringer Feinddistanz Relativgeschwindigkeit als Sollwert statt hartem Geschwindigkeitswechsel. Neue Telemetrie longitudinalThrust/lateralThrust im Combatant-Snapshot und Renderer statt festem Nullwert; vordere RCS können dadurch tatsächliches Bremsen darstellen. Initiator und Reaktor berücksichtigen beide den Gegner. Regressionstest für Gegenschub, Seitenschub, Snapshot und relative Bewegung. Keine Waffenschadensänderung; Qualität und Kampfdauer anhand Alpha-Bericht zu prüfen.
+
+## Review-Log (2026-10-13): Alpha-Schadenskalierung korrigiert
+
+**keine Statusänderung.** Alpha hatte als Beobachtungs-Preset achtfache Schilde, fünffache Hülle und 0,25-fachen Schaden; dadurch wurden in 45 Sekunden trotz Schusswechsel nur wenige Schildpunkte abgetragen. Für die weitere 45–60-s-Auswertung werden Alpha-Schilde auf Faktor 2, Hülle auf Faktor 3 und Schaden auf Faktor 0,75 gesetzt, gleichermaßen für sichtbares Duell und exportierte Preset-Analyse. Keine globale Waffen-Balanceänderung; reale Dauer und Trefferquote bleiben per Log zu messen.
+
+## Review-Log (2026-10-13): Alpha-Sonderfaktoren vollständig entfernt
+
+**keine Statusänderung.** Auf Nutzerwunsch werden Alpha-Schild, Alpha-Hülle und Alpha-Waffenschaden nicht mehr mit einem Sonderfaktor multipliziert (Faktor 1 = Originalwerte). Das gilt gleichermaßen für das spielbare Alpha-Duell und die Preset-Telemetrie. Andere vorhandene schiffsspezifische Werte und globale Spielmechaniken bleiben unverändert. Frühere Balanceversuche mit Faktoren 8/5/0,25 und 2/3/0,75 sind hiermit überholt.
+
+## Review-Log (2026-10-13): Ziel anvisieren / Nachführwinkel
+
+**keine Statusänderung.** Bei der Exchange-Reaktion `turn_to_face` wird der Soll-Bugwinkel jetzt in jedem Simulationstick aus der aktuellen Gegnerposition berechnet, statt den beim Manöverstart fixierten Winkel beziehungsweise die Wegpunktrichtung zu übernehmen. Der physikalische Drehgeschwindigkeitsgrenzwert bleibt bestehen, RCS und Trägheit laufen weiter. Testet die Nachführung bei bewegtem Ziel und das Drehgeschwindigkeitslimit.
+
+## Review-Log (2026-10-13): Kombinierter Antriebsimpuls
+
+**keine Statusänderung.** Bei gleichzeitigem Hauptschub und seitlichem RCS wird der Gesamtimpuls auf das physikalische Beschleunigungslimit begrenzt. Ein zusätzlicher Regressionstest kontrolliert den Vektorbetrag anstelle isolierter Achsenwerte. Keine Änderung an taktischen Zuständen oder Schiffsausrüstung.

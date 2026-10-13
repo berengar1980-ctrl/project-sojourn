@@ -33,15 +33,7 @@ export function analyzeDuelPreset(
       ship
     );
   });
-  const combatants =
-    preset.id === 'alpha'
-      ? setups.map((setup) => ({
-          ...setup,
-          shieldHp: setup.shieldHp * 8,
-          hullHp: setup.hullHp * 5,
-          damageMultiplier: setup.damageMultiplier * 0.25,
-        }))
-      : setups;
+  const combatants = setups;
   const seed = overrideSeed ?? preset.seed;
   return analyzeReproducibleDuel({
     name: preset.title,
