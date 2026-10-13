@@ -237,8 +237,16 @@ function accelerateExchangeShip(
   const lateral = -changeX * forwardY + changeY * forwardX;
   const boostStrength = boosting ? 1 + 2.5 * Math.min(1, (ship.boostRampSeconds ?? 0) / 2) : 1;
   const mainStep = acceleration * dt * boostStrength;
-  const forwardStep = clamp(longitudinal, -mainStep * 0.65, mainStep);
-  const lateralStep = clamp(lateral, -mainStep * 0.4, mainStep * 0.4);
+  let forwardStep = clamp(longitudinal, -mainStep * 0.65, mainStep);
+  let lateralStep = clamp(lateral, -mainStep * 0.4, mainStep * 0.4);
+  // Main drive and lateral RCS share the ship's acceleration budget.
+  // Independent clamping would allow a diagonal impulse above its physical cap.
+  const impulseMagnitude = Math.hypot(forwardStep, lateralStep);
+  if (impulseMagnitude > mainStep) {
+    const scale = mainStep / impulseMagnitude;
+    forwardStep *= scale;
+    lateralStep *= scale;
+  }
   ship.longitudinalThrust =
     ship.subsystems.engine > 0 && forwardStep < 0
       ? clamp(forwardStep / (mainStep * 0.65), -1, 0)
