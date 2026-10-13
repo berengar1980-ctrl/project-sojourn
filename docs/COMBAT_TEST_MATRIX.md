@@ -38,3 +38,7 @@ Die Testmatrix dokumentiert eine **Ausbaustufe**. Aussagen zu Prozentwerten der 
 Offen: erzwungene Minenzündung durch bewegte Asteroiden und gemeinsamer Trefferzeitpunkt mehrerer Projektilarten im vollständigen Gefechtsloop. Diese Tests prüfen unabhängige Ereignispfade, nicht die noch nicht vorhandene Interaktion jedes denkbaren Objektpaars.
 
 - `combat-interaction-engine-tractor-targeting`: gezielte Antriebs-/Traktorschäden, Schildpriorität, Flucht-Antriebsziel, Heck-/Frontwinkel, Zerstörung des Zielsystems und Hüllen-Fallback. Bereits vorhandene `combat-subsystem-strategy`-Tests bleiben bestehen.
+
+## 2026-10-13 – Taktische Intelligenz
+
+Neue Regression für sofortige Neubewertung nach Antriebs-/Traktorausfall, Abstandsanpassung an manövrierunfähige Gegner, begrenztes Ausweichen bei driftenden Asteroiden und erweiterte Duelltelemetrie. Die fünf Entwicklungsziele sind als integrierte Verbesserungen begonnen: situative Reaktion, Subsystemstrategie, Distanzkontrolle, Asteroidenumfahrung und Kampfauswertung. **Noch nicht vollständig:** aktives Deckungssuchen und Minen-/Traktor-Köderpositionierung, quantitative Browser-FPS-Messung und umfassende simulierte Szenariotests der neuen Strategien.
