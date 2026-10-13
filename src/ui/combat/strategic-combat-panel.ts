@@ -27,14 +27,19 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
   const hull = Math.round(percent(combatant.hullHp, combatant.hullMaxHp));
   const engine = Math.round(combatant.subsystems.engine);
   const tractor = Math.round(combatant.subsystems.tractor);
+  const enginePercent = Math.round(percent(engine, combatant.subsystems.maximum));
+  const tractorPercent = Math.round(percent(tractor, combatant.subsystems.maximum));
+  const tractorInstalled = combatant.tractorRangeMeters > 0;
   return `
     <strong>${combatant.name}</strong>
     <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
     <div class="combat-hud-bar"><i data-layer="shield" style="width:${shield}%"></i></div>
     <span>HÜLLE ${Math.round(combatant.hullHp)} / ${combatant.hullMaxHp}</span>
     <div class="combat-hud-bar combat-hud-bar--hull"><i data-layer="hull" style="width:${hull}%"></i></div>
-    <span>TRIEBWERK ${engine} / ${combatant.subsystems.maximum} ${engine <= 0 ? '· DEFEKT' : ''}</span>
-    <span>TRAKTOR ${tractor} / ${combatant.subsystems.maximum} ${tractor <= 0 ? '· DEFEKT / NICHT VORHANDEN' : ''}</span>
+    <span>ANTRIEB ${engine} / ${combatant.subsystems.maximum} (${enginePercent} %) ${engine <= 0 ? '· AUSGEFALLEN' : enginePercent < 100 ? '· BESCHÄDIGT' : ''}</span>
+    <div class="combat-hud-bar combat-hud-bar--engine"><i data-layer="engine" style="width:${enginePercent}%"></i></div>
+    <span>TRAKTOR ${tractorInstalled ? tractor + ' / ' + combatant.subsystems.maximum + ' (' + tractorPercent + ' %)' : 'NICHT MONTIERT'} ${tractorInstalled && tractor <= 0 ? '· AUSGEFALLEN' : tractorInstalled && tractorPercent < 100 ? '· BESCHÄDIGT' : ''}</span>
+    <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
     <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
     <span>MINEN ${combatant.mineCount} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
