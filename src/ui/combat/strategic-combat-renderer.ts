@@ -388,8 +388,8 @@ export class StrategicCombatRenderer {
     const maneuverDemand = {
       turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
       angularThrust: combatant.angularThrust,
-      lateralThrust: 0,
-      longitudinalThrust: 0,
+      lateralThrust: combatant.lateralThrust ?? 0,
+      longitudinalThrust: combatant.longitudinalThrust ?? 0,
     };
     if (hardpoints) {
       this.engineEffects.drawExhaust(
