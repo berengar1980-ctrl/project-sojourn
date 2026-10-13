@@ -36,3 +36,5 @@ Die Testmatrix dokumentiert eine **Ausbaustufe**. Aussagen zu Prozentwerten der 
 - `combat-interaction-moving-rock-tractor-mine`: bewegter Asteroid tritt in/aus Schusslinie; Traktorwirkwurf bei gleichzeitig aktivem Minenobjekt ohne versehentlichen Verlust der Mine.
 
 Offen: erzwungene Minenzündung durch bewegte Asteroiden und gemeinsamer Trefferzeitpunkt mehrerer Projektilarten im vollständigen Gefechtsloop. Diese Tests prüfen unabhängige Ereignispfade, nicht die noch nicht vorhandene Interaktion jedes denkbaren Objektpaars.
+
+- `combat-interaction-engine-tractor-targeting`: gezielte Antriebs-/Traktorschäden, Schildpriorität, Flucht-Antriebsziel, Heck-/Frontwinkel, Zerstörung des Zielsystems und Hüllen-Fallback. Bereits vorhandene `combat-subsystem-strategy`-Tests bleiben bestehen.
