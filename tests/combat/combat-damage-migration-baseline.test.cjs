@@ -1,6 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
@@ -52,6 +53,8 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
     const hit = applyDamage(target, profile.shieldDamage, profile.hullDamage, attacker,
       critical, attacker.position, 'laser', 1);
     const raw = referenceRaw(weaponBase[component.weapon.family][1], component.tier);
+    assert(Math.abs(profile.hullDamage - raw * baseline) < 0.000001,
+      component.id + ': precomputed weapon damage differs from pre-migration raw value');
     assert(Math.abs(hit.damage - expected(raw, crew, critical)) < 0.000001,
       component.id + ': hull damage differs from original balance');
   }
@@ -63,7 +66,12 @@ for (const mine of SHIP_MINE_CATALOG) {
   const hit = applyDamage(target, native.shieldDamage, native.hullDamage, attacker,
     false, attacker.position, 'missile', 1);
   const raw = referenceRaw(mineBase[mine.kind][1], mine.tier);
+  assert(Math.abs(native.hullDamage - raw * baseline) < 0.000001,
+    mine.id + ': precomputed combat mine damage differs');
+  assert.equal(mine.hullDamage, raw, 'shared noncombat mine catalog must retain original damage');
   assert(Math.abs(hit.damage - expected(raw, 1, false)) < 0.000001,
     mine.id + ': mine damage differs from original balance');
 }
-console.log('PASS legacy combat damage reference across all weapon and mine tiers');
+const damageSource = fs.readFileSync(path.join(root, 'src/systems/combat/strategic-combat-damage.ts'), 'utf8');
+assert(!damageSource.includes('COMBAT_DAMAGE_SCALE'), 'global combat factor no longer used on impact');
+console.log('PASS native damage matches old shield/hull baselines for weapon and mine tiers');
