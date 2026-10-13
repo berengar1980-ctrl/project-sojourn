@@ -9,6 +9,9 @@ const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
 const { SHIP_MINE_CATALOG } = loadStandaloneTypeScriptModule(
   root, 'src/data/combat/ship-mines.ts'
 );
+const { nativeWeaponDamage, nativeMineDamage } = loadStandaloneTypeScriptModule(
+  root, 'src/systems/combat/combat-native-damage.ts'
+);
 const { createCombatant } = loadStandaloneTypeScriptModule(
   root, 'src/systems/combat/strategic-combat-geometry.ts'
 );
@@ -41,14 +44,14 @@ function ship(id, side, hp, crew) {
   }, side, arena);
 }
 for (const component of SHIP_COMPONENT_CATALOG.weapon) {
-  const profile = component.weapon;
+  const profile = nativeWeaponDamage(component);
   assert(profile, component.id + ' missing weapon profile');
   for (const [crew, critical] of [[0.75, false], [1, false], [1.2, true]]) {
     const attacker = ship('attacker', 'attacker', 0, crew);
     const target = ship('target', 'defender', 0, 1);
     const hit = applyDamage(target, profile.shieldDamage, profile.hullDamage, attacker,
       critical, attacker.position, 'laser', 1);
-    const raw = referenceRaw(weaponBase[profile.family][1], component.tier);
+    const raw = referenceRaw(weaponBase[component.weapon.family][1], component.tier);
     assert(Math.abs(hit.damage - expected(raw, crew, critical)) < 0.000001,
       component.id + ': hull damage differs from original balance');
   }
@@ -56,7 +59,8 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
 for (const mine of SHIP_MINE_CATALOG) {
   const attacker = ship('attacker', 'attacker', 0, 1);
   const target = ship('target', 'defender', 0, 1);
-  const hit = applyDamage(target, mine.shieldDamage, mine.hullDamage, attacker,
+  const native = nativeMineDamage(mine);
+  const hit = applyDamage(target, native.shieldDamage, native.hullDamage, attacker,
     false, attacker.position, 'missile', 1);
   const raw = referenceRaw(mineBase[mine.kind][1], mine.tier);
   assert(Math.abs(hit.damage - expected(raw, 1, false)) < 0.000001,
