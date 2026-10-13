@@ -690,3 +690,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Alpha-Schadenskalierung korrigiert
 
 **keine Statusänderung.** Alpha hatte als Beobachtungs-Preset achtfache Schilde, fünffache Hülle und 0,25-fachen Schaden; dadurch wurden in 45 Sekunden trotz Schusswechsel nur wenige Schildpunkte abgetragen. Für die weitere 45–60-s-Auswertung werden Alpha-Schilde auf Faktor 2, Hülle auf Faktor 3 und Schaden auf Faktor 0,75 gesetzt, gleichermaßen für sichtbares Duell und exportierte Preset-Analyse. Keine globale Waffen-Balanceänderung; reale Dauer und Trefferquote bleiben per Log zu messen.
+
+## Review-Log (2026-10-13): Alpha-Sonderfaktoren vollständig entfernt
+
+**keine Statusänderung.** Auf Nutzerwunsch werden Alpha-Schild, Alpha-Hülle und Alpha-Waffenschaden nicht mehr mit einem Sonderfaktor multipliziert (Faktor 1 = Originalwerte). Das gilt gleichermaßen für das spielbare Alpha-Duell und die Preset-Telemetrie. Andere vorhandene schiffsspezifische Werte und globale Spielmechaniken bleiben unverändert. Frühere Balanceversuche mit Faktoren 8/5/0,25 und 2/3/0,75 sind hiermit überholt.
