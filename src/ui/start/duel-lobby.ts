@@ -256,9 +256,8 @@ function logSlowDuelFrame(simulationStart: number, renderStart: number, encounte
   });
 }
 
-export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
-  const ships = getAllShipDefinitions();
-  const drafts: [DuelDraft, DuelDraft] = [
+function initialDuelDrafts(ships: ReturnType<typeof getAllShipDefinitions>): [DuelDraft, DuelDraft] {
+  return [
     { shipId: ships[0]!.id, weapons: [], mines: [], crewId: crewDefinitions[0]!.id },
     {
       shipId: ships.find((ship) => ship.role === 'patrol')?.id ?? ships[1]!.id,
@@ -267,6 +266,11 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       crewId: crewDefinitions[1]!.id,
     },
   ];
+}
+
+export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+  const ships = getAllShipDefinitions();
+  const drafts = initialDuelDrafts(ships);
   let selectedEncounter = '';
   const { mapLabel, mapSelect } = createDuelMapSelector();
   const encounterLabel = document.createElement('label');
