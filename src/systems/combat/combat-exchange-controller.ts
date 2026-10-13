@@ -1,4 +1,4 @@
-import { evaluateExchangeOutcome, type ExchangeGeometry } from './combat-exchange-outcome';
+import { evaluateExchangeOutcome, type ExchangeGeometry, type ExchangeOutcome } from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
@@ -85,6 +85,53 @@ function useBoostForExchange(
   else stopExchangeBoost(ship);
 }
 
+function resolveExchange(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  current: CombatExchange,
+  next: CombatExchange,
+  context: { attackerDamage: number; defenderDamage: number },
+  outcome: ExchangeOutcome | null
+): void {
+  if (current.phase === 'resolve') {
+    if (outcome)
+      runtime.combatLog.push({
+        timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+        side: 'system',
+        event: 'result',
+        detail:
+          'EXCHANGE_OUTCOME ' +
+          current.action +
+          '/' +
+          current.reaction +
+          ' action=' +
+          (outcome.actionSucceeded ? 'success' : 'failed') +
+          ' reaction=' +
+          (outcome.reactionSucceeded ? 'success' : 'failed') +
+          ' range=' +
+          Math.round(outcome.startingRange) +
+          '->' +
+          Math.round(outcome.finalRange) +
+          ' closest=' +
+          Math.round(outcome.closestRange),
+      });
+    runtime.combatLog.push({
+      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+      side: 'system',
+      event: 'phase',
+      detail:
+        'Manöver beendet · Schaden Angreifer ' +
+        Math.max(0, context.attackerDamage).toFixed(1) +
+        ' · Verteidiger ' +
+        Math.max(0, context.defenderDamage).toFixed(1) +
+        ' · Initiative ' +
+        next.initiative,
+    });
+    state.flight = null;
+    state.geometry = null;
+  }
+}
+
 export function tickActionExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -154,43 +201,7 @@ export function tickActionExchange(
         's',
     });
   }
-  if (current.phase === 'resolve') {
-    if (outcome)
-      runtime.combatLog.push({
-        timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-        side: 'system',
-        event: 'result',
-        detail:
-          'EXCHANGE_OUTCOME ' +
-          current.action +
-          '/' +
-          current.reaction +
-          ' action=' +
-          (outcome.actionSucceeded ? 'success' : 'failed') +
-          ' reaction=' +
-          (outcome.reactionSucceeded ? 'success' : 'failed') +
-          ' range=' +
-          Math.round(outcome.startingRange) +
-          '->' +
-          Math.round(outcome.finalRange) +
-          ' closest=' +
-          Math.round(outcome.closestRange),
-      });
-    runtime.combatLog.push({
-      timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-      side: 'system',
-      event: 'phase',
-      detail:
-        'Manöver beendet · Schaden Angreifer ' +
-        Math.max(0, context.attackerDamage).toFixed(1) +
-        ' · Verteidiger ' +
-        Math.max(0, context.defenderDamage).toFixed(1) +
-        ' · Initiative ' +
-        next.initiative,
-    });
-    state.flight = null;
-    state.geometry = null;
-  }
+  if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
   state.exchange = next;
   updateExchangeIntents(initiator, opponent, next);
   if (!state.flight || next.phase !== 'execute') return;
