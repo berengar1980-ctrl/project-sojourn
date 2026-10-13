@@ -17,7 +17,20 @@ const { applyDamage } = loadStandaloneTypeScriptModule(
 );
 const arena = { width: 1800, height: 1000,
   attackerPosition: { x: 400, y: 500 }, defenderPosition: { x: 1000, y: 500 } };
+// Frozen pre-migration raw Mk I damage; do not derive expected values from
+// the catalog under test, or a broken migration could pass unchanged.
 const baseline = 0.18;
+const tierScale = [1, 1.3, 1.65, 2.05, 2.5, 3];
+const weaponBase = {
+  pulse_laser: [15, 15], plasma_battery: [24, 24],
+  guided_missile: [18, 25], ion_laser: [30, 6],
+  ion_cannon: [50, 3], autocannon: [8, 34],
+  railgun: [5, 300], he_missile: [10, 48],
+};
+const mineBase = {
+  ion: [65, 5], shaped_charge: [10, 75], hunter: [40, 40],
+};
+const referenceRaw = (base, tier) => Math.max(1, Math.round(base * tierScale[tier - 1]));
 const expected = (raw, crew, critical) =>
   Math.max(1, raw * baseline * crew * (critical ? 1.5 : 1));
 function ship(id, side, hp, crew) {
@@ -35,7 +48,8 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
     const target = ship('target', 'defender', 0, 1);
     const hit = applyDamage(target, profile.shieldDamage, profile.hullDamage, attacker,
       critical, attacker.position, 'laser', 1);
-    assert(Math.abs(hit.damage - expected(profile.hullDamage, crew, critical)) < 0.000001,
+    const raw = referenceRaw(weaponBase[profile.family][1], component.tier);
+    assert(Math.abs(hit.damage - expected(raw, crew, critical)) < 0.000001,
       component.id + ': hull damage differs from original balance');
   }
 }
@@ -44,7 +58,8 @@ for (const mine of SHIP_MINE_CATALOG) {
   const target = ship('target', 'defender', 0, 1);
   const hit = applyDamage(target, mine.shieldDamage, mine.hullDamage, attacker,
     false, attacker.position, 'missile', 1);
-  assert(Math.abs(hit.damage - expected(mine.hullDamage, 1, false)) < 0.000001,
+  const raw = referenceRaw(mineBase[mine.kind][1], mine.tier);
+  assert(Math.abs(hit.damage - expected(raw, 1, false)) < 0.000001,
     mine.id + ': mine damage differs from original balance');
 }
 console.log('PASS legacy combat damage reference across all weapon and mine tiers');
