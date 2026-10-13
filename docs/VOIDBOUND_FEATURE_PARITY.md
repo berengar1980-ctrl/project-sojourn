@@ -710,3 +710,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Sternkarte, Asteroiden-/Kampf- und Bergungskarte
 
 **keine Statusänderung.** Die Sternkarte zeichnet weiter bei jeder Modellaktualisierung, begrenzt aber Frachtmarkt- und Systemlog-Neuaufbau auf höchstens etwa 6–7×/Sekunde. Die Asteroiden-/lokale Kampfkarte zeichnet ebenso weiterhin voll, aktualisiert das Overlay jedoch höchstens 10×/Sekunde. Die Bergungskarte zeichnet den Canvas weiter voll, baut ihre Status-/Fracht-/Ereignis-DOM-Strukturen höchstens 10×/Sekunde auf. Bedienungseingaben und physikalische Simulation bleiben unverändert. Regressionstest bestätigt, dass Canvas-Updates vor der HUD-Drosselung stattfinden. Reale Performancegewinne sind noch im Browser zu messen.
+
+## Review-Log (2026-10-13): Begrenzte Asteroidenroute im Duell
+
+**keine Statusänderung.** Die Gefechtsnavigation verwendet bei blockierter Direktverbindung eine einfache lokale Hindernisumfahrung mit höchstens fünf Ausweichpunkten anstelle mehrfacher vollständiger A*-Rasterdurchläufe mit reduzierten Sicherheitsabständen. Bei temporär blockierten Wegpunkten gilt der 0,75-s-Neuplanungsabstand; keine Rechenlawine pro Frame. Kampagnen-Routenplanung und Asteroidenzahl unverändert. Weiter zu validieren: dichte Felder, Sackgassen, Sicherheitsabstand und tatsächliche Startdauer im Browser.
