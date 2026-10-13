@@ -722,3 +722,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Kombinierte Gefechtstests
 
 **keine Statusänderung.** Neue Regressionstests für gemischte Waffen-/Minen-/Asteroidengefechte über mehrere Seeds, kombinierte Antriebs-/Traktorschäden und 48-Sekunden-Duelltelemetrie; keine Gameplay- oder Balanceänderung. Zusätzliche noch ungetestete Wechselwirkungen in `docs/COMBAT_TEST_MATRIX.md`.
+
+## Review-Log (2026-10-13): Interaktionen verschiedener Kampfobjekte
+
+**keine Statusänderung.** Zusätzliche Tests für Laser-/Torpedo-Einschläge über Schild- und Hüllenphase, bewegliche Asteroiden als temporäre Schusshindernisse und Traktorwurfsystem bei bestehendem Minenobjekt. Keine Änderung an Gameplay oder Schaden.
