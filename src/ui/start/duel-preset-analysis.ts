@@ -37,9 +37,9 @@ export function analyzeDuelPreset(
     preset.id === 'alpha'
       ? setups.map((setup) => ({
           ...setup,
-          shieldHp: setup.shieldHp * 8,
-          hullHp: setup.hullHp * 5,
-          damageMultiplier: setup.damageMultiplier * 0.25,
+          shieldHp: setup.shieldHp * 2,
+          hullHp: setup.hullHp * 3,
+          damageMultiplier: setup.damageMultiplier * 0.75,
         }))
       : setups;
   const seed = overrideSeed ?? preset.seed;
