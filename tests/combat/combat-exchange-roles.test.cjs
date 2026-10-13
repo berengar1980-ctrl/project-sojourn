@@ -40,7 +40,9 @@ assert.match(
   'initiative holder receives initiator flight orders'
 );
 assert(
-  /pilotExchangeShip\(\s*opponent,\s*'reactor',\s*flight,\s*runtime\.arena,\s*dt,\s*initiator,\s*false,\s*next\.reaction === 'turn_to_face'\s*\)/.test(controllerSource),
+  /pilotExchangeShip\(\s*opponent,\s*'reactor',\s*flight,\s*runtime\.arena,\s*dt,\s*initiator,\s*false,\s*next\.reaction === 'turn_to_face'\s*\)/.test(
+    controllerSource
+  ),
   'opposing ship receives reactor flight orders'
 );
 
