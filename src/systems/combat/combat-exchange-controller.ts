@@ -20,6 +20,7 @@ export interface ActiveExchange {
   flight: ExchangeFlightPlan | null;
   geometry: ExchangeGeometry | null;
   reactions: { attacker: ReactionMemory; defender: ReactionMemory };
+  reactiveGoals: { attacker: { x: number; y: number } | null; defender: { x: number; y: number } | null };
   attackerHp: number;
   defenderHp: number;
 }
@@ -30,6 +31,7 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
     flight: null,
     geometry: null,
     reactions: { attacker: initialReactionMemory(runtime.attacker, runtime), defender: initialReactionMemory(runtime.defender, runtime) },
+    reactiveGoals: { attacker: null, defender: null },
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
   };
@@ -151,7 +153,10 @@ function reactToCombatEvents(
   const accepted = commitReactiveDecision(memory, event, runtime.elapsedSeconds);
   memory.shieldHp = ship.shieldHp;
   memory.lastTractorCount = runtime.thrownAsteroids.length;
-  if (!event || !accepted) return null;
+  if (!event || !accepted) {
+    return runtime.elapsedSeconds - memory.lastReactionAt < 1.5 ? state.reactiveGoals[side] : null;
+  }
+  state.reactiveGoals[side] = event.goal;
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
