@@ -112,6 +112,13 @@ for (const name of ['CorridorComplex', 'DoubleDeck', 'EngineRoom', 'CargoHold',
 }
 assert(sections.includes('ladder(') && sections.includes('doorX(') &&
   sections.includes('room('), 'big wreck parts need floors, real doorframes and two deck details');
+assert(sections.includes('function tornRoof(') &&
+  sections.includes('tornRoof(m, [') &&
+  sections.includes('C.soot') &&
+  sections.includes('C.edgeMetal'),
+  'every large wreck must have jagged ceiling remnants, ruptures and scorch');
+assert(sections.includes('floor: [42, 49, 53]'),
+  'large exposed ship interiors must remain dark, not clean light-grey');
 assert(!renderer.includes('drawHullFragments'), 'old fake hull fragments must remain removed');
 assert(fragments.includes('drawProjectedSalvageMesh'), 'wreck fragments share the 3D projection pipeline');
 for (const kind of ['Corridor', 'Deck', 'Airlock', 'Truss', 'Engine', 'Reactor',
