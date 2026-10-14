@@ -149,4 +149,15 @@ assert(
   !damageSource.includes('COMBAT_DAMAGE_SCALE'),
   'global combat factor no longer used on impact'
 );
+const catalogSource = fs.readFileSync(
+  path.join(root, 'src/data/ships/ship-component-catalog.ts'), 'utf8'
+);
+const mineSource = fs.readFileSync(path.join(root, 'src/data/combat/ship-mines.ts'), 'utf8');
+const nativeSource = fs.readFileSync(path.join(root, 'src/systems/combat/combat-native-damage.ts'), 'utf8');
+assert(catalogSource.includes('combatShieldDamage: seed.nativeShieldDamage[index]!'),
+  'weapon native values belong in canonical component definitions');
+assert(mineSource.includes('combatHullDamage: seed.nativeHullDamage[index]!'),
+  'mine native values belong in canonical mine definitions');
+assert(!nativeSource.includes('WEAPON_DAMAGE:') && !nativeSource.includes('MINE_DAMAGE:'),
+  'no duplicate native-damage lookup table');
 console.log('PASS native damage matches old shield/hull baselines for weapon and mine tiers');
