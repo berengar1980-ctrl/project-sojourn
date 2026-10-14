@@ -1,4 +1,4 @@
-import { describeCombatIntent } from './combat-intent-labels';
+import { describeCombatIntent, updateCombatIntent } from './combat-intent-labels';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { reviewCombatStrategy } from './combat-strategy-planner';
 import { reviewCombatCommitment } from './combat-commitment';
@@ -71,8 +71,11 @@ export function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
-  ship.combatIntent = describeCombatIntent(ship);
-  if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
+  updateCombatIntent(
+    ship,
+    usefulRamAttempt(ship, enemy) ? 'RAMMEN' : describeCombatIntent(ship),
+    runtime.elapsedSeconds
+  );
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
   if (ship.strategy.phase !== nextPhase) {
