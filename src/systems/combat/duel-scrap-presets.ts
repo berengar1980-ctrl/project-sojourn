@@ -28,11 +28,11 @@ export function createScrapDuelArena(
   const largeSections = field.wrecks.filter((wreck) => wreck.sectionVariant);
   const containers = field.wrecks.filter((wreck) => wreck.containerVariant);
   const small: ScrapSource[] = [
-    ...field.debris.slice(0, dense ? 85 : 22),
+    ...(field.debris ?? []).slice(0, dense ? 85 : 22),
     ...sourceWrecks.slice(0, dense ? 40 : 20),
     // A second field reuses generated debris IDs ("debris-0", ...). Prefix
     // that layer or collisions/tractor capture will resolve the WRONG body.
-    ...(extraField?.debris.slice(0, 45).map((debris) => ({
+    ...(extraField?.debris?.slice(0, 45).map((debris) => ({
       ...debris,
       id: 'extra-' + debris.id,
     })) ?? []),
@@ -56,7 +56,7 @@ export function createScrapDuelArena(
   // normal asteroid-map shield/tractor rules or changing combatant starts.
   // These pieces sit outside the same 145 m spawn clearance as mined rocks.
   for (let i = 0; i < 4; i += 1) {
-    const source = field.debris[i]!;
+    const source = (field.debris ?? [])[i]!;
     const player = i < 2 ? 0 : 1;
     const spawn = spawns[player]!;
     const side = player === 0 ? 1 : -1;
@@ -117,16 +117,7 @@ function createScrapAsteroids(
     // The dense asteroid arena uses a full 145 m exclusion zone from both
     // spawns for EVERY rock, including debris. Wreck arenas must do likewise.
     const clearance = 145;
-    if (
-      position.x <= radius + 18 ||
-      position.x >= width - radius - 18 ||
-      position.y <= radius + 18 ||
-      position.y >= height - radius - 18 ||
-      spawns.some(
-        (spawn) => Math.hypot(position.x - spawn.x, position.y - spawn.y) < radius + clearance
-      )
-    )
-      return [];
+    if (!isClearScrapPosition(position, radius, width, height, spawns)) return [];
 
     const model = piece as SalvageWreck;
     return [
@@ -154,4 +145,20 @@ function createScrapAsteroids(
       },
     ];
   });
+}
+
+function isClearScrapPosition(
+  position: { x: number; y: number },
+  radius: number,
+  width: number,
+  height: number,
+  spawns: { x: number; y: number }[]
+): boolean {
+  return (
+    position.x > radius + 18 &&
+    position.x < width - radius - 18 &&
+    position.y > radius + 18 &&
+    position.y < height - radius - 18 &&
+    spawns.every((spawn) => Math.hypot(position.x - spawn.x, position.y - spawn.y) >= radius + 145)
+  );
 }
