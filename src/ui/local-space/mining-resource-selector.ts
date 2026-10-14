@@ -90,19 +90,29 @@ export class MiningResourceSelector {
   private handleClick(event: Event): void {
     if (this.locked || !this.model) return;
     const target = event.target;
-    if (!(target instanceof HTMLButtonElement) || target.disabled) return;
+    if (!(target instanceof Element)) return;
+    const button = target.closest('button');
+    if (!(button instanceof HTMLButtonElement) ||
+        !this.container.contains(button) || button.disabled) return;
 
-    if (target.dataset.allResources === 'true') {
+    if (button.dataset.allResources === 'true') {
       this.selection = null;
       this.onChange(null);
       return;
     }
 
-    const resourceId = target.dataset.resourceId;
+    const resourceId = button.dataset.resourceId;
     if (!resourceId) return;
 
     const next = toggleMiningResourceSelection(this.selection, resourceId);
     this.selection = next;
     this.onChange(next);
+    // Mark the choice immediately; HUD updates are throttled at 100ms.
+    // The authoritative per-asteroid selection arrives on the next model tick.
+    this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]').forEach((choice) => {
+      choice.classList.toggle('is-active', next?.includes(choice.dataset.resourceId ?? '') ?? false);
+    });
+    this.container.querySelector<HTMLButtonElement>('[data-all-resources]')
+      ?.classList.toggle('is-active', next === null);
   }
 }
