@@ -12,11 +12,14 @@ const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const mine = read('src/systems/combat/strategic-combat-mines.ts');
 const tractor = read('src/systems/combat/combat-tractor-asteroid-throw.ts');
 const execution = read('src/systems/combat/combat-plan-executor.ts');
+const exchange = read('src/systems/combat/combat-exchange-controller.ts');
 
 assert(cover.includes('ship.shieldHp > ship.shieldMaxHp * 0.4'), 'cover reacts to depleted shields');
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
 assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
 assert(movement.includes('cover ?? waypoint ?? direction'));
+assert(exchange.includes('coverGoal(initiator, opponent, runtime.arena)'),
+  'exchange machine and free flight share the same defensive cover rule');
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
