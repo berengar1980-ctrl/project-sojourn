@@ -36,9 +36,9 @@ export function startCombatBoarding(
   state.embeddedCombat = null;
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
-  context.engagements.finishPlayerCombat();
   if (crewBoardingUnits(context.crew).length === 0) {
     context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
+    context.engagements.finishPlayerCombat();
     runSceneZoomTransition(context.root, returnToMap);
     return;
   }
@@ -83,6 +83,7 @@ export function startCombatBoarding(
         context.systemLog.write('BOARDING > VERTEIDIGUNG VERLOREN · BERGUNG ZUR WERFT');
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
+      context.engagements.finishPlayerCombat();
       runSceneZoomTransition(context.root, returnToMap);
     },
   });
