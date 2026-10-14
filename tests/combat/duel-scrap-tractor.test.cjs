@@ -36,8 +36,11 @@ for (const seed of [1, 53, 415, 9001]) {
       map.asteroids.some((rock) => rock.id === obstacle.id &&
         rock.kind === 'resource' && rock.radius === obstacle.radius)
     ), 'only large hull sections block routes');
-    for (const x of [0.35, 0.65]) {
-      const spawn = {x:map.width*x, y:map.height*0.5};
+    for (const [side, spawn] of [
+      ['attacker', map.attackerPosition],
+      ['defender', map.defenderPosition],
+    ]) {
+      assert(spawn, 'actual duel ' + side + ' must have a known spawn location');
       const available = map.asteroids.filter((rock) =>
         rock.debrisVariant &&
         rock.radius >= 5 && rock.radius <= 35 &&
@@ -55,7 +58,7 @@ for (const seed of [1, 53, 415, 9001]) {
 
 const arena = createDuelArena('scrap_scattered', 4242);
 const actor = {
-  position: {x:arena.width*0.35,y:arena.height*0.5},
+  position: { ...arena.attackerPosition },
   velocity: {x:0,y:0},
   shieldHp: 0,
   hullHp: 300,
@@ -65,7 +68,7 @@ const actor = {
 };
 const enemy = {
   ...actor,
-  position: {x:arena.width*0.65,y:arena.height*0.5},
+  position: { ...arena.defenderPosition },
   shieldHp: 80,
   hullHp: 300,
   velocity: {x:0,y:0},
