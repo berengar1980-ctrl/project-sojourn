@@ -23,12 +23,14 @@ export function createScrapDuelArena(
   const scaleX = width / field.width;
   const scaleY = height / field.height;
   const scale = Math.min(scaleX, scaleY);
+  const extraField = dense ? generateSalvageField('pvp-scrap-extra', seed + 7919, 2) : null;
   const sourceWrecks = field.wrecks.filter((wreck) => wreck.debrisVariant);
   const largeSections = field.wrecks.filter((wreck) => wreck.sectionVariant);
   const containers = field.wrecks.filter((wreck) => wreck.containerVariant);
   const small: ScrapSource[] = [
     ...field.debris.slice(0, dense ? 85 : 22),
     ...sourceWrecks.slice(0, dense ? 40 : 20),
+    ...(extraField?.debris.slice(0, 45) ?? []),
   ];
   const picked: ScrapSource[] = [
     ...small,
