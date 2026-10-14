@@ -253,7 +253,12 @@ function mountControllerMining(
   mountControllerSwitcher(context);
 }
 
-function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = false): void {
+function mountControllerSalvage(
+  context: ControllerRuntimeContext,
+  reuseSeed = false,
+  preservedField?: import('../core/salvage-types').SalvageField,
+  finalCombat?: import('../systems/combat/strategic-combat-types').StrategicCombatSnapshot
+): void {
   const { state, economy } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
@@ -280,7 +285,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     ship: state.activeShip,
     seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
     location,
-    ...(sectorEvent
+    ...(preservedField ? { field: preservedField } : sectorEvent
       ? {
           field:
             state.salvageEventFields.get(sectorEvent.id) ??
@@ -328,6 +333,7 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     }),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
+  if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
 
@@ -341,6 +347,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const snapshot = activeCombat.getSnapshot();
   if (snapshot.boardingInitiator) {
     const origin = state.embeddedCombat;
+    const preservedSalvageField = origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
     if (origin === 'local-space') {
       state.localSpace?.syncCombatPose(
         snapshot.attacker.position,
@@ -356,7 +363,8 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     }
     startCombatBoarding(context, snapshot, () => {
       if (origin === 'local-space') mountControllerMining(context, true, true);
-      else if (origin === 'salvage-space') mountControllerSalvage(context, true);
+      else if (origin === 'salvage-space')
+        mountControllerSalvage(context, true, preservedSalvageField, snapshot);
       else mountControllerStarMap(context);
     });
     return;
