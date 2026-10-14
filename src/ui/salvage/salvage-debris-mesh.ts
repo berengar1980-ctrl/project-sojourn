@@ -291,6 +291,27 @@ const cached: Readonly<Record<SalvageDebrisVariant, readonly Face[]>> = {
   habitation: makeMesh('habitation'),
 };
 
+function compactMesh(variant: SalvageDebrisVariant): readonly Face[] {
+  const m = new ContainerMesh();
+  const long = variant === 'truss' || variant === 'engine';
+  const round = variant === 'airlock' || variant === 'reactor';
+  m.box(0, 0, 0, long ? 3.7 : 2.95, round ? 1.4 : 1.9, 0.38, C.hull);
+  m.box(-0.38, -0.2, 0.24, 1.5, 0.24, 0.14, C.rib);
+  m.box(0.7, 0.36, 0.26, 0.94, 0.18, 0.10, C.rust);
+  return m.faces;
+}
+
+const compact = {
+  corridor: compactMesh('corridor'),
+  deck: compactMesh('deck'),
+  airlock: compactMesh('airlock'),
+  truss: compactMesh('truss'),
+  engine: compactMesh('engine'),
+  reactor: compactMesh('reactor'),
+  bulkhead: compactMesh('bulkhead'),
+  habitation: compactMesh('habitation'),
+} satisfies Record<SalvageDebrisVariant, readonly Face[]>;
+
 function effects(
   context: CanvasRenderingContext2D,
   part: SalvageDebris,
@@ -348,6 +369,11 @@ export function drawSalvageDebris3d(
   radius: number,
   timeSeconds: number
 ): void {
-  drawProjectedSalvageMesh(context, cached[part.variant], radius, part.rotation3d);
-  effects(context, part, radius, timeSeconds);
+  drawProjectedSalvageMesh(
+    context,
+    radius < 12 ? compact[part.variant] : cached[part.variant],
+    radius,
+    part.rotation3d
+  );
+  if (radius >= 12) effects(context, part, radius, timeSeconds);
 }
