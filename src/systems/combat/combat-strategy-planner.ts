@@ -88,6 +88,15 @@ function scoreWeaponGroup(
   };
 }
 
+function canUseTractorLock(ship: MutableCombatant, enemy: MutableCombatant): boolean {
+  return (
+    ship.subsystems.tractor > 0 &&
+    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
+    enemy.shieldHp <= 0 &&
+    enemy.tactic === 'flee'
+  );
+}
+
 function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
   const enemyRange = Math.max(
     0,
@@ -129,12 +138,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     );
     if (plan) plans.push(plan);
   }
-  if (
-    ship.subsystems.tractor > 0 &&
-    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
-    enemy.shieldHp <= 0 &&
-    enemy.tactic === 'flee'
-  ) {
+  if (canUseTractorLock(ship, enemy)) {
     plans.push({
       kind: 'tractor_lock',
       focus: 'turret',
@@ -165,6 +169,15 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
       score: 1,
       reason: 'Waffenposition suchen',
     });
+  }
+  // A disabled opponent cannot sustain a chase: close to the optimal weapon envelope
+  // rather than endlessly kiting at the far edge of the nominal range.
+  if (enemy.subsystems.engine <= 0 && ship.subsystems.engine > 0) {
+    return plans.map((plan) => ({
+      ...plan,
+      desiredRange: Math.min(plan.desiredRange, Math.max(180, plan.desiredRange * 0.75)),
+      reason: plan.reason + ' · Gegner ohne Hauptantrieb',
+    }));
   }
   return plans;
 }

@@ -45,3 +45,7 @@ Offen: erzwungene Minenzündung durch bewegte Asteroiden und gemeinsamer Treffer
 - Der Raumkampf bezieht Schaden aus der festen Tabelle `combat-native-damage.ts`; die ursprünglichen Katalogprofile bleiben bestehen, damit andere Nutzer dieser Profile – insbesondere `mine-damage-service` – ihre bisherige Bedeutung behalten.
 - Direkter Asteroidenwurf-Schaden ist absichtlich nicht konvertiert. Custom-Waffen und -Minen ohne Katalog-ID gelten als bereits nativ skaliert; sie brauchen bei Übernahme alter Rohwerte ausdrücklich eine Migration.
 - **Noch zu bestätigen:** unveränderte Langzeitduelle/Seed-Verläufe sowie exakte Test-Fixtures, die `applyDamage` bislang direkt mit alten unskalierten Werten aufgerufen haben. Merge erst nach grünem CircleCI-Gate.
+
+## 2026-10-13 – Taktische Intelligenz
+
+Neue Regression für sofortige Neubewertung nach Antriebs-/Traktorausfall, Abstandsanpassung an manövrierunfähige Gegner, begrenztes Ausweichen bei driftenden Asteroiden und erweiterte Duelltelemetrie. Die fünf Entwicklungsziele sind als integrierte Verbesserungen begonnen: situative Reaktion, Subsystemstrategie, Distanzkontrolle, Asteroidenumfahrung und Kampfauswertung. **Noch nicht vollständig:** aktives Deckungssuchen und Minen-/Traktor-Köderpositionierung, quantitative Browser-FPS-Messung und umfassende simulierte Szenariotests der neuen Strategien.
