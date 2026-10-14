@@ -17,7 +17,7 @@ const ship = (x, y) => ({
   subsystems: { engine: 100, tractor: 100 },
   setup: { aiControlled: true, combatSpeed: 120, weapons: [], tractorRangeMeters: 420 },
 });
-const first = ship(300, 500);
+const first = ship(360, 500);
 const second = ship(800, 500);
 second.tactic = 'flee';
 second.velocity.y = 90;
@@ -63,6 +63,6 @@ assert.equal(planner.targetSubsystem(first, second), 'hull', 'safe ship focuses 
 first.strategy = { kind: 'broadside', focus: 'broadside', desiredRange: 500, phase: 'fire' };
 first.position.x = 700;
 assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'overshoot triggers reposition phase');
-first.position.x = 300;
+first.position.x = 100;
 assert.equal(executor.executeCombatPlan(first, second), 'reach_range', 'moving out of range re-enters approach');
 console.log('PASS seven-doctrine tactical decisions with real geometry and phase transitions');
