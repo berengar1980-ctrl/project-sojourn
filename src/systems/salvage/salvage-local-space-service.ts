@@ -1,4 +1,5 @@
 import { routeAroundDistressShip } from './distress-navigation';
+import { advanceSalvageContainerDrift } from './salvage-container-motion';
 import { seededLocalGate } from '../../core/local-space-exit';
 import type {
   SalvageLocalPhase,
@@ -237,6 +238,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot {
     const delta = Math.max(0, Math.min(0.05, deltaSeconds));
     this.events.tick(delta);
+    advanceSalvageContainerDrift(this.options.field, delta);
     if (this.phase === 'navigating' || this.phase === 'approaching') {
       this.updateRoute(delta);
     } else if (this.phase === 'inspecting') {
@@ -296,6 +298,11 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.navigationTarget = null;
     if (this.phase === 'navigating') {
       this.finishIdle();
+      return;
+    }
+    const target = this.findWreck(this.workTargetId);
+    if (target && !this.withinWorkRange(target)) {
+      this.beginApproach(target, this.approachPurpose ?? 'inspect');
       return;
     }
     if (this.approachPurpose === 'inspect') this.beginInspection();
