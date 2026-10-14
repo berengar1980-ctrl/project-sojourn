@@ -8,7 +8,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { campaignCombatResult, combatResultMessage } = loadStandaloneTypeScriptModule(
   root,
-  'src/app/combat-result-summary.ts'
+  'src/systems/combat/combat-result-summary.ts'
 );
 const snapshot = {
   winner: 'attacker',
