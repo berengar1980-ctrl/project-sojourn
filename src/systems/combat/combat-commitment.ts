@@ -135,6 +135,15 @@ export function reviewCombatCommitment(
   ship.nextCommitmentReviewAt = elapsed + RETHINK_PERIOD;
   const strength = estimatedVictoryChance(ship, enemy);
   const escape = escapeViability(ship, enemy, arena);
+  return chooseCommitmentTransition(ship, strength, escape, elapsed);
+}
+
+function chooseCommitmentTransition(
+  ship: MutableCombatant,
+  strength: number,
+  escape: number,
+  elapsed: number
+): CombatCommitmentReview | null {
   const currentlyFleeing = ship.tactic === 'flee';
   if (currentlyFleeing) {
     ship.escapeCommittedAt ??= elapsed;
