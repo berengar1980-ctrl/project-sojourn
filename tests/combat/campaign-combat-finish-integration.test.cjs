@@ -39,4 +39,5 @@ assert(boarding.includes('context.engagements.finishPlayerCombat();'), 'resolve 
 assert(boarding.includes('showCampaignCombatSummary'), 'show boarding result before scene return');
 assert(salvage.includes('getField(): SalvageField'), 'salvage scene exposes live field for restoration');
 assert(controller.includes('showCampaignCombatSummary'), 'embedded fights show outcome summary');
+assert(controller.includes("state.mode !== 'boarding'"), 'ongoing boarding must not remount space combat');
 console.log('PASS campaign combat results, boarding scene continuity and outcome presentation');
