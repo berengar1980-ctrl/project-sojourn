@@ -1,6 +1,9 @@
 import type { MutableCombatant } from './strategic-combat-types';
 
 export function describeCombatIntent(ship: MutableCombatant): string {
+  if (ship.setup.weapons.length === 0 && ship.mineStock.length === 0) {
+    return 'UNBEWAFFNET · DISTANZ HALTEN';
+  }
   if (ship.tactic === 'flee') return 'FLIEHEN';
   if (ship.tactic === 'minefield') return 'MINEN LEGEN';
   if (ship.tactic === 'kite') return 'ABSTAND HALTEN';
