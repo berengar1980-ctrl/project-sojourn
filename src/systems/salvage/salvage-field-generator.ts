@@ -121,6 +121,7 @@ export function generateSalvageField(
       component: null,
       componentStatus: 'none',
       inspected: false,
+      scanLevel: 'unscanned',
     });
   }
 
