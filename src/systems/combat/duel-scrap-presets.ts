@@ -30,7 +30,12 @@ export function createScrapDuelArena(
   const small: ScrapSource[] = [
     ...field.debris.slice(0, dense ? 85 : 22),
     ...sourceWrecks.slice(0, dense ? 40 : 20),
-    ...(extraField?.debris.slice(0, 45) ?? []),
+    // A second field reuses generated debris IDs ("debris-0", ...). Prefix
+    // that layer or collisions/tractor capture will resolve the WRONG body.
+    ...(extraField?.debris.slice(0, 45).map((debris) => ({
+      ...debris,
+      id: 'extra-' + debris.id,
+    })) ?? []),
   ];
   const picked: ScrapSource[] = [
     ...small,
