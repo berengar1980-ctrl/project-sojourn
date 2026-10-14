@@ -135,7 +135,9 @@ export function generateSalvageField(
   const sectionCount = 8 + Math.floor(random() * 4);
   for (let index = 0; index < sectionCount; index += 1) {
     const variant = sectionVariants[index] ?? sectionVariants[Math.floor(random() * 8)]!;
-    const radius = 86 + random() * 46;
+    // Keep the established large-section scale, with a per-section ±25% variation.
+    const baseRadius = 86 + random() * 46;
+    const radius = baseRadius * (0.75 + random() * 0.5);
     let position = { x: width / 2, y: height / 2 };
     for (let attempt = 0; attempt < 140; attempt += 1) {
       const candidate = {
@@ -202,19 +204,22 @@ export function generateSalvageField(
     });
   }
 
-  // One of each genuinely different hull fragment, plus up to three repeats.
-  // These are scenery with shield collision, never added to salvage loot/selection.
+  // Keep all eight small-fragment silhouettes. Some are salvageable, while the
+  // rest remain dynamic scenery and tractor-throw ammunition.
   const variants: readonly SalvageDebrisVariant[] = [
     'corridor', 'deck', 'airlock', 'truss',
     'engine', 'reactor', 'bulkhead', 'habitation',
   ];
   const debris: SalvageDebris[] = [];
-  const debrisCount = 178 + Math.floor(random() * 35);
+  // Roughly 20-25% fewer small fragments, counterbalanced by more varied sizes.
+  const debrisCount = 140 + Math.floor(random() * 25);
   for (let index = 0; index < debrisCount; index += 1) {
     const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
-    const radius = 7 + random() * 22;
+    // Each small fragment can grow to twice its previous individual size.
+    const baseRadius = 7 + random() * 22;
+    const radius = baseRadius * (1 + random());
     let position = { x: width / 2, y: height / 2 };
-    for (let attempt = 0; attempt < 64; attempt += 1) {
+    for (let attempt = 0; attempt < 96; attempt += 1) {
       const candidate = {
         x: width * (0.08 + random() * 0.84),
         y: height * (0.08 + random() * 0.84),
