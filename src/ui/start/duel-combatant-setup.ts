@@ -1,4 +1,7 @@
-import { combatEquippedWeapons, combatWeaponMounts } from '../../systems/combat/combat-loadout-mounts';
+import {
+  combatEquippedWeapons,
+  combatWeaponMounts,
+} from '../../systems/combat/combat-loadout-mounts';
 import {
   getShipComponent,
   resolveShipCombatMovementStats,

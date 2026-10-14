@@ -21,15 +21,17 @@ export function combatWeaponMounts(
   return equipped.flatMap((entry, slotIndex) => {
     const mount = points.weaponMounts?.find((point) => point.slotIndex === entry.slotIndex);
     return mount
-      ? [{
-          slotIndex,
-          x: (mount.x - points.pivot.x) * scale,
-          y: (mount.y - points.pivot.y) * scale,
-          facing: mount.facing,
-          ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-          ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-          ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-        }]
+      ? [
+          {
+            slotIndex,
+            x: (mount.x - points.pivot.x) * scale,
+            y: (mount.y - points.pivot.y) * scale,
+            facing: mount.facing,
+            ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
+            ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
+            ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
+          },
+        ]
       : [];
   });
 }

@@ -100,7 +100,8 @@ export function createCombatant(
   const startY = configured?.y ?? arena.height * (side === 'attacker' ? 0.46 : 0.54);
   const startingVelocity = side === 'attacker' ? arena.attackerVelocity : arena.defenderVelocity;
   const initialVelocity = startingVelocity ? { ...startingVelocity } : { x: 0, y: 0 };
-  const initialHeading = side === 'attacker' ? arena.attackerHeadingRadians : arena.defenderHeadingRadians;
+  const initialHeading =
+    side === 'attacker' ? arena.attackerHeadingRadians : arena.defenderHeadingRadians;
   return {
     setup,
     shieldMaxHp: Math.max(0, setup.shieldHp),

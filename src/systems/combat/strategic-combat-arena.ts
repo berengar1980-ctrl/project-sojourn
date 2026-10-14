@@ -19,8 +19,12 @@ function createArenaOptions(
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...(arenaOptions?.attackerVelocity ? { attackerVelocity: arenaOptions.attackerVelocity } : {}),
     ...(arenaOptions?.defenderVelocity ? { defenderVelocity: arenaOptions.defenderVelocity } : {}),
-    ...(arenaOptions?.attackerHeadingRadians !== undefined ? { attackerHeadingRadians: arenaOptions.attackerHeadingRadians } : {}),
-    ...(arenaOptions?.defenderHeadingRadians !== undefined ? { defenderHeadingRadians: arenaOptions.defenderHeadingRadians } : {}),
+    ...(arenaOptions?.attackerHeadingRadians !== undefined
+      ? { attackerHeadingRadians: arenaOptions.attackerHeadingRadians }
+      : {}),
+    ...(arenaOptions?.defenderHeadingRadians !== undefined
+      ? { defenderHeadingRadians: arenaOptions.defenderHeadingRadians }
+      : {}),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };

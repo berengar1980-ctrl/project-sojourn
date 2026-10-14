@@ -236,11 +236,13 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
           radius: asteroid.radius,
           rotation: asteroid.rotation,
         })),
-        obstacles: local.instance.asteroids.filter((asteroid) => asteroid.kind === 'resource').map((asteroid) => ({
-          id: asteroid.id,
-          position: { ...asteroid.position },
-          radius: asteroid.radius,
-        })),
+        obstacles: local.instance.asteroids
+          .filter((asteroid) => asteroid.kind === 'resource')
+          .map((asteroid) => ({
+            id: asteroid.id,
+            position: { ...asteroid.position },
+            radius: asteroid.radius,
+          })),
       });
       if (started) {
         state.embeddedCombat = 'local-space';
