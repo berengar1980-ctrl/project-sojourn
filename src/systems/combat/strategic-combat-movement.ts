@@ -4,6 +4,12 @@ import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
+import { usefulRamAttempt } from './combat-ram-opportunity';
+import {
+  activateExchangeBoost,
+  stopExchangeBoost,
+  updateExchangeBoost,
+} from './combat-exchange-pilot';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
@@ -183,7 +189,8 @@ function applyInertialThrust(
   rcsStrafe?: CombatPoint
 ): void {
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
-  const requested = baseSpeed * targetSpeedFactor * alignment;
+  const boosted = combatant.boostActive === true;
+  const requested = baseSpeed * targetSpeedFactor * alignment * (boosted ? 1.65 : 1);
   const targetSpeed = tractorLocked ? Math.min(requested, 25) : requested;
   const thrust = rcsStrafe ?? {
     x: Math.cos(combatant.headingRadians),
@@ -195,12 +202,13 @@ function applyInertialThrust(
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const fraction = Math.min(
     1,
-    (acceleration * (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+    (acceleration * (boosted ? 1 + 2.5 * Math.min(1, (combatant.boostRampSeconds ?? 0) / 2) : 1) *
+      (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
   );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
   const speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
-  const limit = tractorLocked ? 25 : baseSpeed * 1.05;
+  const limit = tractorLocked ? 25 : baseSpeed * (boosted ? 1.65 : 1.05);
   if (speed > limit) {
     combatant.velocity.x *= limit / speed;
     combatant.velocity.y *= limit / speed;
@@ -424,6 +432,7 @@ export function moveCombatant(
   const perpendicular =
     side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
+  const deliberateRam = usefulRamAttempt(combatant, enemy);
 
   let { direction, targetSpeedFactor } = choosePlanDirection(
     combatant,
@@ -436,13 +445,20 @@ export function moveCombatant(
   );
 
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
-  const evasion = predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
+  const evasion = deliberateRam
+    ? null
+    : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
     direction = evasion.direction;
     targetSpeedFactor = evasion.speedFactor;
   }
 
-  const cover = asteroidCoverHeading(combatant, enemy, arena);
+  if (deliberateRam) {
+    direction = toward;
+    targetSpeedFactor = 1;
+    combatant.combatIntent = 'RAMMEN';
+  }
+  const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
   const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
@@ -466,7 +482,7 @@ export function moveCombatant(
   // Aim the broadside independently of translation. Steering the engines along
   // the broadside heading made both ships orbit indefinitely without firing.
   const gunHeading =
-    !mineAvoidance && !obstacle && !boundary
+    !deliberateRam && !mineAvoidance && !obstacle && !boundary
       ? broadsideSteering(combatant, enemy, range, dx, dy)
       : null;
   if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
@@ -474,6 +490,23 @@ export function moveCombatant(
   }
   const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
   const headingDirection = broadsideActive ? gunHeading! : direction;
+  // Standard campaign/duel AI uses the exact same boost tank and recharge as exchange flight.
+  const headingDot =
+    Math.cos(combatant.headingRadians) * headingDirection.x +
+    Math.sin(combatant.headingRadians) * headingDirection.y;
+  const boostSafe = !mineAvoidance && !obstacle && !boundary && !waypoint && !cover;
+  const wantsBoost =
+    combatant.tactic === 'flee' ||
+    deliberateRam ||
+    (range > Math.max(650, desired * 1.45) && targetSpeedFactor > 0.7);
+  if (boostSafe && wantsBoost && headingDot > 0.7 && (combatant.boostSeconds ?? 0) > 0.8)
+    activateExchangeBoost(combatant);
+  else stopExchangeBoost(combatant);
+  updateExchangeBoost(combatant, deltaSeconds);
+  combatant.boostRampSeconds =
+    combatant.boostActive === true
+      ? Math.min(2, (combatant.boostRampSeconds ?? 0) + deltaSeconds)
+      : 0;
   performCombatThrust(
     combatant,
     enemy,
