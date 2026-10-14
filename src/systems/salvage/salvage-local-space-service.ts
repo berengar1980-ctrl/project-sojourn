@@ -1,5 +1,11 @@
 import { routeAroundDistressShip } from './distress-navigation';
-import { advanceSalvageContainerDrift } from './salvage-container-motion';
+import {
+  advanceSalvageContainerDrift,
+  resolveSalvageShieldContacts,
+  salvageFieldPhysicsBodies,
+} from './salvage-container-motion';
+import { planPointRoute } from '../local-space/local-space-navigation';
+import type { ShipHardpoints } from '../../core/ship-types';
 import { seededLocalGate } from '../../core/local-space-exit';
 import type {
   SalvageLocalPhase,
@@ -51,6 +57,8 @@ interface SalvageRuntimeOptions {
   readonly collect: SalvageResourceCollector;
   readonly collectComponent?: SalvageComponentCollector;
   readonly approachSpeed: number;
+  readonly hardpoints?: ShipHardpoints;
+  readonly shipLengthMeters?: number;
 }
 
 function clampPoint(point: WorldPoint, width: number, height: number): WorldPoint {
@@ -248,6 +256,14 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     } else if (this.phase === 'extracting-component') {
       this.updateComponentRecovery(delta);
     }
+    if (this.options.hardpoints && this.options.shipLengthMeters) {
+      resolveSalvageShieldContacts(
+        this.options.field,
+        this.ship,
+        this.options.hardpoints,
+        this.options.shipLengthMeters
+      );
+    }
     return this.getSnapshot();
   }
 
@@ -277,7 +293,14 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     );
     this.navigationRoute = distress
       ? routeAroundDistressShip(this.ship.position, target, distress.position, distress.radius + 60)
-      : [{ ...this.ship.position }, target];
+      : planPointRoute({
+          start: this.ship.position,
+          target,
+          asteroids: salvageFieldPhysicsBodies(this.options.field),
+          clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
+          width: this.options.field.width,
+          height: this.options.field.height,
+        }).route;
     this.routeIndex = 1;
   }
 
