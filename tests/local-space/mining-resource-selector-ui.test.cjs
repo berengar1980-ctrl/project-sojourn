@@ -48,6 +48,15 @@ assert(!selectorSource.includes('selection.length >= 2'));
 assert(actions.includes('setMiningResourceSelection(resourceIds)'));
 assert(service.includes('this.miningResources.selectionFor(this.selectedAsteroidId)'));
 assert(service.includes('this.miningResources.setSelection(asteroid, resourceIds)'));
+assert(
+  !service.includes("if (this.miningPhase !== 'idle') return this.getSnapshot();"),
+  'live extraction must accept new per-resource targeting decisions'
+);
+assert(selectorSource.includes("target.closest('button')"),
+  'click events should resolve the actual resource button');
+assert(readModuleSource(root, 'src/ui/local-space/local-space-panel-view.ts')
+  .includes('miningResourceSelector.update(model, eventActive)'),
+  'buttons must remain enabled during running mining operations');
 assert(resourceRuntime.includes('private readonly selections = new Map'));
 assert(resourceRuntime.includes('this.selections.set(asteroid.id'));
 assert(resourceRuntime.includes('this.selections.delete(asteroid.id)'));
