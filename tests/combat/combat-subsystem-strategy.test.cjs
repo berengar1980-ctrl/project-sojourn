@@ -130,8 +130,8 @@ assert.equal(
 first.position = { x: 1100, y: 550 };
 assert.equal(
   targeting.canEngagePreferredSubsystem(first, second),
-  false,
-  'hold fire on a fleeing ship until an engine is exposed'
+  true,
+  'fire on the hull when a fleeing ship hides its engine instead of freezing all weapons'
 );
 assert.equal(
   targeting.effectiveTargetSubsystem(first, second),
