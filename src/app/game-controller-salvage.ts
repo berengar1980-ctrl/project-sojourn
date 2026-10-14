@@ -129,6 +129,8 @@ function createNpcSalvageRuntime(
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
     playerShip: options.ship,
     getPlayerShipState: () => service.getSnapshot().ship,
+    onPlayerShieldContact: (normal, overlap) =>
+      service.recordShipShieldContact(normal, overlap),
   });
 }
 
