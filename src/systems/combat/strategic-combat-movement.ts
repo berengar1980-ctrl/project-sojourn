@@ -5,11 +5,7 @@ import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { usefulRamAttempt } from './combat-ram-opportunity';
-import {
-  activateExchangeBoost,
-  stopExchangeBoost,
-  updateExchangeBoost,
-} from './combat-exchange-pilot';
+import { updateStandardCombatBoost } from './combat-standard-boost';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
@@ -490,23 +486,16 @@ export function moveCombatant(
   }
   const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
   const headingDirection = broadsideActive ? gunHeading! : direction;
-  // Standard campaign/duel AI uses the exact same boost tank and recharge as exchange flight.
-  const headingDot =
-    Math.cos(combatant.headingRadians) * headingDirection.x +
-    Math.sin(combatant.headingRadians) * headingDirection.y;
-  const boostSafe = !mineAvoidance && !obstacle && !boundary && !waypoint && !cover;
-  const wantsBoost =
-    combatant.tactic === 'flee' ||
-    deliberateRam ||
-    (range > Math.max(650, desired * 1.45) && targetSpeedFactor > 0.7);
-  if (boostSafe && wantsBoost && headingDot > 0.7 && (combatant.boostSeconds ?? 0) > 0.8)
-    activateExchangeBoost(combatant);
-  else stopExchangeBoost(combatant);
-  updateExchangeBoost(combatant, deltaSeconds);
-  combatant.boostRampSeconds =
-    combatant.boostActive === true
-      ? Math.min(2, (combatant.boostRampSeconds ?? 0) + deltaSeconds)
-      : 0;
+  updateStandardCombatBoost(
+    combatant,
+    headingDirection,
+    range,
+    desired,
+    targetSpeedFactor,
+    deliberateRam,
+    !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
+    deltaSeconds
+  );
   performCombatThrust(
     combatant,
     enemy,
