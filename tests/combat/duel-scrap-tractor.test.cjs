@@ -9,6 +9,8 @@ const { createDuelArena } = loadStandaloneTypeScriptModule(
   root, 'src/systems/combat/duel-arena-presets.ts');
 const { maybeLaunchTractorAsteroid, advanceThrownAsteroids } = loadStandaloneTypeScriptModule(
   root, 'src/systems/combat/combat-tractor-asteroid-throw.ts');
+const { nativeCombatAsteroids } = loadStandaloneTypeScriptModule(
+  root, 'src/systems/combat/combat-asteroid-motion.ts');
 
 for (const seed of [1, 53, 415, 9001]) {
   const moderate = createDuelArena('scrap_scattered', seed);
@@ -39,6 +41,14 @@ for (const seed of [1, 53, 415, 9001]) {
     ), 'all objects must spawn inside map bounds');
     const ids = map.asteroids.map((rock) => rock.id);
     assert.equal(new Set(ids).size, ids.length, 'scrap model IDs must be unique');
+    const physicalScrap = nativeCombatAsteroids(map);
+    assert.equal(physicalScrap.length, map.asteroids.length,
+      'every small scrap fragment remains a physical object in PvP');
+    assert(physicalScrap.some((rock) => rock.kind === 'debris' && !rock.routeBlocking),
+      'small PvP scrap has collisions but never requests a navigation detour');
+    assert(physicalScrap.every((rock) =>
+      rock.kind === 'resource' ? rock.routeBlocking : !rock.routeBlocking),
+      'only large ship sections are route blockers, even if small debris is physically solid');
     assert(map.obstacles.every((obstacle) =>
       map.asteroids.some((rock) => rock.id === obstacle.id &&
         rock.kind === 'resource' && rock.radius === obstacle.radius)
