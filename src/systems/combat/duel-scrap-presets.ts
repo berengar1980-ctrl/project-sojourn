@@ -84,7 +84,7 @@ export function createScrapDuelArena(
   // happened to put most fragments elsewhere. They are genuine 3D wreck meshes
   // and use exactly the same tractor system as other arena objects.
   for (let i = 0; i < 4; i += 1) {
-    const source = small[i]!;
+    const source = field.debris[i]!;
     const player = i < 2 ? 0 : 1;
     const spawn = spawns[player]!;
     const side = player === 0 ? 1 : -1;
@@ -99,9 +99,7 @@ export function createScrapDuelArena(
       rotation: source.rotation3d.z,
       velocity: { x: 0.2 * side, y: 0 },
       angularVelocity: source.spin3d.z,
-      debrisVariant: 'variant' in source
-        ? source.variant
-        : (source as SalvageWreck).debrisVariant!,
+      debrisVariant: source.variant,
       rotation3d: { ...source.rotation3d },
       spin3d: { ...source.spin3d },
       effectSeed: source.effectSeed,
