@@ -1,3 +1,4 @@
+import { localMiningCombatArena } from './game-controller-combat';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
@@ -219,16 +220,13 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
       const local = state.localSpace?.getSnapshot();
       const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
       if (!local || !target) return;
+      const arena = localMiningCombatArena(
+        local.instance,
+        state.localSpace!.getShipWorldVelocity()
+      );
       const started = context.engagements.engageNpcInArena(id, {
-        width: local.instance.width,
-        height: local.instance.height,
-        attackerPosition: { ...local.instance.ship.position },
+        ...arena,
         defenderPosition: { ...target.position },
-        obstacles: local.instance.asteroids.map((asteroid) => ({
-          id: asteroid.id,
-          position: { ...asteroid.position },
-          radius: asteroid.radius,
-        })),
       });
       if (started) {
         state.embeddedCombat = 'local-space';

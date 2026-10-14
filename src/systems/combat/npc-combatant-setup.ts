@@ -1,3 +1,4 @@
+import { combatEquippedWeapons, combatWeaponMounts } from './combat-loadout-mounts';
 import type { SectorNpcState } from '../../core/npc-types';
 
 import {
@@ -12,12 +13,10 @@ import {
   componentHullBonus,
   componentShieldBonus,
   getShipComponent,
-  fitsWeaponHardpoint,
   getShipDefinition,
   resolveShipCombatMovementStats,
   shipHullMaxHp,
   shipShieldMaxHp,
-  type InstalledShipComponents,
 } from '../ships';
 
 import { npcDefenseReaction } from '../npcs/npc-combat-ai';
@@ -29,18 +28,6 @@ import {
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
-function npcWeaponComponents(
-  installed: InstalledShipComponents,
-  ship: NonNullable<ReturnType<typeof getShipDefinition>>
-) {
-  return (installed.weapon ?? []).flatMap((id, slotIndex) => {
-    const component = getShipComponent('weapon', id);
-    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
-      ? [{ component, slotIndex }]
-      : [];
-  });
-}
-
 function npcCombatSkill(npc: SectorNpcState): number {
   return Math.min(90, 35 + npc.aggression * 0.5);
 }
@@ -50,7 +37,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
   const movement = resolveShipCombatMovementStats(ship);
-  const equippedWeapons = npcWeaponComponents(installed, ship);
+  const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
@@ -70,21 +57,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
     weapons: equippedWeapons.map((entry) => entry.component),
-    weaponMounts: (ship.sprite.hardpoints.weaponMounts ?? [])
-      .filter((mount) => equippedWeapons.some((entry) => entry.slotIndex === mount.slotIndex))
-      .map((mount) => {
-        const points = ship.sprite.hardpoints;
-        const scale = ship.nominalLengthMeters / points.sourceWidth;
-        return {
-          slotIndex: equippedWeapons.findIndex((entry) => entry.slotIndex === mount.slotIndex),
-          x: (mount.x - points.pivot.x) * scale,
-          y: (mount.y - points.pivot.y) * scale,
-          facing: mount.facing,
-          ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-          ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-          ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-        };
-      }),
+    weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
     dodgeChance: pilotingDodgeChance(skill),
     damageMultiplier: weaponDamageMultiplier(skill),

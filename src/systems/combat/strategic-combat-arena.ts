@@ -9,6 +9,19 @@ import {
   distance,
 } from './strategic-combat-geometry';
 
+function initialCombatMotion(arenaOptions?: StrategicCombatArenaOptions) {
+  return {
+    ...(arenaOptions?.attackerVelocity ? { attackerVelocity: arenaOptions.attackerVelocity } : {}),
+    ...(arenaOptions?.defenderVelocity ? { defenderVelocity: arenaOptions.defenderVelocity } : {}),
+    ...(arenaOptions?.attackerHeadingRadians !== undefined
+      ? { attackerHeadingRadians: arenaOptions.attackerHeadingRadians }
+      : {}),
+    ...(arenaOptions?.defenderHeadingRadians !== undefined
+      ? { defenderHeadingRadians: arenaOptions.defenderHeadingRadians }
+      : {}),
+  };
+}
+
 function createArenaOptions(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatArenaOptions {
@@ -17,6 +30,7 @@ function createArenaOptions(
     height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
     ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+    ...initialCombatMotion(arenaOptions),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };

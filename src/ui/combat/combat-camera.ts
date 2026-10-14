@@ -36,7 +36,7 @@ export class CombatCamera {
   }
 
   zoomAt(factor: number, x: number, y: number, width: number, height: number): void {
-    const next = Math.max(0.5, Math.min(5, this.zoom * factor));
+    const next = Math.max(1, Math.min(4.6, this.zoom * factor));
     const ratio = next / this.zoom;
     this.offsetX = x - width / 2 - (x - width / 2 - this.offsetX) * ratio;
     this.offsetY = y - height / 2 - (y - height / 2 - this.offsetY) * ratio;

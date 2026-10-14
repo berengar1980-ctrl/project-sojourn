@@ -46,6 +46,13 @@ export function advanceCombatAsteroids(arena: StrategicCombatArenaOptions, dt: n
     const visual = source[index] as CombatVisualAsteroid;
     visual.position.x = body.position.x;
     visual.position.y = body.position.y;
+    // Keep navigation/projectile blockers on the moving rock's current position.
+    for (const obstacle of arena.obstacles ?? []) {
+      if (obstacle.id !== body.id) continue;
+      const position = obstacle.position as { x: number; y: number };
+      position.x = body.position.x;
+      position.y = body.position.y;
+    }
     visual.rotation = body.rotation;
     const velocity = visual.velocity as { x: number; y: number };
     velocity.x = body.physics.velocity.x;

@@ -8,6 +8,7 @@ import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-sp
 
 export interface LocalSpaceService {
   getSnapshot(): LocalSpaceSnapshot;
+  getShipWorldVelocity(): WorldPoint;
   selectAsteroid(id: string | null): LocalSpaceSnapshot;
   setMiningResourceSelection(resourceIds: MiningResourceSelection): LocalSpaceSnapshot;
   getMiningRouteOptions(): RoutePlanningOptions | null;
