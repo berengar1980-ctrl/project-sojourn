@@ -97,7 +97,9 @@ export function reviewCombatCommitment(
   if (!ship.setup.aiControlled || ship.hullHp <= 0 || ship.combatTacticLocked) return null;
   // Preserve the defender's initial four-second planning offset.
   if (!ship.strategy && elapsed < ship.nextStrategyReviewAt) return null;
-  if (elapsed < (ship.nextCommitmentReviewAt ?? 0)) return null;
+  // Engine loss makes escape physically impossible and overrides the ordinary review cadence.
+  if (elapsed < (ship.nextCommitmentReviewAt ?? 0) &&
+    !(ship.tactic === 'flee' && ship.subsystems.engine <= 0)) return null;
   ship.nextCommitmentReviewAt = elapsed + RETHINK_PERIOD;
   const strength = estimatedVictoryChance(ship, enemy);
   const escape = escapeViability(ship, enemy, arena);
