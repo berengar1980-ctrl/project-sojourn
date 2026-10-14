@@ -16,7 +16,7 @@ interface WorldPhysics {
 const physicsByField = new WeakMap<SalvageField, WorldPhysics>();
 
 function isDynamicWreck(wreck: SalvageWreck): boolean {
-  return Boolean(wreck.containerVariant && wreck.driftVelocity && wreck.rotation3d && wreck.spin3d);
+  return Boolean((wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant) && wreck.driftVelocity && wreck.rotation3d && wreck.spin3d);
 }
 
 function ownersForField(field: SalvageField): SalvageBody[] {
@@ -30,7 +30,7 @@ function ownersForField(field: SalvageField): SalvageBody[] {
 function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   const velocity = owner.driftVelocity ?? { x: 0, y: 0 };
   const angularVelocity = owner.spin3d?.z ?? 0;
-  const isHeavy = 'variant' in owner && (owner as SalvageSection).radius >= 70;
+  const isHeavy = owner.radius >= 70;
   const density = isHeavy ? 10 : owner.radius >= 28 ? 3.2 : 1.3;
   const mass = Math.max(1, Math.PI * owner.radius ** 2 * density);
   return {
