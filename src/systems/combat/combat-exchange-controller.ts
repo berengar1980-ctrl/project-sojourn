@@ -24,6 +24,7 @@ import {
 export interface ActiveExchange {
   exchange: CombatExchange;
   flight: ExchangeFlightPlan | null;
+  deliberateRam: boolean;
   geometry: ExchangeGeometry | null;
   reactions: { attacker: ReactionMemory; defender: ReactionMemory };
   reactiveGoals: {
@@ -72,6 +73,7 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
   return {
     exchange: initialExchange(runtime.firstPlanner),
     flight: null,
+    deliberateRam: false,
     geometry: null,
     reactions: {
       attacker: initialReactionMemory(runtime.attacker, runtime),
@@ -336,13 +338,14 @@ export function tickActionExchange(
       initiatorStart: { ...initiator.position },
       reactorStart: { ...opponent.position },
     };
+    state.deliberateRam = context.ramOpportunity === true && next.action === 'frontal_pass';
     state.flight = planExchangeFlight(
       initiator,
       opponent,
       next.action,
       next.reaction,
       next.quality,
-      context.ramOpportunity === true && next.action === 'frontal_pass'
+      state.deliberateRam
     );
     // Preplan both routes at the moment the exchange is chosen, before any thrust.
     combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
@@ -350,7 +353,7 @@ export function tickActionExchange(
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
     runtime.lastEvent =
-      (context.ramOpportunity && next.action === 'frontal_pass' ? 'RAMMVERSUCH' : next.action) +
+      (state.deliberateRam ? 'RAMMVERSUCH' : next.action) +
       ' / ' +
       next.reaction;
     runtime.combatLog.push({
@@ -371,5 +374,6 @@ export function tickActionExchange(
   if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
   state.exchange = next;
   updateExchangeIntents(initiator, opponent, next);
+  if (state.deliberateRam && next.action === 'frontal_pass') initiator.combatIntent = 'RAMMEN';
   flyExchange(runtime, state, initiator, opponent, next, dt);
 }
