@@ -19,13 +19,6 @@ jobs:
           paths:
             - ~/.npm
       - run:
-          name: Apply formatting on temporary repair branch
-          command: |
-            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
-              node scripts/ci-run-and-report.cjs repair-format -- npm run format
-              node scripts/ci-one-time-source-autofix.cjs
-            fi
-      - run:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
