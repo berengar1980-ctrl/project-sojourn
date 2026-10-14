@@ -1,6 +1,7 @@
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
+import { collectCombatCargo } from './game-controller-combat-rewards';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
@@ -358,6 +359,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   } else {
     state.salvageScene?.finishCombat(snapshot);
   }
+  collectCombatCargo(context, snapshot);
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
   showCampaignCombatSummary(context.root, snapshot, () => {
