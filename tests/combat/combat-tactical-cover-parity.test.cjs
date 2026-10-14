@@ -28,6 +28,10 @@ assert(tractor.includes('asteroid'), 'tractor supports asteroid interaction');
 assert(execution.includes('reach_range'), 'multi-stage plans reach range before firing');
 assert(planner.includes('const PERIOD = 8'), 'strategic planner preserves its eight-second cadence');
 
+const plannerSource = read('src/systems/combat/combat-strategy-planner.ts');
+assert(plannerSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
+  'planner uses effective native combat damage rather than legacy catalog score');
+assert(plannerSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
 const coverModule = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-asteroid-cover.ts');
 const ship = {
   position: { x: 700, y: 650 },
