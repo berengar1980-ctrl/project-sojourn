@@ -15,6 +15,7 @@ const miningController = readModuleSource(root, 'src/app/game-controller-local-a
 const salvageController = readModuleSource(root, 'src/app/game-controller-salvage.ts');
 const miningRenderer = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
 const salvageRenderer = readModuleSource(root, 'src/ui/salvage/salvage-scene-layers.ts');
+const styles = readModuleSource(root, 'src/ui/styles.css');
 
 for (const seed of [1, 2, 17, 125, 2468, 31337]) {
   const actualGate = gate.localSpaceExitPoint(4400, 2570, seed);
@@ -39,5 +40,9 @@ assert(miningRenderer.includes('this.model.backgroundSeed'),
   'mining renderer must draw the same seeded gate');
 assert(salvageRenderer.includes('this.model.backgroundSeed'),
   'salvage renderer must draw the same seeded gate');
+
+assert(styles.includes('.local-space-shell .return-map-button') &&
+  styles.includes('right: 148px'),
+  'local-map exit buttons must remain clear of the settings control');
 
 console.log('PASS seeded field exits agree between UI, rendered gate and controller');
