@@ -1,3 +1,4 @@
+import { localMiningCombatArena } from './game-controller-combat';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
@@ -219,30 +220,10 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
       const local = state.localSpace?.getSnapshot();
       const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
       if (!local || !target) return;
+      const arena = localMiningCombatArena(local.instance, state.localSpace!.getShipWorldVelocity());
       const started = context.engagements.engageNpcInArena(id, {
-        width: local.instance.width,
-        height: local.instance.height,
-        attackerPosition: { ...local.instance.ship.position },
+        ...arena,
         defenderPosition: { ...target.position },
-        attackerHeadingRadians: local.instance.ship.headingRadians,
-        attackerVelocity: state.localSpace!.getShipWorldVelocity(),
-        asteroids: local.instance.asteroids.map((asteroid) => ({
-          id: asteroid.id,
-          kind: asteroid.kind,
-          position: { ...asteroid.position },
-          velocity: { ...asteroid.physics.velocity },
-          angularVelocity: asteroid.physics.angularVelocity,
-          physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
-          radius: asteroid.radius,
-          rotation: asteroid.rotation,
-        })),
-        obstacles: local.instance.asteroids
-          .filter((asteroid) => asteroid.kind === 'resource')
-          .map((asteroid) => ({
-            id: asteroid.id,
-            position: { ...asteroid.position },
-            radius: asteroid.radius,
-          })),
       });
       if (started) {
         state.embeddedCombat = 'local-space';
