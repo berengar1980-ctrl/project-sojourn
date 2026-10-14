@@ -27,13 +27,13 @@ assert(
   'opposing side keeps the reactor role'
 );
 assert(
-  /initiatorGoal:\\s*initiatorOverride\\s*\\?\\?\\s*coverGoal\\(initiator, opponent, runtime\\.arena\\)\\s*\\?\\?\\s*state\\.flight\\.initiatorGoal/.test(
+  /initiatorGoal:\s*initiatorOverride\s*\?\?\s*coverGoal\(initiator, opponent, runtime\.arena\)\s*\?\?\s*state\.flight\.initiatorGoal/.test(
     controllerSource
   ),
   'reactive initiator goal keeps its own lane'
 );
 assert(
-  /reactorGoal:\\s*opponentOverride\\s*\\?\\?\\s*coverGoal\\(opponent, initiator, runtime\\.arena\\)\\s*\\?\\?\\s*state\\.flight\\.reactorGoal/.test(
+  /reactorGoal:\s*opponentOverride\s*\?\?\s*coverGoal\(opponent, initiator, runtime\.arena\)\s*\?\?\s*state\.flight\.reactorGoal/.test(
     controllerSource
   ),
   'reactive reactor goal keeps its own lane'
