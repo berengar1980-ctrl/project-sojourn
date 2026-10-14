@@ -219,7 +219,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
       ? (selected.totalRemaining / selected.totalCapacity) * 100
       : 0;
   oreBar.style.width = Math.max(0, remaining) + '%';
-  miningResourceSelector.update(model, miningActive || eventActive);
+  miningResourceSelector.update(model, eventActive);
   shortScanButton.disabled =
     eventActive || !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
   updateMiningButton(mineButton, model, miningActive);
