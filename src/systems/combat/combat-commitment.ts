@@ -19,7 +19,7 @@ function combatPower(ship: MutableCombatant, opponent: MutableCombatant): number
       ? (weapon.combatShieldDamage ?? weapon.shieldDamage)
       : (weapon.combatHullDamage ?? weapon.hullDamage);
     const inRange = range <= weapon.rangeMeters ? 1 : 0.55;
-    const hit = clamp(ship.setup.hitChance * (1 - opponent.setup.dodgeChance), 0.1, 1);
+    const hit = clamp((ship.setup.hitChance ?? 0.7) * (1 - (opponent.setup.dodgeChance ?? 0)), 0.1, 1);
     const facing = weapon.mount === 'guided' || weapon.mount === 'turret' ? 1 :
       clamp(0.65 + turns * 0.1, 0.5, 0.95);
     return sum + damage / Math.max(0.45, weapon.cooldownSeconds) * hit * facing * inRange;
