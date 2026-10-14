@@ -152,7 +152,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       width,
       height,
       this.model.width,
-      this.model.height
+      this.model.height,
+      this.model.backgroundSeed
     );
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
