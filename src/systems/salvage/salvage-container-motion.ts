@@ -6,6 +6,7 @@ import {
   createShieldWorldGeometry,
   resolveAsteroidCollisions,
   resolveShieldCollisions,
+  type ShieldCollisionImpact,
 } from '../local-space/local-space-collision';
 
 type SalvageBody = SalvageDebris | SalvageSection | SalvageWreck;
@@ -120,20 +121,21 @@ export function resolveSalvageShieldContacts(
   ship: LocalShipState,
   hardpoints: ShipHardpoints,
   lengthMeters: number
-): void {
+): ShieldCollisionImpact[] {
   const world = getPhysics(field);
   const heading = ship.headingRadians;
   const velocity = {
     x: Math.cos(heading) * ship.speed,
     y: Math.sin(heading) * ship.speed,
   };
-  resolveShieldCollisions(
+  const collisions = resolveShieldCollisions(
     ship,
     velocity,
     world.bodies,
     createShieldWorldGeometry(hardpoints, lengthMeters)
   );
   syncBodyPositions(world, 0);
+  return collisions;
 }
 
 /** Route planner and tactical combat use live positions from the same cached bodies. */
