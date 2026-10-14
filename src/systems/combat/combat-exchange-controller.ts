@@ -223,7 +223,6 @@ function resolveExchangeFlightGoals(
       exchangeTacticalGoal(opponent, initiator) ??
       state.flight.reactorGoal,
   };
-
 }
 
 function flyExchange(
@@ -280,7 +279,14 @@ function flyExchange(
     opponent
   );
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
-  const flight = resolveExchangeFlightGoals(runtime, state, initiator, opponent, initiatorOverride, opponentOverride);
+  const flight = resolveExchangeFlightGoals(
+    runtime,
+    state,
+    initiator,
+    opponent,
+    initiatorOverride,
+    opponentOverride
+  );
   pilotExchangeShip(
     initiator,
     'initiator',
