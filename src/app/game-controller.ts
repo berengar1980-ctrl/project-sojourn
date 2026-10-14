@@ -220,7 +220,10 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
       const local = state.localSpace?.getSnapshot();
       const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
       if (!local || !target) return;
-      const arena = localMiningCombatArena(local.instance, state.localSpace!.getShipWorldVelocity());
+      const arena = localMiningCombatArena(
+        local.instance,
+        state.localSpace!.getShipWorldVelocity()
+      );
       const started = context.engagements.engageNpcInArena(id, {
         ...arena,
         defenderPosition: { ...target.position },
