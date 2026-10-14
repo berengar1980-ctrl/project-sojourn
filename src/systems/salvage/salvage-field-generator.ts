@@ -160,7 +160,7 @@ export function generateSalvageField(
     }
     const direction = random() * Math.PI * 2;
     const speed = 0.9 + random() * 2.5;
-    debris.push({
+    const part: SalvageDebris = {
       id: `debris-${seed}-${index}`,
       variant,
       position,
@@ -173,7 +173,34 @@ export function generateSalvageField(
         z: 0.011 + random() * 0.03,
       },
       effectSeed: Math.floor(random() * 0x7fffffff),
-    });
+    };
+    // Some scrap fragments are real salvage targets, like resource asteroids;
+    // other fragments are light, tractor-throwable ambient debris.
+    if (index % 3 === 0) {
+      const quality = qualityFromRoll(random(), dangerLevel);
+      wrecks.push({
+        id: part.id,
+        name: 'Schiffsfragment ' + String(index + 1).padStart(3, '0'),
+        kind: wreckKind(random()),
+        quality,
+        debrisVariant: variant,
+        effectSeed: part.effectSeed,
+        position: part.position,
+        radius: part.radius,
+        rotation: part.rotation3d.z,
+        driftVelocity: part.driftVelocity,
+        rotation3d: part.rotation3d,
+        spin3d: part.spin3d,
+        integrity: Math.round(24 + random() * 55),
+        resources: createResources(random, quality),
+        component: null,
+        componentStatus: 'none',
+        inspected: false,
+        scanLevel: 'unscanned',
+      });
+    } else {
+      debris.push(part);
+    }
   }
 
   const sectionVariants: readonly SalvageSectionVariant[] = [
@@ -204,7 +231,7 @@ export function generateSalvageField(
     }
     const angle = random() * Math.PI * 2;
     const drift = 0.2 + random() * 0.75;
-    sections.push({
+    const section: SalvageSection = {
       id: `section-${seed}-${index}`,
       variant,
       position,
@@ -217,12 +244,44 @@ export function generateSalvageField(
         z: 0.002 + random() * 0.008,
       },
       effectSeed: Math.floor(random() * 0x7fffffff),
+    };
+    sections.push(section);
+    const quality = qualityFromRoll(random(), dangerLevel);
+    wrecks.push({
+      id: section.id,
+      name: ({
+        'corridor-complex': 'Korridor- und Raumsektion',
+        'double-deck': 'Doppeldeck-Wrack',
+        'engine-room': 'Maschinenraum-Wrack',
+        'cargo-bay': 'Frachter-Laderaum',
+        'crew-quarters': 'Mannschaftsquartiere',
+        bridge: 'Brückensektion',
+        'reactor-hall': 'Reaktorhalle',
+        medbay: 'Medizinmodul',
+      } as const)[variant],
+      kind: wreckKind(random()),
+      quality,
+      sectionVariant: variant,
+      effectSeed: section.effectSeed,
+      position: section.position,
+      radius: section.radius,
+      rotation: section.rotation3d.z,
+      driftVelocity: section.driftVelocity,
+      rotation3d: section.rotation3d,
+      spin3d: section.spin3d,
+      integrity: Math.round(20 + random() * 75),
+      resources: createResources(random, quality),
+      component: null,
+      componentStatus: 'none',
+      inspected: false,
+      scanLevel: 'unscanned',
     });
   }
 
   return {
     debris,
-    sections,
+    // Large sections are now part of wrecks, not a second, unclickable
+    // visual-only collection; one object owns its pose, physics and loot.
     id: `${sourceLocationId}-salvage-${seed}`,
     sourceLocationId,
     seed,
