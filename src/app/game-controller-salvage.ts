@@ -190,11 +190,18 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
       x: Math.cos(playerShip.headingRadians) * playerShip.speed,
       y: Math.sin(playerShip.headingRadians) * playerShip.speed,
     },
-    obstacles: field.wrecks.map((wreck) => ({
-      id: wreck.id,
-      position: { ...wreck.position },
-      radius: wreck.radius,
-    })),
+    obstacles: [
+      ...field.wrecks.map((wreck) => ({
+        id: wreck.id,
+        position: { ...wreck.position },
+        radius: wreck.radius,
+      })),
+      ...(field.debris ?? []).map((part) => ({
+        id: part.id,
+        position: { ...part.position },
+        radius: part.radius,
+      })),
+    ],
   });
 }
 
