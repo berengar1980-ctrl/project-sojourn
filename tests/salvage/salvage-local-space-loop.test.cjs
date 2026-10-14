@@ -81,6 +81,26 @@ for (let frame = 0; frame < 105; frame += 1) scanService.tick(0.05);
 assert.equal(nearby.scanLevel, 'surveyed', 'shared asteroid long-range scan must discover contact');
 assert.equal(nearby.inspected, false, 'long-range scan must not reveal cargo contents');
 assert.equal(scanService.getSnapshot().longRangeScanProgress, null, 'five-second scan completes');
+const catchup = local.createSalvageLocalSpaceService({
+  field: generator.generateSalvageField('catch-up', 301, 1),
+  setup: {
+    available: true,
+    yieldMultiplier: 1,
+    chanceBonus: 0,
+    cycleSeconds: 0.1,
+    cargoCapacityTons: 260,
+    reactorOutput: 40,
+    continuousPowerUsed: 16,
+  },
+  crewSkill: 60,
+  approachSpeed: 400,
+  collect() { return 0; },
+});
+catchup.startLongRangeScan();
+catchup.tick(0.12);
+assert(catchup.getSnapshot().longRangeScanProgress > 0.02,
+  'slow frames must advance elapsed scan time instead of dropping everything above 50ms');
+
 
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
