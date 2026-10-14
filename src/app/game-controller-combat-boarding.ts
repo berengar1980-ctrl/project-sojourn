@@ -1,3 +1,4 @@
+import { collectCombatCargo } from './game-controller-combat-rewards';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -78,6 +79,7 @@ export function startCombatBoarding(
       if (result.outcome === 'player_win') {
         const captured = enemyUnits[0]!.weapon;
         context.crew.grantBoardingEquipment(captured.id);
+        if (snapshot.boardingInitiator === 'attacker') collectCombatCargo(context, snapshot, true);
         context.systemLog.write('BOARDING > AUSRÜSTUNG ERBEUTET: ' + captured.name.toUpperCase());
       } else if (result.outcome === 'enemy_win') {
         context.navigation.recoverToNearestDock();
@@ -108,6 +110,7 @@ export function returnFromCombat(
     startCombatBoarding(context, snapshot, returnToMap);
     return;
   }
+  collectCombatCargo(context, snapshot);
   context.engagements.finishPlayerCombat();
   showCampaignCombatSummary(context.root, snapshot, () => {
     runSceneZoomTransition(context.root, returnToMap);
