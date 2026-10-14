@@ -10,10 +10,7 @@ const localMining = loadStandaloneTypeScriptModule(
   'src/systems/npcs/npc-local-mining-service.ts'
 );
 
-const { seededLocalGate } = loadStandaloneTypeScriptModule(
-  root,
-  'src/core/local-space-exit.ts'
-);
+const { seededLocalGate } = loadStandaloneTypeScriptModule(root, 'src/core/local-space-exit.ts');
 
 const fieldSeed = 417;
 const miner = {
