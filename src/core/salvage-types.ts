@@ -5,6 +5,7 @@ import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
+export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
 
 export interface SalvageResourceDeposit {
   readonly resourceId: EconomyResourceId;
@@ -24,9 +25,14 @@ export interface SalvageWreck {
   readonly name: string;
   readonly kind: SalvageWreckKind;
   readonly quality: SalvageWreckQuality;
-  readonly position: WorldPoint;
+  position: WorldPoint;
   readonly radius: number;
-  readonly rotation: number;
+  rotation: number;
+  /** Only ordinary salvage containers drift; distress ships keep their original physics. */
+  readonly containerVariant?: SalvageContainerVariant;
+  driftVelocity?: WorldPoint;
+  rotation3d?: { x: number; y: number; z: number };
+  readonly spin3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
   readonly resources: SalvageResourceDeposit[];
   readonly component: SalvageComponentCandidate | null;
