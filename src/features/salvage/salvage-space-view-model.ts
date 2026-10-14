@@ -6,7 +6,9 @@ import type {
   SalvageLocalSpaceSnapshot,
   SalvageContainerVariant,
   SalvageDebris,
+  SalvageDebrisVariant,
   SalvageSection,
+  SalvageSectionVariant,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -40,6 +42,9 @@ export interface SalvageWreckView {
   readonly radius: number;
   readonly rotation: number;
   readonly containerVariant?: SalvageContainerVariant;
+  readonly debrisVariant?: SalvageDebrisVariant;
+  readonly sectionVariant?: SalvageSectionVariant;
+  readonly effectSeed?: number;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
   readonly quality: number;
@@ -170,7 +175,11 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       id: wreck.id,
       name: wreck.name,
       kind: wreck.kind,
-      kindLabel: wreck.containerVariant
+      kindLabel: wreck.sectionVariant
+        ? 'SCHIFFSSEKTION'
+        : wreck.debrisVariant
+          ? 'SCHIFFSFRAGMENT'
+          : wreck.containerVariant
         ? {
             standard: 'FRACHTCONTAINER',
             damaged: 'BESCHÄDIGTER CONTAINER',
@@ -181,6 +190,9 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       radius: wreck.radius,
       rotation: wreck.rotation,
       ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
+      ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
+      ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+      ...(wreck.effectSeed !== undefined ? { effectSeed: wreck.effectSeed } : {}),
       ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,
       quality: wreck.quality,
