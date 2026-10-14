@@ -46,4 +46,28 @@ assert.equal(npcSetup.npcCombatDoctrine(npc('miner', 60), true), 'minefield');
 assert.equal(npcSetup.npcCombatDoctrine(npc('patrol', 85), false), 'kite');
 assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), false), 'fight');
 assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), true), 'minefield');
+const { applyActionRamImpact } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-exchange-collision.ts'
+);
+const collisionShip = (x, headingRadians, vx) => ({
+  position: { x, y: 500 },
+  velocity: { x: vx, y: 0 },
+  headingRadians,
+  shieldHp: 100,
+  hullHp: 200,
+  subsystems: { engine: 200 },
+});
+const impactRuntime = {
+  attacker: collisionShip(500, 0, 180),
+  defender: collisionShip(580, Math.PI, -30),
+  elapsedSeconds: 12,
+  combatLog: [],
+};
+assert(applyActionRamImpact(impactRuntime) > 0, 'closing velocity causes ram damage');
+assert(impactRuntime.attacker.shieldHp < 100);
+assert(impactRuntime.defender.shieldHp < 100);
+const afterImpact = impactRuntime.attacker.shieldHp;
+assert.equal(applyActionRamImpact(impactRuntime), 0, 'ram cooldown prevents repeated contact damage');
+assert.equal(impactRuntime.attacker.shieldHp, afterImpact);
 console.log('PASS ram selection, ramming trajectory, boost activation and recharge');
