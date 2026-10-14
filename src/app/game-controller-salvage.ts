@@ -426,6 +426,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     field,
     setup: runtime.salvage,
     crewSkill: runtime.salvageCrewSkill,
+    scanAvailable: runtime.scanAvailable,
+    sensorModifier: runtime.sensorModifier,
+    sensorCrewSkill: runtime.sensorCrewSkill,
     collect: options.economy.recover,
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
