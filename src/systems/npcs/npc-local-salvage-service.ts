@@ -1,4 +1,5 @@
 import { seededLocalGate } from '../../core/local-space-exit';
+import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { ShipDefinition } from '../../core/ship-types';
@@ -448,15 +449,24 @@ class LocalSalvageService implements NpcLocalSalvageService {
       });
     }
     resolveShipShieldCollisions(bodies);
-    const obstacles = this.options.field.wrecks.map((wreck) => ({
+    // Only distress-rescue ships remain fixed obstacles. All drift objects use
+    // the same impulse-based asteroid shield physics instead of acting as walls.
+    const obstacles = this.options.field.wrecks
+      .filter((wreck) => !wreck.containerVariant)
+      .map((wreck) => ({
       id: wreck.id,
       position: wreck.position,
       radius: wreck.radius,
     }));
-    for (const part of this.options.field.debris ?? []) {
-      obstacles.push({ id: part.id, position: part.position, radius: part.radius });
-    }
     resolveShipShieldObstacleCollisions(bodies, obstacles);
+    for (const body of bodies) {
+      resolveSalvageShieldContacts(
+        this.options.field,
+        body.state as LocalShipState,
+        body.ship.sprite.hardpoints,
+        body.ship.nominalLengthMeters
+      );
+    }
   };
 }
 
