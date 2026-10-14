@@ -39,6 +39,7 @@ export interface SalvageLocalSpaceService {
   getSnapshot(): SalvageLocalSpaceSnapshot;
   selectWreck(wreckId: string | null): SalvageLocalSpaceSnapshot;
   startLongRangeScan(): SalvageLocalSpaceSnapshot;
+  recordShipShieldContact(normal: WorldPoint, overlap: number): void;
   startNavigation(target: WorldPoint): SalvageLocalSpaceSnapshot;
   startInspect(wreckId: string): SalvageLocalSpaceSnapshot;
   startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot;
@@ -91,6 +92,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private readonly events;
   private readonly ship: LocalShipState;
   private readonly collisionShields: ReturnType<typeof createLocalSpaceShipSystems> | null;
+  private shipContactCooldown = 0;
   private selectedWreckId: string | null = null;
   private longRangeScanElapsed: number | null = null;
   private workTargetId: string | null = null;
@@ -166,6 +168,30 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   selectWreck(wreckId: string | null): SalvageLocalSpaceSnapshot {
     if (wreckId === null || this.findWreck(wreckId)) this.selectedWreckId = wreckId;
     return this.getSnapshot();
+  }
+
+  recordShipShieldContact(normal: WorldPoint, overlap: number): void {
+    if (this.shipContactCooldown > 0 || !this.collisionShields) return;
+    this.shipContactCooldown = 0.35;
+    const cos = Math.cos(this.ship.headingRadians);
+    const sin = Math.sin(this.ship.headingRadians);
+    const local = { x: normal.x * cos + normal.y * sin,
+      y: -normal.x * sin + normal.y * cos };
+    const scale = 0.4 * (this.options.shipLengthMeters ?? 80);
+    const contactPoint = {
+      x: this.ship.position.x + normal.x * scale,
+      y: this.ship.position.y + normal.y * scale,
+    };
+    const kineticEnergy = 3500 + Math.min(15000, overlap * 650);
+    this.collisionShields.applyCollision({
+      asteroidId: 'npc-contact',
+      point: contactPoint,
+      normal,
+      surfaceAnchor: local,
+      mass: 350,
+      impactSpeed: Math.sqrt(2 * kineticEnergy / 350),
+      kineticEnergy,
+    });
   }
 
   startLongRangeScan(): SalvageLocalSpaceSnapshot {
@@ -273,6 +299,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       remaining -= delta;
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
+      this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
     if (this.longRangeScanElapsed !== null) {
       this.longRangeScanElapsed += delta;
       if (this.longRangeScanElapsed >= 5) {
