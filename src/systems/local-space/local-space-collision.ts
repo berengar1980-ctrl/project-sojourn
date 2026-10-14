@@ -262,15 +262,13 @@ export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): 
   const buckets = collisionBuckets(asteroids);
   // Standard mining fields use one cell. Large ship sections can overlap
   // objects two cells away; expand only when oversized obstacles exist.
-  const reach = Math.max(
-    1,
-    Math.ceil((2 * asteroids.reduce((max, body) => Math.max(max, body.radius), 0)) / COLLISION_CELL_SIZE)
-  );
+  const maxRadius = asteroids.reduce((max, body) => Math.max(max, body.radius), 0);
 
   asteroids.forEach((asteroid, first) => {
     const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
     const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
 
+    const reach = Math.max(1, Math.ceil((asteroid.radius + maxRadius) / COLLISION_CELL_SIZE));
     for (let rowOffset = -reach; rowOffset <= reach; rowOffset += 1) {
       for (let columnOffset = -reach; columnOffset <= reach; columnOffset += 1) {
         const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];
