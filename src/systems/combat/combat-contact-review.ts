@@ -22,7 +22,11 @@ export function reviewShipContact(
   runtime: StrategicCombatRuntime,
   review: (ship: MutableCombatant, enemy: MutableCombatant, side: StrategicCombatSide) => void
 ): void {
-  if (!collisionThreat(runtime.attacker, runtime.defender)) return;
+  // Only real hull contact interrupts the fixed eight-second strategy cadence.
+  if (Math.hypot(
+    runtime.attacker.position.x - runtime.defender.position.x,
+    runtime.attacker.position.y - runtime.defender.position.y
+  ) > 86) return;
   for (const [side, ship, enemy] of [
     ['attacker', runtime.attacker, runtime.defender],
     ['defender', runtime.defender, runtime.attacker],
