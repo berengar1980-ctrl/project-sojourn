@@ -1,4 +1,5 @@
 import type { SalvageDebris, SalvageDebrisVariant } from '../../core/salvage-types';
+import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
 import {
   ContainerMesh,
   drawProjectedSalvageMesh,
@@ -291,46 +292,6 @@ const cached: Readonly<Record<SalvageDebrisVariant, readonly Face[]>> = {
   habitation: makeMesh('habitation'),
 };
 
-function compactMesh(variant: SalvageDebrisVariant): readonly Face[] {
-  const m = new ContainerMesh();
-  const long = variant === 'truss' || variant === 'engine';
-  const round = variant === 'airlock' || variant === 'reactor';
-  m.box(0, 0, 0, long ? 3.7 : 2.95, round ? 1.4 : 1.9, 0.38, C.hull);
-  m.box(-0.38, -0.2, 0.24, 1.5, 0.24, 0.14, C.rib);
-  m.box(0.7, 0.36, 0.26, 0.94, 0.18, 0.10, C.rust);
-  return m.faces;
-}
-
-const compact = {
-  corridor: compactMesh('corridor'),
-  deck: compactMesh('deck'),
-  airlock: compactMesh('airlock'),
-  truss: compactMesh('truss'),
-  engine: compactMesh('engine'),
-  reactor: compactMesh('reactor'),
-  bulkhead: compactMesh('bulkhead'),
-  habitation: compactMesh('habitation'),
-} satisfies Record<SalvageDebrisVariant, readonly Face[]>;
-
-// Rasterize each low-detail 3D model once. Nearby fragments still use the
-// complete 3D painter; dozens of distant fragments reuse these tiny sprites.
-const distantSprites = new Map<SalvageDebrisVariant, HTMLCanvasElement>();
-
-function distantSprite(variant: SalvageDebrisVariant): HTMLCanvasElement {
-  const existing = distantSprites.get(variant);
-  if (existing) return existing;
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
-  const context = canvas.getContext('2d');
-  if (context) {
-    context.translate(64, 64);
-    drawProjectedSalvageMesh(context, compact[variant], 42, { x: 0.22, y: 0.32, z: 0 });
-  }
-  distantSprites.set(variant, canvas);
-  return canvas;
-}
-
 function effects(
   context: CanvasRenderingContext2D,
   part: Pick<SalvageDebris, 'variant' | 'rotation3d' | 'effectSeed'>,
@@ -388,14 +349,19 @@ export function drawSalvageDebris3d(
   radius: number,
   timeSeconds: number
 ): void {
-  if (radius < 23) {
-    const sprite = distantSprite(part.variant);
-    context.save();
-    context.rotate(part.rotation3d.z);
-    context.drawImage(sprite, -radius * 1.52, -radius * 1.52, radius * 3.04, radius * 3.04);
-    context.restore();
-  } else {
-    drawProjectedSalvageMesh(context, cached[part.variant], radius, part.rotation3d);
+  const mesh = cached[part.variant];
+  if (
+    radius >= 27 ||
+    !drawCachedSalvageMesh(
+      context,
+      'debris:' + part.variant,
+      mesh,
+      radius,
+      part.rotation3d,
+      192
+    )
+  ) {
+    drawProjectedSalvageMesh(context, mesh, radius, part.rotation3d);
   }
   if (radius >= 16) effects(context, part, radius, timeSeconds);
 }
