@@ -242,14 +242,18 @@ function flyExchange(
   );
   useBoostForExchange(
     initiator,
-    state.flight.initiatorGoal,
+    initiator.tactic === 'flee' && runtime.arena.exitPoint
+      ? runtime.arena.exitPoint
+      : state.flight.initiatorGoal,
     next.action === 'disengage_fire' || next.action === 'frontal_pass',
     separation,
     remaining
   );
   useBoostForExchange(
     opponent,
-    state.flight.reactorGoal,
+    opponent.tactic === 'flee' && runtime.arena.exitPoint
+      ? runtime.arena.exitPoint
+      : state.flight.reactorGoal,
     next.reaction === 'pursue' || next.reaction === 'accelerate_clear' || next.reaction === 'break_contact',
     separation,
     remaining
