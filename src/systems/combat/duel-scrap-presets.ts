@@ -113,5 +113,12 @@ export function createScrapDuelArena(
       position: piece.position,
       radius: piece.radius,
     }));
-  return { width, height, asteroids, obstacles };
+  return {
+    width,
+    height,
+    attackerPosition: spawns[0]!,
+    defenderPosition: spawns[1]!,
+    asteroids,
+    obstacles,
+  };
 }
