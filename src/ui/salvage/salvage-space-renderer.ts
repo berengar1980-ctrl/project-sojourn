@@ -93,7 +93,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
       // The sensor pulse is centered on the ship, not the world midpoint.
       // Center the initial camera there so newly scanned contacts are visible.
-      const shipPoint = this.camera.worldToScreen(this.model.ship.position, rect.width, rect.height);
+      const shipPoint = this.camera.worldToScreen(
+        this.model.ship.position,
+        rect.width,
+        rect.height
+      );
       this.camera.pan(rect.width / 2 - shipPoint.x, rect.height / 2 - shipPoint.y);
       this.hasFitted = true;
     }
@@ -142,14 +146,21 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       const point = this.camera.worldToScreen(section.position, width, height);
       const radius = this.camera.scale(section.radius);
       const padding = Math.max(25, radius * 1.55);
-      if (point.x < -padding || point.y < -padding ||
-          point.x > width + padding || point.y > height + padding) continue;
+      if (
+        point.x < -padding ||
+        point.y < -padding ||
+        point.x > width + padding ||
+        point.y > height + padding
+      )
+        continue;
       this.context.save();
       this.context.translate(point.x, point.y);
       drawSalvageSection3d(this.context, section, radius, timeSeconds);
       this.context.restore();
     }
-    const thrownScrap = new Set((this.model.combat?.thrownAsteroids ?? []).map((rock) => rock.asteroidId));
+    const thrownScrap = new Set(
+      (this.model.combat?.thrownAsteroids ?? []).map((rock) => rock.asteroidId)
+    );
     for (const part of this.model.debris) {
       if (thrownScrap.has(part.id)) continue;
       const point = this.camera.worldToScreen(part.position, width, height);
@@ -276,15 +287,21 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.restore();
     // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
-      const lines = wreck.scanLevel === 'analyzed'
-        ? (wreck.resources.length > 0
-          ? wreck.resources.map((resource) => resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t')
-          : ['LEER'])
-        : ['???'];
+      const lines =
+        wreck.scanLevel === 'analyzed'
+          ? wreck.resources.length > 0
+            ? wreck.resources.map(
+                (resource) =>
+                  resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t'
+              )
+            : ['LEER']
+          : ['???'];
       const x = point.x + radius * 0.72;
       const y = point.y - radius * 0.72;
       this.context.save();
-      this.context.strokeStyle = wreck.inspected ? 'rgba(121,220,237,.82)' : 'rgba(139,192,153,.72)';
+      this.context.strokeStyle = wreck.inspected
+        ? 'rgba(121,220,237,.82)'
+        : 'rgba(139,192,153,.72)';
       this.context.fillStyle = wreck.inspected ? 'rgba(179,235,244,.92)' : 'rgba(168,205,178,.84)';
       this.context.lineWidth = 1;
       this.context.beginPath();

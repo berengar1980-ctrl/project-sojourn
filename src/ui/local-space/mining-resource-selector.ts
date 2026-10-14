@@ -80,9 +80,7 @@ export class MiningResourceSelector {
     }
 
     this.container.hidden = false;
-    this.selection = model.miningResourceSelection
-      ? [...model.miningResourceSelection]
-      : null;
+    this.selection = model.miningResourceSelection ? [...model.miningResourceSelection] : null;
     this.updateButtons(deposits);
   }
 
@@ -97,21 +95,25 @@ export class MiningResourceSelector {
     }
     for (const deposit of deposits) {
       if (!deposit.resourceId) continue;
-      const button = [...this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]')]
-        .find((item) => item.dataset.resourceId === deposit.resourceId);
+      const button = [
+        ...this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]'),
+      ].find((item) => item.dataset.resourceId === deposit.resourceId);
       if (!button) continue;
       const depleted = (deposit.estimatedAmount ?? 0) <= 0;
       button.classList.toggle('is-active', selected.includes(deposit.resourceId));
       button.classList.toggle('is-depleted', depleted);
       button.disabled = this.locked || depleted;
-      button.textContent = (deposit.resourceName ?? deposit.resourceId).toUpperCase() +
-        ' · ~' + Math.round(deposit.estimatedAmount ?? 0);
+      button.textContent =
+        (deposit.resourceName ?? deposit.resourceId).toUpperCase() +
+        ' · ~' +
+        Math.round(deposit.estimatedAmount ?? 0);
     }
     const hint = this.container.querySelector<HTMLElement>('.mining-resource-selector__hint');
     if (hint) {
-      hint.textContent = this.selection === null
-        ? 'ALLE VORKOMMEN WERDEN GEBORGEN'
-        : 'FREIE KOMBINATION · NICHT GEWÄHLTE VORKOMMEN VERLIEREN 50 %';
+      hint.textContent =
+        this.selection === null
+          ? 'ALLE VORKOMMEN WERDEN GEBORGEN'
+          : 'FREIE KOMBINATION · NICHT GEWÄHLTE VORKOMMEN VERLIEREN 50 %';
     }
   }
 
@@ -120,14 +122,19 @@ export class MiningResourceSelector {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const button = target.closest('button');
-    if (!(button instanceof HTMLButtonElement) ||
-        !this.container.contains(button) || button.disabled) return;
+    if (
+      !(button instanceof HTMLButtonElement) ||
+      !this.container.contains(button) ||
+      button.disabled
+    )
+      return;
 
-    const next = button.dataset.allResources === 'true'
-      ? null
-      : button.dataset.resourceId
-        ? toggleMiningResourceSelection(this.selection, button.dataset.resourceId)
-        : this.selection;
+    const next =
+      button.dataset.allResources === 'true'
+        ? null
+        : button.dataset.resourceId
+          ? toggleMiningResourceSelection(this.selection, button.dataset.resourceId)
+          : this.selection;
     this.selection = next;
     // Update the same existing buttons immediately, without rebuilding the
     // DOM or losing pointer focus. The next game snapshot confirms the choice.

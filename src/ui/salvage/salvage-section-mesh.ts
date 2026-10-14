@@ -1,6 +1,12 @@
 import type { SalvageSection, SalvageSectionVariant } from '../../core/salvage-types';
 import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
-import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face, type Vec3 } from './salvage-container-mesh';
+import {
+  ContainerMesh,
+  drawProjectedSalvageMesh,
+  type Color,
+  type Face,
+  type Vec3,
+} from './salvage-container-mesh';
 
 /**
  * Eight large, open ship sections, made of genuinely 3D floor slabs, standing
@@ -8,19 +14,36 @@ import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face, type Ve
  * geometry. Partial upper decks expose the rooms underneath.
  */
 const C = {
-  floor: [35, 41, 45], wall: [49, 58, 61], edge: [24, 30, 35],
-  floorLight: [67, 74, 73], trim: [115, 86, 48], rust: [83, 49, 40],
-  steel: [78, 87, 89], dark: [13, 19, 23], cable: [87, 36, 32],
-  blue: [34, 60, 75], signal: [59, 114, 111], glass: [24, 36, 44],
-  soot: [22, 23, 25], burn: [55, 38, 31], edgeMetal: [99, 92, 80],
+  floor: [35, 41, 45],
+  wall: [49, 58, 61],
+  edge: [24, 30, 35],
+  floorLight: [67, 74, 73],
+  trim: [115, 86, 48],
+  rust: [83, 49, 40],
+  steel: [78, 87, 89],
+  dark: [13, 19, 23],
+  cable: [87, 36, 32],
+  blue: [34, 60, 75],
+  signal: [59, 114, 111],
+  glass: [24, 36, 44],
+  soot: [22, 23, 25],
+  burn: [55, 38, 31],
+  edgeMetal: [99, 92, 80],
 } as const satisfies Record<string, Color>;
 
 type DeckHeight = 0 | 1.1;
 
-function floor(m: ContainerMesh, x: number, y: number, w: number, h: number, z: DeckHeight = 0): void {
+function floor(
+  m: ContainerMesh,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  z: DeckHeight = 0
+): void {
   m.box(x, y, z - 0.2, w, h, 0.25, C.floor);
   for (let i = -2; i <= 2; i += 1) {
-    m.box(x + i * w / 6, y, z - 0.055, 0.025, h * 0.83, 0.02, C.edge);
+    m.box(x + (i * w) / 6, y, z - 0.055, 0.025, h * 0.83, 0.02, C.edge);
   }
   for (const edge of [-1, 1]) {
     m.box(x, y + edge * (h / 2 - 0.09), z - 0.045, w * 0.94, 0.055, 0.02, C.trim);
@@ -31,29 +54,29 @@ function wallX(m: ContainerMesh, x: number, y: number, length: number, z = 0): v
   m.box(x, y, z + 0.43, 0.16, length, 0.9, C.wall);
   m.box(x, y, z + 0.91, 0.24, length, 0.14, C.steel);
   for (let i = -1; i <= 1; i += 1) {
-    m.box(x, y + i * length / 3, z + 0.46, 0.25, 0.055, 0.92, C.edge);
+    m.box(x, y + (i * length) / 3, z + 0.46, 0.25, 0.055, 0.92, C.edge);
   }
 }
 function wallY(m: ContainerMesh, x: number, y: number, length: number, z = 0): void {
   m.box(x, y, z + 0.43, length, 0.16, 0.9, C.wall);
   m.box(x, y, z + 0.91, length, 0.23, 0.14, C.steel);
   for (let i = -1; i <= 1; i += 1) {
-    m.box(x + i * length / 3, y, z + 0.46, 0.06, 0.25, 0.92, C.edge);
+    m.box(x + (i * length) / 3, y, z + 0.46, 0.06, 0.25, 0.92, C.edge);
   }
 }
 function doorY(m: ContainerMesh, x: number, y: number, z = 0, width = 0.62): void {
   m.box(x - width / 2, y, z + 0.54, 0.09, 0.2, 1.1, C.trim);
   m.box(x + width / 2, y, z + 0.54, 0.09, 0.2, 1.1, C.trim);
   m.box(x, y, z + 1.09, width + 0.17, 0.22, 0.14, C.steel);
-  m.box(x, y + 0.01, z + 0.11, width - 0.06, 0.20, 0.04, C.dark);
+  m.box(x, y + 0.01, z + 0.11, width - 0.06, 0.2, 0.04, C.dark);
   m.box(x - width * 0.29, y - 0.03, z + 0.49, width * 0.33, 0.085, 0.84, C.wall);
   m.box(x - width * 0.29, y - 0.085, z + 0.56, width * 0.12, 0.06, 0.27, C.glass);
 }
 function doorX(m: ContainerMesh, x: number, y: number, z = 0): void {
-  m.box(x, y - 0.30, z + 0.52, 0.19, 0.09, 1.08, C.trim);
-  m.box(x, y + 0.30, z + 0.52, 0.19, 0.09, 1.08, C.trim);
+  m.box(x, y - 0.3, z + 0.52, 0.19, 0.09, 1.08, C.trim);
+  m.box(x, y + 0.3, z + 0.52, 0.19, 0.09, 1.08, C.trim);
   m.box(x, y, z + 1.08, 0.18, 0.74, 0.13, C.steel);
-  m.box(x, y - 0.07, z + 0.43, 0.10, 0.26, 0.84, C.wall);
+  m.box(x, y - 0.07, z + 0.43, 0.1, 0.26, 0.84, C.wall);
 }
 function room(
   m: ContainerMesh,
@@ -71,9 +94,10 @@ function room(
   if (orientation !== 'front') wallY(m, x, y - h / 2, w, z);
   if (orientation !== 'back') wallY(m, x, y + h / 2, w, z);
   // Reinforcement columns at surviving corners.
-  for (const xx of [-1, 1]) for (const yy of [-1, 1]) {
-    m.box(x + xx * w * 0.46, y + yy * h * 0.45, z + 0.48, 0.16, 0.16, 1, C.edge);
-  }
+  for (const xx of [-1, 1])
+    for (const yy of [-1, 1]) {
+      m.box(x + xx * w * 0.46, y + yy * h * 0.45, z + 0.48, 0.16, 0.16, 1, C.edge);
+    }
 }
 function hatchDivider(m: ContainerMesh, x: number, y: number, total: number, gap = 0.72): void {
   const side = (total - gap) / 2;
@@ -84,7 +108,7 @@ function hatchDivider(m: ContainerMesh, x: number, y: number, total: number, gap
 function grille(m: ContainerMesh, x: number, y: number, w: number, h: number, z = 0): void {
   m.box(x, y, z + 0.01, w, h, 0.04, C.dark);
   for (let i = 0; i < 6; i += 1) {
-    m.box(x - w / 2 + w * (i + 0.5) / 6, y, z + 0.045, 0.028, h, 0.023, C.steel);
+    m.box(x - w / 2 + (w * (i + 0.5)) / 6, y, z + 0.045, 0.028, h, 0.023, C.steel);
   }
 }
 function wires(m: ContainerMesh, x: number, y: number, z = 0): void {
@@ -102,8 +126,15 @@ function ladder(m: ContainerMesh, x: number, y: number): void {
 }
 function ripped(m: ContainerMesh, x: number, y: number, z = 0): void {
   for (let i = 0; i < 4; i += 1) {
-    m.box(x + i * 0.18, y + (i % 2) * 0.16, z + 0.1 + i * 0.11,
-      0.37, 0.09, 0.1, i % 2 ? C.steel : C.rust);
+    m.box(
+      x + i * 0.18,
+      y + (i % 2) * 0.16,
+      z + 0.1 + i * 0.11,
+      0.37,
+      0.09,
+      0.1,
+      i % 2 ? C.steel : C.rust
+    );
   }
 }
 function machine(m: ContainerMesh, x: number, y: number, size = 0.6, z = 0): void {
@@ -121,7 +152,7 @@ function airleak(m: ContainerMesh, x: number, y: number): void {
 function scaffolding(m: ContainerMesh, x: number, y: number, length = 1.5): void {
   for (const dy of [-0.18, 0.18]) m.box(x, y + dy, 0.07, length, 0.07, 0.09, C.edge);
   for (let i = 0; i < 5; i += 1) {
-    m.box(x - length / 2 + length * i / 4, y, 0.13, 0.07, 0.48, 0.075, C.steel);
+    m.box(x - length / 2 + (length * i) / 4, y, 0.13, 0.07, 0.48, 0.075, C.steel);
   }
 }
 function controlConsole(m: ContainerMesh, x: number, y: number, z = 0): void {
@@ -131,31 +162,31 @@ function controlConsole(m: ContainerMesh, x: number, y: number, z = 0): void {
 
 function buildCorridorComplex(m: ContainerMesh): void {
   // Intact central floor, two real adjoining rooms and a damaged blast door.
-  room(m, -0.70, -0.08, 1.5, 2.4, 0, 'front');
+  room(m, -0.7, -0.08, 1.5, 2.4, 0, 'front');
   room(m, 0.88, -0.65, 1.38, 1.25, 0, 'front');
   room(m, 0.88, 0.71, 1.38, 1.15, 0, 'right');
   doorX(m, 0.07, -0.54);
-  doorX(m, 0.07, 0.70);
+  doorX(m, 0.07, 0.7);
   grille(m, -0.74, -0.05, 0.62, 1.68);
-  machine(m, 1.12, -0.70, 0.47);
+  machine(m, 1.12, -0.7, 0.47);
   wires(m, 1.14, 1.1);
   ripped(m, -1.53, -1.05);
   scaffolding(m, -0.73, -1.46);
 }
 function buildDoubleDeck(m: ContainerMesh): void {
-  room(m, -0.60, 0.05, 2.15, 2.45, 0, 'front');
+  room(m, -0.6, 0.05, 2.15, 2.45, 0, 'front');
   room(m, 0.99, -0.56, 1.05, 1.28, 0, 'right');
   doorX(m, 0.48, -0.47);
   controlConsole(m, -1.05, 0.44);
-  grille(m, -0.40, -0.34, 0.8, 0.56);
+  grille(m, -0.4, -0.34, 0.8, 0.56);
   // Raised floor only across HALF the module; lower corridor remains visible.
-  floor(m, -0.69, 0.65, 1.50, 1.05, 1.1);
+  floor(m, -0.69, 0.65, 1.5, 1.05, 1.1);
   wallX(m, -1.45, 0.66, 1.02, 1.1);
   wallY(m, -0.68, 1.15, 1.46, 1.1);
-  m.box(-0.48, 0.11, 1.12, 1.04, 0.10, 0.12, C.trim);
-  m.box(-0.50, 0.3, 1.17, 0.2, 0.65, 0.12, C.edge);
-  ladder(m, -0.10, -0.11);
-  machine(m, -0.86, 0.87, 0.40, 1.1);
+  m.box(-0.48, 0.11, 1.12, 1.04, 0.1, 0.12, C.trim);
+  m.box(-0.5, 0.3, 1.17, 0.2, 0.65, 0.12, C.edge);
+  ladder(m, -0.1, -0.11);
+  machine(m, -0.86, 0.87, 0.4, 1.1);
   ripped(m, 0.51, 1.21, 1.1);
 }
 function buildEngineRoom(m: ContainerMesh): void {
@@ -166,7 +197,7 @@ function buildEngineRoom(m: ContainerMesh): void {
     m.cylinder(-0.46, y, 0.43, 1.36, 0.36, C.edge);
     for (const x of [-0.91, -0.19]) m.cylinder(x, y, 0.43, 0.09, 0.41, C.steel);
   }
-  scaffolding(m, -0.25, 0.0, 1.50);
+  scaffolding(m, -0.25, 0.0, 1.5);
   wires(m, 1.39, 0.76);
   airleak(m, -1.73, -1.03);
   ripped(m, 1.04, 1.31);
@@ -191,10 +222,11 @@ function buildCrewBlock(m: ContainerMesh): void {
   hatchDivider(m, 0.0, 0.0, 2.54);
   doorY(m, -0.74, -0.1);
   doorY(m, 0.65, -0.1);
-  for (const x of [-0.95, 0.54]) for (const y of [-0.76, 0.64]) {
-    m.box(x, y, 0.16, 0.46, 0.18, 0.34, C.floorLight);
-    m.box(x - 0.12, y + 0.10, 0.34, 0.16, 0.13, 0.04, C.blue);
-  }
+  for (const x of [-0.95, 0.54])
+    for (const y of [-0.76, 0.64]) {
+      m.box(x, y, 0.16, 0.46, 0.18, 0.34, C.floorLight);
+      m.box(x - 0.12, y + 0.1, 0.34, 0.16, 0.13, 0.04, C.blue);
+    }
   wires(m, 1.39, 1.16);
   ripped(m, -1.56, 1.12);
 }
@@ -207,7 +239,7 @@ function buildBridge(m: ContainerMesh): void {
   m.box(1.46, 0.03, 0.47, 0.16, 1.5, 0.54, C.glass);
   m.box(1.54, 0.02, 0.57, 0.12, 0.95, 0.16, C.blue);
   ripped(m, 1.62, -1.16);
-  scaffolding(m, -0.44, 1.18, 1.50);
+  scaffolding(m, -0.44, 1.18, 1.5);
 }
 function buildReactorHall(m: ContainerMesh): void {
   room(m, 0.0, 0.0, 3.12, 2.39, 0, 'front');
@@ -228,8 +260,8 @@ function buildMedbay(m: ContainerMesh): void {
   doorX(m, -0.17, -0.59);
   doorX(m, -0.17, 0.57);
   for (const y of [-0.57, 0.56]) {
-    m.box(0.60, y, 0.23, 0.72, 0.34, 0.46, C.floorLight);
-    m.box(0.60, y, 0.48, 0.55, 0.18, 0.05, C.glass);
+    m.box(0.6, y, 0.23, 0.72, 0.34, 0.46, C.floorLight);
+    m.box(0.6, y, 0.48, 0.55, 0.18, 0.05, C.glass);
   }
   controlConsole(m, -1.22, -0.16);
   wires(m, 0.98, 1.18);
@@ -243,22 +275,38 @@ function buildMedbay(m: ContainerMesh): void {
  */
 function tornRoof(m: ContainerMesh, variantIndex: number): void {
   const reversed = variantIndex % 2 === 1 ? -1 : 1;
-  const tilt = (variantIndex % 3 - 1) * 0.14;
+  const tilt = ((variantIndex % 3) - 1) * 0.14;
   const height = variantIndex === 1 ? 2.17 : 1.16;
   const panels: readonly (readonly (readonly [number, number])[])[] = [
     [
-      [-1.86, -1.27], [-0.49, -1.32], [-0.19, -0.91],
-      [-0.50, -0.77], [-0.32, -0.58], [-0.78, -0.65],
-      [-0.94, -0.38], [-1.29, -0.68], [-1.74, -0.48],
+      [-1.86, -1.27],
+      [-0.49, -1.32],
+      [-0.19, -0.91],
+      [-0.5, -0.77],
+      [-0.32, -0.58],
+      [-0.78, -0.65],
+      [-0.94, -0.38],
+      [-1.29, -0.68],
+      [-1.74, -0.48],
     ],
     [
-      [0.40, 1.28], [1.88, 1.14], [1.57, 0.81],
-      [1.81, 0.55], [1.37, 0.61], [1.10, 0.25],
-      [0.91, 0.63], [0.67, 0.48], [0.79, 0.87],
+      [0.4, 1.28],
+      [1.88, 1.14],
+      [1.57, 0.81],
+      [1.81, 0.55],
+      [1.37, 0.61],
+      [1.1, 0.25],
+      [0.91, 0.63],
+      [0.67, 0.48],
+      [0.79, 0.87],
     ],
     [
-      [-1.69, 0.76], [-1.00, 0.69], [-0.73, 0.96],
-      [-0.91, 1.29], [-1.47, 1.24], [-1.28, 1.08],
+      [-1.69, 0.76],
+      [-1.0, 0.69],
+      [-0.73, 0.96],
+      [-0.91, 1.29],
+      [-1.47, 1.24],
+      [-1.28, 1.08],
     ],
   ];
   panels.forEach((outline, panelIndex) => {
@@ -274,8 +322,12 @@ function tornRoof(m: ContainerMesh, variantIndex: number): void {
       const a = shape[i]!;
       const b = shape[(i + 1) % shape.length]!;
       m.face(
-        [a, b, [b[0] + 0.028, b[1] + 0.017, b[2] - 0.1 - (i % 3) * 0.075],
-          [a[0] - 0.034, a[1] + 0.02, a[2] - 0.11 - (i % 2) * 0.08]],
+        [
+          a,
+          b,
+          [b[0] + 0.028, b[1] + 0.017, b[2] - 0.1 - (i % 3) * 0.075],
+          [a[0] - 0.034, a[1] + 0.02, a[2] - 0.11 - (i % 2) * 0.08],
+        ],
         [0, 0, 1],
         i % 3 === 0 ? C.edgeMetal : i % 2 === 0 ? C.rust : C.edge
       );
@@ -286,18 +338,27 @@ function tornRoof(m: ContainerMesh, variantIndex: number): void {
     const xx = reversed * (-1.55 + i * 0.51);
     const yy = (i % 2 ? 1.02 : -1.09) + tilt;
     m.box(xx, yy, height - 0.08, 0.13 + (i % 3) * 0.075, 0.09, 0.2, C.edgeMetal);
-    m.box(xx + 0.08, yy + (i % 2 ? 0.18 : -0.18),
-      height - 0.16, 0.055, 0.42, 0.055, i % 2 ? C.cable : C.rust);
+    m.box(
+      xx + 0.08,
+      yy + (i % 2 ? 0.18 : -0.18),
+      height - 0.16,
+      0.055,
+      0.42,
+      0.055,
+      i % 2 ? C.cable : C.rust
+    );
   }
   // Aged scorch patches and dark ruptures rather than uniform clean floors.
   for (let i = 0; i < 5; i += 1) {
-    const xx = -1.16 + (i * 0.61 + variantIndex * 0.1) % 2.4;
-    const yy = -0.8 + (i * 0.47) % 1.65;
+    const xx = -1.16 + ((i * 0.61 + variantIndex * 0.1) % 2.4);
+    const yy = -0.8 + ((i * 0.47) % 1.65);
     m.face(
-      [[xx - 0.32, yy - 0.19, -0.055],
+      [
+        [xx - 0.32, yy - 0.19, -0.055],
         [xx + 0.24, yy - 0.12, -0.055],
         [xx + 0.28, yy + 0.15, -0.055],
-        [xx - 0.14, yy + 0.29, -0.055]],
+        [xx - 0.14, yy + 0.29, -0.055],
+      ],
       [0, 0, 1],
       i % 2 ? C.burn : C.soot
     );
@@ -307,25 +368,56 @@ function tornRoof(m: ContainerMesh, variantIndex: number): void {
 function buildMesh(variant: SalvageSectionVariant): readonly Face[] {
   const m = new ContainerMesh();
   switch (variant) {
-    case 'corridor-complex': buildCorridorComplex(m); break;
-    case 'double-deck': buildDoubleDeck(m); break;
-    case 'engine-room': buildEngineRoom(m); break;
-    case 'cargo-bay': buildCargoHold(m); break;
-    case 'crew-quarters': buildCrewBlock(m); break;
-    case 'bridge': buildBridge(m); break;
-    case 'reactor-hall': buildReactorHall(m); break;
-    case 'medbay': buildMedbay(m); break;
+    case 'corridor-complex':
+      buildCorridorComplex(m);
+      break;
+    case 'double-deck':
+      buildDoubleDeck(m);
+      break;
+    case 'engine-room':
+      buildEngineRoom(m);
+      break;
+    case 'cargo-bay':
+      buildCargoHold(m);
+      break;
+    case 'crew-quarters':
+      buildCrewBlock(m);
+      break;
+    case 'bridge':
+      buildBridge(m);
+      break;
+    case 'reactor-hall':
+      buildReactorHall(m);
+      break;
+    case 'medbay':
+      buildMedbay(m);
+      break;
   }
-  tornRoof(m, [
-    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
-    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
-  ].indexOf(variant));
+  tornRoof(
+    m,
+    [
+      'corridor-complex',
+      'double-deck',
+      'engine-room',
+      'cargo-bay',
+      'crew-quarters',
+      'bridge',
+      'reactor-hall',
+      'medbay',
+    ].indexOf(variant)
+  );
   return m.faces;
 }
 
 export const SALVAGE_SECTION_VARIANTS = [
-  'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
-  'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
+  'corridor-complex',
+  'double-deck',
+  'engine-room',
+  'cargo-bay',
+  'crew-quarters',
+  'bridge',
+  'reactor-hall',
+  'medbay',
 ] as const satisfies readonly SalvageSectionVariant[];
 
 const meshes: Record<SalvageSectionVariant, readonly Face[]> = {
@@ -385,7 +477,13 @@ export function drawSalvageSection3d(
     const spread = radius * 0.72 * p;
     context.fillStyle = `rgba(173,201,209,${0.11 * (1 - p)})`;
     context.beginPath();
-    context.arc(spread, Math.sin(i * 2.15) * radius * 0.05, radius * (0.035 + p * 0.09), 0, Math.PI * 2);
+    context.arc(
+      spread,
+      Math.sin(i * 2.15) * radius * 0.05,
+      radius * (0.035 + p * 0.09),
+      0,
+      Math.PI * 2
+    );
     context.fill();
   }
   context.restore();
