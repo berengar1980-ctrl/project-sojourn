@@ -777,3 +777,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-14): Punkt 8 – Kampf-/Flucht-Commitment (Draft)
 
 **keine Statusänderung.** Zentrale Entscheidungsschicht für Ausstattung, Risikobereitschaft und geometrische Fluchtwahrscheinlichkeit eingeführt. Flucht wird mindestens 16 Sekunden gehalten, sofern sie nicht bereits wegen zerstörtem Antrieb unmöglich ist; danach nur bei sehr geringer Fluchtchance Rückkehr zur Gegenwehr, mit 24 Sekunden Wiederaufnahme-Sperre. Spielerbefehle gesperrt gegen automatische Überschreibung. Defensiver Mineneinsatz auf hinteren tatsächlichen Fluchtkorridor und relative Bewegung begrenzt. Normaler Kampf und Exchange werden angebunden; Tests und CI noch ausstehend. Bestehende Schadens- und Bewegungswerte unverändert.
+
+## Review-Log (2026-10-14): Kampfabschluss, Feldrückkehr und Boarding (Draft)
+
+**keine Statusänderung.** Strukturierte Kampfergebnis-Zusammenfassung (Sieger, Hüllenzustand, Gegner, Gefechtsdauer, Boarding) und bestätigungspflichtige Ergebnisanzeige ergänzt, ohne fiktive Beute zu vergeben. Boarding verarbeitet den Sieg/Niederlage-Ausgang vor dem Beenden des Raumkampfs. Rückkehr zu bestehender Asteroiden-Instanz und Bergungsfeld mit erhaltenem Wrack-/Ressourcenobjekt und finaler Kampfposition angebunden. Vollständige Laufzeit- und CI-Verifikation noch erforderlich; die weitergehende Synchronisierung von Schild-, Hüllen-, Crew- und Frachtzuständen bleibt gesondert zu prüfen.
