@@ -116,7 +116,6 @@ function createScrapAsteroids(
     const radius = piece.radius * scale;
     // The dense asteroid arena uses a full 145 m exclusion zone from both
     // spawns for EVERY rock, including debris. Wreck arenas must do likewise.
-    const clearance = 145;
     if (!isClearScrapPosition(position, radius, width, height, spawns)) return [];
 
     const model = piece as SalvageWreck;
@@ -132,11 +131,7 @@ function createScrapAsteroids(
         },
         rotation: piece.rotation3d?.z ?? 0,
         angularVelocity: piece.spin3d?.z ?? 0,
-        ...(model.debrisVariant
-          ? { debrisVariant: model.debrisVariant }
-          : 'variant' in piece && !isLarge && !model.containerVariant
-            ? { debrisVariant: piece.variant as SalvageDebris['variant'] }
-            : {}),
+        ...scrapDebrisVariant(piece, isLarge),
         ...(model.sectionVariant ? { sectionVariant: model.sectionVariant } : {}),
         ...(model.containerVariant ? { containerVariant: model.containerVariant } : {}),
         ...(piece.rotation3d ? { rotation3d: { ...piece.rotation3d } } : {}),
@@ -161,4 +156,13 @@ function isClearScrapPosition(
     position.y < height - radius - 18 &&
     spawns.every((spawn) => Math.hypot(position.x - spawn.x, position.y - spawn.y) >= radius + 145)
   );
+}
+
+function scrapDebrisVariant(piece: ScrapSource, isLarge: boolean): { debrisVariant?: SalvageDebris['variant'] } {
+  const model = piece as SalvageWreck;
+  if (model.debrisVariant) return { debrisVariant: model.debrisVariant };
+  if ('variant' in piece && !isLarge && !model.containerVariant) {
+    return { debrisVariant: piece.variant as SalvageDebris['variant'] };
+  }
+  return {};
 }
