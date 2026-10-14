@@ -34,7 +34,8 @@ assert(
   )
 );
 assert(read('src/ui/local-space/local-space-renderer.ts').includes('drawLocalSpaceExitGate('));
-assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawLocalSpaceExitGate('));
+assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('this.drawExitGate('));
+assert(read('src/ui/salvage/salvage-scene-layers.ts').includes('drawLocalSpaceExitGate('));
 assert(
   read('src/systems/combat/combat-escape-evaluation.ts').includes(
     'distance(combatant.position, arena.exitPoint) <= 90'
