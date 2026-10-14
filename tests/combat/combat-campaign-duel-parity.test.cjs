@@ -48,8 +48,8 @@ assert.deepEqual(defaults.position, options.attackerPosition);
 const campaign = read('src/app/game-controller.ts');
 const campaignArena = read('src/app/game-controller-combat.ts');
 assert(
-  campaign.includes(
-    'localMiningCombatArena(local.instance, state.localSpace!.getShipWorldVelocity())'
+  /localMiningCombatArena\s*\(\s*local\.instance\s*,\s*state\.localSpace!\.getShipWorldVelocity\(\)\s*\)/.test(
+    campaign
   ),
   'campaign delegates arena setup using full local inertial velocity'
 );
