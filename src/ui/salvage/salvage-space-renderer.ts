@@ -47,6 +47,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected loadedShipUrl = '';
   protected hasFitted = false;
   protected diagnosisStartedAt = -1;
+  private lastFrameAt = -Infinity;
   startDistressDiagnosis(): void {
     this.diagnosisStartedAt = performance.now() / 1000;
     this.draw();
@@ -75,11 +76,15 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.model = model;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    this.draw();
+    const now = performance.now();
+    if (now - this.lastFrameAt >= 33) {
+      this.lastFrameAt = now;
+      this.draw();
+    }
   }
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    const ratio = Math.max(1, Math.min(1.5, window.devicePixelRatio || 1));
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
