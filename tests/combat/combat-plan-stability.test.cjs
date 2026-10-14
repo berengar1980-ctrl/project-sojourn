@@ -30,7 +30,7 @@ assert.equal(executor.executeCombatPlan(pursuer, target), 'fire',
 target.position.x = 920;
 assert.equal(executor.executeCombatPlan(pursuer, target), 'reach_range',
   'a genuinely out-of-range target should trigger pursuit');
-target.position.x = 530;
+target.position.x = 490;
 assert.equal(executor.executeCombatPlan(pursuer, target), 'reach_range',
   'a very close collision approach still requires corrective movement');
 target.position.x = 710;
