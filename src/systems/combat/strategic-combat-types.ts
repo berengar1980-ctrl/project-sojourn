@@ -323,6 +323,7 @@ export interface MutableCombatant {
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
+  lastCombatIntentChangeAt?: number;
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
