@@ -157,14 +157,20 @@ export class StrategicCombatRenderer {
       this.model.thrownAsteroids,
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
-      (context, rock, radius) => drawCombatScrap(context, {
-        ...rock,
-        rotation3d: {
-          x: rock.rotation3d?.x ?? 0.18,
-          y: rock.rotation3d?.y ?? 0.27,
-          z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
-        },
-      }, radius, timeSeconds)
+      (context, rock, radius) =>
+        drawCombatScrap(
+          context,
+          {
+            ...rock,
+            rotation3d: {
+              x: rock.rotation3d?.x ?? 0.18,
+              y: rock.rotation3d?.y ?? 0.27,
+              z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
+            },
+          },
+          radius,
+          timeSeconds
+        )
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);

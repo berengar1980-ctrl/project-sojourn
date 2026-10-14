@@ -88,7 +88,10 @@ export function generateSalvageField(
   const guaranteedVariants: SalvageContainerVariant[] = ['standard', 'damaged', 'tank'];
   for (let i = guaranteedVariants.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
-    [guaranteedVariants[i], guaranteedVariants[j]] = [guaranteedVariants[j]!, guaranteedVariants[i]!];
+    [guaranteedVariants[i], guaranteedVariants[j]] = [
+      guaranteedVariants[j]!,
+      guaranteedVariants[i]!,
+    ];
   }
 
   for (let index = 0; index < count; index += 1) {
@@ -127,8 +130,14 @@ export function generateSalvageField(
 
   const gate = seededLocalGate(width, height, seed);
   const sectionVariants: readonly SalvageSectionVariant[] = [
-    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
-    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
+    'corridor-complex',
+    'double-deck',
+    'engine-room',
+    'cargo-bay',
+    'crew-quarters',
+    'bridge',
+    'reactor-hall',
+    'medbay',
   ];
   const sections: SalvageSection[] = [];
   // One of each large, open, multi-room 3D section is guaranteed per map.
@@ -146,12 +155,22 @@ export function generateSalvageField(
       };
       if (attempt === 0) position = candidate;
       if (Math.hypot(candidate.x - gate.x, candidate.y - gate.y) < radius + 170) continue;
-      if (wrecks.some((entry) =>
-        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
-          < radius + entry.radius + 36)) continue;
-      if (sections.some((entry) =>
-        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
-          < radius + entry.radius + 90)) continue;
+      if (
+        wrecks.some(
+          (entry) =>
+            Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y) <
+            radius + entry.radius + 36
+        )
+      )
+        continue;
+      if (
+        sections.some(
+          (entry) =>
+            Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y) <
+            radius + entry.radius + 90
+        )
+      )
+        continue;
       position = candidate;
       break;
     }
@@ -175,16 +194,18 @@ export function generateSalvageField(
     const quality = qualityFromRoll(random(), dangerLevel);
     wrecks.push({
       id: section.id,
-      name: ({
-        'corridor-complex': 'Korridor- und Raumsektion',
-        'double-deck': 'Doppeldeck-Wrack',
-        'engine-room': 'Maschinenraum-Wrack',
-        'cargo-bay': 'Frachter-Laderaum',
-        'crew-quarters': 'Mannschaftsquartiere',
-        bridge: 'Brückensektion',
-        'reactor-hall': 'Reaktorhalle',
-        medbay: 'Medizinmodul',
-      } as const)[variant],
+      name: (
+        {
+          'corridor-complex': 'Korridor- und Raumsektion',
+          'double-deck': 'Doppeldeck-Wrack',
+          'engine-room': 'Maschinenraum-Wrack',
+          'cargo-bay': 'Frachter-Laderaum',
+          'crew-quarters': 'Mannschaftsquartiere',
+          bridge: 'Brückensektion',
+          'reactor-hall': 'Reaktorhalle',
+          medbay: 'Medizinmodul',
+        } as const
+      )[variant],
       kind: wreckKind(random()),
       quality,
       sectionVariant: variant,
@@ -207,8 +228,14 @@ export function generateSalvageField(
   // Keep all eight small-fragment silhouettes. Some are salvageable, while the
   // rest remain dynamic scenery and tractor-throw ammunition.
   const variants: readonly SalvageDebrisVariant[] = [
-    'corridor', 'deck', 'airlock', 'truss',
-    'engine', 'reactor', 'bulkhead', 'habitation',
+    'corridor',
+    'deck',
+    'airlock',
+    'truss',
+    'engine',
+    'reactor',
+    'bulkhead',
+    'habitation',
   ];
   const debris: SalvageDebris[] = [];
   // Roughly 20-25% fewer small fragments, counterbalanced by more varied sizes.

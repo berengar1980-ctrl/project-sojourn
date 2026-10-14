@@ -143,8 +143,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       navigationRoute: this.navigationRoute,
       phase: this.phase,
       operationProgress: this.operationProgress(),
-      longRangeScanProgress: this.longRangeScanElapsed === null
-        ? null : Math.min(1, this.longRangeScanElapsed / 5),
+      longRangeScanProgress:
+        this.longRangeScanElapsed === null ? null : Math.min(1, this.longRangeScanElapsed / 5),
       activeResourceId: this.activeResourceId,
       lastRecovery: this.lastRecovery,
       recoverySerial: this.recoverySerial,
@@ -175,8 +175,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.shipContactCooldown = 0.35;
     const cos = Math.cos(this.ship.headingRadians);
     const sin = Math.sin(this.ship.headingRadians);
-    const local = { x: normal.x * cos + normal.y * sin,
-      y: -normal.x * sin + normal.y * cos };
+    const local = { x: normal.x * cos + normal.y * sin, y: -normal.x * sin + normal.y * cos };
     const scale = 0.4 * (this.options.shipLengthMeters ?? 80);
     const contactPoint = {
       x: this.ship.position.x + normal.x * scale,
@@ -189,7 +188,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       normal,
       surfaceAnchor: local,
       mass: 350,
-      impactSpeed: Math.sqrt(2 * kineticEnergy / 350),
+      impactSpeed: Math.sqrt((2 * kineticEnergy) / 350),
       kineticEnergy,
     });
   }
@@ -300,42 +299,42 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
       this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
-    if (this.longRangeScanElapsed !== null) {
-      this.longRangeScanElapsed += delta;
-      if (this.longRangeScanElapsed >= 5) {
-        const radius = longRangeScanRadius({
-          sensorModifier: this.options.sensorModifier ?? 1,
-          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
-        });
-        for (const wreck of this.options.field.wrecks) {
-          if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
-          if (distance(this.ship.position, wreck.position) <= radius) {
-            wreck.scanLevel = 'surveyed';
+      if (this.longRangeScanElapsed !== null) {
+        this.longRangeScanElapsed += delta;
+        if (this.longRangeScanElapsed >= 5) {
+          const radius = longRangeScanRadius({
+            sensorModifier: this.options.sensorModifier ?? 1,
+            crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
+          });
+          for (const wreck of this.options.field.wrecks) {
+            if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
+            if (distance(this.ship.position, wreck.position) <= radius) {
+              wreck.scanLevel = 'surveyed';
+            }
           }
+          this.longRangeScanElapsed = null;
         }
-        this.longRangeScanElapsed = null;
       }
-    }
-    advanceSalvageContainerDrift(this.options.field, delta);
-    if (this.phase === 'navigating' || this.phase === 'approaching') {
-      this.updateRoute(delta);
-    } else if (this.phase === 'inspecting') {
-      this.updateInspection(delta);
-    } else if (this.phase === 'stripping') {
-      this.updateStripping(delta);
-    } else if (this.phase === 'extracting-component') {
-      this.updateComponentRecovery(delta);
-    }
-    if (this.options.hardpoints && this.options.shipLengthMeters) {
-      for (const collision of resolveSalvageShieldContacts(
-        this.options.field,
-        this.ship,
-        this.options.hardpoints,
-        this.options.shipLengthMeters
-      )) {
-        this.collisionShields?.applyCollision(collision);
+      advanceSalvageContainerDrift(this.options.field, delta);
+      if (this.phase === 'navigating' || this.phase === 'approaching') {
+        this.updateRoute(delta);
+      } else if (this.phase === 'inspecting') {
+        this.updateInspection(delta);
+      } else if (this.phase === 'stripping') {
+        this.updateStripping(delta);
+      } else if (this.phase === 'extracting-component') {
+        this.updateComponentRecovery(delta);
       }
-    }
+      if (this.options.hardpoints && this.options.shipLengthMeters) {
+        for (const collision of resolveSalvageShieldContacts(
+          this.options.field,
+          this.ship,
+          this.options.hardpoints,
+          this.options.shipLengthMeters
+        )) {
+          this.collisionShields?.applyCollision(collision);
+        }
+      }
     }
     return this.getSnapshot();
   }

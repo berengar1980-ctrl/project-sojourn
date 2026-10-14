@@ -1,5 +1,10 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
-import type { SalvageDebris, SalvageField, SalvageSection, SalvageWreck } from '../../core/salvage-types';
+import type {
+  SalvageDebris,
+  SalvageField,
+  SalvageSection,
+  SalvageWreck,
+} from '../../core/salvage-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import { integrateAsteroids } from '../local-space/local-space-physics';
 import {
@@ -17,7 +22,12 @@ interface WorldPhysics {
 const physicsByField = new WeakMap<SalvageField, WorldPhysics>();
 
 function isDynamicWreck(wreck: SalvageWreck): boolean {
-  return Boolean((wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant) && wreck.driftVelocity && wreck.rotation3d && wreck.spin3d);
+  return Boolean(
+    (wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant) &&
+    wreck.driftVelocity &&
+    wreck.rotation3d &&
+    wreck.spin3d
+  );
 }
 
 function ownersForField(field: SalvageField): SalvageBody[] {
@@ -56,9 +66,11 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
 function getPhysics(field: SalvageField): WorldPhysics {
   const owners = ownersForField(field);
   const previous = physicsByField.get(field);
-  if (previous &&
-      previous.owners.length === owners.length &&
-      previous.owners.every((owner, i) => owner === owners[i])) {
+  if (
+    previous &&
+    previous.owners.length === owners.length &&
+    previous.owners.every((owner, i) => owner === owners[i])
+  ) {
     return previous;
   }
   const fresh: WorldPhysics = { owners, bodies: owners.map(toLocalAsteroid) };

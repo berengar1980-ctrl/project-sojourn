@@ -103,9 +103,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
     rotation: random() * Math.PI * 2,
     ...(event.type !== 'distress-rescue'
       ? {
-          containerVariant: (['standard', 'damaged', 'tank'] as const)[
-            Math.floor(random() * 3)
-          ],
+          containerVariant: (['standard', 'damaged', 'tank'] as const)[Math.floor(random() * 3)],
           driftVelocity: { x: 2.6, y: -1.4 },
           rotation3d: { x: 0.22, y: 0.3, z: random() * Math.PI * 2 },
           spin3d: { x: 0.08, y: 0.06, z: 0.04 },

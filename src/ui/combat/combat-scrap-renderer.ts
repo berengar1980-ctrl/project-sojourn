@@ -36,13 +36,14 @@ export function drawCombatScrap(
   // invisible but evict the sprite LRU every frame. Reuse eight representative
   // views of the REAL mesh instead; full 3D tumble returns when zoomed in.
   const seed = model.effectSeed ?? 0;
-  const rotation = model.debrisVariant && radius < 27
-    ? {
-        x: (seed % 4) * (Math.PI / 4),
-        y: (Math.floor(seed / 4) % 2) * (Math.PI / 4),
-        z: actualRotation.z,
-      }
-    : actualRotation;
+  const rotation =
+    model.debrisVariant && radius < 27
+      ? {
+          x: (seed % 4) * (Math.PI / 4),
+          y: (Math.floor(seed / 4) % 2) * (Math.PI / 4),
+          z: actualRotation.z,
+        }
+      : actualRotation;
   const part = { rotation3d: rotation, effectSeed: model.effectSeed ?? 0 };
   if (model.debrisVariant) {
     drawSalvageDebris3d(context, { ...part, variant: model.debrisVariant }, radius, timeSeconds);

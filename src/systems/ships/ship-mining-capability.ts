@@ -13,27 +13,26 @@ import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog'
  * Previous defaults equipped only turret pulse lasers: bow/broadside slots
  * received empty strings and campaign ships silently entered combat unarmed.
  */
-export function defaultStarterWeaponId(
-  ship: ShipDefinition,
-  slotIndex: number
-): string {
-  const hardpoint = ship.sprite.hardpoints.weaponMounts?.find((slot) => slot.slotIndex === slotIndex);
+export function defaultStarterWeaponId(ship: ShipDefinition, slotIndex: number): string {
+  const hardpoint = ship.sprite.hardpoints.weaponMounts?.find(
+    (slot) => slot.slotIndex === slotIndex
+  );
   if (!hardpoint && ship.sprite.hardpoints.weaponMounts?.length) return '';
-  const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? [])
-    .filter((component) =>
+  const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter(
+    (component) =>
       component.tier === 1 &&
       component.weapon &&
       (!hardpoint?.allowedMounts ||
         hardpoint.allowedMounts.includes(component.weapon.mount ?? 'turret')) &&
-      (!hardpoint?.allowedFamilies ||
-        hardpoint.allowedFamilies.includes(component.weapon.family))
-    );
-  const preferred = weapons.find((component) => component.weapon?.family === 'pulse_laser')
-    ?? weapons.find((component) => component.weapon?.family === 'railgun')
-    ?? weapons.find((component) => component.weapon?.family === 'plasma_battery')
-    ?? weapons.find((component) => component.weapon?.family === 'autocannon')
-    ?? weapons.find((component) => component.weapon?.ammoPerShot === 0)
-    ?? weapons[0];
+      (!hardpoint?.allowedFamilies || hardpoint.allowedFamilies.includes(component.weapon.family))
+  );
+  const preferred =
+    weapons.find((component) => component.weapon?.family === 'pulse_laser') ??
+    weapons.find((component) => component.weapon?.family === 'railgun') ??
+    weapons.find((component) => component.weapon?.family === 'plasma_battery') ??
+    weapons.find((component) => component.weapon?.family === 'autocannon') ??
+    weapons.find((component) => component.weapon?.ammoPerShot === 0) ??
+    weapons[0];
   return preferred?.id ?? '';
 }
 
@@ -58,9 +57,8 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
   // Prefer an actual defensive pulse laser turret: it can track a pirate
   // throughout the engagement rather than chasing a 60-degree railgun arc.
   const turretSlot = compatibleStarters.indexOf('weapon1');
-  const starterSlot = turretSlot >= 0
-    ? turretSlot
-    : compatibleStarters.findIndex((id) => id !== '');
+  const starterSlot =
+    turretSlot >= 0 ? turretSlot : compatibleStarters.findIndex((id) => id !== '');
   const common: InstalledShipComponents = {
     reactor: ['reactor1'],
     engine: ['engine1'],
