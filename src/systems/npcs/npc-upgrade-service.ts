@@ -7,6 +7,7 @@ import {
   getCompatibleShipComponents,
   getShipComponent,
   getShipDefinition,
+  fitsWeaponHardpoint,
   resolveShipGameplayStats,
 } from '../ships';
 
@@ -33,8 +34,25 @@ function mutableInstalled(
 }
 
 export function ensureNpcInstalledComponents(npc: SectorNpcState): NpcInstalledComponents {
-  if (npc.installedComponents) return npc.installedComponents;
   const ship = getShipDefinition(npc.shipId);
+  if (npc.installedComponents) {
+    // Legacy NPC saves created before directional mounts equipped weapon1 into
+    // the incompatible bow slot. Heal pirates with NO usable guns, while
+    // keeping intentional choices and functioning equipped guns intact.
+    if (ship && (npc.job === 'pirate' || npc.pirate)) {
+      const installed = npc.installedComponents.weapon ?? [];
+      const armed = installed.some((id, index) => {
+        const component = getShipComponent('weapon', id);
+        return Boolean(component?.weapon && fitsWeaponHardpoint(ship, index, component.weapon));
+      });
+      if (!armed) {
+        npc.installedComponents.weapon = [
+          ...(defaultInstalledShipComponents(ship).weapon ?? []),
+        ];
+      }
+    }
+    return npc.installedComponents;
+  }
   npc.installedComponents = ship ? mutableInstalled(defaultInstalledShipComponents(ship)) : {};
   return npc.installedComponents;
 }
