@@ -52,10 +52,11 @@ class FakeElement {
     return false;
   }
   closest(selector) {
-    for (let candidate = this; candidate; candidate = candidate.parentElement) {
-      if (candidate.matches(selector)) return candidate;
-    }
-    return null;
+    const findMatch = (element) => {
+      if (!element) return null;
+      return element.matches(selector) ? element : findMatch(element.parentElement);
+    };
+    return findMatch(this);
   }
   contains(node) {
     let candidate = node;
