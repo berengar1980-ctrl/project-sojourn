@@ -38,9 +38,12 @@ export function createScrapDuelArena(
     ...largeSections.slice(0, dense ? 8 : 3),
   ];
 
+  // Use the exact same spawn defaults as createCombatant on the asteroid
+  // maps. Previously wreck duels started much closer, enabling immediate
+  // uncontested volleys instead of normal range acquisition and maneuvering.
   const spawns = [
-    { x: width * 0.35, y: height * 0.5 },
-    { x: width * 0.65, y: height * 0.5 },
+    { x: width * 0.28, y: height * 0.46 },
+    { x: width * 0.72, y: height * 0.54 },
   ];
   const asteroids: CombatVisualAsteroid[] = picked.flatMap((piece): CombatVisualAsteroid[] => {
     const isLarge = 'sectionVariant' in piece && Boolean(piece.sectionVariant);
@@ -49,7 +52,9 @@ export function createScrapDuelArena(
       y: piece.position.y * scaleY,
     };
     const radius = piece.radius * scale;
-    const clearance = isLarge ? 150 : 72;
+    // The dense asteroid arena uses a full 145 m exclusion zone from both
+    // spawns for EVERY rock, including debris. Wreck arenas must do likewise.
+    const clearance = 145;
     if (
       position.x <= radius + 18 || position.x >= width - radius - 18 ||
       position.y <= radius + 18 || position.y >= height - radius - 18 ||
@@ -82,9 +87,9 @@ export function createScrapDuelArena(
     }];
   });
 
-  // Guaranteed capture candidates near both sides, even when the seeded field
-  // happened to put most fragments elsewhere. They are genuine 3D wreck meshes
-  // and use exactly the same tractor system as other arena objects.
+  // Keep testable wreck ammunition available, but WITHOUT bypassing the
+  // normal asteroid-map shield/tractor rules or changing combatant starts.
+  // These pieces sit outside the same 145 m spawn clearance as mined rocks.
   for (let i = 0; i < 4; i += 1) {
     const source = field.debris[i]!;
     const player = i < 2 ? 0 : 1;
@@ -108,11 +113,11 @@ export function createScrapDuelArena(
     });
   }
 
-  // This is navigation ONLY: every asteroid/scrap element is still an
-  // impulse-based physical collision body in the duel. Small debris should
-  // be flown through, bumped and knocked aside rather than routed around.
+  // Equivalent to the asteroid arena's kind === 'resource' rule: large
+  // sections provide path blocking AND weapon cover; smaller debris remains
+  // collidable and tractor-throwable without influencing route planning.
   const obstacles = asteroids
-    .filter((piece) => Boolean(piece.sectionVariant))
+    .filter((piece) => piece.kind === 'resource')
     .map((piece) => ({
       id: piece.id,
       position: piece.position,
