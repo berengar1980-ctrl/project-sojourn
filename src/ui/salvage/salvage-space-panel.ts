@@ -59,6 +59,9 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
 }
 
 function statusText(model: SalvageSpaceViewModel): string {
+  if (model.longRangeScanProgress !== null) {
+    return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
+  }
   if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
   if (model.phase === 'approaching') return 'ANFLUG AUF BERGUNGSPOSITION';
   if (model.phase === 'inspecting') {
@@ -202,7 +205,8 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   const busy =
     model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
-    ui.meta.textContent = wreck.kindLabel + ' · ANALYSE ERFORDERLICH';
+    ui.meta.textContent = (wreck.scanLevel === 'surveyed' ? 'KONTAKT ERFASST · ???' :
+      'OBJEKT NICHT GESCANNT') + ' · ANALYSE ERFORDERLICH';
     ui.inspectButton.textContent =
       model.phase === 'approaching' || model.phase === 'inspecting'
         ? 'SCAN LÄUFT'
@@ -357,6 +361,7 @@ function bindSalvagePanelActions(
         break;
     }
   });
+  ui.longScanButton.addEventListener('click', options.onLongRangeScan);
   ui.inspectButton.addEventListener('click', () => {
     const wreck = getModel().selectedWreck;
     if (wreck) options.onInspect(wreck.id);
