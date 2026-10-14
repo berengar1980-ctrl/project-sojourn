@@ -125,6 +125,83 @@ export function generateSalvageField(
     });
   }
 
+  const gate = seededLocalGate(width, height, seed);
+  const sectionVariants: readonly SalvageSectionVariant[] = [
+    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
+    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
+  ];
+  const sections: SalvageSection[] = [];
+  // One of each large, open, multi-room 3D section is guaranteed per map.
+  const sectionCount = 8 + Math.floor(random() * 4);
+  for (let index = 0; index < sectionCount; index += 1) {
+    const variant = sectionVariants[index] ?? sectionVariants[Math.floor(random() * 8)]!;
+    const radius = 86 + random() * 46;
+    let position = { x: width / 2, y: height / 2 };
+    for (let attempt = 0; attempt < 140; attempt += 1) {
+      const candidate = {
+        x: radius + 90 + random() * (width - 2 * (radius + 90)),
+        y: radius + 90 + random() * (height - 2 * (radius + 90)),
+      };
+      if (attempt === 0) position = candidate;
+      if (Math.hypot(candidate.x - gate.x, candidate.y - gate.y) < radius + 170) continue;
+      if (wrecks.some((entry) =>
+        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
+          < radius + entry.radius + 36)) continue;
+      if (sections.some((entry) =>
+        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
+          < radius + entry.radius + 90)) continue;
+      position = candidate;
+      break;
+    }
+    const angle = random() * Math.PI * 2;
+    const drift = 0.2 + random() * 0.75;
+    const section: SalvageSection = {
+      id: `section-${seed}-${index}`,
+      variant,
+      position,
+      radius,
+      driftVelocity: { x: Math.cos(angle) * drift, y: Math.sin(angle) * drift },
+      rotation3d: { x: random() * 0.2, y: random() * 0.2, z: random() * Math.PI * 2 },
+      spin3d: {
+        x: 0.002 + random() * 0.006,
+        y: 0.002 + random() * 0.006,
+        z: 0.002 + random() * 0.008,
+      },
+      effectSeed: Math.floor(random() * 0x7fffffff),
+    };
+    sections.push(section);
+    const quality = qualityFromRoll(random(), dangerLevel);
+    wrecks.push({
+      id: section.id,
+      name: ({
+        'corridor-complex': 'Korridor- und Raumsektion',
+        'double-deck': 'Doppeldeck-Wrack',
+        'engine-room': 'Maschinenraum-Wrack',
+        'cargo-bay': 'Frachter-Laderaum',
+        'crew-quarters': 'Mannschaftsquartiere',
+        bridge: 'Brückensektion',
+        'reactor-hall': 'Reaktorhalle',
+        medbay: 'Medizinmodul',
+      } as const)[variant],
+      kind: wreckKind(random()),
+      quality,
+      sectionVariant: variant,
+      effectSeed: section.effectSeed,
+      position: section.position,
+      radius: section.radius,
+      rotation: section.rotation3d.z,
+      driftVelocity: section.driftVelocity,
+      rotation3d: section.rotation3d,
+      spin3d: section.spin3d,
+      integrity: Math.round(20 + random() * 75),
+      resources: createResources(random, quality),
+      component: null,
+      componentStatus: 'none',
+      inspected: false,
+      scanLevel: 'unscanned',
+    });
+  }
+
   // One of each genuinely different hull fragment, plus up to three repeats.
   // These are scenery with shield collision, never added to salvage loot/selection.
   const variants: readonly SalvageDebrisVariant[] = [
@@ -132,7 +209,6 @@ export function generateSalvageField(
     'engine', 'reactor', 'bulkhead', 'habitation',
   ];
   const debris: SalvageDebris[] = [];
-  const gate = seededLocalGate(width, height, seed);
   const debrisCount = 178 + Math.floor(random() * 35);
   for (let index = 0; index < debrisCount; index += 1) {
     const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
@@ -143,6 +219,7 @@ export function generateSalvageField(
         x: width * (0.08 + random() * 0.84),
         y: height * (0.08 + random() * 0.84),
       };
+      if (attempt === 0) position = candidate;
       const clearOfGate = Math.hypot(candidate.x - gate.x, candidate.y - gate.y) > 240;
       const clearOfContainers = wrecks.every(
         (wreck) =>
@@ -201,81 +278,6 @@ export function generateSalvageField(
     } else {
       debris.push(part);
     }
-  }
-
-  const sectionVariants: readonly SalvageSectionVariant[] = [
-    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
-    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
-  ];
-  const sections: SalvageSection[] = [];
-  // One of each large, open, multi-room 3D section is guaranteed per map.
-  const sectionCount = 8 + Math.floor(random() * 4);
-  for (let index = 0; index < sectionCount; index += 1) {
-    const variant = sectionVariants[index] ?? sectionVariants[Math.floor(random() * 8)]!;
-    const radius = 86 + random() * 46;
-    let position = { x: width / 2, y: height / 2 };
-    for (let attempt = 0; attempt < 140; attempt += 1) {
-      const candidate = {
-        x: radius + 90 + random() * (width - 2 * (radius + 90)),
-        y: radius + 90 + random() * (height - 2 * (radius + 90)),
-      };
-      if (Math.hypot(candidate.x - gate.x, candidate.y - gate.y) < radius + 170) continue;
-      if (wrecks.some((entry) =>
-        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
-          < radius + entry.radius + 36)) continue;
-      if (sections.some((entry) =>
-        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
-          < radius + entry.radius + 90)) continue;
-      position = candidate;
-      break;
-    }
-    const angle = random() * Math.PI * 2;
-    const drift = 0.2 + random() * 0.75;
-    const section: SalvageSection = {
-      id: `section-${seed}-${index}`,
-      variant,
-      position,
-      radius,
-      driftVelocity: { x: Math.cos(angle) * drift, y: Math.sin(angle) * drift },
-      rotation3d: { x: random() * 0.2, y: random() * 0.2, z: random() * Math.PI * 2 },
-      spin3d: {
-        x: 0.002 + random() * 0.006,
-        y: 0.002 + random() * 0.006,
-        z: 0.002 + random() * 0.008,
-      },
-      effectSeed: Math.floor(random() * 0x7fffffff),
-    };
-    sections.push(section);
-    const quality = qualityFromRoll(random(), dangerLevel);
-    wrecks.push({
-      id: section.id,
-      name: ({
-        'corridor-complex': 'Korridor- und Raumsektion',
-        'double-deck': 'Doppeldeck-Wrack',
-        'engine-room': 'Maschinenraum-Wrack',
-        'cargo-bay': 'Frachter-Laderaum',
-        'crew-quarters': 'Mannschaftsquartiere',
-        bridge: 'Brückensektion',
-        'reactor-hall': 'Reaktorhalle',
-        medbay: 'Medizinmodul',
-      } as const)[variant],
-      kind: wreckKind(random()),
-      quality,
-      sectionVariant: variant,
-      effectSeed: section.effectSeed,
-      position: section.position,
-      radius: section.radius,
-      rotation: section.rotation3d.z,
-      driftVelocity: section.driftVelocity,
-      rotation3d: section.rotation3d,
-      spin3d: section.spin3d,
-      integrity: Math.round(20 + random() * 75),
-      resources: createResources(random, quality),
-      component: null,
-      componentStatus: 'none',
-      inspected: false,
-      scanLevel: 'unscanned',
-    });
   }
 
   return {
