@@ -119,7 +119,10 @@ export function maybeLaunchTractorAsteroid(
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: (mine ? 'TRACTOR_MINE_THROW ' : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
+    detail: (mine
+      ? 'TRACTOR_MINE_THROW '
+      : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+        ? 'TRACTOR_SCRAP_THROW ' : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
   });
 }
 
@@ -179,12 +182,15 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     weaponKind: 'missile',
     source: 'tractor_asteroid',
   };
-  runtime.lastEvent = 'ASTEROIDENTREFFER · ' + Math.round(shieldDamage + hullDamage) + ' HP';
+  const isScrap = Boolean(rock.debrisVariant || rock.sectionVariant || rock.containerVariant);
+  runtime.lastEvent = (isScrap ? 'SCHROTTTREFFER · ' : 'ASTEROIDENTREFFER · ') +
+    Math.round(shieldDamage + hullDamage) + ' HP';
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: rock.owner,
     event: 'impact',
-    detail: 'TRACTOR_ASTEROID_HIT shield=' + shieldDamage + ' hull=' + hullDamage,
+    detail: (isScrap ? 'TRACTOR_SCRAP_HIT' : 'TRACTOR_ASTEROID_HIT') +
+      ' shield=' + shieldDamage + ' hull=' + hullDamage,
   });
   return true;
 }
