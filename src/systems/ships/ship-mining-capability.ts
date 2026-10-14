@@ -52,6 +52,9 @@ export interface ShipMiningSetup {
 
 export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledShipComponents {
   const stats = resolveShipGameplayStats(ship);
+  const starterSlot = Array.from({ length: stats.weaponSlots }, (_, index) =>
+    defaultStarterWeaponId(ship, index)
+  ).findIndex((id) => id !== '');
   const common: InstalledShipComponents = {
     reactor: ['reactor1'],
     engine: ['engine1'],
@@ -62,7 +65,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     // One affordable defensive Mk I gun as the campaign baseline. Remaining
     // slots stay free for upgrades, not silently filled with incompatible gear.
     weapon: Array.from({ length: stats.weaponSlots }, (_, index) =>
-      index === 0 ? defaultStarterWeaponId(ship, index) : ''
+      index === starterSlot ? defaultStarterWeaponId(ship, index) : ''
     ),
     mine: [''],
     tractor: [ship.role === 'mining' || ship.role === 'salvage' ? 'tractor1' : ''],
