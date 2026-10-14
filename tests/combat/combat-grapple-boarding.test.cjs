@@ -41,6 +41,22 @@ const miss = grapple.fireCombatGrapple('attacker', origin, target, 0, 100, 100, 
 assert.equal(miss.success, false);
 assert(grapple.advanceCombatGrapple(success, origin, target, 0.65).resolved);
 
+const dock = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-grapple-physics.ts'
+);
+const grappleShip = (x, vx = 0) => ({
+  position: { x, y: 0 },
+  velocity: { x: vx, y: 0 },
+  setup: { shieldGeometry: { radiusX: 45, radiusY: 28 } },
+});
+assert(!dock.canDockGrappledShips(grappleShip(0), grappleShip(170)),
+  'a distant grapple hit must not start a boarding battle');
+assert(!dock.canDockGrappledShips(grappleShip(0, 40), grappleShip(96)),
+  'close but rapidly separating hulls must not start boarding');
+assert(dock.canDockGrappledShips(grappleShip(0, 5), grappleShip(95, 7)),
+  'boarding may start once both hulls are coupled with matching velocity');
+
 const combat = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
