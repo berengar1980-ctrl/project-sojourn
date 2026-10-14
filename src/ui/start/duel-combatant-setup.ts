@@ -3,7 +3,6 @@ import {
   combatWeaponMounts,
 } from '../../systems/combat/combat-loadout-mounts';
 import {
-  getShipComponent,
   resolveShipCombatMovementStats,
   shipHullMaxHp,
   shipShieldMaxHp,
