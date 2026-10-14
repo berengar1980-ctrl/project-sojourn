@@ -1,4 +1,5 @@
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
+import { drawTractorThrows } from '../combat/combat-tractor-throw-renderer';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -241,6 +242,12 @@ export abstract class SalvageSceneLayers {
     }
 
     this.drawCombatBeams(width, height);
+    drawTractorThrows(
+      this.context,
+      combat.thrownAsteroids,
+      this.camera.scale(1),
+      (point) => this.camera.worldToScreen(point, width, height)
+    );
 
     for (const projectile of combat.projectiles) {
       const point = this.camera.worldToScreen(projectile.position, width, height);
