@@ -21,8 +21,8 @@ const laser = {
   weapon: {
     family: 'pulse_laser',
     role: 'balanced',
-    shieldDamage: 16,
-    hullDamage: 14,
+    shieldDamage: 2.88,
+    hullDamage: 2.52,
     rangeMeters: 900,
     cooldownSeconds: 0.35,
     heat: 1,
@@ -40,8 +40,8 @@ const missile = {
   weapon: {
     family: 'guided_missile',
     role: 'balanced',
-    shieldDamage: 22,
-    hullDamage: 28,
+    shieldDamage: 3.96,
+    hullDamage: 5.04,
     rangeMeters: 1300,
     cooldownSeconds: 0.8,
     heat: 1,
