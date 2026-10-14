@@ -73,6 +73,9 @@ export interface SalvageWreck {
   rotation: number;
   /** Only ordinary salvage containers drift; distress ships keep their original physics. */
   readonly containerVariant?: SalvageContainerVariant;
+  readonly debrisVariant?: SalvageDebrisVariant;
+  readonly sectionVariant?: SalvageSectionVariant;
+  readonly effectSeed?: number;
   driftVelocity?: WorldPoint;
   rotation3d?: { x: number; y: number; z: number };
   readonly spin3d?: Readonly<{ x: number; y: number; z: number }>;
