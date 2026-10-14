@@ -234,8 +234,18 @@ function tickStrategicCombat(
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
   if (actionState) {
-    const attackerDecision = reviewCombatCommitment(runtime.attacker, runtime.defender, runtime.arena, runtime.elapsedSeconds);
-    const defenderDecision = reviewCombatCommitment(runtime.defender, runtime.attacker, runtime.arena, runtime.elapsedSeconds);
+    const attackerDecision = reviewCombatCommitment(
+      runtime.attacker,
+      runtime.defender,
+      runtime.arena,
+      runtime.elapsedSeconds
+    );
+    const defenderDecision = reviewCombatCommitment(
+      runtime.defender,
+      runtime.attacker,
+      runtime.arena,
+      runtime.elapsedSeconds
+    );
     if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
     if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
     tickActionExchange(runtime, actionState, dt);

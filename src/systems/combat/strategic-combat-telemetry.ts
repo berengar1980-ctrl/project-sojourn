@@ -24,11 +24,19 @@ export function recordCommitment(
   side: 'attacker' | 'defender',
   result: { decision: string; victoryChance: number; escapeChance: number; reason: string }
 ): void {
-  recordCombatLog(runtime, side, 'plan',
-    'ENTSCHEIDUNG ' + result.decision.toUpperCase() +
-    ' · Siegchance ' + Math.round(result.victoryChance * 100) +
-    '% · Fluchtchance ' + Math.round(result.escapeChance * 100) +
-    '% · ' + result.reason);
+  recordCombatLog(
+    runtime,
+    side,
+    'plan',
+    'ENTSCHEIDUNG ' +
+      result.decision.toUpperCase() +
+      ' · Siegchance ' +
+      Math.round(result.victoryChance * 100) +
+      '% · Fluchtchance ' +
+      Math.round(result.escapeChance * 100) +
+      '% · ' +
+      result.reason
+  );
 }
 export function reviewAndExecute(
   runtime: StrategicCombatRuntime,
