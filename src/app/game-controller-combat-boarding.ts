@@ -1,3 +1,4 @@
+import { combatResultMessage } from './combat-result-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
@@ -15,6 +16,7 @@ export function startCombatBoarding(
   returnToMap: () => void
 ): void {
   if (!snapshot.boardingInitiator) return;
+  context.systemLog.write(combatResultMessage(snapshot));
   const enemyName = snapshot.defender.name;
   const { state } = context;
   state.panels.star?.destroy();
@@ -95,6 +97,7 @@ export function returnFromCombat(
   returnToMap: () => void
 ): void {
   const snapshot = combat.getSnapshot();
+  if (!snapshot.boardingInitiator) context.systemLog.write(combatResultMessage(snapshot));
   if (snapshot.boardingInitiator) {
     startCombatBoarding(context, snapshot, returnToMap);
     return;
