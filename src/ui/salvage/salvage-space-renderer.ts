@@ -1,4 +1,5 @@
 import { pickNearestHitArea } from './salvage-hit-test';
+import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -24,7 +25,6 @@ import {
   SalvageSceneLayers,
   type WreckHitArea,
   fractional,
-  hashId,
 } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
@@ -185,18 +185,28 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.context.save();
     this.context.translate(point.x, point.y);
-    this.context.rotate(wreck.rotation);
     this.context.globalAlpha = wreck.depleted ? 0.38 : 0.95;
-    const drewShip = drawDistressShipSprite(
-      this.context,
-      this.model.sectorEvent,
-      wreck.id,
-      this.camera.scale(1),
-      (url) => this.ensureNpcImage(url)
-    );
-    if (!drewShip) {
-      this.drawHullFragments(wreck, radius);
-      this.drawWreckDebris(wreck.id, radius);
+    if (wreck.id.startsWith('event-wreck-salvage-distress-')) {
+      this.context.rotate(wreck.rotation);
+      const drewShip = drawDistressShipSprite(
+        this.context,
+        this.model.sectorEvent,
+        wreck.id,
+        this.camera.scale(1),
+        (url) => this.ensureNpcImage(url)
+      );
+      if (!drewShip) {
+        // Ship silhouette while the existing distress-rescue sprite is loading.
+        this.context.fillStyle = '#6f858a';
+        this.context.fillRect(-radius * 0.8, -radius * 0.24, radius * 1.6, radius * 0.48);
+      }
+    } else {
+      drawSalvageContainer3d(
+        this.context,
+        wreck.containerVariant ?? 'standard',
+        radius,
+        wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation }
+      );
     }
     this.context.restore();
     if (
@@ -215,90 +225,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.restore();
     }
     return { id: wreck.id, point, radius: radius + 12 };
-  }
-  protected drawHullFragments(wreck: SalvageWreckView, radius: number): void {
-    const context = this.context;
-    const length = radius * 1.7;
-    const height = radius * 0.72;
-    const gradient = context.createLinearGradient(-length, -height, length, height);
-    gradient.addColorStop(0, '#3e4549');
-    gradient.addColorStop(0.48, '#70777a');
-    gradient.addColorStop(1, '#24292d');
-    context.fillStyle = gradient;
-    context.strokeStyle = 'rgba(201, 210, 210, 0.22)';
-    context.lineWidth = Math.max(0.8, radius * 0.018);
-    context.beginPath();
-    context.moveTo(-length * 0.92, -height * 0.55);
-    context.lineTo(-length * 0.08, -height * 0.7);
-    context.lineTo(length * 0.02, -height * 0.15);
-    context.lineTo(-length * 0.1, height * 0.62);
-    context.lineTo(-length * 0.9, height * 0.46);
-    context.closePath();
-    context.fill();
-    context.stroke();
-    context.save();
-    context.translate(length * 0.18, -height * 0.08);
-    context.rotate(-0.12);
-    context.beginPath();
-    context.moveTo(-length * 0.05, -height * 0.48);
-    context.lineTo(length * 0.68, -height * 0.34);
-    context.lineTo(length * 0.9, 0);
-    context.lineTo(length * 0.5, height * 0.42);
-    context.lineTo(-length * 0.04, height * 0.32);
-    context.closePath();
-    context.fill();
-    context.stroke();
-    context.restore();
-    this.drawKindDetails(wreck, radius);
-    context.strokeStyle = 'rgba(6, 8, 10, 0.86)';
-    context.lineWidth = Math.max(1.2, radius * 0.055);
-    context.beginPath();
-    context.moveTo(-radius * 0.08, -height * 0.65);
-    context.lineTo(radius * 0.15, height * 0.58);
-    context.stroke();
-  }
-  protected drawKindDetails(wreck: SalvageWreckView, radius: number): void {
-    const context = this.context;
-    context.fillStyle = 'rgba(26, 31, 34, 0.92)';
-    if (wreck.kind === 'freighter') {
-      for (let index = -2; index <= 1; index += 1) {
-        context.fillRect(
-          -radius * 0.65 + index * radius * 0.24,
-          -radius * 0.2,
-          radius * 0.2,
-          radius * 0.4
-        );
-      }
-    } else if (wreck.kind === 'miner') {
-      for (const y of [-0.38, 0, 0.38]) {
-        context.fillRect(radius * 0.38, radius * y - radius * 0.06, radius * 0.55, radius * 0.12);
-      }
-    } else if (wreck.kind === 'salvager') {
-      context.fillRect(-radius * 0.25, -radius * 0.7, radius * 0.46, radius * 0.26);
-      context.fillRect(radius * 0.08, radius * 0.42, radius * 0.58, radius * 0.25);
-    } else {
-      context.beginPath();
-      context.moveTo(radius * 0.12, -radius * 0.48);
-      context.lineTo(radius * 0.95, 0);
-      context.lineTo(radius * 0.1, radius * 0.42);
-      context.closePath();
-      context.fill();
-    }
-  }
-  protected drawWreckDebris(id: string, radius: number): void {
-    const context = this.context;
-    const hash = hashId(id);
-    context.fillStyle = 'rgba(124, 126, 122, 0.72)';
-    for (let index = 0; index < 7; index += 1) {
-      const angle = ((hash % 719) * 0.01 + index * 2.31) % (Math.PI * 2);
-      const spread = radius * (0.9 + ((hash >> (index % 12)) & 7) * 0.08);
-      const size = Math.max(1.3, radius * (0.035 + (index % 3) * 0.018));
-      context.save();
-      context.translate(Math.cos(angle) * spread, Math.sin(angle) * spread);
-      context.rotate(angle * 1.7);
-      context.fillRect(-size, -size * 0.35, size * 2, size * 0.7);
-      context.restore();
-    }
   }
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
