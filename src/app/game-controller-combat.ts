@@ -1,3 +1,5 @@
+import type { LocalSpaceInstance } from '../core/local-space-types';
+import type { WorldPoint } from '../core/world-types';
 import { combatEquippedWeapons, combatWeaponMounts } from '../systems/combat/combat-loadout-mounts';
 import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
@@ -49,5 +51,33 @@ export function createPlayerCombatant(
     sensorTier: sensor?.tier ?? 0,
     sensorRangeMeters: runtime.scanAvailable ? 1000 : 0,
     sensorRangeMultiplier: runtime.sensorModifier || 1,
+  };
+}
+
+/** The live mining field is the combat arena: preserve rocks, inertia and geometry. */
+export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: WorldPoint) {
+  return {
+    width: instance.width,
+    height: instance.height,
+    attackerPosition: { ...instance.ship.position },
+    attackerHeadingRadians: instance.ship.headingRadians,
+    attackerVelocity: velocity,
+    asteroids: instance.asteroids.map((asteroid) => ({
+      id: asteroid.id,
+      kind: asteroid.kind,
+      position: { ...asteroid.position },
+      velocity: { ...asteroid.physics.velocity },
+      angularVelocity: asteroid.physics.angularVelocity,
+      physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
+      radius: asteroid.radius,
+      rotation: asteroid.rotation,
+    })),
+    obstacles: instance.asteroids
+      .filter((asteroid) => asteroid.kind === 'resource')
+      .map((asteroid) => ({
+        id: asteroid.id,
+        position: { ...asteroid.position },
+        radius: asteroid.radius,
+      })),
   };
 }
