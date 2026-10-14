@@ -36,7 +36,11 @@ const campaign = read('src/app/game-controller.ts');
 assert(campaign.includes('asteroids: local.instance.asteroids.map('),
   'embedded campaign combat receives local moving asteroid bodies');
 assert(campaign.includes('attackerHeadingRadians: local.instance.ship.headingRadians'));
-assert(campaign.includes('attackerVelocity: {'));
+assert(campaign.includes('attackerVelocity: state.localSpace!.getShipWorldVelocity()'),
+  'the campaign transfers complete lateral and forward inertial motion');
+const localService = read('src/systems/local-space/local-space-service.ts');
+assert(localService.includes('getShipWorldVelocity(): WorldPoint'),
+  'local-space exposes its authoritative instantaneous world velocity');
 const salvage = read('src/app/game-controller-salvage.ts');
 assert(salvage.includes('attackerHeadingRadians: playerShip.headingRadians'),
   'salvage encounters transfer the player heading');
@@ -52,6 +56,9 @@ for (const setupFile of [
   assert(source.includes(shared), setupFile + ' uses shared weapon slot mapping');
   assert(source.includes('combatWeaponMounts'), setupFile + ' uses shared mount geometry');
 }
+const combatCamera = read('src/ui/combat/combat-camera.ts');
+assert(combatCamera.includes('Math.max(1, Math.min(4.6,'),
+  'duel and embedded-map camera share relative zoom limits');
 const duel = read('src/ui/start/duel-lobby.ts');
 const engagements = read('src/systems/combat/star-map-engagement-service.ts');
 assert(duel.includes('createStrategicCombatService('));
