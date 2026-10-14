@@ -222,7 +222,7 @@ export function reviewCombatStrategy(
 
   const hp = ship.hullHp / ship.hullMaxHp;
   const aggression = Math.max(0, Math.min(100, ship.setup.aiAggression ?? 50));
-  if (ship.setup.aiControlled && hp <= 0.3 && aggression < 88) {
+  if (!ship.setup.aiControlled && hp <= 0.3 && aggression < 88) {
     ship.tactic = 'flee';
     ship.strategy = {
       kind: 'escape',
