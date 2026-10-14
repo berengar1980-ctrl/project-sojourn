@@ -98,6 +98,9 @@ export function createCombatant(
   const configured = side === 'attacker' ? arena.attackerPosition : arena.defenderPosition;
   const startX = configured?.x ?? (side === 'attacker' ? arena.width * 0.28 : arena.width * 0.72);
   const startY = configured?.y ?? arena.height * (side === 'attacker' ? 0.46 : 0.54);
+  const startingVelocity = side === 'attacker' ? arena.attackerVelocity : arena.defenderVelocity;
+  const initialVelocity = startingVelocity ? { ...startingVelocity } : { x: 0, y: 0 };
+  const initialHeading = side === 'attacker' ? arena.attackerHeadingRadians : arena.defenderHeadingRadians;
   return {
     setup,
     shieldMaxHp: Math.max(0, setup.shieldHp),
@@ -117,9 +120,9 @@ export function createCombatant(
       lastShotAt: -10000,
     },
     position: { x: startX, y: startY },
-    velocity: { x: 0, y: 0 },
-    headingRadians: side === 'attacker' ? 0 : Math.PI,
-    speed: 0,
+    velocity: initialVelocity,
+    headingRadians: initialHeading ?? (side === 'attacker' ? 0 : Math.PI),
+    speed: Math.hypot(initialVelocity.x, initialVelocity.y),
     turnRateRadiansPerSecond: 0,
     angularThrust: 0,
     boostSeconds: 3.5,
