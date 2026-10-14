@@ -170,6 +170,7 @@ export interface SalvageLocalSpaceSnapshot {
   readonly lastEventResolution: SalvageEventResolution | null;
   readonly eventResolutionSerial: number;
   readonly salvageAvailable: boolean;
+  readonly scanAvailable?: boolean;
   readonly cargoCapacityTons: number;
 }
 
