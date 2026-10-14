@@ -429,7 +429,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? 'SCAN LÄUFT · ' + Math.round(model.longRangeScanProgress * 100) + ' %'
       : model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
     ui.cancelButton.hidden = model.phase === 'idle';
-    const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
+    const atExit = playerAtLocalExit(model.ship.position, model.width, model.height, model.backgroundSeed);
     ui.backButton.disabled =
       !atExit ||
       model.phase !== 'idle' ||
