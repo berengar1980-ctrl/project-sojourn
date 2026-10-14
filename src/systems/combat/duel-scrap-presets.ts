@@ -108,8 +108,11 @@ export function createScrapDuelArena(
     });
   }
 
+  // This is navigation ONLY: every asteroid/scrap element is still an
+  // impulse-based physical collision body in the duel. Small debris should
+  // be flown through, bumped and knocked aside rather than routed around.
   const obstacles = asteroids
-    .filter((piece) => piece.kind === 'resource')
+    .filter((piece) => Boolean(piece.sectionVariant))
     .map((piece) => ({
       id: piece.id,
       position: piece.position,
