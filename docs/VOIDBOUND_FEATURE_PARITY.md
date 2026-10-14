@@ -781,3 +781,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-14): Kampfabschluss, Feldrückkehr und Boarding (Draft)
 
 **keine Statusänderung.** Strukturierte Kampfergebnis-Zusammenfassung (Sieger, Hüllenzustand, Gegner, Gefechtsdauer, Boarding) und bestätigungspflichtige Ergebnisanzeige ergänzt, ohne fiktive Beute zu vergeben. Boarding verarbeitet den Sieg/Niederlage-Ausgang vor dem Beenden des Raumkampfs. Rückkehr zu bestehender Asteroiden-Instanz und Bergungsfeld mit erhaltenem Wrack-/Ressourcenobjekt und finaler Kampfposition angebunden. Vollständige Laufzeit- und CI-Verifikation noch erforderlich; die weitergehende Synchronisierung von Schild-, Hüllen-, Crew- und Frachtzuständen bleibt gesondert zu prüfen.
+
+## Review-Log (2026-10-14): Kampagnen-Kampfbeute aus realer NPC-Fracht (Draft)
+
+**keine Statusänderung.** Der Kampfabschluss transferiert nur bei gewonnenem Gefecht mit kampfunfähigem Gegner beziehungsweise erfolgreichem eigenen Boarding vorhandene NPC-Waren in das bestehende Spieler-Frachtsystem über `receiveCargo`. Freier Frachtraum begrenzt die Übernahme, der NPC verliert exakt die tatsächlich gebuchten Einheiten; Wiederholung bei vollem Frachtraum gibt keine zusätzliche Beute. Kampfergebnis zeigt die tatsächlich gutgeschriebenen Mengen, vergibt keine erfundenen Credits. CI und vollständige Gameplay-Abnahme offen.
