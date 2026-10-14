@@ -158,12 +158,7 @@ function attachEncounterSelector(
   });
 }
 
-function createDuelMapSelector(): {
-  mapLabel: HTMLLabelElement;
-  mapSelect: HTMLSelectElement;
-  tractorTestLabel: HTMLLabelElement;
-  tractorTestCheckbox: HTMLInputElement;
-} {
+function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLSelectElement } {
   const mapLabel = document.createElement('label');
   mapLabel.textContent = 'Kampfkarte';
   const mapSelect = document.createElement('select');
@@ -174,19 +169,9 @@ function createDuelMapSelector(): {
     mapSelect.append(option);
   }
   mapLabel.append(mapSelect);
-  const tractorTestCheckbox = document.createElement('input');
-  tractorTestCheckbox.type = 'checkbox';
-  const tractorTestLabel = document.createElement('label');
-  tractorTestLabel.textContent = 'Traktor-Test: Startschilde deaktivieren (nur PvP)';
-  tractorTestLabel.append(tractorTestCheckbox);
-  const update = (): void => {
-    const scrap = mapSelect.value === 'scrap_scattered' || mapSelect.value === 'scrap_field';
-    tractorTestLabel.hidden = !scrap;
-    tractorTestCheckbox.checked = scrap;
-  };
-  mapSelect.addEventListener('change', update);
-  update();
-  return { mapLabel, mapSelect, tractorTestLabel, tractorTestCheckbox };
+  // A change of battlefield must never change ship durability. All five maps
+  // use the exact same loadout, start shields, hull and combat damage rules.
+  return { mapLabel, mapSelect };
 }
 
 function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
@@ -305,8 +290,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
   let selectedEncounter = '';
-  const { mapLabel, mapSelect, tractorTestLabel, tractorTestCheckbox } =
-    createDuelMapSelector();
+  const { mapLabel, mapSelect } = createDuelMapSelector();
   const encounterLabel = document.createElement('label');
   encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
   const encounterSelect = document.createElement('select');
@@ -334,7 +318,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     selectedEncounter = id;
     render();
   });
-  shell.append(title, description, encounterLabel, mapLabel, tractorTestLabel, actions, cards);
+  shell.append(title, description, encounterLabel, mapLabel, actions, cards);
   root.replaceChildren(shell);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
@@ -352,19 +336,12 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     const generation = duelGeneration;
     const setups = duelSetups(drafts, ships);
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
-    // Analysis-only durability: preserve damage mechanics, extend observation time.
-    const scrapSelected =
-      mapSelect.value === 'scrap_scattered' || mapSelect.value === 'scrap_field';
-    // Optional PvP-only test setup; normal campaign combat keeps its original
-    // shield-gated tractor rule. This makes the first scrap throw observable
-    // without waiting for a long shield-breaking exchange.
-    const tunedSetups = scrapSelected && tractorTestCheckbox.checked
-      ? setups.map((setup) => ({ ...setup, shieldHp: 0 }))
-      : setups;
+    // Preserve the same prepared combatants on every PvP map: in particular,
+    // never silently replace the working asteroid map's shield defaults.
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
-      tunedSetups[0]!,
-      tunedSetups[1]!,
+      setups[0]!,
+      setups[1]!,
       duelSeed,
       createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
     );
