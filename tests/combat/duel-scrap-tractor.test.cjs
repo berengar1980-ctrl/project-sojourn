@@ -92,6 +92,11 @@ assert.equal(runtime.thrownAsteroids[0].phase,'flight');
 
 const visuals = readModuleSource(root,'src/ui/combat/combat-scrap-renderer.ts');
 const battlefield = readModuleSource(root,'src/ui/combat/strategic-combat-renderer.ts');
+const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');
+assert(lobby.includes('Traktor-Test: Startschilde deaktivieren') &&
+  lobby.includes('scrapSelected && tractorTestCheckbox.checked') &&
+  lobby.includes('shieldHp: 0'),
+  'optional PvP practice mode must permit immediate throws without altering campaign shields');
 assert(visuals.includes('drawSalvageDebris3d') &&
        visuals.includes('drawSalvageSection3d') &&
        visuals.includes('drawSalvageContainer3d'),
