@@ -524,6 +524,28 @@ body {
   border-color: rgba(205, 147, 69, 0.45);
 }
 
+.salvage-long-scan-button {
+  position: absolute;
+  top: 146px;
+  right: 24px;
+  padding: 8px 10px;
+  border: 1px solid rgba(94, 178, 133, 0.42);
+  background: rgba(18, 62, 40, 0.78);
+  color: #a9e8c0;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-long-scan-button:hover {
+  background: rgba(58, 118, 92, 0.44);
+}
+
+.salvage-long-scan-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .salvage-operation-status {
   position: absolute;
   top: 72px;
