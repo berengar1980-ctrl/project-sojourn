@@ -26,6 +26,13 @@ for (const seed of [1, 53, 415, 9001]) {
   assert(dense.asteroids.filter((rock) => rock.kind === 'resource').length >= 5,
     'several large wrecks must serve as actual cover and physical obstacles');
   for (const map of [moderate, dense]) {
+    assert(
+      Math.hypot(
+        map.attackerPosition.x - map.defenderPosition.x,
+        map.attackerPosition.y - map.defenderPosition.y
+      ) <= 1200,
+      'combatants must start within the real tractor engagement separation limit'
+    );
     assert(map.asteroids.every((rock) =>
       rock.position.x > rock.radius && rock.position.x < map.width - rock.radius &&
       rock.position.y > rock.radius && rock.position.y < map.height - rock.radius
