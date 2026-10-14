@@ -8,11 +8,11 @@ import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face, type Ve
  * geometry. Partial upper decks expose the rooms underneath.
  */
 const C = {
-  floor: [42, 49, 53], wall: [64, 73, 76], edge: [28, 36, 42],
-  floorLight: [83, 91, 89], trim: [145, 106, 56], rust: [104, 60, 46],
-  steel: [99, 108, 108], dark: [16, 22, 27], cable: [110, 47, 40],
-  blue: [42, 74, 91], signal: [75, 143, 134], glass: [29, 46, 56],
-  soot: [27, 29, 30], burn: [67, 47, 38], edgeMetal: [126, 115, 98],
+  floor: [35, 41, 45], wall: [49, 58, 61], edge: [24, 30, 35],
+  floorLight: [67, 74, 73], trim: [115, 86, 48], rust: [83, 49, 40],
+  steel: [78, 87, 89], dark: [13, 19, 23], cable: [87, 36, 32],
+  blue: [34, 60, 75], signal: [59, 114, 111], glass: [24, 36, 44],
+  soot: [22, 23, 25], burn: [55, 38, 31], edgeMetal: [99, 92, 80],
 } as const satisfies Record<string, Color>;
 
 type DeckHeight = 0 | 1.1;
