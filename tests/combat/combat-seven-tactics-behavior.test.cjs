@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const load = (path) => loadStandaloneTypeScriptModule(root, path);
+const load = (modulePath) => loadStandaloneTypeScriptModule(root, modulePath);
 const moves = load('src/systems/combat/combat-tactical-maneuvers.ts');
 const planner = load('src/systems/combat/combat-strategy-planner.ts');
 const executor = load('src/systems/combat/combat-plan-executor.ts');
