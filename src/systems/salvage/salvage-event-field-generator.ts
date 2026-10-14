@@ -130,6 +130,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
     component,
     componentStatus: component ? 'available' : 'none',
     inspected: event.type === 'distress-rescue',
+    scanLevel: event.type === 'distress-rescue' ? 'analyzed' : 'unscanned',
   };
   return {
     id: `sector-event-field-${event.id}`,
