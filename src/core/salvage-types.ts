@@ -6,6 +6,27 @@ import type { WorldPoint } from './world-types';
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
 export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
+export type SalvageSectionVariant =
+  | 'corridor-complex'
+  | 'double-deck'
+  | 'engine-room'
+  | 'cargo-bay'
+  | 'crew-quarters'
+  | 'bridge'
+  | 'reactor-hall'
+  | 'medbay';
+
+export interface SalvageSection {
+  readonly id: string;
+  readonly variant: SalvageSectionVariant;
+  position: WorldPoint;
+  readonly radius: number;
+  driftVelocity: WorldPoint;
+  rotation3d: { x: number; y: number; z: number };
+  readonly spin3d: Readonly<{ x: number; y: number; z: number }>;
+  readonly effectSeed: number;
+}
+
 export type SalvageDebrisVariant =
   | 'corridor'
   | 'deck'
@@ -70,6 +91,8 @@ export interface SalvageField {
   readonly wrecks: SalvageWreck[];
   /** Optional for event maps and compatibility with older field snapshots. */
   readonly debris?: SalvageDebris[];
+  /** Large explorable-looking sections, visually independent of the throwable scrap pieces. */
+  readonly sections?: SalvageSection[];
 }
 
 export interface SalvageRecoveryResult {
