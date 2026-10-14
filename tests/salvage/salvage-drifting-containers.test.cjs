@@ -13,11 +13,21 @@ const variants = new Set();
 for (let seed = 1; seed <= 32; seed += 1) {
   const field = generator.generateSalvageField('container-field', seed, 2);
   assert.deepEqual(field, generator.generateSalvageField('container-field', seed, 2));
-  assert(field.debris.length >= 8 && field.debris.length <= 11, 'field should have 8-11 fragments');
+  assert(field.debris.length >= 178 && field.debris.length <= 212,
+    'field should carry asteroid-like numbers of small debris');
+  assert(field.sections.length >= 8 && field.sections.length <= 11,
+    'all eight additional large sections must exist');
   assert.equal(new Set(field.debris.slice(0, 8).map((entry) => entry.variant)).size, 8,
     'every field must include all eight different fragments');
   assert(field.debris.every((entry) => !('resources' in entry) && !('inspected' in entry)),
     'decorative fragments must never become salvage loot targets');
+  assert.equal(new Set(field.sections.slice(0, 8).map((entry) => entry.variant)).size, 8,
+    'every large 3D section must have a distinct room layout');
+  assert(field.sections.some((section) => section.variant === 'double-deck'),
+    'a visible two-deck cutaway is required');
+  assert(field.sections.every((section) => section.radius >= 86 &&
+    section.radius < 132 && section.driftVelocity),
+    'large sections need real scale and asteroid physics');
   assert(field.debris.every((entry) => entry.radius > 0 && entry.driftVelocity),
     'decorative fragments need physics collision and drift bodies');
   assert.equal(new Set(field.wrecks.map((entry) => entry.containerVariant)).size, 3,
@@ -39,6 +49,8 @@ const start = { ...target.position };
 const debris = field.debris[0];
 const debrisStart = { ...debris.position };
 const angle = { ...target.rotation3d };
+const section = field.sections[0];
+const sectionStart = { ...section.position };
 const stationaryDistress = {
   ...target,
   id: 'event-wreck-salvage-distress-ship',
@@ -50,17 +62,27 @@ field.wrecks.push(stationaryDistress);
 motion.advanceSalvageContainerDrift(field, 0.05);
 assert.notDeepEqual(target.position, start, 'container world collision positions must follow drift');
 assert.notDeepEqual(debris.position, debrisStart, 'debris collision positions follow drift');
+assert.notDeepEqual(section.position, sectionStart, 'room-scale sections must drift as rigid bodies');
 assert.notDeepEqual(target.rotation3d, angle, '3D tumble angles must advance with simulation time');
 assert.deepEqual(stationaryDistress.position, { x: 600, y: 600 }, 'distress ship must not drift');
 
 const renderer = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 const mesh = readModuleSource(root, 'src/ui/salvage/salvage-container-mesh.ts');
 const fragments = readModuleSource(root, 'src/ui/salvage/salvage-debris-mesh.ts');
+const sections = readModuleSource(root, 'src/ui/salvage/salvage-section-mesh.ts');
 const controller = readModuleSource(root, 'src/app/game-controller-salvage.ts');
+const localService = readModuleSource(root, 'src/systems/salvage/salvage-local-space-service.ts');
 const scene = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-service.ts');
 assert(renderer.includes('drawSalvageContainer3d') && !renderer.includes('drawHullFragments'));
 assert(renderer.includes('drawDistressShipSprite'), 'distress ship must keep its original renderer');
 assert(renderer.includes('drawSalvageDebris3d'), 'fragment renderer must draw real 3D mesh geometry');
+assert(renderer.includes('drawSalvageSection3d'), 'large ship rooms must be drawn as 3D objects');
+for (const name of ['CorridorComplex', 'DoubleDeck', 'EngineRoom', 'CargoHold',
+  'CrewBlock', 'Bridge', 'ReactorHall', 'Medbay']) {
+  assert(sections.includes('function build' + name + '('), 'missing large room module ' + name);
+}
+assert(sections.includes('ladder(') && sections.includes('doorX(') &&
+  sections.includes('room('), 'big wreck parts need floors, real doorframes and two deck details');
 assert(!renderer.includes('drawHullFragments'), 'old fake hull fragments must remain removed');
 assert(fragments.includes('drawProjectedSalvageMesh'), 'wreck fragments share the 3D projection pipeline');
 for (const kind of ['Corridor', 'Deck', 'Airlock', 'Truss', 'Engine', 'Reactor',
@@ -71,9 +93,19 @@ assert(fragments.includes('sparkPulse') && fragments.includes('const breathe'),
   'sparks and escaping gas should animate with cheap 2D effects');
 assert(mesh.includes("createContainer('standard')") && mesh.includes("createContainer('damaged')") && mesh.includes("createContainer('tank')"));
 assert(scene.includes('resolveShipShieldObstacleCollisions'), 'NPC and player collisions remain enabled');
-assert(scene.includes('options.field.wrecks.map'), 'collisions must use live container positions');
-assert(scene.includes('this.options.field.debris ?? []'), 'ship shields must collide with fragments');
+assert(scene.includes('resolveSalvageShieldContacts'), 'NPC shield collision must use dynamic asteroid impulses');
+assert(motion.advanceSalvageContainerDrift, 'asteroid drift integration must be callable');
+assert(localService.includes('salvageFieldPhysicsBodies'), 'navigation must use asteroid collision bodies');
+assert(controller.includes('asteroids: (field.debris ?? []).map'),
+  'scrap must be fed into the existing tractor-throw mechanic');
+assert(controller.includes('invalidateSalvagePhysics'),
+  'thrown scrap must not respawn after combat');
+assert(localService.includes('longRangeScanRadius') &&
+  localService.includes("wreck.scanLevel = 'surveyed'"),
+  'long-range scan must reuse sensor radius without revealing amounts');
+assert(renderer.includes("['???']") && renderer.includes('resource.remaining'),
+  'long range scan shows ? while detail scan shows actual contents');
 assert(controller.includes('field.debris ?? []'), 'space combat must use fragment obstacles');
 assert(renderer.includes('pickWreck'), 'containers must remain clickable');
 
-console.log('PASS salvage container variants, 3D drift, loot, click, collisions, distress exclusion');
+console.log('PASS dense 3D salvage, eight giant multiroom sections, asteroid impulses, scans and tractor throws');
