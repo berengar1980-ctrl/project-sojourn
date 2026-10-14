@@ -254,18 +254,20 @@ function mountControllerSalvage(
     ship: state.activeShip,
     seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
     location,
-    ...(preservedField ? { field: preservedField } : sectorEvent
-      ? {
-          field:
-            state.salvageEventFields.get(sectorEvent.id) ??
-            (() => {
-              const field = generateSectorSalvageEventField(sectorEvent);
-              state.salvageEventFields.set(sectorEvent.id, field);
-              return field;
-            })(),
-          sectorEvent,
-        }
-      : {}),
+    ...(preservedField
+      ? { field: preservedField }
+      : sectorEvent
+        ? {
+            field:
+              state.salvageEventFields.get(sectorEvent.id) ??
+              (() => {
+                const field = generateSectorSalvageEventField(sectorEvent);
+                state.salvageEventFields.set(sectorEvent.id, field);
+                return field;
+              })(),
+            sectorEvent,
+          }
+        : {}),
     economy: economy.salvage,
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
@@ -309,14 +311,20 @@ function mountControllerSalvage(
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
-  if (activeCombat && state.mode !== 'combat' && state.mode !== 'boarding' && state.embeddedCombat === null) {
+  if (
+    activeCombat &&
+    state.mode !== 'combat' &&
+    state.mode !== 'boarding' &&
+    state.embeddedCombat === null
+  ) {
     mountCombatScene(context, () => mountControllerStarMap(context));
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
   if (snapshot.boardingInitiator) {
     const origin = state.embeddedCombat;
-    const preservedSalvageField = origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
+    const preservedSalvageField =
+      origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
     if (origin === 'local-space') {
       state.localSpace?.syncCombatPose(
         snapshot.attacker.position,

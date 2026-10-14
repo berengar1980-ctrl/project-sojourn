@@ -23,10 +23,19 @@ export function showCampaignCombatSummary(
   heading.textContent = 'KAMPFABSCHLUSS · ' + result.outcome;
   const details = document.createElement('p');
   details.textContent =
-    'Gegner: ' + result.enemy + ' · Eigene Hülle: ' +
-    result.playerHull + '/' + result.playerHullMax + ' · Gegnerhülle: ' +
-    result.enemyHull + '/' + result.enemyHullMax + ' · Dauer: ' +
-    result.duration + ' s';
+    'Gegner: ' +
+    result.enemy +
+    ' · Eigene Hülle: ' +
+    result.playerHull +
+    '/' +
+    result.playerHullMax +
+    ' · Gegnerhülle: ' +
+    result.enemyHull +
+    '/' +
+    result.enemyHullMax +
+    ' · Dauer: ' +
+    result.duration +
+    ' s';
   const loot = document.createElement('p');
   loot.textContent = boardingOutcome
     ? 'Enterergebnis: ' + boardingOutcome + '. Erbeutete Ausrüstung wird separat im Log erfasst.'
@@ -34,10 +43,14 @@ export function showCampaignCombatSummary(
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = 'ZURÜCK ZUM SPIEL';
-  button.addEventListener('click', () => {
-    overlay.remove();
-    onContinue();
-  }, { once: true });
+  button.addEventListener(
+    'click',
+    () => {
+      overlay.remove();
+      onContinue();
+    },
+    { once: true }
+  );
   panel.append(heading, details, loot, button);
   overlay.append(panel);
   root.append(overlay);

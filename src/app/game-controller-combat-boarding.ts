@@ -85,9 +85,14 @@ export function startCombatBoarding(
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
       context.engagements.finishPlayerCombat();
-      showCampaignCombatSummary(context.root, snapshot, () => {
-        runSceneZoomTransition(context.root, () => returnToMap(result.outcome));
-      }, result.outcome);
+      showCampaignCombatSummary(
+        context.root,
+        snapshot,
+        () => {
+          runSceneZoomTransition(context.root, () => returnToMap(result.outcome));
+        },
+        result.outcome
+      );
     },
   });
 }

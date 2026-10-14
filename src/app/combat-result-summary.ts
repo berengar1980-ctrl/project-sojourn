@@ -14,7 +14,12 @@ export interface CampaignCombatResult {
 /** Pure projection: never award fabricated loot or replay economic effects. */
 export function campaignCombatResult(snapshot: StrategicCombatSnapshot): CampaignCombatResult {
   return {
-    outcome: snapshot.winner === 'attacker' ? 'SIEG' : snapshot.winner === 'defender' ? 'NIEDERLAGE' : 'UNENTSCHIEDEN',
+    outcome:
+      snapshot.winner === 'attacker'
+        ? 'SIEG'
+        : snapshot.winner === 'defender'
+          ? 'NIEDERLAGE'
+          : 'UNENTSCHIEDEN',
     enemy: snapshot.defender.name,
     playerHull: Math.round(snapshot.attacker.hullHp),
     playerHullMax: Math.round(snapshot.attacker.hullMaxHp),
@@ -27,8 +32,22 @@ export function campaignCombatResult(snapshot: StrategicCombatSnapshot): Campaig
 
 export function combatResultMessage(snapshot: StrategicCombatSnapshot): string {
   const result = campaignCombatResult(snapshot);
-  return 'KAMPFENDE > ' + result.outcome + ' GEGEN ' + result.enemy.toUpperCase() +
-    ' · HÜLLE ' + result.playerHull + '/' + result.playerHullMax +
-    ' · GEGNER ' + result.enemyHull + '/' + result.enemyHullMax +
-    ' · ' + result.duration + ' S' + (result.boarding ? ' · BOARDING' : '');
+  return (
+    'KAMPFENDE > ' +
+    result.outcome +
+    ' GEGEN ' +
+    result.enemy.toUpperCase() +
+    ' · HÜLLE ' +
+    result.playerHull +
+    '/' +
+    result.playerHullMax +
+    ' · GEGNER ' +
+    result.enemyHull +
+    '/' +
+    result.enemyHullMax +
+    ' · ' +
+    result.duration +
+    ' S' +
+    (result.boarding ? ' · BOARDING' : '')
+  );
 }
