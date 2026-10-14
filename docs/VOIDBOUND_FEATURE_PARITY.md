@@ -734,3 +734,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Gezielte Angriffe auf Antrieb und Traktor
 
 **keine Statusänderung.** Integrationstest ergänzt, der die Zielentscheidung auf fliehenden Antrieb, Traktor nach Antriebszerstörung, Schilde vor Subsystemschaden sowie Winkel-/Hüllen-Fallback ausführt. Vorhandene Spiellogik unverändert; keine neue UI-Auswahlmöglichkeit implementiert.
+
+## Review-Log (2026-10-13): Fünf taktische Kampfverbesserungen
+
+**keine Statusänderung.** Sofortige Plan-Reviews beider Schiffe bei Antriebs-/Traktorausfall, kürzere optimale Waffenreichweite gegen antriebslose Gegner, kurzfristige Kollisionsumfahrung bewegter Asteroiden ohne zusätzliche Grid-A*-Suche und zusätzliche Auswertung von Planwechseln, Trefferarten, Systemausfällen und Hindernisereignissen. Vorhandene Hardpoint-/Waffenpositionslogik wird genutzt, ohne Schadensbalance und Flugphysik zu ändern. Aktive Deckungssuche und Lock-/Ködermanöver sind noch nicht vollständig implementiert; dazu gesonderte KI-Integration erforderlich.

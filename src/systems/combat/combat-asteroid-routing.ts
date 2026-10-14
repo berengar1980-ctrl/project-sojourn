@@ -163,8 +163,13 @@ export function combatRouteHeading(
   if (!waypoint) return null;
   // A temporarily blocked waypoint is handled at the next scheduled refresh.
   // Forcing zero here caused a full replan on every simulation frame.
-  const dx = waypoint.x - ship.position.x;
-  const dy = waypoint.y - ship.position.y;
+  // If an asteroid drifts across the current waypoint corridor, steer around
+  // its nearer flank until the next scheduled route refresh. No grid search.
+  const steeringPoint = pathBlocked(ship.position, waypoint, arena, clearance)
+    ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
+    : waypoint;
+  const dx = steeringPoint.x - ship.position.x;
+  const dy = steeringPoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);
   return distance > 0.001 ? { x: dx / distance, y: dy / distance } : null;
 }

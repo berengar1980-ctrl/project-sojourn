@@ -14,7 +14,7 @@ assert.equal(describeCombatIntent({ tactic: 'fight', strategy: { kind: 'approach
 assert.equal(describeCombatIntent({ tactic: 'fight', strategy: null }), 'KAMPFPOSITION SUCHEN');
 const fs = require('node:fs');
 const source = fs.readFileSync(
-  path.join(root, 'src/systems/combat/strategic-combat-service.ts'),
+  path.join(root, 'src/systems/combat/strategic-combat-telemetry.ts'),
   'utf8'
 );
 assert(
