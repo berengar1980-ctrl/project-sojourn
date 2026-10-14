@@ -99,7 +99,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
     kind: event.wreckKind,
     quality,
     position: { x: width * 0.55, y: height * 0.5 },
-    radius: event.type === 'distress-rescue' ? distressRadius : 58 + random() * 24,
+    radius: event.type === 'distress-rescue' ? distressRadius : 19.5 + random() * 7.5,
     rotation: random() * Math.PI * 2,
     ...(event.type !== 'distress-rescue'
       ? {
