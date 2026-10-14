@@ -192,6 +192,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   );
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
+    seed: state.localSpaceSeed,
     width: state.localSpace.getSnapshot().instance.width,
     height: state.localSpace.getSnapshot().instance.height,
     miners: economy.sectorNpcs.npcs.filter(
