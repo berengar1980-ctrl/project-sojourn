@@ -152,6 +152,8 @@ function chooseCommitmentTransition(
     if (ship.subsystems.engine > 0) return null;
     ship.tactic = 'fight';
     ship.strategy = null;
+    ship.asteroidRoute = [];
+    ship.nextAsteroidRouteAt = 0;
     ship.escapeAbandonedAt = elapsed;
     return {
       decision: 'fight',
@@ -165,6 +167,8 @@ function chooseCommitmentTransition(
   if (strength < requiredConfidence(ship) && escape > 0.5) {
     ship.tactic = 'flee';
     ship.strategy = null;
+    ship.asteroidRoute = [];
+    ship.nextAsteroidRouteAt = 0;
     ship.escapeCommittedAt = elapsed;
     return {
       decision: 'flee',
