@@ -38,6 +38,13 @@ assert.equal(freighter.tactic, 'flee', 'weak freighter commits to fleeing if exi
 freighter.strategy = { kind: 'escape', focus: 'turret', desiredRange: 1000, score: 999, reason: 'test' };
 reviewCombatCommitment(freighter, pirate, arena, 8);
 assert.equal(freighter.tactic, 'flee', 'does not change mind after eight seconds');
+const emergency = ship('freighter-emergency', 800);
+emergency.tactic = 'flee';
+emergency.escapeCommittedAt = 0;
+emergency.nextCommitmentReviewAt = 16;
+emergency.subsystems.engine = 0;
+reviewCombatCommitment(emergency, pirate, arena, 9);
+assert.equal(emergency.tactic, 'fight', 'engine loss interrupts commitment before 16-second boundary');
 assert.equal(freighter.strategy.kind, 'escape', 'commitment does not trample movement strategy');
 freighter.subsystems.engine = 0;
 reviewCombatCommitment(freighter, pirate, arena, 16);
