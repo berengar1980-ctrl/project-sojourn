@@ -23,16 +23,24 @@ export function reviewShipContact(
   review: (ship: MutableCombatant, enemy: MutableCombatant, side: StrategicCombatSide) => void
 ): void {
   // Only real hull contact interrupts the fixed eight-second strategy cadence.
-  if (Math.hypot(
-    runtime.attacker.position.x - runtime.defender.position.x,
-    runtime.attacker.position.y - runtime.defender.position.y
-  ) > 86) return;
+  if (
+    Math.hypot(
+      runtime.attacker.position.x - runtime.defender.position.x,
+      runtime.attacker.position.y - runtime.defender.position.y
+    ) > 86
+  )
+    return;
   for (const [side, ship, enemy] of [
     ['attacker', runtime.attacker, runtime.defender],
     ['defender', runtime.defender, runtime.attacker],
   ] as const) {
     // Contact may not bypass the first staggered four-second analysis window.
-    if (ship.setup?.aiControlled && !ship.strategy && ship.nextStrategyReviewAt > runtime.elapsedSeconds) continue;
+    if (
+      ship.setup?.aiControlled &&
+      !ship.strategy &&
+      ship.nextStrategyReviewAt > runtime.elapsedSeconds
+    )
+      continue;
     if (runtime.elapsedSeconds - (ship.lastContactReviewAt ?? -100) < 2) continue;
     ship.lastContactReviewAt = runtime.elapsedSeconds;
     ship.nextStrategyReviewAt = runtime.elapsedSeconds;
