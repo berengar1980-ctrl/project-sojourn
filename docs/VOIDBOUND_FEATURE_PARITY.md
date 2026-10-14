@@ -745,3 +745,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-13): Fünf taktische Kampfverbesserungen
 
 **keine Statusänderung.** Sofortige Plan-Reviews beider Schiffe bei Antriebs-/Traktorausfall, kürzere optimale Waffenreichweite gegen antriebslose Gegner, kurzfristige Kollisionsumfahrung bewegter Asteroiden ohne zusätzliche Grid-A*-Suche und zusätzliche Auswertung von Planwechseln, Trefferarten, Systemausfällen und Hindernisereignissen. Vorhandene Hardpoint-/Waffenpositionslogik wird genutzt, ohne Schadensbalance und Flugphysik zu ändern. Aktive Deckungssuche und Lock-/Ködermanöver sind noch nicht vollständig implementiert; dazu gesonderte KI-Integration erforderlich.
+
+## Review-Log (2026-10-14): Kampagne/Duell Physik- und Kartenparität
+
+**keine Statusänderung.** Beide Modi verwenden `createStrategicCombatService`; Embedded-Asteroidenkämpfe übernehmen nun Asteroiden mit Geschwindigkeit, Drehung und Physics-Metadaten statt nur statischen Kreishindernissen. Arena-Optionen können Startgeschwindigkeit und Orientierung für beide Kontrahenten übernehmen (sonst bestehende Defaults). Lokale Spielerbewegung wird vorerst aus Kurs und Vorwärtsgeschwindigkeit angenähert; seitliche Trägheit kann vom lokalen Service separat verwaltet sein. Salvage übergibt weiterhin Wreck-Hindernisse; exakte Wrackdrift-/Schiffsgeschwindigkeitsübertragung und vollständige Vereinheitlichung der Schiffsvorbereitung sind Folgearbeiten. Keine Änderung an Waffen-/Schadensbalance. Vergleichstest ergänzt.
