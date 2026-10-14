@@ -460,6 +460,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
     }));
     resolveShipShieldObstacleCollisions(bodies, obstacles);
     for (const body of bodies) {
+      // The player runtime owns shield hits; resolving them here first
+      // would swallow the actual player's visible contact event.
+      if (body.id === 'player') continue;
       resolveSalvageShieldContacts(
         this.options.field,
         body.state as LocalShipState,
