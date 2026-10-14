@@ -1,6 +1,30 @@
 import type { CombatGrapple, MutableCombatant } from './strategic-combat-types';
 
 const COUPLING_DISTANCE = 92;
+
+/** Docking requires physical hull proximity plus settled relative velocity.
+ * Never trigger tactical boarding merely because a hook has attached.
+ */
+export function canDockGrappledShips(
+  source: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>,
+  target: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>
+): boolean {
+  const separation = Math.hypot(
+    source.position.x - target.position.x,
+    source.position.y - target.position.y
+  );
+  const hullRadius = (body: typeof source): number =>
+    Math.max(20, body.setup.shieldGeometry?.radiusX ?? 45);
+  const couplingRange = Math.max(
+    90,
+    Math.min(104, hullRadius(source) + hullRadius(target) + 6)
+  );
+  const relativeSpeed = Math.hypot(
+    source.velocity.x - target.velocity.x,
+    source.velocity.y - target.velocity.y
+  );
+  return separation <= couplingRange && relativeSpeed <= 22;
+}
 const WINCH_REEL_METERS_PER_SECOND = 84;
 const TRACTOR_REEL_BONUS = 76;
 
