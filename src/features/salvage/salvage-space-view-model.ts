@@ -6,6 +6,7 @@ import type {
   SalvageLocalSpaceSnapshot,
   SalvageContainerVariant,
   SalvageDebris,
+  SalvageSection,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -104,6 +105,7 @@ export interface SalvageSpaceViewModel {
   readonly npcShips: readonly SalvageNpcShipView[];
   readonly wrecks: readonly SalvageWreckView[];
   readonly debris: readonly SalvageDebris[];
+  readonly sections: readonly SalvageSection[];
   readonly selectedWreck: SalvageWreckView | null;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
@@ -275,6 +277,7 @@ export function createSalvageSpaceViewModel(
     npcShips: npcShipViews(npcShips, selectedNpcId, combat),
     wrecks,
     debris: snapshot.field.debris ?? [],
+    sections: snapshot.field.sections ?? [],
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
     navigationRoute: snapshot.navigationRoute,
