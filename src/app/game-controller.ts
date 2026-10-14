@@ -16,7 +16,6 @@ import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 import { createControllerStarPanel } from './game-controller-star-map';
-
 import type {
   ControllerRuntimeContext,
   ControllerRuntimeState,
@@ -52,7 +51,6 @@ import {
 import type { GameControllerOptions, GameController } from './game-controller-types';
 
 export type { GameController } from './game-controller-types';
-
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;
   state.shipSwitcher?.destroy();
@@ -71,7 +69,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     }
   );
 }
-
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
   destroyScenePanels(state.panels);
@@ -110,7 +107,6 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   });
   mountControllerSwitcher(context);
 }
-
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
@@ -148,7 +144,6 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
   mountControllerSwitcher(context);
 }
-
 function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelActions {
   return createLocalPanelActions({
     getSpace: () => context.state.localSpace,
@@ -163,7 +158,6 @@ function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelAc
     ),
   });
 }
-
 function mountControllerMining(
   context: ControllerRuntimeContext,
   reuseSeed = false,
@@ -223,7 +217,6 @@ function mountControllerMining(
   });
   mountControllerSwitcher(context);
 }
-
 function mountControllerSalvage(
   context: ControllerRuntimeContext,
   reuseSeed = false,
@@ -309,7 +302,6 @@ function mountControllerSalvage(
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
-
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
