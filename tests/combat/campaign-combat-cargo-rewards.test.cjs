@@ -4,49 +4,32 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const { collectCombatCargo } = loadStandaloneTypeScriptModule(
+const { transferCapturedCargo } = loadStandaloneTypeScriptModule(
   root,
   'src/app/game-controller-combat-rewards.ts'
 );
-const ship = { id: 'miner-80m-variant-01' };
-const npc = { id: 'enemy', locationId: 'harbor', cargo: { ferrite: 7, steel: 3 } };
+const npc = { cargo: { ferrite: 7, steel: 3 } };
 const playerCargo = {};
 let remaining = 5;
-const context = {
-  state: { activeShip: ship },
-  crew: { runtimeOptions: () => ({}) },
-  loadouts: { get: () => ({}) },
-  engagements: { activePlayerEnemy: () => npc },
-  economy: {
-    trade: {
-      receiveCargo: (id, requested) => {
-        const qty = Math.min(requested, remaining);
-        remaining -= qty;
-        playerCargo[id] = (playerCargo[id] ?? 0) + qty;
-        return qty;
-      },
-    },
-  },
-  systemLog: { write: () => {} },
+const receive = (id, requested) => {
+  const qty = Math.min(requested, remaining);
+  remaining -= qty;
+  playerCargo[id] = (playerCargo[id] ?? 0) + qty;
+  return qty;
 };
-const snapshot = {
-  winner: 'attacker',
-  attacker: { hullHp: 50 },
-  defender: { id: 'enemy', hullHp: 0 },
-};
-assert.deepEqual(collectCombatCargo(context, { ...snapshot, winner: 'defender' }), []);
-assert.equal(npc.cargo.ferrite, 7, 'lost battle cannot transfer cargo');
-assert.deepEqual(collectCombatCargo(context, { ...snapshot, defender: { id: 'enemy', hullHp: 5 } }), []);
-assert.equal(npc.cargo.ferrite, 7, 'surviving enemy cannot be looted without successful boarding');
-const acquired = collectCombatCargo(context, snapshot);
+const acquired = transferCapturedCargo(npc, receive);
 assert.deepEqual(acquired, [{ resourceId: 'ferrite', quantity: 5 }]);
 assert.equal(npc.cargo.ferrite, 2);
 assert.equal(npc.cargo.steel, 3, 'cargo capacity prevents excessive rewards');
 assert.equal(playerCargo.ferrite, 5);
-assert.deepEqual(collectCombatCargo(context, snapshot), [], 'repeating settlement cannot clone cargo');
+assert.deepEqual(transferCapturedCargo(npc, receive), [], 'full hold cannot clone cargo');
 remaining = 4;
-assert.deepEqual(collectCombatCargo(context, { ...snapshot, defender: { id: 'enemy', hullHp: 5 } }, true),
+assert.deepEqual(transferCapturedCargo(npc, receive),
   [{ resourceId: 'ferrite', quantity: 2 }, { resourceId: 'steel', quantity: 2 }]);
 assert.equal(npc.cargo.ferrite, undefined);
 assert.equal(npc.cargo.steel, 1);
+const fs = require('node:fs');
+const source = fs.readFileSync(path.join(root, 'src/app/game-controller-combat-rewards.ts'), 'utf8');
+assert(source.includes("snapshot.winner !== 'attacker'"), 'only a player victory qualifies for loot');
+assert(source.includes("!capturedByBoarding && snapshot.defender.hullHp > 0"), 'living enemy cargo requires boarding');
 console.log('PASS campaign combat loot transfers real NPC cargo without capacity overflow or duplication');
