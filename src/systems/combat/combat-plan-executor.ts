@@ -27,6 +27,7 @@ export function executeCombatPlan(
   // Maintain a stable range band: approach, align, fire, then reposition.
   const tooFar = separation > range * 1.2;
   const tooNear = separation < range * 0.62;
+  if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
   if (tooNear && plan.phase === 'fire') return 'regroup';
   if (tooFar || tooNear) return 'reach_range';
   if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
