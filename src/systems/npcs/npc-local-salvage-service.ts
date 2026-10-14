@@ -448,14 +448,15 @@ class LocalSalvageService implements NpcLocalSalvageService {
       });
     }
     resolveShipShieldCollisions(bodies);
-    resolveShipShieldObstacleCollisions(
-      bodies,
-      this.options.field.wrecks.map((wreck) => ({
-        id: wreck.id,
-        position: wreck.position,
-        radius: wreck.radius,
-      }))
-    );
+    const obstacles = this.options.field.wrecks.map((wreck) => ({
+      id: wreck.id,
+      position: wreck.position,
+      radius: wreck.radius,
+    }));
+    for (const part of this.options.field.debris ?? []) {
+      obstacles.push({ id: part.id, position: part.position, radius: part.radius });
+    }
+    resolveShipShieldObstacleCollisions(bodies, obstacles);
   };
 }
 
