@@ -50,7 +50,64 @@ export function createScrapDuelArena(
     { x: width * 0.28, y: height * 0.46 },
     { x: width * 0.72, y: height * 0.54 },
   ];
-  const asteroids: CombatVisualAsteroid[] = picked.flatMap((piece): CombatVisualAsteroid[] => {
+  const asteroids = createScrapAsteroids(picked, scaleX, scaleY, scale, width, height, spawns);
+
+  // Keep testable wreck ammunition available, but WITHOUT bypassing the
+  // normal asteroid-map shield/tractor rules or changing combatant starts.
+  // These pieces sit outside the same 145 m spawn clearance as mined rocks.
+  for (let i = 0; i < 4; i += 1) {
+    const source = field.debris[i]!;
+    const player = i < 2 ? 0 : 1;
+    const spawn = spawns[player]!;
+    const side = player === 0 ? 1 : -1;
+    asteroids.push({
+      id: 'pvp-practice-scrap-' + seed + '-' + i,
+      kind: 'debris',
+      position: {
+        x: spawn.x + side * (155 + (i % 2) * 35),
+        y: spawn.y + (i % 2 ? -90 : 90),
+      },
+      radius: Math.max(9, Math.min(24, source.radius * scale)),
+      rotation: source.rotation3d.z,
+      velocity: { x: 0.2 * side, y: 0 },
+      angularVelocity: source.spin3d.z,
+      debrisVariant: source.variant,
+      rotation3d: { ...source.rotation3d },
+      spin3d: { ...source.spin3d },
+      effectSeed: source.effectSeed,
+    });
+  }
+
+  // Equivalent to the asteroid arena's kind === 'resource' rule: large
+  // sections provide path blocking AND weapon cover; smaller debris remains
+  // collidable and tractor-throwable without influencing route planning.
+  const obstacles = asteroids
+    .filter((piece) => piece.kind === 'resource')
+    .map((piece) => ({
+      id: piece.id,
+      position: piece.position,
+      radius: piece.radius,
+    }));
+  return {
+    width,
+    height,
+    attackerPosition: spawns[0]!,
+    defenderPosition: spawns[1]!,
+    asteroids,
+    obstacles,
+  };
+}
+
+function createScrapAsteroids(
+  picked: ScrapSource[],
+  scaleX: number,
+  scaleY: number,
+  scale: number,
+  width: number,
+  height: number,
+  spawns: { x: number; y: number }[]
+): CombatVisualAsteroid[] {
+  return picked.flatMap((piece): CombatVisualAsteroid[] => {
     const isLarge = 'sectionVariant' in piece && Boolean(piece.sectionVariant);
     const position = {
       x: piece.position.x * scaleX,
@@ -97,49 +154,4 @@ export function createScrapDuelArena(
       },
     ];
   });
-
-  // Keep testable wreck ammunition available, but WITHOUT bypassing the
-  // normal asteroid-map shield/tractor rules or changing combatant starts.
-  // These pieces sit outside the same 145 m spawn clearance as mined rocks.
-  for (let i = 0; i < 4; i += 1) {
-    const source = field.debris[i]!;
-    const player = i < 2 ? 0 : 1;
-    const spawn = spawns[player]!;
-    const side = player === 0 ? 1 : -1;
-    asteroids.push({
-      id: 'pvp-practice-scrap-' + seed + '-' + i,
-      kind: 'debris',
-      position: {
-        x: spawn.x + side * (155 + (i % 2) * 35),
-        y: spawn.y + (i % 2 ? -90 : 90),
-      },
-      radius: Math.max(9, Math.min(24, source.radius * scale)),
-      rotation: source.rotation3d.z,
-      velocity: { x: 0.2 * side, y: 0 },
-      angularVelocity: source.spin3d.z,
-      debrisVariant: source.variant,
-      rotation3d: { ...source.rotation3d },
-      spin3d: { ...source.spin3d },
-      effectSeed: source.effectSeed,
-    });
-  }
-
-  // Equivalent to the asteroid arena's kind === 'resource' rule: large
-  // sections provide path blocking AND weapon cover; smaller debris remains
-  // collidable and tractor-throwable without influencing route planning.
-  const obstacles = asteroids
-    .filter((piece) => piece.kind === 'resource')
-    .map((piece) => ({
-      id: piece.id,
-      position: piece.position,
-      radius: piece.radius,
-    }));
-  return {
-    width,
-    height,
-    attackerPosition: spawns[0]!,
-    defenderPosition: spawns[1]!,
-    asteroids,
-    obstacles,
-  };
 }
