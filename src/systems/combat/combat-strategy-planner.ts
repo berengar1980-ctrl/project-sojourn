@@ -88,6 +88,15 @@ function scoreWeaponGroup(
   };
 }
 
+function canUseTractorLock(ship: MutableCombatant, enemy: MutableCombatant): boolean {
+  return (
+    ship.subsystems.tractor > 0 &&
+    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
+    enemy.shieldHp <= 0 &&
+    enemy.tactic === 'flee'
+  );
+}
+
 function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
   const enemyRange = Math.max(
     0,
@@ -129,12 +138,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     );
     if (plan) plans.push(plan);
   }
-  if (
-    ship.subsystems.tractor > 0 &&
-    (ship.setup.tractorRangeMeters ?? 0) > 0 &&
-    enemy.shieldHp <= 0 &&
-    enemy.tactic === 'flee'
-  ) {
+  if (canUseTractorLock(ship, enemy)) {
     plans.push({
       kind: 'tractor_lock',
       focus: 'turret',
