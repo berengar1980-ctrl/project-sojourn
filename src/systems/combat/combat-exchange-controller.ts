@@ -14,6 +14,7 @@ import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { exchangeTacticalGoal } from './combat-exchange-tactics';
+import { updateCombatIntent } from './combat-intent-labels';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -69,7 +70,8 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
 function updateExchangeIntents(
   initiator: StrategicCombatRuntime['attacker'],
   opponent: StrategicCombatRuntime['defender'],
-  next: CombatExchange
+  next: CombatExchange,
+  elapsedSeconds: number
 ): void {
   const actionNames: Record<string, string> = {
     frontal_pass: 'FRONTALANFLUG',
@@ -91,10 +93,8 @@ function updateExchangeIntents(
     turn_to_face: 'ZIEL ANVISIEREN',
     hold_fire: 'POSITION HALTEN',
   };
-  initiator.combatIntent =
-    initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
-  opponent.combatIntent =
-    opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
+  updateCombatIntent(initiator, actionNames[next.action ?? ''] ?? 'KURS HALTEN', elapsedSeconds);
+  updateCombatIntent(opponent, reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN', elapsedSeconds);
 }
 
 function useBoostForExchange(
@@ -382,7 +382,8 @@ export function tickActionExchange(
   }
   if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
   state.exchange = next;
-  updateExchangeIntents(initiator, opponent, next);
-  if (state.deliberateRam && next.action === 'frontal_pass') initiator.combatIntent = 'RAMMEN';
+  updateExchangeIntents(initiator, opponent, next, runtime.elapsedSeconds);
+  if (state.deliberateRam && next.action === 'frontal_pass')
+    updateCombatIntent(initiator, 'RAMMEN', runtime.elapsedSeconds);
   flyExchange(runtime, state, initiator, opponent, next, dt);
 }
