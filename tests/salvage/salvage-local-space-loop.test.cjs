@@ -56,6 +56,32 @@ if (inspectionSnapshot.salvageEvent) {
   assert.equal(service.getSnapshot().salvageEventRecoverySeconds, 0);
 }
 
+// Broad sensor sweep sees the object, but must never leak actual loot amounts.
+const scanField = generator.generateSalvageField('survey-field', 125, 1);
+const scanService = local.createSalvageLocalSpaceService({
+  field: scanField,
+  setup: {
+    available: true,
+    yieldMultiplier: 1,
+    chanceBonus: 0,
+    cycleSeconds: 0.1,
+    cargoCapacityTons: 260,
+    reactorOutput: 40,
+    continuousPowerUsed: 16,
+  },
+  crewSkill: 65,
+  approachSpeed: 400,
+  collect() { return 0; },
+});
+const nearby = scanField.wrecks[0];
+const shipPoint = scanService.getSnapshot().ship.position;
+nearby.position = { x: shipPoint.x + 80, y: shipPoint.y + 40 };
+scanService.startLongRangeScan();
+for (let frame = 0; frame < 100; frame += 1) scanService.tick(0.05);
+assert.equal(nearby.scanLevel, 'surveyed', 'shared asteroid long-range scan must discover contact');
+assert.equal(nearby.inspected, false, 'long-range scan must not reveal cargo contents');
+assert.equal(scanService.getSnapshot().longRangeScanProgress, null, 'five-second scan completes');
+
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
 service.startStrip(wreck.id, firstDeposit.resourceId);
