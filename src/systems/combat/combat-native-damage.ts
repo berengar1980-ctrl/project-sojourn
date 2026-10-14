@@ -9,12 +9,12 @@ interface NativeDamage {
 // Explicit combat-only effective damage, frozen from the original 0.18 balance.
 // The source catalog intentionally retains its raw data for noncombat consumers.
 const WEAPON_DAMAGE: Readonly<Record<string, NativeDamage>> = {
-  'weapon1': { shieldDamage: 2.6999999999999997, hullDamage: 2.6999999999999997 },
-  'weapon2': { shieldDamage: 3.5999999999999996, hullDamage: 3.5999999999999996 },
-  'weapon3': { shieldDamage: 4.5, hullDamage: 4.5 },
-  'weapon4': { shieldDamage: 5.58, hullDamage: 5.58 },
-  'weapon5': { shieldDamage: 6.84, hullDamage: 6.84 },
-  'weapon6': { shieldDamage: 8.1, hullDamage: 8.1 },
+  weapon1: { shieldDamage: 2.6999999999999997, hullDamage: 2.6999999999999997 },
+  weapon2: { shieldDamage: 3.5999999999999996, hullDamage: 3.5999999999999996 },
+  weapon3: { shieldDamage: 4.5, hullDamage: 4.5 },
+  weapon4: { shieldDamage: 5.58, hullDamage: 5.58 },
+  weapon5: { shieldDamage: 6.84, hullDamage: 6.84 },
+  weapon6: { shieldDamage: 8.1, hullDamage: 8.1 },
   'weapon-plasma-battery-1': { shieldDamage: 4.32, hullDamage: 4.32 },
   'weapon-plasma-battery-2': { shieldDamage: 5.58, hullDamage: 5.58 },
   'weapon-plasma-battery-3': { shieldDamage: 7.199999999999999, hullDamage: 7.199999999999999 },
@@ -81,16 +81,24 @@ const MINE_DAMAGE: Readonly<Record<string, NativeDamage>> = {
 };
 
 /** Unknown custom components already supply native damage values. */
-export function nativeWeaponDamage(component: Pick<ShipComponentDefinition, 'id' | 'weapon'>): NativeDamage {
-  return WEAPON_DAMAGE[component.id] ?? {
-    shieldDamage: component.weapon?.shieldDamage ?? 0,
-    hullDamage: component.weapon?.hullDamage ?? 0,
-  };
+export function nativeWeaponDamage(
+  component: Pick<ShipComponentDefinition, 'id' | 'weapon'>
+): NativeDamage {
+  return (
+    WEAPON_DAMAGE[component.id] ?? {
+      shieldDamage: component.weapon?.shieldDamage ?? 0,
+      hullDamage: component.weapon?.hullDamage ?? 0,
+    }
+  );
 }
 
-export function nativeMineDamage(definition: Pick<ShipMineDefinition, 'id' | 'shieldDamage' | 'hullDamage'>): NativeDamage {
-  return MINE_DAMAGE[definition.id] ?? {
-    shieldDamage: definition.shieldDamage,
-    hullDamage: definition.hullDamage,
-  };
+export function nativeMineDamage(
+  definition: Pick<ShipMineDefinition, 'id' | 'shieldDamage' | 'hullDamage'>
+): NativeDamage {
+  return (
+    MINE_DAMAGE[definition.id] ?? {
+      shieldDamage: definition.shieldDamage,
+      hullDamage: definition.hullDamage,
+    }
+  );
 }

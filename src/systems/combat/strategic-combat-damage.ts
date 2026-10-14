@@ -17,10 +17,7 @@ import { rotate, normalize } from './strategic-combat-geometry';
 
 function scaledDamage(raw: number, attacker: MutableCombatant, critical: boolean): number {
   const criticalMultiplier = critical ? 1.5 : 1;
-  return Math.max(
-    1,
-    raw * attacker.setup.damageMultiplier * criticalMultiplier
-  );
+  return Math.max(1, raw * attacker.setup.damageMultiplier * criticalMultiplier);
 }
 
 export function combatShieldGeometry(target: MutableCombatant): CombatShieldGeometry {
