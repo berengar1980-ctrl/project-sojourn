@@ -1,3 +1,4 @@
+import { nativeMineDamage } from './combat-native-damage';
 import type { ShipMineDefinition } from '../../core/combat-types';
 
 import type {
@@ -150,8 +151,8 @@ function advanceRuntimeMine(
   const source = runtimeCombatant(runtime, mine.owner);
   const result = applyDamage(
     target,
-    mine.definition.shieldDamage,
-    mine.definition.hullDamage,
+    nativeMineDamage(mine.definition).shieldDamage,
+    nativeMineDamage(mine.definition).hullDamage,
     source,
     false,
     mine.position,

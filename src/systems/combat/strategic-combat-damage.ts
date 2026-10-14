@@ -13,14 +13,11 @@ import type {
   StrategicCombatObstacle,
 } from './strategic-combat-types';
 
-import { COMBAT_DAMAGE_SCALE, rotate, normalize } from './strategic-combat-geometry';
+import { rotate, normalize } from './strategic-combat-geometry';
 
 function scaledDamage(raw: number, attacker: MutableCombatant, critical: boolean): number {
   const criticalMultiplier = critical ? 1.5 : 1;
-  return Math.max(
-    1,
-    raw * attacker.setup.damageMultiplier * criticalMultiplier * COMBAT_DAMAGE_SCALE
-  );
+  return Math.max(1, raw * attacker.setup.damageMultiplier * criticalMultiplier);
 }
 
 export function combatShieldGeometry(target: MutableCombatant): CombatShieldGeometry {

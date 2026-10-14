@@ -22,6 +22,8 @@ export interface ShipMineDefinition {
   readonly cost: number;
   readonly shieldDamage: number;
   readonly hullDamage: number;
+  readonly combatShieldDamage?: number;
+  readonly combatHullDamage?: number;
   readonly stealth: number;
   readonly triggerRadiusMeters: number;
   readonly blastRadiusMeters: number;

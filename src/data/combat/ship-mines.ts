@@ -5,6 +5,8 @@ interface MineSeed {
   readonly name: string;
   readonly shieldDamage: number;
   readonly hullDamage: number;
+  readonly nativeShieldDamage: readonly number[];
+  readonly nativeHullDamage: readonly number[];
   readonly stealth: number;
   readonly triggerRadiusMeters: number;
   readonly blastRadiusMeters: number;
@@ -24,6 +26,8 @@ const MINE_SEEDS: readonly MineSeed[] = [
     name: 'Ion Mine',
     shieldDamage: 65,
     hullDamage: 5,
+    nativeShieldDamage: [11.7, 15.3, 19.26, 23.94, 29.34, 35.1],
+    nativeHullDamage: [0.9, 1.26, 1.44, 1.8, 2.34, 2.7],
     stealth: 42,
     triggerRadiusMeters: 90,
     blastRadiusMeters: 65,
@@ -36,6 +40,8 @@ const MINE_SEEDS: readonly MineSeed[] = [
     name: 'Shaped-Charge Mine',
     shieldDamage: 10,
     hullDamage: 75,
+    nativeShieldDamage: [1.8, 2.34, 3.06, 3.78, 4.5, 5.4],
+    nativeHullDamage: [13.5, 17.64, 22.32, 27.72, 33.84, 40.5],
     stealth: 55,
     triggerRadiusMeters: 70,
     blastRadiusMeters: 45,
@@ -48,6 +54,8 @@ const MINE_SEEDS: readonly MineSeed[] = [
     name: 'Hunter Mine',
     shieldDamage: 40,
     hullDamage: 40,
+    nativeShieldDamage: [7.2, 9.36, 11.88, 14.76, 18, 21.6],
+    nativeHullDamage: [7.2, 9.36, 11.88, 14.76, 18, 21.6],
     stealth: 70,
     triggerRadiusMeters: 110,
     blastRadiusMeters: 55,
@@ -76,6 +84,8 @@ function definitions(seed: MineSeed): readonly ShipMineDefinition[] {
       cost: Math.round(seed.cost * costScale),
       shieldDamage: scaled(seed.shieldDamage, damageScale),
       hullDamage: scaled(seed.hullDamage, damageScale),
+      combatShieldDamage: seed.nativeShieldDamage[index]!,
+      combatHullDamage: seed.nativeHullDamage[index]!,
       stealth: seed.stealth + index * 2,
       triggerRadiusMeters: scaled(seed.triggerRadiusMeters, rangeScale),
       blastRadiusMeters: scaled(seed.blastRadiusMeters, rangeScale),

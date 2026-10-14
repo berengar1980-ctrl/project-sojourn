@@ -1,3 +1,4 @@
+import { nativeWeaponDamage } from './combat-native-damage';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 
 import type {
@@ -83,8 +84,8 @@ function fireRuntimeInstantWeapon(
   runtime.impactSerial += 1;
   const result = applyDamage(
     target,
-    weapon.weapon.shieldDamage,
-    weapon.weapon.hullDamage,
+    nativeWeaponDamage(weapon).shieldDamage,
+    nativeWeaponDamage(weapon).hullDamage,
     source,
     critical,
     muzzle,
@@ -151,8 +152,8 @@ function fireRuntimeProjectileWeapon(
       0.4,
       distance(source.position, target.position) / projectileSpeed(kind) + 0.8
     ),
-    shieldDamage: hit ? weapon.weapon.shieldDamage : 0,
-    hullDamage: hit ? weapon.weapon.hullDamage : 0,
+    shieldDamage: hit ? nativeWeaponDamage(weapon).shieldDamage : 0,
+    hullDamage: hit ? nativeWeaponDamage(weapon).hullDamage : 0,
     critical: hit && critical,
     targetSubsystem: effectiveTargetSubsystem(source, target),
     missed: !hit,

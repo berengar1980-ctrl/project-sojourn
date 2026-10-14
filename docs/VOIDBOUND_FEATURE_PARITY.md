@@ -735,6 +735,13 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 
 **keine Statusänderung.** Integrationstest ergänzt, der die Zielentscheidung auf fliehenden Antrieb, Traktor nach Antriebszerstörung, Schilde vor Subsystemschaden sowie Winkel-/Hüllen-Fallback ausführt. Vorhandene Spiellogik unverändert; keine neue UI-Auswahlmöglichkeit implementiert.
 
+## Review-Log (2026-10-13): Vorbereitung auf Entfernung des globalen Schadensfaktors
+
+**keine Statusänderung.** Unabhängige Goldwert-Regressionen über alle acht Waffenfamilien und sechs Waffenstufen sowie alle Minenstufen angelegt. Vor einer produktiven Migration müssen die bisherigen 0,18-Schadenswerte mit den Nebenverwendungen der ursprünglichen Waffen-/Minenprofile abgeglichen werden; insbesondere direkter Asteroidenschaden und der außerhalb des Raumkampf-ApplyDamage verwendete Minenschaden dürfen nicht mit skaliert werden. Noch keine Änderung an Kampfwerten oder Schadensfunktion.
+
+## Review-Log (2026-10-13): Schadensberechnung auf feste Kampfkatalogwerte umgestellt
+
+**keine Statusänderung.** Globaler `COMBAT_DAMAGE_SCALE` aus der Trefferroutine entfernt. Für alle acht Waffenfamilien mit sechs Stufen und alle drei Minenfamilien mit sechs Stufen sind effektive 0,18-Balancewerte ausdrücklich im separaten Combat-Damage-Katalog hinterlegt. Diese Werte gelten nur bei tatsächlichen Raumkampftreffern; ursprüngliche Waffen- und Minenprofile bleiben für andere Verwender unangetastet. Direkte Asteroidenkollisionen und die übrigen eigenen Schadenwege unverändert. Unbekannte Custom-Komponenten benutzen native Damagewerte ohne automatische Umrechnung. Golden Tests prüfen jedes reguläre Schadensprofil gegen eingefrorene Legacy-Basisdaten; realistische Gesamtgefechte und CI müssen vor dem Merge bestätigt werden.
 ## Review-Log (2026-10-13): Fünf taktische Kampfverbesserungen
 
 **keine Statusänderung.** Sofortige Plan-Reviews beider Schiffe bei Antriebs-/Traktorausfall, kürzere optimale Waffenreichweite gegen antriebslose Gegner, kurzfristige Kollisionsumfahrung bewegter Asteroiden ohne zusätzliche Grid-A*-Suche und zusätzliche Auswertung von Planwechseln, Trefferarten, Systemausfällen und Hindernisereignissen. Vorhandene Hardpoint-/Waffenpositionslogik wird genutzt, ohne Schadensbalance und Flugphysik zu ändern. Aktive Deckungssuche und Lock-/Ködermanöver sind noch nicht vollständig implementiert; dazu gesonderte KI-Integration erforderlich.
