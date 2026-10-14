@@ -32,10 +32,16 @@ assert.deepEqual(
 );
 assert.deepEqual(
   selector.toggleMiningResourceSelection(['ferrite', 'sulfur'], 'silica'),
-  ['sulfur', 'silica'],
-  'selecting a third resource must replace the oldest target instead of being blocked'
+  ['ferrite', 'sulfur', 'silica'],
+  'selecting a third resource must keep all three targets active'
 );
-assert.deepEqual(selector.toggleMiningResourceSelection(['sulfur', 'silica'], 'sulfur'), [
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'sulfur', 'silica'], 'sulfur'), [
+  'ferrite', 'silica',
+]);
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'silica'], 'sulfur'), [
+  'ferrite', 'silica', 'sulfur',
+]);
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'silica'], 'ferrite'), [
   'silica',
 ]);
 assert.equal(selector.toggleMiningResourceSelection(['silica'], 'silica'), null);
@@ -43,7 +49,8 @@ assert.equal(selector.toggleMiningResourceSelection(['silica'], 'silica'), null)
 assert(panel.includes('MiningResourceSelector'));
 assert(panel.includes('onMiningResourceSelection'));
 assert(selectorSource.includes("allButton.textContent = 'ALLE'"));
-assert(selectorSource.includes('DRITTE AUSWAHL ERSETZT DIE ÄLTESTE'));
+assert(selectorSource.includes('FREIE KOMBINATION'));
+assert(!selectorSource.includes('DRITTE AUSWAHL ERSETZT DIE ÄLTESTE'));
 assert(!selectorSource.includes('selection.length >= 2'));
 assert(actions.includes('setMiningResourceSelection(resourceIds)'));
 assert(service.includes('this.miningResources.selectionFor(this.selectedAsteroidId)'));
