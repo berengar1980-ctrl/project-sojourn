@@ -90,7 +90,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private readonly salvage: SalvageFieldService;
   private readonly events;
   private readonly ship: LocalShipState;
-  private readonly collisionShields;
+  private readonly collisionShields: ReturnType<typeof createLocalSpaceShipSystems> | null;
   private selectedWreckId: string | null = null;
   private longRangeScanElapsed: number | null = null;
   private workTargetId: string | null = null;
