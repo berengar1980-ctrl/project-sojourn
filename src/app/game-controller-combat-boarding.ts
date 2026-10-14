@@ -1,3 +1,5 @@
+import { combatResultMessage } from '../systems/combat/combat-result-summary';
+import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
@@ -12,9 +14,10 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 export function startCombatBoarding(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  returnToMap: () => void
+  returnToMap: (boardingOutcome?: string) => void
 ): void {
   if (!snapshot.boardingInitiator) return;
+  context.systemLog.write(combatResultMessage(snapshot));
   const enemyName = snapshot.defender.name;
   const { state } = context;
   state.panels.star?.destroy();
@@ -27,8 +30,6 @@ export function startCombatBoarding(
   state.combatPanel = null;
   state.salvageScene?.destroy();
   state.salvageScene = null;
-  state.localSpace = null;
-  state.localNpcMining = null;
   state.boardingPanel?.destroy();
   state.boardingPanel = null;
   state.shipSwitcher?.destroy();
@@ -36,9 +37,9 @@ export function startCombatBoarding(
   state.embeddedCombat = null;
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
-  context.engagements.finishPlayerCombat();
   if (crewBoardingUnits(context.crew).length === 0) {
     context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
+    context.engagements.finishPlayerCombat();
     runSceneZoomTransition(context.root, returnToMap);
     return;
   }
@@ -83,7 +84,15 @@ export function startCombatBoarding(
         context.systemLog.write('BOARDING > VERTEIDIGUNG VERLOREN · BERGUNG ZUR WERFT');
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
-      runSceneZoomTransition(context.root, returnToMap);
+      context.engagements.finishPlayerCombat();
+      showCampaignCombatSummary(
+        context.root,
+        snapshot,
+        () => {
+          runSceneZoomTransition(context.root, () => returnToMap(result.outcome));
+        },
+        result.outcome
+      );
     },
   });
 }
@@ -94,10 +103,13 @@ export function returnFromCombat(
   returnToMap: () => void
 ): void {
   const snapshot = combat.getSnapshot();
+  if (!snapshot.boardingInitiator) context.systemLog.write(combatResultMessage(snapshot));
   if (snapshot.boardingInitiator) {
     startCombatBoarding(context, snapshot, returnToMap);
     return;
   }
   context.engagements.finishPlayerCombat();
-  runSceneZoomTransition(context.root, returnToMap);
+  showCampaignCombatSummary(context.root, snapshot, () => {
+    runSceneZoomTransition(context.root, returnToMap);
+  });
 }

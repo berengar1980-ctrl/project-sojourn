@@ -36,6 +36,7 @@ import {
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 
 export interface SalvageSceneController {
+  getField(): SalvageField;
   beginDistressTow(event: SectorSalvageEvent): void;
   beginDistressRepair(): void;
   tick(deltaSeconds: number): void;
@@ -417,6 +418,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   }
 
   return {
+    getField() {
+      return field;
+    },
     beginDistressRepair() {
       context.state.distressRepairing = true;
       refreshSalvageScene(context);

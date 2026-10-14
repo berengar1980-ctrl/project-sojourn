@@ -1,8 +1,11 @@
 import { localMiningCombatArena } from './game-controller-combat';
+import type { SalvageField } from '../core/salvage-types';
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
+import { combatResultMessage } from '../systems/combat/combat-result-summary';
+import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
-import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import { createShipLoadoutService } from '../systems/ships';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -13,12 +16,10 @@ import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 import { createControllerStarPanel } from './game-controller-star-map';
-
 import type {
   ControllerRuntimeContext,
   ControllerRuntimeState,
 } from './game-controller-runtime-types';
-
 import {
   tickEconomy,
   completeDistressTowOnArrival,
@@ -30,19 +31,12 @@ import {
   destroyScenePanels,
   sectorEventLocation,
 } from './game-controller-events';
-
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
-
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
-
-import { createMiningLocalSpace } from './game-controller-mining';
-
+import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
-
 import { createSalvageScene } from './game-controller-salvage';
-
 import { generateSectorSalvageEventField } from '../systems/salvage';
-
 import {
   controllerLocalModel,
   controllerShipRuntimeOptions,
@@ -54,11 +48,9 @@ import {
   localSeed,
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
-
 import type { GameControllerOptions, GameController } from './game-controller-types';
 
 export type { GameController } from './game-controller-types';
-
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;
   state.shipSwitcher?.destroy();
@@ -77,7 +69,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     }
   );
 }
-
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
   destroyScenePanels(state.panels);
@@ -116,7 +107,6 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   });
   mountControllerSwitcher(context);
 }
-
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
@@ -154,7 +144,6 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
   mountControllerSwitcher(context);
 }
-
 function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelActions {
   return createLocalPanelActions({
     getSpace: () => context.state.localSpace,
@@ -169,9 +158,12 @@ function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelAc
     ),
   });
 }
-
-function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = false): void {
-  const { state, economy } = context;
+function mountControllerMining(
+  context: ControllerRuntimeContext,
+  reuseSeed = false,
+  preserveField = false
+): void {
+  const { state } = context;
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -183,27 +175,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   if (!reuseSeed || state.localSpaceSeed === 0) {
     state.localSpaceSeed = localSeed((state.visitCounter += 1));
   }
-  state.localSpace = createMiningLocalSpace(
-    state.activeShip,
-    state.localSpaceSeed,
-    economy.mining,
-    location,
-    controllerShipRuntimeOptions(context, state.activeShip)
-  );
-  state.localNpcMining = createNpcLocalMiningService({
-    locationId: location.id,
-    seed: state.localSpaceSeed,
-    width: state.localSpace.getSnapshot().instance.width,
-    height: state.localSpace.getSnapshot().instance.height,
-    miners: economy.sectorNpcs.npcs.filter(
-      (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-    ),
-    getAsteroids: () => state.localSpace?.getSnapshot().instance.asteroids ?? [],
-    mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
-    depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
-    playerShip: state.activeShip,
-    getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
-  });
+  ensureMiningCombatWorld(context, location, preserveField);
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
   );
@@ -245,8 +217,12 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   });
   mountControllerSwitcher(context);
 }
-
-function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = false): void {
+function mountControllerSalvage(
+  context: ControllerRuntimeContext,
+  reuseSeed = false,
+  preservedField?: SalvageField,
+  finalCombat?: StrategicCombatSnapshot
+): void {
   const { state, economy } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
@@ -273,18 +249,20 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     ship: state.activeShip,
     seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
     location,
-    ...(sectorEvent
-      ? {
-          field:
-            state.salvageEventFields.get(sectorEvent.id) ??
-            (() => {
-              const field = generateSectorSalvageEventField(sectorEvent);
-              state.salvageEventFields.set(sectorEvent.id, field);
-              return field;
-            })(),
-          sectorEvent,
-        }
-      : {}),
+    ...(preservedField
+      ? { field: preservedField }
+      : sectorEvent
+        ? {
+            field:
+              state.salvageEventFields.get(sectorEvent.id) ??
+              (() => {
+                const field = generateSectorSalvageEventField(sectorEvent);
+                state.salvageEventFields.set(sectorEvent.id, field);
+                return field;
+              })(),
+            sectorEvent,
+          }
+        : {}),
     economy: economy.salvage,
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
@@ -321,21 +299,49 @@ function mountControllerSalvage(context: ControllerRuntimeContext, reuseSeed = f
     }),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
+  if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
-
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
-  if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
+  if (
+    activeCombat &&
+    state.mode !== 'combat' &&
+    state.mode !== 'boarding' &&
+    state.embeddedCombat === null
+  ) {
     mountCombatScene(context, () => mountControllerStarMap(context));
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
   if (snapshot.boardingInitiator) {
-    startCombatBoarding(context, snapshot, () => mountControllerStarMap(context));
+    const origin = state.embeddedCombat;
+    const preservedSalvageField =
+      origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
+    if (origin === 'local-space') {
+      state.localSpace?.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
+      );
+      state.localNpcMining?.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+    }
+    startCombatBoarding(context, snapshot, (boardingOutcome) => {
+      if (boardingOutcome === 'enemy_win') return mountControllerStarMap(context);
+      if (origin === 'local-space') mountControllerMining(context, true, true);
+      else if (origin === 'salvage-space')
+        mountControllerSalvage(context, true, preservedSalvageField, snapshot);
+      else mountControllerStarMap(context);
+    });
     return;
   }
+  context.systemLog.write(combatResultMessage(snapshot));
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   if (state.embeddedCombat === 'local-space') {
     state.localSpace?.syncCombatPose(
@@ -354,6 +360,9 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
+  showCampaignCombatSummary(context.root, snapshot, () => {
+    if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
+  });
 }
 
 function handleControllerLocationEntry(
