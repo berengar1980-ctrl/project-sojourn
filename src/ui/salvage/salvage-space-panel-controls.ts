@@ -17,6 +17,7 @@ export interface SalvageSpacePanelOptions {
   readonly onCombatGrapple: () => void;
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
+  readonly onLongRangeScan: () => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
   readonly onRecoverComponent: (wreckId: string) => void;
   readonly onEventChoice: (choiceId: string) => SalvageSpaceViewModel['lastEventResolution'];
@@ -35,6 +36,7 @@ export interface SalvageControls {
   readonly meta: HTMLElement;
   readonly integrity: HTMLElement;
   readonly inspectButton: HTMLButtonElement;
+  readonly longScanButton: HTMLButtonElement;
   readonly attackButton: HTMLButtonElement;
   readonly resources: HTMLElement;
   readonly status: HTMLElement;
@@ -59,6 +61,7 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
     '<div class="salvage-operation-status" hidden></div>',
     '<div class="salvage-help"></div>',
+    '<button class="salvage-long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
     '<div class="salvage-combat-tactics combat-tactics" hidden>',
     '<button type="button" data-tactic="fight">KAMPF</button>',
     '<button type="button" data-tactic="kite">DISTANZ</button>',
@@ -99,6 +102,7 @@ export function controls(shell: HTMLElement): SalvageControls {
     meta: query<HTMLElement>('.local-selection-meta'),
     integrity: query<HTMLElement>('.salvage-integrity > div'),
     inspectButton: query<HTMLButtonElement>('.salvage-inspect-button'),
+    longScanButton: query<HTMLButtonElement>('.salvage-long-scan-button'),
     attackButton: query<HTMLButtonElement>('.salvage-attack-button'),
     resources: query<HTMLElement>('.salvage-resource-list'),
     status: query<HTMLElement>('.salvage-operation-status'),
