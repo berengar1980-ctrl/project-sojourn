@@ -45,6 +45,7 @@ export interface SalvageWreckView {
   readonly quality: number;
   readonly qualityLabel: string;
   readonly inspected: boolean;
+  readonly scanLevel: 'unscanned' | 'surveyed' | 'analyzed';
   readonly depleted: boolean;
   readonly componentSignal: boolean;
   readonly component: SalvageComponentView | null;
@@ -111,6 +112,7 @@ export interface SalvageSpaceViewModel {
   readonly navigationRoute: readonly WorldPoint[];
   readonly phase: SalvageLocalSpaceSnapshot['phase'];
   readonly operationProgress: number | null;
+  readonly longRangeScanProgress: number | null;
   readonly activeResourceId: string | null;
   readonly salvageAvailable: boolean;
   readonly cargoCapacityTons: number;
@@ -184,6 +186,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       quality: wreck.quality,
       qualityLabel: qualityLabel(wreck.quality),
       inspected: wreck.inspected,
+      scanLevel: wreck.inspected ? 'analyzed' : wreck.scanLevel ?? 'unscanned',
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
       componentSignal: wreck.inspected && wreck.component !== null,
       component:
@@ -283,6 +286,7 @@ export function createSalvageSpaceViewModel(
     navigationRoute: snapshot.navigationRoute,
     phase: snapshot.phase,
     operationProgress: snapshot.operationProgress,
+    longRangeScanProgress: snapshot.longRangeScanProgress ?? null,
     activeResourceId: snapshot.activeResourceId,
     salvageAvailable: snapshot.salvageAvailable,
     cargoCapacityTons: snapshot.cargoCapacityTons,
