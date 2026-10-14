@@ -18,7 +18,22 @@ const source = fs.readFileSync(
   'utf8'
 );
 assert(
-  source.includes('ship.combatIntent = describeCombatIntent(ship)'),
-  'non-Alpha battles update the ship intent'
+  source.includes('updateCombatIntent(') &&
+    source.includes('describeCombatIntent(ship)'),
+  'non-Alpha battles update readable intent through the stable status helper'
 );
+const { updateCombatIntent } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-intent-labels.ts'
+);
+const status = { tactic: 'fight' };
+updateCombatIntent(status, 'ANNÄHERN', 0);
+updateCombatIntent(status, 'BREITSEITE', 0.08);
+assert.equal(status.combatIntent, 'ANNÄHERN', 'HUD labels cannot change each physics frame');
+updateCombatIntent(status, 'BREITSEITE', 2.01);
+assert.equal(status.combatIntent, 'BREITSEITE', 'new labels appear after two seconds');
+status.tactic = 'flee';
+updateCombatIntent(status, 'FLANKIEREN', 2.02);
+assert.equal(status.combatIntent, 'FLIEHEN', 'flee overrides status display immediately');
+
 console.log('PASS combat intent labels for all duels');
