@@ -1,6 +1,7 @@
 import { describeCombatIntent } from './combat-intent-labels';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { reviewCombatCommitment } from './combat-commitment';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 import { distance } from './strategic-combat-geometry';
 import type { MutableCombatant, StrategicCombatRuntime } from './strategic-combat-types';
@@ -18,6 +19,25 @@ export function recordCombatLog(
     detail,
   });
 }
+export function recordCommitment(
+  runtime: StrategicCombatRuntime,
+  side: 'attacker' | 'defender',
+  result: { decision: string; victoryChance: number; escapeChance: number; reason: string }
+): void {
+  recordCombatLog(
+    runtime,
+    side,
+    'plan',
+    'ENTSCHEIDUNG ' +
+      result.decision.toUpperCase() +
+      ' · Siegchance ' +
+      Math.round(result.victoryChance * 100) +
+      '% · Fluchtchance ' +
+      Math.round(result.escapeChance * 100) +
+      '% · ' +
+      result.reason
+  );
+}
 export function reviewAndExecute(
   runtime: StrategicCombatRuntime,
   ship: MutableCombatant,
@@ -25,6 +45,8 @@ export function reviewAndExecute(
   side: 'attacker' | 'defender'
 ): void {
   const previous = ship.strategy;
+  const commitment = reviewCombatCommitment(ship, enemy, runtime.arena, runtime.elapsedSeconds);
+  if (commitment) recordCommitment(runtime, side, commitment);
   reviewCombatStrategy(ship, enemy, side, runtime.elapsedSeconds);
   if (previous !== ship.strategy && ship.strategy) {
     ship.strategy = {

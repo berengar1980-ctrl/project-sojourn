@@ -773,3 +773,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-14): Gemeinsamer Karten-Eingang/Ausgang und Traktor-Abklingzeit
 
 **keine Statusänderung.** Asteroiden-/eigene-Minen-Traktorwurf auf 6 s Cooldown gesetzt. Asteroidenfeld und Bergungsfeld verwenden je Seed einen deterministisch zufälligen Kartenrand-Eingang/Ausgang als gemeinsamen Ort für Spielerstart, NPC-Ankunft, NPC-Rückweg, Ausgangszeichnung und Sternkarten-Rückkehrprüfung einschließlich Schleppgut. Bisherige verstreute Randpunkte zusammengeführt. Build-, Formatierungs-, Typ- und Gameplay-Regressionstests noch ausstehend.
+
+## Review-Log (2026-10-14): Punkt 8 – Kampf-/Flucht-Commitment (Draft)
+
+**keine Statusänderung.** Zentrale Entscheidungsschicht für Ausstattung, Risikobereitschaft und geometrische Fluchtwahrscheinlichkeit eingeführt. Flucht wird mindestens 16 Sekunden gehalten, sofern sie nicht bereits wegen zerstörtem Antrieb unmöglich ist; danach nur bei sehr geringer Fluchtchance Rückkehr zur Gegenwehr, mit 24 Sekunden Wiederaufnahme-Sperre. Spielerbefehle gesperrt gegen automatische Überschreibung. Defensiver Mineneinsatz auf hinteren tatsächlichen Fluchtkorridor und relative Bewegung begrenzt. Normaler Kampf und Exchange werden angebunden; Tests und CI noch ausstehend. Bestehende Schadens- und Bewegungswerte unverändert.

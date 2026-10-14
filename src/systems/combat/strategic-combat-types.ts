@@ -312,6 +312,10 @@ export interface MutableCombatant {
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
   nextStrategyReviewAt: number;
+  combatTacticLocked?: boolean;
+  nextCommitmentReviewAt?: number;
+  escapeCommittedAt?: number;
+  escapeAbandonedAt?: number;
   lastEnemyHpObserved?: number;
   lastProgressAt?: number;
   lastContactReviewAt?: number;
