@@ -261,7 +261,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onReturnToStarMap() {
       const snapshot = service.getSnapshot();
       const { width, height } = snapshot.field;
-      if (!playerAtLocalExit(snapshot.ship.position, width, height)) {
+      if (!playerAtLocalExit(snapshot.ship.position, width, height, snapshot.field.seed)) {
         options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
         refresh();
         return;
@@ -272,7 +272,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
           !towShipAtExit(
             snapshot.ship.position,
             state.distressTow,
-            localSpaceExitPoint(width, height)
+            localSpaceExitPoint(width, height, snapshot.field.seed)
           ))
       ) {
         options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
