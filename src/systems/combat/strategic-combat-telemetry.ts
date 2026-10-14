@@ -49,7 +49,8 @@ export function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
-  ship.combatIntent = usefulRamAttempt(ship, enemy) ? 'RAMMEN' : describeCombatIntent(ship);
+  ship.combatIntent = describeCombatIntent(ship);
+  if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
   if (ship.strategy.phase !== nextPhase) {
