@@ -74,6 +74,7 @@ export function createSalvageFieldService(options: {
       const wreck = findWreck(wreckId);
       if (!wreck) return null;
       wreck.inspected = true;
+      wreck.scanLevel = 'analyzed';
       return wreck;
     },
 
