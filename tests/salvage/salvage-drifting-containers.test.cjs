@@ -122,6 +122,13 @@ assert(localService.includes('longRangeScanRadius') &&
   'long-range scan must reuse sensor radius without revealing amounts');
 assert(renderer.includes("['???']") && renderer.includes('resource.remaining'),
   'long range scan shows ? while detail scan shows actual contents');
+assert(renderer.includes('this.camera.pan(rect.width / 2 - shipPoint.x'),
+  'initial camera must show player-centered long-range scan contacts');
+assert(renderer.includes('private lastFrameAt') && renderer.includes('Math.min(1.5'),
+  'salvage renderer must throttle heavy frames and limit pixel density');
+assert(localService.includes('this.options.sensorModifier') &&
+  localService.includes('this.options.sensorCrewSkill'),
+  'sensor scan must use equipped scanner and crew statistics');
 assert(controller.includes('field.debris ?? []'), 'space combat must use fragment obstacles');
 assert(renderer.includes('pickWreck'), 'containers must remain clickable');
 
