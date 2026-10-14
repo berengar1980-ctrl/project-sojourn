@@ -22,8 +22,8 @@ function isDynamicWreck(wreck: SalvageWreck): boolean {
 function ownersForField(field: SalvageField): SalvageBody[] {
   return [
     ...field.wrecks.filter(isDynamicWreck),
-    ...(field.debris ?? []),
-    ...(field.sections ?? []),
+    // Decorative debris without scan contacts is non-solid and never routed
+    // around. Only salvageable, selectable wrecks participate in physics.
   ];
 }
 
@@ -89,6 +89,29 @@ export function advanceSalvageContainerDrift(field: SalvageField, deltaSeconds: 
   integrateAsteroids(world.bodies, dt, field.width, field.height);
   resolveAsteroidCollisions(world.bodies);
   syncBodyPositions(world, dt);
+
+  // Keep the visual-only scraps drifting cheaply, without collisions against
+  // ships, salvage targets, NPCs or other decorative pieces.
+  for (const scrap of field.debris ?? []) {
+    const margin = scrap.radius + 4;
+    const minX = margin, minY = margin;
+    const maxX = Math.max(minX, field.width - margin);
+    const maxY = Math.max(minY, field.height - margin);
+    let vx = scrap.driftVelocity.x;
+    let vy = scrap.driftVelocity.y;
+    if (scrap.position.x + vx * dt < minX || scrap.position.x + vx * dt > maxX) vx = -vx;
+    if (scrap.position.y + vy * dt < minY || scrap.position.y + vy * dt > maxY) vy = -vy;
+    scrap.driftVelocity = { x: vx, y: vy };
+    scrap.position = {
+      x: Math.max(minX, Math.min(maxX, scrap.position.x + vx * dt)),
+      y: Math.max(minY, Math.min(maxY, scrap.position.y + vy * dt)),
+    };
+    scrap.rotation3d = {
+      x: (scrap.rotation3d.x + scrap.spin3d.x * dt) % (Math.PI * 2),
+      y: (scrap.rotation3d.y + scrap.spin3d.y * dt) % (Math.PI * 2),
+      z: (scrap.rotation3d.z + scrap.spin3d.z * dt) % (Math.PI * 2),
+    };
+  }
 }
 
 /** The same impulse-based shield interaction that pushes asteroids away. */
