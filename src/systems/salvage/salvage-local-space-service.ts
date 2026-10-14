@@ -5,6 +5,7 @@ import {
   salvageFieldPhysicsBodies,
 } from './salvage-container-motion';
 import { planPointRoute } from '../local-space/local-space-navigation';
+import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
 import { longRangeScanRadius } from '../scanning/scanner-service';
 import type { ShipHardpoints } from '../../core/ship-types';
 import { seededLocalGate } from '../../core/local-space-exit';
@@ -89,6 +90,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private readonly salvage: SalvageFieldService;
   private readonly events;
   private readonly ship: LocalShipState;
+  private readonly collisionShields;
   private selectedWreckId: string | null = null;
   private longRangeScanElapsed: number | null = null;
   private workTargetId: string | null = null;
@@ -115,6 +117,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       ...(options.collectComponent ? { collectComponent: options.collectComponent } : {}),
     });
     this.events = createSalvageEventController(options.field.seed);
+    this.collisionShields = options.hardpoints
+      ? createLocalSpaceShipSystems(undefined, options.hardpoints)
+      : null;
     this.ship = {
       position: seededLocalGate(options.field.width, options.field.height, options.field.seed),
       headingRadians: 0,
@@ -129,6 +134,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return {
       field: this.options.field,
       ship: this.ship,
+      shieldImpacts: this.collisionShields?.snapshot().shieldImpacts ?? [],
       selectedWreckId: this.selectedWreckId,
       workTargetId: this.workTargetId,
       navigationTarget: this.navigationTarget,
@@ -266,6 +272,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       const delta = Math.min(0.05, remaining);
       remaining -= delta;
       this.events.tick(delta);
+      this.collisionShields?.advance(delta);
     if (this.longRangeScanElapsed !== null) {
       this.longRangeScanElapsed += delta;
       if (this.longRangeScanElapsed >= 5) {
@@ -293,12 +300,14 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.updateComponentRecovery(delta);
     }
     if (this.options.hardpoints && this.options.shipLengthMeters) {
-      resolveSalvageShieldContacts(
+      for (const collision of resolveSalvageShieldContacts(
         this.options.field,
         this.ship,
         this.options.hardpoints,
         this.options.shipLengthMeters
-      );
+      )) {
+        this.collisionShields?.applyCollision(collision);
+      }
     }
     }
     return this.getSnapshot();
