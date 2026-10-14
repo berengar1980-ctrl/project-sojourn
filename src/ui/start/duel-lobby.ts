@@ -169,6 +169,8 @@ function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLS
     mapSelect.append(option);
   }
   mapLabel.append(mapSelect);
+  // A change of battlefield must never change ship durability. All five maps
+  // use the exact same loadout, start shields, hull and combat damage rules.
   return { mapLabel, mapSelect };
 }
 
@@ -334,12 +336,12 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     const generation = duelGeneration;
     const setups = duelSetups(drafts, ships);
     const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
-    // Analysis-only durability: preserve damage mechanics, extend observation time.
-    const tunedSetups = setups;
+    // Preserve the same prepared combatants on every PvP map: in particular,
+    // never silently replace the working asteroid map's shield defaults.
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
-      tunedSetups[0]!,
-      tunedSetups[1]!,
+      setups[0]!,
+      setups[1]!,
       duelSeed,
       createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
     );

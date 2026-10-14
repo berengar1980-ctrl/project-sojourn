@@ -1,10 +1,55 @@
 import type { EconomyResourceId } from './economy-types';
+import type { AsteroidScanLevel } from './resource-types';
+import type { ShieldImpactEffect } from './shield-types';
 import type { LocalShipState } from './local-space-types';
 import type { ShipComponentType } from './ship-types';
 import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
+export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
+export type SalvageSectionVariant =
+  | 'corridor-complex'
+  | 'double-deck'
+  | 'engine-room'
+  | 'cargo-bay'
+  | 'crew-quarters'
+  | 'bridge'
+  | 'reactor-hall'
+  | 'medbay';
+
+export interface SalvageSection {
+  readonly id: string;
+  readonly variant: SalvageSectionVariant;
+  position: WorldPoint;
+  readonly radius: number;
+  driftVelocity: WorldPoint;
+  rotation3d: { x: number; y: number; z: number };
+  readonly spin3d: Readonly<{ x: number; y: number; z: number }>;
+  readonly effectSeed: number;
+}
+
+export type SalvageDebrisVariant =
+  | 'corridor'
+  | 'deck'
+  | 'airlock'
+  | 'truss'
+  | 'engine'
+  | 'reactor'
+  | 'bulkhead'
+  | 'habitation';
+
+/** Non-lootable ship fragments; kept separate from recoverable container wrecks. */
+export interface SalvageDebris {
+  readonly id: string;
+  readonly variant: SalvageDebrisVariant;
+  position: WorldPoint;
+  readonly radius: number;
+  driftVelocity: WorldPoint;
+  rotation3d: { x: number; y: number; z: number };
+  readonly spin3d: Readonly<{ x: number; y: number; z: number }>;
+  readonly effectSeed: number;
+}
 
 export interface SalvageResourceDeposit {
   readonly resourceId: EconomyResourceId;
@@ -24,14 +69,24 @@ export interface SalvageWreck {
   readonly name: string;
   readonly kind: SalvageWreckKind;
   readonly quality: SalvageWreckQuality;
-  readonly position: WorldPoint;
+  position: WorldPoint;
   readonly radius: number;
-  readonly rotation: number;
+  rotation: number;
+  /** Only ordinary salvage containers drift; distress ships keep their original physics. */
+  readonly containerVariant?: SalvageContainerVariant;
+  readonly debrisVariant?: SalvageDebrisVariant;
+  readonly sectionVariant?: SalvageSectionVariant;
+  readonly effectSeed?: number;
+  driftVelocity?: WorldPoint;
+  rotation3d?: { x: number; y: number; z: number };
+  readonly spin3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
   readonly resources: SalvageResourceDeposit[];
   readonly component: SalvageComponentCandidate | null;
   componentStatus: 'none' | 'available' | 'recovered' | 'destroyed';
   inspected: boolean;
+  /** Shared scan states: surveyed = '?' only, analyzed = identified contents. */
+  scanLevel?: AsteroidScanLevel;
 }
 
 export interface SalvageField {
@@ -41,6 +96,10 @@ export interface SalvageField {
   readonly width: number;
   readonly height: number;
   readonly wrecks: SalvageWreck[];
+  /** Optional for event maps and compatibility with older field snapshots. */
+  readonly debris?: SalvageDebris[];
+  /** Large explorable-looking sections, visually independent of the throwable scrap pieces. */
+  readonly sections?: SalvageSection[];
 }
 
 export interface SalvageRecoveryResult {
@@ -94,12 +153,14 @@ export type SalvageLocalPhase =
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
   readonly ship: LocalShipState;
+  readonly shieldImpacts?: readonly ShieldImpactEffect[];
   readonly selectedWreckId: string | null;
   readonly workTargetId: string | null;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
   readonly phase: SalvageLocalPhase;
   readonly operationProgress: number | null;
+  readonly longRangeScanProgress?: number | null;
   readonly activeResourceId: EconomyResourceId | null;
   readonly lastRecovery: SalvageRecoveryResult | null;
   readonly recoverySerial: number;
@@ -111,6 +172,7 @@ export interface SalvageLocalSpaceSnapshot {
   readonly lastEventResolution: SalvageEventResolution | null;
   readonly eventResolutionSerial: number;
   readonly salvageAvailable: boolean;
+  readonly scanAvailable?: boolean;
   readonly cargoCapacityTons: number;
 }
 

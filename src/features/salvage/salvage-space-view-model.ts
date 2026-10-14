@@ -2,8 +2,14 @@ import type { DistressRammingState } from '../../systems/salvage/distress-rammin
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../../core/economy-types';
+import type { ShieldImpactEffect } from '../../core/shield-types';
 import type {
   SalvageLocalSpaceSnapshot,
+  SalvageContainerVariant,
+  SalvageDebris,
+  SalvageDebrisVariant,
+  SalvageSection,
+  SalvageSectionVariant,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -36,10 +42,16 @@ export interface SalvageWreckView {
   readonly position: WorldPoint;
   readonly radius: number;
   readonly rotation: number;
+  readonly containerVariant?: SalvageContainerVariant;
+  readonly debrisVariant?: SalvageDebrisVariant;
+  readonly sectionVariant?: SalvageSectionVariant;
+  readonly effectSeed?: number;
+  readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
   readonly quality: number;
   readonly qualityLabel: string;
   readonly inspected: boolean;
+  readonly scanLevel: 'unscanned' | 'surveyed' | 'analyzed';
   readonly depleted: boolean;
   readonly componentSignal: boolean;
   readonly component: SalvageComponentView | null;
@@ -97,15 +109,20 @@ export interface SalvageSpaceViewModel {
   readonly width: number;
   readonly height: number;
   readonly ship: SalvageShipView;
+  readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
   readonly wrecks: readonly SalvageWreckView[];
+  readonly debris: readonly SalvageDebris[];
+  readonly sections: readonly SalvageSection[];
   readonly selectedWreck: SalvageWreckView | null;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
   readonly phase: SalvageLocalSpaceSnapshot['phase'];
   readonly operationProgress: number | null;
+  readonly longRangeScanProgress: number | null;
   readonly activeResourceId: string | null;
   readonly salvageAvailable: boolean;
+  readonly scanAvailable: boolean;
   readonly cargoCapacityTons: number;
   readonly cargoUsedTons: number;
   readonly cargoResources: readonly SalvageCargoView[];
@@ -161,14 +178,30 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       id: wreck.id,
       name: wreck.name,
       kind: wreck.kind,
-      kindLabel: wreckKindLabel(wreck.kind),
+      kindLabel: wreck.sectionVariant
+        ? 'SCHIFFSSEKTION'
+        : wreck.debrisVariant
+          ? 'SCHIFFSFRAGMENT'
+          : wreck.containerVariant
+        ? {
+            standard: 'FRACHTCONTAINER',
+            damaged: 'BESCHÄDIGTER CONTAINER',
+            tank: 'TANKMODUL',
+          }[wreck.containerVariant]
+        : wreckKindLabel(wreck.kind),
       position: wreck.position,
       radius: wreck.radius,
       rotation: wreck.rotation,
+      ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
+      ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
+      ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+      ...(wreck.effectSeed !== undefined ? { effectSeed: wreck.effectSeed } : {}),
+      ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,
       quality: wreck.quality,
       qualityLabel: qualityLabel(wreck.quality),
       inspected: wreck.inspected,
+      scanLevel: wreck.inspected ? 'analyzed' : wreck.scanLevel ?? 'unscanned',
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
       componentSignal: wreck.inspected && wreck.component !== null,
       component:
@@ -259,15 +292,20 @@ export function createSalvageSpaceViewModel(
     width: snapshot.field.width,
     height: snapshot.field.height,
     ship: shipView(snapshot, ship, combat),
+    shieldImpacts: snapshot.shieldImpacts ?? [],
     npcShips: npcShipViews(npcShips, selectedNpcId, combat),
     wrecks,
+    debris: snapshot.field.debris ?? [],
+    sections: snapshot.field.sections ?? [],
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
     navigationRoute: snapshot.navigationRoute,
     phase: snapshot.phase,
     operationProgress: snapshot.operationProgress,
+    longRangeScanProgress: snapshot.longRangeScanProgress ?? null,
     activeResourceId: snapshot.activeResourceId,
     salvageAvailable: snapshot.salvageAvailable,
+    scanAvailable: snapshot.scanAvailable ?? true,
     cargoCapacityTons: snapshot.cargoCapacityTons,
     cargoUsedTons:
       cargoResources.reduce((sum, entry) => sum + entry.amount, 0) +

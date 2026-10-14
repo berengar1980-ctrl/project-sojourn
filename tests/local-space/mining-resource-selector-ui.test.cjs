@@ -32,10 +32,16 @@ assert.deepEqual(
 );
 assert.deepEqual(
   selector.toggleMiningResourceSelection(['ferrite', 'sulfur'], 'silica'),
-  ['sulfur', 'silica'],
-  'selecting a third resource must replace the oldest target instead of being blocked'
+  ['ferrite', 'sulfur', 'silica'],
+  'selecting a third resource must keep all three targets active'
 );
-assert.deepEqual(selector.toggleMiningResourceSelection(['sulfur', 'silica'], 'sulfur'), [
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'sulfur', 'silica'], 'sulfur'), [
+  'ferrite', 'silica',
+]);
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'silica'], 'sulfur'), [
+  'ferrite', 'silica', 'sulfur',
+]);
+assert.deepEqual(selector.toggleMiningResourceSelection(['ferrite', 'silica'], 'ferrite'), [
   'silica',
 ]);
 assert.equal(selector.toggleMiningResourceSelection(['silica'], 'silica'), null);
@@ -43,11 +49,29 @@ assert.equal(selector.toggleMiningResourceSelection(['silica'], 'silica'), null)
 assert(panel.includes('MiningResourceSelector'));
 assert(panel.includes('onMiningResourceSelection'));
 assert(selectorSource.includes("allButton.textContent = 'ALLE'"));
-assert(selectorSource.includes('DRITTE AUSWAHL ERSETZT DIE ÄLTESTE'));
+assert(selectorSource.includes('FREIE KOMBINATION'));
+assert(!selectorSource.includes('DRITTE AUSWAHL ERSETZT DIE ÄLTESTE'));
 assert(!selectorSource.includes('selection.length >= 2'));
 assert(actions.includes('setMiningResourceSelection(resourceIds)'));
 assert(service.includes('this.miningResources.selectionFor(this.selectedAsteroidId)'));
 assert(service.includes('this.miningResources.setSelection(asteroid, resourceIds)'));
+assert(
+  !service.includes("if (this.miningPhase !== 'idle') return this.getSnapshot();"),
+  'live extraction must accept new per-resource targeting decisions'
+);
+assert(selectorSource.includes('this.layoutKey !== key') &&
+  selectorSource.includes('this.updateButtons(deposits)'),
+  'unchanged asteroid selection must keep its original DOM buttons mounted');
+assert(selectorSource.includes('if (this.layoutKey !== null) this.container.replaceChildren()') &&
+  selectorSource.includes('if (this.layoutKey !== key)'),
+  'DOM reconstruction is only allowed for hiding or a different asteroid/resource set');
+assert(selectorSource.includes('this.updateButtons(deposits);\n    this.onChange(next);'),
+  'clicked selection must update immediately before the game controller synchronizes state');
+assert(selectorSource.includes("target.closest('button')"),
+  'click events should resolve the actual resource button');
+assert(readModuleSource(root, 'src/ui/local-space/local-space-panel-view.ts')
+  .includes('miningResourceSelector.update(model, eventActive)'),
+  'buttons must remain enabled during running mining operations');
 assert(resourceRuntime.includes('private readonly selections = new Map'));
 assert(resourceRuntime.includes('this.selections.set(asteroid.id'));
 assert(resourceRuntime.includes('this.selections.delete(asteroid.id)'));

@@ -7,6 +7,35 @@ import {
   type InstalledShipComponents,
 } from './ship-component-service';
 import { resolveShipGameplayStats } from './ship-stats';
+import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
+
+/** Starter armament must respect the actual hardpoint mount and family.
+ * Previous defaults equipped only turret pulse lasers: bow/broadside slots
+ * received empty strings and campaign ships silently entered combat unarmed.
+ */
+export function defaultStarterWeaponId(
+  ship: ShipDefinition,
+  slotIndex: number
+): string {
+  const hardpoint = ship.sprite.hardpoints.weaponMounts?.find((slot) => slot.slotIndex === slotIndex);
+  if (!hardpoint && ship.sprite.hardpoints.weaponMounts?.length) return '';
+  const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? [])
+    .filter((component) =>
+      component.tier === 1 &&
+      component.weapon &&
+      (!hardpoint?.allowedMounts ||
+        hardpoint.allowedMounts.includes(component.weapon.mount ?? 'turret')) &&
+      (!hardpoint?.allowedFamilies ||
+        hardpoint.allowedFamilies.includes(component.weapon.family))
+    );
+  const preferred = weapons.find((component) => component.weapon?.family === 'pulse_laser')
+    ?? weapons.find((component) => component.weapon?.family === 'railgun')
+    ?? weapons.find((component) => component.weapon?.family === 'plasma_battery')
+    ?? weapons.find((component) => component.weapon?.family === 'autocannon')
+    ?? weapons.find((component) => component.weapon?.ammoPerShot === 0)
+    ?? weapons[0];
+  return preferred?.id ?? '';
+}
 
 const BASE_MINING_CYCLE_SECONDS = 0.42;
 const BASELINE_MINING_LASERS = 3;
@@ -23,6 +52,15 @@ export interface ShipMiningSetup {
 
 export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledShipComponents {
   const stats = resolveShipGameplayStats(ship);
+  const compatibleStarters = Array.from({ length: stats.weaponSlots }, (_, index) =>
+    defaultStarterWeaponId(ship, index)
+  );
+  // Prefer an actual defensive pulse laser turret: it can track a pirate
+  // throughout the engagement rather than chasing a 60-degree railgun arc.
+  const turretSlot = compatibleStarters.indexOf('weapon1');
+  const starterSlot = turretSlot >= 0
+    ? turretSlot
+    : compatibleStarters.findIndex((id) => id !== '');
   const common: InstalledShipComponents = {
     reactor: ['reactor1'],
     engine: ['engine1'],
@@ -30,13 +68,11 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     hull: ['hull1'],
     sensor: ['sensor1'],
     cargo: ['cargo1'],
-    weapon: Array.from({ length: stats.weaponSlots }, (_, index) => {
-      const mount = ship.sprite.hardpoints.weaponMounts?.find((slot) => slot.slotIndex === index);
-      return (!mount?.allowedMounts || mount.allowedMounts.includes('turret')) &&
-        (!mount?.allowedFamilies || mount.allowedFamilies.includes('pulse_laser'))
-        ? 'weapon1'
-        : '';
-    }),
+    // One affordable defensive Mk I gun as the campaign baseline. Remaining
+    // slots stay free for upgrades, not silently filled with incompatible gear.
+    weapon: Array.from({ length: stats.weaponSlots }, (_, index) =>
+      index === starterSlot ? compatibleStarters[index]! : ''
+    ),
     mine: [''],
     tractor: [ship.role === 'mining' || ship.role === 'salvage' ? 'tractor1' : ''],
   };

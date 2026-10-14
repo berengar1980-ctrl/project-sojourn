@@ -54,6 +54,11 @@ export function advanceCombatAsteroids(arena: StrategicCombatArenaOptions, dt: n
       position.y = body.position.y;
     }
     visual.rotation = body.rotation;
+    if (visual.rotation3d) {
+      visual.rotation3d.x = (visual.rotation3d.x + (visual.spin3d?.x ?? 0) * dt) % (Math.PI * 2);
+      visual.rotation3d.y = (visual.rotation3d.y + (visual.spin3d?.y ?? 0) * dt) % (Math.PI * 2);
+      visual.rotation3d.z = body.rotation;
+    }
     const velocity = visual.velocity as { x: number; y: number };
     velocity.x = body.physics.velocity.x;
     velocity.y = body.physics.velocity.y;

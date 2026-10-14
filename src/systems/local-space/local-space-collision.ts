@@ -260,13 +260,17 @@ function resolveCollisionPair(a: LocalAsteroid, b: LocalAsteroid): void {
 
 export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): void {
   const buckets = collisionBuckets(asteroids);
+  // Standard mining fields use one cell. Large ship sections can overlap
+  // objects two cells away; expand only when oversized obstacles exist.
+  const maxRadius = asteroids.reduce((max, body) => Math.max(max, body.radius), 0);
 
   asteroids.forEach((asteroid, first) => {
     const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
     const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
 
-    for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
-      for (let columnOffset = -1; columnOffset <= 1; columnOffset += 1) {
+    const reach = Math.max(1, Math.ceil((asteroid.radius + maxRadius) / COLLISION_CELL_SIZE));
+    for (let rowOffset = -reach; rowOffset <= reach; rowOffset += 1) {
+      for (let columnOffset = -reach; columnOffset <= reach; columnOffset += 1) {
         const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];
         for (const second of candidates) {
           if (second <= first) continue;

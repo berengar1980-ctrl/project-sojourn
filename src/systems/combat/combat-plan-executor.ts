@@ -24,9 +24,13 @@ export function executeCombatPlan(
   if (!plan) return 'regroup';
   const separation = distance(ship.position, enemy.position);
   const range = plan.desiredRange;
-  // Maintain a stable range band: approach, align, fire, then reposition.
-  const tooFar = separation > range * 1.2;
-  const tooNear = separation < range * 0.62;
+  // Hysteresis prevents reach/align/fire phases oscillating every frame.
+  // Once in firing position, keep it until the ship leaves the wider band.
+  const holdingFire = plan.phase === 'fire' || plan.phase === 'align_weapons';
+  const tooFar = separation > range * (holdingFire ? 1.32 : 1.10);
+  const tooNear = separation < range * (holdingFire ? 0.52 : 0.74);
+  // After a close-range overshoot, commit to a short regroup instead of
+  // immediately oscillating back into fire on the next frame.
   if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
   if (tooNear && plan.phase === 'fire') return 'regroup';
   if (tooFar || tooNear) return 'reach_range';
@@ -44,5 +48,8 @@ export function executeCombatPlan(
         : -Math.PI / 2
       : 0;
   const error = wrapAngle(bearing - ship.headingRadians - mountFacing);
-  return Math.abs(error) > 0.35 ? 'align_weapons' : 'fire';
+  // Weapon orientation also needs hysteresis: enter fire with good alignment,
+  // leave only after a noticeably larger error (not every tiny RCS correction).
+  const tolerance = plan.phase === 'fire' ? 0.52 : 0.29;
+  return Math.abs(error) > tolerance ? 'align_weapons' : 'fire';
 }

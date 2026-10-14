@@ -253,7 +253,11 @@ function weaponDefinitions(seed: WeaponFamilySeed): readonly ShipComponentDefini
       type: 'weapon',
       name: `${seed.name} Mk ${roman}`,
       tier,
-      power: scaled(basePower, seed.powerMultiplier),
+      // A starter pulse laser must fit the standard Mk I reactor budget
+      // alongside the miner's tractor, sensors, shield and drill module.
+      power: seed.id === 'pulse-laser' && tier === 1
+        ? 5
+        : scaled(basePower, seed.powerMultiplier),
       cost: Math.round(baseCost * seed.costMultiplier),
       weapon: {
         family: seed.family,

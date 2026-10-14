@@ -1,6 +1,30 @@
 import type { CombatGrapple, MutableCombatant } from './strategic-combat-types';
 
-const COUPLING_DISTANCE = 140;
+const COUPLING_DISTANCE = 92;
+
+/** Docking requires physical hull proximity plus settled relative velocity.
+ * Never trigger tactical boarding merely because a hook has attached.
+ */
+export function canDockGrappledShips(
+  source: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>,
+  target: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>
+): boolean {
+  const separation = Math.hypot(
+    source.position.x - target.position.x,
+    source.position.y - target.position.y
+  );
+  const hullRadius = (body: typeof source): number =>
+    Math.max(20, body.setup.shieldGeometry?.radiusX ?? 45);
+  const couplingRange = Math.max(
+    90,
+    Math.min(104, hullRadius(source) + hullRadius(target) + 6)
+  );
+  const relativeSpeed = Math.hypot(
+    source.velocity.x - target.velocity.x,
+    source.velocity.y - target.velocity.y
+  );
+  return separation <= couplingRange && relativeSpeed <= 22;
+}
 const WINCH_REEL_METERS_PER_SECOND = 84;
 const TRACTOR_REEL_BONUS = 76;
 
@@ -57,7 +81,18 @@ export function advanceCombatGrappleTether(
     target.velocity.x -= normalX * impulse;
     target.velocity.y -= normalY * impulse;
   }
-  // Tangential momentum is unaffected, so the captured ship can swing.
+  // The rope preserves orbital motion at range; at genuine docking distance,
+  // a small symmetric damping impulse settles relative motion without
+  // teleportation or destroying the pair's shared center-of-mass velocity.
+  if (separation < 134) {
+    const smoothing = Math.min(0.22, deltaSeconds * 2.8);
+    const diffX = (target.velocity.x - source.velocity.x) * smoothing * 0.5;
+    const diffY = (target.velocity.y - source.velocity.y) * smoothing * 0.5;
+    source.velocity.x += diffX;
+    source.velocity.y += diffY;
+    target.velocity.x -= diffX;
+    target.velocity.y -= diffY;
+  }
   source.speed = Math.hypot(source.velocity.x, source.velocity.y);
   target.speed = Math.hypot(target.velocity.x, target.velocity.y);
 

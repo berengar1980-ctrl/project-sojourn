@@ -94,13 +94,23 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
       event.type === 'distress-rescue'
         ? 'Havarist'
         : event.specialComponent
-          ? 'Seltenes Bergungswrack'
-          : 'Wrack',
+          ? 'Seltener Frachtcontainer'
+          : 'Bergungscontainer',
     kind: event.wreckKind,
     quality,
     position: { x: width * 0.55, y: height * 0.5 },
-    radius: event.type === 'distress-rescue' ? distressRadius : 58 + random() * 24,
+    radius: event.type === 'distress-rescue' ? distressRadius : 19.5 + random() * 7.5,
     rotation: random() * Math.PI * 2,
+    ...(event.type !== 'distress-rescue'
+      ? {
+          containerVariant: (['standard', 'damaged', 'tank'] as const)[
+            Math.floor(random() * 3)
+          ],
+          driftVelocity: { x: 2.6, y: -1.4 },
+          rotation3d: { x: 0.22, y: 0.3, z: random() * Math.PI * 2 },
+          spin3d: { x: 0.08, y: 0.06, z: 0.04 },
+        }
+      : {}),
     integrity: Math.round(48 + random() * 42),
     resources:
       event.type === 'distress-rescue' && !event.salvageRights
@@ -120,6 +130,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
     component,
     componentStatus: component ? 'available' : 'none',
     inspected: event.type === 'distress-rescue',
+    scanLevel: event.type === 'distress-rescue' ? 'analyzed' : 'unscanned',
   };
   return {
     id: `sector-event-field-${event.id}`,

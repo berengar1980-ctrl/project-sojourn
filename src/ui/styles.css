@@ -299,6 +299,18 @@ body {
   letter-spacing: 0.14em;
 }
 
+/* Keep the local-field exit clear of the top-right settings controls. */
+.local-space-shell .return-map-button {
+  right: 148px;
+}
+
+@media (max-width: 650px) {
+  .local-space-shell .return-map-button {
+    top: 118px;
+    right: 18px;
+  }
+}
+
 .return-map-button:hover,
 .long-scan-button:hover,
 .short-scan-button:hover,
@@ -522,6 +534,28 @@ body {
 
 .salvage-event__actions button[data-risk='risky'] {
   border-color: rgba(205, 147, 69, 0.45);
+}
+
+.salvage-long-scan-button {
+  position: absolute;
+  top: 146px;
+  right: 24px;
+  padding: 8px 10px;
+  border: 1px solid rgba(94, 178, 133, 0.42);
+  background: rgba(18, 62, 40, 0.78);
+  color: #a9e8c0;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-long-scan-button:hover {
+  background: rgba(58, 118, 92, 0.44);
+}
+
+.salvage-long-scan-button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .salvage-operation-status {

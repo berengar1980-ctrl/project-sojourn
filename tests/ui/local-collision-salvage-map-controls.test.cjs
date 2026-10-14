@@ -29,7 +29,7 @@ assert(
 );
 assert(
   salvageNpc.includes('resolveShipShieldObstacleCollisions') &&
-    salvageNpc.includes('options.field.wrecks.map'),
+    salvageNpc.includes('resolveSalvageShieldContacts'),
   'player and NPC ships must collide with wrecks in salvage space'
 );
 assert(

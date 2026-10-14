@@ -50,7 +50,8 @@ export function drawTractorThrows(
   ctx: CanvasRenderingContext2D,
   rocks: readonly ThrownAsteroidSnapshot[],
   scale: number,
-  project: (point: Point) => Point
+  project: (point: Point) => Point,
+  renderScrap?: (context: CanvasRenderingContext2D, rock: ThrownAsteroidSnapshot, radius: number) => boolean
 ): void {
   for (const rock of rocks) {
     const center = project(rock.position);
@@ -108,7 +109,7 @@ export function drawTractorThrows(
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-    } else {
+    } else if (!renderScrap?.(ctx, rock, radius)) {
       drawRock(ctx, radius, rock.ageSeconds);
     }
     ctx.restore();

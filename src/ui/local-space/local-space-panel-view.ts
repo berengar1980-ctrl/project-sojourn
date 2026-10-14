@@ -124,7 +124,7 @@ function updateLocalExitButton(
   model: LocalSpaceViewModel,
   eventActive: boolean
 ): void {
-  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
+  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height, model.backgroundSeed);
   button.disabled = eventActive || !atExit;
   button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
 }
@@ -219,7 +219,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
       ? (selected.totalRemaining / selected.totalCapacity) * 100
       : 0;
   oreBar.style.width = Math.max(0, remaining) + '%';
-  miningResourceSelector.update(model, miningActive || eventActive);
+  miningResourceSelector.update(model, eventActive);
   shortScanButton.disabled =
     eventActive || !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
   updateMiningButton(mineButton, model, miningActive);

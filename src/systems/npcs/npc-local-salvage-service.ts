@@ -1,4 +1,5 @@
 import { seededLocalGate } from '../../core/local-space-exit';
+import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { ShipDefinition } from '../../core/ship-types';
@@ -46,6 +47,7 @@ export interface NpcLocalSalvageOptions {
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly playerShip?: ShipDefinition;
   readonly getPlayerShipState?: () => LocalShipState;
+  readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
 
 const APPROACH_DISTANCE = 120;
@@ -447,15 +449,44 @@ class LocalSalvageService implements NpcLocalSalvageService {
         pushWeight: 2.4,
       });
     }
-    resolveShipShieldCollisions(bodies);
-    resolveShipShieldObstacleCollisions(
-      bodies,
-      this.options.field.wrecks.map((wreck) => ({
-        id: wreck.id,
-        position: wreck.position,
-        radius: wreck.radius,
-      }))
-    );
+    for (const contact of resolveShipShieldCollisions(bodies)) {
+      if (contact.firstId === 'player') {
+        this.options.onPlayerShieldContact?.(contact.normal, contact.closingDistance);
+      } else if (contact.secondId === 'player') {
+        this.options.onPlayerShieldContact?.(
+          { x: -contact.normal.x, y: -contact.normal.y },
+          contact.closingDistance
+        );
+      }
+    }
+    // Only distress-rescue ships remain fixed obstacles. All drift objects use
+    // the same impulse-based asteroid shield physics instead of acting as walls.
+    const obstacles = this.options.field.wrecks
+      .filter((wreck) => !wreck.containerVariant && !wreck.debrisVariant && !wreck.sectionVariant)
+      .map((wreck) => ({
+      id: wreck.id,
+      position: wreck.position,
+      radius: wreck.radius,
+    }));
+    for (const collision of resolveShipShieldObstacleCollisions(bodies, obstacles)) {
+      if (collision.shipId === 'player') {
+        this.options.onPlayerShieldContact?.(
+          { x: -collision.normal.x, y: -collision.normal.y },
+          collision.closingDistance
+        );
+      }
+    }
+    for (const body of bodies) {
+      // The player runtime owns shield hits; resolving them here first
+      // would swallow the actual player's visible contact event.
+      if (body.id === 'player') continue;
+      resolveSalvageShieldContacts(
+        this.options.field,
+        body.state as LocalShipState,
+        body.ship.sprite.hardpoints,
+        body.ship.nominalLengthMeters
+      );
+    }
   };
 }
 

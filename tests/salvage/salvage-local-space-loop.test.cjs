@@ -56,6 +56,52 @@ if (inspectionSnapshot.salvageEvent) {
   assert.equal(service.getSnapshot().salvageEventRecoverySeconds, 0);
 }
 
+// Broad sensor sweep sees the object, but must never leak actual loot amounts.
+const scanField = generator.generateSalvageField('survey-field', 125, 1);
+const scanService = local.createSalvageLocalSpaceService({
+  field: scanField,
+  setup: {
+    available: true,
+    yieldMultiplier: 1,
+    chanceBonus: 0,
+    cycleSeconds: 0.1,
+    cargoCapacityTons: 260,
+    reactorOutput: 40,
+    continuousPowerUsed: 16,
+  },
+  crewSkill: 65,
+  approachSpeed: 400,
+  collect() { return 0; },
+});
+const nearby = scanField.wrecks[0];
+const shipPoint = scanService.getSnapshot().ship.position;
+nearby.position = { x: shipPoint.x + 80, y: shipPoint.y + 40 };
+scanService.startLongRangeScan();
+for (let frame = 0; frame < 105; frame += 1) scanService.tick(0.05);
+assert.equal(nearby.scanLevel, 'surveyed', 'shared asteroid long-range scan must discover contact');
+assert.equal(nearby.inspected, false, 'long-range scan must not reveal cargo contents');
+assert.equal(scanService.getSnapshot().longRangeScanProgress, null, 'five-second scan completes');
+const catchup = local.createSalvageLocalSpaceService({
+  field: generator.generateSalvageField('catch-up', 301, 1),
+  setup: {
+    available: true,
+    yieldMultiplier: 1,
+    chanceBonus: 0,
+    cycleSeconds: 0.1,
+    cargoCapacityTons: 260,
+    reactorOutput: 40,
+    continuousPowerUsed: 16,
+  },
+  crewSkill: 60,
+  approachSpeed: 400,
+  collect() { return 0; },
+});
+catchup.startLongRangeScan();
+catchup.tick(0.12);
+assert(catchup.getSnapshot().longRangeScanProgress > 0.02,
+  'slow frames must advance elapsed scan time instead of dropping everything above 50ms');
+
+
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
 service.startStrip(wreck.id, firstDeposit.resourceId);
@@ -82,7 +128,7 @@ assert(panel.includes('UNTERSUCHEN'));
 assert(panel.includes('BERGEN'));
 assert(panel.includes('KOMPONENTE BERGEN'));
 assert(!panel.includes('dialog'), 'salvage interaction must remain embedded in local-space UI');
-assert(renderer.includes('drawHullFragments'));
+assert(renderer.includes('drawSalvageContainer3d'));
 assert(renderer.includes('pickWreck'));
 assert(
   renderer.includes('emitters[index % emitters.length]'),

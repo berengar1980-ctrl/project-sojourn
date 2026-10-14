@@ -14,7 +14,7 @@ import {
   type ActiveExchange,
 } from './combat-exchange-controller';
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
-import { advanceCombatGrappleTether } from './combat-grapple-physics';
+import { advanceCombatGrappleTether, canDockGrappledShips } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import type {
   StrategicCombatArenaOptions,
@@ -217,7 +217,8 @@ function tickStrategicCombat(
     moveCombatant(victim, initiator, victimSide, dt, runtime.arena, runtime.mines);
     if (runtime.grapple.success && runtime.grapple.resolved) {
       runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
-      if (distance(initiator.position, victim.position) <= 140) {
+      // Do not open boarding until the grappled hulls actually dock.
+      if (canDockGrappledShips(initiator, victim)) {
         // Match the ships' drift at the moment of docking rather than stopping
         // both vessels instantaneously in the middle of space.
         const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;

@@ -90,7 +90,11 @@ export function createMiningChunk(
 
   if (resourceSelection) {
     const selected = new Set(resourceSelection);
-    const collateralLoss = (amount * 0.5) / activeDeposits.length;
+    // Selective excavation destroys (but never captures) about half as much
+    // of every unselected resource as is mined from a selected deposit.
+    // Do not divide by the number of selected resources: selecting 1+3 must
+    // still cause real loss in excluded resource 2.
+    const collateralLoss = amount * 0.5;
     for (const other of asteroid.deposits) {
       if (selected.has(other.resourceId) || other.oreRemaining <= 0) continue;
       other.oreRemaining = Math.max(0, other.oreRemaining - collateralLoss);
