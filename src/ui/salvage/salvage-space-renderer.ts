@@ -285,6 +285,25 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       );
     }
     this.context.restore();
+    this.drawWreckScanCallout(wreck, point, radius);
+    if (
+      (wreck.isSelected || wreck.isWorkTarget) &&
+      !wreck.id.startsWith('event-wreck-salvage-distress-')
+    ) {
+      this.context.save();
+      this.context.strokeStyle = wreck.isWorkTarget
+        ? 'rgba(232, 184, 96, 0.95)'
+        : 'rgba(130, 206, 224, 0.86)';
+      this.context.lineWidth = 1.5;
+      this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
+      this.context.beginPath();
+      this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
+      this.context.stroke();
+      this.context.restore();
+    }
+    return { id: wreck.id, point, radius: hitRadius };
+  }
+  private drawWreckScanCallout(wreck: SalvageWreckView, point: { x: number; y: number }, radius: number): void {
     // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
       const lines =
@@ -313,23 +332,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       lines.forEach((line, index) => this.context.fillText(line, x + 22, y - 10 + index * 12));
       this.context.restore();
     }
-    if (
-      (wreck.isSelected || wreck.isWorkTarget) &&
-      !wreck.id.startsWith('event-wreck-salvage-distress-')
-    ) {
-      this.context.save();
-      this.context.strokeStyle = wreck.isWorkTarget
-        ? 'rgba(232, 184, 96, 0.95)'
-        : 'rgba(130, 206, 224, 0.86)';
-      this.context.lineWidth = 1.5;
-      this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
-      this.context.stroke();
-      this.context.restore();
-    }
-    return { id: wreck.id, point, radius: hitRadius };
   }
+
   protected drawLongRangeSalvageScan(width: number, height: number, _timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
