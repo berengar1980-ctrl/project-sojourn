@@ -47,6 +47,27 @@ function coverGoal(
   };
 }
 
+/** Ram only when our hull can absorb the contact and the target is vulnerable. */
+function usefulRamAttempt(
+  attacker: StrategicCombatRuntime['attacker'],
+  defender: StrategicCombatRuntime['defender']
+): boolean {
+  if (!attacker.setup.aiControlled || attacker.tactic === 'flee') return false;
+  if (attacker.subsystems.engine <= 0 || attacker.hullHp < attacker.hullMaxHp * 0.65)
+    return false;
+  if (attacker.shieldHp < attacker.shieldMaxHp * 0.35) return false;
+  const range = Math.hypot(
+    attacker.position.x - defender.position.x,
+    attacker.position.y - defender.position.y
+  );
+  return (
+    range >= 160 &&
+    range <= 850 &&
+    defender.hullHp < attacker.hullHp * 0.65 &&
+    defender.shieldHp < defender.shieldMaxHp * 0.3
+  );
+}
+
 export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExchange {
   return {
     exchange: initialExchange(runtime.firstPlanner),
@@ -291,6 +312,7 @@ export function tickActionExchange(
     frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
     broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
     guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
+    ramOpportunity: usefulRamAttempt(initiator, opponent),
     attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
     defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
     roll: runtime.random,
@@ -315,14 +337,18 @@ export function tickActionExchange(
       opponent,
       next.action,
       next.reaction,
-      next.quality
+      next.quality,
+      context.ramOpportunity === true && next.action === 'frontal_pass'
     );
     // Preplan both routes at the moment the exchange is chosen, before any thrust.
     combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
     combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
-    runtime.lastEvent = next.action + ' / ' + next.reaction;
+    runtime.lastEvent =
+      (context.ramOpportunity && next.action === 'frontal_pass' ? 'RAMMVERSUCH' : next.action) +
+      ' / ' +
+      next.reaction;
     runtime.combatLog.push({
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: next.initiative,
