@@ -1,6 +1,6 @@
 import type { CombatGrapple, MutableCombatant } from './strategic-combat-types';
 
-const COUPLING_DISTANCE = 140;
+const COUPLING_DISTANCE = 92;
 const WINCH_REEL_METERS_PER_SECOND = 84;
 const TRACTOR_REEL_BONUS = 76;
 
@@ -57,7 +57,18 @@ export function advanceCombatGrappleTether(
     target.velocity.x -= normalX * impulse;
     target.velocity.y -= normalY * impulse;
   }
-  // Tangential momentum is unaffected, so the captured ship can swing.
+  // The rope preserves orbital motion at range; at genuine docking distance,
+  // a small symmetric damping impulse settles relative motion without
+  // teleportation or destroying the pair's shared center-of-mass velocity.
+  if (separation < 134) {
+    const smoothing = Math.min(0.22, deltaSeconds * 2.8);
+    const diffX = (target.velocity.x - source.velocity.x) * smoothing * 0.5;
+    const diffY = (target.velocity.y - source.velocity.y) * smoothing * 0.5;
+    source.velocity.x += diffX;
+    source.velocity.y += diffY;
+    target.velocity.x -= diffX;
+    target.velocity.y -= diffY;
+  }
   source.speed = Math.hypot(source.velocity.x, source.velocity.y);
   target.speed = Math.hypot(target.velocity.x, target.velocity.y);
 
