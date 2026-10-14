@@ -47,7 +47,7 @@ export function broadsideOrbitManeuver(
   const toward = normalize(enemy.position.x - ship.position.x, enemy.position.y - ship.position.y);
   const distance = Math.hypot(enemy.position.x - ship.position.x, enemy.position.y - ship.position.y);
   if (distance < desiredRange * 0.75 || distance > desiredRange * 1.25) return null;
-  const side = ship.strategy.broadsideFacing === 'starboard' ? 1 : -1;
+  const side = ship.strategy.broadsideFacing === 'starboard' ? -1 : 1;
   const radial = Math.max(-0.45, Math.min(0.45, (distance - desiredRange) / desiredRange));
   return {
     direction: normalize(-toward.y * side + toward.x * radial, toward.x * side + toward.y * radial),
