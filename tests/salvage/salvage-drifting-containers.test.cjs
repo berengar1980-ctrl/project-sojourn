@@ -10,15 +10,23 @@ const generator = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/salv
 const motion = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/salvage-container-motion.ts');
 const types = ['standard', 'damaged', 'tank'];
 const variants = new Set();
+let smallBelowBaselinePeak = false;
+let smallAboveBaselinePeak = false;
+let bigBelowBaselineMinimum = false;
+let bigAboveBaselineMaximum = false;
 for (let seed = 1; seed <= 32; seed += 1) {
   const field = generator.generateSalvageField('container-field', seed, 2);
   assert.deepEqual(field, generator.generateSalvageField('container-field', seed, 2));
   const recoverableScrap = field.wrecks.filter((wreck) => wreck.debrisVariant);
   const sections = field.wrecks.filter((wreck) => wreck.sectionVariant);
   const containers = field.wrecks.filter((wreck) => wreck.containerVariant);
-  assert(field.debris.length + recoverableScrap.length >= 178 &&
-    field.debris.length + recoverableScrap.length <= 212,
-    'field should carry asteroid-like numbers of small debris');
+  const allScrap = [...field.debris, ...recoverableScrap];
+  assert(allScrap.length >= 140 && allScrap.length <= 164,
+    'reduce small debris count while keeping enough fragments to fill the salvage field');
+  assert(allScrap.every((entry) => entry.radius >= 7 && entry.radius < 58),
+    'small fragments must range from their prior scale up to at most twice their prior maximum');
+  smallBelowBaselinePeak ||= allScrap.some((entry) => entry.radius < 29);
+  smallAboveBaselinePeak ||= allScrap.some((entry) => entry.radius > 40);
   assert(sections.length >= 8 && sections.length <= 11,
     'all eight additional large sections must exist');
   assert.equal(new Set([
@@ -35,9 +43,11 @@ for (let seed = 1; seed <= 32; seed += 1) {
     'every large 3D section must have a distinct room layout');
   assert(sections.some((section) => section.sectionVariant === 'double-deck'),
     'a visible two-deck cutaway is required');
-  assert(sections.every((section) => section.radius >= 86 &&
-    section.radius < 132 && section.driftVelocity),
-    'large sections need real scale and asteroid physics');
+  assert(sections.every((section) => section.radius >= 64.5 &&
+    section.radius < 165 && section.driftVelocity),
+    'large sections must stay inside the previous scale range adjusted by ±25%');
+  bigBelowBaselineMinimum ||= sections.some((section) => section.radius < 86);
+  bigAboveBaselineMaximum ||= sections.some((section) => section.radius > 132);
   assert(field.debris.every((entry) => entry.radius > 0 && entry.driftVelocity),
     'decorative fragments need physics collision and drift bodies');
   assert.equal(new Set(containers.map((entry) => entry.containerVariant)).size, 3,
@@ -52,6 +62,10 @@ for (let seed = 1; seed <= 32; seed += 1) {
   }
 }
 assert.deepEqual([...variants].sort(), types.sort(), 'all three container variants must spawn');
+assert(smallBelowBaselinePeak && smallAboveBaselinePeak,
+  'small fragment sizes must remain varied rather than uniformly doubled');
+assert(bigBelowBaselineMinimum && bigAboveBaselineMaximum,
+  'large section size variation must reach both sides of the former range');
 
 const field = generator.generateSalvageField('container-field', 42);
 const target = field.wrecks[0];
