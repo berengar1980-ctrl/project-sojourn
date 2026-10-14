@@ -46,6 +46,7 @@ assert.equal(runtime.thrownAsteroids.length, 0, 'live own shield prohibits tract
 attacker.shieldHp = 0;
 maybeLaunchTractorAsteroid(runtime, 'attacker', attacker, defender);
 assert.equal(runtime.thrownAsteroids.length, 1, 'shield down enables nearby tractor throw');
+assert.equal(attacker.tractorThrowCooldown, 6, 'tractor asteroid throw recharges in six seconds');
 assert.equal(
   arena.asteroids.length,
   0,
