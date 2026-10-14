@@ -367,7 +367,9 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
-  showCampaignCombatSummary(context.root, snapshot, () => {});
+  showCampaignCombatSummary(context.root, snapshot, () => {
+    if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
+  });
 }
 
 function handleControllerLocationEntry(
