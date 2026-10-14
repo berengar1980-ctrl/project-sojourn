@@ -28,7 +28,7 @@ export function reviewShipContact(
     ['defender', runtime.defender, runtime.attacker],
   ] as const) {
     // Contact may not bypass the first staggered four-second analysis window.
-    if (!ship.strategy && ship.nextStrategyReviewAt > runtime.elapsedSeconds) continue;
+    if (ship.setup?.aiControlled && !ship.strategy && ship.nextStrategyReviewAt > runtime.elapsedSeconds) continue;
     if (runtime.elapsedSeconds - (ship.lastContactReviewAt ?? -100) < 2) continue;
     ship.lastContactReviewAt = runtime.elapsedSeconds;
     ship.nextStrategyReviewAt = runtime.elapsedSeconds;
