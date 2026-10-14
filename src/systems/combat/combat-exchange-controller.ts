@@ -38,7 +38,7 @@ function coverGoal(
   ship: StrategicCombatRuntime['attacker'],
   enemy: StrategicCombatRuntime['attacker'],
   arena: StrategicCombatRuntime['arena']
-): { x: number; y: number } | null => {
+): { x: number; y: number } | null {
   const direction = asteroidCoverHeading(ship, enemy, arena);
   if (!direction) return null;
   return {
