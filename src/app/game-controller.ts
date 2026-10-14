@@ -19,7 +19,6 @@ import type {
   ControllerRuntimeContext,
   ControllerRuntimeState,
 } from './game-controller-runtime-types';
-
 import {
   tickEconomy,
   completeDistressTowOnArrival,
@@ -31,19 +30,12 @@ import {
   destroyScenePanels,
   sectorEventLocation,
 } from './game-controller-events';
-
 import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
-
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
-
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
-
 import { createActivePortPanel } from './game-controller-port';
-
 import { createSalvageScene } from './game-controller-salvage';
-
 import { generateSectorSalvageEventField } from '../systems/salvage';
-
 import {
   controllerLocalModel,
   controllerShipRuntimeOptions,
@@ -55,7 +47,6 @@ import {
   localSeed,
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
-
 import type { GameControllerOptions, GameController } from './game-controller-types';
 
 export type { GameController } from './game-controller-types';
