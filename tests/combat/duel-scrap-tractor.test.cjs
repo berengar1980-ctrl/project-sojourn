@@ -12,8 +12,8 @@ const { maybeLaunchTractorAsteroid, advanceThrownAsteroids } = loadStandaloneTyp
 const { nativeCombatAsteroids } = loadStandaloneTypeScriptModule(
   root, 'src/systems/combat/combat-asteroid-motion.ts');
 const scrapPresetSource = readModuleSource(root, 'src/systems/combat/duel-scrap-presets.ts');
-assert(scrapPresetSource.includes('Boolean(piece.sectionVariant)'),
-  'PvP path planning should route only around massive ship sections, not small movable scrap');
+assert(scrapPresetSource.includes("piece.kind === 'resource'"),
+  'PvP obstacle and weapon-cover classification must match the asteroid map resource rule');
 
 
 for (const seed of [1, 53, 415, 9001]) {
@@ -32,13 +32,14 @@ for (const seed of [1, 53, 415, 9001]) {
   assert(dense.asteroids.filter((rock) => rock.kind === 'resource').length >= 5,
     'several large wrecks must serve as actual cover and physical obstacles');
   for (const map of [moderate, dense]) {
-    assert(
-      Math.hypot(
-        map.attackerPosition.x - map.defenderPosition.x,
-        map.attackerPosition.y - map.defenderPosition.y
-      ) <= 1200,
-      'combatants must start within the real tractor engagement separation limit'
-    );
+    // Compare the asteroid preset's built-in combat spawn convention. The
+    // salvage arena used to start 0.35 / 0.65 instead of 0.28 / 0.72.
+    assert.deepEqual(map.attackerPosition, {
+      x: map.width * 0.28, y: map.height * 0.46,
+    }, 'attacker starts at the same position fraction as the asteroid map');
+    assert.deepEqual(map.defenderPosition, {
+      x: map.width * 0.72, y: map.height * 0.54,
+    }, 'defender starts at the same position fraction as the asteroid map');
     assert(map.asteroids.every((rock) =>
       rock.position.x > rock.radius && rock.position.x < map.width - rock.radius &&
       rock.position.y > rock.radius && rock.position.y < map.height - rock.radius
@@ -71,8 +72,8 @@ for (const seed of [1, 53, 415, 9001]) {
         'each ship must start with multiple genuine throwable 3D fragments in tractor range');
       assert(!map.obstacles.some((obstacle) =>
         Math.hypot(obstacle.position.x-spawn.x, obstacle.position.y-spawn.y)
-          < obstacle.radius+145),
-        'heavy wrecks may not obstruct ship spawn immediately');
+          >= obstacle.radius + 145),
+        'heavy wrecks must respect the asteroid-map 145 m spawn clearance');
     }
   }
 }
@@ -89,7 +90,9 @@ const actor = {
 };
 const enemy = {
   ...actor,
-  position: { ...arena.defenderPosition },
+  // Simulate reaching tractor engagement range AFTER the normal starts,
+  // instead of assuming both ships spawn less than 1200 m apart.
+  position: {x:actor.position.x + 650, y:actor.position.y},
   shieldHp: 80,
   hullHp: 300,
   velocity: {x:0,y:0},
@@ -117,10 +120,12 @@ assert.equal(runtime.thrownAsteroids[0].phase,'flight');
 const visuals = readModuleSource(root,'src/ui/combat/combat-scrap-renderer.ts');
 const battlefield = readModuleSource(root,'src/ui/combat/strategic-combat-renderer.ts');
 const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');
-assert(lobby.includes('Traktor-Test: Startschilde deaktivieren') &&
-  lobby.includes('scrapSelected && tractorTestCheckbox.checked') &&
-  lobby.includes('shieldHp: 0'),
-  'optional PvP practice mode must permit immediate throws without altering campaign shields');
+assert(!lobby.includes('Traktor-Test: Startschilde deaktivieren') &&
+  !lobby.includes('tractorTestCheckbox') &&
+  !lobby.includes('setups.map((setup) => ({ ...setup, shieldHp: 0 }))'),
+  'PvP wrecks must NEVER silently start either ship with 0 shields');
+assert(lobby.includes('setups[0]!') && lobby.includes('setups[1]!'),
+  'the asteroid and scrap maps must receive unmodified ship combat setups');
 assert(visuals.includes('drawSalvageDebris3d') &&
        visuals.includes('drawSalvageSection3d') &&
        visuals.includes('drawSalvageContainer3d'),
