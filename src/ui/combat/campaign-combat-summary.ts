@@ -1,4 +1,5 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
+import type { CombatCargoReward } from '../../app/game-controller-combat-rewards';
 import { campaignCombatResult } from '../../systems/combat/combat-result-summary';
 
 /** One user-confirmed outcome screen for campaign encounters, never a second reward grant. */
@@ -6,7 +7,8 @@ export function showCampaignCombatSummary(
   root: HTMLElement,
   snapshot: StrategicCombatSnapshot,
   onContinue: () => void,
-  boardingOutcome?: string
+  boardingOutcome?: string,
+  cargoRewards: readonly CombatCargoReward[] = []
 ): void {
   const result = campaignCombatResult(snapshot);
   const overlay = document.createElement('section');
@@ -37,9 +39,11 @@ export function showCampaignCombatSummary(
     result.duration +
     ' s';
   const loot = document.createElement('p');
-  loot.textContent = boardingOutcome
-    ? 'Enterergebnis: ' + boardingOutcome + '. Erbeutete Ausrüstung wird separat im Log erfasst.'
-    : 'Keine automatische Kampfbeute vergeben. Verfügbare Bergung erfolgt im Feld.';
+  const cargoMessage = cargoRewards.length > 0
+    ? 'Ladung gesichert: ' + cargoRewards.map((item) => item.quantity + ' × ' + item.resourceId).join(', ')
+    : 'Keine Ladung übernommen.';
+  loot.textContent = (boardingOutcome ? 'Enterergebnis: ' + boardingOutcome + '. ' : '') +
+    cargoMessage + ' Weitere Bergung ist im Feld möglich.';
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = 'ZURÜCK ZUM SPIEL';
