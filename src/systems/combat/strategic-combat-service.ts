@@ -42,6 +42,7 @@ import { maybeAttemptBoarding } from './combat-boarding-ai';
 import {
   recordCombatLog,
   reviewAndExecute,
+  recordCommitment,
   recordCombatMotion,
   reviewShieldBreakthroughs,
   reviewSubsystemBreakthroughs,
@@ -233,8 +234,10 @@ function tickStrategicCombat(
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
   if (actionState) {
-    reviewCombatCommitment(runtime.attacker, runtime.defender, runtime.arena, runtime.elapsedSeconds);
-    reviewCombatCommitment(runtime.defender, runtime.attacker, runtime.arena, runtime.elapsedSeconds);
+    const attackerDecision = reviewCombatCommitment(runtime.attacker, runtime.defender, runtime.arena, runtime.elapsedSeconds);
+    const defenderDecision = reviewCombatCommitment(runtime.defender, runtime.attacker, runtime.arena, runtime.elapsedSeconds);
+    if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
+    if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
     tickActionExchange(runtime, actionState, dt);
   } else {
     reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
