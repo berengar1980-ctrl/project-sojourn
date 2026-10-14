@@ -176,6 +176,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     );
     this.drawRoute(width, height);
     this.drawExitGate(width, height);
+    this.drawLongRangeSalvageScan(width, height, timeSeconds);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     drawDistressScanEffect(
@@ -240,6 +241,28 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       );
     }
     this.context.restore();
+    // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
+    if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
+      const lines = wreck.scanLevel === 'analyzed'
+        ? (wreck.resources.length > 0
+          ? wreck.resources.map((resource) => resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t')
+          : ['LEER'])
+        : ['???'];
+      const x = point.x + radius * 0.72;
+      const y = point.y - radius * 0.72;
+      this.context.save();
+      this.context.strokeStyle = wreck.inspected ? 'rgba(121,220,237,.82)' : 'rgba(139,192,153,.72)';
+      this.context.fillStyle = wreck.inspected ? 'rgba(179,235,244,.92)' : 'rgba(168,205,178,.84)';
+      this.context.lineWidth = 1;
+      this.context.beginPath();
+      this.context.moveTo(x, y);
+      this.context.lineTo(x + 10, y - 10);
+      this.context.lineTo(x + 18, y - 10);
+      this.context.stroke();
+      this.context.font = '9px ui-monospace, monospace';
+      lines.forEach((line, index) => this.context.fillText(line, x + 22, y - 10 + index * 12));
+      this.context.restore();
+    }
     if (
       (wreck.isSelected || wreck.isWorkTarget) &&
       !wreck.id.startsWith('event-wreck-salvage-distress-')
@@ -257,6 +280,20 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     return { id: wreck.id, point, radius: hitRadius };
   }
+  protected drawLongRangeSalvageScan(width: number, height: number, timeSeconds: number): void {
+    const progress = this.model.longRangeScanProgress;
+    if (progress === null) return;
+    const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
+    const radius = Math.max(8, Math.max(width, height) * 0.68 * (0.08 + progress * 0.92));
+    this.context.save();
+    this.context.strokeStyle = `rgba(97,222,242,${0.48 * (1 - progress * 0.42)})`;
+    this.context.lineWidth = 1.4;
+    this.context.beginPath();
+    this.context.arc(ship.x, ship.y, radius, 0, Math.PI * 2);
+    this.context.stroke();
+    this.context.restore();
+  }
+
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
