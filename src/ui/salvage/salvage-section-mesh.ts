@@ -276,7 +276,7 @@ const silhouette = (() => {
 
 export function drawSalvageSection3d(
   context: CanvasRenderingContext2D,
-  section: SalvageSection,
+  section: Pick<SalvageSection, 'variant' | 'rotation3d' | 'effectSeed'>,
   radius: number,
   timeSeconds: number
 ): void {
