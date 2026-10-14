@@ -268,6 +268,10 @@ export interface StrategicCombatArenaOptions {
   readonly height: number;
   readonly attackerPosition?: CombatPoint;
   readonly defenderPosition?: CombatPoint;
+  readonly attackerVelocity?: CombatPoint;
+  readonly defenderVelocity?: CombatPoint;
+  readonly attackerHeadingRadians?: number;
+  readonly defenderHeadingRadians?: number;
   readonly obstacles?: readonly StrategicCombatObstacle[];
   readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
