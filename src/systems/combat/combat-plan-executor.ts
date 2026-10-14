@@ -24,11 +24,11 @@ export function executeCombatPlan(
   if (!plan) return 'regroup';
   const separation = distance(ship.position, enemy.position);
   const range = plan.desiredRange;
-  // Maintain a stable range band: approach, align, fire, then reposition.
-  const tooFar = separation > range * 1.2;
-  const tooNear = separation < range * 0.62;
-  if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
-  if (tooNear && plan.phase === 'fire') return 'regroup';
+  // Hysteresis prevents reach/align/fire phases oscillating every frame.
+  // Once in firing position, keep it until the ship leaves the wider band.
+  const holdingFire = plan.phase === 'fire' || plan.phase === 'align_weapons';
+  const tooFar = separation > range * (holdingFire ? 1.32 : 1.10);
+  const tooNear = separation < range * (holdingFire ? 0.52 : 0.74);
   if (tooFar || tooNear) return 'reach_range';
   if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
   if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
