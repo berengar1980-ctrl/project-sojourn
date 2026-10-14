@@ -17,7 +17,10 @@ export function nativeWeaponDamage(
 }
 
 export function nativeMineDamage(
-  definition: Pick<ShipMineDefinition, 'id' | 'shieldDamage' | 'hullDamage' | 'combatShieldDamage' | 'combatHullDamage'>
+  definition: Pick<
+    ShipMineDefinition,
+    'id' | 'shieldDamage' | 'hullDamage' | 'combatShieldDamage' | 'combatHullDamage'
+  >
 ): NativeDamage {
   return {
     shieldDamage: definition.combatShieldDamage ?? definition.shieldDamage,
