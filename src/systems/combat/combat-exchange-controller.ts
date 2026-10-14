@@ -1,3 +1,4 @@
+import { usefulRamAttempt } from './combat-ram-opportunity';
 import {
   chooseReactiveDecision,
   commitReactiveDecision,
@@ -11,6 +12,7 @@ import {
 } from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
+import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -23,6 +25,7 @@ import {
 export interface ActiveExchange {
   exchange: CombatExchange;
   flight: ExchangeFlightPlan | null;
+  deliberateRam: boolean;
   geometry: ExchangeGeometry | null;
   reactions: { attacker: ReactionMemory; defender: ReactionMemory };
   reactiveGoals: {
@@ -33,10 +36,24 @@ export interface ActiveExchange {
   defenderHp: number;
 }
 
+function coverGoal(
+  ship: StrategicCombatRuntime['attacker'],
+  enemy: StrategicCombatRuntime['attacker'],
+  arena: StrategicCombatRuntime['arena']
+): { x: number; y: number } | null {
+  const direction = asteroidCoverHeading(ship, enemy, arena);
+  if (!direction) return null;
+  return {
+    x: ship.position.x + direction.x * 240,
+    y: ship.position.y + direction.y * 240,
+  };
+}
+
 export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExchange {
   return {
     exchange: initialExchange(runtime.firstPlanner),
     flight: null,
+    deliberateRam: false,
     geometry: null,
     reactions: {
       attacker: initialReactionMemory(runtime.attacker, runtime),
@@ -93,11 +110,15 @@ function useBoostForExchange(
   const forwardSpeed =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
+  const fleeing = ship.tactic === 'flee';
+  const pursuit = !fleeing && separation > 600 && range > 350;
+  const ready = (ship.boostSeconds ?? 0) > 0.8;
   const useful =
-    urgent &&
-    separation > 300 &&
-    range > 250 &&
-    aligned > range * 0.92 &&
+    (urgent || fleeing || pursuit) &&
+    ready &&
+    separation > (fleeing ? 180 : 250) &&
+    range > 180 &&
+    aligned > range * 0.7 &&
     forwardSpeed >= 0 &&
     !ship.asteroidRoute?.length &&
     remaining > 0.7;
@@ -203,15 +224,21 @@ function flyExchange(
   );
   useBoostForExchange(
     initiator,
-    state.flight.initiatorGoal,
+    initiator.tactic === 'flee' && runtime.arena.exitPoint
+      ? runtime.arena.exitPoint
+      : state.flight.initiatorGoal,
     next.action === 'disengage_fire' || next.action === 'frontal_pass',
     separation,
     remaining
   );
   useBoostForExchange(
     opponent,
-    state.flight.reactorGoal,
-    next.reaction === 'pursue' || next.reaction === 'accelerate_clear',
+    opponent.tactic === 'flee' && runtime.arena.exitPoint
+      ? runtime.arena.exitPoint
+      : state.flight.reactorGoal,
+    next.reaction === 'pursue' ||
+      next.reaction === 'accelerate_clear' ||
+      next.reaction === 'break_contact',
     separation,
     remaining
   );
@@ -227,8 +254,12 @@ function flyExchange(
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
   const flight = {
     ...state.flight,
-    initiatorGoal: initiatorOverride ?? state.flight.initiatorGoal,
-    reactorGoal: opponentOverride ?? state.flight.reactorGoal,
+    initiatorGoal:
+      initiatorOverride ??
+      coverGoal(initiator, opponent, runtime.arena) ??
+      state.flight.initiatorGoal,
+    reactorGoal:
+      opponentOverride ?? coverGoal(opponent, initiator, runtime.arena) ?? state.flight.reactorGoal,
   };
   pilotExchangeShip(
     initiator,
@@ -273,6 +304,7 @@ export function tickActionExchange(
     frontWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'forward').length,
     broadsideWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'broadside').length,
     guidedWeapons: initiator.setup.weapons.filter((w) => w.weapon?.mount === 'guided').length,
+    ramOpportunity: usefulRamAttempt(initiator, opponent),
     attackerDamage: state.defenderHp - runtime.defender.shieldHp - runtime.defender.hullHp,
     defenderDamage: state.attackerHp - runtime.attacker.shieldHp - runtime.attacker.hullHp,
     roll: runtime.random,
@@ -292,19 +324,21 @@ export function tickActionExchange(
       initiatorStart: { ...initiator.position },
       reactorStart: { ...opponent.position },
     };
+    state.deliberateRam = context.ramOpportunity === true && next.action === 'frontal_pass';
     state.flight = planExchangeFlight(
       initiator,
       opponent,
       next.action,
       next.reaction,
-      next.quality
+      next.quality,
+      state.deliberateRam
     );
     // Preplan both routes at the moment the exchange is chosen, before any thrust.
     combatRouteHeading(initiator, state.flight.initiatorGoal, runtime.arena, 0);
     combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
-    runtime.lastEvent = next.action + ' / ' + next.reaction;
+    runtime.lastEvent = (state.deliberateRam ? 'RAMMVERSUCH' : next.action) + ' / ' + next.reaction;
     runtime.combatLog.push({
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: next.initiative,
@@ -323,5 +357,6 @@ export function tickActionExchange(
   if (current.phase === 'resolve') resolveExchange(runtime, state, current, next, context, outcome);
   state.exchange = next;
   updateExchangeIntents(initiator, opponent, next);
+  if (state.deliberateRam && next.action === 'frontal_pass') initiator.combatIntent = 'RAMMEN';
   flyExchange(runtime, state, initiator, opponent, next, dt);
 }

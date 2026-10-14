@@ -61,7 +61,9 @@ function scoreWeaponGroup(
   const dps = guns.reduce(
     (total, weapon) =>
       total +
-      (enemyShielded ? weapon.shieldDamage : weapon.hullDamage) /
+      (enemyShielded
+        ? (weapon.combatShieldDamage ?? weapon.shieldDamage)
+        : (weapon.combatHullDamage ?? weapon.hullDamage)) /
         Math.max(0.45, weapon.cooldownSeconds),
     0
   );

@@ -1,4 +1,5 @@
 import { describeCombatIntent } from './combat-intent-labels';
+import { usefulRamAttempt } from './combat-ram-opportunity';
 import { reviewCombatStrategy } from './combat-strategy-planner';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 import { distance } from './strategic-combat-geometry';
@@ -49,6 +50,7 @@ export function reviewAndExecute(
     );
   }
   ship.combatIntent = describeCombatIntent(ship);
+  if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
   if (ship.strategy.phase !== nextPhase) {

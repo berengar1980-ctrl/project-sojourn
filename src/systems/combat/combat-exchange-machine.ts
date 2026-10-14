@@ -35,6 +35,7 @@ export interface ExchangeContext {
   readonly frontWeapons: number;
   readonly broadsideWeapons: number;
   readonly guidedWeapons: number;
+  readonly ramOpportunity?: boolean;
   readonly attackerDamage: number;
   readonly defenderDamage: number;
   readonly roll: () => number;
@@ -87,7 +88,11 @@ function chooseAction(
             : 2;
     return {
       action,
-      score: weaponScore - (action === previous ? 100 : 0) - (action === beforePrevious ? 50 : 0),
+      score:
+        weaponScore +
+        (action === 'frontal_pass' && context.ramOpportunity ? 24 : 0) -
+        (action === previous ? 100 : 0) -
+        (action === beforePrevious ? 50 : 0),
     };
   });
   scores.sort((a, b) => b.score - a.score);

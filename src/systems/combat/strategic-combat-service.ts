@@ -239,7 +239,8 @@ function tickStrategicCombat(
     moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
     moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   }
-  if (actionState) applyActionRamImpact(runtime);
+  // One physical impact resolver for both campaign combat and the exchange duel preset.
+  applyActionRamImpact(runtime);
   if (!actionState)
     reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
   resolveCombatantCollision(runtime.attacker, runtime.defender);
