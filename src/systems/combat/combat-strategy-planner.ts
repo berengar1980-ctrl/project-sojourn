@@ -14,8 +14,8 @@ export function targetSubsystem(
 ): 'hull' | 'tractor' | 'engine' {
   if (enemy.subsystems.engine > 0) {
     const relative = Math.hypot(
-      enemy.velocity.x - ship.velocity.x,
-      enemy.velocity.y - ship.velocity.y
+      (enemy.velocity?.x ?? 0) - (ship.velocity?.x ?? 0),
+      (enemy.velocity?.y ?? 0) - (ship.velocity?.y ?? 0)
     );
     if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35)) return 'engine';
   }
