@@ -8,6 +8,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
+const { seededLocalGate } = loadStandaloneTypeScriptModule(root, 'src/core/local-space-exit.ts');
 const localSalvage = loadStandaloneTypeScriptModule(
   root,
   'src/systems/npcs/npc-local-salvage-service.ts'
@@ -110,9 +111,10 @@ function field() {
     'only NPCs in the shared working phase may enter the salvage field'
   );
   const first = { ...service.ships[0].position };
-  assert(
-    first.x <= 18 || first.x >= 982 || first.y <= 18 || first.y >= 782,
-    'NPC salvager must enter through the field perimeter'
+  assert.deepEqual(
+    first,
+    seededLocalGate(salvageField.width, salvageField.height, salvageField.seed),
+    'NPC salvager enters at the same seeded gate as the player'
   );
 
   let sawApproach = false;
