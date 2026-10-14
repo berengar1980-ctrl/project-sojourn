@@ -12,10 +12,17 @@ export function toggleMiningResourceSelection(
   return [...current, resourceId];
 }
 
+/**
+ * Keep resource buttons mounted across frequent HUD updates. Replacing their
+ * DOM nodes between pointerdown and pointerup cancels the browser's click,
+ * which previously made resource selection require repeated attempts.
+ */
 export class MiningResourceSelector {
   private model: LocalSpaceViewModel | null = null;
   private selection: readonly string[] | null = null;
   private locked = false;
+  private layoutKey: string | null = null;
+  private asteroidId: string | null = null;
 
   constructor(
     private readonly container: HTMLElement,
@@ -26,7 +33,6 @@ export class MiningResourceSelector {
 
   update(model: LocalSpaceViewModel, locked: boolean, visible = true): void {
     this.model = model;
-    this.selection = model.miningResourceSelection ? [...model.miningResourceSelection] : null;
     this.locked = locked;
     const asteroid = model.selectedAsteroid;
     const deposits =
@@ -34,56 +40,79 @@ export class MiningResourceSelector {
         ? asteroid.deposits.filter((entry) => entry.resourceId)
         : [];
 
-    if (!visible || !asteroid || deposits.length < 1) {
+    if (!visible || !asteroid || deposits.length === 0) {
       this.container.hidden = true;
-      this.container.replaceChildren();
+      if (this.layoutKey !== null) this.container.replaceChildren();
+      this.layoutKey = null;
+      this.asteroidId = null;
+      this.selection = null;
       return;
     }
 
-    this.container.hidden = false;
-    this.container.replaceChildren();
+    const key = asteroid.id + ':' + deposits.map((entry) => entry.resourceId).join('|');
+    if (this.layoutKey !== key) {
+      this.layoutKey = key;
+      this.asteroidId = asteroid.id;
+      this.container.replaceChildren();
 
-    const title = document.createElement('div');
-    title.className = 'mining-resource-selector__title';
-    title.textContent = 'ABBAU // ZIELRESSOURCEN';
+      const title = document.createElement('div');
+      title.className = 'mining-resource-selector__title';
+      title.textContent = 'ABBAU // ZIELRESSOURCEN';
+      const choices = document.createElement('div');
+      choices.className = 'mining-resource-selector__choices';
 
-    const choices = document.createElement('div');
-    choices.className = 'mining-resource-selector__choices';
+      const allButton = document.createElement('button');
+      allButton.type = 'button';
+      allButton.dataset.allResources = 'true';
+      allButton.textContent = 'ALLE';
+      choices.append(allButton);
 
-    const allButton = document.createElement('button');
-    allButton.type = 'button';
-    allButton.dataset.allResources = 'true';
-    allButton.textContent = 'ALLE';
-    allButton.classList.toggle('is-active', this.selection === null);
-    allButton.disabled = locked;
-    choices.append(allButton);
+      for (const deposit of deposits) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.resourceId = deposit.resourceId!;
+        choices.append(button);
+      }
 
-    const selection = this.selection ?? [];
-    for (const deposit of deposits) {
-      if (!deposit.resourceId) continue;
-      const active = selection.includes(deposit.resourceId);
-      const depleted = (deposit.estimatedAmount ?? 0) <= 0;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.dataset.resourceId = deposit.resourceId;
-      button.classList.toggle('is-active', active);
-      button.classList.toggle('is-depleted', depleted);
-      button.disabled = locked || depleted;
-      button.textContent =
-        (deposit.resourceName ?? deposit.resourceId).toUpperCase() +
-        ' · ~' +
-        Math.round(deposit.estimatedAmount ?? 0);
-      choices.append(button);
+      const hint = document.createElement('div');
+      hint.className = 'mining-resource-selector__hint';
+      this.container.append(title, choices, hint);
     }
 
-    const hint = document.createElement('div');
-    hint.className = 'mining-resource-selector__hint';
-    hint.textContent =
-      this.selection === null
+    this.container.hidden = false;
+    this.selection = model.miningResourceSelection
+      ? [...model.miningResourceSelection]
+      : null;
+    this.updateButtons(deposits);
+  }
+
+  private updateButtons(
+    deposits: NonNullable<LocalSpaceViewModel['selectedAsteroid']>['deposits']
+  ): void {
+    const selected = this.selection ?? [];
+    const allButton = this.container.querySelector<HTMLButtonElement>('[data-all-resources]');
+    if (allButton) {
+      allButton.disabled = this.locked;
+      allButton.classList.toggle('is-active', this.selection === null);
+    }
+    for (const deposit of deposits) {
+      if (!deposit.resourceId) continue;
+      const button = [...this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]')]
+        .find((item) => item.dataset.resourceId === deposit.resourceId);
+      if (!button) continue;
+      const depleted = (deposit.estimatedAmount ?? 0) <= 0;
+      button.classList.toggle('is-active', selected.includes(deposit.resourceId));
+      button.classList.toggle('is-depleted', depleted);
+      button.disabled = this.locked || depleted;
+      button.textContent = (deposit.resourceName ?? deposit.resourceId).toUpperCase() +
+        ' · ~' + Math.round(deposit.estimatedAmount ?? 0);
+    }
+    const hint = this.container.querySelector<HTMLElement>('.mining-resource-selector__hint');
+    if (hint) {
+      hint.textContent = this.selection === null
         ? 'ALLE VORKOMMEN WERDEN GEBORGEN'
         : 'FREIE KOMBINATION · NICHT GEWÄHLTE VORKOMMEN VERLIEREN 50 %';
-
-    this.container.append(title, choices, hint);
+    }
   }
 
   private handleClick(event: Event): void {
@@ -94,28 +123,16 @@ export class MiningResourceSelector {
     if (!(button instanceof HTMLButtonElement) ||
         !this.container.contains(button) || button.disabled) return;
 
-    if (button.dataset.allResources === 'true') {
-      this.selection = null;
-      this.onChange(null);
-      this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]')
-        .forEach((choice) => choice.classList.remove('is-active'));
-      this.container.querySelector<HTMLButtonElement>('[data-all-resources]')
-        ?.classList.add('is-active');
-      return;
-    }
-
-    const resourceId = button.dataset.resourceId;
-    if (!resourceId) return;
-
-    const next = toggleMiningResourceSelection(this.selection, resourceId);
+    const next = button.dataset.allResources === 'true'
+      ? null
+      : button.dataset.resourceId
+        ? toggleMiningResourceSelection(this.selection, button.dataset.resourceId)
+        : this.selection;
     this.selection = next;
+    // Update the same existing buttons immediately, without rebuilding the
+    // DOM or losing pointer focus. The next game snapshot confirms the choice.
+    const deposits = this.model.selectedAsteroid?.deposits ?? [];
+    this.updateButtons(deposits);
     this.onChange(next);
-    // Mark the choice immediately; HUD updates are throttled at 100ms.
-    // The authoritative per-asteroid selection arrives on the next model tick.
-    this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]').forEach((choice) => {
-      choice.classList.toggle('is-active', next?.includes(choice.dataset.resourceId ?? '') ?? false);
-    });
-    this.container.querySelector<HTMLButtonElement>('[data-all-resources]')
-      ?.classList.toggle('is-active', next === null);
   }
 }
