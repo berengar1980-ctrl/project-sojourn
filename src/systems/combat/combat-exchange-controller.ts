@@ -256,11 +256,13 @@ function flyExchange(
   const flight = {
     ...state.flight,
     initiatorGoal:
+      (initiator.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
       initiatorOverride ??
       coverGoal(initiator, opponent, runtime.arena) ??
       exchangeTacticalGoal(initiator, opponent) ??
       state.flight.initiatorGoal,
     reactorGoal:
+      (opponent.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
       opponentOverride ??
       coverGoal(opponent, initiator, runtime.arena) ??
       exchangeTacticalGoal(opponent, initiator) ??
@@ -273,7 +275,7 @@ function flyExchange(
     runtime.arena,
     dt,
     opponent,
-    next.action === 'frontal_pass'
+    next.action === 'frontal_pass' && initiator.tactic !== 'flee'
   );
   pilotExchangeShip(
     opponent,
