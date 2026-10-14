@@ -17,7 +17,7 @@ export function createScrapDuelArena(
   seed: number
 ): StrategicCombatArenaOptions {
   const dense = density === 'dense';
-  const width = dense ? 3000 : 4200;
+  const width = dense ? 3000 : 3600;
   const height = dense ? 1900 : 2600;
   const field = generateSalvageField('pvp-scrap', seed, 2);
   const scaleX = width / field.width;
