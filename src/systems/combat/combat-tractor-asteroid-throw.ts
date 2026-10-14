@@ -111,6 +111,16 @@ export function maybeLaunchTractorAsteroid(
   removeCapturedThrowable(runtime, rock, mine);
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
+  recordTractorLaunch(runtime, side, ship, rock, mine);
+}
+
+function recordTractorLaunch(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
   runtime.lastEvent =
     ship.setup.name +
     (mine
