@@ -309,7 +309,7 @@ function mountControllerSalvage(
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
-  if (activeCombat && state.mode !== 'combat' && state.embeddedCombat === null) {
+  if (activeCombat && state.mode !== 'combat' && state.mode !== 'boarding' && state.embeddedCombat === null) {
     mountCombatScene(context, () => mountControllerStarMap(context));
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
