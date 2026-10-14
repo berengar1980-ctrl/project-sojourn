@@ -29,7 +29,7 @@ function ownersForField(field: SalvageField): SalvageBody[] {
 function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   const velocity = owner.driftVelocity ?? { x: 0, y: 0 };
   const angularVelocity = owner.spin3d?.z ?? 0;
-  const isHeavy = owner.radius >= 70;
+  const isHeavy = 'sectionVariant' in owner && Boolean(owner.sectionVariant);
   const density = isHeavy ? 10 : owner.radius >= 28 ? 3.2 : 1.3;
   const mass = Math.max(1, Math.PI * owner.radius ** 2 * density);
   return {
