@@ -46,15 +46,13 @@ assert.equal(first.speed, Math.hypot(-23, 41));
 const defaults = geometry.createCombatant(attacker, 'attacker', prepared);
 assert.deepEqual(defaults.position, options.attackerPosition);
 const campaign = read('src/app/game-controller.ts');
-assert(
-  campaign.includes('asteroids: local.instance.asteroids.map('),
-  'embedded campaign combat receives local moving asteroid bodies'
-);
-assert(campaign.includes('attackerHeadingRadians: local.instance.ship.headingRadians'));
-assert(
-  campaign.includes('attackerVelocity: state.localSpace!.getShipWorldVelocity()'),
-  'the campaign transfers complete lateral and forward inertial motion'
-);
+const campaignArena = read('src/app/game-controller-combat.ts');
+assert(campaign.includes('localMiningCombatArena(local.instance, state.localSpace!.getShipWorldVelocity())'),
+  'campaign delegates arena setup using full local inertial velocity');
+assert(campaignArena.includes('asteroids: instance.asteroids.map('),
+  'mining arena preserves moving asteroid bodies');
+assert(campaignArena.includes('attackerHeadingRadians: instance.ship.headingRadians'),
+  'mining arena carries over player heading');
 const localService = read('src/systems/local-space/local-space-service.ts');
 assert(
   localService.includes('getShipWorldVelocity(): WorldPoint'),
