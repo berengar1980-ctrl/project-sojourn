@@ -14,7 +14,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 export function startCombatBoarding(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  returnToMap: () => void
+  returnToMap: (boardingOutcome?: string) => void
 ): void {
   if (!snapshot.boardingInitiator) return;
   context.systemLog.write(combatResultMessage(snapshot));
@@ -86,7 +86,7 @@ export function startCombatBoarding(
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
       context.engagements.finishPlayerCombat();
       showCampaignCombatSummary(context.root, snapshot, () => {
-        runSceneZoomTransition(context.root, returnToMap);
+        runSceneZoomTransition(context.root, () => returnToMap(result.outcome));
       }, result.outcome);
     },
   });
