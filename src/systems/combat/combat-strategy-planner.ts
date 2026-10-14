@@ -17,8 +17,7 @@ export function targetSubsystem(
       enemy.velocity.x - ship.velocity.x,
       enemy.velocity.y - ship.velocity.y
     );
-    if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35))
-      return 'engine';
+    if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35)) return 'engine';
   }
   const tractor = enemy.setup.tractorRangeMeters ?? 0;
   const proximity = Math.hypot(
@@ -30,7 +29,8 @@ export function targetSubsystem(
     tractor > 0 &&
     ship.shieldHp <= ship.shieldMaxHp * 0.2 &&
     proximity < tractor * 1.4
-  ) return 'tractor';
+  )
+    return 'tractor';
   return 'hull';
 }
 

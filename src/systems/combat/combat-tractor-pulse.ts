@@ -22,8 +22,10 @@ export function pulseCombatTractor(
   const away = normalize(enemy.position.x - ship.position.x, enemy.position.y - ship.position.y);
   const radial =
     (enemy.velocity.x - ship.velocity.x) * away.x + (enemy.velocity.y - ship.velocity.y) * away.y;
-  const repel = (ship.tactic === 'flee' || ship.hullHp < ship.hullMaxHp * 0.4) &&
-    radial < -18 && separation < Math.min(350, range);
+  const repel =
+    (ship.tactic === 'flee' || ship.hullHp < ship.hullMaxHp * 0.4) &&
+    radial < -18 &&
+    separation < Math.min(350, range);
   const intercept = ship.tactic !== 'flee' && radial > 18;
   if (!repel && !intercept) return;
   ship.tractorPulseCooldown = 6;
@@ -48,7 +50,11 @@ export function pulseCombatTractor(
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: (repel ? 'TRAKTORIMPULS ABWEHR' : 'TRAKTORIMPULS ABFANGEN') + ' · Radialtempo um ' + impulse.toFixed(0) + ' m/s verändert',
+    detail:
+      (repel ? 'TRAKTORIMPULS ABWEHR' : 'TRAKTORIMPULS ABFANGEN') +
+      ' · Radialtempo um ' +
+      impulse.toFixed(0) +
+      ' m/s verändert',
   });
   runtime.lastEvent = ship.setup.name + ': TRAKTORIMPULS';
   ship.combatIntent = 'TRAKTORIMPULS';
