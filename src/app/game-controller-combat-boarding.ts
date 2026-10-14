@@ -1,4 +1,5 @@
 import { combatResultMessage } from './combat-result-summary';
+import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
@@ -84,7 +85,9 @@ export function startCombatBoarding(
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
       context.engagements.finishPlayerCombat();
-      runSceneZoomTransition(context.root, returnToMap);
+      showCampaignCombatSummary(context.root, snapshot, () => {
+        runSceneZoomTransition(context.root, returnToMap);
+      }, result.outcome);
     },
   });
 }
@@ -101,5 +104,7 @@ export function returnFromCombat(
     return;
   }
   context.engagements.finishPlayerCombat();
-  runSceneZoomTransition(context.root, returnToMap);
+  showCampaignCombatSummary(context.root, snapshot, () => {
+    runSceneZoomTransition(context.root, returnToMap);
+  });
 }
