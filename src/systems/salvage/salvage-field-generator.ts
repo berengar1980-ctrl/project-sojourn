@@ -144,6 +144,19 @@ export function generateSalvageField(
   };
 }
 
+function salvageSectionName(variant: SalvageSectionVariant): string {
+  return {
+    'corridor-complex': 'Korridor- und Raumsektion',
+    'double-deck': 'Doppeldeck-Wrack',
+    'engine-room': 'Maschinenraum-Wrack',
+    'cargo-bay': 'Frachter-Laderaum',
+    'crew-quarters': 'Mannschaftsquartiere',
+    bridge: 'Brückensektion',
+    'reactor-hall': 'Reaktorhalle',
+    medbay: 'Medizinmodul',
+  }[variant];
+}
+
 function addSalvageSections(
   random: () => number,
   seed: number,
@@ -218,18 +231,7 @@ function addSalvageSections(
     const quality = qualityFromRoll(random(), dangerLevel);
     wrecks.push({
       id: section.id,
-      name: (
-        {
-          'corridor-complex': 'Korridor- und Raumsektion',
-          'double-deck': 'Doppeldeck-Wrack',
-          'engine-room': 'Maschinenraum-Wrack',
-          'cargo-bay': 'Frachter-Laderaum',
-          'crew-quarters': 'Mannschaftsquartiere',
-          bridge: 'Brückensektion',
-          'reactor-hall': 'Reaktorhalle',
-          medbay: 'Medizinmodul',
-        } as const
-      )[variant],
+      name: salvageSectionName(variant),
       kind: wreckKind(random()),
       quality,
       sectionVariant: variant,
