@@ -75,6 +75,20 @@ first.position.x = 700;
 assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'overshoot triggers reposition phase');
 first.position.x = 100;
 assert.equal(executor.executeCombatPlan(first, second), 'reach_range', 'moving out of range re-enters approach');
+first.position.x = 360;
+first.strategy.phase = 'reach_range';
+assert.equal(executor.executeCombatPlan(first, second), 'align_weapons', 'range reached before broadside alignment');
+first.headingRadians = Math.PI / 2;
+first.strategy.phase = 'align_weapons';
+assert.equal(executor.executeCombatPlan(first, second), 'fire', 'firing follows correct side alignment');
+first.position.x = 700;
+first.strategy.phase = 'fire';
+assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'excessively close after firing starts disengage');
+first.strategy.phase = 'regroup';
+assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'disengage persists until safe separation');
+first.position.x = 360;
+assert.equal(executor.executeCombatPlan(first, second), 'fire', 'regroup rejoins the firing cycle');
+
 const pulseRuntime = () => ({
   elapsedSeconds: 2,
   combatLog: [],
