@@ -2,6 +2,7 @@ import type { DistressRammingState } from '../../systems/salvage/distress-rammin
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { PlayerEconomyState } from '../../core/economy-types';
+import type { ShieldImpactEffect } from '../../core/shield-types';
 import type {
   SalvageLocalSpaceSnapshot,
   SalvageContainerVariant,
@@ -108,6 +109,7 @@ export interface SalvageSpaceViewModel {
   readonly width: number;
   readonly height: number;
   readonly ship: SalvageShipView;
+  readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
   readonly wrecks: readonly SalvageWreckView[];
   readonly debris: readonly SalvageDebris[];
@@ -290,6 +292,7 @@ export function createSalvageSpaceViewModel(
     width: snapshot.field.width,
     height: snapshot.field.height,
     ship: shipView(snapshot, ship, combat),
+    shieldImpacts: snapshot.shieldImpacts ?? [],
     npcShips: npcShipViews(npcShips, selectedNpcId, combat),
     wrecks,
     debris: snapshot.field.debris ?? [],
