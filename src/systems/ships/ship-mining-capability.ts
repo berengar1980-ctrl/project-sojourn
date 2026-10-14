@@ -52,9 +52,15 @@ export interface ShipMiningSetup {
 
 export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledShipComponents {
   const stats = resolveShipGameplayStats(ship);
-  const starterSlot = Array.from({ length: stats.weaponSlots }, (_, index) =>
+  const compatibleStarters = Array.from({ length: stats.weaponSlots }, (_, index) =>
     defaultStarterWeaponId(ship, index)
-  ).findIndex((id) => id !== '');
+  );
+  // Prefer an actual defensive pulse laser turret: it can track a pirate
+  // throughout the engagement rather than chasing a 60-degree railgun arc.
+  const turretSlot = compatibleStarters.indexOf('weapon1');
+  const starterSlot = turretSlot >= 0
+    ? turretSlot
+    : compatibleStarters.findIndex((id) => id !== '');
   const common: InstalledShipComponents = {
     reactor: ['reactor1'],
     engine: ['engine1'],
@@ -65,7 +71,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     // One affordable defensive Mk I gun as the campaign baseline. Remaining
     // slots stay free for upgrades, not silently filled with incompatible gear.
     weapon: Array.from({ length: stats.weaponSlots }, (_, index) =>
-      index === starterSlot ? defaultStarterWeaponId(ship, index) : ''
+      index === starterSlot ? compatibleStarters[index]! : ''
     ),
     mine: [''],
     tractor: [ship.role === 'mining' || ship.role === 'salvage' ? 'tractor1' : ''],
