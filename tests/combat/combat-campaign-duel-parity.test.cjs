@@ -37,6 +37,11 @@ assert(campaign.includes('asteroids: local.instance.asteroids.map('),
   'embedded campaign combat receives local moving asteroid bodies');
 assert(campaign.includes('attackerHeadingRadians: local.instance.ship.headingRadians'));
 assert(campaign.includes('attackerVelocity: {'));
+const salvage = read('src/app/game-controller-salvage.ts');
+assert(salvage.includes('attackerHeadingRadians: playerShip.headingRadians'),
+  'salvage encounters transfer the player heading');
+assert(salvage.includes('attackerVelocity: {'),
+  'salvage encounters transfer the player starting velocity');
 const duel = read('src/ui/start/duel-lobby.ts');
 const engagements = read('src/systems/combat/star-map-engagement-service.ts');
 assert(duel.includes('createStrategicCombatService('));
