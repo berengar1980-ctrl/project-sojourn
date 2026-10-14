@@ -268,7 +268,7 @@ export function reviewCombatStrategy(
     ship.strategy = best;
   }
   // Combat commitment owns fight/flee; the planner only selects combat posture.
-  if (ship.tactic !== 'flee' && !ship.combatTacticLocked) {
+  if (!ship.combatTacticLocked) {
     ship.tactic =
       ship.strategy.kind === 'minefield'
         ? 'minefield'
