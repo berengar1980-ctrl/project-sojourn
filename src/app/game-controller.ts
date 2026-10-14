@@ -225,10 +225,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
         attackerPosition: { ...local.instance.ship.position },
         defenderPosition: { ...target.position },
         attackerHeadingRadians: local.instance.ship.headingRadians,
-        attackerVelocity: {
-          x: Math.cos(local.instance.ship.headingRadians) * local.instance.ship.speed,
-          y: Math.sin(local.instance.ship.headingRadians) * local.instance.ship.speed,
-        },
+        attackerVelocity: state.localSpace!.getShipWorldVelocity(),
         asteroids: local.instance.asteroids.map((asteroid) => ({
           id: asteroid.id,
           kind: asteroid.kind,
