@@ -42,6 +42,16 @@ assert(salvage.includes('attackerHeadingRadians: playerShip.headingRadians'),
   'salvage encounters transfer the player heading');
 assert(salvage.includes('attackerVelocity: {'),
   'salvage encounters transfer the player starting velocity');
+const shared = 'combatEquippedWeapons';
+for (const setupFile of [
+  'src/ui/start/duel-combatant-setup.ts',
+  'src/app/game-controller-combat.ts',
+  'src/systems/combat/npc-combatant-setup.ts',
+]) {
+  const source = read(setupFile);
+  assert(source.includes(shared), setupFile + ' uses shared weapon slot mapping');
+  assert(source.includes('combatWeaponMounts'), setupFile + ' uses shared mount geometry');
+}
 const duel = read('src/ui/start/duel-lobby.ts');
 const engagements = read('src/systems/combat/star-map-engagement-service.ts');
 assert(duel.includes('createStrategicCombatService('));
