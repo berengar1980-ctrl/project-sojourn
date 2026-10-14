@@ -1,6 +1,7 @@
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
+import { drawSalvageSection3d } from './salvage-section-mesh';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -128,6 +129,17 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
     });
+    for (const section of this.model.sections) {
+      const point = this.camera.worldToScreen(section.position, width, height);
+      const radius = this.camera.scale(section.radius);
+      const padding = Math.max(25, radius * 1.55);
+      if (point.x < -padding || point.y < -padding ||
+          point.x > width + padding || point.y > height + padding) continue;
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      drawSalvageSection3d(this.context, section, radius, timeSeconds);
+      this.context.restore();
+    }
     for (const part of this.model.debris) {
       const point = this.camera.worldToScreen(part.position, width, height);
       const radius = this.camera.scale(part.radius);
