@@ -3,9 +3,9 @@ import type { SalvageContainerVariant } from '../../core/salvage-types';
 /** Lightweight orthographic 3D projected into the existing 2D salvage canvas.
  * Geometry is shared by every instance; no WebGL context, textures or per-frame mesh allocations.
  */
-type Vec3 = readonly [number, number, number];
-type Color = readonly [number, number, number];
-interface Face {
+export type Vec3 = readonly [number, number, number];
+export type Color = readonly [number, number, number];
+export interface Face {
   readonly points: readonly Vec3[];
   readonly normal: Vec3;
   readonly color: Color;
@@ -25,7 +25,7 @@ const colors = {
   red: [154, 62, 51],
 } as const satisfies Record<string, Color>;
 
-class ContainerMesh {
+export class ContainerMesh {
   readonly faces: Face[] = [];
 
   face(points: readonly Vec3[], normal: Vec3, color: Color): void {
@@ -151,12 +151,22 @@ export function drawSalvageContainer3d(
   radius: number,
   rotation: Readonly<{ x: number; y: number; z: number }>
 ): void {
+  drawProjectedSalvageMesh(context, meshes[variant], radius, rotation);
+}
+
+/** One painter for all 11 cached meshes. No extra canvas or WebGL layer. */
+export function drawProjectedSalvageMesh(
+  context: CanvasRenderingContext2D,
+  mesh: readonly Face[],
+  radius: number,
+  rotation: Readonly<{ x: number; y: number; z: number }>
+): void {
   const cx = Math.cos(rotation.x), sx = Math.sin(rotation.x);
   const cy = Math.cos(rotation.y), sy = Math.sin(rotation.y);
   const cz = Math.cos(rotation.z), sz = Math.sin(rotation.z);
   const scale = radius / 1.9;
   const faces: { readonly z: number; readonly points: readonly Vec3[]; readonly color: string }[] = [];
-  for (const face of meshes[variant]) {
+  for (const face of mesh) {
     const normal = rotate(face.normal, cx, sx, cy, sy, cz, sz);
     if (normal[2] <= 0.005) continue;
     const light = Math.max(0, -normal[0] * 0.34 + normal[1] * 0.51 + normal[2] * 0.79);
