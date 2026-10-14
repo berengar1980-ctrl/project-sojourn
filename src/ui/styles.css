@@ -299,6 +299,18 @@ body {
   letter-spacing: 0.14em;
 }
 
+/* Keep the local-field exit clear of the top-right settings controls. */
+.local-space-shell .return-map-button {
+  right: 148px;
+}
+
+@media (max-width: 650px) {
+  .local-space-shell .return-map-button {
+    top: 118px;
+    right: 18px;
+  }
+}
+
 .return-map-button:hover,
 .long-scan-button:hover,
 .short-scan-button:hover,
