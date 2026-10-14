@@ -48,32 +48,10 @@ export interface NpcLocalSalvageOptions {
   readonly getPlayerShipState?: () => LocalShipState;
 }
 
-const ENTRY_MARGIN = 18;
-const EXIT_MARGIN = 90;
 const APPROACH_DISTANCE = 120;
 const FLIGHT_SPEED = 82;
 const SCAN_SECONDS = 5;
 const BASE_CYCLE_SECONDS = 1.4;
-
-function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function edgePoint(id: string, width: number, height: number, outside = false): WorldPoint {
-  const hash = hashId(id);
-  const side = hash % 4;
-  const t = ((hash >>> 4) % 1000) / 1000;
-  const margin = outside ? EXIT_MARGIN : ENTRY_MARGIN;
-  if (side === 0) return { x: outside ? -margin : margin, y: height * (0.15 + t * 0.7) };
-  if (side === 1) return { x: width - (outside ? -margin : margin), y: height * (0.15 + t * 0.7) };
-  if (side === 2) return { x: width * (0.15 + t * 0.7), y: outside ? -margin : margin };
-  return { x: width * (0.15 + t * 0.7), y: height - (outside ? -margin : margin) };
-}
 
 function moveToward(
   ship: LocalNpcSalvagerState,
