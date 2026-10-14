@@ -201,6 +201,11 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
         position: { ...part.position },
         radius: part.radius,
       })),
+      ...(field.sections ?? []).map((section) => ({
+        id: section.id,
+        position: { ...section.position },
+        radius: section.radius,
+      })),
     ],
   });
 }
@@ -394,6 +399,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       );
     },
     approachSpeed: 85,
+    hardpoints: options.ship.sprite.hardpoints,
+    shipLengthMeters: options.ship.nominalLengthMeters,
   });
   const context: SalvageSceneRuntime = {
     options,
