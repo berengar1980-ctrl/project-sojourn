@@ -286,6 +286,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.context.restore();
     this.drawWreckScanCallout(wreck, point, radius);
+    this.drawWreckSelection(wreck, point, radius);
+    return { id: wreck.id, point, radius: hitRadius };
+  }
+  private drawWreckSelection(wreck: SalvageWreckView, point: { x: number; y: number }, radius: number): void {
     if (
       (wreck.isSelected || wreck.isWorkTarget) &&
       !wreck.id.startsWith('event-wreck-salvage-distress-')
@@ -301,8 +305,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
       this.context.restore();
     }
-    return { id: wreck.id, point, radius: hitRadius };
   }
+
   private drawWreckScanCallout(wreck: SalvageWreckView, point: { x: number; y: number }, radius: number): void {
     // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
