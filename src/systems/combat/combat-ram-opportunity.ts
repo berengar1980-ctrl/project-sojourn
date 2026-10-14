@@ -13,6 +13,6 @@ export function usefulRamAttempt(attacker: MutableCombatant, defender: MutableCo
     range >= 160 &&
     range <= 850 &&
     defender.hullHp < attacker.hullHp * 0.65 &&
-    defender.shieldHp < defender.shieldMaxHp * 0.3
+    defender.shieldHp <= defender.shieldMaxHp * 0.3
   );
 }
