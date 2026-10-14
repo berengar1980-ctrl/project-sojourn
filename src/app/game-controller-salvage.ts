@@ -66,6 +66,8 @@ interface SalvageSceneOptions {
       readonly height: number;
       readonly attackerPosition: { readonly x: number; readonly y: number };
       readonly defenderPosition: { readonly x: number; readonly y: number };
+      readonly attackerVelocity?: { readonly x: number; readonly y: number };
+      readonly attackerHeadingRadians?: number;
       readonly obstacles?: readonly {
         readonly id: string;
         readonly position: { readonly x: number; readonly y: number };
@@ -182,6 +184,11 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
     height: field.height,
     attackerPosition: { ...playerShip.position },
     defenderPosition: { ...target.position },
+    attackerHeadingRadians: playerShip.headingRadians,
+    attackerVelocity: {
+      x: Math.cos(playerShip.headingRadians) * playerShip.speed,
+      y: Math.sin(playerShip.headingRadians) * playerShip.speed,
+    },
     obstacles: field.wrecks.map((wreck) => ({
       id: wreck.id,
       position: { ...wreck.position },
