@@ -4,6 +4,7 @@ import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
+import { combatRangePosture } from './combat-range-posture';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
@@ -255,47 +256,6 @@ function broadsideSteering(
     Math.atan2(dy, dx) +
     (facing === 'starboard' ? -Math.PI / 2 : facing === 'port' ? Math.PI / 2 : 0);
   return { x: Math.cos(heading), y: Math.sin(heading) };
-}
-
-function combatRangePosture(
-  combatant: MutableCombatant,
-  range: number,
-  desired: number,
-  toward: CombatPoint,
-  perpendicular: CombatPoint
-): { direction: CombatPoint; targetSpeedFactor: number } {
-  if (range < desired * 0.72) {
-    return combatant.setup.aiControlled
-      ? { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.4 }
-      : {
-          direction: normalize(
-            -toward.x * 0.8 + perpendicular.x * 0.45,
-            -toward.y * 0.8 + perpendicular.y * 0.45
-          ),
-          targetSpeedFactor: 0.72,
-        };
-  }
-  if (range <= desired * 1.18) {
-    return combatant.setup.aiControlled
-      ? {
-          direction: toward,
-          targetSpeedFactor: combatant.strategy?.phase === 'reach_range' ? 0.28 : 0.1,
-        }
-      : {
-          direction: normalize(
-            perpendicular.x + toward.x * 0.18,
-            perpendicular.y + toward.y * 0.18
-          ),
-          targetSpeedFactor: combatant.tactic === 'kite' ? 0.78 : 0.62,
-        };
-  }
-  if (combatant.tactic === 'kite' && range < desired * 1.5) {
-    return {
-      direction: normalize(-toward.x * 0.45 + perpendicular.x, -toward.y * 0.45 + perpendicular.y),
-      targetSpeedFactor: 0.8,
-    };
-  }
-  return { direction: toward, targetSpeedFactor: 0.88 };
 }
 
 function choosePlanDirection(
