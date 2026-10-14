@@ -6,6 +6,27 @@ import type { WorldPoint } from './world-types';
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
 export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
+export type SalvageDebrisVariant =
+  | 'corridor'
+  | 'deck'
+  | 'airlock'
+  | 'truss'
+  | 'engine'
+  | 'reactor'
+  | 'bulkhead'
+  | 'habitation';
+
+/** Non-lootable ship fragments; kept separate from recoverable container wrecks. */
+export interface SalvageDebris {
+  readonly id: string;
+  readonly variant: SalvageDebrisVariant;
+  position: WorldPoint;
+  readonly radius: number;
+  driftVelocity: WorldPoint;
+  rotation3d: { x: number; y: number; z: number };
+  readonly spin3d: Readonly<{ x: number; y: number; z: number }>;
+  readonly effectSeed: number;
+}
 
 export interface SalvageResourceDeposit {
   readonly resourceId: EconomyResourceId;
@@ -47,6 +68,8 @@ export interface SalvageField {
   readonly width: number;
   readonly height: number;
   readonly wrecks: SalvageWreck[];
+  /** Optional for event maps and compatibility with older field snapshots. */
+  readonly debris?: SalvageDebris[];
 }
 
 export interface SalvageRecoveryResult {
