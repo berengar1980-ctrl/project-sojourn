@@ -1,4 +1,6 @@
 import { localMiningCombatArena } from './game-controller-combat';
+import type { SalvageField } from '../core/salvage-types';
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { combatResultMessage } from './combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
@@ -167,7 +169,7 @@ function mountControllerMining(
   reuseSeed = false,
   preserveField = false
 ): void {
-  const { state, economy } = context;
+  const { state } = context;
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -225,8 +227,8 @@ function mountControllerMining(
 function mountControllerSalvage(
   context: ControllerRuntimeContext,
   reuseSeed = false,
-  preservedField?: import('../core/salvage-types').SalvageField,
-  finalCombat?: import('../systems/combat/strategic-combat-types').StrategicCombatSnapshot
+  preservedField?: SalvageField,
+  finalCombat?: StrategicCombatSnapshot
 ): void {
   const { state, economy } = context;
   destroyScenePanels(state.panels);
