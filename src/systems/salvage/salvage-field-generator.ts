@@ -5,7 +5,10 @@ import type {
   SalvageWreckKind,
   SalvageWreckQuality,
   SalvageContainerVariant,
+  SalvageDebris,
+  SalvageDebrisVariant,
 } from '../../core/salvage-types';
+import { seededLocalGate } from '../../core/local-space-exit';
 
 const COMMON_RESOURCES = ['steel', 'composite-plate', 'machine-parts'] as const;
 const GOOD_RESOURCES = ['electronics', 'ship-parts', 'industrial-ceramics'] as const;
@@ -78,13 +81,21 @@ export function generateSalvageField(
   const random = createRandom(seed);
   const count = 5 + Math.floor(random() * 4);
   const wrecks: SalvageWreck[] = [];
+  // Each map guarantees all three silhouettes. Shuffle the guaranteed set
+  // rather than letting small 5-8 object fields hide tank/damaged variants.
+  const guaranteedVariants: SalvageContainerVariant[] = ['standard', 'damaged', 'tank'];
+  for (let i = guaranteedVariants.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [guaranteedVariants[i], guaranteedVariants[j]] = [guaranteedVariants[j]!, guaranteedVariants[i]!];
+  }
 
   for (let index = 0; index < count; index += 1) {
     const quality = qualityFromRoll(random(), dangerLevel);
     const kind = wreckKind(random());
     const variantRoll = random();
     const containerVariant: SalvageContainerVariant =
-      variantRoll < 0.46 ? 'standard' : variantRoll < 0.76 ? 'damaged' : 'tank';
+      guaranteedVariants[index] ??
+      (variantRoll < 1 / 3 ? 'standard' : variantRoll < 2 / 3 ? 'damaged' : 'tank');
     const direction = random() * Math.PI * 2;
     const driftSpeed = 2 + random() * 4;
     wrecks.push({
@@ -101,7 +112,7 @@ export function generateSalvageField(
         x: width * (0.12 + random() * 0.76),
         y: height * (0.12 + random() * 0.76),
       },
-      radius: 34 + random() * 42,
+      radius: 11.5 + random() * 14,
       rotation: random() * Math.PI * 2,
       integrity: Math.round(30 + random() * 65),
       resources: createResources(random, quality),
@@ -111,7 +122,59 @@ export function generateSalvageField(
     });
   }
 
+  // One of each genuinely different hull fragment, plus up to three repeats.
+  // These are scenery with shield collision, never added to salvage loot/selection.
+  const variants: readonly SalvageDebrisVariant[] = [
+    'corridor', 'deck', 'airlock', 'truss',
+    'engine', 'reactor', 'bulkhead', 'habitation',
+  ];
+  const debris: SalvageDebris[] = [];
+  const gate = seededLocalGate(width, height, seed);
+  const debrisCount = 8 + Math.floor(random() * 4);
+  for (let index = 0; index < debrisCount; index += 1) {
+    const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
+    const radius = 19 + random() * 23;
+    let position = { x: width / 2, y: height / 2 };
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      const candidate = {
+        x: width * (0.08 + random() * 0.84),
+        y: height * (0.08 + random() * 0.84),
+      };
+      const clearOfGate = Math.hypot(candidate.x - gate.x, candidate.y - gate.y) > 240;
+      const clearOfContainers = wrecks.every(
+        (wreck) =>
+          Math.hypot(candidate.x - wreck.position.x, candidate.y - wreck.position.y) >
+          radius + wreck.radius + 65
+      );
+      const clearOfDebris = debris.every(
+        (part) =>
+          Math.hypot(candidate.x - part.position.x, candidate.y - part.position.y) >
+          radius + part.radius + 65
+      );
+      if (!clearOfGate || !clearOfContainers || !clearOfDebris) continue;
+      position = candidate;
+      break;
+    }
+    const direction = random() * Math.PI * 2;
+    const speed = 0.9 + random() * 2.5;
+    debris.push({
+      id: `debris-${seed}-${index}`,
+      variant,
+      position,
+      radius,
+      driftVelocity: { x: Math.cos(direction) * speed, y: Math.sin(direction) * speed },
+      rotation3d: { x: random() * 0.5, y: random() * 0.5, z: random() * Math.PI * 2 },
+      spin3d: {
+        x: 0.014 + random() * 0.04,
+        y: 0.013 + random() * 0.04,
+        z: 0.011 + random() * 0.03,
+      },
+      effectSeed: Math.floor(random() * 0x7fffffff),
+    });
+  }
+
   return {
+    debris,
     id: `${sourceLocationId}-salvage-${seed}`,
     sourceLocationId,
     seed,
