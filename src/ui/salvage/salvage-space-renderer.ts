@@ -140,7 +140,9 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       drawSalvageSection3d(this.context, section, radius, timeSeconds);
       this.context.restore();
     }
+    const thrownScrap = new Set((this.model.combat?.thrownAsteroids ?? []).map((rock) => rock.asteroidId));
     for (const part of this.model.debris) {
+      if (thrownScrap.has(part.id)) continue;
       const point = this.camera.worldToScreen(part.position, width, height);
       const radius = this.camera.scale(part.radius);
       const padding = Math.max(20, radius * 1.5);
