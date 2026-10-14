@@ -118,8 +118,17 @@ for (const kind of ['Corridor', 'Deck', 'Airlock', 'Truss', 'Engine', 'Reactor',
   'Bulkhead', 'Habitation']) {
   assert(fragments.includes('function build' + kind + '('), 'missing mesh for ' + kind);
 }
-assert(fragments.includes('distantSprites') && fragments.includes('context.drawImage'),
-  'distant debris should use reused prerendered low-poly meshes');
+const lod = readModuleSource(root, 'src/ui/salvage/salvage-mesh-lod-cache.ts');
+assert(!fragments.includes('compactMesh('),
+  'distant debris must keep the real silhouette, not turn into similar boxes');
+assert(!sections.includes('const silhouette ='),
+  'large ship section LOD must not collapse every room design into one rectangular mesh');
+assert(fragments.includes('drawCachedSalvageMesh(') &&
+  sections.includes('drawCachedSalvageMesh('),
+  'both distant meshes must share the actual geometry view cache');
+assert(lod.includes('drawProjectedSalvageMesh') && lod.includes('distantSprites') &&
+  lod.includes('MAX_CACHED_VIEWS') && lod.includes('context.drawImage'),
+  'cached 3D mesh views must be rasterized once and memory bounded');
 assert(fragments.includes('sparkPulse') && fragments.includes('const breathe'),
   'sparks and escaping gas should animate with cheap 2D effects');
 assert(mesh.includes("createContainer('standard')") && mesh.includes("createContainer('damaged')") && mesh.includes("createContainer('tank')"));
