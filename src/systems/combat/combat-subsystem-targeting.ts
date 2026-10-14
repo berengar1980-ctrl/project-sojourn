@@ -16,17 +16,14 @@ export function engineShotAvailable(
   return Math.abs(relative) >= Math.PI / 3;
 }
 
-/** Hold weapon fire on a fleeing ship until its exposed engines can be targeted. */
+/** Never suppress all fire just because engines are not exposed.
+ * The target resolver already falls back to hull when no engine shot exists.
+ */
 export function canEngagePreferredSubsystem(
-  source: MutableCombatant,
-  target: MutableCombatant
+  _source: MutableCombatant,
+  _target: MutableCombatant
 ): boolean {
-  return (
-    target.shieldHp > 0 ||
-    target.tactic !== 'flee' ||
-    target.subsystems.engine <= 0 ||
-    engineShotAvailable(source, target)
-  );
+  return true;
 }
 
 export function effectiveTargetSubsystem(
