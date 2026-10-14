@@ -199,8 +199,8 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   if (!wreck) return;
 
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  if (kind) kind.textContent = wreck.containerVariant ? 'CONTAINER' : 'WRACK';
-  ui.name.textContent = wreck.name;
+  if (kind) kind.textContent = wreck.inspected ? (wreck.containerVariant ? 'CONTAINER' : 'WRACK') : 'KONTAKT';
+  ui.name.textContent = wreck.inspected ? wreck.name : 'UNBEKANNTER BERGUNGSKONTAKT';
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
   const busy =
     model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
