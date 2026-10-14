@@ -58,7 +58,10 @@ async function main() {
     'count=' + count + ', bytes=' + diff.length + ', sha256=' + digest);
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('CI format patch diagnostic failed:', error.message);
+  try {
+    await status('ci/format-patch/error', String(error.message).slice(0, 138), 'failure');
+  } catch {}
   process.exitCode = 1;
 });
