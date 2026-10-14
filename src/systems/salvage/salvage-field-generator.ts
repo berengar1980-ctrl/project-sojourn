@@ -128,6 +128,30 @@ export function generateSalvageField(
     });
   }
 
+  addSalvageSections(random, seed, dangerLevel, width, height, wrecks);
+  const debris = generateSalvageDebris(random, seed, dangerLevel, width, height, wrecks);
+
+  return {
+    debris,
+    // Large sections are now part of wrecks, not a second, unclickable
+    // visual-only collection; one object owns its pose, physics and loot.
+    id: `${sourceLocationId}-salvage-${seed}`,
+    sourceLocationId,
+    seed,
+    width,
+    height,
+    wrecks,
+  };
+}
+
+function addSalvageSections(
+  random: () => number,
+  seed: number,
+  dangerLevel: number,
+  width: number,
+  height: number,
+  wrecks: SalvageWreck[]
+): void {
   const gate = seededLocalGate(width, height, seed);
   const sectionVariants: readonly SalvageSectionVariant[] = [
     'corridor-complex',
@@ -225,6 +249,17 @@ export function generateSalvageField(
     });
   }
 
+}
+
+function generateSalvageDebris(
+  random: () => number,
+  seed: number,
+  dangerLevel: number,
+  width: number,
+  height: number,
+  wrecks: SalvageWreck[]
+): SalvageDebris[] {
+  const gate = seededLocalGate(width, height, seed);
   // Keep all eight small-fragment silhouettes. Some are salvageable, while the
   // rest remain dynamic scenery and tractor-throw ammunition.
   const variants: readonly SalvageDebrisVariant[] = [
@@ -312,15 +347,5 @@ export function generateSalvageField(
     }
   }
 
-  return {
-    debris,
-    // Large sections are now part of wrecks, not a second, unclickable
-    // visual-only collection; one object owns its pose, physics and loot.
-    id: `${sourceLocationId}-salvage-${seed}`,
-    sourceLocationId,
-    seed,
-    width,
-    height,
-    wrecks,
-  };
+  return debris;
 }
