@@ -4,7 +4,6 @@ import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary'
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
-import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import { createShipLoadoutService } from '../systems/ships';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -37,7 +36,7 @@ import { createLocalPanelActions, type LocalPanelActions } from './game-controll
 
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
 
-import { createMiningLocalSpace } from './game-controller-mining';
+import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 
 import { createActivePortPanel } from './game-controller-port';
 
@@ -189,29 +188,7 @@ function mountControllerMining(
   if (!reuseSeed || state.localSpaceSeed === 0) {
     state.localSpaceSeed = localSeed((state.visitCounter += 1));
   }
-  if (!preserveField || !state.localSpace || !state.localNpcMining) {
-  state.localSpace = createMiningLocalSpace(
-    state.activeShip,
-    state.localSpaceSeed,
-    economy.mining,
-    location,
-    controllerShipRuntimeOptions(context, state.activeShip)
-  );
-  state.localNpcMining = createNpcLocalMiningService({
-    locationId: location.id,
-    seed: state.localSpaceSeed,
-    width: state.localSpace.getSnapshot().instance.width,
-    height: state.localSpace.getSnapshot().instance.height,
-    miners: economy.sectorNpcs.npcs.filter(
-      (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-    ),
-    getAsteroids: () => state.localSpace?.getSnapshot().instance.asteroids ?? [],
-    mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
-    depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
-    playerShip: state.activeShip,
-    getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
-  });
-  }
+  ensureMiningCombatWorld(context, location, preserveField);
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
   );
