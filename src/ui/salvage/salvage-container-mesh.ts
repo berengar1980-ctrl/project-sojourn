@@ -144,10 +144,9 @@ export class ContainerMesh {
   }
 }
 
-function createContainer(variant: SalvageContainerVariant): readonly Face[] {
-  const m = new ContainerMesh();
-  const box = (...args: Parameters<ContainerMesh['box']>): void => m.box(...args);
-  if (variant === 'tank') {
+type BoxDrawer = (...args: Parameters<ContainerMesh['box']>) => void;
+
+function createTankGeometry(m: ContainerMesh, box: BoxDrawer): void {
     box(0, 0, -0.23, 3.34, 1.62, 0.23, colors.dark);
     for (const y of [-0.79, 0.79]) box(0, y, -0.13, 3.43, 0.12, 0.36, colors.edge);
     for (const y of [-0.39, 0.39]) {
@@ -162,7 +161,9 @@ function createContainer(variant: SalvageContainerVariant): readonly Face[] {
       for (const y of [-0.7, 0.7]) box(x, y, 0, 0.18, 0.19, 0.47, colors.steel);
     box(-0.15, 0, 0.59, 0.72, 0.17, 0.11, colors.dark);
     box(-0.15, 0, 0.66, 0.51, 0.075, 0.065, colors.teal);
-  } else {
+  }
+
+function createStandardGeometry(box: BoxDrawer, variant: SalvageContainerVariant): void {
     box(0, 0, 0, 3.24, 1.46, 0.88, colors.hull);
     box(0, 0, 0.47, 3.04, 1.29, 0.08, colors.roof);
     box(0, 0, 0.52, 2.74, 1.09, 0.065, variant === 'damaged' ? colors.hull : colors.steel);
@@ -200,6 +201,12 @@ function createContainer(variant: SalvageContainerVariant): readonly Face[] {
       box(0.92, -0.47, 0.67, 0.24, 0.17, 0.05, colors.red);
     }
   }
+
+function createContainer(variant: SalvageContainerVariant): readonly Face[] {
+  const m = new ContainerMesh();
+  const box = (...args: Parameters<ContainerMesh['box']>): void => m.box(...args);
+  if (variant === 'tank') createTankGeometry(m, box);
+  else createStandardGeometry(box, variant);
   return m.faces;
 }
 
