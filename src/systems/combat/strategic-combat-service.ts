@@ -156,6 +156,21 @@ function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number)
   pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
 }
+function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
+  if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
+    runtime.lastLoggedImpact = runtime.lastImpact.serial;
+    recordCombatLog(
+      runtime,
+      runtime.lastImpact.target,
+      'impact',
+      runtime.lastImpact.layer +
+        ' · ' +
+        Math.round(runtime.lastImpact.damage) +
+        ' HP' +
+        (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : '')
+    );
+  }
+}
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -251,19 +266,7 @@ function tickStrategicCombat(
   if (!actionState) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
-  if (runtime.lastImpact && runtime.lastImpact.serial !== runtime.lastLoggedImpact) {
-    runtime.lastLoggedImpact = runtime.lastImpact.serial;
-    recordCombatLog(
-      runtime,
-      runtime.lastImpact.target,
-      'impact',
-      runtime.lastImpact.layer +
-        ' · ' +
-        Math.round(runtime.lastImpact.damage) +
-        ' HP' +
-        (runtime.lastImpact.subsystem ? ' · ' + runtime.lastImpact.subsystem : '')
-    );
-  }
+  recordLatestCombatImpact(runtime);
   if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
   return runtimeSnapshot(runtime);
 }
