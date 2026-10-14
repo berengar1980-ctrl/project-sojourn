@@ -82,7 +82,7 @@ assert(panel.includes('UNTERSUCHEN'));
 assert(panel.includes('BERGEN'));
 assert(panel.includes('KOMPONENTE BERGEN'));
 assert(!panel.includes('dialog'), 'salvage interaction must remain embedded in local-space UI');
-assert(renderer.includes('drawHullFragments'));
+assert(renderer.includes('drawSalvageContainer3d'));
 assert(renderer.includes('pickWreck'));
 assert(
   renderer.includes('emitters[index % emitters.length]'),
