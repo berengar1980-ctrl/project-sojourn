@@ -14,6 +14,9 @@ const field = generation.generateSalvageField('shield-collision-test', 513, 1);
 const decoration = field.debris[0];
 const target = field.wrecks.find((wreck) => wreck.containerVariant);
 assert(decoration && target);
+// Isolate the two bodies to make shield impulse assertions deterministic.
+field.debris.splice(0, field.debris.length, decoration);
+field.wrecks.splice(0, field.wrecks.length, target);
 const hardpoints = {
   sourceWidth: 100,
   pivot: { x: 50, y: 50 },
@@ -37,27 +40,44 @@ const service = local.createSalvageLocalSpaceService({
 });
 const player = service.getSnapshot().ship.position;
 const world = physics.salvageFieldPhysicsBodies(field);
-assert.equal(world.length, field.wrecks.filter((wreck) =>
-  wreck.containerVariant || wreck.sectionVariant || wreck.debrisVariant).length,
-  'only interactive wrecks and containers have collision bodies');
-assert(!world.some((body) => body.id === decoration.id),
-  'purely decorative scrap must never occupy the physics or autopilot obstacle list');
-decoration.position = { x: player.x + 7, y: player.y };
-decoration.driftVelocity = { x: -50, y: 0 };
-const fxBefore = service.getSnapshot().shieldImpacts.length;
-service.tick(0.05);
-assert.equal(service.getSnapshot().shieldImpacts.length, fxBefore,
-  'moving through a purely decorative fragment cannot trigger shield damage or collision FX');
+assert.equal(world.length, field.wrecks.length + field.debris.length,
+  'all visible scrap pieces must have physical collision bodies');
+const decorativeBody = world.find((body) => body.id === decoration.id);
+const targetBody = world.find((body) => body.id === target.id);
+assert(decorativeBody && targetBody, 'both scanned and unscanned scrap must be physical');
+assert.equal(decorativeBody.routeBlocking, false,
+  'unscannable small scrap never causes autopilot detours');
+assert.equal(targetBody.routeBlocking, false,
+  'small selectable containers can be pushed but do not block routes');
 
-const body = world.find((candidate) => candidate.id === target.id);
-assert(body);
-body.position = { x: player.x + 43, y: player.y };
-body.physics.velocity = { x: -75, y: 0 };
+const planner = loader('src/systems/local-space/local-space-navigation.ts');
+const centerY = field.height * 0.48;
+decorativeBody.position = { x: field.width * 0.5, y: centerY };
+targetBody.position = { x: field.width * 0.72, y: centerY + 350 };
+const direct = planner.planPointRoute({
+  start: { x: field.width * 0.2, y: centerY },
+  target: { x: field.width * 0.8, y: centerY },
+  asteroids: world,
+  clearance: 70,
+  width: field.width,
+  height: field.height,
+});
+assert.equal(direct.route.length, 2,
+  'autopilot must fly straight through small scrap despite physical collision bodies');
+
+// Put an incoming fragment on the player's shield and verify the actual
+// asteroid impulse is transferred into its velocity, plus a shield effect.
+decorativeBody.position = { x: player.x + 43, y: player.y };
+decorativeBody.physics.velocity = { x: -80, y: 0 };
+targetBody.position = { x: player.x + 800, y: player.y + 450 };
+const incoming = decorativeBody.physics.velocity.x;
 const after = service.tick(0.05);
 assert(after.shieldImpacts.length >= 1,
-  'a real salvage target must create a visible shield impact on contact');
+  'colliding with non-selectable scrap must visibly activate the shield');
 assert(after.shieldImpacts.some((effect) => effect.lifetimeSeconds > 0),
-  'shield collision FX must have a real duration, just like asteroid contacts');
+  'shield impacts must have a duration, just like in mining fields');
+assert(decorativeBody.physics.velocity.x > incoming,
+  'small scrap must be flung away by the shield impulse, not passed through');
 
 const npc = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-service.ts');
 const renderer = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
@@ -66,4 +86,4 @@ assert(npc.includes("if (body.id === 'player') continue"),
 assert(renderer.includes('this.model.shieldImpacts'),
   'the salvage renderer must draw its field shield impacts');
 
-console.log('PASS decorative salvage debris is pass-through; selectable wrecks produce shield impact FX');
+console.log('PASS all salvage scrap collides and is pushed, while small pieces never block routes');
