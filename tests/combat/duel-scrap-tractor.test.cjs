@@ -126,7 +126,7 @@ for (const seed of [1, 53, 415, 9001]) {
       assert(
         !map.obstacles.some(
           (obstacle) =>
-            Math.hypot(obstacle.position.x - spawn.x, obstacle.position.y - spawn.y) >=
+            Math.hypot(obstacle.position.x - spawn.x, obstacle.position.y - spawn.y) <
             obstacle.radius + 145
         ),
         'heavy wrecks must respect the asteroid-map 145 m spawn clearance'
