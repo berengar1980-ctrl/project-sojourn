@@ -49,7 +49,7 @@ for (let seed = 1; seed <= 32; seed += 1) {
   bigBelowBaselineMinimum ||= sections.some((section) => section.radius < 86);
   bigAboveBaselineMaximum ||= sections.some((section) => section.radius > 132);
   assert(field.debris.every((entry) => entry.radius > 0 && entry.driftVelocity),
-    'decorative fragments need physics collision and drift bodies');
+    'decorative fragments need visual drift even though they are non-colliding');
   assert.equal(new Set(containers.map((entry) => entry.containerVariant)).size, 3,
     'every field must include all three recoverable container models');
   for (const target of containers) {
@@ -117,7 +117,7 @@ assert(sections.includes('function tornRoof(') &&
   sections.includes('C.soot') &&
   sections.includes('C.edgeMetal'),
   'every large wreck must have jagged ceiling remnants, ruptures and scorch');
-assert(sections.includes('floor: [42, 49, 53]'),
+assert(sections.includes('floor: [35, 41, 45]'),
   'large exposed ship interiors must remain dark, not clean light-grey');
 assert(!renderer.includes('drawHullFragments'), 'old fake hull fragments must remain removed');
 assert(fragments.includes('drawProjectedSalvageMesh'), 'wreck fragments share the 3D projection pipeline');
