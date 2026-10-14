@@ -56,6 +56,9 @@ for (const setupFile of [
   assert(source.includes(shared), setupFile + ' uses shared weapon slot mapping');
   assert(source.includes('combatWeaponMounts'), setupFile + ' uses shared mount geometry');
 }
+const motion = read('src/systems/combat/combat-asteroid-motion.ts');
+assert(motion.includes('if (obstacle.id !== body.id) continue'),
+  'moving asteroid blockers must stay synchronized with physical bodies');
 const combatCamera = read('src/ui/combat/combat-camera.ts');
 assert(combatCamera.includes('Math.max(1, Math.min(4.6,'),
   'duel and embedded-map camera share relative zoom limits');
