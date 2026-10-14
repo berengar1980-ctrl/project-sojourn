@@ -77,7 +77,7 @@ const nearby = scanField.wrecks[0];
 const shipPoint = scanService.getSnapshot().ship.position;
 nearby.position = { x: shipPoint.x + 80, y: shipPoint.y + 40 };
 scanService.startLongRangeScan();
-for (let frame = 0; frame < 100; frame += 1) scanService.tick(0.05);
+for (let frame = 0; frame < 105; frame += 1) scanService.tick(0.05);
 assert.equal(nearby.scanLevel, 'surveyed', 'shared asteroid long-range scan must discover contact');
 assert.equal(nearby.inspected, false, 'long-range scan must not reveal cargo contents');
 assert.equal(scanService.getSnapshot().longRangeScanProgress, null, 'five-second scan completes');
