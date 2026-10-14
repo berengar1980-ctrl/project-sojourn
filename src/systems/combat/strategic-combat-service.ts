@@ -173,6 +173,23 @@ function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
     );
   }
 }
+function reviewExchangeCommitments(runtime: StrategicCombatRuntime): void {
+    const attackerDecision = reviewCombatCommitment(
+      runtime.attacker,
+      runtime.defender,
+      runtime.arena,
+      runtime.elapsedSeconds
+    );
+    const defenderDecision = reviewCombatCommitment(
+      runtime.defender,
+      runtime.attacker,
+      runtime.arena,
+      runtime.elapsedSeconds
+    );
+    if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
+    if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
+}
+
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -234,20 +251,7 @@ function tickStrategicCombat(
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
   if (actionState) {
-    const attackerDecision = reviewCombatCommitment(
-      runtime.attacker,
-      runtime.defender,
-      runtime.arena,
-      runtime.elapsedSeconds
-    );
-    const defenderDecision = reviewCombatCommitment(
-      runtime.defender,
-      runtime.attacker,
-      runtime.arena,
-      runtime.elapsedSeconds
-    );
-    if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
-    if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
+    reviewExchangeCommitments(runtime);
     tickActionExchange(runtime, actionState, dt);
   } else {
     reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
