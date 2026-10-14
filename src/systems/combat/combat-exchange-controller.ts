@@ -107,12 +107,16 @@ function useBoostForExchange(
   const forwardSpeed =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
+  const fleeing = ship.tactic === 'flee';
+  const pursuit = !fleeing && separation > 600 && range > 350;
+  const ready = (ship.boostSeconds ?? 0) > 0.8;
   const useful =
-    urgent &&
-    separation > 300 &&
-    range > 250 &&
-    aligned > range * 0.92 &&
-    forwardSpeed >= 0 &&
+    (urgent || fleeing || pursuit) &&
+    ready &&
+    separation > (fleeing ? 180 : 250) &&
+    range > 180 &&
+    aligned > range * 0.7 &&
+    forwardSpeed > -25 &&
     !ship.asteroidRoute?.length &&
     remaining > 0.7;
   if (useful) activateExchangeBoost(ship);
@@ -225,7 +229,7 @@ function flyExchange(
   useBoostForExchange(
     opponent,
     state.flight.reactorGoal,
-    next.reaction === 'pursue' || next.reaction === 'accelerate_clear',
+    next.reaction === 'pursue' || next.reaction === 'accelerate_clear' || next.reaction === 'break_contact',
     separation,
     remaining
   );
