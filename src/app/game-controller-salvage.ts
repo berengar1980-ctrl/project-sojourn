@@ -256,6 +256,11 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       options.log.write('NAV > PUNKTROUTE IM WRACKFELD');
       refresh();
     },
+    onLongRangeScan() {
+      service.startLongRangeScan();
+      options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
+      refresh();
+    },
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
