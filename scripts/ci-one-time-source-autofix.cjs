@@ -13,9 +13,9 @@ const owner = process.env.CIRCLE_PROJECT_USERNAME;
 const repository = process.env.CIRCLE_PROJECT_REPONAME;
 const sha = process.env.CIRCLE_SHA1;
 const url = 'https://api.github.com/repos/' + owner + '/' + repository + '/statuses/' + sha;
-const chunkSize = 116;
+const chunkSize = 1300;
 
-async function status(context, description, state = 'success') {
+async function status(context, description, state = 'success', dataFragment) {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -29,7 +29,9 @@ async function status(context, description, state = 'success') {
       state,
       context,
       description,
-      target_url: process.env.CIRCLE_BUILD_URL,
+      target_url: dataFragment
+        ? 'https://github.com/' + owner + '/' + repository + '/commit/' + sha + '#fmt=' + dataFragment
+        : process.env.CIRCLE_BUILD_URL,
     }),
   });
   if (!response.ok) throw Error('status publication failed: ' + response.status);
@@ -44,13 +46,16 @@ async function main() {
     '.', ':(exclude).circleci/config.yml',
     ':(exclude)scripts/ci-one-time-source-autofix.cjs',
   ], { maxBuffer: 5000000 });
-  const packed = deflateRawSync(diff, { level: 9 }).toString('base64');
+  const packed = deflateRawSync(diff, { level: 9 }).toString('base64')
+    .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
   const count = Math.ceil(packed.length / chunkSize);
   const digest = createHash('sha256').update(diff).digest('hex').slice(0, 16);
-  if (count > 150) throw Error('Patch too large for bounded CI diagnostic transfer: ' + count);
+  if (count > 100) throw Error('Patch too large for bounded CI diagnostic transfer: ' + count);
   for (let i = 0; i < count; i += 1) {
     await status(
       'ci/format-patch/' + String(i).padStart(3, '0'),
+      'Prettier patch fragment ' + (i + 1) + '/' + count,
+      'success',
       packed.slice(i * chunkSize, (i + 1) * chunkSize)
     );
   }
