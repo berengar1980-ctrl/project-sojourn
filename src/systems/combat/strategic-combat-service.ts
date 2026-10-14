@@ -407,6 +407,8 @@ export function createStrategicCombatService(
       // or a stale status while waiting for the next eight-second AI review.
       combatant.strategy = null;
       combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
+      combatant.asteroidRoute = [];
+      combatant.nextAsteroidRouteAt = 0;
       combatant.lastCombatIntentChangeAt = runtime.elapsedSeconds - 2;
       updateCombatIntent(combatant, describeCombatIntent(combatant), runtime.elapsedSeconds);
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
