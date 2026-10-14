@@ -13,26 +13,36 @@ const variants = new Set();
 for (let seed = 1; seed <= 32; seed += 1) {
   const field = generator.generateSalvageField('container-field', seed, 2);
   assert.deepEqual(field, generator.generateSalvageField('container-field', seed, 2));
-  assert(field.debris.length >= 178 && field.debris.length <= 212,
+  const recoverableScrap = field.wrecks.filter((wreck) => wreck.debrisVariant);
+  const sections = field.wrecks.filter((wreck) => wreck.sectionVariant);
+  const containers = field.wrecks.filter((wreck) => wreck.containerVariant);
+  assert(field.debris.length + recoverableScrap.length >= 178 &&
+    field.debris.length + recoverableScrap.length <= 212,
     'field should carry asteroid-like numbers of small debris');
-  assert(field.sections.length >= 8 && field.sections.length <= 11,
+  assert(sections.length >= 8 && sections.length <= 11,
     'all eight additional large sections must exist');
-  assert.equal(new Set(field.debris.slice(0, 8).map((entry) => entry.variant)).size, 8,
-    'every field must include all eight different fragments');
+  assert.equal(new Set([
+    ...field.debris.map((entry) => entry.variant),
+    ...recoverableScrap.map((entry) => entry.debrisVariant),
+  ]).size, 8, 'every field must include all eight different fragments');
+  assert(recoverableScrap.length >= 55,
+    'many visible small fragments must support real scanning and selection');
+  assert(recoverableScrap.every((entry) => !entry.inspected && entry.resources.length > 0),
+    'small selectable debris must hide real loot before the detail scan');
   assert(field.debris.every((entry) => !('resources' in entry) && !('inspected' in entry)),
     'decorative fragments must never become salvage loot targets');
-  assert.equal(new Set(field.sections.slice(0, 8).map((entry) => entry.variant)).size, 8,
+  assert.equal(new Set(sections.slice(0, 8).map((entry) => entry.sectionVariant)).size, 8,
     'every large 3D section must have a distinct room layout');
-  assert(field.sections.some((section) => section.variant === 'double-deck'),
+  assert(sections.some((section) => section.sectionVariant === 'double-deck'),
     'a visible two-deck cutaway is required');
-  assert(field.sections.every((section) => section.radius >= 86 &&
+  assert(sections.every((section) => section.radius >= 86 &&
     section.radius < 132 && section.driftVelocity),
     'large sections need real scale and asteroid physics');
   assert(field.debris.every((entry) => entry.radius > 0 && entry.driftVelocity),
     'decorative fragments need physics collision and drift bodies');
-  assert.equal(new Set(field.wrecks.map((entry) => entry.containerVariant)).size, 3,
+  assert.equal(new Set(containers.map((entry) => entry.containerVariant)).size, 3,
     'every field must include all three recoverable container models');
-  for (const target of field.wrecks) {
+  for (const target of containers) {
     variants.add(target.containerVariant);
     assert(types.includes(target.containerVariant), 'old flat wreck variants must not spawn');
     assert(target.driftVelocity && target.rotation3d && target.spin3d, 'containers need 3D motion');
@@ -49,12 +59,14 @@ const start = { ...target.position };
 const debris = field.debris[0];
 const debrisStart = { ...debris.position };
 const angle = { ...target.rotation3d };
-const section = field.sections[0];
+const section = field.wrecks.find((wreck) => wreck.sectionVariant);
 const sectionStart = { ...section.position };
 const stationaryDistress = {
   ...target,
   id: 'event-wreck-salvage-distress-ship',
   containerVariant: undefined,
+  debrisVariant: undefined,
+  sectionVariant: undefined,
   position: { x: 600, y: 600 },
   rotation3d: undefined,
 };
@@ -76,7 +88,10 @@ const scene = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-service
 assert(renderer.includes('drawSalvageContainer3d') && !renderer.includes('drawHullFragments'));
 assert(renderer.includes('drawDistressShipSprite'), 'distress ship must keep its original renderer');
 assert(renderer.includes('drawSalvageDebris3d'), 'fragment renderer must draw real 3D mesh geometry');
-assert(renderer.includes('drawSalvageSection3d'), 'large ship rooms must be drawn as 3D objects');
+assert(renderer.includes('drawSalvageSection3d') && renderer.includes('wreck.sectionVariant'),
+  'large ship rooms must be both drawn and selectable as wrecks');
+assert(renderer.includes('wreck.debrisVariant'),
+  'small salvageable wreck fragments must use their correct 3D mesh');
 for (const name of ['CorridorComplex', 'DoubleDeck', 'EngineRoom', 'CargoHold',
   'CrewBlock', 'Bridge', 'ReactorHall', 'Medbay']) {
   assert(sections.includes('function build' + name + '('), 'missing large room module ' + name);
@@ -89,6 +104,8 @@ for (const kind of ['Corridor', 'Deck', 'Airlock', 'Truss', 'Engine', 'Reactor',
   'Bulkhead', 'Habitation']) {
   assert(fragments.includes('function build' + kind + '('), 'missing mesh for ' + kind);
 }
+assert(fragments.includes('distantSprites') && fragments.includes('context.drawImage'),
+  'distant debris should use reused prerendered low-poly meshes');
 assert(fragments.includes('sparkPulse') && fragments.includes('const breathe'),
   'sparks and escaping gas should animate with cheap 2D effects');
 assert(mesh.includes("createContainer('standard')") && mesh.includes("createContainer('damaged')") && mesh.includes("createContainer('tank')"));
