@@ -1,4 +1,5 @@
 import type { SalvageSection, SalvageSectionVariant } from '../../core/salvage-types';
+import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
 import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face } from './salvage-container-mesh';
 
 /**
@@ -265,27 +266,26 @@ const meshes: Record<SalvageSectionVariant, readonly Face[]> = {
   medbay: buildMesh('medbay'),
 };
 
-/** Simplified physical silhouette below the 3D-detail visibility threshold. */
-const silhouette = (() => {
-  const m = new ContainerMesh();
-  m.box(0, 0, 0, 3.2, 2.15, 0.36, C.floor);
-  m.box(-1.52, 0.1, 0.45, 0.13, 1.85, 0.91, C.wall);
-  m.box(0, 0.98, 0.39, 2.85, 0.14, 0.80, C.steel);
-  return m.faces;
-})();
-
 export function drawSalvageSection3d(
   context: CanvasRenderingContext2D,
   section: Pick<SalvageSection, 'variant' | 'rotation3d' | 'effectSeed'>,
   radius: number,
   timeSeconds: number
 ): void {
-  drawProjectedSalvageMesh(
-    context,
-    radius < 18 ? silhouette : meshes[section.variant],
-    radius,
-    section.rotation3d
-  );
+  const mesh = meshes[section.variant];
+  if (
+    radius >= 40 ||
+    !drawCachedSalvageMesh(
+      context,
+      'section:' + section.variant,
+      mesh,
+      radius,
+      section.rotation3d,
+      256
+    )
+  ) {
+    drawProjectedSalvageMesh(context, mesh, radius, section.rotation3d);
+  }
   if (radius < 16) return;
   const phase = (timeSeconds * 0.71 + section.effectSeed * 0.000023) % 4.9;
   const x = -radius * 0.19;
