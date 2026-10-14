@@ -1,5 +1,6 @@
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
+import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -127,6 +128,23 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
     });
+    for (const part of this.model.debris) {
+      const point = this.camera.worldToScreen(part.position, width, height);
+      const radius = this.camera.scale(part.radius);
+      const padding = Math.max(20, radius * 1.5);
+      if (
+        point.x < -padding ||
+        point.y < -padding ||
+        point.x > width + padding ||
+        point.y > height + padding
+      ) {
+        continue;
+      }
+      this.context.save();
+      this.context.translate(point.x, point.y);
+      drawSalvageDebris3d(this.context, part, radius, timeSeconds);
+      this.context.restore();
+    }
     const hitAreas: WreckHitArea[] = [];
     for (const wreck of this.model.wrecks) {
       if (this.model.distressTow && wreck.id.startsWith('event-wreck-')) continue;
@@ -173,8 +191,9 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   protected drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {
     const point = this.camera.worldToScreen(wreck.position, width, height);
-    const radius = Math.max(15, this.camera.scale(wreck.radius));
-    const padding = radius + 30;
+    const radius = this.camera.scale(wreck.radius);
+    const hitRadius = Math.max(15, radius + 8);
+    const padding = hitRadius + 30;
     if (
       point.x < -padding ||
       point.y < -padding ||
@@ -224,7 +243,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
       this.context.restore();
     }
-    return { id: wreck.id, point, radius: radius + 12 };
+    return { id: wreck.id, point, radius: hitRadius };
   }
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
