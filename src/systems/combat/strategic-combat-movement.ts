@@ -244,6 +244,11 @@ function choosePlanDirection(
     targetSpeedFactor = posture.targetSpeedFactor;
   }
 
+  // Fleeing is a committed navigation goal. No fire-position or broadside
+  // maneuver may replace the escape heading; obstacle/mine avoidance still
+  // applies downstream.
+  if (combatant.tactic === 'flee') return { direction, targetSpeedFactor };
+
   // Choose the weapon-facing posture before safety steering: neither a broadside
   // nor a pursuit maneuver may discard a necessary collision correction.
   if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
@@ -352,8 +357,14 @@ function steerCombatRoute(
     targetSpeedFactor = 1;
     combatant.combatIntent = 'RAMMEN';
   }
-  const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
+  // Routing to the enemy overrides flight direction even when the pilot is
+  // trying to reach the gate. Fleeing ships must route to the gate instead.
+  const escaping = combatant.tactic === 'flee';
+  const cover = escaping || deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
+  const routeTarget = escaping ? arena.exitPoint : enemy.position;
+  const waypoint = routeTarget
+    ? combatRouteHeading(combatant, routeTarget, arena, deltaSeconds)
+    : null;
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
