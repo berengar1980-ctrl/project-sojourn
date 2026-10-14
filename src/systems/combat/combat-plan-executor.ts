@@ -37,6 +37,11 @@ export function executeCombatPlan(
   if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
   if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
   if (plan.focus === 'turret' || plan.focus === 'mine') return 'fire';
+  return evaluateWeaponAlignment(ship, enemy);
+}
+
+function evaluateWeaponAlignment(ship: MutableCombatant, enemy: MutableCombatant): CombatPlanPhase {
+  const plan = ship.strategy!;
   const bearing = Math.atan2(
     enemy.position.y - ship.position.y,
     enemy.position.x - ship.position.x
