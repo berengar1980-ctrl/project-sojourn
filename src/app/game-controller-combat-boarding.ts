@@ -29,8 +29,6 @@ export function startCombatBoarding(
   state.combatPanel = null;
   state.salvageScene?.destroy();
   state.salvageScene = null;
-  state.localSpace = null;
-  state.localNpcMining = null;
   state.boardingPanel?.destroy();
   state.boardingPanel = null;
   state.shipSwitcher?.destroy();
