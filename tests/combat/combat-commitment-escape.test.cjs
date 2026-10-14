@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const { reviewCombatCommitment, escapeViability, usefulEscapeMine } =
+const { reviewCombatCommitment, estimatedVictoryChance, escapeViability, usefulEscapeMine } =
   loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-commitment.ts');
 const ship = (id, x, weapons = []) => ({
   setup: {
@@ -21,6 +21,18 @@ const pirate = ship('pirate', 1300, [
   { weapon: { hullDamage: 80, shieldDamage: 80, cooldownSeconds: 1 } },
 ]);
 assert(escapeViability(freighter, pirate, arena) > 0.5);
+assert(estimatedVictoryChance(freighter, pirate) < 0.5, 'unarmed freighter faces unfavorable odds');
+const equipped = ship('freight-armed', 800, [{ weapon: {
+  family: 'laser', mount: 'turret', hullDamage: 140, shieldDamage: 140,
+  cooldownSeconds: 0.5, rangeMeters: 1200,
+} }]);
+assert(estimatedVictoryChance(equipped, pirate) > estimatedVictoryChance(freighter, pirate),
+  'ship weapon loadout affects fight odds regardless of civilian role');
+const obstructed = { ...arena, obstacles: [
+  { id: 'rock', position: { x: 500, y: 500 }, radius: 110 },
+] };
+assert(escapeViability(freighter, pirate, obstructed) < escapeViability(freighter, pirate, arena),
+  'asteroids along the escape corridor reduce retreat viability');
 reviewCombatCommitment(freighter, pirate, arena, 0);
 assert.equal(freighter.tactic, 'flee', 'weak freighter commits to fleeing if exit is reachable');
 freighter.strategy = { kind: 'escape', focus: 'turret', desiredRange: 1000, score: 999, reason: 'test' };
