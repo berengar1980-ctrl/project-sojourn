@@ -1,5 +1,6 @@
 import type { EconomyResourceId } from './economy-types';
 import type { AsteroidScanLevel } from './resource-types';
+import type { ShieldImpactEffect } from './shield-types';
 import type { LocalShipState } from './local-space-types';
 import type { ShipComponentType } from './ship-types';
 import type { WorldPoint } from './world-types';
@@ -152,6 +153,7 @@ export type SalvageLocalPhase =
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
   readonly ship: LocalShipState;
+  readonly shieldImpacts?: readonly ShieldImpactEffect[];
   readonly selectedWreckId: string | null;
   readonly workTargetId: string | null;
   readonly navigationTarget: WorldPoint | null;
