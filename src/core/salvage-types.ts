@@ -1,4 +1,5 @@
 import type { EconomyResourceId } from './economy-types';
+import type { AsteroidScanLevel } from './resource-types';
 import type { LocalShipState } from './local-space-types';
 import type { ShipComponentType } from './ship-types';
 import type { WorldPoint } from './world-types';
@@ -80,6 +81,8 @@ export interface SalvageWreck {
   readonly component: SalvageComponentCandidate | null;
   componentStatus: 'none' | 'available' | 'recovered' | 'destroyed';
   inspected: boolean;
+  /** Shared scan states: surveyed = '?' only, analyzed = identified contents. */
+  scanLevel?: AsteroidScanLevel;
 }
 
 export interface SalvageField {
@@ -152,6 +155,7 @@ export interface SalvageLocalSpaceSnapshot {
   readonly navigationRoute: readonly WorldPoint[];
   readonly phase: SalvageLocalPhase;
   readonly operationProgress: number | null;
+  readonly longRangeScanProgress?: number | null;
   readonly activeResourceId: EconomyResourceId | null;
   readonly lastRecovery: SalvageRecoveryResult | null;
   readonly recoverySerial: number;
