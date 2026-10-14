@@ -769,3 +769,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-14): Kampf-KI Punkte 1–7, vollständige Nacharbeit (Draft)
 
 **keine Statusänderung.** Auf Basis von PR #224 wurden die fehlenden aktiven Manöver nachgerüstet: Asteroidendeckung bleibt Teil der Kollisionsroute (1), Breitseitenanflug mit Tangentialkurs und relativer Bremsung statt stationärem Schweben (2), defensiver Traktorimpuls bei nahendem Verfolger und bremsender Traktorimpuls bei Fluchtziel (3), bedrohungsbezogene Ziele auf Antrieb beziehungsweise Traktor (4), Minenleger-Korridor mit Köder-Rückzug und vorhandener tatsächlicher Abwurfsbedingung (5), Vorhalte-Abfangkurs und Relativgeschwindigkeitskontrolle (6), phasenbasierte Folge Reach/Align/Fire/Regroup mit Beibehaltung der 8/4-Sekunden-Strategieintervalle (7). Zuverlässigkeit und Simulations-Balance durch CI und Laufzeittests noch zu verifizieren, kein Freigabestatus hochgestuft. Schadenszahlen unverändert.
+
+## Review-Log (2026-10-14): Gemeinsamer Karten-Eingang/Ausgang und Traktor-Abklingzeit
+
+**keine Statusänderung.** Asteroiden-/eigene-Minen-Traktorwurf auf 6 s Cooldown gesetzt. Asteroidenfeld und Bergungsfeld verwenden je Seed einen deterministisch zufälligen Kartenrand-Eingang/Ausgang als gemeinsamen Ort für Spielerstart, NPC-Ankunft, NPC-Rückweg, Ausgangszeichnung und Sternkarten-Rückkehrprüfung einschließlich Schleppgut. Bisherige verstreute Randpunkte zusammengeführt. Build-, Formatierungs-, Typ- und Gameplay-Regressionstests noch ausstehend.
