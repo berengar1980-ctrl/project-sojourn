@@ -119,7 +119,7 @@ function useBoostForExchange(
     separation > (fleeing ? 180 : 250) &&
     range > 180 &&
     aligned > range * 0.7 &&
-    forwardSpeed > -25 &&
+    forwardSpeed >= 0 &&
     !ship.asteroidRoute?.length &&
     remaining > 0.7;
   if (useful) activateExchangeBoost(ship);
