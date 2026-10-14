@@ -1,6 +1,6 @@
 import type { SalvageSection, SalvageSectionVariant } from '../../core/salvage-types';
 import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
-import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face } from './salvage-container-mesh';
+import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face, type Vec3 } from './salvage-container-mesh';
 
 /**
  * Eight large, open ship sections, made of genuinely 3D floor slabs, standing
@@ -8,10 +8,11 @@ import { ContainerMesh, drawProjectedSalvageMesh, type Color, type Face } from '
  * geometry. Partial upper decks expose the rooms underneath.
  */
 const C = {
-  floor: [83, 94, 97], wall: [132, 137, 131], edge: [43, 51, 58],
-  floorLight: [126, 134, 131], trim: [193, 146, 66], rust: [119, 72, 54],
-  steel: [171, 176, 170], dark: [24, 32, 38], cable: [133, 61, 48],
-  blue: [63, 106, 123], signal: [98, 176, 171], glass: [46, 66, 77],
+  floor: [42, 49, 53], wall: [64, 73, 76], edge: [28, 36, 42],
+  floorLight: [83, 91, 89], trim: [145, 106, 56], rust: [104, 60, 46],
+  steel: [99, 108, 108], dark: [16, 22, 27], cable: [110, 47, 40],
+  blue: [42, 74, 91], signal: [75, 143, 134], glass: [29, 46, 56],
+  soot: [27, 29, 30], burn: [67, 47, 38], edgeMetal: [126, 115, 98],
 } as const satisfies Record<string, Color>;
 
 type DeckHeight = 0 | 1.1;
@@ -235,6 +236,74 @@ function buildMedbay(m: ContainerMesh): void {
   ripped(m, -1.71, -1.13);
 }
 
+/** Irregular torn-open roof remnants, not another clean modular box.
+ * Roughly 20-35% of the original ceiling remains as overlapping jagged plates.
+ * Room floors, doorways and broken wall openings stay visible underneath.
+ * All geometry is cached per model, never generated on individual frames.
+ */
+function tornRoof(m: ContainerMesh, variantIndex: number): void {
+  const reversed = variantIndex % 2 === 1 ? -1 : 1;
+  const tilt = (variantIndex % 3 - 1) * 0.14;
+  const height = variantIndex === 1 ? 2.17 : 1.16;
+  const panels: readonly (readonly (readonly [number, number])[])[] = [
+    [
+      [-1.86, -1.27], [-0.49, -1.32], [-0.19, -0.91],
+      [-0.50, -0.77], [-0.32, -0.58], [-0.78, -0.65],
+      [-0.94, -0.38], [-1.29, -0.68], [-1.74, -0.48],
+    ],
+    [
+      [0.40, 1.28], [1.88, 1.14], [1.57, 0.81],
+      [1.81, 0.55], [1.37, 0.61], [1.10, 0.25],
+      [0.91, 0.63], [0.67, 0.48], [0.79, 0.87],
+    ],
+    [
+      [-1.69, 0.76], [-1.00, 0.69], [-0.73, 0.96],
+      [-0.91, 1.29], [-1.47, 1.24], [-1.28, 1.08],
+    ],
+  ];
+  panels.forEach((outline, panelIndex) => {
+    const z = height + (panelIndex === 1 ? -0.12 : 0.05);
+    const shape: Vec3[] = outline.map(([x, y], i) => [
+      x * reversed + tilt * (panelIndex + 1),
+      y + Math.sin(i * 2.7 + variantIndex) * 0.065,
+      z + (i % 3) * 0.022,
+    ]);
+    m.face(shape, [0, 0, 1], panelIndex === 1 ? C.soot : C.wall);
+    // Sawtooth exposed thickness, with heat-discolored, twisted plate edges.
+    for (let i = 0; i < shape.length; i += 1) {
+      const a = shape[i]!;
+      const b = shape[(i + 1) % shape.length]!;
+      m.face(
+        [a, b, [b[0] + 0.028, b[1] + 0.017, b[2] - 0.1 - (i % 3) * 0.075],
+          [a[0] - 0.034, a[1] + 0.02, a[2] - 0.11 - (i % 2) * 0.08]],
+        [0, 0, 1],
+        i % 3 === 0 ? C.edgeMetal : i % 2 === 0 ? C.rust : C.edge
+      );
+    }
+  });
+  // Jagged exposed beams and broken cable trunks sticking out of the ceiling.
+  for (let i = 0; i < 6; i += 1) {
+    const xx = reversed * (-1.55 + i * 0.51);
+    const yy = (i % 2 ? 1.02 : -1.09) + tilt;
+    m.box(xx, yy, height - 0.08, 0.13 + (i % 3) * 0.075, 0.09, 0.2, C.edgeMetal);
+    m.box(xx + 0.08, yy + (i % 2 ? 0.18 : -0.18),
+      height - 0.16, 0.055, 0.42, 0.055, i % 2 ? C.cable : C.rust);
+  }
+  // Aged scorch patches and dark ruptures rather than uniform clean floors.
+  for (let i = 0; i < 5; i += 1) {
+    const xx = -1.16 + (i * 0.61 + variantIndex * 0.1) % 2.4;
+    const yy = -0.8 + (i * 0.47) % 1.65;
+    m.face(
+      [[xx - 0.32, yy - 0.19, -0.055],
+        [xx + 0.24, yy - 0.12, -0.055],
+        [xx + 0.28, yy + 0.15, -0.055],
+        [xx - 0.14, yy + 0.29, -0.055]],
+      [0, 0, 1],
+      i % 2 ? C.burn : C.soot
+    );
+  }
+}
+
 function buildMesh(variant: SalvageSectionVariant): readonly Face[] {
   const m = new ContainerMesh();
   switch (variant) {
@@ -247,6 +316,10 @@ function buildMesh(variant: SalvageSectionVariant): readonly Face[] {
     case 'reactor-hall': buildReactorHall(m); break;
     case 'medbay': buildMedbay(m); break;
   }
+  tornRoof(m, [
+    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
+    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
+  ].indexOf(variant));
   return m.faces;
 }
 
