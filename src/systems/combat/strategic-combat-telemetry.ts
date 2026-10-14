@@ -1,6 +1,7 @@
 import { describeCombatIntent } from './combat-intent-labels';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { reviewCombatStrategy } from './combat-strategy-planner';
+import { reviewCombatCommitment } from './combat-commitment';
 import { classifyCombatDoctrine, executeCombatPlan } from './combat-plan-executor';
 import { distance } from './strategic-combat-geometry';
 import type { MutableCombatant, StrategicCombatRuntime } from './strategic-combat-types';
@@ -25,6 +26,7 @@ export function reviewAndExecute(
   side: 'attacker' | 'defender'
 ): void {
   const previous = ship.strategy;
+  reviewCombatCommitment(ship, enemy, runtime.arena, runtime.elapsedSeconds);
   reviewCombatStrategy(ship, enemy, side, runtime.elapsedSeconds);
   if (previous !== ship.strategy && ship.strategy) {
     ship.strategy = {
