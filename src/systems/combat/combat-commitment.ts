@@ -64,12 +64,15 @@ export function reviewCombatCommitment(
   elapsed: number
 ): void {
   if (!ship.setup.aiControlled || ship.hullHp <= 0 || ship.combatTacticLocked) return;
+  // Preserve the defender's initial four-second planning offset.
+  if (!ship.strategy && elapsed < ship.nextStrategyReviewAt) return;
   if (elapsed < (ship.nextCommitmentReviewAt ?? 0)) return;
   ship.nextCommitmentReviewAt = elapsed + RETHINK_PERIOD;
   const strength = relativeStrength(ship, enemy);
   const escape = escapeViability(ship, enemy, arena);
   const currentlyFleeing = ship.tactic === 'flee';
   if (currentlyFleeing) {
+    ship.escapeCommittedAt ??= elapsed;
     // Remain committed, unless escape has become almost impossible.
     if (elapsed - (ship.escapeCommittedAt ?? elapsed) < MIN_ESCAPE_COMMITMENT) {
       if (escape >= 0.12 || ship.subsystems.engine > 0) return;
