@@ -9,7 +9,8 @@ function drawTractorLink(
   ctx: CanvasRenderingContext2D,
   rock: ThrownAsteroidSnapshot,
   center: Point,
-  project: (point: Point) => Point
+  project: (point: Point) => Point,
+  renderScrap?: (context: CanvasRenderingContext2D, rock: ThrownAsteroidSnapshot, radius: number) => boolean
 ): void {
   const start = project(rock.origin);
   const charge = rock.phase === 'charge';
@@ -108,7 +109,7 @@ export function drawTractorThrows(
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-    } else {
+    } else if (!renderScrap?.(ctx, rock, radius)) {
       drawRock(ctx, radius, rock.ageSeconds);
     }
     ctx.restore();
