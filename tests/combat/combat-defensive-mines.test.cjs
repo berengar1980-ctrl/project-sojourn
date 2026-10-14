@@ -40,7 +40,11 @@ fugitive.tactic = 'flee';
 pursuer.velocity.x = -80;
 const runtime = { mineSerial: 0, mines: [], lastEvent: '', arena, elapsedSeconds: 0 };
 mines.maybeDropRuntimeMine(runtime, 'attacker', fugitive, pursuer, 0.08);
-assert.equal(runtime.mines.length, 1, 'escape should deploy a defensive mine against an approaching rear pursuer');
+assert.equal(
+  runtime.mines.length,
+  1,
+  'escape should deploy a defensive mine against an approaching rear pursuer'
+);
 assert.equal(runtime.mines[0].definition.id, hunter.id);
 assert.equal(runtime.mines[0].owner, 'attacker');
 assert.equal(fugitive.mineStock.length, 0);
