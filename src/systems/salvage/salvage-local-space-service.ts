@@ -299,22 +299,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
       this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
-      if (this.longRangeScanElapsed !== null) {
-        this.longRangeScanElapsed += delta;
-        if (this.longRangeScanElapsed >= 5) {
-          const radius = longRangeScanRadius({
-            sensorModifier: this.options.sensorModifier ?? 1,
-            crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
-          });
-          for (const wreck of this.options.field.wrecks) {
-            if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
-            if (distance(this.ship.position, wreck.position) <= radius) {
-              wreck.scanLevel = 'surveyed';
-            }
-          }
-          this.longRangeScanElapsed = null;
-        }
-      }
+      this.advanceLongRangeScan(delta);
       advanceSalvageContainerDrift(this.options.field, delta);
       if (this.phase === 'navigating' || this.phase === 'approaching') {
         this.updateRoute(delta);
@@ -337,6 +322,25 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       }
     }
     return this.getSnapshot();
+  }
+
+  private advanceLongRangeScan(delta: number): void {
+    if (this.longRangeScanElapsed !== null) {
+      this.longRangeScanElapsed += delta;
+      if (this.longRangeScanElapsed >= 5) {
+        const radius = longRangeScanRadius({
+          sensorModifier: this.options.sensorModifier ?? 1,
+          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
+        });
+        for (const wreck of this.options.field.wrecks) {
+          if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
+          if (distance(this.ship.position, wreck.position) <= radius) {
+            wreck.scanLevel = 'surveyed';
+          }
+        }
+        this.longRangeScanElapsed = null;
+      }
+    }
   }
 
   private findWreck(wreckId: string | null): SalvageWreck | null {
