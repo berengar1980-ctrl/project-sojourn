@@ -8,6 +8,7 @@ const moves = load('src/systems/combat/combat-tactical-maneuvers.ts');
 const planner = load('src/systems/combat/combat-strategy-planner.ts');
 const executor = load('src/systems/combat/combat-plan-executor.ts');
 const cover = load('src/systems/combat/combat-asteroid-cover.ts');
+const tractor = load('src/systems/combat/combat-tractor-pulse.ts');
 
 const ship = (x, y) => ({
   position: { x, y }, velocity: { x: 0, y: 0 },
@@ -65,4 +66,31 @@ first.position.x = 700;
 assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'overshoot triggers reposition phase');
 first.position.x = 100;
 assert.equal(executor.executeCombatPlan(first, second), 'reach_range', 'moving out of range re-enters approach');
+const pulseRuntime = () => ({
+  elapsedSeconds: 2,
+  combatLog: [],
+  beams: [],
+  beamSerial: 0,
+  lastEvent: '',
+});
+const tug = ship(300, 500);
+const target = ship(530, 500);
+tug.shieldHp = 0;
+tug.tactic = 'flee';
+target.velocity.x = -90;
+const repelRuntime = pulseRuntime();
+tractor.pulseCombatTractor(repelRuntime, 'attacker', tug, target, 0.08);
+assert(target.velocity.x > -90, 'fleeing tractor ship repels an approaching pursuer');
+assert.equal(repelRuntime.beams.length, 1);
+assert(repelRuntime.combatLog[0].detail.includes('ABWEHR'));
+tug.tactic = 'fight';
+tug.tractorPulseCooldown = 0;
+target.velocity.x = 90;
+tractor.pulseCombatTractor(pulseRuntime(), 'attacker', tug, target, 0.08);
+assert(target.velocity.x < 90, 'tractor interceptor brakes a separating target');
+tug.shieldHp = 20;
+tug.tractorPulseCooldown = 0;
+target.velocity.x = 90;
+tractor.pulseCombatTractor(pulseRuntime(), 'attacker', tug, target, 0.08);
+assert.equal(target.velocity.x, 90, 'own shields still block tractor use');
 console.log('PASS seven-doctrine tactical decisions with real geometry and phase transitions');
