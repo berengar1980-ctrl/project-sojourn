@@ -1,5 +1,5 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
-import { campaignCombatResult } from '../../app/combat-result-summary';
+import { campaignCombatResult } from '../../systems/combat/combat-result-summary';
 
 /** One user-confirmed outcome screen for campaign encounters, never a second reward grant. */
 export function showCampaignCombatSummary(
