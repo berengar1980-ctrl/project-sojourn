@@ -217,7 +217,14 @@ function tickStrategicCombat(
     moveCombatant(victim, initiator, victimSide, dt, runtime.arena, runtime.mines);
     if (runtime.grapple.success && runtime.grapple.resolved) {
       runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
-      if (distance(initiator.position, victim.position) <= 140) {
+      const dockingSeparation = distance(initiator.position, victim.position);
+      const relativeDockingSpeed = Math.hypot(
+        initiator.velocity.x - victim.velocity.x,
+        initiator.velocity.y - victim.velocity.y
+      );
+      // Dock only when the hulls are almost touching AND their inertial
+      // velocities have settled. A grapple hit or long rope is not boarding.
+      if (dockingSeparation <= 104 && relativeDockingSpeed <= 22) {
         // Match the ships' drift at the moment of docking rather than stopping
         // both vessels instantaneously in the middle of space.
         const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;
