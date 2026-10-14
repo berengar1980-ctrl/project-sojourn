@@ -1,10 +1,29 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import type { SectorNpcState } from '../core/npc-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 
 export interface CombatCargoReward {
   readonly resourceId: string;
   readonly quantity: number;
+}
+
+/** Apply existing cargo admission rules; debit exactly what the player actually receives. */
+export function transferCapturedCargo(
+  npc: Pick<SectorNpcState, 'cargo'>,
+  receive: (resourceId: string, quantity: number) => number
+): CombatCargoReward[] {
+  const rewards: CombatCargoReward[] = [];
+  for (const [resourceId, amount] of Object.entries(npc.cargo)) {
+    const available = Math.max(0, Math.floor(amount));
+    if (available === 0) continue;
+    const received = receive(resourceId, available);
+    if (received === 0) continue;
+    npc.cargo[resourceId] = amount - received;
+    if (npc.cargo[resourceId] <= 0) delete npc.cargo[resourceId];
+    rewards.push({ resourceId, quantity: received });
+  }
+  return rewards;
 }
 
 /**
@@ -26,16 +45,11 @@ export function collectCombatCargo(
     ...crew.runtimeOptions(state.activeShip),
     installed: loadouts.get(state.activeShip),
   }).cargoCapacityTons;
-  const rewards: CombatCargoReward[] = [];
-  for (const [resourceId, amount] of Object.entries(npc.cargo)) {
-    const available = Math.max(0, Math.floor(amount));
-    if (available === 0) continue;
-    const received = economy.trade.receiveCargo(resourceId, available, capacity, npc.locationId);
-    if (received === 0) continue;
-    npc.cargo[resourceId] = amount - received;
-    if (npc.cargo[resourceId] <= 0) delete npc.cargo[resourceId];
-    rewards.push({ resourceId, quantity: received });
-    context.systemLog.write('BEUTE > ' + received + ' × ' + resourceId.toUpperCase());
+  const rewards = transferCapturedCargo(npc, (resourceId, available) =>
+    economy.trade.receiveCargo(resourceId, available, capacity, npc.locationId)
+  );
+  for (const reward of rewards) {
+    context.systemLog.write('BEUTE > ' + reward.quantity + ' × ' + reward.resourceId.toUpperCase());
   }
   return rewards;
 }
