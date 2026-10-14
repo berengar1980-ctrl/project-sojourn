@@ -452,7 +452,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     // Only distress-rescue ships remain fixed obstacles. All drift objects use
     // the same impulse-based asteroid shield physics instead of acting as walls.
     const obstacles = this.options.field.wrecks
-      .filter((wreck) => !wreck.containerVariant)
+      .filter((wreck) => !wreck.containerVariant && !wreck.debrisVariant && !wreck.sectionVariant)
       .map((wreck) => ({
       id: wreck.id,
       position: wreck.position,
