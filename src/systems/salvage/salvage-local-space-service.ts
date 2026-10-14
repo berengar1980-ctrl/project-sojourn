@@ -259,8 +259,13 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   }
 
   tick(deltaSeconds: number): SalvageLocalSpaceSnapshot {
-    const delta = Math.max(0, Math.min(0.05, deltaSeconds));
-    this.events.tick(delta);
+    // Preserve real elapsed gameplay time on frames slower than 20 fps.
+    // Previously frames above 50 ms were discarded and everything ran in slow motion.
+    let remaining = Math.max(0, Math.min(0.15, deltaSeconds));
+    while (remaining > 0.000001) {
+      const delta = Math.min(0.05, remaining);
+      remaining -= delta;
+      this.events.tick(delta);
     if (this.longRangeScanElapsed !== null) {
       this.longRangeScanElapsed += delta;
       if (this.longRangeScanElapsed >= 5) {
@@ -294,6 +299,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
         this.options.hardpoints,
         this.options.shipLengthMeters
       );
+    }
     }
     return this.getSnapshot();
   }
