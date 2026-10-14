@@ -50,6 +50,8 @@ interface WeaponFamilySeed {
   readonly role: ShipWeaponRole;
   readonly shieldDamage: number;
   readonly hullDamage: number;
+  readonly nativeShieldDamage: readonly number[];
+  readonly nativeHullDamage: readonly number[];
   readonly rangeMeters: number;
   readonly cooldownSeconds: number;
   readonly heat: number;
@@ -76,6 +78,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'balanced',
     shieldDamage: 15,
     hullDamage: 15,
+    nativeShieldDamage: [2.7, 3.6, 4.5, 5.58, 6.84, 8.1],
+    nativeHullDamage: [2.7, 3.6, 4.5, 5.58, 6.84, 8.1],
     rangeMeters: 750,
     cooldownSeconds: 0.36,
     heat: 6,
@@ -93,6 +97,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'balanced',
     shieldDamage: 24,
     hullDamage: 24,
+    nativeShieldDamage: [4.32, 5.58, 7.2, 8.82, 10.8, 12.96],
+    nativeHullDamage: [4.32, 5.58, 7.2, 8.82, 10.8, 12.96],
     rangeMeters: 560,
     cooldownSeconds: 2.7,
     heat: 12,
@@ -109,6 +115,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'balanced',
     shieldDamage: 18,
     hullDamage: 25,
+    nativeShieldDamage: [3.24, 4.14, 5.4, 6.66, 8.1, 9.72],
+    nativeHullDamage: [4.5, 5.94, 7.38, 9.18, 11.34, 13.5],
     rangeMeters: 1200,
     cooldownSeconds: 3,
     heat: 2,
@@ -125,6 +133,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'shield',
     shieldDamage: 30,
     hullDamage: 6,
+    nativeShieldDamage: [5.4, 7.02, 9, 10.98, 13.5, 16.2],
+    nativeHullDamage: [1.08, 1.44, 1.8, 2.16, 2.7, 3.24],
     rangeMeters: 700,
     cooldownSeconds: 0.38,
     heat: 8,
@@ -141,6 +151,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'shield',
     shieldDamage: 50,
     hullDamage: 3,
+    nativeShieldDamage: [9, 11.7, 14.94, 18.36, 22.5, 27],
+    nativeHullDamage: [0.54, 0.72, 0.9, 1.08, 1.44, 1.62],
     rangeMeters: 480,
     cooldownSeconds: 2.9,
     heat: 14,
@@ -157,6 +169,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'hull',
     shieldDamage: 8,
     hullDamage: 34,
+    nativeShieldDamage: [1.44, 1.8, 2.34, 2.88, 3.6, 4.32],
+    nativeHullDamage: [6.12, 7.92, 10.08, 12.6, 15.3, 18.36],
     rangeMeters: 560,
     cooldownSeconds: 2.2,
     heat: 4,
@@ -173,6 +187,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'hull',
     shieldDamage: 5,
     hullDamage: 300,
+    nativeShieldDamage: [0.9, 1.26, 1.44, 1.8, 2.34, 2.7],
+    nativeHullDamage: [54, 70.2, 89.1, 110.7, 135, 162],
     rangeMeters: 1550,
     cooldownSeconds: 7.2,
     heat: 10,
@@ -189,6 +205,8 @@ const WEAPON_FAMILIES: readonly WeaponFamilySeed[] = [
     role: 'hull',
     shieldDamage: 10,
     hullDamage: 48,
+    nativeShieldDamage: [1.8, 2.34, 3.06, 3.78, 4.5, 5.4],
+    nativeHullDamage: [8.64, 11.16, 14.22, 17.64, 21.6, 25.92],
     rangeMeters: 1250,
     cooldownSeconds: 4.4,
     heat: 2,
@@ -242,6 +260,8 @@ function weaponDefinitions(seed: WeaponFamilySeed): readonly ShipComponentDefini
         role: seed.role,
         shieldDamage: scaled(seed.shieldDamage, damageScale),
         hullDamage: scaled(seed.hullDamage, damageScale),
+        combatShieldDamage: seed.nativeShieldDamage[index]!,
+        combatHullDamage: seed.nativeHullDamage[index]!,
         rangeMeters: scaled(seed.rangeMeters, rangeScale),
         cooldownSeconds: Number((seed.cooldownSeconds * cooldownScale).toFixed(2)),
         heat: scaled(seed.heat, damageScale),
