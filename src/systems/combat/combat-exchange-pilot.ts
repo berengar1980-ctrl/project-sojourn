@@ -79,7 +79,8 @@ export function planExchangeFlight(
   reactor: MutableCombatant,
   action: CombatAction,
   reaction: CombatReaction,
-  quality: CombatExchange['quality']
+  quality: CombatExchange['quality'],
+  deliberateRam = false
 ): ExchangeFlightPlan {
   const toward = normalize(
     reactor.position.x - initiator.position.x,
@@ -89,7 +90,7 @@ export function planExchangeFlight(
   // Each action represents a distinct, committed flight trajectory.
   const attacking =
     action === 'frontal_pass'
-      ? offsetPoint(reactor.position, toward, -110, 0)
+      ? offsetPoint(reactor.position, toward, deliberateRam ? 55 : -110, 0)
       : action === 'broadside_pass'
         ? offsetPoint(reactor.position, toward, -60, side * 290)
         : action === 'disengage_fire'
