@@ -4,6 +4,7 @@ import type {
   SalvageWreck,
   SalvageWreckKind,
   SalvageWreckQuality,
+  SalvageContainerVariant,
 } from '../../core/salvage-types';
 
 const COMMON_RESOURCES = ['steel', 'composite-plate', 'machine-parts'] as const;
@@ -35,14 +36,13 @@ function wreckKind(roll: number): SalvageWreckKind {
   return 'patrol';
 }
 
-function wreckName(kind: SalvageWreckKind, index: number): string {
+function containerName(variant: SalvageContainerVariant, index: number): string {
   const label = {
-    freighter: 'Frachter',
-    miner: 'Minenkutter',
-    salvager: 'Bergungskutter',
-    patrol: 'Patrouillenschiff',
-  }[kind];
-  return `${label}-Wrack ${String(index + 1).padStart(2, '0')}`;
+    standard: 'Frachtcontainer',
+    damaged: 'Beschädigter Container',
+    tank: 'Tankmodul',
+  }[variant];
+  return `${label} ${String(index + 1).padStart(2, '0')}`;
 }
 
 function resourcePool(quality: SalvageWreckQuality): readonly string[] {
@@ -82,11 +82,21 @@ export function generateSalvageField(
   for (let index = 0; index < count; index += 1) {
     const quality = qualityFromRoll(random(), dangerLevel);
     const kind = wreckKind(random());
+    const variantRoll = random();
+    const containerVariant: SalvageContainerVariant =
+      variantRoll < 0.46 ? 'standard' : variantRoll < 0.76 ? 'damaged' : 'tank';
+    const direction = random() * Math.PI * 2;
+    const driftSpeed = 2 + random() * 4;
     wrecks.push({
       id: `wreck-${seed}-${index}`,
-      name: wreckName(kind, index),
+      name: containerName(containerVariant, index),
       kind,
       quality,
+      containerVariant,
+      driftVelocity: { x: Math.cos(direction) * driftSpeed, y: Math.sin(direction) * driftSpeed },
+      rotation3d: { x: random() * 0.5, y: random() * 0.5, z: random() * Math.PI * 2 },
+      spin3d: { x: 0.04 + random() * 0.09, y: 0.035 + random() * 0.08, z: 0.02 + random() * 0.045 },
+
       position: {
         x: width * (0.12 + random() * 0.76),
         y: height * (0.12 + random() * 0.76),
