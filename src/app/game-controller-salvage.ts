@@ -11,6 +11,8 @@ import {
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
+import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
+import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
@@ -69,6 +71,7 @@ interface SalvageSceneOptions {
       readonly defenderPosition: { readonly x: number; readonly y: number };
       readonly attackerVelocity?: { readonly x: number; readonly y: number };
       readonly attackerHeadingRadians?: number;
+      readonly asteroids?: readonly CombatVisualAsteroid[];
       readonly obstacles?: readonly {
         readonly id: string;
         readonly position: { readonly x: number; readonly y: number };
@@ -190,6 +193,17 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
       x: Math.cos(playerShip.headingRadians) * playerShip.speed,
       y: Math.sin(playerShip.headingRadians) * playerShip.speed,
     },
+    // The tractor weapon already captures CombatVisualAsteroid objects. Supplying
+    // small wreck parts here enables exactly the existing five-phase throw.
+    asteroids: (field.debris ?? []).map((part) => ({
+      id: part.id,
+      position: { ...part.position },
+      velocity: { ...part.driftVelocity },
+      angularVelocity: part.spin3d.z,
+      rotation: part.rotation3d.z,
+      radius: part.radius,
+      kind: 'debris' as const,
+    })),
     obstacles: [
       ...field.wrecks.map((wreck) => ({
         id: wreck.id,
@@ -368,6 +382,22 @@ function finishSalvageCombat(
   context: SalvageSceneRuntime,
   snapshot: StrategicCombatSnapshot
 ): void {
+  if (context.field.debris && snapshot.arena.asteroids) {
+    const remaining = new Map(snapshot.arena.asteroids.map((rock) => [rock.id, rock]));
+    // Once captured and thrown, the original fragment must not respawn in the field.
+    for (let index = context.field.debris.length - 1; index >= 0; index -= 1) {
+      const part = context.field.debris[index]!;
+      const live = remaining.get(part.id);
+      if (!live) {
+        context.field.debris.splice(index, 1);
+        continue;
+      }
+      part.position = { ...live.position };
+      part.driftVelocity = { ...live.velocity };
+      part.rotation3d = { ...part.rotation3d, z: live.rotation };
+    }
+    invalidateSalvagePhysics(context.field);
+  }
   context.service.syncCombatPose(
     snapshot.attacker.position,
     snapshot.attacker.headingRadians,
