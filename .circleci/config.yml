@@ -19,6 +19,19 @@ jobs:
           paths:
             - ~/.npm
       - run:
+          name: Apply formatting on temporary repair branch
+          command: |
+            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
+              npm run format
+              if ! git diff --quiet; then
+                git config user.name "circleci-format[bot]"
+                git config user.email "ci-format@users.noreply.github.com"
+                git add -A
+                git commit -m "style: format the code merged by PR 230"
+                git push origin HEAD:fix/main-quality-gate-after-pr230
+              fi
+            fi
+      - run:
           name: Format
           command: node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
