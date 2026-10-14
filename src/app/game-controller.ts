@@ -1,5 +1,6 @@
 import { localMiningCombatArena } from './game-controller-combat';
 import { combatResultMessage } from './combat-result-summary';
+import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
@@ -388,6 +389,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
+  showCampaignCombatSummary(context.root, snapshot, () => {});
 }
 
 function handleControllerLocationEntry(
