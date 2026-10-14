@@ -52,10 +52,8 @@ class FakeElement {
     return false;
   }
   closest(selector) {
-    let candidate = this;
-    while (candidate) {
+    for (let candidate = this; candidate; candidate = candidate.parentElement) {
       if (candidate.matches(selector)) return candidate;
-      candidate = candidate.parentElement;
     }
     return null;
   }
