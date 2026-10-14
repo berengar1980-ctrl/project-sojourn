@@ -48,7 +48,7 @@ export function pulseCombatTractor(
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: (repel ? 'TRAKTORABWEHR' : 'TRAKTORABFANGEN') + ' · Radialtempo um ' + impulse.toFixed(0) + ' m/s verändert',
+    detail: (repel ? 'TRAKTORIMPULS ABWEHR' : 'TRAKTORIMPULS ABFANGEN') + ' · Radialtempo um ' + impulse.toFixed(0) + ' m/s verändert',
   });
   runtime.lastEvent = ship.setup.name + ': TRAKTORIMPULS';
   ship.combatIntent = 'TRAKTORIMPULS';
