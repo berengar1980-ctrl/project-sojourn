@@ -1,3 +1,4 @@
+import { usefulRamAttempt } from './combat-ram-opportunity';
 import {
   chooseReactiveDecision,
   commitReactiveDecision,
@@ -46,27 +47,6 @@ function coverGoal(
     x: ship.position.x + direction.x * 240,
     y: ship.position.y + direction.y * 240,
   };
-}
-
-/** Ram only when our hull can absorb the contact and the target is vulnerable. */
-function usefulRamAttempt(
-  attacker: StrategicCombatRuntime['attacker'],
-  defender: StrategicCombatRuntime['defender']
-): boolean {
-  if (!attacker.setup.aiControlled || attacker.tactic === 'flee') return false;
-  if (attacker.subsystems.engine <= 0 || attacker.hullHp < attacker.hullMaxHp * 0.65)
-    return false;
-  if (attacker.shieldHp < attacker.shieldMaxHp * 0.35) return false;
-  const range = Math.hypot(
-    attacker.position.x - defender.position.x,
-    attacker.position.y - defender.position.y
-  );
-  return (
-    range >= 160 &&
-    range <= 850 &&
-    defender.hullHp < attacker.hullHp * 0.65 &&
-    defender.shieldHp < defender.shieldMaxHp * 0.3
-  );
 }
 
 export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExchange {
