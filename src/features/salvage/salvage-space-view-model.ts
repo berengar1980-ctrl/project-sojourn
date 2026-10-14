@@ -4,6 +4,7 @@ import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-com
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type {
   SalvageLocalSpaceSnapshot,
+  SalvageContainerVariant,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -36,6 +37,8 @@ export interface SalvageWreckView {
   readonly position: WorldPoint;
   readonly radius: number;
   readonly rotation: number;
+  readonly containerVariant?: SalvageContainerVariant;
+  readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
   readonly quality: number;
   readonly qualityLabel: string;
@@ -161,10 +164,18 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       id: wreck.id,
       name: wreck.name,
       kind: wreck.kind,
-      kindLabel: wreckKindLabel(wreck.kind),
+      kindLabel: wreck.containerVariant
+        ? {
+            standard: 'FRACHTCONTAINER',
+            damaged: 'BESCHÄDIGTER CONTAINER',
+            tank: 'TANKMODUL',
+          }[wreck.containerVariant]
+        : wreckKindLabel(wreck.kind),
       position: wreck.position,
       radius: wreck.radius,
       rotation: wreck.rotation,
+      ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
+      ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,
       quality: wreck.quality,
       qualityLabel: qualityLabel(wreck.quality),
