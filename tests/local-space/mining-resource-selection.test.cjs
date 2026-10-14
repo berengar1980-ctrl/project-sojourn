@@ -128,7 +128,26 @@ assert(first && second);
 assert.deepEqual([first.resourceId, second.resourceId], ['ferrite', 'sulfur']);
 assert.equal(dual.deposits[0].oreRemaining, 54);
 assert.equal(dual.deposits[1].oreRemaining, 54);
-assert.equal(dual.deposits[2].oreRemaining, 57);
+assert.equal(dual.deposits[2].oreRemaining, 54);
+
+const outer = asteroid();
+const firstOuter = mining.createMiningChunk(outer, ship, hardpoints, 80, 1, 0, 1, ['ferrite', 'silica']);
+const thirdOuter = mining.createMiningChunk(outer, ship, hardpoints, 80, 1, 1, 1, ['ferrite', 'silica']);
+assert.deepEqual([firstOuter?.resourceId, thirdOuter?.resourceId], ['ferrite', 'silica'],
+  'choosing deposits 1+3 must never mine deposit 2');
+assert.equal(outer.deposits[0].oreRemaining, 54);
+assert.equal(outer.deposits[2].oreRemaining, 54);
+assert.equal(outer.deposits[1].oreRemaining, 54,
+  'excluded deposit 2 must lose 50% of the total selected extraction (2 x 6t = 6t loss)');
+assert.equal(firstOuter?.amount + thirdOuter?.amount, 12,
+  'only selected deposits generate real cargo chunks');
+const allDeposits = asteroid();
+const allChunks = [0, 1, 2].map((i) =>
+  mining.createMiningChunk(allDeposits, ship, hardpoints, 80, 1, i, 1, null));
+assert.deepEqual(allChunks.map((entry) => entry?.resourceId),
+  ['ferrite', 'sulfur', 'silica'], 'ALLE must continue mining every available resource');
+assert.deepEqual(allDeposits.deposits.map((entry) => entry.oreRemaining),
+  [54, 54, 54], 'all-resource mode incurs no collateral loss');
 
 dual.deposits[0].oreRemaining = 0;
 dual.deposits[1].oreRemaining = 0;
