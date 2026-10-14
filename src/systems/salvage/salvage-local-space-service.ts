@@ -61,6 +61,9 @@ interface SalvageRuntimeOptions {
   readonly approachSpeed: number;
   readonly hardpoints?: ShipHardpoints;
   readonly shipLengthMeters?: number;
+  readonly scanAvailable?: boolean;
+  readonly sensorModifier?: number;
+  readonly sensorCrewSkill?: number;
 }
 
 function clampPoint(point: WorldPoint, width: number, height: number): WorldPoint {
@@ -149,6 +152,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       lastEventResolution: this.lastEventResolution,
       eventResolutionSerial: this.eventResolutionSerial,
       salvageAvailable: this.options.setup.available,
+      scanAvailable: this.options.scanAvailable ?? true,
       cargoCapacityTons: this.options.setup.cargoCapacityTons,
     };
   }
@@ -159,6 +163,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   }
 
   startLongRangeScan(): SalvageLocalSpaceSnapshot {
+    if (this.options.scanAvailable === false) return this.getSnapshot();
     if (this.longRangeScanElapsed === null) this.longRangeScanElapsed = 0;
     return this.getSnapshot();
   }
@@ -260,8 +265,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.longRangeScanElapsed += delta;
       if (this.longRangeScanElapsed >= 5) {
         const radius = longRangeScanRadius({
-          sensorModifier: 1,
-          crewSkill: this.options.crewSkill,
+          sensorModifier: this.options.sensorModifier ?? 1,
+          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
         });
         for (const wreck of this.options.field.wrecks) {
           if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
