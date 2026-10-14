@@ -9,8 +9,7 @@ export function toggleMiningResourceSelection(
     const next = current.filter((id) => id !== resourceId);
     return next.length > 0 ? next : null;
   }
-  if (current.length < 2) return [...current, resourceId];
-  return [current[1]!, resourceId];
+  return [...current, resourceId];
 }
 
 export class MiningResourceSelector {
@@ -35,7 +34,7 @@ export class MiningResourceSelector {
         ? asteroid.deposits.filter((entry) => entry.resourceId)
         : [];
 
-    if (!visible || !asteroid || deposits.length < 2) {
+    if (!visible || !asteroid || deposits.length < 1) {
       this.container.hidden = true;
       this.container.replaceChildren();
       return;
@@ -82,7 +81,7 @@ export class MiningResourceSelector {
     hint.textContent =
       this.selection === null
         ? 'ALLE VORKOMMEN WERDEN GEBORGEN'
-        : 'MAX. 2 · DRITTE AUSWAHL ERSETZT DIE ÄLTESTE · REST 50 % SCHWUND';
+        : 'FREIE KOMBINATION · NICHT GEWÄHLTE VORKOMMEN VERLIEREN 50 %';
 
     this.container.append(title, choices, hint);
   }
@@ -98,6 +97,10 @@ export class MiningResourceSelector {
     if (button.dataset.allResources === 'true') {
       this.selection = null;
       this.onChange(null);
+      this.container.querySelectorAll<HTMLButtonElement>('[data-resource-id]')
+        .forEach((choice) => choice.classList.remove('is-active'));
+      this.container.querySelector<HTMLButtonElement>('[data-all-resources]')
+        ?.classList.add('is-active');
       return;
     }
 
