@@ -64,7 +64,7 @@ export function interceptBrakeManeuver(
 ): TacticalManeuver | null {
   if (ship.tactic === 'flee' || ship.subsystems.engine <= 0) return null;
   const separation = Math.hypot(enemy.position.x - ship.position.x, enemy.position.y - ship.position.y);
-  if (separation > desiredRange * 1.05) return null;
+  if (separation > desiredRange * 1.05 || ship.strategy?.phase === 'align_weapons') return null;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
   if (Math.hypot(relativeX, relativeY) < 45) return null;
