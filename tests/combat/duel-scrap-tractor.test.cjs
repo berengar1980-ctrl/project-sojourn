@@ -213,7 +213,7 @@ assert(
   'PvP must reuse all existing salvage geometry, not draw generic rocks'
 );
 assert(
-  battlefield.includes('drawCombatScrap(context, {'),
+  /drawCombatScrap\s*\(\s*(?:this\.)?context\s*,/.test(battlefield),
   'tractor projectiles must render the captured 3D mesh during throw'
 );
 console.log(
