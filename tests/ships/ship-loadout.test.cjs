@@ -26,6 +26,18 @@ for (const ship of ships.getAllShipDefinitions()) {
   assert(stats);
   const weaponSlots = stats.weaponSlots;
   assert.equal(installed.weapon?.length, weaponSlots);
+  const starterGuns = (installed.weapon ?? []).filter(Boolean);
+  assert.equal(starterGuns.length, 1, ship.id + ' must start with exactly one usable gun');
+  assert.equal(installed.weapon?.[3], 'weapon1',
+    ship.id + ' must start with a 360-degree light pulse laser in turret slot 3');
+  assert(
+    (installed.weapon ?? []).every((id, index) => {
+      if (!id) return true;
+      const weapon = components.getShipComponent('weapon', id)?.weapon;
+      return Boolean(weapon && loadouts.fitsWeaponHardpoint(ship, index, weapon));
+    }),
+    ship.id + ' must never start with an incompatible weapon mount'
+  );
   for (const id of installed.weapon ?? []) {
     if (id) assert.equal(components.getShipComponent('weapon', id).tier, 1);
   }
