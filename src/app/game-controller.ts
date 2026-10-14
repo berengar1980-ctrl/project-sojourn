@@ -224,7 +224,22 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
         height: local.instance.height,
         attackerPosition: { ...local.instance.ship.position },
         defenderPosition: { ...target.position },
-        obstacles: local.instance.asteroids.map((asteroid) => ({
+        attackerHeadingRadians: local.instance.ship.headingRadians,
+        attackerVelocity: {
+          x: Math.cos(local.instance.ship.headingRadians) * local.instance.ship.speed,
+          y: Math.sin(local.instance.ship.headingRadians) * local.instance.ship.speed,
+        },
+        asteroids: local.instance.asteroids.map((asteroid) => ({
+          id: asteroid.id,
+          kind: asteroid.kind,
+          position: { ...asteroid.position },
+          velocity: { ...asteroid.physics.velocity },
+          angularVelocity: asteroid.physics.angularVelocity,
+          physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
+          radius: asteroid.radius,
+          rotation: asteroid.rotation,
+        })),
+        obstacles: local.instance.asteroids.filter((asteroid) => asteroid.kind === 'resource').map((asteroid) => ({
           id: asteroid.id,
           position: { ...asteroid.position },
           radius: asteroid.radius,
