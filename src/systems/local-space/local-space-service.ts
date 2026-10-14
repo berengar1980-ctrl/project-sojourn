@@ -143,8 +143,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   setMiningResourceSelection(resourceIds: MiningResourceSelection): LocalSpaceSnapshot {
-    if (this.miningPhase !== 'idle') return this.getSnapshot();
-    const asteroid = this.findAsteroid(this.selectedAsteroidId);
+    if (this.miningEvents.pending) return this.getSnapshot();
+    // Retargeting a live mining beam must work between extraction cycles.
+    // The mining runtime reads this per-asteroid selection on every new chunk.
+    const asteroid = this.findAsteroid(this.selectedAsteroidId ?? this.miningTargetId);
     if (!asteroid || asteroid.scanLevel !== 'analyzed') return this.getSnapshot();
     this.miningResources.setSelection(asteroid, resourceIds);
     return this.getSnapshot();
