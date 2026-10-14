@@ -1,4 +1,5 @@
 import { routeAroundDistressShip } from './distress-navigation';
+import { seededLocalGate } from '../../core/local-space-exit';
 import type {
   SalvageLocalPhase,
   SalvageLocalSpaceSnapshot,
@@ -100,7 +101,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     });
     this.events = createSalvageEventController(options.field.seed);
     this.ship = {
-      position: { x: options.field.width * 0.5, y: options.field.height * 0.5 },
+      position: seededLocalGate(options.field.width, options.field.height, options.field.seed),
       headingRadians: 0,
       speed: 0,
       turnRateRadiansPerSecond: 0,
