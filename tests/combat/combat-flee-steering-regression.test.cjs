@@ -37,6 +37,7 @@ const arena = {
   height: 1400,
   attackerPosition: { x: 700, y: 650 },
   defenderPosition: { x: 1190, y: 650 },
+  attackerHeadingRadians: Math.PI,
   exitPoint: { x: 120, y: 650 },
   // Obstacle is only between the escaping ship and its pursuer. The old
   // steering implementation mistakenly plotted around it toward the ENEMY.
@@ -57,6 +58,8 @@ assert.equal(frame.attacker.combatIntent, 'FLIEHEN',
   'maneuver labels must not replace a committed flee status');
 assert(frame.attacker.position.x < startX - 12,
   'fleeing ship must actually make progress toward the exit, away from enemy-side obstruction');
+assert(Math.cos(frame.attacker.headingRadians) < -0.3,
+  'fleeing ship must keep facing generally toward the exit, never the enemy detour');
 
 // Deliberately make escape appear hopeless. An operational engine must not
 // cause an autonomous flight order to turn back into an attack at second 16.
