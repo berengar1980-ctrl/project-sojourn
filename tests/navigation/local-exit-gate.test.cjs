@@ -18,8 +18,10 @@ assert.equal(playerAtLocalExit({ x: 1600, y: 950 }, 3200, 1900, 417), false);
 assert.equal(playerAtLocalExit(exit, 3200, 1900, 418), false);
 for (let seed = 1; seed <= 100; seed += 1) {
   const gate = localSpaceExitPoint(4400, 2570, seed);
-  assert(gate.x === 180 || gate.x === 4220 || gate.y === 180 || gate.y === 2390,
-    'seed ' + seed + ' must select a safe map edge');
+  assert(
+    gate.x === 180 || gate.x === 4220 || gate.y === 180 || gate.y === 2390,
+    'seed ' + seed + ' must select a safe map edge'
+  );
 }
 
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');

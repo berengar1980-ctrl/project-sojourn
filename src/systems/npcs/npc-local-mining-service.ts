@@ -52,14 +52,22 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
   ship.targetAsteroidId = null;
   ship.laserActive = false;
   ship.scanProgress = 0;
-  ship.exitPoint = seededLocalGate(runtime.options.width, runtime.options.height, runtime.options.seed ?? 0);
+  ship.exitPoint = seededLocalGate(
+    runtime.options.width,
+    runtime.options.height,
+    runtime.options.seed ?? 0
+  );
 }
 
 function syncArrivals(runtime: MinerRuntime): void {
   const active = new Set(runtime.ships.map((ship) => ship.npcId));
   for (const npc of runtime.options.miners) {
     if (active.has(npc.id) || !eligibleMiner(npc, runtime.options.locationId)) continue;
-    const entry = seededLocalGate(runtime.options.width, runtime.options.height, runtime.options.seed ?? 0);
+    const entry = seededLocalGate(
+      runtime.options.width,
+      runtime.options.height,
+      runtime.options.seed ?? 0
+    );
     runtime.ships.push({
       npcId: npc.id,
       name: npc.name,

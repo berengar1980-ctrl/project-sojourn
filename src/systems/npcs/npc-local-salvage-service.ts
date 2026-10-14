@@ -169,13 +169,21 @@ class LocalSalvageService implements NpcLocalSalvageService {
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
-    ship.exitPoint = seededLocalGate(this.options.field.width, this.options.field.height, this.options.field.seed);
+    ship.exitPoint = seededLocalGate(
+      this.options.field.width,
+      this.options.field.height,
+      this.options.field.seed
+    );
   };
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
       if (active.has(npc.id) || !eligible(npc, this.options.locationId)) continue;
-      const entry = seededLocalGate(this.options.field.width, this.options.field.height, this.options.field.seed);
+      const entry = seededLocalGate(
+        this.options.field.width,
+        this.options.field.height,
+        this.options.field.seed
+      );
       this.ships.push({
         npcId: npc.id,
         name: npc.name,

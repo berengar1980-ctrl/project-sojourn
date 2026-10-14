@@ -6,7 +6,12 @@ export function localSpaceExitPoint(width: number, height: number, seed = 0): Wo
   return seededLocalGate(width, height, seed);
 }
 
-export function playerAtLocalExit(position: WorldPoint, width: number, height: number, seed = 0): boolean {
+export function playerAtLocalExit(
+  position: WorldPoint,
+  width: number,
+  height: number,
+  seed = 0
+): boolean {
   const target = localSpaceExitPoint(width, height, seed);
   return Math.hypot(position.x - target.x, position.y - target.y) <= 150;
 }
@@ -20,7 +25,11 @@ export function drawLocalSpaceExitGate(
   sceneHeight: number,
   seed = 0
 ): void {
-  const point = camera.worldToScreen(localSpaceExitPoint(sceneWidth, sceneHeight, seed), width, height);
+  const point = camera.worldToScreen(
+    localSpaceExitPoint(sceneWidth, sceneHeight, seed),
+    width,
+    height
+  );
   context.save();
   context.lineWidth = 3;
   context.strokeStyle = '#70daff';
