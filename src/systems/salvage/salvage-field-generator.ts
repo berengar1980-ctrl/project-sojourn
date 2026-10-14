@@ -7,6 +7,8 @@ import type {
   SalvageContainerVariant,
   SalvageDebris,
   SalvageDebrisVariant,
+  SalvageSection,
+  SalvageSectionVariant,
 } from '../../core/salvage-types';
 import { seededLocalGate } from '../../core/local-space-exit';
 
@@ -130,10 +132,10 @@ export function generateSalvageField(
   ];
   const debris: SalvageDebris[] = [];
   const gate = seededLocalGate(width, height, seed);
-  const debrisCount = 8 + Math.floor(random() * 4);
+  const debrisCount = 125 + Math.floor(random() * 30);
   for (let index = 0; index < debrisCount; index += 1) {
     const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
-    const radius = 19 + random() * 23;
+    const radius = 7 + random() * 22;
     let position = { x: width / 2, y: height / 2 };
     for (let attempt = 0; attempt < 64; attempt += 1) {
       const candidate = {
@@ -173,8 +175,53 @@ export function generateSalvageField(
     });
   }
 
+  const sectionVariants: readonly SalvageSectionVariant[] = [
+    'corridor-complex', 'double-deck', 'engine-room', 'cargo-bay',
+    'crew-quarters', 'bridge', 'reactor-hall', 'medbay',
+  ];
+  const sections: SalvageSection[] = [];
+  // One of each large, open, multi-room 3D section is guaranteed per map.
+  const sectionCount = 8 + Math.floor(random() * 4);
+  for (let index = 0; index < sectionCount; index += 1) {
+    const variant = sectionVariants[index] ?? sectionVariants[Math.floor(random() * 8)]!;
+    const radius = 86 + random() * 46;
+    let position = { x: width / 2, y: height / 2 };
+    for (let attempt = 0; attempt < 140; attempt += 1) {
+      const candidate = {
+        x: radius + 90 + random() * (width - 2 * (radius + 90)),
+        y: radius + 90 + random() * (height - 2 * (radius + 90)),
+      };
+      if (Math.hypot(candidate.x - gate.x, candidate.y - gate.y) < radius + 170) continue;
+      if (wrecks.some((entry) =>
+        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
+          < radius + entry.radius + 36)) continue;
+      if (sections.some((entry) =>
+        Math.hypot(candidate.x - entry.position.x, candidate.y - entry.position.y)
+          < radius + entry.radius + 90)) continue;
+      position = candidate;
+      break;
+    }
+    const angle = random() * Math.PI * 2;
+    const drift = 0.2 + random() * 0.75;
+    sections.push({
+      id: `section-${seed}-${index}`,
+      variant,
+      position,
+      radius,
+      driftVelocity: { x: Math.cos(angle) * drift, y: Math.sin(angle) * drift },
+      rotation3d: { x: random() * 0.2, y: random() * 0.2, z: random() * Math.PI * 2 },
+      spin3d: {
+        x: 0.002 + random() * 0.006,
+        y: 0.002 + random() * 0.006,
+        z: 0.002 + random() * 0.008,
+      },
+      effectSeed: Math.floor(random() * 0x7fffffff),
+    });
+  }
+
   return {
     debris,
+    sections,
     id: `${sourceLocationId}-salvage-${seed}`,
     sourceLocationId,
     seed,
