@@ -1,4 +1,5 @@
 import { nativeMineDamage } from './combat-native-damage';
+import { usefulEscapeMine } from './combat-commitment';
 import type { ShipMineDefinition } from '../../core/combat-types';
 
 import type {
@@ -76,7 +77,11 @@ export function maybeDropRuntimeMine(
 ): void {
   source.mineCooldown = Math.max(0, source.mineCooldown - deltaSeconds);
   const range = distance(source.position, target.position);
-  const defensiveMine = source.tactic === 'flee' && range <= 640 && target.subsystems.engine > 0;
+  const defensiveMine =
+    source.tactic === 'flee' &&
+    range <= 640 &&
+    target.subsystems.engine > 0 &&
+    usefulEscapeMine(source, target, runtime.arena);
   // Armed AI ships can also deploy an opportunistic mine during a close pass.
   const tacticalMine =
     source.setup.aiControlled &&

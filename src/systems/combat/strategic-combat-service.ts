@@ -1,4 +1,5 @@
 import { reviewShipContact } from './combat-contact-review';
+import { reviewCombatCommitment } from './combat-commitment';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
@@ -41,6 +42,7 @@ import { maybeAttemptBoarding } from './combat-boarding-ai';
 import {
   recordCombatLog,
   reviewAndExecute,
+  recordCommitment,
   recordCombatMotion,
   reviewShieldBreakthroughs,
   reviewSubsystemBreakthroughs,
@@ -171,6 +173,23 @@ function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
     );
   }
 }
+function reviewExchangeCommitments(runtime: StrategicCombatRuntime): void {
+  const attackerDecision = reviewCombatCommitment(
+    runtime.attacker,
+    runtime.defender,
+    runtime.arena,
+    runtime.elapsedSeconds
+  );
+  const defenderDecision = reviewCombatCommitment(
+    runtime.defender,
+    runtime.attacker,
+    runtime.arena,
+    runtime.elapsedSeconds
+  );
+  if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
+  if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
+}
+
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -232,6 +251,7 @@ function tickStrategicCombat(
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
   if (actionState) {
+    reviewExchangeCommitments(runtime);
     tickActionExchange(runtime, actionState, dt);
   } else {
     reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
@@ -380,6 +400,7 @@ export function createStrategicCombatService(
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
       combatant.tactic = tactic;
+      combatant.combatTacticLocked = true;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
     tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),

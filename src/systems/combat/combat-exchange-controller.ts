@@ -199,6 +199,32 @@ function reactToCombatEvents(
   return event.goal;
 }
 
+function resolveExchangeFlightGoals(
+  runtime: StrategicCombatRuntime,
+  state: ActiveExchange,
+  initiator: StrategicCombatRuntime['attacker'],
+  opponent: StrategicCombatRuntime['defender'],
+  initiatorOverride: { x: number; y: number } | null,
+  opponentOverride: { x: number; y: number } | null
+): ExchangeFlightPlan {
+  if (!state.flight) throw new Error('Cannot fly without an exchange plan');
+  return {
+    ...state.flight,
+    initiatorGoal:
+      (initiator.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
+      initiatorOverride ??
+      coverGoal(initiator, opponent, runtime.arena) ??
+      exchangeTacticalGoal(initiator, opponent) ??
+      state.flight.initiatorGoal,
+    reactorGoal:
+      (opponent.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
+      opponentOverride ??
+      coverGoal(opponent, initiator, runtime.arena) ??
+      exchangeTacticalGoal(opponent, initiator) ??
+      state.flight.reactorGoal,
+  };
+}
+
 function flyExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -253,19 +279,14 @@ function flyExchange(
     opponent
   );
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
-  const flight = {
-    ...state.flight,
-    initiatorGoal:
-      initiatorOverride ??
-      coverGoal(initiator, opponent, runtime.arena) ??
-      exchangeTacticalGoal(initiator, opponent) ??
-      state.flight.initiatorGoal,
-    reactorGoal:
-      opponentOverride ??
-      coverGoal(opponent, initiator, runtime.arena) ??
-      exchangeTacticalGoal(opponent, initiator) ??
-      state.flight.reactorGoal,
-  };
+  const flight = resolveExchangeFlightGoals(
+    runtime,
+    state,
+    initiator,
+    opponent,
+    initiatorOverride,
+    opponentOverride
+  );
   pilotExchangeShip(
     initiator,
     'initiator',
@@ -273,7 +294,7 @@ function flyExchange(
     runtime.arena,
     dt,
     opponent,
-    next.action === 'frontal_pass'
+    next.action === 'frontal_pass' && initiator.tactic !== 'flee'
   );
   pilotExchangeShip(
     opponent,
