@@ -302,7 +302,10 @@ export function pilotExchangeShip(
   const distance = Math.hypot(dx, dy);
   // Accelerate on the navigation heading first. Only rotate into a firing
   // posture after the ship has established real forward momentum.
-  const navigationHeading = distance < 95 ? ship.headingRadians : Math.atan2(dy, dx);
+  const navigationHeading =
+    ship.tactic !== 'flee' && distance < 95
+      ? ship.headingRadians
+      : Math.atan2(dy, dx);
   const forwardVelocity =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
@@ -311,7 +314,7 @@ export function pilotExchangeShip(
   const facing = exchangeFacing(
     ship,
     opponent,
-    trackTarget,
+    trackTarget && ship.tactic !== 'flee',
     route,
     distance,
     forwardVelocity,
