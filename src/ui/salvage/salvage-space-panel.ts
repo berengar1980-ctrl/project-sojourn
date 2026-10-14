@@ -424,10 +424,10 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     ui.help.innerHTML = model.salvageAvailable
       ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
       : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
-    ui.longScanButton.disabled = model.longRangeScanProgress !== null;
+    ui.longScanButton.disabled = !model.scanAvailable || model.longRangeScanProgress !== null;
     ui.longScanButton.textContent = model.longRangeScanProgress !== null
       ? 'SCAN LÄUFT · ' + Math.round(model.longRangeScanProgress * 100) + ' %'
-      : 'LANGREICHWEITENSCAN';
+      : model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
     ui.cancelButton.hidden = model.phase === 'idle';
     const atExit = playerAtLocalExit(model.ship.position, model.width, model.height);
     ui.backButton.disabled =
