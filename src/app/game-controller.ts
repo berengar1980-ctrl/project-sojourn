@@ -1,4 +1,5 @@
 import { localMiningCombatArena } from './game-controller-combat';
+import { combatResultMessage } from './combat-result-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
@@ -336,6 +337,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     startCombatBoarding(context, snapshot, () => mountControllerStarMap(context));
     return;
   }
+  context.systemLog.write(combatResultMessage(snapshot));
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   if (state.embeddedCombat === 'local-space') {
     state.localSpace?.syncCombatPose(
