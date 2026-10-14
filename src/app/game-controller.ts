@@ -359,12 +359,12 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   } else {
     state.salvageScene?.finishCombat(snapshot);
   }
-  collectCombatCargo(context, snapshot);
+  const cargoRewards = collectCombatCargo(context, snapshot);
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
   showCampaignCombatSummary(context.root, snapshot, () => {
     if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
-  });
+  }, undefined, cargoRewards);
 }
 
 function handleControllerLocationEntry(
