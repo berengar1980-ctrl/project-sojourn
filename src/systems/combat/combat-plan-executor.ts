@@ -48,5 +48,8 @@ export function executeCombatPlan(
         : -Math.PI / 2
       : 0;
   const error = wrapAngle(bearing - ship.headingRadians - mountFacing);
-  return Math.abs(error) > 0.35 ? 'align_weapons' : 'fire';
+  // Weapon orientation also needs hysteresis: enter fire with good alignment,
+  // leave only after a noticeably larger error (not every tiny RCS correction).
+  const tolerance = plan.phase === 'fire' ? 0.52 : 0.29;
+  return Math.abs(error) > tolerance ? 'align_weapons' : 'fire';
 }
