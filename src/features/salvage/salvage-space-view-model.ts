@@ -120,6 +120,7 @@ export interface SalvageSpaceViewModel {
   readonly longRangeScanProgress: number | null;
   readonly activeResourceId: string | null;
   readonly salvageAvailable: boolean;
+  readonly scanAvailable: boolean;
   readonly cargoCapacityTons: number;
   readonly cargoUsedTons: number;
   readonly cargoResources: readonly SalvageCargoView[];
@@ -301,6 +302,7 @@ export function createSalvageSpaceViewModel(
     longRangeScanProgress: snapshot.longRangeScanProgress ?? null,
     activeResourceId: snapshot.activeResourceId,
     salvageAvailable: snapshot.salvageAvailable,
+    scanAvailable: snapshot.scanAvailable ?? true,
     cargoCapacityTons: snapshot.cargoCapacityTons,
     cargoUsedTons:
       cargoResources.reduce((sum, entry) => sum + entry.amount, 0) +
