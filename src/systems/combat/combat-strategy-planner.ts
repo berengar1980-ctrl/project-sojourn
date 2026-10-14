@@ -7,17 +7,30 @@ import type {
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
 
-function targetSubsystem(
+/** Disable the highest immediate threat before trying to destroy the hull. */
+export function targetSubsystem(
   ship: MutableCombatant,
   enemy: MutableCombatant
 ): 'hull' | 'tractor' | 'engine' {
-  if (enemy.tactic === 'flee' && enemy.subsystems.engine > 0) return 'engine';
+  if (enemy.subsystems.engine > 0) {
+    const relative = Math.hypot(
+      enemy.velocity.x - ship.velocity.x,
+      enemy.velocity.y - ship.velocity.y
+    );
+    if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35))
+      return 'engine';
+  }
+  const tractor = enemy.setup.tractorRangeMeters ?? 0;
+  const proximity = Math.hypot(
+    ship.position.x - enemy.position.x,
+    ship.position.y - enemy.position.y
+  );
   if (
-    ship.shieldHp <= 0 &&
     enemy.subsystems.tractor > 0 &&
-    (enemy.setup.tractorRangeMeters ?? 0) > 0
-  )
-    return 'tractor';
+    tractor > 0 &&
+    ship.shieldHp <= ship.shieldMaxHp * 0.2 &&
+    proximity < tractor * 1.4
+  ) return 'tractor';
   return 'hull';
 }
 
