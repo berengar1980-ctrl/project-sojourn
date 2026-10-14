@@ -464,10 +464,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
     const obstacles = this.options.field.wrecks
       .filter((wreck) => !wreck.containerVariant && !wreck.debrisVariant && !wreck.sectionVariant)
       .map((wreck) => ({
-      id: wreck.id,
-      position: wreck.position,
-      radius: wreck.radius,
-    }));
+        id: wreck.id,
+        position: wreck.position,
+        radius: wreck.radius,
+      }));
     for (const collision of resolveShipShieldObstacleCollisions(bodies, obstacles)) {
       if (collision.shipId === 'player') {
         this.options.onPlayerShieldContact?.(

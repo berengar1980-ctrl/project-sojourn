@@ -183,12 +183,12 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
         : wreck.debrisVariant
           ? 'SCHIFFSFRAGMENT'
           : wreck.containerVariant
-        ? {
-            standard: 'FRACHTCONTAINER',
-            damaged: 'BESCHÄDIGTER CONTAINER',
-            tank: 'TANKMODUL',
-          }[wreck.containerVariant]
-        : wreckKindLabel(wreck.kind),
+            ? {
+                standard: 'FRACHTCONTAINER',
+                damaged: 'BESCHÄDIGTER CONTAINER',
+                tank: 'TANKMODUL',
+              }[wreck.containerVariant]
+            : wreckKindLabel(wreck.kind),
       position: wreck.position,
       radius: wreck.radius,
       rotation: wreck.rotation,
@@ -201,7 +201,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       quality: wreck.quality,
       qualityLabel: qualityLabel(wreck.quality),
       inspected: wreck.inspected,
-      scanLevel: wreck.inspected ? 'analyzed' : wreck.scanLevel ?? 'unscanned',
+      scanLevel: wreck.inspected ? 'analyzed' : (wreck.scanLevel ?? 'unscanned'),
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
       componentSignal: wreck.inspected && wreck.component !== null,
       component:

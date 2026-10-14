@@ -15,10 +15,7 @@ export function canDockGrappledShips(
   );
   const hullRadius = (body: typeof source): number =>
     Math.max(20, body.setup.shieldGeometry?.radiusX ?? 45);
-  const couplingRange = Math.max(
-    90,
-    Math.min(104, hullRadius(source) + hullRadius(target) + 6)
-  );
+  const couplingRange = Math.max(90, Math.min(104, hullRadius(source) + hullRadius(target) + 6));
   const relativeSpeed = Math.hypot(
     source.velocity.x - target.velocity.x,
     source.velocity.y - target.velocity.y
