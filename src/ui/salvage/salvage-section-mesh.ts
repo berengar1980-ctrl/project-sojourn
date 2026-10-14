@@ -263,7 +263,7 @@ function tornRoof(m: ContainerMesh, variantIndex: number): void {
   ];
   panels.forEach((outline, panelIndex) => {
     const z = height + (panelIndex === 1 ? -0.12 : 0.05);
-    const shape: Vec3[] = outline.map(([x, y], i) => [
+    const shape: Vec3[] = outline.map(([x, y], i): Vec3 => [
       x * reversed + tilt * (panelIndex + 1),
       y + Math.sin(i * 2.7 + variantIndex) * 0.065,
       z + (i % 3) * 0.022,
