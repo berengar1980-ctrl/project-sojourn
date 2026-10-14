@@ -98,6 +98,16 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
   }
 
+  /** Preserve the complete instantaneous inertial velocity when entering combat. */
+  getShipWorldVelocity(): WorldPoint {
+    return localShipVelocity(this.instance.ship, {
+      miningPhase: this.miningPhase,
+      shipForwardVelocity: this.shipForwardVelocity,
+      shipLateralVelocity: this.shipLateralVelocity,
+      idleLateralVelocity: this.idleStationKeeping.lateralVelocity,
+    });
+  }
+
   getSnapshot(): LocalSpaceSnapshot {
     return {
       instance: this.instance,
