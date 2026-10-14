@@ -29,6 +29,10 @@ export function executeCombatPlan(
   const holdingFire = plan.phase === 'fire' || plan.phase === 'align_weapons';
   const tooFar = separation > range * (holdingFire ? 1.32 : 1.10);
   const tooNear = separation < range * (holdingFire ? 0.52 : 0.74);
+  // After a close-range overshoot, commit to a short regroup instead of
+  // immediately oscillating back into fire on the next frame.
+  if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
+  if (tooNear && plan.phase === 'fire') return 'regroup';
   if (tooFar || tooNear) return 'reach_range';
   if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
   if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
