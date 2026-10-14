@@ -210,11 +210,6 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
         position: { ...wreck.position },
         radius: wreck.radius,
       })),
-      ...(field.debris ?? []).map((part) => ({
-        id: part.id,
-        position: { ...part.position },
-        radius: part.radius,
-      })),
       ...(field.sections ?? []).map((section) => ({
         id: section.id,
         position: { ...section.position },
