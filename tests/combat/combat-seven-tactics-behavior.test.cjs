@@ -10,6 +10,8 @@ const executor = load('src/systems/combat/combat-plan-executor.ts');
 const cover = load('src/systems/combat/combat-asteroid-cover.ts');
 const tractor = load('src/systems/combat/combat-tractor-pulse.ts');
 const exchangeTactics = load('src/systems/combat/combat-exchange-tactics.ts');
+const geometry = load('src/systems/combat/strategic-combat-geometry.ts');
+const movement = load('src/systems/combat/strategic-combat-movement.ts');
 
 const ship = (x, y) => ({
   position: { x, y }, velocity: { x: 0, y: 0 },
@@ -89,6 +91,24 @@ assert.equal(executor.executeCombatPlan(first, second), 'regroup', 'disengage pe
 first.position.x = 360;
 assert.equal(executor.executeCombatPlan(first, second), 'fire', 'regroup rejoins the firing cycle');
 
+const space = { width: 2400, height: 1200, attackerPosition: { x: 700, y: 500 }, defenderPosition: { x: 1200, y: 500 } };
+const actorSetup = (id) => ({
+  id, name: id, shipId: 'patrol', shieldHp: 100, hullHp: 200, weapons: [],
+  hitChance: 0.7, dodgeChance: 0.1, damageMultiplier: 1, criticalChance: 0,
+  cycleTimeMultiplier: 1, aiControlled: true, combatSpeed: 120,
+  turnRateRadiansPerSecond: 1, accelerationMetersPerSecond2: 30,
+});
+for (const [facing, expected] of [['port', 1], ['starboard', -1]]) {
+  const orbitShip = geometry.createCombatant(actorSetup('orbit-' + facing), 'attacker', space);
+  const orbitTarget = geometry.createCombatant(actorSetup('target'), 'defender', space);
+  orbitShip.strategy = {
+    kind: 'broadside', focus: 'broadside', broadsideFacing: facing,
+    desiredRange: 500, score: 1, reason: 'side weapons',
+  };
+  movement.moveCombatant(orbitShip, orbitTarget, 'attacker', 0.08, space, []);
+  assert(orbitShip.headingRadians * expected > 0,
+    facing + ' orbit drives the actual ship rotation in the correct direction');
+}
 const pulseRuntime = () => ({
   elapsedSeconds: 2,
   combatLog: [],
