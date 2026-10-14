@@ -26,6 +26,8 @@ for (const ship of ships.getAllShipDefinitions()) {
   assert(stats);
   const weaponSlots = stats.weaponSlots;
   assert.equal(installed.weapon?.length, weaponSlots);
+  assert(components.calculateShipEnergy(installed).combatFree >= 0,
+    ship.id + ' must power its starting gun without overloading the Mk I reactor');
   const starterGuns = (installed.weapon ?? []).filter(Boolean);
   assert.equal(starterGuns.length, 1, ship.id + ' must start with exactly one usable gun');
   assert.equal(installed.weapon?.[3], 'weapon1',
