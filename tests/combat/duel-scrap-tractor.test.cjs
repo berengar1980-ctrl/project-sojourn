@@ -11,6 +11,10 @@ const { maybeLaunchTractorAsteroid, advanceThrownAsteroids } = loadStandaloneTyp
   root, 'src/systems/combat/combat-tractor-asteroid-throw.ts');
 const { nativeCombatAsteroids } = loadStandaloneTypeScriptModule(
   root, 'src/systems/combat/combat-asteroid-motion.ts');
+const scrapPresetSource = readModuleSource(root, 'src/systems/combat/duel-scrap-presets.ts');
+assert(scrapPresetSource.includes('Boolean(piece.sectionVariant)'),
+  'PvP path planning should route only around massive ship sections, not small movable scrap');
+
 
 for (const seed of [1, 53, 415, 9001]) {
   const moderate = createDuelArena('scrap_scattered', seed);
