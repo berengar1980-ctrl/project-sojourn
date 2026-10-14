@@ -32,6 +32,8 @@ export interface ShipWeaponProfile {
   readonly role: ShipWeaponRole;
   readonly shieldDamage: number;
   readonly hullDamage: number;
+  readonly combatShieldDamage?: number;
+  readonly combatHullDamage?: number;
   readonly rangeMeters: number;
   readonly cooldownSeconds: number;
   readonly heat: number;
