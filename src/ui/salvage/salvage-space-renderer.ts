@@ -503,7 +503,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
     this.shieldImpacts.draw(
       this.context,
-      this.model.combat?.attacker.shieldImpacts ?? [],
+      [...this.model.shieldImpacts, ...(this.model.combat?.attacker.shieldImpacts ?? [])],
       source,
       geometry
     );
