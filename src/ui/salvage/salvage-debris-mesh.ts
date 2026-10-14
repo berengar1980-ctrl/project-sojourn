@@ -11,17 +11,17 @@ import {
 // Eight distinct reusable 3D meshes: beams, torn plating, open floors, pipes,
 // doors and loose power conduits. Built once; instances only carry pose.
 const C = {
-  hull: [74, 87, 95],
-  plating: [125, 137, 136],
-  light: [157, 159, 151],
-  rib: [43, 55, 62],
-  dark: [20, 30, 37],
-  rust: [119, 75, 55],
-  brass: [159, 117, 64],
-  caution: [189, 139, 52],
-  cable: [130, 47, 37],
-  coolant: [50, 99, 137],
-  glass: [46, 84, 98],
+  hull: [54, 64, 70],
+  plating: [86, 96, 96],
+  light: [109, 115, 109],
+  rib: [31, 39, 44],
+  dark: [17, 23, 28],
+  rust: [90, 57, 44],
+  brass: [121, 88, 50],
+  caution: [151, 112, 45],
+  cable: [104, 37, 32],
+  coolant: [41, 78, 105],
+  glass: [38, 65, 75],
 } as const satisfies Record<string, Color>;
 
 type Point = readonly [number, number];
