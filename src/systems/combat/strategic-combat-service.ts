@@ -380,6 +380,7 @@ export function createStrategicCombatService(
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
       combatant.tactic = tactic;
+      combatant.combatTacticLocked = !combatant.setup.aiControlled;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
     tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),
