@@ -5,13 +5,14 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const service = read('src/systems/combat/strategic-combat-service.ts');
+const combatTelemetry = read('src/systems/combat/strategic-combat-telemetry.ts');
 const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const routing = read('src/systems/combat/combat-asteroid-routing.ts');
 const telemetry = read('src/systems/combat/combat-duel-telemetry.ts');
 assert(service.includes('reviewSubsystemBreakthroughs(runtime, previousSubsystems)'));
-assert(service.includes('damaged.subsystems.engine <= 0'));
-assert(service.includes('damaged.subsystems.tractor <= 0'));
-assert(service.includes('opponent.nextStrategyReviewAt = runtime.elapsedSeconds'));
+assert(combatTelemetry.includes('damaged.subsystems.engine <= 0'));
+assert(combatTelemetry.includes('damaged.subsystems.tractor <= 0'));
+assert(combatTelemetry.includes('opponent.nextStrategyReviewAt = runtime.elapsedSeconds'));
 assert(
   planner.includes('enemy.subsystems.engine <= 0 && ship.subsystems.engine > 0'),
   'weapons move into effective range after enemy engine loss'
