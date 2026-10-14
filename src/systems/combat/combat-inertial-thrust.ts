@@ -3,7 +3,7 @@ import type {
   StrategicCombatArenaOptions,
   CombatPoint,
 } from './strategic-combat-types';
-import { clamp } from './strategic-combat-geometry';
+import { clamp, EDGE_PADDING } from './strategic-combat-geometry';
 
 export function applyInertialThrust(
   combatant: MutableCombatant,
