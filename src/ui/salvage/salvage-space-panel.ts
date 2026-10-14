@@ -59,7 +59,7 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
 }
 
 function statusText(model: SalvageSpaceViewModel): string {
-  if (model.phase === 'navigating') return 'NAVIGATION IM WRACKFELD';
+  if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
   if (model.phase === 'approaching') return 'ANFLUG AUF BERGUNGSPOSITION';
   if (model.phase === 'inspecting') {
     return 'WRACKANALYSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
@@ -196,7 +196,7 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   if (!wreck) return;
 
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  if (kind) kind.textContent = 'WRACK';
+  if (kind) kind.textContent = wreck.containerVariant ? 'CONTAINER' : 'WRACK';
   ui.name.textContent = wreck.name;
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
   const busy =
@@ -253,7 +253,7 @@ function createRecoveryTracker(
     for (const wreck of model.wrecks) {
       if (!wreck.inspected || inspected.has(wreck.id)) continue;
       inspected.add(wreck.id);
-      options.log.write('BERGUNG > WRACKANALYSE ABGESCHLOSSEN: ' + wreck.name.toUpperCase());
+      options.log.write('BERGUNG > ANALYSE ABGESCHLOSSEN: ' + wreck.name.toUpperCase());
       changed = true;
     }
 
