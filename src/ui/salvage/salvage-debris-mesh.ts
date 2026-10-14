@@ -314,7 +314,7 @@ const compact = {
 
 function effects(
   context: CanvasRenderingContext2D,
-  part: SalvageDebris,
+  part: Pick<SalvageDebris, 'variant' | 'rotation3d' | 'effectSeed'>,
   radius: number,
   timeSeconds: number
 ): void {
@@ -365,7 +365,7 @@ function effects(
 
 export function drawSalvageDebris3d(
   context: CanvasRenderingContext2D,
-  part: SalvageDebris,
+  part: Pick<SalvageDebris, 'variant' | 'rotation3d' | 'effectSeed'>,
   radius: number,
   timeSeconds: number
 ): void {
