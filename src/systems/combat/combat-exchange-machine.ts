@@ -89,7 +89,8 @@ function chooseAction(
     return {
       action,
       score:
-        weaponScore + (action === 'frontal_pass' && context.ramOpportunity ? 24 : 0) -
+        weaponScore +
+        (action === 'frontal_pass' && context.ramOpportunity ? 24 : 0) -
         (action === previous ? 100 : 0) -
         (action === beforePrevious ? 50 : 0),
     };

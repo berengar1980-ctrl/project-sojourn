@@ -8,14 +8,27 @@ const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   'src/systems/combat/strategic-combat-service.ts'
 );
 const ship = (id, shieldHp = 100, hullHp = 200) => ({
-  id, name: id, shipId: 'patrol', shieldHp, hullHp, weapons: [],
-  mines: [], hitChance: 0.7, dodgeChance: 0.1,
-  damageMultiplier: 1, criticalChance: 0, cycleTimeMultiplier: 1,
-  aiControlled: true, preferredTactic: 'fight', combatSpeed: 120,
-  accelerationMetersPerSecond2: 25, turnRateRadiansPerSecond: 1,
+  id,
+  name: id,
+  shipId: 'patrol',
+  shieldHp,
+  hullHp,
+  weapons: [],
+  mines: [],
+  hitChance: 0.7,
+  dodgeChance: 0.1,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  aiControlled: true,
+  preferredTactic: 'fight',
+  combatSpeed: 120,
+  accelerationMetersPerSecond2: 25,
+  turnRateRadiansPerSecond: 1,
 });
 const arena = (distance) => ({
-  width: 3200, height: 1800,
+  width: 3200,
+  height: 1800,
   attackerPosition: { x: 700, y: 900 },
   defenderPosition: { x: 700 + distance, y: 900 },
   obstacles: [],

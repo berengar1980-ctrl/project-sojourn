@@ -236,7 +236,9 @@ function flyExchange(
     opponent.tactic === 'flee' && runtime.arena.exitPoint
       ? runtime.arena.exitPoint
       : state.flight.reactorGoal,
-    next.reaction === 'pursue' || next.reaction === 'accelerate_clear' || next.reaction === 'break_contact',
+    next.reaction === 'pursue' ||
+      next.reaction === 'accelerate_clear' ||
+      next.reaction === 'break_contact',
     separation,
     remaining
   );
@@ -252,8 +254,12 @@ function flyExchange(
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
   const flight = {
     ...state.flight,
-    initiatorGoal: initiatorOverride ?? coverGoal(initiator, opponent, runtime.arena) ?? state.flight.initiatorGoal,
-    reactorGoal: opponentOverride ?? coverGoal(opponent, initiator, runtime.arena) ?? state.flight.reactorGoal,
+    initiatorGoal:
+      initiatorOverride ??
+      coverGoal(initiator, opponent, runtime.arena) ??
+      state.flight.initiatorGoal,
+    reactorGoal:
+      opponentOverride ?? coverGoal(opponent, initiator, runtime.arena) ?? state.flight.reactorGoal,
   };
   pilotExchangeShip(
     initiator,
@@ -332,10 +338,7 @@ export function tickActionExchange(
     combatRouteHeading(opponent, state.flight.reactorGoal, runtime.arena, 0);
     state.attackerHp = runtime.attacker.shieldHp + runtime.attacker.hullHp;
     state.defenderHp = runtime.defender.shieldHp + runtime.defender.hullHp;
-    runtime.lastEvent =
-      (state.deliberateRam ? 'RAMMVERSUCH' : next.action) +
-      ' / ' +
-      next.reaction;
+    runtime.lastEvent = (state.deliberateRam ? 'RAMMVERSUCH' : next.action) + ' / ' + next.reaction;
     runtime.combatLog.push({
       timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
       side: next.initiative,

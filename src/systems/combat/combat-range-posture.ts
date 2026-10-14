@@ -41,4 +41,3 @@ export function combatRangePosture(
   }
   return { direction: toward, targetSpeedFactor: 0.88 };
 }
-

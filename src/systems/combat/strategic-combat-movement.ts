@@ -199,8 +199,12 @@ function applyInertialThrust(
   const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const fraction = Math.min(
     1,
-    (acceleration * (boosted ? 1 + 2.5 * Math.min(1, (combatant.boostRampSeconds ?? 0) / 2) : 1) *
-      (rcsStrafe ? 0.4 : 1) * (slowing ? 1.35 : 1) * dt) / Math.max(0.001, change)
+    (acceleration *
+      (boosted ? 1 + 2.5 * Math.min(1, (combatant.boostRampSeconds ?? 0) / 2) : 1) *
+      (rcsStrafe ? 0.4 : 1) *
+      (slowing ? 1.35 : 1) *
+      dt) /
+      Math.max(0.001, change)
   );
   combatant.velocity.x += dx * fraction;
   combatant.velocity.y += dy * fraction;
