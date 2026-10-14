@@ -68,4 +68,20 @@ assert.equal(usefulEscapeMine(runner, hunter, arena), false, 'no mine on off-axi
 hunter.position.y = 500;
 hunter.velocity.x = 130;
 assert.equal(usefulEscapeMine(runner, hunter, arena), false, 'no mine on pursuer moving away');
+// Reproducible 100-condition matrix: no immediate fight/flee oscillation.
+for (let seed = 1; seed <= 100; seed += 1) {
+  const fighter = ship('freighter-' + seed, 700 + seed % 40);
+  const threat = ship('pirate-' + seed, 1280, pirate.setup.weapons);
+  fighter.setup.shipId = 'freighter';
+  fighter.shieldHp = 30 + seed % 70;
+  fighter.hullHp = 40 + seed % 60;
+  fighter.nextStrategyReviewAt = seed % 2 === 0 ? 0 : 4;
+  const firstAt = fighter.nextStrategyReviewAt;
+  reviewCombatCommitment(fighter, threat, arena, firstAt);
+  const initialTactic = fighter.tactic;
+  for (let elapsed = firstAt + 1; elapsed < firstAt + 8; elapsed += 1)
+    reviewCombatCommitment(fighter, threat, arena, elapsed);
+  assert.equal(fighter.tactic, initialTactic,
+    'seed ' + seed + ': combat commitment cannot oscillate between eight-second reviews');
+}
 console.log('PASS combat confidence, retreat commitment, escape feasibility and rear-guard mine geometry');
