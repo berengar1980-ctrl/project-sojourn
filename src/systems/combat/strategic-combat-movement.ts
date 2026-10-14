@@ -251,6 +251,8 @@ function choosePlanDirection(
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
   }
+  if (combatant.strategy?.phase === 'regroup' && combatant.tactic !== 'flee')
+    return { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.7 };
   const tactical =
     pursuitManeuver(combatant, enemy) ??
     mineBaitManeuver(combatant, enemy) ??
