@@ -339,7 +339,8 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
         snapshot.defender.speed
       );
     }
-    startCombatBoarding(context, snapshot, () => {
+    startCombatBoarding(context, snapshot, (boardingOutcome) => {
+      if (boardingOutcome === 'enemy_win') return mountControllerStarMap(context);
       if (origin === 'local-space') mountControllerMining(context, true, true);
       else if (origin === 'salvage-space')
         mountControllerSalvage(context, true, preservedSalvageField, snapshot);
