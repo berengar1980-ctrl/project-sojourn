@@ -53,6 +53,15 @@ const FLIGHT_SPEED = 82;
 const SCAN_SECONDS = 5;
 const BASE_CYCLE_SECONDS = 1.4;
 
+function hashId(id: string): number {
+  let hash = 2166136261;
+  for (const char of id) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 function moveToward(
   ship: LocalNpcSalvagerState,
   target: WorldPoint,
