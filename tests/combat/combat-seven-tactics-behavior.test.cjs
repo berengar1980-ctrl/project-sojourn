@@ -12,6 +12,7 @@ const tractor = load('src/systems/combat/combat-tractor-pulse.ts');
 const exchangeTactics = load('src/systems/combat/combat-exchange-tactics.ts');
 const geometry = load('src/systems/combat/strategic-combat-geometry.ts');
 const movement = load('src/systems/combat/strategic-combat-movement.ts');
+const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
 
 const ship = (x, y) => ({
   position: { x, y }, velocity: { x: 0, y: 0 },
@@ -108,6 +109,23 @@ for (const [facing, expected] of [['port', 1], ['starboard', -1]]) {
   movement.moveCombatant(orbitShip, orbitTarget, 'attacker', 0.08, space, []);
   assert(orbitShip.headingRadians * expected > 0,
     facing + ' orbit drives the actual ship rotation in the correct direction');
+}
+for (const lateralSpeed of [80, -80]) {
+  const chase = createStrategicCombatService(
+    { ...actorSetup('pursuer'), preferredTactic: 'fight' },
+    { ...actorSetup('evader'), preferredTactic: 'flee' },
+    202,
+    {
+      width: 2500, height: 1200,
+      attackerPosition: { x: 500, y: 600 },
+      defenderPosition: { x: 1200, y: 600 },
+      defenderVelocity: { x: 0, y: lateralSpeed },
+      exitPoint: { x: 2300, y: 600 },
+    }
+  );
+  const oneFrame = chase.tick(0.08);
+  assert(oneFrame.attacker.headingRadians * lateralSpeed > 0,
+    'real pursuer adjusts heading towards the moving target lead');
 }
 const pulseRuntime = () => ({
   elapsedSeconds: 2,
