@@ -47,6 +47,7 @@ export interface NpcLocalSalvageOptions {
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly playerShip?: ShipDefinition;
   readonly getPlayerShipState?: () => LocalShipState;
+  readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
 
 const APPROACH_DISTANCE = 120;
@@ -448,7 +449,16 @@ class LocalSalvageService implements NpcLocalSalvageService {
         pushWeight: 2.4,
       });
     }
-    resolveShipShieldCollisions(bodies);
+    for (const contact of resolveShipShieldCollisions(bodies)) {
+      if (contact.firstId === 'player') {
+        this.options.onPlayerShieldContact?.(contact.normal, contact.closingDistance);
+      } else if (contact.secondId === 'player') {
+        this.options.onPlayerShieldContact?.(
+          { x: -contact.normal.x, y: -contact.normal.y },
+          contact.closingDistance
+        );
+      }
+    }
     // Only distress-rescue ships remain fixed obstacles. All drift objects use
     // the same impulse-based asteroid shield physics instead of acting as walls.
     const obstacles = this.options.field.wrecks
