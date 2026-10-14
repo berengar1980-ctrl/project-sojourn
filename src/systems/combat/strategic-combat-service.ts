@@ -1,4 +1,5 @@
 import { reviewShipContact } from './combat-contact-review';
+import { describeCombatIntent, updateCombatIntent } from './combat-intent-labels';
 import { reviewCombatCommitment } from './combat-commitment';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
@@ -402,6 +403,12 @@ export function createStrategicCombatService(
       const combatant = runtimeCombatant(runtime, side);
       combatant.tactic = tactic;
       combatant.combatTacticLocked = true;
+      // A player order is immediate: do not keep an obsolete combat maneuver
+      // or a stale status while waiting for the next eight-second AI review.
+      combatant.strategy = null;
+      combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
+      combatant.lastCombatIntentChangeAt = runtime.elapsedSeconds - 2;
+      updateCombatIntent(combatant, describeCombatIntent(combatant), runtime.elapsedSeconds);
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
     tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),
