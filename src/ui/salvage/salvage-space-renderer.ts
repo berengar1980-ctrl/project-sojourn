@@ -330,7 +330,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     return { id: wreck.id, point, radius: hitRadius };
   }
-  protected drawLongRangeSalvageScan(width: number, height: number, timeSeconds: number): void {
+  protected drawLongRangeSalvageScan(width: number, height: number, _timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
     const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
