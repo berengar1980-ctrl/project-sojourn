@@ -1,14 +1,21 @@
 import { generateMiningSpace } from '../local-space/local-space-generator';
+import { createScrapDuelArena } from './duel-scrap-presets';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 
-export type DuelMapKind = 'empty' | 'scattered' | 'asteroid_field';
+export type DuelMapKind =
+  | 'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field';
 export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
   { id: 'empty', title: 'Leerer Raum' },
   { id: 'scattered', title: 'Einzelne Asteroiden · klein und groß' },
   { id: 'asteroid_field', title: 'Dichtes Asteroidenfeld' },
+  { id: 'scrap_scattered', title: 'Schrottfeld · moderat' },
+  { id: 'scrap_field', title: 'Schrottfeld · dicht' },
 ];
 
 export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
+  if (kind === 'scrap_scattered' || kind === 'scrap_field') {
+    return createScrapDuelArena(kind === 'scrap_field' ? 'dense' : 'moderate', seed);
+  }
   const width = kind === 'asteroid_field' ? 3000 : 4200;
   const height = kind === 'asteroid_field' ? 1900 : 2600;
   if (kind === 'empty') return { width, height, obstacles: [], asteroids: [] };
