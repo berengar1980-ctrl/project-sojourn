@@ -368,6 +368,66 @@ function applyMineAvoidance(direction: CombatPoint, avoidance: CombatPoint | nul
   return normalize(direction.x + avoidance.x * 2, direction.y + avoidance.y * 2);
 }
 
+function steerCombatRoute(
+  combatant: MutableCombatant,
+  enemy: MutableCombatant,
+  side: StrategicCombatSide,
+  deltaSeconds: number,
+  arena: StrategicCombatArenaOptions,
+  activeMines: readonly MutableMine[],
+  toward: CombatPoint,
+  deliberateRam: boolean,
+  posture: { direction: CombatPoint; targetSpeedFactor: number }
+): {
+  direction: CombatPoint;
+  targetSpeedFactor: number;
+  clear: boolean;
+  canAim: boolean;
+} {
+  let { direction, targetSpeedFactor } = posture;
+  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
+  const evasion = deliberateRam
+    ? null
+    : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
+  if (evasion) {
+    direction = evasion.direction;
+    targetSpeedFactor = evasion.speedFactor;
+  }
+
+  if (deliberateRam) {
+    direction = toward;
+    targetSpeedFactor = 1;
+    combatant.combatIntent = 'RAMMEN';
+  }
+  const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
+  const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
+  direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
+  const obstacle = obstacleAvoidance(combatant, arena);
+  if (obstacle) {
+    direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
+  }
+
+  const boundary = arenaBoundaryAvoidance(combatant, arena);
+  if (boundary && combatant.tactic !== 'flee') {
+    const steeringWeight = 1.8 + boundary.strength * 4.2;
+    direction = normalize(
+      direction.x + boundary.x * steeringWeight,
+      direction.y + boundary.y * steeringWeight
+    );
+    targetSpeedFactor = Math.min(
+      targetSpeedFactor,
+      Math.max(0.38, 0.76 - boundary.strength * 0.34)
+    );
+  }
+
+  return {
+    direction,
+    targetSpeedFactor,
+    clear: !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
+    canAim: !mineAvoidance && !obstacle && !boundary,
+  };
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -404,45 +464,24 @@ export function moveCombatant(
     perpendicular
   );
 
-  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
-  const evasion = deliberateRam
-    ? null
-    : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
-  if (evasion) {
-    direction = evasion.direction;
-    targetSpeedFactor = evasion.speedFactor;
-  }
-
-  if (deliberateRam) {
-    direction = toward;
-    targetSpeedFactor = 1;
-    combatant.combatIntent = 'RAMMEN';
-  }
-  const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
-  direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
-  const obstacle = obstacleAvoidance(combatant, arena);
-  if (obstacle) {
-    direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
-  }
-
-  const boundary = arenaBoundaryAvoidance(combatant, arena);
-  if (boundary && combatant.tactic !== 'flee') {
-    const steeringWeight = 1.8 + boundary.strength * 4.2;
-    direction = normalize(
-      direction.x + boundary.x * steeringWeight,
-      direction.y + boundary.y * steeringWeight
-    );
-    targetSpeedFactor = Math.min(
-      targetSpeedFactor,
-      Math.max(0.38, 0.76 - boundary.strength * 0.34)
-    );
-  }
+  const steering = steerCombatRoute(
+    combatant,
+    enemy,
+    side,
+    deltaSeconds,
+    arena,
+    activeMines,
+    toward,
+    deliberateRam,
+    { direction, targetSpeedFactor }
+  );
+  direction = steering.direction;
+  targetSpeedFactor = steering.targetSpeedFactor;
 
   // Aim the broadside independently of translation. Steering the engines along
   // the broadside heading made both ships orbit indefinitely without firing.
   const gunHeading =
-    !deliberateRam && !mineAvoidance && !obstacle && !boundary
+    !deliberateRam && steering.canAim
       ? broadsideSteering(combatant, enemy, range, dx, dy)
       : null;
   if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
@@ -457,7 +496,7 @@ export function moveCombatant(
     desired,
     targetSpeedFactor,
     deliberateRam,
-    !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
+    steering.clear,
     deltaSeconds
   );
   performCombatThrust(
