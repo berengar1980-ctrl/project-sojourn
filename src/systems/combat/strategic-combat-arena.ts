@@ -9,14 +9,8 @@ import {
   distance,
 } from './strategic-combat-geometry';
 
-function createArenaOptions(
-  arenaOptions?: StrategicCombatArenaOptions
-): StrategicCombatArenaOptions {
-  const arena: StrategicCombatArenaOptions = {
-    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
-    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
-    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
-    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+function initialCombatMotion(arenaOptions?: StrategicCombatArenaOptions) {
+  return {
     ...(arenaOptions?.attackerVelocity ? { attackerVelocity: arenaOptions.attackerVelocity } : {}),
     ...(arenaOptions?.defenderVelocity ? { defenderVelocity: arenaOptions.defenderVelocity } : {}),
     ...(arenaOptions?.attackerHeadingRadians !== undefined
@@ -25,6 +19,18 @@ function createArenaOptions(
     ...(arenaOptions?.defenderHeadingRadians !== undefined
       ? { defenderHeadingRadians: arenaOptions.defenderHeadingRadians }
       : {}),
+  };
+}
+
+function createArenaOptions(
+  arenaOptions?: StrategicCombatArenaOptions
+): StrategicCombatArenaOptions {
+  const arena: StrategicCombatArenaOptions = {
+    width: Math.max(800, arenaOptions?.width ?? DEFAULT_ARENA_WIDTH),
+    height: Math.max(600, arenaOptions?.height ?? DEFAULT_ARENA_HEIGHT),
+    ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
+    ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
+    ...initialCombatMotion(arenaOptions),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };
