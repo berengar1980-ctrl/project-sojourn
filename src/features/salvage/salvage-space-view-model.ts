@@ -5,6 +5,7 @@ import type { PlayerEconomyState } from '../../core/economy-types';
 import type {
   SalvageLocalSpaceSnapshot,
   SalvageContainerVariant,
+  SalvageDebris,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -102,6 +103,7 @@ export interface SalvageSpaceViewModel {
   readonly ship: SalvageShipView;
   readonly npcShips: readonly SalvageNpcShipView[];
   readonly wrecks: readonly SalvageWreckView[];
+  readonly debris: readonly SalvageDebris[];
   readonly selectedWreck: SalvageWreckView | null;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
@@ -272,6 +274,7 @@ export function createSalvageSpaceViewModel(
     ship: shipView(snapshot, ship, combat),
     npcShips: npcShipViews(npcShips, selectedNpcId, combat),
     wrecks,
+    debris: snapshot.field.debris ?? [],
     selectedWreck: wrecks.find((wreck) => wreck.isSelected) ?? null,
     navigationTarget: snapshot.navigationTarget,
     navigationRoute: snapshot.navigationRoute,
