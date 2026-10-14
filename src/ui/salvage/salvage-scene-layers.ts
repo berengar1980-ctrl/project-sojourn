@@ -1,5 +1,6 @@
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import { drawTractorThrows } from '../combat/combat-tractor-throw-renderer';
+import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -246,7 +247,21 @@ export abstract class SalvageSceneLayers {
       this.context,
       combat.thrownAsteroids,
       this.camera.scale(1),
-      (point) => this.camera.worldToScreen(point, width, height)
+      (point) => this.camera.worldToScreen(point, width, height),
+      (context, rock, radius) => {
+        const scrap = this.model.debris.find((part) => part.id === rock.asteroidId);
+        if (!scrap) return false;
+        drawSalvageDebris3d(
+          context,
+          {
+            ...scrap,
+            rotation3d: { ...scrap.rotation3d, z: scrap.rotation3d.z + rock.ageSeconds * 4 },
+          },
+          radius,
+          rock.ageSeconds
+        );
+        return true;
+      }
     );
 
     for (const projectile of combat.projectiles) {
