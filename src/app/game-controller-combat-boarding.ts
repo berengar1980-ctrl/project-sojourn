@@ -1,4 +1,4 @@
-import { combatResultMessage } from './combat-result-summary';
+import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
