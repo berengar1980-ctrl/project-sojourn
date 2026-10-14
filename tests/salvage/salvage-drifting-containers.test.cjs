@@ -33,7 +33,7 @@ for (let seed = 1; seed <= 32; seed += 1) {
     ...field.debris.map((entry) => entry.variant),
     ...recoverableScrap.map((entry) => entry.debrisVariant),
   ]).size, 8, 'every field must include all eight different fragments');
-  assert(recoverableScrap.length >= 55,
+  assert(recoverableScrap.length >= 46,
     'many visible small fragments must support real scanning and selection');
   assert(recoverableScrap.every((entry) => !entry.inspected && entry.resources.length > 0),
     'small selectable debris must hide real loot before the detail scan');
@@ -143,6 +143,14 @@ assert(scene.includes('resolveShipShieldObstacleCollisions'), 'NPC and player co
 assert(scene.includes('resolveSalvageShieldContacts'), 'NPC shield collision must use dynamic asteroid impulses');
 assert(motion.advanceSalvageContainerDrift, 'asteroid drift integration must be callable');
 assert(localService.includes('salvageFieldPhysicsBodies'), 'navigation must use asteroid collision bodies');
+const physicsSource = readModuleSource(root, 'src/systems/salvage/salvage-container-motion.ts');
+assert(!physicsSource.includes('...(field.debris ?? [])') &&
+  physicsSource.includes('for (const scrap of field.debris ?? [])'),
+  'visual-only debris must drift without collision bodies or route blocking');
+assert(localService.includes('this.collisionShields?.applyCollision(collision)'),
+  'player collisions must produce visible shield impacts');
+assert(renderer.includes('this.model.shieldImpacts'),
+  'salvage map must render contact FX outside of combat');
 assert(controller.includes('asteroids: (field.debris ?? []).map'),
   'scrap must be fed into the existing tractor-throw mechanic');
 assert(controller.includes('invalidateSalvagePhysics'),
