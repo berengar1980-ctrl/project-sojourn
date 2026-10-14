@@ -73,6 +73,11 @@ function queueTractorThrow(
   runtime.thrownAsteroids.push({
     owner: side,
     asteroidId: rock?.id ?? 'mine-' + mine!.id,
+    ...(rock?.debrisVariant ? { debrisVariant: rock.debrisVariant } : {}),
+    ...(rock?.sectionVariant ? { sectionVariant: rock.sectionVariant } : {}),
+    ...(rock?.containerVariant ? { containerVariant: rock.containerVariant } : {}),
+    ...(rock?.rotation3d ? { rotation3d: { ...rock.rotation3d } } : {}),
+    ...(rock?.effectSeed !== undefined ? { effectSeed: rock.effectSeed } : {}),
     ...(mine ? { mineDefinition: mine.definition } : {}),
     position: { ...position },
     radius: rock?.radius ?? 9,
@@ -107,7 +112,9 @@ export function maybeLaunchTractorAsteroid(
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
   runtime.lastEvent =
-    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' : ': TRAKTOR ERFASST ASTEROID');
+    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' :
+      rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+        ? ': TRAKTOR ERFASST SCHROTT' : ': TRAKTOR ERFASST ASTEROID');
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
