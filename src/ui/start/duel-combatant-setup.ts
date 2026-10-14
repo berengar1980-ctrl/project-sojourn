@@ -1,6 +1,6 @@
+import { combatEquippedWeapons, combatWeaponMounts } from '../../systems/combat/combat-loadout-mounts';
 import {
   getShipComponent,
-  fitsWeaponHardpoint,
   resolveShipCombatMovementStats,
   shipHullMaxHp,
   shipShieldMaxHp,
@@ -30,29 +30,8 @@ export function duelCombatant(
   ship: ShipDefinition
 ): StrategicCombatantSetup {
   const points = ship.sprite.hardpoints;
-  const scale = ship.nominalLengthMeters / points.sourceWidth;
-  const equipped = draft.weapons.flatMap((id, slotIndex) => {
-    const component = getShipComponent('weapon', id);
-    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
-      ? [{ component, slotIndex }]
-      : [];
-  });
-  const mounts = equipped.flatMap((entry, slotIndex) => {
-    const mount = points.weaponMounts?.find((point) => point.slotIndex === entry.slotIndex);
-    return mount
-      ? [
-          {
-            slotIndex,
-            x: (mount.x - points.pivot.x) * scale,
-            y: (mount.y - points.pivot.y) * scale,
-            facing: mount.facing,
-            ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-            ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-            ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-          },
-        ]
-      : [];
-  });
+  const equipped = combatEquippedWeapons(ship, draft.weapons);
+  const mounts = combatWeaponMounts(ship, equipped);
   const crew = crewDefinitionById(draft.crewId);
   const pilotSkill = crew?.skills.piloting ?? 50;
   const weaponSkill = crew?.skills.weapons ?? 50;
