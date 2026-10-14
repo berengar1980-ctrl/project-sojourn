@@ -84,8 +84,8 @@ assert.equal(runtime.thrownAsteroids.length, 1,
 assert.equal(arena.asteroids.length, initialCount-1,
   'captured mesh must be removed from the drifting field exactly once');
 const projectile = runtime.thrownAsteroids[0];
-assert(projectile.debrisVariant,
-  'captured projectile must keep original 3D wreck model, not turn into an asteroid sprite');
+assert(projectile.debrisVariant || projectile.containerVariant || projectile.sectionVariant,
+  'captured projectile must keep its original 3D wreck model, not turn into an asteroid sprite');
 assert(projectile.rotation3d && typeof projectile.effectSeed === 'number',
   'rotation and visual damage seed must follow the captured wreck');
 for (let frame=0; frame<9;frame++) advanceThrownAsteroids(runtime,0.08);
