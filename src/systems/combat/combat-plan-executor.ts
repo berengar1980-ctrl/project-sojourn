@@ -24,9 +24,14 @@ export function executeCombatPlan(
   if (!plan) return 'regroup';
   const separation = distance(ship.position, enemy.position);
   const range = plan.desiredRange;
+  // Maintain a stable range band: approach, align, fire, then reposition.
   const tooFar = separation > range * 1.2;
   const tooNear = separation < range * 0.62;
+  if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
+  if (tooNear && plan.phase === 'fire') return 'regroup';
   if (tooFar || tooNear) return 'reach_range';
+  if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
+  if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
   if (plan.focus === 'turret' || plan.focus === 'mine') return 'fire';
   const bearing = Math.atan2(
     enemy.position.y - ship.position.y,

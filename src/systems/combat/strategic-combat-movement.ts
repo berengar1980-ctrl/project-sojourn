@@ -5,6 +5,12 @@ import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { combatRangePosture } from './combat-range-posture';
+import {
+  pursuitManeuver,
+  mineBaitManeuver,
+  broadsideOrbitManeuver,
+  interceptBrakeManeuver,
+} from './combat-tactical-maneuvers';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
@@ -245,20 +251,16 @@ function choosePlanDirection(
     direction = toward;
     targetSpeedFactor = range > desired ? 0.9 : 0.4;
   }
-  if (
-    combatant.tactic !== 'flee' &&
-    enemy.tactic === 'flee' &&
-    enemy.subsystems.engine > 0 &&
-    combatant.subsystems.engine > 0
-  ) {
-    // Approach the fleeing ship's stern instead of indefinitely tailing its bow.
-    const offset = Math.min(220, Math.max(90, range * 0.28));
-    const stern = {
-      x: enemy.position.x - Math.cos(enemy.headingRadians) * offset,
-      y: enemy.position.y - Math.sin(enemy.headingRadians) * offset,
-    };
-    direction = normalize(stern.x - combatant.position.x, stern.y - combatant.position.y);
-    targetSpeedFactor = 1;
+  if (combatant.strategy?.phase === 'regroup' && combatant.tactic !== 'flee')
+    return { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.7 };
+  const tactical =
+    pursuitManeuver(combatant, enemy) ??
+    mineBaitManeuver(combatant, enemy) ??
+    interceptBrakeManeuver(combatant, enemy, desired) ??
+    broadsideOrbitManeuver(combatant, enemy, desired);
+  if (tactical && combatant.setup.aiControlled) {
+    direction = tactical.direction;
+    targetSpeedFactor = tactical.speedFactor;
   }
   return { direction, targetSpeedFactor };
 }

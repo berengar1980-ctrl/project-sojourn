@@ -13,6 +13,7 @@ import {
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
+import { exchangeTacticalGoal } from './combat-exchange-tactics';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -257,9 +258,13 @@ function flyExchange(
     initiatorGoal:
       initiatorOverride ??
       coverGoal(initiator, opponent, runtime.arena) ??
+      exchangeTacticalGoal(initiator, opponent) ??
       state.flight.initiatorGoal,
     reactorGoal:
-      opponentOverride ?? coverGoal(opponent, initiator, runtime.arena) ?? state.flight.reactorGoal,
+      opponentOverride ??
+      coverGoal(opponent, initiator, runtime.arena) ??
+      exchangeTacticalGoal(opponent, initiator) ??
+      state.flight.reactorGoal,
   };
   pilotExchangeShip(
     initiator,
