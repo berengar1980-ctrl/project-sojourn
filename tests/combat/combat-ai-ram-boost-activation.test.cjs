@@ -37,4 +37,13 @@ pilot.stopExchangeBoost(booster);
 pilot.updateExchangeBoost(booster, 0.5);
 assert.equal(booster.boostActive, false, 'stopped boost starts recharging');
 assert(booster.boostSeconds > 3, 'boost recharges between bursts');
+const npcSetup = loadStandaloneTypeScriptModule(root, 'src/systems/combat/npc-combatant-setup.ts');
+const npc = (job, aggression, pirate = false) => ({
+  job, aggression, pirate, hullHp: 100, hullMaxHp: 100,
+});
+assert.equal(npcSetup.npcCombatDoctrine(npc('freighter', 30), false), 'flee');
+assert.equal(npcSetup.npcCombatDoctrine(npc('miner', 60), true), 'minefield');
+assert.equal(npcSetup.npcCombatDoctrine(npc('patrol', 85), false), 'kite');
+assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), false), 'fight');
+assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), true), 'minefield');
 console.log('PASS ram selection, ramming trajectory, boost activation and recharge');
