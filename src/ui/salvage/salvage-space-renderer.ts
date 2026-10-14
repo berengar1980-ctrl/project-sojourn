@@ -207,7 +207,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected drawWreck(wreck: SalvageWreckView, width: number, height: number): WreckHitArea | null {
     const point = this.camera.worldToScreen(wreck.position, width, height);
     const radius = this.camera.scale(wreck.radius);
-    const hitRadius = Math.max(15, radius + 8);
+    const hitRadius = Math.max(19, radius + 10);
     const padding = hitRadius + 30;
     if (
       point.x < -padding ||
@@ -234,6 +234,28 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         this.context.fillStyle = '#6f858a';
         this.context.fillRect(-radius * 0.8, -radius * 0.24, radius * 1.6, radius * 0.48);
       }
+    } else if (wreck.sectionVariant) {
+      drawSalvageSection3d(
+        this.context,
+        {
+          variant: wreck.sectionVariant,
+          rotation3d: wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation },
+          effectSeed: wreck.effectSeed ?? 0,
+        },
+        radius,
+        performance.now() / 1000
+      );
+    } else if (wreck.debrisVariant) {
+      drawSalvageDebris3d(
+        this.context,
+        {
+          variant: wreck.debrisVariant,
+          rotation3d: wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation },
+          effectSeed: wreck.effectSeed ?? 0,
+        },
+        radius,
+        performance.now() / 1000
+      );
     } else {
       drawSalvageContainer3d(
         this.context,
