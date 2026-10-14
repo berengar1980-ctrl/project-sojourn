@@ -17,7 +17,6 @@ import {
   resolveShipCombatMovementStats,
   shipHullMaxHp,
   shipShieldMaxHp,
-  type InstalledShipComponents,
 } from '../ships';
 
 import { npcDefenseReaction } from '../npcs/npc-combat-ai';
