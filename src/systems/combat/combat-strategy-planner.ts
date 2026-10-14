@@ -220,19 +220,6 @@ export function reviewCombatStrategy(
     return;
   }
 
-  const hp = ship.hullHp / ship.hullMaxHp;
-  const aggression = Math.max(0, Math.min(100, ship.setup.aiAggression ?? 50));
-  if (!ship.setup.aiControlled && hp <= 0.3 && aggression < 88) {
-    ship.tactic = 'flee';
-    ship.strategy = {
-      kind: 'escape',
-      focus: 'turret',
-      desiredRange: 1000,
-      score: 999,
-      reason: 'Kritischer Hüllenschaden',
-    };
-    return;
-  }
   // A selected minefield tactic is an instruction, not a low-scoring weapon plan.
   // Keep deploying while there is stock and an operational main engine.
   if (ship.tactic === 'minefield' && ship.mineStock.length > 0 && ship.subsystems.engine > 0) {
@@ -280,10 +267,9 @@ export function reviewCombatStrategy(
   } else {
     ship.strategy = best;
   }
-  ship.tactic =
-    ship.strategy.kind === 'minefield'
-      ? 'minefield'
-      : ship.strategy.kind === 'skirmish'
-        ? 'kite'
-        : 'fight';
+  // Combat commitment owns fight/flee; the planner only selects combat posture.
+  if (ship.tactic !== 'flee' && !ship.combatTacticLocked) {
+    ship.tactic = ship.strategy.kind === 'minefield' ? 'minefield' :
+      ship.strategy.kind === 'skirmish' ? 'kite' : 'fight';
+  }
 }
