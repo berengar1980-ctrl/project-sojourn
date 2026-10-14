@@ -1,12 +1,18 @@
 import type { WorldPoint } from '../../core/world-types';
+import { seededLocalGate } from '../../core/local-space-exit';
 import type { MapCamera } from './map-camera';
 
-export function localSpaceExitPoint(width: number, height: number): WorldPoint {
-  return { x: width - 180, y: height * 0.5 };
+export function localSpaceExitPoint(width: number, height: number, seed = 0): WorldPoint {
+  return seededLocalGate(width, height, seed);
 }
 
-export function playerAtLocalExit(position: WorldPoint, width: number, height: number): boolean {
-  const target = localSpaceExitPoint(width, height);
+export function playerAtLocalExit(
+  position: WorldPoint,
+  width: number,
+  height: number,
+  seed = 0
+): boolean {
+  const target = localSpaceExitPoint(width, height, seed);
   return Math.hypot(position.x - target.x, position.y - target.y) <= 150;
 }
 
@@ -16,9 +22,14 @@ export function drawLocalSpaceExitGate(
   width: number,
   height: number,
   sceneWidth: number,
-  sceneHeight: number
+  sceneHeight: number,
+  seed = 0
 ): void {
-  const point = camera.worldToScreen(localSpaceExitPoint(sceneWidth, sceneHeight), width, height);
+  const point = camera.worldToScreen(
+    localSpaceExitPoint(sceneWidth, sceneHeight, seed),
+    width,
+    height
+  );
   context.save();
   context.lineWidth = 3;
   context.strokeStyle = '#70daff';

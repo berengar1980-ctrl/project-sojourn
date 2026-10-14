@@ -10,6 +10,9 @@ const localMining = loadStandaloneTypeScriptModule(
   'src/systems/npcs/npc-local-mining-service.ts'
 );
 
+const { seededLocalGate } = loadStandaloneTypeScriptModule(root, 'src/core/local-space-exit.ts');
+
+const fieldSeed = 417;
 const miner = {
   id: 'npc-miner-test',
   name: 'Acastus Avern',
@@ -81,6 +84,7 @@ const restingMiner = {
 
 const service = localMining.createNpcLocalMiningService({
   locationId: 'test-field',
+  seed: fieldSeed,
   width: 1000,
   height: 800,
   miners: [miner, restingMiner],
@@ -104,9 +108,10 @@ assert.equal(
   'only NPCs in the shared working phase may enter the mining field'
 );
 const first = { ...service.ships[0].position };
-assert(
-  first.x <= 18 || first.x >= 982 || first.y <= 18 || first.y >= 782,
-  'NPC miner must enter from the field perimeter rather than appear in the middle'
+assert.deepEqual(
+  first,
+  seededLocalGate(1000, 800, fieldSeed),
+  'NPC miner must enter at the same seeded gate as the player'
 );
 
 let sawFlight = false;

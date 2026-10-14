@@ -1,3 +1,4 @@
+import { seededLocalGate } from '../../core/local-space-exit';
 import type { LocalAsteroid } from '../../core/local-space-types';
 
 import type { SectorNpcState } from '../../core/npc-types';
@@ -17,7 +18,6 @@ import { getShipDefinition } from '../ships';
 import {
   type NpcLocalMiningOptions,
   type LocalNpcMinerState,
-  edgePoint,
   eligibleMiner,
   FLIGHT_SPEED,
   chooseAsteroid,
@@ -52,11 +52,10 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
   ship.targetAsteroidId = null;
   ship.laserActive = false;
   ship.scanProgress = 0;
-  ship.exitPoint = edgePoint(
-    ship.npcId + ':exit',
+  ship.exitPoint = seededLocalGate(
     runtime.options.width,
     runtime.options.height,
-    true
+    runtime.options.seed ?? 0
   );
 }
 
@@ -64,7 +63,11 @@ function syncArrivals(runtime: MinerRuntime): void {
   const active = new Set(runtime.ships.map((ship) => ship.npcId));
   for (const npc of runtime.options.miners) {
     if (active.has(npc.id) || !eligibleMiner(npc, runtime.options.locationId)) continue;
-    const entry = edgePoint(npc.id, runtime.options.width, runtime.options.height, false);
+    const entry = seededLocalGate(
+      runtime.options.width,
+      runtime.options.height,
+      runtime.options.seed ?? 0
+    );
     runtime.ships.push({
       npcId: npc.id,
       name: npc.name,
@@ -77,7 +80,7 @@ function syncArrivals(runtime: MinerRuntime): void {
       laserActive: false,
       scanProgress: 0,
       entryPoint: entry,
-      exitPoint: edgePoint(npc.id + ':exit', runtime.options.width, runtime.options.height, true),
+      exitPoint: { ...entry },
       miningAccumulator: 0,
     });
   }

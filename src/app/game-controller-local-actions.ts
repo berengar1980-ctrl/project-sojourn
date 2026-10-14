@@ -105,7 +105,7 @@ export function createLocalPanelActions(context: LocalActionContext): LocalPanel
       const snapshot = context.getSpace()?.getSnapshot();
       if (!snapshot) return;
       const { width, height, ship } = snapshot.instance;
-      if (!playerAtLocalExit(ship.position, width, height)) {
+      if (!playerAtLocalExit(ship.position, width, height, snapshot.instance.seed)) {
         context.systemLog.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
         return;
       }

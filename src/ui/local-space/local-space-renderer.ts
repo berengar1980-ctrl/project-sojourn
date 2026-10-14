@@ -162,7 +162,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       width,
       height,
       this.model.width,
-      this.model.height
+      this.model.height,
+      this.model.backgroundSeed
     );
     this.drawLongRangeScan(width, height, timeSeconds);
     this.drawShortRangeScan(width, height, timeSeconds);

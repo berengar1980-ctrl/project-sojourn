@@ -12,7 +12,7 @@ import type {
 
 const MAX_RADIUS = 35;
 const THROW_SPEED = 420;
-const COOLDOWN_SECONDS = 16;
+const COOLDOWN_SECONDS = 6;
 const CAPTURE_SECONDS = 0.65;
 const CHARGE_SECONDS = 0.85;
 

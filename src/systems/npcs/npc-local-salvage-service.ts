@@ -1,3 +1,4 @@
+import { seededLocalGate } from '../../core/local-space-exit';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { ShipDefinition } from '../../core/ship-types';
@@ -47,8 +48,6 @@ export interface NpcLocalSalvageOptions {
   readonly getPlayerShipState?: () => LocalShipState;
 }
 
-const ENTRY_MARGIN = 18;
-const EXIT_MARGIN = 90;
 const APPROACH_DISTANCE = 120;
 const FLIGHT_SPEED = 82;
 const SCAN_SECONDS = 5;
@@ -61,17 +60,6 @@ function hashId(id: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-}
-
-function edgePoint(id: string, width: number, height: number, outside = false): WorldPoint {
-  const hash = hashId(id);
-  const side = hash % 4;
-  const t = ((hash >>> 4) % 1000) / 1000;
-  const margin = outside ? EXIT_MARGIN : ENTRY_MARGIN;
-  if (side === 0) return { x: outside ? -margin : margin, y: height * (0.15 + t * 0.7) };
-  if (side === 1) return { x: width - (outside ? -margin : margin), y: height * (0.15 + t * 0.7) };
-  if (side === 2) return { x: width * (0.15 + t * 0.7), y: outside ? -margin : margin };
-  return { x: width * (0.15 + t * 0.7), y: height - (outside ? -margin : margin) };
 }
 
 function moveToward(
@@ -190,18 +178,21 @@ class LocalSalvageService implements NpcLocalSalvageService {
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
-    ship.exitPoint = edgePoint(
-      ship.npcId + ':exit',
+    ship.exitPoint = seededLocalGate(
       this.options.field.width,
       this.options.field.height,
-      true
+      this.options.field.seed
     );
   };
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
       if (active.has(npc.id) || !eligible(npc, this.options.locationId)) continue;
-      const entry = edgePoint(npc.id, this.options.field.width, this.options.field.height);
+      const entry = seededLocalGate(
+        this.options.field.width,
+        this.options.field.height,
+        this.options.field.seed
+      );
       this.ships.push({
         npcId: npc.id,
         name: npc.name,
@@ -214,12 +205,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         salvageActive: false,
         scanProgress: 0,
         workAccumulator: 0,
-        exitPoint: edgePoint(
-          npc.id + ':exit',
-          this.options.field.width,
-          this.options.field.height,
-          true
-        ),
+        exitPoint: { ...entry },
       });
     }
   };

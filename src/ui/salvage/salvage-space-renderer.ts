@@ -9,7 +9,6 @@ import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distre
 import { drawDistressTow } from './distress-tow-renderer';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
-import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
@@ -146,14 +145,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       height
     );
     this.drawRoute(width, height);
-    drawLocalSpaceExitGate(
-      this.context,
-      this.camera,
-      width,
-      height,
-      this.model.width,
-      this.model.height
-    );
+    this.drawExitGate(width, height);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
     drawDistressScanEffect(

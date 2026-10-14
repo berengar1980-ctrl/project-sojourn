@@ -36,6 +36,7 @@ export interface NpcLocalMiningService {
 
 export interface NpcLocalMiningOptions {
   readonly locationId: string;
+  readonly seed?: number;
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];

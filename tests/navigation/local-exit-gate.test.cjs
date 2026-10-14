@@ -10,11 +10,19 @@ const { localSpaceExitPoint, playerAtLocalExit } = loadStandaloneTypeScriptModul
   root,
   'src/ui/map/local-space-exit-gate.ts'
 );
-const exit = localSpaceExitPoint(3200, 1900);
-assert.deepEqual(exit, { x: 3020, y: 950 });
-assert.equal(playerAtLocalExit({ x: 3020, y: 950 }, 3200, 1900), true);
-assert.equal(playerAtLocalExit({ x: 500, y: 950 }, 3200, 1900), false);
-assert.equal(playerAtLocalExit({ x: 3020, y: 700 }, 3200, 1900), false);
+const exit = localSpaceExitPoint(3200, 1900, 417);
+assert.deepEqual(exit, localSpaceExitPoint(3200, 1900, 417), 'same seed retains gate');
+assert.notDeepEqual(exit, localSpaceExitPoint(3200, 1900, 418), 'different seeds move the gate');
+assert.equal(playerAtLocalExit(exit, 3200, 1900, 417), true);
+assert.equal(playerAtLocalExit({ x: 1600, y: 950 }, 3200, 1900, 417), false);
+assert.equal(playerAtLocalExit(exit, 3200, 1900, 418), false);
+for (let seed = 1; seed <= 100; seed += 1) {
+  const gate = localSpaceExitPoint(4400, 2570, seed);
+  assert(
+    gate.x === 180 || gate.x === 4220 || gate.y === 180 || gate.y === 2390,
+    'seed ' + seed + ' must select a safe map edge'
+  );
+}
 
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 assert(read('src/app/game-controller-local-actions.ts').includes('playerAtLocalExit('));
@@ -26,7 +34,8 @@ assert(
   )
 );
 assert(read('src/ui/local-space/local-space-renderer.ts').includes('drawLocalSpaceExitGate('));
-assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawLocalSpaceExitGate('));
+assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('this.drawExitGate('));
+assert(read('src/ui/salvage/salvage-scene-layers.ts').includes('drawLocalSpaceExitGate('));
 assert(
   read('src/systems/combat/combat-escape-evaluation.ts').includes(
     'distance(combatant.position, arena.exitPoint) <= 90'

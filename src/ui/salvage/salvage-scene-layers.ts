@@ -1,5 +1,6 @@
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
@@ -39,6 +40,17 @@ export abstract class SalvageSceneLayers {
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
   protected abstract combatImpactAge: number;
+  protected drawExitGate(width: number, height: number): void {
+    drawLocalSpaceExitGate(
+      this.context,
+      this.camera,
+      width,
+      height,
+      this.model.width,
+      this.model.height,
+      this.model.backgroundSeed
+    );
+  }
   protected drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
     const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {

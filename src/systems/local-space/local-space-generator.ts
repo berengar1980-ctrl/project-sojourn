@@ -1,3 +1,4 @@
+import { seededLocalGate } from '../../core/local-space-exit';
 import type {
   AsteroidPhysics,
   LocalAsteroid,
@@ -159,7 +160,7 @@ export function generateMiningSpace(
     ],
     chunks: [],
     ship: {
-      position: { x: width * 0.5, y: height * 0.5 },
+      position: seededLocalGate(width, height, seed),
       headingRadians: 0,
       speed: 0,
       turnRateRadiansPerSecond: 0,
