@@ -468,7 +468,14 @@ class LocalSalvageService implements NpcLocalSalvageService {
       position: wreck.position,
       radius: wreck.radius,
     }));
-    resolveShipShieldObstacleCollisions(bodies, obstacles);
+    for (const collision of resolveShipShieldObstacleCollisions(bodies, obstacles)) {
+      if (collision.shipId === 'player') {
+        this.options.onPlayerShieldContact?.(
+          { x: -collision.normal.x, y: -collision.normal.y },
+          collision.closingDistance
+        );
+      }
+    }
     for (const body of bodies) {
       // The player runtime owns shield hits; resolving them here first
       // would swallow the actual player's visible contact event.
