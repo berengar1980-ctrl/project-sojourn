@@ -1,28 +1,12 @@
+import { combatEquippedWeapons, combatWeaponMounts } from '../systems/combat/combat-loadout-mounts';
 import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
-  fitsWeaponHardpoint,
   resolveShipRuntimeSetup,
   resolveShipCombatMovementStats,
   type ShipRuntimeOptions,
 } from '../systems/ships';
-
-function combatWeaponMounts(ship: ShipDefinition, slots: readonly number[]) {
-  const points = ship.sprite.hardpoints;
-  const scale = ship.nominalLengthMeters / points.sourceWidth;
-  return (points.weaponMounts ?? [])
-    .filter((mount) => slots.includes(mount.slotIndex))
-    .map((mount) => ({
-      slotIndex: slots.indexOf(mount.slotIndex),
-      x: (mount.x - points.pivot.x) * scale,
-      y: (mount.y - points.pivot.y) * scale,
-      facing: mount.facing,
-      ...(mount.arcDegrees !== undefined ? { arcDegrees: mount.arcDegrees } : {}),
-      ...(mount.allowedMounts ? { allowedMounts: mount.allowedMounts } : {}),
-      ...(mount.allowedFamilies ? { allowedFamilies: mount.allowedFamilies } : {}),
-    }));
-}
 
 export function createPlayerCombatant(
   ship: ShipDefinition,
@@ -30,12 +14,7 @@ export function createPlayerCombatant(
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
   const movement = resolveShipCombatMovementStats(ship);
-  const equippedWeapons = (runtime.installed.weapon ?? []).flatMap((id, slotIndex) => {
-    const component = getShipComponent('weapon', id);
-    return component?.weapon && fitsWeaponHardpoint(ship, slotIndex, component.weapon)
-      ? [{ component, slotIndex }]
-      : [];
-  });
+  const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);
   const sensor = (runtime.installed.sensor ?? [])
     .map((id) => getShipComponent('sensor', id))
@@ -53,10 +32,7 @@ export function createPlayerCombatant(
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
     weapons,
-    weaponMounts: combatWeaponMounts(
-      ship,
-      equippedWeapons.map((entry) => entry.slotIndex)
-    ),
+    weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
     dodgeChance: runtime.crewEffects.piloting.dodgeChance,
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
