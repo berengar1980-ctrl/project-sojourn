@@ -10,11 +10,25 @@ const { DUEL_MAPS, createDuelArena } = loadStandaloneTypeScriptModule(
 );
 assert.deepEqual(
   DUEL_MAPS.map((entry) => entry.id),
-  ['empty', 'scattered', 'asteroid_field']
+  ['empty', 'scattered', 'asteroid_field', 'scrap_scattered', 'scrap_field']
 );
 const empty = createDuelArena('empty', 1001);
 const sparse = createDuelArena('scattered', 1001);
 const dense = createDuelArena('asteroid_field', 1001);
+const scrapModerate = createDuelArena('scrap_scattered', 1001);
+const scrapDense = createDuelArena('scrap_field', 1001);
+assert(scrapModerate.asteroids.length >= 25 && scrapModerate.asteroids.length < 65,
+  'moderate scrap map offers a manageable number of drifting 3D parts');
+assert(scrapDense.asteroids.length > scrapModerate.asteroids.length * 2,
+  'dense scrap map has at least twice the moderate number of parts');
+assert(scrapDense.asteroids.some((part) => part.sectionVariant),
+  'dense scrap field includes full-size modular 3D ship wrecks');
+assert(scrapModerate.asteroids.some((part) => part.debrisVariant),
+  'moderate scrap field includes 3D tractor-throwable fragments');
+assert(scrapDense.asteroids.filter((part) => part.kind === 'resource').length >= 5,
+  'dense map provides several heavy large-section obstacles');
+assert.deepEqual(createDuelArena('scrap_field', 1001), scrapDense,
+  'PvP wreck field must be deterministic per seed');
 assert.equal(empty.obstacles.length, 0, 'empty map stays clear');
 assert.equal(empty.asteroids.length, 0, 'empty map contains no drawn asteroids');
 assert(
@@ -66,4 +80,4 @@ assert(arenaSource.includes('generateMiningSpace'), 'reuse mining field generato
 assert(asteroidRenderer.includes('ProceduralSpaceBodyRenderer'), 'reuse real asteroid renderer');
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
 assert(lobby.includes('mapSelect.value as DuelMapKind'), 'selected map reaches simulation');
-console.log('PASS three selectable deterministic PvP combat maps');
+console.log('PASS five deterministic PvP combat maps including moderate and dense 3D scrap');
