@@ -1,4 +1,8 @@
-import type { MutableCombatant, StrategicCombatArenaOptions, CombatPoint } from './strategic-combat-types';
+import type {
+  MutableCombatant,
+  StrategicCombatArenaOptions,
+  CombatPoint,
+} from './strategic-combat-types';
 import { clamp } from './strategic-combat-geometry';
 
 export function applyInertialThrust(
@@ -50,4 +54,3 @@ export function applyInertialThrust(
   if (nextY !== combatant.position.y) combatant.velocity.y = 0;
   combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
 }
-
