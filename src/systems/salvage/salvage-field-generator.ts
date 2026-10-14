@@ -133,7 +133,7 @@ export function generateSalvageField(
   ];
   const debris: SalvageDebris[] = [];
   const gate = seededLocalGate(width, height, seed);
-  const debrisCount = 125 + Math.floor(random() * 30);
+  const debrisCount = 178 + Math.floor(random() * 35);
   for (let index = 0; index < debrisCount; index += 1) {
     const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
     const radius = 7 + random() * 22;
