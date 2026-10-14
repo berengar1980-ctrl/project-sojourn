@@ -171,7 +171,11 @@ function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelAc
   });
 }
 
-function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = false): void {
+function mountControllerMining(
+  context: ControllerRuntimeContext,
+  reuseSeed = false,
+  preserveField = false
+): void {
   const { state, economy } = context;
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
@@ -184,6 +188,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
   if (!reuseSeed || state.localSpaceSeed === 0) {
     state.localSpaceSeed = localSeed((state.visitCounter += 1));
   }
+  if (!preserveField || !state.localSpace || !state.localNpcMining) {
   state.localSpace = createMiningLocalSpace(
     state.activeShip,
     state.localSpaceSeed,
@@ -205,6 +210,7 @@ function mountControllerMining(context: ControllerRuntimeContext, reuseSeed = fa
     playerShip: state.activeShip,
     getPlayerShipState: () => state.localSpace!.getSnapshot().instance.ship,
   });
+  }
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
   );
@@ -334,7 +340,25 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
   if (snapshot.boardingInitiator) {
-    startCombatBoarding(context, snapshot, () => mountControllerStarMap(context));
+    const origin = state.embeddedCombat;
+    if (origin === 'local-space') {
+      state.localSpace?.syncCombatPose(
+        snapshot.attacker.position,
+        snapshot.attacker.headingRadians,
+        snapshot.attacker.speed
+      );
+      state.localNpcMining?.syncCombatPose(
+        snapshot.defender.id,
+        snapshot.defender.position,
+        snapshot.defender.headingRadians,
+        snapshot.defender.speed
+      );
+    }
+    startCombatBoarding(context, snapshot, () => {
+      if (origin === 'local-space') mountControllerMining(context, true, true);
+      else if (origin === 'salvage-space') mountControllerSalvage(context, true);
+      else mountControllerStarMap(context);
+    });
     return;
   }
   context.systemLog.write(combatResultMessage(snapshot));
