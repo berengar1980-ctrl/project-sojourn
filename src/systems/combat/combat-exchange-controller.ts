@@ -11,6 +11,7 @@ import {
 } from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
+import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -225,10 +226,21 @@ function flyExchange(
     opponent
   );
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
+  const coverGoal = (
+    ship: typeof initiator,
+    enemy: typeof opponent
+  ): { x: number; y: number } | null => {
+    const direction = asteroidCoverHeading(ship, enemy, runtime.arena);
+    if (!direction) return null;
+    return {
+      x: ship.position.x + direction.x * 240,
+      y: ship.position.y + direction.y * 240,
+    };
+  };
   const flight = {
     ...state.flight,
-    initiatorGoal: initiatorOverride ?? state.flight.initiatorGoal,
-    reactorGoal: opponentOverride ?? state.flight.reactorGoal,
+    initiatorGoal: initiatorOverride ?? coverGoal(initiator, opponent) ?? state.flight.initiatorGoal,
+    reactorGoal: opponentOverride ?? coverGoal(opponent, initiator) ?? state.flight.reactorGoal,
   };
   pilotExchangeShip(
     initiator,
