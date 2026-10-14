@@ -1,7 +1,7 @@
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
-import { combatResultMessage } from './combat-result-summary';
+import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
