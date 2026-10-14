@@ -49,7 +49,7 @@ for (let seed = 1; seed <= 32; seed += 1) {
   bigBelowBaselineMinimum ||= sections.some((section) => section.radius < 86);
   bigAboveBaselineMaximum ||= sections.some((section) => section.radius > 132);
   assert(field.debris.every((entry) => entry.radius > 0 && entry.driftVelocity),
-    'decorative fragments need visual drift even though they are non-colliding');
+    'decorative fragments need physical collision and drift even without scan contacts');
   assert.equal(new Set(containers.map((entry) => entry.containerVariant)).size, 3,
     'every field must include all three recoverable container models');
   for (const target of containers) {
@@ -144,9 +144,10 @@ assert(scene.includes('resolveSalvageShieldContacts'), 'NPC shield collision mus
 assert(motion.advanceSalvageContainerDrift, 'asteroid drift integration must be callable');
 assert(localService.includes('salvageFieldPhysicsBodies'), 'navigation must use asteroid collision bodies');
 const physicsSource = readModuleSource(root, 'src/systems/salvage/salvage-container-motion.ts');
-assert(!physicsSource.includes('...(field.debris ?? [])') &&
-  physicsSource.includes('for (const scrap of field.debris ?? [])'),
-  'visual-only debris must drift without collision bodies or route blocking');
+assert(physicsSource.includes('...(field.debris ?? [])') &&
+  physicsSource.includes('routeBlocking:') &&
+  physicsSource.includes("owner.sectionVariant"),
+  'decorative scrap must collide but only large sections may block routing');
 assert(localService.includes('this.collisionShields?.applyCollision(collision)'),
   'player collisions must produce visible shield impacts');
 assert(renderer.includes('this.model.shieldImpacts'),
