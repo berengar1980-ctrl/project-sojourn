@@ -168,18 +168,21 @@ function reactToCombatEvents(
 ): { x: number; y: number } | null {
   const memory = state.reactions[side];
   const event = chooseReactiveDecision(runtime, ship, enemy, side, memory);
-  const accepted = commitReactiveDecision(memory, event, runtime.elapsedSeconds);
+  // Ordinary pursuit and tractor events are telemetry, not permission to
+  // replace the trajectory already committed by the exchange choreography.
+  const safetyEvent = event?.critical ? event : null;
+  const accepted = commitReactiveDecision(memory, safetyEvent, runtime.elapsedSeconds);
   memory.shieldHp = ship.shieldHp;
   memory.lastTractorCount = runtime.thrownAsteroids.length;
-  if (!event || !accepted) {
+  if (!safetyEvent || !accepted) {
     return runtime.elapsedSeconds - memory.lastReactionAt < 1.5 ? state.reactiveGoals[side] : null;
   }
-  state.reactiveGoals[side] = event.goal;
+  state.reactiveGoals[side] = safetyEvent.goal;
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: 'REACTIVE_' + event.kind.toUpperCase() + ' priority=' + event.priority,
+    detail: 'REACTIVE_' + safetyEvent.kind.toUpperCase() + ' priority=' + safetyEvent.priority,
   });
   return event.goal;
 }
