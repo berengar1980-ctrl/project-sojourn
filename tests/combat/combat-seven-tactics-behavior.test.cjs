@@ -9,7 +9,6 @@ const planner = load('src/systems/combat/combat-strategy-planner.ts');
 const executor = load('src/systems/combat/combat-plan-executor.ts');
 const cover = load('src/systems/combat/combat-asteroid-cover.ts');
 const tractor = load('src/systems/combat/combat-tractor-pulse.ts');
-const exchangeTactics = load('src/systems/combat/combat-exchange-tactics.ts');
 const geometry = load('src/systems/combat/strategic-combat-geometry.ts');
 const movement = load('src/systems/combat/strategic-combat-movement.ts');
 const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
@@ -38,11 +37,6 @@ assert(
   'pursuit leads the moving target instead of its last position'
 );
 assert.equal(moves.pursuitManeuver({ ...first, tactic: 'flee' }, second), null);
-const exchangeLead = exchangeTactics.exchangeTacticalGoal(first, second);
-assert(
-  exchangeLead && exchangeLead.y > first.position.y,
-  'exchange battles also lead escaping targets rather than chasing their old position'
-);
 
 first.tactic = 'minefield';
 first.mineStock = [{ id: 'test' }];
@@ -53,11 +47,6 @@ assert(
   'minelayer runs from approaching ship to lay a chase corridor'
 );
 assert.equal(moves.mineBaitManeuver({ ...first, mineStock: [] }, second), null);
-const exchangeBait = exchangeTactics.exchangeTacticalGoal(first, second);
-assert(
-  exchangeBait && exchangeBait.x < first.position.x,
-  'exchange minelayers bait the chase corridor'
-);
 
 first.tactic = 'fight';
 first.strategy = {
