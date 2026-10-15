@@ -1,13 +1,3 @@
-const sectionVariants: readonly SalvageSectionVariant[] = [
-  'corridor-complex',
-  'double-deck',
-  'engine-room',
-  'cargo-bay',
-  'crew-quarters',
-  'bridge',
-  'reactor-hall',
-  'medbay',
-];
 import type {
   SalvageField,
   SalvageResourceDeposit,
@@ -138,9 +128,8 @@ export function generateSalvageField(
     });
   }
 
-  const gate = seededLocalGate(width, height, seed);
-  appendSections(wrecks, random, seed, dangerLevel, width, height, gate);
-  const debris = appendDebris(wrecks, random, seed, dangerLevel, width, height, gate);
+  addSalvageSections(random, seed, dangerLevel, width, height, wrecks);
+  const debris = generateSalvageDebris(random, seed, dangerLevel, width, height, wrecks);
 
   return {
     debris,
@@ -155,15 +144,38 @@ export function generateSalvageField(
   };
 }
 
-function appendSections(
-  wrecks: SalvageWreck[],
+function salvageSectionName(variant: SalvageSectionVariant): string {
+  return {
+    'corridor-complex': 'Korridor- und Raumsektion',
+    'double-deck': 'Doppeldeck-Wrack',
+    'engine-room': 'Maschinenraum-Wrack',
+    'cargo-bay': 'Frachter-Laderaum',
+    'crew-quarters': 'Mannschaftsquartiere',
+    bridge: 'Brückensektion',
+    'reactor-hall': 'Reaktorhalle',
+    medbay: 'Medizinmodul',
+  }[variant];
+}
+
+function addSalvageSections(
   random: () => number,
   seed: number,
   dangerLevel: number,
   width: number,
   height: number,
-  gate: { x: number; y: number }
+  wrecks: SalvageWreck[]
 ): void {
+  const gate = seededLocalGate(width, height, seed);
+  const sectionVariants: readonly SalvageSectionVariant[] = [
+    'corridor-complex',
+    'double-deck',
+    'engine-room',
+    'cargo-bay',
+    'crew-quarters',
+    'bridge',
+    'reactor-hall',
+    'medbay',
+  ];
   const sections: SalvageSection[] = [];
   // One of each large, open, multi-room 3D section is guaranteed per map.
   const sectionCount = 8 + Math.floor(random() * 4);
@@ -219,18 +231,7 @@ function appendSections(
     const quality = qualityFromRoll(random(), dangerLevel);
     wrecks.push({
       id: section.id,
-      name: (
-        {
-          'corridor-complex': 'Korridor- und Raumsektion',
-          'double-deck': 'Doppeldeck-Wrack',
-          'engine-room': 'Maschinenraum-Wrack',
-          'cargo-bay': 'Frachter-Laderaum',
-          'crew-quarters': 'Mannschaftsquartiere',
-          bridge: 'Brückensektion',
-          'reactor-hall': 'Reaktorhalle',
-          medbay: 'Medizinmodul',
-        } as const
-      )[variant],
+      name: salvageSectionName(variant),
       kind: wreckKind(random()),
       quality,
       sectionVariant: variant,
@@ -251,15 +252,15 @@ function appendSections(
   }
 }
 
-function appendDebris(
-  wrecks: SalvageWreck[],
+function generateSalvageDebris(
   random: () => number,
   seed: number,
   dangerLevel: number,
   width: number,
   height: number,
-  gate: { x: number; y: number }
+  wrecks: SalvageWreck[]
 ): SalvageDebris[] {
+  const gate = seededLocalGate(width, height, seed);
   // Keep all eight small-fragment silhouettes. Some are salvageable, while the
   // rest remain dynamic scenery and tractor-throw ammunition.
   const variants: readonly SalvageDebrisVariant[] = [

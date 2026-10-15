@@ -1,10 +1,9 @@
-import { moveToward } from './npc-salvage-navigation';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { ShipDefinition } from '../../core/ship-types';
-import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
 import { createSalvageFieldService } from '../salvage/salvage-field-service';
@@ -13,8 +12,22 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
+import { getShipDefinition, resolveShipRuntimeSetup } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
+import {
+  FLIGHT_SPEED,
+  SCAN_SECONDS,
+  BASE_CYCLE_SECONDS,
+  hashId,
+  moveToward,
+  cargoUsed,
+  eligible,
+  wreckRemaining,
+  chooseWreck,
+  workPoint,
+  chooseEventChoice,
+  recoveryAmount,
+} from './npc-local-salvage-helpers';
 
 export type LocalNpcSalvagePhase =
   'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
@@ -49,94 +62,6 @@ export interface NpcLocalSalvageOptions {
   readonly playerShip?: ShipDefinition;
   readonly getPlayerShipState?: () => LocalShipState;
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
-}
-
-const APPROACH_DISTANCE = 120;
-const FLIGHT_SPEED = 82;
-const SCAN_SECONDS = 5;
-const BASE_CYCLE_SECONDS = 1.4;
-
-function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function cargoUsed(npc: SectorNpcState): number {
-  return Object.values(npc.cargo).reduce((sum, amount) => sum + Math.max(0, Math.floor(amount)), 0);
-}
-
-function eligible(npc: SectorNpcState, locationId: string): boolean {
-  return (
-    npc.job === 'salvager' &&
-    npc.workLocationId === locationId &&
-    npc.locationId === locationId &&
-    !npc.travel &&
-    npc.autonomy?.phase === 'working' &&
-    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
-  );
-}
-
-function wreckRemaining(wreck: SalvageWreck): number {
-  return wreck.resources.reduce((sum, entry) => sum + Math.max(0, entry.remainingAmount), 0);
-}
-
-function chooseWreck(
-  npc: SectorNpcState,
-  field: SalvageField,
-  occupied: ReadonlySet<string>
-): SalvageWreck | null {
-  const candidates = field.wrecks.filter(
-    (wreck) =>
-      !occupied.has(wreck.id) &&
-      (wreckRemaining(wreck) > 0 || wreck.componentStatus === 'available')
-  );
-  if (candidates.length === 0) return null;
-  return (
-    [...candidates].sort(
-      (a, b) =>
-        b.quality - a.quality || wreckRemaining(b) - wreckRemaining(a) || a.id.localeCompare(b.id)
-    )[hashId(npc.id) % Math.min(4, candidates.length)] ??
-    candidates[0] ??
-    null
-  );
-}
-
-function workPoint(npcId: string, wreck: SalvageWreck): WorldPoint {
-  const angle = ((hashId(npcId + ':' + wreck.id) % 6283) / 1000) % (Math.PI * 2);
-  const range = wreck.radius + APPROACH_DISTANCE;
-  return {
-    x: wreck.position.x + Math.cos(angle) * range,
-    y: wreck.position.y + Math.sin(angle) * range,
-  };
-}
-
-function chooseEventChoice(
-  npc: SectorNpcState,
-  choices: readonly SalvageEventChoice[]
-): SalvageEventChoice | null {
-  if (choices.length === 0) return null;
-  const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
-  const risky = npc.workRiskPreference === 'risky';
-  return (
-    [...choices].sort((a, b) =>
-      risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
-    )[0] ?? null
-  );
-}
-
-function recoveryAmount(npc: SectorNpcState, wreck: SalvageWreck): number {
-  const ship = getShipDefinition(npc.shipId);
-  if (!ship) return 3 + wreck.quality * 2;
-  const runtime = resolveShipRuntimeSetup(ship);
-  const crewMultiplier = stationFactor(20, 0.35);
-  return Math.max(
-    1,
-    Math.round((3 + wreck.quality * 2) * runtime.salvage.yieldMultiplier * crewMultiplier)
-  );
 }
 
 class LocalSalvageService implements NpcLocalSalvageService {
@@ -414,10 +339,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
     }
 
-    this.resolveContacts();
+    this.resolveLocalCollisions();
   };
-
-  private resolveContacts(): void {
+  private resolveLocalCollisions = (): void => {
     const playerState = this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
       const definition = getShipDefinition(local.shipId);
@@ -469,7 +393,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         body.ship.nominalLengthMeters
       );
     }
-  }
+  };
 }
 
 export function createNpcLocalSalvageService(

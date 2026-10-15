@@ -5,8 +5,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const { readModuleSource } = require('../module-source.cjs');
 const root = path.resolve(__dirname, '../..');
-const moduleCache = new Map();
-const loader = (file) => loadStandaloneTypeScriptModule(root, file, moduleCache);
+const loader = (file) => loadStandaloneTypeScriptModule(root, file);
 const generation = loader('src/systems/salvage/salvage-field-generator.ts');
 const physics = loader('src/systems/salvage/salvage-container-motion.ts');
 const local = loader('src/systems/salvage/salvage-local-space-service.ts');
@@ -49,6 +48,9 @@ const service = local.createSalvageLocalSpaceService({
     return 0;
   },
 });
+// Keep the test contact inside the field: the seeded exit can be near a wall,
+// where boundary restitution would reverse the incoming fragment first.
+service.syncCombatPose({ x: field.width * 0.5, y: field.height * 0.5 }, 0, 0);
 const player = service.getSnapshot().ship.position;
 const world = physics.salvageFieldPhysicsBodies(field);
 assert.equal(
@@ -90,21 +92,32 @@ assert.equal(
 
 // Put an incoming fragment on the player's shield and verify the actual
 // asteroid impulse is transferred into its velocity, plus a shield effect.
-decorativeBody.position = { x: player.x + 43, y: player.y };
-decorativeBody.physics.velocity = { x: -80, y: 0 };
-targetBody.position = { x: player.x + 800, y: player.y + 450 };
-const incoming = decorativeBody.physics.velocity.x;
+// The standalone TS loader creates separate module graphs for the physics helper
+// and service. Configure the shared field owners, not another loader's cached bodies.
+decoration.position = { x: player.x + 43, y: player.y };
+decoration.driftVelocity = { x: -80, y: 0 };
+target.position = { x: player.x + 800, y: player.y + 450 };
+const incoming = decoration.driftVelocity.x;
 const after = service.tick(0.05);
 assert(
   after.shieldImpacts.length >= 1,
-  'colliding with non-selectable scrap must visibly activate the shield'
+  'colliding with non-selectable scrap must visibly activate the shield: ' +
+    JSON.stringify({
+      player,
+      radius: decorativeBody.radius,
+      bodyPosition: decoration.position,
+      bodyVelocity: decoration.driftVelocity,
+      incoming,
+      shieldImpacts: after.shieldImpacts.length,
+      shield: after.shieldImpacts,
+    })
 );
 assert(
   after.shieldImpacts.some((effect) => effect.lifetimeSeconds > 0),
   'shield impacts must have a duration, just like in mining fields'
 );
 assert(
-  decorativeBody.physics.velocity.x > incoming,
+  decoration.driftVelocity.x > incoming,
   'small scrap must be flung away by the shield impulse, not passed through'
 );
 

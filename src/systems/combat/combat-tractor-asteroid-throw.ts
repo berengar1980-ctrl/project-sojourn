@@ -111,8 +111,34 @@ export function maybeLaunchTractorAsteroid(
   removeCapturedThrowable(runtime, rock, mine);
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
-  const scrap = [rock?.debrisVariant, rock?.sectionVariant, rock?.containerVariant].some(Boolean);
-  recordTractorLaunch(runtime, side, ship.setup.name, rock?.id ?? mine!.id, Boolean(mine), scrap);
+  recordTractorLaunch(runtime, side, ship, rock, mine);
+}
+
+function recordTractorLaunch(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
+  runtime.lastEvent =
+    ship.setup.name +
+    (mine
+      ? ': TRAKTOR ERFASST MINE'
+      : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+        ? ': TRAKTOR ERFASST SCHROTT'
+        : ': TRAKTOR ERFASST ASTEROID');
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event: 'action',
+    detail:
+      (mine
+        ? 'TRACTOR_MINE_THROW '
+        : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+          ? 'TRACTOR_SCRAP_THROW '
+          : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
+  });
 }
 
 function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownAsteroid): boolean {
@@ -228,29 +254,4 @@ export function advanceThrownAsteroids(runtime: StrategicCombatRuntime, dt: numb
       runtime.thrownAsteroids.splice(index, 1);
     }
   }
-}
-
-function recordTractorLaunch(
-  runtime: StrategicCombatRuntime,
-  side: StrategicCombatSide,
-  name: string,
-  id: string | number,
-  mine: boolean,
-  scrap: boolean
-): void {
-  runtime.lastEvent =
-    name +
-    (mine
-      ? ': TRAKTOR ERFASST MINE'
-      : scrap
-        ? ': TRAKTOR ERFASST SCHROTT'
-        : ': TRAKTOR ERFASST ASTEROID');
-  runtime.combatLog.push({
-    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-    side,
-    event: 'action',
-    detail:
-      (mine ? 'TRACTOR_MINE_THROW ' : scrap ? 'TRACTOR_SCRAP_THROW ' : 'TRACTOR_ASTEROID_THROW ') +
-      id,
-  });
 }

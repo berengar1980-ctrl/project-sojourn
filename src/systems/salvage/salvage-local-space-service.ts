@@ -1,25 +1,27 @@
-import type { EconomyResourceId } from '../../core/economy-types';
-import { seededLocalGate } from '../../core/local-space-exit';
-import type { LocalShipState } from '../../core/local-space-types';
-import type {
-  SalvageLocalPhase,
-  SalvageLocalSpaceSnapshot,
-  SalvageWreck,
-} from '../../core/salvage-types';
-import type { ShipHardpoints } from '../../core/ship-types';
-import type { WorldPoint } from '../../core/world-types';
-import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
-import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
-import { distance } from '../local-space/local-space-motion';
-import { planPointRoute } from '../local-space/local-space-navigation';
-import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
-import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { routeAroundDistressShip } from './distress-navigation';
+import { WORK_STANDOFF, clampPoint, workPoint } from './salvage-work-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
   salvageFieldPhysicsBodies,
 } from './salvage-container-motion';
+import { planPointRoute } from '../local-space/local-space-navigation';
+import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
+import { longRangeScanRadius } from '../scanning/scanner-service';
+import type { ShipHardpoints } from '../../core/ship-types';
+import { seededLocalGate } from '../../core/local-space-exit';
+import type {
+  SalvageLocalPhase,
+  SalvageLocalSpaceSnapshot,
+  SalvageWreck,
+} from '../../core/salvage-types';
+import type { LocalShipState } from '../../core/local-space-types';
+import type { EconomyResourceId } from '../../core/economy-types';
+import type { WorldPoint } from '../../core/world-types';
+import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
+import { distance } from '../local-space/local-space-motion';
+import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
+import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { createSalvageEventController } from './salvage-event-service';
 import {
   createSalvageFieldService,
@@ -27,10 +29,8 @@ import {
   type SalvageFieldService,
   type SalvageResourceCollector,
 } from './salvage-field-service';
-import { advanceSalvageSurvey } from './salvage-survey';
 
 const INSPECTION_SECONDS = 2.8;
-const WORK_STANDOFF = 105;
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
 type ApproachPurpose = 'inspect' | 'strip' | 'component';
@@ -66,25 +66,6 @@ interface SalvageRuntimeOptions {
   readonly scanAvailable?: boolean;
   readonly sensorModifier?: number;
   readonly sensorCrewSkill?: number;
-}
-
-function clampPoint(point: WorldPoint, width: number, height: number): WorldPoint {
-  return {
-    x: Math.max(0, Math.min(width, point.x)),
-    y: Math.max(0, Math.min(height, point.y)),
-  };
-}
-
-function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint {
-  const dx = ship.position.x - wreck.position.x;
-  const dy = ship.position.y - wreck.position.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const range =
-    wreck.radius + (wreck.id.startsWith('event-wreck-salvage-distress-') ? 45 : WORK_STANDOFF);
-  return {
-    x: wreck.position.x + (dx / length) * range,
-    y: wreck.position.y + (dy / length) * range,
-  };
 }
 
 class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
@@ -299,14 +280,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
       this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
-      this.longRangeScanElapsed = advanceSalvageSurvey(
-        this.longRangeScanElapsed,
-        delta,
-        this.options.field,
-        this.ship.position,
-        this.options.sensorModifier ?? 1,
-        this.options.sensorCrewSkill ?? this.options.crewSkill
-      );
+      this.advanceLongRangeScan(delta);
       advanceSalvageContainerDrift(this.options.field, delta);
       if (this.phase === 'navigating' || this.phase === 'approaching') {
         this.updateRoute(delta);
@@ -329,6 +303,25 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       }
     }
     return this.getSnapshot();
+  }
+
+  private advanceLongRangeScan(delta: number): void {
+    if (this.longRangeScanElapsed !== null) {
+      this.longRangeScanElapsed += delta;
+      if (this.longRangeScanElapsed >= 5) {
+        const radius = longRangeScanRadius({
+          sensorModifier: this.options.sensorModifier ?? 1,
+          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
+        });
+        for (const wreck of this.options.field.wrecks) {
+          if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
+          if (distance(this.ship.position, wreck.position) <= radius) {
+            wreck.scanLevel = 'surveyed';
+          }
+        }
+        this.longRangeScanElapsed = null;
+      }
+    }
   }
 
   private findWreck(wreckId: string | null): SalvageWreck | null {

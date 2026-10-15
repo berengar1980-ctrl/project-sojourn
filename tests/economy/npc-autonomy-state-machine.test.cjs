@@ -3,7 +3,6 @@
 const { readModuleSource } = require('../module-source.cjs');
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -403,13 +402,10 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 
 {
   const miningSource = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
-  const salvageSource = fs.readFileSync(
-    path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
-    'utf8'
-  );
+  const salvageHelpers = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-helpers.ts');
   assert(
     miningSource.includes("npc.autonomy?.phase === 'working'") &&
-      salvageSource.includes("npc.autonomy?.phase === 'working'"),
+      salvageHelpers.includes("npc.autonomy?.phase === 'working'"),
     'local worker services must require the shared working autonomy phase'
   );
 }

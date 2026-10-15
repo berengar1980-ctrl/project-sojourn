@@ -35,11 +35,11 @@ for (const seed of [1, 2, 17, 125, 2468, 31337]) {
 assert(localModel.includes('backgroundSeed: snapshot.instance.seed'));
 assert(salvageModel.includes('backgroundSeed: snapshot.field.seed'));
 assert(
-  /model\.height,\s*model\.backgroundSeed/.test(miningUi),
+  /playerAtLocalExit\([\s\S]*?model\.height,\s*model\.backgroundSeed/.test(miningUi),
   'mining exit button must test the gate actually rendered for the current field'
 );
 assert(
-  /model\.height,\s*model\.backgroundSeed/.test(salvageUi),
+  /playerAtLocalExit\([\s\S]*?model\.height,\s*model\.backgroundSeed/.test(salvageUi),
   'salvage exit button must test the gate actually rendered for the current field'
 );
 assert(

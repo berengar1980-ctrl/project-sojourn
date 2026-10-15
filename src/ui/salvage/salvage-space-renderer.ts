@@ -1,5 +1,5 @@
-import { drawSalvageWreckLabel } from './salvage-wreck-label';
 import { pickNearestHitArea } from './salvage-hit-test';
+import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { drawSalvageSection3d } from './salvage-section-mesh';
@@ -23,12 +23,7 @@ import {
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
-import {
-  type NpcHitArea,
-  SalvageSceneLayers,
-  type WreckHitArea,
-  fractional,
-} from './salvage-scene-layers';
+import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   protected readonly camera: MapCamera;
@@ -229,7 +224,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     const point = this.camera.worldToScreen(wreck.position, width, height);
     const radius = this.camera.scale(wreck.radius);
     const hitRadius = Math.max(19, radius + 10);
-    const rotation = wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation };
     const padding = hitRadius + 30;
     if (
       point.x < -padding ||
@@ -261,7 +255,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         this.context,
         {
           variant: wreck.sectionVariant,
-          rotation3d: rotation,
+          rotation3d: wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation },
           effectSeed: wreck.effectSeed ?? 0,
         },
         radius,
@@ -272,17 +266,30 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         this.context,
         {
           variant: wreck.debrisVariant,
-          rotation3d: rotation,
+          rotation3d: wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation },
           effectSeed: wreck.effectSeed ?? 0,
         },
         radius,
         performance.now() / 1000
       );
     } else {
-      drawSalvageContainer3d(this.context, wreck.containerVariant ?? 'standard', radius, rotation);
+      drawSalvageContainer3d(
+        this.context,
+        wreck.containerVariant ?? 'standard',
+        radius,
+        wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation }
+      );
     }
     this.context.restore();
-    drawSalvageWreckLabel(this.context, wreck, point, radius);
+    this.drawWreckScanCallout(wreck, point, radius);
+    this.drawWreckSelection(wreck, point, radius);
+    return { id: wreck.id, point, radius: hitRadius };
+  }
+  private drawWreckSelection(
+    wreck: SalvageWreckView,
+    point: { x: number; y: number },
+    radius: number
+  ): void {
     if (
       (wreck.isSelected || wreck.isWorkTarget) &&
       !wreck.id.startsWith('event-wreck-salvage-distress-')
@@ -298,8 +305,43 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.stroke();
       this.context.restore();
     }
-    return { id: wreck.id, point, radius: hitRadius };
   }
+
+  private drawWreckScanCallout(
+    wreck: SalvageWreckView,
+    point: { x: number; y: number },
+    radius: number
+  ): void {
+    // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
+    if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
+      const lines =
+        wreck.scanLevel === 'analyzed'
+          ? wreck.resources.length > 0
+            ? wreck.resources.map(
+                (resource) =>
+                  resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t'
+              )
+            : ['LEER']
+          : ['???'];
+      const x = point.x + radius * 0.72;
+      const y = point.y - radius * 0.72;
+      this.context.save();
+      this.context.strokeStyle = wreck.inspected
+        ? 'rgba(121,220,237,.82)'
+        : 'rgba(139,192,153,.72)';
+      this.context.fillStyle = wreck.inspected ? 'rgba(179,235,244,.92)' : 'rgba(168,205,178,.84)';
+      this.context.lineWidth = 1;
+      this.context.beginPath();
+      this.context.moveTo(x, y);
+      this.context.lineTo(x + 10, y - 10);
+      this.context.lineTo(x + 18, y - 10);
+      this.context.stroke();
+      this.context.font = '9px ui-monospace, monospace';
+      lines.forEach((line, index) => this.context.fillText(line, x + 22, y - 10 + index * 12));
+      this.context.restore();
+    }
+  }
+
   protected drawLongRangeSalvageScan(width: number, height: number, _timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
@@ -357,75 +399,28 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   protected drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
-    const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
-    if (!wreck) return;
-    const geometry = this.shipGeometry(width, height);
-    const wreckPoint = this.camera.worldToScreen(wreck.position, width, height);
-    const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
-    const emitters =
-      hardpoints.length > 0
-        ? hardpoints.map((hardpoint) =>
-            projectHardpoint(hardpoint, this.model.ship.hardpoints, geometry)
-          )
-        : [geometry.center];
-    const progress = this.model.operationProgress ?? 0;
-    const pulse = 0.68 + Math.sin(timeSeconds * 7.5) * 0.2;
-    const component = this.model.phase === 'extracting-component';
+    drawPlayerSalvageWorkEffect(
+      this.context,
+      this.camera,
+      this.model,
+      this.shipGeometry(width, height),
+      width,
+      height,
+      timeSeconds
+    );
+  }
+  protected drawRoute(width: number, height: number): void {
+    if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
     this.context.save();
-    this.context.lineCap = 'round';
-    for (const emitter of emitters) {
-      this.context.shadowColor = component
-        ? 'rgba(110, 214, 255, 0.8)'
-        : 'rgba(235, 180, 83, 0.78)';
-      this.context.shadowBlur = 8 + pulse * 5;
-      this.context.strokeStyle = component
-        ? `rgba(128, 220, 255, ${0.34 + pulse * 0.28})`
-        : `rgba(239, 187, 91, ${0.32 + pulse * 0.3})`;
-      this.context.lineWidth = 5.5;
-      this.context.beginPath();
-      this.context.moveTo(emitter.x, emitter.y);
-      this.context.lineTo(wreckPoint.x, wreckPoint.y);
-      this.context.stroke();
-      this.context.shadowBlur = 2;
-      this.context.strokeStyle = component
-        ? `rgba(220, 248, 255, ${0.64 + pulse * 0.25})`
-        : `rgba(255, 230, 164, ${0.62 + pulse * 0.28})`;
-      this.context.lineWidth = 1.1;
-      this.context.setLineDash([7, 5]);
-      this.context.lineDashOffset = -timeSeconds * 24;
-      this.context.beginPath();
-      this.context.moveTo(emitter.x, emitter.y);
-      this.context.lineTo(wreckPoint.x, wreckPoint.y);
-      this.context.stroke();
-    }
-    this.context.setLineDash([]);
-    for (let index = 0; index < 9; index += 1) {
-      const destination = emitters[index % emitters.length] ?? geometry.center;
-      const phase = fractional(
-        timeSeconds * (0.55 + index * 0.017) + index * 0.137 + progress * 0.2
-      );
-      const curve = Math.sin(phase * Math.PI) * (index % 2 === 0 ? 8 : -8);
-      const dx = destination.x - wreckPoint.x;
-      const dy = destination.y - wreckPoint.y;
-      const length = Math.max(1, Math.hypot(dx, dy));
-      const nx = -dy / length;
-      const ny = dx / length;
-      const x = wreckPoint.x + dx * phase + nx * curve;
-      const y = wreckPoint.y + dy * phase + ny * curve;
-      const alpha = Math.sin(phase * Math.PI) * 0.78;
-      this.context.fillStyle = component
-        ? `rgba(176, 232, 255, ${alpha})`
-        : `rgba(220, 192, 132, ${alpha})`;
-      this.context.beginPath();
-      this.context.arc(x, y, component ? 2.2 : 1.5 + (index % 3) * 0.55, 0, Math.PI * 2);
-      this.context.fill();
-    }
-    this.context.strokeStyle = component
-      ? `rgba(146, 225, 255, ${0.42 + pulse * 0.24})`
-      : `rgba(255, 194, 93, ${0.38 + pulse * 0.28})`;
-    this.context.lineWidth = 1.4;
+    this.context.strokeStyle = 'rgba(224, 177, 88, 0.68)';
+    this.context.lineWidth = 1.25;
+    this.context.setLineDash([6, 6]);
     this.context.beginPath();
-    this.context.arc(wreckPoint.x, wreckPoint.y, 12 + pulse * 5, 0, Math.PI * 2);
+    this.model.navigationRoute.forEach((entry, index) => {
+      const point = this.camera.worldToScreen(entry, width, height);
+      if (index === 0) this.context.moveTo(point.x, point.y);
+      else this.context.lineTo(point.x, point.y);
+    });
     this.context.stroke();
     this.context.restore();
   }

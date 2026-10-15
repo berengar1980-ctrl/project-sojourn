@@ -74,7 +74,10 @@ assert(renderer.includes('drawCombatTorpedo(context)'), 'combat renderer uses to
 assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
 assert(!torpedoRenderer.includes('lineTo(-8, 5)'), 'torpedo has no rocket fins');
 assert(
-  renderer.includes('drawCombatHullImpact('),
+  renderer.includes('drawStrategicHullImpact(') &&
+    fs
+      .readFileSync(path.join(root, 'src/ui/combat/strategic-hull-impact-effect.ts'), 'utf8')
+      .includes('drawCombatHullImpact('),
   'combat renderer delegates explosions to the impact renderer'
 );
 console.log('PASS projectile misses, shield contacts and distinctive missile impacts');

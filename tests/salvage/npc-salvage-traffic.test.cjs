@@ -152,6 +152,7 @@ const salvageSource = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'
 );
+const salvageHelpers = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-helpers.ts');
 assert(
   minerSource.includes('createMiningEventController'),
   'NPC miners must use the exact player mining event controller'
@@ -162,7 +163,7 @@ assert(
 );
 assert(
   minerSource.includes("npc.workRiskPreference === 'risky'") &&
-    salvageSource.includes("npc.workRiskPreference === 'risky'"),
+    salvageHelpers.includes("npc.workRiskPreference === 'risky'"),
   'NPC workers must choose their player event options from a persistent safe-or-risk preference'
 );
 assert(

@@ -144,49 +144,68 @@ export class ContainerMesh {
   }
 }
 
+type BoxDrawer = (...args: Parameters<ContainerMesh['box']>) => void;
+
+function createTankGeometry(m: ContainerMesh, box: BoxDrawer): void {
+  box(0, 0, -0.23, 3.34, 1.62, 0.23, colors.dark);
+  for (const y of [-0.79, 0.79]) box(0, y, -0.13, 3.43, 0.12, 0.36, colors.edge);
+  for (const y of [-0.39, 0.39]) {
+    m.cylinder(0, y, 0.15, 2.92, 0.4, colors.tank);
+    for (const x of [-1.12, -0.52, 0.1, 0.77, 1.16])
+      m.cylinder(x, y, 0.15, 0.07, 0.435, colors.steel);
+    box(-1.52, y, 0.15, 0.11, 0.37, 0.35, colors.dark);
+    box(1.52, y, 0.15, 0.11, 0.37, 0.35, colors.dark);
+    box(0.4, y, 0.59, 0.43, 0.07, 0.065, colors.amber);
+  }
+  for (const x of [-1.5, 1.5])
+    for (const y of [-0.7, 0.7]) box(x, y, 0, 0.18, 0.19, 0.47, colors.steel);
+  box(-0.15, 0, 0.59, 0.72, 0.17, 0.11, colors.dark);
+  box(-0.15, 0, 0.66, 0.51, 0.075, 0.065, colors.teal);
+}
+
+function createStandardGeometry(box: BoxDrawer, variant: SalvageContainerVariant): void {
+  box(0, 0, 0, 3.24, 1.46, 0.88, colors.hull);
+  box(0, 0, 0.47, 3.04, 1.29, 0.08, colors.roof);
+  box(0, 0, 0.52, 2.74, 1.09, 0.065, variant === 'damaged' ? colors.hull : colors.steel);
+  for (const y of [-0.74, 0.74]) box(0, y, 0, 3.38, 0.105, 1.0, colors.edge);
+  for (const x of [-1.64, 1.64]) box(x, 0, 0, 0.12, 1.6, 1.04, colors.edge);
+  for (const x of [-1.6, 1.6])
+    for (const y of [-0.7, 0.7]) box(x, y, 0.1, 0.16, 0.16, 1.17, colors.steel);
+  for (let i = 0; i < 11; i += 1) {
+    const x = -1.3 + i * 0.26;
+    box(x, 0, 0.57, 0.035, 1.04, 0.05, i % 4 === 0 ? colors.steel : colors.seam);
+    for (const y of [-0.77, 0.77])
+      box(x, y, 0.01, 0.055, 0.05, 0.72, i % 4 === 0 ? colors.rust : colors.roof);
+  }
+  for (const y of [-0.55, 0.55]) box(0, y, 0.575, 2.89, 0.058, 0.065, colors.steel);
+  box(-0.33, 0, 0.61, 0.75, 0.6, 0.08, colors.dark);
+  box(-0.33, 0, 0.66, 0.65, 0.53, 0.05, colors.roof);
+  box(-0.33, 0, 0.69, 0.51, 0.055, 0.035, colors.seam);
+  box(-0.33, 0, 0.69, 0.05, 0.43, 0.035, colors.seam);
+  for (const x of [-1.36, 1.36]) {
+    box(x, 0, 0.61, 0.065, 1.19, 0.1, colors.steel);
+    for (const y of [-0.48, 0.48]) box(x, y, 0.66, 0.17, 0.11, 0.047, colors.amber);
+  }
+  for (let i = 0; i < 4; i += 1)
+    box(0.76 + i * 0.16, -0.49, 0.62, 0.11, 0.15, 0.045, i % 2 ? colors.pale : colors.amber);
+  box(1.56, -0.37, 0.07, 0.06, 0.23, 0.16, colors.teal);
+  box(-1.56, 0.37, 0.07, 0.06, 0.23, 0.16, colors.red);
+  for (const y of [-0.44, 0, 0.44]) box(1.71, y, 0, 0.034, 0.035, 0.6, colors.steel);
+  if (variant === 'damaged') {
+    box(0.45, 0.15, 0.61, 1.13, 0.82, 0.13, colors.dark);
+    box(0.45, 0.15, 0.68, 0.91, 0.6, 0.07, colors.seam);
+    for (const x of [-0.15, 0.12, 0.58, 0.86]) box(x, 0.12, 0.74, 0.065, 0.62, 0.085, colors.rust);
+    box(-1.22, 0.33, 0.68, 0.39, 0.25, 0.09, colors.rust);
+    box(1.52, -0.62, 0.12, 0.45, 0.13, 0.35, colors.rust);
+    box(0.92, -0.47, 0.67, 0.24, 0.17, 0.05, colors.red);
+  }
+}
+
 function createContainer(variant: SalvageContainerVariant): readonly Face[] {
   const m = new ContainerMesh();
   const box = (...args: Parameters<ContainerMesh['box']>): void => m.box(...args);
-  if (variant === 'tank') {
-    createTank(m);
-  } else {
-    box(0, 0, 0, 3.24, 1.46, 0.88, colors.hull);
-    box(0, 0, 0.47, 3.04, 1.29, 0.08, colors.roof);
-    box(0, 0, 0.52, 2.74, 1.09, 0.065, variant === 'damaged' ? colors.hull : colors.steel);
-    for (const y of [-0.74, 0.74]) box(0, y, 0, 3.38, 0.105, 1.0, colors.edge);
-    for (const x of [-1.64, 1.64]) box(x, 0, 0, 0.12, 1.6, 1.04, colors.edge);
-    for (const x of [-1.6, 1.6])
-      for (const y of [-0.7, 0.7]) box(x, y, 0.1, 0.16, 0.16, 1.17, colors.steel);
-    for (let i = 0; i < 11; i += 1) {
-      const x = -1.3 + i * 0.26;
-      box(x, 0, 0.57, 0.035, 1.04, 0.05, i % 4 === 0 ? colors.steel : colors.seam);
-      for (const y of [-0.77, 0.77])
-        box(x, y, 0.01, 0.055, 0.05, 0.72, i % 4 === 0 ? colors.rust : colors.roof);
-    }
-    for (const y of [-0.55, 0.55]) box(0, y, 0.575, 2.89, 0.058, 0.065, colors.steel);
-    box(-0.33, 0, 0.61, 0.75, 0.6, 0.08, colors.dark);
-    box(-0.33, 0, 0.66, 0.65, 0.53, 0.05, colors.roof);
-    box(-0.33, 0, 0.69, 0.51, 0.055, 0.035, colors.seam);
-    box(-0.33, 0, 0.69, 0.05, 0.43, 0.035, colors.seam);
-    for (const x of [-1.36, 1.36]) {
-      box(x, 0, 0.61, 0.065, 1.19, 0.1, colors.steel);
-      for (const y of [-0.48, 0.48]) box(x, y, 0.66, 0.17, 0.11, 0.047, colors.amber);
-    }
-    for (let i = 0; i < 4; i += 1)
-      box(0.76 + i * 0.16, -0.49, 0.62, 0.11, 0.15, 0.045, i % 2 ? colors.pale : colors.amber);
-    box(1.56, -0.37, 0.07, 0.06, 0.23, 0.16, colors.teal);
-    box(-1.56, 0.37, 0.07, 0.06, 0.23, 0.16, colors.red);
-    for (const y of [-0.44, 0, 0.44]) box(1.71, y, 0, 0.034, 0.035, 0.6, colors.steel);
-    if (variant === 'damaged') {
-      box(0.45, 0.15, 0.61, 1.13, 0.82, 0.13, colors.dark);
-      box(0.45, 0.15, 0.68, 0.91, 0.6, 0.07, colors.seam);
-      for (const x of [-0.15, 0.12, 0.58, 0.86])
-        box(x, 0.12, 0.74, 0.065, 0.62, 0.085, colors.rust);
-      box(-1.22, 0.33, 0.68, 0.39, 0.25, 0.09, colors.rust);
-      box(1.52, -0.62, 0.12, 0.45, 0.13, 0.35, colors.rust);
-      box(0.92, -0.47, 0.67, 0.24, 0.17, 0.05, colors.red);
-    }
-  }
+  if (variant === 'tank') createTankGeometry(m, box);
+  else createStandardGeometry(box, variant);
   return m.faces;
 }
 
@@ -261,22 +280,4 @@ export function drawProjectedSalvageMesh(
     context.closePath();
     context.fill();
   }
-}
-
-function createTank(m: ContainerMesh): void {
-  const box = (...args: Parameters<ContainerMesh['box']>): void => m.box(...args);
-  box(0, 0, -0.23, 3.34, 1.62, 0.23, colors.dark);
-  for (const y of [-0.79, 0.79]) box(0, y, -0.13, 3.43, 0.12, 0.36, colors.edge);
-  for (const y of [-0.39, 0.39]) {
-    m.cylinder(0, y, 0.15, 2.92, 0.4, colors.tank);
-    for (const x of [-1.12, -0.52, 0.1, 0.77, 1.16])
-      m.cylinder(x, y, 0.15, 0.07, 0.435, colors.steel);
-    box(-1.52, y, 0.15, 0.11, 0.37, 0.35, colors.dark);
-    box(1.52, y, 0.15, 0.11, 0.37, 0.35, colors.dark);
-    box(0.4, y, 0.59, 0.43, 0.07, 0.065, colors.amber);
-  }
-  for (const x of [-1.5, 1.5])
-    for (const y of [-0.7, 0.7]) box(x, y, 0, 0.18, 0.19, 0.47, colors.steel);
-  box(-0.15, 0, 0.59, 0.72, 0.17, 0.11, colors.dark);
-  box(-0.15, 0, 0.66, 0.51, 0.075, 0.065, colors.teal);
 }
