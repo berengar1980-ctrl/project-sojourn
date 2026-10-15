@@ -8,17 +8,11 @@ Die Diagnose verwendet die vom Nutzer in Codespaces erzeugte Datei `combat-stagn
 
 In allen neun regulären Läufen werden wiederholt Abstände nahe 86–87 Metern erreicht. Dort bleiben die beiden Schiffe sehr langsam, obwohl ihre Antriebssubsysteme intakt sind. Die gewünschte Distanz und der tatsächlich erreichte Abstand widersprechen sich.
 
-| Szenario | Seed | Beginn längerer gemeinsamer Langsamfahrt | Kontaktnahe 1-s-Traces im Diagnosefenster | Strategie A / B |
-| --- | --- | --- | --- | --- |
-| Front / Breitseite | 100 | 58,40 s | 17/17 | frontal / broadside |
-| Front / Breitseite | 101 | 51,92 s | 12/17 | frontal / broadside |
-| Front / Breitseite | 102 | 58,40 s | 17/17 | frontal / broadside |
-| Schnell / Langsam | 100 | 24,24 s | 13/17 | frontal / broadside |
-| Schnell / Langsam | 101 | 20,88 s | 12/17 | frontal / broadside |
-| Schnell / Langsam | 102 | 24,24 s | 13/17 | frontal / broadside |
-| Front / Front | 100 | 28,24 s | 12/17 | frontal / frontal |
-| Front / Front | 101 | 26,72 s | 12/17 | frontal / frontal |
-| Front / Front | 102 | 28,24 s | 12/17 | frontal / frontal |
+Die folgenden Angaben nennen Seed, Beginn einer längeren Langsamfahrt und kontaktnahe Sekundenstichproben im Diagnosefenster:
+
+- **Front / Breitseite:** Seed 100: 58,40 s (17/17); Seed 101: 51,92 s (12/17); Seed 102: 58,40 s (17/17). Doktrinen: frontal / broadside.
+- **Schnell / Langsam:** Seed 100: 24,24 s (13/17); Seed 101: 20,88 s (12/17); Seed 102: 24,24 s (13/17). Doktrinen: frontal / broadside.
+- **Front / Front:** Seed 100: 28,24 s (12/17); Seed 101: 26,72 s (12/17); Seed 102: 28,24 s (12/17). Doktrinen: frontal / frontal.
 
 **Interpretation:** Eine contact-nahe Trace-Stichprobe meint einen aufgezeichneten Sekundenpunkt mit Distanz von 85,5 bis 87,1 Metern, nicht einen ausdrücklich protokollierten Aufruf der Kollisionsroutine. Werte stammen aus den 17 einsekündigen Stichproben im jeweiligen Fenster. Sie sind nicht gleichbedeutend mit Gesamtzeit bei physischer Kollision.
 
