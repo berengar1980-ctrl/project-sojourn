@@ -194,3 +194,12 @@ assert(
 );
 
 console.log('PASS docked port UI architecture and market presentation');
+
+assert(
+  portUi.includes('aria-label="Schiffs- und Kampffähigkeiten"') &&
+    portUi.includes('crew.skills.map((skill)') &&
+    portUi.includes('FERNKAMPF ${crew.ranged}') &&
+    portUi.includes('NAHKAMPF ${crew.melee}') &&
+    !portUi.includes('crew.traits.map('),
+  'recruit cards must show all seven station skills and both combat skills without social traits'
+);
