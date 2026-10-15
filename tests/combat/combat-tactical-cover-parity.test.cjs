@@ -32,15 +32,13 @@ const planned = {
 };
 const fighting = { tactic: 'fight' };
 assert.deepEqual(
-  resolveExchangeFlightGoals(planned, fighting, fighting, undefined, null, null)
-    .initiatorGoal,
+  resolveExchangeFlightGoals(planned, fighting, fighting, undefined, null, null).initiatorGoal,
   planned.initiatorGoal,
   'ordinary defensive cover cannot override a committed exchange passage'
 );
 assert.deepEqual(
-  resolveExchangeFlightGoals(
-    planned, fighting, fighting, undefined, { x: 500, y: 500 }, null
-  ).initiatorGoal,
+  resolveExchangeFlightGoals(planned, fighting, fighting, undefined, { x: 500, y: 500 }, null)
+    .initiatorGoal,
   { x: 500, y: 500 },
   'a critical safety reaction temporarily overrides the committed passage'
 );
