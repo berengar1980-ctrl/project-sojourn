@@ -99,7 +99,16 @@ const incoming = decorativeBody.physics.velocity.x;
 const after = service.tick(0.05);
 assert(
   after.shieldImpacts.length >= 1,
-  'colliding with non-selectable scrap must visibly activate the shield'
+  'colliding with non-selectable scrap must visibly activate the shield: ' +
+    JSON.stringify({
+      player,
+      radius: decorativeBody.radius,
+      bodyPosition: decorativeBody.position,
+      bodyVelocity: decorativeBody.physics.velocity,
+      incoming,
+      shieldImpacts: after.shieldImpacts.length,
+      shield: after.shieldImpacts,
+    })
 );
 assert(
   after.shieldImpacts.some((effect) => effect.lifetimeSeconds > 0),
