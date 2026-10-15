@@ -22,4 +22,3 @@ export function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint
     y: wreck.position.y + (dy / length) * range,
   };
 }
-

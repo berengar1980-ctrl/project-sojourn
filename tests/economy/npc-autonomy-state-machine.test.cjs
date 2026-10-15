@@ -402,10 +402,7 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 
 {
   const miningSource = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
-  const salvageHelpers = readModuleSource(
-    root,
-    'src/systems/npcs/npc-local-salvage-helpers.ts'
-  );
+  const salvageHelpers = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-helpers.ts');
   assert(
     miningSource.includes("npc.autonomy?.phase === 'working'") &&
       salvageHelpers.includes("npc.autonomy?.phase === 'working'"),

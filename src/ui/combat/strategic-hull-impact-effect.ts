@@ -2,10 +2,10 @@ import { drawCombatHullImpact } from './combat-hull-impact-renderer';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 
 export function drawStrategicHullImpact(
-context: CanvasRenderingContext2D,
-impact: StrategicCombatSnapshot['lastImpact'],
-impactAge: number,
-point: { readonly x: number; readonly y: number }
+  context: CanvasRenderingContext2D,
+  impact: StrategicCombatSnapshot['lastImpact'],
+  impactAge: number,
+  point: { readonly x: number; readonly y: number }
 ): void {
   if (!impact) return;
   drawCombatHullImpact(context, impact, impactAge, point);

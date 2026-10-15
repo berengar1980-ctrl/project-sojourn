@@ -1,11 +1,18 @@
 import type { SalvageDebris, SalvageDebrisVariant } from '../../core/salvage-types';
 import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
-import { C, plate, beam, cable, hatch, grates, tornFrame, buildCorridor, buildDeck, buildAirlock } from './salvage-debris-structures';
 import {
-  ContainerMesh,
-  drawProjectedSalvageMesh,
-  type Face,
-} from './salvage-container-mesh';
+  C,
+  plate,
+  beam,
+  cable,
+  hatch,
+  grates,
+  tornFrame,
+  buildCorridor,
+  buildDeck,
+  buildAirlock,
+} from './salvage-debris-structures';
+import { ContainerMesh, drawProjectedSalvageMesh, type Face } from './salvage-container-mesh';
 
 function buildTruss(m: ContainerMesh): void {
   tornFrame(m, 4.64, 0.75, 0.11);

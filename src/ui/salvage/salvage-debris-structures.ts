@@ -292,4 +292,3 @@ export function buildAirlock(m: ContainerMesh): void {
     C.coolant
   );
 }
-

@@ -23,11 +23,7 @@ import {
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
-import {
-  type NpcHitArea,
-  SalvageSceneLayers,
-  type WreckHitArea,
-} from './salvage-scene-layers';
+import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   protected readonly camera: MapCamera;
@@ -289,7 +285,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawWreckSelection(wreck, point, radius);
     return { id: wreck.id, point, radius: hitRadius };
   }
-  private drawWreckSelection(wreck: SalvageWreckView, point: { x: number; y: number }, radius: number): void {
+  private drawWreckSelection(
+    wreck: SalvageWreckView,
+    point: { x: number; y: number },
+    radius: number
+  ): void {
     if (
       (wreck.isSelected || wreck.isWorkTarget) &&
       !wreck.id.startsWith('event-wreck-salvage-distress-')
@@ -307,7 +307,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
   }
 
-  private drawWreckScanCallout(wreck: SalvageWreckView, point: { x: number; y: number }, radius: number): void {
+  private drawWreckScanCallout(
+    wreck: SalvageWreckView,
+    point: { x: number; y: number },
+    radius: number
+  ): void {
     // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
       const lines =

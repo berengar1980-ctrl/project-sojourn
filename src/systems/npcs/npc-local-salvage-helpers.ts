@@ -113,4 +113,3 @@ export function recoveryAmount(npc: SectorNpcState, wreck: SalvageWreck): number
     Math.round((3 + wreck.quality * 2) * runtime.salvage.yieldMultiplier * crewMultiplier)
   );
 }
-
