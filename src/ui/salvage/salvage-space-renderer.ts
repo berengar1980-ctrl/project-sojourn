@@ -1,4 +1,5 @@
 import { pickNearestHitArea } from './salvage-hit-test';
+import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { drawSalvageSection3d } from './salvage-section-mesh';
@@ -394,78 +395,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.restore();
   }
   protected drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
-    if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
-    const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
-    if (!wreck) return;
-    const geometry = this.shipGeometry(width, height);
-    const wreckPoint = this.camera.worldToScreen(wreck.position, width, height);
-    const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
-    const emitters =
-      hardpoints.length > 0
-        ? hardpoints.map((hardpoint) =>
-            projectHardpoint(hardpoint, this.model.ship.hardpoints, geometry)
-          )
-        : [geometry.center];
-    const progress = this.model.operationProgress ?? 0;
-    const pulse = 0.68 + Math.sin(timeSeconds * 7.5) * 0.2;
-    const component = this.model.phase === 'extracting-component';
-    this.context.save();
-    this.context.lineCap = 'round';
-    for (const emitter of emitters) {
-      this.context.shadowColor = component
-        ? 'rgba(110, 214, 255, 0.8)'
-        : 'rgba(235, 180, 83, 0.78)';
-      this.context.shadowBlur = 8 + pulse * 5;
-      this.context.strokeStyle = component
-        ? `rgba(128, 220, 255, ${0.34 + pulse * 0.28})`
-        : `rgba(239, 187, 91, ${0.32 + pulse * 0.3})`;
-      this.context.lineWidth = 5.5;
-      this.context.beginPath();
-      this.context.moveTo(emitter.x, emitter.y);
-      this.context.lineTo(wreckPoint.x, wreckPoint.y);
-      this.context.stroke();
-      this.context.shadowBlur = 2;
-      this.context.strokeStyle = component
-        ? `rgba(220, 248, 255, ${0.64 + pulse * 0.25})`
-        : `rgba(255, 230, 164, ${0.62 + pulse * 0.28})`;
-      this.context.lineWidth = 1.1;
-      this.context.setLineDash([7, 5]);
-      this.context.lineDashOffset = -timeSeconds * 24;
-      this.context.beginPath();
-      this.context.moveTo(emitter.x, emitter.y);
-      this.context.lineTo(wreckPoint.x, wreckPoint.y);
-      this.context.stroke();
-    }
-    this.context.setLineDash([]);
-    for (let index = 0; index < 9; index += 1) {
-      const destination = emitters[index % emitters.length] ?? geometry.center;
-      const phase = fractional(
-        timeSeconds * (0.55 + index * 0.017) + index * 0.137 + progress * 0.2
-      );
-      const curve = Math.sin(phase * Math.PI) * (index % 2 === 0 ? 8 : -8);
-      const dx = destination.x - wreckPoint.x;
-      const dy = destination.y - wreckPoint.y;
-      const length = Math.max(1, Math.hypot(dx, dy));
-      const nx = -dy / length;
-      const ny = dx / length;
-      const x = wreckPoint.x + dx * phase + nx * curve;
-      const y = wreckPoint.y + dy * phase + ny * curve;
-      const alpha = Math.sin(phase * Math.PI) * 0.78;
-      this.context.fillStyle = component
-        ? `rgba(176, 232, 255, ${alpha})`
-        : `rgba(220, 192, 132, ${alpha})`;
-      this.context.beginPath();
-      this.context.arc(x, y, component ? 2.2 : 1.5 + (index % 3) * 0.55, 0, Math.PI * 2);
-      this.context.fill();
-    }
-    this.context.strokeStyle = component
-      ? `rgba(146, 225, 255, ${0.42 + pulse * 0.24})`
-      : `rgba(255, 194, 93, ${0.38 + pulse * 0.28})`;
-    this.context.lineWidth = 1.4;
-    this.context.beginPath();
-    this.context.arc(wreckPoint.x, wreckPoint.y, 12 + pulse * 5, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
+    drawPlayerSalvageWorkEffect(this.context, this.camera, this.model, this.shipGeometry(width, height), width, height, timeSeconds);
   }
   protected drawRoute(width: number, height: number): void {
     if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
