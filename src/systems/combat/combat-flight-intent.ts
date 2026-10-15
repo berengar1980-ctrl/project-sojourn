@@ -9,7 +9,14 @@ import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 export interface CombatFlightIntent {
   readonly direction: CombatPoint;
   readonly speedFactor: number;
-  readonly kind: 'escape' | 'ram' | 'pursuit' | 'minefield' | 'intercept' | 'pass' | 'extend';
+  readonly kind:
+    | 'escape'
+    | 'ram'
+    | 'pursuit'
+    | 'minefield'
+    | 'intercept'
+    | 'pass'
+    | 'extend';
 }
 
 /**
@@ -34,13 +41,10 @@ export function chooseCombatFlightIntent(
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
     const exit = arena.exitPoint;
-    return {
-      kind: 'escape',
-      direction: exit
-        ? normalize(exit.x - ship.position.x, exit.y - ship.position.y)
-        : away,
-      speedFactor: 1,
-    };
+    const direction = exit
+      ? normalize(exit.x - ship.position.x, exit.y - ship.position.y)
+      : away;
+    return { kind: 'escape', direction, speedFactor: 1 };
   }
   if (deliberateRam) {
     delete ship.flightPass;
