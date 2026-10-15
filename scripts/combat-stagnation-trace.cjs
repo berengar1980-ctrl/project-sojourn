@@ -70,9 +70,7 @@ function createStagnationTrace(maxSpeeds) {
     const round = (value) => Number(value.toFixed(2));
     const start = firstStall === null ? 0 : Math.max(0, firstStall - 5);
     const end = firstStall === null ? Math.min(20, previousTime ?? 0) : firstStall + 12;
-    const relevant = log.filter(
-      (entry) => entry.timeSeconds >= start && entry.timeSeconds <= end
-    );
+    const relevant = log.filter((entry) => entry.timeSeconds >= start && entry.timeSeconds <= end);
     return {
       firstSustainedSlowStartSeconds: firstStall === null ? null : round(firstStall),
       secondsNear86mContact: round(contactSeconds),
