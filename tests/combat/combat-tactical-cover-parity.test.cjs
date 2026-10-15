@@ -21,9 +21,28 @@ assert(
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
 assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
 assert(movement.includes('cover ?? waypoint ?? direction'));
-assert(
-  exchange.includes('coverGoal(initiator, opponent, runtime.arena)'),
-  'exchange machine and free flight share the same defensive cover rule'
+const { resolveExchangeFlightGoals } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-exchange-goals.ts'
+);
+assert(exchange.includes('resolveExchangeFlightGoals('), 'exchange delegates flight priority');
+const planned = {
+  initiatorGoal: { x: 1100, y: 400 },
+  reactorGoal: { x: 250, y: 900 },
+};
+const fighting = { tactic: 'fight' };
+assert.deepEqual(
+  resolveExchangeFlightGoals(planned, fighting, fighting, undefined, null, null)
+    .initiatorGoal,
+  planned.initiatorGoal,
+  'ordinary defensive cover cannot override a committed exchange passage'
+);
+assert.deepEqual(
+  resolveExchangeFlightGoals(
+    planned, fighting, fighting, undefined, { x: 500, y: 500 }, null
+  ).initiatorGoal,
+  { x: 500, y: 500 },
+  'a critical safety reaction temporarily overrides the committed passage'
 );
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
