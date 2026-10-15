@@ -4,9 +4,6 @@
 // Sampled points are 0.8s apart, so short passages and fast spins may be missed.
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const wrapAngle = (angle) => Math.atan2(Math.sin(angle), Math.cos(angle));
-const signedAlong = (a, b, heading) =>
-  (b[0] - a[0]) * Math.cos(heading) + (b[1] - a[1]) * Math.sin(heading);
-const ratio = (value, limit) => Math.min(1, Math.max(-1, value / limit));
 const round = (value) => Number(value.toFixed(3));
 
 function inspectTrajectory(entry) {
@@ -25,6 +22,7 @@ function inspectTrajectory(entry) {
   let passArmed = true;
   let approaching = false;
   let orbitAngle = 0;
+  let closestInApproach = Infinity;
   for (let i = 1; i < frames.length; i += 1) {
     const previous = frames[i - 1];
     const frame = frames[i];
@@ -34,16 +32,20 @@ function inspectTrajectory(entry) {
     const earlierSeparation = distance(previous.a, previous.b);
     metrics.minimumObservedSeparation = Math.min(metrics.minimumObservedSeparation, separation);
     metrics.observedSeconds += dt;
-    if (separation < earlierSeparation - 1) approaching = true;
+    if (separation < earlierSeparation - 1) {
+      approaching = true;
+      closestInApproach = Math.min(closestInApproach, separation);
+    }
     if (approaching && separation > earlierSeparation + 1) {
       metrics.approachAndRecede += 1;
       // A narrow encounter with both closing and opening motion is a proximity
       // passage candidate, not proof that hulls crossed or exchanged sides.
-      if (separation < 420 && passArmed) {
+      if (closestInApproach < 420 && passArmed) {
         metrics.passages += 1;
         passArmed = false;
       }
       approaching = false;
+      closestInApproach = Infinity;
     }
     if (separation > 550) passArmed = true;
     const beforeBearing = Math.atan2(previous.b[1] - previous.a[1], previous.b[0] - previous.a[0]);
