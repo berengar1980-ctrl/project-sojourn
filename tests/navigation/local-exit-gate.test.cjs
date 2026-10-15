@@ -42,8 +42,8 @@ assert(
   )
 );
 assert(
-  read('src/systems/combat/strategic-combat-movement.ts').includes(
-    'arena.exitPoint.x - combatant.position.x'
+  read('src/systems/combat/combat-flight-intent.ts').includes(
+    'exit.x - ship.position.x'
   )
 );
 assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNKT'));
