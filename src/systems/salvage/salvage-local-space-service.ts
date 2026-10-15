@@ -1,5 +1,5 @@
 import { routeAroundDistressShip } from './distress-navigation';
-import { clampPoint, workPoint } from './salvage-work-navigation';
+import { WORK_STANDOFF, clampPoint, workPoint } from './salvage-work-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
