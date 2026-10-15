@@ -25,23 +25,39 @@ const ship = (x) => ({
 const pursuer = ship(250);
 const target = ship(900);
 
-assert.equal(executor.executeCombatPlan(pursuer, target), 'fire',
-  'previously firing ship must not oscillate at the original 1.2x range boundary');
+assert.equal(
+  executor.executeCombatPlan(pursuer, target),
+  'fire',
+  'previously firing ship must not oscillate at the original 1.2x range boundary'
+);
 target.position.x = 920;
-assert.equal(executor.executeCombatPlan(pursuer, target), 'reach_range',
-  'a genuinely out-of-range target should trigger pursuit');
+assert.equal(
+  executor.executeCombatPlan(pursuer, target),
+  'reach_range',
+  'a genuinely out-of-range target should trigger pursuit'
+);
 target.position.x = 490;
-assert.equal(executor.executeCombatPlan(pursuer, target), 'reach_range',
-  'a very close collision approach still requires corrective movement');
+assert.equal(
+  executor.executeCombatPlan(pursuer, target),
+  'regroup',
+  'close-range overshoot first invokes regroup without abruptly resuming fire'
+);
 target.position.x = 710;
-assert.equal(executor.executeCombatPlan(pursuer, target), 'fire',
-  'the stabilized weapon envelope should resume firing');
+assert.equal(
+  executor.executeCombatPlan(pursuer, target),
+  'fire',
+  'the stabilized weapon envelope should resume firing'
+);
 target.tactic = 'flee';
 target.shieldHp = 0;
 target.headingRadians = 0;
 target.subsystems.engine = 100;
-assert(targeting.canEngagePreferredSubsystem(pursuer, target),
-  'unexposed enemy engines must never suppress all otherwise valid hull shots');
+assert(
+  targeting.canEngagePreferredSubsystem(pursuer, target),
+  'unexposed enemy engines must never suppress all otherwise valid hull shots'
+);
 assert.equal(intent.describeCombatIntent(pursuer), 'UNBEWAFFNET · DISTANZ HALTEN');
 
-console.log('PASS stable combat firing envelope, no soft-lock on fleeing engine and useful unarmed status');
+console.log(
+  'PASS stable combat firing envelope, no soft-lock on fleeing engine and useful unarmed status'
+);

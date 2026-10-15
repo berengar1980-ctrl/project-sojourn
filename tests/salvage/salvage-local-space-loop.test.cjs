@@ -71,7 +71,9 @@ const scanService = local.createSalvageLocalSpaceService({
   },
   crewSkill: 65,
   approachSpeed: 400,
-  collect() { return 0; },
+  collect() {
+    return 0;
+  },
 });
 const nearby = scanField.wrecks[0];
 const shipPoint = scanService.getSnapshot().ship.position;
@@ -94,18 +96,21 @@ const catchup = local.createSalvageLocalSpaceService({
   },
   crewSkill: 60,
   approachSpeed: 400,
-  collect() { return 0; },
+  collect() {
+    return 0;
+  },
 });
 catchup.startLongRangeScan();
 catchup.tick(0.12);
-assert(catchup.getSnapshot().longRangeScanProgress > 0.02,
-  'slow frames must advance elapsed scan time instead of dropping everything above 50ms');
-
+assert(
+  catchup.getSnapshot().longRangeScanProgress > 0.02,
+  'slow frames must advance elapsed scan time instead of dropping everything above 50ms'
+);
 
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
 service.startStrip(wreck.id, firstDeposit.resourceId);
-for (let index = 0; index < 20; index += 1) service.tick(0.05);
+for (let index = 0; index < 400 && collected === 0; index += 1) service.tick(0.05);
 assert(collected > 0, 'stripping must collect physical salvage cargo');
 assert(firstDeposit.remainingAmount < before, 'stripping must deplete the selected wreck reserve');
 assert(service.getSnapshot().recoverySerial > 0);

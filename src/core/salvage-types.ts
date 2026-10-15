@@ -30,14 +30,7 @@ export interface SalvageSection {
 }
 
 export type SalvageDebrisVariant =
-  | 'corridor'
-  | 'deck'
-  | 'airlock'
-  | 'truss'
-  | 'engine'
-  | 'reactor'
-  | 'bulkhead'
-  | 'habitation';
+  'corridor' | 'deck' | 'airlock' | 'truss' | 'engine' | 'reactor' | 'bulkhead' | 'habitation';
 
 /** Non-lootable ship fragments; kept separate from recoverable container wrecks. */
 export interface SalvageDebris {

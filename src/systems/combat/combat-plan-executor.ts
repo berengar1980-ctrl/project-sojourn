@@ -27,7 +27,7 @@ export function executeCombatPlan(
   // Hysteresis prevents reach/align/fire phases oscillating every frame.
   // Once in firing position, keep it until the ship leaves the wider band.
   const holdingFire = plan.phase === 'fire' || plan.phase === 'align_weapons';
-  const tooFar = separation > range * (holdingFire ? 1.32 : 1.10);
+  const tooFar = separation > range * (holdingFire ? 1.32 : 1.1);
   const tooNear = separation < range * (holdingFire ? 0.52 : 0.74);
   // After a close-range overshoot, commit to a short regroup instead of
   // immediately oscillating back into fire on the next frame.
@@ -37,6 +37,11 @@ export function executeCombatPlan(
   if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
   if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
   if (plan.focus === 'turret' || plan.focus === 'mine') return 'fire';
+  return evaluateWeaponAlignment(ship, enemy);
+}
+
+function evaluateWeaponAlignment(ship: MutableCombatant, enemy: MutableCombatant): CombatPlanPhase {
+  const plan = ship.strategy!;
   const bearing = Math.atan2(
     enemy.position.y - ship.position.y,
     enemy.position.x - ship.position.x

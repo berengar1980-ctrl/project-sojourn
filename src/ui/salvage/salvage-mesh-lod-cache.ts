@@ -19,8 +19,7 @@ interface Rotation3d {
 }
 
 function bucket(angle: number): number {
-  return ((Math.round((angle / TWO_PI) * ANGLE_STEPS) % ANGLE_STEPS) +
-    ANGLE_STEPS) % ANGLE_STEPS;
+  return ((Math.round((angle / TWO_PI) * ANGLE_STEPS) % ANGLE_STEPS) + ANGLE_STEPS) % ANGLE_STEPS;
 }
 
 /**

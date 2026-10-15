@@ -111,18 +111,33 @@ export function maybeLaunchTractorAsteroid(
   removeCapturedThrowable(runtime, rock, mine);
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
+  recordTractorLaunch(runtime, side, ship, rock, mine);
+}
+
+function recordTractorLaunch(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  ship: MutableCombatant,
+  rock?: CombatVisualAsteroid,
+  mine?: StrategicCombatRuntime['mines'][number]
+): void {
   runtime.lastEvent =
-    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' :
-      rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
-        ? ': TRAKTOR ERFASST SCHROTT' : ': TRAKTOR ERFASST ASTEROID');
+    ship.setup.name +
+    (mine
+      ? ': TRAKTOR ERFASST MINE'
+      : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+        ? ': TRAKTOR ERFASST SCHROTT'
+        : ': TRAKTOR ERFASST ASTEROID');
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side,
     event: 'action',
-    detail: (mine
-      ? 'TRACTOR_MINE_THROW '
-      : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
-        ? 'TRACTOR_SCRAP_THROW ' : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
+    detail:
+      (mine
+        ? 'TRACTOR_MINE_THROW '
+        : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
+          ? 'TRACTOR_SCRAP_THROW '
+          : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
   });
 }
 
@@ -183,14 +198,20 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     source: 'tractor_asteroid',
   };
   const isScrap = Boolean(rock.debrisVariant || rock.sectionVariant || rock.containerVariant);
-  runtime.lastEvent = (isScrap ? 'SCHROTTTREFFER · ' : 'ASTEROIDENTREFFER · ') +
-    Math.round(shieldDamage + hullDamage) + ' HP';
+  runtime.lastEvent =
+    (isScrap ? 'SCHROTTTREFFER · ' : 'ASTEROIDENTREFFER · ') +
+    Math.round(shieldDamage + hullDamage) +
+    ' HP';
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: rock.owner,
     event: 'impact',
-    detail: (isScrap ? 'TRACTOR_SCRAP_HIT' : 'TRACTOR_ASTEROID_HIT') +
-      ' shield=' + shieldDamage + ' hull=' + hullDamage,
+    detail:
+      (isScrap ? 'TRACTOR_SCRAP_HIT' : 'TRACTOR_ASTEROID_HIT') +
+      ' shield=' +
+      shieldDamage +
+      ' hull=' +
+      hullDamage,
   });
   return true;
 }

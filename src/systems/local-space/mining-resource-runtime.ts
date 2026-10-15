@@ -43,8 +43,8 @@ export class MiningResourceRuntime {
     }
 
     const unique = [...new Set(resourceIds)];
-    if (unique.length < 1) {
-      throw new Error('Targeted mining requires at least one resource.');
+    if (unique.length < 1 || unique.length > 2) {
+      throw new Error('Targeted mining requires one or two resources.');
     }
 
     const available = new Set(asteroid.deposits.map((deposit) => deposit.resourceId));
