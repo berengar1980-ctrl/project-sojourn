@@ -124,14 +124,18 @@ export function bindCargoMarketScanner(
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
+  let lastMarkerSignature = '';
+  const updateVisualization = (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void => {
+    const signature = [...markers].map(([id, rating]) => id + ':' + rating).join('|');
+    if (signature === lastMarkerSignature) return;
+    lastMarkerSignature = signature;
+    onVisualization(markers);
+  };
   const renderCargoScanner = (): void => {
     const scanner = getModel().cargoScanner;
-    cargoPanel.hidden = !preferredCargoVisible;
-    cargoToggle.textContent = preferredCargoVisible ? 'FRACHT // AN' : 'FRACHT // AUS';
-    if (!preferredCargoVisible) {
-      onVisualization(new Map());
-      return;
-    }
+    // The market analysis stays visible in its menu section. The toggle only
+    // controls optional map markers, not access to prices or buyer hints.
+    cargoToggle.textContent = preferredCargoVisible ? 'MARKTMARKER // AN' : 'MARKTMARKER // AUS';
     const items = scanner?.resources ?? [];
     const previous = preferredCargoResource;
     cargoSelect.replaceChildren();
@@ -150,6 +154,7 @@ export function bindCargoMarketScanner(
     if (!items.length) {
       cargoContent.textContent =
         'Frachtraum leer. Nach dem Mining erscheinen hier deine Rohstoffe.';
+      updateVisualization(new Map());
       return;
     }
     const lead = document.createElement('div');
@@ -175,7 +180,9 @@ export function bindCargoMarketScanner(
       onNavigate,
       getModel().navigation.selectedDestinationId
     );
-    onVisualization(cargoMarkers(scanner, preferredCargoResource, quotes));
+    updateVisualization(
+      preferredCargoVisible ? cargoMarkers(scanner, preferredCargoResource, quotes) : new Map()
+    );
     const legend = document.createElement('p');
     legend.className = 'cargo-market-legend';
     legend.textContent =
