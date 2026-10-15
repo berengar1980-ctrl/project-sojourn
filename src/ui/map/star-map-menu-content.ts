@@ -77,7 +77,8 @@ export function renderStarMapEvents(
 ): void {
   // Sector salvage and distress signals enter the map as dynamic wreck locations.
   const events = model.locations.filter(
-    (location) => location.kind === 'wreck' && (location.activities.salvage || location.activities.missions)
+    (location) =>
+      location.kind === 'wreck' && (location.activities.salvage || location.activities.missions)
   );
   const summary = document.createElement('p');
   summary.className = 'star-map-directory__summary';
@@ -94,6 +95,10 @@ export function renderStarMapEvents(
             () => actions.onSelectLocation(location.id)
           )
         )
-      : [createEmptyState('Derzeit keine bekannten Bergungs- oder Notsignale. Weitere Auftragstypen folgen.')])
+      : [
+          createEmptyState(
+            'Derzeit keine bekannten Bergungs- oder Notsignale. Weitere Auftragstypen folgen.'
+          ),
+        ])
   );
 }
