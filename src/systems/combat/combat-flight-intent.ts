@@ -6,17 +6,12 @@ import type {
 import { normalize } from './strategic-combat-geometry';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 
+type FlightKind = 'escape' | 'ram' | 'pursuit' | 'minefield' | 'intercept' | 'pass' | 'extend';
+
 export interface CombatFlightIntent {
   readonly direction: CombatPoint;
   readonly speedFactor: number;
-  readonly kind:
-    | 'escape'
-    | 'ram'
-    | 'pursuit'
-    | 'minefield'
-    | 'intercept'
-    | 'pass'
-    | 'extend';
+  readonly kind: FlightKind;
 }
 
 /**
@@ -41,9 +36,7 @@ export function chooseCombatFlightIntent(
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
     const exit = arena.exitPoint;
-    const direction = exit
-      ? normalize(exit.x - ship.position.x, exit.y - ship.position.y)
-      : away;
+    const direction = exit ? normalize(exit.x - ship.position.x, exit.y - ship.position.y) : away;
     return { kind: 'escape', direction, speedFactor: 1 };
   }
   if (deliberateRam) {
