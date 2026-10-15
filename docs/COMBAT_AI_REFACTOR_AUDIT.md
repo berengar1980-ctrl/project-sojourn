@@ -51,3 +51,21 @@ npm run check:quick
 3. Record scenario expectations: identical patrols; front/broadside; fast/slow; mines; tractor; flee; engine loss; obstacles; grappling.
 4. Specify the exact single control path and success/failure semantics before changing any combat behavior.
 5. Retain original features and compare matched seeds, edge cases and visible action; merge only after user approval.
+
+## Physical motion writers verified separately
+
+Not all velocity changes are competing AI commands. Preserve physically justified impulses and constraints while consolidating **AI flight intent**:
+
+| Current file | Direct motion mutation | Ownership assessment |
+| --- | --- | --- |
+| `combat-inertial-thrust.ts` | velocity/position integration | normal flight execution |
+| `combat-exchange-pilot.ts` | heading, thrust, velocity/position | exchange-only pilot; overlapping execution path |
+| `strategic-combat-movement.ts` | heading/position plus normal pilot and ship collision | regular pilot and collision boundary |
+| `combat-exchange-collision.ts` | separation impulse and ram damage | legitimate collision physics |
+| `combat-asteroid-contacts.ts` | penetration correction and collision impulse | legitimate collision physics |
+| `combat-grapple-physics.ts` | rope corrections and shared velocity adjustments | legitimate tether physics |
+| `combat-tractor-pulse.ts` | impulse to opponent's velocity | legitimate tractor gameplay effect |
+| `combat-tractor-asteroid-throw.ts` | thrown rock motion | independent asteroid/projectile simulation |
+| `strategic-combat-service.ts` | shared docking velocity, grapple branch updates | integration/coupling boundary |
+
+**Do not interpret the PDF's “one writer” as forbidding collision, tractor or grapple impulses.** The enforceable goal is one normal AI propulsion path, with explicit physical effects remaining authoritative. A naive replacement that eliminates these writers would break existing gameplay.
