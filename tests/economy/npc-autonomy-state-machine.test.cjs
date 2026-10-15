@@ -407,9 +407,13 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
     path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
     'utf8'
   );
+  const salvageHelpers = readModuleSource(
+    root,
+    'src/systems/npcs/npc-local-salvage-helpers.ts'
+  );
   assert(
     miningSource.includes("npc.autonomy?.phase === 'working'") &&
-      salvageSource.includes("npc.autonomy?.phase === 'working'"),
+      salvageHelpers.includes("npc.autonomy?.phase === 'working'"),
     'local worker services must require the shared working autonomy phase'
   );
 }
