@@ -65,9 +65,12 @@ function crewRows(model: PortViewModel): string {
       (crew) => `
         <article class="port-crew-row">
           <div class="port-crew-avatar">${crew.initials}</div>
-          <div class="port-crew-identity"><strong>${crew.name}${crew.elite ? ' // ELITE' : ''}</strong><span>${crew.role}</span><small class="port-crew-skills">${crew.skills.join(' · ')}</small></div>
-          <div class="port-traits">${crew.traits.map((trait) => `<span>${trait}</span>`).join('')}</div>
-          <div class="port-combat"><span>FK ${crew.ranged}</span><span>NK ${crew.melee}</span></div>
+          <div class="port-crew-identity"><strong>${crew.name}${crew.elite ? ' // ELITE' : ''}</strong><span>${crew.role}</span></div>
+          <div class="port-crew-skills" aria-label="Schiffs- und Kampffähigkeiten">
+            ${crew.skills.map((skill) => `<span class="port-crew-skill">${skill}</span>`).join('')}
+            <span class="port-crew-skill port-crew-skill--combat">FERNKAMPF ${crew.ranged}</span>
+            <span class="port-crew-skill port-crew-skill--combat">NAHKAMPF ${crew.melee}</span>
+          </div>
           <div class="port-crew-equipment">${crew.equipment.join(' · ')}</div>
           <strong class="port-salary">ANTEIL ${crew.share}%</strong>
           <button class="port-action-button" type="button" data-hire-crew-id="${crew.id}" ${full ? 'disabled' : ''}>ANHEUERN</button>
