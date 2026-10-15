@@ -12,6 +12,7 @@ import {
 } from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
+import { resolveExchangeFlightGoals } from './combat-exchange-goals';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -187,28 +188,6 @@ function reactToCombatEvents(
   return event.goal;
 }
 
-function resolveExchangeFlightGoals(
-  runtime: StrategicCombatRuntime,
-  state: ActiveExchange,
-  initiator: StrategicCombatRuntime['attacker'],
-  opponent: StrategicCombatRuntime['defender'],
-  initiatorOverride: { x: number; y: number } | null,
-  opponentOverride: { x: number; y: number } | null
-): ExchangeFlightPlan {
-  if (!state.flight) throw new Error('Cannot fly without an exchange plan');
-  return {
-    ...state.flight,
-    initiatorGoal:
-      (initiator.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
-      initiatorOverride ??
-      state.flight.initiatorGoal,
-    reactorGoal:
-      (opponent.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
-      opponentOverride ??
-      state.flight.reactorGoal,
-  };
-}
-
 function flyExchange(
   runtime: StrategicCombatRuntime,
   state: ActiveExchange,
@@ -264,10 +243,10 @@ function flyExchange(
   );
   const opponentOverride = reactToCombatEvents(runtime, state, opposingSide, opponent, initiator);
   const flight = resolveExchangeFlightGoals(
-    runtime,
-    state,
+    state.flight,
     initiator,
     opponent,
+    runtime.arena.exitPoint,
     initiatorOverride,
     opponentOverride
   );
