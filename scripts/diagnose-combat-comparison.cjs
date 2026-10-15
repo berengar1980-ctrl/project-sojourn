@@ -27,9 +27,9 @@ for (const entry of after) {
     main: inspectTrajectory(original),
     pr: inspectTrajectory(entry),
     escape: entry.case === 'escape' ? {
-      main: { winner: original.winner, duration: original.durationSeconds,
+      main: { winner: original.winner, likelyEscaped: original.winner === 'defender' && original.escapeDistanceToExit <= 90 && original.finalSeparation > 480, duration: original.durationSeconds,
         distanceToExit: original.escapeDistanceToExit },
-      pr: { winner: entry.winner, duration: entry.durationSeconds,
+      pr: { winner: entry.winner, likelyEscaped: entry.winner === 'defender' && entry.escapeDistanceToExit <= 90 && entry.finalSeparation > 480, duration: entry.durationSeconds,
         distanceToExit: entry.escapeDistanceToExit },
     } : undefined,
   });
