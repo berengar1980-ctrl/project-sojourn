@@ -244,4 +244,5 @@ module.exports = {
   extractDetail,
   extractDiagnosticLines,
   truncate,
+  postStatus,
 };
