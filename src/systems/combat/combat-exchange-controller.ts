@@ -185,7 +185,7 @@ function reactToCombatEvents(
     event: 'action',
     detail: 'REACTIVE_' + safetyEvent.kind.toUpperCase() + ' priority=' + safetyEvent.priority,
   });
-  return event.goal;
+  return safetyEvent.goal;
 }
 
 function flyExchange(
