@@ -1,23 +1,17 @@
-import { reviewShipContact } from './combat-contact-review';
 import { describeCombatIntent, updateCombatIntent } from './combat-intent-labels';
-import { reviewCombatCommitment } from './combat-commitment';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
-import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
+import { applyCombatRamImpact } from './combat-ram-impact';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
   maybeLaunchTractorAsteroid,
   advanceThrownAsteroids,
 } from './combat-tractor-asteroid-throw';
-import {
-  createActionExchange,
-  tickActionExchange,
-  type ActiveExchange,
-} from './combat-exchange-controller';
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceCombatGrappleTether, canDockGrappledShips } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import type {
+  MutableCombatant,
   StrategicCombatArenaOptions,
   StrategicCombatRuntime,
   StrategicCombatSnapshot,
@@ -43,7 +37,6 @@ import { maybeAttemptBoarding } from './combat-boarding-ai';
 import {
   recordCombatLog,
   reviewAndExecute,
-  recordCommitment,
   recordCombatMotion,
   reviewShieldBreakthroughs,
   reviewSubsystemBreakthroughs,
@@ -174,27 +167,18 @@ function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
     );
   }
 }
-function reviewExchangeCommitments(runtime: StrategicCombatRuntime): void {
-  const attackerDecision = reviewCombatCommitment(
-    runtime.attacker,
-    runtime.defender,
-    runtime.arena,
-    runtime.elapsedSeconds
-  );
-  const defenderDecision = reviewCombatCommitment(
-    runtime.defender,
-    runtime.attacker,
-    runtime.arena,
-    runtime.elapsedSeconds
-  );
-  if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
-  if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
+function observedMotion(ship: MutableCombatant): MutableCombatant {
+  return {
+    ...ship,
+    position: { ...ship.position },
+    velocity: { ...ship.velocity },
+    subsystems: { ...ship.subsystems },
+  };
 }
 
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
-  deltaSeconds: number,
-  actionState?: ActiveExchange
+  deltaSeconds: number
 ): StrategicCombatSnapshot {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
     return runtimeSnapshot(runtime);
@@ -252,21 +236,15 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  if (actionState) {
-    reviewExchangeCommitments(runtime);
-    tickActionExchange(runtime, actionState, dt);
-  } else {
-    reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
-    reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
-    moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
-    moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
-  }
-  // One physical impact resolver for both campaign combat and the exchange duel preset.
-  applyActionRamImpact(runtime);
-  if (!actionState)
-    reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
+  // Both decisions and pilots observe the same pre-movement physical state.
+  const observedAttacker = observedMotion(runtime.attacker);
+  const observedDefender = observedMotion(runtime.defender);
+  reviewAndExecute(runtime, runtime.attacker, observedDefender, 'attacker');
+  reviewAndExecute(runtime, runtime.defender, observedAttacker, 'defender');
+  moveCombatant(runtime.attacker, observedDefender, 'attacker', dt, runtime.arena, runtime.mines);
+  moveCombatant(runtime.defender, observedAttacker, 'defender', dt, runtime.arena, runtime.mines);
+  applyCombatRamImpact(runtime);
   resolveCombatantCollision(runtime.attacker, runtime.defender);
-  if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
   updateCombatAsteroidThrows(runtime, dt);
@@ -285,8 +263,8 @@ function tickStrategicCombat(
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
   reviewSubsystemBreakthroughs(runtime, previousSubsystems);
-  // The Alpha reference duel tests flight and weapons, not boarding transitions.
-  if (!actionState) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
+  if (runtime.arena.allowBoarding !== false)
+    maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   recordLatestCombatImpact(runtime);
@@ -316,7 +294,6 @@ function createStrategicCombatRuntime(
     grappleUsed: { attacker: false, defender: false },
     lastEvent: 'Kampfkontakt hergestellt',
     combatLog: [],
-    firstPlanner: seed % 2 === 0 ? 'attacker' : 'defender',
     lastLoggedImpact: 0,
     lastLoggedSampleSecond: -1,
     projectileSerial: 0,
@@ -362,16 +339,7 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
-  const actionState: ActiveExchange | undefined =
-    seed === 1001 ? createActionExchange(runtime) : undefined;
-  runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
-  runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
-  recordCombatLog(
-    runtime,
-    'system',
-    'start',
-    'Seed ' + seed + ' · erste Analyse ' + runtime.firstPlanner
-  );
+  recordCombatLog(runtime, 'system', 'start', 'Seed ' + seed + ' · gemeinsame Kampfsteuerung');
   for (const [side, setup] of [
     ['attacker', attackerSetup],
     ['defender', defenderSetup],
@@ -404,7 +372,7 @@ export function createStrategicCombatService(
       combatant.tactic = tactic;
       combatant.combatTacticLocked = true;
       // A player order is immediate: do not keep an obsolete combat maneuver
-      // or a stale status while waiting for the next eight-second AI review.
+      // or a stale status until the next simulation tick.
       combatant.strategy = null;
       combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
       combatant.asteroidRoute = [];
@@ -412,6 +380,6 @@ export function createStrategicCombatService(
       updateCombatIntent(combatant, describeCombatIntent(combatant), runtime.elapsedSeconds);
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
-    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),
+    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
   };
 }

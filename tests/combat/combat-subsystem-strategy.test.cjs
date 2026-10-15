@@ -103,7 +103,7 @@ assert.equal(first.subsystems.engine, 100, 'snapshots must be detached');
 
 planner.reviewCombatStrategy(first, second, 'attacker', 0);
 assert(first.strategy);
-assert.equal(first.nextStrategyReviewAt, 8);
+assert.equal(first.nextStrategyReviewAt, 0);
 const initial = first.strategy.kind;
 planner.reviewCombatStrategy(first, second, 'attacker', 2);
 assert.equal(first.strategy.kind, initial, 'no strategy thrashing before next review');

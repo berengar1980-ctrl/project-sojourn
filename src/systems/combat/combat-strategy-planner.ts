@@ -4,7 +4,6 @@ import type {
   StrategicCombatSide,
 } from './strategic-combat-types';
 
-const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
 
 /** Disable the highest immediate threat before trying to destroy the hull. */
@@ -204,11 +203,8 @@ export function reviewCombatStrategy(
   _side: StrategicCombatSide,
   elapsed: number
 ): void {
-  if (elapsed + 0.00001 < ship.nextStrategyReviewAt || ship.hullHp <= 0) return;
-  // The first planning side is selected per fight. Keep each ship's own
-  // eight-second cadence, without using attacker/defender as the fixed offset.
-  ship.nextStrategyReviewAt +=
-    (Math.floor((elapsed - ship.nextStrategyReviewAt) / PERIOD) + 1) * PERIOD;
+  if (ship.hullHp <= 0) return;
+  ship.nextStrategyReviewAt = elapsed;
   if (ship.tactic === 'flee') {
     ship.strategy = {
       ...(ship.strategy?.kind === 'escape' && ship.strategy.phase
@@ -252,14 +248,5 @@ export function reviewCombatStrategy(
     };
   } else {
     ship.strategy = best;
-  }
-  // Combat commitment owns fight/flee; the planner only selects combat posture.
-  if (!ship.combatTacticLocked) {
-    ship.tactic =
-      ship.strategy.kind === 'minefield'
-        ? 'minefield'
-        : ship.strategy.kind === 'skirmish'
-          ? 'kite'
-          : 'fight';
   }
 }

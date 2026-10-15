@@ -50,19 +50,19 @@ for (const [seed, first, second] of [
   const fight = createStrategicCombatService(setup('A'), setup('B'), seed);
   let state = fight.getSnapshot();
   assert.equal(state[first].nextStrategyReviewAt, 0);
-  assert.equal(state[second].nextStrategyReviewAt, 4);
+  assert.equal(state[second].nextStrategyReviewAt, 0);
   assert(
     state.combatLog.some((entry) => entry.event === 'start' && entry.detail.includes('Railgun I'))
   );
   state = fight.tick(0.08);
   assert(state[first].strategy);
-  assert.equal(state[second].strategy, null);
-  assert.equal(state[first].nextStrategyReviewAt, 8);
+  assert(state[second].strategy);
+  assert.equal(state[first].nextStrategyReviewAt, state.elapsedSeconds);
   assert(state.combatLog.some((entry) => entry.event === 'plan' && entry.side === first));
   assert(state.combatLog.some((entry) => entry.event === 'phase' && entry.side === first));
   for (let i = 0; i < 50; i++) state = fight.tick(0.08);
   assert(state[second].strategy);
-  assert.equal(state[second].nextStrategyReviewAt, 12);
+  assert.equal(state[second].nextStrategyReviewAt, state.elapsedSeconds);
   const log = fight.getCombatLog();
   assert(
     log.some((entry) => entry.event === 'state' && entry.detail.includes('Abstand')),
@@ -71,4 +71,4 @@ for (const [seed, first, second] of [
   log[0].detail = 'corrupted';
   assert.notEqual(fight.getCombatLog()[0].detail, 'corrupted', 'logs must be detached');
 }
-console.log('PASS seeded four-second stagger, eight-second plans and independent telemetry');
+console.log('PASS simultaneous independent plans and independent telemetry');

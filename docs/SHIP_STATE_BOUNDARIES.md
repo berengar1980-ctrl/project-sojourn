@@ -24,3 +24,7 @@ This is an **in-memory data contract**, not an on-disk format. It does not promi
 3. Keep snapshots detached from mutable references; they are observations, not transactions.
 4. Never infer a component's properties from visible labels; use canonical component IDs.
 5. No `localStorage`, IndexedDB, filesystem saves, load buttons, or compatibility shims at this stage.
+
+## Transient combat state
+
+The strategic combat runtime owns maneuver commitment (including fixed goals, progress observations and transition reasons), navigation routes and accepted flight commands. Both ships consume a common beginning-of-frame observation. `getSnapshot()` detaches maneuver goals and flight velocity objects; no mutable references escape. This encounter-only state is deliberately absent from progression snapshots and introduces no persistence. See `COMBAT_FLIGHT_ARCHITECTURE.md`.

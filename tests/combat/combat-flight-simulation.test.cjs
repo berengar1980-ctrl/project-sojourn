@@ -81,11 +81,7 @@ function simulate(index, seed, flee = false, obstacles = [], dt = 0.08) {
         metric.shots >= 5,
         `${index}/${seed}/${side}: weapon starvation ${JSON.stringify(metric)}`
       );
-    if (seed !== 1001)
-      assert(
-        metric.phases <= 20,
-        `${index}/${seed}/${side}: phase churn ${JSON.stringify(metric)}`
-      );
+    assert(metric.phases <= 20, `${index}/${seed}/${side}: phase churn ${JSON.stringify(metric)}`);
   }
   if (flee)
     assert(

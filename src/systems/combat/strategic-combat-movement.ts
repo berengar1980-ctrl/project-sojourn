@@ -1,9 +1,10 @@
+import { describeCombatIntent } from './combat-intent-labels';
+import type { CombatFlightObservation } from './combat-maneuver-types';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
 
 import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
-import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { createCombatFlightOrder } from './combat-flight-order';
 import { pilotCombatFlight } from './combat-flight-controller';
 import { usefulRamAttempt } from './combat-ram-opportunity';
@@ -189,6 +190,7 @@ function steerCombatRoute(
   targetSpeedFactor: number;
   clear: boolean;
   canAim: boolean;
+  constraint: CombatFlightObservation['constraint'];
 } {
   let { direction, targetSpeedFactor } = posture;
   const evasion = deliberateRam
@@ -207,9 +209,6 @@ function steerCombatRoute(
   // Routing to the enemy overrides flight direction even when the pilot is
   // trying to reach the gate. Fleeing ships must route to the gate instead.
   const escaping = combatant.tactic === 'flee';
-  const cover =
-    escaping || deliberateRam || evasion ? null : asteroidCoverHeading(combatant, enemy, arena);
-  direction = cover ?? direction;
   const routeTarget =
     escaping && arena.exitPoint
       ? arena.exitPoint
@@ -241,13 +240,24 @@ function steerCombatRoute(
 
   // Safety is a translation request, even when range control requested a halt.
   // Otherwise a ship at its firing distance only rotates beside the hazard.
-  const avoiding = [mineAvoidance, obstacle, boundary, waypoint, cover].some(Boolean);
+  const avoiding = [mineAvoidance, obstacle, boundary, waypoint].some(Boolean);
   if (avoiding) targetSpeedFactor = Math.max(0.38, targetSpeedFactor);
   return {
     direction,
     targetSpeedFactor,
     clear: !avoiding,
     canAim: ![mineAvoidance, obstacle, boundary, waypoint, evasion].some(Boolean),
+    constraint: deliberateRam
+      ? 'ram'
+      : mineAvoidance
+        ? 'mine'
+        : evasion
+          ? 'collision'
+          : boundary
+            ? 'boundary'
+            : obstacle || waypoint
+              ? 'navigation'
+              : 'none',
   };
 }
 
@@ -307,6 +317,19 @@ export function moveCombatant(
     x: steering.direction.x * speed * steering.targetSpeedFactor * multiplier,
     y: steering.direction.y * speed * steering.targetSpeedFactor * multiplier,
   };
+  combatant.flight = { heading, velocity: { ...velocity }, constraint: steering.constraint };
+  const constraintLabel = {
+    none: '',
+    navigation: ' · SICHERER KURS',
+    collision: ' · AUSWEICHEN',
+    mine: ' · MINE UMFLIEGEN',
+    boundary: ' · FELDRAND',
+    ram: ' · RAMMEN',
+  };
+  combatant.combatIntent = deliberateRam
+    ? 'RAMMEN'
+    : describeCombatIntent(combatant) +
+      (combatant.tactic === 'flee' ? '' : constraintLabel[steering.constraint]);
   pilotCombatFlight(
     combatant,
     { velocity, heading },

@@ -1,3 +1,4 @@
+import type { CombatManeuver, CombatFlightObservation } from './combat-maneuver-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -156,6 +157,8 @@ export interface StrategicCombatantSnapshot {
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
   readonly combatIntent?: string;
+  readonly maneuver?: Readonly<CombatManeuver>;
+  readonly flight?: CombatFlightObservation;
   readonly mineCount: number;
   readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
@@ -280,6 +283,7 @@ export interface StrategicCombatObstacle {
 }
 
 export interface StrategicCombatArenaOptions {
+  readonly allowBoarding?: boolean;
   readonly width: number;
   readonly height: number;
   readonly attackerPosition?: CombatPoint;
@@ -323,6 +327,8 @@ export interface MutableCombatant {
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
+  maneuver?: CombatManeuver;
+  flight?: CombatFlightObservation;
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
@@ -424,7 +430,6 @@ export interface StrategicCombatRuntime {
   grappleUsed: Record<StrategicCombatSide, boolean>;
   lastEvent: string;
   combatLog: CombatLogEntry[];
-  firstPlanner: StrategicCombatSide;
   lastLoggedImpact: number;
   lastLoggedSampleSecond: number;
   projectileSerial: number;

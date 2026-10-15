@@ -8,7 +8,6 @@ const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
 const { reviewCombatCommitment, escapeViability } = load('src/systems/combat/combat-commitment.ts');
-const { pilotExchangeShip } = load('src/systems/combat/combat-exchange-pilot.ts');
 const { updateCombatIntent } = load('src/systems/combat/combat-intent-labels.ts');
 
 const setup = (id) => ({
@@ -120,40 +119,6 @@ assert.equal(
 runner.subsystems.engine = 0;
 reviewCombatCommitment(runner, hunter, trapped, 17);
 assert.equal(runner.tactic, 'fight', 'engine loss can still abort an impossible escape');
-
-// Exchange / Alpha preset: when reaction is "turn_to_face", the fleeing
-// reactor must point at the exit rather than at its opponent.
-const escapingExchangeShip = {
-  position: { x: 740, y: 650 },
-  velocity: { x: 0, y: 0 },
-  headingRadians: 0,
-  tactic: 'flee',
-  setup: setup('exchange-runner'),
-  subsystems: { engine: 100 },
-};
-const opponent = {
-  position: { x: 1110, y: 650 },
-  velocity: { x: 0, y: 0 },
-};
-pilotExchangeShip(
-  escapingExchangeShip,
-  'reactor',
-  {
-    initiatorGoal: { x: 1240, y: 650 },
-    reactorGoal: { x: 1240, y: 650 },
-    initiatorHeading: 0,
-    reactorHeading: 0,
-  },
-  arena,
-  0.08,
-  opponent,
-  false,
-  true
-);
-assert(
-  Math.abs(escapingExchangeShip.headingRadians) > 0.03,
-  'exchange reactor must turn toward the exit even when target tracking is requested'
-);
 
 // Presentation reflects the selected flight order without a separate timer.
 const status = { tactic: 'fight', combatIntent: undefined };

@@ -20,14 +20,14 @@ export interface DuelTelemetry {
   readonly durationSeconds: number;
   readonly winner: StrategicCombatSide | null;
   readonly timedOut: boolean;
-  readonly exchanges: number;
+  readonly maneuvers: number;
+  readonly recoveries: number;
   readonly planChanges: number;
   readonly shieldHits: number;
   readonly hullHits: number;
   readonly subsystemHits: number;
   readonly subsystemFailures: number;
   readonly obstacleEvents: number;
-  readonly reactions: Readonly<Record<string, number>>;
   readonly minimumSeparation: number;
   readonly maximumSeparation: number;
   readonly finalShields: readonly [number, number];
@@ -62,13 +62,7 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
     combat.tick(DUEL_ANALYSIS_STEP);
   }
   const final = combat.getSnapshot();
-  const reactions: Record<string, number> = {};
   const log = combat.getCombatLog();
-  for (const entry of log) {
-    if (!entry.detail.startsWith('REACTIVE_')) continue;
-    const kind = entry.detail.split(' ')[0]!;
-    reactions[kind] = (reactions[kind] ?? 0) + 1;
-  }
   return {
     name: input.name,
     seed: input.seed,
@@ -87,10 +81,9 @@ export function analyzeReproducibleDuel(input: DuelAnalysisInput): DuelTelemetry
       (entry) => entry.event === 'phase' && entry.detail.includes('ausgefallen')
     ).length,
     obstacleEvents: log.filter((entry) => /Hindernis|Asteroid|Kollision/.test(entry.detail)).length,
-    exchanges: log.filter(
-      (entry) => entry.event === 'result' && entry.detail.startsWith('EXCHANGE_OUTCOME')
-    ).length,
-    reactions,
+    maneuvers: (final.attacker.maneuver?.serial ?? 0) + (final.defender.maneuver?.serial ?? 0),
+    recoveries:
+      (final.attacker.maneuver?.recoveries ?? 0) + (final.defender.maneuver?.recoveries ?? 0),
     minimumSeparation: Number(closest.toFixed(1)),
     maximumSeparation: Number(farthest.toFixed(1)),
     finalShields: [final.attacker.shieldHp, final.defender.shieldHp],
@@ -110,7 +103,8 @@ export function formatDuelTelemetry(result: DuelTelemetry): string {
     'Seed: ' + result.seed,
     'Duration: ' + result.durationSeconds + ' s (' + range + ')',
     'Winner: ' + (result.winner ?? 'none / time limit'),
-    'Exchanges: ' + result.exchanges,
+    'Maneuver starts: ' + result.maneuvers,
+    'Progress recoveries: ' + result.recoveries,
     'Plan changes: ' + result.planChanges,
     'Shield hits: ' + result.shieldHits,
     'Hull hits: ' + result.hullHits,
@@ -118,7 +112,6 @@ export function formatDuelTelemetry(result: DuelTelemetry): string {
     'Subsystem failure alerts: ' + result.subsystemFailures,
     'Obstacle / collision events: ' + result.obstacleEvents,
     'Range: ' + result.minimumSeparation + '–' + result.maximumSeparation + ' m',
-    'Reactions: ' + JSON.stringify(result.reactions),
     'Final shields: ' + result.finalShields.join(' / '),
     'Final hulls: ' + result.finalHulls.join(' / '),
     '',

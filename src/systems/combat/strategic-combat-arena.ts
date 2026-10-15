@@ -31,6 +31,7 @@ function createArenaOptions(
     ...(arenaOptions?.attackerPosition ? { attackerPosition: arenaOptions.attackerPosition } : {}),
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...initialCombatMotion(arenaOptions),
+    allowBoarding: arenaOptions?.allowBoarding ?? true,
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
   };

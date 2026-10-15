@@ -131,7 +131,7 @@ export function createCombatant(
     boostCooldownSeconds: 0,
     tactic: setup.preferredTactic ?? 'fight',
     strategy: null,
-    nextStrategyReviewAt: side === 'attacker' ? 0 : 4,
+    nextStrategyReviewAt: 0,
     shieldImpacts: [],
     mineStock: [...(setup.mines ?? [])],
     mineCooldown: 0,
@@ -160,6 +160,17 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     boostSeconds: combatant.boostSeconds ?? 3.5,
     boostActive: combatant.boostActive === true,
     ...(combatant.combatIntent !== undefined ? { combatIntent: combatant.combatIntent } : {}),
+    ...(combatant.maneuver
+      ? {
+          maneuver: {
+            ...combatant.maneuver,
+            ...(combatant.maneuver.goal ? { goal: { ...combatant.maneuver.goal } } : {}),
+          },
+        }
+      : {}),
+    ...(combatant.flight
+      ? { flight: { ...combatant.flight, velocity: { ...combatant.flight.velocity } } }
+      : {}),
     mineCount: combatant.mineStock.length,
     tractorRangeMeters: combatant.setup.tractorRangeMeters ?? 0,
     boostCooldownSeconds: combatant.boostCooldownSeconds ?? 0,

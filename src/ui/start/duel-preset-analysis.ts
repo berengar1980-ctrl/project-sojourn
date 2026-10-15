@@ -40,7 +40,7 @@ export function analyzeDuelPreset(
     seed,
     attacker: combatants[0]!,
     defender: combatants[1]!,
-    arena: createDuelArena(map, seed),
+    arena: { ...createDuelArena(map, seed), allowBoarding: false },
   });
 }
 
@@ -51,13 +51,13 @@ export function formatPresetAnalysis(results: readonly DuelTelemetry[]): string 
       result.seed,
       result.durationSeconds,
       result.winner ?? 'timeout',
-      result.exchanges,
-      Object.values(result.reactions).reduce((sum, count) => sum + count, 0),
+      result.maneuvers,
+      result.recoveries,
     ].join(' | ')
   );
   return [
     '# Harrowdrift · Duellanalyse',
-    'Preset | Seed | Dauer (s) | Sieger | Exchanges | Reaktionen',
+    'Preset | Seed | Dauer (s) | Sieger | Manöverstarts | Fortschrittskorrekturen',
     '--- | --- | --- | --- | --- | ---',
     ...rows,
     '',

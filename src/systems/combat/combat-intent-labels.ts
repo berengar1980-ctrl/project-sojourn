@@ -5,6 +5,7 @@ export function describeCombatIntent(ship: MutableCombatant): string {
   if (ship.setup?.weapons?.length === 0 && ship.mineStock?.length === 0) {
     return 'UNBEWAFFNET · DISTANZ HALTEN';
   }
+  if (ship.maneuver) return describeManeuver(ship);
   if (ship.tactic === 'minefield') return 'MINEN LEGEN';
   if (ship.tactic === 'kite') return 'ABSTAND HALTEN';
   switch (ship.strategy?.kind) {
@@ -34,4 +35,21 @@ export function updateCombatIntent(
   _elapsedSeconds: number
 ): void {
   ship.combatIntent = ship.tactic === 'flee' ? 'FLIEHEN' : proposed;
+}
+
+function describeManeuver(ship: MutableCombatant): string {
+  const labels = {
+    intercept: 'ABFANGEN',
+    hold: 'FEUERPOSITION HALTEN',
+    pass: 'PASSAGE FLIEGEN',
+    extend: 'ABSTAND HERSTELLEN',
+    escape: 'FLIEHEN',
+  };
+  const focus =
+    ship.strategy?.focus === 'broadside'
+      ? ' · BREITSEITE'
+      : ship.strategy?.focus === 'forward'
+        ? ' · FRONTWAFFEN'
+        : '';
+  return labels[ship.maneuver!.kind] + focus;
 }

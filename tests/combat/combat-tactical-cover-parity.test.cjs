@@ -12,35 +12,28 @@ const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const mine = read('src/systems/combat/strategic-combat-mines.ts');
 const tractor = read('src/systems/combat/combat-tractor-asteroid-throw.ts');
 const execution = read('src/systems/combat/combat-plan-executor.ts');
-const exchange = read('src/systems/combat/combat-exchange-controller.ts');
 
 assert(
   cover.includes('ship.shieldHp > ship.shieldMaxHp * 0.4'),
   'cover reacts to depleted shields'
 );
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
-assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
-assert(movement.includes('direction = cover ?? direction;'));
+const director = read('src/systems/combat/combat-maneuver-director.ts');
 assert(
-  movement.indexOf('direction = cover ?? direction;') < movement.indexOf('const waypoint ='),
-  'cover selects the destination before routing; it must not override safe waypoints'
+  director.includes('asteroidCoverHeading(ship, enemy, arena)'),
+  'cover belongs to the maneuver destination'
+);
+assert(
+  !movement.includes('asteroidCoverHeading'),
+  'navigation must not select a competing tactical goal'
 );
 assert(movement.includes('direction = waypoint ?? direction;'));
-assert(
-  exchange.includes('coverGoal(initiator, opponent, runtime.arena)'),
-  'exchange machine and free flight share the same defensive cover rule'
-);
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
 assert(mine.includes('usefulMineCorridor'), 'mines deny predicted pursuit corridors');
 assert(tractor.includes('asteroid'), 'tractor supports asteroid interaction');
 assert(execution.includes('reach_range'), 'multi-stage plans reach range before firing');
-assert(
-  planner.includes('const PERIOD = 8'),
-  'strategic planner preserves its eight-second cadence'
-);
-
 const plannerSource = read('src/systems/combat/combat-strategy-planner.ts');
 assert(
   plannerSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),

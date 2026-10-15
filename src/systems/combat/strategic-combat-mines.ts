@@ -1,3 +1,4 @@
+import { usesMineCorridor } from './combat-weapon-posture';
 import { nativeMineDamage } from './combat-native-damage';
 import { usefulEscapeMine } from './combat-commitment';
 import type { ShipMineDefinition } from '../../core/combat-types';
@@ -91,7 +92,7 @@ export function maybeDropRuntimeMine(
     (target.velocity.x - source.velocity.x) * (target.position.x - source.position.x) +
       (target.velocity.y - source.velocity.y) * (target.position.y - source.position.y) <
       0;
-  const zoneMine = source.tactic === 'minefield' && usefulMineCorridor(source, target);
+  const zoneMine = usesMineCorridor(source) && usefulMineCorridor(source, target);
   if (!canDeployMine(runtime, side, source, Boolean(zoneMine || defensiveMine || tacticalMine)))
     return;
   if (range > 720) return;

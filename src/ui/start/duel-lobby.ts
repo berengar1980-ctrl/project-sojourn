@@ -339,12 +339,10 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     // Preserve the same prepared combatants on every PvP map: in particular,
     // never silently replace the working asteroid map's shield defaults.
     const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
-    const combat = createStrategicCombatService(
-      setups[0]!,
-      setups[1]!,
-      duelSeed,
-      createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
-    );
+    const combat = createStrategicCombatService(setups[0]!, setups[1]!, duelSeed, {
+      ...createDuelArena(mapSelect.value as DuelMapKind, duelSeed),
+      allowBoarding: false,
+    });
     activePanel = createStrategicCombatPanel({
       root,
       combat,

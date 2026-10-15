@@ -17,7 +17,7 @@ export interface CombatFlightControl {
   readonly heading: number;
 }
 
-/** The only integrator for powered combat flight, in campaign and exchange battles. */
+/** The only integrator for powered combat flight, in campaign and PvP battles. */
 export function pilotCombatFlight(
   ship: MutableCombatant,
   order: CombatFlightControl,

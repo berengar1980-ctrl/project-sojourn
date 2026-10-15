@@ -1,3 +1,4 @@
+import { updateCombatManeuver } from './combat-maneuver-director';
 import { describeCombatIntent, updateCombatIntent } from './combat-intent-labels';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { reviewCombatStrategy } from './combat-strategy-planner';
@@ -48,7 +49,13 @@ export function reviewAndExecute(
   const commitment = reviewCombatCommitment(ship, enemy, runtime.arena, runtime.elapsedSeconds);
   if (commitment) recordCommitment(runtime, side, commitment);
   reviewCombatStrategy(ship, enemy, side, runtime.elapsedSeconds);
-  if (previous !== ship.strategy && ship.strategy) {
+  if (
+    ship.strategy &&
+    (!previous ||
+      previous.kind !== ship.strategy.kind ||
+      previous.broadsideFacing !== ship.strategy.broadsideFacing ||
+      previous.targetSubsystem !== ship.strategy.targetSubsystem)
+  ) {
     ship.strategy = {
       ...ship.strategy,
       doctrine: classifyCombatDoctrine(ship, enemy),
@@ -71,6 +78,15 @@ export function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
+  const serial = ship.maneuver?.serial;
+  updateCombatManeuver(ship, enemy, runtime.arena, runtime.elapsedSeconds);
+  if (ship.maneuver?.serial !== serial)
+    recordCombatLog(
+      runtime,
+      side,
+      'plan',
+      'MANEUVER ' + ship.maneuver!.kind + ' · ' + ship.maneuver!.reason
+    );
   updateCombatIntent(
     ship,
     usefulRamAttempt(ship, enemy) ? 'RAMMEN' : describeCombatIntent(ship),

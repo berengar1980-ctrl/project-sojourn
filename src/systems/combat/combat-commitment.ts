@@ -123,8 +123,6 @@ export function reviewCombatCommitment(
   elapsed: number
 ): CombatCommitmentReview | null {
   if (!ship.setup.aiControlled || ship.hullHp <= 0 || ship.combatTacticLocked) return null;
-  // Preserve the defender's initial four-second planning offset.
-  if (!ship.strategy && elapsed < ship.nextStrategyReviewAt) return null;
   // Engine loss makes escape physically impossible and overrides the ordinary review cadence.
   if (
     elapsed < (ship.nextCommitmentReviewAt ?? 0) &&
