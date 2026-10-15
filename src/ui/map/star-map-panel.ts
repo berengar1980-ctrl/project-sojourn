@@ -220,7 +220,6 @@ function updateTravelStatus(model: StarMapViewModel, travelStatus: HTMLElement):
     'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
 }
 
-
 function populateStarMapMenu(
   menu: StarMapMenu,
   controls: ReturnType<typeof createStarMapControls>
