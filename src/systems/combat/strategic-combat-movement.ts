@@ -4,14 +4,8 @@ import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
-import { combatRangePosture } from './combat-range-posture';
-import {
-  pursuitManeuver,
-  mineBaitManeuver,
-  broadsideOrbitManeuver,
-  interceptBrakeManeuver,
-} from './combat-tactical-maneuvers';
 import { usefulRamAttempt } from './combat-ram-opportunity';
+import { chooseCombatFlightIntent } from './combat-flight-intent';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
@@ -219,52 +213,6 @@ function broadsideSteering(
   return { x: Math.cos(heading), y: Math.sin(heading) };
 }
 
-function choosePlanDirection(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  arena: StrategicCombatArenaOptions,
-  range: number,
-  desired: number,
-  toward: CombatPoint,
-  perpendicular: CombatPoint
-): { direction: CombatPoint; targetSpeedFactor: number } {
-  let direction: CombatPoint;
-  let targetSpeedFactor: number;
-  if (combatant.tactic === 'flee') {
-    direction = arena.exitPoint
-      ? normalize(
-          arena.exitPoint.x - combatant.position.x,
-          arena.exitPoint.y - combatant.position.y
-        )
-      : { x: -toward.x, y: -toward.y };
-    targetSpeedFactor = 1;
-  } else {
-    const posture = combatRangePosture(combatant, range, desired, toward, perpendicular);
-    direction = posture.direction;
-    targetSpeedFactor = posture.targetSpeedFactor;
-  }
-
-  // Choose the weapon-facing posture before safety steering: neither a broadside
-  // nor a pursuit maneuver may discard a necessary collision correction.
-  if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
-    // Approach with the bow facing the target: velocity still obeys inertia.
-    direction = toward;
-    targetSpeedFactor = range > desired ? 0.9 : 0.4;
-  }
-  if (combatant.strategy?.phase === 'regroup' && combatant.tactic !== 'flee')
-    return { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.7 };
-  const tactical =
-    pursuitManeuver(combatant, enemy) ??
-    mineBaitManeuver(combatant, enemy) ??
-    interceptBrakeManeuver(combatant, enemy, desired) ??
-    broadsideOrbitManeuver(combatant, enemy, desired);
-  if (tactical && combatant.setup.aiControlled) {
-    direction = tactical.direction;
-    targetSpeedFactor = tactical.speedFactor;
-  }
-  return { direction, targetSpeedFactor };
-}
-
 function performCombatThrust(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -353,7 +301,11 @@ function steerCombatRoute(
     combatant.combatIntent = 'RAMMEN';
   }
   const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const waypoint = combatRouteHeading(combatant, enemy.position, arena, deltaSeconds);
+  const destination = {
+    x: combatant.position.x + direction.x * 700,
+    y: combatant.position.y + direction.y * 700,
+  };
+  const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
@@ -402,20 +354,20 @@ export function moveCombatant(
   const dy = enemy.position.y - combatant.position.y;
   const range = Math.max(1, Math.hypot(dx, dy));
   const toward = normalize(dx, dy);
-  const perpendicular =
-    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
   const deliberateRam = usefulRamAttempt(combatant, enemy);
-
-  let { direction, targetSpeedFactor } = choosePlanDirection(
+  const intent = chooseCombatFlightIntent(
     combatant,
     enemy,
-    arena,
-    range,
     desired,
-    toward,
-    perpendicular
+    arena,
+    deltaSeconds,
+    deliberateRam
   );
+  let { direction } = intent;
+  let targetSpeedFactor = intent.speedFactor;
+  if (intent.kind === 'pass') combatant.combatIntent = 'ANGRIFFSPASSAGE';
+  if (intent.kind === 'extend') combatant.combatIntent = 'ABSTAND GEWINNEN';
 
   const steering = steerCombatRoute(
     combatant,
@@ -435,10 +387,10 @@ export function moveCombatant(
   // the broadside heading made both ships orbit indefinitely without firing.
   const gunHeading =
     !deliberateRam && steering.canAim ? broadsideSteering(combatant, enemy, range, dx, dy) : null;
-  if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
-  }
-  const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
+  const broadsideActive =
+    Boolean(gunHeading) &&
+    combatant.strategy?.phase !== 'reach_range' &&
+    range >= Math.max(155, desired * 0.66);
   const headingDirection = broadsideActive ? gunHeading! : direction;
   updateStandardCombatBoost(
     combatant,
