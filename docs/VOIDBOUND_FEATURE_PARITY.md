@@ -793,3 +793,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-15): Kampf-KI-Refactor Phase 1 – Bestandsaufnahme und Bewegungsdiagnostik
 
 **keine Statusänderung.** Die neue Branch-Dokumentation und die rein lesende Bewegungsdiagnostik erfassen Steuerungspfade und Bewegungszustände, ohne Kampfphysik, Schadensberechnung, Waffen, Taktiken oder Voidbound-Funktionsparität zu verändern. Laufzeit-Baseline und vollständiges CI-Gate stehen noch aus; keine Mergefreigabe.
+
+## Review-Log (2026-10-15): Kampf-KI-Refactor – gemeinsamer Laufzeitpfad
+
+**keine Statusänderung.** Auf dem separaten Branch wurden der Seed-1001-Sonderpfad aus der aktiven Raumkampfsteuerung entfernt und die Flugabsichten pro Schiff auf geometrisch überprüfbare Annäherungs-, Passagen- und Distanzentscheidungen umgestellt. Bestehende Antriebsphysik, Boost, RCS, Waffentypen, Schadenswerte, Subsysteme, Minen, Traktor, Kollision und Boarding wurden nicht als neue Voidbound-Funktionen portiert oder hinsichtlich ihrer Zahlenwerte verändert. Die neue Steuerung und die alten direkt testbaren Choreografie-Hilfsmodule koexistieren vorübergehend während der Testmigration. CI, Bewegungsauswertung und visuelle Abnahme sind Voraussetzung für weitere Freigabe. Kein Merge nach main.
