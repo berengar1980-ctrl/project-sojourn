@@ -183,7 +183,7 @@ assert(
 );
 assert(
   sections.includes('function tornRoof(') &&
-    sections.includes('tornRoof(m, [') &&
+    /tornRoof\(\s*m,\s*\[/.test(sections) &&
     sections.includes('C.soot') &&
     sections.includes('C.edgeMetal'),
   'every large wreck must have jagged ceiling remnants, ruptures and scorch'
