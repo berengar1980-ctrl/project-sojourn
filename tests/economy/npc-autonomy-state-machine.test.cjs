@@ -3,7 +3,6 @@
 const { readModuleSource } = require('../module-source.cjs');
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
