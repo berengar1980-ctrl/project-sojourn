@@ -18,31 +18,11 @@ interface MenuDefinition {
 }
 
 const MENU_ITEMS: readonly MenuDefinition[] = [
-  {
-    id: 'map',
-    label: 'Karte',
-    icon: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="m9 5 2 14M16 5l-2 14"/>',
-  },
-  {
-    id: 'trade',
-    label: 'Handel',
-    icon: '<path d="M3 20h18M6 16V9m6 7V4m6 12v-5"/><path d="M4 9h4m2-5h4m2 7h4"/>',
-  },
-  {
-    id: 'contacts',
-    label: 'Kontakte',
-    icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/><path d="M12 3v9h9"/>',
-  },
-  {
-    id: 'missions',
-    label: 'Aufträge',
-    icon: '<rect x="5" y="4" width="14" height="17" rx="1"/><path d="M9 4V2h6v2M9 10h6m-6 4h6m-6 4h4"/>',
-  },
-  {
-    id: 'system',
-    label: 'System',
-    icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>',
-  },
+  { id: 'map', label: 'Karte', icon: '<path d="M3 5h18v14H3zM9 5v14m6-14v14"/>' },
+  { id: 'trade', label: 'Handel', icon: '<path d="M4 19h16M7 16V9m5 7V5m5 11v-5"/>' },
+  { id: 'contacts', label: 'Kontakte', icon: '<circle cx="12" cy="12" r="8"/><path d="M12 4v8h8"/>' },
+  { id: 'missions', label: 'Aufträge', icon: '<path d="M5 4h14v17H5zM9 9h6m-6 4h6m-6 4h4"/>' },
+  { id: 'system', label: 'System', icon: '<path d="M3 4h18v16H3zM7 9l3 3-3 3m6 0h4"/>' },
 ];
 
 function createMenuSurface(parent: HTMLElement) {
@@ -80,12 +60,7 @@ function createMenuSurface(parent: HTMLElement) {
     button.setAttribute('aria-label', item.label);
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('aria-controls', 'star-map-pane-' + item.id);
-    button.innerHTML =
-      '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
-      item.icon +
-      '</svg><span>' +
-      item.label +
-      '</span>';
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg><span>${item.label}</span>`;
     buttons.set(item.id, button);
     nav.append(button);
 
@@ -121,16 +96,16 @@ export function createStarMapMenu(
       button.setAttribute('aria-expanded', String(active));
       panes.get(item.id)!.hidden = !active;
     }
-    title.textContent =
-      'SOJOURN // ' +
-      (MENU_ITEMS.find((item) => item.id === next)?.label.toUpperCase() ?? '');
+    const label = MENU_ITEMS.find((item) => item.id === next)?.label;
+    title.textContent = label ? 'SOJOURN // ' + label.toUpperCase() : '';
     onSectionChange(next);
   };
 
   for (const item of MENU_ITEMS) {
-    buttons.get(item.id)!.addEventListener('click', () =>
-      setSection(selected === item.id ? null : item.id)
-    );
+    const button = buttons.get(item.id)!;
+    button.addEventListener('click', () => {
+      setSection(selected === item.id ? null : item.id);
+    });
   }
   const close = (): void => setSection(null);
   const closeOutside = (event: PointerEvent): void => {
