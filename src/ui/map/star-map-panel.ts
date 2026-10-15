@@ -326,6 +326,7 @@ function createMenuContentRefresher(
 }
 
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
+  const controls = createStarMapControls(options);
   const {
     shell,
     canvas,
@@ -340,27 +341,13 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     cargoPanel,
     cargoSelect,
     cargoContent,
-  } = createStarMapControls(options);
+  } = controls;
 
   let model = options.model;
   let refreshMenuContent: () => void = () => {};
   const menu = createStarMapMenu(shell, () => refreshMenuContent());
 
-  const resetButton = populateStarMapMenu(menu, {
-    shell,
-    canvas,
-    card,
-    travelButton,
-    dockButton,
-    attackButton,
-    travelStatus,
-    modeToggle,
-    labelToggle,
-    cargoToggle,
-    cargoPanel,
-    cargoSelect,
-    cargoContent,
-  });
+  const resetButton = populateStarMapMenu(menu, controls);
   const updateTicker = createStarMapTicker(shell, options.log);
   const renderer = new TopdownMapRenderer(canvas, model);
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
