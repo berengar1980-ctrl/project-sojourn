@@ -90,7 +90,7 @@ assert.equal(
 assert.equal(freighter.strategy, null, 'transition clears obsolete escape plan');
 freighter.subsystems.engine = 100;
 reviewCombatCommitment(freighter, pirate, arena, 24);
-assert.equal(freighter.tactic, 'fight', 're-entry cooldown prevents fight/flight oscillation');
+assert.equal(freighter.tactic, 'flee', 'restored engine allows a new viable escape decision');
 const commanded = ship('freight-commanded', 800);
 commanded.combatTacticLocked = true;
 reviewCombatCommitment(commanded, pirate, arena, 0);

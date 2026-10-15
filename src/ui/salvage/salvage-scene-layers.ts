@@ -42,6 +42,21 @@ export abstract class SalvageSceneLayers {
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
   protected abstract combatImpactAge: number;
+  protected drawRoute(width: number, height: number): void {
+    if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
+    this.context.save();
+    this.context.strokeStyle = 'rgba(224, 177, 88, 0.68)';
+    this.context.lineWidth = 1.25;
+    this.context.setLineDash([6, 6]);
+    this.context.beginPath();
+    this.model.navigationRoute.forEach((entry, index) => {
+      const point = this.camera.worldToScreen(entry, width, height);
+      if (index === 0) this.context.moveTo(point.x, point.y);
+      else this.context.lineTo(point.x, point.y);
+    });
+    this.context.stroke();
+    this.context.restore();
+  }
   protected drawExitGate(width: number, height: number): void {
     drawLocalSpaceExitGate(
       this.context,

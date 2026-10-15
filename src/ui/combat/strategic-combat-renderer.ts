@@ -1,33 +1,32 @@
-import { drawCombatAsteroids } from './combat-asteroid-renderer';
-import { drawTractorThrows } from './combat-tractor-throw-renderer';
-import { drawCombatScrap } from './combat-scrap-renderer';
-import { CombatCamera } from './combat-camera';
-import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
-import { drawCombatTorpedo } from './combat-torpedo-renderer';
-import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
-import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { clamp01 } from './strategic-combat-renderer-math';
-import { drawCombatBackground } from './combat-background-renderer';
-import { drawCombatHullImpact } from './combat-hull-impact-renderer';
-import { DistressDamageParticles } from '../salvage/distress-damage-particles';
-import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
   CombatMineSnapshot,
-  CombatProjectileSnapshot,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { getShipDefinition } from '../../systems/ships';
+import { DistressDamageParticles } from '../salvage/distress-damage-particles';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
   projectHardpoint,
   spriteDrawOffset,
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
-import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
-import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
+import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
+import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { drawCombatBackground } from './combat-background-renderer';
+import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
+import { CombatCamera } from './combat-camera';
+import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
+import { drawCombatGrapple } from './combat-grapple-renderer';
+import { drawCombatHullImpact } from './combat-hull-impact-renderer';
+import { drawCombatProjectile } from './combat-projectile-renderer';
+import { drawCombatScrap } from './combat-scrap-renderer';
+import { drawTractorThrows } from './combat-tractor-throw-renderer';
+import { clamp01 } from './strategic-combat-renderer-math';
 interface Point {
   readonly x: number;
   readonly y: number;
@@ -157,14 +156,20 @@ export class StrategicCombatRenderer {
       this.model.thrownAsteroids,
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
-      (context, rock, radius) => drawCombatScrap(context, {
-        ...rock,
-        rotation3d: {
-          x: rock.rotation3d?.x ?? 0.18,
-          y: rock.rotation3d?.y ?? 0.27,
-          z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
-        },
-      }, radius, timeSeconds)
+      (context, rock, radius) =>
+        drawCombatScrap(
+          context,
+          {
+            ...rock,
+            rotation3d: {
+              x: rock.rotation3d?.x ?? 0.18,
+              y: rock.rotation3d?.y ?? 0.27,
+              z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
+            },
+          },
+          radius,
+          timeSeconds
+        )
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
@@ -254,36 +259,8 @@ export class StrategicCombatRenderer {
     for (const projectile of this.model.projectiles) {
       const point = this.screen(projectile.position, width, height);
       const target = this.screen(projectile.target, width, height);
-      this.drawProjectile(projectile, point, target);
+      drawCombatProjectile(this.context, this.camera.zoom, projectile, point, target);
     }
-  }
-  private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    const angle =
-      projectile.kind === 'missile'
-        ? Math.atan2(projectile.direction.y, projectile.direction.x)
-        : Math.atan2(target.y - point.y, target.x - point.x);
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(angle);
-    if (projectile.kind === 'plasma') {
-      this.context.shadowColor = '#73dfff';
-      this.context.shadowBlur = 14;
-      this.context.fillStyle = 'rgba(78, 177, 241, 0.45)';
-      this.context.beginPath();
-      this.context.arc(0, 0, 7, 0, Math.PI * 2);
-      this.context.fill();
-      this.context.fillStyle = '#e1f9ff';
-      this.context.beginPath();
-      this.context.arc(0, 0, 3, 0, Math.PI * 2);
-      this.context.fill();
-    } else if (projectile.kind === 'missile') {
-      this.context.scale(this.camera.zoom / 3, this.camera.zoom / 3);
-      drawCombatTorpedo(this.context);
-    } else {
-      this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-      this.context.fillRect(-3, -1, 6, 2);
-    }
-    this.context.restore();
   }
   private drawMines(width: number, height: number): void {
     for (const mine of this.model.mines) {

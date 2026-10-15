@@ -409,7 +409,6 @@ export function createStrategicCombatService(
       combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
       combatant.asteroidRoute = [];
       combatant.nextAsteroidRouteAt = 0;
-      combatant.lastCombatIntentChangeAt = runtime.elapsedSeconds - 2;
       updateCombatIntent(combatant, describeCombatIntent(combatant), runtime.elapsedSeconds);
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },

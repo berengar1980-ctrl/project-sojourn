@@ -8,8 +8,7 @@ const { readModuleSource } = require('../module-source.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (p) => loadStandaloneTypeScriptModule(root, p);
 const { createDuelArena } = load('src/systems/combat/duel-arena-presets.ts');
-const { createStrategicCombatService } =
-  load('src/systems/combat/strategic-combat-service.ts');
+const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
 const setup = (id) => ({
   id,
   name: id,
@@ -32,7 +31,10 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
   const scrapArena = createDuelArena('scrap_field', seed);
   const moderateArena = createDuelArena('scrap_scattered', seed);
   const reference = createStrategicCombatService(
-    setup('A'), setup('B'), seed, asteroidArena
+    setup('A'),
+    setup('B'),
+    seed,
+    asteroidArena
   ).getSnapshot();
 
   for (const [name, arena] of [
@@ -40,30 +42,53 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
     ['moderate scrap', moderateArena],
   ]) {
     const snapshot = createStrategicCombatService(
-      setup('A'), setup('B'), seed, arena
+      setup('A'),
+      setup('B'),
+      seed,
+      arena
     ).getSnapshot();
     for (const side of ['attacker', 'defender']) {
-      assert.equal(snapshot[side].shieldHp, reference[side].shieldHp,
-        name + ' must start with identical shield HP to asteroid duel');
-      assert.equal(snapshot[side].shieldMaxHp, reference[side].shieldMaxHp,
-        name + ' must retain the same maximum shield HP');
-      assert.equal(snapshot[side].hullHp, reference[side].hullHp,
-        name + ' must start with identical hull HP');
-      assert.equal(snapshot[side].hullMaxHp, reference[side].hullMaxHp,
-        name + ' must retain the same hull maximum');
-      assert.deepEqual(snapshot[side].velocity, reference[side].velocity,
-        name + ' must preserve initial velocity');
-      assert.equal(snapshot[side].headingRadians, reference[side].headingRadians,
-        name + ' must use unchanged initial heading');
-      const fraction = side === 'attacker'
-        ? { x: 0.28, y: 0.46 }
-        : { x: 0.72, y: 0.54 };
-      assert(Math.abs(
-        snapshot[side].position.x / arena.width - reference[side].position.x / asteroidArena.width
-      ) < 0.0001 && Math.abs(
-        snapshot[side].position.y / arena.height - reference[side].position.y / asteroidArena.height
-      ) < 0.0001,
-      name + ' must use same relative starting location as asteroid field');
+      assert.equal(
+        snapshot[side].shieldHp,
+        reference[side].shieldHp,
+        name + ' must start with identical shield HP to asteroid duel'
+      );
+      assert.equal(
+        snapshot[side].shieldMaxHp,
+        reference[side].shieldMaxHp,
+        name + ' must retain the same maximum shield HP'
+      );
+      assert.equal(
+        snapshot[side].hullHp,
+        reference[side].hullHp,
+        name + ' must start with identical hull HP'
+      );
+      assert.equal(
+        snapshot[side].hullMaxHp,
+        reference[side].hullMaxHp,
+        name + ' must retain the same hull maximum'
+      );
+      assert.deepEqual(
+        snapshot[side].velocity,
+        reference[side].velocity,
+        name + ' must preserve initial velocity'
+      );
+      assert.equal(
+        snapshot[side].headingRadians,
+        reference[side].headingRadians,
+        name + ' must use unchanged initial heading'
+      );
+      const fraction = side === 'attacker' ? { x: 0.28, y: 0.46 } : { x: 0.72, y: 0.54 };
+      assert(
+        Math.abs(
+          snapshot[side].position.x / arena.width - reference[side].position.x / asteroidArena.width
+        ) < 0.0001 &&
+          Math.abs(
+            snapshot[side].position.y / arena.height -
+              reference[side].position.y / asteroidArena.height
+          ) < 0.0001,
+        name + ' must use same relative starting location as asteroid field'
+      );
       assert(Math.abs(snapshot[side].position.x - arena.width * fraction.x) < 0.01);
       assert(Math.abs(snapshot[side].position.y - arena.height * fraction.y) < 0.01);
     }
@@ -72,20 +97,32 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
     // that block the AI and the weapon line of sight. Small debris still
     // participates in the shared shield collision solver.
     const expectedCover = arena.asteroids.filter((body) => body.kind === 'resource');
-    assert.equal(arena.obstacles.length, expectedCover.length,
-      name + ' must share asteroid kind=resource cover rules');
-    assert.deepEqual(arena.obstacles.map((obstacle) => obstacle.id),
+    assert.equal(
+      arena.obstacles.length,
+      expectedCover.length,
+      name + ' must share asteroid kind=resource cover rules'
+    );
+    assert.deepEqual(
+      arena.obstacles.map((obstacle) => obstacle.id),
       expectedCover.map((body) => body.id),
-      name + ' cannot include small flying debris as cover/detour objects');
+      name + ' cannot include small flying debris as cover/detour objects'
+    );
     const ids = arena.asteroids.map((body) => body.id);
-    assert.equal(new Set(ids).size, ids.length,
-      name + ' must assign unique body identifiers across ALL generated layers');
+    assert.equal(
+      new Set(ids).size,
+      ids.length,
+      name + ' must assign unique body identifiers across ALL generated layers'
+    );
     for (const body of arena.asteroids) {
       const isPracticePiece = body.id.includes('practice-scrap-');
       if (isPracticePiece) continue;
-      assert([arena.attackerPosition, arena.defenderPosition].every((spawn) =>
-        Math.hypot(body.position.x-spawn.x, body.position.y-spawn.y) >= body.radius + 145
-      ), name + ' must protect ship spawns by the same 145 m radius as the asteroid field');
+      assert(
+        [arena.attackerPosition, arena.defenderPosition].every(
+          (spawn) =>
+            Math.hypot(body.position.x - spawn.x, body.position.y - spawn.y) >= body.radius + 145
+        ),
+        name + ' must protect ship spawns by the same 145 m radius as the asteroid field'
+      );
     }
   }
 }
@@ -93,13 +130,21 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
 const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');
 const hits = readModuleSource(root, 'src/systems/combat/combat-asteroid-contacts.ts');
 const throwLogic = readModuleSource(root, 'src/systems/combat/combat-tractor-asteroid-throw.ts');
-assert(!lobby.includes('tractorTestCheckbox') && !lobby.includes('shieldHp: 0'),
-  'choosing a scrap map must never silently remove its normal starting shields');
-assert(lobby.includes('setups[0]!') && lobby.includes('setups[1]!'),
-  'all PvP maps must receive the same ship configurations');
-assert(hits.includes('resolveShieldCollisions('),
-  'both maps must use one asteroid physics impulse and damage resolver');
-assert(throwLogic.includes('const shieldDamage = Math.min(enemy.shieldHp, 130)'),
-  'both maps must preserve the same existing tractor-throw impact model');
+assert(
+  !lobby.includes('tractorTestCheckbox') && !lobby.includes('shieldHp: 0'),
+  'choosing a scrap map must never silently remove its normal starting shields'
+);
+assert(
+  lobby.includes('setups[0]!') && lobby.includes('setups[1]!'),
+  'all PvP maps must receive the same ship configurations'
+);
+assert(
+  hits.includes('resolveShieldCollisions('),
+  'both maps must use one asteroid physics impulse and damage resolver'
+);
+assert(
+  throwLogic.includes('const shieldDamage = Math.min(enemy.shieldHp, 130)'),
+  'both maps must preserve the same existing tractor-throw impact model'
+);
 
 console.log('PASS PvP asteroid/scrap shield, hull, spawn, cover, and physics parity');

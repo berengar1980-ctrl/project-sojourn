@@ -211,6 +211,9 @@ export function reviewCombatStrategy(
     (Math.floor((elapsed - ship.nextStrategyReviewAt) / PERIOD) + 1) * PERIOD;
   if (ship.tactic === 'flee') {
     ship.strategy = {
+      ...(ship.strategy?.kind === 'escape' && ship.strategy.phase
+        ? { phase: ship.strategy.phase }
+        : {}),
       kind: 'escape',
       focus: 'turret',
       desiredRange: 1000,
@@ -224,6 +227,9 @@ export function reviewCombatStrategy(
   // Keep deploying while there is stock and an operational main engine.
   if (ship.tactic === 'minefield' && ship.mineStock.length > 0 && ship.subsystems.engine > 0) {
     ship.strategy = {
+      ...(ship.strategy?.kind === 'minefield' && ship.strategy.phase
+        ? { phase: ship.strategy.phase }
+        : {}),
       kind: 'minefield',
       focus: 'mine',
       desiredRange: 460,
@@ -232,38 +238,18 @@ export function reviewCombatStrategy(
     };
     return;
   }
-  // Reassess a doctrine that has dealt no meaningful damage for 24 seconds.
-  // Penalize only that weapon posture; a fallback can be selected at the
-  // normal eight-second strategic review rather than on every motion tick.
-  const enemyHp = enemy.shieldHp + enemy.hullHp;
-  if (ship.lastEnemyHpObserved === undefined || enemyHp < ship.lastEnemyHpObserved - 1) {
-    ship.lastProgressAt = elapsed;
-    delete ship.stalledPlanKind;
-    delete ship.stalledPlanFacing;
-  }
-  ship.lastEnemyHpObserved = enemyHp;
-  if (elapsed - (ship.lastProgressAt ?? elapsed) >= 24 && ship.strategy) {
-    ship.stalledPlanKind = ship.strategy.kind;
-    ship.stalledPlanFacing = ship.strategy.broadsideFacing;
-  }
-  const options = candidatePlans(ship, enemy)
-    .map((option) =>
-      option.kind === ship.stalledPlanKind && option.broadsideFacing === ship.stalledPlanFacing
-        ? {
-            ...option,
-            score: option.score * 0.15,
-            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt',
-          }
-        : option
-    )
-    .sort((a, b) => b.score - a.score);
+  const options = candidatePlans(ship, enemy).sort((a, b) => b.score - a.score);
   const best = options[0]!;
   const current = ship.strategy;
   const equivalent = options.find(
     (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
   );
   if (equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)) {
-    ship.strategy = { ...equivalent, reason: current!.reason };
+    ship.strategy = {
+      ...equivalent,
+      ...(current?.phase ? { phase: current.phase } : {}),
+      reason: current!.reason,
+    };
   } else {
     ship.strategy = best;
   }

@@ -124,7 +124,12 @@ function updateLocalExitButton(
   model: LocalSpaceViewModel,
   eventActive: boolean
 ): void {
-  const atExit = playerAtLocalExit(model.ship.position, model.width, model.height, model.backgroundSeed);
+  const atExit = playerAtLocalExit(
+    model.ship.position,
+    model.width,
+    model.height,
+    model.backgroundSeed
+  );
   button.disabled = eventActive || !atExit;
   button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
 }

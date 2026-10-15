@@ -1,26 +1,25 @@
+import type { EconomyResourceId } from '../../core/economy-types';
+import { seededLocalGate } from '../../core/local-space-exit';
+import type { LocalShipState } from '../../core/local-space-types';
+import type {
+  SalvageLocalPhase,
+  SalvageLocalSpaceSnapshot,
+  SalvageWreck,
+} from '../../core/salvage-types';
+import type { ShipHardpoints } from '../../core/ship-types';
+import type { WorldPoint } from '../../core/world-types';
+import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
+import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
+import { distance } from '../local-space/local-space-motion';
+import { planPointRoute } from '../local-space/local-space-navigation';
+import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
+import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { routeAroundDistressShip } from './distress-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
   salvageFieldPhysicsBodies,
 } from './salvage-container-motion';
-import { planPointRoute } from '../local-space/local-space-navigation';
-import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
-import { longRangeScanRadius } from '../scanning/scanner-service';
-import type { ShipHardpoints } from '../../core/ship-types';
-import { seededLocalGate } from '../../core/local-space-exit';
-import type {
-  SalvageLocalPhase,
-  SalvageLocalSpaceSnapshot,
-  SalvageWreck,
-} from '../../core/salvage-types';
-import type { LocalShipState } from '../../core/local-space-types';
-import type { EconomyResourceId } from '../../core/economy-types';
-import type { WorldPoint } from '../../core/world-types';
-import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
-import { distance } from '../local-space/local-space-motion';
-import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
-import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { createSalvageEventController } from './salvage-event-service';
 import {
   createSalvageFieldService,
@@ -28,6 +27,7 @@ import {
   type SalvageFieldService,
   type SalvageResourceCollector,
 } from './salvage-field-service';
+import { advanceSalvageSurvey } from './salvage-survey';
 
 const INSPECTION_SECONDS = 2.8;
 const WORK_STANDOFF = 105;
@@ -143,8 +143,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       navigationRoute: this.navigationRoute,
       phase: this.phase,
       operationProgress: this.operationProgress(),
-      longRangeScanProgress: this.longRangeScanElapsed === null
-        ? null : Math.min(1, this.longRangeScanElapsed / 5),
+      longRangeScanProgress:
+        this.longRangeScanElapsed === null ? null : Math.min(1, this.longRangeScanElapsed / 5),
       activeResourceId: this.activeResourceId,
       lastRecovery: this.lastRecovery,
       recoverySerial: this.recoverySerial,
@@ -175,8 +175,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.shipContactCooldown = 0.35;
     const cos = Math.cos(this.ship.headingRadians);
     const sin = Math.sin(this.ship.headingRadians);
-    const local = { x: normal.x * cos + normal.y * sin,
-      y: -normal.x * sin + normal.y * cos };
+    const local = { x: normal.x * cos + normal.y * sin, y: -normal.x * sin + normal.y * cos };
     const scale = 0.4 * (this.options.shipLengthMeters ?? 80);
     const contactPoint = {
       x: this.ship.position.x + normal.x * scale,
@@ -189,7 +188,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       normal,
       surfaceAnchor: local,
       mass: 350,
-      impactSpeed: Math.sqrt(2 * kineticEnergy / 350),
+      impactSpeed: Math.sqrt((2 * kineticEnergy) / 350),
       kineticEnergy,
     });
   }
@@ -300,42 +299,34 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
       this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
-    if (this.longRangeScanElapsed !== null) {
-      this.longRangeScanElapsed += delta;
-      if (this.longRangeScanElapsed >= 5) {
-        const radius = longRangeScanRadius({
-          sensorModifier: this.options.sensorModifier ?? 1,
-          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
-        });
-        for (const wreck of this.options.field.wrecks) {
-          if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
-          if (distance(this.ship.position, wreck.position) <= radius) {
-            wreck.scanLevel = 'surveyed';
-          }
-        }
-        this.longRangeScanElapsed = null;
-      }
-    }
-    advanceSalvageContainerDrift(this.options.field, delta);
-    if (this.phase === 'navigating' || this.phase === 'approaching') {
-      this.updateRoute(delta);
-    } else if (this.phase === 'inspecting') {
-      this.updateInspection(delta);
-    } else if (this.phase === 'stripping') {
-      this.updateStripping(delta);
-    } else if (this.phase === 'extracting-component') {
-      this.updateComponentRecovery(delta);
-    }
-    if (this.options.hardpoints && this.options.shipLengthMeters) {
-      for (const collision of resolveSalvageShieldContacts(
+      this.longRangeScanElapsed = advanceSalvageSurvey(
+        this.longRangeScanElapsed,
+        delta,
         this.options.field,
-        this.ship,
-        this.options.hardpoints,
-        this.options.shipLengthMeters
-      )) {
-        this.collisionShields?.applyCollision(collision);
+        this.ship.position,
+        this.options.sensorModifier ?? 1,
+        this.options.sensorCrewSkill ?? this.options.crewSkill
+      );
+      advanceSalvageContainerDrift(this.options.field, delta);
+      if (this.phase === 'navigating' || this.phase === 'approaching') {
+        this.updateRoute(delta);
+      } else if (this.phase === 'inspecting') {
+        this.updateInspection(delta);
+      } else if (this.phase === 'stripping') {
+        this.updateStripping(delta);
+      } else if (this.phase === 'extracting-component') {
+        this.updateComponentRecovery(delta);
       }
-    }
+      if (this.options.hardpoints && this.options.shipLengthMeters) {
+        for (const collision of resolveSalvageShieldContacts(
+          this.options.field,
+          this.ship,
+          this.options.hardpoints,
+          this.options.shipLengthMeters
+        )) {
+          this.collisionShields?.applyCollision(collision);
+        }
+      }
     }
     return this.getSnapshot();
   }

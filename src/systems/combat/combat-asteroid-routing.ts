@@ -131,6 +131,15 @@ export function combatRouteHeading(
   deltaSeconds: number
 ): CombatPoint | null {
   if (!arena.obstacles?.length) return null;
+  const previousTarget = ship.asteroidRouteTarget;
+  if (
+    !previousTarget ||
+    Math.hypot(target.x - previousTarget.x, target.y - previousTarget.y) > 120
+  ) {
+    ship.asteroidRoute = [];
+    ship.nextAsteroidRouteAt = 0;
+    ship.asteroidRouteTarget = { ...target };
+  }
   const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
   const prediction = {
     x: ship.position.x + ship.velocity.x * 2,

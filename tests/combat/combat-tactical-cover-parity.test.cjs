@@ -20,7 +20,12 @@ assert(
 );
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
 assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
-assert(movement.includes('cover ?? waypoint ?? direction'));
+assert(movement.includes('direction = cover ?? direction;'));
+assert(
+  movement.indexOf('direction = cover ?? direction;') < movement.indexOf('const waypoint ='),
+  'cover selects the destination before routing; it must not override safe waypoints'
+);
+assert(movement.includes('direction = waypoint ?? direction;'));
 assert(
   exchange.includes('coverGoal(initiator, opponent, runtime.arena)'),
   'exchange machine and free flight share the same defensive cover rule'

@@ -56,14 +56,10 @@ reviewCombatStrategy(ship, enemy, 'attacker', 0);
 const firstKind = ship.strategy.kind;
 assert(firstKind === 'skirmish' || firstKind === 'broadside');
 for (const second of [8, 16, 24]) reviewCombatStrategy(ship, enemy, 'attacker', second);
-assert(
-  ship.stalledPlanKind,
-  'after 24 seconds of no damage the tactical planner must flag its failed posture'
-);
-assert.notEqual(
+assert.equal(
   ship.strategy.kind,
   firstKind,
-  'stalled primary posture should yield to secondary weapon group'
+  'elapsed time alone must not replace a valid weapon plan'
 );
 
 function setup(id, guns, facing) {

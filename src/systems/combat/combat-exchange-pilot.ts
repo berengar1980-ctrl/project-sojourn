@@ -1,3 +1,5 @@
+import { createCombatFlightOrder } from './combat-flight-order';
+import { pilotCombatFlight } from './combat-flight-controller';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -5,14 +7,7 @@ import type {
 } from './strategic-combat-types';
 import type { CombatAction, CombatReaction, CombatExchange } from './combat-exchange-machine';
 import { combatRouteHeading } from './combat-asteroid-routing';
-import {
-  clamp,
-  normalize,
-  wrapAngle,
-  DEFAULT_ACCELERATION,
-  DEFAULT_TURN_RATE,
-  EDGE_PADDING,
-} from './strategic-combat-geometry';
+import { clamp, normalize, DEFAULT_ACCELERATION, EDGE_PADDING } from './strategic-combat-geometry';
 
 export interface ExchangeFlightPlan {
   readonly initiatorGoal: CombatPoint;
@@ -196,75 +191,11 @@ function exchangeFacing(
   weaponFacing: number,
   navigationHeading: number
 ): number {
-  if (trackTarget && opponent)
+  if (trackTarget && opponent && !route)
     return Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x);
   return !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
     ? weaponFacing
     : navigationHeading;
-}
-
-function accelerateExchangeShip(
-  ship: MutableCombatant,
-  goal: CombatPoint,
-  distance: number,
-  boosting: boolean,
-  arena: StrategicCombatArenaOptions,
-  dt: number,
-  opponent?: MutableCombatant
-): void {
-  // Control velocity rather than preserving drift after passing a waypoint.
-  // The desired speed falls as stopping distance approaches the remaining gap.
-
-  const acceleration = Math.max(
-    12,
-    ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
-  );
-  const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting ? 1.65 : 1);
-  // Account for limited reverse and lateral RCS: high closing speed requires
-  // an earlier braking phase than main-drive acceleration would suggest.
-  const conservativeBraking = acceleration * 0.32;
-  const brakingSpeed = Math.sqrt(2 * conservativeBraking * Math.max(0, distance - 35));
-  const targetSpeed = ship.subsystems.engine <= 0 ? 0 : Math.min(speedLimit, brakingSpeed);
-  // Match the nearby opponent's drift while settling into a firing lane.
-  // This is a desired velocity, not a direct change to momentum.
-  const { x: desiredX, y: desiredY } = desiredExchangeVelocity(ship, goal, targetSpeed, opponent);
-  // Main drive accelerates along the bow. RCS provides weaker lateral
-  // corrections and limited reverse thrust while preserving existing momentum.
-  const changeX = desiredX - ship.velocity.x;
-  const changeY = desiredY - ship.velocity.y;
-  const forwardX = Math.cos(ship.headingRadians);
-  const forwardY = Math.sin(ship.headingRadians);
-  const longitudinal = changeX * forwardX + changeY * forwardY;
-  const lateral = -changeX * forwardY + changeY * forwardX;
-  const boostStrength = boosting ? 1 + 2.5 * Math.min(1, (ship.boostRampSeconds ?? 0) / 2) : 1;
-  const mainStep = acceleration * dt * boostStrength;
-  let forwardStep = clamp(longitudinal, -mainStep * 0.65, mainStep);
-  let lateralStep = clamp(lateral, -mainStep * 0.4, mainStep * 0.4);
-  // Main drive and lateral RCS share the ship's acceleration budget.
-  // Independent clamping would allow a diagonal impulse above its physical cap.
-  const impulseMagnitude = Math.hypot(forwardStep, lateralStep);
-  if (impulseMagnitude > mainStep) {
-    const scale = mainStep / impulseMagnitude;
-    forwardStep *= scale;
-    lateralStep *= scale;
-  }
-  ship.longitudinalThrust =
-    ship.subsystems.engine > 0 && forwardStep < 0
-      ? clamp(forwardStep / (mainStep * 0.65), -1, 0)
-      : 0;
-  ship.lateralThrust =
-    ship.subsystems.engine > 0 ? clamp(lateralStep / (mainStep * 0.4), -1, 1) : 0;
-  if (ship.subsystems.engine > 0) {
-    ship.velocity.x += forwardX * forwardStep - forwardY * lateralStep;
-    ship.velocity.y += forwardY * forwardStep + forwardX * lateralStep;
-  }
-  const nextX = ship.position.x + ship.velocity.x * dt;
-  const nextY = ship.position.y + ship.velocity.y * dt;
-  ship.position.x = clamp(nextX, EDGE_PADDING, arena.width - EDGE_PADDING);
-  ship.position.y = clamp(nextY, EDGE_PADDING, arena.height - EDGE_PADDING);
-  if (ship.position.x !== nextX) ship.velocity.x = 0;
-  if (ship.position.y !== nextY) ship.velocity.y = 0;
-  ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
 }
 
 export function pilotExchangeShip(
@@ -283,13 +214,7 @@ export function pilotExchangeShip(
   else ship.boostRampSeconds = 0;
   const planned = role === 'initiator' ? plan.initiatorGoal : plan.reactorGoal;
   const liveTarget = frontalApproach && opponent ? interceptPoint(ship, opponent) : planned;
-  const goal =
-    ship.tactic === 'flee' && arena.exitPoint
-      ? arena.exitPoint
-      : {
-          x: clamp(liveTarget.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
-          y: clamp(liveTarget.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
-        };
+  const goal = exchangeGoal(ship, liveTarget, arena, opponent);
   // Route is established before thrust. Follow a navigable waypoint rather than
   // cutting through a rock on the way to the tactical maneuver destination.
   const route = combatRouteHeading(ship, goal, arena, dt);
@@ -303,15 +228,13 @@ export function pilotExchangeShip(
   // Accelerate on the navigation heading first. Only rotate into a firing
   // posture after the ship has established real forward momentum.
   const navigationHeading =
-    ship.tactic !== 'flee' && distance < 95
-      ? ship.headingRadians
-      : Math.atan2(dy, dx);
+    ship.tactic !== 'flee' && distance < 95 ? ship.headingRadians : Math.atan2(dy, dx);
   const forwardVelocity =
     ship.velocity.x * Math.cos(ship.headingRadians) +
     ship.velocity.y * Math.sin(ship.headingRadians);
   // Tracking must use the opponent's CURRENT position on every tick;
   // the maneuver's originally selected heading can become stale.
-  const facing =
+  let facing =
     ship.tactic === 'flee'
       ? navigationHeading
       : exchangeFacing(
@@ -324,19 +247,65 @@ export function pilotExchangeShip(
           weaponFacing,
           navigationHeading
         );
-  const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
-  const error = wrapAngle(facing - ship.headingRadians);
-  const turn = clamp(error, -turnRate * dt, turnRate * dt);
-  ship.headingRadians = wrapAngle(ship.headingRadians + turn);
-  ship.turnRateRadiansPerSecond = turn / Math.max(dt, 0.001);
-  ship.angularThrust = clamp(error / turnRate, -1, 1);
-  accelerateExchangeShip(
+  facing = liveWeaponFacing(ship, opponent, arena, route, facing);
+  const acceleration = Math.max(
+    12,
+    ship.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
+  );
+  const speedLimit = Math.max(65, ship.setup.combatSpeed ?? 120) * (boosting && !route ? 1.65 : 1);
+  const targetSpeed = Math.min(
+    speedLimit,
+    Math.sqrt(2 * acceleration * 0.32 * Math.max(0, distance - 35))
+  );
+  const velocity = desiredExchangeVelocity(
     ship,
     safeGoal,
-    distance,
-    boosting && !route,
-    arena,
-    dt,
+    targetSpeed,
     route ? undefined : opponent
   );
+  pilotCombatFlight(ship, { velocity, heading: facing }, arena, dt);
+}
+
+function liveWeaponFacing(
+  ship: MutableCombatant,
+  opponent: MutableCombatant | undefined,
+  arena: StrategicCombatArenaOptions,
+  route: CombatPoint | null,
+  fallback: number
+): number {
+  let facing = fallback;
+  // A maneuver supplies a destination, never a stale or wrong-side firing angle.
+  if (ship.tactic !== 'flee' && !route && opponent && ship.setup.weapons?.length) {
+    const range = Math.hypot(
+      opponent.position.x - ship.position.x,
+      opponent.position.y - ship.position.y
+    );
+    const weaponRange = Math.max(
+      ...ship.setup.weapons.map(({ weapon }) => weapon?.rangeMeters ?? 0)
+    );
+    if (range <= weaponRange) facing = createCombatFlightOrder(ship, opponent, arena).heading;
+  }
+  return facing;
+}
+
+function exchangeGoal(
+  ship: MutableCombatant,
+  target: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  opponent?: MutableCombatant
+): CombatPoint {
+  if (ship.tactic === 'flee') {
+    if (arena.exitPoint) return arena.exitPoint;
+    if (opponent) {
+      const away = normalize(
+        ship.position.x - opponent.position.x,
+        ship.position.y - opponent.position.y
+      );
+      return { x: ship.position.x + away.x * 600, y: ship.position.y + away.y * 600 };
+    }
+  }
+  return {
+    x: clamp(target.x, EDGE_PADDING + 100, arena.width - EDGE_PADDING - 100),
+    y: clamp(target.y, EDGE_PADDING + 100, arena.height - EDGE_PADDING - 100),
+  };
 }

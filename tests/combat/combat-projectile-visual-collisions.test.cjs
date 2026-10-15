@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { readModuleSource } = require('../module-source.cjs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
@@ -10,10 +11,7 @@ const weapons = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-weapons.ts'),
   'utf8'
 );
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
-  'utf8'
-);
+const renderer = readModuleSource(root, 'src/ui/combat/strategic-combat-renderer.ts');
 const impactRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-hull-impact-renderer.ts'),
   'utf8'
@@ -72,10 +70,7 @@ const torpedoRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),
   'utf8'
 );
-assert(
-  renderer.includes('drawCombatTorpedo(this.context)'),
-  'combat renderer uses torpedo silhouette'
-);
+assert(renderer.includes('drawCombatTorpedo(context)'), 'combat renderer uses torpedo silhouette');
 assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
 assert(!torpedoRenderer.includes('lineTo(-8, 5)'), 'torpedo has no rocket fins');
 assert(

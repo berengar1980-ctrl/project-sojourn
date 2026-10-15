@@ -3,7 +3,7 @@ import { createScrapDuelArena } from './duel-scrap-presets';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 
 export type DuelMapKind =
-  | 'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field';
+  'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field';
 export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
   { id: 'empty', title: 'Leerer Raum' },
   { id: 'scattered', title: 'Einzelne Asteroiden · klein und groß' },

@@ -20,6 +20,7 @@ export function executeCombatPlan(
   ship: MutableCombatant,
   enemy: MutableCombatant
 ): CombatPlanPhase {
+  if (ship.tactic === 'flee') return 'escape';
   const plan = ship.strategy;
   if (!plan) return 'regroup';
   const separation = distance(ship.position, enemy.position);
@@ -27,15 +28,14 @@ export function executeCombatPlan(
   // Hysteresis prevents reach/align/fire phases oscillating every frame.
   // Once in firing position, keep it until the ship leaves the wider band.
   const holdingFire = plan.phase === 'fire' || plan.phase === 'align_weapons';
-  const tooFar = separation > range * (holdingFire ? 1.32 : 1.10);
+  const tooFar = separation > range * (holdingFire ? 1.32 : 1.1);
   const tooNear = separation < range * (holdingFire ? 0.52 : 0.74);
   // After a close-range overshoot, commit to a short regroup instead of
   // immediately oscillating back into fire on the next frame.
   if (plan.phase === 'regroup' && separation < range * 0.86) return 'regroup';
   if (tooNear && plan.phase === 'fire') return 'regroup';
   if (tooFar || tooNear) return 'reach_range';
-  if (plan.kind === 'minefield' && ship.mineStock.length === 0) return 'regroup';
-  if (plan.kind === 'tractor_lock' && ship.subsystems.tractor <= 0) return 'regroup';
+  if (unavailablePlan(ship)) return 'regroup';
   if (plan.focus === 'turret' || plan.focus === 'mine') return 'fire';
   const bearing = Math.atan2(
     enemy.position.y - ship.position.y,
@@ -52,4 +52,11 @@ export function executeCombatPlan(
   // leave only after a noticeably larger error (not every tiny RCS correction).
   const tolerance = plan.phase === 'fire' ? 0.52 : 0.29;
   return Math.abs(error) > tolerance ? 'align_weapons' : 'fire';
+}
+
+function unavailablePlan(ship: MutableCombatant): boolean {
+  return (
+    (ship.strategy?.kind === 'minefield' && ship.mineStock.length === 0) ||
+    (ship.strategy?.kind === 'tractor_lock' && ship.subsystems.tractor <= 0)
+  );
 }

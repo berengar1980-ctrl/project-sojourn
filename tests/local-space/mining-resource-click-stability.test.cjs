@@ -52,7 +52,8 @@ class FakeElement {
     return false;
   }
   closest(selector) {
-    let candidate = this;
+    if (this.matches(selector)) return this;
+    let candidate = this.parentElement;
     while (candidate) {
       if (candidate.matches(selector)) return candidate;
       candidate = candidate.parentElement;
@@ -88,7 +89,9 @@ class FakeElement {
   }
 }
 class FakeButton extends FakeElement {
-  constructor() { super('button'); }
+  constructor() {
+    super('button');
+  }
 }
 const originalElement = global.Element;
 const originalButton = global.HTMLButtonElement;
@@ -96,12 +99,14 @@ const originalDocument = global.document;
 global.Element = FakeElement;
 global.HTMLButtonElement = FakeButton;
 global.document = {
-  createElement: (tag) => tag === 'button' ? new FakeButton() : new FakeElement(tag),
+  createElement: (tag) => (tag === 'button' ? new FakeButton() : new FakeElement(tag)),
 };
 
 try {
   const { MiningResourceSelector } = loadStandaloneTypeScriptModule(
-    root, 'src/ui/local-space/mining-resource-selector.ts');
+    root,
+    'src/ui/local-space/mining-resource-selector.ts'
+  );
   const container = new FakeElement();
   const selections = [];
   const selector = new MiningResourceSelector(container, (next) => selections.push(next));
@@ -124,8 +129,11 @@ try {
   // between pointerdown and pointerup, cancelling the user's click.
   for (let frame = 0; frame < 80; frame += 1) {
     selector.update(model, false);
-    assert.equal(container.querySelectorAll('[data-resource-id]')[0], first,
-      'every HUD refresh must preserve the original button identity');
+    assert.equal(
+      container.querySelectorAll('[data-resource-id]')[0],
+      first,
+      'every HUD refresh must preserve the original button identity'
+    );
   }
   assert.equal(container.rebuilds, 1, 'same asteroid must not rebuild button DOM');
   container.click(first);
@@ -134,8 +142,11 @@ try {
   model = { ...model, miningResourceSelection: selections.at(-1) };
   selector.update(model, false);
   container.click(third);
-  assert.deepEqual(selections.at(-1), ['one', 'three'],
-    'one further click must select 1+3 without touching resource 2');
+  assert.deepEqual(
+    selections.at(-1),
+    ['one', 'three'],
+    'one further click must select 1+3 without touching resource 2'
+  );
   assert.equal(container.rebuilds, 1);
   assert(first.classList.contains('is-active'));
   assert(third.classList.contains('is-active'));
@@ -146,13 +157,19 @@ try {
   assert.equal(selections.length, 3, 'each user click produces exactly one callback');
   assert.equal(container.rebuilds, 1);
 
-  selector.update({
-    ...model,
-    selectedAsteroid: { ...model.selectedAsteroid, id: 'rock-2' },
-    miningResourceSelection: null,
-  }, false);
-  assert.equal(container.rebuilds, 2,
-    'the buttons only rebuild when switching to a different asteroid');
+  selector.update(
+    {
+      ...model,
+      selectedAsteroid: { ...model.selectedAsteroid, id: 'rock-2' },
+      miningResourceSelection: null,
+    },
+    false
+  );
+  assert.equal(
+    container.rebuilds,
+    2,
+    'the buttons only rebuild when switching to a different asteroid'
+  );
   console.log('PASS stable one-click mining resource buttons across 80 HUD updates');
 } finally {
   global.Element = originalElement;

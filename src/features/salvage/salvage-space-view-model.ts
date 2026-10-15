@@ -178,17 +178,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       id: wreck.id,
       name: wreck.name,
       kind: wreck.kind,
-      kindLabel: wreck.sectionVariant
-        ? 'SCHIFFSSEKTION'
-        : wreck.debrisVariant
-          ? 'SCHIFFSFRAGMENT'
-          : wreck.containerVariant
-        ? {
-            standard: 'FRACHTCONTAINER',
-            damaged: 'BESCHÄDIGTER CONTAINER',
-            tank: 'TANKMODUL',
-          }[wreck.containerVariant]
-        : wreckKindLabel(wreck.kind),
+      kindLabel: salvageWreckLabel(wreck),
       position: wreck.position,
       radius: wreck.radius,
       rotation: wreck.rotation,
@@ -201,7 +191,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       quality: wreck.quality,
       qualityLabel: qualityLabel(wreck.quality),
       inspected: wreck.inspected,
-      scanLevel: wreck.inspected ? 'analyzed' : wreck.scanLevel ?? 'unscanned',
+      scanLevel: wreck.inspected ? 'analyzed' : (wreck.scanLevel ?? 'unscanned'),
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
       componentSignal: wreck.inspected && wreck.component !== null,
       component:
@@ -331,4 +321,18 @@ export function createSalvageSpaceViewModel(
     distressRamming,
     distressRepairing,
   };
+}
+
+function salvageWreckLabel(wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]): string {
+  return wreck.sectionVariant
+    ? 'SCHIFFSSEKTION'
+    : wreck.debrisVariant
+      ? 'SCHIFFSFRAGMENT'
+      : wreck.containerVariant
+        ? {
+            standard: 'FRACHTCONTAINER',
+            damaged: 'BESCHÄDIGTER CONTAINER',
+            tank: 'TANKMODUL',
+          }[wreck.containerVariant]
+        : wreckKindLabel(wreck.kind);
 }

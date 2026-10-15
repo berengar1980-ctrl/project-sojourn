@@ -1,3 +1,4 @@
+import { moveCombatant } from './strategic-combat-movement';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import {
   chooseReactiveDecision,
@@ -93,7 +94,8 @@ function updateExchangeIntents(
     turn_to_face: 'ZIEL ANVISIEREN',
     hold_fire: 'POSITION HALTEN',
   };
-  updateCombatIntent(initiator, actionNames[next.action ?? ''] ?? 'KURS HALTEN', elapsedSeconds);
+  if (!next.action || !next.reaction) return;
+  updateCombatIntent(initiator, actionNames[next.action] ?? 'KURS HALTEN', elapsedSeconds);
   updateCombatIntent(opponent, reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN', elapsedSeconds);
 }
 
@@ -233,7 +235,11 @@ function flyExchange(
   next: CombatExchange,
   dt: number
 ): void {
-  if (!state.flight || next.phase !== 'execute') return;
+  if (!state.flight || next.phase !== 'execute') {
+    moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
+    moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
+    return;
+  }
   const remaining = next.duration - next.elapsed;
   if (state.geometry) {
     const closest = Math.hypot(

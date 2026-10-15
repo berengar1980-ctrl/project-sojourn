@@ -10,7 +10,10 @@ const routing = fs.readFileSync(
   'utf8'
 );
 
-assert(lobby.includes('const tunedSetups = setups;'), 'Alpha uses the regular combat setup');
+assert(
+  lobby.includes('const setups = duelSetups(drafts, ships);'),
+  'Alpha uses the regular combat setup'
+);
 assert(
   !lobby.includes('damageMultiplier: setup.damageMultiplier *'),
   'Alpha damage uses normal value'

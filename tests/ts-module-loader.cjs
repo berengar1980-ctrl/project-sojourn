@@ -54,8 +54,8 @@ function loadTypeScriptFile(filename, cache) {
   return module.exports;
 }
 
-function loadStandaloneTypeScriptModule(root, relativePath) {
-  return loadTypeScriptFile(path.join(root, relativePath), new Map());
+function loadStandaloneTypeScriptModule(root, relativePath, cache = new Map()) {
+  return loadTypeScriptFile(path.join(root, relativePath), cache);
 }
 
 module.exports = { loadStandaloneTypeScriptModule };

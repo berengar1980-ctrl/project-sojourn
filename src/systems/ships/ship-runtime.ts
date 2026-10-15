@@ -74,11 +74,11 @@ function compatibleInstalledComponents(
   const compatible: Partial<Record<ShipComponentType, readonly string[]>> = {};
 
   for (const type of COMPONENT_TYPES) {
-    const ids = (installed[type] ?? []).filter((id) => {
+    const ids = (installed[type] ?? []).map((id) => {
       const component = getShipComponent(type, id);
-      return component !== null && component.tier <= maxTier;
+      return component !== null && component.tier <= maxTier ? id : '';
     });
-    if (ids.length > 0) compatible[type] = ids;
+    if (ids.some(Boolean)) compatible[type] = ids;
   }
 
   return compatible;

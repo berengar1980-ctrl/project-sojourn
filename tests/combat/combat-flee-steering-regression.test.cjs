@@ -47,19 +47,32 @@ const duel = createStrategicCombatService(setup('runner'), setup('hunter'), 2048
 duel.setTactic('attacker', 'flee');
 let frame = duel.getSnapshot();
 assert.equal(frame.attacker.tactic, 'flee');
-assert.equal(frame.attacker.combatIntent, 'FLIEHEN',
-  'manual flee command must change the visible status immediately');
+assert.equal(
+  frame.attacker.combatIntent,
+  'FLIEHEN',
+  'manual flee command must change the visible status immediately'
+);
 
 const startX = frame.attacker.position.x;
 for (let step = 0; step < 80; step += 1) frame = duel.tick(0.08);
-assert.equal(frame.attacker.tactic, 'flee',
-  'user-selected fleeing must remain authoritative through strategy updates');
-assert.equal(frame.attacker.combatIntent, 'FLIEHEN',
-  'maneuver labels must not replace a committed flee status');
-assert(frame.attacker.position.x < startX - 12,
-  'fleeing ship must actually make progress toward the exit, away from enemy-side obstruction');
-assert(Math.cos(frame.attacker.headingRadians) < -0.3,
-  'fleeing ship must keep facing generally toward the exit, never the enemy detour');
+assert.equal(
+  frame.attacker.tactic,
+  'flee',
+  'user-selected fleeing must remain authoritative through strategy updates'
+);
+assert.equal(
+  frame.attacker.combatIntent,
+  'FLIEHEN',
+  'maneuver labels must not replace a committed flee status'
+);
+assert(
+  frame.attacker.position.x < startX - 12,
+  'fleeing ship must actually make progress toward the exit, away from enemy-side obstruction'
+);
+assert(
+  Math.cos(frame.attacker.headingRadians) < -0.3,
+  'fleeing ship must keep facing generally toward the exit, never the enemy detour'
+);
 
 // Deliberately make escape appear hopeless. An operational engine must not
 // cause an autonomous flight order to turn back into an attack at second 16.
@@ -94,11 +107,16 @@ const trapped = {
     radius: 80,
   })),
 };
-assert(escapeViability(runner, hunter, trapped) < 0.2,
-  'this test must reproduce poor escape viability that previously aborted flight');
+assert(
+  escapeViability(runner, hunter, trapped) < 0.2,
+  'this test must reproduce poor escape viability that previously aborted flight'
+);
 reviewCombatCommitment(runner, hunter, trapped, 16);
-assert.equal(runner.tactic, 'flee',
-  'an operational engine keeps the escape commitment even if probabilities deteriorate');
+assert.equal(
+  runner.tactic,
+  'flee',
+  'an operational engine keeps the escape commitment even if probabilities deteriorate'
+);
 runner.subsystems.engine = 0;
 reviewCombatCommitment(runner, hunter, trapped, 17);
 assert.equal(runner.tactic, 'fight', 'engine loss can still abort an impossible escape');
@@ -132,22 +150,22 @@ pilotExchangeShip(
   false,
   true
 );
-assert(Math.abs(escapingExchangeShip.headingRadians) > 0.03,
-  'exchange reactor must turn toward the exit even when target tracking is requested');
+assert(
+  Math.abs(escapingExchangeShip.headingRadians) > 0.03,
+  'exchange reactor must turn toward the exit even when target tracking is requested'
+);
 
-// Only the presentation is debounced. FLEE overrides it immediately.
+// Presentation reflects the selected flight order without a separate timer.
 const status = { tactic: 'fight', combatIntent: undefined };
 updateCombatIntent(status, 'ANNÄHERN', 0);
 updateCombatIntent(status, 'BREITSEITE', 0.08);
 updateCombatIntent(status, 'ZIEL ANVISIEREN', 1.8);
-assert.equal(status.combatIntent, 'ANNÄHERN',
-  'maneuver labels remain readable for two seconds, not multiple per frame');
+assert.equal(status.combatIntent, 'ZIEL ANVISIEREN', 'labels reflect the actual order immediately');
 updateCombatIntent(status, 'BREITSEITE', 2.1);
 assert.equal(status.combatIntent, 'BREITSEITE');
 status.tactic = 'flee';
 updateCombatIntent(status, 'FRONTALANGRIFF', 2.15);
-assert.equal(status.combatIntent, 'FLIEHEN',
-  'flee status must bypass all display throttling');
+assert.equal(status.combatIntent, 'FLIEHEN', 'flee status must bypass all display throttling');
 updateCombatIntent(status, 'BREITSEITE', 2.2);
 assert.equal(status.combatIntent, 'FLIEHEN');
 

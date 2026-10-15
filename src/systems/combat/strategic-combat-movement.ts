@@ -4,19 +4,11 @@ import { detectShipMine } from './mine-detection-service';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
-import { combatRangePosture } from './combat-range-posture';
-import {
-  pursuitManeuver,
-  mineBaitManeuver,
-  broadsideOrbitManeuver,
-  interceptBrakeManeuver,
-} from './combat-tactical-maneuvers';
+import { createCombatFlightOrder } from './combat-flight-order';
+import { pilotCombatFlight } from './combat-flight-controller';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { updateStandardCombatBoost } from './combat-standard-boost';
-import { applyInertialThrust } from './combat-inertial-thrust';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
-import { preferredRange } from './combat-tactic-choice';
-export { updateAiTactic } from './combat-tactic-choice';
 
 import type {
   MutableCombatant,
@@ -32,9 +24,6 @@ import {
   EDGE_WARNING_DISTANCE,
   EDGE_PADDING,
   normalize,
-  wrapAngle,
-  DEFAULT_TURN_RATE,
-  DEFAULT_ACCELERATION,
 } from './strategic-combat-geometry';
 
 function arenaBoundaryAvoidance(
@@ -180,147 +169,6 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   );
 }
 
-/** Apply limited thrust to velocity; turning the bow does not rotate existing momentum. */
-/**
- * Heavy side guns dictate the preferred heading, while the main movement
- * routine remains responsible for thrust, inertia and obstacle avoidance.
- */
-function broadsideSteering(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  range: number,
-  dx: number,
-  dy: number
-): CombatPoint | null {
-  if (combatant.tactic === 'flee') return null;
-  if (combatant.strategy && combatant.strategy.focus !== 'broadside') return null;
-  const sideGun = combatant.setup.weapons
-    .map((weapon, index) => ({ weapon, index }))
-    .filter(
-      (entry) =>
-        entry.weapon.weapon?.mount === 'broadside' &&
-        range <= entry.weapon.weapon.rangeMeters * 1.2 &&
-        (!combatant.strategy?.broadsideFacing ||
-          combatant.setup.weaponMounts?.find((mount) => mount.slotIndex === entry.index)?.facing ===
-            combatant.strategy.broadsideFacing)
-    )
-    .sort((a, b) =>
-      enemy.shieldHp > 0
-        ? (b.weapon.weapon?.shieldDamage ?? 0) - (a.weapon.weapon?.shieldDamage ?? 0)
-        : (b.weapon.weapon?.hullDamage ?? 0) - (a.weapon.weapon?.hullDamage ?? 0)
-    )[0];
-  if (!sideGun) return null;
-  const facing = combatant.setup.weaponMounts?.find(
-    (mount) => mount.slotIndex === sideGun.index
-  )?.facing;
-  const heading =
-    Math.atan2(dy, dx) +
-    (facing === 'starboard' ? -Math.PI / 2 : facing === 'port' ? Math.PI / 2 : 0);
-  return { x: Math.cos(heading), y: Math.sin(heading) };
-}
-
-function choosePlanDirection(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  arena: StrategicCombatArenaOptions,
-  range: number,
-  desired: number,
-  toward: CombatPoint,
-  perpendicular: CombatPoint
-): { direction: CombatPoint; targetSpeedFactor: number } {
-  let direction: CombatPoint;
-  let targetSpeedFactor: number;
-  if (combatant.tactic === 'flee') {
-    direction = arena.exitPoint
-      ? normalize(
-          arena.exitPoint.x - combatant.position.x,
-          arena.exitPoint.y - combatant.position.y
-        )
-      : { x: -toward.x, y: -toward.y };
-    targetSpeedFactor = 1;
-  } else {
-    const posture = combatRangePosture(combatant, range, desired, toward, perpendicular);
-    direction = posture.direction;
-    targetSpeedFactor = posture.targetSpeedFactor;
-  }
-
-  // Fleeing is a committed navigation goal. No fire-position or broadside
-  // maneuver may replace the escape heading; obstacle/mine avoidance still
-  // applies downstream.
-  if (combatant.tactic === 'flee') return { direction, targetSpeedFactor };
-
-  // Choose the weapon-facing posture before safety steering: neither a broadside
-  // nor a pursuit maneuver may discard a necessary collision correction.
-  if (combatant.strategy?.focus === 'forward' && combatant.tactic !== 'flee') {
-    // Approach with the bow facing the target: velocity still obeys inertia.
-    direction = toward;
-    targetSpeedFactor = range > desired ? 0.9 : 0.4;
-  }
-  if (combatant.strategy?.phase === 'regroup' && combatant.tactic !== 'flee')
-    return { direction: { x: -toward.x, y: -toward.y }, targetSpeedFactor: 0.7 };
-  const tactical =
-    pursuitManeuver(combatant, enemy) ??
-    mineBaitManeuver(combatant, enemy) ??
-    interceptBrakeManeuver(combatant, enemy, desired) ??
-    broadsideOrbitManeuver(combatant, enemy, desired);
-  if (tactical && combatant.setup.aiControlled) {
-    direction = tactical.direction;
-    targetSpeedFactor = tactical.speedFactor;
-  }
-  return { direction, targetSpeedFactor };
-}
-
-function performCombatThrust(
-  combatant: MutableCombatant,
-  enemy: MutableCombatant,
-  deltaSeconds: number,
-  arena: StrategicCombatArenaOptions,
-  headingDirection: CombatPoint,
-  targetSpeedFactor: number,
-  strafeDirection?: CombatPoint
-): void {
-  const desiredHeading = Math.atan2(headingDirection.y, headingDirection.x);
-  const headingError = wrapAngle(desiredHeading - combatant.headingRadians);
-  const maxTurn = Math.max(0.25, combatant.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
-  const turn = clamp(headingError, -maxTurn * deltaSeconds, maxTurn * deltaSeconds);
-  combatant.headingRadians = wrapAngle(combatant.headingRadians + turn);
-  combatant.turnRateRadiansPerSecond = deltaSeconds > 0 ? turn / deltaSeconds : 0;
-  combatant.angularThrust = clamp(headingError / Math.max(0.1, maxTurn), -1, 1);
-
-  const baseSpeed = Math.max(65, combatant.setup.combatSpeed ?? 120);
-  const acceleration = Math.max(
-    12,
-    combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
-  );
-  if (combatant.subsystems.engine <= 0) {
-    // With no main engine the ship keeps drifting; only RCS can turn its bow.
-    combatant.position.x = clamp(
-      combatant.position.x + combatant.velocity.x * deltaSeconds,
-      EDGE_PADDING,
-      arena.width - EDGE_PADDING
-    );
-    combatant.position.y = clamp(
-      combatant.position.y + combatant.velocity.y * deltaSeconds,
-      EDGE_PADDING,
-      arena.height - EDGE_PADDING
-    );
-    resolveArenaObstacles(combatant, arena);
-    return;
-  }
-  applyInertialThrust(
-    combatant,
-    headingError,
-    targetSpeedFactor,
-    baseSpeed,
-    acceleration,
-    isTractorLocked(combatant, enemy),
-    deltaSeconds,
-    arena,
-    strafeDirection
-  );
-  resolveArenaObstacles(combatant, arena);
-}
-
 function applyMineAvoidance(direction: CombatPoint, avoidance: CombatPoint | null): CombatPoint {
   if (!avoidance) return direction;
   return normalize(direction.x + avoidance.x * 2, direction.y + avoidance.y * 2);
@@ -343,7 +191,6 @@ function steerCombatRoute(
   canAim: boolean;
 } {
   let { direction, targetSpeedFactor } = posture;
-  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
   const evasion = deliberateRam
     ? null
     : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
@@ -360,12 +207,20 @@ function steerCombatRoute(
   // Routing to the enemy overrides flight direction even when the pilot is
   // trying to reach the gate. Fleeing ships must route to the gate instead.
   const escaping = combatant.tactic === 'flee';
-  const cover = escaping || deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const routeTarget = escaping ? arena.exitPoint : enemy.position;
-  const waypoint = routeTarget
-    ? combatRouteHeading(combatant, routeTarget, arena, deltaSeconds)
-    : null;
-  direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
+  const cover =
+    escaping || deliberateRam || evasion ? null : asteroidCoverHeading(combatant, enemy, arena);
+  direction = cover ?? direction;
+  const routeTarget =
+    escaping && arena.exitPoint
+      ? arena.exitPoint
+      : {
+          x: combatant.position.x + direction.x * 400,
+          y: combatant.position.y + direction.y * 400,
+        };
+  const waypoint = combatRouteHeading(combatant, routeTarget, arena, deltaSeconds);
+  direction = waypoint ?? direction;
+  const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
+  direction = applyMineAvoidance(direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
   if (obstacle) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
@@ -384,11 +239,15 @@ function steerCombatRoute(
     );
   }
 
+  // Safety is a translation request, even when range control requested a halt.
+  // Otherwise a ship at its firing distance only rotates beside the hazard.
+  const avoiding = [mineAvoidance, obstacle, boundary, waypoint, cover].some(Boolean);
+  if (avoiding) targetSpeedFactor = Math.max(0.38, targetSpeedFactor);
   return {
     direction,
     targetSpeedFactor,
-    clear: !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
-    canAim: !mineAvoidance && !obstacle && !boundary,
+    clear: !avoiding,
+    canAim: ![mineAvoidance, obstacle, boundary, waypoint, evasion].some(Boolean),
   };
 }
 
@@ -409,25 +268,15 @@ export function moveCombatant(
     return;
   }
 
-  const dx = enemy.position.x - combatant.position.x;
-  const dy = enemy.position.y - combatant.position.y;
-  const range = Math.max(1, Math.hypot(dx, dy));
-  const toward = normalize(dx, dy);
-  const perpendicular =
-    side === 'attacker' ? { x: -toward.y, y: toward.x } : { x: toward.y, y: -toward.x };
-  const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
-  const deliberateRam = usefulRamAttempt(combatant, enemy);
-
-  let { direction, targetSpeedFactor } = choosePlanDirection(
-    combatant,
-    enemy,
-    arena,
-    range,
-    desired,
-    toward,
-    perpendicular
+  const order = createCombatFlightOrder(combatant, enemy, arena);
+  const toward = normalize(
+    enemy.position.x - combatant.position.x,
+    enemy.position.y - combatant.position.y
   );
-
+  const deliberateRam = usefulRamAttempt(combatant, enemy);
+  const speed = Math.max(65, combatant.setup.combatSpeed ?? 120);
+  const requestedSpeed = Math.hypot(order.velocity.x, order.velocity.y);
+  const direction = requestedSpeed > 0.001 ? normalize(order.velocity.x, order.velocity.y) : toward;
   const steering = steerCombatRoute(
     combatant,
     enemy,
@@ -437,37 +286,33 @@ export function moveCombatant(
     activeMines,
     toward,
     deliberateRam,
-    { direction, targetSpeedFactor }
+    { direction, targetSpeedFactor: requestedSpeed / speed }
   );
-  direction = steering.direction;
-  targetSpeedFactor = steering.targetSpeedFactor;
-
-  // Aim the broadside independently of translation. Steering the engines along
-  // the broadside heading made both ships orbit indefinitely without firing.
-  const gunHeading =
-    !deliberateRam && steering.canAim ? broadsideSteering(combatant, enemy, range, dx, dy) : null;
-  if (gunHeading && combatant.strategy?.phase !== 'reach_range') {
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.28);
-  }
-  const broadsideActive = Boolean(gunHeading) && combatant.strategy?.phase !== 'reach_range';
-  const headingDirection = broadsideActive ? gunHeading! : direction;
+  const safetyActive = !steering.canAim || deliberateRam;
+  const heading = safetyActive
+    ? Math.atan2(steering.direction.y, steering.direction.x)
+    : order.heading;
   updateStandardCombatBoost(
     combatant,
-    headingDirection,
-    range,
-    desired,
-    targetSpeedFactor,
+    steering.direction,
+    distance(combatant.position, enemy.position),
+    combatant.strategy?.desiredRange ?? 300,
+    steering.targetSpeedFactor,
     deliberateRam,
     steering.clear,
     deltaSeconds
   );
-  performCombatThrust(
+  const multiplier = combatant.boostActive ? 1.65 : 1;
+  const velocity = {
+    x: steering.direction.x * speed * steering.targetSpeedFactor * multiplier,
+    y: steering.direction.y * speed * steering.targetSpeedFactor * multiplier,
+  };
+  pilotCombatFlight(
     combatant,
-    enemy,
-    deltaSeconds,
+    { velocity, heading },
     arena,
-    headingDirection,
-    targetSpeedFactor,
-    broadsideActive ? direction : undefined
+    deltaSeconds,
+    isTractorLocked(combatant, enemy)
   );
+  resolveArenaObstacles(combatant, arena);
 }

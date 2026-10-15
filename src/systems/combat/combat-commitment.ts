@@ -152,6 +152,7 @@ function chooseCommitmentTransition(
     if (ship.subsystems.engine > 0) return null;
     ship.tactic = 'fight';
     ship.strategy = null;
+    ship.nextStrategyReviewAt = elapsed;
     ship.asteroidRoute = [];
     ship.nextAsteroidRouteAt = 0;
     ship.escapeAbandonedAt = elapsed;
@@ -163,10 +164,11 @@ function chooseCommitmentTransition(
     };
   }
   // Avoid re-entering a doomed escape immediately after abandoning it.
-  if (elapsed - (ship.escapeAbandonedAt ?? -10000) < 24) return null;
+  if (ship.subsystems.engine <= 0) return null;
   if (strength < requiredConfidence(ship) && escape > 0.5) {
     ship.tactic = 'flee';
     ship.strategy = null;
+    ship.nextStrategyReviewAt = elapsed;
     ship.asteroidRoute = [];
     ship.nextAsteroidRouteAt = 0;
     ship.escapeCommittedAt = elapsed;

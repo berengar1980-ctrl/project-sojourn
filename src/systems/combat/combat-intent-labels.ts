@@ -27,23 +27,11 @@ export function describeCombatIntent(ship: MutableCombatant): string {
   }
 }
 
-/**
- * HUD messages are presentation, not flight orders. Hold non-emergency
- * labels for two seconds so rapidly changing maneuver suggestions do not
- * make the status unreadable. An actual flight command always wins now.
- */
+/** Presentation reflects the selected order immediately; it is never a second state machine. */
 export function updateCombatIntent(
   ship: MutableCombatant,
   proposed: string,
-  elapsedSeconds: number
+  _elapsedSeconds: number
 ): void {
-  const next = ship.tactic === 'flee' ? 'FLIEHEN' : proposed;
-  if (ship.combatIntent === next) return;
-  if (
-    next !== 'FLIEHEN' &&
-    ship.combatIntent &&
-    elapsedSeconds - (ship.lastCombatIntentChangeAt ?? -100) < 2
-  ) return;
-  ship.combatIntent = next;
-  ship.lastCombatIntentChangeAt = elapsedSeconds;
+  ship.combatIntent = ship.tactic === 'flee' ? 'FLIEHEN' : proposed;
 }

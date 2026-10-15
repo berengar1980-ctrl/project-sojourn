@@ -141,7 +141,7 @@ function variantDefinition(
     name: variantName(base, parsed.modifier, parsed.pct, special),
     power:
       parsed.modifier === 'efficiency'
-        ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100)))
+        ? Math.max(0, Math.round(base.power * (1 - parsed.pct / 100) * 100) / 100)
         : base.power,
     ...(base.weapon ? { weapon: variantWeapon(base, parsed.modifier, parsed.pct) } : {}),
     ...(parsed.modifier === 'performance' ? performanceFields(base, parsed.pct) : {}),

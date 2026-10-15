@@ -28,11 +28,11 @@ export function createScrapDuelArena(
   const largeSections = field.wrecks.filter((wreck) => wreck.sectionVariant);
   const containers = field.wrecks.filter((wreck) => wreck.containerVariant);
   const small: ScrapSource[] = [
-    ...field.debris.slice(0, dense ? 85 : 22),
+    ...(field.debris ?? []).slice(0, dense ? 85 : 22),
     ...sourceWrecks.slice(0, dense ? 40 : 20),
     // A second field reuses generated debris IDs ("debris-0", ...). Prefix
     // that layer or collisions/tractor capture will resolve the WRONG body.
-    ...(extraField?.debris.slice(0, 45).map((debris) => ({
+    ...(extraField?.debris?.slice(0, 45).map((debris) => ({
       ...debris,
       id: 'extra-' + debris.id,
     })) ?? []),
@@ -61,42 +61,85 @@ export function createScrapDuelArena(
     // spawns for EVERY rock, including debris. Wreck arenas must do likewise.
     const clearance = 145;
     if (
-      position.x <= radius + 18 || position.x >= width - radius - 18 ||
-      position.y <= radius + 18 || position.y >= height - radius - 18 ||
-      spawns.some((spawn) =>
-        Math.hypot(position.x - spawn.x, position.y - spawn.y) < radius + clearance)
-    ) return [];
+      position.x <= radius + 18 ||
+      position.x >= width - radius - 18 ||
+      position.y <= radius + 18 ||
+      position.y >= height - radius - 18 ||
+      spawns.some(
+        (spawn) => Math.hypot(position.x - spawn.x, position.y - spawn.y) < radius + clearance
+      )
+    )
+      return [];
 
-    const model = piece as SalvageWreck;
-    return [{
-      id: 'pvp-' + piece.id,
-      kind: isLarge ? 'resource' : 'debris',
-      position,
-      radius,
-      velocity: {
-        x: piece.driftVelocity?.x ?? 0,
-        y: piece.driftVelocity?.y ?? 0,
-      },
-      rotation: piece.rotation3d?.z ?? 0,
-      angularVelocity: piece.spin3d?.z ?? 0,
-      ...(model.debrisVariant
-        ? { debrisVariant: model.debrisVariant }
-        : 'variant' in piece && !isLarge && !model.containerVariant
-          ? { debrisVariant: piece.variant as SalvageDebris['variant'] }
-          : {}),
-      ...(model.sectionVariant ? { sectionVariant: model.sectionVariant } : {}),
-      ...(model.containerVariant ? { containerVariant: model.containerVariant } : {}),
-      ...(piece.rotation3d ? { rotation3d: { ...piece.rotation3d } } : {}),
-      ...(piece.spin3d ? { spin3d: { ...piece.spin3d } } : {}),
-      ...(piece.effectSeed !== undefined ? { effectSeed: piece.effectSeed } : {}),
-    }];
+    return [scrapVisual(piece, isLarge, position, radius)];
   });
 
   // Keep testable wreck ammunition available, but WITHOUT bypassing the
   // normal asteroid-map shield/tractor rules or changing combatant starts.
   // These pieces sit outside the same 145 m spawn clearance as mined rocks.
+  appendPracticeScrap(asteroids, field.debris ?? [], spawns, scale, seed);
+
+  // Equivalent to the asteroid arena's kind === 'resource' rule: large
+  // sections provide path blocking AND weapon cover; smaller debris remains
+  // collidable and tractor-throwable without influencing route planning.
+  const obstacles = asteroids
+    .filter((piece) => piece.kind === 'resource')
+    .map((piece) => ({
+      id: piece.id,
+      position: piece.position,
+      radius: piece.radius,
+    }));
+  return {
+    width,
+    height,
+    attackerPosition: spawns[0]!,
+    defenderPosition: spawns[1]!,
+    asteroids,
+    obstacles,
+  };
+}
+
+function scrapVisual(
+  piece: ScrapSource,
+  isLarge: boolean,
+  position: { x: number; y: number },
+  radius: number
+): CombatVisualAsteroid {
+  const model = piece as SalvageWreck;
+  return {
+    id: 'pvp-' + piece.id,
+    kind: isLarge ? 'resource' : 'debris',
+    position,
+    radius,
+    velocity: {
+      x: piece.driftVelocity?.x ?? 0,
+      y: piece.driftVelocity?.y ?? 0,
+    },
+    rotation: piece.rotation3d?.z ?? 0,
+    angularVelocity: piece.spin3d?.z ?? 0,
+    ...(model.debrisVariant
+      ? { debrisVariant: model.debrisVariant }
+      : 'variant' in piece && !isLarge && !model.containerVariant
+        ? { debrisVariant: piece.variant as SalvageDebris['variant'] }
+        : {}),
+    ...(model.sectionVariant ? { sectionVariant: model.sectionVariant } : {}),
+    ...(model.containerVariant ? { containerVariant: model.containerVariant } : {}),
+    ...(piece.rotation3d ? { rotation3d: { ...piece.rotation3d } } : {}),
+    ...(piece.spin3d ? { spin3d: { ...piece.spin3d } } : {}),
+    ...(piece.effectSeed !== undefined ? { effectSeed: piece.effectSeed } : {}),
+  };
+}
+
+function appendPracticeScrap(
+  asteroids: CombatVisualAsteroid[],
+  debris: readonly SalvageDebris[],
+  spawns: readonly { x: number; y: number }[],
+  scale: number,
+  seed: number
+): void {
   for (let i = 0; i < 4; i += 1) {
-    const source = field.debris[i]!;
+    const source = debris[i];
+    if (!source) continue;
     const player = i < 2 ? 0 : 1;
     const spawn = spawns[player]!;
     const side = player === 0 ? 1 : -1;
@@ -117,23 +160,4 @@ export function createScrapDuelArena(
       effectSeed: source.effectSeed,
     });
   }
-
-  // Equivalent to the asteroid arena's kind === 'resource' rule: large
-  // sections provide path blocking AND weapon cover; smaller debris remains
-  // collidable and tractor-throwable without influencing route planning.
-  const obstacles = asteroids
-    .filter((piece) => piece.kind === 'resource')
-    .map((piece) => ({
-      id: piece.id,
-      position: piece.position,
-      radius: piece.radius,
-    }));
-  return {
-    width,
-    height,
-    attackerPosition: spawns[0]!,
-    defenderPosition: spawns[1]!,
-    asteroids,
-    obstacles,
-  };
 }

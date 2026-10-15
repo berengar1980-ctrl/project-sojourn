@@ -199,14 +199,20 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   if (!wreck) return;
 
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  if (kind) kind.textContent = wreck.inspected ? (wreck.containerVariant ? 'CONTAINER' : 'WRACK') : 'KONTAKT';
+  if (kind)
+    kind.textContent = wreck.inspected
+      ? wreck.containerVariant
+        ? 'CONTAINER'
+        : 'WRACK'
+      : 'KONTAKT';
   ui.name.textContent = wreck.inspected ? wreck.name : 'UNBEKANNTER BERGUNGSKONTAKT';
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
   const busy =
     model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
-    ui.meta.textContent = (wreck.scanLevel === 'surveyed' ? 'KONTAKT ERFASST · ???' :
-      'OBJEKT NICHT GESCANNT') + ' · ANALYSE ERFORDERLICH';
+    ui.meta.textContent =
+      (wreck.scanLevel === 'surveyed' ? 'KONTAKT ERFASST · ???' : 'OBJEKT NICHT GESCANNT') +
+      ' · ANALYSE ERFORDERLICH';
     ui.inspectButton.textContent =
       model.phase === 'approaching' || model.phase === 'inspecting'
         ? 'SCAN LÄUFT'
@@ -425,11 +431,19 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
       : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
     ui.longScanButton.disabled = !model.scanAvailable || model.longRangeScanProgress !== null;
-    ui.longScanButton.textContent = model.longRangeScanProgress !== null
-      ? 'SCAN LÄUFT · ' + Math.round(model.longRangeScanProgress * 100) + ' %'
-      : model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
+    ui.longScanButton.textContent =
+      model.longRangeScanProgress !== null
+        ? 'SCAN LÄUFT · ' + Math.round(model.longRangeScanProgress * 100) + ' %'
+        : model.scanAvailable
+          ? 'LANGREICHWEITENSCAN'
+          : 'SCAN NICHT VERFÜGBAR';
     ui.cancelButton.hidden = model.phase === 'idle';
-    const atExit = playerAtLocalExit(model.ship.position, model.width, model.height, model.backgroundSeed);
+    const atExit = playerAtLocalExit(
+      model.ship.position,
+      model.width,
+      model.height,
+      model.backgroundSeed
+    );
     ui.backButton.disabled =
       !atExit ||
       model.phase !== 'idle' ||

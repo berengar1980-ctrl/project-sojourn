@@ -46,9 +46,7 @@ export function ensureNpcInstalledComponents(npc: SectorNpcState): NpcInstalledC
         return Boolean(component?.weapon && fitsWeaponHardpoint(ship, index, component.weapon));
       });
       if (!armed) {
-        npc.installedComponents.weapon = [
-          ...(defaultInstalledShipComponents(ship).weapon ?? []),
-        ];
+        npc.installedComponents.weapon = [...(defaultInstalledShipComponents(ship).weapon ?? [])];
       }
     }
     return npc.installedComponents;

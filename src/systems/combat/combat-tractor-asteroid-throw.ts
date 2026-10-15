@@ -111,19 +111,8 @@ export function maybeLaunchTractorAsteroid(
   removeCapturedThrowable(runtime, rock, mine);
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
-  runtime.lastEvent =
-    ship.setup.name + (mine ? ': TRAKTOR ERFASST MINE' :
-      rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
-        ? ': TRAKTOR ERFASST SCHROTT' : ': TRAKTOR ERFASST ASTEROID');
-  runtime.combatLog.push({
-    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-    side,
-    event: 'action',
-    detail: (mine
-      ? 'TRACTOR_MINE_THROW '
-      : rock?.debrisVariant || rock?.sectionVariant || rock?.containerVariant
-        ? 'TRACTOR_SCRAP_THROW ' : 'TRACTOR_ASTEROID_THROW ') + (rock?.id ?? mine!.id),
-  });
+  const scrap = [rock?.debrisVariant, rock?.sectionVariant, rock?.containerVariant].some(Boolean);
+  recordTractorLaunch(runtime, side, ship.setup.name, rock?.id ?? mine!.id, Boolean(mine), scrap);
 }
 
 function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownAsteroid): boolean {
@@ -183,14 +172,20 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     source: 'tractor_asteroid',
   };
   const isScrap = Boolean(rock.debrisVariant || rock.sectionVariant || rock.containerVariant);
-  runtime.lastEvent = (isScrap ? 'SCHROTTTREFFER · ' : 'ASTEROIDENTREFFER · ') +
-    Math.round(shieldDamage + hullDamage) + ' HP';
+  runtime.lastEvent =
+    (isScrap ? 'SCHROTTTREFFER · ' : 'ASTEROIDENTREFFER · ') +
+    Math.round(shieldDamage + hullDamage) +
+    ' HP';
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: rock.owner,
     event: 'impact',
-    detail: (isScrap ? 'TRACTOR_SCRAP_HIT' : 'TRACTOR_ASTEROID_HIT') +
-      ' shield=' + shieldDamage + ' hull=' + hullDamage,
+    detail:
+      (isScrap ? 'TRACTOR_SCRAP_HIT' : 'TRACTOR_ASTEROID_HIT') +
+      ' shield=' +
+      shieldDamage +
+      ' hull=' +
+      hullDamage,
   });
   return true;
 }
@@ -233,4 +228,29 @@ export function advanceThrownAsteroids(runtime: StrategicCombatRuntime, dt: numb
       runtime.thrownAsteroids.splice(index, 1);
     }
   }
+}
+
+function recordTractorLaunch(
+  runtime: StrategicCombatRuntime,
+  side: StrategicCombatSide,
+  name: string,
+  id: string | number,
+  mine: boolean,
+  scrap: boolean
+): void {
+  runtime.lastEvent =
+    name +
+    (mine
+      ? ': TRAKTOR ERFASST MINE'
+      : scrap
+        ? ': TRAKTOR ERFASST SCHROTT'
+        : ': TRAKTOR ERFASST ASTEROID');
+  runtime.combatLog.push({
+    timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
+    side,
+    event: 'action',
+    detail:
+      (mine ? 'TRACTOR_MINE_THROW ' : scrap ? 'TRACTOR_SCRAP_THROW ' : 'TRACTOR_ASTEROID_THROW ') +
+      id,
+  });
 }

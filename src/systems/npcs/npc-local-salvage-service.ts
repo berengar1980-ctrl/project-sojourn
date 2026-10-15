@@ -1,3 +1,4 @@
+import { moveToward } from './npc-salvage-navigation';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -62,29 +63,6 @@ function hashId(id: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-}
-
-function moveToward(
-  ship: LocalNpcSalvagerState,
-  target: WorldPoint,
-  speed: number,
-  dt: number
-): boolean {
-  const dx = target.x - ship.position.x;
-  const dy = target.y - ship.position.y;
-  const remaining = Math.hypot(dx, dy);
-  ship.headingRadians = Math.atan2(dy, dx);
-  ship.speed = speed;
-  if (remaining <= Math.max(2, speed * dt)) {
-    ship.position = { ...target };
-    ship.speed = 0;
-    return true;
-  }
-  ship.position = {
-    x: ship.position.x + (dx / remaining) * speed * dt,
-    y: ship.position.y + (dy / remaining) * speed * dt,
-  };
-  return false;
 }
 
 function cargoUsed(npc: SectorNpcState): number {
@@ -436,6 +414,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
     }
 
+    this.resolveContacts();
+  };
+
+  private resolveContacts(): void {
     const playerState = this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
       const definition = getShipDefinition(local.shipId);
@@ -464,10 +446,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
     const obstacles = this.options.field.wrecks
       .filter((wreck) => !wreck.containerVariant && !wreck.debrisVariant && !wreck.sectionVariant)
       .map((wreck) => ({
-      id: wreck.id,
-      position: wreck.position,
-      radius: wreck.radius,
-    }));
+        id: wreck.id,
+        position: wreck.position,
+        radius: wreck.radius,
+      }));
     for (const collision of resolveShipShieldObstacleCollisions(bodies, obstacles)) {
       if (collision.shipId === 'player') {
         this.options.onPlayerShieldContact?.(
@@ -487,7 +469,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         body.ship.nominalLengthMeters
       );
     }
-  };
+  }
 }
 
 export function createNpcLocalSalvageService(

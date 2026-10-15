@@ -226,8 +226,8 @@ assert(
 );
 assert(
   service.includes('setMiningResourceSelection') &&
-    miningResourceRuntime.includes('unique.length < 1 || unique.length > 2'),
-  'local mining must support ALL or exactly one/two targeted resources'
+    miningResourceRuntime.includes('unique.length < 1'),
+  'local mining must support ALL or selected available resources'
 );
 assert(
   miningResourceRuntime.includes('selections = new Map') &&

@@ -42,9 +42,9 @@ export function usefulMineCorridor(source: MutableCombatant, target: MutableComb
   if (distanceToShip > 720 || distanceToShip < 135) return false;
   const closing =
     (target.velocity.x - source.velocity.x) * dx + (target.velocity.y - source.velocity.y) * dy;
-  if (closing < 0) return false;
   const speed = Math.hypot(target.velocity.x, target.velocity.y);
   if (speed < 10) return distanceToShip < 400;
+  if (closing < 0) return false;
   const approach = Math.max(
     0,
     Math.min(3, (dx * target.velocity.x + dy * target.velocity.y) / (speed * speed))

@@ -34,7 +34,7 @@ export type CombatDoctrine =
   | 'tractor_intercept'
   | 'escape';
 
-export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup';
+export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup' | 'escape';
 
 export interface CombatLogEntry {
   readonly timeSeconds: number;
@@ -323,24 +323,19 @@ export interface MutableCombatant {
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
-  lastCombatIntentChangeAt?: number;
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
   strategy: CombatStrategyPlan | null;
   nextStrategyReviewAt: number;
-  lastPlanPhaseChangeAt?: number;
   combatTacticLocked?: boolean;
   nextCommitmentReviewAt?: number;
   escapeCommittedAt?: number;
   escapeAbandonedAt?: number;
-  lastEnemyHpObserved?: number;
-  lastProgressAt?: number;
   lastContactReviewAt?: number;
   nextAsteroidRouteAt?: number;
+  asteroidRouteTarget?: CombatPoint;
   asteroidRoute?: { x: number; y: number }[];
-  stalledPlanKind?: CombatStrategyPlan['kind'];
-  stalledPlanFacing?: CombatStrategyPlan['broadsideFacing'];
   shieldHp: number;
   hullHp: number;
   subsystems: { engine: number; tractor: number; maximum: number };

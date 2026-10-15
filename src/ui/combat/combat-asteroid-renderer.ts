@@ -18,9 +18,13 @@ export function drawCombatAsteroids(
     const radius = Math.max(asteroid.kind === 'debris' ? 2 : 5, asteroid.radius * scale);
     if (context && isCombatScrap(asteroid)) {
       const canvas = context.canvas;
-      if (center.x < -radius * 2 || center.y < -radius * 2 ||
-          center.x > canvas.clientWidth + radius * 2 ||
-          center.y > canvas.clientHeight + radius * 2) continue;
+      if (
+        center.x < -radius * 2 ||
+        center.y < -radius * 2 ||
+        center.x > canvas.clientWidth + radius * 2 ||
+        center.y > canvas.clientHeight + radius * 2
+      )
+        continue;
       context.save();
       context.translate(center.x, center.y);
       drawCombatScrap(context, asteroid, radius, timeSeconds);

@@ -127,8 +127,8 @@ assert.equal(
 );
 assert.equal(
   targeting.canEngagePreferredSubsystem(source, frontTarget),
-  false,
-  'AI should hold fire until fleeing engine is exposed'
+  true,
+  'AI can fire at hull while the preferred engine is not exposed'
 );
 assert.equal(
   targeting.effectiveTargetSubsystem(source, frontTarget),

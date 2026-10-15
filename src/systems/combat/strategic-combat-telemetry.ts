@@ -79,15 +79,7 @@ export function reviewAndExecute(
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
   if (ship.strategy.phase !== nextPhase) {
-    const previousPhase = ship.strategy.phase;
-    // Gameplay and HUD should not oscillate between "approach" and "fire"
-    // faster than a pilot can react or a player can read the status.
-    if (
-      previousPhase &&
-      runtime.elapsedSeconds - (ship.lastPlanPhaseChangeAt ?? -100) < 1.2
-    ) return;
     ship.strategy = { ...ship.strategy, phase: nextPhase };
-    ship.lastPlanPhaseChangeAt = runtime.elapsedSeconds;
     recordCombatLog(runtime, side, 'phase', nextPhase);
   }
 }

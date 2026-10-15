@@ -18,8 +18,7 @@ const source = fs.readFileSync(
   'utf8'
 );
 assert(
-  source.includes('updateCombatIntent(') &&
-    source.includes('describeCombatIntent(ship)'),
+  source.includes('updateCombatIntent(') && source.includes('describeCombatIntent(ship)'),
   'non-Alpha battles update readable intent through the stable status helper'
 );
 const { updateCombatIntent } = loadStandaloneTypeScriptModule(
@@ -29,9 +28,9 @@ const { updateCombatIntent } = loadStandaloneTypeScriptModule(
 const status = { tactic: 'fight' };
 updateCombatIntent(status, 'ANNÄHERN', 0);
 updateCombatIntent(status, 'BREITSEITE', 0.08);
-assert.equal(status.combatIntent, 'ANNÄHERN', 'HUD labels cannot change each physics frame');
+assert.equal(status.combatIntent, 'BREITSEITE', 'HUD reflects an accepted order immediately');
 updateCombatIntent(status, 'BREITSEITE', 2.01);
-assert.equal(status.combatIntent, 'BREITSEITE', 'new labels appear after two seconds');
+assert.equal(status.combatIntent, 'BREITSEITE', 'unchanged order keeps the same label');
 status.tactic = 'flee';
 updateCombatIntent(status, 'FLANKIEREN', 2.02);
 assert.equal(status.combatIntent, 'FLIEHEN', 'flee overrides status display immediately');

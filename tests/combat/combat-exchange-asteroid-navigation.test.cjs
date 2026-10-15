@@ -21,7 +21,8 @@ assert(
   'exchange pilot follows the asteroid route during thrust'
 );
 assert(
-  /accelerateExchangeShip\(\s*ship,\s*safeGoal/.test(pilot),
+  /desiredExchangeVelocity\(\s*ship,\s*safeGoal/.test(pilot) &&
+    pilot.includes('pilotCombatFlight(ship,'),
   'ship accelerates toward a navigable waypoint instead of an obstacle'
 );
 assert(routing.includes('pathBlocked('), 'avoid only actual obstructed trajectories');
