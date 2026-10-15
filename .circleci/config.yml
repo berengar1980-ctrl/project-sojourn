@@ -43,6 +43,12 @@ jobs:
           name: Tests
           command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
+          name: Combat motion comparison
+          command: |
+            if [ "$CIRCLE_BRANCH" = "refactor/combat-ai-architecture" ]; then
+              node scripts/combat-ci-metrics.cjs
+            fi
+      - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
 
