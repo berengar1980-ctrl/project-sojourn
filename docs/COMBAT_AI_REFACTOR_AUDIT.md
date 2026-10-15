@@ -48,7 +48,25 @@ node scripts/combat-motion-baseline.cjs 90 > combat-motion-before.json
 npm run check:quick
 ```
 
-**Baseline numeric results are pending.** This environment can read/write GitHub sources but cannot clone the private repo for a full dependency-graph execution. Do not claim that repository tests passed or invent scores.
+## Measured before-refactor baseline: 2026-10-15
+
+The user executed `node scripts/combat-motion-baseline.cjs 90` in Codespaces. All 12 reported scenario results are preserved verbatim in `docs/combat-baselines/main-pre-refactor-2026-10-15.json`. These measurements use **unchanged main gameplay code** on the refactor branch. The 12 cases cover three weapon/speed matchups and four seeds per matchup; seed 1001 activates the exchange reference path.
+
+- Regular combat (nine cases): mean **55.77 of 90 seconds (61.97%)** with both ships under 15% of their respective configured speed limits; the longest individual both-slow streak is **69.2 seconds**; mean relative speed **26.79 m/s**; **0 detected close-pass candidates**.
+- Exchange reference combat (three cases): mean **1.84 of 90 seconds (2.04%)** with both ships under the same speed threshold; mean relative speed **82.45 m/s**; close-pass candidates across scenarios: **0, 2, 2**.
+- **All 12 fights reached the 90-second limit without a winner.** No frame failed numeric validation (`invalidFrames: 0`). Neither property establishes that weapons behave correctly or that the battle is visually exciting.
+- Regular path minimum separations cluster around **86 m**, consistent with the normal collision contact threshold of 86 m in `resolveCombatantCollision`. Its near-contact overlap handling also damps both velocities by 0.6. This suggests a possible recurring contact/braking feedback loop that must be investigated rather than assumed.
+- Several seed 100 and seed 102 measurements are identical within each regular matchup, indicating weak observed variation for these fixtures; the 12 scenarios do not establish overall seed-diversity.
+
+**Metric limitations:** `closePassCandidates` detects a discrete turning point in range with a minimum per-frame distance change; it can miss a genuine passage and is not equivalent to visual flyby count. `plannedActions` counts generic `plan` log events, not confirmed successful maneuvers. `secondsNearlyFixedRange` detects low separation variation in roughly ten-second windows and does not distinguish intentional range control from an unwanted deadlock. Neither damage dealt nor shots fired is included in this baseline output.
+
+**Read-only CI verification:** at the last reviewed diagnostic commit, formatting, ESLint, TypeScript, dependencies, tests and build all passed in CircleCI. This does not constitute a visual combat-quality review.
+
+**Working diagnosis, not yet a proven causal chain:** the normal path combines desired-range speed factor `0.1` from `combat-range-posture.ts`, conditional lateral/broadside speed caps, relative braking, and collision damping near 86 m. The reference path instead uses a separate flight pilot, which stays mobile in these fixtures. We must remove contradictory movement ownership, not just increase speed multipliers.
+
+**Next verification:** sample time-series of position, velocity, distance, tactic, flight phase, fire events and contact corrections near the onset of stagnation; compare seed-matched before/after replays, not merely summary totals.
+
+
 
 ## Gate before runtime refactor
 
