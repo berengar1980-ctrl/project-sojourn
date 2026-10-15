@@ -41,11 +41,7 @@ assert(
     'distance(combatant.position, arena.exitPoint) <= 90'
   )
 );
-assert(
-  read('src/systems/combat/combat-flight-intent.ts').includes(
-    'exit.x - ship.position.x'
-  )
-);
+assert(read('src/systems/combat/combat-flight-intent.ts').includes('exit.x - ship.position.x'));
 assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNKT'));
 assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('drawCombatEscapeGate('));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));
