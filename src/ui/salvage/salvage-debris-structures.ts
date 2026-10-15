@@ -1,4 +1,4 @@
-import { ContainerMesh, type Color, type Vec3 } from './salvage-container-mesh';
+import type { ContainerMesh, Color, Vec3 } from './salvage-container-mesh';
 
 // Eight distinct reusable 3D meshes: beams, torn plating, open floors, pipes,
 // doors and loose power conduits. Built once; instances only carry pose.
