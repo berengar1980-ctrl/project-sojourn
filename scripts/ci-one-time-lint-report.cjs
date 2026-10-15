@@ -33,15 +33,24 @@ async function run() {
   const child = spawnSync('npm', ['run', 'lint'], { encoding: 'utf8', maxBuffer: 1000000 });
   const log = (child.stdout || '') + '\n' + (child.stderr || '');
   process.stdout.write(log);
-  const zip = deflateRawSync(Buffer.from(log), { level: 9 }).toString('base64')
-    .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
-  const size = 1300, count = Math.ceil(zip.length / size);
+  const zip = deflateRawSync(Buffer.from(log), { level: 9 })
+    .toString('base64')
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/, '');
+  const size = 1300,
+    count = Math.ceil(zip.length / size);
   if (count > 95) throw Error('Diagnostic too large: ' + count);
   for (let i = 0; i < count; i += 1)
-    await post('ci/lint-report/' + String(i).padStart(3, '0'),
-      'Lint report fragment ' + (i + 1) + '/' + count, zip.slice(i * size, (i + 1) * size));
-  await post('ci/lint-report/complete', 'count=' + count + ', bytes=' +
-    Buffer.byteLength(log) + ', code=' + child.status);
+    await post(
+      'ci/lint-report/' + String(i).padStart(3, '0'),
+      'Lint report fragment ' + (i + 1) + '/' + count,
+      zip.slice(i * size, (i + 1) * size)
+    );
+  await post(
+    'ci/lint-report/complete',
+    'count=' + count + ', bytes=' + Buffer.byteLength(log) + ', code=' + child.status
+  );
   process.exitCode = child.status ?? 1;
 }
 run().catch((error) => {

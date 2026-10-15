@@ -158,7 +158,10 @@ function isClearScrapPosition(
   );
 }
 
-function scrapDebrisVariant(piece: ScrapSource, isLarge: boolean): { debrisVariant?: SalvageDebris['variant'] } {
+function scrapDebrisVariant(
+  piece: ScrapSource,
+  isLarge: boolean
+): { debrisVariant?: SalvageDebris['variant'] } {
   const model = piece as SalvageWreck;
   if (model.debrisVariant) return { debrisVariant: model.debrisVariant };
   if ('variant' in piece && !isLarge && !model.containerVariant) {

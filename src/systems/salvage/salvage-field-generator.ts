@@ -250,7 +250,6 @@ function addSalvageSections(
       scanLevel: 'unscanned',
     });
   }
-
 }
 
 function generateSalvageDebris(

@@ -168,18 +168,20 @@ function cargoView(player: PlayerEconomyState): readonly SalvageCargoView[] {
     .sort((first, second) => first.name.localeCompare(second.name));
 }
 
-function salvageWreckKindLabel(wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]): string {
+function salvageWreckKindLabel(
+  wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]
+): string {
   return wreck.sectionVariant
-        ? 'SCHIFFSSEKTION'
-        : wreck.debrisVariant
-          ? 'SCHIFFSFRAGMENT'
-          : wreck.containerVariant
-            ? {
-                standard: 'FRACHTCONTAINER',
-                damaged: 'BESCHÄDIGTER CONTAINER',
-                tank: 'TANKMODUL',
-              }[wreck.containerVariant]
-            : wreckKindLabel(wreck.kind);
+    ? 'SCHIFFSSEKTION'
+    : wreck.debrisVariant
+      ? 'SCHIFFSFRAGMENT'
+      : wreck.containerVariant
+        ? {
+            standard: 'FRACHTCONTAINER',
+            damaged: 'BESCHÄDIGTER CONTAINER',
+            tank: 'TANKMODUL',
+          }[wreck.containerVariant]
+        : wreckKindLabel(wreck.kind);
 }
 
 function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckView[] {
