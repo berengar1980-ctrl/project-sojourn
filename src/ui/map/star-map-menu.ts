@@ -25,10 +25,7 @@ const MENU_ITEMS: readonly MenuDefinition[] = [
   { id: 'system', label: 'System', icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>' },
 ];
 
-export function createStarMapMenu(
-  parent: HTMLElement,
-  onSectionChange: (section: StarMapMenuSection | null) => void
-): StarMapMenu {
+function createMenuSurface(parent: HTMLElement) {
   const shell = document.createElement('div');
   shell.className = 'star-map-menu';
 
@@ -79,6 +76,14 @@ export function createStarMapMenu(
   shell.append(drawer, nav);
   parent.append(shell);
 
+  return { shell, drawer, title, closeButton, panes, buttons };
+}
+
+export function createStarMapMenu(
+  parent: HTMLElement,
+  onSectionChange: (section: StarMapMenuSection | null) => void
+): StarMapMenu {
+  const { shell, drawer, title, closeButton, panes, buttons } = createMenuSurface(parent);
   let selected: StarMapMenuSection | null = null;
   const setSection = (next: StarMapMenuSection | null): void => {
     if (selected === next) return;
