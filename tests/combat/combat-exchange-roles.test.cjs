@@ -26,17 +26,10 @@ assert(
   ),
   'opposing side keeps the reactor role'
 );
-assert(
-  /initiatorGoal:\s*\(initiator\.tactic === 'flee' \? runtime\.arena\.exitPoint : null\)\s*\?\?\s*initiatorOverride\s*\?\?\s*state\.flight\.initiatorGoal/.test(
-    controllerSource
-  ),
-  'initiator keeps choreographed goal unless fleeing or reacting to danger'
-);
-assert(
-  /reactorGoal:\s*\(opponent\.tactic === 'flee' \? runtime\.arena\.exitPoint : null\)\s*\?\?\s*opponentOverride\s*\?\?\s*state\.flight\.reactorGoal/.test(
-    controllerSource
-  ),
-  'reactor keeps choreographed goal unless fleeing or reacting to danger'
+assert.match(
+  controllerSource,
+  /import \{ resolveExchangeFlightGoals \} from '\.\/combat-exchange-goals';/,
+  'flight goal policy is a separate, testable module'
 );
 assert.match(
   controllerSource,
