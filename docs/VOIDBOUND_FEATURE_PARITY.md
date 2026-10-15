@@ -789,3 +789,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-15): PR #233 – Crew-Rekrutierung mit vollständigen Fähigkeiten
 
 **keine Statusänderung.** Die Rekrutierungsansicht zeigt die sieben vorhandenen Schiffs-/Stationsfähigkeiten sowie Nahkampf und Fernkampf als einzeln lesbare Werte; persönliche soziale Traits werden dort nicht mehr angezeigt. Die zugrunde liegenden Crew-Definitionen, Rekrutierungslogik, Kampfwerte und Stationszuweisungen bleiben unverändert. UI-Regressionstest ergänzt; keine Änderung der Voidbound-Feature-Parität.
+
+## Review-Log (2026-10-15): Bestehende Kampfchoreografie bewahren
+
+**keine Statusänderung.** Die bestehende Action/Reaction-Exchange-Choreografie bleibt erhalten. Während einer laufenden Passage dürfen allgemeine Deckungs- und Verfolgungsziele die bereits geplanten Flugziele nicht verdrängen; Flucht zum Ausgang und unmittelbare reaktive Gefahrmanöver behalten Vorrang. Der vorhandene Pilot, die Exchange-Auswahl, Waffen- und Schadenslogik bleiben unverändert. Ein Regressionstest schützt die Priorität der choreografierten Flugziele. Keine Änderung an den 241 Voidbound-Feature-Statuswerten.
