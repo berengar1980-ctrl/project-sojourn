@@ -32,7 +32,9 @@ export function chooseCombatFlightIntent(
   const range = Math.max(1, Math.hypot(dx, dy));
   const toward = normalize(dx, dy);
   const away = { x: -toward.x, y: -toward.y };
-  const side = { x: -toward.y, y: toward.x };
+  const orbitSign =
+    ship.strategy?.focus === 'broadside' && ship.strategy.broadsideFacing === 'starboard' ? -1 : 1;
+  const side = { x: -toward.y * orbitSign, y: toward.x * orbitSign };
 
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
