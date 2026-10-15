@@ -19,6 +19,9 @@ jobs:
           paths:
             - ~/.npm
       - run:
+          name: Temporary formatting diff
+          command: node scripts/ci-format-diff.cjs
+      - run:
           name: Format
           command: |
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
