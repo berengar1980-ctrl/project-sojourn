@@ -39,8 +39,8 @@ assert.equal(
 target.position.x = 490;
 assert.equal(
   executor.executeCombatPlan(pursuer, target),
-  'reach_range',
-  'a very close collision approach still requires corrective movement'
+  'regroup',
+  'close-range overshoot first invokes regroup without abruptly resuming fire'
 );
 target.position.x = 710;
 assert.equal(
