@@ -15,7 +15,6 @@ export function drawPlayerSalvageWorkEffect(
     if (model.phase !== 'stripping' && model.phase !== 'extracting-component') return;
     const wreck = model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-    const geometry = geometry;
     const wreckPoint = camera.worldToScreen(wreck.position, width, height);
     const hardpoints = model.ship.hardpoints.tractorBeams ?? [];
     const emitters =
