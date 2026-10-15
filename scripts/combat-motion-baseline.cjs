@@ -68,8 +68,9 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
     phaseChanges: log.filter((entry) => entry.event === 'phase').length,
     reactiveEvents: log.filter((entry) => entry.detail.startsWith('REACTIVE_')).length,
-    confirmedExchangeOutcomes: log.filter((entry) => entry.detail.startsWith('EXCHANGE_OUTCOME'))
-      .length,
+    confirmedExchangeOutcomes: log.filter((entry) =>
+      entry.detail.startsWith('EXCHANGE_OUTCOME')
+    ).length,
   };
 }
 
