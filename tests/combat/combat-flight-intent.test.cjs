@@ -17,8 +17,9 @@ const ship = (x, vx = 0) => ({
   subsystems: { engine: 100, tractor: 0 },
   strategy: { kind: 'frontal', focus: 'forward', desiredRange: 1000 },
 });
-const order = (a, b, desired = 1000) =>
-  chooseCombatFlightIntent(a, b, desired, arena, 0.08, false);
+function order(a, b, desired = 1000) {
+  return chooseCombatFlightIntent(a, b, desired, arena, 0.08, false);
+}
 
 const close = ship(1000);
 const neighbor = ship(1086);
@@ -39,7 +40,12 @@ assert.equal(order(attacker, defender).kind, 'pass', 'moving target does not can
 
 const runner = ship(1000);
 runner.tactic = 'flee';
-runner.flightPass = { direction: { x: 1, y: 0 }, startRange: 300, closestRange: 300, ageSeconds: 0 };
+runner.flightPass = {
+  direction: { x: 1, y: 0 },
+  startRange: 300,
+  closestRange: 300,
+  ageSeconds: 0,
+};
 const escape = order(runner, defender);
 assert.equal(escape.kind, 'escape');
 assert(escape.direction.x < 0);
