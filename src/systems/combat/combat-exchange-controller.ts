@@ -13,6 +13,7 @@ import {
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { resolveExchangeFlightGoals } from './combat-exchange-goals';
+import { updateExchangeIntents } from './combat-exchange-intents';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -50,39 +51,6 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
   };
-}
-
-function updateExchangeIntents(
-  initiator: StrategicCombatRuntime['attacker'],
-  opponent: StrategicCombatRuntime['defender'],
-  next: CombatExchange
-): void {
-  const actionNames: Record<string, string> = {
-    frontal_pass: 'FRONTALANFLUG',
-    broadside_pass: 'BREITSEITENPASSAGE',
-    disengage_fire: 'ABSTAND GEWINNEN',
-    flanking_pass: 'FLANKIEREN',
-  };
-  const reactionNames: Record<string, string> = {
-    evade: 'AUSWEICHEN',
-    accelerate_clear: 'BESCHLEUNIGEN',
-    extend_range: 'ABSTAND HALTEN',
-    break_contact: 'KONTAKT LÖSEN',
-    close_gap: 'ANNÄHERN',
-    intercept: 'ABFANGEN',
-    pursue: 'VERFOLGEN',
-    cross_pass: 'KREUZEN',
-    counter_pass: 'GEGENPASSAGE',
-    counterfire: 'GEGENFEUER',
-    turn_to_face: 'ZIEL ANVISIEREN',
-    hold_fire: 'POSITION HALTEN',
-  };
-  // During the one-tick choose transition, retain the last meaningful label.
-  // The next exchange will replace it when its action/reaction are chosen.
-  if (initiator.tactic === 'flee') initiator.combatIntent = 'FLIEHEN';
-  else if (next.action) initiator.combatIntent = actionNames[next.action] ?? 'KURS HALTEN';
-  if (opponent.tactic === 'flee') opponent.combatIntent = 'FLIEHEN';
-  else if (next.reaction) opponent.combatIntent = reactionNames[next.reaction] ?? 'KURS HALTEN';
 }
 
 function useBoostForExchange(
