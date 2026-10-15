@@ -14,9 +14,11 @@ export function resolveExchangeFlightGoals(
   initiatorSafetyGoal: CombatPoint | null,
   reactorSafetyGoal: CombatPoint | null
 ): ExchangeFlightPlan {
+  const initiatorEscape = initiator.tactic === 'flee' ? exitPoint : null;
+  const reactorEscape = reactor.tactic === 'flee' ? exitPoint : null;
   return {
     ...flight,
-    initiatorGoal: (initiator.tactic === 'flee' ? exitPoint : null) ?? initiatorSafetyGoal ?? flight.initiatorGoal,
-    reactorGoal: (reactor.tactic === 'flee' ? exitPoint : null) ?? reactorSafetyGoal ?? flight.reactorGoal,
+    initiatorGoal: initiatorEscape ?? initiatorSafetyGoal ?? flight.initiatorGoal,
+    reactorGoal: reactorEscape ?? reactorSafetyGoal ?? flight.reactorGoal,
   };
 }
