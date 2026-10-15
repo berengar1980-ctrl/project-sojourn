@@ -166,7 +166,7 @@ assert(
 );
 assert(
   minerSource.includes("npc.workRiskPreference === 'risky'") &&
-    salvageSource.includes("npc.workRiskPreference === 'risky'"),
+    salvageHelpers.includes("npc.workRiskPreference === 'risky'"),
   'NPC workers must choose their player event options from a persistent safe-or-risk preference'
 );
 assert(
