@@ -1,5 +1,7 @@
 # Harrowdrift combat choreography
 
+> **Historisches Konzept (nicht mehr im aktiven Laufzeitpfad des Refactor-Branches):** Die folgende Action-Exchange-Choreografie mit vorgegebenen Aktionen und Reaktionen ist durch die einheitliche, unabhängig entscheidende Kampf-KI abgelöst worden. Ihr Code bleibt bis zur vollständigen Testmigration vorübergehend im Repository. Verbindliche Zielarchitektur: [COMBAT_AI_TARGET_ARCHITECTURE.md](COMBAT_AI_TARGET_ARCHITECTURE.md).
+
 A combat exchange is a dynamic flight commitment, not a scripted animation.
 Flight goals are subject to ship inertia, acceleration, heading, asteroid routing, weapon arcs and damage.
 
