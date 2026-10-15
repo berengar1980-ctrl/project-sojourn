@@ -8,8 +8,10 @@ const { chooseCombatFlightIntent } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-flight-intent.ts'
 );
-const { activateCombatBoost, stopCombatBoost, updateCombatBoost } =
-  loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-boost-control.ts');
+const { activateCombatBoost, stopCombatBoost, updateCombatBoost } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-boost-control.ts'
+);
 const actor = (x) => ({
   position: { x, y: 500 },
   velocity: { x: 0, y: 0 },
