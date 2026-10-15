@@ -61,23 +61,41 @@ function ship(id, weapon, facing, speed = 120, tactic = 'fight', mine = false) {
 const rock = [{ id: 'reference-rock', position: { x: 1200, y: 750 }, radius: 160 }];
 const cases = [
   ['front-front', () => [ship('A', railgun, 'forward'), ship('B', railgun, 'forward'), arena()]],
-  ['front-broadside', () => [ship('A', railgun, 'forward'), ship('B', autocannon, 'port'), arena()]],
-  ['unequal-speed', () => [ship('A', railgun, 'forward', 165), ship('B', autocannon, 'port', 85), arena()]],
+  [
+    'front-broadside',
+    () => [ship('A', railgun, 'forward'), ship('B', autocannon, 'port'), arena()],
+  ],
+  [
+    'unequal-speed',
+    () => [ship('A', railgun, 'forward', 165), ship('B', autocannon, 'port', 85), arena()],
+  ],
   ['obstacle', () => [ship('A', railgun, 'forward'), ship('B', autocannon, 'port'), arena(rock)]],
-  ['minefield', () => [ship('A', railgun, 'forward', 120, 'minefield', true), ship('B', autocannon, 'port'), arena()]],
-  ['escape', () => [ship('A', railgun, 'forward', 150, 'flee'), ship('B', railgun, 'forward'), arena()]],
+  [
+    'minefield',
+    () => [
+      ship('A', railgun, 'forward', 120, 'minefield', true),
+      ship('B', autocannon, 'port'),
+      arena(),
+    ],
+  ],
+  [
+    'escape',
+    () => [ship('A', railgun, 'forward', 150, 'flee'), ship('B', railgun, 'forward'), arena()],
+  ],
 ];
 function sampleShip(shipState, previous, dt) {
   const travelled = distance(shipState.position, previous.position);
   return {
     distance: travelled,
     stationarySeconds: shipState.speed < 5 ? dt : 0,
-    headingMismatchSeconds: shipState.combatIntent &&
+    headingMismatchSeconds:
+      shipState.combatIntent &&
       /FRONTAL|ANVISIEREN/.test(shipState.combatIntent) &&
-      Math.cos(shipState.headingRadians) *
-        (previous.enemy.x - shipState.position.x) +
-      Math.sin(shipState.headingRadians) *
-        (previous.enemy.y - shipState.position.y) < 0 ? dt : 0,
+      Math.cos(shipState.headingRadians) * (previous.enemy.x - shipState.position.x) +
+        Math.sin(shipState.headingRadians) * (previous.enemy.y - shipState.position.y) <
+        0
+        ? dt
+        : 0,
   };
 }
 function replay(name, makeScenario, seed) {
@@ -114,7 +132,11 @@ function replay(name, makeScenario, seed) {
     ]) {
       const s = current[side];
       const earlier = last[side];
-      const measure = sampleShip(s, { position: earlier.position, enemy: current[enemy].position }, dt);
+      const measure = sampleShip(
+        s,
+        { position: earlier.position, enemy: current[enemy].position },
+        dt
+      );
       metrics.distance[index] += measure.distance;
       metrics.stationarySeconds[index] += measure.stationarySeconds;
       metrics.headingMismatchSeconds[index] += measure.headingMismatchSeconds;
@@ -131,10 +153,16 @@ function replay(name, makeScenario, seed) {
     if (frame % 10 === 0 || current.winner) {
       trajectory.push({
         t: round(current.elapsedSeconds),
-        a: [round(current.attacker.position.x), round(current.attacker.position.y),
-          round(current.attacker.headingRadians)],
-        b: [round(current.defender.position.x), round(current.defender.position.y),
-          round(current.defender.headingRadians)],
+        a: [
+          round(current.attacker.position.x),
+          round(current.attacker.position.y),
+          round(current.attacker.headingRadians),
+        ],
+        b: [
+          round(current.defender.position.x),
+          round(current.defender.position.y),
+          round(current.defender.headingRadians),
+        ],
       });
     }
     last = current;
@@ -150,8 +178,8 @@ function replay(name, makeScenario, seed) {
     initialSeparation: round(originalRange),
     minimumSeparation: round(minimumRange),
     finalSeparation: round(previousRange),
-    escapeDistanceToExit: name === 'escape'
-      ? round(distance(current.attacker.position, field.exitPoint)) : null,
+    escapeDistanceToExit:
+      name === 'escape' ? round(distance(current.attacker.position, field.exitPoint)) : null,
     distance: metrics.distance.map(round),
     meanSpeed: metrics.speedIntegral.map((value) => round(value / Math.max(duration, STEP))),
     peakSpeed: metrics.peakSpeed.map(round),
