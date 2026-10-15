@@ -5,7 +5,7 @@ import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
-import { createStarMapMenu } from './star-map-menu';
+import { createStarMapMenu, type StarMapMenu } from './star-map-menu';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
@@ -220,6 +220,111 @@ function updateTravelStatus(model: StarMapViewModel, travelStatus: HTMLElement):
     'KURS · ' + percent + '% · ' + Math.round(model.navigation.speed) + ' u/s';
 }
 
+
+function populateStarMapMenu(
+  menu: StarMapMenu,
+  controls: ReturnType<typeof createStarMapControls>
+): HTMLButtonElement {
+  const { modeToggle, labelToggle, cargoToggle, cargoPanel } = controls;
+  menu.mapPane.insertAdjacentHTML(
+    'afterbegin',
+    '<p class="star-map-menu__help">KARTENDARSTELLUNG</p>'
+  );
+  menu.mapPane.append(modeToggle, labelToggle);
+  const resetButton = document.createElement('button');
+  resetButton.type = 'button';
+  resetButton.className = 'star-map-menu__action';
+  resetButton.textContent = 'KARTE ZENTRIEREN';
+  menu.mapPane.append(resetButton);
+  const hint = document.createElement('p');
+  hint.className = 'star-map-menu__hint';
+  hint.textContent = 'Mausrad: Zoom · Ziehen: Verschieben · Doppelklick: Zentrieren';
+  menu.mapPane.append(hint);
+
+  const tradeHeading = document.createElement('p');
+  tradeHeading.className = 'star-map-menu__help';
+  tradeHeading.textContent = 'FRACHTMARKT // ANALYSE';
+  cargoPanel.removeAttribute('style');
+  cargoPanel.hidden = false;
+  const cargoSelect = controls.cargoSelect;
+  cargoSelect.removeAttribute('style');
+  menu.tradePane.append(tradeHeading, cargoToggle, cargoPanel);
+  return resetButton;
+}
+
+function bindMapDisplayOptions(
+  shell: HTMLElement,
+  renderer: TopdownMapRenderer,
+  modeToggle: HTMLButtonElement,
+  labelToggle: HTMLButtonElement,
+  resetButton: HTMLButtonElement
+): void {
+  resetButton.addEventListener('click', () => renderer.resetCamera());
+  const applyDisplayMode = (mode: StarMapDisplayMode): void => {
+    preferredDisplayMode = mode;
+    shell.classList.toggle('is-nav-mode', mode === 'nav');
+    modeToggle.textContent = mode === 'nav' ? 'ANSICHT // NAV' : 'ANSICHT // PHYSISCH';
+    renderer.setDisplayMode(mode);
+  };
+  modeToggle.addEventListener('click', () =>
+    applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
+  );
+  labelToggle.addEventListener('click', () => {
+    preferredLabelsVisible = !preferredLabelsVisible;
+    labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+    labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+    renderer.setLabelsVisible(preferredLabelsVisible);
+  });
+  applyDisplayMode(preferredDisplayMode);
+  labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
+  labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
+  renderer.setLabelsVisible(preferredLabelsVisible);
+}
+
+function createStarMapTicker(shell: HTMLElement, log: SystemLogService): () => void {
+  const ticker = document.createElement('div');
+  ticker.className = 'star-map-event-ticker';
+  ticker.setAttribute('aria-label', 'Letzte Bordcomputer-Meldung');
+  ticker.hidden = true;
+  shell.append(ticker);
+  let lastTickerId = -1;
+  return (): void => {
+    const latest = log.entries().at(-1);
+    if (!latest || latest.id === lastTickerId) return;
+    lastTickerId = latest.id;
+    ticker.textContent = 'SYS > ' + latest.message;
+    ticker.hidden = false;
+  };
+}
+
+function createMenuContentRefresher(
+  menu: StarMapMenu,
+  getModel: () => StarMapViewModel,
+  renderCargoScanner: () => void,
+  systemLog: { update(): void },
+  actions: Pick<StarMapPanelOptions, 'onSelectNpc' | 'onSelectLocation'>
+): () => void {
+  const directoryActions = {
+    onSelectNpc(id: string): void {
+      menu.close();
+      actions.onSelectNpc(id);
+    },
+    onSelectLocation(id: string): void {
+      menu.close();
+      actions.onSelectLocation(id);
+    },
+  };
+  return (): void => {
+    const section = menu.activeSection();
+    if (section === 'trade') renderCargoScanner();
+    else if (section === 'contacts') {
+      renderStarMapContacts(getModel(), menu.contactsPane, directoryActions);
+    } else if (section === 'missions') {
+      renderStarMapEvents(getModel(), menu.missionsPane, directoryActions);
+    } else if (section === 'system') systemLog.update();
+  };
+}
+
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const {
     shell,
@@ -241,60 +346,24 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   let refreshMenuContent: () => void = () => {};
   const menu = createStarMapMenu(shell, () => refreshMenuContent());
 
-  menu.mapPane.insertAdjacentHTML(
-    'afterbegin',
-    '<p class="star-map-menu__help">KARTENDARSTELLUNG</p>'
-  );
-  menu.mapPane.append(modeToggle, labelToggle);
-  const resetButton = document.createElement('button');
-  resetButton.type = 'button';
-  resetButton.className = 'star-map-menu__action';
-  resetButton.textContent = 'KARTE ZENTRIEREN';
-  menu.mapPane.append(resetButton);
-  const mapHint = document.createElement('p');
-  mapHint.className = 'star-map-menu__hint';
-  mapHint.textContent = 'Mausrad: Zoom · Ziehen: Verschieben · Doppelklick: Zentrieren';
-  menu.mapPane.append(mapHint);
-
-  const tradeHeading = document.createElement('p');
-  tradeHeading.className = 'star-map-menu__help';
-  tradeHeading.textContent = 'FRACHTMARKT // ANALYSE';
-  cargoPanel.removeAttribute('style');
-  cargoPanel.hidden = false;
-  menu.tradePane.append(tradeHeading, cargoToggle, cargoPanel);
-
-  const contactsHeading = document.createElement('p');
-  contactsHeading.className = 'star-map-menu__hint';
-  contactsHeading.textContent = 'Kontakte aus der aktuellen Sensorerfassung auswählen.';
-  menu.contactsPane.append(contactsHeading);
-
-  const ticker = document.createElement('div');
-  ticker.className = 'star-map-event-ticker';
-  ticker.setAttribute('aria-label', 'Letzte Bordcomputer-Meldung');
-  ticker.hidden = true;
-  shell.append(ticker);
-
-  const renderer = new TopdownMapRenderer(canvas, model);
-  resetButton.addEventListener('click', () => renderer.resetCamera());
-  const applyDisplayMode = (mode: StarMapDisplayMode): void => {
-    preferredDisplayMode = mode;
-    shell.classList.toggle('is-nav-mode', mode === 'nav');
-    modeToggle.textContent = mode === 'nav' ? 'ANSICHT // NAV' : 'ANSICHT // PHYSISCH';
-    renderer.setDisplayMode(mode);
-  };
-  modeToggle.addEventListener('click', () =>
-    applyDisplayMode(preferredDisplayMode === 'physical' ? 'nav' : 'physical')
-  );
-  labelToggle.addEventListener('click', () => {
-    preferredLabelsVisible = !preferredLabelsVisible;
-    labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
-    labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
-    renderer.setLabelsVisible(preferredLabelsVisible);
+  const resetButton = populateStarMapMenu(menu, {
+    shell,
+    canvas,
+    card,
+    travelButton,
+    dockButton,
+    attackButton,
+    travelStatus,
+    modeToggle,
+    labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
   });
-  applyDisplayMode(preferredDisplayMode);
-  labelToggle.textContent = preferredLabelsVisible ? 'NAMEN // AN' : 'NAMEN // AUS';
-  labelToggle.classList.toggle('is-off', !preferredLabelsVisible);
-  renderer.setLabelsVisible(preferredLabelsVisible);
+  const updateTicker = createStarMapTicker(shell, options.log);
+  const renderer = new TopdownMapRenderer(canvas, model);
+  bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
 
   const renderCargoScanner = bindCargoMarketScanner(
     () => model,
@@ -343,34 +412,13 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     if (selected) options.onAttackNpc(selected.id);
   });
 
-  const directoryActions = {
-    onSelectNpc(id: string): void {
-      menu.close();
-      options.onSelectNpc(id);
-    },
-    onSelectLocation(id: string): void {
-      menu.close();
-      options.onSelectLocation(id);
-    },
-  };
-  refreshMenuContent = (): void => {
-    const section = menu.activeSection();
-    if (section === 'trade') renderCargoScanner();
-    else if (section === 'contacts') {
-      renderStarMapContacts(model, menu.contactsPane, directoryActions);
-    } else if (section === 'missions') {
-      renderStarMapEvents(model, menu.missionsPane, directoryActions);
-    } else if (section === 'system') systemLog.update();
-  };
-
-  let lastTickerId = -1;
-  const updateTicker = (): void => {
-    const latest = options.log.entries().at(-1);
-    if (!latest || latest.id === lastTickerId) return;
-    lastTickerId = latest.id;
-    ticker.textContent = 'SYS > ' + latest.message;
-    ticker.hidden = false;
-  };
+  refreshMenuContent = createMenuContentRefresher(
+    menu,
+    () => model,
+    renderCargoScanner,
+    systemLog,
+    options
+  );
   let lastAuxiliaryUpdate = -Infinity;
   updateSelection();
   updateTicker();
