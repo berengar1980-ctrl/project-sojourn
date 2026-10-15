@@ -69,7 +69,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
   return {
     label,
     seed,
-    steeringPath: seed === 1001 ? 'exchange-reference' : 'regular',
+    steeringPath: 'unified',
     winner: frame.winner,
     ...metrics.summarize(),
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
@@ -111,5 +111,5 @@ for (const { label, attacker, defender } of scenarios) {
   }
 }
 process.stdout.write(
-  JSON.stringify({ baselineVersion: 1, maximumSeconds, scenarios: results }, null, 2) + '\n'
+  JSON.stringify({ baselineVersion: 2, maximumSeconds, scenarios: results }, null, 2) + '\n'
 );
