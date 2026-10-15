@@ -14,12 +14,11 @@ import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { resolveExchangeFlightGoals } from './combat-exchange-goals';
 import { updateExchangeIntents } from './combat-exchange-intents';
+import { useBoostForExchange } from './combat-exchange-boost';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
   pilotExchangeShip,
-  activateExchangeBoost,
-  stopExchangeBoost,
   type ExchangeFlightPlan,
 } from './combat-exchange-pilot';
 
@@ -51,36 +50,6 @@ export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExc
     attackerHp: runtime.attacker.shieldHp + runtime.attacker.hullHp,
     defenderHp: runtime.defender.shieldHp + runtime.defender.hullHp,
   };
-}
-
-function useBoostForExchange(
-  ship: StrategicCombatRuntime['attacker'],
-  goal: { x: number; y: number },
-  urgent: boolean,
-  separation: number,
-  remaining: number
-): void {
-  const dx = goal.x - ship.position.x;
-  const dy = goal.y - ship.position.y;
-  const range = Math.hypot(dx, dy);
-  const aligned = dx * Math.cos(ship.headingRadians) + dy * Math.sin(ship.headingRadians);
-  const forwardSpeed =
-    ship.velocity.x * Math.cos(ship.headingRadians) +
-    ship.velocity.y * Math.sin(ship.headingRadians);
-  const fleeing = ship.tactic === 'flee';
-  const pursuit = !fleeing && separation > 600 && range > 350;
-  const ready = (ship.boostSeconds ?? 0) > 0.8;
-  const useful =
-    (urgent || fleeing || pursuit) &&
-    ready &&
-    separation > (fleeing ? 180 : 250) &&
-    range > 180 &&
-    aligned > range * 0.7 &&
-    forwardSpeed >= 0 &&
-    !ship.asteroidRoute?.length &&
-    remaining > 0.7;
-  if (useful) activateExchangeBoost(ship);
-  else stopExchangeBoost(ship);
 }
 
 function resolveExchange(
