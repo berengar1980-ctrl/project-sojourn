@@ -47,4 +47,3 @@ export function updateCombatBoost(ship: MutableCombatant, dt: number): void {
     (energy >= third && energy < third * 2 ? (third * 2 - energy) * (4.5 / third) + 3.5 : 0) +
     (energy >= third * 2 ? (BOOST_DURATION_SECONDS - energy) * (3.5 / third) : 0);
 }
-
