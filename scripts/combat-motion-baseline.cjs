@@ -5,6 +5,7 @@
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../tests/ts-module-loader.cjs');
 const { createMotionMetrics } = require('./combat-motion-metrics.cjs');
+const { createStagnationTrace } = require('./combat-stagnation-trace.cjs');
 const root = path.resolve(__dirname, '..');
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   root,
@@ -51,12 +52,17 @@ function combatant(id, weapons, facing, speed = 120, acceleration = 35) {
 function analyze(seed, label, attacker, defender, maximumSeconds) {
   const combat = createStrategicCombatService(attacker, defender, seed);
   const metrics = createMotionMetrics([attacker.combatSpeed, defender.combatSpeed]);
+  const trace = traceEnabled
+    ? createStagnationTrace([attacker.combatSpeed, defender.combatSpeed])
+    : null;
   let frame = combat.getSnapshot();
   metrics.sample(frame);
+  trace?.observe(frame);
   const steps = Math.ceil(maximumSeconds / 0.08);
   for (let index = 0; index < steps && !frame.winner; index += 1) {
     frame = combat.tick(0.08);
     metrics.sample(frame);
+    trace?.observe(frame);
   }
   const log = combat.getCombatLog();
   const outcomes = log.filter((entry) => entry.detail.startsWith('EXCHANGE_OUTCOME')).length;
@@ -70,12 +76,14 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     phaseChanges: log.filter((entry) => entry.event === 'phase').length,
     reactiveEvents: log.filter((entry) => entry.detail.startsWith('REACTIVE_')).length,
     confirmedExchangeOutcomes: outcomes,
+    ...(trace ? { stagnationTrace: trace.summarize(log) } : {}),
   };
 }
 
 const rail = weapon('weapon-railgun-1');
 const broadside = weapon('weapon-autocannon-1');
 const maximumSeconds = Number(process.argv[2] ?? 90);
+const traceEnabled = process.argv.includes('--trace');
 if (!Number.isFinite(maximumSeconds) || maximumSeconds < 1 || maximumSeconds > 600) {
   throw new Error('maximumSeconds must be between 1 and 600');
 }
