@@ -394,7 +394,16 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.restore();
   }
   protected drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
-    drawPlayerSalvageWorkEffect(this.context, this.camera, this.model, this.shipGeometry(width, height), width, height, timeSeconds);
+    if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;
+    drawPlayerSalvageWorkEffect(
+      this.context,
+      this.camera,
+      this.model,
+      this.shipGeometry(width, height),
+      width,
+      height,
+      timeSeconds
+    );
   }
   protected drawRoute(width: number, height: number): void {
     if (!this.model.navigationTarget || this.model.navigationRoute.length < 2) return;
