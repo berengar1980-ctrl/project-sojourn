@@ -2,7 +2,6 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
-import type { LocalNpcSalvagerState } from './npc-local-salvage-service';
 
 export const APPROACH_DISTANCE = 120;
 export const FLIGHT_SPEED = 82;
@@ -19,7 +18,7 @@ export function hashId(id: string): number {
 }
 
 export function moveToward(
-  ship: LocalNpcSalvagerState,
+  ship: { position: WorldPoint; headingRadians: number; speed: number },
   target: WorldPoint,
   speed: number,
   dt: number
