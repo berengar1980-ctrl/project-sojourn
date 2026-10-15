@@ -59,6 +59,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     metrics.sample(frame);
   }
   const log = combat.getCombatLog();
+  const outcomes = log.filter((entry) => entry.detail.startsWith('EXCHANGE_OUTCOME')).length;
   return {
     label,
     seed,
@@ -68,9 +69,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
     phaseChanges: log.filter((entry) => entry.event === 'phase').length,
     reactiveEvents: log.filter((entry) => entry.detail.startsWith('REACTIVE_')).length,
-    confirmedExchangeOutcomes: log.filter((entry) =>
-      entry.detail.startsWith('EXCHANGE_OUTCOME')
-    ).length,
+    confirmedExchangeOutcomes: outcomes,
   };
 }
 
@@ -81,24 +80,24 @@ if (!Number.isFinite(maximumSeconds) || maximumSeconds < 1 || maximumSeconds > 6
   throw new Error('maximumSeconds must be between 1 and 600');
 }
 const scenarios = [
-  [
-    'front vs broadside',
-    combatant('front', [rail], 'forward'),
-    combatant('side', [broadside], 'port'),
-  ],
-  [
-    'fast vs slow',
-    combatant('fast', [rail], 'forward', 160, 45),
-    combatant('slow', [broadside], 'port', 80, 20),
-  ],
-  [
-    'both front',
-    combatant('alpha', [rail], 'forward'),
-    combatant('beta', [rail], 'forward'),
-  ],
+  {
+    label: 'front vs broadside',
+    attacker: combatant('front', [rail], 'forward'),
+    defender: combatant('side', [broadside], 'port'),
+  },
+  {
+    label: 'fast vs slow',
+    attacker: combatant('fast', [rail], 'forward', 160, 45),
+    defender: combatant('slow', [broadside], 'port', 80, 20),
+  },
+  {
+    label: 'both front',
+    attacker: combatant('alpha', [rail], 'forward'),
+    defender: combatant('beta', [rail], 'forward'),
+  },
 ];
 const results = [];
-for (const [label, attacker, defender] of scenarios) {
+for (const { label, attacker, defender } of scenarios) {
   for (const seed of [1001, 100, 101, 102]) {
     results.push(analyze(seed, label, attacker, defender, maximumSeconds));
   }
