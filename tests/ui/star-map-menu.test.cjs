@@ -16,7 +16,7 @@ const bootstrap = read('src/main.ts');
 for (const id of ['map', 'trade', 'contacts', 'missions', 'system']) {
   assert(menu.includes("id: '" + id + "'"), 'missing map menu section: ' + id);
 }
-assert(menu.includes("setSection(selected === item.id ? null : item.id)"));
+assert(menu.includes('setSection(selected === item.id ? null : item.id)'));
 assert(menu.includes("event.key === 'Escape'"));
 assert(menu.includes("document.removeEventListener('pointerdown', closeOutside)"));
 assert(menu.includes("window.removeEventListener('keydown', onKeyDown)"));
