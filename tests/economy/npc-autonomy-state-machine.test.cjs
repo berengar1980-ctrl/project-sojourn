@@ -403,10 +403,6 @@ function tickUntil(service, predicate, message, maximumTicks = 3000) {
 
 {
   const miningSource = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
-  const salvageSource = fs.readFileSync(
-    path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
-    'utf8'
-  );
   const salvageHelpers = readModuleSource(
     root,
     'src/systems/npcs/npc-local-salvage-helpers.ts'
