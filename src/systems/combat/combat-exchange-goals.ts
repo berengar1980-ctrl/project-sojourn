@@ -16,13 +16,7 @@ export function resolveExchangeFlightGoals(
 ): ExchangeFlightPlan {
   return {
     ...flight,
-    initiatorGoal:
-      (initiator.tactic === 'flee' ? exitPoint : null) ??
-      initiatorSafetyGoal ??
-      flight.initiatorGoal,
-    reactorGoal:
-      (reactor.tactic === 'flee' ? exitPoint : null) ??
-      reactorSafetyGoal ??
-      flight.reactorGoal,
+    initiatorGoal: (initiator.tactic === 'flee' ? exitPoint : null) ?? initiatorSafetyGoal ?? flight.initiatorGoal,
+    reactorGoal: (reactor.tactic === 'flee' ? exitPoint : null) ?? reactorSafetyGoal ?? flight.reactorGoal,
   };
 }
