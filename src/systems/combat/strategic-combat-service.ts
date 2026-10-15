@@ -1,6 +1,6 @@
 import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
-import { applyActionRamImpact } from './combat-exchange-collision';
+import { applyCombatRamImpact } from './combat-ram-impact';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
@@ -231,7 +231,7 @@ function tickStrategicCombat(
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
   moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   // One physical impact resolver for both campaign combat and the exchange duel preset.
-  applyActionRamImpact(runtime);
+  applyCombatRamImpact(runtime);
   reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
   resolveCombatantCollision(runtime.attacker, runtime.defender);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
