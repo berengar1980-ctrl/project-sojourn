@@ -60,7 +60,18 @@ function createMenuSurface(parent: HTMLElement) {
     button.setAttribute('aria-label', item.label);
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('aria-controls', 'star-map-pane-' + item.id);
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg><span>${item.label}</span>`;
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '1.5');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.innerHTML = item.icon;
+    const label = document.createElement('span');
+    label.textContent = item.label;
+    button.append(icon, label);
     buttons.set(item.id, button);
     nav.append(button);
 
