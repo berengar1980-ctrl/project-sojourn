@@ -82,9 +82,7 @@ function compatibleInstalledComponents(
       return component !== null && component.tier <= maxTier;
     };
     const ids =
-      type === 'weapon'
-        ? source.map((id) => (valid(id) ? id : ''))
-        : source.filter(valid);
+      type === 'weapon' ? source.map((id) => (valid(id) ? id : '')) : source.filter(valid);
     if (ids.some((id) => id !== '')) compatible[type] = ids;
   }
 
