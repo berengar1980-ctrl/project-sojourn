@@ -77,10 +77,12 @@ function updateExchangeIntents(
     turn_to_face: 'ZIEL ANVISIEREN',
     hold_fire: 'POSITION HALTEN',
   };
-  initiator.combatIntent =
-    initiator.tactic === 'flee' ? 'FLIEHEN' : (actionNames[next.action ?? ''] ?? 'KURS HALTEN');
-  opponent.combatIntent =
-    opponent.tactic === 'flee' ? 'FLIEHEN' : (reactionNames[next.reaction ?? ''] ?? 'KURS HALTEN');
+  // During the one-tick choose transition, retain the last meaningful label.
+  // The next exchange will replace it when its action/reaction are chosen.
+  if (initiator.tactic === 'flee') initiator.combatIntent = 'FLIEHEN';
+  else if (next.action) initiator.combatIntent = actionNames[next.action] ?? 'KURS HALTEN';
+  if (opponent.tactic === 'flee') opponent.combatIntent = 'FLIEHEN';
+  else if (next.reaction) opponent.combatIntent = reactionNames[next.reaction] ?? 'KURS HALTEN';
 }
 
 function useBoostForExchange(
