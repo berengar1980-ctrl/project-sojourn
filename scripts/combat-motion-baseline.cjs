@@ -56,11 +56,19 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     ? createStagnationTrace([attacker.combatSpeed, defender.combatSpeed])
     : null;
   let frame = combat.getSnapshot();
+  const initialAttackerHp = frame.attacker.shieldHp + frame.attacker.hullHp;
+  const initialDefenderHp = frame.defender.shieldHp + frame.defender.hullHp;
+  let damageImpacts = 0;
+  let previousImpact = frame.lastImpact?.serial ?? 0;
   metrics.sample(frame);
   trace?.observe(frame);
   const steps = Math.ceil(maximumSeconds / 0.08);
   for (let index = 0; index < steps && !frame.winner; index += 1) {
     frame = combat.tick(0.08);
+    if (frame.lastImpact && frame.lastImpact.serial !== previousImpact) {
+      previousImpact = frame.lastImpact.serial;
+      if (frame.lastImpact.damage > 0) damageImpacts += 1;
+    }
     metrics.sample(frame);
     trace?.observe(frame);
   }
@@ -71,6 +79,9 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     seed,
     steeringPath: 'unified',
     winner: frame.winner,
+    attackerHpLost: Math.max(0, initialAttackerHp - frame.attacker.shieldHp - frame.attacker.hullHp),
+    defenderHpLost: Math.max(0, initialDefenderHp - frame.defender.shieldHp - frame.defender.hullHp),
+    damageImpacts,
     ...metrics.summarize(),
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
     phaseChanges: log.filter((entry) => entry.event === 'phase').length,
