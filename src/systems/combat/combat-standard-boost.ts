@@ -1,11 +1,11 @@
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
 import {
-  activateExchangeBoost,
-  stopExchangeBoost,
-  updateExchangeBoost,
-} from './combat-exchange-pilot';
+  activateCombatBoost,
+  stopCombatBoost,
+  updateCombatBoost,
+} from './combat-boost-control';
 
-/** Automatic boost in ordinary fights, using the exchange boost tank and recharge. */
+/** Automatic boost in ordinary fights, using the existing boost tank and recharge. */
 export function updateStandardCombatBoost(
   ship: MutableCombatant,
   headingDirection: CombatPoint,
@@ -24,9 +24,9 @@ export function updateStandardCombatBoost(
     deliberateRam ||
     (distance > Math.max(650, desiredRange * 1.45) && targetSpeedFactor > 0.7);
   if (corridorClear && wantsBoost && facing > 0.7 && (ship.boostSeconds ?? 0) > 0.8)
-    activateExchangeBoost(ship);
-  else stopExchangeBoost(ship);
-  updateExchangeBoost(ship, dt);
+    activateCombatBoost(ship);
+  else stopCombatBoost(ship);
+  updateCombatBoost(ship, dt);
   ship.boostRampSeconds =
     ship.boostActive === true ? Math.min(2, (ship.boostRampSeconds ?? 0) + dt) : 0;
 }
