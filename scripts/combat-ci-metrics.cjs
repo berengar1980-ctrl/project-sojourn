@@ -53,18 +53,13 @@ async function run() {
   const summaries = summarizeMotion(baseline.scenarios);
   let success = baseline.scenarios.length === 12 && summaries.length === 3;
   for (const summary of summaries) {
-    const healthy =
-      summary.longestStallSeconds < 20 &&
-      summary.invalidFrames === 0 &&
-      summary.allUnified;
+    const goodMotion = summary.longestStallSeconds < 20;
+    const healthy = goodMotion && summary.invalidFrames === 0 && summary.allUnified;
     const detail = formatMotionStatus(summary);
     process.stdout.write(detail + '\n');
     if (!healthy) success = false;
-    const posted = await postStatus(
-      healthy ? 'success' : 'failure',
-      'motion ' + summary.label,
-      detail
-    );
+    const state = healthy ? 'success' : 'failure';
+    const posted = await postStatus(state, 'motion ' + summary.label, detail);
     if (!posted) success = false;
   }
   process.exitCode = success ? 0 : 1;
