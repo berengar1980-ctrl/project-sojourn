@@ -10,16 +10,14 @@ Cinematic quality is a measurable and visually reviewed outcome, not a command t
 
 ## State and decision ownership
 
-| Responsibility | Single owner | Boundaries |
-| --- | --- | --- |
-| Fight, flee, boarding commitment | strategic decision | Sticky player commands; no weapon or navigation override |
-| Tactical maneuver choice | one tactical decision per ship | Reads own ship, opponent, geometry, equipment and previous outcomes |
-| Flight intent | active maneuver | Desired travel and facing directions with progress/outcome checks |
-| Navigation and safety | one movement adapter per ship | Resolves mine/asteroid/collision constraints without selecting a different tactic |
-| Propulsion | existing flight integration | Acceleration, turn rate, RCS, boost and inertia remain unchanged |
-| Physical impacts | existing collision, tractor and grapple handlers | May apply genuine impulses; not competing AI commands |
-| Weapons and special systems | existing combat runtime | Retains hit, cooldown, range, arc, shield and subsystem rules |
-| Telemetry | read-only observer | Never issues movement commands |
+- **Fight, flee, boarding commitment:** strategic decision; a player command cannot be overridden by weapon aiming or navigation.
+- **Tactical maneuver choice:** one decision process per ship; reads the real combat geometry, equipment, constraints and outcomes.
+- **Flight intent:** active maneuver; desired travel/facing directions with observable progress and outcome.
+- **Navigation and safety:** one movement adapter per ship; avoids mines, asteroids and collisions without selecting a different tactic.
+- **Propulsion:** existing flight integration; acceleration, turn rate, RCS, boost and inertia remain unchanged.
+- **Physical impacts:** existing collision, tractor and grapple handlers; legitimate impulses remain authoritative.
+- **Weapons and special systems:** existing combat runtime; preserves eligibility, timing, arcs, shields and subsystem rules.
+- **Telemetry:** read-only observer, never a source of commands.
 
 This is an **ownership specification**, not a requirement to introduce one new module for each table row. Keep code in canonical owners and remove superseded paths after parity and behavior are proven.
 
