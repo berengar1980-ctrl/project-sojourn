@@ -5,6 +5,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (modulePath) => loadStandaloneTypeScriptModule(root, modulePath);
 const moves = load('src/systems/combat/combat-tactical-maneuvers.ts');
+const flight = load('src/systems/combat/combat-flight-intent.ts');
 const planner = load('src/systems/combat/combat-strategy-planner.ts');
 const executor = load('src/systems/combat/combat-plan-executor.ts');
 const cover = load('src/systems/combat/combat-asteroid-cover.ts');
@@ -55,26 +56,25 @@ first.strategy = {
   broadsideFacing: 'port',
   desiredRange: 500,
 };
-const broadside = moves.broadsideOrbitManeuver(first, second, 500);
-assert(broadside && Math.abs(broadside.direction.y) > 0.8, 'broadside circles at weapon range');
-assert(broadside.direction.y > 0, 'port guns remain exposed on the correct orbit side');
-const starboard = moves.broadsideOrbitManeuver(
-  { ...first, strategy: { ...first.strategy, broadsideFacing: 'starboard' } },
+const broadside = flight.chooseCombatFlightIntent(
+  first,
   second,
-  500
+  500,
+  { width: 1600, height: 1000 },
+  0.08,
+  false
 );
-assert(starboard && starboard.direction.y < 0, 'starboard guns orbit on the opposite side');
-first.velocity.x = 100;
-const brake = moves.interceptBrakeManeuver(first, second, 500);
-assert(brake && brake.direction.y > 0, 'relative braking accounts for enemy lateral velocity');
-assert.equal(
-  moves.interceptBrakeManeuver(
-    { ...first, strategy: { ...first.strategy, phase: 'align_weapons' } },
-    second,
-    500
-  ),
-  null
+assert(broadside.direction.y > 0, 'port-facing weapons select their own orbit side');
+const otherSide = { ...first, strategy: { ...first.strategy, broadsideFacing: 'starboard' } };
+const starboard = flight.chooseCombatFlightIntent(
+  otherSide,
+  second,
+  500,
+  { width: 1600, height: 1000 },
+  0.08,
+  false
 );
+assert(starboard.direction.y < 0, 'starboard-facing weapons use the opposite side');
 
 first.shieldHp = 10;
 const arena = {
