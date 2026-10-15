@@ -40,4 +40,12 @@ assert(
   reactor.headingRadians <= 1.5 * 0.08 + 0.001,
   'tracking respects physical maximum turn rate'
 );
+const fleeing = ship(500, 500);
+fleeing.tactic = 'flee';
+const exitArena = { ...arena, exitPoint: { x: 500, y: 1300 } };
+pilotExchangeShip(fleeing, 'reactor', plan, exitArena, 0.08, opponent, false, true);
+assert(
+  fleeing.headingRadians > 0,
+  'escape navigation must override turn-to-face reaction tracking'
+);
 console.log('PASS turn-to-face continuously tracks moving opponent');
