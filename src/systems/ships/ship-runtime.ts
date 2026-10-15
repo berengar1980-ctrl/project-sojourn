@@ -74,11 +74,18 @@ function compatibleInstalledComponents(
   const compatible: Partial<Record<ShipComponentType, readonly string[]>> = {};
 
   for (const type of COMPONENT_TYPES) {
-    const ids = (installed[type] ?? []).filter((id) => {
+    const source = installed[type] ?? [];
+    // Weapon indices correspond to physical hardpoint slotIndex values.
+    // Filtering empty slots shifts a valid weapon into an incompatible mount.
+    const valid = (id: string): boolean => {
       const component = getShipComponent(type, id);
       return component !== null && component.tier <= maxTier;
-    });
-    if (ids.length > 0) compatible[type] = ids;
+    };
+    const ids =
+      type === 'weapon'
+        ? source.map((id) => (valid(id) ? id : ''))
+        : source.filter(valid);
+    if (ids.some((id) => id !== '')) compatible[type] = ids;
   }
 
   return compatible;
