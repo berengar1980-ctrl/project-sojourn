@@ -1,9 +1,5 @@
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
-import {
-  activateCombatBoost,
-  stopCombatBoost,
-  updateCombatBoost,
-} from './combat-boost-control';
+import { activateCombatBoost, stopCombatBoost, updateCombatBoost } from './combat-boost-control';
 
 /** Automatic boost in ordinary fights, using the existing boost tank and recharge. */
 export function updateStandardCombatBoost(
