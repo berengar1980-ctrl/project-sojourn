@@ -1,13 +1,26 @@
 'use strict';
 
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const prettier = require('prettier');
 
 async function main() {
-  const result = spawnSync('npx', ['prettier', '--list-different', '.'], {
-    encoding: 'utf8',
-    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-  });
-  const files = result.stdout.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  const file = 'src/ui/styles/star-map-menu.css';
+  const actual = fs.readFileSync(file, 'utf8');
+  const config = JSON.parse(fs.readFileSync('.prettierrc.json', 'utf8'));
+  const expected = await prettier.format(actual, { ...config, filepath: file });
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'sojourn-css-diff-'));
+  const left = path.join(temp, 'actual.css');
+  const right = path.join(temp, 'expected.css');
+  fs.writeFileSync(left, actual);
+  fs.writeFileSync(right, expected);
+  const result = spawnSync('diff', ['-u', left, right], { encoding: 'utf8' });
+  const files = result.stdout
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('+') || line.startsWith('-') || line.startsWith('@@'));
+  fs.rmSync(temp, { recursive: true, force: true });
   const token = process.env.SOJOURN_GITHUB_STATUS_TOKEN;
   const owner = process.env.CIRCLE_PROJECT_USERNAME;
   const repo = process.env.CIRCLE_PROJECT_REPONAME;
