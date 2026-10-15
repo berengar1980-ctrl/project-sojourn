@@ -323,6 +323,13 @@ export interface MutableCombatant {
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
+  /** Current geometric flyby, owned only by the ship's tactical flight controller. */
+  flightPass?: {
+    readonly direction: CombatPoint;
+    readonly startRange: number;
+    closestRange: number;
+    ageSeconds: number;
+  };
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
