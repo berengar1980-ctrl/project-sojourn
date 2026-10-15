@@ -36,6 +36,15 @@ const report = trace.summarize([
 ]);
 assert.equal(report.firstSustainedSlowStartSeconds, 2);
 assert.equal(report.secondsNear86mContact, 12);
+
+const boundary = createStagnationTrace([100, 100]);
+boundary.observe(snapshot(0, 87.05, 0));
+boundary.observe(snapshot(1, 87.05, 0));
+assert.equal(
+  boundary.summarize([]).secondsNear86mContact,
+  1,
+  'rounded collision-separation positions must count despite numeric jitter'
+);
 assert(report.secondsNear86mAndBothSlow >= 9.5);
 assert.equal(report.motion[0].separationMeters, 86);
 assert.equal(report.motion[0].attacker.doctrine, 'frontal');
