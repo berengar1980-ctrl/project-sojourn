@@ -1,4 +1,5 @@
 import { routeAroundDistressShip } from './distress-navigation';
+import { clampPoint, workPoint } from './salvage-work-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
@@ -30,7 +31,6 @@ import {
 } from './salvage-field-service';
 
 const INSPECTION_SECONDS = 2.8;
-const WORK_STANDOFF = 105;
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
 type ApproachPurpose = 'inspect' | 'strip' | 'component';
@@ -66,25 +66,6 @@ interface SalvageRuntimeOptions {
   readonly scanAvailable?: boolean;
   readonly sensorModifier?: number;
   readonly sensorCrewSkill?: number;
-}
-
-function clampPoint(point: WorldPoint, width: number, height: number): WorldPoint {
-  return {
-    x: Math.max(0, Math.min(width, point.x)),
-    y: Math.max(0, Math.min(height, point.y)),
-  };
-}
-
-function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint {
-  const dx = ship.position.x - wreck.position.x;
-  const dy = ship.position.y - wreck.position.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const range =
-    wreck.radius + (wreck.id.startsWith('event-wreck-salvage-distress-') ? 45 : WORK_STANDOFF);
-  return {
-    x: wreck.position.x + (dx / length) * range,
-    y: wreck.position.y + (dy / length) * range,
-  };
 }
 
 class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
