@@ -27,7 +27,6 @@ import {
   type NpcHitArea,
   SalvageSceneLayers,
   type WreckHitArea,
-  fractional,
 } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
