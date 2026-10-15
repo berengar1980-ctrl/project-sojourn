@@ -118,13 +118,17 @@
   align-content: start;
   gap: 10px;
   padding: 13px;
-  font: 11px/1.5 system-ui, sans-serif;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .star-map-menu__help {
   margin: 0;
   color: #8da7b3;
-  font: 10px/1.6 'Courier New', ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.6;
   letter-spacing: 0.1em;
 }
 
@@ -149,7 +153,8 @@
   color: #c0dbe3;
   cursor: pointer;
   text-align: left;
-  font: 10px 'Courier New', ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 10px;
   letter-spacing: 0.08em;
 }
 
@@ -171,7 +176,9 @@
   border: 0;
   background: transparent;
   box-shadow: none;
-  font: 11px/1.5 system-ui, sans-serif;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .star-map-menu__pane .map-cargo-scanner > strong {
@@ -209,7 +216,8 @@
 .star-map-directory__summary {
   margin: 0 0 4px;
   color: #90aebd;
-  font: 10px 'Courier New', ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 10px;
   letter-spacing: 0.08em;
 }
 
@@ -289,7 +297,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 10px 'Courier New', ui-monospace, monospace;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 10px;
   letter-spacing: 0.045em;
   color: rgba(126, 194, 146, 0.75);
   text-shadow: 0 1px 7px #000;
