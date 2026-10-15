@@ -12,8 +12,6 @@ import {
 } from './combat-exchange-outcome';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { combatRouteHeading } from './combat-asteroid-routing';
-import { asteroidCoverHeading } from './combat-asteroid-cover';
-import { exchangeTacticalGoal } from './combat-exchange-tactics';
 import { advanceExchange, initialExchange, type CombatExchange } from './combat-exchange-machine';
 import {
   planExchangeFlight,
@@ -35,19 +33,6 @@ export interface ActiveExchange {
   };
   attackerHp: number;
   defenderHp: number;
-}
-
-function coverGoal(
-  ship: StrategicCombatRuntime['attacker'],
-  enemy: StrategicCombatRuntime['attacker'],
-  arena: StrategicCombatRuntime['arena']
-): { x: number; y: number } | null {
-  const direction = asteroidCoverHeading(ship, enemy, arena);
-  if (!direction) return null;
-  return {
-    x: ship.position.x + direction.x * 240,
-    y: ship.position.y + direction.y * 240,
-  };
 }
 
 export function createActionExchange(runtime: StrategicCombatRuntime): ActiveExchange {
@@ -213,14 +198,10 @@ function resolveExchangeFlightGoals(
     initiatorGoal:
       (initiator.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
       initiatorOverride ??
-      coverGoal(initiator, opponent, runtime.arena) ??
-      exchangeTacticalGoal(initiator, opponent) ??
       state.flight.initiatorGoal,
     reactorGoal:
       (opponent.tactic === 'flee' ? runtime.arena.exitPoint : null) ??
       opponentOverride ??
-      coverGoal(opponent, initiator, runtime.arena) ??
-      exchangeTacticalGoal(opponent, initiator) ??
       state.flight.reactorGoal,
   };
 }
