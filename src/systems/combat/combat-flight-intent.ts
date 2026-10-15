@@ -6,7 +6,8 @@ import type {
 import { normalize } from './strategic-combat-geometry';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 
-type FlightKind = 'escape' | 'ram' | 'pursuit' | 'minefield' | 'intercept' | 'pass' | 'extend';
+type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
+type FlightKind = TacticalKind | 'intercept' | 'pass' | 'extend';
 
 export interface CombatFlightIntent {
   readonly direction: CombatPoint;
@@ -47,7 +48,11 @@ export function chooseCombatFlightIntent(
   const pursuing = pursuitManeuver(ship, enemy);
   if (pursuing) {
     delete ship.flightPass;
-    return { kind: 'pursuit', direction: pursuing.direction, speedFactor: pursuing.speedFactor };
+    return {
+      kind: 'pursuit',
+      direction: pursuing.direction,
+      speedFactor: pursuing.speedFactor,
+    };
   }
   const minefield = mineBaitManeuver(ship, enemy);
   if (minefield) {
@@ -82,12 +87,13 @@ export function chooseCombatFlightIntent(
     };
   }
 
-  const relativeClosing =
-    (ship.velocity.x - enemy.velocity.x) * toward.x +
-    (ship.velocity.y - enemy.velocity.y) * toward.y;
+  const relativeX = ship.velocity.x - enemy.velocity.x;
+  const relativeY = ship.velocity.y - enemy.velocity.y;
+  const relativeClosing = relativeX * toward.x + relativeY * toward.y;
   const canPass = ship.subsystems.engine > 0 && range <= desiredRange * 1.12;
   if (canPass && relativeClosing > 14) {
-    const lead = Math.min(1.2, range / Math.max(65, ship.setup.combatSpeed ?? 120) * 0.2);
+    const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
+    const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
     const direction = normalize(
       dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
       dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
@@ -103,7 +109,8 @@ export function chooseCombatFlightIntent(
 
   if (range < desiredRange * 1.2) {
     // Keep traversing the engagement rather than braking at a fixed range.
-    const radial = Math.max(-0.55, Math.min(0.55, (range - desiredRange) / desiredRange));
+    const rangeError = (range - desiredRange) / desiredRange;
+    const radial = Math.max(-0.55, Math.min(0.55, rangeError));
     return {
       kind: 'intercept',
       direction: normalize(side.x + toward.x * radial, side.y + toward.y * radial),
