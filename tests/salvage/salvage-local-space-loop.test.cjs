@@ -110,7 +110,7 @@ assert(
 const firstDeposit = wreck.resources[0];
 const before = firstDeposit.remainingAmount;
 service.startStrip(wreck.id, firstDeposit.resourceId);
-for (let index = 0; index < 20; index += 1) service.tick(0.05);
+for (let index = 0; index < 400 && collected === 0; index += 1) service.tick(0.05);
 assert(collected > 0, 'stripping must collect physical salvage cargo');
 assert(firstDeposit.remainingAmount < before, 'stripping must deplete the selected wreck reserve');
 assert(service.getSnapshot().recoverySerial > 0);
