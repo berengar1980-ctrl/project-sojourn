@@ -196,7 +196,7 @@ function exchangeFacing(
   weaponFacing: number,
   navigationHeading: number
 ): number {
-  if (trackTarget && opponent)
+  if (trackTarget && opponent && ship.tactic !== 'flee')
     return Math.atan2(opponent.position.y - ship.position.y, opponent.position.x - ship.position.x);
   return !route && (distance < 90 || (forwardVelocity >= 45 && distance < 260))
     ? weaponFacing
