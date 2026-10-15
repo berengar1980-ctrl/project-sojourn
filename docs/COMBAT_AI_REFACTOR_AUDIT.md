@@ -66,8 +66,6 @@ The user executed `node scripts/combat-motion-baseline.cjs 90` in Codespaces. Al
 
 **Next verification:** sample time-series of position, velocity, distance, tactic, flight phase, fire events and contact corrections near the onset of stagnation; compare seed-matched before/after replays, not merely summary totals.
 
-
-
 ## Gate before runtime refactor
 
 1. Run baseline, existing test suite and visually inspect sample fights; preserve results.
