@@ -6,22 +6,20 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
-const controller = read('src/systems/combat/combat-exchange-controller.ts');
-const pilot = read('src/systems/combat/combat-exchange-pilot.ts');
+const movement = read('src/systems/combat/strategic-combat-movement.ts');
 const routing = read('src/systems/combat/combat-asteroid-routing.ts');
 const physics = read('src/systems/combat/combat-asteroid-contacts.ts');
 const renderer = read('src/ui/combat/combat-hull-impact-renderer.ts');
 const weapons = read('src/systems/combat/strategic-combat-weapons.ts');
 
 assert(
-  controller.includes('combatRouteHeading(initiator'),
-  'plan attacker route before exchange flight'
+  movement.includes('combatRouteHeading(combatant, destination'),
+  'autonomous movement routes through obstacle navigation'
 );
 assert(
-  controller.includes('combatRouteHeading(opponent'),
-  'plan defender route before exchange flight'
+  movement.includes('asteroidCoverHeading(combatant, enemy, arena)'),
+  'cover and asteroid avoidance remain part of the canonical pilot'
 );
-assert(pilot.includes('combatRouteHeading(ship, goal'), 'pilot follows current route');
 assert(routing.includes('pathBlocked('), 'direct line checks asteroid clearance');
 assert(physics.includes('resistance'), 'large rocks resist ship-contact displacement');
 assert(renderer.includes("impact.layer === 'obstacle'"), 'obstacle impacts have a visual effect');
@@ -37,4 +35,4 @@ assert(
   weapons.includes('noteRuntimeImpact(runtime'),
   'weapon collisions emit impact notifications'
 );
-console.log('PASS asteroid route and impact integration guards');
+console.log('PASS unified asteroid route and existing impact rendering guards');
