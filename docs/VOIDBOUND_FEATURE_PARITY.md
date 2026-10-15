@@ -785,3 +785,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-15): PR #232 – CI-Qualitätsprüfung nach PR #230
 
 **keine Statusänderung.** Der PR bereinigt Lint-/Typfehler, extrahiert Hilfsfunktionen aus Kampf-, Bergungs- und Rendering-Code und korrigiert nachweisbar überholte Testannahmen für Fallback-Zielwahl, Duell-Setups und Regroup-Phasen. Effizienzvarianten mit kleinen ganzzahligen Energiekosten erhalten eine tatsächliche Verbrauchsreduktion. Die übernommene Formatierung enthält auch funktionsrelevante Sojourn-Dateien; daraus lässt sich keine neue oder vollständiger portierte Voidbound-Funktion ableiten. Die bestehende Paritätsbewertung bleibt deshalb vorerst unverändert. **Keine Mergefreigabe:** Weitere Laufzeit-, Architektur- und Gameplay-Tests sind noch fehlgeschlagen und müssen separat korrigiert und überprüft werden.
+
+## Review-Log (2026-10-15): PR #233 – Crew-Rekrutierung mit vollständigen Fähigkeiten
+
+**keine Statusänderung.** Die Rekrutierungsansicht zeigt die sieben vorhandenen Schiffs-/Stationsfähigkeiten sowie Nahkampf und Fernkampf als einzeln lesbare Werte; persönliche soziale Traits werden dort nicht mehr angezeigt. Die zugrunde liegenden Crew-Definitionen, Rekrutierungslogik, Kampfwerte und Stationszuweisungen bleiben unverändert. UI-Regressionstest ergänzt; keine Änderung der Voidbound-Feature-Parität.
