@@ -19,6 +19,27 @@ export interface CombatFlightIntent {
  * One independent flight intention per ship. No paired action/reaction table,
  * waypoint arrival or time-driven choreography. Flight uses existing physics.
  */
+function continueCommittedPass(
+  ship: MutableCombatant,
+  range: number,
+  dx: number,
+  dy: number,
+  dt: number
+): CombatFlightIntent | null {
+  const pass = ship.flightPass;
+  if (!pass) return null;
+  pass.ageSeconds += dt;
+  pass.closestRange = Math.min(pass.closestRange, range);
+  const along = dx * pass.direction.x + dy * pass.direction.y;
+  const crossed = along < -70 && range > pass.closestRange + 90;
+  const blocked = pass.ageSeconds > 14 && range < pass.startRange * 0.6;
+  if (crossed || blocked || pass.ageSeconds >= 20) {
+    delete ship.flightPass;
+    return null;
+  }
+  return { kind: 'pass', direction: pass.direction, speedFactor: 0.92 };
+}
+
 export function chooseCombatFlightIntent(
   ship: MutableCombatant,
   enemy: MutableCombatant,
@@ -67,18 +88,8 @@ export function chooseCombatFlightIntent(
     };
   }
 
-  const pass = ship.flightPass;
-  if (pass) {
-    pass.ageSeconds += deltaSeconds;
-    pass.closestRange = Math.min(pass.closestRange, range);
-    const along = dx * pass.direction.x + dy * pass.direction.y;
-    const crossed = along < -70 && range > pass.closestRange + 90;
-    const blocked = pass.ageSeconds > 14 && range < pass.startRange * 0.6;
-    if (!crossed && !blocked && pass.ageSeconds < 20) {
-      return { kind: 'pass', direction: pass.direction, speedFactor: 0.92 };
-    }
-    delete ship.flightPass;
-  }
+  const ongoingPass = continueCommittedPass(ship, range, dx, dy, deltaSeconds);
+  if (ongoingPass) return ongoingPass;
 
   // A ship inside its minimum useful firing envelope must not be ordered
   // towards the enemy by a separate forward-weapon alignment rule.
