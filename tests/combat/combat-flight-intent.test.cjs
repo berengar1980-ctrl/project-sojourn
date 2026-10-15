@@ -46,9 +46,9 @@ runner.flightPass = {
   closestRange: 300,
   ageSeconds: 0,
 };
-const escape = order(runner, defender);
-assert.equal(escape.kind, 'escape');
-assert(escape.direction.x < 0);
+const retreat = order(runner, defender);
+assert.equal(retreat.kind, 'escape');
+assert(retreat.direction.x < 0);
 assert.equal(runner.flightPass, undefined, 'flee cancels attack commitment');
 
 const rammer = ship(1000);
