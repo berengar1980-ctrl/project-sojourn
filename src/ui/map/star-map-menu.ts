@@ -20,7 +20,7 @@ interface MenuDefinition {
 const MENU_ITEMS: readonly MenuDefinition[] = [
   { id: 'map', label: 'Karte', icon: '<path d="M3 5h18v14H3zM9 5v14m6-14v14"/>' },
   { id: 'trade', label: 'Handel', icon: '<path d="M4 19h16M7 16V9m5 7V5m5 11v-5"/>' },
-  { id: 'contacts', label: 'Kontakte', icon: '<circle cx="12" cy="12" r="8"/><path d="M12 4v8h8"/>' },
+  { id: 'contacts', label: 'Kontakte', icon: '<path d="M12 3a9 9 0 1 0 9 9M12 3v9h9"/>' },
   { id: 'missions', label: 'Aufträge', icon: '<path d="M5 4h14v17H5zM9 9h6m-6 4h6m-6 4h4"/>' },
   { id: 'system', label: 'System', icon: '<path d="M3 4h18v16H3zM7 9l3 3-3 3m6 0h4"/>' },
 ];
