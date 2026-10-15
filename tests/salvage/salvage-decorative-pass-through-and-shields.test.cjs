@@ -48,6 +48,9 @@ const service = local.createSalvageLocalSpaceService({
     return 0;
   },
 });
+// Keep the test contact inside the field: the seeded exit can be near a wall,
+// where boundary restitution would reverse the incoming fragment first.
+service.syncCombatPose({ x: field.width * 0.5, y: field.height * 0.5 }, 0, 0);
 const player = service.getSnapshot().ship.position;
 const world = physics.salvageFieldPhysicsBodies(field);
 assert.equal(
