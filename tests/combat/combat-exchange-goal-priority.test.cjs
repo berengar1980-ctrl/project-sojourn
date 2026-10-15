@@ -1,30 +1,37 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const controller = fs.readFileSync(
-  path.join(root, 'src/systems/combat/combat-exchange-controller.ts'),
-  'utf8'
+const { resolveExchangeFlightGoals } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-exchange-goals.ts'
 );
 
-const goals = controller.slice(
-  controller.indexOf('function resolveExchangeFlightGoals('),
-  controller.indexOf('function flyExchange(')
-);
-assert.match(goals, /initiatorOverride\s*\?\?\s*state\.flight\.initiatorGoal/);
-assert.match(goals, /opponentOverride\s*\?\?\s*state\.flight\.reactorGoal/);
-assert.doesNotMatch(goals, /coverGoal|exchangeTacticalGoal|pursuitManeuver/);
-assert.match(goals, /initiator\.tactic === 'flee'/);
-assert.match(goals, /opponent\.tactic === 'flee'/);
+const flight = {
+  initiatorGoal: { x: 900, y: 650 },
+  reactorGoal: { x: 300, y: 400 },
+  initiatorHeading: 0,
+  reactorHeading: Math.PI,
+};
+const fighter = { tactic: 'fight' };
+const fleeing = { tactic: 'flee' };
+const exit = { x: 120, y: 140 };
+const hazard = { x: 670, y: 800 };
+const original = resolveExchangeFlightGoals(flight, fighter, fighter, exit, null, null);
+assert.deepEqual(original, flight, 'ordinary flight retains committed choreography');
 
-const reactions = controller.slice(
-  controller.indexOf('function reactToCombatEvents('),
-  controller.indexOf('function resolveExchangeFlightGoals(')
-);
-assert.match(reactions, /const safetyEvent = event\?\.critical \? event : null;/);
-assert.match(reactions, /commitReactiveDecision\(memory, safetyEvent,/);
-assert.match(reactions, /state\.reactiveGoals\[side\] = safetyEvent\.goal/);
-assert.doesNotMatch(reactions, /state\.reactiveGoals\[side\] = event\.goal/);
-console.log('PASS exchange choreography owns flight goals; safety and escape override');
+const dangerous = resolveExchangeFlightGoals(flight, fighter, fighter, exit, hazard, null);
+assert.deepEqual(dangerous.initiatorGoal, hazard, 'safety temporarily overrides choreography');
+assert.deepEqual(dangerous.reactorGoal, flight.reactorGoal, 'other ship retains its own order');
+
+const escaped = resolveExchangeFlightGoals(flight, fleeing, fighter, exit, hazard, null);
+assert.deepEqual(escaped.initiatorGoal, exit, 'escape outranks hazard and choreography');
+assert.deepEqual(escaped.reactorGoal, flight.reactorGoal);
+assert.deepEqual(flight.initiatorGoal, { x: 900, y: 650 }, 'source plan remains immutable');
+
+const resumed = resolveExchangeFlightGoals(flight, fighter, fighter, exit, null, null);
+assert.deepEqual(resumed, flight, 'choreographed flight resumes after safety correction');
+
+console.log('PASS choreography, safety, and escape flight-order priority');
