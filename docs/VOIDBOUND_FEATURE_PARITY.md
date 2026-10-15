@@ -789,3 +789,7 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-15): PR #233 – Crew-Rekrutierung mit vollständigen Fähigkeiten
 
 **keine Statusänderung.** Die Rekrutierungsansicht zeigt die sieben vorhandenen Schiffs-/Stationsfähigkeiten sowie Nahkampf und Fernkampf als einzeln lesbare Werte; persönliche soziale Traits werden dort nicht mehr angezeigt. Die zugrunde liegenden Crew-Definitionen, Rekrutierungslogik, Kampfwerte und Stationszuweisungen bleiben unverändert. UI-Regressionstest ergänzt; keine Änderung der Voidbound-Feature-Parität.
+
+## Review-Log (2026-10-15): Kampf-KI-Refactor Phase 1 – Bestandsaufnahme und Bewegungsdiagnostik
+
+**keine Statusänderung.** Die neue Branch-Dokumentation und die rein lesende Bewegungsdiagnostik erfassen Steuerungspfade und Bewegungszustände, ohne Kampfphysik, Schadensberechnung, Waffen, Taktiken oder Voidbound-Funktionsparität zu verändern. Laufzeit-Baseline und vollständiges CI-Gate stehen noch aus; keine Mergefreigabe.
