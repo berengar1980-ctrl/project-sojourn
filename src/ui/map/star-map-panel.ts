@@ -4,6 +4,8 @@ import { bindCargoMarketScanner } from './star-map-cargo-scanner';
 import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
+import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
+import { createStarMapMenu } from './star-map-menu';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
@@ -236,7 +238,44 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   } = createStarMapControls(options);
 
   let model = options.model;
+  let refreshMenuContent: () => void = () => {};
+  const menu = createStarMapMenu(shell, () => refreshMenuContent());
+
+  menu.mapPane.insertAdjacentHTML(
+    'afterbegin',
+    '<p class="star-map-menu__help">KARTENDARSTELLUNG</p>'
+  );
+  menu.mapPane.append(modeToggle, labelToggle);
+  const resetButton = document.createElement('button');
+  resetButton.type = 'button';
+  resetButton.className = 'star-map-menu__action';
+  resetButton.textContent = 'KARTE ZENTRIEREN';
+  menu.mapPane.append(resetButton);
+  const mapHint = document.createElement('p');
+  mapHint.className = 'star-map-menu__hint';
+  mapHint.textContent = 'Mausrad: Zoom · Ziehen: Verschieben · Doppelklick: Zentrieren';
+  menu.mapPane.append(mapHint);
+
+  const tradeHeading = document.createElement('p');
+  tradeHeading.className = 'star-map-menu__help';
+  tradeHeading.textContent = 'FRACHTMARKT // ANALYSE';
+  cargoPanel.removeAttribute('style');
+  cargoPanel.hidden = false;
+  menu.tradePane.append(tradeHeading, cargoToggle, cargoPanel);
+
+  const contactsHeading = document.createElement('p');
+  contactsHeading.className = 'star-map-menu__hint';
+  contactsHeading.textContent = 'Kontakte aus der aktuellen Sensorerfassung auswählen.';
+  menu.contactsPane.append(contactsHeading);
+
+  const ticker = document.createElement('div');
+  ticker.className = 'star-map-event-ticker';
+  ticker.setAttribute('aria-label', 'Letzte Bordcomputer-Meldung');
+  ticker.hidden = true;
+  shell.append(ticker);
+
   const renderer = new TopdownMapRenderer(canvas, model);
+  resetButton.addEventListener('click', () => renderer.resetCamera());
   const applyDisplayMode = (mode: StarMapDisplayMode): void => {
     preferredDisplayMode = mode;
     shell.classList.toggle('is-nav-mode', mode === 'nav');
@@ -268,7 +307,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   );
 
   const systemLog = createSystemLogPanel({
-    root: shell,
+    root: menu.systemPane,
     log: options.log,
     header: 'SYS // NAVIGATION',
     placementClass: 'star-system-log',
@@ -304,24 +343,54 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     if (selected) options.onAttackNpc(selected.id);
   });
 
+  const directoryActions = {
+    onSelectNpc(id: string): void {
+      menu.close();
+      options.onSelectNpc(id);
+    },
+    onSelectLocation(id: string): void {
+      menu.close();
+      options.onSelectLocation(id);
+    },
+  };
+  refreshMenuContent = (): void => {
+    const section = menu.activeSection();
+    if (section === 'trade') renderCargoScanner();
+    else if (section === 'contacts') {
+      renderStarMapContacts(model, menu.contactsPane, directoryActions);
+    } else if (section === 'missions') {
+      renderStarMapEvents(model, menu.missionsPane, directoryActions);
+    } else if (section === 'system') systemLog.update();
+  };
+
+  let lastTickerId = -1;
+  const updateTicker = (): void => {
+    const latest = options.log.entries().at(-1);
+    if (!latest || latest.id === lastTickerId) return;
+    lastTickerId = latest.id;
+    ticker.textContent = 'SYS > ' + latest.message;
+    ticker.hidden = false;
+  };
   let lastAuxiliaryUpdate = -Infinity;
   updateSelection();
+  updateTicker();
   return {
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
       updateSelection();
       const now = performance.now();
-      if (now - lastAuxiliaryUpdate >= 150) {
+      if (now - lastAuxiliaryUpdate >= 650) {
         lastAuxiliaryUpdate = now;
-        renderCargoScanner();
-        systemLog.update();
+        updateTicker();
+        refreshMenuContent();
       }
     },
     destroy(): void {
       unbindInput();
       observer.disconnect();
       systemLog.destroy();
+      menu.destroy();
       shell.remove();
     },
   };
