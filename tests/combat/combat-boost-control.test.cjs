@@ -2,11 +2,10 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
-const { activateCombatBoost, stopCombatBoost, updateCombatBoost } =
-  loadStandaloneTypeScriptModule(
-    path.resolve(__dirname, '../..'),
-    'src/systems/combat/combat-boost-control.ts'
-  );
+const { activateCombatBoost, stopCombatBoost, updateCombatBoost } = loadStandaloneTypeScriptModule(
+  path.resolve(__dirname, '../..'),
+  'src/systems/combat/combat-boost-control.ts'
+);
 
 const ship = {
   subsystems: { engine: 100 },
