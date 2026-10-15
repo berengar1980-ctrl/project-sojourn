@@ -4,10 +4,10 @@ import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 import type { LocalNpcSalvagerState } from './npc-local-salvage-service';
 
-const APPROACH_DISTANCE = 120;
-const FLIGHT_SPEED = 82;
-const SCAN_SECONDS = 5;
-const BASE_CYCLE_SECONDS = 1.4;
+export const APPROACH_DISTANCE = 120;
+export const FLIGHT_SPEED = 82;
+export const SCAN_SECONDS = 5;
+export const BASE_CYCLE_SECONDS = 1.4;
 
 export function hashId(id: string): number {
   let hash = 2166136261;
