@@ -74,13 +74,15 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
   }
   const log = combat.getCombatLog();
   const outcomes = log.filter((entry) => entry.detail.startsWith('EXCHANGE_OUTCOME')).length;
+  const attackerHpLeft = frame.attacker.shieldHp + frame.attacker.hullHp;
+  const defenderHpLeft = frame.defender.shieldHp + frame.defender.hullHp;
   return {
     label,
     seed,
     steeringPath: 'unified',
     winner: frame.winner,
-    attackerHpLost: Math.max(0, initialAttackerHp - frame.attacker.shieldHp - frame.attacker.hullHp),
-    defenderHpLost: Math.max(0, initialDefenderHp - frame.defender.shieldHp - frame.defender.hullHp),
+    attackerHpLost: Math.max(0, initialAttackerHp - attackerHpLeft),
+    defenderHpLost: Math.max(0, initialDefenderHp - defenderHpLeft),
     damageImpacts,
     ...metrics.summarize(),
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
