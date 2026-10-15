@@ -1719,7 +1719,8 @@ body {
 .port-crew-row {
   display: grid;
   grid-template-columns:
-    48px minmax(125px, 0.8fr) minmax(270px, 2.5fr) minmax(90px, 0.7fr) 90px 96px;
+    48px minmax(125px, 0.8fr) minmax(270px, 2.5fr) minmax(90px, 0.7fr)
+    90px 96px;
   align-items: center;
   gap: 10px;
   min-height: 104px;
