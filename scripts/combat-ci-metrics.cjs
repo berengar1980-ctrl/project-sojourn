@@ -20,6 +20,8 @@ function summarizeMotion(scenarios) {
       meanRelativeSpeed: mean('meanRelativeSpeedMetersPerSecond'),
       closePassCandidates: cases.reduce((sum, row) => sum + row.closePassCandidates, 0),
       winners: cases.filter((row) => row.winner !== null).length,
+      meanTotalDamage: mean('attackerHpLost') + mean('defenderHpLost'),
+      damageImpacts: cases.reduce((sum, row) => sum + row.damageImpacts, 0),
       invalidFrames: cases.reduce((sum, row) => sum + row.invalidFrames, 0),
       allUnified: cases.every((row) => row.steeringPath === 'unified'),
     };
@@ -40,7 +42,9 @@ function formatMotionStatus(summary) {
     '; wins ' +
     summary.winners +
     '/' +
-    summary.cases
+    summary.cases +
+    '; dmg ' +
+    summary.meanTotalDamage.toFixed(0)
   );
 }
 
