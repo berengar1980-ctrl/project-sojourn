@@ -22,7 +22,8 @@ function createStagnationTrace(maxSpeeds) {
     const relativeSpeed = Math.hypot(relativeX, relativeY);
     const closingSpeed = range > 0 ? (relativeX * dx + relativeY * dy) / range : 0;
     const slow = attacker.speed < thresholds[0] && defender.speed < thresholds[1];
-    const atContact = range >= 85.5 && range <= 87;
+    // Allow for the 87m post-separation boundary plus floating-point jitter.
+    const atContact = range >= 85.5 && range <= 87.1;
     const dt = previousTime === null ? 0 : Math.max(0, time - previousTime);
     previousTime = time;
 
