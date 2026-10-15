@@ -52,6 +52,12 @@ Der reguläre Steuerpfad hat eine nachvollziehbare, fehlsteuernde Rückkopplung:
 
 Der spezielle Exchange-Pfad (Seed 1001) zeigte in diesen drei Setups **keinen längeren gemeinsamen Stillstand** und keine 86-m-Nahkontaktphase. Er benutzt aber feste Choreografie und ist deshalb **kein** zu übernehmendes Zielsystem.
 
+### Quantitativer Fingerabdruck der Kollisions-Rückkopplung
+
+In Front/Front Seed 100 bleiben beide Geschwindigkeiten nach Annäherung an die Kontaktgrenze über viele Sekunden exakt bei **4,2 m/s**. Mit der vorhandenen Beschleunigung von 35 m/s² und einem festen Zeitschritt von 0,08 s erhält ein Schiff ohne Boost pro Tick bis zu 2,8 m/s Geschwindigkeit. Wird die Geschwindigkeit nach dem Antrieb in jedem Tick mit 0,6 gedämpft, gilt im stationären Fall `v = 0.6 * (v + 2.8)`, also **v = 4,2 m/s**. Das stimmt exakt mit dem gemessenen Plateau überein. Die gleichzeitig stabilen Positionen nahe 87 m passen zur wiederholten Positionskorrektur.
+
+Das ist ein sehr starker kausaler Fingerabdruck für die Kollisionsrückkopplung in diesem konkreten Fall. Für andere Konstellationen mit periodischen Kontakten statt einem Kontakt in jedem Frame sind andere stationäre Geschwindigkeiten möglich; der Test ersetzt daher nicht eine direkte Kollisionsereignis-Zählung.
+
 ## Zweiter Befund: viele Plan-Logs bedeuten nicht viele Taktikwechsel
 
 Bei Front/Front, Seed 100, wiederholt die normale KI während des Stillstands etwa alle zwei Sekunden `shield_breaker / frontal / reach_range`. Die Zahl der protokollierten Pläne kann daher nicht als Indikator für echte Manövervielfalt verwendet werden. Ein zukünftiger Test muss zwischen **Neubewertung**, **geänderter Entscheidung** und **erfolgreich beendeter Aktion** unterscheiden.
