@@ -15,6 +15,31 @@ assert(
   pilot.includes("action === 'frontal_pass' ? 0 : separation"),
   'frontal approach avoids flanking offset'
 );
-assert(controller.includes('forwardSpeed >= 0'), 'boost refuses reversed velocity');
-assert(controller.includes('aligned > range * 0.7'), 'boost requires forward orientation');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+const { useBoostForExchange } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-exchange-boost.ts'
+);
+assert(controller.includes('useBoostForExchange('), 'exchange invokes the boost owner');
+function boostShip(velocity, headingRadians = 0) {
+  return {
+    position: { x: 0, y: 0 },
+    velocity: { x: velocity, y: 0 },
+    headingRadians,
+    tactic: 'fight',
+    boostSeconds: 3,
+    boostActive: false,
+    subsystems: { engine: 100 },
+  };
+}
+const goal = { x: 800, y: 0 };
+const reversed = boostShip(-25);
+useBoostForExchange(reversed, goal, true, 800, 4);
+assert.equal(reversed.boostActive, false, 'boost refuses reversed velocity');
+const facingAway = boostShip(25, Math.PI);
+useBoostForExchange(facingAway, goal, true, 800, 4);
+assert.equal(facingAway.boostActive, false, 'boost requires forward orientation');
+const aligned = boostShip(25);
+useBoostForExchange(aligned, goal, true, 800, 4);
+assert.equal(aligned.boostActive, true, 'aligned advancing ship may boost');
 console.log('PASS frontal approach alignment guards');
