@@ -17,7 +17,11 @@ function ship(x, y) {
     headingRadians: 0,
     speed: 0,
     tactic: 'fight',
-    setup: { combatSpeed: 130, accelerationMetersPerSecond2: 34, turnRateRadiansPerSecond: 1 },
+    setup: {
+      combatSpeed: 130,
+      accelerationMetersPerSecond2: 34,
+      turnRateRadiansPerSecond: 1,
+    },
     subsystems: { engine: 100 },
   };
 }
@@ -30,13 +34,23 @@ for (const action of actions) {
   const plan = planExchangeFlight(initiator, reactor, action, 'evade', 'strong');
   let peakSpeed = 0;
   for (let frame = 0; frame < 120; frame += 1) {
-    pilotExchangeShip(initiator, 'initiator', plan, arena, 0.08, reactor, action === 'frontal_pass');
+    pilotExchangeShip(
+      initiator,
+      'initiator',
+      plan,
+      arena,
+      0.08,
+      reactor,
+      action === 'frontal_pass'
+    );
     peakSpeed = Math.max(peakSpeed, initiator.speed);
   }
   const displacement = Math.hypot(initiator.position.x - 600, initiator.position.y - 760);
   assert(displacement > 80, action + ': choreography must move the ship');
   assert(peakSpeed > 25, action + ': ship must build physical speed');
-  positions.push([Math.round(initiator.position.x / 10), Math.round(initiator.position.y / 10)].join(':'));
+  positions.push(
+    [Math.round(initiator.position.x / 10), Math.round(initiator.position.y / 10)].join(':')
+  );
 }
-assert.equal(new Set(positions).size, 4, 'the four choreographed maneuvers must remain distinct');
+assert.equal(new Set(positions).size, 4, 'choreographed maneuvers must remain distinct');
 console.log('PASS four choreographed passages remain mobile and distinct');
