@@ -14,6 +14,9 @@ const scenarios = [
     closePassCandidates: 2,
     invalidFrames: 0,
     winner: null,
+    attackerHpLost: 20,
+    defenderHpLost: 40,
+    damageImpacts: 2,
   },
   {
     label: 'front',
@@ -26,6 +29,9 @@ const scenarios = [
     closePassCandidates: 1,
     invalidFrames: 0,
     winner: 'attacker',
+    attackerHpLost: 5,
+    defenderHpLost: 95,
+    damageImpacts: 5,
   },
 ];
 const groups = summarizeMotion(scenarios);
@@ -36,6 +42,8 @@ assert.equal(groups[0].longestStallSeconds, 8);
 assert.equal(groups[0].meanRelativeSpeed, 70);
 assert.equal(groups[0].closePassCandidates, 3);
 assert.equal(groups[0].winners, 1);
+assert.equal(groups[0].meanTotalDamage, 80);
+assert.equal(groups[0].damageImpacts, 7);
 assert.equal(groups[0].allUnified, true);
 assert(formatMotionStatus(groups[0]).includes('slow 15.0%'));
 console.log('PASS CI combat-motion summaries preserve seeded progress metrics');
