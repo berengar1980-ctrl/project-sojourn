@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const { applyActionRamImpact } = loadStandaloneTypeScriptModule(
+const { applyCombatRamImpact } = loadStandaloneTypeScriptModule(
   root,
-  'src/systems/combat/combat-exchange-collision.ts'
+  'src/systems/combat/combat-ram-impact.ts'
 );
 
 const makeShip = (x, heading, velocity) => ({
@@ -21,7 +21,7 @@ function impact(aHeading, bHeading) {
   const attacker = makeShip(200, aHeading, 80);
   const defender = makeShip(260, bHeading, -80);
   const runtime = { attacker, defender, elapsedSeconds: 2, combatLog: [] };
-  applyActionRamImpact(runtime);
+  applyCombatRamImpact(runtime);
   return [100 - attacker.shieldHp, 100 - defender.shieldHp];
 }
 const headOn = impact(0, Math.PI);
@@ -33,7 +33,7 @@ assert(rear[1] > flank[1], 'stern receives more impact damage than broadside');
 const unshieldedAttacker = makeShip(200, 0, 180);
 const unshieldedDefender = makeShip(260, 0, -180);
 unshieldedDefender.shieldHp = 0;
-applyActionRamImpact({
+applyCombatRamImpact({
   attacker: unshieldedAttacker,
   defender: unshieldedDefender,
   elapsedSeconds: 2,
