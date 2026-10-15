@@ -15,7 +15,6 @@ import {
 import { getShipDefinition, resolveShipRuntimeSetup } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 import {
-  APPROACH_DISTANCE,
   FLIGHT_SPEED,
   SCAN_SECONDS,
   BASE_CYCLE_SECONDS,
