@@ -2,7 +2,7 @@ import type { WorldPoint } from '../../core/world-types';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SalvageWreck } from '../../core/salvage-types';
 
-const WORK_STANDOFF = 105;
+export const WORK_STANDOFF = 105;
 
 export function clampPoint(point: WorldPoint, width: number, height: number): WorldPoint {
   return {
