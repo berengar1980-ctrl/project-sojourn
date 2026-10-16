@@ -44,7 +44,10 @@ assert.equal(
 );
 
 const duel = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
-const port = fs.readFileSync(path.join(root, 'src/features/port/port-ship-view-model.ts'), 'utf8');
+const port = fs.readFileSync(
+  path.join(root, 'src/features/port/port-ship-view-model.ts'),
+  'utf8'
+);
 const editor = fs.readFileSync(path.join(root, 'tools/hardpoint-editor.html'), 'utf8');
 for (const [where, source] of [['duel', duel], ['campaign', port], ['editor', editor]]) {
   assert(source.includes('weaponHardpointDescription'), where + ' uses the same slot presentation');
