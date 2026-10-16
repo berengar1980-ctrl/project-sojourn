@@ -188,7 +188,11 @@ export function combatRouteHeading(
   // No per-frame emergency flank reversal during retreat: a flight waypoint
   // is committed until reached. Ordinary combat can still dodge drifting rocks.
   let steeringPoint = waypoint;
-  if (ship.tactic !== 'flee' && immediateThreat && pathBlocked(ship.position, waypoint, arena, clearance)) {
+  if (
+    ship.tactic !== 'flee' &&
+    immediateThreat &&
+    pathBlocked(ship.position, waypoint, arena, clearance)
+  ) {
     steeringPoint = detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint;
   }
   const dx = steeringPoint.x - ship.position.x;
