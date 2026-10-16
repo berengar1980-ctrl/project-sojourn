@@ -361,9 +361,7 @@ function steerCombatRoute(
   // Close contact with a blocking ship needs a committed *sideways* pass,
   // not another forward push into the collision shell.
   const detour =
-    combatant.tactic === 'flee'
-      ? escapeContactDetour(combatant, enemy, side, direction)
-      : null;
+    combatant.tactic === 'flee' ? escapeContactDetour(combatant, enemy, side, direction) : null;
   if (detour) {
     direction = detour;
     targetSpeedFactor = Math.max(0.85, targetSpeedFactor);
