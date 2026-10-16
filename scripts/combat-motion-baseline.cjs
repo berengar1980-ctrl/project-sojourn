@@ -6,10 +6,15 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../tests/ts-module-loader.cjs');
 const { createMotionMetrics } = require('./combat-motion-metrics.cjs');
 const { createStagnationTrace } = require('./combat-stagnation-trace.cjs');
+const { createEngagementMetrics } = require('./combat-engagement-metrics.cjs');
 const root = path.resolve(__dirname, '..');
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
+);
+const { weaponInArc } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-weapon-geometry.ts'
 );
 const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
   root,
@@ -52,6 +57,7 @@ function combatant(id, weapons, facing, speed = 120, acceleration = 35) {
 function analyze(seed, label, attacker, defender, maximumSeconds) {
   const combat = createStrategicCombatService(attacker, defender, seed);
   const metrics = createMotionMetrics([attacker.combatSpeed, defender.combatSpeed]);
+  const engagement = createEngagementMetrics([attacker, defender], weaponInArc);
   const trace = traceEnabled
     ? createStagnationTrace([attacker.combatSpeed, defender.combatSpeed])
     : null;
@@ -61,6 +67,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
   let damageImpacts = 0;
   let previousImpact = frame.lastImpact?.serial ?? 0;
   metrics.sample(frame);
+  engagement.sample(frame);
   trace?.observe(frame);
   const steps = Math.ceil(maximumSeconds / 0.08);
   for (let index = 0; index < steps && !frame.winner; index += 1) {
@@ -70,6 +77,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
       if (frame.lastImpact.damage > 0) damageImpacts += 1;
     }
     metrics.sample(frame);
+    engagement.sample(frame);
     trace?.observe(frame);
   }
   const log = combat.getCombatLog();
@@ -85,6 +93,7 @@ function analyze(seed, label, attacker, defender, maximumSeconds) {
     defenderHpLost: Math.max(0, initialDefenderHp - defenderHpLeft),
     damageImpacts,
     ...metrics.summarize(),
+    ...engagement.summarize(),
     plannedActions: log.filter((entry) => entry.event === 'plan').length,
     phaseChanges: log.filter((entry) => entry.event === 'phase').length,
     reactiveEvents: log.filter((entry) => entry.detail.startsWith('REACTIVE_')).length,
