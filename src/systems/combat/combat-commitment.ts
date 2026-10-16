@@ -153,6 +153,7 @@ function chooseCommitmentTransition(
     } else if (escape >= 0.2) return null;
     ship.tactic = 'fight';
     ship.strategy = null;
+    delete ship.escapeGate;
     ship.escapeAbandonedAt = elapsed;
     return {
       decision: 'fight',
@@ -166,6 +167,7 @@ function chooseCommitmentTransition(
   if (strength < requiredConfidence(ship) && escape > 0.5) {
     ship.tactic = 'flee';
     ship.strategy = null;
+    delete ship.escapeGate;
     ship.escapeCommittedAt = elapsed;
     return {
       decision: 'flee',
