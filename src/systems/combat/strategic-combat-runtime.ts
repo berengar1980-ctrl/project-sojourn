@@ -4,6 +4,7 @@ import {
   RAIL_LANCE_SECONDS,
   VISION_ION_LASER_SECONDS,
   VISION_PULSE_SECONDS,
+  VISION_REPEATER_SECONDS,
 } from '../../core/combat-visual-timings';
 
 import type {
@@ -61,8 +62,10 @@ export function addRuntimeBeam(
 ): void {
   runtime.beamSerial += 1;
   const maxTtlSeconds =
-    family === 'railgun'
-      ? RAIL_LANCE_SECONDS
+    family === 'front_repeater'
+      ? VISION_REPEATER_SECONDS
+      : family === 'railgun'
+        ? RAIL_LANCE_SECONDS
       : family === 'ion_cannon'
         ? ION_CANNON_ARC_SECONDS
         : family === 'ion_laser'

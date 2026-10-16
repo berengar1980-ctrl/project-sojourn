@@ -16,6 +16,7 @@ import {
   drawVisionIonLaser,
   drawVisionProjectile,
   drawVisionPulseLaser,
+  drawVisionFrontRepeater,
   drawVisionWeaponImpact,
 } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
@@ -102,6 +103,8 @@ export class StrategicCombatRenderer {
       const flightDelay =
         impact.weaponFamily === 'pulse_laser'
           ? 0.42
+          : impact.weaponFamily === 'front_repeater'
+            ? 0.045
           : impact.weaponFamily === 'ion_laser'
             ? 0.1
             : impact.weaponFamily === 'ion_cannon'
@@ -253,6 +256,10 @@ export class StrategicCombatRenderer {
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
+    if (beam.family === 'front_repeater') {
+      drawVisionFrontRepeater(this.context, start, end, ageSeconds);
+      return;
+    }
     if (beam.family === 'pulse_laser') {
       drawVisionPulseLaser(this.context, start, end, ageSeconds);
       return;

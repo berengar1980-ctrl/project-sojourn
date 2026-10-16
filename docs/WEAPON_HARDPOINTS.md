@@ -27,6 +27,8 @@ Beispiel eines Eintrags:
 }
 ```
 
+Die neue Standardbelegung aller 28 Modelle besitzt sechs Slots: Bug 0 und 5 (Railgun oder Front Repeater), Backbord 1, Steuerbord 2 und Universal 3 und 4. Beide Universalplätze erlauben unabhängig voneinander Turmwaffen (Pulse/Ion Laser) oder Lenkwaffen (Guided/HE Missile), bei 360° Zielabdeckung. Die bisherigen Slots 0 bis 4 behalten ihre Indizes; Slot 5 ergänzt die zweite Bugwaffe. Das verhindert eine Verschiebung bestehender Ausrüstungslisten.
+
 Die Slot-Reihenfolge legt den Index im Ausrüstungsbildschirm fest. **Anzahl und Platzierung der `weaponMounts` in der JSON bestimmen die verfügbaren Waffenplätze**; es werden keine zusätzlichen Slots automatisch erzeugt. Das gilt für Spieler und NPCs.
 
 ## Werft und Gefecht
