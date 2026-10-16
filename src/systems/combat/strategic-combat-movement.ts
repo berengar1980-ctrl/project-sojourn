@@ -388,8 +388,10 @@ function steerCombatRoute(
       !obstacle &&
       retreatBoundaryClear(combatant, boundary) &&
       !waypoint &&
-      !cover,
-    canAim: !mineAvoidance && !obstacle && !boundary && !evasion,
+      !cover &&
+      !evasion &&
+      !detour,
+    canAim: !mineAvoidance && !obstacle && !boundary && !evasion && !detour,
   };
 }
 
