@@ -68,12 +68,7 @@ export function drawCombatShipBody(
     );
   } else {
     context.fillStyle = '#a4b2ba';
-    context.fillRect(
-      -geometry.width / 2,
-      -geometry.height / 2,
-      geometry.width,
-      geometry.height
-    );
+    context.fillRect(-geometry.width / 2, -geometry.height / 2, geometry.width, geometry.height);
   }
   context.restore();
 }
