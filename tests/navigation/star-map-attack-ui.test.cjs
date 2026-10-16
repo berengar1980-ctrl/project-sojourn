@@ -21,8 +21,14 @@ assert(
 );
 assert(renderer.includes("kind: 'npc'"), 'NPC ship sprites must own hit areas');
 assert(
-  renderer.includes("filter((area) => area.kind === 'npc')"),
-  'NPC hit areas must win over overlapping planets, stations and fields'
+  renderer.includes("kind === 'npc'") && renderer.includes('pickContacts('),
+  'NPC contacts must remain available among overlapping map targets'
+);
+assert(
+  input.includes('renderer.pickContacts(') &&
+    input.includes('picker.show(contacts, point)') &&
+    input.includes('else if (contacts[0]) select(contacts[0])'),
+  'overlapping contacts require disambiguation while lone contacts remain direct'
 );
 assert(renderer.includes('drawPursuitLine'), 'active pursuit must be visible on the star map');
 assert(
