@@ -18,7 +18,6 @@ export function predictedCollisionEvasion(
   };
 }
 
-
 /** Keep a consistent lateral clearance side when a pursuer blocks the exit path. */
 export function escapeContactDetour(
   combatant: MutableCombatant,
