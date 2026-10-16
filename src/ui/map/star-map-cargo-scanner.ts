@@ -110,6 +110,18 @@ function renderMarketQuotes(
   }
 }
 
+function createVisualizationUpdater(
+  onVisualization: (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void
+): (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void {
+  let lastMarkerSignature = '';
+  return (markers): void => {
+    const signature = [...markers].map(([id, rating]) => id + ':' + rating).join('|');
+    if (signature === lastMarkerSignature) return;
+    lastMarkerSignature = signature;
+    onVisualization(markers);
+  };
+}
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -124,13 +136,7 @@ export function bindCargoMarketScanner(
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
-  let lastMarkerSignature = '';
-  const updateVisualization = (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void => {
-    const signature = [...markers].map(([id, rating]) => id + ':' + rating).join('|');
-    if (signature === lastMarkerSignature) return;
-    lastMarkerSignature = signature;
-    onVisualization(markers);
-  };
+  const updateVisualization = createVisualizationUpdater(onVisualization);
   let lastRenderedSignature = '';
   const renderCargoScanner = (): void => {
     const model = getModel();
