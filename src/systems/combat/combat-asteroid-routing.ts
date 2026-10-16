@@ -123,20 +123,15 @@ function pathBlocked(
   });
 }
 
-/** Reuse the campaign's grid navigation, recomputing as asteroids drift. */
-export function combatRouteHeading(
+/** Flight-route memory is shared; only escape keeps a committed rock flank. */
+function selectRouteWaypoint(
   ship: MutableCombatant,
   target: CombatPoint,
   arena: StrategicCombatArenaOptions,
-  deltaSeconds: number
+  clearance: number,
+  deltaSeconds: number,
+  immediateThreat: boolean
 ): CombatPoint | null {
-  if (!arena.obstacles?.length) return null;
-  const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
-  const prediction = {
-    x: ship.position.x + ship.velocity.x * 2,
-    y: ship.position.y + ship.velocity.y * 2,
-  };
-  const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
   const blocked = pathBlocked(ship.position, target, arena, clearance);
   const fleeing = ship.tactic === 'flee';
   if (!fleeing && !immediateThreat && !blocked) {
@@ -164,7 +159,31 @@ export function combatRouteHeading(
     ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
-  const waypoint = ship.asteroidRoute?.[0];
+  return ship.asteroidRoute?.[0] ?? null;
+}
+
+/** Reuse the campaign's grid navigation, recomputing as asteroids drift. */
+export function combatRouteHeading(
+  ship: MutableCombatant,
+  target: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  deltaSeconds: number
+): CombatPoint | null {
+  if (!arena.obstacles?.length) return null;
+  const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
+  const prediction = {
+    x: ship.position.x + ship.velocity.x * 2,
+    y: ship.position.y + ship.velocity.y * 2,
+  };
+  const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
+  const waypoint = selectRouteWaypoint(
+    ship,
+    target,
+    arena,
+    clearance,
+    deltaSeconds,
+    immediateThreat
+  );
   if (!waypoint) return null;
   const steeringPoint =
     pathBlocked(ship.position, waypoint, arena, clearance) && immediateThreat
