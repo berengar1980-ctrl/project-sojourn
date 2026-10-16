@@ -3,3 +3,6 @@ export const RAIL_LANCE_SECONDS = 1.35;
 export const ION_CANNON_ARC_SECONDS = 0.52;
 export const AUTOCANNON_ROUNDS = 7;
 export const AUTOCANNON_ROUND_INTERVAL = 0.065;
+export const VISION_IMPACT_SECONDS = 1.1;
+export const VISION_PULSE_SECONDS = 0.64;
+export const VISION_ION_LASER_SECONDS = 0.82;
