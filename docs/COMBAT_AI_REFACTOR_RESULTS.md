@@ -21,18 +21,21 @@ CircleCI published the following per-scenario-group results (four seeds per grou
 
 The previous repeating 86–87 m, 4.2 m/s near-contact deadlock is **not present in these twelve traces**. These numbers show substantially more actual relative movement and no prolonged shared stall.
 
-## Aiming quality and deliberately rejected alternatives
+## Aiming and mobility experiments
 
-All figures below are per-scenario mean **seconds inside an actual firing arc** over 90 s, followed by the total *detected close-pass candidates* across four seeds. These are measured CI outcomes, not qualitative claims about cinematography.
+The same 12 seeded duels were compared using real firing-arc exposure, relative speed, total damage, and close-pass candidates. These are diagnostic heuristics, not visual acceptance criteria.
 
-- **Initially unified movement** (CI 4385, commit `c2f0618`): forward vs broadside 7 s and 16 passes; fast vs slow 7 s and 10 passes; two forward guns approximately 5 s per ship and 2 passes.
-- **Continuous forward-gun tracking** (CI 4400, commit `b72a5e0`): forward vs broadside 21 s and 0 passes; fast vs slow 30 s and 10 passes; two forward guns 81 s per ship and 0 passes. More firing opportunity, but a severe loss of close encounters in two scenarios. Rejected.
-- **Tracking only during intercept/engagement** (CI 4404, commit `4f87c7d`): forward vs broadside 7 s and 10 passes; fast vs slow 7 s and 12 passes; two forward guns 34–35 s and 2 passes. Mean combined damage was 23, 19 and 16 HP respectively; common slow-flight time stayed near 0.4%. Preferred compromise.
-- **Additional aim during direction-compatible flybys** (CI 4407, commit `1f9047b`): forward vs broadside 8 s and 4 passes; fast vs slow 7 s and 6 passes; two forward guns 39 s and 2 passes. Too little aiming gain for the loss of encounters; rejected.
+**Baseline (CI 4385):** Forward guns were aimable for about 5–7 seconds out of 90. Front/broadside, fast/slow, and front/front produced 16, 10, and 2 close-pass candidates respectively.
 
-The preferred engagement-only selection has been retained while extracting its logic into one bounded-complexity `chooseWeaponPosture` function; the final equivalent refactor commit awaits its own CI check. The two ships still select their maneuver independently; no scripted paired reactions or forced pass quota exist.
+**Continuous tracking (CI 4400):** Front gun exposure rose to 21, 30, and 81 seconds, but passes fell to 0, 10, and 0. This sacrificed important combat motion and was rejected.
 
-The lack of a winner inside 90 seconds is not itself evidence of ineffective AI: the fixtures each start with 150 shield HP, and Tier 1 railgun/autocannon families have low native shield damage relative to their hull damage and cooldown. Do not modify the combat balance to make these diagnostic fixtures end artificially sooner.
+**Engagement-only tracking (CI 4404):** Exposure was 7, 7, and 34–35 seconds. Pass candidates were 10, 12, and 2, with group mean damage of 23, 19, and 16 HP. This is the preferred measured compromise.
+
+**Tracking during compatible flybys (CI 4407):** Exposure improved only to 8, 7, and 39 seconds, while pass candidates fell to 4, 6, and 2. This was rejected in favor of engagement-only tracking.
+
+The selected behavior keeps maneuver selection independent for each ship and preserves momentum during committed passes. Its implementation has been factored into `chooseWeaponPosture` without a second movement controller. A fresh CI run for the refactored equivalent is pending.
+
+None of the 90-second fixtures produced a winner. Each starts with 150 shield HP, while Tier 1 railguns and autocannons have low native shield damage compared with hull damage. Do not alter balance simply to force these diagnostic fights to end early.
 
 ## Interpretation and outstanding quality gates
 
