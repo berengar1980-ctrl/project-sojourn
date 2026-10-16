@@ -106,7 +106,7 @@ assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual 
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
 assert(renderer.includes('drawIonCannonArc('), 'game renderer dispatches ion cannon lightning');
 assert(renderer.includes('drawRailgunLance('), 'game renderer dispatches railgun lance');
-assert(renderer.includes('drawAutocannonBurst('), 'game renderer dispatches autocannon salvo');
+assert(renderer.includes('drawVisionAutocannon('), 'game renderer dispatches upgraded seven-round autocannon salvo');
 assert(
   !gameplay.includes('AUTOCANNON_ROUNDS'),
   'seven visual rounds must never multiply physical damage or ammunition usage'
