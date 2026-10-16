@@ -65,11 +65,7 @@ function makeShip(id, weapons, mounts, x = 700) {
 }
 
 function chosen(front, broadside, shield = 100, mount = {}) {
-  const first = makeShip(
-    'player',
-    [front, broadside],
-    ['forward', 'port']
-  );
+  const first = makeShip('player', [front, broadside], ['forward', 'port']);
   const enemy = makeShip('enemy', [turret], ['forward'], 1650);
   first.setup.weaponMounts[0] = { ...first.setup.weaponMounts[0], ...mount };
   first.headingRadians = 0;
@@ -96,11 +92,13 @@ assert.equal(starboard.strategy.kind, 'broadside');
 assert.equal(starboard.strategy.broadsideFacing, 'starboard');
 
 const mixed = makeShip('mixed', [strongFront, weakSide, turret], [
-  'forward', 'port', 'forward',
+  'forward',
+  'port',
+  'forward',
 ]);
 const opposing = makeShip('opposing', [turret], ['forward'], 1500);
 const main = scoreWeaponPosture(mixed, opposing, { focus: 'forward' });
 const port = scoreWeaponPosture(mixed, opposing, { focus: 'broadside', facing: 'port' });
-assert(main && port && main.firepower > port.firepower, 'secondary turret does not dominate posture');
+assert(main && port && main.firepower > port.firepower, 'turret cannot dictate bow heading');
 
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');
