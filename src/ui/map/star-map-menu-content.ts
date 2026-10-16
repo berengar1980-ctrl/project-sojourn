@@ -46,7 +46,7 @@ const CONTACT_GROUPS = [
   'FRACHTVERKEHR',
 ] as const;
 
-function contactGroup(npc: NpcShipMapView): string {
+function contactGroup(npc: NpcShipMapView): (typeof CONTACT_GROUPS)[number] {
   if (npc.combatMode) return 'GEFECHTSKONTAKTE';
   if (npc.isPursuitTarget) return 'VERFOLGUNG';
   if (npc.job === 'pirate') return 'PIRATEN';
@@ -89,12 +89,10 @@ export function renderStarMapContacts(
       ),
     };
   });
-  entries.sort(
-    (a, b) =>
-      CONTACT_GROUPS.indexOf(a.group as (typeof CONTACT_GROUPS)[number]) -
-        CONTACT_GROUPS.indexOf(b.group as (typeof CONTACT_GROUPS)[number]) ||
-      a.distance - b.distance
-  );
+  entries.sort((a, b) => {
+    const priority = CONTACT_GROUPS.indexOf(a.group) - CONTACT_GROUPS.indexOf(b.group);
+    return priority || a.distance - b.distance;
+  });
   container.replaceChildren(summary);
   if (!entries.length) {
     container.append(emptyState('Keine Schiffe innerhalb der aktuellen Sensorreichweite.'));
