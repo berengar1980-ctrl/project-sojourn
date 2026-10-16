@@ -1,4 +1,4 @@
-import type { StarMapPickOption } from './topdown-map-renderer';
+import type { StarMapPickOption } from './star-map-contact-picking';
 
 export interface StarMapPickMenu {
   show(options: readonly StarMapPickOption[], point: { x: number; y: number }): void;
