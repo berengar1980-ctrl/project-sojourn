@@ -1,6 +1,10 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
-import { ION_CANNON_ARC_SECONDS, RAIL_LANCE_SECONDS } from '../../core/combat-visual-timings';
-import { VISION_ION_LASER_SECONDS, VISION_PULSE_SECONDS } from '../../ui/combat/combat-weapon-vision-renderer';
+import {
+  ION_CANNON_ARC_SECONDS,
+  RAIL_LANCE_SECONDS,
+  VISION_ION_LASER_SECONDS,
+  VISION_PULSE_SECONDS,
+} from '../../core/combat-visual-timings';
 
 import type {
   StrategicCombatRuntime,
