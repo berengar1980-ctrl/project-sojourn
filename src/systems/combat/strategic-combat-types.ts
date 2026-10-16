@@ -353,6 +353,8 @@ export interface MutableCombatant {
   shieldImpacts: ShieldImpactEffect[];
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
+  /** Brief window after a real enemy tractor action, not mere tractor ownership. */
+  tractorThreatenedUntil?: number;
   tractorPulseCooldown?: number;
   tractorThrowCooldown?: number;
 }
