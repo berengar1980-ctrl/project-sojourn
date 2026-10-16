@@ -97,4 +97,23 @@ const main = scoreWeaponPosture(mixed, opposing, { focus: 'forward' });
 const port = scoreWeaponPosture(mixed, opposing, { focus: 'broadside', facing: 'port' });
 assert(main && port && main.firepower > port.firepower, 'turret cannot dictate bow heading');
 
+const dominant = makeShip('dominant', [strongFront, weakSide], ['forward', 'port']);
+const unchangedEnemy = makeShip('enemy', [turret], ['forward'], 1500);
+reviewCombatStrategy(dominant, unchangedEnemy, 'attacker', 0);
+assert.equal(dominant.strategy.kind, 'frontal');
+reviewCombatStrategy(dominant, unchangedEnemy, 'attacker', 32);
+assert.equal(
+  dominant.strategy.kind,
+  'frontal',
+  'no-hit review must not force a much weaker broadside posture'
+);
+
+const switching = makeShip('switching', [rail, side], ['forward', 'port']);
+const switchingTarget = makeShip('target', [turret], ['forward'], 1500);
+reviewCombatStrategy(switching, switchingTarget, 'attacker', 0);
+assert.equal(switching.strategy.kind, 'broadside');
+switchingTarget.shieldHp = 0;
+reviewCombatStrategy(switching, switchingTarget, 'attacker', 8);
+assert.equal(switching.strategy.kind, 'frontal', 'shield loss changes effective gun priority');
+
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');
