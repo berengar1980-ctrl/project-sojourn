@@ -14,6 +14,7 @@ import type {
   CombatImpactLayer,
   CombatPoint,
   CombatBeamKind,
+  CombatImpactSnapshot,
 } from './strategic-combat-types';
 
 export function runtimeCombatant(
@@ -30,6 +31,15 @@ export function runtimeEnemy(
   return side === 'attacker' ? runtime.defender : runtime.attacker;
 }
 
+/** Keep each physical hit in the shared combat event stream, including simultaneous mount hits. */
+export function recordRuntimeImpact(runtime: StrategicCombatRuntime, impact: CombatImpactSnapshot): void {
+  runtime.lastImpact = impact;
+  // Some focused physics tests use minimal mock runtimes without a visual history.
+  if (!runtime.recentImpacts) return;
+  runtime.recentImpacts.push(impact);
+  if (runtime.recentImpacts.length > 64) runtime.recentImpacts.splice(0, runtime.recentImpacts.length - 64);
+}
+
 export function noteRuntimeImpact(
   runtime: StrategicCombatRuntime,
   target: StrategicCombatSide,
@@ -40,7 +50,7 @@ export function noteRuntimeImpact(
   weaponFamily?: ShipWeaponFamily
 ): void {
   runtime.impactSerial += 1;
-  runtime.lastImpact = {
+  recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target,
     layer,
@@ -48,7 +58,7 @@ export function noteRuntimeImpact(
     position: { ...point },
     ...(weaponKind ? { weaponKind } : {}),
     ...(weaponFamily ? { weaponFamily } : {}),
-  };
+  });
 }
 
 export function addRuntimeBeam(

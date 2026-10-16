@@ -23,6 +23,7 @@ const mineDamage = loadStandaloneTypeScriptModule(
 const weapons = catalog.SHIP_COMPONENT_CATALOG.weapon ?? [];
 const expectedFamilies = [
   'pulse_laser',
+  'front_repeater',
   'plasma_battery',
   'guided_missile',
   'ion_laser',

@@ -57,6 +57,19 @@ const pulseExpired = recordingCanvas();
 effects.drawVisionPulseLaser(pulseExpired.context, from, to, timing.VISION_PULSE_SECONDS + 0.01);
 assert.equal(pulseExpired.operations.length, 0, 'expired pulse beams vanish');
 
+const repeat = recordingCanvas();
+effects.drawVisionFrontRepeater(repeat.context, from, to, 0.06);
+assert(repeat.operations.some(op => op.color === '#ff9f4d'), 'repeater has amber shot streaks');
+const repeatExpired = recordingCanvas();
+effects.drawVisionFrontRepeater(repeatExpired.context, from, to, timing.VISION_REPEATER_SECONDS + 0.01);
+assert.equal(repeatExpired.operations.length, 0, 'repeater bolt expires quickly');
+const repeatImpact = recordingCanvas();
+effects.drawVisionWeaponImpact(repeatImpact.context, 'front_repeater', to, 0.08, 11, false);
+assert(repeatImpact.operations.some(op => op.color === '#ff9a4f'), 'hull strikes have warm kinetic sparks');
+const repeatImpactExpired = recordingCanvas();
+effects.drawVisionWeaponImpact(repeatImpactExpired.context, 'front_repeater', to, timing.VISION_REPEATER_IMPACT_SECONDS + 0.01, 11, true);
+assert.equal(repeatImpactExpired.operations.length, 0, 'fast impact fades independently');
+
 const ionLaser = recordingCanvas();
 effects.drawVisionIonLaser(ionLaser.context, from, to, 0.2, 11);
 assert(
@@ -100,6 +113,7 @@ assert(
 
 const families = [
   'pulse_laser',
+  'front_repeater',
   'plasma_battery',
   'guided_missile',
   'ion_laser',
@@ -169,4 +183,4 @@ assert(
   !runtime.includes('AUTOCANNON_ROUNDS'),
   'visual seven-shot salvo never multiplies real weapon damage'
 );
-console.log('PASS eight distinct impacts, selected shot effects, timing and combat integration');
+console.log('PASS nine distinct impacts including rapid repeater shot and contact');

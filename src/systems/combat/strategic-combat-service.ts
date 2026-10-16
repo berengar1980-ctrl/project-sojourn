@@ -134,6 +134,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           : mineDetection(mine.definition, runtime.attacker, mine.position),
     })),
     lastImpact: runtime.lastImpact,
+    recentImpacts: runtime.recentImpacts.map(impact => ({ ...impact, position: { ...impact.position } })),
     arena: {
       width: runtime.arena.width,
       height: runtime.arena.height,
@@ -283,6 +284,7 @@ function createStrategicCombatRuntime(
     mineSerial: 0,
     impactSerial: 0,
     lastImpact: null,
+    recentImpacts: [],
   };
 }
 function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'defender'): boolean {

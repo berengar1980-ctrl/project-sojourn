@@ -23,6 +23,7 @@ import {
 import {
   addRuntimeBeam,
   noteRuntimeImpact,
+  recordRuntimeImpact,
   runtimeCombatant,
   runtimeEnemy,
 } from './strategic-combat-runtime';
@@ -98,7 +99,7 @@ function fireRuntimeInstantWeapon(
     shieldHit ?? undefined,
     effectiveTargetSubsystem(source, target)
   );
-  runtime.lastImpact = {
+  recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
@@ -107,7 +108,7 @@ function fireRuntimeInstantWeapon(
     position: { ...result.point },
     weaponKind: kind,
     weaponFamily: weapon.weapon.family,
-  };
+  });
   return (
     source.setup.name +
     ': ' +
@@ -304,7 +305,7 @@ function recordProjectileDamage(
       : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
-  runtime.lastImpact = {
+  recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
@@ -312,7 +313,7 @@ function recordProjectileDamage(
     position: { ...result.point },
     weaponKind: projectile.kind,
     weaponFamily: projectile.family,
-  };
+  });
   return result;
 }
 
@@ -323,7 +324,7 @@ function expireProjectile(
 ): void {
   if (projectile.kind === 'missile') {
     runtime.impactSerial += 1;
-    runtime.lastImpact = {
+    recordRuntimeImpact(runtime, {
       serial: runtime.impactSerial,
       target: projectile.target,
       layer: 'miss',
@@ -331,7 +332,7 @@ function expireProjectile(
       position: { ...projectile.position },
       weaponKind: 'missile',
       weaponFamily: projectile.family,
-    };
+    });
   }
   runtime.projectiles.splice(index, 1);
 }

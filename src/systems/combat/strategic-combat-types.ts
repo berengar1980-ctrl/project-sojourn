@@ -244,6 +244,7 @@ export interface StrategicCombatSnapshot {
   readonly mines: readonly CombatMineSnapshot[];
   readonly thrownAsteroids: readonly ThrownAsteroidSnapshot[];
   readonly lastImpact: CombatImpactSnapshot | null;
+  readonly recentImpacts: readonly CombatImpactSnapshot[];
   readonly arena: {
     readonly width: number;
     readonly height: number;
@@ -442,4 +443,5 @@ export interface StrategicCombatRuntime {
   mineSerial: number;
   impactSerial: number;
   lastImpact: CombatImpactSnapshot | null;
+  recentImpacts: CombatImpactSnapshot[];
 }
