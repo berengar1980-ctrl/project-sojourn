@@ -28,7 +28,7 @@ const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
 
 const repeaterCycle = { cooldownSeconds: 0.2 };
 assert.equal(control.weaponCycleSeconds(repeaterCycle, 1), 0.2);
-assert.equal(control.weaponCycleSeconds(repeaterCycle, 0.88), 0.176);
+assert(Math.abs(control.weaponCycleSeconds(repeaterCycle, 0.88) - 0.176) < 0.000001);
 const reloadOwner = { setup: { weapons: [{}, {}] }, cooldowns: [0.2, 1.8] };
 control.advanceWeaponCooldowns(reloadOwner, 0.2);
 assert.deepEqual(reloadOwner.cooldowns, [0, 1.6], 'independent reload timers advance together');
@@ -109,8 +109,8 @@ const combat = createStrategicCombatService(
   }
 );
 const detached = combat.getSnapshot();
-detached.attacker.recentImpacts.push({ serial: -1 });
-assert.equal(combat.getSnapshot().attacker.recentImpacts.length, 0, 'impact history snapshots detach');
+detached.recentImpacts.push({ serial: -1 });
+assert.equal(combat.getSnapshot().recentImpacts.length, 0, 'impact history snapshots detach');
 
 const shots = { attacker: new Set(), defender: new Set() };
 const firstMountShots = [];
