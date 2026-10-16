@@ -89,7 +89,12 @@ export function renderStarMapContacts(
       ),
     };
   });
-  entries.sort((a, b) => a.distance - b.distance);
+  entries.sort(
+    (a, b) =>
+      CONTACT_GROUPS.indexOf(a.group as (typeof CONTACT_GROUPS)[number]) -
+        CONTACT_GROUPS.indexOf(b.group as (typeof CONTACT_GROUPS)[number]) ||
+      a.distance - b.distance
+  );
   container.replaceChildren(summary);
   if (!entries.length) {
     container.append(emptyState('Keine Schiffe innerhalb der aktuellen Sensorreichweite.'));
