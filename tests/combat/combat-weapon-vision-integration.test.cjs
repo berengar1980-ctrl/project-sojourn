@@ -59,15 +59,30 @@ assert.equal(pulseExpired.operations.length, 0, 'expired pulse beams vanish');
 
 const repeat = recordingCanvas();
 effects.drawVisionFrontRepeater(repeat.context, from, to, 0.06);
-assert(repeat.operations.some(op => op.color === '#ff9f4d'), 'repeater has amber shot streaks');
+assert(repeat.operations.some((op) => op.color === '#ff9f4d'), 'repeater has amber shot streaks');
 const repeatExpired = recordingCanvas();
-effects.drawVisionFrontRepeater(repeatExpired.context, from, to, timing.VISION_REPEATER_SECONDS + 0.01);
+effects.drawVisionFrontRepeater(
+  repeatExpired.context,
+  from,
+  to,
+  timing.VISION_REPEATER_SECONDS + 0.01
+);
 assert.equal(repeatExpired.operations.length, 0, 'repeater bolt expires quickly');
 const repeatImpact = recordingCanvas();
 effects.drawVisionWeaponImpact(repeatImpact.context, 'front_repeater', to, 0.08, 11, false);
-assert(repeatImpact.operations.some(op => op.color === '#ff9a4f'), 'hull strikes have warm kinetic sparks');
+assert(
+  repeatImpact.operations.some((op) => op.color === '#ff9a4f'),
+  'hull strikes have warm kinetic sparks'
+);
 const repeatImpactExpired = recordingCanvas();
-effects.drawVisionWeaponImpact(repeatImpactExpired.context, 'front_repeater', to, timing.VISION_REPEATER_IMPACT_SECONDS + 0.01, 11, true);
+effects.drawVisionWeaponImpact(
+  repeatImpactExpired.context,
+  'front_repeater',
+  to,
+  timing.VISION_REPEATER_IMPACT_SECONDS + 0.01,
+  11,
+  true
+);
 assert.equal(repeatImpactExpired.operations.length, 0, 'fast impact fades independently');
 
 const ionLaser = recordingCanvas();

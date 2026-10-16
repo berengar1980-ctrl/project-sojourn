@@ -99,23 +99,19 @@ export class StrategicCombatRenderer {
     }
     // Multiple independently firing mounts may land hits in the same simulation tick.
     // Render each real event once; keep the single lastImpact fallback for other physics sources.
-    const unseen = [...(model.recentImpacts ?? []), ...(model.lastImpact ? [model.lastImpact] : [])]
+    const recentImpacts = model.recentImpacts ?? [];
+    const finalImpact = model.lastImpact ? [model.lastImpact] : [];
+    const unseen = [...recentImpacts, ...finalImpact]
       .filter((impact) => impact.serial > this.seenImpactSerial)
       .sort((a, b) => a.serial - b.serial);
     for (const impact of unseen) {
       this.seenImpactSerial = impact.serial;
-      const flightDelay =
-        impact.weaponFamily === 'pulse_laser'
-          ? 0.42
-          : impact.weaponFamily === 'front_repeater'
-            ? 0.045
-            : impact.weaponFamily === 'ion_laser'
-            ? 0.1
-            : impact.weaponFamily === 'ion_cannon'
-              ? 0.075
-              : impact.weaponFamily === 'railgun'
-                ? 0.045
-                : 0;
+      let flightDelay = 0;
+      if (impact.weaponFamily === 'pulse_laser') flightDelay = 0.42;
+      if (impact.weaponFamily === 'front_repeater') flightDelay = 0.045;
+      if (impact.weaponFamily === 'ion_laser') flightDelay = 0.1;
+      if (impact.weaponFamily === 'ion_cannon') flightDelay = 0.075;
+      if (impact.weaponFamily === 'railgun') flightDelay = 0.045;
       this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
     }
     for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
