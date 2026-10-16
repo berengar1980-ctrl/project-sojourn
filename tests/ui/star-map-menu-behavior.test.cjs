@@ -49,7 +49,10 @@ class StubElement {
 
   removeEventListener(name, listener) {
     const existing = this.listeners.get(name) || [];
-    this.listeners.set(name, existing.filter((item) => item !== listener));
+    this.listeners.set(
+      name,
+      existing.filter((item) => item !== listener)
+    );
   }
 
   dispatch(name, event = {}) {
