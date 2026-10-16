@@ -366,6 +366,7 @@ export function createStrategicCombatService(
       combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
       delete combatant.flightPass;
       delete combatant.escapeGate;
+      delete combatant.escapeAvoidanceSide;
       combatant.asteroidRoute = [];
       combatant.nextAsteroidRouteAt = 0;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
