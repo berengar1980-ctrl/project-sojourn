@@ -53,4 +53,11 @@ assert(
   calls.some((call) => call.method === 'rect'),
   'NAV station should use a schematic vector symbol'
 );
+const utilitySpokes = calls.filter((call) => call.method === 'moveTo').length;
+calls.length = 0;
+renderer.drawLocation({ kind: 'station', stationType: 'military' }, { x: 50, y: 60 }, 15);
+assert(
+  calls.filter((call) => call.method === 'moveTo').length > utilitySpokes,
+  'military stations must have a distinct NAV glyph'
+);
 console.log('PASS NAV radar follows camera pan and zoom, grid globes and station glyphs');
