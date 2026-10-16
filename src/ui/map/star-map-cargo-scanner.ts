@@ -122,6 +122,17 @@ function createVisualizationUpdater(
   };
 }
 
+function appendResourceOption(
+  select: HTMLSelectElement,
+  value: string,
+  label: string
+): void {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  select.append(option);
+}
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -155,14 +166,10 @@ export function bindCargoMarketScanner(
     const items = scanner?.resources ?? [];
     const previous = preferredCargoResource;
     cargoSelect.replaceChildren();
-    const addOption = (value: string, label: string): void => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      cargoSelect.append(option);
-    };
-    addOption('all', 'GESAMTE FRACHT');
-    for (const item of items) addOption(item.resourceId, item.name + ' (' + item.quantity + ')');
+    appendResourceOption(cargoSelect, 'all', 'GESAMTE FRACHT');
+    for (const item of items) {
+      appendResourceOption(cargoSelect, item.resourceId, item.name + ' (' + item.quantity + ')');
+    }
     preferredCargoResource =
       previous !== 'all' && items.some((item) => item.resourceId === previous) ? previous : 'all';
     cargoSelect.value = preferredCargoResource;
