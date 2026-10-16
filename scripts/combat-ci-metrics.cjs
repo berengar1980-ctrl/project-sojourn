@@ -22,6 +22,10 @@ function summarizeMotion(scenarios) {
       winners: cases.filter((row) => row.winner !== null).length,
       meanTotalDamage: mean('attackerHpLost') + mean('defenderHpLost'),
       damageImpacts: cases.reduce((sum, row) => sum + row.damageImpacts, 0),
+      attackerRangeSeconds: mean('attackerWeaponRangeSeconds'),
+      defenderRangeSeconds: mean('defenderWeaponRangeSeconds'),
+      attackerArcSeconds: mean('attackerWeaponArcSeconds'),
+      defenderArcSeconds: mean('defenderWeaponArcSeconds'),
       invalidFrames: cases.reduce((sum, row) => sum + row.invalidFrames, 0),
       allUnified: cases.every((row) => row.steeringPath === 'unified'),
     };
@@ -65,6 +69,16 @@ async function run() {
     const state = healthy ? 'success' : 'failure';
     const posted = await postStatus(state, 'motion ' + summary.label, detail);
     if (!posted) success = false;
+    const aim = [
+      summary.label,
+      'range',
+      summary.attackerRangeSeconds.toFixed(0) + '/' + summary.defenderRangeSeconds.toFixed(0),
+      'arc',
+      summary.attackerArcSeconds.toFixed(0) + '/' + summary.defenderArcSeconds.toFixed(0),
+      'seconds per ship in 90s',
+    ].join(' ');
+    process.stdout.write(aim + '\n');
+    if (!(await postStatus('success', 'aim ' + summary.label, aim))) success = false;
   }
   process.exitCode = success ? 0 : 1;
 }
