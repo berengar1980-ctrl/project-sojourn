@@ -71,10 +71,10 @@ export function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
-  ship.combatIntent =
-    ship.tactic !== 'flee' && enemy.tactic === 'flee' && ship.subsystems.engine > 0
-      ? 'VERFOLGEN'
-      : describeCombatIntent(ship);
+  ship.combatIntent = describeCombatIntent(ship);
+  if (ship.tactic !== 'flee' && enemy.tactic === 'flee' && ship.subsystems.engine > 0) {
+    ship.combatIntent = 'VERFOLGEN';
+  }
   if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
