@@ -91,11 +91,7 @@ reviewCombatStrategy(starboard, target, 'attacker', 0);
 assert.equal(starboard.strategy.kind, 'broadside');
 assert.equal(starboard.strategy.broadsideFacing, 'starboard');
 
-const mixed = makeShip('mixed', [strongFront, weakSide, turret], [
-  'forward',
-  'port',
-  'forward',
-]);
+const mixed = makeShip('mixed', [strongFront, weakSide, turret], ['forward', 'port', 'forward']);
 const opposing = makeShip('opposing', [turret], ['forward'], 1500);
 const main = scoreWeaponPosture(mixed, opposing, { focus: 'forward' });
 const port = scoreWeaponPosture(mixed, opposing, { focus: 'broadside', facing: 'port' });
