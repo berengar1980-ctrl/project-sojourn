@@ -38,25 +38,22 @@ function setup(id, hull, shield) {
     aiAggression: 100,
   };
 }
-const combat = createStrategicCombatService(
-  setup('rammer', 260, 200),
-  setup('weak', 70, 0),
-  100,
-  {
-    width: 2600,
-    height: 1600,
-    attackerPosition: { x: 850, y: 800 },
-    defenderPosition: { x: 1300, y: 800 },
-    attackerHeadingRadians: 0,
-    defenderHeadingRadians: Math.PI,
-  }
-);
+const arena = {
+  width: 2600,
+  height: 1600,
+  attackerPosition: { x: 850, y: 800 },
+  defenderPosition: { x: 1300, y: 800 },
+  attackerHeadingRadians: 0,
+  defenderHeadingRadians: Math.PI,
+};
+const combat = createStrategicCombatService(setup('rammer', 260, 200), setup('weak', 70, 0), 100, arena);
 let seenRam = false;
 let seenForwardShot = false;
 for (let tick = 0; tick < 20; tick += 1) {
   const frame = combat.tick(0.08);
   seenRam ||= frame.attacker.combatIntent === 'RAMMEN';
-  seenForwardShot ||= frame.beams.some((beam) => beam.owner === 'attacker' && beam.kind === 'rail');
+  const attackerRails = frame.beams.filter((beam) => beam.owner === 'attacker' && beam.kind === 'rail');
+  seenForwardShot ||= attackerRails.length > 0;
 }
 assert(seenRam, 'tactically justified ram retains frontal approach');
 assert(seenForwardShot, 'forward gun may still fire during a real ram approach');
