@@ -174,6 +174,7 @@ export interface CombatProjectileSnapshot {
   readonly owner: StrategicCombatSide;
   readonly kind: CombatProjectileKind;
   readonly family: ShipWeaponFamily;
+  readonly origin: CombatPoint;
   readonly position: CombatPoint;
   readonly target: CombatPoint;
   readonly ttlSeconds: number;
@@ -371,6 +372,7 @@ export interface MutableProjectile {
   owner: StrategicCombatSide;
   kind: CombatProjectileKind;
   family: ShipWeaponFamily;
+  origin: { x: number; y: number };
   position: { x: number; y: number };
   target: StrategicCombatSide;
   speed: number;
