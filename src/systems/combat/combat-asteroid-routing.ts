@@ -166,9 +166,10 @@ export function combatRouteHeading(
   }
   const waypoint = ship.asteroidRoute?.[0];
   if (!waypoint) return null;
-  const steeringPoint = pathBlocked(ship.position, waypoint, arena, clearance) && immediateThreat
-    ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
-    : waypoint;
+  const steeringPoint =
+    pathBlocked(ship.position, waypoint, arena, clearance) && immediateThreat
+      ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
+      : waypoint;
   const dx = steeringPoint.x - ship.position.x;
   const dy = steeringPoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);

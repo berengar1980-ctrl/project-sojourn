@@ -90,7 +90,11 @@ const blocked = createStrategicCombatService(setup('blocked'), setup('guard'), 8
 });
 blocked.setTactic('attacker', 'flee');
 const blockSnapshot = blocked.tick(0.08);
-assert.deepEqual(blockSnapshot.exitPoint, arena.exitPoint, 'enemy cannot relocate an existing gate');
+assert.deepEqual(
+  blockSnapshot.exitPoint,
+  arena.exitPoint,
+  'enemy cannot relocate an existing gate'
+);
 blocked.setTactic('attacker', 'flee');
 assert.deepEqual(
   blocked.getSnapshot().exitPoint,
