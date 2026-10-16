@@ -4,10 +4,7 @@ import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
-import {
-  drawIonCannonArc,
-  drawRailgunLance,
-} from './combat-weapon-fx-renderer';
+import { drawIonCannonArc, drawRailgunLance } from './combat-weapon-fx-renderer';
 import {
   drawVisionAutocannon,
   drawVisionIonLaser,
@@ -593,12 +590,7 @@ export class StrategicCombatRenderer {
           impact.layer === 'shield'
         );
       } else {
-        drawStrategicHullImpact(
-          this.context,
-          impact,
-          clamp01(age / 0.7),
-          point
-        );
+        drawStrategicHullImpact(this.context, impact, clamp01(age / 0.7), point);
       }
     }
   }

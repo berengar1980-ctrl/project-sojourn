@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const effects = loadStandaloneTypeScriptModule(
-  root,
-  'src/ui/combat/combat-weapon-fx-renderer.ts'
-);
+const effects = loadStandaloneTypeScriptModule(root, 'src/ui/combat/combat-weapon-fx-renderer.ts');
 const { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL, RAIL_LANCE_SECONDS } =
   loadStandaloneTypeScriptModule(root, 'src/core/combat-visual-timings.ts');
 
@@ -106,7 +103,10 @@ assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual 
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
 assert(renderer.includes('drawIonCannonArc('), 'game renderer dispatches ion cannon lightning');
 assert(renderer.includes('drawRailgunLance('), 'game renderer dispatches railgun lance');
-assert(renderer.includes('drawVisionAutocannon('), 'game renderer dispatches upgraded seven-round autocannon salvo');
+assert(
+  renderer.includes('drawVisionAutocannon('),
+  'game renderer dispatches upgraded seven-round autocannon salvo'
+);
 assert(
   !gameplay.includes('AUTOCANNON_ROUNDS'),
   'seven visual rounds must never multiply physical damage or ammunition usage'

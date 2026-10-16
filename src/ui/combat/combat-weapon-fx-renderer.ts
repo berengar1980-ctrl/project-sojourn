@@ -87,10 +87,7 @@ export function ionArcVertices(
   for (let index = 1; index < 14; index += 1) {
     const t = index / 14;
     const displacement =
-      (noise(seed * 13 + index * 7 + phase * 31) - 0.5) *
-      amplitude *
-      2 *
-      Math.sin(Math.PI * t);
+      (noise(seed * 13 + index * 7 + phase * 31) - 0.5) * amplitude * 2 * Math.sin(Math.PI * t);
     vertices.push({
       x: blend(from.x, to.x, t) + offsetX * displacement,
       y: blend(from.y, to.y, t) + offsetY * displacement,

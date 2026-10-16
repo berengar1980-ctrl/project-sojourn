@@ -71,7 +71,15 @@ function fireRuntimeInstantWeapon(
 
   if (obstacle) {
     addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, obstacle.point, weaponIndex);
-    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point, kind, weapon.weapon.family);
+    noteRuntimeImpact(
+      runtime,
+      targetSide,
+      'obstacle',
+      0,
+      obstacle.point,
+      kind,
+      weapon.weapon.family
+    );
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 

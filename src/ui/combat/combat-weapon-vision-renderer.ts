@@ -231,7 +231,14 @@ export function drawVisionAutocannon(
     stroke(ctx, tail, head, '#ffe1ab', 1.3, tracer.opacity * 0.85, 3);
     circle(ctx, head, 1.5, '#fff1ca', tracer.opacity, 4);
     if (tracer.progress < 0.15) {
-      circle(ctx, from, 3 + noise(tracer.index * 5) * 3, '#fcb672', (1 - tracer.progress / 0.15) * 0.66, 9);
+      circle(
+        ctx,
+        from,
+        3 + noise(tracer.index * 5) * 3,
+        '#fcb672',
+        (1 - tracer.progress / 0.15) * 0.66,
+        9
+      );
     }
     const casing = {
       x: from.x - 13 - tracer.progress * 13,
@@ -258,8 +265,24 @@ function drawPulseImpact({ ctx, p, ageSeconds }: VisionImpactFrame): void {
     const x = p.x + (index - 1) * 4;
     const y = p.y + (index % 2 ? 3 : -3);
     const alpha = 1 - v;
-    stroke(ctx, { x: x - 4 - v * 5, y: y - 3 - v * 5 }, { x: x + 4 + v * 5, y: y + 3 + v * 5 }, '#ffb2a1', 1.4, alpha, 6);
-    stroke(ctx, { x: x - 3 - v * 3, y: y + 4 + v * 5 }, { x: x + 3 + v * 3, y: y - 4 - v * 5 }, '#fff1d8', 0.7, alpha, 5);
+    stroke(
+      ctx,
+      { x: x - 4 - v * 5, y: y - 3 - v * 5 },
+      { x: x + 4 + v * 5, y: y + 3 + v * 5 },
+      '#ffb2a1',
+      1.4,
+      alpha,
+      6
+    );
+    stroke(
+      ctx,
+      { x: x - 3 - v * 3, y: y + 4 + v * 5 },
+      { x: x + 3 + v * 3, y: y - 4 - v * 5 },
+      '#fff1d8',
+      0.7,
+      alpha,
+      5
+    );
   }
 }
 
@@ -304,14 +327,26 @@ function drawIonImpact({ ctx, p, ageSeconds, seed, t, fade }: VisionImpactFrame)
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.scale(1.1, 0.6);
-    circle(ctx, { x: 0, y: 0 }, 9 + t * (27 + ring * 17), '#8fffe6', fade * (0.8 - ring * 0.16), 13, true, 2 - ring * 0.4);
+    circle(
+      ctx,
+      { x: 0, y: 0 },
+      9 + t * (27 + ring * 17),
+      '#8fffe6',
+      fade * (0.8 - ring * 0.16),
+      13,
+      true,
+      2 - ring * 0.4
+    );
     ctx.restore();
   }
   for (let index = 0; index < 12; index += 1) {
     const angle = (index * TAU) / 12;
     const radius = 17 + t * (29 + noise(index + seed) * 24);
     const offset = Math.sin(index * 4 + ageSeconds * 15) * 9;
-    const middle = { x: p.x + Math.cos(angle) * radius * 0.48 + offset, y: p.y + Math.sin(angle) * radius * 0.48 };
+    const middle = {
+      x: p.x + Math.cos(angle) * radius * 0.48 + offset,
+      y: p.y + Math.sin(angle) * radius * 0.48,
+    };
     const end = { x: p.x + Math.cos(angle) * radius, y: p.y + Math.sin(angle) * radius };
     stroke(ctx, p, middle, '#dffffb', 1, fade * 0.55, 9);
     stroke(ctx, middle, end, '#dffffb', 1, fade * 0.55, 9);
@@ -322,12 +357,20 @@ function drawAutocannonImpact({ ctx, p, ageSeconds }: VisionImpactFrame): void {
   for (let index = 0; index < 7; index += 1) {
     const v = (ageSeconds - index * 0.065) / 0.26;
     if (v < 0 || v > 1) continue;
-    const center = { x: p.x + (index % 3 - 1) * 3, y: p.y + (index % 2 ? 4 : -4) };
+    const center = { x: p.x + ((index % 3) - 1) * 3, y: p.y + (index % 2 ? 4 : -4) };
     circle(ctx, center, 1.4, '#fff0bf', 1 - v, 6);
     for (let part = 0; part < 3; part += 1) {
       const angle = (index * 2 + part) * 2.38;
       const radius = v * (8 + 12 * noise(index * 5 + part));
-      stroke(ctx, center, { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius }, '#e4aa7c', 0.85, 1 - v, 4);
+      stroke(
+        ctx,
+        center,
+        { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius },
+        '#e4aa7c',
+        0.85,
+        1 - v,
+        4
+      );
     }
   }
 }
@@ -338,7 +381,15 @@ function drawRailgunImpact({ ctx, p, seed, t, fade }: VisionImpactFrame): void {
   for (let index = 0; index < 8; index += 1) {
     const angle = (index * TAU) / 8;
     const radius = 5 + t * (30 + noise(index + seed) * 27);
-    stroke(ctx, p, { x: p.x + Math.cos(angle) * radius, y: p.y + Math.sin(angle) * radius }, '#d8dedd', 0.75, fade * (0.5 + (index % 3) * 0.08), 4);
+    stroke(
+      ctx,
+      p,
+      { x: p.x + Math.cos(angle) * radius, y: p.y + Math.sin(angle) * radius },
+      '#d8dedd',
+      0.75,
+      fade * (0.5 + (index % 3) * 0.08),
+      4
+    );
   }
   circle(ctx, p, 2.5, '#ffffff', fade, 8);
 }
