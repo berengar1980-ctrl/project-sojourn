@@ -195,7 +195,7 @@ function selectStablePlan(
     previous.focus === selected.focus &&
     previous.broadsideFacing === selected.broadsideFacing;
   // Reconsidering the same posture must not restart a partially completed turn.
-  return samePosture ? { ...selected, phase: previous.phase } : selected;
+  return samePosture && previous.phase ? { ...selected, phase: previous.phase } : selected;
 }
 
 /** Only strategic reviews can replace a plan; movement ticks never replan. */
