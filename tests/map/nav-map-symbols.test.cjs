@@ -49,5 +49,8 @@ assert(
 
 calls.length = 0;
 renderer.drawLocation({ kind: 'station' }, { x: 50, y: 60 }, 15);
-assert(calls.some((call) => call.method === 'rect'), 'NAV station should use a schematic vector symbol');
+assert(
+  calls.some((call) => call.method === 'rect'),
+  'NAV station should use a schematic vector symbol'
+);
 console.log('PASS NAV radar follows camera pan and zoom, grid globes and station glyphs');
