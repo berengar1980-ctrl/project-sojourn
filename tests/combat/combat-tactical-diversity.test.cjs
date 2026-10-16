@@ -60,10 +60,10 @@ assert(
   ship.stalledPlanKind,
   'after 24 seconds of no damage the tactical planner must flag its failed posture'
 );
-assert.notEqual(
+assert.equal(
   ship.strategy.kind,
   firstKind,
-  'stalled primary posture should yield to secondary weapon group'
+  'a failed attack does not justify switching to a much weaker firing sector'
 );
 
 function setup(id, guns, facing) {
