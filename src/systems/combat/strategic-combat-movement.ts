@@ -137,7 +137,7 @@ export function avoidDetectedMine(
   mines: readonly MutableMine[],
   desired: CombatPoint
 ): CombatPoint | null {
-  if (!combatant.setup.aiControlled) return null;
+  // Both NPC and player vessels use the same autonomous avoidance pilot.
   const heading = normalize(
     combatant.velocity.x + desired.x * 65,
     combatant.velocity.y + desired.y * 65
