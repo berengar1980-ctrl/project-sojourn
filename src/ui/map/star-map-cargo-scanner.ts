@@ -110,6 +110,25 @@ function renderMarketQuotes(
   }
 }
 
+function createVisualizationUpdater(
+  onVisualization: (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void
+): (markers: ReadonlyMap<string, 'best' | 'good' | 'low'>) => void {
+  let lastMarkerSignature = '';
+  return (markers): void => {
+    const signature = [...markers].map(([id, rating]) => id + ':' + rating).join('|');
+    if (signature === lastMarkerSignature) return;
+    lastMarkerSignature = signature;
+    onVisualization(markers);
+  };
+}
+
+function appendResourceOption(select: HTMLSelectElement, value: string, label: string): void {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  select.append(option);
+}
+
 let preferredCargoVisible = false;
 let preferredCargoResource = 'all';
 
@@ -124,25 +143,29 @@ export function bindCargoMarketScanner(
 ): () => void {
   const formatCredits = (value: number): string =>
     Math.round(value).toLocaleString('de-DE') + ' Cr';
+  const updateVisualization = createVisualizationUpdater(onVisualization);
+  let lastRenderedSignature = '';
   const renderCargoScanner = (): void => {
-    const scanner = getModel().cargoScanner;
-    cargoPanel.hidden = !preferredCargoVisible;
-    cargoToggle.textContent = preferredCargoVisible ? 'FRACHT // AN' : 'FRACHT // AUS';
-    if (!preferredCargoVisible) {
-      onVisualization(new Map());
-      return;
-    }
+    const model = getModel();
+    const scanner = model.cargoScanner;
+    const signature = JSON.stringify([
+      scanner,
+      model.navigation.selectedDestinationId,
+      preferredCargoResource,
+      preferredCargoVisible,
+    ]);
+    if (signature === lastRenderedSignature) return;
+    lastRenderedSignature = signature;
+    // The market analysis stays visible in its menu section. The toggle only
+    // controls optional map markers, not access to prices or buyer hints.
+    cargoToggle.textContent = preferredCargoVisible ? 'MARKTMARKER // AN' : 'MARKTMARKER // AUS';
     const items = scanner?.resources ?? [];
     const previous = preferredCargoResource;
     cargoSelect.replaceChildren();
-    const addOption = (value: string, label: string): void => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      cargoSelect.append(option);
-    };
-    addOption('all', 'GESAMTE FRACHT');
-    for (const item of items) addOption(item.resourceId, item.name + ' (' + item.quantity + ')');
+    appendResourceOption(cargoSelect, 'all', 'GESAMTE FRACHT');
+    for (const item of items) {
+      appendResourceOption(cargoSelect, item.resourceId, item.name + ' (' + item.quantity + ')');
+    }
     preferredCargoResource =
       previous !== 'all' && items.some((item) => item.resourceId === previous) ? previous : 'all';
     cargoSelect.value = preferredCargoResource;
@@ -150,6 +173,7 @@ export function bindCargoMarketScanner(
     if (!items.length) {
       cargoContent.textContent =
         'Frachtraum leer. Nach dem Mining erscheinen hier deine Rohstoffe.';
+      updateVisualization(new Map());
       return;
     }
     const lead = document.createElement('div');
@@ -173,9 +197,11 @@ export function bindCargoMarketScanner(
       preferredCargoResource,
       cargoContent,
       onNavigate,
-      getModel().navigation.selectedDestinationId
+      model.navigation.selectedDestinationId
     );
-    onVisualization(cargoMarkers(scanner, preferredCargoResource, quotes));
+    updateVisualization(
+      preferredCargoVisible ? cargoMarkers(scanner, preferredCargoResource, quotes) : new Map()
+    );
     const legend = document.createElement('p');
     legend.className = 'cargo-market-legend';
     legend.textContent =
@@ -191,7 +217,7 @@ export function bindCargoMarketScanner(
     renderMarketQuotes(
       quotes,
       scanner?.currentDay ?? 0,
-      getModel().navigation.selectedDestinationId,
+      model.navigation.selectedDestinationId,
       cargoContent,
       onNavigate,
       formatCredits

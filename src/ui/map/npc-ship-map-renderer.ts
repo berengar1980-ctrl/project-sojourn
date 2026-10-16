@@ -31,7 +31,8 @@ export class NpcShipMapRenderer {
     camera: MapCamera,
     width: number,
     height: number,
-    labelsVisible: boolean
+    labelsVisible: boolean,
+    navMode = false
   ): NpcShipMapHitArea[] {
     const hits: NpcShipMapHitArea[] = [];
     const zoom = camera.getRelativeZoom();
@@ -40,10 +41,10 @@ export class NpcShipMapRenderer {
 
     for (const npc of model.npcShips) {
       const point = camera.worldToScreen(npc.position, width, height);
-      const image = this.image(npc.spriteUrl);
+      const image = navMode ? null : this.image(npc.spriteUrl);
       const widthPx = starMapShipWidth(npc.nominalLengthMeters, zoom);
       const aspect =
-        image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
           ? image.naturalWidth / image.naturalHeight
           : npc.spriteAspectRatio;
       const geometry: ShipScreenGeometry = {
@@ -53,34 +54,67 @@ export class NpcShipMapRenderer {
         angle: npc.headingRadians,
       };
 
-      this.drawShip(
-        model,
-        npc.id,
-        image,
-        geometry,
-        starPoint,
-        npc.headingRadians,
-        npc.isTravelling,
-        timeSeconds
-      );
-      if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
-      this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
+      if (navMode) {
+        const size = Math.min(12, Math.max(7, widthPx * 0.34));
+        this.drawNavContact(point, npc.headingRadians, size);
+        this.drawContactRing(model, npc.id, point.x, point.y, size * 2, size * 2);
+      } else if (image) {
+        this.drawShip(
+          model,
+          npc.id,
+          image,
+          geometry,
+          starPoint,
+          npc.headingRadians,
+          npc.isTravelling,
+          timeSeconds
+        );
+        if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
+        this.drawContactRing(model, npc.id, point.x, point.y, widthPx, geometry.height);
+      }
       hits.push({
         id: npc.id,
         x: point.x,
         y: point.y,
-        radius: Math.max(20, Math.max(widthPx, geometry.height) * 0.85 + 8),
+        radius: navMode ? 19 : Math.max(20, Math.max(widthPx, geometry.height) * 0.85 + 8),
       });
 
       if (labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
-        this.context.fillStyle = 'rgba(196, 211, 221, .78)';
+        this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 11);
+        this.context.fillText(
+          npc.name,
+          point.x,
+          point.y + (navMode ? 21 : geometry.height / 2 + 11)
+        );
       }
     }
 
     return hits;
+  }
+
+  private drawNavContact(
+    point: { readonly x: number; readonly y: number },
+    headingRadians: number,
+    size: number
+  ): void {
+    const context = this.context;
+    context.save();
+    context.translate(point.x, point.y);
+    context.rotate(headingRadians);
+    context.strokeStyle = '#8bd9a9';
+    context.fillStyle = 'rgba(93, 187, 126, .15)';
+    context.lineWidth = 1.3;
+    context.beginPath();
+    context.moveTo(size, 0);
+    context.lineTo(-size * 0.75, -size * 0.6);
+    context.lineTo(-size * 0.38, 0);
+    context.lineTo(-size * 0.75, size * 0.6);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
   }
 
   drawPursuitLine(model: StarMapViewModel, camera: MapCamera, width: number, height: number): void {
