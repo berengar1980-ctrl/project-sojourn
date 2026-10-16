@@ -328,6 +328,8 @@ export interface MutableCombatant {
   combatIntent?: string;
   /** Alternate escape gate selected only when the current gate is blocked. */
   escapeGate?: CombatPoint;
+  /** Stable side while clearing an enemy hull on the escape corridor. */
+  escapeAvoidanceSide?: -1 | 1;
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {
     readonly direction: CombatPoint;
