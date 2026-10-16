@@ -233,7 +233,7 @@ function forwardWeaponSteering(
       return [component.weapon.rangeMeters];
     })
   );
-  if (range > forwardRange || range < Math.max(240, desired * 0.5)) return null;
+  if (forwardRange <= 0 || range < Math.max(155, desired * 0.55)) return null;
   return toward;
 }
 
@@ -386,12 +386,9 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
     range >= Math.max(155, desired * 0.66);
   if (broadsideReady) return { heading: broadside, strafe: travel };
 
-  // Flybys stay under their own momentum-led flight intention; target
-  // tracking is reserved for stable engagements, not a second pass controller.
-  const engagement = intentKind === 'intercept';
-  if (!engagement || range < desired * 0.74 || range > desired * 1.12) {
-    return { heading: travel };
-  }
+  // A forward attack must first turn its actual bow toward the enemy.
+  // Translation stays independent; a committed pass or retreat is not interrupted.
+  if (intentKind !== 'intercept') return { heading: travel };
   const forward = forwardWeaponSteering(combatant, range, desired, toward);
   return forward ? { heading: forward, strafe: travel } : { heading: travel };
 }
