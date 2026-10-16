@@ -5,8 +5,8 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const moduleUnderTest = loadStandaloneTypeScriptModule(root, 'src/ui/map/star-map-contact-picking.ts');
-const pick = moduleUnderTest.collectStarMapPickOptions;
+const pickModule = loadStandaloneTypeScriptModule(root, 'src/ui/map/star-map-contact-picking.ts');
+const pick = pickModule.collectStarMapPickOptions;
 
 const model = { locations: [], npcShips: [] };
 model.locations.push({ id: 'planet', name: 'Varras Prime', kind: 'planet' });
