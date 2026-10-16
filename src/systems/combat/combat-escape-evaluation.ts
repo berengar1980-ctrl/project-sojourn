@@ -27,13 +27,21 @@ export function rerouteBlockedEscape(
     { x: arena.width * 0.25, y: arena.height - margin },
     { x: arena.width * 0.75, y: arena.height - margin },
   ];
+  const enemyDx = enemy.position.x - ship.position.x;
+  const enemyDy = enemy.position.y - ship.position.y;
+  const enemyRange = Math.max(1, Math.hypot(enemyDx, enemyDy));
+  const score = (point: (typeof options)[number]): number => {
+    const dx = point.x - ship.position.x;
+    const dy = point.y - ship.position.y;
+    const travel = Math.max(1, Math.hypot(dx, dy));
+    const towardThreat = (dx * enemyDx + dy * enemyDy) / (travel * enemyRange);
+    // Do not reroute straight through the ship camping the current gate.
+    const exposure = Math.max(0, towardThreat) * 1500;
+    return distance(point, enemy.position) - travel * 0.4 - exposure;
+  };
   const replacement = options
     .filter((candidate) => distance(candidate, gate) > 250)
-    .sort((left, right) => {
-      const score = (point: typeof left): number =>
-        distance(point, enemy.position) - distance(point, ship.position) * 0.25;
-      return score(right) - score(left);
-    })[0];
+    .sort((left, right) => score(right) - score(left))[0];
   if (!replacement) return false;
   ship.escapeGate = replacement;
   ship.asteroidRoute = [];
