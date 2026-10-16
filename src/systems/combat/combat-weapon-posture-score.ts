@@ -47,17 +47,11 @@ function aimedHeading(
     : bearing + (group.facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
 }
 
-function damageRate(
-  ship: MutableCombatant,
-  profile: ShipWeaponProfile,
-  shielded: boolean
-): number {
+function damageRate(ship: MutableCombatant, profile: ShipWeaponProfile, shielded: boolean): number {
   const damage = shielded
     ? (profile.combatShieldDamage ?? profile.shieldDamage)
     : (profile.combatHullDamage ?? profile.hullDamage);
-  return (
-    Math.max(0, damage) / weaponCycleSeconds(profile, ship.setup.cycleTimeMultiplier ?? 1)
-  );
+  return Math.max(0, damage) / weaponCycleSeconds(profile, ship.setup.cycleTimeMultiplier ?? 1);
 }
 
 function coverageFactor(degrees: number): number {
@@ -94,8 +88,8 @@ export function scoreWeaponPosture(
     const arc = Math.min(profile.arcDegrees ?? 360, mount?.arcDegrees ?? 360);
     const primary = matches(installed, group);
     if (!primary && installed.focus !== 'turret') continue;
-    const weight =
-      damageRate(ship, profile, shielded) * coverageFactor(arc) * (primary ? 1 : 0.25);
+    const rate = damageRate(ship, profile, shielded);
+    const weight = rate * coverageFactor(arc) * (primary ? 1 : 0.25);
     if (weight > 0) available.push({ profile, primary, weight });
   }
 
@@ -107,10 +101,8 @@ export function scoreWeaponPosture(
   let bestRange = 0;
   let bestFirepower = 0;
   let bestScore = -Infinity;
-  const enemyRange = Math.max(
-    0,
-    ...enemy.setup.weapons.map((weapon) => weapon.weapon?.rangeMeters ?? 0)
-  );
+  const enemyRanges = enemy.setup.weapons.map((weapon) => weapon.weapon?.rangeMeters ?? 0);
+  const enemyRange = Math.max(0, ...enemyRanges);
 
   for (const candidate of primary) {
     const range = Math.max(180, candidate.profile.rangeMeters * 0.8);
@@ -119,8 +111,9 @@ export function scoreWeaponPosture(
       0
     );
     const safety = range > enemyRange ? 1.12 : 1;
-    const mobility =
-      (ship.setup.combatSpeed ?? 120) / Math.max(65, enemy.setup.combatSpeed ?? 120);
+    const ownSpeed = ship.setup.combatSpeed ?? 120;
+    const enemySpeed = enemy.setup.combatSpeed ?? 120;
+    const mobility = ownSpeed / Math.max(65, enemySpeed);
     const exposure = range < enemyRange && mobility < 0.95 ? 0.86 : 1;
     const score = firepower * safety * exposure * (1 + range / 12000);
     if (score > bestScore) {

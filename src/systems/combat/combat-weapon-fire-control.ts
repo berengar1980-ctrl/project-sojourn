@@ -3,10 +3,7 @@ import type { ShipWeaponProfile } from '../../core/ship-types';
 
 /** Each installed weapon owns its reload timer; no ship-wide pulse budget. */
 export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
-  return Math.max(
-    0.05,
-    weapon.cooldownSeconds * Math.max(0.4, Math.min(2, crewMultiplier))
-  );
+  return Math.max(0.05, weapon.cooldownSeconds * Math.max(0.4, Math.min(2, crewMultiplier)));
 }
 
 export function advanceWeaponCooldowns(ship: MutableCombatant, dt: number): void {

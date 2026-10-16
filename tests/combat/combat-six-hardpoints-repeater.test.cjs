@@ -117,16 +117,8 @@ const fronts = [
   { slotIndex: 0, x: 16, y: -8, facing: 'forward', arcDegrees: 60 },
   { slotIndex: 1, x: 16, y: 8, facing: 'forward', arcDegrees: 60 },
 ];
-const attacker = createCombatant(
-  setup('attacker', [repeater, repeater], fronts),
-  'attacker',
-  arena
-);
-const defender = createCombatant(
-  setup('defender', [], []),
-  'defender',
-  arena
-);
+const attacker = createCombatant(setup('attacker', [repeater, repeater], fronts), 'attacker', arena);
+const defender = createCombatant(setup('defender', [], []), 'defender', arena);
 attacker.cooldowns[0] = 0;
 attacker.cooldowns[1] = 0;
 const runtime = {

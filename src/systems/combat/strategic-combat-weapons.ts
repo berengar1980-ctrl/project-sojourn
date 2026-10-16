@@ -245,8 +245,7 @@ export function advanceRuntimeWeapons(
   advanceWeaponCooldowns(source, deltaSeconds);
   // Retreat is a command, not an aim posture: keep cooling guns but do not
   // launch new offensive projectiles while fleeing. Mines remain autonomous.
-  if (source.tactic === 'flee' || target.hullHp <= 0)
-    return;
+  if (source.tactic === 'flee' || target.hullHp <= 0) return;
 
   // The current target layer determines weapon priority. A heavy gun cannot
   // fire through the opposite side of the hull simply because it is loaded.

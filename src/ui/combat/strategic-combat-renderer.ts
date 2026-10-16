@@ -99,10 +99,7 @@ export class StrategicCombatRenderer {
     }
     // Multiple independently firing mounts may land hits in the same simulation tick.
     // Render each real event once; keep the single lastImpact fallback for other physics sources.
-    const unseen = [
-      ...(model.recentImpacts ?? []),
-      ...(model.lastImpact ? [model.lastImpact] : []),
-    ]
+    const unseen = [...(model.recentImpacts ?? []), ...(model.lastImpact ? [model.lastImpact] : [])]
       .filter((impact) => impact.serial > this.seenImpactSerial)
       .sort((a, b) => a.serial - b.serial);
     for (const impact of unseen) {
@@ -112,7 +109,7 @@ export class StrategicCombatRenderer {
           ? 0.42
           : impact.weaponFamily === 'front_repeater'
             ? 0.045
-          : impact.weaponFamily === 'ion_laser'
+            : impact.weaponFamily === 'ion_laser'
             ? 0.1
             : impact.weaponFamily === 'ion_cannon'
               ? 0.075
