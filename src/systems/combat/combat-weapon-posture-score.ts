@@ -50,7 +50,7 @@ function damageRate(ship: MutableCombatant, index: number, enemyShielded: boolea
   const damage = enemyShielded
     ? (weapon.combatShieldDamage ?? weapon.shieldDamage)
     : (weapon.combatHullDamage ?? weapon.hullDamage);
-  const cycle = weapon.cooldownSeconds * clamp(ship.setup.cycleTimeMultiplier, 0.4, 2);
+  const cycle = weapon.cooldownSeconds * clamp(ship.setup.cycleTimeMultiplier ?? 1, 0.4, 2);
   return Math.max(0, damage) / Math.max(0.45, cycle);
 }
 
