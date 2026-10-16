@@ -55,6 +55,13 @@ assert.equal(retreat.kind, 'escape');
 assert(retreat.direction.x < 0);
 assert.equal(runner.flightPass, undefined, 'flee cancels attack commitment');
 
+const atGate = ship(50);
+atGate.position.y = 1300;
+atGate.tactic = 'flee';
+const outbound = order(atGate, defender);
+assert.equal(outbound.kind, 'escape');
+assert(outbound.direction.x < 0, 'escape gate keeps an outward heading at zero distance');
+
 const rammer = ship(1000);
 assert.equal(
   chooseCombatFlightIntent(rammer, defender, 1000, arena, 0.08, true).kind,
