@@ -21,6 +21,11 @@ export interface StarMapPick {
   readonly id: string;
 }
 
+export interface StarMapPickOption extends StarMapPick {
+  readonly name: string;
+  readonly detail: string;
+}
+
 interface HitArea extends StarMapPick {
   readonly x: number;
   readonly y: number;
@@ -38,7 +43,7 @@ export class TopdownMapRenderer {
   private readonly stations: ProceduralStationRenderer;
   private readonly npcShips: NpcShipMapRenderer;
   private model: StarMapViewModel;
-  private displayMode: StarMapDisplayMode = 'physical';
+  private displayMode: StarMapDisplayMode = 'nav';
   private labelsVisible = true;
   private cargoOverlay: ReadonlyMap<string, 'best' | 'good' | 'low'> = new Map();
   private hasFitted = false;
@@ -125,16 +130,47 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
+  pickContacts(x: number, y: number): StarMapPickOption[] {
+    const matches = this.hitAreas
+      .filter((area) => Math.hypot(x - area.x, y - area.y) <= area.radius)
+      .sort((first, second) => {
+        if (first.kind !== second.kind) return first.kind === 'location' ? -1 : 1;
+        return Math.hypot(x - first.x, y - first.y) - Math.hypot(x - second.x, y - second.y);
+      });
+    const unique = new Set<string>();
+    const options: StarMapPickOption[] = [];
+    for (const hit of matches) {
+      const key = hit.kind + ':' + hit.id;
+      if (unique.has(key)) continue;
+      unique.add(key);
+      if (hit.kind === 'npc') {
+        const npc = this.model.npcShips.find((candidate) => candidate.id === hit.id);
+        if (npc) {
+          options.push({
+            kind: 'npc',
+            id: hit.id,
+            name: npc.name,
+            detail: 'SCHIFF // ' + npc.job.toUpperCase(),
+          });
+        }
+      } else {
+        const location = this.model.locations.find((candidate) => candidate.id === hit.id);
+        if (location) {
+          options.push({
+            kind: 'location',
+            id: hit.id,
+            name: location.name,
+            detail: location.kind.replace('-', ' ').toUpperCase(),
+          });
+        }
+      }
+    }
+    return options;
+  }
+
   pickContact(x: number, y: number): StarMapPick | null {
-    const matches = this.hitAreas.filter(
-      (area) => Math.hypot(x - area.x, y - area.y) <= area.radius
-    );
-    const npc = matches
-      .filter((area) => area.kind === 'npc')
-      .sort((first, second) => first.radius - second.radius)[0];
-    const best =
-      npc ?? [...matches].sort((first, second) => first.radius - second.radius)[0] ?? null;
-    return best ? { kind: best.kind, id: best.id } : null;
+    const first = this.pickContacts(x, y)[0];
+    return first ? { kind: first.kind, id: first.id } : null;
   }
 
   private draw(): void {
@@ -144,7 +180,16 @@ export class TopdownMapRenderer {
     this.context.clearRect(0, 0, width, height);
 
     const timeSeconds = performance.now() / 1000;
-    if (this.displayMode === 'nav') this.navRenderer.drawBackground(width, height, timeSeconds);
+    if (this.displayMode === 'nav') {
+      const origin = this.camera.worldToScreen(this.model.star.position, width, height);
+      this.navRenderer.drawBackground(
+        width,
+        height,
+        timeSeconds,
+        origin,
+        this.camera.getRelativeZoom()
+      );
+    }
     else {
       this.backgroundRenderer.draw({
         width,
@@ -162,7 +207,7 @@ export class TopdownMapRenderer {
       this.drawLocation(location, width, height)
     );
     const npcHits = this.npcShips
-      .draw(this.model, this.camera, width, height, this.labelsVisible)
+      .draw(this.model, this.camera, width, height, this.labelsVisible, this.displayMode === 'nav')
       .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height);
