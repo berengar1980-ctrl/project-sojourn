@@ -112,8 +112,15 @@ export function drawVisionFrontRepeater(
   if (progress < 0.35) {
     const flash = 1 - progress / 0.35;
     circle(ctx, from, 3.8 + 5 * progress, '#ffae6f', flash * 0.55, 11);
-    stroke(ctx, { x: from.x - 5, y: from.y - 3 }, { x: from.x + 9, y: from.y + 3 },
-      '#fff2d8', 1.25, flash * 0.72, 5);
+    stroke(
+      ctx,
+      { x: from.x - 5, y: from.y - 3 },
+      { x: from.x + 9, y: from.y + 3 },
+      '#fff2d8',
+      1.25,
+      flash * 0.72,
+      5
+    );
   }
 }
 

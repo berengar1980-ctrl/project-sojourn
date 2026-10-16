@@ -8,7 +8,9 @@ import type { ShipWeaponHardpoint } from './ship-types';
 export function weaponHardpointName(
   mount: Pick<ShipWeaponHardpoint, 'facing' | 'allowedMounts'>
 ): string {
-  if (mount.allowedMounts?.includes('turret') && mount.allowedMounts.includes('guided')) return 'Universalwaffe';
+  if (mount.allowedMounts?.includes('turret') && mount.allowedMounts.includes('guided')) {
+    return 'Universalwaffe';
+  }
   if (mount.allowedMounts?.length === 1) {
     if (mount.allowedMounts[0] === 'turret') return 'Geschützturm';
     if (mount.allowedMounts[0] === 'guided') return 'Lenkwaffenwerfer';

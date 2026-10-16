@@ -273,7 +273,14 @@ export function advanceRuntimeWeapons(
     });
   // All ready mounts fire independently. Sorting preserves target-layer priority only.
   for (const candidate of candidates) {
-    const event = fireRuntimeWeapon(runtime, side, source, target, candidate.weapon, candidate.index);
+    const event = fireRuntimeWeapon(
+      runtime,
+      side,
+      source,
+      target,
+      candidate.weapon,
+      candidate.index
+    );
     source.cooldowns[candidate.index] = weaponCycleSeconds(
       candidate.weapon.weapon!,
       source.setup.cycleTimeMultiplier

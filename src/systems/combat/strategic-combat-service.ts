@@ -134,7 +134,10 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           : mineDetection(mine.definition, runtime.attacker, mine.position),
     })),
     lastImpact: runtime.lastImpact,
-    recentImpacts: runtime.recentImpacts.map(impact => ({ ...impact, position: { ...impact.position } })),
+    recentImpacts: runtime.recentImpacts.map((impact) => ({
+      ...impact,
+      position: { ...impact.position },
+    })),
     arena: {
       width: runtime.arena.width,
       height: runtime.arena.height,

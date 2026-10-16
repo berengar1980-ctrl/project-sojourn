@@ -32,12 +32,17 @@ export function runtimeEnemy(
 }
 
 /** Keep each physical hit in the shared combat event stream, including simultaneous mount hits. */
-export function recordRuntimeImpact(runtime: StrategicCombatRuntime, impact: CombatImpactSnapshot): void {
+export function recordRuntimeImpact(
+  runtime: StrategicCombatRuntime,
+  impact: CombatImpactSnapshot
+): void {
   runtime.lastImpact = impact;
   // Some focused physics tests use minimal mock runtimes without a visual history.
   if (!runtime.recentImpacts) return;
   runtime.recentImpacts.push(impact);
-  if (runtime.recentImpacts.length > 64) runtime.recentImpacts.splice(0, runtime.recentImpacts.length - 64);
+  if (runtime.recentImpacts.length > 64) {
+    runtime.recentImpacts.splice(0, runtime.recentImpacts.length - 64);
+  }
 }
 
 export function noteRuntimeImpact(
@@ -76,15 +81,15 @@ export function addRuntimeBeam(
       ? VISION_REPEATER_SECONDS
       : family === 'railgun'
         ? RAIL_LANCE_SECONDS
-      : family === 'ion_cannon'
-        ? ION_CANNON_ARC_SECONDS
-        : family === 'ion_laser'
-          ? VISION_ION_LASER_SECONDS
-          : family === 'pulse_laser'
-            ? VISION_PULSE_SECONDS
-            : kind === 'laser'
-              ? 0.16
-              : 0.09;
+        : family === 'ion_cannon'
+          ? ION_CANNON_ARC_SECONDS
+          : family === 'ion_laser'
+            ? VISION_ION_LASER_SECONDS
+            : family === 'pulse_laser'
+              ? VISION_PULSE_SECONDS
+              : kind === 'laser'
+                ? 0.16
+                : 0.09;
   runtime.beams.push({
     id: runtime.beamSerial,
     owner: side,
