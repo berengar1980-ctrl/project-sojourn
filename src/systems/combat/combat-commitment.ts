@@ -154,6 +154,7 @@ function chooseCommitmentTransition(
     ship.tactic = 'fight';
     ship.strategy = null;
     delete ship.escapeGate;
+    delete ship.escapeAvoidanceSide;
     ship.escapeAbandonedAt = elapsed;
     return {
       decision: 'fight',
@@ -168,6 +169,7 @@ function chooseCommitmentTransition(
     ship.tactic = 'flee';
     ship.strategy = null;
     delete ship.escapeGate;
+    delete ship.escapeAvoidanceSide;
     ship.escapeCommittedAt = elapsed;
     return {
       decision: 'flee',
