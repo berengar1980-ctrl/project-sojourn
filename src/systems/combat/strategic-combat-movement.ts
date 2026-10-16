@@ -308,8 +308,33 @@ function combatRouteDestination(
   return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
 }
 
-function retreatBoundaryClear(ship: MutableCombatant, boundary: CombatPoint | null): boolean {
-  return ship.tactic === 'flee' || !boundary;
+interface SteeringHazards {
+  readonly mines: boolean;
+  readonly obstacle: boolean;
+  readonly boundary: boolean;
+  readonly waypoint: boolean;
+  readonly cover: boolean;
+  readonly collision: boolean;
+  readonly detour: boolean;
+}
+
+/** The same clearance decision controls weapon aiming and automatic boost. */
+function evaluateSteeringSafety(
+  ship: MutableCombatant,
+  hazards: SteeringHazards
+): { clear: boolean; canAim: boolean } {
+  const { mines, obstacle, boundary, waypoint, cover, collision, detour } = hazards;
+  return {
+    clear:
+      !mines &&
+      !obstacle &&
+      (ship.tactic === 'flee' || !boundary) &&
+      !waypoint &&
+      !cover &&
+      !collision &&
+      !detour,
+    canAim: !mines && !obstacle && !boundary && !collision && !detour,
+  };
 }
 
 function steerCombatRoute(
@@ -380,19 +405,16 @@ function steerCombatRoute(
     );
   }
 
-  return {
-    direction,
-    targetSpeedFactor,
-    clear:
-      !mineAvoidance &&
-      !obstacle &&
-      retreatBoundaryClear(combatant, boundary) &&
-      !waypoint &&
-      !cover &&
-      !evasion &&
-      !detour,
-    canAim: !mineAvoidance && !obstacle && !boundary && !evasion && !detour,
-  };
+  const safety = evaluateSteeringSafety(combatant, {
+    mines: Boolean(mineAvoidance),
+    obstacle: Boolean(obstacle),
+    boundary: Boolean(boundary),
+    waypoint: Boolean(waypoint),
+    cover: Boolean(cover),
+    collision: Boolean(evasion),
+    detour: Boolean(detour),
+  });
+  return { direction, targetSpeedFactor, ...safety };
 }
 
 interface WeaponPostureInput {
