@@ -122,11 +122,7 @@ function createVisualizationUpdater(
   };
 }
 
-function appendResourceOption(
-  select: HTMLSelectElement,
-  value: string,
-  label: string
-): void {
+function appendResourceOption(select: HTMLSelectElement, value: string, label: string): void {
   const option = document.createElement('option');
   option.value = value;
   option.textContent = label;
