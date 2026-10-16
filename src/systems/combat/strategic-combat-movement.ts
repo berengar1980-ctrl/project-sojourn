@@ -293,6 +293,19 @@ function applyMineAvoidance(direction: CombatPoint, avoidance: CombatPoint | nul
   return normalize(direction.x + avoidance.x * 2, direction.y + avoidance.y * 2);
 }
 
+function combatRouteDestination(
+  ship: MutableCombatant,
+  arena: StrategicCombatArenaOptions,
+  direction: CombatPoint
+): CombatPoint {
+  if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
+  return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
+}
+
+function retreatBoundaryClear(ship: MutableCombatant, boundary: CombatPoint | null): boolean {
+  return ship.tactic === 'flee' || !boundary;
+}
+
 function steerCombatRoute(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -329,15 +342,8 @@ function steerCombatRoute(
     combatant.combatIntent = 'RAMMEN';
   }
   const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  // Route a retreat to its actual reachable gate. A 700 m extrapolation
-  // beyond the arena edge used to steer ships away from the exit.
-  const destination =
-    combatant.tactic === 'flee'
-      ? (combatant.escapeGate ?? arena.exitPoint ?? combatant.position)
-      : {
-          x: combatant.position.x + direction.x * 700,
-          y: combatant.position.y + direction.y * 700,
-        };
+  // Escape routing uses the real gate, not a projected point beyond the arena.
+  const destination = combatRouteDestination(combatant, arena, direction);
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
@@ -364,7 +370,7 @@ function steerCombatRoute(
     clear:
       !mineAvoidance &&
       !obstacle &&
-      (!boundary || combatant.tactic === 'flee') &&
+      retreatBoundaryClear(combatant, boundary) &&
       !waypoint &&
       !cover,
     canAim: !mineAvoidance && !obstacle && !boundary && !evasion,
