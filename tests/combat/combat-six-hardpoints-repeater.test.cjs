@@ -160,9 +160,6 @@ mixed.setup.weapons[1] = {
   weapon: { ...repeater.weapon, combatShieldDamage: 0.001, combatHullDamage: 0.001 },
 };
 const long = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
-assert(
-  long && long.effectiveRange > far.effectiveRange,
-  'long rail prefers a different envelope'
-);
+assert(long && long.effectiveRange > far.effectiveRange, 'long rail prefers a different envelope');
 
 console.log('PASS 28 six-slot ships, universal guns, independent repeater fire and range scoring');
