@@ -431,3 +431,13 @@
   border-color: rgba(134, 234, 173, 0.62);
   background: rgba(50, 107, 76, 0.35);
 }
+
+.star-map-directory__group {
+  margin: 8px 0 0;
+  padding: 5px 2px 2px;
+  border-bottom: 1px solid rgba(117, 181, 150, 0.24);
+  color: #8cceaa;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
