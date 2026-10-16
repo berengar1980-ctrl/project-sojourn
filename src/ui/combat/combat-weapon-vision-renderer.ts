@@ -1,10 +1,12 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
+import {
+  VISION_IMPACT_SECONDS,
+  VISION_PULSE_SECONDS,
+  VISION_ION_LASER_SECONDS,
+} from '../../core/combat-visual-timings';
 import { autocannonTracers, type WeaponFxPoint } from './combat-weapon-fx-renderer';
 
 /** Visual-only reinterpretations approved from the HTML weapon laboratory. */
-export const VISION_IMPACT_SECONDS = 1.1;
-export const VISION_PULSE_SECONDS = 0.64;
-export const VISION_ION_LASER_SECONDS = 0.82;
 const TAU = Math.PI * 2;
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
@@ -217,10 +219,6 @@ export function drawVisionAutocannon(
     };
     circle(ctx, casing, 1.15, '#9b7861', (1 - tracer.progress) * 0.5, 2);
   }
-}
-
-export function visionImpactFamily(family: ShipWeaponFamily | undefined): ShipWeaponFamily | null {
-  return family ?? null;
 }
 
 /** The eight impacts from the HTML's "Meine Version" tab. */
