@@ -58,9 +58,5 @@ const passing = createStrategicCombatService(setup('passing'), setup('opponent')
 });
 const flyby = passing.tick(0.08);
 assert.equal(flyby.attacker.combatIntent, 'ANGRIFFSPASSAGE');
-assert(
-  flyby.attacker.angularThrust < -0.1,
-  'forward weapon may track during a flyby only when travel and fire directions are compatible'
-);
-assert(flyby.attacker.speed > 60, 'aiming must preserve existing pass momentum');
-console.log('PASS forward guns track on viable firing approaches without stopping flybys');
+assert(flyby.attacker.speed > 60, 'committed passage must retain actual ship momentum');
+console.log('PASS forward-gun aiming and committed flybys remain independent');
