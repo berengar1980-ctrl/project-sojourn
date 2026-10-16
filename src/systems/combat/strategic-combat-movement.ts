@@ -5,7 +5,7 @@ import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { combatRouteHeading } from './combat-asteroid-routing';
 import { asteroidCoverHeading } from './combat-asteroid-cover';
 import { usefulRamAttempt } from './combat-ram-opportunity';
-import { chooseCombatFlightIntent } from './combat-flight-intent';
+import { chooseCombatFlightIntent, type CombatFlightIntent } from './combat-flight-intent';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
 import { predictedCollisionEvasion } from './combat-collision-evasion';
@@ -357,6 +357,45 @@ function steerCombatRoute(
   };
 }
 
+interface WeaponPostureInput {
+  readonly combatant: MutableCombatant;
+  readonly enemy: MutableCombatant;
+  readonly range: number;
+  readonly desired: number;
+  readonly toward: CombatPoint;
+  readonly travel: CombatPoint;
+  readonly intentKind: CombatFlightIntent['kind'];
+  readonly canAim: boolean;
+  readonly deliberateRam: boolean;
+}
+
+/** One owner chooses the bow orientation without replacing the travel vector. */
+function chooseWeaponPosture(input: WeaponPostureInput): {
+  readonly heading: CombatPoint;
+  readonly strafe?: CombatPoint;
+} {
+  const { combatant, enemy, range, desired, toward, travel, intentKind } = input;
+  if (!input.canAim || input.deliberateRam) return { heading: travel };
+
+  const dx = enemy.position.x - combatant.position.x;
+  const dy = enemy.position.y - combatant.position.y;
+  const broadside = broadsideSteering(combatant, enemy, range, dx, dy);
+  const broadsideReady =
+    broadside &&
+    combatant.strategy?.phase !== 'reach_range' &&
+    range >= Math.max(155, desired * 0.66);
+  if (broadsideReady) return { heading: broadside, strafe: travel };
+
+  const alignment = travel.x * toward.x + travel.y * toward.y;
+  const canAimDuringPass = intentKind === 'pass' && alignment >= 0.9;
+  const engagement = intentKind === 'intercept' || canAimDuringPass;
+  if (!engagement || range < desired * 0.74 || range > desired * 1.12) {
+    return { heading: travel };
+  }
+  const forward = forwardWeaponSteering(combatant, range, desired, toward);
+  return forward ? { heading: forward, strafe: travel } : { heading: travel };
+}
+
 export function moveCombatant(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -407,28 +446,18 @@ export function moveCombatant(
   direction = steering.direction;
   targetSpeedFactor = steering.targetSpeedFactor;
 
-  // Aim the broadside independently of translation. Steering the engines along
-  // the broadside heading made both ships orbit indefinitely without firing.
-  const gunHeading =
-    !deliberateRam && steering.canAim ? broadsideSteering(combatant, enemy, range, dx, dy) : null;
-  const broadsideActive =
-    Boolean(gunHeading) &&
-    combatant.strategy?.phase !== 'reach_range' &&
-    range >= Math.max(155, desired * 0.66);
-  // Track fixed guns while engaging; a committed pass or separation needs
-  // full propulsion authority rather than prolonged sideways RCS steering.
-  const forwardAlignment = direction.x * toward.x + direction.y * toward.y;
-  const aimablePass = intent.kind === 'pass' && forwardAlignment >= 0.9;
-  const engaging =
-    (intent.kind === 'intercept' || aimablePass) &&
-    range >= desired * 0.74 &&
-    range <= desired * 1.12;
-  const forwardHeading =
-    engaging && !deliberateRam && steering.canAim
-      ? forwardWeaponSteering(combatant, range, desired, toward)
-      : null;
-  const trackingWeapons = broadsideActive || Boolean(forwardHeading);
-  const headingDirection = broadsideActive ? gunHeading! : (forwardHeading ?? direction);
+  const posture = chooseWeaponPosture({
+    combatant,
+    enemy,
+    range,
+    desired,
+    toward,
+    travel: direction,
+    intentKind: intent.kind,
+    canAim: steering.canAim,
+    deliberateRam,
+  });
+  const headingDirection = posture.heading;
   updateStandardCombatBoost(
     combatant,
     headingDirection,
@@ -446,6 +475,6 @@ export function moveCombatant(
     arena,
     headingDirection,
     targetSpeedFactor,
-    trackingWeapons ? direction : undefined
+    posture.strafe
   );
 }
