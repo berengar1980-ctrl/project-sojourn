@@ -172,12 +172,7 @@ function advanceRuntimeGrapple(runtime: StrategicCombatRuntime, dt: number): boo
   const owner = runtime.grapple.owner;
   const initiator = runtimeCombatant(runtime, owner);
   const victim = runtimeEnemy(runtime, owner);
-  runtime.grapple = advanceCombatGrapple(
-    runtime.grapple,
-    initiator.position,
-    victim.position,
-    dt
-  );
+  runtime.grapple = advanceCombatGrapple(runtime.grapple, initiator.position, victim.position, dt);
   if (!runtime.grapple.resolved) return false;
   if (!runtime.grapple.success) {
     runtime.lastEvent = 'GREIFHAKEN > AM RUMPF ABGEPRALLT';
