@@ -20,7 +20,10 @@ export function showCampaignCombatSummary(
   panel.style.cssText =
     'max-width:480px;padding:30px;border:1px solid #66808c;background:#101923;font:16px sans-serif;line-height:1.7';
   const heading = document.createElement('h2');
-  heading.textContent = 'KAMPFABSCHLUSS · ' + result.outcome;
+  heading.textContent =
+    'KAMPFABSCHLUSS · ' +
+    result.outcome +
+    (result.reason === 'surrender' ? ' / KAPITULATION' : '');
   const details = document.createElement('p');
   details.textContent =
     'Gegner: ' +
@@ -39,7 +42,9 @@ export function showCampaignCombatSummary(
   const loot = document.createElement('p');
   loot.textContent = boardingOutcome
     ? 'Enterergebnis: ' + boardingOutcome + '. Erbeutete Ausrüstung wird separat im Log erfasst.'
-    : 'Keine automatische Kampfbeute vergeben. Verfügbare Bergung erfolgt im Feld.';
+    : result.reason === 'surrender'
+      ? 'Freiwillige Niederlage: kein künstlicher Hüllenschaden, keine automatische Zerstörung.'
+      : 'Keine automatische Kampfbeute vergeben. Verfügbare Bergung erfolgt im Feld.';
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = 'ZURÜCK ZUM SPIEL';

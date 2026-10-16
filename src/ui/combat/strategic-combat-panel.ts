@@ -1,5 +1,4 @@
 import type {
-  CombatTactic,
   StrategicCombatService,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
@@ -42,7 +41,7 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
     <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
-    <span>MINEN ${combatant.mineCount} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
+    <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
   `;
 }
 
@@ -125,11 +124,18 @@ function makeCombatShell(root: HTMLElement): HTMLElement {
     <div class="combat-map-title">HARROWDRIFT // RAUMKAMPF <span class="combat-encounter-time"></span></div>
     <aside class="combat-hud combat-hud--player"></aside>
     <aside class="combat-hud combat-hud--enemy"></aside>
-    <div class="combat-tactics" aria-label="Kampftaktik">
-      <button type="button" data-tactic="fight">KAMPF</button>
-      <button type="button" data-tactic="kite">DISTANZ</button>
-      <button type="button" data-tactic="minefield">MINEN</button>
-      <button type="button" data-tactic="flee">FLUCHT</button>
+    <div class="combat-tactics" aria-label="Kampfbefehle">
+      <button type="button" data-command="flee">FLIEHEN</button>
+      <button type="button" data-command="surrender">AUFGEBEN</button>
+    </div>
+    <div class="combat-surrender-confirm" role="dialog" aria-modal="true"
+      aria-label="Kapitulation bestätigen" hidden>
+      <strong>KAPITULATION BESTÄTIGEN?</strong>
+      <p>Das Gefecht endet als Niederlage. Dein Schiff wird nicht automatisch zerstört.</p>
+      <div class="combat-surrender-actions">
+        <button type="button" data-surrender="cancel">ABBRECHEN</button>
+        <button type="button" data-surrender="confirm">JA, AUFGEBEN</button>
+      </div>
     </div>
     <div class="strategic-combat-event"></div>
     <button class="strategic-combat-grapple" type="button">GREIFHAKEN</button>
@@ -152,7 +158,11 @@ export function createStrategicCombatPanel(
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');
   const returnButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-return');
   const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
-  const tacticButtons = [...shell.querySelectorAll<HTMLButtonElement>('[data-tactic]')];
+  const fleeButton = shell.querySelector<HTMLButtonElement>('[data-command="flee"]');
+  const surrenderButton = shell.querySelector<HTMLButtonElement>('[data-command="surrender"]');
+  const surrenderDialog = shell.querySelector<HTMLElement>('.combat-surrender-confirm');
+  const surrenderCancel = shell.querySelector<HTMLButtonElement>('[data-surrender="cancel"]');
+  const surrenderConfirm = shell.querySelector<HTMLButtonElement>('[data-surrender="confirm"]');
   attachCombatLogExport(shell, options);
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
@@ -164,12 +174,29 @@ export function createStrategicCombatPanel(
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
-  for (const button of tacticButtons) {
-    button.addEventListener('click', () => {
-      const tactic = button.dataset.tactic as CombatTactic | undefined;
-      if (tactic) options.combat.setTactic('attacker', tactic);
-    });
-  }
+  fleeButton?.addEventListener('click', () => {
+    const tactic = options.combat.getSnapshot().attacker.tactic;
+    options.combat.setTactic('attacker', tactic === 'flee' ? 'fight' : 'flee');
+    render();
+  });
+  surrenderButton?.addEventListener('click', () => {
+    if (options.combat.getSnapshot().winner) return;
+    if (surrenderDialog) surrenderDialog.hidden = false;
+    surrenderCancel?.focus();
+  });
+  const cancelSurrender = (): void => {
+    if (surrenderDialog) surrenderDialog.hidden = true;
+    surrenderButton?.focus();
+  };
+  surrenderCancel?.addEventListener('click', cancelSurrender);
+  surrenderDialog?.addEventListener('keydown', (keyboardEvent) => {
+    if (keyboardEvent.key === 'Escape') cancelSurrender();
+  });
+  surrenderConfirm?.addEventListener('click', () => {
+    if (surrenderDialog) surrenderDialog.hidden = true;
+    options.combat.surrender('attacker');
+    render();
+  });
 
   let lastHudTime = -Infinity;
   const render = (): void => {
@@ -208,19 +235,13 @@ export function createStrategicCombatPanel(
         ? 'GREIFHAKEN VERBRAUCHT'
         : 'GREIFHAKEN ABSCHIESSEN';
     }
-    for (const button of tacticButtons) {
-      button.classList.toggle('is-active', button.dataset.tactic === model.attacker.tactic);
-      button.disabled =
-        model.winner !== null ||
-        (button.dataset.tactic === 'minefield' && model.attacker.mineCount === 0);
-      if (button.dataset.tactic === 'minefield') {
-        button.title =
-          model.attacker.mineCount === 0
-            ? 'Keine Minen ausgerüstet'
-            : model.attacker.mineCount + ' Minen vorhanden';
-        button.textContent = 'MINEN (' + model.attacker.mineCount + ')';
-      }
+    if (fleeButton) {
+      const fleeing = model.attacker.tactic === 'flee';
+      fleeButton.textContent = fleeing ? 'KAMPF AUFNEHMEN' : 'FLIEHEN';
+      fleeButton.classList.toggle('is-active', fleeing);
+      fleeButton.disabled = model.winner !== null;
     }
+    if (surrenderButton) surrenderButton.disabled = model.winner !== null;
   };
 
   returnButton.addEventListener('click', options.onReturn);
