@@ -33,10 +33,10 @@ assert(
 
 const scoringSource = read('src/systems/combat/combat-weapon-posture-score.ts');
 assert(
-  scoringSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
+  scoringSource.includes('profile.combatShieldDamage ?? profile.shieldDamage'),
   'weapon scorer uses effective native damage rather than legacy catalog score'
 );
-assert(scoringSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
+assert(scoringSource.includes('profile.combatHullDamage ?? profile.hullDamage'));
 const coverModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-cover.ts'
