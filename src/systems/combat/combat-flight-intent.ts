@@ -16,6 +16,21 @@ export interface CombatFlightIntent {
   readonly kind: FlightKind;
 }
 
+/** Do not turn back into the arena when the ship has reached its exit marker. */
+function escapeGateDirection(
+  ship: MutableCombatant,
+  gate: CombatPoint,
+  arena: StrategicCombatArenaOptions
+): CombatPoint {
+  const dx = gate.x - ship.position.x;
+  const dy = gate.y - ship.position.y;
+  if (Math.hypot(dx, dy) > 0.001) return normalize(dx, dy);
+  const closest = Math.min(gate.x, arena.width - gate.x, gate.y, arena.height - gate.y);
+  if (gate.x === closest) return { x: -1, y: 0 };
+  if (arena.width - gate.x === closest) return { x: 1, y: 0 };
+  return gate.y === closest ? { x: 0, y: -1 } : { x: 0, y: 1 };
+}
+
 /**
  * One independent flight intention per ship. No paired action/reaction table,
  * waypoint arrival or time-driven choreography. Flight uses existing physics.
@@ -83,7 +98,7 @@ export function chooseCombatFlightIntent(
     delete ship.flightPass;
     const exit = ship.escapeGate ?? arena.exitPoint;
     let direction = away;
-    if (exit) direction = normalize(exit.x - ship.position.x, exit.y - ship.position.y);
+    if (exit) direction = escapeGateDirection(ship, exit, arena);
     return { kind: 'escape', direction, speedFactor: 1 };
   }
   if (deliberateRam) {
