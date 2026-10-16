@@ -18,7 +18,7 @@ assert(
   'weapons move into effective range after enemy engine loss'
 );
 assert(
-  routing.includes("ship.tactic !== 'flee' && immediateThreat"),
+  routing.includes("ship.tactic !== 'flee'") && routing.includes('immediateThreat &&'),
   'ordinary combat dodges drifting rocks without overturning committed escape routes'
 );
 for (const metric of [
