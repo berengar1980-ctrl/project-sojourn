@@ -1,13 +1,15 @@
 /** Purely visual combat effects. None of these routines applies or schedules damage. */
+import {
+  AUTOCANNON_ROUNDS,
+  AUTOCANNON_ROUND_INTERVAL,
+  ION_CANNON_ARC_SECONDS,
+  RAIL_LANCE_SECONDS,
+} from '../../core/combat-visual-timings';
+
 export interface WeaponFxPoint {
   readonly x: number;
   readonly y: number;
 }
-
-export const RAIL_LANCE_SECONDS = 1.35;
-export const ION_CANNON_ARC_SECONDS = 0.52;
-export const AUTOCANNON_ROUNDS = 7;
-export const AUTOCANNON_ROUND_INTERVAL = 0.065;
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
