@@ -386,9 +386,9 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
     range >= Math.max(155, desired * 0.66);
   if (broadsideReady) return { heading: broadside, strafe: travel };
 
-  const alignment = travel.x * toward.x + travel.y * toward.y;
-  const canAimDuringPass = intentKind === 'pass' && alignment >= 0.9;
-  const engagement = intentKind === 'intercept' || canAimDuringPass;
+  // Flybys stay under their own momentum-led flight intention; target
+  // tracking is reserved for stable engagements, not a second pass controller.
+  const engagement = intentKind === 'intercept';
   if (!engagement || range < desired * 0.74 || range > desired * 1.12) {
     return { heading: travel };
   }
