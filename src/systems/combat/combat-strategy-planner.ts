@@ -219,13 +219,24 @@ export function reviewCombatStrategy(
     ship.stalledPlanKind = ship.strategy.kind;
     ship.stalledPlanFacing = ship.strategy.broadsideFacing;
   }
-  const options = candidatePlans(ship, enemy)
-    .map((option) =>
+  const candidates = candidatePlans(ship, enemy);
+  const stalled = candidates.find(
+    (option) =>
       option.kind === ship.stalledPlanKind && option.broadsideFacing === ship.stalledPlanFacing
+  );
+  const alternative = candidates
+    .filter((option) => option !== stalled)
+    .reduce((highest, option) => Math.max(highest, option.score), 0);
+  // Never abandon a dominant hardpoint group for a drastically weaker angle
+  // merely because a well-armoured enemy took little damage recently.
+  const viableFallback = stalled && alternative >= stalled.score * 0.7;
+  const options = candidates
+    .map((option) =>
+      viableFallback && option === stalled
         ? {
             ...option,
-            score: option.score * 0.15,
-            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt',
+            score: option.score * 0.7,
+            reason: 'Vergleichbar wirksame Waffenposition als Ausweichplan',
           }
         : option
     )
