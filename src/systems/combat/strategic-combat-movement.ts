@@ -128,9 +128,7 @@ export function mineDetection(
   }).level;
 }
 
-/** Pick a lateral escape corridor from a detected mine, not a radial reversal.
- * Prediction uses closest approach along current drift and the planned heading.
- */
+/** Avoid detectable mines using the current drift and planned heading. */
 export function avoidDetectedMine(
   combatant: MutableCombatant,
   side: StrategicCombatSide,

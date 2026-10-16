@@ -137,26 +137,36 @@ export function combatRouteHeading(
     y: ship.position.y + ship.velocity.y * 2,
   };
   const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
+  const blocked = pathBlocked(ship.position, target, arena, clearance);
+  const fleeing = ship.tactic === 'flee';
+  if (!fleeing && !immediateThreat && !blocked) {
+    ship.asteroidRoute = [];
+    return null;
+  }
   const route = ship.asteroidRoute ?? [];
   const reached = Math.max(
     32,
     Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
   );
-  while (route.length && Math.hypot(ship.position.x - route[0]!.x, ship.position.y - route[0]!.y) <= reached) {
+  while (
+    route.length &&
+    Math.hypot(ship.position.x - route[0]!.x, ship.position.y - route[0]!.y) <= reached
+  ) {
     route.shift();
   }
-  // A committed detour must survive a momentarily clear direct line and the
-  // periodic route timer. Otherwise the pilot alternates around both rock flanks.
-  if (!route.length && (immediateThreat || pathBlocked(ship.position, target, arena, clearance))) {
+  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
+  // Only a retreat keeps its selected flank. Normal combat still replans
+  // as targets move, while a retreat never flips sides on timer expiry.
+  const replan = fleeing
+    ? !route.length && (immediateThreat || blocked)
+    : ship.nextAsteroidRouteAt <= 0;
+  if (replan) {
     ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
   const waypoint = ship.asteroidRoute?.[0];
   if (!waypoint) return null;
-  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  // Keep the current waypoint as the planned flank; only an imminent collision
-  // with a drifting obstacle justifies a temporary evasive direction.
-  const steeringPoint = immediateThreat && pathBlocked(ship.position, waypoint, arena, clearance)
+  const steeringPoint = pathBlocked(ship.position, waypoint, arena, clearance) && immediateThreat
     ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
     : waypoint;
   const dx = steeringPoint.x - ship.position.x;
