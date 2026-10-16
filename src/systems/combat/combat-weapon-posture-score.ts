@@ -64,19 +64,22 @@ export interface WeaponPostureScore {
   readonly turnSeconds: number;
 }
 
-/**
- * Score discrete, reachable firing envelopes instead of averaging dissimilar ranges.
- * A long railgun and a short repeater create two valid engagement distances.
- */
-export function scoreWeaponPosture(
+interface ScoredWeapon {
+  readonly profile: ShipWeaponProfile;
+  readonly primary: boolean;
+  readonly weight: number;
+}
+
+/** Resolve legal firing arcs once for any proposed ship heading. */
+function availableWeapons(
   ship: MutableCombatant,
   enemy: MutableCombatant,
-  group: WeaponPostureGroup
-): WeaponPostureScore | null {
-  const heading = aimedHeading(ship, enemy, group);
+  group: WeaponPostureGroup,
+  heading: number
+): ScoredWeapon[] {
   const projected = { ...ship, headingRadians: heading };
   const shielded = enemy.shieldHp > 0;
-  const available: { profile: ShipWeaponProfile; primary: boolean; weight: number }[] = [];
+  const result: ScoredWeapon[] = [];
 
   for (let index = 0; index < ship.setup.weapons.length; index += 1) {
     const profile = ship.setup.weapons[index]?.weapon;
@@ -90,19 +93,27 @@ export function scoreWeaponPosture(
     if (!primary && installed.focus !== 'turret') continue;
     const rate = damageRate(ship, profile, shielded);
     const weight = rate * coverageFactor(arc) * (primary ? 1 : 0.25);
-    if (weight > 0) available.push({ profile, primary, weight });
+    if (weight > 0) result.push({ profile, primary, weight });
   }
+  return result;
+}
 
+/** Calculate useful weapon damage at an exact distance, not a mean of gun ranges. */
+function selectFiringEnvelope(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  available: readonly ScoredWeapon[]
+): { readonly firepower: number; readonly range: number } {
   const primary = available.filter((entry) => entry.primary);
-  if (!primary.length) return null;
+  const enemyRanges = enemy.setup.weapons.map((weapon) => weapon.weapon?.rangeMeters ?? 0);
+  const enemyRange = Math.max(0, ...enemyRanges);
+  const ownSpeed = ship.setup.combatSpeed ?? 120;
+  const enemySpeed = enemy.setup.combatSpeed ?? 120;
+  const mobility = ownSpeed / Math.max(65, enemySpeed);
 
-  // Each weapon range creates a candidate envelope. Score firing effectiveness
-  // at that range; deliberately favour distance slightly when performance is close.
   let bestRange = 0;
   let bestFirepower = 0;
   let bestScore = -Infinity;
-  const enemyRanges = enemy.setup.weapons.map((weapon) => weapon.weapon?.rangeMeters ?? 0);
-  const enemyRange = Math.max(0, ...enemyRanges);
 
   for (const candidate of primary) {
     const range = Math.max(180, candidate.profile.rangeMeters * 0.8);
@@ -111,9 +122,6 @@ export function scoreWeaponPosture(
       0
     );
     const safety = range > enemyRange ? 1.12 : 1;
-    const ownSpeed = ship.setup.combatSpeed ?? 120;
-    const enemySpeed = enemy.setup.combatSpeed ?? 120;
-    const mobility = ownSpeed / Math.max(65, enemySpeed);
     const exposure = range < enemyRange && mobility < 0.95 ? 0.86 : 1;
     const score = firepower * safety * exposure * (1 + range / 12000);
     if (score > bestScore) {
@@ -122,12 +130,28 @@ export function scoreWeaponPosture(
       bestFirepower = firepower;
     }
   }
+  return { firepower: bestFirepower, range: bestRange };
+}
 
+/**
+ * Score discrete, reachable firing envelopes instead of averaging dissimilar ranges.
+ * A long railgun and a short repeater create two valid engagement distances.
+ */
+export function scoreWeaponPosture(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  group: WeaponPostureGroup
+): WeaponPostureScore | null {
+  const heading = aimedHeading(ship, enemy, group);
+  const available = availableWeapons(ship, enemy, group, heading);
+  if (!available.some((entry) => entry.primary)) return null;
+
+  const envelope = selectFiringEnvelope(ship, enemy, available);
   const turning = Math.abs(wrapAngle(heading - ship.headingRadians));
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? 0.72);
   return {
-    firepower: bestFirepower,
-    effectiveRange: bestRange,
+    firepower: envelope.firepower,
+    effectiveRange: envelope.range,
     turnSeconds: group.focus === 'turret' ? 0 : turning / turnRate,
   };
 }
