@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-16 | PR #238 · Sojourn-Waffeneffekte (acht Waffenfamilien) | Voidbound-Parität überprüft: **keine Statusänderung**. Die acht Sojourn-Waffenfamilien erhalten ausschließlich neue Flug-/Schuss- und Einschlaganimationen, darunter die getrennten Ionen-Effekte, das Railgun-Nachglühen und die sieben rein visuellen Autocannon-Tracer. Kampfauflösung, Reichweiten, Trefferchancen, Munition, Feuerrate, Schilde und Hüllenschaden bleiben in der Spiellogik unverändert. Die Waffenfamilie wird für die visuelle Trefferzuordnung im Snapshot übergeben. Dies ist eine Sojourn-spezifische Präsentation ohne neue Voidbound-Feature-ID; `combat.weapon_fire` bleibt **teilweise**, `ship.weapon_roles` bleibt **umgesetzt**. Die Verschiebung der Strahl-, Minen- und Schiffbeleuchtungs-Zeichenlogik in kleinere Renderer ändert keine Feature-Bewertung. |
+
+
 | 2026-10-10 | Bedingungsabhängige Kampfpläne und Kampflog | Voidbound-Parität überprüft: **keine Statusänderung**. Harrowdrift erweitert den Kampfplan um Doktrin/Phasen, Seed-bestimmte Reihenfolge für initiale 0-/4-Sekunden-Analyse, 8-Sekunden-Kadenz, sofortige Umplanung nach Schilddurchbruch und maschinenlesbare Kampftelemetrie mit UI-Export. Folgeschritte: vollständige Doktrin-Unterpläne und reproduzierbare Massen-Balancings. |
 
 
