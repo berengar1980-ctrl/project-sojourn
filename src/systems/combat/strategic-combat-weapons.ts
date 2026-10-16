@@ -71,13 +71,13 @@ function fireRuntimeInstantWeapon(
 
   if (obstacle) {
     addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, obstacle.point, weaponIndex);
-    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point, kind);
+    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point, kind, weapon.weapon.family);
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
   addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, beamEnd, weaponIndex);
   if (!hit) {
-    noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint);
+    noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint, kind, weapon.weapon.family);
     return source.setup.name + ': ' + weapon.name + ' verfehlt';
   }
 
@@ -101,6 +101,8 @@ function fireRuntimeInstantWeapon(
     ...(result.subsystem ? { subsystem: result.subsystem } : {}),
     damage: result.damage,
     position: { ...result.point },
+    weaponKind: kind,
+    weaponFamily: weapon.weapon.family,
   };
   return (
     source.setup.name +
@@ -307,6 +309,7 @@ function recordProjectileDamage(
     damage: result.damage,
     position: { ...result.point },
     weaponKind: projectile.kind,
+    weaponFamily: projectile.family,
   };
   return result;
 }
