@@ -64,12 +64,10 @@ export function renderStarMapContacts(
   const combatCount = model.npcShips.filter((npc) => Boolean(npc.combatMode)).length;
   const summary = document.createElement('p');
   summary.className = 'star-map-directory__summary';
-  summary.textContent =
-    'SENSORKONTAKTE // ' +
-    model.npcShips.length +
-    ' SICHTBAR · ' +
-    combatCount +
-    ' IM GEFECHT';
+  summary.textContent = [
+    'SENSORKONTAKTE // ' + model.npcShips.length + ' SICHTBAR',
+    combatCount + ' IM GEFECHT',
+  ].join(' · ');
 
   const entries = model.npcShips.map((npc) => {
     const distance = Math.round(
