@@ -12,7 +12,7 @@ assert(
   renderer.includes('combatant.combatIntent,'),
   'tactical status contains only the chosen maneuver'
 );
-assert(!renderer.includes("combatant.combatIntent + (combatant.boostActive"));
+assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
 assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
 assert(renderer.includes('combatant.boostActive'), 'engine boost visual effects remain');
 
