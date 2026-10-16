@@ -56,7 +56,7 @@ export function escapeViability(
   arena: StrategicCombatArenaOptions
 ): number {
   if (ship.subsystems.engine <= 0) return 0;
-  const exit = arena.exitPoint;
+  const exit = ship.escapeGate ?? arena.exitPoint;
   if (!exit) return 0;
   const distanceToExit = distance(ship.position, exit);
   if (distanceToExit < 130) return 1;
@@ -153,6 +153,8 @@ function chooseCommitmentTransition(
     } else if (escape >= 0.2) return null;
     ship.tactic = 'fight';
     ship.strategy = null;
+    delete ship.escapeGate;
+    delete ship.escapeAvoidanceSide;
     ship.escapeAbandonedAt = elapsed;
     return {
       decision: 'fight',
@@ -166,6 +168,8 @@ function chooseCommitmentTransition(
   if (strength < requiredConfidence(ship) && escape > 0.5) {
     ship.tactic = 'flee';
     ship.strategy = null;
+    delete ship.escapeGate;
+    delete ship.escapeAvoidanceSide;
     ship.escapeCommittedAt = elapsed;
     return {
       decision: 'flee',
@@ -183,11 +187,9 @@ export function usefulEscapeMine(
   enemy: MutableCombatant,
   arena: StrategicCombatArenaOptions
 ): boolean {
-  if (ship.tactic !== 'flee' || !arena.exitPoint || ship.subsystems.engine <= 0) return false;
-  const towardExit = normalize(
-    arena.exitPoint.x - ship.position.x,
-    arena.exitPoint.y - ship.position.y
-  );
+  const gate = ship.escapeGate ?? arena.exitPoint;
+  if (ship.tactic !== 'flee' || !gate || ship.subsystems.engine <= 0) return false;
+  const towardExit = normalize(gate.x - ship.position.x, gate.y - ship.position.y);
   const rear =
     (enemy.position.x - ship.position.x) * towardExit.x +
     (enemy.position.y - ship.position.y) * towardExit.y;

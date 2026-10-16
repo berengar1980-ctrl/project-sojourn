@@ -4,13 +4,29 @@ import type {
   StrategicCombatSide,
 } from './strategic-combat-types';
 
+import { scoreWeaponPosture, type WeaponPostureGroup } from './combat-weapon-posture-score';
+
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
+
+function activeHostileTractor(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  elapsed: number
+): boolean {
+  const reach = enemy.setup.tractorRangeMeters ?? 0;
+  if (reach <= 0 || enemy.shieldHp > 0 || enemy.subsystems.tractor <= 0) return false;
+  if ((ship.tractorThreatenedUntil ?? -1) <= elapsed) return false;
+  const dx = ship.position.x - enemy.position.x;
+  const dy = ship.position.y - enemy.position.y;
+  return Math.hypot(dx, dy) <= reach * 1.1;
+}
 
 /** Disable the highest immediate threat before trying to destroy the hull. */
 export function targetSubsystem(
   ship: MutableCombatant,
-  enemy: MutableCombatant
+  enemy: MutableCombatant,
+  elapsed = 0
 ): 'hull' | 'tractor' | 'engine' {
   if (enemy.subsystems.engine > 0) {
     const relative = Math.hypot(
@@ -19,72 +35,29 @@ export function targetSubsystem(
     );
     if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35)) return 'engine';
   }
-  const tractor = enemy.setup.tractorRangeMeters ?? 0;
-  const proximity = Math.hypot(
-    ship.position.x - enemy.position.x,
-    ship.position.y - enemy.position.y
-  );
-  if (
-    enemy.subsystems.tractor > 0 &&
-    tractor > 0 &&
-    ship.shieldHp <= ship.shieldMaxHp * 0.2 &&
-    proximity < tractor * 1.4
-  )
-    return 'tractor';
+  if (activeHostileTractor(ship, enemy, elapsed)) return 'tractor';
   return 'hull';
 }
 
-type WeaponGroup = {
-  readonly focus: 'forward' | 'broadside' | 'turret';
-  readonly facing?: 'port' | 'starboard';
-};
-
 function scoreWeaponGroup(
   ship: MutableCombatant,
-  group: WeaponGroup,
+  enemy: MutableCombatant,
+  group: WeaponPostureGroup,
   enemyRange: number,
   currentRange: number,
   speedRatio: number,
   turnRatio: number,
-  enemyShielded: boolean,
   targetSubsystemChoice: 'hull' | 'engine' | 'tractor'
 ): CombatStrategyPlan | null {
-  const guns = ship.setup.weapons.flatMap((component, index) => {
-    const weapon = component.weapon;
-    if (!weapon) return [];
-    const mount = ship.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
-    const facing = mount?.facing ?? (weapon.mount === 'broadside' ? 'port' : 'forward');
-    const weaponMount =
-      weapon.mount ??
-      (weapon.family === 'railgun'
-        ? 'forward'
-        : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
-          ? 'broadside'
-          : 'turret');
-    const matching =
-      group.focus === 'turret'
-        ? weaponMount === 'turret' || weaponMount === 'guided'
-        : group.focus === 'forward'
-          ? weaponMount === 'forward' && facing === 'forward'
-          : weaponMount === 'broadside' && facing === group.facing;
-    return matching ? [weapon] : [];
-  });
-  if (!guns.length) return null;
-  const range = Math.max(...guns.map((weapon) => weapon.rangeMeters));
-  const dps = guns.reduce(
-    (total, weapon) =>
-      total +
-      (enemyShielded
-        ? (weapon.combatShieldDamage ?? weapon.shieldDamage)
-        : (weapon.combatHullDamage ?? weapon.hullDamage)) /
-        Math.max(0.45, weapon.cooldownSeconds),
-    0
-  );
+  const usable = scoreWeaponPosture(ship, enemy, group);
+  if (!usable) return null;
+  const range = usable.effectiveRange;
   const maintainRange = range > enemyRange && speedRatio >= 1.02;
   const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
   const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
   const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
   const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));
+  const readiness = 1 / (1 + Math.min(12, usable.turnSeconds) * 0.06);
   return {
     kind:
       group.focus === 'forward'
@@ -96,10 +69,14 @@ function scoreWeaponGroup(
     ...(group.facing ? { broadsideFacing: group.facing } : {}),
     targetSubsystem: targetSubsystemChoice,
     desiredRange: effectiveRange,
-    score: dps * travelPenalty * relativeMobility * turnFactor * (maintainRange ? 1.2 : 1),
-    reason: enemyShielded
-      ? 'Gleichzeitig nutzbare Waffen gegen Schilde einsetzen'
-      : 'Hardpoints und Reichweiten gegen das Ziel ausnutzen',
+    score:
+      usable.firepower *
+      travelPenalty *
+      relativeMobility *
+      turnFactor *
+      readiness *
+      (maintainRange ? 1.2 : 1),
+    reason: 'Nutzbare Waffenwirkung, Schusswinkel, Reichweite und Ausrichtungszeit abwägen',
   };
 }
 
@@ -112,7 +89,11 @@ function canUseTractorLock(ship: MutableCombatant, enemy: MutableCombatant): boo
   );
 }
 
-function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
+function candidatePlans(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  elapsed: number
+): CombatStrategyPlan[] {
   const enemyRange = Math.max(
     0,
     ...enemy.setup.weapons.flatMap((component) =>
@@ -123,8 +104,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     ship.position.x - enemy.position.x,
     ship.position.y - enemy.position.y
   );
-  const targetSubsystemChoice = targetSubsystem(ship, enemy);
-  const enemyShielded = enemy.shieldHp > 0;
+  const targetSubsystemChoice = targetSubsystem(ship, enemy, elapsed);
   const speedRatio =
     ship.subsystems.engine > 0
       ? (ship.setup.combatSpeed ?? 120) /
@@ -134,7 +114,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     (ship.setup.turnRateRadiansPerSecond ?? 1) /
     Math.max(0.4, enemy.setup.turnRateRadiansPerSecond ?? 1);
   const plans: CombatStrategyPlan[] = [];
-  const groups: readonly WeaponGroup[] = [
+  const groups: readonly WeaponPostureGroup[] = [
     { focus: 'forward' },
     { focus: 'broadside', facing: 'port' },
     { focus: 'broadside', facing: 'starboard' },
@@ -143,12 +123,12 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
   for (const group of groups) {
     const plan = scoreWeaponGroup(
       ship,
+      enemy,
       group,
       enemyRange,
       currentRange,
       speedRatio,
       turnRatio,
-      enemyShielded,
       targetSubsystemChoice
     );
     if (plan) plans.push(plan);
@@ -195,6 +175,27 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     }));
   }
   return plans;
+}
+
+function selectStablePlan(
+  previous: CombatStrategyPlan | null,
+  options: readonly CombatStrategyPlan[]
+): CombatStrategyPlan {
+  const best = options[0]!;
+  const equivalent = options.find(
+    (option) =>
+      option.kind === previous?.kind && option.broadsideFacing === previous?.broadsideFacing
+  );
+  const selected =
+    equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)
+      ? { ...equivalent, reason: previous!.reason }
+      : best;
+  const samePosture =
+    previous?.kind === selected.kind &&
+    previous.focus === selected.focus &&
+    previous.broadsideFacing === selected.broadsideFacing;
+  // Reconsidering the same posture must not restart a partially completed turn.
+  return samePosture && previous.phase ? { ...selected, phase: previous.phase } : selected;
 }
 
 /** Only strategic reviews can replace a plan; movement ticks never replan. */
@@ -246,27 +247,29 @@ export function reviewCombatStrategy(
     ship.stalledPlanKind = ship.strategy.kind;
     ship.stalledPlanFacing = ship.strategy.broadsideFacing;
   }
-  const options = candidatePlans(ship, enemy)
-    .map((option) =>
+  const candidates = candidatePlans(ship, enemy, elapsed);
+  const stalled = candidates.find(
+    (option) =>
       option.kind === ship.stalledPlanKind && option.broadsideFacing === ship.stalledPlanFacing
+  );
+  const alternative = candidates
+    .filter((option) => option !== stalled)
+    .reduce((highest, option) => Math.max(highest, option.score), 0);
+  // Never abandon a dominant hardpoint group for a drastically weaker angle
+  // merely because a well-armoured enemy took little damage recently.
+  const viableFallback = stalled && alternative >= stalled.score * 0.7;
+  const options = candidates
+    .map((option) =>
+      viableFallback && option === stalled
         ? {
             ...option,
-            score: option.score * 0.15,
-            reason: 'Ausweichplan: bisherige Waffenposition ohne Fortschritt',
+            score: option.score * 0.7,
+            reason: 'Vergleichbar wirksame Waffenposition als Ausweichplan',
           }
         : option
     )
     .sort((a, b) => b.score - a.score);
-  const best = options[0]!;
-  const current = ship.strategy;
-  const equivalent = options.find(
-    (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
-  );
-  if (equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)) {
-    ship.strategy = { ...equivalent, reason: current!.reason };
-  } else {
-    ship.strategy = best;
-  }
+  ship.strategy = selectStablePlan(ship.strategy, options);
   // Combat commitment owns fight/flee; the planner only selects combat posture.
   if (!ship.combatTacticLocked) {
     ship.tactic =

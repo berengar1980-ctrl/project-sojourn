@@ -110,6 +110,7 @@ export function maybeLaunchTractorAsteroid(
   // authoritative projectile position instead of a duplicate stationary body.
   removeCapturedThrowable(runtime, rock, mine);
   queueTractorThrow(runtime, side, ship, position, aim, rock, mine);
+  target.tractorThreatenedUntil = runtime.elapsedSeconds + 12;
   ship.tractorThrowCooldown = COOLDOWN_SECONDS;
   recordTractorLaunch(runtime, side, ship, rock, mine);
 }

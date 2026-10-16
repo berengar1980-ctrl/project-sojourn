@@ -34,6 +34,7 @@ export function pulseCombatTractor(
   enemy.velocity.x += away.x * impulse * sign;
   enemy.velocity.y += away.y * impulse * sign;
   enemy.speed = Math.hypot(enemy.velocity.x, enemy.velocity.y);
+  enemy.tractorThreatenedUntil = runtime.elapsedSeconds + 12;
   runtime.beamSerial += 1;
   runtime.beams.push({
     id: runtime.beamSerial,

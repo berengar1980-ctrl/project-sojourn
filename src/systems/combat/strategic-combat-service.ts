@@ -1,18 +1,12 @@
 import { reviewShipContact } from './combat-contact-review';
-import { reviewCombatCommitment } from './combat-commitment';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
-import { separateActionShips, applyActionRamImpact } from './combat-exchange-collision';
+import { applyCombatRamImpact } from './combat-ram-impact';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
   maybeLaunchTractorAsteroid,
   advanceThrownAsteroids,
 } from './combat-tractor-asteroid-throw';
-import {
-  createActionExchange,
-  tickActionExchange,
-  type ActiveExchange,
-} from './combat-exchange-controller';
 import { advanceCombatGrapple, fireCombatGrapple } from './combat-grapple-service';
 import { advanceCombatGrappleTether, canDockGrappledShips } from './combat-grapple-physics';
 import { advanceShieldImpacts } from '../shields/shield-service';
@@ -42,7 +36,6 @@ import { maybeAttemptBoarding } from './combat-boarding-ai';
 import {
   recordCombatLog,
   reviewAndExecute,
-  recordCommitment,
   recordCombatMotion,
   reviewShieldBreakthroughs,
   reviewSubsystemBreakthroughs,
@@ -68,6 +61,8 @@ export type { StrategicCombatArenaOptions } from './strategic-combat-types';
 export type { StrategicCombatService } from './strategic-combat-types';
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
+  const escapeGate =
+    runtime.attacker.escapeGate ?? runtime.defender.escapeGate ?? runtime.arena.exitPoint!;
   return {
     attacker: {
       ...snapshot(runtime.attacker),
@@ -88,8 +83,9 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
     elapsedSeconds: runtime.elapsedSeconds,
-    exitPoint: runtime.arena.exitPoint!,
+    exitPoint: escapeGate,
     winner: runtime.winner,
+    outcomeReason: runtime.outcomeReason ?? null,
     boardingInitiator: runtime.boardingInitiator,
     grapple: runtime.grapple
       ? {
@@ -173,27 +169,39 @@ function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
     );
   }
 }
-function reviewExchangeCommitments(runtime: StrategicCombatRuntime): void {
-  const attackerDecision = reviewCombatCommitment(
-    runtime.attacker,
-    runtime.defender,
-    runtime.arena,
-    runtime.elapsedSeconds
-  );
-  const defenderDecision = reviewCombatCommitment(
-    runtime.defender,
-    runtime.attacker,
-    runtime.arena,
-    runtime.elapsedSeconds
-  );
-  if (attackerDecision) recordCommitment(runtime, 'attacker', attackerDecision);
-  if (defenderDecision) recordCommitment(runtime, 'defender', defenderDecision);
+/** Grapple is a physical constraint, not an alternate combat update loop. */
+function advanceRuntimeGrapple(runtime: StrategicCombatRuntime, dt: number): boolean {
+  if (!runtime.grapple) return false;
+  const owner = runtime.grapple.owner;
+  const initiator = runtimeCombatant(runtime, owner);
+  const victim = runtimeEnemy(runtime, owner);
+  runtime.grapple = advanceCombatGrapple(runtime.grapple, initiator.position, victim.position, dt);
+  if (!runtime.grapple.resolved) return false;
+  if (!runtime.grapple.success) {
+    runtime.lastEvent = 'GREIFHAKEN > AM RUMPF ABGEPRALLT';
+    runtime.grapple = null;
+    return false;
+  }
+  runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
+  if (!canDockGrappledShips(initiator, victim)) return false;
+  const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;
+  const sharedY = (initiator.velocity.y + victim.velocity.y) / 2;
+  initiator.velocity.x = sharedX;
+  initiator.velocity.y = sharedY;
+  victim.velocity.x = sharedX;
+  victim.velocity.y = sharedY;
+  initiator.speed = Math.hypot(sharedX, sharedY);
+  victim.speed = initiator.speed;
+  runtime.boardingInitiator = owner;
+  runtime.winner = owner;
+  runtime.outcomeReason = 'boarding';
+  recordCombatLog(runtime, owner, 'action', 'BOARDING_COUPLED');
+  runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
+  return true;
 }
-
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
-  deltaSeconds: number,
-  actionState?: ActiveExchange
+  deltaSeconds: number
 ): StrategicCombatSnapshot {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
     return runtimeSnapshot(runtime);
@@ -201,71 +209,22 @@ function tickStrategicCombat(
   const dt = Math.min(deltaSeconds, 0.08);
   runtime.elapsedSeconds += dt;
   advanceCombatAsteroids(runtime.arena, dt);
-  if (runtime.grapple) {
-    const initiator = runtimeCombatant(runtime, runtime.grapple.owner);
-    const victim = runtimeEnemy(runtime, runtime.grapple.owner);
-    runtime.grapple = advanceCombatGrapple(
-      runtime.grapple,
-      initiator.position,
-      victim.position,
-      dt
-    );
-    // The ships keep maneuvering while the hook flies and after it attaches.
-    // Momentum is never cleared simply because a grapple was fired.
-    moveCombatant(initiator, victim, runtime.grapple.owner, dt, runtime.arena, runtime.mines);
-    const victimSide = runtime.grapple.owner === 'attacker' ? 'defender' : 'attacker';
-    moveCombatant(victim, initiator, victimSide, dt, runtime.arena, runtime.mines);
-    if (runtime.grapple.success && runtime.grapple.resolved) {
-      runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
-      // Do not open boarding until the grappled hulls actually dock.
-      if (canDockGrappledShips(initiator, victim)) {
-        // Match the ships' drift at the moment of docking rather than stopping
-        // both vessels instantaneously in the middle of space.
-        const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;
-        const sharedY = (initiator.velocity.y + victim.velocity.y) / 2;
-        initiator.velocity.x = sharedX;
-        initiator.velocity.y = sharedY;
-        victim.velocity.x = sharedX;
-        victim.velocity.y = sharedY;
-        initiator.speed = Math.hypot(sharedX, sharedY);
-        victim.speed = initiator.speed;
-        runtime.boardingInitiator = runtime.grapple.owner;
-        runtime.winner = runtime.grapple.owner;
-        runtime.combatLog.push({
-          timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
-          side: runtime.grapple.owner,
-          event: 'action',
-          detail: 'BOARDING_COUPLED',
-        });
-        runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
-      }
-    } else if (runtime.grapple.resolved) {
-      runtime.lastEvent = 'GREIFHAKEN > AM RUMPF ABGEPRALLT';
-      runtime.grapple = null;
-    }
-    resolveCombatantCollision(runtime.attacker, runtime.defender);
-    resolveArenaObstacles(runtime.attacker, runtime.arena);
-    resolveArenaObstacles(runtime.defender, runtime.arena);
-    return runtimeSnapshot(runtime);
-  }
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
-  if (actionState) {
-    reviewExchangeCommitments(runtime);
-    tickActionExchange(runtime, actionState, dt);
-  } else {
-    reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
-    reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
-    moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
-    moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
-  }
+  // The exit is fixed for the duration of a duel; only the flight path detours.
+  reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
+  reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
+  moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
+  moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
+  // A connected hook constrains positions, but regular guns and projectiles
+  // keep advancing until the hulls physically couple for boarding.
+  const boardingCoupled = advanceRuntimeGrapple(runtime, dt);
+  if (boardingCoupled) return runtimeSnapshot(runtime);
   // One physical impact resolver for both campaign combat and the exchange duel preset.
-  applyActionRamImpact(runtime);
-  if (!actionState)
-    reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
+  applyCombatRamImpact(runtime);
+  reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
   resolveCombatantCollision(runtime.attacker, runtime.defender);
-  if (actionState) separateActionShips(runtime);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
   updateCombatAsteroidThrows(runtime, dt);
@@ -284,8 +243,7 @@ function tickStrategicCombat(
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
   reviewSubsystemBreakthroughs(runtime, previousSubsystems);
-  // The Alpha reference duel tests flight and weapons, not boarding transitions.
-  if (!actionState) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
+  maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side));
   recordCombatMotion(runtime);
   resolveRuntimeWinner(runtime);
   recordLatestCombatImpact(runtime);
@@ -310,6 +268,7 @@ function createStrategicCombatRuntime(
     thrownAsteroids: [],
     elapsedSeconds: 0,
     winner: null,
+    outcomeReason: null,
     boardingInitiator: null,
     grapple: null,
     grappleUsed: { attacker: false, defender: false },
@@ -361,8 +320,6 @@ export function createStrategicCombatService(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatService {
   const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
-  const actionState: ActiveExchange | undefined =
-    seed === 1001 ? createActionExchange(runtime) : undefined;
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
   recordCombatLog(
@@ -400,10 +357,28 @@ export function createStrategicCombatService(
     fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
+      if (runtime.winner) return;
+      if (combatant.combatTacticLocked && combatant.tactic === tactic) return;
       combatant.tactic = tactic;
       combatant.combatTacticLocked = true;
+      // Player orders have immediate authority over the previous AI plan.
+      combatant.strategy = null;
+      combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
+      delete combatant.flightPass;
+      delete combatant.escapeGate;
+      delete combatant.escapeAvoidanceSide;
+      combatant.asteroidRoute = [];
+      combatant.nextAsteroidRouteAt = 0;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
-    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, actionState),
+    surrender(side) {
+      if (runtime.winner) return;
+      const combatant = runtimeCombatant(runtime, side);
+      runtime.winner = side === 'attacker' ? 'defender' : 'attacker';
+      runtime.outcomeReason = 'surrender';
+      runtime.lastEvent = combatant.setup.name + ' gibt das Gefecht auf';
+      recordCombatLog(runtime, side, 'result', 'KAPITULATION · Hülle bleibt unverändert');
+    },
+    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
   };
 }

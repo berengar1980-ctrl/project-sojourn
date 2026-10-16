@@ -239,7 +239,10 @@ export function advanceRuntimeWeapons(
   for (let index = 0; index < source.setup.weapons.length; index += 1) {
     source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
   }
-  if (target.hullHp <= 0 || !fireControlReady(source.fireControl, now)) return;
+  // Retreat is a command, not an aim posture: keep cooling guns but do not
+  // launch new offensive projectiles while fleeing. Mines remain autonomous.
+  if (source.tactic === 'flee' || target.hullHp <= 0 || !fireControlReady(source.fireControl, now))
+    return;
 
   // The current target layer determines weapon priority. A heavy gun cannot
   // fire through the opposite side of the hull simply because it is loaded.

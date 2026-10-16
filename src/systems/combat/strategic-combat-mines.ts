@@ -84,8 +84,8 @@ export function maybeDropRuntimeMine(
     usefulEscapeMine(source, target, runtime.arena);
   // Armed AI ships can also deploy an opportunistic mine during a close pass.
   const tacticalMine =
-    source.setup.aiControlled &&
-    source.tactic === 'fight' &&
+    source.tactic !== 'flee' &&
+    source.tactic !== 'minefield' &&
     range >= 155 &&
     range <= 470 &&
     (target.velocity.x - source.velocity.x) * (target.position.x - source.position.x) +

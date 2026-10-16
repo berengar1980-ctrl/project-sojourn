@@ -13,6 +13,7 @@ import type { ShipWeaponFamily } from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 
 export type StrategicCombatSide = 'attacker' | 'defender';
+export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
@@ -238,6 +239,7 @@ export interface StrategicCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly exitPoint: CombatPoint;
   readonly winner: StrategicCombatSide | null;
+  readonly outcomeReason?: CombatOutcomeReason | null;
   readonly boardingInitiator: StrategicCombatSide | null;
   readonly grapple: CombatGrapple | null;
   readonly grappleUsed: Readonly<Record<StrategicCombatSide, boolean>>;
@@ -298,6 +300,7 @@ export interface StrategicCombatService {
   getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
+  surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
 }
 
@@ -323,6 +326,17 @@ export interface MutableCombatant {
   boostSeconds?: number;
   boostActive?: boolean;
   combatIntent?: string;
+  /** Alternate escape gate selected only when the current gate is blocked. */
+  escapeGate?: CombatPoint;
+  /** Stable side while clearing an enemy hull on the escape corridor. */
+  escapeAvoidanceSide?: -1 | 1;
+  /** Current geometric flyby, owned only by the ship's tactical flight controller. */
+  flightPass?: {
+    readonly direction: CombatPoint;
+    readonly startRange: number;
+    closestRange: number;
+    ageSeconds: number;
+  };
   boostRampSeconds?: number;
   boostCooldownSeconds?: number;
   tactic: CombatTactic;
@@ -346,6 +360,8 @@ export interface MutableCombatant {
   shieldImpacts: ShieldImpactEffect[];
   mineStock: ShipMineDefinition[];
   mineCooldown: number;
+  /** Brief window after a real enemy tractor action, not mere tractor ownership. */
+  tractorThreatenedUntil?: number;
   tractorPulseCooldown?: number;
   tractorThrowCooldown?: number;
 }
@@ -423,6 +439,7 @@ export interface StrategicCombatRuntime {
   elapsedSeconds: number;
   lastRamImpactAt?: number;
   winner: StrategicCombatSide | null;
+  outcomeReason?: CombatOutcomeReason | null;
   boardingInitiator: StrategicCombatSide | null;
   grapple: CombatGrapple | null;
   grappleUsed: Record<StrategicCombatSide, boolean>;

@@ -5,11 +5,11 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (modulePath) => loadStandaloneTypeScriptModule(root, modulePath);
 const moves = load('src/systems/combat/combat-tactical-maneuvers.ts');
+const flight = load('src/systems/combat/combat-flight-intent.ts');
 const planner = load('src/systems/combat/combat-strategy-planner.ts');
 const executor = load('src/systems/combat/combat-plan-executor.ts');
 const cover = load('src/systems/combat/combat-asteroid-cover.ts');
 const tractor = load('src/systems/combat/combat-tractor-pulse.ts');
-const exchangeTactics = load('src/systems/combat/combat-exchange-tactics.ts');
 const geometry = load('src/systems/combat/strategic-combat-geometry.ts');
 const movement = load('src/systems/combat/strategic-combat-movement.ts');
 const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
@@ -38,11 +38,6 @@ assert(
   'pursuit leads the moving target instead of its last position'
 );
 assert.equal(moves.pursuitManeuver({ ...first, tactic: 'flee' }, second), null);
-const exchangeLead = exchangeTactics.exchangeTacticalGoal(first, second);
-assert(
-  exchangeLead && exchangeLead.y > first.position.y,
-  'exchange battles also lead escaping targets rather than chasing their old position'
-);
 
 first.tactic = 'minefield';
 first.mineStock = [{ id: 'test' }];
@@ -53,11 +48,6 @@ assert(
   'minelayer runs from approaching ship to lay a chase corridor'
 );
 assert.equal(moves.mineBaitManeuver({ ...first, mineStock: [] }, second), null);
-const exchangeBait = exchangeTactics.exchangeTacticalGoal(first, second);
-assert(
-  exchangeBait && exchangeBait.x < first.position.x,
-  'exchange minelayers bait the chase corridor'
-);
 
 first.tactic = 'fight';
 first.strategy = {
@@ -66,26 +56,25 @@ first.strategy = {
   broadsideFacing: 'port',
   desiredRange: 500,
 };
-const broadside = moves.broadsideOrbitManeuver(first, second, 500);
-assert(broadside && Math.abs(broadside.direction.y) > 0.8, 'broadside circles at weapon range');
-assert(broadside.direction.y > 0, 'port guns remain exposed on the correct orbit side');
-const starboard = moves.broadsideOrbitManeuver(
-  { ...first, strategy: { ...first.strategy, broadsideFacing: 'starboard' } },
+const broadside = flight.chooseCombatFlightIntent(
+  first,
   second,
-  500
+  500,
+  { width: 1600, height: 1000 },
+  0.08,
+  false
 );
-assert(starboard && starboard.direction.y < 0, 'starboard guns orbit on the opposite side');
-first.velocity.x = 100;
-const brake = moves.interceptBrakeManeuver(first, second, 500);
-assert(brake && brake.direction.y > 0, 'relative braking accounts for enemy lateral velocity');
-assert.equal(
-  moves.interceptBrakeManeuver(
-    { ...first, strategy: { ...first.strategy, phase: 'align_weapons' } },
-    second,
-    500
-  ),
-  null
+assert(broadside.direction.y > 0, 'port-facing weapons select their own orbit side');
+const otherSide = { ...first, strategy: { ...first.strategy, broadsideFacing: 'starboard' } };
+const starboard = flight.chooseCombatFlightIntent(
+  otherSide,
+  second,
+  500,
+  { width: 1600, height: 1000 },
+  0.08,
+  false
 );
+assert(starboard.direction.y < 0, 'starboard-facing weapons use the opposite side');
 
 first.shieldHp = 10;
 const arena = {
@@ -104,13 +93,15 @@ assert.equal(planner.targetSubsystem(first, second), 'engine', 'fleeing targets 
 second.tactic = 'fight';
 second.setup.tractorRangeMeters = 420;
 first.position.x = 520;
+assert.equal(planner.targetSubsystem(first, second, 10), 'hull');
+first.tractorThreatenedUntil = 12;
 assert.equal(
-  planner.targetSubsystem(first, second),
+  planner.targetSubsystem(first, second, 10),
   'tractor',
-  'shieldless threatened ship disables nearby tractor'
+  'recent hostile tractor activity can justify targeting its subsystem'
 );
 first.shieldHp = 100;
-assert.equal(planner.targetSubsystem(first, second), 'hull', 'safe ship focuses hull');
+assert.equal(planner.targetSubsystem(first, second, 13), 'hull', 'expired threat refocuses hull');
 first.strategy = { kind: 'broadside', focus: 'broadside', desiredRange: 500, phase: 'fire' };
 first.position.x = 700;
 assert.equal(

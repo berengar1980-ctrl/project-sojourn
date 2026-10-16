@@ -50,7 +50,7 @@ function detourPoint(
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const length = Math.max(1, Math.hypot(dx, dy));
-  const clearanceRadius = rock.radius + clearance + 35;
+  const clearanceRadius = (rock.radius + clearance + 35) * 1.5;
   const candidates = [1, -1].map((sign) => ({
     x: Math.max(
       EDGE_MARGIN,
@@ -123,6 +123,45 @@ function pathBlocked(
   });
 }
 
+/** Flight-route memory is shared; only escape keeps a committed rock flank. */
+function selectRouteWaypoint(
+  ship: MutableCombatant,
+  target: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  clearance: number,
+  deltaSeconds: number,
+  immediateThreat: boolean
+): CombatPoint | null {
+  const blocked = pathBlocked(ship.position, target, arena, clearance);
+  const fleeing = ship.tactic === 'flee';
+  if (!fleeing && !immediateThreat && !blocked) {
+    ship.asteroidRoute = [];
+    return null;
+  }
+  const route = ship.asteroidRoute ?? [];
+  const reached = Math.max(
+    32,
+    Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
+  );
+  while (
+    route.length &&
+    Math.hypot(ship.position.x - route[0]!.x, ship.position.y - route[0]!.y) <= reached
+  ) {
+    route.shift();
+  }
+  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
+  // Only a retreat keeps its selected flank. Normal combat still replans
+  // as targets move, while a retreat never flips sides on timer expiry.
+  const replan = fleeing
+    ? !route.length && (immediateThreat || blocked)
+    : ship.nextAsteroidRouteAt <= 0;
+  if (replan) {
+    ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
+    ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
+  }
+  return ship.asteroidRoute?.[0] ?? null;
+}
+
 /** Reuse the campaign's grid navigation, recomputing as asteroids drift. */
 export function combatRouteHeading(
   ship: MutableCombatant,
@@ -137,37 +176,25 @@ export function combatRouteHeading(
     y: ship.position.y + ship.velocity.y * 2,
   };
   const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
-  if (!immediateThreat && !pathBlocked(ship.position, target, arena, clearance)) {
-    ship.asteroidRoute = [];
-    return null;
-  }
-  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  if (ship.nextAsteroidRouteAt <= 0) {
-    ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
-    ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
-  }
-  const route = ship.asteroidRoute ?? [];
-  while (route.length > 0) {
-    const waypoint = route[0]!;
-    if (
-      Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) >
-      Math.max(
-        32,
-        Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
-      )
-    )
-      break;
-    route.shift();
-  }
-  const waypoint = route[0];
+  const waypoint = selectRouteWaypoint(
+    ship,
+    target,
+    arena,
+    clearance,
+    deltaSeconds,
+    immediateThreat
+  );
   if (!waypoint) return null;
-  // A temporarily blocked waypoint is handled at the next scheduled refresh.
-  // Forcing zero here caused a full replan on every simulation frame.
-  // If an asteroid drifts across the current waypoint corridor, steer around
-  // its nearer flank until the next scheduled route refresh. No grid search.
-  const steeringPoint = pathBlocked(ship.position, waypoint, arena, clearance)
-    ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
-    : waypoint;
+  // No per-frame emergency flank reversal during retreat: a flight waypoint
+  // is committed until reached. Ordinary combat can still dodge drifting rocks.
+  let steeringPoint = waypoint;
+  if (
+    ship.tactic !== 'flee' &&
+    immediateThreat &&
+    pathBlocked(ship.position, waypoint, arena, clearance)
+  ) {
+    steeringPoint = detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint;
+  }
   const dx = steeringPoint.x - ship.position.x;
   const dy = steeringPoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);

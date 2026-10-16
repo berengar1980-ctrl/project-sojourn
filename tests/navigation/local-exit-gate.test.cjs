@@ -38,14 +38,10 @@ assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('this.drawExitG
 assert(read('src/ui/salvage/salvage-scene-layers.ts').includes('drawLocalSpaceExitGate('));
 assert(
   read('src/systems/combat/combat-escape-evaluation.ts').includes(
-    'distance(combatant.position, arena.exitPoint) <= 90'
+    'distance(combatant.position, gate) <= 90'
   )
 );
-assert(
-  read('src/systems/combat/strategic-combat-movement.ts').includes(
-    'arena.exitPoint.x - combatant.position.x'
-  )
-);
+assert(read('src/systems/combat/combat-flight-intent.ts').includes('gate.x - ship.position.x'));
 assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNKT'));
 assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('drawCombatEscapeGate('));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));

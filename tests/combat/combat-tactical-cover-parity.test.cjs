@@ -12,7 +12,6 @@ const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const mine = read('src/systems/combat/strategic-combat-mines.ts');
 const tractor = read('src/systems/combat/combat-tractor-asteroid-throw.ts');
 const execution = read('src/systems/combat/combat-plan-executor.ts');
-const exchange = read('src/systems/combat/combat-exchange-controller.ts');
 
 assert(
   cover.includes('ship.shieldHp > ship.shieldMaxHp * 0.4'),
@@ -21,10 +20,6 @@ assert(
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
 assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
 assert(movement.includes('cover ?? waypoint ?? direction'));
-assert(
-  exchange.includes('coverGoal(initiator, opponent, runtime.arena)'),
-  'exchange machine and free flight share the same defensive cover rule'
-);
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
@@ -36,12 +31,12 @@ assert(
   'strategic planner preserves its eight-second cadence'
 );
 
-const plannerSource = read('src/systems/combat/combat-strategy-planner.ts');
+const scoringSource = read('src/systems/combat/combat-weapon-posture-score.ts');
 assert(
-  plannerSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
-  'planner uses effective native combat damage rather than legacy catalog score'
+  scoringSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
+  'weapon scorer uses effective native damage rather than legacy catalog score'
 );
-assert(plannerSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
+assert(scoringSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
 const coverModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-cover.ts'

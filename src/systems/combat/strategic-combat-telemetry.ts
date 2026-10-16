@@ -9,7 +9,7 @@ import type { MutableCombatant, StrategicCombatRuntime } from './strategic-comba
 export function recordCombatLog(
   runtime: StrategicCombatRuntime,
   side: 'attacker' | 'defender' | 'system',
-  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result',
+  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'action' | 'result',
   detail: string
 ): void {
   runtime.combatLog.push({
@@ -72,6 +72,9 @@ export function reviewAndExecute(
     );
   }
   ship.combatIntent = describeCombatIntent(ship);
+  if (ship.tactic !== 'flee' && enemy.tactic === 'flee' && ship.subsystems.engine > 0) {
+    ship.combatIntent = 'VERFOLGEN';
+  }
   if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
@@ -158,6 +161,9 @@ export function reviewSubsystemBreakthroughs(
     if (!engineLost && !tractorLost) continue;
     opponent.nextStrategyReviewAt = runtime.elapsedSeconds;
     damaged.nextStrategyReviewAt = runtime.elapsedSeconds;
+    if (engineLost && damaged.tactic === 'flee') {
+      runtime.lastEvent = damaged.setup.name + ': FLUCHT · ANTRIEB AUSGEFALLEN';
+    }
     recordCombatLog(
       runtime,
       'system',
