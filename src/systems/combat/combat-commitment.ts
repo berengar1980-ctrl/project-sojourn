@@ -56,7 +56,7 @@ export function escapeViability(
   arena: StrategicCombatArenaOptions
 ): number {
   if (ship.subsystems.engine <= 0) return 0;
-  const exit = arena.exitPoint;
+  const exit = ship.escapeGate ?? arena.exitPoint;
   if (!exit) return 0;
   const distanceToExit = distance(ship.position, exit);
   if (distanceToExit < 130) return 1;
