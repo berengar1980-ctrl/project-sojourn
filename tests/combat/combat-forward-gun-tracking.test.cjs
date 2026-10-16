@@ -57,6 +57,10 @@ const passing = createStrategicCombatService(setup('passing'), setup('opponent')
   attackerVelocity: { x: 100, y: 0 },
 });
 const flyby = passing.tick(0.08);
-assert.equal(flyby.attacker.combatIntent, 'ANGRIFFSPASSAGE');
+assert.notEqual(
+  flyby.attacker.combatIntent,
+  'ANGRIFFSPASSAGE',
+  'a frontal ship must finish turning before committing to a flyby'
+);
 assert(flyby.attacker.speed > 60, 'committed passage must retain actual ship momentum');
 console.log('PASS forward-gun aiming and committed flybys remain independent');
