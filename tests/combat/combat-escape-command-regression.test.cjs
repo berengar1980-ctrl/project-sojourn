@@ -70,7 +70,12 @@ function distanceToExit(frame) {
 }
 
 // Turning 180 degrees with existing forward inertia must reach the real gate.
-const retreat = createStrategicCombatService(ship('retreat', 120, [beam]), ship('chaser', 85), 86, arena);
+const retreat = createStrategicCombatService(
+  ship('retreat', 120, [beam]),
+  ship('chaser', 85),
+  86,
+  arena
+);
 retreat.setTactic('attacker', 'flee');
 const samples = play(retreat);
 const end = samples[samples.length - 1];
@@ -124,13 +129,17 @@ const blockedFrames = play(blocked, 850);
 const detour = blockedFrames[1].exitPoint;
 assert.notDeepEqual(detour, arena.exitPoint, 'blocked gate chooses a different physical exit');
 assert(
-  blockedFrames.every((frame, index) => index === 0 || (
-    frame.exitPoint.x === detour.x && frame.exitPoint.y === detour.y
-  )),
+  blockedFrames.every(
+    (frame, index) =>
+      index === 0 || (frame.exitPoint.x === detour.x && frame.exitPoint.y === detour.y)
+  ),
   'alternate gate remains committed even when pursuer follows'
 );
-assert.equal(blocked.getCombatLog().filter((entry) =>
-  entry.detail.includes('FLUCHTKORRIDOR BLOCKIERT')).length, 1);
+assert.equal(
+  blocked.getCombatLog().filter((entry) => entry.detail.includes('FLUCHTKORRIDOR BLOCKIERT'))
+    .length,
+  1
+);
 
 // Giving up is a distinct terminal result, not a simulated escape or hull destruction.
 const surrender = createStrategicCombatService(ship('captain'), ship('hunter'), 92, arena);
@@ -147,7 +156,10 @@ assert.deepEqual(surrender.tick(0.08), yielded, 'terminal surrender does not adv
 
 // Only flee/surrender are visible player commands; hardware tactics stay active.
 const panel = fs.readFileSync(path.join(root, 'src/ui/combat/strategic-combat-panel.ts'), 'utf8');
-const mines = fs.readFileSync(path.join(root, 'src/systems/combat/strategic-combat-mines.ts'), 'utf8');
+const mines = fs.readFileSync(
+  path.join(root, 'src/systems/combat/strategic-combat-mines.ts'),
+  'utf8'
+);
 assert(panel.includes('data-command="flee"') && panel.includes('data-command="surrender"'));
 assert(!panel.includes('data-tactic="kite"') && !panel.includes('data-tactic="minefield"'));
 assert(panel.includes('KAMPF AUFNEHMEN') && panel.includes('KAPITULATION BESTÄTIGEN?'));
