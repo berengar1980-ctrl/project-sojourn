@@ -6,7 +6,8 @@ import {
   DEFAULT_ARENA_WIDTH,
   DEFAULT_ARENA_HEIGHT,
   EDGE_PADDING,
-  distance,
+  createRng,
+  hashSeed,
 } from './strategic-combat-geometry';
 
 function initialCombatMotion(arenaOptions?: StrategicCombatArenaOptions) {
@@ -44,32 +45,35 @@ export function buildCombatArena(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatArenaOptions {
   const arena = createArenaOptions(arenaOptions);
-  const margin = EDGE_PADDING;
-  const along = 0.35 + (((seed >>> 5) % 101) / 100) * 0.3;
-  const candidates = [
-    { x: margin, y: arena.height * along },
-    { x: arena.width - margin, y: arena.height * along },
-    { x: arena.width * along, y: margin },
-    { x: arena.width * along, y: arena.height - margin },
-  ];
-  const attackerPosition = arenaOptions?.attackerPosition ?? {
-    x: arena.width * 0.35,
-    y: arena.height * 0.5,
+  // One seeded perimeter sample, not a "furthest from pursuer" selection.
+  // The old four-candidate scoring concentrated almost every gate on the left.
+  const random = createRng(hashSeed(String(seed) + ':combat-exit'));
+  const width = arena.width - EDGE_PADDING * 2;
+  const height = arena.height - EDGE_PADDING * 2;
+  const perimeter = 2 * (width + height);
+  const sample = (): { x: number; y: number } => {
+    const offset = random() * perimeter;
+    if (offset < width) return { x: EDGE_PADDING + offset, y: EDGE_PADDING };
+    if (offset < width + height)
+      return { x: arena.width - EDGE_PADDING, y: EDGE_PADDING + offset - width };
+    if (offset < 2 * width + height)
+      return { x: EDGE_PADDING + 2 * width + height - offset, y: arena.height - EDGE_PADDING };
+    return { x: EDGE_PADDING, y: EDGE_PADDING + perimeter - offset };
   };
-  const defenderPosition = arenaOptions?.defenderPosition ?? {
-    x: arena.width * 0.65,
-    y: arena.height * 0.5,
-  };
-  const playerFlees =
-    attackerSetup.preferredTactic === 'flee' || defenderSetup.preferredTactic !== 'flee';
-  const runner = playerFlees ? attackerPosition : defenderPosition;
-  const pursuer = playerFlees ? defenderPosition : attackerPosition;
-  const preferredGate = candidates
-    .map((point, index) => ({
-      point,
-      score: distance(point, pursuer) - distance(point, runner) * 0.4 + ((seed + index) % 4) * 2,
-    }))
-    .sort((a, b) => b.score - a.score)[0]!.point;
+  // Avoid placing the only exit inside an asteroid. Rejection is seeded and
+  // performed once at setup, not in the frame-by-frame flight controller.
+  let preferredGate = sample();
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    if (
+      !(arena.obstacles ?? []).some(
+        (rock) =>
+          Math.hypot(rock.position.x - preferredGate.x, rock.position.y - preferredGate.y) <
+          rock.radius + 85
+      )
+    )
+      break;
+    preferredGate = sample();
+  }
   const escapeArena: StrategicCombatArenaOptions = {
     ...arena,
     exitPoint: arenaOptions?.exitPoint ?? preferredGate,

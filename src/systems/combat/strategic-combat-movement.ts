@@ -137,7 +137,6 @@ export function avoidDetectedMine(
   mines: readonly MutableMine[],
   desired: CombatPoint
 ): CombatPoint | null {
-  // Both NPC and player vessels use the same autonomous avoidance pilot.
   const heading = normalize(
     combatant.velocity.x + desired.x * 65,
     combatant.velocity.y + desired.y * 65
@@ -342,12 +341,13 @@ function steerCombatRoute(
     combatant.combatIntent = 'RAMMEN';
   }
   const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  // Escape routing uses the real gate, not a projected point beyond the arena.
   const destination = combatRouteDestination(combatant, arena, direction);
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
-  if (obstacle) {
+  // Follow the chosen flank; radial repulsion against the same rock used to
+  // overpower the waypoint and flip the bow left/right on consecutive ticks.
+  if (obstacle && (combatant.tactic !== 'flee' || !waypoint)) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
   }
 

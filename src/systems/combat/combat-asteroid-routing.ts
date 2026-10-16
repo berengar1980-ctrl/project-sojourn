@@ -50,7 +50,7 @@ function detourPoint(
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const length = Math.max(1, Math.hypot(dx, dy));
-  const clearanceRadius = rock.radius + clearance + 35;
+  const clearanceRadius = (rock.radius + clearance + 35) * 1.5;
   const candidates = [1, -1].map((sign) => ({
     x: Math.max(
       EDGE_MARGIN,
@@ -137,35 +137,26 @@ export function combatRouteHeading(
     y: ship.position.y + ship.velocity.y * 2,
   };
   const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
-  if (!immediateThreat && !pathBlocked(ship.position, target, arena, clearance)) {
-    ship.asteroidRoute = [];
-    return null;
+  const route = ship.asteroidRoute ?? [];
+  const reached = Math.max(
+    32,
+    Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
+  );
+  while (route.length && Math.hypot(ship.position.x - route[0]!.x, ship.position.y - route[0]!.y) <= reached) {
+    route.shift();
   }
-  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  if (ship.nextAsteroidRouteAt <= 0) {
+  // A committed detour must survive a momentarily clear direct line and the
+  // periodic route timer. Otherwise the pilot alternates around both rock flanks.
+  if (!route.length && (immediateThreat || pathBlocked(ship.position, target, arena, clearance))) {
     ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
-  const route = ship.asteroidRoute ?? [];
-  while (route.length > 0) {
-    const waypoint = route[0]!;
-    if (
-      Math.hypot(ship.position.x - waypoint.x, ship.position.y - waypoint.y) >
-      Math.max(
-        32,
-        Math.min(REACHED_WAYPOINT_METERS, (ship.setup.shieldGeometry?.radiusX ?? 30) * 1.5)
-      )
-    )
-      break;
-    route.shift();
-  }
-  const waypoint = route[0];
+  const waypoint = ship.asteroidRoute?.[0];
   if (!waypoint) return null;
-  // A temporarily blocked waypoint is handled at the next scheduled refresh.
-  // Forcing zero here caused a full replan on every simulation frame.
-  // If an asteroid drifts across the current waypoint corridor, steer around
-  // its nearer flank until the next scheduled route refresh. No grid search.
-  const steeringPoint = pathBlocked(ship.position, waypoint, arena, clearance)
+  ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
+  // Keep the current waypoint as the planned flank; only an imminent collision
+  // with a drifting obstacle justifies a temporary evasive direction.
+  const steeringPoint = immediateThreat && pathBlocked(ship.position, waypoint, arena, clearance)
     ? (detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint)
     : waypoint;
   const dx = steeringPoint.x - ship.position.x;
