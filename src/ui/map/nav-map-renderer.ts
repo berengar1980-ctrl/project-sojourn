@@ -78,7 +78,7 @@ export class NavMapRenderer {
 
   drawLocation(location: StarMapLocationView, point: WorldPoint, radius: number): void {
     if (location.kind === 'station') {
-      this.drawStation(point, radius);
+      this.drawStation(point, radius, location.stationType ?? 'utility');
       return;
     }
     if (location.kind === 'wreck') {
@@ -118,7 +118,11 @@ export class NavMapRenderer {
     context.restore();
   }
 
-  private drawStation(point: WorldPoint, radius: number): void {
+  private drawStation(
+    point: WorldPoint,
+    radius: number,
+    stationType: NonNullable<StarMapLocationView['stationType']>
+  ): void {
     const context = this.context;
     const size = Math.max(7, radius * 0.8);
     context.save();
@@ -132,14 +136,22 @@ export class NavMapRenderer {
     context.stroke();
     context.beginPath();
     context.arc(0, 0, size * 0.36, 0, Math.PI * 2);
-    context.moveTo(-size * 1.12, 0);
-    context.lineTo(-size * 0.63, 0);
-    context.moveTo(size * 0.63, 0);
-    context.lineTo(size * 1.12, 0);
-    context.moveTo(0, -size * 1.12);
-    context.lineTo(0, -size * 0.63);
-    context.moveTo(0, size * 0.63);
-    context.lineTo(0, size * 1.12);
+    const spokes: Record<NonNullable<StarMapLocationView['stationType']>, number> = {
+      trade: 4,
+      shipyard: 6,
+      military: 8,
+      refinery: 5,
+      research: 3,
+      pirate: 7,
+      utility: 2,
+    };
+    for (let index = 0; index < spokes[stationType]; index += 1) {
+      const angle = (index / spokes[stationType]) * Math.PI * 2;
+      const x = Math.cos(angle);
+      const y = Math.sin(angle);
+      context.moveTo(x * size * 0.63, y * size * 0.63);
+      context.lineTo(x * size * 1.12, y * size * 1.12);
+    }
     context.stroke();
     context.restore();
   }
