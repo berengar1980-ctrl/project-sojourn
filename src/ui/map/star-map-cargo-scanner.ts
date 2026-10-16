@@ -131,8 +131,18 @@ export function bindCargoMarketScanner(
     lastMarkerSignature = signature;
     onVisualization(markers);
   };
+  let lastRenderedSignature = '';
   const renderCargoScanner = (): void => {
-    const scanner = getModel().cargoScanner;
+    const model = getModel();
+    const scanner = model.cargoScanner;
+    const signature = JSON.stringify([
+      scanner,
+      model.navigation.selectedDestinationId,
+      preferredCargoResource,
+      preferredCargoVisible,
+    ]);
+    if (signature === lastRenderedSignature) return;
+    lastRenderedSignature = signature;
     // The market analysis stays visible in its menu section. The toggle only
     // controls optional map markers, not access to prices or buyer hints.
     cargoToggle.textContent = preferredCargoVisible ? 'MARKTMARKER // AN' : 'MARKTMARKER // AUS';
@@ -178,7 +188,7 @@ export function bindCargoMarketScanner(
       preferredCargoResource,
       cargoContent,
       onNavigate,
-      getModel().navigation.selectedDestinationId
+      model.navigation.selectedDestinationId
     );
     updateVisualization(
       preferredCargoVisible ? cargoMarkers(scanner, preferredCargoResource, quotes) : new Map()
@@ -198,7 +208,7 @@ export function bindCargoMarketScanner(
     renderMarketQuotes(
       quotes,
       scanner?.currentDay ?? 0,
-      getModel().navigation.selectedDestinationId,
+      model.navigation.selectedDestinationId,
       cargoContent,
       onNavigate,
       formatCredits
