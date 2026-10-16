@@ -34,10 +34,7 @@ const chaser = vessel(565, 500, 20, 55);
 resolveCombatantCollision(runner, chaser);
 assert.equal(runner.velocity.y, 55, 'contact must retain escape tangent velocity');
 assert.equal(chaser.velocity.y, 55, 'contact must retain pursuit tangent velocity');
-assert(
-  runner.velocity.x < 100 && chaser.velocity.x > 20,
-  'only normal closing speed is resolved'
-);
+assert(runner.velocity.x < 100 && chaser.velocity.x > 20, 'only normal closing speed is resolved');
 const resolvedDistance = Math.hypot(
   runner.position.x - chaser.position.x,
   runner.position.y - chaser.position.y
