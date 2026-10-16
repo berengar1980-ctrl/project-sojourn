@@ -1,4 +1,5 @@
-import type { TopdownMapRenderer, StarMapPickOption } from './topdown-map-renderer';
+import type { TopdownMapRenderer } from './topdown-map-renderer';
+import type { StarMapPickOption } from './star-map-contact-picking';
 import { createStarMapPickMenu } from './star-map-pick-menu';
 
 interface StarMapInputOptions {
