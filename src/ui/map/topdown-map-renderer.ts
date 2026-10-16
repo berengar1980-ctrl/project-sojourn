@@ -189,8 +189,7 @@ export class TopdownMapRenderer {
         origin,
         this.camera.getRelativeZoom()
       );
-    }
-    else {
+    } else {
       this.backgroundRenderer.draw({
         width,
         height,
