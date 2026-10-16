@@ -9,7 +9,7 @@ import type { MutableCombatant, StrategicCombatRuntime } from './strategic-comba
 export function recordCombatLog(
   runtime: StrategicCombatRuntime,
   side: 'attacker' | 'defender' | 'system',
-  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'result',
+  event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'action' | 'result',
   detail: string
 ): void {
   runtime.combatLog.push({
