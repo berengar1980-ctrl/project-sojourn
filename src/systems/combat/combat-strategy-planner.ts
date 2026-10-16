@@ -12,7 +12,8 @@ const SWITCH_MARGIN = 0.16;
 /** Disable the highest immediate threat before trying to destroy the hull. */
 export function targetSubsystem(
   ship: MutableCombatant,
-  enemy: MutableCombatant
+  enemy: MutableCombatant,
+  elapsed = 0
 ): 'hull' | 'tractor' | 'engine' {
   if (enemy.subsystems.engine > 0) {
     const relative = Math.hypot(
@@ -29,8 +30,9 @@ export function targetSubsystem(
   if (
     enemy.subsystems.tractor > 0 &&
     tractor > 0 &&
-    ship.shieldHp <= ship.shieldMaxHp * 0.2 &&
-    proximity < tractor * 1.4
+    enemy.shieldHp <= 0 &&
+    (ship.tractorThreatenedUntil ?? -1) > elapsed &&
+    proximity <= tractor * 1.1
   )
     return 'tractor';
   return 'hull';
@@ -86,7 +88,11 @@ function canUseTractorLock(ship: MutableCombatant, enemy: MutableCombatant): boo
   );
 }
 
-function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): CombatStrategyPlan[] {
+function candidatePlans(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  elapsed: number
+): CombatStrategyPlan[] {
   const enemyRange = Math.max(
     0,
     ...enemy.setup.weapons.flatMap((component) =>
@@ -97,7 +103,7 @@ function candidatePlans(ship: MutableCombatant, enemy: MutableCombatant): Combat
     ship.position.x - enemy.position.x,
     ship.position.y - enemy.position.y
   );
-  const targetSubsystemChoice = targetSubsystem(ship, enemy);
+  const targetSubsystemChoice = targetSubsystem(ship, enemy, elapsed);
   const speedRatio =
     ship.subsystems.engine > 0
       ? (ship.setup.combatSpeed ?? 120) /
@@ -219,7 +225,7 @@ export function reviewCombatStrategy(
     ship.stalledPlanKind = ship.strategy.kind;
     ship.stalledPlanFacing = ship.strategy.broadsideFacing;
   }
-  const candidates = candidatePlans(ship, enemy);
+  const candidates = candidatePlans(ship, enemy, elapsed);
   const stalled = candidates.find(
     (option) =>
       option.kind === ship.stalledPlanKind && option.broadsideFacing === ship.stalledPlanFacing
