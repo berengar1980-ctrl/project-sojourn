@@ -11,6 +11,7 @@ const ship = (x, vx = 0) => ({
   position: { x, y: 1000 },
   velocity: { x: vx, y: 0 },
   speed: Math.abs(vx),
+  headingRadians: 0,
   tactic: 'fight',
   mineStock: [],
   setup: { combatSpeed: 120, aiControlled: true },
@@ -30,6 +31,9 @@ assert(separation.speedFactor > 0.7);
 
 const attacker = ship(1000, 100);
 const defender = ship(2000, -100);
+attacker.headingRadians = Math.PI / 2;
+assert.notEqual(order(attacker, defender).kind, 'pass', 'unaligned bow cannot start a flyby');
+attacker.headingRadians = 0;
 const pass = order(attacker, defender);
 assert.equal(pass.kind, 'pass');
 assert(pass.direction.y > 0, 'flyby uses a nonzero crossing lane');
