@@ -8,6 +8,8 @@ export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: nu
 
 export function advanceWeaponCooldowns(ship: MutableCombatant, dt: number): void {
   for (let index = 0; index < ship.setup.weapons.length; index += 1) {
-    ship.cooldowns[index] = Math.max(0, (ship.cooldowns[index] ?? 0) - dt);
+    const remaining = (ship.cooldowns[index] ?? 0) - dt;
+    // Floating-point residue must not postpone a shot at the exact reload deadline.
+    ship.cooldowns[index] = remaining <= 0.000001 ? 0 : remaining;
   }
 }
