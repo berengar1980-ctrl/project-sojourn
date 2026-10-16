@@ -56,14 +56,13 @@ function forwardPassReady(ship: MutableCombatant, enemy: MutableCombatant): bool
       const weapon = component.weapon;
       if (!weapon) return false;
       const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
-      return (
-        (weapon.mount === 'forward' || weapon.family === 'railgun') &&
-        (!mount?.facing || mount.facing === 'forward')
-      );
+      const fixedGun = weapon.mount === 'forward' || weapon.family === 'railgun';
+      const forwardFacing = !mount?.facing || mount.facing === 'forward';
+      return fixedGun && forwardFacing;
     });
-  return forwardGuns.every(({ component, index }) =>
-    weaponInArc(ship, enemy.position, index, component.weapon!)
-  );
+  return forwardGuns.every(({ component, index }) => {
+    return weaponInArc(ship, enemy.position, index, component.weapon!);
+  });
 }
 
 export function chooseCombatFlightIntent(
