@@ -34,11 +34,15 @@ const chaser = vessel(565, 500, 20, 55);
 resolveCombatantCollision(runner, chaser);
 assert.equal(runner.velocity.y, 55, 'contact must retain escape tangent velocity');
 assert.equal(chaser.velocity.y, 55, 'contact must retain pursuit tangent velocity');
-assert(runner.velocity.x < 100 && chaser.velocity.x > 20, 'only normal closing speed is resolved');
-assert(Math.hypot(
+assert(
+  runner.velocity.x < 100 && chaser.velocity.x > 20,
+  'only normal closing speed is resolved'
+);
+const resolvedDistance = Math.hypot(
   runner.position.x - chaser.position.x,
   runner.position.y - chaser.position.y
-) >= 86, 'hulls do not overlap');
+);
+assert(resolvedDistance >= 86, 'hulls do not overlap');
 const parallel = vessel(500, 500, 0, -100);
 const neighbour = vessel(565, 500, 0, -100);
 resolveCombatantCollision(parallel, neighbour);
@@ -56,4 +60,4 @@ assert(second && second.y > 0, 'avoidance side cannot alternate each tick');
 blocker.position.x = 650;
 assert.equal(escapeContactDetour(flight, blocker, 'attacker', forward), null);
 assert.equal(flight.escapeAvoidanceSide, undefined, 'after overtaking, clear detour state');
-console.log('PASS boost remains visual only, contact preserves tangent and escape bypass persists');
+console.log('PASS boost status, tangential collision impulse and persistent escape detour');
