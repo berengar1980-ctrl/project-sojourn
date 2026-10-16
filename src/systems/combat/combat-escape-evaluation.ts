@@ -54,9 +54,8 @@ export function runtimeCombatantEscaped(
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   )
     return false;
-  const atExit =
-    (combatant.escapeGate ?? arena.exitPoint) !== undefined &&
-    distance(combatant.position, (combatant.escapeGate ?? arena.exitPoint)!) <= 90;
+  const gate = combatant.escapeGate ?? arena.exitPoint;
+  const atExit = gate !== undefined && distance(combatant.position, gate) <= 90;
   const safeSeparation = safeEscapeSeparation(arena);
   return atExit && distance(combatant.position, enemy.position) > safeSeparation;
 }
