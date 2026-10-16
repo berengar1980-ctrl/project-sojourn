@@ -417,8 +417,12 @@ export function moveCombatant(
     range >= Math.max(155, desired * 0.66);
   // Track fixed guns while engaging; a committed pass or separation needs
   // full propulsion authority rather than prolonged sideways RCS steering.
+  const forwardAlignment = direction.x * toward.x + direction.y * toward.y;
+  const aimablePass = intent.kind === 'pass' && forwardAlignment >= 0.9;
   const engaging =
-    intent.kind === 'intercept' && range >= desired * 0.74 && range <= desired * 1.12;
+    (intent.kind === 'intercept' || aimablePass) &&
+    range >= desired * 0.74 &&
+    range <= desired * 1.12;
   const forwardHeading =
     engaging && !deliberateRam && steering.canAim
       ? forwardWeaponSteering(combatant, range, desired, toward)
