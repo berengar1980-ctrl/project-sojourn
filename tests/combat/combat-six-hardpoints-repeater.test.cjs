@@ -161,7 +161,7 @@ const far = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
 assert(far);
 mixed.setup.weapons[1] = {
   ...repeater,
-  weapon: { ...repeater.weapon, combatShieldDamage: 0.05, combatHullDamage: 0.05 },
+  weapon: { ...repeater.weapon, combatShieldDamage: 0.001, combatHullDamage: 0.001 },
 };
 const long = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
 assert(long && long.effectiveRange > far.effectiveRange, 'long rail prefers a different envelope');
