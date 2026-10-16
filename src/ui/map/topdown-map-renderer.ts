@@ -4,6 +4,12 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
+import {
+  collectStarMapPickOptions,
+  type StarMapHitArea as HitArea,
+  type StarMapPick,
+  type StarMapPickOption,
+} from './star-map-contact-picking';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawCargoMarketMarker } from './cargo-market-marker';
@@ -16,22 +22,6 @@ import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
-export interface StarMapPick {
-  readonly kind: 'location' | 'npc';
-  readonly id: string;
-}
-
-export interface StarMapPickOption extends StarMapPick {
-  readonly name: string;
-  readonly detail: string;
-}
-
-interface HitArea extends StarMapPick {
-  readonly x: number;
-  readonly y: number;
-  readonly radius: number;
-}
-
 export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
@@ -131,41 +121,7 @@ export class TopdownMapRenderer {
   }
 
   pickContacts(x: number, y: number): StarMapPickOption[] {
-    const matches = this.hitAreas
-      .filter((area) => Math.hypot(x - area.x, y - area.y) <= area.radius)
-      .sort((first, second) => {
-        if (first.kind !== second.kind) return first.kind === 'location' ? -1 : 1;
-        return Math.hypot(x - first.x, y - first.y) - Math.hypot(x - second.x, y - second.y);
-      });
-    const unique = new Set<string>();
-    const options: StarMapPickOption[] = [];
-    for (const hit of matches) {
-      const key = hit.kind + ':' + hit.id;
-      if (unique.has(key)) continue;
-      unique.add(key);
-      if (hit.kind === 'npc') {
-        const npc = this.model.npcShips.find((candidate) => candidate.id === hit.id);
-        if (npc) {
-          options.push({
-            kind: 'npc',
-            id: hit.id,
-            name: npc.name,
-            detail: 'SCHIFF // ' + npc.job.toUpperCase(),
-          });
-        }
-      } else {
-        const location = this.model.locations.find((candidate) => candidate.id === hit.id);
-        if (location) {
-          options.push({
-            kind: 'location',
-            id: hit.id,
-            name: location.name,
-            detail: location.kind.replace('-', ' ').toUpperCase(),
-          });
-        }
-      }
-    }
-    return options;
+    return collectStarMapPickOptions(this.hitAreas, this.model, x, y);
   }
 
   pickContact(x: number, y: number): StarMapPick | null {
@@ -347,32 +303,6 @@ export class TopdownMapRenderer {
       this.context.beginPath();
       this.context.arc(center.x, center.y, this.camera.scale(location.orbitRadius), 0, Math.PI * 2);
       this.context.stroke();
-    }
-  }
-
-  private drawRegions(width: number, height: number): void {
-    for (const region of this.model.regions) {
-      const center = this.camera.worldToScreen(region.center, width, height);
-      const radius = this.camera.scale(region.radius);
-      const gradient = this.context.createRadialGradient(
-        center.x,
-        center.y,
-        radius * 0.15,
-        center.x,
-        center.y,
-        radius
-      );
-      gradient.addColorStop(0, 'rgba(155, 48, 44, 0.10)');
-      gradient.addColorStop(0.7, 'rgba(155, 48, 44, 0.14)');
-      gradient.addColorStop(1, 'rgba(155, 48, 44, 0)');
-      this.context.fillStyle = gradient;
-      this.context.beginPath();
-      this.context.arc(center.x, center.y, radius, 0, Math.PI * 2);
-      this.context.fill();
-
-      this.context.fillStyle = 'rgba(224, 134, 124, 0.65)';
-      this.context.font = '11px system-ui';
-      this.context.fillText(region.name.toUpperCase(), center.x - 28, center.y - radius * 0.55);
     }
   }
 
