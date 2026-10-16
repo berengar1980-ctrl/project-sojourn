@@ -93,13 +93,15 @@ assert.equal(planner.targetSubsystem(first, second), 'engine', 'fleeing targets 
 second.tactic = 'fight';
 second.setup.tractorRangeMeters = 420;
 first.position.x = 520;
+assert.equal(planner.targetSubsystem(first, second, 10), 'hull');
+first.tractorThreatenedUntil = 12;
 assert.equal(
-  planner.targetSubsystem(first, second),
+  planner.targetSubsystem(first, second, 10),
   'tractor',
-  'shieldless threatened ship disables nearby tractor'
+  'recent hostile tractor activity can justify targeting its subsystem'
 );
 first.shieldHp = 100;
-assert.equal(planner.targetSubsystem(first, second), 'hull', 'safe ship focuses hull');
+assert.equal(planner.targetSubsystem(first, second, 13), 'hull', 'expired threat refocuses hull');
 first.strategy = { kind: 'broadside', focus: 'broadside', desiredRange: 500, phase: 'fire' };
 first.position.x = 700;
 assert.equal(
