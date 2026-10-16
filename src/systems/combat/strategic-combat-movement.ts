@@ -8,7 +8,7 @@ import { usefulRamAttempt } from './combat-ram-opportunity';
 import { chooseCombatFlightIntent, type CombatFlightIntent } from './combat-flight-intent';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
-import { predictedCollisionEvasion } from './combat-collision-evasion';
+import { predictedCollisionEvasion, escapeContactDetour } from './combat-collision-evasion';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
 
@@ -356,6 +356,17 @@ function steerCombatRoute(
   // overpower the waypoint and flip the bow left/right on consecutive ticks.
   if (obstacle && (combatant.tactic !== 'flee' || !waypoint)) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
+  }
+
+  // Close contact with a blocking ship needs a committed *sideways* pass,
+  // not another forward push into the collision shell.
+  const detour =
+    combatant.tactic === 'flee'
+      ? escapeContactDetour(combatant, enemy, side, direction)
+      : null;
+  if (detour) {
+    direction = detour;
+    targetSpeedFactor = Math.max(0.85, targetSpeedFactor);
   }
 
   const boundary = arenaBoundaryAvoidance(combatant, arena);
