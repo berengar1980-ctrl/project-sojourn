@@ -78,10 +78,7 @@ global.window = win;
 
 try {
   const root = path.resolve(__dirname, '../..');
-  const { bindStarMapInput } = loadStandaloneTypeScriptModule(
-    root,
-    'src/ui/map/star-map-input.ts'
-  );
+  const { bindStarMapInput } = loadStandaloneTypeScriptModule(root, 'src/ui/map/star-map-input.ts');
   const shell = new StubElement('section');
   const canvas = new StubElement('canvas');
   shell.append(canvas);
