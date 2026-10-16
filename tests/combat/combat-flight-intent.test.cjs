@@ -14,7 +14,7 @@ const ship = (x, vx = 0) => ({
   headingRadians: 0,
   tactic: 'fight',
   mineStock: [],
-  setup: { combatSpeed: 120, aiControlled: true },
+  setup: { combatSpeed: 120, aiControlled: true, weapons: [] },
   subsystems: { engine: 100, tractor: 0 },
   strategy: { kind: 'frontal', focus: 'forward', desiredRange: 1000 },
 });
