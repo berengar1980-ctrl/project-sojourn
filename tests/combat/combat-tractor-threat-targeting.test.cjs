@@ -49,11 +49,11 @@ const runtime = { elapsedSeconds: 10, beamSerial: 0, beams: [], combatLog: [], l
 pulseCombatTractor(runtime, 'attacker', tractorShip, victim, 0.08);
 assert.equal(runtime.beams.length, 1, 'enemy tractor must actually have fired');
 assert.equal(targetSubsystem(victim, tractorShip, 11), 'tractor');
-assert.equal(targetSubsystem(victim, tractorShip, 23), 'hull', 'threat expires without use');
+assert.equal(targetSubsystem(victim, tractorShip, 23), 'hull');
 victim.tractorThreatenedUntil = 30;
 victim.position.x = 1550;
-assert.equal(targetSubsystem(victim, tractorShip, 11), 'hull', 'far tractors are not immediate threats');
+assert.equal(targetSubsystem(victim, tractorShip, 11), 'hull');
 victim.position.x = 850;
 tractorShip.shieldHp = 50;
-assert.equal(targetSubsystem(victim, tractorShip, 11), 'hull', 'shielded tractor cannot pulse');
+assert.equal(targetSubsystem(victim, tractorShip, 11), 'hull');
 console.log('PASS tractor is targeted only after a credible observed hostile action');
