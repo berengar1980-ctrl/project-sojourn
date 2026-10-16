@@ -43,7 +43,7 @@ const arena = {
   defenderHeadingRadians: Math.PI,
   obstacles: [],
 };
-const battle = createStrategicCombatService(setup('front'), setup('target'), 87, arena);
+const battle = createStrategicCombatService(setup('front'), setup('target'), 86, arena);
 const first = battle.tick(0.08);
 assert(
   first.attacker.angularThrust < -0.1,
