@@ -7,6 +7,7 @@ import type {
   ShipWeaponFamily,
 } from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
+import { weaponHardpointDescription } from '../../core/weapon-hardpoint-labels';
 import {
   getShipComponent,
   salvagedComponentAppraisal,
@@ -165,14 +166,7 @@ function componentSlotView(
     weaponSlot,
     ...(mount
       ? {
-          mountInfo:
-            (mount.facing === 'port'
-              ? 'BACKBORD'
-              : mount.facing === 'starboard'
-                ? 'STEUERBORD'
-                : 'BUG') +
-            ' · ' +
-            (mount.arcDegrees ? mount.arcDegrees + '° MAX.' : 'WAFFENWINKEL'),
+          mountInfo: weaponHardpointDescription(mount).toUpperCase(),
           allowedMounts: mount.allowedMounts,
           allowedFamilies: mount.allowedFamilies,
         }
