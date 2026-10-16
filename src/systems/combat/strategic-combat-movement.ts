@@ -106,10 +106,19 @@ export function resolveCombatantCollision(first: MutableCombatant, second: Mutab
   first.position.y -= normal.y * overlap * 0.5;
   second.position.x += normal.x * overlap * 0.5;
   second.position.y += normal.y * overlap * 0.5;
-  first.velocity.x *= 0.6;
-  first.velocity.y *= 0.6;
-  second.velocity.x *= 0.6;
-  second.velocity.y *= 0.6;
+  // Resolve only the closing component along the hull-contact normal.
+  // Multiplying both complete velocity vectors by 0.6 every frame erased
+  // tangential motion and made an escaping ship stick to its pursuer.
+  const relativeX = first.velocity.x - second.velocity.x;
+  const relativeY = first.velocity.y - second.velocity.y;
+  const closingSpeed = relativeX * normal.x + relativeY * normal.y;
+  if (closingSpeed > 0) {
+    const impulse = closingSpeed * 0.55;
+    first.velocity.x -= normal.x * impulse;
+    first.velocity.y -= normal.y * impulse;
+    second.velocity.x += normal.x * impulse;
+    second.velocity.y += normal.y * impulse;
+  }
   first.speed = Math.hypot(first.velocity.x, first.velocity.y);
   second.speed = Math.hypot(second.velocity.x, second.velocity.y);
 }
