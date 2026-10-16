@@ -596,7 +596,7 @@ export class StrategicCombatRenderer {
         drawStrategicHullImpact(
           this.context,
           impact,
-          clamp01(age / 0.24),
+          clamp01(age / 0.7),
           point
         );
       }
