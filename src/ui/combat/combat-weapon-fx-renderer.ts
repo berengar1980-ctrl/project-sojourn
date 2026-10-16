@@ -4,6 +4,8 @@ import {
   AUTOCANNON_ROUND_INTERVAL,
   ION_CANNON_ARC_SECONDS,
   RAIL_LANCE_SECONDS,
+  VISION_REPEATER_SECONDS,
+  VISION_REPEATER_IMPACT_SECONDS,
 } from '../../core/combat-visual-timings';
 
 export interface WeaponFxPoint {
@@ -196,6 +198,96 @@ export function drawRailgunLance(
     context.beginPath();
     context.arc(point.x, point.y, 0.35 + noise(index * 29) * 0.48, 0, Math.PI * 2);
     context.fill();
+  }
+  context.restore();
+}
+
+/** Lightweight, independent high-rate front repeater visuals. */
+function repeaterCircle(
+  context: CanvasRenderingContext2D,
+  point: WeaponFxPoint,
+  radius: number,
+  color: string,
+  alpha: number,
+  outline = false
+): void {
+  context.globalAlpha = clamp01(alpha);
+  context.shadowColor = color;
+  context.shadowBlur = 7;
+  context.beginPath();
+  context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  if (outline) {
+    context.strokeStyle = color;
+    context.lineWidth = 1;
+    context.stroke();
+  } else {
+    context.fillStyle = color;
+    context.fill();
+  }
+}
+
+export function drawVisionFrontRepeater(
+  context: CanvasRenderingContext2D,
+  from: WeaponFxPoint,
+  to: WeaponFxPoint,
+  ageSeconds: number
+): void {
+  if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_SECONDS) return;
+  const progress = ageSeconds / VISION_REPEATER_SECONDS;
+  const headT = clamp01(progress * 3.6);
+  const tailT = clamp01(progress * 3.6 - 0.14);
+  const head = { x: blend(from.x, to.x, headT), y: blend(from.y, to.y, headT) };
+  const tail = { x: blend(from.x, to.x, tailT), y: blend(from.y, to.y, tailT) };
+  const fade = Math.pow(1 - progress, 0.65);
+  context.save();
+  context.lineCap = 'round';
+  line(context, tail, head, '#ff9f4d', 5, fade * 0.26, 12);
+  line(context, tail, head, '#ffd199', 2.2, fade * 0.88, 5);
+  line(context, tail, head, '#fffdf3', 0.95, fade, 2);
+  repeaterCircle(context, head, 2.2, '#fff5dc', fade * 0.95);
+  if (progress < 0.35) {
+    const flash = 1 - progress / 0.35;
+    repeaterCircle(context, from, 3.8 + 5 * progress, '#ffae6f', flash * 0.55);
+    line(
+      context,
+      { x: from.x - 5, y: from.y - 3 },
+      { x: from.x + 9, y: from.y + 3 },
+      '#fff2d8',
+      1.25,
+      flash * 0.72,
+      5
+    );
+  }
+  context.restore();
+}
+
+/** One impact per actual shot: tight copper shards or a blue shield ripple. */
+export function drawVisionRepeaterImpact(
+  context: CanvasRenderingContext2D,
+  point: WeaponFxPoint,
+  ageSeconds: number,
+  seed: number,
+  shield: boolean
+): void {
+  if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_IMPACT_SECONDS) return;
+  const t = ageSeconds / VISION_REPEATER_IMPACT_SECONDS;
+  const fade = Math.pow(1 - t, 1.4);
+  context.save();
+  repeaterCircle(context, point, 2.7 + t * 4, '#fff8e7', fade);
+  if (shield) {
+    repeaterCircle(context, point, 5 + t * 16, '#a7e2ff', fade * 0.75, true);
+    repeaterCircle(context, point, 3 + t * 10, '#ffc48c', fade * 0.48, true);
+  } else {
+    repeaterCircle(context, point, 3 + t * 7, '#ff9a4f', fade * 0.58, true);
+  }
+  for (let index = 0; index < 5; index += 1) {
+    const angle = (index * Math.PI * 2) / 5 + noise(seed + index) * 0.35;
+    const reach = 3 + t * (8 + noise(seed * 3 + index) * 10);
+    const end = {
+      x: point.x + Math.cos(angle) * reach,
+      y: point.y + Math.sin(angle) * reach,
+    };
+    line(context, point, end, index % 2 ? '#ffc689' : '#fff8d9', 0.8, fade * 0.8, 3);
   }
   context.restore();
 }

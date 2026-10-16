@@ -3,10 +3,13 @@ import {
   VISION_IMPACT_SECONDS,
   VISION_PULSE_SECONDS,
   VISION_ION_LASER_SECONDS,
-  VISION_REPEATER_SECONDS,
-  VISION_REPEATER_IMPACT_SECONDS,
 } from '../../core/combat-visual-timings';
-import { autocannonTracers, type WeaponFxPoint } from './combat-weapon-fx-renderer';
+import {
+  autocannonTracers,
+  drawVisionRepeaterImpact,
+  type WeaponFxPoint,
+} from './combat-weapon-fx-renderer';
+export { drawVisionFrontRepeater } from './combat-weapon-fx-renderer';
 
 /** Visual-only reinterpretations approved from the HTML weapon laboratory. */
 const TAU = Math.PI * 2;
@@ -89,38 +92,6 @@ export function drawVisionPulseLaser(
     stroke(ctx, wideTail, head, index === 1 ? '#ffd9bc' : '#ff817c', 3.4, 1 - progress * 0.4, 9);
     stroke(ctx, coreTail, head, '#fff6e5', 1, 1, 3);
     circle(ctx, from, 3.5 + index * 0.5, '#ffbda9', 0.6 * (1 - progress), 11);
-  }
-}
-
-/** Fast, needle-thin amber-white kinetic bursts. Each bolt is an independent real shot. */
-export function drawVisionFrontRepeater(
-  ctx: CanvasRenderingContext2D,
-  from: WeaponFxPoint,
-  to: WeaponFxPoint,
-  ageSeconds: number
-): void {
-  if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_SECONDS) return;
-  const progress = ageSeconds / VISION_REPEATER_SECONDS;
-  const head = along(from, to, clamp01(progress * 3.6));
-  const tail = along(from, to, clamp01(progress * 3.6 - 0.14));
-  const fade = Math.pow(1 - progress, 0.65);
-  stroke(ctx, tail, head, '#ff9f4d', 5, fade * 0.26, 12);
-  stroke(ctx, tail, head, '#ffd199', 2.2, fade * 0.88, 5);
-  stroke(ctx, tail, head, '#fffdf3', 0.95, fade, 2);
-  circle(ctx, head, 2.2, '#fff5dc', fade * 0.95, 6);
-  // A short asymmetric muzzle flash; no expensive smoke or particle emitters.
-  if (progress < 0.35) {
-    const flash = 1 - progress / 0.35;
-    circle(ctx, from, 3.8 + 5 * progress, '#ffae6f', flash * 0.55, 11);
-    stroke(
-      ctx,
-      { x: from.x - 5, y: from.y - 3 },
-      { x: from.x + 9, y: from.y + 3 },
-      '#fff2d8',
-      1.25,
-      flash * 0.72,
-      5
-    );
   }
 }
 
@@ -290,26 +261,6 @@ interface VisionImpactFrame {
   readonly shield: boolean;
   readonly t: number;
   readonly fade: number;
-}
-
-/** Compact kinetic contact: white flash, copper shards, tight shield ripple. */
-function drawRepeaterImpact({ ctx, p, seed, ageSeconds, shield }: VisionImpactFrame): void {
-  if (ageSeconds >= VISION_REPEATER_IMPACT_SECONDS) return;
-  const t = ageSeconds / VISION_REPEATER_IMPACT_SECONDS;
-  const fade = Math.pow(1 - t, 1.4);
-  circle(ctx, p, 2.7 + t * 4, '#fff8e7', fade, 9);
-  if (shield) {
-    circle(ctx, p, 5 + t * 16, '#a7e2ff', fade * 0.75, 7, true, 1.4);
-    circle(ctx, p, 3 + t * 10, '#ffc48c', fade * 0.48, 5, true, 0.8);
-  } else {
-    circle(ctx, p, 3 + t * 7, '#ff9a4f', fade * 0.58, 7, true, 1.1);
-  }
-  for (let index = 0; index < 5; index += 1) {
-    const angle = (index * TAU) / 5 + noise(seed + index) * 0.35;
-    const reach = 3 + t * (8 + noise(seed * 3 + index) * 10);
-    const point = { x: p.x + Math.cos(angle) * reach, y: p.y + Math.sin(angle) * reach };
-    stroke(ctx, p, point, index % 2 ? '#ffc689' : '#fff8d9', 0.8, fade * 0.8, 3);
-  }
 }
 
 function drawPulseImpact({ ctx, p, ageSeconds }: VisionImpactFrame): void {
@@ -490,7 +441,7 @@ export function drawVisionWeaponImpact(
   };
   switch (family) {
     case 'front_repeater':
-      drawRepeaterImpact(frame);
+      drawVisionRepeaterImpact(ctx, point, ageSeconds, seed, shield);
       return;
     case 'pulse_laser':
       drawPulseImpact(frame);
