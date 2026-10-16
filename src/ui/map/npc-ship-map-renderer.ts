@@ -55,7 +55,9 @@ export class NpcShipMapRenderer {
       };
 
       if (navMode) {
-        this.drawNavContact(point, npc.headingRadians, Math.min(12, Math.max(7, widthPx * 0.34)));
+        const size = Math.min(12, Math.max(7, widthPx * 0.34));
+        this.drawNavContact(point, npc.headingRadians, size);
+        this.drawContactRing(model, npc.id, point.x, point.y, size * 2, size * 2);
       } else if (image) {
         this.drawShip(
           model,
