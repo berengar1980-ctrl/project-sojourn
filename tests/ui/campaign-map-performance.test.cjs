@@ -14,7 +14,7 @@ for (const [file, minInterval] of [
   const timing = source.indexOf('performance.now();', draw);
   assert(draw >= 0 && timing > draw, file + ': canvas updates must precede HUD throttle');
   if (file.includes('star-map-panel.ts')) {
-    const throttle = /now - lastAuxiliaryUpdate >= (\\d+)/.exec(source);
+    const throttle = /now - lastAuxiliaryUpdate >= (\d+)/.exec(source);
     assert(
       throttle && Number(throttle[1]) >= minInterval,
       file + ': bounded HUD update interval'
