@@ -315,7 +315,11 @@ function steerCombatRoute(
     ? null
     : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
-    direction = evasion.direction;
+    // An emergency dodge must not replace a commanded escape with an orbit.
+    direction =
+      combatant.tactic === 'flee'
+        ? normalize(direction.x * 2 + evasion.direction.x, direction.y * 2 + evasion.direction.y)
+        : evasion.direction;
     targetSpeedFactor = evasion.speedFactor;
   }
 
@@ -455,6 +459,10 @@ export function moveCombatant(
     deliberateRam,
   });
   const headingDirection = posture.heading;
+  // The bow may need time to turn, but RCS can already correct the escape
+  // velocity. Without this the main engine traces a broad circle first.
+  const headingError = wrapAngle(Math.atan2(direction.y, direction.x) - combatant.headingRadians);
+  const escapeStrafe = combatant.tactic === 'flee' && Math.abs(headingError) > 0.65;
   updateStandardCombatBoost(
     combatant,
     headingDirection,
@@ -472,6 +480,6 @@ export function moveCombatant(
     arena,
     headingDirection,
     targetSpeedFactor,
-    posture.strafe
+    escapeStrafe ? direction : posture.strafe
   );
 }
