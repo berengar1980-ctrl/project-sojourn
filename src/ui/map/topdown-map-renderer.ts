@@ -4,6 +4,12 @@ import type {
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
 import { MapCamera } from './map-camera';
+import {
+  collectStarMapPickOptions,
+  type StarMapHitArea as HitArea,
+  type StarMapPick,
+  type StarMapPickOption,
+} from './star-map-contact-picking';
 import { mapSymbolScale } from './map-visual-scale';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawCargoMarketMarker } from './cargo-market-marker';
@@ -16,17 +22,6 @@ import { PlanetRingRenderer } from './planet-ring-renderer';
 import { ProceduralStationRenderer } from '../space/procedural-station-renderer';
 
 export type StarMapDisplayMode = 'physical' | 'nav';
-export interface StarMapPick {
-  readonly kind: 'location' | 'npc';
-  readonly id: string;
-}
-
-interface HitArea extends StarMapPick {
-  readonly x: number;
-  readonly y: number;
-  readonly radius: number;
-}
-
 export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly camera: MapCamera;
@@ -38,7 +33,7 @@ export class TopdownMapRenderer {
   private readonly stations: ProceduralStationRenderer;
   private readonly npcShips: NpcShipMapRenderer;
   private model: StarMapViewModel;
-  private displayMode: StarMapDisplayMode = 'physical';
+  private displayMode: StarMapDisplayMode = 'nav';
   private labelsVisible = true;
   private cargoOverlay: ReadonlyMap<string, 'best' | 'good' | 'low'> = new Map();
   private hasFitted = false;
@@ -125,16 +120,13 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
+  pickContacts(x: number, y: number): StarMapPickOption[] {
+    return collectStarMapPickOptions(this.hitAreas, this.model, x, y);
+  }
+
   pickContact(x: number, y: number): StarMapPick | null {
-    const matches = this.hitAreas.filter(
-      (area) => Math.hypot(x - area.x, y - area.y) <= area.radius
-    );
-    const npc = matches
-      .filter((area) => area.kind === 'npc')
-      .sort((first, second) => first.radius - second.radius)[0];
-    const best =
-      npc ?? [...matches].sort((first, second) => first.radius - second.radius)[0] ?? null;
-    return best ? { kind: best.kind, id: best.id } : null;
+    const first = this.pickContacts(x, y)[0];
+    return first ? { kind: first.kind, id: first.id } : null;
   }
 
   private draw(): void {
@@ -144,8 +136,16 @@ export class TopdownMapRenderer {
     this.context.clearRect(0, 0, width, height);
 
     const timeSeconds = performance.now() / 1000;
-    if (this.displayMode === 'nav') this.navRenderer.drawBackground(width, height, timeSeconds);
-    else {
+    if (this.displayMode === 'nav') {
+      const origin = this.camera.worldToScreen(this.model.star.position, width, height);
+      this.navRenderer.drawBackground(
+        width,
+        height,
+        timeSeconds,
+        origin,
+        this.camera.getRelativeZoom()
+      );
+    } else {
       this.backgroundRenderer.draw({
         width,
         height,
@@ -162,7 +162,7 @@ export class TopdownMapRenderer {
       this.drawLocation(location, width, height)
     );
     const npcHits = this.npcShips
-      .draw(this.model, this.camera, width, height, this.labelsVisible)
+      .draw(this.model, this.camera, width, height, this.labelsVisible, this.displayMode === 'nav')
       .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height);
@@ -303,32 +303,6 @@ export class TopdownMapRenderer {
       this.context.beginPath();
       this.context.arc(center.x, center.y, this.camera.scale(location.orbitRadius), 0, Math.PI * 2);
       this.context.stroke();
-    }
-  }
-
-  private drawRegions(width: number, height: number): void {
-    for (const region of this.model.regions) {
-      const center = this.camera.worldToScreen(region.center, width, height);
-      const radius = this.camera.scale(region.radius);
-      const gradient = this.context.createRadialGradient(
-        center.x,
-        center.y,
-        radius * 0.15,
-        center.x,
-        center.y,
-        radius
-      );
-      gradient.addColorStop(0, 'rgba(155, 48, 44, 0.10)');
-      gradient.addColorStop(0.7, 'rgba(155, 48, 44, 0.14)');
-      gradient.addColorStop(1, 'rgba(155, 48, 44, 0)');
-      this.context.fillStyle = gradient;
-      this.context.beginPath();
-      this.context.arc(center.x, center.y, radius, 0, Math.PI * 2);
-      this.context.fill();
-
-      this.context.fillStyle = 'rgba(224, 134, 124, 0.65)';
-      this.context.font = '11px system-ui';
-      this.context.fillText(region.name.toUpperCase(), center.x - 28, center.y - radius * 0.55);
     }
   }
 

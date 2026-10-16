@@ -39,7 +39,12 @@ assert(
 );
 assert(renderer.includes('class TopdownMapRenderer'), 'top-down renderer missing');
 assert(renderer.includes('shouldDrawLabel'), 'renderer must reduce minor labels at overview zoom');
-assert(renderer.includes('stationSymbols.draw'), 'stations must use typed visual symbols');
+assert(
+  renderer.includes('this.stations.draw(') &&
+    navRenderer.includes('location.stationType') &&
+    navRenderer.includes('spokes[stationType]'),
+  'stations must retain type-specific symbols in physical and NAV views'
+);
 assert(!renderer.includes('locationId ='), 'renderer must not mutate player navigation state');
 assert(panel.includes("'WERFT'"), 'star map must identify shipyard locations');
 assert(
