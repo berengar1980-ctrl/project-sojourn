@@ -328,6 +328,7 @@ function expireProjectile(
       damage: 0,
       position: { ...projectile.position },
       weaponKind: 'missile',
+      weaponFamily: projectile.family,
     };
   }
   runtime.projectiles.splice(index, 1);
@@ -414,7 +415,8 @@ function advanceRuntimeProjectile(
       'obstacle',
       0,
       obstacle.point,
-      projectile.kind
+      projectile.kind,
+      projectile.family
     );
     runtime.lastEvent =
       source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';
