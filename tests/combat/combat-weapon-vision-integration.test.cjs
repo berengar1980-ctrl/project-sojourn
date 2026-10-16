@@ -59,7 +59,7 @@ assert.equal(pulseExpired.operations.length, 0, 'expired pulse beams vanish');
 
 const repeat = recordingCanvas();
 effects.drawVisionFrontRepeater(repeat.context, from, to, 0.06);
-assert(repeat.operations.some((op) => op.color === '#ff9f4d'), 'repeater has amber shot streaks');
+assert(repeat.operations.some((op) => op.color === '#ff9f4d'), 'amber repeater streaks');
 const repeatExpired = recordingCanvas();
 effects.drawVisionFrontRepeater(
   repeatExpired.context,
