@@ -150,6 +150,41 @@ function makeCombatShell(root: HTMLElement): HTMLElement {
   return shell;
 }
 
+function bindCombatOrders(
+  shell: HTMLElement,
+  combat: StrategicCombatService,
+  onUpdate: () => void
+): void {
+  const flee = shell.querySelector<HTMLButtonElement>('[data-command="flee"]');
+  const surrender = shell.querySelector<HTMLButtonElement>('[data-command="surrender"]');
+  const dialog = shell.querySelector<HTMLElement>('.combat-surrender-confirm');
+  const cancel = shell.querySelector<HTMLButtonElement>('[data-surrender="cancel"]');
+  const confirm = shell.querySelector<HTMLButtonElement>('[data-surrender="confirm"]');
+  flee?.addEventListener('click', () => {
+    const tactic = combat.getSnapshot().attacker.tactic;
+    combat.setTactic('attacker', tactic === 'flee' ? 'fight' : 'flee');
+    onUpdate();
+  });
+  surrender?.addEventListener('click', () => {
+    if (combat.getSnapshot().winner) return;
+    if (dialog) dialog.hidden = false;
+    cancel?.focus();
+  });
+  const hideDialog = (): void => {
+    if (dialog) dialog.hidden = true;
+    surrender?.focus();
+  };
+  cancel?.addEventListener('click', hideDialog);
+  dialog?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hideDialog();
+  });
+  confirm?.addEventListener('click', () => {
+    if (dialog) dialog.hidden = true;
+    combat.surrender('attacker');
+    onUpdate();
+  });
+}
+
 export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
@@ -163,9 +198,6 @@ export function createStrategicCombatPanel(
   const grappleButton = shell.querySelector<HTMLButtonElement>('.strategic-combat-grapple');
   const fleeButton = shell.querySelector<HTMLButtonElement>('[data-command="flee"]');
   const surrenderButton = shell.querySelector<HTMLButtonElement>('[data-command="surrender"]');
-  const surrenderDialog = shell.querySelector<HTMLElement>('.combat-surrender-confirm');
-  const surrenderCancel = shell.querySelector<HTMLButtonElement>('[data-surrender="cancel"]');
-  const surrenderConfirm = shell.querySelector<HTMLButtonElement>('[data-surrender="confirm"]');
   attachCombatLogExport(shell, options);
   if (!canvas || !playerHud || !enemyHud || !event || !returnButton) {
     throw new Error('Strategic combat UI is incomplete.');
@@ -176,30 +208,6 @@ export function createStrategicCombatPanel(
   const unbindCamera = bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
-
-  fleeButton?.addEventListener('click', () => {
-    const tactic = options.combat.getSnapshot().attacker.tactic;
-    options.combat.setTactic('attacker', tactic === 'flee' ? 'fight' : 'flee');
-    render();
-  });
-  surrenderButton?.addEventListener('click', () => {
-    if (options.combat.getSnapshot().winner) return;
-    if (surrenderDialog) surrenderDialog.hidden = false;
-    surrenderCancel?.focus();
-  });
-  const cancelSurrender = (): void => {
-    if (surrenderDialog) surrenderDialog.hidden = true;
-    surrenderButton?.focus();
-  };
-  surrenderCancel?.addEventListener('click', cancelSurrender);
-  surrenderDialog?.addEventListener('keydown', (keyboardEvent) => {
-    if (keyboardEvent.key === 'Escape') cancelSurrender();
-  });
-  surrenderConfirm?.addEventListener('click', () => {
-    if (surrenderDialog) surrenderDialog.hidden = true;
-    options.combat.surrender('attacker');
-    render();
-  });
 
   let lastHudTime = -Infinity;
   const render = (): void => {
@@ -248,6 +256,7 @@ export function createStrategicCombatPanel(
   };
 
   returnButton.addEventListener('click', options.onReturn);
+  bindCombatOrders(shell, options.combat, render);
   render();
 
   return {
