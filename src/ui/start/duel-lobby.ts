@@ -1,4 +1,5 @@
 import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
+import { weaponHardpointDescription } from '../../core/weapon-hardpoint-labels';
 import {
   getAllShipDefinitions,
   fitsWeaponHardpoint,
@@ -70,7 +71,7 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
     select.addEventListener('change', () => {
       draft.weapons[mount.slotIndex] = select.value;
     });
-    return createLabel('Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + mount.facing, select);
+    return createLabel('Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + weaponHardpointDescription(mount), select);
   });
 }
 
