@@ -81,7 +81,7 @@ export function chooseCombatFlightIntent(
 
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
-    const exit = arena.exitPoint;
+    const exit = ship.escapeGate ?? arena.exitPoint;
     let direction = away;
     if (exit) direction = normalize(exit.x - ship.position.x, exit.y - ship.position.y);
     return { kind: 'escape', direction, speedFactor: 1 };
