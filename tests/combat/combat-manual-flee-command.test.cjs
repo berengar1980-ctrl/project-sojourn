@@ -92,6 +92,12 @@ assert.notDeepEqual(
   'a camped escape gate must reroute instead of demanding thrust against the boundary'
 );
 assert.equal(blockSnapshot.attacker.tactic, 'flee');
+blocked.setTactic('attacker', 'flee');
+assert.deepEqual(
+  blocked.getSnapshot().exitPoint,
+  blockSnapshot.exitPoint,
+  'repeating a manual flee order must not discard a viable escape detour'
+);
 assert.equal(blockSnapshot.winner, null, 'rerouting is not an instant successful escape');
 assert(
   blocked.getCombatLog().some((event) => event.detail.includes('FLUCHTKORRIDOR BLOCKIERT')),
