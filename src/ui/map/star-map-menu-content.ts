@@ -36,14 +36,41 @@ function contactStatus(npc: NpcShipMapView): string {
   return npc.activity;
 }
 
+const CONTACT_GROUPS = [
+  'GEFECHTSKONTAKTE',
+  'VERFOLGUNG',
+  'PIRATEN',
+  'PATROUILLE',
+  'BERGUNG',
+  'BERGBAU',
+  'FRACHTVERKEHR',
+] as const;
+
+function contactGroup(npc: NpcShipMapView): string {
+  if (npc.combatMode) return 'GEFECHTSKONTAKTE';
+  if (npc.isPursuitTarget) return 'VERFOLGUNG';
+  if (npc.job === 'pirate') return 'PIRATEN';
+  if (npc.job === 'patrol') return 'PATROUILLE';
+  if (npc.job === 'salvager') return 'BERGUNG';
+  if (npc.job === 'miner') return 'BERGBAU';
+  return 'FRACHTVERKEHR';
+}
+
 export function renderStarMapContacts(
   model: StarMapViewModel,
   container: HTMLElement,
   actions: DirectoryActions
 ): void {
+  const combatCount = model.npcShips.filter((npc) => Boolean(npc.combatMode)).length;
   const summary = document.createElement('p');
   summary.className = 'star-map-directory__summary';
-  summary.textContent = 'SENSORKONTAKTE // ' + model.npcShips.length + ' sichtbar';
+  summary.textContent =
+    'SENSORKONTAKTE // ' +
+    model.npcShips.length +
+    ' SICHTBAR · ' +
+    combatCount +
+    ' IM GEFECHT';
+
   const entries = model.npcShips.map((npc) => {
     const distance = Math.round(
       Math.hypot(
@@ -51,13 +78,16 @@ export function renderStarMapContacts(
         npc.position.y - model.playerShip.position.y
       )
     );
-    const row = createRow(
-      npc.name,
-      npc.job.toUpperCase() + ' · ' + distance + ' u · ' + contactStatus(npc),
-      npc.isSelected === true,
-      () => actions.onSelectNpc(npc.id)
-    );
-    return { distance, row };
+    return {
+      group: contactGroup(npc),
+      distance,
+      row: createRow(
+        npc.name,
+        npc.job.toUpperCase() + ' · ' + distance + ' u · ' + contactStatus(npc),
+        npc.isSelected === true,
+        () => actions.onSelectNpc(npc.id)
+      ),
+    };
   });
   entries.sort((a, b) => a.distance - b.distance);
   container.replaceChildren(summary);
@@ -65,7 +95,19 @@ export function renderStarMapContacts(
     container.append(emptyState('Keine Schiffe innerhalb der aktuellen Sensorreichweite.'));
     return;
   }
-  container.append(...entries.slice(0, 24).map((entry) => entry.row));
+
+  const visible = entries.slice(0, 24);
+  for (const group of CONTACT_GROUPS) {
+    const matching = visible.filter((entry) => entry.group === group);
+    if (!matching.length) continue;
+    const heading = document.createElement('p');
+    heading.className = 'star-map-directory__group';
+    heading.textContent = group + ' // ' + matching.length;
+    container.append(heading, ...matching.map((entry) => entry.row));
+  }
+  if (entries.length > visible.length) {
+    container.append(emptyState('WEITERE ' + (entries.length - visible.length) + ' KONTAKTE'));
+  }
 }
 
 export function renderStarMapEvents(
