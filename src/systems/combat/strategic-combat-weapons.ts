@@ -71,13 +71,21 @@ function fireRuntimeInstantWeapon(
 
   if (obstacle) {
     addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, obstacle.point, weaponIndex);
-    noteRuntimeImpact(runtime, targetSide, 'obstacle', 0, obstacle.point, kind);
+    noteRuntimeImpact(
+      runtime,
+      targetSide,
+      'obstacle',
+      0,
+      obstacle.point,
+      kind,
+      weapon.weapon.family
+    );
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
   addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, beamEnd, weaponIndex);
   if (!hit) {
-    noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint);
+    noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint, kind, weapon.weapon.family);
     return source.setup.name + ': ' + weapon.name + ' verfehlt';
   }
 
@@ -101,6 +109,8 @@ function fireRuntimeInstantWeapon(
     ...(result.subsystem ? { subsystem: result.subsystem } : {}),
     damage: result.damage,
     position: { ...result.point },
+    weaponKind: kind,
+    weaponFamily: weapon.weapon.family,
   };
   return (
     source.setup.name +
@@ -144,7 +154,8 @@ function fireRuntimeProjectileWeapon(
     owner: side,
     kind,
     family: weapon.weapon.family,
-    position: muzzle,
+    origin: { ...muzzle },
+    position: { ...muzzle },
     direction: normalize(targetPoint.x - muzzle.x, targetPoint.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
     speed: projectileSpeed(kind),
@@ -306,6 +317,7 @@ function recordProjectileDamage(
     damage: result.damage,
     position: { ...result.point },
     weaponKind: projectile.kind,
+    weaponFamily: projectile.family,
   };
   return result;
 }
@@ -324,6 +336,7 @@ function expireProjectile(
       damage: 0,
       position: { ...projectile.position },
       weaponKind: 'missile',
+      weaponFamily: projectile.family,
     };
   }
   runtime.projectiles.splice(index, 1);
@@ -410,7 +423,8 @@ function advanceRuntimeProjectile(
       'obstacle',
       0,
       obstacle.point,
-      projectile.kind
+      projectile.kind,
+      projectile.family
     );
     runtime.lastEvent =
       source.setup.name + ': ' + projectile.family.replaceAll('_', ' ') + ' trifft Hindernis';

@@ -54,12 +54,12 @@ assert(weapons.includes('weaponKind: projectile.kind'), 'impact visuals know pro
 assert(types.includes('readonly weaponKind?: CombatProjectileKind | CombatBeamKind'));
 assert(impactRenderer.includes("impact.weaponKind === 'missile'"), 'rocket gets visible explosion');
 assert(
-  weapons.includes('obstacle.point, kind'),
-  'beam impact carries its weapon category to the renderer'
+  /obstacle\.point,\s*kind,\s*weapon\.weapon\.family/.test(weapons),
+  'beam obstacle impacts carry weapon kind and specific family to the renderer'
 );
 assert(
-  weapons.includes('projectile.kind\n    );'),
-  'projectile impact carries its weapon category to the renderer'
+  /obstacle\.point,\s*projectile\.kind,\s*projectile\.family\s*\)/.test(weapons),
+  'projectile obstacle impacts carry weapon kind and specific family to the renderer'
 );
 assert(impactRenderer.includes("impact.layer === 'obstacle'"), 'solid rocks get hit effects');
 assert(

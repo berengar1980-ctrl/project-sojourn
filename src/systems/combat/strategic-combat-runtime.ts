@@ -1,4 +1,10 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
+import {
+  ION_CANNON_ARC_SECONDS,
+  RAIL_LANCE_SECONDS,
+  VISION_ION_LASER_SECONDS,
+  VISION_PULSE_SECONDS,
+} from '../../core/combat-visual-timings';
 
 import type {
   StrategicCombatRuntime,
@@ -29,7 +35,8 @@ export function noteRuntimeImpact(
   layer: CombatImpactLayer,
   damage: number,
   point: CombatPoint,
-  weaponKind?: CombatBeamKind | 'plasma' | 'missile' | 'autocannon'
+  weaponKind?: CombatBeamKind | 'plasma' | 'missile' | 'autocannon',
+  weaponFamily?: ShipWeaponFamily
 ): void {
   runtime.impactSerial += 1;
   runtime.lastImpact = {
@@ -39,6 +46,7 @@ export function noteRuntimeImpact(
     damage,
     position: { ...point },
     ...(weaponKind ? { weaponKind } : {}),
+    ...(weaponFamily ? { weaponFamily } : {}),
   };
 }
 
@@ -52,7 +60,18 @@ export function addRuntimeBeam(
   weaponIndex: number
 ): void {
   runtime.beamSerial += 1;
-  const maxTtlSeconds = kind === 'laser' ? 0.16 : 0.09;
+  const maxTtlSeconds =
+    family === 'railgun'
+      ? RAIL_LANCE_SECONDS
+      : family === 'ion_cannon'
+        ? ION_CANNON_ARC_SECONDS
+        : family === 'ion_laser'
+          ? VISION_ION_LASER_SECONDS
+          : family === 'pulse_laser'
+            ? VISION_PULSE_SECONDS
+            : kind === 'laser'
+              ? 0.16
+              : 0.09;
   runtime.beams.push({
     id: runtime.beamSerial,
     owner: side,

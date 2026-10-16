@@ -102,6 +102,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       owner: projectile.owner,
       kind: projectile.kind,
       family: projectile.family,
+      origin: { ...projectile.origin },
       position: { ...projectile.position },
       target: { ...runtimeEnemy(runtime, projectile.owner).position },
       ttlSeconds: projectile.ttlSeconds,
