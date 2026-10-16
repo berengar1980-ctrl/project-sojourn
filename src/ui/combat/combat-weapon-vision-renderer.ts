@@ -77,6 +77,7 @@ export function drawVisionPulseLaser(
   to: WeaponFxPoint,
   ageSeconds: number
 ): void {
+  if (ageSeconds < 0 || ageSeconds >= VISION_PULSE_SECONDS) return;
   for (let index = 0; index < 3; index += 1) {
     const progress = (ageSeconds - index * 0.085) / 0.24;
     if (progress < 0 || progress > 1) continue;
