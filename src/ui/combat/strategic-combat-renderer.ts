@@ -407,7 +407,14 @@ export class StrategicCombatRenderer {
         'below'
       );
     }
-    drawCombatShipBody(this.context, geometry, hullRatio, this.image(combatant.shipId), hardpoints, this.lighting);
+    drawCombatShipBody(
+      this.context,
+      geometry,
+      hullRatio,
+      this.image(combatant.shipId),
+      hardpoints,
+      this.lighting
+    );
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
     }
