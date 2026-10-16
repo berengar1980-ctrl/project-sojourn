@@ -31,12 +31,12 @@ assert(
   'strategic planner preserves its eight-second cadence'
 );
 
-const plannerSource = read('src/systems/combat/combat-strategy-planner.ts');
+const scoringSource = read('src/systems/combat/combat-weapon-posture-score.ts');
 assert(
-  plannerSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
-  'planner uses effective native combat damage rather than legacy catalog score'
+  scoringSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
+  'weapon scorer uses effective native damage rather than legacy catalog score'
 );
-assert(plannerSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
+assert(scoringSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
 const coverModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-cover.ts'
