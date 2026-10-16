@@ -7,10 +7,7 @@ export type WeaponPostureGroup = {
   readonly facing?: 'port' | 'starboard';
 };
 
-function weaponGroup(
-  ship: MutableCombatant,
-  index: number
-): WeaponPostureGroup | null {
+function weaponGroup(ship: MutableCombatant, index: number): WeaponPostureGroup | null {
   const weapon = ship.setup.weapons[index]?.weapon;
   if (!weapon) return null;
   const facing = ship.setup.weaponMounts?.find((mount) => mount.slotIndex === index)?.facing;
@@ -47,11 +44,7 @@ function aimedHeading(
   return bearing + (group.facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
 }
 
-function damageRate(
-  ship: MutableCombatant,
-  index: number,
-  enemyShielded: boolean
-): number {
+function damageRate(ship: MutableCombatant, index: number, enemyShielded: boolean): number {
   const weapon = ship.setup.weapons[index]?.weapon;
   if (!weapon) return 0;
   const damage = enemyShielded
@@ -66,11 +59,17 @@ function coverageFactor(degrees: number): number {
   return 0.55 + 0.45 * clamp(degrees / 180, 0, 1);
 }
 
+interface WeaponPostureScore {
+  readonly firepower: number;
+  readonly effectiveRange: number;
+  readonly turnSeconds: number;
+}
+
 export function scoreWeaponPosture(
   ship: MutableCombatant,
   enemy: MutableCombatant,
   group: WeaponPostureGroup
-): { readonly firepower: number; readonly effectiveRange: number; readonly turnSeconds: number } | null {
+): WeaponPostureScore | null {
   const heading = aimedHeading(ship, enemy, group);
   const projected = { ...ship, headingRadians: heading };
   const enemyShielded = enemy.shieldHp > 0;
