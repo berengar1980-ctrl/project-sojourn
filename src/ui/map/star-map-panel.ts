@@ -387,6 +387,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   const unbindInput = bindStarMapInput({
     canvas,
+    shell,
     renderer,
     onSelectLocation: options.onSelectLocation,
     onSelectNpc: options.onSelectNpc,
