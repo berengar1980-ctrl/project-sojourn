@@ -9,6 +9,19 @@ import { scoreWeaponPosture, type WeaponPostureGroup } from './combat-weapon-pos
 const PERIOD = 8;
 const SWITCH_MARGIN = 0.16;
 
+function activeHostileTractor(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  elapsed: number
+): boolean {
+  const reach = enemy.setup.tractorRangeMeters ?? 0;
+  if (reach <= 0 || enemy.shieldHp > 0 || enemy.subsystems.tractor <= 0) return false;
+  if ((ship.tractorThreatenedUntil ?? -1) <= elapsed) return false;
+  const dx = ship.position.x - enemy.position.x;
+  const dy = ship.position.y - enemy.position.y;
+  return Math.hypot(dx, dy) <= reach * 1.1;
+}
+
 /** Disable the highest immediate threat before trying to destroy the hull. */
 export function targetSubsystem(
   ship: MutableCombatant,
@@ -22,19 +35,7 @@ export function targetSubsystem(
     );
     if (enemy.tactic === 'flee' || (ship.tactic === 'flee' && relative > 35)) return 'engine';
   }
-  const tractor = enemy.setup.tractorRangeMeters ?? 0;
-  const proximity = Math.hypot(
-    ship.position.x - enemy.position.x,
-    ship.position.y - enemy.position.y
-  );
-  if (
-    enemy.subsystems.tractor > 0 &&
-    tractor > 0 &&
-    enemy.shieldHp <= 0 &&
-    (ship.tractorThreatenedUntil ?? -1) > elapsed &&
-    proximity <= tractor * 1.1
-  )
-    return 'tractor';
+  if (activeHostileTractor(ship, enemy, elapsed)) return 'tractor';
   return 'hull';
 }
 
@@ -176,6 +177,27 @@ function candidatePlans(
   return plans;
 }
 
+function selectStablePlan(
+  previous: CombatStrategyPlan | null,
+  options: readonly CombatStrategyPlan[]
+): CombatStrategyPlan {
+  const best = options[0]!;
+  const equivalent = options.find(
+    (option) =>
+      option.kind === previous?.kind && option.broadsideFacing === previous?.broadsideFacing
+  );
+  const selected =
+    equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)
+      ? { ...equivalent, reason: previous!.reason }
+      : best;
+  const samePosture =
+    previous?.kind === selected.kind &&
+    previous.focus === selected.focus &&
+    previous.broadsideFacing === selected.broadsideFacing;
+  // Reconsidering the same posture must not restart a partially completed turn.
+  return samePosture ? { ...selected, phase: previous.phase } : selected;
+}
+
 /** Only strategic reviews can replace a plan; movement ticks never replan. */
 export function reviewCombatStrategy(
   ship: MutableCombatant,
@@ -247,22 +269,7 @@ export function reviewCombatStrategy(
         : option
     )
     .sort((a, b) => b.score - a.score);
-  const best = options[0]!;
-  const current = ship.strategy;
-  const equivalent = options.find(
-    (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
-  );
-  const selected =
-    equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)
-      ? { ...equivalent, reason: current!.reason }
-      : best;
-  const samePosture =
-    current?.kind === selected.kind &&
-    current.focus === selected.focus &&
-    current.broadsideFacing === selected.broadsideFacing;
-  // Re-evaluating the same posture is not a fresh attack: preserve its
-  // current phase instead of restarting alignment on every strategy review.
-  ship.strategy = samePosture ? { ...selected, phase: current.phase } : selected;
+  ship.strategy = selectStablePlan(ship.strategy, options);
   // Combat commitment owns fight/flee; the planner only selects combat posture.
   if (!ship.combatTacticLocked) {
     ship.tactic =
