@@ -4,6 +4,12 @@ import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
+import { drawLegacyCombatBeam } from './combat-legacy-beam-renderer';
+import {
+  drawCombatMineMarker,
+  drawCombatShipBody,
+  drawCombatShipCaption,
+} from './combat-ship-detail-renderer';
 import { drawIonCannonArc, drawRailgunLance } from './combat-weapon-fx-renderer';
 import {
   drawVisionAutocannon,
@@ -24,7 +30,6 @@ import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
   CombatImpactSnapshot,
-  CombatMineSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
@@ -32,7 +37,6 @@ import { getShipDefinition } from '../../systems/ships';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
   projectHardpoint,
-  spriteDrawOffset,
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
@@ -268,64 +272,7 @@ export class StrategicCombatRenderer {
       drawRailgunLance(this.context, start, end, ageSeconds);
       return;
     }
-    const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
-    const progress = 1 - alpha;
-    const segmentStart =
-      beam.kind === 'tractor'
-        ? start
-        : {
-            x: start.x + (end.x - start.x) * Math.max(0, progress - 0.32),
-            y: start.y + (end.y - start.y) * Math.max(0, progress - 0.32),
-          };
-    const segmentEnd =
-      beam.kind === 'tractor'
-        ? end
-        : {
-            x: start.x + (end.x - start.x) * Math.min(1, progress + 0.18),
-            y: start.y + (end.y - start.y) * Math.min(1, progress + 0.18),
-          };
-    this.context.save();
-    this.context.lineCap = 'round';
-    if (beam.kind === 'tractor') {
-      this.context.strokeStyle = `rgba(113, 220, 190, ${0.35 + alpha * 0.6})`;
-      this.context.lineWidth = 2.5;
-      this.context.setLineDash([4, 5]);
-      this.context.beginPath();
-      this.context.moveTo(segmentStart.x, segmentStart.y);
-      this.context.lineTo(segmentEnd.x, segmentEnd.y);
-      this.context.stroke();
-    } else if (beam.kind === 'laser') {
-      this.context.shadowColor = 'rgba(67, 185, 255, .95)';
-      this.context.shadowBlur = 4;
-      this.context.strokeStyle = `rgba(108, 214, 255, ${0.25 + alpha * 0.5})`;
-      this.context.lineWidth = 1.8;
-      this.context.beginPath();
-      this.context.moveTo(segmentStart.x, segmentStart.y);
-      this.context.lineTo(segmentEnd.x, segmentEnd.y);
-      this.context.stroke();
-      this.context.shadowBlur = 3;
-      this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
-      this.context.lineWidth = 0.65;
-      this.context.beginPath();
-      this.context.moveTo(segmentStart.x, segmentStart.y);
-      this.context.lineTo(segmentEnd.x, segmentEnd.y);
-      this.context.stroke();
-      // Brief muzzle flare anchors each shot visually to the firing hardpoint.
-      this.context.shadowBlur = 5;
-      this.context.fillStyle = `rgba(202, 244, 255, ${alpha * 0.9})`;
-      this.context.beginPath();
-      this.context.arc(start.x, start.y, 1.3 + alpha * 1.1, 0, Math.PI * 2);
-      this.context.fill();
-    } else {
-      this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
-      this.context.lineWidth = 1.3;
-      this.context.setLineDash([18, 5]);
-      this.context.beginPath();
-      this.context.moveTo(segmentStart.x, segmentStart.y);
-      this.context.lineTo(segmentEnd.x, segmentEnd.y);
-      this.context.stroke();
-    }
-    this.context.restore();
+    drawLegacyCombatBeam(this.context, beam, start, end);
   }
   private drawProjectiles(width: number, height: number): void {
     for (const projectile of this.model.projectiles) {
@@ -390,27 +337,8 @@ export class StrategicCombatRenderer {
     for (const mine of this.model.mines) {
       if (mine.detection === 'hidden') continue;
       const point = this.screen(mine.position, width, height);
-      this.drawMine(mine, point);
+      drawCombatMineMarker(this.context, mine, point);
     }
-  }
-  private drawMine(mine: CombatMineSnapshot, point: Point): void {
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.strokeStyle = mine.armed ? 'rgba(226, 108, 82, .76)' : 'rgba(175, 177, 151, .48)';
-    this.context.fillStyle = 'rgba(44, 49, 51, .9)';
-    this.context.lineWidth = 1;
-    this.context.beginPath();
-    this.context.arc(0, 0, 6, 0, Math.PI * 2);
-    this.context.fill();
-    this.context.stroke();
-    for (let index = 0; index < 4; index += 1) {
-      const angle = (Math.PI / 2) * index;
-      this.context.beginPath();
-      this.context.moveTo(Math.cos(angle) * 6, Math.sin(angle) * 6);
-      this.context.lineTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
-      this.context.stroke();
-    }
-    this.context.restore();
   }
   private drawCombatDamage(
     combatant: StrategicCombatSnapshot['attacker'],
@@ -441,49 +369,6 @@ export class StrategicCombatRenderer {
       height,
       fraction
     );
-  }
-  private drawShipBody(
-    combatant: StrategicCombatSnapshot['attacker'],
-    geometry: ShipScreenGeometry,
-    hullRatio: number
-  ): void {
-    const image = this.image(combatant.shipId);
-    const definition = getShipDefinition(combatant.shipId);
-    const hardpoints = definition?.sprite.hardpoints;
-    this.context.save();
-    this.context.translate(geometry.center.x, geometry.center.y);
-    this.context.rotate(geometry.angle);
-    this.context.globalAlpha = hullRatio <= 0 ? 0.28 : 1;
-    if (image && image.complete && image.naturalWidth > 0 && hardpoints) {
-      const offset = spriteDrawOffset(hardpoints, geometry);
-      this.lighting.draw(this.context, {
-        image,
-        width: geometry.width,
-        height: geometry.height,
-        angle: geometry.angle,
-        light: { x: -0.72, y: -0.56 },
-        offsetX: offset.x,
-        offsetY: offset.y,
-        directionalStrength: 2.05,
-      });
-    } else if (image && image.complete && image.naturalWidth > 0) {
-      this.context.drawImage(
-        image,
-        -geometry.width / 2,
-        -geometry.height / 2,
-        geometry.width,
-        geometry.height
-      );
-    } else {
-      this.context.fillStyle = '#a4b2ba';
-      this.context.fillRect(
-        -geometry.width / 2,
-        -geometry.height / 2,
-        geometry.width,
-        geometry.height
-      );
-    }
-    this.context.restore();
   }
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
@@ -522,7 +407,7 @@ export class StrategicCombatRenderer {
         'below'
       );
     }
-    this.drawShipBody(combatant, geometry, hullRatio);
+    drawCombatShipBody(this.context, geometry, hullRatio, this.image(combatant.shipId), hardpoints, this.lighting);
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
     }
@@ -545,7 +430,7 @@ export class StrategicCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-    this.drawShipCaption(combatant.name, hullRatio, geometry);
+    drawCombatShipCaption(this.context, combatant.name, hullRatio, geometry);
     if (combatant.combatIntent) {
       this.context.font = 'bold 10px ui-monospace, monospace';
       this.context.textAlign = 'center';
@@ -562,16 +447,6 @@ export class StrategicCombatRenderer {
       geometry.height,
       combatant.boostSeconds,
       combatant.boostActive
-    );
-  }
-  private drawShipCaption(name: string, hullRatio: number, geometry: ShipScreenGeometry): void {
-    this.context.fillStyle = hullRatio > 0.35 ? 'rgba(220, 232, 238, .78)' : '#d88673';
-    this.context.font = '10px ui-monospace, monospace';
-    this.context.textAlign = 'center';
-    this.context.fillText(
-      name.toUpperCase(),
-      geometry.center.x,
-      geometry.center.y + geometry.height * 0.8 + 18
     );
   }
   private drawHullImpacts(width: number, height: number): void {
