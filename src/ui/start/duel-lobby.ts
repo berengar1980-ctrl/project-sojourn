@@ -71,7 +71,10 @@ function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelEleme
     select.addEventListener('change', () => {
       draft.weapons[mount.slotIndex] = select.value;
     });
-    return createLabel('Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + weaponHardpointDescription(mount), select);
+    return createLabel(
+      'Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + weaponHardpointDescription(mount),
+      select
+    );
   });
 }
 
