@@ -13,6 +13,14 @@ for (const [file, minInterval] of [
   const draw = source.indexOf('renderer.update(model);');
   const timing = source.indexOf('performance.now();', draw);
   assert(draw >= 0 && timing > draw, file + ': canvas updates must precede HUD throttle');
-  assert(source.includes(minInterval.toString()), file + ': bounded HUD update interval');
+  if (file.includes('star-map-panel.ts')) {
+    const throttle = /now - lastAuxiliaryUpdate >= (\\d+)/.exec(source);
+    assert(
+      throttle && Number(throttle[1]) >= minInterval,
+      file + ': bounded HUD update interval'
+    );
+  } else {
+    assert(source.includes(minInterval.toString()), file + ': bounded HUD update interval');
+  }
 }
 console.log('PASS campaign map canvases remain responsive while HUD updates are reduced');
