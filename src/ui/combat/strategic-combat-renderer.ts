@@ -5,10 +5,17 @@ import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import {
-  drawAutocannonBurst,
   drawIonCannonArc,
   drawRailgunLance,
 } from './combat-weapon-fx-renderer';
+import {
+  drawVisionAutocannon,
+  drawVisionIonLaser,
+  drawVisionProjectile,
+  drawVisionPulseLaser,
+  drawVisionWeaponImpact,
+} from './combat-weapon-vision-renderer';
+import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
@@ -19,6 +26,7 @@ import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
+  CombatImpactSnapshot,
   CombatMineSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
@@ -44,6 +52,10 @@ interface AutocannonVisualBurst {
   readonly spawnedAt: number;
   readonly flightSeconds: number;
 }
+interface VisibleCombatImpact {
+  readonly impact: CombatImpactSnapshot;
+  readonly startedAt: number;
+}
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
@@ -57,7 +69,7 @@ export class StrategicCombatRenderer {
   private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
   private seenImpactSerial = -1;
-  private impactAge = 1;
+  private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: StrategicCombatSnapshot
@@ -87,10 +99,25 @@ export class StrategicCombatRenderer {
       if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
     }
     if (model.lastImpact && model.lastImpact.serial !== this.seenImpactSerial) {
-      this.seenImpactSerial = model.lastImpact.serial;
-      this.impactAge = 0;
-    } else {
-      this.impactAge = Math.min(1, this.impactAge + 0.07);
+      const impact = model.lastImpact;
+      this.seenImpactSerial = impact.serial;
+      const flightDelay =
+        impact.weaponFamily === 'pulse_laser'
+          ? 0.42
+          : impact.weaponFamily === 'ion_laser'
+            ? 0.1
+            : impact.weaponFamily === 'ion_cannon'
+              ? 0.075
+              : impact.weaponFamily === 'railgun'
+                ? 0.045
+                : 0;
+      this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
+    }
+    for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
+      const visible = this.visibleImpacts[index]!;
+      if (model.elapsedSeconds - visible.startedAt >= VISION_IMPACT_SECONDS) {
+        this.visibleImpacts.splice(index, 1);
+      }
     }
     this.model = model;
     this.draw();
@@ -217,7 +244,7 @@ export class StrategicCombatRenderer {
     this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
     this.drawShip(this.model.defender, width, height, timeSeconds);
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
-    this.drawHullImpact(this.model.lastImpact, width, height);
+    this.drawHullImpacts(width, height);
   }
   private drawBeams(width: number, height: number): void {
     for (const beam of this.model.beams) this.drawBeam(beam, width, height);
@@ -228,6 +255,14 @@ export class StrategicCombatRenderer {
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
+    if (beam.family === 'pulse_laser') {
+      drawVisionPulseLaser(this.context, start, end, ageSeconds);
+      return;
+    }
+    if (beam.family === 'ion_laser') {
+      drawVisionIonLaser(this.context, start, end, ageSeconds, beam.id);
+      return;
+    }
     if (beam.family === 'ion_cannon') {
       drawIonCannonArc(this.context, start, end, ageSeconds, beam.id);
       return;
@@ -305,7 +340,7 @@ export class StrategicCombatRenderer {
   }
   private drawAutocannonBursts(width: number, height: number): void {
     for (const burst of this.autocannonBursts.values()) {
-      drawAutocannonBurst(
+      drawVisionAutocannon(
         this.context,
         this.screen(burst.origin, width, height),
         this.screen(burst.target, width, height),
@@ -315,6 +350,18 @@ export class StrategicCombatRenderer {
     }
   }
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
+    if (
+      drawVisionProjectile(
+        this.context,
+        projectile.family,
+        point,
+        projectile.direction,
+        this.model.elapsedSeconds,
+        projectile.id
+      )
+    ) {
+      return;
+    }
     const angle =
       projectile.kind === 'missile'
         ? Math.atan2(projectile.direction.y, projectile.direction.x)
@@ -530,17 +577,29 @@ export class StrategicCombatRenderer {
       geometry.center.y + geometry.height * 0.8 + 18
     );
   }
-  private drawHullImpact(
-    impact: StrategicCombatSnapshot['lastImpact'],
-    width: number,
-    height: number
-  ): void {
-    if (!impact) return;
-    drawStrategicHullImpact(
-      this.context,
-      impact,
-      this.impactAge,
-      this.screen(impact.position, width, height)
-    );
+  private drawHullImpacts(width: number, height: number): void {
+    for (const visible of this.visibleImpacts) {
+      const impact = visible.impact;
+      const age = this.model.elapsedSeconds - visible.startedAt;
+      if (age < 0) continue;
+      const point = this.screen(impact.position, width, height);
+      if (impact.weaponFamily && impact.layer !== 'miss') {
+        drawVisionWeaponImpact(
+          this.context,
+          impact.weaponFamily,
+          point,
+          age,
+          impact.serial,
+          impact.layer === 'shield'
+        );
+      } else {
+        drawStrategicHullImpact(
+          this.context,
+          impact,
+          clamp01(age / 0.24),
+          point
+        );
+      }
+    }
   }
 }
