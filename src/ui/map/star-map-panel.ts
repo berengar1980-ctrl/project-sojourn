@@ -12,7 +12,7 @@ export interface StarMapPanel {
   destroy(): void;
 }
 
-let preferredDisplayMode: StarMapDisplayMode = 'physical';
+let preferredDisplayMode: StarMapDisplayMode = 'nav';
 let preferredLabelsVisible = true;
 
 interface StarMapPanelOptions {
