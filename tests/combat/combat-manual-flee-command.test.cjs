@@ -7,6 +7,10 @@ const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
 );
+const { createDuelArena } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/duel-arena-presets.ts'
+);
 function setup(id) {
   return {
     id,
@@ -128,4 +132,36 @@ assert.equal(capitulation.winner, 'defender', 'capitulation is a voluntary loss'
 assert.equal(capitulation.attacker.hullHp, untouched.attacker.hullHp, 'no artificial hull damage');
 assert.deepEqual(surrendered.tick(0.08), capitulation, 'surrender ends the simulation');
 
-console.log('PASS manual flee, long escape, asteroid detour and surrender');
+// Reproduce the actual dense duel map, not only an isolated test rock.
+const dense = createDuelArena('asteroid_field', 1001);
+const denseDuel = createStrategicCombatService(setup('field-runner'), setup('field-chaser'), 92, {
+  ...dense,
+  exitPoint: { x: 160, y: dense.height * 0.5 },
+});
+denseDuel.setTactic('attacker', 'flee');
+let denseFrame = denseDuel.getSnapshot();
+const startDistance = Math.hypot(
+  denseFrame.attacker.position.x - denseFrame.exitPoint.x,
+  denseFrame.attacker.position.y - denseFrame.exitPoint.y
+);
+let closestDistance = startDistance;
+let totalTurn = 0;
+for (let tick = 0; tick < 1600 && !denseFrame.winner; tick += 1) {
+  const next = denseDuel.tick(0.08);
+  const change = next.attacker.headingRadians - denseFrame.attacker.headingRadians;
+  totalTurn += Math.abs(Math.atan2(Math.sin(change), Math.cos(change)));
+  denseFrame = next;
+  const remaining = Math.hypot(
+    denseFrame.attacker.position.x - denseFrame.exitPoint.x,
+    denseFrame.attacker.position.y - denseFrame.exitPoint.y
+  );
+  closestDistance = Math.min(closestDistance, remaining);
+}
+assert(
+  closestDistance < startDistance - 450,
+  'dense real asteroid field must not strand escaping ships oscillating in place'
+);
+assert(totalTurn < 35, 'fluctuating asteroid navigation must not cause endless alternating turns');
+assert.deepEqual(denseFrame.exitPoint, { x: 160, y: dense.height * 0.5 });
+
+console.log('PASS manual flee, long escape, asteroid detour, real dense field and surrender');
