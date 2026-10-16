@@ -20,9 +20,10 @@ function frame(seconds, firstHeading, separation) {
     },
   };
 }
-const inArc = (actor, target, _slot, _weapon) =>
-  Math.cos(Math.atan2(target.y - actor.position.y, target.x - actor.position.x) -
-    actor.headingRadians) > 0.8;
+function inArc(actor, target) {
+  const bearing = Math.atan2(target.y - actor.position.y, target.x - actor.position.x);
+  return Math.cos(bearing - actor.headingRadians) > 0.8;
+}
 const monitor = createEngagementMetrics([forward, forward], inArc);
 monitor.sample(frame(0, 0, 200));
 monitor.sample(frame(1, Math.PI / 2, 200));
