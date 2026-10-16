@@ -83,7 +83,11 @@ export class NpcShipMapRenderer {
         this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';
-        this.context.fillText(npc.name, point.x, point.y + (navMode ? 21 : geometry.height / 2 + 11));
+        this.context.fillText(
+          npc.name,
+          point.x,
+          point.y + (navMode ? 21 : geometry.height / 2 + 11)
+        );
       }
     }
 
