@@ -415,8 +415,11 @@ export function moveCombatant(
     Boolean(gunHeading) &&
     combatant.strategy?.phase !== 'reach_range' &&
     range >= Math.max(155, desired * 0.66);
+  // Track fixed guns while engaging; a committed pass or separation needs
+  // full propulsion authority rather than prolonged sideways RCS steering.
+  const engaging = intent.kind === 'intercept' && range <= desired * 1.12;
   const forwardHeading =
-    !deliberateRam && steering.canAim
+    engaging && !deliberateRam && steering.canAim
       ? forwardWeaponSteering(combatant, range, desired, toward)
       : null;
   const trackingWeapons = broadsideActive || Boolean(forwardHeading);
