@@ -4,6 +4,12 @@ import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
+import {
+  drawAutocannonBurst,
+  drawIonCannonArc,
+  drawRailgunLance,
+} from './combat-weapon-fx-renderer';
+import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { clamp01 } from './strategic-combat-renderer-math';
@@ -32,6 +38,12 @@ interface Point {
   readonly x: number;
   readonly y: number;
 }
+interface AutocannonVisualBurst {
+  readonly origin: Point;
+  readonly target: Point;
+  readonly spawnedAt: number;
+  readonly flightSeconds: number;
+}
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
@@ -42,6 +54,7 @@ export class StrategicCombatRenderer {
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly lighting = new ShipLightingRenderer();
   private readonly shieldImpacts = new ShieldImpactRenderer();
+  private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
   private seenImpactSerial = -1;
   private impactAge = 1;
@@ -57,6 +70,22 @@ export class StrategicCombatRenderer {
     this.resize();
   }
   update(model: StrategicCombatSnapshot): void {
+    for (const projectile of model.projectiles) {
+      if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(projectile.id)) continue;
+      const origin = projectile.origin;
+      const target = projectile.target;
+      const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
+      this.autocannonBursts.set(projectile.id, {
+        origin: { ...origin },
+        target: { ...target },
+        spawnedAt: model.elapsedSeconds,
+        flightSeconds: Math.max(0.12, travel / 900),
+      });
+    }
+    for (const [id, burst] of this.autocannonBursts) {
+      const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
+      if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
+    }
     if (model.lastImpact && model.lastImpact.serial !== this.seenImpactSerial) {
       this.seenImpactSerial = model.lastImpact.serial;
       this.impactAge = 0;
@@ -175,6 +204,7 @@ export class StrategicCombatRenderer {
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
     this.drawProjectiles(width, height);
+    this.drawAutocannonBursts(width, height);
     this.drawBeams(width, height);
     drawCombatGrapple(this.context, this.model, (side) => {
       const combatant = this.model[side];
@@ -197,6 +227,15 @@ export class StrategicCombatRenderer {
     // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
+    const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
+    if (beam.family === 'ion_cannon') {
+      drawIonCannonArc(this.context, start, end, ageSeconds, beam.id);
+      return;
+    }
+    if (beam.family === 'railgun') {
+      drawRailgunLance(this.context, start, end, ageSeconds);
+      return;
+    }
     const alpha = clamp01(beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds));
     const progress = 1 - alpha;
     const segmentStart =
@@ -258,9 +297,21 @@ export class StrategicCombatRenderer {
   }
   private drawProjectiles(width: number, height: number): void {
     for (const projectile of this.model.projectiles) {
+      if (projectile.kind === 'autocannon') continue;
       const point = this.screen(projectile.position, width, height);
       const target = this.screen(projectile.target, width, height);
       this.drawProjectile(projectile, point, target);
+    }
+  }
+  private drawAutocannonBursts(width: number, height: number): void {
+    for (const burst of this.autocannonBursts.values()) {
+      drawAutocannonBurst(
+        this.context,
+        this.screen(burst.origin, width, height),
+        this.screen(burst.target, width, height),
+        this.model.elapsedSeconds - burst.spawnedAt,
+        burst.flightSeconds
+      );
     }
   }
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
