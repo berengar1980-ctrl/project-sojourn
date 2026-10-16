@@ -75,10 +75,7 @@ global.window = windowStub;
 
 try {
   const root = path.resolve(__dirname, '../..');
-  const { createStarMapMenu } = loadStandaloneTypeScriptModule(
-    root,
-    'src/ui/map/star-map-menu.ts'
-  );
+  const { createStarMapMenu } = loadStandaloneTypeScriptModule(root, 'src/ui/map/star-map-menu.ts');
   const host = new StubElement('section');
   const sections = [];
   const menu = createStarMapMenu(host, (section) => sections.push(section));
