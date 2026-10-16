@@ -62,6 +62,8 @@ export type { StrategicCombatArenaOptions } from './strategic-combat-types';
 export type { StrategicCombatService } from './strategic-combat-types';
 export { createCombatShieldGeometry } from './strategic-combat-geometry';
 function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapshot {
+  const escapeGate =
+    runtime.attacker.escapeGate ?? runtime.defender.escapeGate ?? runtime.arena.exitPoint!;
   return {
     attacker: {
       ...snapshot(runtime.attacker),
@@ -82,7 +84,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
     elapsedSeconds: runtime.elapsedSeconds,
-    exitPoint: runtime.attacker.escapeGate ?? runtime.defender.escapeGate ?? runtime.arena.exitPoint!,
+    exitPoint: escapeGate,
     winner: runtime.winner,
     boardingInitiator: runtime.boardingInitiator,
     grapple: runtime.grapple
