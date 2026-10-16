@@ -213,6 +213,30 @@ function broadsideSteering(
   return { x: Math.cos(heading), y: Math.sin(heading) };
 }
 
+/**
+ * Fixed forward guns can track the enemy while the ship still travels along
+ * its independently chosen pass. Using RCS for that separation preserves inertia.
+ */
+function forwardWeaponSteering(
+  combatant: MutableCombatant,
+  range: number,
+  desired: number,
+  toward: CombatPoint
+): CombatPoint | null {
+  if (combatant.tactic === 'flee' || combatant.strategy?.focus !== 'forward') return null;
+  const forwardRange = Math.max(
+    0,
+    ...combatant.setup.weapons.flatMap((component, index) => {
+      if (component.weapon?.mount !== 'forward') return [];
+      const mount = combatant.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
+      if (mount?.facing && mount.facing !== 'forward') return [];
+      return [component.weapon.rangeMeters];
+    })
+  );
+  if (range > forwardRange || range < Math.max(240, desired * 0.5)) return null;
+  return toward;
+}
+
 function performCombatThrust(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
@@ -329,7 +353,7 @@ function steerCombatRoute(
     direction,
     targetSpeedFactor,
     clear: !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
-    canAim: !mineAvoidance && !obstacle && !boundary,
+    canAim: !mineAvoidance && !obstacle && !boundary && !evasion,
   };
 }
 
@@ -391,7 +415,12 @@ export function moveCombatant(
     Boolean(gunHeading) &&
     combatant.strategy?.phase !== 'reach_range' &&
     range >= Math.max(155, desired * 0.66);
-  const headingDirection = broadsideActive ? gunHeading! : direction;
+  const forwardHeading =
+    !deliberateRam && steering.canAim
+      ? forwardWeaponSteering(combatant, range, desired, toward)
+      : null;
+  const trackingWeapons = broadsideActive || Boolean(forwardHeading);
+  const headingDirection = broadsideActive ? gunHeading! : (forwardHeading ?? direction);
   updateStandardCombatBoost(
     combatant,
     headingDirection,
@@ -409,6 +438,6 @@ export function moveCombatant(
     arena,
     headingDirection,
     targetSpeedFactor,
-    broadsideActive ? direction : undefined
+    trackingWeapons ? direction : undefined
   );
 }
