@@ -52,4 +52,15 @@ assert(
 let latest = first;
 for (let tick = 0; tick < 35; tick += 1) latest = battle.tick(0.08);
 assert(latest.attacker.speed > 1, 'weapon tracking must not immobilize the ship');
-console.log('PASS forward gun tracks target while existing inertial movement remains active');
+const passing = createStrategicCombatService(setup('passing'), setup('opponent'), 86, {
+  ...arena,
+  attackerVelocity: { x: 100, y: 0 },
+});
+const flyby = passing.tick(0.08);
+assert.equal(flyby.attacker.combatIntent, 'ANGRIFFSPASSAGE');
+assert(
+  flyby.attacker.angularThrust < -0.1,
+  'forward weapon may track during a flyby only when travel and fire directions are compatible'
+);
+assert(flyby.attacker.speed > 60, 'aiming must preserve existing pass momentum');
+console.log('PASS forward guns track on viable firing approaches without stopping flybys');
