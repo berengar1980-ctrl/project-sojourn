@@ -1,42 +1,13 @@
-import type { CombatFireControl, MutableCombatant } from './strategic-combat-types';
+import type { MutableCombatant } from './strategic-combat-types';
+import type { ShipWeaponProfile } from '../../core/ship-types';
 
-const MIN_SHOT_INTERVAL = 0.45;
-
-/** Ship-wide fire-control pulses recharge sequentially, not per weapon. */
-export function fireControlRechargeSeconds(max: number): number {
-  if (max <= 1) return 0.9;
-  if (max === 2) return 0.8;
-  if (max === 3) return 0.72;
-  return 0.68;
+/** Each installed weapon owns its reload timer; no ship-wide pulse budget. */
+export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
+  return Math.max(0.05, weapon.cooldownSeconds * Math.max(0.4, Math.min(2, crewMultiplier)));
 }
 
-export function rechargeFireControl(state: MutableCombatant, now: number): void {
-  const control = state.fireControl;
-  if (control.charges >= control.max) {
-    control.nextRechargeAt = 0;
-    return;
+export function advanceWeaponCooldowns(ship: MutableCombatant, dt: number): void {
+  for (let index = 0; index < ship.setup.weapons.length; index += 1) {
+    ship.cooldowns[index] = Math.max(0, (ship.cooldowns[index] ?? 0) - dt);
   }
-  const recharge = fireControlRechargeSeconds(control.max);
-  if (control.nextRechargeAt <= 0) control.nextRechargeAt = now + recharge;
-  // Floating-point rounding must not delay a charge at the exact deadline.
-  while (control.charges < control.max && now + 0.000001 >= control.nextRechargeAt) {
-    control.charges += 1;
-    control.nextRechargeAt = control.charges < control.max ? control.nextRechargeAt + recharge : 0;
-  }
-}
-
-export function fireControlReady(control: CombatFireControl, now: number): boolean {
-  return control.charges > 0 && now - control.lastShotAt >= MIN_SHOT_INTERVAL - 0.000001;
-}
-
-export function consumeFireControl(state: MutableCombatant, now: number): boolean {
-  rechargeFireControl(state, now);
-  const control = state.fireControl;
-  if (!fireControlReady(control, now)) return false;
-  control.charges -= 1;
-  control.lastShotAt = now;
-  if (control.nextRechargeAt <= 0) {
-    control.nextRechargeAt = now + fireControlRechargeSeconds(control.max);
-  }
-  return true;
 }

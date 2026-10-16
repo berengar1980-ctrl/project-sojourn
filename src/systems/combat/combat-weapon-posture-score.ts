@@ -1,6 +1,8 @@
 import type { MutableCombatant } from './strategic-combat-types';
+import type { ShipWeaponProfile } from '../../core/ship-types';
 import { clamp, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
+import { weaponCycleSeconds } from './combat-weapon-fire-control';
 
 export type WeaponPostureGroup = {
   readonly focus: 'forward' | 'broadside' | 'turret';
@@ -11,60 +13,46 @@ function weaponGroup(ship: MutableCombatant, index: number): WeaponPostureGroup 
   const weapon = ship.setup.weapons[index]?.weapon;
   if (!weapon) return null;
   const facing = ship.setup.weaponMounts?.find((mount) => mount.slotIndex === index)?.facing;
-  const mount =
-    weapon.mount ??
-    (weapon.family === 'railgun'
-      ? 'forward'
-      : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family)
-        ? 'broadside'
-        : 'turret');
+  const mount = weapon.mount ?? (weapon.family === 'railgun' || weapon.family === 'front_repeater'
+    ? 'forward'
+    : ['plasma_battery', 'ion_cannon', 'autocannon'].includes(weapon.family) ? 'broadside' : 'turret');
   if (mount === 'turret' || mount === 'guided') return { focus: 'turret' };
   if (mount === 'forward' && (!facing || facing === 'forward')) return { focus: 'forward' };
-  if (mount === 'broadside') {
-    return { focus: 'broadside', facing: facing === 'starboard' ? 'starboard' : 'port' };
-  }
+  if (mount === 'broadside') return { focus: 'broadside', facing: facing === 'starboard' ? 'starboard' : 'port' };
   return null;
 }
 
-function groupMatches(a: WeaponPostureGroup, b: WeaponPostureGroup): boolean {
+function matches(a: WeaponPostureGroup, b: WeaponPostureGroup): boolean {
   return a.focus === b.focus && a.facing === b.facing;
 }
 
-function aimedHeading(
-  ship: MutableCombatant,
-  enemy: MutableCombatant,
-  group: WeaponPostureGroup
-): number {
+function aimedHeading(ship: MutableCombatant, enemy: MutableCombatant, group: WeaponPostureGroup): number {
   if (group.focus === 'turret') return ship.headingRadians;
-  const bearing = Math.atan2(
-    enemy.position.y - ship.position.y,
-    enemy.position.x - ship.position.x
-  );
-  if (group.focus === 'forward') return bearing;
-  return bearing + (group.facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
+  const bearing = Math.atan2(enemy.position.y - ship.position.y, enemy.position.x - ship.position.x);
+  return group.focus === 'forward' ? bearing :
+    bearing + (group.facing === 'starboard' ? -Math.PI / 2 : Math.PI / 2);
 }
 
-function damageRate(ship: MutableCombatant, index: number, enemyShielded: boolean): number {
-  const weapon = ship.setup.weapons[index]?.weapon;
-  if (!weapon) return 0;
-  const damage = enemyShielded
-    ? (weapon.combatShieldDamage ?? weapon.shieldDamage)
-    : (weapon.combatHullDamage ?? weapon.hullDamage);
-  const cycle = weapon.cooldownSeconds * clamp(ship.setup.cycleTimeMultiplier ?? 1, 0.4, 2);
-  return Math.max(0, damage) / Math.max(0.45, cycle);
+function damageRate(ship: MutableCombatant, profile: ShipWeaponProfile, shielded: boolean): number {
+  const damage = shielded ? (profile.combatShieldDamage ?? profile.shieldDamage) :
+    (profile.combatHullDamage ?? profile.hullDamage);
+  return Math.max(0, damage) / weaponCycleSeconds(profile, ship.setup.cycleTimeMultiplier ?? 1);
 }
 
 function coverageFactor(degrees: number): number {
-  // Wider existing arcs provide more firing opportunity, not more damage per hit.
   return 0.55 + 0.45 * clamp(degrees / 180, 0, 1);
 }
 
-interface WeaponPostureScore {
+export interface WeaponPostureScore {
   readonly firepower: number;
   readonly effectiveRange: number;
   readonly turnSeconds: number;
 }
 
+/**
+ * Score discrete, reachable firing envelopes instead of averaging dissimilar ranges.
+ * A long railgun and a short repeater create TWO valid engagement distances.
+ */
 export function scoreWeaponPosture(
   ship: MutableCombatant,
   enemy: MutableCombatant,
@@ -72,35 +60,46 @@ export function scoreWeaponPosture(
 ): WeaponPostureScore | null {
   const heading = aimedHeading(ship, enemy, group);
   const projected = { ...ship, headingRadians: heading };
-  const enemyShielded = enemy.shieldHp > 0;
-  let primary = 0;
-  let supplementary = 0;
-  let rangeSum = 0;
-  let rangeWeight = 0;
+  const shielded = enemy.shieldHp > 0;
+  const available: { profile: ShipWeaponProfile; primary: boolean; weight: number }[] = [];
   for (let index = 0; index < ship.setup.weapons.length; index += 1) {
-    const weapon = ship.setup.weapons[index]?.weapon;
+    const profile = ship.setup.weapons[index]?.weapon;
     const installed = weaponGroup(ship, index);
-    if (!weapon || !installed) continue;
-    if (!weaponInArc(projected, enemy.position, index, weapon)) continue;
+    if (!profile || !installed || !weaponInArc(projected, enemy.position, index, profile)) continue;
     const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
-    const arc = Math.min(weapon.arcDegrees ?? 360, mount?.arcDegrees ?? 360);
-    const rate = damageRate(ship, index, enemyShielded);
-    const adjusted = rate * coverageFactor(arc);
-    if (groupMatches(installed, group)) {
-      primary += adjusted;
-      rangeSum += adjusted * weapon.rangeMeters;
-      rangeWeight += adjusted;
-    } else if (installed.focus === 'turret') {
-      // Independent turrets can fire during a forward or broadside approach.
-      supplementary += adjusted * 0.25;
+    const arc = Math.min(profile.arcDegrees ?? 360, mount?.arcDegrees ?? 360);
+    const primary = matches(installed, group);
+    if (!primary && installed.focus !== 'turret') continue;
+    const weight = damageRate(ship, profile, shielded) * coverageFactor(arc) * (primary ? 1 : 0.25);
+    if (weight > 0) available.push({ profile, primary, weight });
+  }
+  const primary = available.filter(entry => entry.primary);
+  if (!primary.length) return null;
+  // Each weapon range creates a candidate envelope. Score firing effectiveness
+  // at that range; deliberately favour distance slightly when performance is close.
+  let bestRange = 0;
+  let bestFirepower = 0;
+  let bestScore = -Infinity;
+  const enemyRange = Math.max(0, ...enemy.setup.weapons.map(w => w.weapon?.rangeMeters ?? 0));
+  for (const candidate of primary) {
+    const range = Math.max(180, candidate.profile.rangeMeters * 0.8);
+    const firepower = available.reduce((total, entry) =>
+      total + (entry.profile.rangeMeters >= range ? entry.weight : 0), 0);
+    const safety = range > enemyRange ? 1.12 : 1;
+    const mobility = (ship.setup.combatSpeed ?? 120) / Math.max(65, enemy.setup.combatSpeed ?? 120);
+    const exposure = range < enemyRange && mobility < 0.95 ? 0.86 : 1;
+    const score = firepower * safety * exposure * (1 + range / 12000);
+    if (score > bestScore) {
+      bestScore = score;
+      bestRange = range;
+      bestFirepower = firepower;
     }
   }
-  if (primary <= 0) return null;
   const turning = Math.abs(wrapAngle(heading - ship.headingRadians));
   const turnRate = Math.max(0.25, ship.setup.turnRateRadiansPerSecond ?? 0.72);
   return {
-    firepower: primary + supplementary,
-    effectiveRange: rangeSum / Math.max(0.001, rangeWeight),
+    firepower: bestFirepower,
+    effectiveRange: bestRange,
     turnSeconds: group.focus === 'turret' ? 0 : turning / turnRate,
   };
 }

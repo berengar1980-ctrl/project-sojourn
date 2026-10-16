@@ -28,11 +28,7 @@ import {
 } from './strategic-combat-runtime';
 
 import { distance, clamp, weaponKind, normalize } from './strategic-combat-geometry';
-import {
-  consumeFireControl,
-  rechargeFireControl,
-  fireControlReady,
-} from './combat-weapon-fire-control';
+import { advanceWeaponCooldowns, weaponCycleSeconds } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import {
@@ -245,14 +241,10 @@ export function advanceRuntimeWeapons(
   target: MutableCombatant,
   deltaSeconds: number
 ): void {
-  const now = runtime.elapsedSeconds;
-  rechargeFireControl(source, now);
-  for (let index = 0; index < source.setup.weapons.length; index += 1) {
-    source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
-  }
+  advanceWeaponCooldowns(source, deltaSeconds);
   // Retreat is a command, not an aim posture: keep cooling guns but do not
   // launch new offensive projectiles while fleeing. Mines remain autonomous.
-  if (source.tactic === 'flee' || target.hullHp <= 0 || !fireControlReady(source.fireControl, now))
+  if (source.tactic === 'flee' || target.hullHp <= 0)
     return;
 
   // The current target layer determines weapon priority. A heavy gun cannot
@@ -278,13 +270,15 @@ export function advanceRuntimeWeapons(
         target.shieldHp > 0 ? (weapon.weapon?.shieldDamage ?? 0) : (weapon.weapon?.hullDamage ?? 0);
       return score(b.weapon) - score(a.weapon);
     });
-  const candidate = candidates[0];
-  if (!candidate || !consumeFireControl(source, now)) return;
-  const event = fireRuntimeWeapon(runtime, side, source, target, candidate.weapon, candidate.index);
-  source.cooldowns[candidate.index] =
-    (candidate.weapon.weapon?.cooldownSeconds ?? 1) *
-    clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
-  if (event) runtime.lastEvent = event;
+  // All ready mounts fire independently. Sorting preserves target-layer priority only.
+  for (const candidate of candidates) {
+    const event = fireRuntimeWeapon(runtime, side, source, target, candidate.weapon, candidate.index);
+    source.cooldowns[candidate.index] = weaponCycleSeconds(
+      candidate.weapon.weapon!,
+      source.setup.cycleTimeMultiplier
+    );
+    if (event) runtime.lastEvent = event;
+  }
 }
 
 function recordProjectileDamage(
