@@ -116,4 +116,33 @@ switchingTarget.shieldHp = 0;
 reviewCombatStrategy(switching, switchingTarget, 'attacker', 8);
 assert.equal(switching.strategy.kind, 'frontal', 'shield loss changes effective gun priority');
 
+const narrow = {
+  ...strongFront,
+  weapon: { ...strongFront.weapon, arcDegrees: 10 },
+};
+const wide = {
+  ...strongFront,
+  weapon: { ...strongFront.weapon, arcDegrees: 120 },
+};
+const narrowShip = makeShip('narrow', [narrow], ['forward']);
+const wideShip = makeShip('wide', [wide], ['forward']);
+const narrowScore = scoreWeaponPosture(narrowShip, opposing, { focus: 'forward' });
+const wideScore = scoreWeaponPosture(wideShip, opposing, { focus: 'forward' });
+assert(narrowScore && wideScore && wideScore.firepower > narrowScore.firepower);
+
+const shortHeavy = {
+  ...heavySide,
+  weapon: { ...heavySide.weapon, rangeMeters: 300 },
+};
+const longWeak = {
+  ...weakSide,
+  weapon: { ...weakSide.weapon, rangeMeters: 1800 },
+};
+const rangedShip = makeShip('ranged', [shortHeavy, longWeak], ['port', 'port']);
+const rangeScore = scoreWeaponPosture(rangedShip, opposing, {
+  focus: 'broadside',
+  facing: 'port',
+});
+assert(rangeScore && rangeScore.effectiveRange < 600, 'dominant short gun sets useful range');
+
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');
