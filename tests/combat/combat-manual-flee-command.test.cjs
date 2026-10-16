@@ -79,4 +79,23 @@ for (const heading of [0, Math.PI / 2, Math.PI]) {
     assert(totalRotation < Math.PI * 1.75, 'escaping must not spin repeatedly in open space');
   }
 }
+const blocked = createStrategicCombatService(setup('blocked'), setup('guard'), 86, {
+  ...arena,
+  attackerPosition: { x: 172, y: 750 },
+  defenderPosition: { x: 350, y: 750 },
+});
+blocked.setTactic('attacker', 'flee');
+const blockSnapshot = blocked.tick(0.08);
+assert.notDeepEqual(
+  blockSnapshot.exitPoint,
+  arena.exitPoint,
+  'a camped escape gate must reroute instead of demanding thrust against the boundary'
+);
+assert.equal(blockSnapshot.attacker.tactic, 'flee');
+assert.equal(blockSnapshot.winner, null, 'rerouting is not an instant successful escape');
+assert(
+  blocked.getCombatLog().some((event) => event.detail.includes('FLUCHTKORRIDOR BLOCKIERT')),
+  'blocked gate decision must be visible in diagnostic combat logs'
+);
+
 console.log('PASS manual flee overrides attack immediately, moves to gate and can be cancelled');
