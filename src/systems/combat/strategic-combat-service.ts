@@ -362,8 +362,8 @@ export function createStrategicCombatService(
     fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
-      if (runtime.winner || (combatant.combatTacticLocked && combatant.tactic === tactic))
-        return;
+      if (runtime.winner) return;
+      if (combatant.combatTacticLocked && combatant.tactic === tactic) return;
       combatant.tactic = tactic;
       combatant.combatTacticLocked = true;
       // Player orders have immediate authority over the previous AI plan.
