@@ -65,7 +65,11 @@ reviewCombatStrategy(attacker, defender, 'attacker', 0);
 assert.equal(attacker.strategy.focus, 'forward');
 attacker.strategy = { ...attacker.strategy, phase: 'align_weapons' };
 reviewCombatStrategy(attacker, defender, 'attacker', 8);
-assert.equal(attacker.strategy.phase, 'align_weapons', 'review cannot restart an equivalent maneuver');
+assert.equal(
+  attacker.strategy.phase,
+  'align_weapons',
+  'review cannot restart an equivalent maneuver'
+);
 let firstPassHeadingError = null;
 let correctedHeading = false;
 for (let step = 0; step < 60; step += 1) {
@@ -89,4 +93,4 @@ assert(
   firstPassHeadingError === null || firstPassHeadingError < 0.28,
   'frontal flyby cannot interrupt incomplete bow alignment'
 );
-console.log('PASS frontal attack fully aligns before a pass and phase persists across reviews');
+console.log('PASS frontal attack aligns before pass and retains plan phase');
