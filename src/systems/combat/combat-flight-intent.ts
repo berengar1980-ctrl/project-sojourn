@@ -3,7 +3,8 @@ import type {
   MutableCombatant,
   StrategicCombatArenaOptions,
 } from './strategic-combat-types';
-import { normalize } from './strategic-combat-geometry';
+import { normalize, wrapAngle } from './strategic-combat-geometry';
+import { weaponInArc } from './combat-weapon-geometry';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 
 type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
@@ -38,6 +39,29 @@ function continueCommittedPass(
     return null;
   }
   return { kind: 'pass', direction: pass.direction, speedFactor: 0.92 };
+}
+
+/** A forward-gun passage starts only once the real weapon arc is aligned. */
+function forwardPassReady(ship: MutableCombatant, enemy: MutableCombatant): boolean {
+  if (ship.strategy?.focus !== 'forward') return true;
+  const bearing = Math.atan2(
+    enemy.position.y - ship.position.y,
+    enemy.position.x - ship.position.x
+  );
+  const error = Math.abs(wrapAngle(bearing - ship.headingRadians));
+  if (!Number.isFinite(error) || error > 0.25) return false;
+  const forwardGuns = ship.setup.weapons
+    .map((component, index) => ({ component, index }))
+    .filter(({ component, index }) => {
+      const weapon = component.weapon;
+      if (!weapon) return false;
+      const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
+      return (weapon.mount === 'forward' || weapon.family === 'railgun') &&
+        (!mount?.facing || mount.facing === 'forward');
+    });
+  return forwardGuns.every(({ component, index }) =>
+    weaponInArc(ship, enemy.position, index, component.weapon!)
+  );
 }
 
 export function chooseCombatFlightIntent(
@@ -104,7 +128,10 @@ export function chooseCombatFlightIntent(
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
   const relativeClosing = relativeX * toward.x + relativeY * toward.y;
-  const canPass = ship.subsystems.engine > 0 && range <= desiredRange * 1.12;
+  const canPass =
+    ship.subsystems.engine > 0 &&
+    range <= desiredRange * 1.12 &&
+    forwardPassReady(ship, enemy);
   if (canPass && relativeClosing > 14) {
     const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
     const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
