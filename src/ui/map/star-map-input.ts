@@ -1,14 +1,21 @@
-import type { TopdownMapRenderer } from './topdown-map-renderer';
+import type { TopdownMapRenderer, StarMapPickOption } from './topdown-map-renderer';
+import { createStarMapPickMenu } from './star-map-pick-menu';
 
 interface StarMapInputOptions {
   readonly canvas: HTMLCanvasElement;
+  readonly shell: HTMLElement;
   readonly renderer: TopdownMapRenderer;
   readonly onSelectLocation: (id: string) => void;
   readonly onSelectNpc: (id: string) => void;
 }
 
 export function bindStarMapInput(options: StarMapInputOptions): () => void {
-  const { canvas, renderer, onSelectLocation, onSelectNpc } = options;
+  const { canvas, shell, renderer, onSelectLocation, onSelectNpc } = options;
+  const select = (contact: StarMapPickOption): void => {
+    if (contact.kind === 'npc') onSelectNpc(contact.id);
+    else onSelectLocation(contact.id);
+  };
+  const picker = createStarMapPickMenu(shell, select);
   let dragging = false;
   let moved = false;
   let lastX = 0;
@@ -22,6 +29,7 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
   };
 
   const pointerDown = (event: PointerEvent): void => {
+    picker.close();
     dragging = true;
     moved = false;
     const point = pointerPoint(event);
@@ -47,18 +55,21 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
     dragging = false;
     if (moved) return;
     const point = pointerPoint(event);
-    const contact = renderer.pickContact(point.x, point.y);
-    if (!contact) return;
-    if (contact.kind === 'npc') onSelectNpc(contact.id);
-    else onSelectLocation(contact.id);
+    const contacts = renderer.pickContacts(point.x, point.y);
+    if (contacts.length > 1) picker.show(contacts, point);
+    else if (contacts[0]) select(contacts[0]);
   };
 
   const wheel = (event: WheelEvent): void => {
     event.preventDefault();
+    picker.close();
     renderer.zoomAt(event.deltaY, event.offsetX, event.offsetY);
   };
 
-  const reset = (): void => renderer.resetCamera();
+  const reset = (): void => {
+    picker.close();
+    renderer.resetCamera();
+  };
 
   const keyDown = (event: KeyboardEvent): void => {
     if (event.key.toLowerCase() === 'h') renderer.toggleHardpointDebug();
@@ -72,6 +83,7 @@ export function bindStarMapInput(options: StarMapInputOptions): () => void {
   window.addEventListener('keydown', keyDown);
 
   return () => {
+    picker.destroy();
     canvas.removeEventListener('pointerdown', pointerDown);
     canvas.removeEventListener('pointermove', pointerMove);
     canvas.removeEventListener('pointerup', pointerUp);
