@@ -57,4 +57,26 @@ combat.setTactic('attacker', 'fight');
 const resumed = combat.tick(0.08);
 assert.equal(resumed.attacker.tactic, 'fight');
 assert.notEqual(resumed.attacker.strategy?.kind, 'escape');
+for (const heading of [0, Math.PI / 2, Math.PI]) {
+  for (const seed of [85, 86]) {
+    const duel = createStrategicCombatService(setup('pilot'), setup('pursuer'), seed, {
+      ...arena,
+      attackerHeadingRadians: heading,
+    });
+    duel.setTactic('attacker', 'flee');
+    let previous = duel.getSnapshot();
+    let totalRotation = 0;
+    for (let tick = 0; tick < 70 && !previous.winner; tick += 1) {
+      const frame = duel.tick(0.08);
+      const delta = frame.attacker.headingRadians - previous.attacker.headingRadians;
+      totalRotation += Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta)));
+      previous = frame;
+    }
+    assert(
+      previous.attacker.position.x < arena.attackerPosition.x - 25,
+      'manual flight progresses toward exit across seeds and starting headings'
+    );
+    assert(totalRotation < Math.PI * 1.75, 'escaping must not spin repeatedly in open space');
+  }
+}
 console.log('PASS manual flee overrides attack immediately, moves to gate and can be cancelled');
