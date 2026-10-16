@@ -34,8 +34,11 @@ function createEngagementMetrics(setups, weaponInArc) {
       const state = { ...actor, setup };
       const inArc = setup.weapons.some((component, slot) => {
         const weapon = component.weapon;
-        return weapon && distance <= weapon.rangeMeters &&
-          weaponInArc(state, target.position, slot, weapon);
+        return (
+          weapon &&
+          distance <= weapon.rangeMeters &&
+          weaponInArc(state, target.position, slot, weapon)
+        );
       });
       if (inArc) secondsInArc[index] += dt;
       if (actor.strategy?.phase === 'fire') secondsPhaseFire[index] += dt;
