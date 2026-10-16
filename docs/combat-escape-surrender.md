@@ -26,7 +26,5 @@ confiscation, or rescue consequence is invented; that requires a separate
 design decision. Ordinary escape now also has its own outcome reason, avoiding
 a misleading defeat label in the player-facing summary.
 
-Regression coverage: `tests/combat/combat-manual-flee-command.test.cjs` and
-`tests/combat/combat-escape-command-regression.test.cjs`, alongside the
-existing combat integration tests and the 12-scenario movement baseline in
+Regression coverage: `tests/combat/combat-manual-flee-command.test.cjs` alongside the existing combat integration tests and the 12-scenario movement baseline in
 `scripts/combat-ci-metrics.cjs`.

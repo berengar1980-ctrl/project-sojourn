@@ -104,4 +104,38 @@ assert(
   'blocked gate decision must be visible in diagnostic combat logs'
 );
 
-console.log('PASS manual flee overrides attack immediately, moves to gate and can be cancelled');
+// Longer physical trajectories must reach the real exit, not just display FLIEHEN.
+const longRun = createStrategicCombatService(setup('long-runner'), setup('long-hunter'), 86, {
+  ...arena,
+  defenderPosition: { x: 2250, y: 750 },
+});
+longRun.setTactic('attacker', 'flee');
+let longFrame = longRun.getSnapshot();
+for (let tick = 0; tick < 900 && !longFrame.winner; tick += 1) {
+  longFrame = longRun.tick(0.08);
+}
+assert.equal(longFrame.outcomeReason, 'escape', 'clear route finishes as actual escape');
+assert.equal(longFrame.winner, 'defender', 'an escaped attacker does not win by destruction');
+
+const asteroidRun = createStrategicCombatService(setup('rock-runner'), setup('rock-hunter'), 86, {
+  ...arena,
+  defenderPosition: { x: 2250, y: 750 },
+  obstacles: [{ id: 'rock', position: { x: 680, y: 750 }, radius: 90 }],
+});
+asteroidRun.setTactic('attacker', 'flee');
+let rockFrame = asteroidRun.getSnapshot();
+for (let tick = 0; tick < 1100 && !rockFrame.winner; tick += 1) {
+  rockFrame = asteroidRun.tick(0.08);
+}
+assert.equal(rockFrame.outcomeReason, 'escape', 'asteroid detour reaches the exit');
+
+const surrendered = createStrategicCombatService(setup('captain'), setup('pirate'), 87, arena);
+const untouched = surrendered.getSnapshot();
+surrendered.surrender('attacker');
+const capitulation = surrendered.getSnapshot();
+assert.equal(capitulation.outcomeReason, 'surrender', 'distinct capitulation result');
+assert.equal(capitulation.winner, 'defender', 'capitulation is a voluntary loss');
+assert.equal(capitulation.attacker.hullHp, untouched.attacker.hullHp, 'no artificial hull damage');
+assert.deepEqual(surrendered.tick(0.08), capitulation, 'surrender ends the simulation');
+
+console.log('PASS manual flee, long escape, asteroid detour and surrender');
