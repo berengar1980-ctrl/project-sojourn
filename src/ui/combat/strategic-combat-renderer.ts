@@ -35,10 +35,7 @@ import type {
 } from '../../systems/combat/strategic-combat-service';
 import { getShipDefinition } from '../../systems/ships';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  projectHardpoint,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
