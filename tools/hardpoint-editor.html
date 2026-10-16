@@ -85,14 +85,15 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 <label>Ausgewählter Hardpoint</label>
 <div id="emptySelection" class="muted">Wähle links einen Hardpoint oder klicke einen Marker am Schiff.</div>
 <div id="editor" hidden>
+<p id="weaponSummary" class="muted" hidden></p>
 <div class="field-grid">
 <div class="wide"><label>ID</label><input id="fieldId"></div>
 <div><label>X</label><input id="fieldX" type="number" step="1"></div>
 <div><label>Y</label><input id="fieldY" type="number" step="1"></div>
 <div><label>Breite</label><input id="fieldWidth" type="number" min="1" step="1"></div>
 <div><label>Layer</label><select id="fieldLayer"><option value="below">unter Schiff</option><option value="above">über Schiff</option></select></div>
-<div id="weaponFacingWrap" class="wide" hidden><label>Schussrichtung</label><select id="fieldFacing"><option value="forward">Bug (vorne)</option><option value="port">Backbord (oben)</option><option value="starboard">Steuerbord (unten)</option></select></div>
-<div id="weaponArcWrap" hidden><label>Max. Feuerwinkel (°)</label><input id="fieldArcDegrees" type="number" min="1" max="360" step="1"></div>
+<div id="weaponFacingWrap" class="wide" hidden><label>Grundausrichtung (bei Winkel unter 360°)</label><select id="fieldFacing"><option value="forward">Bug (vorne)</option><option value="port">Backbord (oben)</option><option value="starboard">Steuerbord (unten)</option></select></div>
+<div id="weaponArcWrap" hidden><label>Max. Feuerwinkel (°)</label><input id="fieldArcDegrees" type="number" min="1" max="360" step="1"><p class="muted">Bei 360° ist die Grundausrichtung für die Zielabdeckung ohne Einfluss. Lenkwaffen nutzen eine Rundum-Zielerfassung.</p></div>
 <div id="weaponTypesWrap" class="wide" hidden><label>Zulässige Waffen-Montagen</label>
 <div class="type-grid"><label><input type="checkbox" class="weaponAllowed" value="forward"> Front</label><label><input type="checkbox" class="weaponAllowed" value="broadside"> Breitseite</label><label><input type="checkbox" class="weaponAllowed" value="turret"> Rundumturm</label><label><input type="checkbox" class="weaponAllowed" value="guided"> Lenkwaffen</label></div>
 <p class="muted">Nur ausgewählte Montagen sind im Spiel in diesem Slot einbaubar. Alte Slots ohne Angabe bleiben bis zur Kalibrierung kompatibel.</p></div>
@@ -136,7 +137,8 @@ kbd{border:1px solid #3a515b;border-bottom-width:2px;border-radius:3px;padding:1
 </div>
 </aside>
 </div>
-<script>
+<script type="module">
+import { weaponHardpointName, weaponHardpointDescription } from "../src/core/weapon-hardpoint-labels.ts";
 const TYPES={
  engines:{label:"Engine",color:"#4da3ff"},
  weaponLasers:{label:"Laser",color:"#ffb347"},
@@ -145,7 +147,7 @@ const TYPES={
  maneuverThrusters:{label:"RCS Burst",color:"#f4f7fb"},
  tractorBeams:{label:"Traktorstrahl",color:"#54ef8d"}
 };
-const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","modeGrid","hardpointControls","pointSection","hardpointEditorSection","shieldEditorSection","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","fieldFacing","fieldArcDegrees","weaponFacingWrap","weaponArcWrap","weaponTypesWrap","weaponFamiliesWrap","shieldCenterX","shieldCenterY","shieldRadiusX","shieldRadiusY","shieldMaxHp","shieldModifier","meta"].map(id=>[id,document.getElementById(id)]));
+const els=Object.fromEntries(["saveBtn","saveAllBtn","status","shipSelect","dirtyInfo","modeGrid","hardpointControls","pointSection","hardpointEditorSection","shieldEditorSection","typeGrid","addBtn","deleteBtn","hardpointList","canvas","editor","emptySelection","fieldId","fieldX","fieldY","fieldWidth","fieldLayer","forceXWrap","forceYWrap","fieldForceX","fieldForceY","fieldFacing","fieldArcDegrees","weaponSummary","weaponFacingWrap","weaponArcWrap","weaponTypesWrap","weaponFamiliesWrap","shieldCenterX","shieldCenterY","shieldRadiusX","shieldRadiusY","shieldMaxHp","shieldModifier","meta"].map(id=>[id,document.getElementById(id)]));
 const ctx=els.canvas.getContext("2d");
 const SHIP_IDS=[
  "freighter-120m-variant-01","freighter-120m-variant-02","freighter-120m-variant-03","freighter-120m-variant-04",
@@ -212,7 +214,9 @@ function renderList(){
  const list=points();els.hardpointList.innerHTML="";
  list.forEach((hp,index)=>{
   const row=document.createElement("div");row.className="hp"+(state.selected===index?" selected":"");row.onclick=()=>selectPoint(index);
-  row.innerHTML='<i class="dot" style="background:'+TYPES[state.type].color+'"></i><span>'+escapeHtml(hp.id)+'</span><span class="badge">'+(hp.layer||"below")+"</span>";
+  const label=state.type==="weaponMounts"?(hp.slotIndex+1)+" · "+weaponHardpointName(hp):hp.id;
+  row.title=state.type==="weaponMounts"?hp.id+" · "+weaponHardpointDescription(hp):hp.id;
+  row.innerHTML='<i class="dot" style="background:'+TYPES[state.type].color+'"></i><span>'+escapeHtml(label)+'</span><span class="badge">'+(hp.layer||"below")+"</span>";
   els.hardpointList.appendChild(row);
  });
 }
@@ -221,8 +225,8 @@ function renderEditor(){
  const hp=points()[state.selected];const has=Boolean(hp);els.editor.hidden=!has;els.emptySelection.hidden=has;if(!has)return;
  els.fieldId.value=hp.id;els.fieldX.value=hp.x;els.fieldY.value=hp.y;els.fieldWidth.value=hp.width;els.fieldLayer.value=hp.layer||"below";
  const rcs=state.type==="maneuverThrusters";els.forceXWrap.hidden=!rcs;els.forceYWrap.hidden=!rcs;els.fieldForceX.value=hp.forceX??0;els.fieldForceY.value=hp.forceY??0;
- const weapon=state.type==="weaponMounts";els.weaponFacingWrap.hidden=!weapon;els.weaponArcWrap.hidden=!weapon;els.weaponTypesWrap.hidden=!weapon;els.weaponFamiliesWrap.hidden=!weapon;
- if(weapon){els.fieldFacing.value=hp.facing||"forward";els.fieldArcDegrees.value=hp.arcDegrees??360;for(const input of document.querySelectorAll(".weaponAllowed"))input.checked=(hp.allowedMounts||["forward","broadside","turret","guided"]).includes(input.value);for(const input of document.querySelectorAll(".weaponFamily"))input.checked=!hp.allowedFamilies||hp.allowedFamilies.includes(input.value)}
+ const weapon=state.type==="weaponMounts";els.weaponSummary.hidden=!weapon;els.weaponFacingWrap.hidden=!weapon;els.weaponArcWrap.hidden=!weapon;els.weaponTypesWrap.hidden=!weapon;els.weaponFamiliesWrap.hidden=!weapon;
+ if(weapon){els.weaponSummary.textContent="Waffenplatz "+(hp.slotIndex+1)+" · "+weaponHardpointDescription(hp);els.fieldFacing.value=hp.facing||"forward";els.fieldArcDegrees.value=hp.arcDegrees??360;for(const input of document.querySelectorAll(".weaponAllowed"))input.checked=(hp.allowedMounts||["forward","broadside","turret","guided"]).includes(input.value);for(const input of document.querySelectorAll(".weaponFamily"))input.checked=!hp.allowedFamilies||hp.allowedFamilies.includes(input.value)}
 }
 function renderShieldEditor(){
  if(!state.ship)return;
@@ -249,7 +253,7 @@ function applyFields(){
  const hp=points()[state.selected];if(!hp)return;
  hp.id=els.fieldId.value.trim()||hp.id;hp.x=Number(els.fieldX.value)||0;hp.y=Number(els.fieldY.value)||0;hp.width=Math.max(1,Number(els.fieldWidth.value)||1);hp.layer=els.fieldLayer.value;
  if(state.type==="maneuverThrusters"){hp.forceX=Number(els.fieldForceX.value)||0;hp.forceY=Number(els.fieldForceY.value)||0}
- if(state.type==="weaponMounts"){hp.facing=els.fieldFacing.value;hp.arcDegrees=Math.max(1,Math.min(360,Number(els.fieldArcDegrees.value)||360));hp.allowedMounts=[...document.querySelectorAll(".weaponAllowed:checked")].map(input=>input.value);hp.allowedFamilies=[...document.querySelectorAll(".weaponFamily:checked")].map(input=>input.value)}
+ if(state.type==="weaponMounts"){hp.facing=els.fieldFacing.value;hp.arcDegrees=Math.max(1,Math.min(360,Number(els.fieldArcDegrees.value)||360));hp.allowedMounts=[...document.querySelectorAll(".weaponAllowed:checked")].map(input=>input.value);hp.allowedFamilies=[...document.querySelectorAll(".weaponFamily:checked")].map(input=>input.value);els.weaponSummary.textContent="Waffenplatz "+(hp.slotIndex+1)+" · "+weaponHardpointDescription(hp)}
  markDirty();renderList();draw();
 }
 function addPoint(){
