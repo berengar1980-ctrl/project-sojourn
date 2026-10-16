@@ -73,8 +73,7 @@ function scoreWeaponGroup(
       turnFactor *
       readiness *
       (maintainRange ? 1.2 : 1),
-    reason:
-      'Nutzbare Waffenwirkung, Schusswinkel, Reichweite und Ausrichtungszeit abwägen',
+    reason: 'Nutzbare Waffenwirkung, Schusswinkel, Reichweite und Ausrichtungszeit abwägen',
   };
 }
 
