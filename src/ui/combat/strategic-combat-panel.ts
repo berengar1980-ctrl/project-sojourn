@@ -40,7 +40,7 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
     <span>TRAKTOR ${tractorInstalled ? tractor + ' / ' + combatant.subsystems.maximum + ' (' + tractorPercent + ' %)' : 'NICHT MONTIERT'} ${tractorInstalled && tractor <= 0 ? '· AUSGEFALLEN' : tractorInstalled && tractorPercent < 100 ? '· BESCHÄDIGT' : ''}</span>
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
-    <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
+    <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
     <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
   `;
 }

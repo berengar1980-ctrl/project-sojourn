@@ -151,6 +151,8 @@ export interface StrategicCombatantSnapshot {
   readonly boostCooldownSeconds: number;
   readonly combatIntent?: string;
   readonly mineCount: number;
+  readonly readyWeapons: number;
+  readonly installedWeapons: number;
   readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
