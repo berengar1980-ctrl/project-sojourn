@@ -125,10 +125,8 @@ export function chooseCombatFlightIntent(
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
   const relativeClosing = relativeX * toward.x + relativeY * toward.y;
-  const canPass =
-    ship.subsystems.engine > 0 &&
-    range <= desiredRange * 1.12 &&
-    forwardPassReady(ship, enemy);
+  const inPassRange = range <= desiredRange * 1.12;
+  const canPass = ship.subsystems.engine > 0 && inPassRange && forwardPassReady(ship, enemy);
   if (canPass && relativeClosing > 14) {
     const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
     const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
