@@ -252,11 +252,17 @@ export function reviewCombatStrategy(
   const equivalent = options.find(
     (option) => option.kind === current?.kind && option.broadsideFacing === current?.broadsideFacing
   );
-  if (equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)) {
-    ship.strategy = { ...equivalent, reason: current!.reason };
-  } else {
-    ship.strategy = best;
-  }
+  const selected =
+    equivalent && equivalent.score >= best.score * (1 - SWITCH_MARGIN)
+      ? { ...equivalent, reason: current!.reason }
+      : best;
+  const samePosture =
+    current?.kind === selected.kind &&
+    current.focus === selected.focus &&
+    current.broadsideFacing === selected.broadsideFacing;
+  // Re-evaluating the same posture is not a fresh attack: preserve its
+  // current phase instead of restarting alignment on every strategy review.
+  ship.strategy = samePosture ? { ...selected, phase: current.phase } : selected;
   // Combat commitment owns fight/flee; the planner only selects combat posture.
   if (!ship.combatTacticLocked) {
     ship.tactic =
