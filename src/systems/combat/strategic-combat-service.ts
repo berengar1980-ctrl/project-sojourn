@@ -351,8 +351,15 @@ export function createStrategicCombatService(
     fireGrapple: (side) => tryFireGrapple(runtime, side),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
+      if (runtime.winner) return;
       combatant.tactic = tactic;
       combatant.combatTacticLocked = true;
+      // Player orders have immediate authority over the previous AI plan.
+      combatant.strategy = null;
+      combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
+      delete combatant.flightPass;
+      combatant.asteroidRoute = [];
+      combatant.nextAsteroidRouteAt = 0;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
     },
     tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
