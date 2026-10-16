@@ -456,7 +456,7 @@ export class StrategicCombatRenderer {
       this.context.textAlign = 'center';
       this.context.fillStyle = combatant.combatIntent === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
       this.context.fillText(
-        combatant.combatIntent + (combatant.boostActive ? ' · BOOST' : ''),
+        combatant.combatIntent,
         geometry.center.x,
         geometry.center.y - geometry.height * 0.8 - 13
       );
