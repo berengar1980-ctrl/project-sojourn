@@ -44,25 +44,21 @@ function continueCommittedPass(
 /** A forward-gun passage starts only once the real weapon arc is aligned. */
 function forwardPassReady(ship: MutableCombatant, enemy: MutableCombatant): boolean {
   if (ship.strategy?.focus !== 'forward') return true;
-  const bearing = Math.atan2(
-    enemy.position.y - ship.position.y,
-    enemy.position.x - ship.position.x
-  );
-  const error = Math.abs(wrapAngle(bearing - ship.headingRadians));
+  const dx = enemy.position.x - ship.position.x;
+  const dy = enemy.position.y - ship.position.y;
+  const error = Math.abs(wrapAngle(Math.atan2(dy, dx) - ship.headingRadians));
   if (!Number.isFinite(error) || error > 0.25) return false;
-  const forwardGuns = ship.setup.weapons
-    .map((component, index) => ({ component, index }))
-    .filter(({ component, index }) => {
-      const weapon = component.weapon;
-      if (!weapon) return false;
-      const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
-      const fixedGun = weapon.mount === 'forward' || weapon.family === 'railgun';
-      const forwardFacing = !mount?.facing || mount.facing === 'forward';
-      return fixedGun && forwardFacing;
-    });
-  return forwardGuns.every(({ component, index }) => {
-    return weaponInArc(ship, enemy.position, index, component.weapon!);
-  });
+
+  for (let index = 0; index < ship.setup.weapons.length; index += 1) {
+    const weapon = ship.setup.weapons[index]?.weapon;
+    if (!weapon) continue;
+    const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
+    const fixedGun = weapon.mount === 'forward' || weapon.family === 'railgun';
+    const frontMount = !mount?.facing || mount.facing === 'forward';
+    if (!fixedGun || !frontMount) continue;
+    if (!weaponInArc(ship, enemy.position, index, weapon)) return false;
+  }
+  return true;
 }
 
 export function chooseCombatFlightIntent(
