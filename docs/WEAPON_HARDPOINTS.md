@@ -6,7 +6,9 @@ Der Hardpoint-Editor wird mit `npm run hardpoints:edit` geöffnet. Für jedes Sc
 
 Im Editor das Schiff und **Waffen-Slots** auswählen. Ein Slot kann auf dem Sprite verschoben werden. Rechts lassen sich ID, Position, Mündungsbreite, Render-Layer, **Schussrichtung** (Bug, Backbord, Steuerbord), maximaler **Feuerwinkel** (1–360°) sowie **zulässige Waffen-Montageklassen und Waffenfamilien** bearbeiten. Der gezeichnete Sektor zeigt den eingestellten Slot-Winkel.
 
-Die Montageklasse der Waffe (Front, Breitseite, Rundumturm oder Lenkwaffe) stammt aus dem Komponenten-Katalog. Ein Slot kann mehrere Klassen erlauben, aber keine nicht freigegebene Klasse aufnehmen. Der tatsächlich nutzbare Winkel ist das Minimum aus dem Waffenprofil und der Slot-Begrenzung. Die Schussrichtung des Slots gilt für **alle** Waffenklassen.
+Die Montageklasse der Waffe (Front, Breitseite, Rundumturm oder Lenkwaffe) stammt aus dem Komponenten-Katalog. Ein Slot kann mehrere Klassen erlauben, aber keine nicht freigegebene Klasse aufnehmen. Der tatsächlich nutzbare Winkel ist das Minimum aus dem Waffenprofil und der Slot-Begrenzung. Die Grundausrichtung des Slots ist nur für Winkel **unter 360°** für die Zielabdeckung entscheidend.
+
+**Anzeigebezeichnungen (Duell, Kampagne und Editor):** Bugwaffe (60°), Backbordwaffe (90°), Steuerbordwaffe (90°), Geschützturm (360° Feuerwinkel) und, wo vorhanden, Lenkwaffenwerfer (360° Zielerfassung). Die Anzeige leitet die Funktion aus `allowedMounts` und den Winkel aus `arcDegrees` ab. `facing: "forward"` bleibt für Geschützturm und Lenkwaffenwerfer als technische Grundausrichtung erhalten; es bedeutet bei 360° **keine reine Bugwaffe**. Die Anzeige ändert weder Einbaubeschränkungen noch die Kampfgeometrie.
 
 Beispiel eines Eintrags:
 
