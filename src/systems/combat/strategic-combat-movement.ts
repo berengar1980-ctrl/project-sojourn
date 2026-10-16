@@ -9,6 +9,7 @@ import { chooseCombatFlightIntent, type CombatFlightIntent } from './combat-flig
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
 import { predictedCollisionEvasion, escapeContactDetour } from './combat-collision-evasion';
+import { evaluateSteeringSafety } from './combat-steering-safety';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
 
@@ -94,34 +95,7 @@ export function resolveArenaObstacles(
   resolveCombatAsteroidContacts(combatant, arena);
 }
 
-export function resolveCombatantCollision(first: MutableCombatant, second: MutableCombatant): void {
-  const dx = second.position.x - first.position.x;
-  const dy = second.position.y - first.position.y;
-  const range = Math.hypot(dx, dy);
-  const required = 86;
-  if (range >= required) return;
-  const normal = range > 0.001 ? { x: dx / range, y: dy / range } : { x: 1, y: 0 };
-  const overlap = required - range + 1;
-  first.position.x -= normal.x * overlap * 0.5;
-  first.position.y -= normal.y * overlap * 0.5;
-  second.position.x += normal.x * overlap * 0.5;
-  second.position.y += normal.y * overlap * 0.5;
-  // Resolve only the closing component along the hull-contact normal.
-  // Multiplying both complete velocity vectors by 0.6 every frame erased
-  // tangential motion and made an escaping ship stick to its pursuer.
-  const relativeX = first.velocity.x - second.velocity.x;
-  const relativeY = first.velocity.y - second.velocity.y;
-  const closingSpeed = relativeX * normal.x + relativeY * normal.y;
-  if (closingSpeed > 0) {
-    const impulse = closingSpeed * 0.55;
-    first.velocity.x -= normal.x * impulse;
-    first.velocity.y -= normal.y * impulse;
-    second.velocity.x += normal.x * impulse;
-    second.velocity.y += normal.y * impulse;
-  }
-  first.speed = Math.hypot(first.velocity.x, first.velocity.y);
-  second.speed = Math.hypot(second.velocity.x, second.velocity.y);
-}
+export { resolveCombatantCollision } from './combat-contact-response';
 
 export function mineDetection(
   mine: ShipMineDefinition,
@@ -306,35 +280,6 @@ function combatRouteDestination(
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
   return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
-}
-
-interface SteeringHazards {
-  readonly mines: boolean;
-  readonly obstacle: boolean;
-  readonly boundary: boolean;
-  readonly waypoint: boolean;
-  readonly cover: boolean;
-  readonly collision: boolean;
-  readonly detour: boolean;
-}
-
-/** The same clearance decision controls weapon aiming and automatic boost. */
-function evaluateSteeringSafety(
-  ship: MutableCombatant,
-  hazards: SteeringHazards
-): { clear: boolean; canAim: boolean } {
-  const { mines, obstacle, boundary, waypoint, cover, collision, detour } = hazards;
-  return {
-    clear:
-      !mines &&
-      !obstacle &&
-      (ship.tactic === 'flee' || !boundary) &&
-      !waypoint &&
-      !cover &&
-      !collision &&
-      !detour,
-    canAim: !mines && !obstacle && !boundary && !collision && !detour,
-  };
 }
 
 function steerCombatRoute(
