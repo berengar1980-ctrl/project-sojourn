@@ -21,9 +21,7 @@ export function showCampaignCombatSummary(
     'max-width:480px;padding:30px;border:1px solid #66808c;background:#101923;font:16px sans-serif;line-height:1.7';
   const heading = document.createElement('h2');
   heading.textContent =
-    'KAMPFABSCHLUSS · ' +
-    result.outcome +
-    (result.reason === 'surrender' ? ' / KAPITULATION' : '');
+    'KAMPFABSCHLUSS · ' + result.outcome + (result.reason === 'surrender' ? ' / KAPITULATION' : '');
   const details = document.createElement('p');
   details.textContent =
     'Gegner: ' +
