@@ -11,7 +11,10 @@ export function rerouteBlockedEscape(
   enemy: MutableCombatant,
   arena: StrategicCombatArenaOptions
 ): boolean {
-  const gate = ship.escapeGate ?? arena.exitPoint;
+  // Commit to one alternative exit rather than oscillating between gates
+  // whenever a fast pursuer shadows the ship along the arena edge.
+  if (ship.escapeGate) return false;
+  const gate = arena.exitPoint;
   if (ship.tactic !== 'flee' || !gate || ship.subsystems.engine <= 0) return false;
   if (distance(ship.position, gate) > 105) return false;
   if (distance(ship.position, enemy.position) >= safeEscapeSeparation(arena)) return false;

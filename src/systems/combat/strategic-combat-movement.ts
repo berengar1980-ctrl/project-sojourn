@@ -329,10 +329,15 @@ function steerCombatRoute(
     combatant.combatIntent = 'RAMMEN';
   }
   const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const destination = {
-    x: combatant.position.x + direction.x * 700,
-    y: combatant.position.y + direction.y * 700,
-  };
+  // Route a retreat to its actual reachable gate. A 700 m extrapolation
+  // beyond the arena edge used to steer ships away from the exit.
+  const destination =
+    combatant.tactic === 'flee'
+      ? (combatant.escapeGate ?? arena.exitPoint ?? combatant.position)
+      : {
+          x: combatant.position.x + direction.x * 700,
+          y: combatant.position.y + direction.y * 700,
+        };
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
@@ -356,7 +361,12 @@ function steerCombatRoute(
   return {
     direction,
     targetSpeedFactor,
-    clear: !mineAvoidance && !obstacle && !boundary && !waypoint && !cover,
+    clear:
+      !mineAvoidance &&
+      !obstacle &&
+      (!boundary || combatant.tactic === 'flee') &&
+      !waypoint &&
+      !cover,
     canAim: !mineAvoidance && !obstacle && !boundary && !evasion,
   };
 }

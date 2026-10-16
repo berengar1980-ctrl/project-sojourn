@@ -71,7 +71,10 @@ export function reviewAndExecute(
         Math.round(enemy.hullHp)
     );
   }
-  ship.combatIntent = describeCombatIntent(ship);
+  ship.combatIntent =
+    ship.tactic !== 'flee' && enemy.tactic === 'flee' && ship.subsystems.engine > 0
+      ? 'VERFOLGEN'
+      : describeCombatIntent(ship);
   if (usefulRamAttempt(ship, enemy)) ship.combatIntent = 'RAMMEN';
   if (!ship.strategy) return;
   const nextPhase = executeCombatPlan(ship, enemy);
@@ -158,6 +161,9 @@ export function reviewSubsystemBreakthroughs(
     if (!engineLost && !tractorLost) continue;
     opponent.nextStrategyReviewAt = runtime.elapsedSeconds;
     damaged.nextStrategyReviewAt = runtime.elapsedSeconds;
+    if (engineLost && damaged.tactic === 'flee') {
+      runtime.lastEvent = damaged.setup.name + ': FLUCHT · ANTRIEB AUSGEFALLEN';
+    }
     recordCombatLog(
       runtime,
       'system',

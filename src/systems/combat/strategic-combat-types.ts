@@ -13,6 +13,7 @@ import type { ShipWeaponFamily } from '../../core/ship-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 
 export type StrategicCombatSide = 'attacker' | 'defender';
+export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
@@ -238,6 +239,7 @@ export interface StrategicCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly exitPoint: CombatPoint;
   readonly winner: StrategicCombatSide | null;
+  readonly outcomeReason?: CombatOutcomeReason | null;
   readonly boardingInitiator: StrategicCombatSide | null;
   readonly grapple: CombatGrapple | null;
   readonly grappleUsed: Readonly<Record<StrategicCombatSide, boolean>>;
@@ -298,6 +300,7 @@ export interface StrategicCombatService {
   getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
+  surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
 }
 
@@ -434,6 +437,7 @@ export interface StrategicCombatRuntime {
   elapsedSeconds: number;
   lastRamImpactAt?: number;
   winner: StrategicCombatSide | null;
+  outcomeReason?: CombatOutcomeReason | null;
   boardingInitiator: StrategicCombatSide | null;
   grapple: CombatGrapple | null;
   grappleUsed: Record<StrategicCombatSide, boolean>;

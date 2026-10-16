@@ -86,6 +86,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
     elapsedSeconds: runtime.elapsedSeconds,
     exitPoint: escapeGate,
     winner: runtime.winner,
+    outcomeReason: runtime.outcomeReason ?? null,
     boardingInitiator: runtime.boardingInitiator,
     grapple: runtime.grapple
       ? {
@@ -194,6 +195,7 @@ function advanceRuntimeGrapple(runtime: StrategicCombatRuntime, dt: number): boo
   victim.speed = initiator.speed;
   runtime.boardingInitiator = owner;
   runtime.winner = owner;
+  runtime.outcomeReason = 'boarding';
   recordCombatLog(runtime, owner, 'action', 'BOARDING_COUPLED');
   runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
   return true;
@@ -274,6 +276,7 @@ function createStrategicCombatRuntime(
     thrownAsteroids: [],
     elapsedSeconds: 0,
     winner: null,
+    outcomeReason: null,
     boardingInitiator: null,
     grapple: null,
     grappleUsed: { attacker: false, defender: false },
@@ -374,6 +377,14 @@ export function createStrategicCombatService(
       combatant.asteroidRoute = [];
       combatant.nextAsteroidRouteAt = 0;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
+    },
+    surrender(side) {
+      if (runtime.winner) return;
+      const combatant = runtimeCombatant(runtime, side);
+      runtime.winner = side === 'attacker' ? 'defender' : 'attacker';
+      runtime.outcomeReason = 'surrender';
+      runtime.lastEvent = combatant.setup.name + ' gibt das Gefecht auf';
+      recordCombatLog(runtime, side, 'result', 'KAPITULATION · Hülle bleibt unverändert');
     },
     tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
   };

@@ -9,17 +9,20 @@ export interface CampaignCombatResult {
   readonly enemyHullMax: number;
   readonly duration: number;
   readonly boarding: boolean;
+  readonly reason?: StrategicCombatSnapshot['outcomeReason'];
 }
 
 /** Pure projection: never award fabricated loot or replay economic effects. */
 export function campaignCombatResult(snapshot: StrategicCombatSnapshot): CampaignCombatResult {
   return {
     outcome:
-      snapshot.winner === 'attacker'
-        ? 'SIEG'
-        : snapshot.winner === 'defender'
-          ? 'NIEDERLAGE'
-          : 'UNENTSCHIEDEN',
+      snapshot.outcomeReason === 'escape' && snapshot.attacker.tactic === 'flee'
+        ? 'FLUCHT'
+        : snapshot.winner === 'attacker'
+          ? 'SIEG'
+          : snapshot.winner === 'defender'
+            ? 'NIEDERLAGE'
+            : 'UNENTSCHIEDEN',
     enemy: snapshot.defender.name,
     playerHull: Math.round(snapshot.attacker.hullHp),
     playerHullMax: Math.round(snapshot.attacker.hullMaxHp),
@@ -27,6 +30,7 @@ export function campaignCombatResult(snapshot: StrategicCombatSnapshot): Campaig
     enemyHullMax: Math.round(snapshot.defender.hullMaxHp),
     duration: Math.round(snapshot.elapsedSeconds),
     boarding: snapshot.boardingInitiator !== null,
+    reason: snapshot.outcomeReason,
   };
 }
 
@@ -48,6 +52,7 @@ export function combatResultMessage(snapshot: StrategicCombatSnapshot): string {
     ' · ' +
     result.duration +
     ' S' +
-    (result.boarding ? ' · BOARDING' : '')
+    (result.boarding ? ' · BOARDING' : '') +
+    (result.reason === 'surrender' ? ' · KAPITULATION' : '')
   );
 }
