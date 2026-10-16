@@ -2,6 +2,7 @@ import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
+import { rerouteBlockedEscape } from './combat-escape-evaluation';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
   maybeLaunchTractorAsteroid,
@@ -81,7 +82,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
     elapsedSeconds: runtime.elapsedSeconds,
-    exitPoint: runtime.arena.exitPoint!,
+    exitPoint: runtime.attacker.escapeGate ?? runtime.defender.escapeGate ?? runtime.arena.exitPoint!,
     winner: runtime.winner,
     boardingInitiator: runtime.boardingInitiator,
     grapple: runtime.grapple
@@ -208,6 +209,14 @@ function tickStrategicCombat(
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
+  for (const [ship, enemy, side] of [
+    [runtime.attacker, runtime.defender, 'attacker'],
+    [runtime.defender, runtime.attacker, 'defender'],
+  ] as const) {
+    if (rerouteBlockedEscape(ship, enemy, runtime.arena)) {
+      recordCombatLog(runtime, side, 'plan', 'FLUCHTKORRIDOR BLOCKIERT · AUSWEICHROUTE');
+    }
+  }
   reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
   reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
@@ -358,6 +367,7 @@ export function createStrategicCombatService(
       combatant.strategy = null;
       combatant.nextStrategyReviewAt = runtime.elapsedSeconds;
       delete combatant.flightPass;
+      delete combatant.escapeGate;
       combatant.asteroidRoute = [];
       combatant.nextAsteroidRouteAt = 0;
       runtime.lastEvent = combatant.setup.name + ': Taktik ' + tactic.toUpperCase();
