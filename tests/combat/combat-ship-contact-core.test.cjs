@@ -48,8 +48,8 @@ const resolved = shipContact(wide, other);
 assert(resolved.distance >= resolved.required, 'physical collision separates hulls');
 assert.equal(wide.velocity.y, 0, 'only normal impact velocity changes');
 
-const flankA = ship(500, 500, Math.PI / 2);
-const flankB = ship(500, 548, Math.PI / 2);
+const flankA = ship(500, 500, 0);
+const flankB = ship(500, 548, 0);
 const flankContact = shipContact(flankA, flankB);
 assert(flankContact.required < actual.required, 'ship contact depends on hull orientation');
 assert.equal(collisionThreat(wide, ship(700, 600, 0, -90)), true);
