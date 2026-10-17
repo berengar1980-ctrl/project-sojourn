@@ -212,8 +212,7 @@ function forwardWeaponSteering(
       return [component.weapon.rangeMeters];
     })
   );
-  // Even while opening distance, loaded fixed guns should still track a
-  // target safely outside collision contact. Translation uses independent RCS.
+  // Keep front guns tracking while the ship uses independent RCS for translation.
   if (forwardRange <= 0 || range < 155) return null;
   return toward;
 }
@@ -282,12 +281,11 @@ function combatRouteDestination(
   intentKind: CombatFlightIntent['kind']
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
-  // An orbital steering vector is not a destination. Path toward the actual
-  // opponent while intercepting, so repeated detours converge in dense fields.
+  // Interception routes toward the real enemy rather than a rotating steering vector.
   if (intentKind === 'intercept' || intentKind === 'pursuit' || intentKind === 'ram') {
     return enemy.position;
   }
-  // Flybys, minelaying and spacing manoeuvres keep their own travel direction.
+
   return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
 }
 
