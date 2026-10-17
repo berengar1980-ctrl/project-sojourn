@@ -40,12 +40,12 @@ assert(rock);
 const ratio = asteroidSilhouetteInradius(rock.id, rock.kind);
 assert(ratio > 0.65 && ratio < 1, 'rock footprint follows deterministic surface contour');
 
-function ship(rock, distance) {
+function ship(body, distance) {
   return {
     setup: {
       shieldGeometry: { centerOffset: { x: 0, y: 0 }, radiusX: 50, radiusY: 20, modifier: 1 },
     },
-    position: { x: rock.position.x - distance, y: rock.position.y },
+    position: { x: body.position.x - distance, y: body.position.y },
     velocity: { x: 30, y: 0 },
     headingRadians: 0,
     speed: 30,
