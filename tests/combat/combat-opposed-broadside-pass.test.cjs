@@ -101,7 +101,7 @@ assert(
 );
 const previousPass = left.flightPass;
 left.strategy = { ...left.strategy, broadsideFacing: 'port' };
-left.headingRadians = Math.PI / 2;
+left.headingRadians = -Math.PI / 2;
 const switchedIntent = intent(left, right);
 assert.notEqual(
   left.flightPass,
