@@ -120,5 +120,6 @@ export function commitFireControlVolley(
   firedIndices: readonly number[]
 ): void {
   source.nextFireDecisionAt = now + FIRE_CONTROL_CADENCE_SECONDS;
-  source.lastFiredWeaponIndex = firedIndices[firedIndices.length - 1];
+  const lastFired = firedIndices[firedIndices.length - 1];
+  if (lastFired !== undefined) source.lastFiredWeaponIndex = lastFired;
 }
