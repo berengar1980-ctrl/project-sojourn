@@ -22,7 +22,11 @@ const pursuer = {
 };
 assert(runtimeCombatantEscaped(runner, pursuer, arena), 'arriving at exit ends flight');
 runner.position.x = 270;
-assert.equal(runtimeCombatantEscaped(runner, pursuer, arena), false, 'cannot escape before arrival');
+assert.equal(
+  runtimeCombatantEscaped(runner, pursuer, arena),
+  false,
+  'cannot escape before arrival'
+);
 runner.position.x = 180;
 runner.shieldHp = 0;
 pursuer.subsystems.tractor = 100;
