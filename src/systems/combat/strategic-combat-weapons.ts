@@ -37,6 +37,7 @@ import {
   commitFireControlVolley,
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
+import { ballisticInterceptPoint } from './combat-weapon-aim';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import {
   effectiveTargetSubsystem,
@@ -145,11 +146,16 @@ function fireRuntimeProjectileWeapon(
 ): string {
   if (!weapon.weapon) return '';
   const muzzle = weaponMuzzle(source, weaponIndex);
+  const speed = projectileSpeed(kind);
+  const aim =
+    kind === 'missile'
+      ? target.position
+      : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
   const targetPoint = hit
-    ? target.position
+    ? aim
     : {
-        x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
-        y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
+        x: aim.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
+        y: aim.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
       };
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
@@ -161,11 +167,8 @@ function fireRuntimeProjectileWeapon(
     position: { ...muzzle },
     direction: normalize(targetPoint.x - muzzle.x, targetPoint.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
-    speed: projectileSpeed(kind),
-    ttlSeconds: Math.max(
-      0.4,
-      distance(source.position, target.position) / projectileSpeed(kind) + 0.8
-    ),
+    speed,
+    ttlSeconds: Math.max(0.4, distance(muzzle, targetPoint) / speed + 0.8),
     shieldDamage: hit ? nativeWeaponDamage(weapon).shieldDamage : 0,
     hullDamage: hit ? nativeWeaponDamage(weapon).hullDamage : 0,
     critical: hit && critical,
