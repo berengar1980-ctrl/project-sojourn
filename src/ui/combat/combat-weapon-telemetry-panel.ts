@@ -23,9 +23,23 @@ export function combatWeaponTelemetryHtml(
   elapsedSeconds: number
 ): string {
   if (!ship.weaponTelemetry.length) return '';
+  const slotNumbers = new Map<string, number>();
   const rows = [...ship.weaponTelemetry]
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map((weapon) => {
+      const ordinal = (slotNumbers.get(weapon.mountLabel) ?? 0) + 1;
+      slotNumbers.set(weapon.mountLabel, ordinal);
+      const prefix =
+        weapon.mountLabel === 'Bugwaffe'
+          ? 'BUG ' + ordinal
+          : weapon.mountLabel === 'Universalwaffe'
+            ? 'TUR ' + ordinal
+            : weapon.mountLabel === 'Backbordwaffe'
+              ? 'BB'
+              : weapon.mountLabel === 'Steuerbordwaffe'
+                ? 'SB'
+                : 'W' + ordinal;
+      const weaponLabel = prefix + ' · ' + weapon.weaponName;
       const remaining = Math.max(0, weapon.cooldownRemaining);
       const ready = remaining < 0.01;
       const fired = weapon.lastFiredAt !== null && elapsedSeconds - weapon.lastFiredAt < 0.6;
@@ -36,8 +50,8 @@ export function combatWeaponTelemetryHtml(
       return `
         <div class="combat-weapon-row combat-weapon-row--${state}">
           <div class="combat-weapon-row__main">
-            <span class="combat-weapon-row__name" title="${escapeHtml(weapon.weaponName)}">
-              ${escapeHtml(weapon.weaponName)}
+            <span class="combat-weapon-row__name" title="${escapeHtml(weaponLabel)}">
+              ${escapeHtml(weaponLabel)}
             </span>
             <span class="combat-weapon-row__cd">${countdown}</span>
             <span class="combat-weapon-row__shield">${fmt(weapon.shieldDamageDealt)}</span>
