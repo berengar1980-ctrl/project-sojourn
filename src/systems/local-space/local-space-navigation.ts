@@ -125,7 +125,8 @@ function pointClear(
   clearance: number
 ): boolean {
   return obstacles.every(
-    (asteroid) => distance(point, asteroid.position) >= localAsteroidContactRadius(asteroid) + clearance
+    (asteroid) =>
+      distance(point, asteroid.position) >= localAsteroidContactRadius(asteroid) + clearance
   );
 }
 
@@ -137,7 +138,8 @@ function segmentClear(
 ): boolean {
   return obstacles.every(
     (asteroid) =>
-      pointToSegmentDistance(asteroid.position, start, end) >= localAsteroidContactRadius(asteroid) + clearance
+      pointToSegmentDistance(asteroid.position, start, end) >=
+      localAsteroidContactRadius(asteroid) + clearance
   );
 }
 
