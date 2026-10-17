@@ -101,4 +101,6 @@ recordWeaponDamage(ship, 0, 'miss', 50);
 assert.equal(ship.weaponTelemetry[0].hullDamageDealt, recorded, 'misses never grant damage');
 recordWeaponDamage(ship, 0, 'shield', 2);
 assert.equal(ship.weaponTelemetry[0].shieldDamageDealt, 2, 'shield damage is separate');
-console.log('PASS per-hardpoint shots, delayed projectile damage, shield/hull totals and snapshots');
+console.log(
+  'PASS per-hardpoint shots, delayed projectile damage, shield/hull totals and snapshots'
+);
