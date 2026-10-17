@@ -129,6 +129,23 @@ export interface StrategicCombatantSetup {
   readonly pirateMark?: 'broken-spear' | 'black-tide';
 }
 
+export interface WeaponTelemetry {
+  readonly slotIndex: number;
+  readonly weaponId: string;
+  readonly weaponName: string;
+  shotsFired: number;
+  shieldDamageDealt: number;
+  hullDamageDealt: number;
+  lastFiredAt: number | null;
+}
+
+export interface WeaponTelemetrySnapshot extends Readonly<WeaponTelemetry> {
+  readonly cooldownRemaining: number;
+  readonly cooldownSeconds: number;
+  readonly mountLabel: string;
+  readonly displayOrder: number;
+}
+
 export interface StrategicCombatantSnapshot {
   readonly id: string;
   readonly name: string;
@@ -153,6 +170,7 @@ export interface StrategicCombatantSnapshot {
   readonly mineCount: number;
   readonly readyWeapons: number;
   readonly installedWeapons: number;
+  readonly weaponTelemetry: readonly WeaponTelemetrySnapshot[];
   readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
@@ -306,6 +324,7 @@ export interface MutableCombatant {
   readonly shieldMaxHp: number;
   readonly hullMaxHp: number;
   readonly cooldowns: number[];
+  readonly weaponTelemetry: WeaponTelemetry[];
   /** Next permitted coordinated firing decision. Individual reloads remain authoritative. */
   nextFireDecisionAt?: number;
   /** Round-robin tie-breaker for identical gun mounts. */
@@ -365,6 +384,7 @@ export interface MutableCombatant {
 
 export interface MutableProjectile {
   id: number;
+  weaponIndex?: number;
   owner: StrategicCombatSide;
   kind: CombatProjectileKind;
   family: ShipWeaponFamily;
