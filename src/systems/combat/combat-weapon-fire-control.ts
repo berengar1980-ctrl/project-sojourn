@@ -5,7 +5,7 @@ import { nativeWeaponDamage } from './combat-native-damage';
 import { effectiveTargetSubsystem } from './combat-subsystem-targeting';
 
 /** One deliberate fire-control decision at a time; a decision may release a real salvo. */
-export const FIRE_CONTROL_CADENCE_SECONDS = 0.8;
+export const FIRE_CONTROL_CADENCE_SECONDS = 0.65;
 export const FIRE_CONTROL_LOOKAHEAD_SECONDS = 0.24;
 
 export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
@@ -75,7 +75,14 @@ export function selectFireControlVolley(
 ): number[] {
   if (now + 0.000001 < (source.nextFireDecisionAt ?? 0)) return [];
   const { shots, health } = scoreShots(source, target, candidates);
-  const ready = shots.filter((shot) => shot.readyIn <= 0.000001).sort((a, b) => b.score - a.score);
+  const ready = shots
+    .filter((shot) => shot.readyIn <= 0.000001)
+    .sort((a, b) => {
+      const difference = b.score - a.score;
+      if (Math.abs(difference) > 0.000001) return difference;
+      return Number(a.index === source.lastFiredWeaponIndex) -
+        Number(b.index === source.lastFiredWeaponIndex);
+    });
   const best = ready[0];
   if (!best) return [];
 
@@ -106,6 +113,11 @@ export function selectFireControlVolley(
 }
 
 /** Commit cadence only after real weapon launches; blocked shots never spend a decision. */
-export function commitFireControlVolley(source: MutableCombatant, now: number): void {
+export function commitFireControlVolley(
+  source: MutableCombatant,
+  now: number,
+  firedIndices: readonly number[]
+): void {
   source.nextFireDecisionAt = now + FIRE_CONTROL_CADENCE_SECONDS;
+  source.lastFiredWeaponIndex = firedIndices[firedIndices.length - 1];
 }
