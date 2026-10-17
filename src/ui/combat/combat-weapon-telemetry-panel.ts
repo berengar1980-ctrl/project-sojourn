@@ -17,6 +17,14 @@ function fmt(value: number): string {
   return Number(value.toFixed(1)).toLocaleString('de-DE');
 }
 
+function shortMountLabel(label: string, ordinal: number): string {
+  if (label === 'Bugwaffe') return 'BUG ' + ordinal;
+  if (label === 'Universalwaffe') return 'TUR ' + ordinal;
+  if (label === 'Backbordwaffe') return 'BB';
+  if (label === 'Steuerbordwaffe') return 'SB';
+  return 'W' + ordinal;
+}
+
 /** Lightweight 10 Hz HUD rendering; shot/damage counters are immutable combat snapshots. */
 export function combatWeaponTelemetryHtml(
   ship: StrategicCombatantSnapshot,
@@ -29,16 +37,7 @@ export function combatWeaponTelemetryHtml(
     .map((weapon) => {
       const ordinal = (slotNumbers.get(weapon.mountLabel) ?? 0) + 1;
       slotNumbers.set(weapon.mountLabel, ordinal);
-      const prefix =
-        weapon.mountLabel === 'Bugwaffe'
-          ? 'BUG ' + ordinal
-          : weapon.mountLabel === 'Universalwaffe'
-            ? 'TUR ' + ordinal
-            : weapon.mountLabel === 'Backbordwaffe'
-              ? 'BB'
-              : weapon.mountLabel === 'Steuerbordwaffe'
-                ? 'SB'
-                : 'W' + ordinal;
+      const prefix = shortMountLabel(weapon.mountLabel, ordinal);
       const weaponLabel = prefix + ' · ' + weapon.weaponName;
       const remaining = Math.max(0, weapon.cooldownRemaining);
       const ready = remaining < 0.01;
