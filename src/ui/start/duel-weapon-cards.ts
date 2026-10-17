@@ -1,7 +1,11 @@
 import type { ShipDefinition } from '../../systems/ships';
 import { fitsWeaponHardpoint } from '../../systems/ships';
 import type { ShipWeaponHardpoint } from '../../core/ship-types';
-import { weaponHardpointDescription, weaponUiGroup, weaponUiOrder } from '../../core/weapon-hardpoint-labels';
+import {
+  weaponHardpointDescription,
+  weaponUiGroup,
+  weaponUiOrder,
+} from '../../core/weapon-hardpoint-labels';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { nativeWeaponDamage } from '../../systems/combat/combat-native-damage';
 import type { DuelDraft } from './duel-combatant-setup';
@@ -102,7 +106,11 @@ export function buildDuelWeaponSections(draft: DuelDraft, ship: ShipDefinition):
     turret: 'UNIVERSALWAFFEN',
   };
   const groups = [
-    { key: 'front', heading: sectionNames.front, mounts: mounts.filter((m) => weaponUiGroup(m) === 'front') },
+    {
+      key: 'front',
+      heading: sectionNames.front,
+      mounts: mounts.filter((m) => weaponUiGroup(m) === 'front'),
+    },
     {
       key: 'sides',
       heading: sectionNames.port,
