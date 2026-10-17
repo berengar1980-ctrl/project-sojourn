@@ -32,3 +32,25 @@ export function weaponHardpointDescription(
       : ' Feuerwinkel';
   return name + ' · ' + mount.arcDegrees + '°' + suffix;
 }
+
+export type WeaponUiGroup = 'front' | 'port' | 'starboard' | 'turret';
+
+/** Shared display ordering only; physical slotIndex is never renumbered. */
+export function weaponUiGroup(
+  mount: Pick<ShipWeaponHardpoint, 'facing' | 'allowedMounts'>
+): WeaponUiGroup {
+  if (mount.allowedMounts?.includes('turret') || mount.allowedMounts?.includes('guided')) {
+    return 'turret';
+  }
+  if (mount.facing === 'port') return 'port';
+  if (mount.facing === 'starboard') return 'starboard';
+  return 'front';
+}
+
+export function weaponUiOrder(
+  mount: Pick<ShipWeaponHardpoint, 'slotIndex' | 'facing' | 'allowedMounts'>
+): number {
+  const group = weaponUiGroup(mount);
+  const rank = { front: 0, port: 1, starboard: 2, turret: 3 }[group];
+  return rank * 100 + mount.slotIndex;
+}
