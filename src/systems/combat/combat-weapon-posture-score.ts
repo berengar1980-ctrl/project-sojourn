@@ -101,7 +101,10 @@ function availableWeapons(
     const remaining = Math.max(0, ship.cooldowns[index] ?? 0);
     const readiness = clamp(1 - remaining / 8, 0.35, 1);
     const burst = (Math.max(0, impact) / 4) * readiness;
-    const weight = (rate + burst) * coverageFactor(arc) * (primary ? 1 : 0.25);
+    // Universals remain fully operational while the bow turns toward a
+    // broadside or frontal battery. Discounting them made a turret-only
+    // heading look stronger than the very same turrets PLUS the side guns.
+    const weight = (rate + burst) * coverageFactor(arc);
     if (weight > 0) result.push({ profile, primary, weight });
   }
   return result;
