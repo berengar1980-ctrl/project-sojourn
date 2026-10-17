@@ -1,7 +1,10 @@
 import type { MutableCombatant } from './strategic-combat-types';
 
-type ContactShip = Pick<MutableCombatant, 'position'> &
-  Partial<Pick<MutableCombatant, 'headingRadians' | 'setup'>>;
+interface ContactShip {
+  readonly position: { readonly x: number; readonly y: number };
+  readonly headingRadians?: number;
+  readonly setup?: Pick<MutableCombatant['setup'], 'shipId' | 'shieldGeometry'>;
+}
 
 export interface ShipContact {
   readonly distance: number;
@@ -35,10 +38,6 @@ export function shipContact(first: ContactShip, second: ContactShip): ShipContac
   const dy = second.position.y - first.position.y;
   const distance = Math.hypot(dx, dy);
   const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
-  return {
-    distance,
-    normal,
-    required:
-      hullExtent(first, normal.x, normal.y) + hullExtent(second, -normal.x, -normal.y),
-  };
+  const required = hullExtent(first, normal.x, normal.y) + hullExtent(second, -normal.x, -normal.y);
+  return { distance, normal, required };
 }
