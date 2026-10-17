@@ -107,7 +107,7 @@ function fireRuntimeInstantWeapon(
     shieldHit ?? undefined,
     effectiveTargetSubsystem(source, target)
   );
-  recordWeaponDamage(source, weaponIndex, result.layer, result.damage);
+  recordWeaponDamage(source, weaponIndex, result.layer, result.damage, result.subsystem);
   recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
@@ -287,7 +287,7 @@ function recordProjectileDamage(
       : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
-  recordWeaponDamage(source, projectile.weaponIndex, result.layer, result.damage);
+  recordWeaponDamage(source, projectile.weaponIndex, result.layer, result.damage, result.subsystem);
   recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
