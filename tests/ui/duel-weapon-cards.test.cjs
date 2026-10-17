@@ -37,7 +37,10 @@ const hud = fs.readFileSync(
 assert(cards.includes('nativeWeaponDamage'), 'loadout displays actual battle damage values');
 assert(cards.includes('fitsWeaponHardpoint'), 'selectors retain hardpoint restrictions');
 assert(cards.includes('draft.weapons[mount.slotIndex]'), 'UI sorting never changes actual loadout');
-assert(cards.includes("updateStats(stats, select.value, mount)"), 'weapon selection refreshes stats');
+assert(
+  cards.includes("updateStats(stats, select.value, mount)"),
+  'weapon selection refreshes stats'
+);
 assert(lobby.includes('buildDuelWeaponSections'), 'grouped selectors are displayed');
 assert(hud.includes('shieldDamageDealt') && hud.includes('hullDamageDealt'));
 assert(hud.includes('cooldownRemaining') && hud.includes('shotsFired'));
