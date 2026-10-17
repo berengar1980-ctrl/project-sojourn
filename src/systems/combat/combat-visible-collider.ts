@@ -12,8 +12,6 @@ import type { CombatVisualAsteroid } from './strategic-combat-types';
  * container ~0.8 / 1.9; debris frame ~0.7 / 1.9; room sections ~1.1 / 1.9.
  * A broad circle around the entire visual envelope is NOT a physical hull.
  */
-const asteroidShapeCache = new Map<string, number>();
-
 export function combatVisibleContactRadius(
   asteroid: Pick<
     CombatVisualAsteroid,
@@ -23,11 +21,5 @@ export function combatVisibleContactRadius(
   if (asteroid.containerVariant) return salvageSolidContactRadius(asteroid.radius, 'container');
   if (asteroid.debrisVariant) return salvageSolidContactRadius(asteroid.radius, 'debris');
   if (asteroid.sectionVariant) return salvageSolidContactRadius(asteroid.radius, 'section');
-  const key = asteroid.id + ':' + asteroid.kind;
-  let factor = asteroidShapeCache.get(key);
-  if (factor === undefined) {
-    factor = asteroidSilhouetteInradius(asteroid.id, asteroid.kind);
-    asteroidShapeCache.set(key, factor);
-  }
-  return asteroid.radius * factor;
+  return asteroid.radius * asteroidSilhouetteInradius(asteroid.id, asteroid.kind);
 }
