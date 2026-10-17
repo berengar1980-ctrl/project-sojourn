@@ -176,8 +176,10 @@ function beginAttackPass(
   const waypointOrigin = broadside ? ship.position : enemy.position;
   ship.flightPass = {
     direction,
-    focus: ship.strategy?.focus,
-    broadsideFacing: ship.strategy?.broadsideFacing,
+    ...(ship.strategy ? { focus: ship.strategy.focus } : {}),
+    ...(ship.strategy?.broadsideFacing
+      ? { broadsideFacing: ship.strategy.broadsideFacing }
+      : {}),
     destination: {
       x: Math.max(160, Math.min(arena.width - 160, waypointOrigin.x + direction.x * overshoot)),
       y: Math.max(160, Math.min(arena.height - 160, waypointOrigin.y + direction.y * overshoot)),
