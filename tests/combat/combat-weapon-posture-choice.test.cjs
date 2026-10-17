@@ -116,6 +116,24 @@ switchingTarget.shieldHp = 0;
 reviewCombatStrategy(switching, switchingTarget, 'attacker', 8);
 assert.equal(switching.strategy.kind, 'frontal', 'shield loss changes effective gun priority');
 
+const twinRails = makeShip('twin-rail', [rail, rail, turret], [
+  'forward',
+  'forward',
+  'forward',
+]);
+const twinTarget = makeShip('twin-target', [turret], ['forward'], 1500);
+reviewCombatStrategy(twinRails, twinTarget, 'attacker', 0);
+assert.equal(twinRails.strategy.kind, 'skirmish', 'shields favour the effective turret');
+twinTarget.shieldHp = 0;
+twinRails.cooldowns[0] = 6;
+twinRails.cooldowns[1] = 6;
+reviewCombatStrategy(twinRails, twinTarget, 'attacker', 8);
+assert.equal(
+  twinRails.strategy.kind,
+  'frontal',
+  'twin railguns pre-align for the loaded hull-destruction salvo after shield loss'
+);
+
 const narrow = {
   ...strongFront,
   weapon: { ...strongFront.weapon, arcDegrees: 10 },
