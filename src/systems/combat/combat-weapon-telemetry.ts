@@ -24,7 +24,7 @@ export function recordWeaponFired(
   slotIndex: number,
   time: number
 ): void {
-  const entry = source.weaponTelemetry[slotIndex];
+  const entry = source.weaponTelemetry?.[slotIndex];
   if (!entry) return;
   entry.shotsFired += 1;
   entry.lastFiredAt = time;
