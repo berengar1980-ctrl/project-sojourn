@@ -1,3 +1,5 @@
+import { createWeaponTelemetry } from './combat-weapon-telemetry';
+import { weaponUiOrder, weaponHardpointName } from '../../core/weapon-hardpoint-labels';
 import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
 
 import type {
@@ -114,6 +116,7 @@ export function createCombatant(
       maximum: Math.max(1, setup.hullHp),
     },
     cooldowns: setup.weapons.map((_, index) => 0.7 + index * 0.18),
+    weaponTelemetry: createWeaponTelemetry({ setup }),
     position: { x: startX, y: startY },
     velocity: initialVelocity,
     headingRadians: initialHeading ?? (side === 'attacker' ? 0 : Math.PI),
@@ -156,6 +159,19 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     mineCount: combatant.mineStock.length,
     readyWeapons: combatant.cooldowns.filter((seconds) => seconds <= 0).length,
     installedWeapons: combatant.setup.weapons.length,
+    weaponTelemetry: combatant.weaponTelemetry.map((entry, index) => {
+      const mount = combatant.setup.weaponMounts?.find((point) => point.slotIndex === index);
+      const profile = combatant.setup.weapons[index]?.weapon;
+      return {
+        ...entry,
+        cooldownRemaining: combatant.cooldowns[index] ?? 0,
+        cooldownSeconds: profile
+          ? Math.max(0, profile.cooldownSeconds * combatant.setup.cycleTimeMultiplier)
+          : 0,
+        mountLabel: mount ? weaponHardpointName(mount) : 'Waffe',
+        displayOrder: mount ? weaponUiOrder(mount) : index,
+      };
+    }),
     tractorRangeMeters: combatant.setup.tractorRangeMeters ?? 0,
     boostCooldownSeconds: combatant.boostCooldownSeconds ?? 0,
     tactic: combatant.tactic,
