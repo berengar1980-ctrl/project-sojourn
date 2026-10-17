@@ -190,7 +190,6 @@
   }
 }
 
-
 /* Compact tactical equipment configurator: physical slots are never renumbered. */
 .harrow-duel {
   padding: clamp(18px, 3vw, 52px);
