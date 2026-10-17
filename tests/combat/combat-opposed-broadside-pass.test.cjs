@@ -75,16 +75,8 @@ assert.notEqual(
   'ships awaiting their staggered first strategy review cannot commit a blind flyby'
 );
 
-assert.notEqual(
-  intent(left, right).kind,
-  'pass',
-  'a turret may not start an unaligned passage'
-);
-assert.notEqual(
-  intent(right, left).kind,
-  'pass',
-  'an unaligned port gun must not start a pass'
-);
+assert.notEqual(intent(left, right).kind, 'pass', 'a turret may not start an unaligned passage');
+assert.notEqual(intent(right, left).kind, 'pass', 'an unaligned port gun must not start a pass');
 
 left.headingRadians = -Math.PI / 2;
 right.headingRadians = -Math.PI / 2;
@@ -113,11 +105,7 @@ assert.notEqual(
   previousPass,
   'changing the preferred broadside invalidates an old committed attack lane'
 );
-assert.notEqual(
-  switchedIntent.kind,
-  'pass',
-  'new flank needs alignment before another passage'
-);
+assert.notEqual(switchedIntent.kind, 'pass', 'new flank needs alignment before another passage');
 
 right.shieldHp = 0;
 reviewCombatStrategy(left, right, 'attacker', 8);
@@ -143,12 +131,7 @@ const duel = createStrategicCombatService(
 );
 let battle;
 for (let tick = 0; tick < 225; tick += 1) battle = duel.tick(0.08);
-assert(
-  battle.attacker.weaponTelemetry[1].shotsFired > 0,
-  'attacker starboard shield gun fired'
-);
+assert(battle.attacker.weaponTelemetry[1].shotsFired > 0, 'attacker starboard shield gun fired');
 assert(battle.defender.weaponTelemetry[0].shotsFired > 0, 'defender port shield gun fired');
 
-console.log(
-  'PASS shield-phase opposite broadsides align then commit to parallel firing lanes'
-);
+console.log('PASS shield-phase opposite broadsides align then commit to parallel firing lanes');
