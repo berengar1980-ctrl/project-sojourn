@@ -1,4 +1,5 @@
 import { asteroidSilhouetteInradius } from '../../core/asteroid-silhouette';
+import { salvageSolidContactRadius } from '../../core/salvage-contact-profile';
 import type { CombatVisualAsteroid } from './strategic-combat-types';
 
 /**
@@ -11,12 +12,6 @@ import type { CombatVisualAsteroid } from './strategic-combat-types';
  * container ~0.8 / 1.9; debris frame ~0.7 / 1.9; room sections ~1.1 / 1.9.
  * A broad circle around the entire visual envelope is NOT a physical hull.
  */
-const SCRAP_INRADII = {
-  container: 0.8 / 1.9,
-  debris: 0.7 / 1.9,
-  section: 1.1 / 1.9,
-} as const;
-
 const asteroidShapeCache = new Map<string, number>();
 
 export function combatVisibleContactRadius(
@@ -25,9 +20,9 @@ export function combatVisibleContactRadius(
     'id' | 'kind' | 'radius' | 'containerVariant' | 'debrisVariant' | 'sectionVariant'
   >
 ): number {
-  if (asteroid.containerVariant) return asteroid.radius * SCRAP_INRADII.container;
-  if (asteroid.debrisVariant) return asteroid.radius * SCRAP_INRADII.debris;
-  if (asteroid.sectionVariant) return asteroid.radius * SCRAP_INRADII.section;
+  if (asteroid.containerVariant) return salvageSolidContactRadius(asteroid.radius, 'container');
+  if (asteroid.debrisVariant) return salvageSolidContactRadius(asteroid.radius, 'debris');
+  if (asteroid.sectionVariant) return salvageSolidContactRadius(asteroid.radius, 'section');
   const key = asteroid.id + ':' + asteroid.kind;
   let factor = asteroidShapeCache.get(key);
   if (factor === undefined) {
