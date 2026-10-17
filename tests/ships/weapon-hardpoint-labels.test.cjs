@@ -33,7 +33,9 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-assert(read('src/ui/start/duel-lobby.ts').includes('weaponHardpointDescription'));
+const duelCards = read('src/ui/start/duel-weapon-cards.ts');
+assert(duelCards.includes('weaponHardpointName'));
+assert(duelCards.includes('weaponUiOrder'));
 assert(read('src/features/port/port-ship-view-model.ts').includes('weaponHardpointDescription'));
 const editor = read('tools/hardpoint-editor.html');
 assert(editor.includes('weaponHardpointDescription'));
