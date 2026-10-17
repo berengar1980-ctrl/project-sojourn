@@ -116,11 +116,7 @@ switchingTarget.shieldHp = 0;
 reviewCombatStrategy(switching, switchingTarget, 'attacker', 8);
 assert.equal(switching.strategy.kind, 'frontal', 'shield loss changes effective gun priority');
 
-const twinRails = makeShip('twin-rail', [rail, rail, turret], [
-  'forward',
-  'forward',
-  'forward',
-]);
+const twinRails = makeShip('twin-rail', [rail, rail, turret], ['forward', 'forward', 'forward']);
 const twinTarget = makeShip('twin-target', [turret], ['forward'], 1500);
 reviewCombatStrategy(twinRails, twinTarget, 'attacker', 0);
 assert.equal(twinRails.strategy.kind, 'skirmish', 'shields favour the effective turret');
