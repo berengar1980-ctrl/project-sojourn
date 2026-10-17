@@ -12,13 +12,8 @@ import type {
   StrategicCombatSide,
   MutableMine,
 } from './strategic-combat-types';
-import {
-  clamp,
-  distance,
-  EDGE_WARNING_DISTANCE,
-  EDGE_PADDING,
-  normalize,
-} from './strategic-combat-geometry';
+import { clamp, distance, normalize } from './strategic-combat-geometry';
+import { EDGE_WARNING_DISTANCE, EDGE_PADDING } from './strategic-combat-geometry';
 
 function arenaBoundaryAvoidance(
   combatant: MutableCombatant,
