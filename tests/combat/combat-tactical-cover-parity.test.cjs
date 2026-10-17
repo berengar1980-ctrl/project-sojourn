@@ -45,7 +45,8 @@ const ship = {
   position: { x: 700, y: 650 },
   shieldHp: 15,
   shieldMaxHp: 100,
-  tactic: 'fight',
+  tactic: 'kite',
+  strategy: { kind: 'skirmish', focus: 'turret', desiredRange: 650 },
   setup: { aiControlled: true },
 };
 const enemy = { position: { x: 200, y: 500 } };
@@ -56,6 +57,11 @@ const arena = {
 };
 const heading = coverModule.asteroidCoverHeading(ship, enemy, arena);
 assert(heading, 'damaged AI uses a nearby rock between itself and the enemy');
+assert.equal(
+  coverModule.asteroidCoverHeading({ ...ship, tactic: 'fight' }, enemy, arena),
+  null,
+  'offensive frontal and broadside combat never diverts into defensive rock orbit'
+);
 assert(heading.x < 0 && heading.y < 0, 'defensive steering seeks the far side of the rock');
 assert.equal(
   coverModule.asteroidCoverHeading({ ...ship, shieldHp: 90 }, enemy, arena),
