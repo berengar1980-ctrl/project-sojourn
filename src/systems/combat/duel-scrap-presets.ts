@@ -1,6 +1,7 @@
 import { generateSalvageField } from '../salvage/salvage-field-generator';
 import type { SalvageDebris, SalvageWreck } from '../../core/salvage-types';
 import type { CombatVisualAsteroid, StrategicCombatArenaOptions } from './strategic-combat-types';
+import { combatVisibleContactRadius } from './combat-visible-collider';
 
 export type ScrapDuelDensity = 'moderate' | 'dense';
 
@@ -68,6 +69,12 @@ export function createScrapDuelArena(
         y: spawn.y + (i % 2 ? -90 : 90),
       },
       radius: Math.max(9, Math.min(24, source.radius * scale)),
+      collisionRadius: combatVisibleContactRadius({
+        id: 'pvp-practice-scrap-' + seed + '-' + i,
+        kind: 'debris',
+        radius: Math.max(9, Math.min(24, source.radius * scale)),
+        debrisVariant: source.variant,
+      }),
       rotation: source.rotation3d.z,
       velocity: { x: 0.2 * side, y: 0 },
       angularVelocity: source.spin3d.z,
@@ -86,7 +93,7 @@ export function createScrapDuelArena(
     .map((piece) => ({
       id: piece.id,
       position: piece.position,
-      radius: piece.radius,
+      radius: piece.collisionRadius ?? piece.radius,
     }));
   return {
     width,
@@ -119,21 +126,30 @@ function createScrapAsteroids(
     if (!isClearScrapPosition(position, radius, width, height, spawns)) return [];
 
     const model = piece as SalvageWreck;
+    const variants = {
+      ...scrapDebrisVariant(piece, isLarge),
+      ...(model.sectionVariant ? { sectionVariant: model.sectionVariant } : {}),
+      ...(model.containerVariant ? { containerVariant: model.containerVariant } : {}),
+    };
     return [
       {
         id: 'pvp-' + piece.id,
         kind: isLarge ? 'resource' : 'debris',
         position,
         radius,
+        collisionRadius: combatVisibleContactRadius({
+          id: 'pvp-' + piece.id,
+          kind: isLarge ? 'resource' : 'debris',
+          radius,
+          ...variants,
+        }),
         velocity: {
           x: piece.driftVelocity?.x ?? 0,
           y: piece.driftVelocity?.y ?? 0,
         },
         rotation: piece.rotation3d?.z ?? 0,
         angularVelocity: piece.spin3d?.z ?? 0,
-        ...scrapDebrisVariant(piece, isLarge),
-        ...(model.sectionVariant ? { sectionVariant: model.sectionVariant } : {}),
-        ...(model.containerVariant ? { containerVariant: model.containerVariant } : {}),
+        ...variants,
         ...(piece.rotation3d ? { rotation3d: { ...piece.rotation3d } } : {}),
         ...(piece.spin3d ? { spin3d: { ...piece.spin3d } } : {}),
         ...(piece.effectSeed !== undefined ? { effectSeed: piece.effectSeed } : {}),
