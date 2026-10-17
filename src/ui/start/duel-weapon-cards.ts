@@ -2,7 +2,7 @@ import type { ShipDefinition } from '../../systems/ships';
 import { fitsWeaponHardpoint } from '../../systems/ships';
 import type { ShipWeaponHardpoint } from '../../core/ship-types';
 import {
-  weaponHardpointDescription,
+  weaponHardpointName,
   weaponUiGroup,
   weaponUiOrder,
 } from '../../core/weapon-hardpoint-labels';
@@ -138,7 +138,7 @@ export function buildDuelWeaponSections(draft: DuelDraft, ship: ShipDefinition):
             ? 'Bugwaffe ' + (index + 1)
             : group.key === 'turret'
               ? 'Universalwaffe ' + (index + 1)
-              : weaponHardpointDescription(mount).split(' · ')[0];
+              : weaponHardpointName(mount);
         grid.append(weaponSlotCard(draft, ship, mount, label));
       }
       section.append(title, grid);
