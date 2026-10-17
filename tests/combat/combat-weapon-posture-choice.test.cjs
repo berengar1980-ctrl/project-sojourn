@@ -159,4 +159,27 @@ const rangeScore = scoreWeaponPosture(rangedShip, opposing, {
 });
 assert(rangeScore && rangeScore.effectiveRange < 600, 'dominant short gun sets useful range');
 
+// Real duel loadout: both universal turrets can still fire while the two
+// side batteries point in opposite directions. Credit that combined salvo.
+const ion = catalog('weapon-ion-cannon-1');
+const gun = catalog('weapon-autocannon-1');
+const portShield = makeShip(
+  'port-shield',
+  [ion, gun, turret, turret],
+  ['port', 'starboard', 'forward', 'forward']
+);
+const starboardShield = makeShip(
+  'starboard-shield',
+  [ion, gun, turret, turret],
+  ['starboard', 'port', 'forward', 'forward'],
+  1650
+);
+starboardShield.headingRadians = Math.PI;
+reviewCombatStrategy(portShield, starboardShield, 'attacker', 0);
+reviewCombatStrategy(starboardShield, portShield, 'defender', 0);
+assert.equal(portShield.strategy.focus, 'broadside', 'port shields plus live turrets beat turret-only');
+assert.equal(portShield.strategy.broadsideFacing, 'port');
+assert.equal(starboardShield.strategy.focus, 'broadside', 'starboard shields plus turrets are viable');
+assert.equal(starboardShield.strategy.broadsideFacing, 'starboard');
+
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');
