@@ -104,9 +104,7 @@ function readyForAttackPass(
   if (!firingLane || ship.subsystems.engine <= 0 || range > desiredRange * 1.12) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
-  return (
-    relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy)
-  );
+  return relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy);
 }
 
 /** Fix a destination beyond the enemy so asteroid routing can complete the passage. */
