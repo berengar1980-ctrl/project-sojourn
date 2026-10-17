@@ -81,6 +81,7 @@ function queueTractorThrow(
     ...(mine ? { mineDefinition: mine.definition } : {}),
     position: { ...position },
     radius: rock?.radius ?? 9,
+    collisionRadius: rock?.collisionRadius ?? rock?.radius ?? 9,
     velocity: { x: aim.x * THROW_SPEED, y: aim.y * THROW_SPEED },
     ageSeconds: 0,
     phase: 'capture',
@@ -145,7 +146,7 @@ function recordTractorLaunch(
 function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownAsteroid): boolean {
   const enemy = rock.owner === 'attacker' ? runtime.defender : runtime.attacker;
   const hitRadius =
-    rock.radius +
+    (rock.collisionRadius ?? rock.radius) +
     Math.max(enemy.setup.shieldGeometry?.radiusX ?? 30, enemy.setup.shieldGeometry?.radiusY ?? 20);
   if (distance(rock.position, enemy.position) > hitRadius) return false;
   if (rock.mineDefinition) {
