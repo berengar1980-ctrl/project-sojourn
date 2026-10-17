@@ -19,7 +19,7 @@ const makeShip = (x, heading, velocity) => ({
 });
 function impact(aHeading, bHeading) {
   const attacker = makeShip(200, aHeading, 80);
-  const defender = makeShip(260, bHeading, -80);
+  const defender = makeShip(240, bHeading, -80);
   const runtime = { attacker, defender, elapsedSeconds: 2, combatLog: [] };
   applyCombatRamImpact(runtime);
   return [100 - attacker.shieldHp, 100 - defender.shieldHp];
@@ -31,7 +31,7 @@ assert(flank[1] > flank[0], 'ramming broadside takes more damage than armored no
 const rear = impact(0, 0);
 assert(rear[1] > flank[1], 'stern receives more impact damage than broadside');
 const unshieldedAttacker = makeShip(200, 0, 180);
-const unshieldedDefender = makeShip(260, 0, -180);
+const unshieldedDefender = makeShip(240, 0, -180);
 unshieldedDefender.shieldHp = 0;
 applyCombatRamImpact({
   attacker: unshieldedAttacker,
