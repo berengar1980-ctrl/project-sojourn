@@ -45,6 +45,15 @@ function continueCommittedPass(
 ): CombatFlightIntent | null {
   const pass = ship.flightPass;
   if (!pass) return null;
+  // Switching from shield breakers to hull batteries can change the required
+  // broadside. An old committed lane must not keep steering the new gun away.
+  if (
+    pass.focus !== ship.strategy?.focus ||
+    pass.broadsideFacing !== ship.strategy?.broadsideFacing
+  ) {
+    delete ship.flightPass;
+    return null;
+  }
   pass.ageSeconds += dt;
   pass.closestRange = Math.min(pass.closestRange, range);
   const along = dx * pass.direction.x + dy * pass.direction.y;
@@ -128,7 +137,10 @@ function readyForAttackPass(
   firingLane: boolean,
   arena: StrategicCombatArenaOptions
 ): boolean {
-  if (!firingLane || ship.subsystems.engine <= 0 || range > desiredRange * 1.12) return false;
+  // The second AI planner starts four seconds later; unplanned ships may
+  // approach but cannot lock in an unarmed twenty-second attack passage.
+  if (!ship.strategy || !firingLane || ship.subsystems.engine <= 0) return false;
+  if (range > desiredRange * 1.12) return false;
   if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
@@ -164,6 +176,8 @@ function beginAttackPass(
   const waypointOrigin = broadside ? ship.position : enemy.position;
   ship.flightPass = {
     direction,
+    focus: ship.strategy?.focus,
+    broadsideFacing: ship.strategy?.broadsideFacing,
     destination: {
       x: Math.max(160, Math.min(arena.width - 160, waypointOrigin.x + direction.x * overshoot)),
       y: Math.max(160, Math.min(arena.height - 160, waypointOrigin.y + direction.y * overshoot)),
