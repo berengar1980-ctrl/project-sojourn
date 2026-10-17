@@ -154,7 +154,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   );
 }
 
- /**
+/**
  * Heavy side guns dictate the preferred heading, while the main movement
  * routine remains responsible for thrust, inertia and obstacle avoidance.
  */
