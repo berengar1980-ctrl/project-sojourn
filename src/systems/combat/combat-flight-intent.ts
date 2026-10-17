@@ -5,6 +5,7 @@ import type {
 } from './strategic-combat-types';
 import { normalize, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
+import { hasClearCombatShot } from './combat-line-of-sight';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 
 type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
@@ -94,6 +95,18 @@ export function chooseCombatFlightIntent(
   const orbitSign = starboard ? -1 : 1;
   const side = { x: -toward.y * orbitSign, y: toward.x * orbitSign };
 
+  // Orbiting only helps when a mounted weapon can actually reach the enemy
+  // through the field. Otherwise the ship must navigate into a firing corridor.
+  const firingLane =
+    !arena.obstacles?.length ||
+    ship.setup.weapons.length === 0 ||
+    ship.setup.weapons.some(
+      (component, index) =>
+        component.weapon &&
+        range <= component.weapon.rangeMeters &&
+        hasClearCombatShot(ship, enemy, index, arena)
+    );
+
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
     const exit = ship.escapeGate ?? arena.exitPoint;
@@ -141,7 +154,8 @@ export function chooseCombatFlightIntent(
   const relativeY = ship.velocity.y - enemy.velocity.y;
   const relativeClosing = relativeX * toward.x + relativeY * toward.y;
   const inPassRange = range <= desiredRange * 1.12;
-  const canPass = ship.subsystems.engine > 0 && inPassRange && forwardPassReady(ship, enemy);
+  const canPass =
+    ship.subsystems.engine > 0 && inPassRange && firingLane && forwardPassReady(ship, enemy);
   if (canPass && relativeClosing > 14) {
     const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
     const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
@@ -149,8 +163,15 @@ export function chooseCombatFlightIntent(
       dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
       dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
     );
+    // Fix a physical destination beyond the opposing ship when the pass
+    // starts. The asteroid router owns the path to it until this pass ends.
+    const overshoot = Math.min(500, Math.max(260, range * 0.4));
     ship.flightPass = {
       direction,
+      destination: {
+        x: Math.max(160, Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)),
+        y: Math.max(160, Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)),
+      },
       startRange: range,
       closestRange: range,
       ageSeconds: 0,
@@ -158,8 +179,9 @@ export function chooseCombatFlightIntent(
     return { kind: 'pass', direction, speedFactor: 0.92 };
   }
 
-  if (range < desiredRange * 1.2) {
-    // Keep traversing the engagement rather than braking at a fixed range.
+  if (range < desiredRange * 1.2 && firingLane && ship.strategy?.focus !== 'forward') {
+    // Orbit only with a viable firing lane and a non-frontal weapon posture.
+    // Fixed bow guns must first build a real closing pass, not circle at range.
     const rangeError = (range - desiredRange) / desiredRange;
     const radial = Math.max(-0.55, Math.min(0.55, rangeError));
     return {

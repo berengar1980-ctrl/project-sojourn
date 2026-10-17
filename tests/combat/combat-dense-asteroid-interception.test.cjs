@@ -9,6 +9,10 @@ const { combatRouteHeading } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-routing.ts'
 );
+const { chooseCombatFlightIntent } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-flight-intent.ts'
+);
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
@@ -61,6 +65,73 @@ assert.deepEqual(
   waypoint,
   'unchanged asteroid flank remains committed beyond the former 750 ms refresh'
 );
+
+// A front-gun combatant inside nominal range must close for a genuine
+// attack passage, not enter a permanent tangent orbit around its own position.
+const forwardPilot = {
+  position: { x: 650, y: 1050 },
+  velocity: { x: 0, y: 0 },
+  headingRadians: 0,
+  tactic: 'fight',
+  strategy: { kind: 'frontal', focus: 'forward', desiredRange: 1280 },
+  subsystems: { engine: 100 },
+  setup: {
+    combatSpeed: 125,
+    weapons: [rail, rail],
+    weaponMounts: [
+      { slotIndex: 0, x: 26, y: -10, facing: 'forward', arcDegrees: 60 },
+      { slotIndex: 1, x: 26, y: 10, facing: 'forward', arcDegrees: 60 },
+    ],
+  },
+};
+const targetPilot = {
+  position: { x: 1650, y: 1050 },
+  velocity: { x: 0, y: 0 },
+  shieldHp: 0,
+  tactic: 'fight',
+};
+const frontalApproach = chooseCombatFlightIntent(
+  forwardPilot,
+  targetPilot,
+  1280,
+  arena,
+  0.08,
+  false
+);
+assert(
+  frontalApproach.direction.x > 0.8,
+  'front guns must close through asteroids instead of orbiting inside nominal gun range'
+);
+const blockedOrbit = chooseCombatFlightIntent(
+  { ...forwardPilot, strategy: { kind: 'skirmish', focus: 'turret', desiredRange: 1280 } },
+  targetPilot,
+  1280,
+  arena,
+  0.08,
+  false
+);
+assert(
+  blockedOrbit.direction.x > 0.8,
+  'even 360-degree weapons must approach if asteroids block their firing lane'
+);
+const passing = {
+  ...forwardPilot,
+  velocity: { x: 100, y: 0 },
+  flightPass: undefined,
+};
+const passIntent = chooseCombatFlightIntent(
+  passing,
+  targetPilot,
+  1280,
+  { ...arena, obstacles: [] },
+  0.08,
+  false
+);
+assert.equal(passIntent.kind, 'pass', 'front-gun passage starts after a real intercept');
+const passDestination = { ...passing.flightPass.destination };
+passing.position = { x: 725, y: 1050 };
+chooseCombatFlightIntent(passing, targetPilot, 1280, { ...arena, obstacles: [] }, 0.08, false);
+assert.deepEqual(passing.flightPass.destination, passDestination, 'a committed pass owns a fixed destination');
 
 function ship(id) {
   return {

@@ -281,7 +281,9 @@ function combatRouteDestination(
   intentKind: CombatFlightIntent['kind']
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
-  // Interception routes toward the real enemy rather than a rotating steering vector.
+  // An attack pass has one fixed destination beyond the target. Routing to a
+  // ship-relative point every frame used to make ships orbit their own rocks.
+  if (intentKind === 'pass') return ship.flightPass?.destination ?? enemy.position;
   if (intentKind === 'intercept' || intentKind === 'pursuit' || intentKind === 'ram') {
     return enemy.position;
   }
@@ -339,8 +341,9 @@ function steerCombatRoute(
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
-  // Avoid repulsion that reverses an already chosen rock flank.
-  if (obstacle && (combatant.tactic !== 'flee' || !waypoint)) {
+  // The committed clearance waypoint already steers around the rock.
+  // Never let radial repulsion override it: that feedback created local orbits.
+  if (obstacle && !waypoint) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
   }
 
