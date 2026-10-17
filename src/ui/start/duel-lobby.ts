@@ -1,14 +1,12 @@
 import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
-import { weaponHardpointDescription } from '../../core/weapon-hardpoint-labels';
+import { buildDuelWeaponSections } from './duel-weapon-cards';
 import {
   getAllShipDefinitions,
-  fitsWeaponHardpoint,
   type ShipDefinition,
 } from '../../systems/ships';
 import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
-import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
@@ -45,37 +43,6 @@ function shipSelector(
     rerender();
   });
   return createLabel('Schiff', select);
-}
-
-function weaponSelectors(draft: DuelDraft, ship: ShipDefinition): HTMLLabelElement[] {
-  const catalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
-  return (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
-    const select = document.createElement('select');
-    const empty = document.createElement('option');
-    empty.value = '';
-    empty.textContent = 'Nicht ausgerüstet';
-    select.append(empty);
-    for (const component of catalog) {
-      if (!component.weapon || !fitsWeaponHardpoint(ship, mount.slotIndex, component.weapon)) {
-        continue;
-      }
-      const option = document.createElement('option');
-      option.value = component.id;
-      option.textContent = component.name;
-      select.append(option);
-    }
-    if (draft.weapons[mount.slotIndex] === undefined) {
-      draft.weapons[mount.slotIndex] = select.options[1]?.value ?? '';
-    }
-    select.value = draft.weapons[mount.slotIndex] ?? '';
-    select.addEventListener('change', () => {
-      draft.weapons[mount.slotIndex] = select.value;
-    });
-    return createLabel(
-      'Waffenplatz ' + (mount.slotIndex + 1) + ' · ' + weaponHardpointDescription(mount),
-      select
-    );
-  });
 }
 
 function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
@@ -134,7 +101,7 @@ function playerCard(
   heading.textContent = 'Spieler ' + (index + 1);
   const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
   card.append(heading, shipSelector(draft, ships, rerender));
-  card.append(...weaponSelectors(draft, ship));
+  card.append(...buildDuelWeaponSections(draft, ship));
   card.append(...mineSelectors(draft));
   card.append(crewSelector(draft));
   return card;
