@@ -47,6 +47,18 @@ assert.equal(repeater.weapon.mount, 'forward');
 assert.equal(repeater.weapon.arcDegrees, 60);
 assert.equal(repeater.weapon.cooldownSeconds, 0.2);
 assert.equal(repeater.weapon.rangeMeters, 600);
+assert.equal(repeater.weapon.shieldDamage, 6, 'catalog damage scales with the rebalance');
+assert.equal(repeater.weapon.hullDamage, 6, 'catalog hull damage scales with the rebalance');
+
+const repeaterDamageByTier = [1, 1.3, 1.65, 2.05, 2.5, 3];
+for (let tier = 1; tier <= 6; tier += 1) {
+  const current = weapon(`weapon-front-repeater-${tier}`).weapon;
+  const expectedDamage = repeaterDamageByTier[tier - 1];
+  assert.equal(current.combatShieldDamage, expectedDamage, 'shield damage Mk ' + tier);
+  assert.equal(current.combatHullDamage, expectedDamage, 'hull damage Mk ' + tier);
+}
+assert.equal(repeater.weapon.combatShieldDamage / repeater.weapon.cooldownSeconds, 5);
+assert.equal(repeater.weapon.combatHullDamage / repeater.weapon.cooldownSeconds, 5);
 
 for (const name of ['patrol-60m', 'miner-80m', 'freighter-120m', 'salvage-100m']) {
   for (let variant = 1; variant <= 7; variant += 1) {
