@@ -39,6 +39,7 @@ function combatant(weapons, x) {
       aiAggression: 90,
     },
     position: { x, y: 650 },
+    cooldowns: weapons.map(() => 0),
     shieldHp: 300,
     shieldMaxHp: 300,
     hullHp: 300,
