@@ -350,7 +350,9 @@ export interface MutableCombatant {
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {
     readonly direction: CombatPoint;
-    /** Stable world-space position on the far side of the opponent. */
+    readonly focus?: CombatStrategyPlan['focus'];
+    readonly broadsideFacing?: CombatStrategyPlan['broadsideFacing'];
+    /** Stable world-space commitment point along the chosen attack lane. */
     readonly destination?: CombatPoint;
     readonly startRange: number;
     closestRange: number;
