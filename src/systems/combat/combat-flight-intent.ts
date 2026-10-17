@@ -169,8 +169,14 @@ export function chooseCombatFlightIntent(
     ship.flightPass = {
       direction,
       destination: {
-        x: Math.max(160, Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)),
-        y: Math.max(160, Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)),
+        x: Math.max(
+          160,
+          Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)
+        ),
+        y: Math.max(
+          160,
+          Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)
+        ),
       },
       startRange: range,
       closestRange: range,

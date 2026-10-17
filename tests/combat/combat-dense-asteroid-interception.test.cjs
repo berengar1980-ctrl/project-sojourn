@@ -131,7 +131,11 @@ assert.equal(passIntent.kind, 'pass', 'front-gun passage starts after a real int
 const passDestination = { ...passing.flightPass.destination };
 passing.position = { x: 725, y: 1050 };
 chooseCombatFlightIntent(passing, targetPilot, 1280, { ...arena, obstacles: [] }, 0.08, false);
-assert.deepEqual(passing.flightPass.destination, passDestination, 'a committed pass owns a fixed destination');
+assert.deepEqual(
+  passing.flightPass.destination,
+  passDestination,
+  'a committed pass owns a fixed destination'
+);
 
 function ship(id) {
   return {
