@@ -39,6 +39,7 @@ function combatant(weapons, x) {
       aiAggression: 90,
     },
     position: { x, y: 650 },
+    headingRadians: 0,
     cooldowns: weapons.map(() => 0),
     shieldHp: 300,
     shieldMaxHp: 300,
@@ -63,8 +64,8 @@ assert(
 );
 assert.equal(
   ship.strategy.kind,
-  firstKind,
-  'a failed attack does not justify switching to a much weaker firing sector'
+  'broadside',
+  'after sustained failure a comparably effective weapon sector becomes the fallback'
 );
 
 function setup(id, guns, facing) {
