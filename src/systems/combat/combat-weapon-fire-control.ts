@@ -45,7 +45,10 @@ function scoreShots(
     : subsystem === 'hull'
       ? target.hullHp
       : target.subsystems[subsystem];
-  const hitChance = Math.max(0.2, Math.min(0.98, source.setup.hitChance - target.setup.dodgeChance));
+  const hitChance = Math.max(
+    0.2,
+    Math.min(0.98, source.setup.hitChance - target.setup.dodgeChance)
+  );
   const multiplier = Math.max(0, source.setup.damageMultiplier);
   const shots = candidates.flatMap(({ index, component }) => {
     if (!component.weapon) return [];
@@ -80,8 +83,10 @@ export function selectFireControlVolley(
     .sort((a, b) => {
       const difference = b.score - a.score;
       if (Math.abs(difference) > 0.000001) return difference;
-      return Number(a.index === source.lastFiredWeaponIndex) -
-        Number(b.index === source.lastFiredWeaponIndex);
+      return (
+        Number(a.index === source.lastFiredWeaponIndex) -
+        Number(b.index === source.lastFiredWeaponIndex)
+      );
     });
   const best = ready[0];
   if (!best) return [];
