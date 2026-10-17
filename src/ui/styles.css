@@ -3419,7 +3419,6 @@ body {
   border-top: 1px solid rgba(92, 148, 166, 0.14);
 }
 
-
 /* Live fire-control diagnostics: compact, readable, and out of the battle center. */
 .combat-hud {
   width: min(372px, 31vw);
@@ -3527,7 +3526,6 @@ body {
     font-size: 8px;
   }
 }
-
 
 /* Stronger than generic HUD text rules: preserve legibility of measured damage. */
 .combat-hud .combat-weapon-row__main span {
