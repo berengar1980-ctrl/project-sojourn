@@ -60,9 +60,9 @@ target.shieldHp = 200;
 const mixed = combatant('mixed', [rail, repeater, repeater]);
 mixed.cooldowns.fill(0);
 assert.deepEqual(decide(mixed, target), [1], 'fast repeater is preferred over a wasteful rail shot');
-fire.commitFireControlVolley(mixed, 5);
-assert.deepEqual(decide(mixed, target, 5.7), [], 'decision cadence reduces excess fire');
-assert.deepEqual(decide(mixed, target, 5.8), [1], 'ready weapon resumes at cadence boundary');
+fire.commitFireControlVolley(mixed, 5, [1]);
+assert.deepEqual(decide(mixed, target, 5.6), [], 'decision cadence reduces excess fire');
+assert.deepEqual(decide(mixed, target, 5.65), [2], 'equal repeaters alternate at cadence boundary');
 assert.equal(mixed.cooldowns[1], 0, 'selection does not modify individual weapon reloads');
 
 const heavy = combatant('heavy', [rail, rail]);
