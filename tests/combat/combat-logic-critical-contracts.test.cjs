@@ -60,8 +60,17 @@ assert.equal(
     { ...pursuer, position: { x: 1850, y: 800 } },
     arena
   ),
+  true,
+  'pursuer 250m away cannot create an invisible escape blockade'
+);
+assert.equal(
+  escapeLogic.runtimeCombatantEscaped(
+    fleeing,
+    { ...pursuer, position: { x: 2080, y: 800 } },
+    arena
+  ),
   false,
-  'ship too close to pursuing opponent cannot escape'
+  'real hull overlap still blocks departure'
 );
 const tractorPursuer = {
   ...pursuer,
