@@ -154,8 +154,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
   );
 }
 
-/** Apply limited thrust to velocity; turning the bow does not rotate existing momentum. */
-/**
+ /**
  * Heavy side guns dictate the preferred heading, while the main movement
  * routine remains responsible for thrust, inertia and obstacle avoidance.
  */
@@ -281,8 +280,7 @@ function combatRouteDestination(
   intentKind: CombatFlightIntent['kind']
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
-  // An attack pass has one fixed destination beyond the target. Routing to a
-  // ship-relative point every frame used to make ships orbit their own rocks.
+  // A fixed pass destination prevents ship-relative route orbiting.
   if (intentKind === 'pass') return ship.flightPass?.destination ?? enemy.position;
   if (intentKind === 'intercept' || intentKind === 'pursuit' || intentKind === 'ram') {
     return enemy.position;
@@ -341,8 +339,7 @@ function steerCombatRoute(
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
-  // The committed clearance waypoint already steers around the rock.
-  // Never let radial repulsion override it: that feedback created local orbits.
+  // Never override a committed asteroid clearance waypoint with radial repulsion.
   if (obstacle && !waypoint) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
   }
@@ -475,8 +472,7 @@ export function moveCombatant(
     deliberateRam,
   });
   const headingDirection = posture.heading;
-  // The bow may need time to turn, but RCS can already correct the escape
-  // velocity. Without this the main engine traces a broad circle first.
+  // RCS corrects the escape velocity before the hull completes its turn.
   const headingError = wrapAngle(Math.atan2(direction.y, direction.x) - combatant.headingRadians);
   const escapeStrafe = combatant.tactic === 'flee' && Math.abs(headingError) > 0.65;
   updateStandardCombatBoost(
