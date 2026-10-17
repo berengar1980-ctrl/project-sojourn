@@ -77,6 +77,68 @@ function forwardPassReady(ship: MutableCombatant, enemy: MutableCombatant): bool
   return true;
 }
 
+/** Check whether any mounted weapon can currently fire along an unblocked corridor. */
+function clearFiringLane(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  if (!arena.obstacles?.length || ship.setup.weapons.length === 0) return true;
+  return ship.setup.weapons.some(
+    (component, index) =>
+      component.weapon &&
+      range <= component.weapon.rangeMeters &&
+      hasClearCombatShot(ship, enemy, index, arena)
+  );
+}
+
+function readyForAttackPass(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  desiredRange: number,
+  toward: CombatPoint,
+  firingLane: boolean
+): boolean {
+  if (!firingLane || ship.subsystems.engine <= 0 || range > desiredRange * 1.12) return false;
+  const relativeX = ship.velocity.x - enemy.velocity.x;
+  const relativeY = ship.velocity.y - enemy.velocity.y;
+  return (
+    relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy)
+  );
+}
+
+/** Fix a destination beyond the enemy so asteroid routing can complete the passage. */
+function beginAttackPass(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  arena: StrategicCombatArenaOptions,
+  range: number,
+  side: CombatPoint
+): CombatFlightIntent {
+  const dx = enemy.position.x - ship.position.x;
+  const dy = enemy.position.y - ship.position.y;
+  const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
+  const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
+  const direction = normalize(
+    dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
+    dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
+  );
+  const overshoot = Math.min(500, Math.max(260, range * 0.4));
+  ship.flightPass = {
+    direction,
+    destination: {
+      x: Math.max(160, Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)),
+      y: Math.max(160, Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)),
+    },
+    startRange: range,
+    closestRange: range,
+    ageSeconds: 0,
+  };
+  return { kind: 'pass', direction, speedFactor: 0.92 };
+}
+
 export function chooseCombatFlightIntent(
   ship: MutableCombatant,
   enemy: MutableCombatant,
@@ -95,17 +157,8 @@ export function chooseCombatFlightIntent(
   const orbitSign = starboard ? -1 : 1;
   const side = { x: -toward.y * orbitSign, y: toward.x * orbitSign };
 
-  // Orbiting only helps when a mounted weapon can actually reach the enemy
-  // through the field. Otherwise the ship must navigate into a firing corridor.
-  const firingLane =
-    !arena.obstacles?.length ||
-    ship.setup.weapons.length === 0 ||
-    ship.setup.weapons.some(
-      (component, index) =>
-        component.weapon &&
-        range <= component.weapon.rangeMeters &&
-        hasClearCombatShot(ship, enemy, index, arena)
-    );
+  // An orbit is useful only when a mounted gun has a clear firing lane.
+  const firingLane = clearFiringLane(ship, enemy, range, arena);
 
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
@@ -150,33 +203,8 @@ export function chooseCombatFlightIntent(
     };
   }
 
-  const relativeX = ship.velocity.x - enemy.velocity.x;
-  const relativeY = ship.velocity.y - enemy.velocity.y;
-  const relativeClosing = relativeX * toward.x + relativeY * toward.y;
-  const inPassRange = range <= desiredRange * 1.12;
-  const canPass =
-    ship.subsystems.engine > 0 && inPassRange && firingLane && forwardPassReady(ship, enemy);
-  if (canPass && relativeClosing > 14) {
-    const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
-    const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
-    const direction = normalize(
-      dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
-      dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
-    );
-    // Fix a physical destination beyond the opposing ship when the pass
-    // starts. The asteroid router owns the path to it until this pass ends.
-    const overshoot = Math.min(500, Math.max(260, range * 0.4));
-    ship.flightPass = {
-      direction,
-      destination: {
-        x: Math.max(160, Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)),
-        y: Math.max(160, Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)),
-      },
-      startRange: range,
-      closestRange: range,
-      ageSeconds: 0,
-    };
-    return { kind: 'pass', direction, speedFactor: 0.92 };
+  if (readyForAttackPass(ship, enemy, range, desiredRange, toward, firingLane)) {
+    return beginAttackPass(ship, enemy, arena, range, side);
   }
 
   if (range < desiredRange * 1.2 && firingLane && ship.strategy?.focus !== 'forward') {
