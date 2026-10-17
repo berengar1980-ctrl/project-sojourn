@@ -311,9 +311,13 @@ function steerCombatRoute(
 } {
   let { direction, targetSpeedFactor } = posture;
   const mineAvoidance = avoidDetectedMine(combatant, side, activeMines, direction);
-  const evasion = deliberateRam
-    ? null
-    : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
+  // A fleeing ship has ONE persistent pursuer-clearance controller below.
+  // Mixing generic collision evasion with its escape detour made the heading
+  // jump between competing avoidance directions on consecutive frames.
+  const evasion =
+    deliberateRam || combatant.tactic === 'flee'
+      ? null
+      : predictedCollisionEvasion(combatant, enemy, side, toward, targetSpeedFactor);
   if (evasion) {
     // An emergency dodge must not replace a commanded escape with an orbit.
     direction =
