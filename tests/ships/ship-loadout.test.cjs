@@ -52,7 +52,7 @@ for (const ship of ships.getAllShipDefinitions()) {
   if (ship.role === 'mining') assert.equal(installed.mining?.[0], 'mining1');
   if (ship.role === 'salvage') assert.equal(installed.salvage?.[0], 'salvage1');
 
-  assert.equal(weaponSlots, ship.role === 'patrol' ? 5 : 4);
+  assert.equal(weaponSlots, 6, 'all ship types share the new six-slot configuration');
   assert.equal(service.setSlot(ship, 'weapon', 3, null), true);
   assert.equal(service.get(ship).weapon[3], '', 'turret slot must become visibly empty');
   assert.equal(service.setSlot(ship, 'weapon', 3, 'weapon1'), true);
