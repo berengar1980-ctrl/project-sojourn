@@ -1,4 +1,5 @@
 import { seededLocalGate } from '../../core/local-space-exit';
+import { asteroidSilhouetteInradius } from '../../core/asteroid-silhouette';
 import type {
   AsteroidPhysics,
   LocalAsteroid,
@@ -99,6 +100,8 @@ function createResourceAsteroids(
       routeBlocking: true,
       position: { x, y },
       radius,
+      collisionRadius:
+        radius * asteroidSilhouetteInradius(`asteroid-${seed}-${index}`, 'resource'),
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 5.8, 0.1, 1.9),
       deposits,
@@ -129,6 +132,7 @@ function createDebris(
         y: radius + random() * (height - radius * 2),
       },
       radius,
+      collisionRadius: radius * asteroidSilhouetteInradius(`debris-${seed}-${index}`, 'debris'),
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 16.5, 0.36, 1.15),
       deposits: [],
