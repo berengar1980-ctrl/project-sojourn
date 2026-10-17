@@ -64,8 +64,8 @@ assert(
 );
 assert.equal(
   ship.strategy.kind,
-  'broadside',
-  'after sustained failure a comparably effective weapon sector becomes the fallback'
+  firstKind,
+  'a failed posture must not switch to a much weaker sector solely due to elapsed time'
 );
 
 function setup(id, guns, facing) {
