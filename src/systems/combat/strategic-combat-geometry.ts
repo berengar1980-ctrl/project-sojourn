@@ -1,4 +1,5 @@
 import { createWeaponTelemetry } from './combat-weapon-telemetry';
+import { weaponCycleSeconds } from './combat-weapon-fire-control';
 import { weaponUiOrder, weaponHardpointName } from '../../core/weapon-hardpoint-labels';
 import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
 
@@ -166,7 +167,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
         ...entry,
         cooldownRemaining: combatant.cooldowns[index] ?? 0,
         cooldownSeconds: profile
-          ? Math.max(0, profile.cooldownSeconds * combatant.setup.cycleTimeMultiplier)
+          ? weaponCycleSeconds(profile, combatant.setup.cycleTimeMultiplier)
           : 0,
         mountLabel: mount ? weaponHardpointName(mount) : 'Waffe',
         displayOrder: mount ? weaponUiOrder(mount) : index,
