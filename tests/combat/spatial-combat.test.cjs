@@ -129,12 +129,10 @@ assert.equal(initial.arena.width, 2200);
 assert.equal(initial.attacker.position.x, 500);
 assert.equal(initial.defender.position.x, 1500);
 
-let sawProjectile = false;
 let sawImpact = false;
 let shieldDropped = false;
 for (let step = 0; step < 500 && !combat.getSnapshot().winner; step += 1) {
   const snapshot = combat.tick(0.08);
-  if (snapshot.projectiles.length > 0) sawProjectile = true;
   if (snapshot.lastImpact?.layer === 'shield' || snapshot.lastImpact?.layer === 'hull') {
     sawImpact = true;
   }
@@ -156,7 +154,23 @@ assert(
   Math.hypot(afterFire.attacker.position.x - 1000, afterFire.attacker.position.y - 700) >= 160,
   'combat movement must not pass through local obstacles'
 );
-assert(sawProjectile, 'weapons must create visible projectiles');
+const projectileCombat = combatModule.createStrategicCombatService(
+  { ...setup('missile-launcher', 'fight'), weapons: [missile] },
+  { ...setup('missile-target', 'fight'), weapons: [] },
+  345,
+  {
+    width: 1800,
+    height: 1100,
+    attackerPosition: { x: 650, y: 550 },
+    defenderPosition: { x: 1000, y: 550 },
+  }
+);
+let sawProjectile = false;
+for (let step = 0; step < 90; step += 1) {
+  const state = projectileCombat.tick(0.08);
+  if (state.projectiles.length > 0) sawProjectile = true;
+}
+assert(sawProjectile, 'guided weapons must create visible projectiles');
 assert(sawImpact, 'weapon hits must create impact events');
 assert(shieldDropped, 'combat fire must collapse shield HP before hull HP');
 
