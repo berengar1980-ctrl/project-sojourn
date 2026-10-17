@@ -306,6 +306,8 @@ export interface MutableCombatant {
   readonly shieldMaxHp: number;
   readonly hullMaxHp: number;
   readonly cooldowns: number[];
+  /** Next permitted coordinated firing decision. Individual reloads remain authoritative. */
+  nextFireDecisionAt?: number;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   headingRadians: number;
