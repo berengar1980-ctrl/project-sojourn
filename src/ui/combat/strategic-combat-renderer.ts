@@ -23,7 +23,7 @@ import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { clamp01 } from './strategic-combat-renderer-math';
+import { clamp01, weaponImpactView } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import { drawStrategicHullImpact } from './strategic-hull-impact-effect';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
@@ -467,14 +467,19 @@ export class StrategicCombatRenderer {
       if (age < 0) continue;
       const point = this.screen(impact.position, width, height);
       if (impact.weaponFamily && impact.layer !== 'miss') {
-        drawVisionWeaponImpact(
-          this.context,
+        const view = weaponImpactView(
+          this.shipGeometry(this.model[impact.target], width, height).height,
           impact.weaponFamily,
-          point,
-          age,
-          impact.serial,
           impact.layer === 'shield'
         );
+        this.context.save();
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, view.radius, 0, Math.PI * 2);
+        this.context.clip();
+        this.context.translate(point.x, point.y);
+        this.context.scale(view.scale, view.scale);
+        drawVisionWeaponImpact(this.context, impact.weaponFamily, { x: 0, y: 0 }, age, impact.serial, impact.layer === 'shield');
+        this.context.restore();
       } else {
         drawStrategicHullImpact(this.context, impact, clamp01(age / 0.7), point);
       }
