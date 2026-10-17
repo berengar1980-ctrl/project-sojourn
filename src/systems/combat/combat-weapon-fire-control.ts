@@ -4,12 +4,13 @@ import type { ShipComponentDefinition } from '../../data/ships/ship-component-ca
 import { nativeWeaponDamage } from './combat-native-damage';
 import { effectiveTargetSubsystem } from './combat-subsystem-targeting';
 
-/** One deliberate fire-control decision at a time; a decision may release a real salvo. */
+/** Deliberate fire-control decisions; one decision can authorize a strong salvo. */
 export const FIRE_CONTROL_CADENCE_SECONDS = 0.65;
 export const FIRE_CONTROL_LOOKAHEAD_SECONDS = 0.24;
 
 export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
-  return Math.max(0.05, weapon.cooldownSeconds * Math.max(0.4, Math.min(2, crewMultiplier)));
+  const adjustedCrew = Math.max(0.4, Math.min(2, crewMultiplier));
+  return Math.max(0.05, weapon.cooldownSeconds * adjustedCrew);
 }
 
 export function advanceWeaponCooldowns(ship: MutableCombatant, dt: number): void {
@@ -32,7 +33,7 @@ interface ScoredShot {
   readonly readyIn: number;
 }
 
-/** Use actual combat damage and target-layer health, never the economy/catalog UI values. */
+/** Score actual combat damage, never nominal catalog numbers or weapon-family labels. */
 function scoreShots(
   source: MutableCombatant,
   target: MutableCombatant,
@@ -40,35 +41,41 @@ function scoreShots(
 ): { shots: ScoredShot[]; health: number } {
   const shielded = target.shieldHp > 0;
   const subsystem = effectiveTargetSubsystem(source, target);
-  const health = shielded
-    ? target.shieldHp
-    : subsystem === 'hull'
-      ? target.hullHp
-      : target.subsystems[subsystem];
-  const hitChance = Math.max(
-    0.2,
-    Math.min(0.98, source.setup.hitChance - target.setup.dodgeChance)
-  );
+  let health = shielded ? target.shieldHp : target.hullHp;
+  if (!shielded && subsystem !== 'hull') health = target.subsystems[subsystem];
+
+  const accuracy = source.setup.hitChance - target.setup.dodgeChance;
+  const hitChance = Math.max(0.2, Math.min(0.98, accuracy));
   const multiplier = Math.max(0, source.setup.damageMultiplier);
+
   const shots = candidates.flatMap(({ index, component }) => {
     if (!component.weapon) return [];
     const damage = nativeWeaponDamage(component);
     const raw = shielded ? damage.shieldDamage : damage.hullDamage;
     if (raw <= 0 || health <= 0) return [];
+
     const expectedDamage = Math.min(health, raw * multiplier) * hitChance;
     const cycle = weaponCycleSeconds(component.weapon, source.setup.cycleTimeMultiplier);
-    // Sustained output matters, but a loaded heavy gun must retain its alpha-strike value.
-    // Square-root weighting avoids both 'fastest always wins' and 'biggest always wins'.
-    const score = expectedDamage / Math.sqrt(Math.max(1, cycle / FIRE_CONTROL_CADENCE_SECONDS));
-    return [{ index, expectedDamage, cycle, score, readyIn: source.cooldowns[index] ?? 0 }];
+    // Preserve the value of a loaded heavy weapon without always favoring raw alpha.
+    const cycleFactor = Math.sqrt(Math.max(1, cycle / FIRE_CONTROL_CADENCE_SECONDS));
+    const score = expectedDamage / cycleFactor;
+    const readyIn = source.cooldowns[index] ?? 0;
+    return [{ index, expectedDamage, cycle, score, readyIn }];
   });
   return { shots, health };
 }
 
+function compareShotValue(source: MutableCombatant, a: ScoredShot, b: ScoredShot): number {
+  const difference = b.score - a.score;
+  if (Math.abs(difference) > 0.000001) return difference;
+  if (a.index === source.lastFiredWeaponIndex) return 1;
+  if (b.index === source.lastFiredWeaponIndex) return -1;
+  return a.index - b.index;
+}
+
 /**
- * Select only the most valuable legal fire opportunity. A strong second shot can
- * join the same salvo, while low-impact rapid guns fire as successive decisions.
- * The planner is generic: no weapon family has a special priority or reservation.
+ * A single authoritative scheduler chooses the useful ready gun or a strong
+ * coordinated salvo. There are no railgun/repeater-specific firing exceptions.
  */
 export function selectFireControlVolley(
   source: MutableCombatant,
@@ -78,46 +85,35 @@ export function selectFireControlVolley(
 ): number[] {
   if (now + 0.000001 < (source.nextFireDecisionAt ?? 0)) return [];
   const { shots, health } = scoreShots(source, target, candidates);
-  const ready = shots
-    .filter((shot) => shot.readyIn <= 0.000001)
-    .sort((a, b) => {
-      const difference = b.score - a.score;
-      if (Math.abs(difference) > 0.000001) return difference;
-      return (
-        Number(a.index === source.lastFiredWeaponIndex) -
-        Number(b.index === source.lastFiredWeaponIndex)
-      );
-    });
+  const ready = shots.filter((shot) => shot.readyIn <= 0.000001);
+  ready.sort((a, b) => compareShotValue(source, a, b));
   const best = ready[0];
   if (!best) return [];
 
-  // A superior weapon that will finish reloading almost immediately may
-  // justify a short wait, but never reserve a gun for an indefinite future event.
-  if (
-    shots.some(
-      (shot) =>
-        shot.readyIn > 0.000001 &&
-        shot.readyIn <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
-        shot.score > best.score * 1.75
-    )
-  ) {
-    return [];
-  }
+  // Only a short, bounded wait is justified when a much stronger gun is nearly ready.
+  const betterSoon = shots.some(
+    (shot) =>
+      shot.readyIn > 0.000001 &&
+      shot.readyIn <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
+      shot.score > best.score * 1.75
+  );
+  if (betterSoon) return [];
 
   const volley = [best.index];
   const remaining = Math.max(0, health - best.expectedDamage);
   if (remaining <= 0 || best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) return volley;
-  const second = ready.slice(1).find(
-    (shot) =>
-      shot.cycle >= FIRE_CONTROL_CADENCE_SECONDS * 1.5 &&
-      shot.expectedDamage >= best.expectedDamage * 0.6 &&
-      Math.min(remaining, shot.expectedDamage) >= health * 0.06
-  );
-  if (second) volley.push(second.index);
+
+  for (const second of ready.slice(1)) {
+    if (second.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) continue;
+    if (second.expectedDamage < best.expectedDamage * 0.6) continue;
+    if (Math.min(remaining, second.expectedDamage) < health * 0.06) continue;
+    volley.push(second.index);
+    break;
+  }
   return volley;
 }
 
-/** Commit cadence only after real weapon launches; blocked shots never spend a decision. */
+/** Only actual launches consume the shared fire-control cadence. */
 export function commitFireControlVolley(
   source: MutableCombatant,
   now: number,
