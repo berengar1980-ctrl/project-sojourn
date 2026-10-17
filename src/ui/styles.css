@@ -3527,3 +3527,22 @@ body {
     font-size: 8px;
   }
 }
+
+
+/* Stronger than generic HUD text rules: preserve legibility of measured damage. */
+.combat-hud .combat-weapon-row__main span {
+  font-size: inherit;
+  letter-spacing: 0;
+}
+.combat-hud .combat-weapon-row__shield {
+  color: #81cde7;
+}
+.combat-hud .combat-weapon-row__hull {
+  color: #e6a18b;
+}
+.combat-hud .combat-weapon-row__cd {
+  color: #d8c18b;
+}
+.combat-hud .combat-weapon-row--ready .combat-weapon-row__cd {
+  color: #91c6a5;
+}
