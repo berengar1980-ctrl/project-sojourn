@@ -5,7 +5,10 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const fire = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-weapon-fire-control.ts');
+const fire = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-weapon-fire-control.ts'
+);
 const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
   root,
   'src/data/ships/ship-component-catalog.ts'
@@ -63,7 +66,11 @@ assert.deepEqual(decide(source, target), [0], 'railgun becomes best against unsh
 target.shieldHp = 200;
 const mixed = combatant('mixed', [rail, repeater, repeater]);
 mixed.cooldowns.fill(0);
-assert.deepEqual(decide(mixed, target), [1], 'fast repeater is preferred over a wasteful rail shot');
+assert.deepEqual(
+  decide(mixed, target),
+  [1],
+  'fast repeater is preferred over a wasteful rail shot'
+);
 fire.commitFireControlVolley(mixed, 5, [1]);
 assert.deepEqual(decide(mixed, target, 5.6), [], 'decision cadence reduces excess fire');
 assert.deepEqual(decide(mixed, target, 5.65), [2], 'equal repeaters alternate at cadence boundary');
@@ -80,7 +87,11 @@ target.hullHp = 350;
 heavy.cooldowns[0] = 3;
 assert.deepEqual(decide(heavy, target), [1], 'a cooling gun cannot join the salvo');
 heavy.cooldowns[0] = 0.15;
-assert.deepEqual(decide(heavy, target), [1], 'near-equal high-impact guns do not stall indefinitely');
+assert.deepEqual(
+  decide(heavy, target),
+  [1],
+  'near-equal high-impact guns do not stall indefinitely'
+);
 
 const waiting = combatant('waiting', [repeater, rail]);
 waiting.cooldowns[0] = 0;
@@ -92,7 +103,11 @@ assert.deepEqual(
 );
 waiting.cooldowns[1] = 0;
 assert.deepEqual(decide(waiting, target, 5.16), [1], 'release the strong gun when ready');
-assert.equal(waiting.nextFireDecisionAt, undefined, 'unlaunched evaluations spend no fire-control slot');
+assert.equal(
+  waiting.nextFireDecisionAt,
+  undefined,
+  'unlaunched evaluations spend no fire-control slot'
+);
 
 const onlyRail = combatant('only-rail', [rail]);
 onlyRail.cooldowns[0] = 0;
@@ -100,4 +115,6 @@ target.shieldHp = 200;
 assert.deepEqual(decide(onlyRail, target), [0], 'never reserve the only usable gun indefinitely');
 assert.equal(fire.weaponCycleSeconds(repeater.weapon, 1), 0.2);
 assert.equal(fire.weaponCycleSeconds(rail.weapon, 1), 7.2);
-console.log('PASS damage-aware shield/hull switching, paced fire, heavy salvos and bounded waiting');
+console.log(
+  'PASS damage-aware shield/hull switching, paced fire, heavy salvos and bounded waiting'
+);
