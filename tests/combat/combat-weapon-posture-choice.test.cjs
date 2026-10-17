@@ -177,9 +177,17 @@ const starboardShield = makeShip(
 starboardShield.headingRadians = Math.PI;
 reviewCombatStrategy(portShield, starboardShield, 'attacker', 0);
 reviewCombatStrategy(starboardShield, portShield, 'defender', 0);
-assert.equal(portShield.strategy.focus, 'broadside', 'port shields plus live turrets beat turret-only');
+assert.equal(
+  portShield.strategy.focus,
+  'broadside',
+  'port shields plus live turrets beat turret-only'
+);
 assert.equal(portShield.strategy.broadsideFacing, 'port');
-assert.equal(starboardShield.strategy.focus, 'broadside', 'starboard shields plus turrets are viable');
+assert.equal(
+  starboardShield.strategy.focus,
+  'broadside',
+  'starboard shields plus turrets are viable'
+);
 assert.equal(starboardShield.strategy.broadsideFacing, 'starboard');
 
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');
