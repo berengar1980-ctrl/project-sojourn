@@ -5,9 +5,7 @@ import type {
 } from './strategic-combat-types';
 
 /** Weapon statistics belong to the firing ship, not a renderer or parsed log. */
-export function createWeaponTelemetry(
-  ship: Pick<MutableCombatant, 'setup'>
-): WeaponTelemetry[] {
+export function createWeaponTelemetry(ship: Pick<MutableCombatant, 'setup'>): WeaponTelemetry[] {
   return ship.setup.weapons.map((component, index) => ({
     slotIndex: index,
     weaponId: component.id,
@@ -19,11 +17,7 @@ export function createWeaponTelemetry(
   }));
 }
 
-export function recordWeaponFired(
-  source: MutableCombatant,
-  slotIndex: number,
-  time: number
-): void {
+export function recordWeaponFired(source: MutableCombatant, slotIndex: number, time: number): void {
   const entry = source.weaponTelemetry?.[slotIndex];
   if (!entry) return;
   entry.shotsFired += 1;
