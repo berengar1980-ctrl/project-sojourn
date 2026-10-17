@@ -41,8 +41,9 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   const velocity = owner.driftVelocity ?? { x: 0, y: 0 };
   const angularVelocity = owner.spin3d?.z ?? 0;
   const isHeavy = 'sectionVariant' in owner && Boolean(owner.sectionVariant);
-  const kind =
-    isHeavy ? 'section' : 'containerVariant' in owner && owner.containerVariant
+  const kind = isHeavy
+    ? 'section'
+    : 'containerVariant' in owner && owner.containerVariant
       ? 'container'
       : 'debris';
   const physicalRadius = salvageSolidContactRadius(owner.radius, kind);
