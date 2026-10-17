@@ -339,8 +339,7 @@ function steerCombatRoute(
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
-  // Follow the chosen flank; radial repulsion against the same rock used to
-  // overpower the waypoint and flip the bow left/right on consecutive ticks.
+  // Avoid repulsion that reverses an already chosen rock flank.
   if (obstacle && (combatant.tactic !== 'flee' || !waypoint)) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
   }
@@ -407,8 +406,7 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
     range >= Math.max(155, desired * 0.66);
   if (broadsideReady) return { heading: broadside, strafe: travel };
 
-  // A committed flyby is a trajectory, not a forced bow orientation. RCS
-  // keeps loaded forward weapons on the target while the ship traverses its pass.
+  // A flyby retains weapon aim while RCS handles the travel vector.
   const forward = forwardWeaponSteering(combatant, range, toward);
   return forward ? { heading: forward, strafe: travel } : { heading: travel };
 }
