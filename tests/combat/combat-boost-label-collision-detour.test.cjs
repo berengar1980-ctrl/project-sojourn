@@ -20,6 +20,10 @@ const { resolveCombatantCollision } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-movement.ts'
 );
+const { shipContact } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-ship-contact-geometry.ts'
+);
 const { escapeContactDetour } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-collision-evasion.ts'
@@ -30,7 +34,7 @@ const vessel = (x, y, vx, vy) => ({
   speed: Math.hypot(vx, vy),
 });
 const runner = vessel(500, 500, 100, 55);
-const chaser = vessel(565, 500, 20, 55);
+const chaser = vessel(545, 500, 20, 55);
 resolveCombatantCollision(runner, chaser);
 assert.equal(runner.velocity.y, 55, 'contact must retain escape tangent velocity');
 assert.equal(chaser.velocity.y, 55, 'contact must retain pursuit tangent velocity');
@@ -39,9 +43,9 @@ const resolvedDistance = Math.hypot(
   runner.position.x - chaser.position.x,
   runner.position.y - chaser.position.y
 );
-assert(resolvedDistance >= 86, 'hulls do not overlap');
+assert(resolvedDistance >= shipContact(runner, chaser).required, 'hulls do not overlap');
 const parallel = vessel(500, 500, 0, -100);
-const neighbour = vessel(565, 500, 0, -100);
+const neighbour = vessel(545, 500, 0, -100);
 resolveCombatantCollision(parallel, neighbour);
 assert.equal(parallel.velocity.y, -100, 'parallel ships do not suffer phantom braking');
 assert.equal(neighbour.velocity.y, -100);
