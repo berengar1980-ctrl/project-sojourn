@@ -8,6 +8,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 const cover = read('src/systems/combat/combat-asteroid-cover.ts');
 const movement = read('src/systems/combat/strategic-combat-movement.ts');
+const steering = read('src/systems/combat/combat-route-steering.ts');
 const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const mine = read('src/systems/combat/strategic-combat-mines.ts');
 const tractor = read('src/systems/combat/combat-tractor-asteroid-throw.ts');
@@ -18,8 +19,9 @@ assert(
   'cover reacts to depleted shields'
 );
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
-assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
-assert(movement.includes('cover ?? waypoint ?? direction'));
+assert(movement.includes('steerCombatRoute('));
+assert(steering.includes('asteroidCoverHeading(combatant, enemy, arena)'));
+assert(steering.includes('cover ?? waypoint ?? direction'));
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
