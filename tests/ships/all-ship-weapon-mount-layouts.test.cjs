@@ -11,24 +11,24 @@ assert.equal(files.length, 28);
 for (const file of files) {
   const ship = JSON.parse(fs.readFileSync(path.join(shipsDir, file), 'utf8'));
   const mounts = ship.weaponMounts;
-  const isPatrol = file.startsWith('patrol-');
-  assert.equal(mounts.length, isPatrol ? 5 : 4, file + ': weapon slot count');
+  assert.equal(mounts.length, 6, file + ': six independent weapon slots');
   const expected = [
-    ['forward', 'forward', 60, ['railgun']],
-    ['port', 'broadside', 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
-    ['starboard', 'broadside', 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
-    ['forward', 'turret', 360, ['pulse_laser', 'ion_laser']],
-    ...(isPatrol ? [['forward', 'guided', 360, ['guided_missile', 'he_missile']]] : []),
+    ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
+    ['port', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
+    ['starboard', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
+    ['forward', ['turret', 'guided'], 360, ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile']],
+    ['forward', ['turret', 'guided'], 360, ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile']],
+    ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
   ];
   mounts.forEach((mount, index) => {
     const [facing, kind, arc, families] = expected[index];
     assert.equal(mount.slotIndex, index, file + ': stable index');
     assert.equal(mount.facing, facing, file + ': facing ' + index);
-    assert.deepEqual(mount.allowedMounts, [kind], file + ': mount class ' + index);
+    assert.deepEqual(mount.allowedMounts, kind, file + ': mount class ' + index);
     assert.deepEqual(mount.allowedFamilies, families, file + ': weapon families ' + index);
     assert.equal(mount.arcDegrees, arc, file + ': arc ' + index);
     assert(mount.x >= 0 && mount.x <= ship.sourceWidth, file + ': mount x');
     assert(mount.y >= 0 && mount.y <= ship.sourceHeight, file + ': mount y');
   });
 }
-console.log('PASS all 28 ships have directional broadside turret and patrol missile hardpoints');
+console.log('PASS 28 ships have six slots with dual front, two broadside and two universal mounts');
