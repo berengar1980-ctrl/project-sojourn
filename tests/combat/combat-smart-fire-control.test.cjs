@@ -22,8 +22,12 @@ const weapon = (id) => {
 const rail = weapon('weapon-railgun-1');
 const repeater = weapon('weapon-front-repeater-1');
 const ion = weapon('weapon-ion-laser-1');
-const arena = { width: 2200, height: 1200, attackerPosition: { x: 500, y: 600 },
-  defenderPosition: { x: 950, y: 600 } };
+const arena = {
+  width: 2200,
+  height: 1200,
+  attackerPosition: { x: 500, y: 600 },
+  defenderPosition: { x: 950, y: 600 },
+};
 
 function combatant(name, weapons, shieldHp = 200, hullHp = 350) {
   return createCombatant(
