@@ -1,9 +1,6 @@
 import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
 import { buildDuelWeaponSections } from './duel-weapon-cards';
-import {
-  getAllShipDefinitions,
-  type ShipDefinition,
-} from '../../systems/ships';
+import { getAllShipDefinitions, type ShipDefinition } from '../../systems/ships';
 import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
