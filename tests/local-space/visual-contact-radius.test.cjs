@@ -14,11 +14,11 @@ const { generateSalvageField } = load('src/systems/salvage/salvage-field-generat
 const { salvageFieldPhysicsBodies } = load('src/systems/salvage/salvage-container-motion.ts');
 
 const field = generateMiningSpace('footprint-test', 127);
-for (const asteroid of field.asteroids) {
-  assert(asteroid.collisionRadius > 0);
-  assert(asteroid.collisionRadius < asteroid.radius);
+for (const body of field.asteroids) {
+  assert(body.collisionRadius > 0);
+  assert(body.collisionRadius < body.radius);
 }
-const original = field.asteroids.find((asteroid) => asteroid.kind === 'resource');
+const original = field.asteroids.find((body) => body.kind === 'resource');
 assert(original);
 const shield = { centerOffset: { x: 0, y: 0 }, radiusX: 30, radiusY: 16 };
 const speed = { x: 26, y: 0 };
@@ -32,18 +32,18 @@ function ship(x) {
     lateralThrust: 0,
   };
 }
-function asteroid() {
+function createTestRock() {
   return {
     ...original,
     position: { x: 500, y: 300 },
     physics: { ...original.physics, velocity: { x: 0, y: 0 } },
   };
 }
-const ghost = asteroid();
+const ghost = createTestRock();
 const drawGap = (ghost.radius + ghost.collisionRadius) / 2;
 const distantHits = resolveShieldCollisions(ship(500 - 30 - drawGap), speed, [ghost], shield);
 assert.equal(distantHits.length, 0, 'shield cannot hit the invisible draw-envelope margin');
-const solid = asteroid();
+const solid = createTestRock();
 const impact = resolveShieldCollisions(
   ship(500 - 30 - solid.collisionRadius + 2),
   speed,
@@ -52,8 +52,8 @@ const impact = resolveShieldCollisions(
 );
 assert.equal(impact.length, 1, 'physical rock core still rebounds from ship shield');
 
-const first = asteroid();
-const second = asteroid();
+const first = createTestRock();
+const second = createTestRock();
 second.id = 'second';
 const physicalWidth = first.collisionRadius + second.collisionRadius;
 const envelopeWidth = first.radius + second.radius;
@@ -66,9 +66,9 @@ assert.equal(
   'physics must not collide transparent margins'
 );
 
-const blocking = asteroid();
+const blocking = createTestRock();
 blocking.position = { x: 900, y: 660 };
-const path = planPointRoute({
+const route = planPointRoute({
   start: { x: 500, y: 660 + blocking.collisionRadius + 2 },
   target: { x: 1300, y: 660 + blocking.collisionRadius + 2 },
   asteroids: [blocking],
@@ -76,7 +76,7 @@ const path = planPointRoute({
   width: 1800,
   height: 1200,
 });
-assert.equal(path.compromised, false, 'navigation clears physical rock footprint');
+assert.equal(route.compromised, false, 'navigation clears physical rock footprint');
 
 const salvage = generateSalvageField('footprint-test', 13);
 const bodies = salvageFieldPhysicsBodies(salvage);
