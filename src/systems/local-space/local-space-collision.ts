@@ -181,7 +181,8 @@ function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
 
 function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
   const currentDistance = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y);
-  const overlap = localAsteroidContactRadius(a) + localAsteroidContactRadius(b) - currentDistance;
+  const overlap =
+    localAsteroidContactRadius(a) + localAsteroidContactRadius(b) - currentDistance;
   if (overlap <= 0) return;
 
   const inverseA = 1 / a.physics.mass;
@@ -264,13 +265,19 @@ export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): 
   const buckets = collisionBuckets(asteroids);
   // Standard mining fields use one cell. Large ship sections can overlap
   // objects two cells away; expand only when oversized obstacles exist.
-  const maxRadius = asteroids.reduce((max, body) => Math.max(max, localAsteroidContactRadius(body)), 0);
+  const maxRadius = asteroids.reduce(
+    (max, body) => Math.max(max, localAsteroidContactRadius(body)),
+    0
+  );
 
   asteroids.forEach((asteroid, first) => {
     const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
     const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
 
-    const reach = Math.max(1, Math.ceil((localAsteroidContactRadius(asteroid) + maxRadius) / COLLISION_CELL_SIZE));
+    const reach = Math.max(
+      1,
+      Math.ceil((localAsteroidContactRadius(asteroid) + maxRadius) / COLLISION_CELL_SIZE)
+    );
     for (let rowOffset = -reach; rowOffset <= reach; rowOffset += 1) {
       for (let columnOffset = -reach; columnOffset <= reach; columnOffset += 1) {
         const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];
