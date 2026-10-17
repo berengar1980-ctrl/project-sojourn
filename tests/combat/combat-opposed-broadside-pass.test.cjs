@@ -66,6 +66,18 @@ right.velocity = { x: -85, y: 0 };
 const intent = (ship, target) =>
   chooseCombatFlightIntent(ship, target, ship.strategy.desiredRange, arena, 0.08, false);
 
+const unplanned = build('unplanned', 'attacker', [autocannon, ion], [
+  'port',
+  'starboard',
+]);
+unplanned.velocity = { x: 85, y: 0 };
+unplanned.headingRadians = -Math.PI / 2;
+assert.notEqual(
+  chooseCombatFlightIntent(unplanned, right, 520, arena, 0.08, false).kind,
+  'pass',
+  'ships awaiting their staggered first strategy review cannot commit a blind flyby'
+);
+
 assert.notEqual(intent(left, right).kind, 'pass', 'a turret may not start an unaligned passage');
 assert.notEqual(intent(right, left).kind, 'pass', 'an unaligned port gun must not start a pass');
 
@@ -87,6 +99,17 @@ assert(
     Math.abs(right.flightPass.destination.x - right.position.x) < 200,
   'broadside waypoints follow the own firing lane, not through the opponent'
 );
+const previousPass = left.flightPass;
+left.strategy = { ...left.strategy, broadsideFacing: 'port' };
+left.headingRadians = Math.PI / 2;
+const switchedIntent = intent(left, right);
+assert.notEqual(
+  left.flightPass,
+  previousPass,
+  'changing the preferred broadside invalidates an old committed attack lane'
+);
+assert.notEqual(switchedIntent.kind, 'pass', 'new flank needs alignment before another passage');
+
 
 right.shieldHp = 0;
 reviewCombatStrategy(left, right, 'attacker', 8);
