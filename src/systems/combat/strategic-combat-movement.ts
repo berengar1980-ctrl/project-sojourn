@@ -200,7 +200,6 @@ function broadsideSteering(
 function forwardWeaponSteering(
   combatant: MutableCombatant,
   range: number,
-  desired: number,
   toward: CombatPoint
 ): CombatPoint | null {
   if (combatant.tactic === 'flee' || combatant.strategy?.focus !== 'forward') return null;
@@ -213,7 +212,9 @@ function forwardWeaponSteering(
       return [component.weapon.rangeMeters];
     })
   );
-  if (forwardRange <= 0 || range < Math.max(155, desired * 0.55)) return null;
+  // Even while opening distance, loaded fixed guns should still track a
+  // target safely outside collision contact. Translation uses independent RCS.
+  if (forwardRange <= 0 || range < 155) return null;
   return toward;
 }
 
@@ -387,7 +388,6 @@ interface WeaponPostureInput {
   readonly desired: number;
   readonly toward: CombatPoint;
   readonly travel: CombatPoint;
-  readonly intentKind: CombatFlightIntent['kind'];
   readonly canAim: boolean;
   readonly deliberateRam: boolean;
 }
@@ -397,7 +397,7 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
   readonly heading: CombatPoint;
   readonly strafe?: CombatPoint;
 } {
-  const { combatant, enemy, range, desired, toward, travel, intentKind } = input;
+  const { combatant, enemy, range, desired, toward, travel } = input;
   if (!input.canAim || input.deliberateRam) return { heading: travel };
 
   const dx = enemy.position.x - combatant.position.x;
@@ -411,10 +411,8 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
 
   // A committed flyby is a trajectory, not a forced bow orientation. RCS
   // keeps loaded forward weapons on the target while the ship traverses its pass.
-  const forward = forwardWeaponSteering(combatant, range, desired, toward);
-  return forward && intentKind !== 'extend'
-    ? { heading: forward, strafe: travel }
-    : { heading: travel };
+  const forward = forwardWeaponSteering(combatant, range, toward);
+  return forward ? { heading: forward, strafe: travel } : { heading: travel };
 }
 
 export function moveCombatant(
@@ -474,7 +472,6 @@ export function moveCombatant(
     desired,
     toward,
     travel: direction,
-    intentKind: intent.kind,
     canAim: steering.canAim,
     deliberateRam,
   });
