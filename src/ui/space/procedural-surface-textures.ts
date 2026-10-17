@@ -1,4 +1,10 @@
 import type { PlanetBiome, WorldPoint } from '../../core/world-types';
+import {
+  asteroidRandom as createRandom,
+  hashAsteroidSeed as hashSeed,
+  createAsteroidOutline,
+} from '../../core/asteroid-silhouette';
+export { asteroidRandom as createRandom, hashAsteroidSeed as hashSeed } from '../../core/asteroid-silhouette';
 
 export interface SurfaceCrater {
   readonly x: number;
@@ -19,26 +25,6 @@ export interface AsteroidSurface {
 }
 
 export type AsteroidTextureDetail = 'far' | 'normal' | 'near';
-
-export function hashSeed(value: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-export function createRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state += 0x6d2b79f5;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function smooth(value: number): number {
   return value * value * (3 - 2 * value);
@@ -105,15 +91,7 @@ function paintPixel(
 
 export function createAsteroidSurface(id: string, kind: 'resource' | 'debris'): AsteroidSurface {
   const random = createRandom(hashSeed(id + ':' + kind));
-  const vertices = kind === 'debris' ? 12 : 24;
-  const outline: WorldPoint[] = [];
-
-  for (let index = 0; index < vertices; index += 1) {
-    const angle = (index / vertices) * Math.PI * 2;
-    const broad = Math.sin(angle * 2 + random() * 0.8) * 0.035;
-    const radius = 0.79 + random() * 0.2 + broad;
-    outline.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius });
-  }
+  const outline = createAsteroidOutline(kind, random);
 
   const craters: SurfaceCrater[] = [];
   if (kind === 'resource') {
