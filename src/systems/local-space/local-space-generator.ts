@@ -132,7 +132,8 @@ function createDebris(
         y: radius + random() * (height - radius * 2),
       },
       radius,
-      collisionRadius: radius * asteroidSilhouetteInradius(`debris-${seed}-${index}`, 'debris'),
+      collisionRadius:
+        radius * asteroidSilhouetteInradius(`debris-${seed}-${index}`, 'debris'),
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 16.5, 0.36, 1.15),
       deposits: [],
