@@ -26,6 +26,8 @@ export interface LocalAsteroid {
   readonly routeBlocking: boolean;
   position: WorldPoint;
   radius: number;
+  /** Contact radius derived from the rendered silhouette; radius stays the visual scale. */
+  readonly collisionRadius?: number;
   rotation: number;
   physics: AsteroidPhysics;
   readonly deposits: AsteroidResourceDeposit[];
