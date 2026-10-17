@@ -22,7 +22,7 @@ function vessel(x, headingRadians) {
 
 function ram(closing) {
   const attacker = vessel(500, 0);
-  const defender = vessel(580, Math.PI);
+  const defender = vessel(546, Math.PI);
   attacker.velocity.x = closing / 2;
   defender.velocity.x = -closing / 2;
   const runtime = {
