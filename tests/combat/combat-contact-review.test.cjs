@@ -14,7 +14,7 @@ const attacker = {
   nextStrategyReviewAt: 8,
 };
 const defender = {
-  position: { x: 180, y: 100 },
+  position: { x: 150, y: 100 },
   velocity: { x: 0, y: 0 },
   nextStrategyReviewAt: 12,
 };
