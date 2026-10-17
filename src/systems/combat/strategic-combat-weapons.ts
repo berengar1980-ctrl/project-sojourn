@@ -1,4 +1,5 @@
 import { nativeWeaponDamage } from './combat-native-damage';
+import { recordWeaponDamage, recordWeaponFired } from './combat-weapon-telemetry';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 
 import type {
@@ -106,6 +107,7 @@ function fireRuntimeInstantWeapon(
     shieldHit ?? undefined,
     effectiveTargetSubsystem(source, target)
   );
+  recordWeaponDamage(source, weaponIndex, result.layer, result.damage);
   recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
@@ -160,6 +162,7 @@ function fireRuntimeProjectileWeapon(
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,
+    weaponIndex,
     owner: side,
     kind,
     family: weapon.weapon.family,
@@ -255,6 +258,7 @@ export function advanceRuntimeWeapons(
       source.setup.cycleTimeMultiplier
     );
     runtime.lastEvent = event;
+    recordWeaponFired(source, index, runtime.elapsedSeconds);
     launched = true;
   }
   if (launched) commitFireControlVolley(source, runtime.elapsedSeconds, volley);
@@ -283,6 +287,7 @@ function recordProjectileDamage(
       : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
+  recordWeaponDamage(source, projectile.weaponIndex, result.layer, result.damage);
   recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
