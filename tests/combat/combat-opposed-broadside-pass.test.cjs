@@ -114,4 +114,28 @@ assert.notEqual(switchedIntent.kind, 'pass', 'new flank needs alignment before a
 right.shieldHp = 0;
 reviewCombatStrategy(left, right, 'attacker', 8);
 assert.equal(left.strategy.broadsideFacing, 'port', 're-plan onto hull gun after shield break');
+const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
+const duel = createStrategicCombatService(
+  {
+    ...left.setup,
+    shieldHp: 1600,
+  },
+  {
+    ...right.setup,
+    shieldHp: 1600,
+  },
+  12,
+  {
+    ...arena,
+    attackerHeadingRadians: -Math.PI / 2,
+    defenderHeadingRadians: -Math.PI / 2,
+    attackerVelocity: { x: 85, y: 0 },
+    defenderVelocity: { x: -85, y: 0 },
+  }
+);
+let battle;
+for (let tick = 0; tick < 225; tick += 1) battle = duel.tick(0.08);
+assert(battle.attacker.weaponTelemetry[1].shotsFired > 0, 'attacker starboard shield gun fired');
+assert(battle.defender.weaponTelemetry[0].shotsFired > 0, 'defender port shield gun fired');
+
 console.log('PASS shield-phase opposite broadsides align then commit to parallel firing lanes');
