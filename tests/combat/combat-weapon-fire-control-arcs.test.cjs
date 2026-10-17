@@ -71,10 +71,7 @@ const rail = allWeapons.find((weapon) => weapon.id === 'weapon-railgun-1');
 const cannon = allWeapons.find((weapon) => weapon.id === 'weapon-autocannon-1');
 assert(pulse && rail && cannon);
 const repeater = allWeapons.find((weapon) => weapon.id === 'weapon-front-repeater-1');
-assert(
-  repeater && repeater.weapon.cooldownSeconds < 0.45,
-  'rapid front repeater fires independently'
-);
+assert(repeater && repeater.weapon.cooldownSeconds < 0.45, 'rapid front repeater fires independently');
 assert(rail.weapon.cooldownSeconds > 6, 'railgun must recharge slowly');
 assert(rail.weapon.hullDamage > cannon.weapon.hullDamage * 5);
 

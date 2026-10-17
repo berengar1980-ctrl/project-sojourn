@@ -61,8 +61,12 @@ const repeaterShot = recordingCanvas();
 effects.drawVisionFrontRepeater(repeaterShot.context, from, to, 0.06);
 assert(repeaterShot.operations.length > 0, 'repeater bolt is visible');
 const repeaterGone = recordingCanvas();
-const repeaterEnd = timing.VISION_REPEATER_SECONDS + 0.01;
-effects.drawVisionFrontRepeater(repeaterGone.context, from, to, repeaterEnd);
+effects.drawVisionFrontRepeater(
+  repeaterGone.context,
+  from,
+  to,
+  timing.VISION_REPEATER_SECONDS + 0.01
+);
 assert.equal(repeaterGone.operations.length, 0);
 const repeaterHit = recordingCanvas();
 effects.drawVisionWeaponImpact(repeaterHit.context, 'front_repeater', to, 0.08, 11, false);
