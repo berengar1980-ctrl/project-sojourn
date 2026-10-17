@@ -1,5 +1,6 @@
 import type {
   CombatImpactLayer,
+  CombatTargetSubsystem,
   MutableCombatant,
   WeaponTelemetry,
 } from './strategic-combat-types';
@@ -29,11 +30,12 @@ export function recordWeaponDamage(
   source: MutableCombatant,
   slotIndex: number | undefined,
   layer: CombatImpactLayer,
-  damage: number
+  damage: number,
+  subsystem?: CombatTargetSubsystem
 ): void {
   if (slotIndex === undefined || !Number.isFinite(damage) || damage <= 0) return;
   const entry = source.weaponTelemetry?.[slotIndex];
   if (!entry) return;
   if (layer === 'shield') entry.shieldDamageDealt += damage;
-  if (layer === 'hull') entry.hullDamageDealt += damage;
+  if (layer === 'hull' && !subsystem) entry.hullDamageDealt += damage;
 }
