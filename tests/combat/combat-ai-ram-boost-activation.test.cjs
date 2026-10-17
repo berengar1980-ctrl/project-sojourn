@@ -68,7 +68,7 @@ const collisionShip = (x, headingRadians, vx) => ({
 });
 const impactRuntime = {
   attacker: collisionShip(500, 0, 180),
-  defender: collisionShip(580, Math.PI, -30),
+  defender: collisionShip(545, Math.PI, -30),
   elapsedSeconds: 12,
   combatLog: [],
 };
