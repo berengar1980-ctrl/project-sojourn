@@ -227,6 +227,7 @@ const openingRange = Math.hypot(
 );
 let closest = openingRange;
 let postOpeningRailHits = 0;
+let executedAttackPass = false;
 let lastSerial = 0;
 for (let tick = 0; tick < 1200 && !snapshot.winner; tick += 1) {
   snapshot = fight.tick(0.08);
@@ -235,6 +236,12 @@ for (let tick = 0; tick < 1200 && !snapshot.winner; tick += 1) {
     snapshot.attacker.position.y - snapshot.defender.position.y
   );
   closest = Math.min(closest, separation);
+  if (
+    snapshot.attacker.combatIntent === 'ANGRIFFSPASSAGE' ||
+    snapshot.defender.combatIntent === 'ANGRIFFSPASSAGE'
+  ) {
+    executedAttackPass = true;
+  }
   const unseen = snapshot.recentImpacts.filter((hit) => hit.serial > lastSerial);
   lastSerial = Math.max(lastSerial, ...unseen.map((hit) => hit.serial));
   if (snapshot.elapsedSeconds > 10) {
@@ -250,5 +257,9 @@ assert(
 assert(
   postOpeningRailHits >= 2,
   'railguns must deliver follow-up shots, not only the initial frontal salvo'
+);
+assert(
+  executedAttackPass,
+  'dense asteroid engagement must actually execute a committed attack passage'
 );
 console.log('PASS stable asteroid flank, dense-field interception and repeat railgun salvos');
