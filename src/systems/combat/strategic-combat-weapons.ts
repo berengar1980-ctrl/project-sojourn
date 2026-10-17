@@ -257,7 +257,7 @@ export function advanceRuntimeWeapons(
     runtime.lastEvent = event;
     launched = true;
   }
-  if (launched) commitFireControlVolley(source, runtime.elapsedSeconds);
+  if (launched) commitFireControlVolley(source, runtime.elapsedSeconds, volley);
 }
 
 function recordProjectileDamage(
