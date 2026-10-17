@@ -12,12 +12,13 @@ for (const file of files) {
   const ship = JSON.parse(fs.readFileSync(path.join(shipsDir, file), 'utf8'));
   const mounts = ship.weaponMounts;
   assert.equal(mounts.length, 6, file + ': six independent weapon slots');
+  const universalFamilies = ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile'];
   const expected = [
     ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
     ['port', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
     ['starboard', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
-    ['forward', ['turret', 'guided'], 360, ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile']],
-    ['forward', ['turret', 'guided'], 360, ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile']],
+    ['forward', ['turret', 'guided'], 360, universalFamilies],
+    ['forward', ['turret', 'guided'], 360, universalFamilies],
     ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
   ];
   mounts.forEach((mount, index) => {
