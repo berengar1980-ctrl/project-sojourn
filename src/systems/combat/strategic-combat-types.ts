@@ -286,6 +286,8 @@ export interface CombatVisualAsteroid {
   readonly angularVelocity: number;
   readonly physics?: AsteroidPhysics;
   readonly radius: number;
+  /** Solid contact radius, separate from the nominal visual envelope. */
+  readonly collisionRadius?: number;
   rotation: number;
   readonly kind: 'resource' | 'debris';
 }
