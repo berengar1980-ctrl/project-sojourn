@@ -25,6 +25,8 @@ export function evaluateSteeringSafety(
       !cover &&
       !collision &&
       !detour,
-    canAim: !mines && !obstacle && !boundary && !collision && !detour,
+    // Nearby rock clearance should not suppress all front gun alignment if
+    // an established waypoint already owns the safe lateral route.
+    canAim: !mines && !boundary && !collision && !detour && (!obstacle || waypoint),
   };
 }

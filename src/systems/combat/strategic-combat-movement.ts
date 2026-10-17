@@ -275,10 +275,18 @@ function applyMineAvoidance(direction: CombatPoint, avoidance: CombatPoint | nul
 
 function combatRouteDestination(
   ship: MutableCombatant,
+  enemy: MutableCombatant,
   arena: StrategicCombatArenaOptions,
-  direction: CombatPoint
+  direction: CombatPoint,
+  intentKind: CombatFlightIntent['kind']
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
+  // An orbital steering vector is not a destination. Path toward the actual
+  // opponent while intercepting, so repeated detours converge in dense fields.
+  if (intentKind === 'intercept' || intentKind === 'pursuit' || intentKind === 'ram') {
+    return enemy.position;
+  }
+  // Flybys, minelaying and spacing manoeuvres keep their own travel direction.
   return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
 }
 
@@ -291,7 +299,11 @@ function steerCombatRoute(
   activeMines: readonly MutableMine[],
   toward: CombatPoint,
   deliberateRam: boolean,
-  posture: { direction: CombatPoint; targetSpeedFactor: number }
+  posture: {
+    direction: CombatPoint;
+    targetSpeedFactor: number;
+    intentKind: CombatFlightIntent['kind'];
+  }
 ): {
   direction: CombatPoint;
   targetSpeedFactor: number;
@@ -318,7 +330,13 @@ function steerCombatRoute(
     combatant.combatIntent = 'RAMMEN';
   }
   const cover = deliberateRam ? null : asteroidCoverHeading(combatant, enemy, arena);
-  const destination = combatRouteDestination(combatant, arena, direction);
+  const destination = combatRouteDestination(
+    combatant,
+    enemy,
+    arena,
+    direction,
+    posture.intentKind
+  );
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
@@ -391,11 +409,12 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
     range >= Math.max(155, desired * 0.66);
   if (broadsideReady) return { heading: broadside, strafe: travel };
 
-  // A forward attack must first turn its actual bow toward the enemy.
-  // Translation stays independent; a committed pass or retreat is not interrupted.
-  if (intentKind !== 'intercept') return { heading: travel };
+  // A committed flyby is a trajectory, not a forced bow orientation. RCS
+  // keeps loaded forward weapons on the target while the ship traverses its pass.
   const forward = forwardWeaponSteering(combatant, range, desired, toward);
-  return forward ? { heading: forward, strafe: travel } : { heading: travel };
+  return forward && intentKind !== 'extend'
+    ? { heading: forward, strafe: travel }
+    : { heading: travel };
 }
 
 export function moveCombatant(
@@ -443,7 +462,7 @@ export function moveCombatant(
     activeMines,
     toward,
     deliberateRam,
-    { direction, targetSpeedFactor }
+    { direction, targetSpeedFactor, intentKind: intent.kind }
   );
   direction = steering.direction;
   targetSpeedFactor = steering.targetSpeedFactor;

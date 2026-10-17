@@ -11,12 +11,20 @@ export function asteroidCoverHeading(
   enemy: MutableCombatant,
   arena: StrategicCombatArenaOptions
 ): CombatPoint | null {
-  if (!ship.setup.aiControlled || ship.tactic === 'flee' || ship.shieldHp > ship.shieldMaxHp * 0.4)
+  // Cover belongs to an actual ranged skirmish, never to a frontal
+  // or broadside attack that needs to close through the asteroid field.
+  if (
+    !ship.setup.aiControlled ||
+    ship.tactic !== 'kite' ||
+    ship.strategy?.focus !== 'turret' ||
+    ship.shieldHp > ship.shieldMaxHp * 0.4
+  )
     return null;
   const dx = ship.position.x - enemy.position.x;
   const dy = ship.position.y - enemy.position.y;
   const separation = Math.hypot(dx, dy);
   if (separation < 180 || separation > 1300) return null;
+  if (separation > (ship.strategy?.desiredRange ?? 700) * 1.15) return null;
   const rocks = (arena.obstacles ?? [])
     .filter((rock) => rock.radius >= 35)
     .map((rock) => {

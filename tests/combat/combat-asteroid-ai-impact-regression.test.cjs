@@ -13,7 +13,8 @@ const renderer = read('src/ui/combat/combat-hull-impact-renderer.ts');
 const weapons = read('src/systems/combat/strategic-combat-weapons.ts');
 
 assert(
-  movement.includes('combatRouteHeading(combatant, destination'),
+  movement.includes('combatRouteHeading(combatant, destination') &&
+    movement.includes('return enemy.position;'),
   'autonomous movement routes through obstacle navigation'
 );
 assert(

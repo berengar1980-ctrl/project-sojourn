@@ -92,7 +92,16 @@ function availableWeapons(
     const primary = matches(installed, group);
     if (!primary && installed.focus !== 'turret') continue;
     const rate = damageRate(ship, profile, shielded);
-    const weight = rate * coverageFactor(arc) * (primary ? 1 : 0.25);
+    const impact = shielded
+      ? (profile.combatShieldDamage ?? profile.shieldDamage)
+      : (profile.combatHullDamage ?? profile.hullDamage);
+    // Value an imminent loaded salvo within the same tactical horizon as
+    // sustained fire. A high-alpha railgun is worth aligning before it reloads,
+    // rather than losing the finishing shot to an unrelated turret posture.
+    const remaining = Math.max(0, ship.cooldowns[index] ?? 0);
+    const readiness = clamp(1 - remaining / 8, 0.35, 1);
+    const burst = (Math.max(0, impact) / 4) * readiness;
+    const weight = (rate + burst) * coverageFactor(arc) * (primary ? 1 : 0.25);
     if (weight > 0) result.push({ profile, primary, weight });
   }
   return result;
