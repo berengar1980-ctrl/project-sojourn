@@ -25,7 +25,7 @@ function separateShipFromRock(
   const rx = Math.max(1, geometry?.radiusX ?? 30);
   const ry = Math.max(1, geometry?.radiusY ?? 20);
   const shieldExtent = 1 / Math.hypot(localX / rx, localY / ry);
-  const penetration = Math.max(0, rock.radius + shieldExtent - length);
+  const penetration = Math.max(0, (rock.collisionRadius ?? rock.radius) + shieldExtent - length);
   ship.position.x -= (dx / length) * penetration;
   ship.position.y -= (dy / length) * penetration;
 }
