@@ -1,4 +1,5 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
+import { salvageSolidContactRadius } from '../../core/salvage-contact-profile';
 import type {
   SalvageDebris,
   SalvageField,
@@ -40,6 +41,11 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   const velocity = owner.driftVelocity ?? { x: 0, y: 0 };
   const angularVelocity = owner.spin3d?.z ?? 0;
   const isHeavy = 'sectionVariant' in owner && Boolean(owner.sectionVariant);
+  const kind =
+    isHeavy ? 'section' : 'containerVariant' in owner && owner.containerVariant
+      ? 'container'
+      : 'debris';
+  const physicalRadius = salvageSolidContactRadius(owner.radius, kind);
   const density = isHeavy ? 10 : owner.radius >= 28 ? 3.2 : 1.3;
   const mass = Math.max(1, Math.PI * owner.radius ** 2 * density);
   return {
@@ -49,7 +55,7 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
     // trigger detours. Only large room-scale ship sections block routes.
     routeBlocking: 'sectionVariant' in owner && Boolean(owner.sectionVariant),
     position: { ...owner.position },
-    radius: owner.radius,
+    radius: physicalRadius,
     rotation: owner.rotation3d?.z ?? ('rotation' in owner ? owner.rotation : 0),
     physics: {
       mass,
