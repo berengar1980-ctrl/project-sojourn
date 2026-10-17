@@ -155,15 +155,16 @@ function selectRouteWaypoint(
   // to replace every 750 ms. Replan only if the destination actually moves,
   // a new rock obstructs the next leg, or the route is exhausted.
   const oldTarget = route.at(-1);
-  const targetDrift = oldTarget
-    ? Math.hypot(oldTarget.x - target.x, oldTarget.y - target.y)
-    : Infinity;
+  let targetDrift = Infinity;
+  if (oldTarget) {
+    targetDrift = Math.hypot(oldTarget.x - target.x, oldTarget.y - target.y);
+  }
   const staleLeg = route.length > 0 && pathBlocked(ship.position, route[0]!, arena, clearance);
-  const replan =
-    !route.length ||
-    (!fleeing &&
-      ship.nextAsteroidRouteAt <= 0 &&
-      (targetDrift > TARGET_DRIFT_METERS || staleLeg));
+  const needRefresh =
+    !fleeing &&
+    ship.nextAsteroidRouteAt <= 0 &&
+    (targetDrift > TARGET_DRIFT_METERS || (staleLeg && immediateThreat));
+  const replan = !route.length || needRefresh;
   if (replan) {
     ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
