@@ -241,6 +241,7 @@ export interface ThrownAsteroidSnapshot {
   readonly mineDefinition?: ShipMineDefinition;
   readonly position: CombatPoint;
   readonly radius: number;
+  readonly collisionRadius?: number;
   readonly velocity: CombatPoint;
   readonly ageSeconds: number;
   readonly phase: 'capture' | 'charge' | 'flight';
@@ -441,6 +442,7 @@ export interface MutableThrownAsteroid {
   mineDefinition?: ShipMineDefinition;
   position: { x: number; y: number };
   radius: number;
+  collisionRadius?: number;
   velocity: CombatPoint;
   ageSeconds: number;
   phase: 'capture' | 'charge' | 'flight';
