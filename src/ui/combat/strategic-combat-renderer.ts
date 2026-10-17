@@ -478,7 +478,14 @@ export class StrategicCombatRenderer {
         this.context.clip();
         this.context.translate(point.x, point.y);
         this.context.scale(view.scale, view.scale);
-        drawVisionWeaponImpact(this.context, impact.weaponFamily, { x: 0, y: 0 }, age, impact.serial, impact.layer === 'shield');
+        drawVisionWeaponImpact(
+          this.context,
+          impact.weaponFamily,
+          { x: 0, y: 0 },
+          age,
+          impact.serial,
+          impact.layer === 'shield'
+        );
         this.context.restore();
       } else {
         drawStrategicHullImpact(this.context, impact, clamp01(age / 0.7), point);
