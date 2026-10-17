@@ -13,6 +13,14 @@ const { chooseCombatFlightIntent } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-flight-intent.ts'
 );
+const { moveCombatant } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-movement.ts'
+);
+const { createCombatant } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-geometry.ts'
+);
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/strategic-combat-service.ts'
@@ -135,6 +143,56 @@ assert.deepEqual(
   passing.flightPass.destination,
   passDestination,
   'a committed pass owns a fixed destination'
+);
+
+// A nearby asteroid's radial avoidance must never reverse an established
+// waypoint; the ship's actual initial thrust must follow the committed flank.
+const steeringArena = {
+  width: 3400,
+  height: 2200,
+  attackerPosition: { x: 1100, y: 1170 },
+  defenderPosition: { x: 2700, y: 1050 },
+  obstacles: [{ id: 'nearby', position: { x: 1270, y: 1150 }, radius: 105 }],
+};
+const steeringSetup = (id) => ({
+  id,
+  name: id,
+  shipId: 'patrol-60m-variant-01',
+  shieldHp: 100,
+  hullHp: 900,
+  weapons: [rail, rail],
+  weaponMounts: [
+    { slotIndex: 0, x: 26, y: -10, facing: 'forward', arcDegrees: 60 },
+    { slotIndex: 1, x: 26, y: 10, facing: 'forward', arcDegrees: 60 },
+  ],
+  hitChance: 0.95,
+  dodgeChance: 0,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  combatSpeed: 125,
+  turnRateRadiansPerSecond: 1,
+  accelerationMetersPerSecond2: 36,
+});
+const steeringShip = createCombatant(steeringSetup('steering'), 'attacker', steeringArena);
+const steeringTarget = createCombatant(steeringSetup('target'), 'defender', steeringArena);
+steeringShip.strategy = {
+  kind: 'frontal',
+  focus: 'forward',
+  desiredRange: 1280,
+  score: 1,
+  reason: 'track the target while clearing an asteroid',
+};
+const detour = combatRouteHeading(steeringShip, steeringTarget.position, steeringArena, 0.08);
+assert(detour, 'nearby asteroid must produce a navigable flank');
+moveCombatant(steeringShip, steeringTarget, 'attacker', 0.08, steeringArena, []);
+const thrust = Math.hypot(steeringShip.velocity.x, steeringShip.velocity.y);
+const committedProgress =
+  (steeringShip.velocity.x * detour.x + steeringShip.velocity.y * detour.y) /
+  Math.max(0.001, thrust);
+assert(
+  committedProgress > 0.7,
+  'radial asteroid repulsion must not overpower the already chosen safe detour'
 );
 
 function ship(id) {
