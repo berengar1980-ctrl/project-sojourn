@@ -31,7 +31,8 @@ for (const title of [
 assert(menu.includes('button.disabled = !entry.action'), 'future features must be disabled');
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
-assert(duel.includes('fitsWeaponHardpoint'), 'weapon choices respect ship JSON');
+const weaponCards = read('src/ui/start/duel-weapon-cards.ts');
+assert(weaponCards.includes('fitsWeaponHardpoint'), 'weapon choices respect ship JSON');
 assert(duel.includes('createStrategicCombatService'), 'duel starts existing combat engine');
 assert(duel.includes('createStrategicCombatPanel'), 'duel uses existing combat visuals');
 console.log('PASS Harrowdrift menu navigation and two-player duel setup contracts');
