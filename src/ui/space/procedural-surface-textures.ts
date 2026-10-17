@@ -4,7 +4,10 @@ import {
   hashAsteroidSeed as hashSeed,
   createAsteroidOutline,
 } from '../../core/asteroid-silhouette';
-export { asteroidRandom as createRandom, hashAsteroidSeed as hashSeed } from '../../core/asteroid-silhouette';
+export {
+  asteroidRandom as createRandom,
+  hashAsteroidSeed as hashSeed,
+} from '../../core/asteroid-silhouette';
 
 export interface SurfaceCrater {
   readonly x: number;
