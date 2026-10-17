@@ -226,6 +226,7 @@ function repeaterCircle(
   }
 }
 
+/** Four phased ultraviolet flechettes for one gameplay shot, not four damage events. */
 export function drawVisionFrontRepeater(
   context: CanvasRenderingContext2D,
   from: WeaponFxPoint,
@@ -233,35 +234,62 @@ export function drawVisionFrontRepeater(
   ageSeconds: number
 ): void {
   if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_SECONDS) return;
-  const progress = ageSeconds / VISION_REPEATER_SECONDS;
-  const headT = clamp01(progress * 3.6);
-  const tailT = clamp01(progress * 3.6 - 0.14);
-  const head = { x: blend(from.x, to.x, headT), y: blend(from.y, to.y, headT) };
-  const tail = { x: blend(from.x, to.x, tailT), y: blend(from.y, to.y, tailT) };
-  const fade = Math.pow(1 - progress, 0.65);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const normal = { x: -dy / length, y: dx / length };
   context.save();
   context.lineCap = 'round';
-  line(context, tail, head, '#ff9f4d', 5, fade * 0.26, 12);
-  line(context, tail, head, '#ffd199', 2.2, fade * 0.88, 5);
-  line(context, tail, head, '#fffdf3', 0.95, fade, 2);
-  repeaterCircle(context, head, 2.2, '#fff5dc', fade * 0.95);
-  if (progress < 0.35) {
-    const flash = 1 - progress / 0.35;
-    repeaterCircle(context, from, 3.8 + 5 * progress, '#ffae6f', flash * 0.55);
-    line(
+  for (let index = 0; index < 4; index += 1) {
+    const launch = index * 0.035;
+    const flight = (ageSeconds - launch) / 0.115;
+    if (flight < 0 || flight >= 1) continue;
+    // Deliberately offset packets: a compact prismatic burst, not copper slugs.
+    const lane = (index - 1.5) * 3.8;
+    const progress = clamp01(flight);
+    const rear = clamp01(flight - 0.105);
+    const offset = (point: WeaponFxPoint): WeaponFxPoint => ({
+      x: point.x + normal.x * lane,
+      y: point.y + normal.y * lane,
+    });
+    const head = offset({
+      x: blend(from.x, to.x, progress),
+      y: blend(from.y, to.y, progress),
+    });
+    const tail = offset({
+      x: blend(from.x, to.x, rear),
+      y: blend(from.y, to.y, rear),
+    });
+    const fade = Math.sin(Math.PI * flight) * 0.7 + 0.3;
+    line(context, tail, head, '#6524bd', 6, fade * 0.24, 15);
+    line(context, tail, head, '#d24fff', 2.5, fade * 0.85, 7);
+    line(context, tail, head, '#ffe8ff', 0.9, fade, 3);
+    // Each flechette has a broken diamond tip, unlike autocannon tracer dots.
+    const back = {
+      x: head.x - (dx / length) * 5,
+      y: head.y - (dy / length) * 5,
+    };
+    path(
       context,
-      { x: from.x - 5, y: from.y - 3 },
-      { x: from.x + 9, y: from.y + 3 },
-      '#fff2d8',
-      1.25,
-      flash * 0.72,
-      5
+      [
+        { x: back.x + normal.x * 2, y: back.y + normal.y * 2 },
+        { x: head.x + (dx / length) * 2, y: head.y + (dy / length) * 2 },
+        { x: back.x - normal.x * 2, y: back.y - normal.y * 2 },
+      ],
+      '#fff0ff',
+      1.1,
+      fade,
+      4
     );
+    if (flight < 0.26) {
+      const pulse = 1 - flight / 0.26;
+      repeaterCircle(context, offset(from), 2.5 + flight * 5, '#b751ff', pulse * 0.7);
+    }
   }
   context.restore();
 }
 
-/** One impact per actual shot: tight copper shards or a blue shield ripple. */
+/** Prismatic fracture, not the autocannon's copper sparks and shell flashes. */
 export function drawVisionRepeaterImpact(
   context: CanvasRenderingContext2D,
   point: WeaponFxPoint,
@@ -270,24 +298,30 @@ export function drawVisionRepeaterImpact(
   shield: boolean
 ): void {
   if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_IMPACT_SECONDS) return;
-  const t = ageSeconds / VISION_REPEATER_IMPACT_SECONDS;
-  const fade = Math.pow(1 - t, 1.4);
+  const progress = ageSeconds / VISION_REPEATER_IMPACT_SECONDS;
+  const fade = Math.pow(1 - progress, 1.5);
   context.save();
-  repeaterCircle(context, point, 2.7 + t * 4, '#fff8e7', fade);
+  repeaterCircle(context, point, 1.7 + progress * 2.6, '#fff3ff', fade);
   if (shield) {
-    repeaterCircle(context, point, 5 + t * 16, '#a7e2ff', fade * 0.75, true);
-    repeaterCircle(context, point, 3 + t * 10, '#ffc48c', fade * 0.48, true);
+    repeaterCircle(context, point, 4 + progress * 19, '#c78cff', fade * 0.78, true);
+    repeaterCircle(context, point, 2 + progress * 11, '#f59cff', fade * 0.44, true);
   } else {
-    repeaterCircle(context, point, 3 + t * 7, '#ff9a4f', fade * 0.58, true);
-  }
-  for (let index = 0; index < 5; index += 1) {
-    const angle = (index * Math.PI * 2) / 5 + noise(seed + index) * 0.35;
-    const reach = 3 + t * (8 + noise(seed * 3 + index) * 10);
-    const end = {
-      x: point.x + Math.cos(angle) * reach,
-      y: point.y + Math.sin(angle) * reach,
-    };
-    line(context, point, end, index % 2 ? '#ffc689' : '#fff8d9', 0.8, fade * 0.8, 3);
+    // Four angular fissures, with short off-axis branches.
+    for (let index = 0; index < 4; index += 1) {
+      const angle = (index * Math.PI) / 2 + noise(seed + index) * 0.24;
+      const radius = 4 + progress * (12 + noise(seed * 3 + index) * 6);
+      const middle = {
+        x: point.x + Math.cos(angle) * radius * 0.58,
+        y: point.y + Math.sin(angle) * radius * 0.58,
+      };
+      const end = {
+        x: point.x + Math.cos(angle + 0.21) * radius,
+        y: point.y + Math.sin(angle + 0.21) * radius,
+      };
+      path(context, [point, middle, end], '#d88cff', 1.3, fade * 0.88, 6);
+      line(context, middle, end, '#fff1ff', 0.55, fade * 0.75, 2);
+    }
+    repeaterCircle(context, point, 3 + progress * 7, '#932ae5', fade * 0.36, true);
   }
   context.restore();
 }

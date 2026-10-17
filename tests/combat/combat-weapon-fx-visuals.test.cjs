@@ -79,6 +79,15 @@ assert(
   'the entire luminous lance fades smoothly'
 );
 assert.equal(RAIL_LANCE_SECONDS, 1.35);
+const flechettes = mockContext();
+effects.drawVisionFrontRepeater(flechettes.context, start, end, 0.075);
+assert(
+  flechettes.strokes.length >= 8,
+  'one repeater fire event renders overlapping prismatic flechettes'
+);
+const shattered = mockContext();
+effects.drawVisionRepeaterImpact(shattered.context, end, 0.1, 13, false);
+assert(shattered.strokes.length >= 8, 'hull strike fractures into violet shards');
 
 const burst = mockContext();
 effects.drawAutocannonBurst(burst.context, start, end, 0.25, 0.7);

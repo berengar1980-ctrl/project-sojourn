@@ -59,7 +59,12 @@ assert.equal(pulseExpired.operations.length, 0, 'expired pulse beams vanish');
 
 const repeaterShot = recordingCanvas();
 effects.drawVisionFrontRepeater(repeaterShot.context, from, to, 0.06);
-assert(repeaterShot.operations.length > 0, 'repeater bolt is visible');
+assert(repeaterShot.operations.length >= 8, 'each shot contains multiple phased flechettes');
+assert(
+  repeaterShot.operations.some((op) => op.color === '#d24fff') &&
+    !repeaterShot.operations.some((op) => op.color === '#b86f40'),
+  'repeater uses its own ultraviolet palette, never copper autocannon tracers'
+);
 const repeaterGone = recordingCanvas();
 effects.drawVisionFrontRepeater(
   repeaterGone.context,
@@ -70,7 +75,11 @@ effects.drawVisionFrontRepeater(
 assert.equal(repeaterGone.operations.length, 0);
 const repeaterHit = recordingCanvas();
 effects.drawVisionWeaponImpact(repeaterHit.context, 'front_repeater', to, 0.08, 11, false);
-assert(repeaterHit.operations.length > 0, 'repeater hull impact is visible');
+assert(repeaterHit.operations.length >= 4, 'repeater impact has multiple angular fissures');
+assert(
+  repeaterHit.operations.some((op) => op.color === '#d88cff'),
+  'repeater impact is prismatic violet, not ballistic copper sparks'
+);
 const expiredHit = recordingCanvas();
 const impactEnd = timing.VISION_REPEATER_IMPACT_SECONDS + 0.01;
 effects.drawVisionWeaponImpact(expiredHit.context, 'front_repeater', to, impactEnd, 11, true);
