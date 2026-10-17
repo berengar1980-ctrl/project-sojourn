@@ -84,7 +84,7 @@ function clearFiringLane(
   range: number,
   arena: StrategicCombatArenaOptions
 ): boolean {
-  if (!arena.obstacles?.length || ship.setup.weapons.length === 0) return true;
+  if (!arena.obstacles?.length) return true;
   return ship.setup.weapons.some(
     (component, index) =>
       component.weapon &&
@@ -93,15 +93,43 @@ function clearFiringLane(
   );
 }
 
+/**
+ * A broadside passage may only start after its CHOSEN side can fire.
+ * A ready turret on the opposite arc is not evidence that a side gun
+ * is aligned. The heading is prepared by the regular posture controller.
+ */
+function preferredBroadsideAligned(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  if (ship.strategy?.focus !== 'broadside') return true;
+  const facing = ship.strategy.broadsideFacing;
+  return ship.setup.weapons.some((component, index) => {
+    const weapon = component.weapon;
+    const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
+    return (
+      weapon?.mount === 'broadside' &&
+      mount?.facing === facing &&
+      range <= weapon.rangeMeters &&
+      weaponInArc(ship, enemy.position, index, weapon) &&
+      (!arena.obstacles?.length || hasClearCombatShot(ship, enemy, index, arena))
+    );
+  });
+}
+
 function readyForAttackPass(
   ship: MutableCombatant,
   enemy: MutableCombatant,
   range: number,
   desiredRange: number,
   toward: CombatPoint,
-  firingLane: boolean
+  firingLane: boolean,
+  arena: StrategicCombatArenaOptions
 ): boolean {
   if (!firingLane || ship.subsystems.engine <= 0 || range > desiredRange * 1.12) return false;
+  if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
   return relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy);
@@ -119,16 +147,26 @@ function beginAttackPass(
   const dy = enemy.position.y - ship.position.y;
   const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
   const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
-  const direction = normalize(
-    dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
-    dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
-  );
-  const overshoot = Math.min(500, Math.max(260, range * 0.4));
+  const broadside = ship.strategy?.focus === 'broadside';
+  // Once a side gun is aimed, fly tangentially instead of cutting across the
+  // opponent. Opposite port/starboard plans independently yield parallel tracks.
+  // The small radial correction preserves useful firing range without an orbit.
+  const toward = normalize(dx, dy);
+  const rangeError = (range - (ship.strategy?.desiredRange ?? range)) / Math.max(1, range);
+  const radial = Math.max(-0.18, Math.min(0.18, rangeError));
+  const direction = broadside
+    ? normalize(side.x + toward.x * radial, side.y + toward.y * radial)
+    : normalize(
+        dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
+        dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
+      );
+  const overshoot = Math.min(700, Math.max(350, range * 0.7));
+  const waypointOrigin = broadside ? ship.position : enemy.position;
   ship.flightPass = {
     direction,
     destination: {
-      x: Math.max(160, Math.min(arena.width - 160, enemy.position.x + direction.x * overshoot)),
-      y: Math.max(160, Math.min(arena.height - 160, enemy.position.y + direction.y * overshoot)),
+      x: Math.max(160, Math.min(arena.width - 160, waypointOrigin.x + direction.x * overshoot)),
+      y: Math.max(160, Math.min(arena.height - 160, waypointOrigin.y + direction.y * overshoot)),
     },
     startRange: range,
     closestRange: range,
@@ -201,7 +239,7 @@ export function chooseCombatFlightIntent(
     };
   }
 
-  if (readyForAttackPass(ship, enemy, range, desiredRange, toward, firingLane)) {
+  if (readyForAttackPass(ship, enemy, range, desiredRange, toward, firingLane, arena)) {
     return beginAttackPass(ship, enemy, arena, range, side);
   }
 
