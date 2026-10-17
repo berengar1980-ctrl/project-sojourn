@@ -55,11 +55,16 @@ assert.equal(impact.length, 1, 'physical rock core still rebounds from ship shie
 const first = asteroid();
 const second = asteroid();
 second.id = 'second';
-const gap = (first.collisionRadius + second.collisionRadius +
-  first.radius + second.radius) / 2;
+const physicalWidth = first.collisionRadius + second.collisionRadius;
+const envelopeWidth = first.radius + second.radius;
+const gap = (physicalWidth + envelopeWidth) / 2;
 second.position.x = first.position.x + gap;
 resolveAsteroidCollisions([first, second]);
-assert.equal(second.position.x, first.position.x + gap, 'physics must not collide transparent margins');
+assert.equal(
+  second.position.x,
+  first.position.x + gap,
+  'physics must not collide transparent margins'
+);
 
 const blocking = asteroid();
 blocking.position = { x: 900, y: 660 };
@@ -75,9 +80,9 @@ assert.equal(path.compromised, false, 'navigation clears physical rock footprint
 
 const salvage = generateSalvageField('footprint-test', 13);
 const bodies = salvageFieldPhysicsBodies(salvage);
+const owners = new Map([...salvage.wrecks, ...salvage.debris].map((owner) => [owner.id, owner]));
 for (const body of bodies) {
-  const owner = salvage.wrecks.find((wreck) => wreck.id === body.id) ??
-    salvage.debris.find((debris) => debris.id === body.id);
+  const owner = owners.get(body.id);
   assert(owner);
   assert(body.radius < owner.radius, 'salvage contact disk fits inside visible 3D mesh');
 }
