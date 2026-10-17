@@ -62,7 +62,7 @@ assert.deepEqual(
   'unchanged asteroid flank remains committed beyond the former 750 ms refresh'
 );
 
-function ship(id, facing) {
+function ship(id) {
   return {
     id,
     name: id,
