@@ -29,7 +29,13 @@ import {
 } from './strategic-combat-runtime';
 
 import { distance, clamp, weaponKind, normalize } from './strategic-combat-geometry';
-import { advanceWeaponCooldowns, weaponCycleSeconds } from './combat-weapon-fire-control';
+import {
+  advanceWeaponCooldowns,
+  weaponCycleSeconds,
+  FIRE_CONTROL_LOOKAHEAD_SECONDS,
+  selectFireControlVolley,
+  commitFireControlVolley,
+} from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import {
@@ -218,45 +224,37 @@ export function advanceRuntimeWeapons(
   deltaSeconds: number
 ): void {
   advanceWeaponCooldowns(source, deltaSeconds);
-  // Retreat is a command, not an aim posture: keep cooling guns but do not
-  // launch new offensive projectiles while fleeing. Mines remain autonomous.
+  // Movement tactics own retreat; cooldowns still advance while fleeing.
   if (source.tactic === 'flee' || target.hullHp <= 0) return;
 
-  // The current target layer determines weapon priority. A heavy gun cannot
-  // fire through the opposite side of the hull simply because it is loaded.
   const candidates = source.setup.weapons
-    .map((weapon, index) => ({ weapon, index }))
-    .filter(({ weapon, index }) =>
+    .map((component, index) => ({ component, index }))
+    .filter(({ component, index }) =>
       Boolean(
-        weapon?.weapon &&
-        (source.cooldowns[index] ?? 0) <= 0 &&
-        distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+        component?.weapon &&
+        (source.cooldowns[index] ?? 0) <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
+        distance(source.position, target.position) <= component.weapon.rangeMeters &&
         canEngagePreferredSubsystem(source, target) &&
-        weaponInArc(source, target.position, index, weapon.weapon) &&
+        weaponInArc(source, target.position, index, component.weapon) &&
         hasClearCombatShot(source, target, index, runtime.arena)
       )
-    )
-    .sort((a, b) => {
-      const score = (weapon: ShipComponentDefinition): number =>
-        target.shieldHp > 0 ? (weapon.weapon?.shieldDamage ?? 0) : (weapon.weapon?.hullDamage ?? 0);
-      return score(b.weapon) - score(a.weapon);
-    });
-  // All ready mounts fire independently. Sorting preserves target-layer priority only.
-  for (const candidate of candidates) {
-    const event = fireRuntimeWeapon(
-      runtime,
-      side,
-      source,
-      target,
-      candidate.weapon,
-      candidate.index
     );
-    source.cooldowns[candidate.index] = weaponCycleSeconds(
-      candidate.weapon.weapon!,
+  const volley = selectFireControlVolley(source, target, candidates, runtime.elapsedSeconds);
+  if (!volley.length) return;
+  let launched = false;
+  for (const index of volley) {
+    if (target.hullHp <= 0) break;
+    const component = source.setup.weapons[index]!;
+    const event = fireRuntimeWeapon(runtime, side, source, target, component, index);
+    if (!event) continue;
+    source.cooldowns[index] = weaponCycleSeconds(
+      component.weapon!,
       source.setup.cycleTimeMultiplier
     );
-    if (event) runtime.lastEvent = event;
+    runtime.lastEvent = event;
+    launched = true;
   }
+  if (launched) commitFireControlVolley(source, runtime.elapsedSeconds);
 }
 
 function recordProjectileDamage(
