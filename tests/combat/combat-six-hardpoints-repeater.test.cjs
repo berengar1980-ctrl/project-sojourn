@@ -151,16 +151,21 @@ const runtime = {
   recentImpacts: [],
 };
 advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
-assert.equal(runtime.beams.length, 2, 'both loaded bow guns shoot in one tick');
-assert.equal(runtime.recentImpacts.length, 2, 'both real hits remain visible');
+assert.equal(runtime.beams.length, 1, 'rapid bow guns share deliberately paced fire decisions');
+assert.equal(runtime.recentImpacts.length, 1, 'one real hit is recorded for one released shot');
 assert.equal(runtime.recentImpacts[0].weaponFamily, 'front_repeater');
-assert.equal(runtime.recentImpacts[1].weaponFamily, 'front_repeater');
 assert.equal(attacker.cooldowns[0], 0.2);
-assert.equal(attacker.cooldowns[1], 0.2);
+assert.equal(attacker.cooldowns[1], 0, 'unfired mount keeps its independent reload');
+
+runtime.elapsedSeconds = 1.8;
+advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
+assert.equal(runtime.beams.length, 2, 'the second repeater can fire on the next control decision');
+assert.equal(runtime.recentImpacts.length, 2, 'consecutive impacts remain independently recorded');
 
 attacker.tactic = 'flee';
 attacker.cooldowns[0] = 0;
 attacker.cooldowns[1] = 0;
+runtime.elapsedSeconds = 3;
 advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
 assert.equal(runtime.beams.length, 2, 'fleeing never launches offensive repeater shots');
 
@@ -174,4 +179,4 @@ mixed.setup.weapons[1] = {
 const long = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
 assert(long && long.effectiveRange > far.effectiveRange, 'long rail prefers a different envelope');
 
-console.log('PASS 28 six-slot ships, universal guns, independent repeater fire and range scoring');
+console.log('PASS 28 six-slot ships, coordinated repeater cadence and range scoring');
