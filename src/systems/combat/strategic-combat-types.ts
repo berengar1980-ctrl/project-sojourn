@@ -308,6 +308,8 @@ export interface MutableCombatant {
   readonly cooldowns: number[];
   /** Next permitted coordinated firing decision. Individual reloads remain authoritative. */
   nextFireDecisionAt?: number;
+  /** Round-robin tie-breaker for identical gun mounts. */
+  lastFiredWeaponIndex?: number;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   headingRadians: number;
