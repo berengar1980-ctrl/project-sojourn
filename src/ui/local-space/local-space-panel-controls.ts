@@ -75,7 +75,7 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
     '<button type="button" data-tactic="flee">FLUCHT</button>',
     '<button type="button" data-grapple>GREIFHAKEN</button></div>',
     '<aside class="local-mining-event" hidden></aside>',
-    '<div class="local-cargo-panel">',
+    '<div class="local-operations-dock"><div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // CONTAINER</div>',
     '<div class="local-cargo-total">GESAMT · <strong>0</strong></div>',
     '<div class="local-cargo-list"></div></div>',
@@ -86,7 +86,7 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
     '<div class="mining-resource-selector" hidden></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
     '<button class="mine-button" type="button">MINING</button>',
-    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div>',
+    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div></div>',
   ].join('');
   options.root.replaceChildren(shell);
   return shell;
