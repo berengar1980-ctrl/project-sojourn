@@ -7,6 +7,7 @@ import { createGameAudioService } from '../../systems/audio/game-audio-service';
 import { createSettingsMenu } from '../settings/settings-menu';
 
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
+import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
 import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
 import { analyzeDuelPreset, formatPresetAnalysis } from './duel-preset-analysis';
@@ -65,6 +66,23 @@ function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
   });
 }
 
+function equipmentSelector(
+  draft: DuelDraft,
+  type: 'engine' | 'armor'
+): HTMLLabelElement {
+  const select = document.createElement('select');
+  if (type === 'armor') select.append(new Option('Keine Richtungs-Panzerung', ''));
+  for (const component of SHIP_COMPONENT_CATALOG[type] ?? []) {
+    select.append(new Option(component.name, component.id));
+  }
+  select.value = type === 'engine' ? draft.engineId ?? 'engine1' : draft.armorId ?? '';
+  select.addEventListener('change', () => {
+    if (type === 'engine') draft.engineId = select.value;
+    else draft.armorId = select.value;
+  });
+  return createLabel(type === 'engine' ? 'Plasma-Triebwerk' : 'Richtungs-Hüllenpanzerung', select);
+}
+
 function crewSelector(draft: DuelDraft): HTMLLabelElement {
   const select = document.createElement('select');
   for (const member of crewDefinitions) {
@@ -101,6 +119,7 @@ function playerCard(
   const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
   card.append(heading, shipSelector(draft, ships, rerender));
   card.append(...buildDuelWeaponSections(draft, ship));
+  card.append(equipmentSelector(draft, 'engine'), equipmentSelector(draft, 'armor'));
   card.append(...mineSelectors(draft));
   card.append(crewSelector(draft));
   return card;
@@ -121,6 +140,8 @@ function attachEncounterSelector(
         drafts[index]!.shipId = entry.shipId;
         drafts[index]!.weapons = [...entry.weapons];
         drafts[index]!.mines = [];
+        drafts[index]!.engineId = 'engine1';
+        drafts[index]!.armorId = '';
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });
     }

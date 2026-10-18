@@ -84,6 +84,24 @@ function impactAnchor(target: MutableCombatant, sourcePosition: CombatPoint): Co
   return { x: local.x / length, y: local.y / length };
 }
 
+/** Physical armor protects the impacted facing once the shields are exhausted. */
+export function directionalHullDamage(
+  target: MutableCombatant,
+  rawDamage: number,
+  sourcePosition: CombatPoint
+): number {
+  const armor = target.setup.armor;
+  if (!armor || rawDamage <= 0) return rawDamage;
+  const local = rotate(
+    { x: sourcePosition.x - target.position.x, y: sourcePosition.y - target.position.y },
+    -target.headingRadians
+  );
+  const facing = Math.abs(local.x) >= Math.abs(local.y)
+    ? local.x >= 0 ? 'front' : 'rear'
+    : local.y >= 0 ? 'starboard' : 'port';
+  return rawDamage * (1 - Math.max(0, Math.min(1, armor[facing])));
+}
+
 export function applyDamage(
   target: MutableCombatant,
   shieldDamage: number,
@@ -130,7 +148,7 @@ export function applyDamage(
   const directed = targetSubsystem !== 'hull' && target.subsystems[targetSubsystem] > 0;
   const damage = Math.min(
     directed ? target.subsystems[targetSubsystem] : target.hullHp,
-    scaledDamage(hullDamage, attacker, critical)
+    directionalHullDamage(target, scaledDamage(hullDamage, attacker, critical), sourcePosition)
   );
   if (directed)
     target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);

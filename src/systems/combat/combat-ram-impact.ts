@@ -1,5 +1,6 @@
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
+import { directionalHullDamage } from './strategic-combat-damage';
 
 function ramExposure(
   heading: number,
@@ -35,11 +36,16 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
     const shield = Math.min(ship.shieldHp, impact);
     ship.shieldHp -= shield;
     const overflow = impact - shield;
-    ship.hullHp = Math.max(0, ship.hullHp - overflow);
+    const armorAdjusted = directionalHullDamage(
+      ship,
+      overflow,
+      ship === attacker ? defender.position : attacker.position
+    );
+    ship.hullHp = Math.max(0, ship.hullHp - armorAdjusted);
     const facing =
       Math.cos(ship.headingRadians) * contactX + Math.sin(ship.headingRadians) * contactY;
     if (facing < -0.5 && overflow > 0) {
-      ship.subsystems.engine = Math.max(0, ship.subsystems.engine - overflow * 0.5);
+      ship.subsystems.engine = Math.max(0, ship.subsystems.engine - armorAdjusted * 0.5);
     }
   }
   runtime.combatLog.push({

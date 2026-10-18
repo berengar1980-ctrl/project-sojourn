@@ -1,3 +1,4 @@
+import type { ShipArmorProtection } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -106,6 +107,7 @@ export interface StrategicCombatantSetup {
   readonly shieldHp: number;
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
+  readonly armor?: ShipArmorProtection;
   readonly weapons: readonly ShipComponentDefinition[];
   readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
