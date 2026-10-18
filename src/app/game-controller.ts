@@ -201,6 +201,11 @@ function mountControllerMining(
       const started = context.engagements.engageNpcInArena(id, {
         ...arena,
         defenderPosition: { ...target.position },
+        defenderHeadingRadians: target.headingRadians,
+        defenderVelocity: {
+          x: Math.cos(target.headingRadians) * target.speed,
+          y: Math.sin(target.headingRadians) * target.speed,
+        },
       });
       if (started) {
         state.embeddedCombat = 'local-space';

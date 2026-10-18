@@ -6,7 +6,11 @@ import {
   generateMiningSpace,
   type LocalSpaceService,
 } from '../systems/local-space';
-import { resolveShipRuntimeSetup, type ShipRuntimeOptions } from '../systems/ships';
+import {
+  resolveShipLocalCruiseSpeed,
+  resolveShipRuntimeSetup,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 
 export function createMiningLocalSpace(
   ship: ShipDefinition,
@@ -19,7 +23,7 @@ export function createMiningLocalSpace(
 
   return createLocalSpaceService({
     instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
-    approachSpeed: 85,
+    approachSpeed: resolveShipLocalCruiseSpeed(ship),
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
     mining: {

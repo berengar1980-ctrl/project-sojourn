@@ -32,6 +32,7 @@ import {
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
+  resolveShipLocalCruiseSpeed,
   resolveShipRuntimeSetup,
   type ShipComponentInventoryService,
   type ShipRuntimeOptions,
@@ -75,6 +76,8 @@ interface SalvageSceneOptions {
       readonly defenderPosition: { readonly x: number; readonly y: number };
       readonly attackerVelocity?: { readonly x: number; readonly y: number };
       readonly attackerHeadingRadians?: number;
+      readonly defenderHeadingRadians?: number;
+      readonly defenderVelocity?: { readonly x: number; readonly y: number };
       readonly asteroids?: readonly CombatVisualAsteroid[];
       readonly obstacles?: readonly {
         readonly id: string;
@@ -170,6 +173,11 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
     attackerPosition: { ...playerShip.position },
     defenderPosition: { ...target.position },
     attackerHeadingRadians: playerShip.headingRadians,
+    defenderHeadingRadians: target.headingRadians,
+    defenderVelocity: {
+      x: Math.cos(target.headingRadians) * target.speed,
+      y: Math.sin(target.headingRadians) * target.speed,
+    },
     attackerVelocity: {
       x: Math.cos(playerShip.headingRadians) * playerShip.speed,
       y: Math.sin(playerShip.headingRadians) * playerShip.speed,
@@ -412,7 +420,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         null
       );
     },
-    approachSpeed: 85,
+    approachSpeed: resolveShipLocalCruiseSpeed(options.ship),
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });

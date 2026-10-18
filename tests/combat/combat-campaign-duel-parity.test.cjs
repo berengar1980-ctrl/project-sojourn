@@ -9,7 +9,16 @@ const geometry = loadStandaloneTypeScriptModule(
   'src/systems/combat/strategic-combat-geometry.ts'
 );
 const arena = loadStandaloneTypeScriptModule(root, 'src/systems/combat/strategic-combat-arena.ts');
+const shipStats = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-stats.ts');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+for (const role of ['patrol', 'freighter', 'mining', 'salvage']) {
+  const ship = { role, navigation: { cruiseSpeed: 480 }, nominalLengthMeters: 85 };
+  assert.equal(
+    shipStats.resolveShipLocalCruiseSpeed(ship),
+    shipStats.resolveShipCombatMovementStats(ship).combatSpeed,
+    role + ' shares unboosted combat and local cruise speed'
+  );
+}
 const setup = (id) => ({
   id,
   name: id,
@@ -58,6 +67,11 @@ assert(
   'mining arena preserves moving asteroid bodies'
 );
 assert(
+  campaign.includes('defenderHeadingRadians: target.headingRadians') &&
+    campaign.includes('defenderVelocity: {'),
+  'mining combat also inherits the target ship motion'
+);
+assert(
   campaignArena.includes('attackerHeadingRadians: instance.ship.headingRadians'),
   'mining arena carries over player heading'
 );
@@ -72,9 +86,22 @@ assert(
   'salvage encounters transfer the player heading'
 );
 assert(
+  salvage.includes('defenderHeadingRadians: target.headingRadians') &&
+    salvage.includes('defenderVelocity: {'),
+  'salvage combat also inherits the target ship motion'
+);
+assert(
   salvage.includes('attackerVelocity: {'),
   'salvage encounters transfer the player starting velocity'
 );
+const mining = read('src/app/game-controller-mining.ts');
+const npcMining = read('src/systems/npcs/npc-local-mining-service.ts');
+const npcSalvage = read('src/systems/npcs/npc-local-salvage-service.ts');
+assert(mining.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship)'));
+assert(salvage.includes('approachSpeed: resolveShipLocalCruiseSpeed(options.ship)'));
+assert(npcMining.includes('localCruiseSpeed(ship.shipId)'));
+assert(npcSalvage.includes('localCruiseSpeed(ship.shipId)'));
+assert(read('src/app/game-controller-combat.ts').includes('hitChance: 0.68 +'));
 const shared = 'combatEquippedWeapons';
 for (const setupFile of [
   'src/ui/start/duel-combatant-setup.ts',
