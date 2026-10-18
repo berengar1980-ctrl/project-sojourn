@@ -7,6 +7,7 @@ import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 import { createSalvageEventPanel } from './salvage-event-panel';
+import { renderSectorEvent } from './salvage-sector-event';
 
 import { bindSalvageSpaceInput } from './salvage-space-input';
 
@@ -22,40 +23,6 @@ import {
 export interface SalvageSpacePanel {
   update(model: SalvageSpaceViewModel): void;
   destroy(): void;
-}
-
-function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement): void {
-  const event = model.sectorEvent;
-  container.hidden = !event;
-  if (!event) {
-    container.replaceChildren();
-    return;
-  }
-  if (event.type === 'special-wreck') {
-    container.innerHTML =
-      '<strong>SELTENES BERGUNGSSIGNAL</strong><span>Dieses Wrack kann eine modifizierte Schiffskomponente enthalten.</span>';
-    return;
-  }
-  const damage = event.distressDamage?.replaceAll('_', ' ').toUpperCase() ?? 'UNBEKANNT';
-  const stage = event.distressStage ?? 'approach';
-  const actions =
-    stage === 'approach'
-      ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
-      : stage === 'diagnosed'
-        ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button><button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
-        : stage === 'tow_required'
-          ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
-          : stage === 'towing'
-            ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
-            : stage === 'salvage_rights'
-              ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
-              : '<span>EINSATZ ABGESCHLOSSEN</span>';
-  container.innerHTML =
-    '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
-    damage +
-    '</span><div class="sector-salvage-actions">' +
-    actions +
-    '</div>';
 }
 
 function statusText(model: SalvageSpaceViewModel): string {
@@ -455,6 +422,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
     if (
+      model.sectorEvent?.distressStage !== 'approach' ||
       !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
     ) {
       renderSectorEvent(model, ui.sectorEventContainer);

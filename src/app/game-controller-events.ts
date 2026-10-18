@@ -8,7 +8,6 @@ import type { ControllerPanels, ControllerRuntimeContext } from './game-controll
 
 export interface ControllerEventActions {
   readonly mountStarMap: () => void;
-  readonly mountSalvage: (reuseSeed?: boolean) => void;
 }
 
 function showDistressReward(context: ControllerRuntimeContext, result: DistressActionResult): void {
@@ -254,7 +253,7 @@ export function controllerSalvageEventCallbacks(
           mountControllerBoarding(context, eventId, actions)
         );
       } else {
-        actions.mountSalvage(true);
+        state.salvageScene?.updateSectorEvent(economy.salvageEvents.event(eventId));
       }
     },
     onRepairDistress: (eventId: string) => {
@@ -272,22 +271,22 @@ export function controllerSalvageEventCallbacks(
         state.salvageScene?.beginDistressRepair();
         setTimeout(() => runSceneZoomTransition(context.root, actions.mountStarMap), 5500);
       } else {
-        actions.mountSalvage(true);
+        state.salvageScene?.updateSectorEvent(economy.salvageEvents.event(eventId));
       }
     },
     onTowDistress: (eventId: string) => {
-      const result = economy.salvageEvents.towDistress(eventId);
-      if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
-      if (!result?.success || !result.towDestinationId) {
-        actions.mountSalvage(true);
+      if (!state.salvageScene?.canAttachDistressTow()) {
+        context.systemLog.write('SCHLEPPEN > GREIFHAKEN AUSSER REICHWEITE · HAVARIST ANFLIEGEN');
         return;
       }
+      const result = economy.salvageEvents.towDistress(eventId);
+      if (result) context.systemLog.write('NOTRUF > ' + result.text.toUpperCase());
+      if (!result?.success || !result.towDestinationId) return;
       context.systemLog.write('SCHLEPPEN > MANUELL ZUM MARKIERTEN AUSGANG FLIEGEN');
       const event = economy.salvageEvents.event(eventId);
-      if (event && context.state.salvageScene) {
-        context.state.salvageScene.beginDistressTow(event);
-      } else {
-        actions.mountSalvage(true);
+      if (event) {
+        state.salvageScene?.updateSectorEvent(event);
+        state.salvageScene?.beginDistressTow(event);
       }
     },
     onEvacuateDistress: (eventId: string) => {
@@ -300,8 +299,7 @@ export function controllerSalvageEventCallbacks(
           mountControllerBoarding(context, eventId, actions)
         );
       } else if (result?.salvageRights) {
-        state.salvageEventFields.delete(eventId);
-        actions.mountSalvage(true);
+        state.salvageScene?.updateSectorEvent(economy.salvageEvents.event(eventId));
       } else if (result?.success) {
         runSceneZoomTransition(context.root, actions.mountStarMap);
       }

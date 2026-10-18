@@ -7,6 +7,7 @@ import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
   createDistressTowState,
+  distressTowWithinRange,
   towShipAtExit,
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
@@ -29,17 +30,20 @@ import {
   type NpcLocalSalvageService,
 } from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
+import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
-  getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipComponentInventoryService,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
+import { salvageNpcShips } from './game-controller-salvage-npc-view';
 
 export interface SalvageSceneController {
   getField(): SalvageField;
   beginDistressTow(event: SectorSalvageEvent): void;
+  canAttachDistressTow(): boolean;
+  updateSectorEvent(event: SectorSalvageEvent | null): void;
   beginDistressRepair(): void;
   tick(deltaSeconds: number): void;
   finishCombat(snapshot: StrategicCombatSnapshot): void;
@@ -130,30 +134,6 @@ function createNpcSalvageRuntime(
     playerShip: options.ship,
     getPlayerShipState: () => service.getSnapshot().ship,
     onPlayerShieldContact: (normal, overlap) => service.recordShipShieldContact(normal, overlap),
-  });
-}
-
-function salvageNpcShips(npcSalvage: NpcLocalSalvageService) {
-  return npcSalvage.ships.flatMap((npc) => {
-    const definition = getShipDefinition(npc.shipId);
-    if (!definition) return [];
-    return [
-      {
-        id: npc.npcId,
-        name: npc.name,
-        position: npc.position,
-        headingRadians: npc.headingRadians,
-        speed: npc.speed,
-        phase: npc.phase,
-        targetWreckId: npc.targetWreckId,
-        salvageActive: npc.salvageActive,
-        scanProgress: npc.scanProgress,
-        nominalLengthMeters: definition.nominalLengthMeters,
-        spriteUrl: definition.sprite.assetUrl,
-        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-        hardpoints: definition.sprite.hardpoints,
-      },
-    ];
   });
 }
 
@@ -314,9 +294,9 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
 function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   const { options, service, state } = context;
   if (
-    !options.sectorEvent ||
+    !state.activeSectorEvent ||
     state.sectorEventResolved ||
-    (options.sectorEvent.type !== 'special-wreck' && !options.sectorEvent.salvageRights)
+    (state.activeSectorEvent.type !== 'special-wreck' && !state.activeSectorEvent.salvageRights)
   ) {
     return;
   }
@@ -328,7 +308,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   );
   if (!complete) return;
   state.sectorEventResolved = true;
-  options.onSectorEventResolved?.(options.sectorEvent.id);
+  options.onSectorEventResolved?.(state.activeSectorEvent.id);
 }
 
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
@@ -469,11 +449,25 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     getField() {
       return field;
     },
+    canAttachDistressTow() {
+      const wreck = context.field.wrecks[0];
+      return !!wreck && distressTowWithinRange(service.getSnapshot().ship.position, wreck.position);
+    },
+    updateSectorEvent(event) {
+      context.state.activeSectorEvent = event;
+      // Sector event records are mutable and shared with the economy service.
+      // Do not detect this transition by comparing the previous event reference.
+      if (event?.salvageRights && context.field.wrecks[0]?.resources.length === 0) {
+        grantDistressSalvageRights(context.field, event);
+      }
+      refreshSalvageScene(context);
+    },
     beginDistressRepair() {
       context.state.distressRepairing = true;
       refreshSalvageScene(context);
     },
     beginDistressTow(event) {
+      if (!this.canAttachDistressTow()) return;
       context.state.activeSectorEvent = event;
       const wreck = context.field.wrecks[0];
       if (wreck) context.state.distressTow = createDistressTowState(wreck.position, wreck.rotation);
