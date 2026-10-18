@@ -68,6 +68,4 @@ assert.deepEqual(
   ['weapon-front-repeater-1', '', '', ''],
   'already valid NPC front loadouts remain unchanged'
 );
-console.log(
-  'PASS front-only salvager auto-fire, reactor power and pirate starter recovery'
-);
+console.log('PASS front-only salvager auto-fire, reactor power and pirate starter recovery');
