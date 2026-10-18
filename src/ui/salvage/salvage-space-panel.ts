@@ -1,16 +1,13 @@
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
-import {
-  distressTowWithinRange,
-  DISTRESS_TOW_ATTACH_RANGE,
-} from '../../systems/salvage/distress-tow-physics';
 
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 
 import { createSystemLogPanel, type SystemLogPanel } from '../system-log/system-log-panel';
 
 import { createSalvageEventPanel } from './salvage-event-panel';
+import { renderSectorEvent } from './salvage-sector-event';
 
 import { bindSalvageSpaceInput } from './salvage-space-input';
 
@@ -26,55 +23,6 @@ import {
 export interface SalvageSpacePanel {
   update(model: SalvageSpaceViewModel): void;
   destroy(): void;
-}
-
-function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement): void {
-  const event = model.sectorEvent;
-  container.hidden = !event;
-  if (!event) {
-    container.replaceChildren();
-    return;
-  }
-  if (event.type === 'special-wreck') {
-    container.innerHTML =
-      '<strong>SELTENES BERGUNGSSIGNAL</strong><span>Dieses Wrack kann eine modifizierte Schiffskomponente enthalten.</span>';
-    return;
-  }
-  const damage = event.distressDamage?.replaceAll('_', ' ').toUpperCase() ?? 'UNBEKANNT';
-  const stage = event.distressStage ?? 'approach';
-  const wreck = model.wrecks[0];
-  const towInRange = !!wreck && distressTowWithinRange(model.ship.position, wreck.position);
-  const towButton = towInRange
-    ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button>'
-    : '<button type="button" data-distress-action="tow" disabled title="Zuerst den Havaristen anfliegen">GREIFHAKEN AUSSER REICHWEITE</button>';
-  const towHint = towInRange
-    ? ''
-    : '<span>ANFLUG ERFORDERLICH · GREIFHAKENREICHWEITE ' +
-      DISTRESS_TOW_ATTACH_RANGE +
-      ' m</span>';
-  const actions =
-    stage === 'approach'
-      ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
-      : stage === 'diagnosed'
-        ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button>' +
-          towButton +
-          '<button type="button" data-distress-action="evacuate">EVAKUIEREN</button>' +
-          towHint
-        : stage === 'tow_required'
-          ? towButton +
-            '<button type="button" data-distress-action="evacuate">EVAKUIEREN</button>' +
-            towHint
-          : stage === 'towing'
-            ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
-            : stage === 'salvage_rights'
-              ? '<span class="port-positive">BERGUNGSRECHTE ERTEILT · WRACK KANN AUSGESCHLACHTET WERDEN</span>'
-              : '<span>EINSATZ ABGESCHLOSSEN</span>';
-  container.innerHTML =
-    '<strong>HILFERUF // HAVARIST</strong><span>SCHADEN: ' +
-    damage +
-    '</span><div class="sector-salvage-actions">' +
-    actions +
-    '</div>';
 }
 
 function statusText(model: SalvageSpaceViewModel): string {
