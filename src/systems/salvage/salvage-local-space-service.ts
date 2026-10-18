@@ -156,7 +156,14 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   }
 
   selectWreck(wreckId: string | null): SalvageLocalSpaceSnapshot {
-    if (wreckId === null || this.findWreck(wreckId)) this.selectedWreckId = wreckId;
+    if (wreckId !== null && !this.findWreck(wreckId)) return this.getSnapshot();
+    if (
+      wreckId !== this.workTargetId &&
+      (this.approachPurpose === 'diagnose' || this.phase === 'diagnosing')
+    ) {
+      this.cancelOperation();
+    }
+    this.selectedWreckId = wreckId;
     return this.getSnapshot();
   }
 
