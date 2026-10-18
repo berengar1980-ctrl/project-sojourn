@@ -15,6 +15,8 @@ import {
   getShipComponent,
   getShipDefinition,
   resolveShipCombatMovementStats,
+  shipCombatTractorRange,
+  shipHasIndustrialTractor,
   shipHullMaxHp,
   shipShieldMaxHp,
 } from '../ships';
@@ -81,10 +83,8 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     preferredTactic: npcCombatDoctrine(npc, mines.length > 0),
     ...movement,
     mines,
-    tractorRangeMeters: Math.max(
-      0,
-      ...(installed.tractor ?? []).map((id) => getShipComponent('tractor', id)?.range ?? 0)
-    ),
+    tractorRangeMeters: shipCombatTractorRange(installed),
+    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     sensorCrewSkill: skill,
     sensorTier: sensor?.tier ?? 0,
     sensorRangeMeters: sensor ? 1000 : 0,
