@@ -82,6 +82,36 @@ function createSettingsShell(): HTMLDivElement {
   return shell;
 }
 
+function createSettingsKeyHandler(
+  panel: HTMLElement,
+  setOpen: (open: boolean) => void
+): (event: KeyboardEvent) => void {
+  return (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (!event.repeat) setOpen(panel.hidden);
+      return;
+    }
+    if (event.key !== 'Tab' || panel.hidden) return;
+    const focusable = [
+      ...panel.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+      ),
+    ];
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    const focusOutside = !panel.contains(document.activeElement);
+    if (event.shiftKey && (document.activeElement === first || focusOutside)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || focusOutside)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void
@@ -146,31 +176,7 @@ export function createSettingsMenu(
     if (!window.confirm('Zum Hauptmenü zurückkehren? Der aktuelle Durchlauf wird beendet.')) return;
     onReturnToMainMenu();
   };
-  const onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      if (!event.repeat) setOpen(panel.hidden);
-      return;
-    }
-    if (event.key !== 'Tab' || panel.hidden) return;
-    const focusable = [
-      ...panel.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
-      ),
-    ];
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    const focusOutside = !panel.contains(document.activeElement);
-    if (event.shiftKey && (document.activeElement === first || focusOutside)) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && (document.activeElement === last || focusOutside)) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
-
+  const onKeyDown = createSettingsKeyHandler(panel, setOpen);
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
   toggle.addEventListener('click', onToggle);
