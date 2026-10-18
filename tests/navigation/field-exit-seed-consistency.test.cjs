@@ -64,10 +64,11 @@ assert(
 );
 
 assert(
-  /\\.local-operations-toolbar\\s*\\{[^}]*right:\\s*24px;/.test(styles) &&
-    /\\.settings-menu__toggle\\s*\\{[^}]*left:\\s*0;/.test(styles) &&
+  styles.includes('.local-operations-toolbar .return-map-button') &&
+    styles.includes('body.app-has-system-bar #app') &&
+    styles.includes('.settings-menu__chrome') &&
     !styles.includes('.local-space-shell .return-map-button'),
-  'field exit controls must stay in the top-right toolbar, separate from the left-edge settings tab'
+  'field exit stays in its own local-operation toolbar beneath the shared console'
 );
 
 console.log('PASS seeded field exits agree between UI, rendered gate and controller');
