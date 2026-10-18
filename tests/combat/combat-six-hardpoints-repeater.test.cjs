@@ -76,30 +76,30 @@ for (const name of ['patrol-60m', 'miner-80m', 'freighter-120m', 'salvage-100m']
       [mounts[0].facing, mounts[1].facing, mounts[2].facing, mounts[5].facing],
       ['forward', 'port', 'starboard', 'forward']
     );
-    const ship = { id, nominalLengthMeters: 80, sprite: { hardpoints: points } };
+    const role = name.startsWith('patrol') ? 'patrol' : name.startsWith('miner') ? 'mining' : name.startsWith('freighter') ? 'freighter' : 'salvage';
+    const ship = { id, role, nominalLengthMeters: 80, sprite: { hardpoints: points } };
     for (const slot of [0, 5]) {
-      assert(fitsWeaponHardpoint(ship, slot, repeater.weapon), id + ': front repeater');
-      assert(fitsWeaponHardpoint(ship, slot, rail.weapon), id + ': front railgun');
+      assert.equal(fitsWeaponHardpoint(ship, slot, repeater.weapon), slot === 0 || role === 'patrol', id + ': allowed front repeater');
+      assert.equal(fitsWeaponHardpoint(ship, slot, rail.weapon), slot === 0 || role === 'patrol', id + ': allowed front railgun');
       assert(!fitsWeaponHardpoint(ship, slot, missile.weapon), id + ': no front missiles');
     }
     for (const slot of [3, 4]) {
       assert.equal(mounts[slot].arcDegrees, 360);
-      assert(fitsWeaponHardpoint(ship, slot, ion.weapon), id + ': universal turret');
-      assert(fitsWeaponHardpoint(ship, slot, missile.weapon), id + ': universal missile');
+      assert.equal(fitsWeaponHardpoint(ship, slot, ion.weapon), role === 'patrol' || (role === 'freighter' && slot === 3), id + ': authorized turret');
+      assert.equal(fitsWeaponHardpoint(ship, slot, missile.weapon), role === 'patrol' || (role === 'freighter' && slot === 3), id + ': authorized missile');
       assert(!fitsWeaponHardpoint(ship, slot, rail.weapon), id + ': no turret railgun');
     }
-    const fitted = combatEquippedWeapons(ship, [
-      repeater.id,
-      plasma.id,
-      autocannon.id,
-      ion.id,
-      missile.id,
-      rail.id,
-    ]);
-    assert.equal(fitted.length, 6, id + ': all independent mounts resolve');
+    const fitted = combatEquippedWeapons(
+      ship,
+      [repeater.id, plasma.id, autocannon.id, ion.id, missile.id, rail.id]
+    );
+    const expected = name.startsWith('patrol') ? 6 : name.startsWith('freighter') ? 2 : 1;
+    assert.equal(fitted.length, expected, id + ': only role-authorized mounts resolve');
     const world = combatWeaponMounts(ship, fitted);
-    assert.equal(world.length, 6);
-    assert.notDeepEqual(world[0], world[5], id + ': bow muzzles are physically separate');
+    assert.equal(world.length, expected);
+    if (expected === 6) {
+      assert.notDeepEqual(world[0], world[5], id + ': bow muzzles are physically separate');
+    }
   }
 }
 
