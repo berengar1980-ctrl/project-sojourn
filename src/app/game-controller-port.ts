@@ -419,11 +419,10 @@ export function createActivePortPanel(
   const installed = loadouts.get(ship);
   const runtime = resolveShipRuntimeSetup(ship, { ...crew.runtimeOptions(ship), installed });
   const gameplay = resolveShipGameplayStats(ship);
-  navigation.setTurnRateMultiplier(engineSpeedMultiplier(runtime.installed));
+  const drive = engineSpeedMultiplier(runtime.installed);
   navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed *
-      engineSpeedMultiplier(runtime.installed) *
-      runtime.crewEffects.piloting.travelSpeedMultiplier
+    ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
+    drive
   );
 
   const context: ActivePortContext = {

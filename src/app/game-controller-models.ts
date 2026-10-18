@@ -72,11 +72,10 @@ export function controllerShipRuntimeOptions(
 export function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {
   const ship = context.state.activeShip;
   const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
-  context.navigation.setTurnRateMultiplier(engineSpeedMultiplier(runtime.installed));
+  const drive = engineSpeedMultiplier(runtime.installed);
   context.navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed *
-      engineSpeedMultiplier(runtime.installed) *
-      runtime.crewEffects.piloting.travelSpeedMultiplier
+    ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
+    drive
   );
 }
 

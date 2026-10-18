@@ -31,6 +31,13 @@ interface NavigationRuntimeState {
 
 const MAX_TURN_RATE = 0.9;
 
+function validTurnRateMultiplier(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('Navigation turn rate multiplier must be positive.');
+  }
+  return value;
+}
+
 function locationPosition(world: WorldMap, id: string): WorldPoint {
   const location = world.locations.find((candidate) => candidate.id === id);
   if (!location) throw new Error('Unknown navigation location: ' + id);
@@ -302,19 +309,15 @@ export function createNavigationService(
     return snapshot();
   };
 
-  const setCruiseSpeed = (nextCruiseSpeed: number): NavigationSnapshot => {
+  const setCruiseSpeed = (
+    nextCruiseSpeed: number,
+    turnRateMultiplier = 1
+  ): NavigationSnapshot => {
     if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0) {
       throw new Error('Navigation cruise speed must be positive.');
     }
     state.cruiseSpeed = nextCruiseSpeed;
-    return snapshot();
-  };
-
-  const setTurnRateMultiplier = (multiplier: number): NavigationSnapshot => {
-    if (!Number.isFinite(multiplier) || multiplier <= 0) {
-      throw new Error('Navigation turn rate multiplier must be positive.');
-    }
-    state.turnRateMultiplier = multiplier;
+    state.turnRateMultiplier = validTurnRateMultiplier(turnRateMultiplier);
     return snapshot();
   };
 
@@ -375,7 +378,6 @@ export function createNavigationService(
       return snapshot();
     },
     setCruiseSpeed,
-    setTurnRateMultiplier,
     tick(deltaSeconds) {
       if (state.pursuit) advancePursuit(state, deltaSeconds);
       else advanceTravel(state, deltaSeconds);
