@@ -38,7 +38,10 @@ export function resolveShipCombatMovementStats(
   readonly accelerationMetersPerSecond2: number;
 } {
   const normalBaseSpeed = Math.max(78, Math.min(160, ship.navigation.cruiseSpeed * 0.28));
-  const baseSpeed = resolveShipGameplayStats(ship).combatBaseSpeed ?? normalBaseSpeed;
+  const baseSpeed =
+    ship.gameplayOverrides?.combatBaseSpeed ??
+    getShipRoleProfile(ship.role).combatBaseSpeed ??
+    normalBaseSpeed;
   const patrolSpeedFactor = ship.role === 'patrol' ? 1.3 : 1;
   const drive = installed ? engineSpeedMultiplier(installed) : 1;
   const acceleration = Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18));

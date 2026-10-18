@@ -134,7 +134,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
       miningImpact: this.currentMiningImpact(),
     };
   }
-
   selectAsteroid(id: string | null): LocalSpaceSnapshot {
     const asteroid = this.findAsteroid(id);
     if (id && (!asteroid || asteroid.kind !== 'resource')) {
@@ -172,11 +171,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
       height: this.instance.height,
     };
   }
-
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (this.miningEvents.pending || route.length < 2) return this.getSnapshot();
     if (this.miningPhase !== 'idle') this.finishMining();
-
     this.navigationTarget = { ...target };
     this.navigationRoute = route;
     this.navigationIndex = 1;
@@ -186,7 +183,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
     return this.getSnapshot();
   }
-
   startLongRangeScan(sensorModifier?: number, crewSkill?: number): LocalSpaceSnapshot {
     if (!this.shipSystems.scanAvailable) return this.getSnapshot();
     if (!this.longRangeScanParameters) {
@@ -198,7 +194,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
     return this.getSnapshot();
   }
-
   startMining(route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (!this.miningEnabled || this.miningEvents.pending) return this.getSnapshot();
     const asteroid = this.findAsteroid(this.selectedAsteroidId);
