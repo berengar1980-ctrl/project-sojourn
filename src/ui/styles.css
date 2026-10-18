@@ -299,18 +299,6 @@ body {
   letter-spacing: 0.14em;
 }
 
-/* Keep the local-field exit clear of the top-right settings controls. */
-.local-space-shell .return-map-button {
-  right: 148px;
-}
-
-@media (max-width: 650px) {
-  .local-space-shell .return-map-button {
-    top: 118px;
-    right: 18px;
-  }
-}
-
 .return-map-button:hover,
 .long-scan-button:hover,
 .short-scan-button:hover,
@@ -3310,13 +3298,67 @@ body {
   }
 }
 
-/* Global settings menu */
+/* The global console owns a permanent viewport row. Scenes render beneath it
+   instead of sharing coordinates with Settings, independently of the current mode. */
+body.app-has-system-bar #app {
+  height: calc(100dvh - 42px);
+  min-height: 0;
+  margin-top: 42px;
+  overflow: hidden;
+}
+
+body.app-has-system-bar #app > .star-map-shell,
+body.app-has-system-bar #app > .local-space-shell,
+body.app-has-system-bar #app > .port-shell,
+body.app-has-system-bar #app > .strategic-combat-shell,
+body.app-has-system-bar #app > .harrow-duel {
+  width: 100%;
+  height: 100%;
+}
+
+/* One settings surface for campaign and duels; never anchor to HUD content. */
 .settings-menu {
   position: fixed;
-  bottom: 18px;
-  left: 18px;
+  inset: 0;
   z-index: 1000;
+  pointer-events: none;
   font-family: 'Courier New', ui-monospace, monospace;
+}
+
+.settings-menu__chrome {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(102, 160, 178, 0.33);
+  background: rgba(4, 13, 19, 0.97);
+  pointer-events: auto;
+}
+
+.settings-menu__brand {
+  display: flex;
+  gap: 13px;
+  align-items: baseline;
+  min-width: 0;
+  color: #91bdc8;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.settings-menu__brand strong {
+  color: #d1e5eb;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.settings-menu__brand span {
+  color: #77939e;
 }
 
 .settings-menu__toggle,
@@ -3331,8 +3373,16 @@ body {
 }
 
 .settings-menu__toggle {
-  padding: 8px 11px;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 3px;
   font-size: 9px;
+  white-space: nowrap;
+}
+
+.settings-menu__toggle span {
+  margin-left: 5px;
+  color: #809da8;
 }
 
 .settings-menu__toggle:hover,
@@ -3341,27 +3391,39 @@ body {
   background: rgba(17, 43, 52, 0.96);
 }
 
+.settings-menu__toggle:focus-visible,
+.settings-menu__close:focus-visible,
+.settings-menu__panel button:focus-visible {
+  outline: 2px solid #70d7e8;
+  outline-offset: 2px;
+}
+
+.settings-menu__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 6, 9, 0.78);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
 .settings-menu__panel {
   position: absolute;
-  bottom: 42px;
-  left: 0;
-  width: min(420px, calc(100vw - 32px));
-  border: 1px solid rgba(92, 148, 166, 0.34);
-  background: rgba(3, 10, 14, 0.97);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(5px);
+  top: 50%;
+  left: 50%;
+  width: min(440px, calc(100vw - 36px));
+  max-height: min(85vh, 720px);
+  overflow-y: auto;
+  border: 1px solid rgba(92, 148, 166, 0.42);
+  background: rgba(3, 10, 14, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
 }
 
-.settings-menu__panel[hidden] {
+.settings-menu__panel[hidden],
+.settings-menu__backdrop[hidden],
+.settings-menu__toggle[hidden] {
   display: none;
-}
-
-body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
-body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
-body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
-  top: 72px;
-  bottom: auto;
-  left: 18px;
 }
 
 .settings-menu__header {
@@ -3619,20 +3681,9 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
 }
 
 @media (max-width: 650px) {
-  .settings-menu {
-    bottom: 12px;
-    left: 12px;
-  }
-
   .settings-menu__panel {
-    width: min(360px, calc(100vw - 24px));
-  }
-
-  body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
-  body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
-  body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
-    top: 64px;
-    left: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 28px);
   }
 }
 
@@ -3640,7 +3691,7 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
 .local-operations-toolbar {
   position: absolute;
   top: 22px;
-  right: 148px;
+  right: 24px;
   z-index: 11;
   display: flex;
   gap: 6px;
@@ -3666,7 +3717,7 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
 .local-operations-feedback {
   position: absolute;
   top: 65px;
-  right: 148px;
+  right: 24px;
   z-index: 11;
   display: flex;
   gap: 8px;
@@ -3696,21 +3747,6 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
   cursor: pointer;
   font-size: 9px;
   letter-spacing: 0.1em;
-}
-
-body:has(.local-space-shell) .settings-menu,
-body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu {
-  top: 22px;
-  right: 18px;
-  bottom: auto;
-  left: auto;
-}
-
-body:has(.local-space-shell) .settings-menu__panel {
-  right: 0;
-  bottom: auto;
-  left: auto;
-  top: 42px;
 }
 
 .local-operations-dock {
@@ -3831,14 +3867,6 @@ body:has(.local-space-shell) .settings-menu__panel {
     right: 16px;
     left: 16px;
     justify-content: flex-end;
-  }
-
-  body:has(.local-space-shell) .settings-menu,
-  body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu {
-    top: 14px;
-    right: 16px;
-    bottom: auto;
-    left: auto;
   }
 
   .local-operations-dock {

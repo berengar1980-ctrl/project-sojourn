@@ -3,6 +3,8 @@ import { buildDuelWeaponSections } from './duel-weapon-cards';
 import { getAllShipDefinitions, type ShipDefinition } from '../../systems/ships';
 import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
+import { createGameAudioService } from '../../systems/audio/game-audio-service';
+import { createSettingsMenu } from '../settings/settings-menu';
 
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
@@ -254,6 +256,15 @@ function duelSetups(
   );
 }
 
+function mountDuelSettings(onBack: () => void): () => void {
+  const audio = createGameAudioService();
+  const settingsMenu = createSettingsMenu(audio, onBack);
+  return () => {
+    settingsMenu.destroy();
+    audio.destroy();
+  };
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
@@ -288,6 +299,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   });
   shell.append(title, description, encounterLabel, mapLabel, actions, cards);
   root.replaceChildren(shell);
+  const destroySettings = mountDuelSettings(onBack);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
   let canceled = false;
@@ -351,6 +363,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       duelGeneration += 1;
       cancelAnimationFrame(frame);
       activePanel?.destroy();
+      destroySettings();
       shell.remove();
     },
   };
