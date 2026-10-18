@@ -2,7 +2,7 @@ import type { SalvageWreck, SectorSalvageEvent } from '../core/salvage-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { SalvageLocalSpaceService } from '../systems/salvage/salvage-local-space-service';
 
-interface DistressDiagnosisContext {
+interface DiagnosisScene {
   readonly field: { readonly wrecks: readonly SalvageWreck[] };
   readonly service: SalvageLocalSpaceService;
   readonly state: { readonly activeSectorEvent: SectorSalvageEvent | null };
@@ -12,10 +12,7 @@ interface DistressDiagnosisContext {
   };
 }
 
-export function requestDistressDiagnosis(
-  context: DistressDiagnosisContext,
-  eventId: string
-): void {
+export function requestDistressDiagnosis(context: DiagnosisScene, eventId: string): void {
   const { service, state, field, options } = context;
   const event = state.activeSectorEvent;
   if (
@@ -34,10 +31,7 @@ export function requestDistressDiagnosis(
   }
 }
 
-export function tickDistressDiagnosis(
-  context: DistressDiagnosisContext,
-  deltaSeconds: number
-): void {
+export function tickDistressDiagnosis(context: DiagnosisScene, deltaSeconds: number): void {
   const { service, state, options } = context;
   const serial = service.getSnapshot().diagnosisSerial;
   service.tick(deltaSeconds);
