@@ -25,18 +25,24 @@ for (const ship of ships.getAllShipDefinitions()) {
   const stats = ships.getShipGameplayStats(ship.id);
   assert(stats);
   const weaponSlots = stats.weaponSlots;
-  assert.equal(installed.weapon?.length, weaponSlots);
+  const activeSlots = {
+    patrol: [0, 1, 2, 3, 4, 5],
+    freighter: [0, 1, 2, 3],
+    mining: [0, 1, 2],
+    salvage: [0, 1, 2],
+  }[ship.role];
+  assert.equal(weaponSlots, activeSlots.length, ship.id + ' role weapon limit');
+  // Installed arrays keep physical slot indices (e.g. freighter turret at index 3).
+  assert.equal(installed.weapon?.length, ship.sprite.hardpoints.weaponMounts.length);
   assert(
     components.calculateShipEnergy(installed).combatFree >= 0,
     ship.id + ' must power its starting gun without overloading the Mk I reactor'
   );
   const starterGuns = (installed.weapon ?? []).filter(Boolean);
   assert.equal(starterGuns.length, 1, ship.id + ' must start with exactly one usable gun');
-  assert.equal(
-    installed.weapon?.[3],
-    'weapon1',
-    ship.id + ' must start with a 360-degree light pulse laser in turret slot 3'
-  );
+  const starterSlot = ship.role === 'patrol' || ship.role === 'freighter' ? 3 : 0;
+  const starterId = starterSlot === 3 ? 'weapon1' : 'weapon-front-repeater-1';
+  assert.equal(installed.weapon?.[starterSlot], starterId, ship.id + ' starter weapon');
   assert(
     (installed.weapon ?? []).every((id, index) => {
       if (!id) return true;
@@ -52,13 +58,22 @@ for (const ship of ships.getAllShipDefinitions()) {
   if (ship.role === 'mining') assert.equal(installed.mining?.[0], 'mining1');
   if (ship.role === 'salvage') assert.equal(installed.salvage?.[0], 'salvage1');
 
-  assert.equal(weaponSlots, 6, 'all ship types share the new six-slot configuration');
-  assert.equal(service.setSlot(ship, 'weapon', 3, null), true);
-  assert.equal(service.get(ship).weapon[3], '', 'turret slot must become visibly empty');
-  assert.equal(service.setSlot(ship, 'weapon', 3, 'weapon1'), true);
-  assert.equal(service.get(ship).weapon[3], 'weapon1', 'pulse laser belongs on turret mount');
   assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon1'), false);
   assert.equal(service.setSlot(ship, 'weapon', 0, 'weapon-railgun-1'), true);
+  assert.equal(service.setSlot(ship, 'weapon', 1, 'weapon-plasma-battery-1'), true);
+  assert.equal(service.setSlot(ship, 'weapon', 2, 'weapon-autocannon-1'), true);
+  if (starterSlot === 3) {
+    assert.equal(service.setSlot(ship, 'weapon', 3, null), true);
+    assert.equal(service.get(ship).weapon[3], '', 'turret slot can be emptied');
+    assert.equal(service.setSlot(ship, 'weapon', 3, 'weapon1'), true);
+  } else {
+    assert.equal(service.setSlot(ship, 'weapon', 3, 'weapon1'), false);
+    assert.equal(service.get(ship).weapon[3], '', 'mining/salvage has no turret');
+  }
+  if (ship.role !== 'patrol') {
+    assert.equal(service.setSlot(ship, 'weapon', 4, 'weapon1'), false);
+    assert.equal(service.setSlot(ship, 'weapon', 5, 'weapon-railgun-1'), false);
+  }
 }
 
 console.log(
