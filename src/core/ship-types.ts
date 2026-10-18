@@ -92,6 +92,7 @@ export interface ShipGameplayProfile {
 }
 
 export interface ShipGameplayOverrides {
+  readonly combatBaseSpeed?: number;
   readonly hullPoints?: number;
   readonly shieldModifier?: number;
   readonly fuelCapacity?: number;
