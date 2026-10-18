@@ -64,8 +64,10 @@ assert(
 );
 
 assert(
-  styles.includes('.local-space-shell .return-map-button') && styles.includes('right: 148px'),
-  'local-map exit buttons must remain clear of the settings control'
+  /\\.local-operations-toolbar\\s*\\{[^}]*right:\\s*24px;/.test(styles) &&
+    /\\.settings-menu__toggle\\s*\\{[^}]*left:\\s*0;/.test(styles) &&
+    !styles.includes('.local-space-shell .return-map-button'),
+  'field exit controls must stay in the top-right toolbar, separate from the left-edge settings tab'
 );
 
 console.log('PASS seeded field exits agree between UI, rendered gate and controller');
