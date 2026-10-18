@@ -29,11 +29,8 @@ import {
   createNpcLocalSalvageService,
   type NpcLocalSalvageService,
 } from '../systems/npcs/npc-local-salvage-service';
-import {
-  createSalvageLocalSpaceService,
-  generateSalvageField,
-  generateSectorSalvageEventField,
-} from '../systems/salvage';
+import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
+import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
   getShipDefinition,
   resolveShipRuntimeSetup,
@@ -484,18 +481,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       const previous = context.state.activeSectorEvent;
       context.state.activeSectorEvent = event;
       if (event?.salvageRights && !previous?.salvageRights) {
-        // Unlock loot on the existing field without reconstructing the ship or its route.
-        const replacement = generateSectorSalvageEventField(event).wrecks[0];
-        const current = context.field.wrecks[0];
-        if (replacement && current) {
-          context.field.wrecks[0] = {
-            ...current,
-            quality: replacement.quality,
-            resources: replacement.resources,
-            component: replacement.component,
-            componentStatus: replacement.componentStatus,
-          };
-        }
+        grantDistressSalvageRights(context.field, event);
       }
       refreshSalvageScene(context);
     },
