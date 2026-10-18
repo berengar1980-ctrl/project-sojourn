@@ -824,3 +824,12 @@ Wenn ein Voidbound-Feature nach Sojourn portiert, verändert oder bewusst verwor
 ## Review-Log (2026-10-16): PR #237 – Waffenplatzbezeichnungen nach Montageklasse
 
 **keine Statusänderung.** Die bereits vorhandenen Front-, Backbord-, Steuerbord-, Turm- und Lenkwaffen-Hardpoints der Sojourn-Schiffsvarianten werden im Kampagnenmodus und im Duell nun nach ihrer aus dem JSON abgeleiteten Funktion benannt. Der Hardpoint-Editor zeigt dieselben Bezeichnungen, ohne technische IDs, Grundausrichtung oder editierbare Feuerwinkel zu entfernen. Ein Geschützturm wird als `Geschützturm · 360° Feuerwinkel`, ein Lenkwaffenwerfer als `Lenkwaffenwerfer · 360° Zielerfassung` statt als reine Bugwaffe dargestellt. Die bisherigen 28 Hardpoint-JSONs, Montagekompatibilität, Kampfgeometrie und alle 241 Voidbound-Feature-Statuswerte bleiben unverändert; ein Regressionstest sichert die Anzeige ab.
+
+## Review-Log (2026-10-18): PR #240 – getrennte Kampfstatus-Anzeige
+
+**keine Statusänderung.** Die gewählte Kampfstrategie wird unabhängig vom aktuellen Flugmanöver
+angezeigt. Insbesondere bleibt `BREITSEITE · BACKBORD` oder `BREITSEITE · STEUERBORD` sichtbar,
+während das Schiff eine Angriffspassage fliegt oder Abstand gewinnt.
+Die Anzeige nutzt ausschließlich bestehende Kampfplan- und Bewegungsstatusdaten.
+KI-Entscheidungen, Navigation, Physik, Waffen, Feuerleitung und Schaden bleiben unverändert.
+Die bestehenden 241 Voidbound-Paritätsbewertungen ändern sich nicht.
