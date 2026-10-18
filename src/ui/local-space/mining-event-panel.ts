@@ -10,7 +10,7 @@ interface MiningEventPanelOptions {
 }
 
 export interface MiningEventPanel {
-  update(event: MiningEventState | null): void;
+  update(event: MiningEventState | null, recoverySeconds: number): void;
 }
 
 function buttonForChoice(
@@ -33,6 +33,7 @@ function buttonForChoice(
   button.addEventListener('click', () => {
     const result = options.onChoice(choice.id);
     if (!result) return;
+    renderRecovery(options.container, result, null);
     options.log.write('MINING > ' + result.title.toUpperCase());
     options.log.write('MINING > ' + result.resultText);
     options.logPanel.update();
@@ -62,18 +63,62 @@ function renderEvent(event: MiningEventState, options: MiningEventPanelOptions):
   options.container.replaceChildren(kicker, title, description, progress, actions);
 }
 
+function renderRecovery(
+  container: HTMLElement,
+  result: MiningEventResolution | null,
+  seconds: number | null
+): void {
+  container.hidden = false;
+  if (!container.querySelector('.local-mining-event__busy')) {
+    const kicker = document.createElement('div');
+    kicker.className = 'local-mining-event__kicker';
+    kicker.textContent = 'ENTSCHEIDUNG ÜBERMITTELT // VERARBEITUNG';
+    const title = document.createElement('h3');
+    title.textContent = result?.title ?? 'Bergbausysteme stabilisieren';
+    const description = document.createElement('p');
+    description.textContent = result?.resultText ?? 'Mining wird nach der Systemprüfung fortgesetzt.';
+    const busy = document.createElement('div');
+    busy.className = 'local-mining-event__busy';
+    busy.setAttribute('role', 'status');
+    busy.setAttribute('aria-live', 'polite');
+    const status = document.createElement('span');
+    status.className = 'local-mining-event__remaining';
+    const activity = document.createElement('div');
+    activity.className = 'local-mining-event__activity';
+    activity.setAttribute('aria-hidden', 'true');
+    busy.append(status, activity);
+    container.replaceChildren(kicker, title, description, busy);
+  }
+  const remaining = container.querySelector<HTMLElement>('.local-mining-event__remaining');
+  if (remaining) {
+    remaining.textContent =
+      seconds === null
+        ? 'ENTSCHEIDUNG WIRD AUSGEFÜHRT…'
+        : 'SYSTEME STABILISIEREN · ' + Math.ceil(seconds) + ' s';
+  }
+}
+
 export function createMiningEventPanel(options: MiningEventPanelOptions): MiningEventPanel {
   let renderedEventId: string | null = null;
 
   return {
-    update(event) {
-      options.container.hidden = event === null;
-      if (!event) return;
-      if (renderedEventId === event.id) return;
-      renderedEventId = event.id;
-      renderEvent(event, options);
-      options.log.write('MINING > EREIGNIS: ' + event.title.toUpperCase());
-      options.logPanel.update();
+    update(event, recoverySeconds) {
+      if (event) {
+        options.container.hidden = false;
+        if (renderedEventId === event.id) return;
+        renderedEventId = event.id;
+        renderEvent(event, options);
+        options.log.write('MINING > EREIGNIS: ' + event.title.toUpperCase());
+        options.logPanel.update();
+        return;
+      }
+      renderedEventId = null;
+      if (recoverySeconds > 0) {
+        renderRecovery(options.container, null, recoverySeconds);
+      } else {
+        options.container.hidden = true;
+        options.container.replaceChildren();
+      }
     },
   };
 }
