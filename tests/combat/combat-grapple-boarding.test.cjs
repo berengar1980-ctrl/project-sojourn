@@ -56,8 +56,12 @@ assert(
   'close but rapidly separating hulls must not start boarding'
 );
 assert(
-  dock.canDockGrappledShips(grappleShip(0, 5), grappleShip(95, 7)),
-  'boarding may start once both hulls are coupled with matching velocity'
+  !dock.canDockGrappledShips(grappleShip(0, 5), grappleShip(95, 7)),
+  'docking cannot couple through the old invisible 95m separation'
+);
+assert(
+  dock.canDockGrappledShips(grappleShip(0, 5), grappleShip(75, 7)),
+  'boarding may start at actual hull-contact distance with settled velocity'
 );
 
 const combat = loadStandaloneTypeScriptModule(

@@ -1,7 +1,6 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import { clamp, distance, normalize } from './strategic-combat-geometry';
 
-const MIN_ESCAPE_COMMITMENT = 16;
 const RETHINK_PERIOD = 8;
 
 /** Comparable combat power: only equipment installed on this particular vessel counts. */
@@ -147,10 +146,10 @@ function chooseCommitmentTransition(
   const currentlyFleeing = ship.tactic === 'flee';
   if (currentlyFleeing) {
     ship.escapeCommittedAt ??= elapsed;
-    // Remain committed, unless escape has become almost impossible.
-    if (elapsed - (ship.escapeCommittedAt ?? elapsed) < MIN_ESCAPE_COMMITMENT) {
-      if (escape >= 0.12 || ship.subsystems.engine > 0) return null;
-    } else if (escape >= 0.2) return null;
+    // A viable engine makes the decision final for this engagement. Changing
+    // odds and temporary pursuer interception must change the escape ROUTE,
+    // never silently switch the player's or NPC's flight command to attack.
+    if (ship.subsystems.engine > 0) return null;
     ship.tactic = 'fight';
     ship.strategy = null;
     delete ship.escapeGate;

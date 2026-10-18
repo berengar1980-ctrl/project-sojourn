@@ -5,10 +5,11 @@ import type {
 } from './strategic-combat-types';
 
 const ROUTE_REFRESH_SECONDS = 0.75;
+const TARGET_DRIFT_METERS = 150;
 const REACHED_WAYPOINT_METERS = 65;
 
 // Local steering for combat: bounded obstacle checks instead of a full grid A*.
-const MAX_DETOUR_HOPS = 5;
+const MAX_DETOUR_HOPS = 10;
 
 function nearestBlocker(
   start: CombatPoint,
@@ -150,11 +151,20 @@ function selectRouteWaypoint(
     route.shift();
   }
   ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  // Only a retreat keeps its selected flank. Normal combat still replans
-  // as targets move, while a retreat never flips sides on timer expiry.
-  const replan = fleeing
-    ? !route.length && (immediateThreat || blocked)
-    : ship.nextAsteroidRouteAt <= 0;
+  // The current obstacle flank is a committed waypoint, not a suggestion
+  // to replace every 750 ms. Replan only if the destination actually moves,
+  // a new rock obstructs the next leg, or the route is exhausted.
+  const oldTarget = route.at(-1);
+  let targetDrift = Infinity;
+  if (oldTarget) {
+    targetDrift = Math.hypot(oldTarget.x - target.x, oldTarget.y - target.y);
+  }
+  const staleLeg = route.length > 0 && pathBlocked(ship.position, route[0]!, arena, clearance);
+  const needRefresh =
+    !fleeing &&
+    ship.nextAsteroidRouteAt <= 0 &&
+    (targetDrift > TARGET_DRIFT_METERS || (staleLeg && immediateThreat));
+  const replan = !route.length || needRefresh;
   if (replan) {
     ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
@@ -162,7 +172,7 @@ function selectRouteWaypoint(
   return ship.asteroidRoute?.[0] ?? null;
 }
 
-/** Reuse the campaign's grid navigation, recomputing as asteroids drift. */
+/** Bounded local obstacle routing with a committed flank for each ship. */
 export function combatRouteHeading(
   ship: MutableCombatant,
   target: CombatPoint,

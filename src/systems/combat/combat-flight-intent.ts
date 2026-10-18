@@ -5,6 +5,7 @@ import type {
 } from './strategic-combat-types';
 import { normalize, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
+import { hasClearCombatShot } from './combat-line-of-sight';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
 
 type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
@@ -44,6 +45,15 @@ function continueCommittedPass(
 ): CombatFlightIntent | null {
   const pass = ship.flightPass;
   if (!pass) return null;
+  // Switching from shield breakers to hull batteries can change the required
+  // broadside. An old committed lane must not keep steering the new gun away.
+  if (
+    pass.focus !== ship.strategy?.focus ||
+    pass.broadsideFacing !== ship.strategy?.broadsideFacing
+  ) {
+    delete ship.flightPass;
+    return null;
+  }
   pass.ageSeconds += dt;
   pass.closestRange = Math.min(pass.closestRange, range);
   const along = dx * pass.direction.x + dy * pass.direction.y;
@@ -76,6 +86,109 @@ function forwardPassReady(ship: MutableCombatant, enemy: MutableCombatant): bool
   return true;
 }
 
+/** Check whether any mounted weapon can currently fire along an unblocked corridor. */
+function clearFiringLane(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  if (!arena.obstacles?.length) return true;
+  return ship.setup.weapons.some(
+    (component, index) =>
+      component.weapon &&
+      range <= component.weapon.rangeMeters &&
+      hasClearCombatShot(ship, enemy, index, arena)
+  );
+}
+
+/**
+ * A broadside passage may only start after its CHOSEN side can fire.
+ * A ready turret on the opposite arc is not evidence that a side gun
+ * is aligned. The heading is prepared by the regular posture controller.
+ */
+function preferredBroadsideAligned(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  if (ship.strategy?.focus !== 'broadside') return true;
+  const facing = ship.strategy.broadsideFacing;
+  return ship.setup.weapons.some((component, index) => {
+    const weapon = component.weapon;
+    const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
+    return (
+      weapon?.mount === 'broadside' &&
+      mount?.facing === facing &&
+      range <= weapon.rangeMeters &&
+      weaponInArc(ship, enemy.position, index, weapon) &&
+      (!arena.obstacles?.length || hasClearCombatShot(ship, enemy, index, arena))
+    );
+  });
+}
+
+function readyForAttackPass(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  desiredRange: number,
+  toward: CombatPoint,
+  firingLane: boolean,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  // The second AI planner starts four seconds later; unplanned ships may
+  // approach but cannot lock in an unarmed twenty-second attack passage.
+  if (!ship.strategy || !firingLane || ship.subsystems.engine <= 0) return false;
+  if (range > desiredRange * 1.12) return false;
+  if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
+  const relativeX = ship.velocity.x - enemy.velocity.x;
+  const relativeY = ship.velocity.y - enemy.velocity.y;
+  return relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy);
+}
+
+/** Fix a destination beyond the enemy so asteroid routing can complete the passage. */
+function beginAttackPass(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  arena: StrategicCombatArenaOptions,
+  range: number,
+  side: CombatPoint
+): CombatFlightIntent {
+  const dx = enemy.position.x - ship.position.x;
+  const dy = enemy.position.y - ship.position.y;
+  const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
+  const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
+  const broadside = ship.strategy?.focus === 'broadside';
+  // Once a side gun is aimed, fly tangentially instead of cutting across the
+  // opponent. Opposite port/starboard plans independently yield parallel tracks.
+  // The small radial correction preserves useful firing range without an orbit.
+  const toward = normalize(dx, dy);
+  const rangeError = (range - (ship.strategy?.desiredRange ?? range)) / Math.max(1, range);
+  const radial = Math.max(-0.18, Math.min(0.18, rangeError));
+  const direction = broadside
+    ? normalize(side.x + toward.x * radial, side.y + toward.y * radial)
+    : normalize(
+        dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
+        dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
+      );
+  const overshoot = Math.min(700, Math.max(350, range * 0.7));
+  const waypointOrigin = broadside ? ship.position : enemy.position;
+  ship.flightPass = {
+    direction,
+    ...(ship.strategy ? { focus: ship.strategy.focus } : {}),
+    ...(ship.strategy?.broadsideFacing ? { broadsideFacing: ship.strategy.broadsideFacing } : {}),
+    destination: {
+      x: Math.max(160, Math.min(arena.width - 160, waypointOrigin.x + direction.x * overshoot)),
+      y: Math.max(160, Math.min(arena.height - 160, waypointOrigin.y + direction.y * overshoot)),
+    },
+    startRange: range,
+    closestRange: range,
+    ageSeconds: 0,
+  };
+  return { kind: 'pass', direction, speedFactor: 0.92 };
+}
+
 export function chooseCombatFlightIntent(
   ship: MutableCombatant,
   enemy: MutableCombatant,
@@ -93,6 +206,9 @@ export function chooseCombatFlightIntent(
     ship.strategy?.focus === 'broadside' && ship.strategy.broadsideFacing === 'starboard';
   const orbitSign = starboard ? -1 : 1;
   const side = { x: -toward.y * orbitSign, y: toward.x * orbitSign };
+
+  // An orbit is useful only when a mounted gun has a clear firing lane.
+  const firingLane = clearFiringLane(ship, enemy, range, arena);
 
   if (ship.tactic === 'flee') {
     delete ship.flightPass;
@@ -137,29 +253,13 @@ export function chooseCombatFlightIntent(
     };
   }
 
-  const relativeX = ship.velocity.x - enemy.velocity.x;
-  const relativeY = ship.velocity.y - enemy.velocity.y;
-  const relativeClosing = relativeX * toward.x + relativeY * toward.y;
-  const inPassRange = range <= desiredRange * 1.12;
-  const canPass = ship.subsystems.engine > 0 && inPassRange && forwardPassReady(ship, enemy);
-  if (canPass && relativeClosing > 14) {
-    const shipSpeed = Math.max(65, ship.setup.combatSpeed ?? 120);
-    const lead = Math.min(1.2, (range / shipSpeed) * 0.2);
-    const direction = normalize(
-      dx + enemy.velocity.x * lead + side.x * Math.min(250, range * 0.36),
-      dy + enemy.velocity.y * lead + side.y * Math.min(250, range * 0.36)
-    );
-    ship.flightPass = {
-      direction,
-      startRange: range,
-      closestRange: range,
-      ageSeconds: 0,
-    };
-    return { kind: 'pass', direction, speedFactor: 0.92 };
+  if (readyForAttackPass(ship, enemy, range, desiredRange, toward, firingLane, arena)) {
+    return beginAttackPass(ship, enemy, arena, range, side);
   }
 
-  if (range < desiredRange * 1.2) {
-    // Keep traversing the engagement rather than braking at a fixed range.
+  if (range < desiredRange * 1.2 && firingLane && ship.strategy?.focus !== 'forward') {
+    // Orbit only with a viable firing lane and a non-frontal weapon posture.
+    // Fixed bow guns must first build a real closing pass, not circle at range.
     const rangeError = (range - desiredRange) / desiredRange;
     const radial = Math.max(-0.55, Math.min(0.55, rangeError));
     return {

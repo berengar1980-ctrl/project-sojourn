@@ -4,7 +4,12 @@ import {
   VISION_PULSE_SECONDS,
   VISION_ION_LASER_SECONDS,
 } from '../../core/combat-visual-timings';
-import { autocannonTracers, type WeaponFxPoint } from './combat-weapon-fx-renderer';
+import {
+  autocannonTracers,
+  drawVisionRepeaterImpact,
+  type WeaponFxPoint,
+} from './combat-weapon-fx-renderer';
+export { drawVisionFrontRepeater } from './combat-weapon-fx-renderer';
 
 /** Visual-only reinterpretations approved from the HTML weapon laboratory. */
 const TAU = Math.PI * 2;
@@ -435,6 +440,9 @@ export function drawVisionWeaponImpact(
     fade,
   };
   switch (family) {
+    case 'front_repeater':
+      drawVisionRepeaterImpact(ctx, point, ageSeconds, seed, shield);
+      return;
     case 'pulse_laser':
       drawPulseImpact(frame);
       break;

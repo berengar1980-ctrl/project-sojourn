@@ -31,16 +31,16 @@
   "weaponLasers": [],
   "weaponMounts": [
     {
-      "id": "weapon-front",
+      "id": "weapon-front-primary",
       "slotIndex": 0,
       "x": 425,
-      "y": 158,
+      "y": 142,
       "width": 6,
       "facing": "forward",
       "layer": "below",
       "arcDegrees": 60,
       "allowedMounts": ["forward"],
-      "allowedFamilies": ["railgun"]
+      "allowedFamilies": ["railgun", "front_repeater"]
     },
     {
       "id": "weapon-port",
@@ -67,7 +67,7 @@
       "allowedFamilies": ["plasma_battery", "ion_cannon", "autocannon"]
     },
     {
-      "id": "weapon-turret",
+      "id": "weapon-universal-primary",
       "slotIndex": 3,
       "x": 243,
       "y": 158,
@@ -75,8 +75,32 @@
       "facing": "forward",
       "layer": "below",
       "arcDegrees": 360,
-      "allowedMounts": ["turret"],
-      "allowedFamilies": ["pulse_laser", "ion_laser"]
+      "allowedMounts": ["turret", "guided"],
+      "allowedFamilies": ["pulse_laser", "ion_laser", "guided_missile", "he_missile"]
+    },
+    {
+      "id": "weapon-universal-secondary",
+      "slotIndex": 4,
+      "x": 336,
+      "y": 190,
+      "width": 6,
+      "facing": "forward",
+      "layer": "below",
+      "arcDegrees": 360,
+      "allowedMounts": ["turret", "guided"],
+      "allowedFamilies": ["pulse_laser", "ion_laser", "guided_missile", "he_missile"]
+    },
+    {
+      "id": "weapon-front-secondary",
+      "slotIndex": 5,
+      "x": 425,
+      "y": 174,
+      "width": 6,
+      "facing": "forward",
+      "layer": "below",
+      "arcDegrees": 60,
+      "allowedMounts": ["forward"],
+      "allowedFamilies": ["railgun", "front_repeater"]
     }
   ],
   "miningLasers": [],

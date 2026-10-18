@@ -53,7 +53,7 @@ function scoreWeaponGroup(
   if (!usable) return null;
   const range = usable.effectiveRange;
   const maintainRange = range > enemyRange && speedRatio >= 1.02;
-  const effectiveRange = Math.max(180, range * (maintainRange ? 0.82 : 0.68));
+  const effectiveRange = Math.max(180, range);
   const travelPenalty = Math.max(0.55, 1 - Math.abs(currentRange - effectiveRange) / 6000);
   const relativeMobility = Math.min(1.3, Math.max(0.7, speedRatio));
   const turnFactor = group.focus === 'turret' ? 1 : Math.min(1.2, Math.max(0.75, turnRatio));

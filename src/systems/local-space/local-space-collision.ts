@@ -2,6 +2,7 @@ import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
+import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
 export interface ShieldWorldGeometry {
   readonly centerOffset: WorldPoint;
@@ -100,7 +101,8 @@ export function resolveShieldCollisions(
       y: asteroid.position.y - center.y,
     };
     const local = rotate(relative, -ship.headingRadians);
-    const separationLocal = separationVector(local, asteroid.radius, shield);
+    const contactRadius = localAsteroidContactRadius(asteroid);
+    const separationLocal = separationVector(local, contactRadius, shield);
     if (separationLocal.x === 0 && separationLocal.y === 0) continue;
 
     const separationWorld = rotate(separationLocal, ship.headingRadians);
@@ -111,7 +113,7 @@ export function resolveShieldCollisions(
     };
 
     const contactPoint = {
-      x: asteroid.position.x - normal.x * asteroid.radius,
+      x: asteroid.position.x - normal.x * contactRadius,
       y: asteroid.position.y - normal.y * asteroid.radius,
     };
     const localContact = rotate(
@@ -179,7 +181,7 @@ function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
 
 function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
   const currentDistance = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y);
-  const overlap = a.radius + b.radius - currentDistance;
+  const overlap = localAsteroidContactRadius(a) + localAsteroidContactRadius(b) - currentDistance;
   if (overlap <= 0) return;
 
   const inverseA = 1 / a.physics.mass;
@@ -200,7 +202,7 @@ function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): v
 
 function resolvePairImpulse(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
   const contactPoint = {
-    x: a.position.x + normal.x * a.radius,
+    x: a.position.x + normal.x * localAsteroidContactRadius(a),
     y: a.position.y + normal.y * a.radius,
   };
   const velocityA = pointVelocity(a, contactPoint);
@@ -248,7 +250,7 @@ function collisionBuckets(asteroids: readonly LocalAsteroid[]): Map<string, numb
 }
 
 function resolveCollisionPair(a: LocalAsteroid, b: LocalAsteroid): void {
-  const maximumDistance = a.radius + b.radius;
+  const maximumDistance = localAsteroidContactRadius(a) + localAsteroidContactRadius(b);
   const dx = b.position.x - a.position.x;
   const dy = b.position.y - a.position.y;
   if (dx * dx + dy * dy >= maximumDistance * maximumDistance) return;
@@ -262,13 +264,17 @@ export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): 
   const buckets = collisionBuckets(asteroids);
   // Standard mining fields use one cell. Large ship sections can overlap
   // objects two cells away; expand only when oversized obstacles exist.
-  const maxRadius = asteroids.reduce((max, body) => Math.max(max, body.radius), 0);
+  let maxRadius = 0;
+  for (const body of asteroids) {
+    maxRadius = Math.max(maxRadius, localAsteroidContactRadius(body));
+  }
 
   asteroids.forEach((asteroid, first) => {
     const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
     const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
 
-    const reach = Math.max(1, Math.ceil((asteroid.radius + maxRadius) / COLLISION_CELL_SIZE));
+    const reachDistance = localAsteroidContactRadius(asteroid) + maxRadius;
+    const reach = Math.max(1, Math.ceil(reachDistance / COLLISION_CELL_SIZE));
     for (let rowOffset = -reach; rowOffset <= reach; rowOffset += 1) {
       for (let columnOffset = -reach; columnOffset <= reach; columnOffset += 1) {
         const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];

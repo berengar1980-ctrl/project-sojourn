@@ -1,5 +1,6 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
 interface GridNode extends WorldPoint {
   readonly column: number;
@@ -124,7 +125,8 @@ function pointClear(
   clearance: number
 ): boolean {
   return obstacles.every(
-    (asteroid) => distance(point, asteroid.position) >= asteroid.radius + clearance
+    (asteroid) =>
+      distance(point, asteroid.position) >= localAsteroidContactRadius(asteroid) + clearance
   );
 }
 
@@ -136,7 +138,8 @@ function segmentClear(
 ): boolean {
   return obstacles.every(
     (asteroid) =>
-      pointToSegmentDistance(asteroid.position, start, end) >= asteroid.radius + clearance
+      pointToSegmentDistance(asteroid.position, start, end) >=
+      localAsteroidContactRadius(asteroid) + clearance
   );
 }
 

@@ -23,6 +23,7 @@ const mineDamage = loadStandaloneTypeScriptModule(
 const weapons = catalog.SHIP_COMPONENT_CATALOG.weapon ?? [];
 const expectedFamilies = [
   'pulse_laser',
+  'front_repeater',
   'plasma_battery',
   'guided_missile',
   'ion_laser',
@@ -96,7 +97,7 @@ for (const family of expectedFamilies) {
   const eliteProfile = weaponCombat.crewAdjustedShipWeaponProfile(ion, 100, 100);
   assert.equal(eliteProfile.shieldDamage, Math.round(50 * 1.2));
   assert.equal(eliteProfile.hullDamage, Math.round(3 * 1.2));
-  assert.equal(eliteProfile.cooldownSeconds, 2.9 * 0.88);
+  assert.equal(eliteProfile.cooldownSeconds, ion.weapon.cooldownSeconds * 0.88);
   assert.equal(eliteProfile.criticalChance, 0.1);
   assert.equal(eliteProfile.hitChanceBonus, 0.15);
 

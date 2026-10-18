@@ -13,30 +13,16 @@ const escapeLogic = loadStandaloneTypeScriptModule(
 );
 const winner = loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-runtime-winner.ts');
 
-function fireState(charges = 2, max = 2) {
-  return { fireControl: { charges, max, lastShotAt: -100, nextRechargeAt: 0 } };
-}
-
-const state = fireState();
-assert.equal(fire.consumeFireControl(state, 0), true);
-assert.equal(state.fireControl.charges, 1);
-assert.equal(fire.consumeFireControl(state, 0.44), false, 'no second pulse during global lockout');
-assert.equal(fire.consumeFireControl(state, 0.45), true, 'second pulse at minimum interval');
-assert.equal(state.fireControl.charges, 0);
-assert.equal(fire.consumeFireControl(state, 0.79), false, 'empty charge bank cannot fire');
-fire.rechargeFireControl(state, 1.6);
-assert.equal(state.fireControl.charges, 2, 'charges replenish sequentially to capacity');
-assert.equal(state.fireControl.nextRechargeAt, 0, 'full bank stops scheduling recharges');
-fire.rechargeFireControl(state, 100);
-assert.equal(state.fireControl.charges, 2, 'charge bank never overfills');
-for (const [max, expected] of [
-  [1, 0.9],
-  [2, 0.8],
-  [3, 0.72],
-  [4, 0.68],
-]) {
-  assert.equal(fire.fireControlRechargeSeconds(max), expected);
-}
+// Each installed weapon reloads independently, including fast repeaters.
+const cooldowns = { setup: { weapons: [{}, {}, {}] }, cooldowns: [0.2, 1.6, 0] };
+fire.advanceWeaponCooldowns(cooldowns, 0.15);
+assert(Math.abs(cooldowns.cooldowns[0] - 0.05) < 0.000001);
+assert(Math.abs(cooldowns.cooldowns[1] - 1.45) < 0.000001);
+assert.equal(cooldowns.cooldowns[2], 0, 'ready weapon stays ready');
+fire.advanceWeaponCooldowns(cooldowns, 0.05);
+assert.equal(cooldowns.cooldowns[0], 0, 'fast weapon reloads without a global lock');
+assert.equal(fire.weaponCycleSeconds({ cooldownSeconds: 0.2 }, 1), 0.2);
+assert.equal(fire.weaponCycleSeconds({ cooldownSeconds: 7.2 }, 1), 7.2);
 
 const arena = { width: 2400, height: 1600, exitPoint: { x: 2100, y: 800 } };
 const fleeing = {
@@ -74,8 +60,17 @@ assert.equal(
     { ...pursuer, position: { x: 1850, y: 800 } },
     arena
   ),
+  true,
+  'pursuer 250m away cannot create an invisible escape blockade'
+);
+assert.equal(
+  escapeLogic.runtimeCombatantEscaped(
+    fleeing,
+    { ...pursuer, position: { x: 2080, y: 800 } },
+    arena
+  ),
   false,
-  'ship too close to pursuing opponent cannot escape'
+  'real hull overlap still blocks departure'
 );
 const tractorPursuer = {
   ...pursuer,
@@ -116,4 +111,4 @@ assert.match(fight.lastEvent, /entkommt aus dem Gefecht/);
 fight = runtime({ ...fleeing, tactic: 'fight' }, pursuer);
 winner.resolveRuntimeWinner(fight);
 assert.equal(fight.winner, null, 'active combat does not spontaneously declare a winner');
-console.log('PASS fire-control pulses, escape safety and terminal combat outcomes');
+console.log('PASS independent weapon cooldowns, escape safety and terminal combat outcomes');

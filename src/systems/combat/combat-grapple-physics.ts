@@ -1,6 +1,7 @@
 import type { CombatGrapple, MutableCombatant } from './strategic-combat-types';
+import { shipContact } from './combat-ship-contact-geometry';
 
-const COUPLING_DISTANCE = 92;
+const DOCKING_CLEARANCE = 4;
 
 /** Docking requires physical hull proximity plus settled relative velocity.
  * Never trigger tactical boarding merely because a hook has attached.
@@ -9,13 +10,9 @@ export function canDockGrappledShips(
   source: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>,
   target: Pick<MutableCombatant, 'position' | 'velocity' | 'setup'>
 ): boolean {
-  const separation = Math.hypot(
-    source.position.x - target.position.x,
-    source.position.y - target.position.y
-  );
-  const hullRadius = (body: typeof source): number =>
-    Math.max(20, body.setup.shieldGeometry?.radiusX ?? 45);
-  const couplingRange = Math.max(90, Math.min(104, hullRadius(source) + hullRadius(target) + 6));
+  const contact = shipContact(source, target);
+  const separation = contact.distance;
+  const couplingRange = contact.required + DOCKING_CLEARANCE;
   const relativeSpeed = Math.hypot(
     source.velocity.x - target.velocity.x,
     source.velocity.y - target.velocity.y
@@ -49,7 +46,11 @@ export function advanceCombatGrappleTether(
     (source.setup.tractorRangeMeters ?? 0) > 0 &&
     separation <= (source.setup.tractorRangeMeters ?? 0);
   const reelRate = WINCH_REEL_METERS_PER_SECOND + (tractorAssisted ? TRACTOR_REEL_BONUS : 0);
-  const ropeLength = Math.max(COUPLING_DISTANCE, grapple.ropeLength - reelRate * deltaSeconds);
+  const contact = shipContact(source, target);
+  const ropeLength = Math.max(
+    contact.required + DOCKING_CLEARANCE,
+    grapple.ropeLength - reelRate * deltaSeconds
+  );
 
   const separatingSpeed =
     (target.velocity.x - source.velocity.x) * normalX +
@@ -81,7 +82,7 @@ export function advanceCombatGrappleTether(
   // The rope preserves orbital motion at range; at genuine docking distance,
   // a small symmetric damping impulse settles relative motion without
   // teleportation or destroying the pair's shared center-of-mass velocity.
-  if (separation < 134) {
+  if (separation < contact.required + 42) {
     const smoothing = Math.min(0.22, deltaSeconds * 2.8);
     const diffX = (target.velocity.x - source.velocity.x) * smoothing * 0.5;
     const diffY = (target.velocity.y - source.velocity.y) * smoothing * 0.5;

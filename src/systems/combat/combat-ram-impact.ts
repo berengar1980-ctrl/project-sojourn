@@ -1,4 +1,5 @@
 import type { StrategicCombatRuntime } from './strategic-combat-types';
+import { shipContact } from './combat-ship-contact-geometry';
 
 function ramExposure(
   heading: number,
@@ -13,12 +14,11 @@ function ramExposure(
 /** Apply one impact impulse, not continuous damage while hulls remain entangled. */
 export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
   const { attacker, defender } = runtime;
-  const dx = defender.position.x - attacker.position.x;
-  const dy = defender.position.y - attacker.position.y;
-  const range = Math.hypot(dx, dy);
-  if (range > 86 || runtime.elapsedSeconds - (runtime.lastRamImpactAt ?? -100) < 0.9) return 0;
-  const nx = range > 0.001 ? dx / range : 1;
-  const ny = range > 0.001 ? dy / range : 0;
+  const { distance, required, normal } = shipContact(attacker, defender);
+  if (distance > required || runtime.elapsedSeconds - (runtime.lastRamImpactAt ?? -100) < 0.9)
+    return 0;
+  const nx = normal.x;
+  const ny = normal.y;
   const closing =
     (attacker.velocity.x - defender.velocity.x) * nx +
     (attacker.velocity.y - defender.velocity.y) * ny;

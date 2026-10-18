@@ -3418,3 +3418,129 @@ body {
   padding-top: 12px;
   border-top: 1px solid rgba(92, 148, 166, 0.14);
 }
+
+/* Live fire-control diagnostics: compact, readable, and out of the battle center. */
+.combat-hud {
+  width: min(372px, 31vw);
+  max-height: min(83vh, 760px);
+  overflow-y: auto;
+  gap: 6px;
+  padding: 13px 15px;
+  border-color: rgba(126, 158, 174, 0.52);
+  background: rgba(5, 13, 19, 0.86);
+}
+.combat-weapon-telemetry {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(114, 151, 167, 0.38);
+}
+.combat-weapon-telemetry__title {
+  margin-bottom: 9px;
+  color: #d1bb7d;
+  font: 600 10px monospace;
+  letter-spacing: 0.14em;
+}
+.combat-weapon-telemetry__columns,
+.combat-weapon-row__main {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) 0.83fr 0.7fr 0.7fr 0.42fr;
+  gap: 5px;
+  align-items: center;
+}
+.combat-weapon-telemetry__columns {
+  padding: 0 3px 6px;
+  color: #8b9faa;
+  font: 9px monospace;
+}
+.combat-weapon-telemetry__columns span:not(:first-child) {
+  text-align: right;
+}
+.combat-weapon-row {
+  margin: 0 0 3px;
+  padding: 6px 3px 4px;
+  border: 1px solid transparent;
+  background: rgba(29, 51, 62, 0.22);
+}
+.combat-weapon-row__main {
+  color: #d5e0e5;
+  font: 10px monospace;
+  font-variant-numeric: tabular-nums;
+}
+.combat-weapon-row__main > span:not(:first-child) {
+  text-align: right;
+}
+.combat-weapon-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-weapon-row__shield {
+  color: #81cde7;
+}
+.combat-weapon-row__hull {
+  color: #e6a18b;
+}
+.combat-weapon-row__cd {
+  color: #d8c18b;
+}
+.combat-weapon-row--ready .combat-weapon-row__cd {
+  color: #91c6a5;
+}
+.combat-weapon-row--fired {
+  border-color: rgba(220, 190, 111, 0.62);
+  background: rgba(144, 111, 49, 0.22);
+}
+.combat-weapon-row__bar {
+  height: 2px;
+  margin-top: 5px;
+  background: rgba(80, 111, 127, 0.18);
+}
+.combat-weapon-row__bar i {
+  display: block;
+  height: 100%;
+  background: #d1ad65;
+}
+@media (max-width: 1050px) {
+  .combat-hud {
+    width: calc(50vw - 33px);
+    padding: 10px;
+  }
+  .combat-weapon-row__main {
+    font-size: 9px;
+  }
+}
+@media (max-width: 640px) {
+  .combat-hud {
+    top: 43px;
+    width: calc(50vw - 18px);
+    max-height: 46vh;
+    padding: 7px;
+  }
+  .combat-hud--player {
+    left: 8px;
+  }
+  .combat-hud--enemy {
+    right: 8px;
+  }
+  .combat-weapon-row__main {
+    font-size: 8px;
+  }
+}
+
+/* Stronger than generic HUD text rules: preserve legibility of measured damage. */
+.combat-hud .combat-weapon-row__main span {
+  font-size: inherit;
+  letter-spacing: 0;
+}
+.combat-hud .combat-weapon-row__shield {
+  color: #81cde7;
+}
+.combat-hud .combat-weapon-row__hull {
+  color: #e6a18b;
+}
+.combat-hud .combat-weapon-row__cd {
+  color: #d8c18b;
+}
+.combat-hud .combat-weapon-row--ready .combat-weapon-row__cd {
+  color: #91c6a5;
+}

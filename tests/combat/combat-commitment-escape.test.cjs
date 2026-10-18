@@ -144,6 +144,18 @@ for (let seed = 1; seed <= 100; seed += 1) {
     'seed ' + seed + ': combat commitment cannot oscillate between eight-second reviews'
   );
 }
+const persistent = ship('freighter-committed', 800);
+persistent.tactic = 'flee';
+persistent.escapeCommittedAt = 0;
+const interceptor = ship('interceptor', 470, pirate.setup.weapons);
+for (const at of [16, 32, 48]) {
+  reviewCombatCommitment(persistent, interceptor, arena, at);
+  assert.equal(
+    persistent.tactic,
+    'flee',
+    'committed flight may not silently abort when pursuer reduces escape odds'
+  );
+}
 console.log(
   'PASS combat confidence, retreat commitment, escape feasibility and rear-guard mine geometry'
 );

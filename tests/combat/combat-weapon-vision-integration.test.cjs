@@ -57,6 +57,34 @@ const pulseExpired = recordingCanvas();
 effects.drawVisionPulseLaser(pulseExpired.context, from, to, timing.VISION_PULSE_SECONDS + 0.01);
 assert.equal(pulseExpired.operations.length, 0, 'expired pulse beams vanish');
 
+const repeaterShot = recordingCanvas();
+effects.drawVisionFrontRepeater(repeaterShot.context, from, to, 0.06);
+assert(repeaterShot.operations.length >= 8, 'each shot contains multiple phased flechettes');
+assert(
+  repeaterShot.operations.some((op) => op.color === '#d24fff') &&
+    !repeaterShot.operations.some((op) => op.color === '#b86f40'),
+  'repeater uses its own ultraviolet palette, never copper autocannon tracers'
+);
+const repeaterGone = recordingCanvas();
+effects.drawVisionFrontRepeater(
+  repeaterGone.context,
+  from,
+  to,
+  timing.VISION_REPEATER_SECONDS + 0.01
+);
+assert.equal(repeaterGone.operations.length, 0);
+const repeaterHit = recordingCanvas();
+effects.drawVisionWeaponImpact(repeaterHit.context, 'front_repeater', to, 0.08, 11, false);
+assert(repeaterHit.operations.length >= 4, 'repeater impact has multiple angular fissures');
+assert(
+  repeaterHit.operations.some((op) => op.color === '#d88cff'),
+  'repeater impact is prismatic violet, not ballistic copper sparks'
+);
+const expiredHit = recordingCanvas();
+const impactEnd = timing.VISION_REPEATER_IMPACT_SECONDS + 0.01;
+effects.drawVisionWeaponImpact(expiredHit.context, 'front_repeater', to, impactEnd, 11, true);
+assert.equal(expiredHit.operations.length, 0);
+
 const ionLaser = recordingCanvas();
 effects.drawVisionIonLaser(ionLaser.context, from, to, 0.2, 11);
 assert(
@@ -100,6 +128,7 @@ assert(
 
 const families = [
   'pulse_laser',
+  'front_repeater',
   'plasma_battery',
   'guided_missile',
   'ion_laser',
@@ -169,4 +198,4 @@ assert(
   !runtime.includes('AUTOCANNON_ROUNDS'),
   'visual seven-shot salvo never multiplies real weapon damage'
 );
-console.log('PASS eight distinct impacts, selected shot effects, timing and combat integration');
+console.log('PASS nine distinct impacts including rapid repeater shot and contact');

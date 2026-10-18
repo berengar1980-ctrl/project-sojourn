@@ -27,27 +27,27 @@ const arena = {
   attackerPosition: { x: 400, y: 500 },
   defenderPosition: { x: 1000, y: 500 },
 };
-// Frozen pre-migration raw Mk I damage; do not derive expected values from
-// the catalog under test, or a broken migration could pass unchanged.
-const baseline = 0.18;
+// Explicit expected real-time damage per Mk, frozen after the intentional rebalance.
 const tierScale = [1, 1.3, 1.65, 2.05, 2.5, 3];
-const weaponBase = {
-  pulse_laser: [15, 15],
-  plasma_battery: [24, 24],
-  guided_missile: [18, 25],
-  ion_laser: [30, 6],
-  ion_cannon: [50, 3],
-  autocannon: [8, 34],
-  railgun: [5, 300],
-  he_missile: [10, 48],
+const weaponExpected = {
+  pulse_laser: { shield: [4, 5.2, 6.6, 8.2, 10, 12], hull: [4, 5.2, 6.6, 8.2, 10, 12] },
+  front_repeater: { shield: [1, 1.3, 1.65, 2.05, 2.5, 3], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
+  plasma_battery: { shield: [12, 15.6, 19.8, 24.6, 30, 36], hull: [12, 15.6, 19.8, 24.6, 30, 36] },
+  guided_missile: { shield: [5, 6.5, 8.25, 10.25, 12.5, 15], hull: [8, 10.4, 13.2, 16.4, 20, 24] },
+  ion_laser: { shield: [8, 10.4, 13.2, 16.4, 20, 24], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
+  ion_cannon: { shield: [16, 20.8, 26.4, 32.8, 40, 48], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
+  autocannon: { shield: [2, 2.6, 3.3, 4.1, 5, 6], hull: [8, 10.4, 13.2, 16.4, 20, 24] },
+  railgun: { shield: [0.9, 1.26, 1.44, 1.8, 2.34, 2.7], hull: [54, 70.2, 89.1, 110.7, 135, 162] },
+  he_missile: { shield: [2, 2.6, 3.3, 4.1, 5, 6], hull: [18, 23.4, 29.7, 36.9, 45, 54] },
 };
+const baseline = 0.18;
 const mineBase = {
   ion: [65, 5],
   shaped_charge: [10, 75],
   hunter: [40, 40],
 };
 const referenceRaw = (base, tier) => Math.max(1, Math.round(base * tierScale[tier - 1]));
-const expected = (raw, crew, critical) => Math.max(1, raw * baseline * crew * (critical ? 1.5 : 1));
+const expected = (raw, crew, critical) => Math.max(1, raw * crew * (critical ? 1.5 : 1));
 function ship(id, side, hp, crew) {
   return createCombatant(
     {
@@ -87,14 +87,16 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
       'laser',
       1
     );
-    const raw = referenceRaw(weaponBase[component.weapon.family][1], component.tier);
+    const reference = weaponExpected[component.weapon.family];
+    assert(reference, component.id + ': missing explicit Mk baseline');
+    const expectedHull = reference.hull[component.tier - 1];
     assert(
-      Math.abs(profile.hullDamage - raw * baseline) < 0.000001,
-      component.id + ': precomputed weapon damage differs from pre-migration raw value'
+      Math.abs(profile.hullDamage - expectedHull) < 0.000001,
+      component.id + ': native hull damage differs from the approved combat profile'
     );
     assert(
-      Math.abs(hit.damage - expected(raw, crew, critical)) < 0.000001,
-      component.id + ': hull damage differs from original balance'
+      Math.abs(hit.damage - expected(expectedHull, crew, critical)) < 0.000001,
+      component.id + ': actual hull hit differs from the approved combat profile'
     );
     const shieldTarget = ship('shield-target', 'defender', 2000, 1);
     const shieldHit = applyDamage(
@@ -107,11 +109,11 @@ for (const component of SHIP_COMPONENT_CATALOG.weapon) {
       'laser',
       2
     );
-    const shieldRaw = referenceRaw(weaponBase[component.weapon.family][0], component.tier);
+    const expectedShield = reference.shield[component.tier - 1];
     assert.equal(shieldHit.layer, 'shield');
     assert(
-      Math.abs(shieldHit.damage - expected(shieldRaw, crew, critical)) < 0.000001,
-      component.id + ': shield damage differs from original balance'
+      Math.abs(shieldHit.damage - expected(expectedShield, crew, critical)) < 0.000001,
+      component.id + ': actual shield hit differs from the approved combat profile'
     );
     assert.equal(shieldTarget.hullHp, 2000, 'shield hits cannot bypass hull protection');
   }
@@ -137,7 +139,7 @@ for (const mine of SHIP_MINE_CATALOG) {
   );
   assert.equal(mine.hullDamage, raw, 'shared noncombat mine catalog must retain original damage');
   assert(
-    Math.abs(hit.damage - expected(raw, 1, false)) < 0.000001,
+    Math.abs(hit.damage - expected(raw * baseline, 1, false)) < 0.000001,
     mine.id + ': mine damage differs from original balance'
   );
 }
@@ -170,4 +172,4 @@ assert(
   !nativeSource.includes('WEAPON_DAMAGE:') && !nativeSource.includes('MINE_DAMAGE:'),
   'no duplicate native-damage lookup table'
 );
-console.log('PASS native damage matches old shield/hull baselines for weapon and mine tiers');
+console.log('PASS native damage matches approved weapon rebalancing and legacy mine tiers');

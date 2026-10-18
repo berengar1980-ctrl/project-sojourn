@@ -16,13 +16,14 @@ import {
   drawVisionIonLaser,
   drawVisionProjectile,
   drawVisionPulseLaser,
+  drawVisionFrontRepeater,
   drawVisionWeaponImpact,
 } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { clamp01 } from './strategic-combat-renderer-math';
+import { clamp01, weaponImpactView } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import { drawStrategicHullImpact } from './strategic-hull-impact-effect';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
@@ -96,19 +97,21 @@ export class StrategicCombatRenderer {
       const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
       if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
     }
-    if (model.lastImpact && model.lastImpact.serial !== this.seenImpactSerial) {
-      const impact = model.lastImpact;
+    // Multiple independently firing mounts may land hits in the same simulation tick.
+    // Render each real event once; keep the single lastImpact fallback for other physics sources.
+    const recentImpacts = model.recentImpacts ?? [];
+    const finalImpact = model.lastImpact ? [model.lastImpact] : [];
+    const unseen = [...recentImpacts, ...finalImpact]
+      .filter((impact) => impact.serial > this.seenImpactSerial)
+      .sort((a, b) => a.serial - b.serial);
+    for (const impact of unseen) {
       this.seenImpactSerial = impact.serial;
-      const flightDelay =
-        impact.weaponFamily === 'pulse_laser'
-          ? 0.42
-          : impact.weaponFamily === 'ion_laser'
-            ? 0.1
-            : impact.weaponFamily === 'ion_cannon'
-              ? 0.075
-              : impact.weaponFamily === 'railgun'
-                ? 0.045
-                : 0;
+      let flightDelay = 0;
+      if (impact.weaponFamily === 'pulse_laser') flightDelay = 0.42;
+      if (impact.weaponFamily === 'front_repeater') flightDelay = 0.045;
+      if (impact.weaponFamily === 'ion_laser') flightDelay = 0.1;
+      if (impact.weaponFamily === 'ion_cannon') flightDelay = 0.075;
+      if (impact.weaponFamily === 'railgun') flightDelay = 0.045;
       this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
     }
     for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
@@ -253,6 +256,10 @@ export class StrategicCombatRenderer {
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
+    if (beam.family === 'front_repeater') {
+      drawVisionFrontRepeater(this.context, start, end, ageSeconds);
+      return;
+    }
     if (beam.family === 'pulse_laser') {
       drawVisionPulseLaser(this.context, start, end, ageSeconds);
       return;
@@ -460,14 +467,26 @@ export class StrategicCombatRenderer {
       if (age < 0) continue;
       const point = this.screen(impact.position, width, height);
       if (impact.weaponFamily && impact.layer !== 'miss') {
+        const view = weaponImpactView(
+          this.shipGeometry(this.model[impact.target], width, height).height,
+          impact.weaponFamily,
+          impact.layer === 'shield'
+        );
+        this.context.save();
+        this.context.beginPath();
+        this.context.arc(point.x, point.y, view.radius, 0, Math.PI * 2);
+        this.context.clip();
+        this.context.translate(point.x, point.y);
+        this.context.scale(view.scale, view.scale);
         drawVisionWeaponImpact(
           this.context,
           impact.weaponFamily,
-          point,
+          { x: 0, y: 0 },
           age,
           impact.serial,
           impact.layer === 'shield'
         );
+        this.context.restore();
       } else {
         drawStrategicHullImpact(this.context, impact, clamp01(age / 0.7), point);
       }

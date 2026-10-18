@@ -4,6 +4,7 @@ import type {
 } from '../../systems/combat/strategic-combat-service';
 import { StrategicCombatRenderer } from './strategic-combat-renderer';
 import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
+import { combatWeaponTelemetryHtml } from './combat-weapon-telemetry-panel';
 
 export interface StrategicCombatPanel {
   update(): void;
@@ -21,7 +22,10 @@ function percent(current: number, maximum: number): number {
   return maximum <= 0 ? 0 : Math.max(0, Math.min(100, (current / maximum) * 100));
 }
 
-function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
+function combatantHud(
+  combatant: StrategicCombatSnapshot['attacker'],
+  elapsedSeconds: number
+): string {
   const shield = Math.round(percent(combatant.shieldHp, combatant.shieldMaxHp));
   const hull = Math.round(percent(combatant.hullHp, combatant.hullMaxHp));
   const engine = Math.round(combatant.subsystems.engine);
@@ -40,7 +44,8 @@ function combatantHud(combatant: StrategicCombatSnapshot['attacker']): string {
     <span>TRAKTOR ${tractorInstalled ? tractor + ' / ' + combatant.subsystems.maximum + ' (' + tractorPercent + ' %)' : 'NICHT MONTIERT'} ${tractorInstalled && tractor <= 0 ? '· AUSGEFALLEN' : tractorInstalled && tractorPercent < 100 ? '· BESCHÄDIGT' : ''}</span>
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
-    <span>FEUERLEITUNG ${combatant.fireControl.charges} / ${combatant.fireControl.max}</span>
+    <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
+    ${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}
     <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
   `;
 }
@@ -217,8 +222,8 @@ export function createStrategicCombatPanel(
     // avoidable layout and garbage-collection work during longer duels.
     if (model.elapsedSeconds - lastHudTime < 0.1 && model.winner === null) return;
     lastHudTime = model.elapsedSeconds;
-    playerHud.innerHTML = combatantHud(model.attacker);
-    enemyHud.innerHTML = combatantHud(model.defender);
+    playerHud.innerHTML = combatantHud(model.attacker, model.elapsedSeconds);
+    enemyHud.innerHTML = combatantHud(model.defender, model.elapsedSeconds);
     event.textContent = model.lastEvent;
     const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
     if (timer) {

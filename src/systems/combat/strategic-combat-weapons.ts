@@ -1,4 +1,5 @@
 import { nativeWeaponDamage } from './combat-native-damage';
+import { recordWeaponDamage, recordWeaponFired } from './combat-weapon-telemetry';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 
 import type {
@@ -23,17 +24,21 @@ import {
 import {
   addRuntimeBeam,
   noteRuntimeImpact,
+  recordRuntimeImpact,
   runtimeCombatant,
   runtimeEnemy,
 } from './strategic-combat-runtime';
 
 import { distance, clamp, weaponKind, normalize } from './strategic-combat-geometry';
 import {
-  consumeFireControl,
-  rechargeFireControl,
-  fireControlReady,
+  advanceWeaponCooldowns,
+  weaponCycleSeconds,
+  FIRE_CONTROL_LOOKAHEAD_SECONDS,
+  selectFireControlVolley,
+  commitFireControlVolley,
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
+import { ballisticInterceptPoint } from './combat-weapon-aim';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import {
   effectiveTargetSubsystem,
@@ -102,7 +107,8 @@ function fireRuntimeInstantWeapon(
     shieldHit ?? undefined,
     effectiveTargetSubsystem(source, target)
   );
-  runtime.lastImpact = {
+  recordWeaponDamage(source, weaponIndex, result.layer, result.damage, result.subsystem);
+  recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
@@ -111,7 +117,7 @@ function fireRuntimeInstantWeapon(
     position: { ...result.point },
     weaponKind: kind,
     weaponFamily: weapon.weapon.family,
-  };
+  });
   return (
     source.setup.name +
     ': ' +
@@ -142,15 +148,21 @@ function fireRuntimeProjectileWeapon(
 ): string {
   if (!weapon.weapon) return '';
   const muzzle = weaponMuzzle(source, weaponIndex);
+  const speed = projectileSpeed(kind);
+  const aim =
+    kind === 'missile'
+      ? target.position
+      : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
   const targetPoint = hit
-    ? target.position
+    ? aim
     : {
-        x: target.position.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
-        y: target.position.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
+        x: aim.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
+        y: aim.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
       };
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,
+    weaponIndex,
     owner: side,
     kind,
     family: weapon.weapon.family,
@@ -158,11 +170,8 @@ function fireRuntimeProjectileWeapon(
     position: { ...muzzle },
     direction: normalize(targetPoint.x - muzzle.x, targetPoint.y - muzzle.y),
     target: side === 'attacker' ? 'defender' : 'attacker',
-    speed: projectileSpeed(kind),
-    ttlSeconds: Math.max(
-      0.4,
-      distance(source.position, target.position) / projectileSpeed(kind) + 0.8
-    ),
+    speed,
+    ttlSeconds: Math.max(0.4, distance(muzzle, targetPoint) / speed + 0.8),
     shieldDamage: hit ? nativeWeaponDamage(weapon).shieldDamage : 0,
     hullDamage: hit ? nativeWeaponDamage(weapon).hullDamage : 0,
     critical: hit && critical,
@@ -213,31 +222,6 @@ function fireRuntimeWeapon(
   );
 }
 
-export function shouldReserveRailgun(
-  source: MutableCombatant,
-  target: MutableCombatant,
-  railRange: number
-): boolean {
-  if (target.shieldHp > 0 || target.tactic !== 'flee' || source.tactic === 'flee') return false;
-  if (target.subsystems?.engine > 0 && engineShotAvailable(source, target)) return false;
-  const dx = target.position.x - source.position.x;
-  const dy = target.position.y - source.position.y;
-  const range = Math.hypot(dx, dy);
-  if (range < 1 || range >= railRange * 0.85) return false;
-  const separatingSpeed =
-    ((target.velocity.x - source.velocity.x) * dx + (target.velocity.y - source.velocity.y) * dy) /
-    range;
-  if (separatingSpeed <= 5) return false;
-  return source.setup.weapons.some(({ weapon }) =>
-    Boolean(
-      weapon &&
-      weapon.mount !== 'forward' &&
-      weapon.rangeMeters < railRange * 0.85 &&
-      weapon.rangeMeters >= range
-    )
-  );
-}
-
 export function advanceRuntimeWeapons(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
@@ -245,46 +229,39 @@ export function advanceRuntimeWeapons(
   target: MutableCombatant,
   deltaSeconds: number
 ): void {
-  const now = runtime.elapsedSeconds;
-  rechargeFireControl(source, now);
-  for (let index = 0; index < source.setup.weapons.length; index += 1) {
-    source.cooldowns[index] = Math.max(0, (source.cooldowns[index] ?? 0) - deltaSeconds);
-  }
-  // Retreat is a command, not an aim posture: keep cooling guns but do not
-  // launch new offensive projectiles while fleeing. Mines remain autonomous.
-  if (source.tactic === 'flee' || target.hullHp <= 0 || !fireControlReady(source.fireControl, now))
-    return;
+  advanceWeaponCooldowns(source, deltaSeconds);
+  // Movement tactics own retreat; cooldowns still advance while fleeing.
+  if (source.tactic === 'flee' || target.hullHp <= 0) return;
 
-  // The current target layer determines weapon priority. A heavy gun cannot
-  // fire through the opposite side of the hull simply because it is loaded.
   const candidates = source.setup.weapons
-    .map((weapon, index) => ({ weapon, index }))
-    .filter(({ weapon, index }) =>
+    .map((component, index) => ({ component, index }))
+    .filter(({ component, index }) =>
       Boolean(
-        weapon?.weapon &&
-        (source.cooldowns[index] ?? 0) <= 0 &&
-        distance(source.position, target.position) <= weapon.weapon.rangeMeters &&
+        component?.weapon &&
+        (source.cooldowns[index] ?? 0) <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
+        distance(source.position, target.position) <= component.weapon.rangeMeters &&
         canEngagePreferredSubsystem(source, target) &&
-        weaponInArc(source, target.position, index, weapon.weapon) &&
-        hasClearCombatShot(source, target, index, runtime.arena) &&
-        !(
-          weapon.weapon.family === 'railgun' &&
-          shouldReserveRailgun(source, target, weapon.weapon.rangeMeters)
-        )
+        weaponInArc(source, target.position, index, component.weapon) &&
+        hasClearCombatShot(source, target, index, runtime.arena)
       )
-    )
-    .sort((a, b) => {
-      const score = (weapon: ShipComponentDefinition): number =>
-        target.shieldHp > 0 ? (weapon.weapon?.shieldDamage ?? 0) : (weapon.weapon?.hullDamage ?? 0);
-      return score(b.weapon) - score(a.weapon);
-    });
-  const candidate = candidates[0];
-  if (!candidate || !consumeFireControl(source, now)) return;
-  const event = fireRuntimeWeapon(runtime, side, source, target, candidate.weapon, candidate.index);
-  source.cooldowns[candidate.index] =
-    (candidate.weapon.weapon?.cooldownSeconds ?? 1) *
-    clamp(source.setup.cycleTimeMultiplier, 0.4, 2);
-  if (event) runtime.lastEvent = event;
+    );
+  const volley = selectFireControlVolley(source, target, candidates, runtime.elapsedSeconds);
+  if (!volley.length) return;
+  let launched = false;
+  for (const index of volley) {
+    if (target.hullHp <= 0) break;
+    const component = source.setup.weapons[index]!;
+    const event = fireRuntimeWeapon(runtime, side, source, target, component, index);
+    if (!event) continue;
+    source.cooldowns[index] = weaponCycleSeconds(
+      component.weapon!,
+      source.setup.cycleTimeMultiplier
+    );
+    runtime.lastEvent = event;
+    recordWeaponFired(source, index, runtime.elapsedSeconds);
+    launched = true;
+  }
+  if (launched) commitFireControlVolley(source, runtime.elapsedSeconds, volley);
 }
 
 function recordProjectileDamage(
@@ -310,7 +287,8 @@ function recordProjectileDamage(
       : (projectile.targetSubsystem ?? 'hull')
   );
   const targetSide: StrategicCombatSide = projectile.owner === 'attacker' ? 'defender' : 'attacker';
-  runtime.lastImpact = {
+  recordWeaponDamage(source, projectile.weaponIndex, result.layer, result.damage, result.subsystem);
+  recordRuntimeImpact(runtime, {
     serial: runtime.impactSerial,
     target: targetSide,
     layer: result.layer,
@@ -318,7 +296,7 @@ function recordProjectileDamage(
     position: { ...result.point },
     weaponKind: projectile.kind,
     weaponFamily: projectile.family,
-  };
+  });
   return result;
 }
 
@@ -329,7 +307,7 @@ function expireProjectile(
 ): void {
   if (projectile.kind === 'missile') {
     runtime.impactSerial += 1;
-    runtime.lastImpact = {
+    recordRuntimeImpact(runtime, {
       serial: runtime.impactSerial,
       target: projectile.target,
       layer: 'miss',
@@ -337,7 +315,7 @@ function expireProjectile(
       position: { ...projectile.position },
       weaponKind: 'missile',
       weaponFamily: projectile.family,
-    };
+    });
   }
   runtime.projectiles.splice(index, 1);
 }

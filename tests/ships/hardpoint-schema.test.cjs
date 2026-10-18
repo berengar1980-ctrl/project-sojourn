@@ -36,6 +36,7 @@ for (const name of files) {
         mount.allowedFamilies.every((family) =>
           [
             'pulse_laser',
+            'front_repeater',
             'ion_laser',
             'plasma_battery',
             'ion_cannon',

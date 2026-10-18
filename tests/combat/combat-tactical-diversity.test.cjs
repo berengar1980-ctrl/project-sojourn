@@ -39,6 +39,8 @@ function combatant(weapons, x) {
       aiAggression: 90,
     },
     position: { x, y: 650 },
+    headingRadians: 0,
+    cooldowns: weapons.map(() => 0),
     shieldHp: 300,
     shieldMaxHp: 300,
     hullHp: 300,
@@ -63,7 +65,7 @@ assert(
 assert.equal(
   ship.strategy.kind,
   firstKind,
-  'a failed attack does not justify switching to a much weaker firing sector'
+  'a failed posture must not switch to a much weaker sector solely due to elapsed time'
 );
 
 function setup(id, guns, facing) {

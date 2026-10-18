@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
@@ -31,7 +32,23 @@ for (const title of [
 assert(menu.includes('button.disabled = !entry.action'), 'future features must be disabled');
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
-assert(duel.includes('fitsWeaponHardpoint'), 'weapon choices respect ship JSON');
+const weaponCards = read('src/ui/start/duel-weapon-cards.ts');
+assert(weaponCards.includes('fitsWeaponHardpoint'), 'weapon choices respect ship JSON');
 assert(duel.includes('createStrategicCombatService'), 'duel starts existing combat engine');
 assert(duel.includes('createStrategicCombatPanel'), 'duel uses existing combat visuals');
+const labels = loadStandaloneTypeScriptModule(root, 'src/core/weapon-hardpoint-labels.ts');
+const hardpointFile = 'src/data/ships/patrol-60m-variant-01.hardpoints.json';
+const mounts = JSON.parse(read(hardpointFile)).weaponMounts;
+const ordered = [...mounts].sort((a, b) => labels.weaponUiOrder(a) - labels.weaponUiOrder(b));
+assert.equal(ordered.map((mount) => mount.slotIndex).join(','), '0,5,1,2,3,4');
+const groupOrder = ordered.map(labels.weaponUiGroup).join(',');
+assert.equal(groupOrder, 'front,front,port,starboard,turret,turret');
+const stats = read('src/ui/start/duel-weapon-cards.ts');
+assert(stats.includes('nativeWeaponDamage'), 'show actual combat damage');
+assert(stats.includes('draft.weapons[mount.slotIndex]'), 'retain physical loadout indices');
+assert(stats.includes('updateStats(stats, select.value, mount)'), 'live weapon selection');
+const telemetry = read('src/ui/combat/combat-weapon-telemetry-panel.ts');
+assert(telemetry.includes('shieldDamageDealt') && telemetry.includes('hullDamageDealt'));
+assert(telemetry.includes('cooldownRemaining') && telemetry.includes('shotsFired'));
+
 console.log('PASS Harrowdrift menu navigation and two-player duel setup contracts');

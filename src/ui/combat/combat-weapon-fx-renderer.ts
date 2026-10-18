@@ -4,6 +4,8 @@ import {
   AUTOCANNON_ROUND_INTERVAL,
   ION_CANNON_ARC_SECONDS,
   RAIL_LANCE_SECONDS,
+  VISION_REPEATER_SECONDS,
+  VISION_REPEATER_IMPACT_SECONDS,
 } from '../../core/combat-visual-timings';
 
 export interface WeaponFxPoint {
@@ -196,6 +198,130 @@ export function drawRailgunLance(
     context.beginPath();
     context.arc(point.x, point.y, 0.35 + noise(index * 29) * 0.48, 0, Math.PI * 2);
     context.fill();
+  }
+  context.restore();
+}
+
+/** Lightweight, independent high-rate front repeater visuals. */
+function repeaterCircle(
+  context: CanvasRenderingContext2D,
+  point: WeaponFxPoint,
+  radius: number,
+  color: string,
+  alpha: number,
+  outline = false
+): void {
+  context.globalAlpha = clamp01(alpha);
+  context.shadowColor = color;
+  context.shadowBlur = 7;
+  context.beginPath();
+  context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  if (outline) {
+    context.strokeStyle = color;
+    context.lineWidth = 1;
+    context.stroke();
+  } else {
+    context.fillStyle = color;
+    context.fill();
+  }
+}
+
+/** Four phased ultraviolet flechettes for one gameplay shot, not four damage events. */
+export function drawVisionFrontRepeater(
+  context: CanvasRenderingContext2D,
+  from: WeaponFxPoint,
+  to: WeaponFxPoint,
+  ageSeconds: number
+): void {
+  if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_SECONDS) return;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const normal = { x: -dy / length, y: dx / length };
+  context.save();
+  context.lineCap = 'round';
+  for (let index = 0; index < 4; index += 1) {
+    const launch = index * 0.035;
+    const flight = (ageSeconds - launch) / 0.115;
+    if (flight < 0 || flight >= 1) continue;
+    // Deliberately offset packets: a compact prismatic burst, not copper slugs.
+    const lane = (index - 1.5) * 3.8;
+    const progress = clamp01(flight);
+    const rear = clamp01(flight - 0.105);
+    const offset = (point: WeaponFxPoint): WeaponFxPoint => ({
+      x: point.x + normal.x * lane,
+      y: point.y + normal.y * lane,
+    });
+    const head = offset({
+      x: blend(from.x, to.x, progress),
+      y: blend(from.y, to.y, progress),
+    });
+    const tail = offset({
+      x: blend(from.x, to.x, rear),
+      y: blend(from.y, to.y, rear),
+    });
+    const fade = Math.sin(Math.PI * flight) * 0.7 + 0.3;
+    line(context, tail, head, '#6524bd', 6, fade * 0.24, 15);
+    line(context, tail, head, '#d24fff', 2.5, fade * 0.85, 7);
+    line(context, tail, head, '#ffe8ff', 0.9, fade, 3);
+    // Each flechette has a broken diamond tip, unlike autocannon tracer dots.
+    const back = {
+      x: head.x - (dx / length) * 5,
+      y: head.y - (dy / length) * 5,
+    };
+    path(
+      context,
+      [
+        { x: back.x + normal.x * 2, y: back.y + normal.y * 2 },
+        { x: head.x + (dx / length) * 2, y: head.y + (dy / length) * 2 },
+        { x: back.x - normal.x * 2, y: back.y - normal.y * 2 },
+      ],
+      '#fff0ff',
+      1.1,
+      fade,
+      4
+    );
+    if (flight < 0.26) {
+      const pulse = 1 - flight / 0.26;
+      repeaterCircle(context, offset(from), 2.5 + flight * 5, '#b751ff', pulse * 0.7);
+    }
+  }
+  context.restore();
+}
+
+/** Prismatic fracture, not the autocannon's copper sparks and shell flashes. */
+export function drawVisionRepeaterImpact(
+  context: CanvasRenderingContext2D,
+  point: WeaponFxPoint,
+  ageSeconds: number,
+  seed: number,
+  shield: boolean
+): void {
+  if (ageSeconds < 0 || ageSeconds >= VISION_REPEATER_IMPACT_SECONDS) return;
+  const progress = ageSeconds / VISION_REPEATER_IMPACT_SECONDS;
+  const fade = Math.pow(1 - progress, 1.5);
+  context.save();
+  repeaterCircle(context, point, 1.7 + progress * 2.6, '#fff3ff', fade);
+  if (shield) {
+    repeaterCircle(context, point, 4 + progress * 19, '#c78cff', fade * 0.78, true);
+    repeaterCircle(context, point, 2 + progress * 11, '#f59cff', fade * 0.44, true);
+  } else {
+    // Four angular fissures, with short off-axis branches.
+    for (let index = 0; index < 4; index += 1) {
+      const angle = (index * Math.PI) / 2 + noise(seed + index) * 0.24;
+      const radius = 4 + progress * (12 + noise(seed * 3 + index) * 6);
+      const middle = {
+        x: point.x + Math.cos(angle) * radius * 0.58,
+        y: point.y + Math.sin(angle) * radius * 0.58,
+      };
+      const end = {
+        x: point.x + Math.cos(angle + 0.21) * radius,
+        y: point.y + Math.sin(angle + 0.21) * radius,
+      };
+      path(context, [point, middle, end], '#d88cff', 1.3, fade * 0.88, 6);
+      line(context, middle, end, '#fff1ff', 0.55, fade * 0.75, 2);
+    }
+    repeaterCircle(context, point, 3 + progress * 7, '#932ae5', fade * 0.36, true);
   }
   context.restore();
 }

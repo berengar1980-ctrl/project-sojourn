@@ -8,6 +8,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 const cover = read('src/systems/combat/combat-asteroid-cover.ts');
 const movement = read('src/systems/combat/strategic-combat-movement.ts');
+const steering = read('src/systems/combat/combat-route-steering.ts');
 const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const mine = read('src/systems/combat/strategic-combat-mines.ts');
 const tractor = read('src/systems/combat/combat-tractor-asteroid-throw.ts');
@@ -18,8 +19,9 @@ assert(
   'cover reacts to depleted shields'
 );
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
-assert(movement.includes('asteroidCoverHeading(combatant, enemy, arena)'));
-assert(movement.includes('cover ?? waypoint ?? direction'));
+assert(movement.includes('steerCombatRoute('));
+assert(steering.includes('asteroidCoverHeading(combatant, enemy, arena)'));
+assert(steering.includes('cover ?? waypoint ?? direction'));
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
@@ -33,10 +35,10 @@ assert(
 
 const scoringSource = read('src/systems/combat/combat-weapon-posture-score.ts');
 assert(
-  scoringSource.includes('weapon.combatShieldDamage ?? weapon.shieldDamage'),
+  scoringSource.includes('profile.combatShieldDamage ?? profile.shieldDamage'),
   'weapon scorer uses effective native damage rather than legacy catalog score'
 );
-assert(scoringSource.includes('weapon.combatHullDamage ?? weapon.hullDamage'));
+assert(scoringSource.includes('profile.combatHullDamage ?? profile.hullDamage'));
 const coverModule = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-cover.ts'
@@ -45,7 +47,8 @@ const ship = {
   position: { x: 700, y: 650 },
   shieldHp: 15,
   shieldMaxHp: 100,
-  tactic: 'fight',
+  tactic: 'kite',
+  strategy: { kind: 'skirmish', focus: 'turret', desiredRange: 650 },
   setup: { aiControlled: true },
 };
 const enemy = { position: { x: 200, y: 500 } };
@@ -56,6 +59,11 @@ const arena = {
 };
 const heading = coverModule.asteroidCoverHeading(ship, enemy, arena);
 assert(heading, 'damaged AI uses a nearby rock between itself and the enemy');
+assert.equal(
+  coverModule.asteroidCoverHeading({ ...ship, tactic: 'fight' }, enemy, arena),
+  null,
+  'offensive frontal and broadside combat never diverts into defensive rock orbit'
+);
 assert(heading.x < 0 && heading.y < 0, 'defensive steering seeks the far side of the rock');
 assert.equal(
   coverModule.asteroidCoverHeading({ ...ship, shieldHp: 90 }, enemy, arena),

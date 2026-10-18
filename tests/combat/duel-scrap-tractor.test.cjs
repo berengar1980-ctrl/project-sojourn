@@ -102,7 +102,9 @@ for (const seed of [1, 53, 415, 9001]) {
       map.obstacles.every((obstacle) =>
         map.asteroids.some(
           (rock) =>
-            rock.id === obstacle.id && rock.kind === 'resource' && rock.radius === obstacle.radius
+            rock.id === obstacle.id &&
+            rock.kind === 'resource' &&
+            (rock.collisionRadius ?? rock.radius) === obstacle.radius
         )
       ),
       'only large hull sections block routes'

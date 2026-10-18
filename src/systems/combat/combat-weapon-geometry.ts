@@ -30,7 +30,7 @@ export function weaponInArc(
 ): boolean {
   let kind = profile.mount;
   if (!kind) {
-    if (profile.family === 'railgun') kind = 'forward';
+    if (profile.family === 'railgun' || profile.family === 'front_repeater') kind = 'forward';
     else if (['plasma_battery', 'ion_cannon', 'autocannon'].includes(profile.family)) {
       kind = 'broadside';
     } else kind = 'turret';

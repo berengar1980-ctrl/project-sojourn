@@ -1,5 +1,6 @@
 import { generateMiningSpace } from '../local-space/local-space-generator';
 import { createScrapDuelArena } from './duel-scrap-presets';
+import { combatVisibleContactRadius } from './combat-visible-collider';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 
 export type DuelMapKind =
@@ -58,6 +59,11 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
         y: asteroid.physics.velocity.y * factorY,
       },
       angularVelocity: asteroid.physics.angularVelocity,
+      collisionRadius: combatVisibleContactRadius({
+        id: asteroid.id,
+        kind: asteroid.kind,
+        radius: asteroid.radius * scale,
+      }),
       physics: {
         ...asteroid.physics,
         velocity: {
@@ -90,7 +96,7 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
       .map((asteroid) => ({
         id: asteroid.id,
         position: asteroid.position,
-        radius: asteroid.radius,
+        radius: asteroid.collisionRadius ?? asteroid.radius,
       })),
   };
 }

@@ -7,17 +7,20 @@ const root = path.resolve(__dirname, '../..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
 const movement = read('src/systems/combat/strategic-combat-movement.ts');
+const steering = read('src/systems/combat/combat-route-steering.ts');
 const routing = read('src/systems/combat/combat-asteroid-routing.ts');
 const physics = read('src/systems/combat/combat-asteroid-contacts.ts');
 const renderer = read('src/ui/combat/combat-hull-impact-renderer.ts');
 const weapons = read('src/systems/combat/strategic-combat-weapons.ts');
 
 assert(
-  movement.includes('combatRouteHeading(combatant, destination'),
+  movement.includes('steerCombatRoute(') &&
+    steering.includes('combatRouteHeading(combatant, destination') &&
+    steering.includes('return enemy.position;'),
   'autonomous movement routes through obstacle navigation'
 );
 assert(
-  movement.includes('asteroidCoverHeading(combatant, enemy, arena)'),
+  steering.includes('asteroidCoverHeading(combatant, enemy, arena)'),
   'cover and asteroid avoidance remain part of the canonical pilot'
 );
 assert(routing.includes('pathBlocked('), 'direct line checks asteroid clearance');

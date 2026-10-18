@@ -78,13 +78,6 @@ export interface CombatWeaponMount {
   readonly allowedFamilies?: readonly ShipWeaponFamily[];
 }
 
-export interface CombatFireControl {
-  readonly max: number;
-  readonly charges: number;
-  readonly nextRechargeAt: number;
-  readonly lastShotAt: number;
-}
-
 export interface CombatGrapple {
   readonly owner: StrategicCombatSide;
   readonly success: boolean;
@@ -136,6 +129,23 @@ export interface StrategicCombatantSetup {
   readonly pirateMark?: 'broken-spear' | 'black-tide';
 }
 
+export interface WeaponTelemetry {
+  readonly slotIndex: number;
+  readonly weaponId: string;
+  readonly weaponName: string;
+  shotsFired: number;
+  shieldDamageDealt: number;
+  hullDamageDealt: number;
+  lastFiredAt: number | null;
+}
+
+export interface WeaponTelemetrySnapshot extends Readonly<WeaponTelemetry> {
+  readonly cooldownRemaining: number;
+  readonly cooldownSeconds: number;
+  readonly mountLabel: string;
+  readonly displayOrder: number;
+}
+
 export interface StrategicCombatantSnapshot {
   readonly id: string;
   readonly name: string;
@@ -158,6 +168,9 @@ export interface StrategicCombatantSnapshot {
   readonly boostCooldownSeconds: number;
   readonly combatIntent?: string;
   readonly mineCount: number;
+  readonly readyWeapons: number;
+  readonly installedWeapons: number;
+  readonly weaponTelemetry: readonly WeaponTelemetrySnapshot[];
   readonly tractorRangeMeters: number;
   readonly tactic: CombatTactic;
   readonly strategy: CombatStrategyPlan | null;
@@ -166,7 +179,6 @@ export interface StrategicCombatantSnapshot {
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly shieldImpacts: readonly ShieldImpactEffect[];
-  readonly fireControl: CombatFireControl;
 }
 
 export interface CombatProjectileSnapshot {
@@ -229,6 +241,7 @@ export interface ThrownAsteroidSnapshot {
   readonly mineDefinition?: ShipMineDefinition;
   readonly position: CombatPoint;
   readonly radius: number;
+  readonly collisionRadius?: number;
   readonly velocity: CombatPoint;
   readonly ageSeconds: number;
   readonly phase: 'capture' | 'charge' | 'flight';
@@ -252,6 +265,7 @@ export interface StrategicCombatSnapshot {
   readonly mines: readonly CombatMineSnapshot[];
   readonly thrownAsteroids: readonly ThrownAsteroidSnapshot[];
   readonly lastImpact: CombatImpactSnapshot | null;
+  readonly recentImpacts: readonly CombatImpactSnapshot[];
   readonly arena: {
     readonly width: number;
     readonly height: number;
@@ -273,6 +287,8 @@ export interface CombatVisualAsteroid {
   readonly angularVelocity: number;
   readonly physics?: AsteroidPhysics;
   readonly radius: number;
+  /** Solid contact radius, separate from the nominal visual envelope. */
+  readonly collisionRadius?: number;
   rotation: number;
   readonly kind: 'resource' | 'debris';
 }
@@ -311,12 +327,11 @@ export interface MutableCombatant {
   readonly shieldMaxHp: number;
   readonly hullMaxHp: number;
   readonly cooldowns: number[];
-  fireControl: {
-    max: number;
-    charges: number;
-    nextRechargeAt: number;
-    lastShotAt: number;
-  };
+  readonly weaponTelemetry: WeaponTelemetry[];
+  /** Next permitted coordinated firing decision. Individual reloads remain authoritative. */
+  nextFireDecisionAt?: number;
+  /** Round-robin tie-breaker for identical gun mounts. */
+  lastFiredWeaponIndex?: number;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   headingRadians: number;
@@ -335,6 +350,10 @@ export interface MutableCombatant {
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {
     readonly direction: CombatPoint;
+    readonly focus?: CombatStrategyPlan['focus'];
+    readonly broadsideFacing?: CombatStrategyPlan['broadsideFacing'];
+    /** Stable world-space commitment point along the chosen attack lane. */
+    readonly destination?: CombatPoint;
     readonly startRange: number;
     closestRange: number;
     ageSeconds: number;
@@ -370,6 +389,7 @@ export interface MutableCombatant {
 
 export interface MutableProjectile {
   id: number;
+  weaponIndex?: number;
   owner: StrategicCombatSide;
   kind: CombatProjectileKind;
   family: ShipWeaponFamily;
@@ -424,6 +444,7 @@ export interface MutableThrownAsteroid {
   mineDefinition?: ShipMineDefinition;
   position: { x: number; y: number };
   radius: number;
+  collisionRadius?: number;
   velocity: CombatPoint;
   ageSeconds: number;
   phase: 'capture' | 'charge' | 'flight';
@@ -456,4 +477,5 @@ export interface StrategicCombatRuntime {
   mineSerial: number;
   impactSerial: number;
   lastImpact: CombatImpactSnapshot | null;
+  recentImpacts: CombatImpactSnapshot[];
 }

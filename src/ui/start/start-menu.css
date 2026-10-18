@@ -189,3 +189,114 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Compact tactical equipment configurator: physical slots are never renumbered. */
+.harrow-duel {
+  padding: clamp(18px, 3vw, 52px);
+}
+.harrow-duel__cards {
+  max-width: 1480px;
+  gap: 18px;
+}
+.harrow-duel__card {
+  min-width: 0;
+  padding: 18px;
+  border-color: rgba(126, 155, 169, 0.5);
+  background: rgba(8, 14, 20, 0.96);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.26);
+}
+.harrow-duel__card h2 {
+  border-bottom: 1px solid rgba(195, 166, 89, 0.35);
+  padding-bottom: 9px;
+}
+.duel-weapons {
+  margin: 18px 0;
+}
+.duel-weapons__heading {
+  margin: 0 0 8px;
+  padding-left: 9px;
+  border-left: 3px solid #bca35f;
+  color: #d3bd80;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.duel-weapons__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.duel-weapon {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(109, 145, 164, 0.34);
+  background: linear-gradient(135deg, rgba(22, 38, 48, 0.88), rgba(9, 17, 25, 0.92));
+}
+.harrow-duel__card .duel-weapon__label {
+  margin: 0;
+  color: #c9d7df;
+  font-size: 11px;
+  letter-spacing: 0.035em;
+}
+.duel-weapon__label select {
+  min-width: 0;
+  margin-top: 2px;
+  font-size: 12px;
+}
+.duel-weapon__stats {
+  min-height: 51px;
+  margin-top: 8px;
+}
+.duel-weapon__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.duel-weapon__role,
+.duel-weapon__meta {
+  padding: 2px 5px;
+  border: 1px solid rgba(124, 151, 161, 0.26);
+  color: #adbfcb;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.duel-weapon__role--shield {
+  color: #8bd4e9;
+  border-color: rgba(94, 184, 223, 0.45);
+}
+.duel-weapon__role--hull {
+  color: #f0a18c;
+  border-color: rgba(216, 124, 97, 0.45);
+}
+.duel-weapon__role--balanced {
+  color: #cab9ed;
+  border-color: rgba(153, 128, 205, 0.45);
+}
+.duel-weapon__damage {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  font: 11px monospace;
+}
+.duel-weapon__damage-shield {
+  color: #8bd4e9;
+}
+.duel-weapon__damage-hull {
+  color: #f0a18c;
+}
+.duel-weapon__empty {
+  color: #8395a1;
+  font-size: 11px;
+}
+@media (max-width: 1180px) {
+  .harrow-duel__cards {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 760px;
+  }
+}
+@media (max-width: 560px) {
+  .duel-weapons__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

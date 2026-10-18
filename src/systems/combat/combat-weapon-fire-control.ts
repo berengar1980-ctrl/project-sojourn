@@ -1,42 +1,125 @@
-import type { CombatFireControl, MutableCombatant } from './strategic-combat-types';
+import type { MutableCombatant } from './strategic-combat-types';
+import type { ShipWeaponProfile } from '../../core/ship-types';
+import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
+import { nativeWeaponDamage } from './combat-native-damage';
+import { effectiveTargetSubsystem } from './combat-subsystem-targeting';
 
-const MIN_SHOT_INTERVAL = 0.45;
+/** Deliberate fire-control decisions; one decision can authorize a strong salvo. */
+export const FIRE_CONTROL_CADENCE_SECONDS = 0.65;
+export const FIRE_CONTROL_LOOKAHEAD_SECONDS = 0.24;
 
-/** Ship-wide fire-control pulses recharge sequentially, not per weapon. */
-export function fireControlRechargeSeconds(max: number): number {
-  if (max <= 1) return 0.9;
-  if (max === 2) return 0.8;
-  if (max === 3) return 0.72;
-  return 0.68;
+export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
+  const adjustedCrew = Math.max(0.4, Math.min(2, crewMultiplier));
+  return Math.max(0.05, weapon.cooldownSeconds * adjustedCrew);
 }
 
-export function rechargeFireControl(state: MutableCombatant, now: number): void {
-  const control = state.fireControl;
-  if (control.charges >= control.max) {
-    control.nextRechargeAt = 0;
-    return;
-  }
-  const recharge = fireControlRechargeSeconds(control.max);
-  if (control.nextRechargeAt <= 0) control.nextRechargeAt = now + recharge;
-  // Floating-point rounding must not delay a charge at the exact deadline.
-  while (control.charges < control.max && now + 0.000001 >= control.nextRechargeAt) {
-    control.charges += 1;
-    control.nextRechargeAt = control.charges < control.max ? control.nextRechargeAt + recharge : 0;
+export function advanceWeaponCooldowns(ship: MutableCombatant, dt: number): void {
+  for (let index = 0; index < ship.setup.weapons.length; index += 1) {
+    const remaining = (ship.cooldowns[index] ?? 0) - dt;
+    ship.cooldowns[index] = remaining <= 0.000001 ? 0 : remaining;
   }
 }
 
-export function fireControlReady(control: CombatFireControl, now: number): boolean {
-  return control.charges > 0 && now - control.lastShotAt >= MIN_SHOT_INTERVAL - 0.000001;
+export interface FireControlCandidate {
+  readonly index: number;
+  readonly component: ShipComponentDefinition;
 }
 
-export function consumeFireControl(state: MutableCombatant, now: number): boolean {
-  rechargeFireControl(state, now);
-  const control = state.fireControl;
-  if (!fireControlReady(control, now)) return false;
-  control.charges -= 1;
-  control.lastShotAt = now;
-  if (control.nextRechargeAt <= 0) {
-    control.nextRechargeAt = now + fireControlRechargeSeconds(control.max);
+interface ScoredShot {
+  readonly index: number;
+  readonly expectedDamage: number;
+  readonly cycle: number;
+  readonly score: number;
+  readonly readyIn: number;
+}
+
+/** Score actual combat damage, never nominal catalog numbers or weapon-family labels. */
+function scoreShots(
+  source: MutableCombatant,
+  target: MutableCombatant,
+  candidates: readonly FireControlCandidate[]
+): { shots: ScoredShot[]; health: number } {
+  const shielded = target.shieldHp > 0;
+  const subsystem = effectiveTargetSubsystem(source, target);
+  let health = shielded ? target.shieldHp : target.hullHp;
+  if (!shielded && subsystem !== 'hull') health = target.subsystems[subsystem];
+
+  const accuracy = source.setup.hitChance - target.setup.dodgeChance;
+  const hitChance = Math.max(0.2, Math.min(0.98, accuracy));
+  const multiplier = Math.max(0, source.setup.damageMultiplier);
+
+  const shots = candidates.flatMap(({ index, component }) => {
+    if (!component.weapon) return [];
+    const damage = nativeWeaponDamage(component);
+    const raw = shielded ? damage.shieldDamage : damage.hullDamage;
+    if (raw <= 0 || health <= 0) return [];
+
+    const expectedDamage = Math.min(health, raw * multiplier) * hitChance;
+    const cycle = weaponCycleSeconds(component.weapon, source.setup.cycleTimeMultiplier);
+    // Preserve the value of a loaded heavy weapon without always favoring raw alpha.
+    const cycleFactor = Math.sqrt(Math.max(1, cycle / FIRE_CONTROL_CADENCE_SECONDS));
+    const score = expectedDamage / cycleFactor;
+    const readyIn = source.cooldowns[index] ?? 0;
+    return [{ index, expectedDamage, cycle, score, readyIn }];
+  });
+  return { shots, health };
+}
+
+function compareShotValue(source: MutableCombatant, a: ScoredShot, b: ScoredShot): number {
+  const difference = b.score - a.score;
+  if (Math.abs(difference) > 0.000001) return difference;
+  if (a.index === source.lastFiredWeaponIndex) return 1;
+  if (b.index === source.lastFiredWeaponIndex) return -1;
+  return a.index - b.index;
+}
+
+/**
+ * A single authoritative scheduler chooses the useful ready gun or a strong
+ * coordinated salvo. There are no railgun/repeater-specific firing exceptions.
+ */
+export function selectFireControlVolley(
+  source: MutableCombatant,
+  target: MutableCombatant,
+  candidates: readonly FireControlCandidate[],
+  now: number
+): number[] {
+  if (now + 0.000001 < (source.nextFireDecisionAt ?? 0)) return [];
+  const { shots, health } = scoreShots(source, target, candidates);
+  const ready = shots.filter((shot) => shot.readyIn <= 0.000001);
+  ready.sort((a, b) => compareShotValue(source, a, b));
+  const best = ready[0];
+  if (!best) return [];
+
+  // Only a short, bounded wait is justified when a much stronger gun is nearly ready.
+  const betterSoon = shots.some(
+    (shot) =>
+      shot.readyIn > 0.000001 &&
+      shot.readyIn <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
+      shot.score > best.score * 1.75
+  );
+  if (betterSoon) return [];
+
+  const volley = [best.index];
+  const remaining = Math.max(0, health - best.expectedDamage);
+  if (remaining <= 0 || best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) return volley;
+
+  for (const second of ready.slice(1)) {
+    if (second.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) continue;
+    if (second.expectedDamage < best.expectedDamage * 0.6) continue;
+    if (Math.min(remaining, second.expectedDamage) < health * 0.06) continue;
+    volley.push(second.index);
+    break;
   }
-  return true;
+  return volley;
+}
+
+/** Only actual launches consume the shared fire-control cadence. */
+export function commitFireControlVolley(
+  source: MutableCombatant,
+  now: number,
+  firedIndices: readonly number[]
+): void {
+  source.nextFireDecisionAt = now + FIRE_CONTROL_CADENCE_SECONDS;
+  const lastFired = firedIndices[firedIndices.length - 1];
+  if (lastFired !== undefined) source.lastFiredWeaponIndex = lastFired;
 }

@@ -116,6 +116,20 @@ switchingTarget.shieldHp = 0;
 reviewCombatStrategy(switching, switchingTarget, 'attacker', 8);
 assert.equal(switching.strategy.kind, 'frontal', 'shield loss changes effective gun priority');
 
+const twinRails = makeShip('twin-rail', [rail, rail, turret], ['forward', 'forward', 'forward']);
+const twinTarget = makeShip('twin-target', [turret], ['forward'], 1500);
+reviewCombatStrategy(twinRails, twinTarget, 'attacker', 0);
+assert.equal(twinRails.strategy.kind, 'skirmish', 'shields favour the effective turret');
+twinTarget.shieldHp = 0;
+twinRails.cooldowns[0] = 6;
+twinRails.cooldowns[1] = 6;
+reviewCombatStrategy(twinRails, twinTarget, 'attacker', 8);
+assert.equal(
+  twinRails.strategy.kind,
+  'frontal',
+  'twin railguns pre-align for the loaded hull-destruction salvo after shield loss'
+);
+
 const narrow = {
   ...strongFront,
   weapon: { ...strongFront.weapon, arcDegrees: 10 },
@@ -144,5 +158,36 @@ const rangeScore = scoreWeaponPosture(rangedShip, opposing, {
   facing: 'port',
 });
 assert(rangeScore && rangeScore.effectiveRange < 600, 'dominant short gun sets useful range');
+
+// Real duel loadout: both universal turrets can still fire while the two
+// side batteries point in opposite directions. Credit that combined salvo.
+const ion = catalog('weapon-ion-cannon-1');
+const gun = catalog('weapon-autocannon-1');
+const portShield = makeShip(
+  'port-shield',
+  [ion, gun, turret, turret],
+  ['port', 'starboard', 'forward', 'forward']
+);
+const starboardShield = makeShip(
+  'starboard-shield',
+  [ion, gun, turret, turret],
+  ['starboard', 'port', 'forward', 'forward'],
+  1650
+);
+starboardShield.headingRadians = Math.PI;
+reviewCombatStrategy(portShield, starboardShield, 'attacker', 0);
+reviewCombatStrategy(starboardShield, portShield, 'defender', 0);
+assert.equal(
+  portShield.strategy.focus,
+  'broadside',
+  'port shields plus live turrets beat turret-only'
+);
+assert.equal(portShield.strategy.broadsideFacing, 'port');
+assert.equal(
+  starboardShield.strategy.focus,
+  'broadside',
+  'starboard shields plus turrets are viable'
+);
+assert.equal(starboardShield.strategy.broadsideFacing, 'starboard');
 
 console.log('PASS mounted arcs, phase damage, usable range and strong-weapon tactical priority');

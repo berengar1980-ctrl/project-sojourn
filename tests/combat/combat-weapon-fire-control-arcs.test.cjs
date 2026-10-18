@@ -26,25 +26,12 @@ const { SHIP_COMPONENT_CATALOG } = loadStandaloneTypeScriptModule(
   'src/data/ships/ship-component-catalog.ts'
 );
 
-assert.deepEqual(
-  [1, 2, 3, 4].map(control.fireControlRechargeSeconds),
-  [0.9, 0.8, 0.72, 0.68],
-  'Voidbound recharge intervals must remain deterministic'
-);
-
-const fireOwner = {
-  fireControl: { max: 3, charges: 3, nextRechargeAt: 0, lastShotAt: -10000 },
-};
-assert(control.consumeFireControl(fireOwner, 10), 'first shot consumes a shared charge');
-assert(!control.consumeFireControl(fireOwner, 10.2), 'all weapons share a 450ms command interval');
-assert(control.consumeFireControl(fireOwner, 10.45), 'second pulse can fire the same gun');
-assert.equal(fireOwner.fireControl.charges, 1);
-control.rechargeFireControl(fireOwner, 10.71);
-assert.equal(fireOwner.fireControl.charges, 1, 'recharge must not arrive early');
-control.rechargeFireControl(fireOwner, 10.72);
-assert.equal(fireOwner.fireControl.charges, 2, 'charges refill sequentially');
-control.rechargeFireControl(fireOwner, 11.44);
-assert.equal(fireOwner.fireControl.charges, 3, 'second charge follows the first');
+const repeaterCycle = { cooldownSeconds: 0.2 };
+assert.equal(control.weaponCycleSeconds(repeaterCycle, 1), 0.2);
+assert(Math.abs(control.weaponCycleSeconds(repeaterCycle, 0.88) - 0.176) < 0.000001);
+const reloadOwner = { setup: { weapons: [{}, {}] }, cooldowns: [0.2, 1.8] };
+control.advanceWeaponCooldowns(reloadOwner, 0.2);
+assert.deepEqual(reloadOwner.cooldowns, [0, 1.6], 'independent reload timers advance together');
 
 const mountOwner = {
   position: { x: 100, y: 100 },
@@ -74,7 +61,7 @@ assert(Math.abs(muzzle.x - 112) < 0.0001 && Math.abs(muzzle.y - 110) < 0.0001);
 assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, broadside));
 
 const allWeapons = SHIP_COMPONENT_CATALOG.weapon ?? [];
-assert.equal(allWeapons.length, 48);
+assert.equal(allWeapons.length, 54);
 for (const weapon of allWeapons) {
   assert(weapon.weapon.mount, weapon.name + ' must have an explicit mount role');
   assert(weapon.weapon.arcDegrees > 0, weapon.name + ' needs a firing arc');
@@ -83,7 +70,11 @@ const pulse = allWeapons.find((weapon) => weapon.id === 'weapon1');
 const rail = allWeapons.find((weapon) => weapon.id === 'weapon-railgun-1');
 const cannon = allWeapons.find((weapon) => weapon.id === 'weapon-autocannon-1');
 assert(pulse && rail && cannon);
-assert(pulse.weapon.cooldownSeconds < 0.45, 'small turrets can reuse spare charges quickly');
+const repeater = allWeapons.find((weapon) => weapon.id === 'weapon-front-repeater-1');
+assert(
+  repeater && repeater.weapon.cooldownSeconds < 0.45,
+  'rapid front repeater fires independently'
+);
 assert(rail.weapon.cooldownSeconds > 6, 'railgun must recharge slowly');
 assert(rail.weapon.hullDamage > cannon.weapon.hullDamage * 5);
 
@@ -121,8 +112,8 @@ const combat = createStrategicCombatService(
   }
 );
 const detached = combat.getSnapshot();
-detached.attacker.fireControl.charges = -999;
-assert.equal(combat.getSnapshot().attacker.fireControl.charges, 3);
+detached.recentImpacts.push({ serial: -1 });
+assert.equal(combat.getSnapshot().recentImpacts.length, 0, 'impact history snapshots detach');
 
 const shots = { attacker: new Set(), defender: new Set() };
 const firstMountShots = [];
@@ -135,8 +126,8 @@ for (let tick = 0; tick < 90; tick += 1) {
     }
   }
 }
-assert(shots.attacker.size >= 3 && shots.defender.size >= 3, 'both AIs fire via shared control');
-assert(new Set(firstMountShots).size >= 2, 'the same turret can consume successive pulses');
+assert(shots.attacker.size >= 3 && shots.defender.size >= 3, 'both AIs fire independently');
+assert(new Set(firstMountShots).size >= 2, 'the same turret can reload and fire repeatedly');
 
 function testProjectile(kind, targetY) {
   const attacker = { position: { x: 100, y: 100 } };
@@ -173,5 +164,5 @@ assert.equal(testProjectile('plasma', 400).position.y, 100, 'plasma must stay ba
 assert(testProjectile('missile', 400).position.y > 100, 'missiles must steer toward the target');
 
 console.log(
-  'PASS shared fire impulses, 450ms command gap, gun arcs, AI fire, snapshot, projectile steering'
+  'PASS independent weapon reloads, gun arcs, AI fire, impact history, projectile steering'
 );

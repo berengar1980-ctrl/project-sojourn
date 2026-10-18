@@ -82,9 +82,17 @@ const arena = {
   height: 1000,
   obstacles: [{ id: 'rock', radius: 90, position: { x: 500, y: 500 } }],
 };
+assert.equal(
+  cover.asteroidCoverHeading(first, second, arena),
+  null,
+  'broadside approach is not diverted into cover'
+);
+first.tactic = 'kite';
+first.strategy = { kind: 'skirmish', focus: 'turret', desiredRange: 500 };
 const hiding = cover.asteroidCoverHeading(first, second, arena);
-assert(hiding, 'low-shield ship takes cover behind real obstacle');
+assert(hiding, 'low-shield skirmisher can deliberately take cover');
 assert.equal(cover.asteroidCoverHeading({ ...first, shieldHp: 100 }, second, arena), null);
+first.tactic = 'fight';
 
 first.shieldHp = 0;
 second.shieldHp = 0;
