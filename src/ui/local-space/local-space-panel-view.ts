@@ -1,3 +1,4 @@
+import { updateLongRangeScanButton } from '../local-operations/local-operations-hud';
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
@@ -18,7 +19,7 @@ function miningStatus(model: LocalSpaceViewModel): string {
     return 'MINING-SYSTEME NEUSTART · ' + Math.ceil(model.miningRecoverySeconds) + ' s';
   }
   if (model.longRangeScanProgress != null) {
-    return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
+    return 'FERNBEREICHSSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
   }
   if (model.shortRangeScanProgress != null) {
     return 'NAHBEREICHSSCAN · ' + Math.round(model.shortRangeScanProgress * 100) + ' %';
@@ -102,7 +103,7 @@ function updateMiningButton(
             (deposit.estimatedAmount ?? 0) > 0
         );
   const depleted = selected.scanLevel === 'analyzed' && !targetedRemaining;
-  button.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
+  button.textContent = model.miningAvailable ? 'MINING STARTEN' : 'MINING NICHT VERFÜGBAR';
   button.title = model.miningAvailable
     ? ''
     : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
@@ -170,7 +171,6 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   const selected = model.selectedAsteroid;
   const miningActive = model.miningPhase !== 'idle';
   const eventActive = model.miningEvent !== null;
-  const longScanActive = model.longRangeScanProgress != null;
   trackScanCompletion(model);
   miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
   canvas.classList.toggle('is-locked', eventActive);
@@ -179,8 +179,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   cancelButton.disabled = eventActive;
   updateLocalExitButton(backButton, model, eventActive);
   renderCargo(model, cargoTotal, cargoList);
-  longScanButton.disabled = eventActive || !model.scanAvailable || longScanActive;
-  longScanButton.textContent = model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
+  updateLongRangeScanButton(longScanButton, model.scanAvailable, model.longRangeScanProgress, eventActive);
 
   trackIntegrity(model);
 
