@@ -1,6 +1,9 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalShipState } from '../../core/local-space-types';
-import type { SalvageWreck } from '../../core/salvage-types';
+import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import { planPointRoute } from '../local-space/local-space-navigation';
+import { routeAroundDistressShip } from './distress-navigation';
+import { salvageFieldPhysicsBodies } from './salvage-container-motion';
 
 export const WORK_STANDOFF = 105;
 export const DISTRESS_DIAGNOSIS_STANDOFF = 70;
@@ -24,4 +27,36 @@ export function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint
     x: wreck.position.x + (dx / length) * range,
     y: wreck.position.y + (dy / length) * range,
   };
+}
+
+export function salvageWorkInRange(ship: WorldPoint, wreck: SalvageWreck): boolean {
+  return Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
+    wreck.radius + WORK_STANDOFF + 6;
+}
+
+export function distressDiagnosisInRange(ship: WorldPoint, wreck: SalvageWreck): boolean {
+  return Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
+    wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6;
+}
+
+export function planSalvageRoute(
+  field: SalvageField,
+  from: WorldPoint,
+  target: WorldPoint,
+  shipLengthMeters: number
+): readonly WorldPoint[] {
+  const distress = field.wrecks.find((wreck) =>
+    wreck.id.startsWith('event-wreck-salvage-distress-')
+  );
+  if (distress) {
+    return routeAroundDistressShip(from, target, distress.position, distress.radius + 60);
+  }
+  return planPointRoute({
+    start: from,
+    target,
+    asteroids: salvageFieldPhysicsBodies(field),
+    clearance: Math.max(32, shipLengthMeters * 0.46),
+    width: field.width,
+    height: field.height,
+  }).route;
 }
