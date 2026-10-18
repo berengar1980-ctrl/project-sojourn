@@ -454,9 +454,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       return !!wreck && distressTowWithinRange(service.getSnapshot().ship.position, wreck.position);
     },
     updateSectorEvent(event) {
-      const previous = context.state.activeSectorEvent;
       context.state.activeSectorEvent = event;
-      if (event?.salvageRights && !previous?.salvageRights) {
+      // Sector event records are mutable and shared with the economy service.
+      // Do not detect this transition by comparing the previous event reference.
+      if (event?.salvageRights && context.field.wrecks[0]?.resources.length === 0) {
         grantDistressSalvageRights(context.field, event);
       }
       refreshSalvageScene(context);
