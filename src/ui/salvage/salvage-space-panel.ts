@@ -464,6 +464,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent);
     if (
+      model.sectorEvent?.distressStage !== 'approach' ||
       !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
     ) {
       renderSectorEvent(model, ui.sectorEventContainer);
