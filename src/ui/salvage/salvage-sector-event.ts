@@ -26,20 +26,19 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
     : '<button type="button" data-distress-action="tow" disabled title="Zuerst den Havaristen anfliegen">GREIFHAKEN AUSSER REICHWEITE</button>';
   const towHint = towInRange
     ? ''
-    : '<span>ANFLUG ERFORDERLICH · GREIFHAKENREICHWEITE ' +
-      DISTRESS_TOW_ATTACH_RANGE +
-      ' m</span>';
+    : `<span>ANFLUG ERFORDERLICH · GREIFHAKENREICHWEITE ${DISTRESS_TOW_ATTACH_RANGE} m</span>`;
   const evacuate = '<button type="button" data-distress-action="evacuate">EVAKUIEREN</button>';
 
   let actions = '<span>EINSATZ ABGESCHLOSSEN</span>';
   if (stage === 'approach') {
     actions = '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
   } else if (stage === 'diagnosed') {
-    actions =
-      '<button type="button" data-distress-action="repair">NOTREPARATUR</button>' +
-      towButton +
-      evacuate +
-      towHint;
+    actions = [
+      '<button type="button" data-distress-action="repair">NOTREPARATUR</button>',
+      towButton,
+      evacuate,
+      towHint,
+    ].join('');
   } else if (stage === 'tow_required') {
     actions = towButton + evacuate + towHint;
   } else if (stage === 'towing') {
