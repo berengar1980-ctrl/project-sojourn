@@ -157,12 +157,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   selectWreck(wreckId: string | null): SalvageLocalSpaceSnapshot {
     if (wreckId !== null && !this.findWreck(wreckId)) return this.getSnapshot();
-    if (
-      wreckId !== this.workTargetId &&
-      (this.approachPurpose === 'diagnose' || this.phase === 'diagnosing')
-    ) {
-      this.cancelOperation();
-    }
+    const diagnosing = this.approachPurpose === 'diagnose' || this.phase === 'diagnosing';
+    if (wreckId !== this.workTargetId && diagnosing) this.cancelOperation();
     this.selectedWreckId = wreckId;
     return this.getSnapshot();
   }
@@ -370,16 +366,13 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   }
 
   private withinDiagnosisRange(wreck: SalvageWreck): boolean {
-    return (
-      distance(this.ship.position, wreck.position) <=
-      wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6
-    );
+    const limit = wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6;
+    return distance(this.ship.position, wreck.position) <= limit;
   }
 
   private withinApproachRange(wreck: SalvageWreck): boolean {
-    return this.approachPurpose === 'diagnose'
-      ? this.withinDiagnosisRange(wreck)
-      : this.withinWorkRange(wreck);
+    if (this.approachPurpose === 'diagnose') return this.withinDiagnosisRange(wreck);
+    return this.withinWorkRange(wreck);
   }
 
   private beginApproach(wreck: SalvageWreck, purpose: ApproachPurpose): void {
