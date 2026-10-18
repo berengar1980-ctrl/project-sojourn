@@ -174,7 +174,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   trackScanCompletion(model);
   miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
   canvas.classList.toggle('is-locked', eventActive);
-  card.hidden = !selected && !selectedNpc;
+  card.hidden = false;
   cancelButton.hidden = !miningActive;
   cancelButton.disabled = eventActive;
   updateLocalExitButton(backButton, model, eventActive);
@@ -213,6 +213,13 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   shortScanButton.hidden = false;
   mineButton.hidden = false;
   if (!selected) {
+    const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+    if (kind) kind.textContent = 'MINING // ZIELAUSWAHL';
+    name.textContent = 'ASTEROID AUSWÄHLEN';
+    meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
+    oreBar.style.width = '0%';
+    shortScanButton.hidden = true;
+    mineButton.hidden = true;
     miningResourceSelector.update(model, true, false);
     return;
   }
