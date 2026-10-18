@@ -88,62 +88,65 @@ function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTM
   }
 }
 
-function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
-  const npc = model.npcShips.find((entry) => entry.isSelected);
-  const wreck = model.selectedWreck;
-  ui.card.hidden = false;
+type SelectedWreck = NonNullable<SalvageSpaceViewModel['selectedWreck']>;
+type SelectedNpc = SalvageSpaceViewModel['npcShips'][number];
+
+function showSalvageNpc(model: SalvageSpaceViewModel, ui: SalvageControls, npc: SelectedNpc): void {
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  ui.attackButton.hidden = true;
-  ui.inspectButton.hidden = true;
+  if (kind) kind.textContent = 'SCHIFF';
+  ui.name.textContent = npc.name;
+  ui.meta.textContent = model.combat
+    ? 'GEFECHT · SCHILD ' +
+      Math.round(model.combat.defender.shieldHp) +
+      ' · HÜLLE ' +
+      Math.round(model.combat.defender.hullHp)
+    : 'SCHIFF · ' + npc.phase.toUpperCase();
+  ui.integrity.style.width = '100%';
+  ui.attackButton.hidden = model.combat !== null;
+}
 
-  if (npc) {
-    if (kind) kind.textContent = 'SCHIFF';
-    ui.name.textContent = npc.name;
-    ui.meta.textContent = model.combat
-      ? 'GEFECHT · SCHILD ' +
-        Math.round(model.combat.defender.shieldHp) +
-        ' · HÜLLE ' +
-        Math.round(model.combat.defender.hullHp)
-      : 'SCHIFF · ' + npc.phase.toUpperCase();
-    ui.integrity.style.width = '100%';
-    ui.attackButton.hidden = model.combat !== null;
-    return;
-  }
-  if (!wreck) {
-    if (kind)
-      kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
-    ui.name.textContent = model.sectorEvent ? 'HAVARIST AUSWÄHLEN' : 'WRACK AUSWÄHLEN';
-    ui.meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
-    ui.integrity.style.width = '0%';
-    return;
-  }
+function showSalvageContactHint(model: SalvageSpaceViewModel, ui: SalvageControls): void {
+  const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind)
+    kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
+  ui.name.textContent = model.sectorEvent ? 'HAVARIST AUSWÄHLEN' : 'WRACK AUSWÄHLEN';
+  ui.meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
+  ui.integrity.style.width = '0%';
+}
 
+function showUninspectedWreck(
+  model: SalvageSpaceViewModel,
+  ui: SalvageControls,
+  wreck: SelectedWreck
+): void {
+  const contactStatus =
+    wreck.scanLevel === 'surveyed' ? 'FERNBEREICHSSCAN · KONTAKT ERFASST' : 'KONTAKT UNBEKANNT';
+  ui.meta.textContent = contactStatus + ' · NAHBEREICHSSCAN ERFORDERLICH';
+  ui.inspectButton.hidden = false;
+  ui.inspectButton.textContent =
+    model.phase === 'approaching' || model.phase === 'inspecting'
+      ? 'NAHBEREICHSSCAN LÄUFT'
+      : 'NAHBEREICHSSCAN';
+  ui.inspectButton.disabled =
+    model.phase !== 'idle' ||
+    model.salvageEvent !== null ||
+    model.salvageEventRecoverySeconds > 0 ||
+    !model.scanAvailable;
+  ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
+}
+
+function showSalvageWreck(model: SalvageSpaceViewModel, ui: SalvageControls, wreck: SelectedWreck): void {
+  const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
   if (kind) {
-    kind.textContent = wreck.inspected
-      ? wreck.containerVariant
-        ? 'CONTAINER'
-        : 'WRACK'
-      : 'KONTAKT';
+    if (!wreck.inspected) kind.textContent = 'KONTAKT';
+    else kind.textContent = wreck.containerVariant ? 'CONTAINER' : 'WRACK';
   }
   ui.name.textContent = wreck.inspected ? wreck.name : 'UNBEKANNTER BERGUNGSKONTAKT';
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
-  const busy =
-    model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
-
   if (!wreck.inspected) {
-    const contactStatus =
-      wreck.scanLevel === 'surveyed' ? 'FERNBEREICHSSCAN · KONTAKT ERFASST' : 'KONTAKT UNBEKANNT';
-    ui.meta.textContent = contactStatus + ' · NAHBEREICHSSCAN ERFORDERLICH';
-    ui.inspectButton.hidden = false;
-    ui.inspectButton.textContent =
-      model.phase === 'approaching' || model.phase === 'inspecting'
-        ? 'NAHBEREICHSSCAN LÄUFT'
-        : 'NAHBEREICHSSCAN';
-    ui.inspectButton.disabled = busy || !model.scanAvailable;
-    ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
+    showUninspectedWreck(model, ui, wreck);
     return;
   }
-
   ui.meta.textContent =
     wreck.kindLabel +
     ' · QUALITÄT ' +
@@ -152,6 +155,21 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
     wreck.integrity +
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
+}
+
+function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
+  const npc = model.npcShips.find((entry) => entry.isSelected);
+  const wreck = model.selectedWreck;
+  ui.card.hidden = false;
+  ui.attackButton.hidden = true;
+  ui.inspectButton.hidden = true;
+  if (npc) {
+    showSalvageNpc(model, ui, npc);
+  } else if (wreck) {
+    showSalvageWreck(model, ui, wreck);
+  } else {
+    showSalvageContactHint(model, ui);
+  }
 }
 
 function createRecoveryTracker(
