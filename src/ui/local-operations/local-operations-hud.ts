@@ -1,7 +1,10 @@
 /** Shared controls for mining, wreck salvage and distress-rescue local fields. */
 export function localOperationsHeader(kind: string, title: string): string {
   return [
-    '<div class="local-space-title"><span>', kind, '</span><strong>', title,
+    '<div class="local-space-title"><span>',
+    kind,
+    '</span><strong>',
+    title,
     '</strong></div>',
     '<nav class="local-operations-toolbar" aria-label="Einsatzsteuerung">',
     '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
