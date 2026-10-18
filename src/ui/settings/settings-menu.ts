@@ -153,16 +153,19 @@ export function createSettingsMenu(
       return;
     }
     if (event.key !== 'Tab' || panel.hidden) return;
-    const focusable = [...panel.querySelectorAll<HTMLElement>(
-      'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
-    )];
+    const focusable = [
+      ...panel.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+      ),
+    ];
     if (focusable.length === 0) return;
     const first = focusable[0]!;
     const last = focusable[focusable.length - 1]!;
-    if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+    const focusOutside = !panel.contains(document.activeElement);
+    if (event.shiftKey && (document.activeElement === first || focusOutside)) {
       event.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+    } else if (!event.shiftKey && (document.activeElement === last || focusOutside)) {
       event.preventDefault();
       first.focus();
     }
