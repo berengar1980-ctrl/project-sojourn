@@ -68,14 +68,23 @@ function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
 
 function equipmentSelector(draft: DuelDraft, type: 'engine' | 'armor'): HTMLLabelElement {
   const select = document.createElement('select');
-  if (type === 'armor') select.append(new Option('Keine Richtungs-Panzerung', ''));
+  if (type === 'armor') {
+    select.append(new Option('Keine Richtungs-Panzerung', ''));
+  }
   for (const component of SHIP_COMPONENT_CATALOG[type] ?? []) {
     select.append(new Option(component.name, component.id));
   }
-  select.value = type === 'engine' ? draft.engineId ?? 'engine1' : draft.armorId ?? '';
+  if (type === 'engine') {
+    select.value = draft.engineId ?? 'engine1';
+  } else {
+    select.value = draft.armorId ?? '';
+  }
   select.addEventListener('change', () => {
-    if (type === 'engine') draft.engineId = select.value;
-    else draft.armorId = select.value;
+    if (type === 'engine') {
+      draft.engineId = select.value;
+    } else {
+      draft.armorId = select.value;
+    }
   });
   const label = type === 'engine' ? 'Plasma-Triebwerk' : 'Richtungs-Hüllenpanzerung';
   return createLabel(label, select);

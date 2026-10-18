@@ -4,7 +4,8 @@ import type {
   ShipGameplayProfile,
 } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
-import { engineSpeedMultiplier, type InstalledShipComponents } from './ship-component-service';
+import { engineSpeedMultiplier } from './ship-component-service';
+import type { InstalledShipComponents } from './ship-component-service';
 import { shipActiveCombatWeaponMounts } from './ship-combat-role-policy';
 
 export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGameplayStats {
@@ -40,15 +41,14 @@ export function resolveShipCombatMovementStats(
   const baseSpeed = ship.role === 'freighter' ? 69 : normalBaseSpeed;
   const patrolSpeedFactor = ship.role === 'patrol' ? 1.3 : 1;
   const drive = installed ? engineSpeedMultiplier(installed) : 1;
+  const acceleration = Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18));
   return {
     combatSpeed: Math.round(baseSpeed * patrolSpeedFactor * drive),
     turnRateRadiansPerSecond: Math.max(
       0.4,
       Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)
     ),
-    accelerationMetersPerSecond2:
-      Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18)) *
-      (1 + (drive - 1) * 0.5),
+    accelerationMetersPerSecond2: acceleration * (1 + (drive - 1) * 0.5),
   };
 }
 
