@@ -59,11 +59,13 @@ assert(
 );
 
 assert(
-  controller.includes('createSettingsMenu(context.audio)') &&
+  controller.includes('createSettingsMenu(context.audio, options.onReturnToMainMenu)') &&
     settings.includes('EINSTELLUNGEN') &&
     settings.includes('data-audio-volume="ambience"') &&
-    settings.includes('data-audio-volume="rcs"'),
-  'general settings menu must expose ambience and RCS volume controls'
+    settings.includes('data-audio-volume="rcs"') &&
+    settings.includes('settings-menu__main-menu') &&
+    settings.includes('onReturnToMainMenu()'),
+  'general settings menu must expose audio controls and a main-menu return action'
 );
 
 assert(

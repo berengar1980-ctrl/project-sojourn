@@ -27,6 +27,7 @@ import {
   controllerSalvageExitAction,
   destroyControllerBoarding,
   destroyControllerCombat,
+  destroyGameController,
   destroyControllerSalvage,
   destroyScenePanels,
   sectorEventLocation,
@@ -486,11 +487,12 @@ export function createGameController(options: GameControllerOptions): GameContro
     options.navigation.getSnapshot().currentPosition,
     state.activeShip.role === 'salvage'
   );
-  createSettingsMenu(context.audio);
+  const settingsMenu = createSettingsMenu(context.audio, options.onReturnToMainMenu);
   mountControllerStarMap(context);
   return {
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
     },
+    destroy: () => destroyGameController(context, settingsMenu),
   };
 }

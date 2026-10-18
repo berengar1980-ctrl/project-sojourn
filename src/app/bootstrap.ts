@@ -5,6 +5,7 @@ import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
 import { getShipDefinition } from '../systems/ships';
 import { createGameController } from './game-controller';
+import type { GameController } from './game-controller-types';
 
 export function bootstrap(root: HTMLElement | null): void {
   if (!root) throw new Error('HARROWDRIFT app root is missing.');
@@ -20,10 +21,22 @@ function launchCampaign(root: HTMLElement): void {
     narrowsSector.startLocationId,
     ship.navigation.cruiseSpeed
   );
-  const game = createGameController({ root, ship, navigation });
+  let running = true;
+  const game: GameController = createGameController({
+    root,
+    ship,
+    navigation,
+    onReturnToMainMenu: () => {
+      if (!running) return;
+      running = false;
+      game.destroy();
+      showMainMenu(root);
+    },
+  });
 
   let previousTime = performance.now();
   const frame = (time: number): void => {
+    if (!running) return;
     const deltaSeconds = (time - previousTime) / 1000;
     previousTime = time;
     game.tick(deltaSeconds);

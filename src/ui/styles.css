@@ -1719,11 +1719,11 @@ body {
 .port-crew-row {
   display: grid;
   grid-template-columns:
-    48px minmax(125px, 0.8fr) minmax(270px, 2.5fr) minmax(90px, 0.7fr)
-    90px 96px;
+    48px minmax(130px, 1.2fr) minmax(150px, 1.2fr) 80px minmax(130px, 1fr)
+    100px 96px;
   align-items: center;
   gap: 10px;
-  min-height: 104px;
+  min-height: 72px;
   padding: 9px 12px;
   border-bottom: 1px solid rgba(90, 132, 146, 0.13);
 }
@@ -1749,53 +1749,10 @@ body {
 }
 
 .port-crew-skills {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
-  min-width: 0;
-}
-
-.port-crew-skill {
-  padding: 5px 6px;
-  border: 1px solid rgba(91, 164, 181, 0.2);
-  background: rgba(37, 83, 94, 0.12);
-  color: #a7c7d0;
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.port-crew-skill--combat {
-  border-color: rgba(101, 183, 202, 0.36);
-  color: #b7e0e9;
-}
-
-@media (max-width: 1100px) {
-  .port-crew-row {
-    grid-template-columns: 42px minmax(110px, 1fr) minmax(220px, 2fr);
-  }
-
-  .port-crew-equipment,
-  .port-salary,
-  .port-crew-row > .port-action-button {
-    grid-column: 3;
-  }
-}
-
-@media (max-width: 650px) {
-  .port-crew-row {
-    grid-template-columns: 42px minmax(0, 1fr);
-  }
-
-  .port-crew-skills,
-  .port-crew-equipment,
-  .port-salary,
-  .port-crew-row > .port-action-button {
-    grid-column: 1 / -1;
-  }
-
-  .port-crew-skills {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  margin-top: 4px;
+  color: #719aa5;
+  font-size: 8px;
+  line-height: 1.45;
 }
 
 .port-traits {
@@ -3271,8 +3228,8 @@ body {
 /* Global settings menu */
 .settings-menu {
   position: fixed;
-  top: 16px;
-  right: 18px;
+  bottom: 18px;
+  left: 18px;
   z-index: 1000;
   font-family: 'Courier New', ui-monospace, monospace;
 }
@@ -3293,10 +3250,16 @@ body {
   font-size: 9px;
 }
 
+.settings-menu__toggle:hover,
+.settings-menu__main-menu:hover {
+  border-color: rgba(112, 215, 232, 0.7);
+  background: rgba(17, 43, 52, 0.96);
+}
+
 .settings-menu__panel {
   position: absolute;
-  top: 42px;
-  right: 0;
+  bottom: 42px;
+  left: 0;
   width: min(420px, calc(100vw - 32px));
   border: 1px solid rgba(92, 148, 166, 0.34);
   background: rgba(3, 10, 14, 0.97);
@@ -3306,6 +3269,14 @@ body {
 
 .settings-menu__panel[hidden] {
   display: none;
+}
+
+body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
+body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
+body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
+  top: 72px;
+  bottom: auto;
+  left: 18px;
 }
 
 .settings-menu__header {
@@ -3419,128 +3390,37 @@ body {
   border-top: 1px solid rgba(92, 148, 166, 0.14);
 }
 
-/* Live fire-control diagnostics: compact, readable, and out of the battle center. */
-.combat-hud {
-  width: min(372px, 31vw);
-  max-height: min(83vh, 760px);
-  overflow-y: auto;
-  gap: 6px;
-  padding: 13px 15px;
-  border-color: rgba(126, 158, 174, 0.52);
-  background: rgba(5, 13, 19, 0.86);
-}
-.combat-weapon-telemetry {
-  margin-top: 9px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(114, 151, 167, 0.38);
-}
-.combat-weapon-telemetry__title {
-  margin-bottom: 9px;
-  color: #d1bb7d;
-  font: 600 10px monospace;
-  letter-spacing: 0.14em;
-}
-.combat-weapon-telemetry__columns,
-.combat-weapon-row__main {
-  display: grid;
-  grid-template-columns: minmax(0, 2.4fr) 0.83fr 0.7fr 0.7fr 0.42fr;
-  gap: 5px;
-  align-items: center;
-}
-.combat-weapon-telemetry__columns {
-  padding: 0 3px 6px;
-  color: #8b9faa;
-  font: 9px monospace;
-}
-.combat-weapon-telemetry__columns span:not(:first-child) {
-  text-align: right;
-}
-.combat-weapon-row {
-  margin: 0 0 3px;
-  padding: 6px 3px 4px;
-  border: 1px solid transparent;
-  background: rgba(29, 51, 62, 0.22);
-}
-.combat-weapon-row__main {
-  color: #d5e0e5;
-  font: 10px monospace;
-  font-variant-numeric: tabular-nums;
-}
-.combat-weapon-row__main > span:not(:first-child) {
-  text-align: right;
-}
-.combat-weapon-row__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.combat-weapon-row__shield {
-  color: #81cde7;
-}
-.combat-weapon-row__hull {
-  color: #e6a18b;
-}
-.combat-weapon-row__cd {
-  color: #d8c18b;
-}
-.combat-weapon-row--ready .combat-weapon-row__cd {
-  color: #91c6a5;
-}
-.combat-weapon-row--fired {
-  border-color: rgba(220, 190, 111, 0.62);
-  background: rgba(144, 111, 49, 0.22);
-}
-.combat-weapon-row__bar {
-  height: 2px;
-  margin-top: 5px;
-  background: rgba(80, 111, 127, 0.18);
-}
-.combat-weapon-row__bar i {
-  display: block;
-  height: 100%;
-  background: #d1ad65;
-}
-@media (max-width: 1050px) {
-  .combat-hud {
-    width: calc(50vw - 33px);
-    padding: 10px;
-  }
-  .combat-weapon-row__main {
-    font-size: 9px;
-  }
-}
-@media (max-width: 640px) {
-  .combat-hud {
-    top: 43px;
-    width: calc(50vw - 18px);
-    max-height: 46vh;
-    padding: 7px;
-  }
-  .combat-hud--player {
-    left: 8px;
-  }
-  .combat-hud--enemy {
-    right: 8px;
-  }
-  .combat-weapon-row__main {
-    font-size: 8px;
-  }
+.settings-menu__main-menu {
+  min-height: 36px;
+  border: 1px solid rgba(104, 159, 176, 0.35);
+  background: rgba(5, 14, 19, 0.9);
+  color: #a8dce6;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.12em;
 }
 
-/* Stronger than generic HUD text rules: preserve legibility of measured damage. */
-.combat-hud .combat-weapon-row__main span {
-  font-size: inherit;
-  letter-spacing: 0;
+.settings-menu__main-menu-note {
+  color: #718d99;
+  font-size: 8px;
+  line-height: 1.4;
 }
-.combat-hud .combat-weapon-row__shield {
-  color: #81cde7;
-}
-.combat-hud .combat-weapon-row__hull {
-  color: #e6a18b;
-}
-.combat-hud .combat-weapon-row__cd {
-  color: #d8c18b;
-}
-.combat-hud .combat-weapon-row--ready .combat-weapon-row__cd {
-  color: #91c6a5;
+
+@media (max-width: 650px) {
+  .settings-menu {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .settings-menu__panel {
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
+  body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
+  body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
+    top: 64px;
+    left: 12px;
+  }
 }
