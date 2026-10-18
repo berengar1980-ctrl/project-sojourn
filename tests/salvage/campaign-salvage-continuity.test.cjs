@@ -17,16 +17,23 @@ const styles = source('src/ui/styles.css');
 assert(scene.includes('updateSectorEvent(event)'));
 assert(scene.includes('grantDistressSalvageRights(context.field, event)'));
 assert(scene.includes('state.activeSectorEvent.salvageRights'));
-assert(rights.includes('...current'), 'existing wreck position and motion must survive loot unlock');
+assert(
+  rights.includes('...current'),
+  'existing wreck position and motion must survive loot unlock'
+);
 assert(!callbacks.includes('actions.mountSalvage(true)'));
 assert(callbacks.includes('state.salvageScene?.updateSectorEvent(event)'));
 assert(panel.includes('GREIFHAKEN AUSSER REICHWEITE'));
 assert(panel.includes('distressTowWithinRange(model.ship.position, wreck.position)'));
-assert(panel.includes("model.sectorEvent?.distressStage !== 'approach'"),
-  'completed diagnosis must refresh action buttons without recreating the scene');
+assert(
+  panel.includes("model.sectorEvent?.distressStage !== 'approach'"),
+  'completed diagnosis must refresh action buttons without recreating the scene'
+);
 assert(miningPanel.includes('renderRecovery(options.container, result, null)'));
 assert(miningPanel.includes('recoverySeconds > 0'));
 assert(miningPanel.includes("activity.setAttribute('aria-hidden', 'true')"));
-assert(miningView.includes('miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds)'));
+assert(
+  miningView.includes('miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds)')
+);
 assert(styles.includes('@keyframes mining-decision-processing'));
 console.log('PASS rescue scene continuity, tow range UI, and mining processing feedback');
