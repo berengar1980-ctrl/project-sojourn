@@ -179,7 +179,12 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   cancelButton.disabled = eventActive;
   updateLocalExitButton(backButton, model, eventActive);
   renderCargo(model, cargoTotal, cargoList);
-  updateLongRangeScanButton(longScanButton, model.scanAvailable, model.longRangeScanProgress, eventActive);
+  updateLongRangeScanButton(
+    longScanButton,
+    model.scanAvailable,
+    model.longRangeScanProgress,
+    eventActive
+  );
 
   trackIntegrity(model);
 
