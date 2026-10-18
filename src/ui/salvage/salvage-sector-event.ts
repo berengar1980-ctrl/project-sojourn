@@ -33,16 +33,17 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
 
   let actions = '<span>EINSATZ ABGESCHLOSSEN</span>';
   if (stage === 'approach') {
-    const underway =
-      (model.phase === 'approaching' || model.phase === 'diagnosing') &&
-      wreck?.isWorkTarget;
+    const underway = !!wreck?.isWorkTarget &&
+      (model.phase === 'approaching' || model.phase === 'diagnosing');
+    const progress = Math.round((model.operationProgress ?? 0) * 100);
+    const label =
+      model.phase === 'diagnosing' ? 'TECHNISCHE DIAGNOSE · ' + progress + ' %' : 'ANFLUG ZUR DIAGNOSE';
+    const unavailable = !model.scanAvailable || model.phase !== 'idle';
     actions = underway
-      ? '<button type="button" data-distress-action="diagnose" disabled>' +
-        (model.phase === 'diagnosing'
-          ? 'TECHNISCHE DIAGNOSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %'
-          : 'ANFLUG ZUR DIAGNOSE') +
-        '</button>'
-      : '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
+      ? '<button type="button" data-distress-action="diagnose" disabled>' + label + '</button>'
+      : unavailable
+        ? '<button type="button" data-distress-action="diagnose" disabled>SCANSYSTEM NICHT BEREIT</button>'
+        : '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
   } else if (stage === 'diagnosed') {
     actions = [
       '<button type="button" data-distress-action="repair">NOTREPARATUR</button>',
