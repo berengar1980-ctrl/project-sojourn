@@ -148,6 +148,7 @@ const actor = {
   setup: {
     name: 'PvP salvager',
     tractorRangeMeters: 500,
+    tractorCanManipulateObjects: true,
     shieldGeometry: { radiusX: 28, radiusY: 20 },
   },
 };
