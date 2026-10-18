@@ -10,6 +10,13 @@ export interface DistressTowState {
   readonly cableTension: number;
 }
 
+// Maximum center-to-center separation for launching the rescue grapple (world units).
+export const DISTRESS_TOW_ATTACH_RANGE = 320;
+
+export function distressTowWithinRange(ship: WorldPoint, wreck: WorldPoint): boolean {
+  return Math.hypot(ship.x - wreck.x, ship.y - wreck.y) <= DISTRESS_TOW_ATTACH_RANGE;
+}
+
 export function createDistressTowState(position: WorldPoint, headingRadians = 0): DistressTowState {
   return {
     position: { ...position },
