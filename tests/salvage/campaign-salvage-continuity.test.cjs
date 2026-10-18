@@ -30,9 +30,15 @@ assert(
   panel.includes("model.sectorEvent?.distressStage !== 'approach'"),
   'completed diagnosis must refresh action buttons without recreating the scene'
 );
-assert(miningPanel.includes("renderOperationEventFeedback(options.container, result, null, 'mining')"));
+assert(
+  miningPanel.includes("renderOperationEventFeedback(options.container, result, null, 'mining')")
+);
 assert(miningPanel.includes('recoverySeconds > 0'));
-assert(source('src/ui/local-operations/event-feedback.ts').includes("activity.setAttribute('aria-hidden', 'true')"));
+assert(
+  source('src/ui/local-operations/event-feedback.ts').includes(
+    "activity.setAttribute('aria-hidden', 'true')"
+  )
+);
 assert(
   miningView.includes('miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds)')
 );
