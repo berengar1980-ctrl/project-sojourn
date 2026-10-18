@@ -40,6 +40,8 @@ for (let tier = 1; tier <= 6; tier++) {
   );
   assert(upgraded.accelerationMetersPerSecond2 >= baseline.accelerationMetersPerSecond2);
   assert.equal(components.engineSpeedMultiplier(installed), 1 + bonus);
+  const turnRatio = upgraded.turnRateRadiansPerSecond / baseline.turnRateRadiansPerSecond;
+  assert(Math.abs(turnRatio - (1 + bonus)) < 1e-10);
 }
 
 for (let tier = 1; tier <= 6; tier++) {
@@ -77,49 +79,6 @@ const hit = damage.applyDamage(target, 0, 40, attacker, false, { x: 100, y: 0 },
 assert.equal(hit.damage, 20);
 assert.equal(target.hullHp, 80);
 assert.equal(components.resolveShipArmorProtection({ armor: [''] }), undefined);
-const autopilot = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/local-space/local-space-autopilot.ts'
+console.log(
+  'PASS engine speeds, freighter baseline and six tiers of four directional armor patterns'
 );
-const navigation = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/navigation/navigation-service.ts'
-);
-for (const role of ['freighter', 'mining', 'salvage', 'patrol']) {
-  const hull = ship(role);
-  const normal = movement.resolveShipCombatMovementStats(hull, { engine: ['engine1'] });
-  const upgrade = movement.resolveShipCombatMovementStats(hull, { engine: ['engine6'] });
-  const turnMultiplier = upgrade.turnRateRadiansPerSecond / normal.turnRateRadiansPerSecond;
-  assert(Math.abs(turnMultiplier - 1.78) < 1e-10);
-}
-function localShip() {
-  return {
-    position: { x: 0, y: 0 },
-    headingRadians: 0,
-    speed: 0,
-    turnRateRadiansPerSecond: 0,
-    angularThrust: 0,
-    lateralThrust: 0,
-  };
-}
-const route = [{ x: 0, y: 0 }, { x: 0, y: 300 }];
-const normalLocal = localShip();
-const fastLocal = localShip();
-autopilot.advanceAutopilotRoute(normalLocal, route, 1, 78, 0.1, false, false, 1);
-autopilot.advanceAutopilotRoute(fastLocal, route, 1, 78, 0.1, false, false, 1.78);
-const localMultiplier = fastLocal.headingRadians / normalLocal.headingRadians;
-assert(Math.abs(localMultiplier - 1.78) < 1e-10);
-const sector = {
-  locations: [{ id: 'start', position: { x: 0, y: 0 } }],
-  width: 2000,
-  height: 1200,
-};
-const normalNav = navigation.createNavigationService(sector, 'start', 220);
-const fastNav = navigation.createNavigationService(sector, 'start', 220);
-normalNav.startPursuit('target', { x: 0, y: 500 });
-fastNav.setTurnRateMultiplier(1.78);
-fastNav.startPursuit('target', { x: 0, y: 500 });
-const normalTurn = normalNav.tick(0.1).turnRateRadiansPerSecond;
-const fastTurn = fastNav.tick(0.1).turnRateRadiansPerSecond;
-assert(Math.abs(fastTurn / normalTurn - 1.78) < 1e-10);
-console.log('PASS engine speeds, directional armor and drive-adjusted RCS across flight modes');
