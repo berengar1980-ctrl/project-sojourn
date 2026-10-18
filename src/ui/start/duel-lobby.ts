@@ -256,6 +256,15 @@ function duelSetups(
   );
 }
 
+function mountDuelSettings(onBack: () => void): () => void {
+  const audio = createGameAudioService();
+  const settingsMenu = createSettingsMenu(audio, onBack);
+  return () => {
+    settingsMenu.destroy();
+    audio.destroy();
+  };
+}
+
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
@@ -290,8 +299,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   });
   shell.append(title, description, encounterLabel, mapLabel, actions, cards);
   root.replaceChildren(shell);
-  const audio = createGameAudioService();
-  const settingsMenu = createSettingsMenu(audio, onBack);
+  const destroySettings = mountDuelSettings(onBack);
 
   let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
   let canceled = false;
@@ -355,8 +363,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       duelGeneration += 1;
       cancelAnimationFrame(frame);
       activePanel?.destroy();
-      settingsMenu.destroy();
-      audio.destroy();
+      destroySettings();
       shell.remove();
     },
   };
