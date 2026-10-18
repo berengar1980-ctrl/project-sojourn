@@ -80,6 +80,57 @@ export class SalvageWorkSelector {
     );
   }
 
+  private choiceLabel(
+    choice: string,
+    wreck: NonNullable<SalvageSpaceViewModel['selectedWreck']>
+  ): string {
+    if (choice === 'component' && wreck.component) {
+      return (
+        'KOMPONENTE · ' +
+        wreck.component.name.toUpperCase() +
+        ' · ' +
+        wreck.component.chancePercent +
+        ' %'
+      );
+    }
+    const resource = choice.startsWith('resource:')
+      ? wreck.resources.find((entry) => entry.resourceId === choice.slice('resource:'.length))
+      : null;
+    return resource
+      ? resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t'
+      : choice;
+  }
+
+  private updateChoiceButtons(
+    model: SalvageSpaceViewModel,
+    wreck: NonNullable<SalvageSpaceViewModel['selectedWreck']>,
+    busy: boolean
+  ): void {
+    for (const button of this.container.querySelectorAll<HTMLButtonElement>('[data-work-choice]')) {
+      const choice = button.dataset.workChoice ?? '';
+      button.textContent = this.choiceLabel(choice, wreck);
+      button.disabled = busy || !this.isAvailable(choice, model);
+      button.classList.toggle('is-active', choice === this.choice);
+      button.setAttribute('aria-pressed', String(choice === this.choice));
+    }
+  }
+
+  private updateStartButton(model: SalvageSpaceViewModel, busy: boolean): void {
+    if (!model.salvageAvailable) {
+      this.startButton.textContent = 'BERGUNGSMODUL FEHLT';
+      this.startButton.title = 'Dieses Schiff hat kein einsatzfähiges Bergungssystem.';
+    } else if (busy) {
+      this.startButton.textContent = 'BERGUNGSSYSTEM BESCHÄFTIGT';
+      this.startButton.title = '';
+    } else {
+      this.startButton.textContent = 'BERGUNG STARTEN';
+      this.startButton.title = this.choice
+        ? ''
+        : 'Kein bergbares Material oder keine verfügbare Komponente';
+    }
+    this.startButton.disabled = busy || !model.salvageAvailable || this.choice === null;
+  }
+
   private refresh(): void {
     const model = this.model;
     const wreck = model?.selectedWreck;
@@ -94,35 +145,8 @@ export class SalvageWorkSelector {
           (item) => this.isAvailable(item, model)
         ) ?? null;
     }
-    for (const button of this.container.querySelectorAll<HTMLButtonElement>('[data-work-choice]')) {
-      const choice = button.dataset.workChoice ?? '';
-      const resource = choice.startsWith('resource:')
-        ? wreck.resources.find((entry) => entry.resourceId === choice.slice('resource:'.length))
-        : null;
-      button.textContent =
-        choice === 'component' && wreck.component
-          ? 'KOMPONENTE · ' +
-            wreck.component.name.toUpperCase() +
-            ' · ' +
-            wreck.component.chancePercent +
-            ' %'
-          : resource
-            ? resource.name.toUpperCase() + ' · ' + Math.round(resource.remaining) + ' t'
-            : choice;
-      button.disabled = busy || !this.isAvailable(choice, model);
-      button.classList.toggle('is-active', choice === this.choice);
-      button.setAttribute('aria-pressed', String(choice === this.choice));
-    }
-    this.startButton.textContent = model.salvageAvailable
-      ? busy
-        ? 'BERGUNGSSYSTEM BESCHÄFTIGT'
-        : 'BERGUNG STARTEN'
-      : 'BERGUNGSMODUL FEHLT';
-    this.startButton.disabled = busy || !model.salvageAvailable || this.choice === null;
-    this.startButton.title = !model.salvageAvailable
-      ? 'Dieses Schiff hat kein einsatzfähiges Bergungssystem.'
-      : this.choice === null
-        ? 'Kein bergbares Material oder keine verfügbare Komponente'
-        : '';
+    this.updateChoiceButtons(model, wreck, busy);
+    this.updateStartButton(model, busy);
   }
+
 }
