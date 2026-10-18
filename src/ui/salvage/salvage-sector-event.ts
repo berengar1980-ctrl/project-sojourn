@@ -6,8 +6,11 @@ import {
 
 export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement): void {
   const event = model.sectorEvent;
-  container.hidden = !event;
-  if (!event) {
+  const wreck = model.wrecks[0];
+  const selectedDistress =
+    event?.type === 'distress-rescue' && wreck?.id === model.selectedWreck?.id;
+  container.hidden = !event || (event.type === 'distress-rescue' && !selectedDistress);
+  if (!event || container.hidden) {
     container.replaceChildren();
     return;
   }
@@ -19,7 +22,6 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
 
   const damage = event.distressDamage?.replaceAll('_', ' ').toUpperCase() ?? 'UNBEKANNT';
   const stage = event.distressStage ?? 'approach';
-  const wreck = model.wrecks[0];
   const towInRange = !!wreck && distressTowWithinRange(model.ship.position, wreck.position);
   const towButton = towInRange
     ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button>'
@@ -31,7 +33,16 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
 
   let actions = '<span>EINSATZ ABGESCHLOSSEN</span>';
   if (stage === 'approach') {
-    actions = '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
+    const underway =
+      (model.phase === 'approaching' || model.phase === 'diagnosing') &&
+      wreck?.isWorkTarget;
+    actions = underway
+      ? '<button type="button" data-distress-action="diagnose" disabled>' +
+        (model.phase === 'diagnosing'
+          ? 'TECHNISCHE DIAGNOSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %'
+          : 'ANFLUG ZUR DIAGNOSE') +
+        '</button>'
+      : '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
   } else if (stage === 'diagnosed') {
     actions = [
       '<button type="button" data-distress-action="repair">NOTREPARATUR</button>',
