@@ -9,7 +9,7 @@ const COMMON_STATIONS = [
 
 const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
   freighter: {
-    hullPoints: 78,
+    hullPoints: 115,
     shieldModifier: 1,
     fuelCapacity: 150,
     fuelUse: 0.82,
@@ -46,7 +46,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     shieldModifier: 1.1875,
     fuelCapacity: 140,
     fuelUse: 0.98,
-    weaponSlots: 3,
+    weaponSlots: 6,
     crewBerths: 5,
     maxComponentTier: 3,
     stations: [...COMMON_STATIONS, { id: 'damage_control', skill: 'engineering' }],
