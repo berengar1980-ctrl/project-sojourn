@@ -154,10 +154,8 @@ export function applyDamage(
   const scaled = scaledDamage(hullDamage, attacker, critical);
   // Armor is for hull HP. Targeted subsystem attacks retain their own balancing.
   const effective = directed ? scaled : directionalHullDamage(target, scaled, sourcePosition);
-  const damage = Math.min(
-    directed ? target.subsystems[targetSubsystem] : target.hullHp,
-    effective
-  );
+  const remaining = directed ? target.subsystems[targetSubsystem] : target.hullHp;
+  const damage = Math.min(remaining, effective);
   if (directed)
     target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);
   else target.hullHp = Math.max(0, target.hullHp - damage);

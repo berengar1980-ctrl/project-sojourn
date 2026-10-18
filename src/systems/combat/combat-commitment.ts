@@ -128,17 +128,12 @@ export function reviewCombatCommitment(
   ship.nextCommitmentReviewAt = elapsed + RETHINK_PERIOD;
   const strength = estimatedVictoryChance(ship, enemy);
   const escape = escapeViability(ship, enemy, arena);
-  return chooseCommitmentTransition(
-    ship,
-    strength,
-    escape,
-    elapsed,
-    requiredCombatConfidence(
-      ship.setup.shipId,
-      enemy.setup.shipId,
-      ship.setup.aiAggression ?? 50
-    )
+  const confidence = requiredCombatConfidence(
+    ship.setup.shipId,
+    enemy.setup.shipId,
+    ship.setup.aiAggression ?? 50
   );
+  return chooseCommitmentTransition(ship, strength, escape, elapsed, confidence);
 }
 
 function chooseCommitmentTransition(

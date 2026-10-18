@@ -279,9 +279,10 @@ assert(
   stationKeeping.includes('angularThrust'),
   'idle attitude correction must drive RCS turn commands'
 );
+const fittedCruise = 'approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed)';
+const fittedRcs = 'turnRateMultiplier: engineSpeedMultiplier(runtime.installed)';
 assert(
-  miningController.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed)') &&
-    miningController.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'),
+  miningController.includes(fittedCruise) && miningController.includes(fittedRcs),
   'local-space navigation must use fitted engine cruise speed and RCS turn rate'
 );
 assert(
