@@ -9,6 +9,7 @@ import {
   getShipDefinition,
   fitsWeaponHardpoint,
   resolveShipGameplayStats,
+  isShipCombatWeaponSlotActive,
 } from '../ships';
 
 const UPGRADE_TYPES: readonly ShipComponentType[] = [
@@ -65,6 +66,9 @@ function nextUpgradeForType(
   const stats = resolveShipGameplayStats(ship);
   const installed = ensureNpcInstalledComponents(npc);
   const ids = installed[type] ?? [];
+  const fitsSlot = (component: ShipComponentDefinition, index: number): boolean =>
+    type !== 'weapon' ||
+    Boolean(component.weapon && fitsWeaponHardpoint(ship, index, component.weapon));
   const compatible = [
     ...getCompatibleShipComponents(type, stats.maxComponentTier),
     ...extraComponents.filter(
@@ -75,7 +79,7 @@ function nextUpgradeForType(
 
   if (ids.length === 0) {
     const first = compatible
-      .filter((component) => component.tier >= 1)
+      .filter((component) => component.tier >= 1 && fitsSlot(component, 0))
       .sort((a, b) => a.tier - b.tier || a.cost - b.cost)[0];
     return first ? { index: 0, nextId: first.id, cost: first.cost } : null;
   }
@@ -83,6 +87,7 @@ function nextUpgradeForType(
   let bestIndex = -1;
   let bestTier = Number.POSITIVE_INFINITY;
   for (let index = 0; index < ids.length; index += 1) {
+    if (type === 'weapon' && !isShipCombatWeaponSlotActive(ship, index)) continue;
     const component = getShipComponent(type, ids[index]!);
     const tier = component?.tier ?? 0;
     if (tier < bestTier) {
@@ -96,6 +101,7 @@ function nextUpgradeForType(
     .filter(
       (component) =>
         component.tier === bestTier &&
+        fitsSlot(component, bestIndex) &&
         component.shipyardVariant &&
         component.id !== current?.id &&
         (current?.salvageModifierPct ?? 0) < (component.salvageModifierPct ?? 0)
@@ -109,7 +115,7 @@ function nextUpgradeForType(
   if (bestTier >= stats.maxComponentTier) return null;
 
   const next = compatible
-    .filter((component) => component.tier === bestTier + 1)
+    .filter((component) => component.tier === bestTier + 1 && fitsSlot(component, bestIndex))
     .sort((a, b) => a.cost - b.cost)[0];
   return next ? { index: bestIndex, nextId: next.id, cost: next.cost } : null;
 }
