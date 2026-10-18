@@ -97,10 +97,15 @@ assert(
 const mining = read('src/app/game-controller-mining.ts');
 const npcMining = read('src/systems/npcs/npc-local-mining-service.ts');
 const npcSalvage = read('src/systems/npcs/npc-local-salvage-service.ts');
-assert(mining.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship)'));
-assert(salvage.includes('approachSpeed: resolveShipLocalCruiseSpeed(options.ship)'));
-assert(npcMining.includes('localCruiseSpeed(ship.shipId)'));
-assert(npcSalvage.includes('localCruiseSpeed(ship.shipId)'));
+assert(mining.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed)'));
+assert(mining.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'));
+assert(salvage.includes('approachSpeed: resolveShipLocalCruiseSpeed(options.ship, runtime.installed)'));
+assert(salvage.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'));
+assert(npcMining.includes('localCruiseSpeed(npc)'));
+assert(npcMining.includes('ensureNpcInstalledComponents(npc)'));
+
+assert(npcSalvage.includes('localCruiseSpeed(npc)'));
+assert(npcSalvage.includes('ensureNpcInstalledComponents(npc)'));
 assert(read('src/app/game-controller-combat.ts').includes('hitChance: 0.68 +'));
 const shared = 'combatEquippedWeapons';
 for (const setupFile of [

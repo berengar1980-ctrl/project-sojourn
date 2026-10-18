@@ -48,10 +48,10 @@ function requiredConfidence(ship: MutableCombatant, opponent: MutableCombatant):
   const otherCivilian = civilianPattern.test(opponent.setup.shipId.toLowerCase());
   // Armed working vessels should not immediately retreat from equally matched peers.
   // Against combat hulls, keep the original cautious civilian confidence threshold.
-  const base = civilian
-    ? otherCivilian ? 0.45 : 0.68
-    : /patrol|cutter/.test(role) ? 0.32 : 0.4;
-  return clamp(base - ((ship.setup.aiAggression ?? 50) - 50) * 0.0025, 0.16, 0.85);
+  const nonCivilianBase = /patrol|cutter/.test(role) ? 0.32 : 0.4;
+  const base = civilian ? (otherCivilian ? 0.4 : 0.68) : nonCivilianBase;
+  const confidence = clamp(base - ((ship.setup.aiAggression ?? 50) - 50) * 0.0025, 0.16, 0.85);
+  return civilian && otherCivilian ? Math.min(0.48, confidence) : confidence;
 }
 
 /** Estimate viability of escape from the current actual motion and exit location. */
