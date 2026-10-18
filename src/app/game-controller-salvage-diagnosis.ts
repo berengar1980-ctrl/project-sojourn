@@ -2,41 +2,51 @@ import type { SalvageWreck, SectorSalvageEvent } from '../core/salvage-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { SalvageLocalSpaceService } from '../systems/salvage/salvage-local-space-service';
 
+interface DistressDiagnosisContext {
+  readonly field: { readonly wrecks: readonly SalvageWreck[] };
+  readonly service: SalvageLocalSpaceService;
+  readonly state: { readonly activeSectorEvent: SectorSalvageEvent | null };
+  readonly options: {
+    readonly log: SystemLogService;
+    readonly onDiagnoseDistress?: (eventId: string) => void;
+  };
+}
+
 export function requestDistressDiagnosis(
-  event: SectorSalvageEvent | null,
-  eventId: string,
-  wreck: SalvageWreck | undefined,
-  service: SalvageLocalSpaceService,
-  log: SystemLogService
+  context: DistressDiagnosisContext,
+  eventId: string
 ): void {
+  const { service, state, field, options } = context;
+  const event = state.activeSectorEvent;
   if (
     event?.id !== eventId ||
     event.type !== 'distress-rescue' ||
-    event.distressStage !== 'approach' ||
-    !wreck
+    event.distressStage !== 'approach'
   ) {
     return;
   }
+  const wreck = field.wrecks[0];
+  if (!wreck) return;
   const before = service.getSnapshot().phase;
   const after = service.startDistressDiagnosis(wreck.id);
   if (before === 'idle' && after.phase !== 'idle') {
-    log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
+    options.log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
   }
 }
 
 export function tickDistressDiagnosis(
-  service: SalvageLocalSpaceService,
-  deltaSeconds: number,
-  event: SectorSalvageEvent | null,
-  onComplete?: (eventId: string) => void
+  context: DistressDiagnosisContext,
+  deltaSeconds: number
 ): void {
+  const { service, state, options } = context;
   const serial = service.getSnapshot().diagnosisSerial;
   service.tick(deltaSeconds);
+  const event = state.activeSectorEvent;
   if (
     service.getSnapshot().diagnosisSerial !== serial &&
     event?.type === 'distress-rescue' &&
     event.distressStage === 'approach'
   ) {
-    onComplete?.(event.id);
+    options.onDiagnoseDistress?.(event.id);
   }
 }
