@@ -1,3 +1,5 @@
+import { localOperationsHeader } from '../local-operations/local-operations-hud';
+
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 
 import type { SystemLogService } from '../../core/system-log-types';
@@ -37,11 +39,12 @@ export interface SalvageControls {
   readonly integrity: HTMLElement;
   readonly inspectButton: HTMLButtonElement;
   readonly longScanButton: HTMLButtonElement;
+  readonly scanLabelsButton: HTMLButtonElement;
+  readonly workButton: HTMLButtonElement;
   readonly attackButton: HTMLButtonElement;
   readonly resources: HTMLElement;
   readonly status: HTMLElement;
   readonly cancelButton: HTMLButtonElement;
-  readonly help: HTMLElement;
   readonly cargoTotal: HTMLElement;
   readonly cargoList: HTMLElement;
   readonly backButton: HTMLButtonElement;
@@ -55,21 +58,13 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
   shell.className = 'local-space-shell salvage-space-shell';
   shell.innerHTML = [
     '<canvas class="local-space-canvas salvage-space-canvas" aria-label="Lokales Wrackfeld"></canvas>',
-    '<div class="local-space-title"><span>BERGUNGSZONE</span><strong>',
-    options.model.title,
-    '</strong></div>',
-    '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
-    '<div class="salvage-operation-status" hidden></div>',
-    '<div class="salvage-help"></div>',
-    '<button class="salvage-long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
+    localOperationsHeader('BERGUNG // LOKALER EINSATZ', options.model.title),
     '<div class="salvage-combat-tactics combat-tactics" hidden>',
     '<button type="button" data-tactic="fight">KAMPF</button>',
     '<button type="button" data-tactic="kite">DISTANZ</button>',
     '<button type="button" data-tactic="minefield">MINEN</button>',
     '<button type="button" data-tactic="flee">FLUCHT</button>',
     '<button type="button" data-grapple>GREIFHAKEN</button></div>',
-    '<button class="salvage-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
-    '<aside class="sector-salvage-event" hidden></aside>',
     '<aside class="salvage-event" hidden></aside>',
     '<div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // BERGUNG</div>',
@@ -80,8 +75,10 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<div class="local-selection-name"></div>',
     '<div class="local-selection-meta"></div>',
     '<div class="salvage-integrity"><div></div></div>',
-    '<div class="salvage-resource-list"></div>',
-    '<button class="salvage-inspect-button" type="button">UNTERSUCHEN</button>',
+    '<div class="salvage-resource-list" hidden></div>',
+    '<button class="salvage-work-button" type="button" hidden>BERGUNG STARTEN</button>',
+    '<button class="salvage-inspect-button" type="button">NAHBEREICHSSCAN</button>',
+    '<aside class="sector-salvage-event" hidden></aside>',
     '<button class="salvage-attack-button" type="button" hidden>ANGREIFEN</button>',
     '</div>',
   ].join('');
@@ -102,12 +99,13 @@ export function controls(shell: HTMLElement): SalvageControls {
     meta: query<HTMLElement>('.local-selection-meta'),
     integrity: query<HTMLElement>('.salvage-integrity > div'),
     inspectButton: query<HTMLButtonElement>('.salvage-inspect-button'),
-    longScanButton: query<HTMLButtonElement>('.salvage-long-scan-button'),
+    longScanButton: query<HTMLButtonElement>('.long-scan-button'),
+    scanLabelsButton: query<HTMLButtonElement>('.scan-label-toggle'),
+    workButton: query<HTMLButtonElement>('.salvage-work-button'),
     attackButton: query<HTMLButtonElement>('.salvage-attack-button'),
     resources: query<HTMLElement>('.salvage-resource-list'),
-    status: query<HTMLElement>('.salvage-operation-status'),
-    cancelButton: query<HTMLButtonElement>('.salvage-cancel-button'),
-    help: query<HTMLElement>('.salvage-help'),
+    status: query<HTMLElement>('.local-operations-status'),
+    cancelButton: query<HTMLButtonElement>('.operations-cancel-button'),
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
