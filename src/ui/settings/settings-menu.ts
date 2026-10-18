@@ -12,18 +12,18 @@ function createSettingsShell(): HTMLDivElement {
   const shell = document.createElement('div');
   shell.className = 'settings-menu';
   shell.innerHTML = `
-    <button
-      class="settings-menu__toggle"
-      type="button"
-      aria-label="Menü und Einstellungen öffnen"
-      aria-expanded="false"
-      aria-controls="settings-menu-dialog"
-      aria-keyshortcuts="Escape"
-      title="Menü öffnen (Esc)"
-    >
-      <span class="settings-menu__icon" aria-hidden="true">☰</span>
-      <span class="settings-menu__toggle-label" aria-hidden="true">MENÜ</span>
-    </button>
+    <header class="settings-menu__chrome" aria-label="Systemleiste">
+      <div class="settings-menu__brand"><strong>SOJOURN</strong><span>SYSTEMKONSOLE</span></div>
+      <button
+        class="settings-menu__toggle"
+        type="button"
+        aria-label="Menü und Einstellungen öffnen"
+        aria-expanded="false"
+        aria-controls="settings-menu-dialog"
+        aria-keyshortcuts="Escape"
+        title="Menü öffnen (Esc)"
+      >MENÜ <span aria-hidden="true">· ESC</span></button>
+    </header>
 
     <div class="settings-menu__backdrop" hidden></div>
     <section
@@ -78,6 +78,7 @@ function createSettingsShell(): HTMLDivElement {
   `;
 
   document.body.append(shell);
+  document.body.classList.add('app-has-system-bar');
 
   return shell;
 }
@@ -88,8 +89,18 @@ function createSettingsKeyHandler(
 ): (event: KeyboardEvent) => void {
   return (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
+      if (event.repeat) return;
+      if (
+        panel.hidden &&
+        document.querySelector(
+          '.star-map-menu__drawer:not([hidden]), .combat-surrender-confirm:not([hidden])'
+        )
+      ) {
+        return;
+      }
       event.preventDefault();
-      if (!event.repeat) setOpen(panel.hidden);
+      event.stopImmediatePropagation();
+      setOpen(panel.hidden);
       return;
     }
     if (event.key !== 'Tab' || panel.hidden) return;
@@ -183,7 +194,7 @@ export function createSettingsMenu(
   backdrop.addEventListener('click', onClose);
   close.addEventListener('click', onClose);
   mainMenu.addEventListener('click', onMainMenu);
-  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keydown', onKeyDown, true);
 
   sync();
   setOpen(false);
@@ -196,8 +207,9 @@ export function createSettingsMenu(
       backdrop.removeEventListener('click', onClose);
       close.removeEventListener('click', onClose);
       mainMenu.removeEventListener('click', onMainMenu);
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
       shell.remove();
+      document.body.classList.remove('app-has-system-bar');
     },
   };
 }
