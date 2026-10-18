@@ -91,10 +91,7 @@ export function resolveCombatAsteroidContacts(
       Math.max(0.1, geometry?.modifier ?? 1);
     if (damage <= 0) continue;
     if (ship.shieldHp <= 0) {
-      ship.hullHp = Math.max(
-        0,
-        ship.hullHp - directionalHullDamage(ship, damage, hit.point)
-      );
+      ship.hullHp = Math.max(0, ship.hullHp - directionalHullDamage(ship, damage, hit.point));
       continue;
     }
     const effect = applyShieldHit(
