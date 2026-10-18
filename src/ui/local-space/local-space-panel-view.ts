@@ -172,7 +172,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   const eventActive = model.miningEvent !== null;
   const longScanActive = model.longRangeScanProgress != null;
   trackScanCompletion(model);
-  miningEventPanel.update(model.miningEvent);
+  miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
   canvas.classList.toggle('is-locked', eventActive);
   card.hidden = !selected && !selectedNpc;
   cancelButton.hidden = !miningActive;
