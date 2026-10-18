@@ -3736,13 +3736,16 @@ body:has(.local-space-shell) .settings-menu__panel {
 }
 
 .local-operations-dock .local-selection-card {
+  order: 0;
   max-height: min(70vh, 660px);
   overflow-y: auto;
   pointer-events: auto;
 }
 
 .local-operations-dock .local-cargo-panel {
+  order: 1;
   flex: 0 0 218px;
+  margin-left: auto;
 }
 
 .local-operations-dock .local-selection-card[hidden] {
@@ -3892,7 +3895,9 @@ body:has(.local-space-shell) .settings-menu__panel {
   }
 
   .local-operations-dock .local-cargo-panel {
+    order: 0;
     flex: 0 0 auto;
+    margin-left: 0;
     width: 100%;
     padding: 7px 10px;
     max-height: 70px;
@@ -3900,6 +3905,7 @@ body:has(.local-space-shell) .settings-menu__panel {
   }
 
   .local-operations-dock .local-selection-card {
+    order: 1;
     width: 100%;
     max-height: 42vh;
   }
@@ -3912,5 +3918,39 @@ body:has(.local-space-shell) .settings-menu__panel {
   .salvage-event {
     left: 50%;
     width: calc(100vw - 32px);
+  }
+}
+
+/* Shared decision feedback for mining incidents and salvage events. */
+.operations-event-feedback__busy {
+  margin-top: 16px;
+  color: #e9bb76;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.operations-event-feedback__activity {
+  position: relative;
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(180, 142, 83, 0.2);
+}
+
+.operations-event-feedback__activity::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  background: #e5aa56;
+  box-shadow: 0 0 12px rgba(241, 183, 97, 0.68);
+  animation: mining-decision-processing 1.25s ease-in-out infinite alternate;
+  content: '';
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operations-event-feedback__activity::after {
+    left: 32%;
+    animation: none;
   }
 }
