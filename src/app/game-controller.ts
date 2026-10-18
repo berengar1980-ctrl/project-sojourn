@@ -296,7 +296,6 @@ function mountControllerSalvage(
     },
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
-      mountSalvage: (preserveSeed = false) => mountControllerSalvage(context, preserveSeed),
     }),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
