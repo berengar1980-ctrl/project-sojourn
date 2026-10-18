@@ -12,8 +12,7 @@ const {
   towShipAtExit,
   distressTowWithinRange,
   DISTRESS_TOW_ATTACH_RANGE,
-} =
-  loadStandaloneTypeScriptModule(root, 'src/systems/salvage/distress-tow-physics.ts');
+} = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/distress-tow-physics.ts');
 assert.equal(DISTRESS_TOW_ATTACH_RANGE, 320);
 assert.equal(distressTowWithinRange({ x: 0, y: 0 }, { x: 320, y: 0 }), true);
 assert.equal(distressTowWithinRange({ x: 0, y: 0 }, { x: 321, y: 0 }), false);
@@ -73,9 +72,13 @@ assert(controller.includes('towShipAtExit('));
 assert(controller.includes('beginDistressTow(event)'));
 const callbacks = fs.readFileSync(path.join(root, 'src/app/game-controller-events.ts'), 'utf8');
 assert(callbacks.includes('state.salvageScene?.beginDistressTow(event)'));
-assert(callbacks.indexOf('canAttachDistressTow()') < callbacks.indexOf('towDistress(eventId)'),
-  'distance validation must happen before the event advances to towing');
+assert(
+  callbacks.indexOf('canAttachDistressTow()') < callbacks.indexOf('towDistress(eventId)'),
+  'distance validation must happen before the event advances to towing'
+);
 assert(callbacks.includes('updateSectorEvent(economy.salvageEvents.event(eventId))'));
-assert(!callbacks.includes('actions.mountSalvage(true)'),
-  'rescue decisions must not recreate the local scene or reset the player to the exit');
+assert(
+  !callbacks.includes('actions.mountSalvage(true)'),
+  'rescue decisions must not recreate the local scene or reset the player to the exit'
+);
 console.log('PASS grapple launch, inertial tow drift, cable tension and two-ship exit gate');
