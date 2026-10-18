@@ -33,21 +33,17 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
 
   let actions = '<span>EINSATZ ABGESCHLOSSEN</span>';
   if (stage === 'approach') {
-    const underway =
-      !!wreck?.isWorkTarget &&
-      (model.phase === 'approaching' || model.phase === 'diagnosing');
+    const diagnosing = model.phase === 'diagnosing';
+    const approaching = model.phase === 'approaching' && !!wreck?.isWorkTarget;
+    const busy = model.phase !== 'idle';
     const progress = Math.round((model.operationProgress ?? 0) * 100);
-    const progressLabel = 'TECHNISCHE DIAGNOSE · ' + progress + ' %';
-    const label = model.phase === 'diagnosing' ? progressLabel : 'ANFLUG ZUR DIAGNOSE';
-    if (underway) {
-      actions = '<button type="button" data-distress-action="diagnose" disabled>' + label + '</button>';
-    } else if (!model.scanAvailable) {
-      actions = '<button type="button" data-distress-action="diagnose" disabled>SCANSYSTEM FEHLT</button>';
-    } else if (model.phase !== 'idle') {
-      actions = '<button type="button" data-distress-action="diagnose" disabled>VORGANG LÄUFT</button>';
-    } else {
-      actions = '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
-    }
+    let caption = 'TECHNISCHE DIAGNOSE';
+    if (diagnosing) caption = 'TECHNISCHE DIAGNOSE · ' + progress + ' %';
+    else if (approaching) caption = 'ANFLUG ZUR DIAGNOSE';
+    else if (!model.scanAvailable) caption = 'SCANSYSTEM FEHLT';
+    else if (busy) caption = 'VORGANG LÄUFT';
+    const disabled = busy || !model.scanAvailable ? ' disabled' : '';
+    actions = `<button type="button" data-distress-action="diagnose"${disabled}>${caption}</button>`;
   } else if (stage === 'diagnosed') {
     actions = [
       '<button type="button" data-distress-action="repair">NOTREPARATUR</button>',
