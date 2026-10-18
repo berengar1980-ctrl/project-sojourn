@@ -76,7 +76,8 @@ function renderRecovery(
     const title = document.createElement('h3');
     title.textContent = result?.title ?? 'Bergbausysteme stabilisieren';
     const description = document.createElement('p');
-    description.textContent = result?.resultText ?? 'Mining wird nach der Systemprüfung fortgesetzt.';
+    description.textContent =
+      result?.resultText ?? 'Mining wird nach der Systemprüfung fortgesetzt.';
     const busy = document.createElement('div');
     busy.className = 'local-mining-event__busy';
     busy.setAttribute('role', 'status');
