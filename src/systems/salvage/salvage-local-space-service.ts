@@ -1,20 +1,24 @@
-import { routeAroundDistressShip } from './distress-navigation';
 import {
-  DISTRESS_DIAGNOSIS_STANDOFF,
-  WORK_STANDOFF,
   clampPoint,
+  createInitialSalvageShip,
+  distressDiagnosisInRange,
+  planSalvageRoute,
+  salvageWorkInRange,
   workPoint,
 } from './salvage-work-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
-  salvageFieldPhysicsBodies,
 } from './salvage-container-motion';
-import { planPointRoute } from '../local-space/local-space-navigation';
+import { applySalvageShieldContact } from './salvage-shield-contact';
+import { advanceSalvageLongRangeScan } from './salvage-field-scan';
+import {
+  INSPECTION_SECONDS,
+  DISTRESS_DIAGNOSIS_SECONDS,
+  salvageOperationProgress,
+} from './salvage-operation-progress';
 import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
-import { longRangeScanRadius } from '../scanning/scanner-service';
 import type { ShipHardpoints } from '../../core/ship-types';
-import { seededLocalGate } from '../../core/local-space-exit';
 import type {
   SalvageLocalPhase,
   SalvageLocalSpaceSnapshot,
@@ -24,7 +28,6 @@ import type { LocalShipState } from '../../core/local-space-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
-import { distance } from '../local-space/local-space-motion';
 import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { createSalvageEventController } from './salvage-event-service';
@@ -35,8 +38,7 @@ import {
   type SalvageResourceCollector,
 } from './salvage-field-service';
 
-const INSPECTION_SECONDS = 2.8;
-export const DISTRESS_DIAGNOSIS_SECONDS = 3;
+export { DISTRESS_DIAGNOSIS_SECONDS } from './salvage-operation-progress';
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
 type ApproachPurpose = 'inspect' | 'diagnose' | 'strip' | 'component';
@@ -111,14 +113,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.collisionShields = options.hardpoints
       ? createLocalSpaceShipSystems(undefined, options.hardpoints)
       : null;
-    this.ship = {
-      position: seededLocalGate(options.field.width, options.field.height, options.field.seed),
-      headingRadians: 0,
-      speed: 0,
-      turnRateRadiansPerSecond: 0,
-      angularThrust: 0,
-      lateralThrust: 0,
-    };
+    this.ship = createInitialSalvageShip(options.field);
   }
 
   getSnapshot(): SalvageLocalSpaceSnapshot {
@@ -131,7 +126,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       navigationTarget: this.navigationTarget,
       navigationRoute: this.navigationRoute,
       phase: this.phase,
-      operationProgress: this.operationProgress(),
+      operationProgress: salvageOperationProgress(
+        this.phase,
+        this.elapsed,
+        this.salvageCycleSeconds(),
+        this.componentCycleSeconds()
+      ),
       longRangeScanProgress:
         this.longRangeScanElapsed === null ? null : Math.min(1, this.longRangeScanElapsed / 5),
       activeResourceId: this.activeResourceId,
@@ -166,24 +166,13 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   recordShipShieldContact(normal: WorldPoint, overlap: number): void {
     if (this.shipContactCooldown > 0 || !this.collisionShields) return;
     this.shipContactCooldown = 0.35;
-    const cos = Math.cos(this.ship.headingRadians);
-    const sin = Math.sin(this.ship.headingRadians);
-    const local = { x: normal.x * cos + normal.y * sin, y: -normal.x * sin + normal.y * cos };
-    const scale = 0.4 * (this.options.shipLengthMeters ?? 80);
-    const contactPoint = {
-      x: this.ship.position.x + normal.x * scale,
-      y: this.ship.position.y + normal.y * scale,
-    };
-    const kineticEnergy = 3500 + Math.min(15000, overlap * 650);
-    this.collisionShields.applyCollision({
-      asteroidId: 'npc-contact',
-      point: contactPoint,
+    applySalvageShieldContact(
+      this.collisionShields,
+      this.ship,
       normal,
-      surfaceAnchor: local,
-      mass: 350,
-      impactSpeed: Math.sqrt((2 * kineticEnergy) / 350),
-      kineticEnergy,
-    });
+      overlap,
+      this.options.shipLengthMeters ?? 80
+    );
   }
 
   startLongRangeScan(): SalvageLocalSpaceSnapshot {
@@ -207,7 +196,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = null;
-    if (this.withinWorkRange(wreck)) this.beginInspection();
+    if (salvageWorkInRange(this.ship.position, wreck)) this.beginScan('inspecting');
     else this.beginApproach(wreck, 'inspect');
     return this.getSnapshot();
   }
@@ -225,7 +214,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     }
     this.workTargetId = wreckId;
     this.activeResourceId = null;
-    if (this.withinDiagnosisRange(wreck)) this.beginDiagnosis();
+    if (distressDiagnosisInRange(this.ship.position, wreck)) this.beginScan('diagnosing');
     else this.beginApproach(wreck, 'diagnose');
     return this.getSnapshot();
   }
@@ -243,7 +232,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = resourceId;
-    if (this.withinWorkRange(wreck)) this.beginStripping();
+    if (salvageWorkInRange(this.ship.position, wreck)) this.beginStripping();
     else this.beginApproach(wreck, 'strip');
     return this.getSnapshot();
   }
@@ -262,7 +251,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = null;
-    if (this.withinWorkRange(wreck)) this.beginComponentRecovery();
+    if (salvageWorkInRange(this.ship.position, wreck)) this.beginComponentRecovery();
     else this.beginApproach(wreck, 'component');
     return this.getSnapshot();
   }
@@ -310,7 +299,14 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.events.tick(delta);
       this.collisionShields?.advance(delta);
       this.shipContactCooldown = Math.max(0, this.shipContactCooldown - delta);
-      this.advanceLongRangeScan(delta);
+      this.longRangeScanElapsed = advanceSalvageLongRangeScan(
+        this.longRangeScanElapsed,
+        delta,
+        this.options.field,
+        this.ship.position,
+        this.options.sensorModifier ?? 1,
+        this.options.sensorCrewSkill ?? this.options.crewSkill
+      );
       advanceSalvageContainerDrift(this.options.field, delta);
       if (this.phase === 'navigating' || this.phase === 'approaching') {
         this.updateRoute(delta);
@@ -337,42 +333,15 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return this.getSnapshot();
   }
 
-  private advanceLongRangeScan(delta: number): void {
-    if (this.longRangeScanElapsed !== null) {
-      this.longRangeScanElapsed += delta;
-      if (this.longRangeScanElapsed >= 5) {
-        const radius = longRangeScanRadius({
-          sensorModifier: this.options.sensorModifier ?? 1,
-          crewSkill: this.options.sensorCrewSkill ?? this.options.crewSkill,
-        });
-        for (const wreck of this.options.field.wrecks) {
-          if (wreck.inspected || wreck.scanLevel === 'analyzed') continue;
-          if (distance(this.ship.position, wreck.position) <= radius) {
-            wreck.scanLevel = 'surveyed';
-          }
-        }
-        this.longRangeScanElapsed = null;
-      }
-    }
-  }
-
   private findWreck(wreckId: string | null): SalvageWreck | null {
     if (!wreckId) return null;
     return this.options.field.wrecks.find((wreck) => wreck.id === wreckId) ?? null;
   }
 
-  private withinWorkRange(wreck: SalvageWreck): boolean {
-    return distance(this.ship.position, wreck.position) <= wreck.radius + WORK_STANDOFF + 6;
-  }
-
-  private withinDiagnosisRange(wreck: SalvageWreck): boolean {
-    const limit = wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6;
-    return distance(this.ship.position, wreck.position) <= limit;
-  }
-
   private withinApproachRange(wreck: SalvageWreck): boolean {
-    if (this.approachPurpose === 'diagnose') return this.withinDiagnosisRange(wreck);
-    return this.withinWorkRange(wreck);
+    return this.approachPurpose === 'diagnose'
+      ? distressDiagnosisInRange(this.ship.position, wreck)
+      : salvageWorkInRange(this.ship.position, wreck);
   }
 
   private beginApproach(wreck: SalvageWreck, purpose: ApproachPurpose): void {
@@ -387,19 +356,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.phase = phase;
     this.elapsed = 0;
     this.navigationTarget = target;
-    const distress = this.options.field.wrecks.find((wreck) =>
-      wreck.id.startsWith('event-wreck-salvage-distress-')
+    this.navigationRoute = planSalvageRoute(
+      this.options.field,
+      this.ship.position,
+      target,
+      this.options.shipLengthMeters ?? 70
     );
-    this.navigationRoute = distress
-      ? routeAroundDistressShip(this.ship.position, target, distress.position, distress.radius + 60)
-      : planPointRoute({
-          start: this.ship.position,
-          target,
-          asteroids: salvageFieldPhysicsBodies(this.options.field),
-          clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
-          width: this.options.field.width,
-          height: this.options.field.height,
-        }).route;
     this.routeIndex = 1;
   }
 
@@ -427,15 +389,15 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.beginApproach(target, this.approachPurpose ?? 'inspect');
       return;
     }
-    if (this.approachPurpose === 'inspect') this.beginInspection();
-    else if (this.approachPurpose === 'diagnose') this.beginDiagnosis();
+    if (this.approachPurpose === 'inspect') this.beginScan('inspecting');
+    else if (this.approachPurpose === 'diagnose') this.beginScan('diagnosing');
     else if (this.approachPurpose === 'strip') this.beginStripping();
     else if (this.approachPurpose === 'component') this.beginComponentRecovery();
     else this.finishIdle();
   }
 
-  private beginInspection(): void {
-    this.phase = 'inspecting';
+  private beginScan(phase: 'inspecting' | 'diagnosing'): void {
+    this.phase = phase;
     this.elapsed = 0;
     this.approachPurpose = null;
     resetAutopilotMotion(this.ship);
@@ -451,17 +413,10 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.finishIdle();
   }
 
-  private beginDiagnosis(): void {
-    this.phase = 'diagnosing';
-    this.elapsed = 0;
-    this.approachPurpose = null;
-    resetAutopilotMotion(this.ship);
-  }
-
   private updateDiagnosis(deltaSeconds: number): void {
     const target = this.findWreck(this.workTargetId);
     if (!target) return this.finishIdle();
-    if (!this.withinDiagnosisRange(target)) {
+    if (!distressDiagnosisInRange(this.ship.position, target)) {
       this.beginApproach(target, 'diagnose');
       return;
     }
@@ -521,18 +476,6 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   private componentCycleSeconds(): number {
     return Math.max(2.5, this.salvageCycleSeconds() * COMPONENT_CYCLE_MULTIPLIER);
-  }
-
-  private operationProgress(): number | null {
-    if (this.phase === 'inspecting') return Math.min(1, this.elapsed / INSPECTION_SECONDS);
-    if (this.phase === 'diagnosing') return Math.min(1, this.elapsed / DISTRESS_DIAGNOSIS_SECONDS);
-    if (this.phase === 'stripping') {
-      return Math.min(1, this.elapsed / this.salvageCycleSeconds());
-    }
-    if (this.phase === 'extracting-component') {
-      return Math.min(1, this.elapsed / this.componentCycleSeconds());
-    }
-    return null;
   }
 
   private finishIdle(): void {
