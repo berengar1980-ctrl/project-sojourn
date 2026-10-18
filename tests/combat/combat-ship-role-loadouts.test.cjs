@@ -18,7 +18,12 @@ const grapplePhysics = load('src/systems/combat/combat-grapple-physics.ts');
 const throwLogic = load('src/systems/combat/combat-tractor-asteroid-throw.ts');
 
 const maxWeapons = { patrol: 6, freighter: 2, mining: 1, salvage: 1 };
-const activeSlots = { patrol: [0, 1, 2, 3, 4, 5], freighter: [0, 3], mining: [0], salvage: [0] };
+const activeSlots = {
+  patrol: [0, 1, 2, 3, 4, 5],
+  freighter: [0, 3],
+  mining: [0],
+  salvage: [0],
+};
 const isIndustrial = (role) => role === 'mining' || role === 'salvage';
 const fitting = [
   'weapon-front-repeater-1',
@@ -91,7 +96,10 @@ const base = {
 const direction = { x: 1, y: 0 };
 const arena = { asteroids: [anchor], obstacles: [] };
 assert.equal(physics.tractorAccelerationFactor(base, direction, arena), 1.2);
-assert.equal(physics.tractorAccelerationFactor({ ...base, boostActive: false }, direction, arena), 1);
+assert.equal(
+  physics.tractorAccelerationFactor({ ...base, boostActive: false }, direction, arena),
+  1
+);
 assert.equal(physics.tractorAccelerationFactor(base, direction, { asteroids: [] }), 1);
 assert.equal(
   physics.tractorAccelerationFactor({ ...base, subsystems: { tractor: 0 } }, direction, arena),
@@ -153,4 +161,6 @@ throwLogic.maybeLaunchTractorAsteroid(runtime, 'attacker', industrial, enemy);
 assert.equal(runtime.thrownAsteroids.length, 1, 'miner/salvager can manipulate rocks');
 assert.equal(runtime.arena.asteroids.length, 0, 'captured industrial projectile leaves world');
 
-console.log('PASS 28 shared ship-class loadouts, tractor anchor, boarding and industrial-only throws');
+console.log(
+  'PASS 28 shared ship-class loadouts, tractor anchor, boarding and industrial-only throws'
+);
