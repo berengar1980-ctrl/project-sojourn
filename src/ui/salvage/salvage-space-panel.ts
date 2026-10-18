@@ -107,8 +107,7 @@ function showSalvageNpc(model: SalvageSpaceViewModel, ui: SalvageControls, npc: 
 
 function showSalvageContactHint(model: SalvageSpaceViewModel, ui: SalvageControls): void {
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  if (kind)
-    kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
+  if (kind) kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
   ui.name.textContent = model.sectorEvent ? 'HAVARIST AUSWÄHLEN' : 'WRACK AUSWÄHLEN';
   ui.meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
   ui.integrity.style.width = '0%';
