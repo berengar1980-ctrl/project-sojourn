@@ -3271,8 +3271,8 @@ body {
 /* Global settings menu */
 .settings-menu {
   position: fixed;
-  top: 16px;
-  right: 18px;
+  bottom: 18px;
+  left: 18px;
   z-index: 1000;
   font-family: 'Courier New', ui-monospace, monospace;
 }
@@ -3293,10 +3293,16 @@ body {
   font-size: 9px;
 }
 
+.settings-menu__toggle:hover,
+.settings-menu__main-menu:hover {
+  border-color: rgba(112, 215, 232, 0.7);
+  background: rgba(17, 43, 52, 0.96);
+}
+
 .settings-menu__panel {
   position: absolute;
-  top: 42px;
-  right: 0;
+  bottom: 42px;
+  left: 0;
   width: min(420px, calc(100vw - 32px));
   border: 1px solid rgba(92, 148, 166, 0.34);
   background: rgba(3, 10, 14, 0.97);
@@ -3306,6 +3312,14 @@ body {
 
 .settings-menu__panel[hidden] {
   display: none;
+}
+
+body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
+body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
+body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
+  top: 72px;
+  bottom: auto;
+  left: 18px;
 }
 
 .settings-menu__header {
@@ -3543,4 +3557,39 @@ body {
 }
 .combat-hud .combat-weapon-row--ready .combat-weapon-row__cd {
   color: #91c6a5;
+}
+
+.settings-menu__main-menu {
+  min-height: 36px;
+  border: 1px solid rgba(104, 159, 176, 0.35);
+  background: rgba(5, 14, 19, 0.9);
+  color: #a8dce6;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.settings-menu__main-menu-note {
+  color: #718d99;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+@media (max-width: 650px) {
+  .settings-menu {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .settings-menu__panel {
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  body:has(.star-map-shell .selection-card:not([hidden])) .settings-menu,
+  body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu,
+  body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-menu {
+    top: 64px;
+    left: 12px;
+  }
 }

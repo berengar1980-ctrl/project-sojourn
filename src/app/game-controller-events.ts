@@ -83,6 +83,22 @@ export function destroyControllerBoarding(context: ControllerRuntimeContext): vo
   context.state.boardingPanel = null;
 }
 
+export function destroyGameController(
+  context: ControllerRuntimeContext,
+  settingsMenu: { destroy(): void }
+): void {
+  const { state } = context;
+  settingsMenu.destroy();
+  destroyScenePanels(state.panels);
+  destroyControllerSalvage(context);
+  destroyControllerCombat(context);
+  destroyControllerBoarding(context);
+  state.shipSwitcher?.destroy();
+  state.shipSwitcher = null;
+  context.audio.destroy();
+  context.root.replaceChildren();
+}
+
 export function sectorEventLocation(
   context: ControllerRuntimeContext,
   id: string | null

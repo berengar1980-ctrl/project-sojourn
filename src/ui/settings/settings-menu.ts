@@ -60,6 +60,8 @@ function createSettingsShell(): HTMLDivElement {
           <span>WEITERE EINSTELLUNGEN</span>
           <small>Spielstand, Laden und Export werden hier später ergänzt.</small>
         </section>
+        <button class="settings-menu__main-menu" type="button">ZUM HAUPTMENÜ</button>
+        <small class="settings-menu__main-menu-note">Der aktuelle Durchlauf wird beendet.</small>
       </div>
     </section>
   `;
@@ -69,7 +71,10 @@ function createSettingsShell(): HTMLDivElement {
   return shell;
 }
 
-export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
+export function createSettingsMenu(
+  audio: GameAudioService,
+  onReturnToMainMenu: () => void
+): SettingsMenu {
   document.querySelector('.settings-menu')?.remove();
 
   const shell = createSettingsShell();
@@ -77,6 +82,7 @@ export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
   const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
   const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
+  const mainMenu = shell.querySelector<HTMLButtonElement>('.settings-menu__main-menu')!;
   const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
   const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
   const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
@@ -108,6 +114,10 @@ export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
 
   const onToggle = (): void => setOpen(panel.hidden);
   const onClose = (): void => setOpen(false);
+  const onMainMenu = (): void => {
+    if (!window.confirm('Zum Hauptmenü zurückkehren? Der aktuelle Durchlauf wird beendet.')) return;
+    onReturnToMainMenu();
+  };
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && !panel.hidden) setOpen(false);
   };
@@ -116,6 +126,7 @@ export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
   rcs.addEventListener('input', onRcs);
   toggle.addEventListener('click', onToggle);
   close.addEventListener('click', onClose);
+  mainMenu.addEventListener('click', onMainMenu);
   window.addEventListener('keydown', onKeyDown);
 
   sync();
@@ -127,6 +138,7 @@ export function createSettingsMenu(audio: GameAudioService): SettingsMenu {
       rcs.removeEventListener('input', onRcs);
       toggle.removeEventListener('click', onToggle);
       close.removeEventListener('click', onClose);
+      mainMenu.removeEventListener('click', onMainMenu);
       window.removeEventListener('keydown', onKeyDown);
       shell.remove();
     },
