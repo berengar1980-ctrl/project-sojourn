@@ -15,18 +15,29 @@ function createSettingsShell(): HTMLDivElement {
     <button
       class="settings-menu__toggle"
       type="button"
-      aria-label="Einstellungen"
+      aria-label="Menü und Einstellungen öffnen"
       aria-expanded="false"
-      title="Einstellungen"
+      aria-controls="settings-menu-dialog"
+      aria-keyshortcuts="Escape"
+      title="Menü öffnen (Esc)"
     >
-      SETTINGS
+      <span class="settings-menu__icon" aria-hidden="true">☰</span>
+      <span class="settings-menu__toggle-label" aria-hidden="true">MENÜ</span>
     </button>
 
-    <section class="settings-menu__panel" hidden aria-label="Einstellungen">
+    <div class="settings-menu__backdrop" hidden></div>
+    <section
+      id="settings-menu-dialog"
+      class="settings-menu__panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-menu-title"
+      hidden
+    >
       <header class="settings-menu__header">
         <div>
           <span>SOJOURN</span>
-          <strong>EINSTELLUNGEN</strong>
+          <strong id="settings-menu-title">EINSTELLUNGEN</strong>
         </div>
         <button class="settings-menu__close" type="button" aria-label="Schließen">×</button>
       </header>
@@ -81,6 +92,7 @@ export function createSettingsMenu(
 
   const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
+  const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
   const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
   const mainMenu = shell.querySelector<HTMLButtonElement>('.settings-menu__main-menu')!;
   const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
@@ -96,10 +108,26 @@ export function createSettingsMenu(
     rcsValue.value = percent(settings.rcsVolume);
   };
 
+  let previouslyFocused: HTMLElement | null = null;
   const setOpen = (open: boolean): void => {
+    const wasOpen = !panel.hidden;
+    if (open && !wasOpen) {
+      previouslyFocused =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
     panel.hidden = !open;
+    backdrop.hidden = !open;
+    toggle.hidden = open;
     toggle.setAttribute('aria-expanded', String(open));
-    if (open) sync();
+    shell.classList.toggle('is-open', open);
+    if (open) {
+      sync();
+      close.focus();
+    } else if (wasOpen) {
+      const focusTarget = previouslyFocused?.isConnected ? previouslyFocused : toggle;
+      previouslyFocused = null;
+      focusTarget.focus();
+    }
   };
 
   const onAmbience = (): void => {
@@ -119,12 +147,31 @@ export function createSettingsMenu(
     onReturnToMainMenu();
   };
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && !panel.hidden) setOpen(false);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (!event.repeat) setOpen(panel.hidden);
+      return;
+    }
+    if (event.key !== 'Tab' || panel.hidden) return;
+    const focusable = [...panel.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+    )];
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
   };
 
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
   toggle.addEventListener('click', onToggle);
+  backdrop.addEventListener('click', onClose);
   close.addEventListener('click', onClose);
   mainMenu.addEventListener('click', onMainMenu);
   window.addEventListener('keydown', onKeyDown);
@@ -137,6 +184,7 @@ export function createSettingsMenu(
       ambience.removeEventListener('input', onAmbience);
       rcs.removeEventListener('input', onRcs);
       toggle.removeEventListener('click', onToggle);
+      backdrop.removeEventListener('click', onClose);
       close.removeEventListener('click', onClose);
       mainMenu.removeEventListener('click', onMainMenu);
       window.removeEventListener('keydown', onKeyDown);
