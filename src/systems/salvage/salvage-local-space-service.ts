@@ -532,9 +532,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   private operationProgress(): number | null {
     if (this.phase === 'inspecting') return Math.min(1, this.elapsed / INSPECTION_SECONDS);
-    if (this.phase === 'diagnosing') {
-      return Math.min(1, this.elapsed / DISTRESS_DIAGNOSIS_SECONDS);
-    }
+    if (this.phase === 'diagnosing') return Math.min(1, this.elapsed / DISTRESS_DIAGNOSIS_SECONDS);
     if (this.phase === 'stripping') {
       return Math.min(1, this.elapsed / this.salvageCycleSeconds());
     }
