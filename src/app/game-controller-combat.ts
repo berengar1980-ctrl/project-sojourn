@@ -7,6 +7,8 @@ import {
   getShipComponent,
   resolveShipRuntimeSetup,
   resolveShipCombatMovementStats,
+  shipCombatTractorRange,
+  shipHasIndustrialTractor,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 
@@ -43,10 +45,8 @@ export function createPlayerCombatant(
     preferredTactic: 'fight',
     ...movement,
     mines,
-    tractorRangeMeters: Math.max(
-      0,
-      ...(runtime.installed.tractor ?? []).map((id) => getShipComponent('tractor', id)?.range ?? 0)
-    ),
+    tractorRangeMeters: shipCombatTractorRange(runtime.installed),
+    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     sensorCrewSkill: runtime.sensorCrewSkill,
     sensorTier: sensor?.tier ?? 0,
     sensorRangeMeters: runtime.scanAvailable ? 1000 : 0,
