@@ -91,7 +91,7 @@ function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTM
 function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
   const npc = model.npcShips.find((entry) => entry.isSelected);
   const wreck = model.selectedWreck;
-  ui.card.hidden = !wreck && !npc && !model.sectorEvent;
+  ui.card.hidden = false;
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
   ui.attackButton.hidden = true;
   ui.inspectButton.hidden = true;
@@ -110,9 +110,9 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
     return;
   }
   if (!wreck) {
-    if (kind) kind.textContent = 'NOTRUF';
-    ui.name.textContent = 'HAVARIST';
-    ui.meta.textContent = 'Ziel auf der Karte auswählen und Nahbereichsscan durchführen.';
+    if (kind) kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
+    ui.name.textContent = model.sectorEvent ? 'HAVARIST AUSWÄHLEN' : 'WRACK AUSWÄHLEN';
+    ui.meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
     ui.integrity.style.width = '0%';
     return;
   }
