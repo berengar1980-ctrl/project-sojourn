@@ -41,6 +41,11 @@ export function resolveShipCombatMovementStats(ship: ShipDefinition): {
   };
 }
 
+/** Unboosted local travel uses the same hull speed as ordinary combat thrust. */
+export function resolveShipLocalCruiseSpeed(ship: ShipDefinition): number {
+  return resolveShipCombatMovementStats(ship).combatSpeed;
+}
+
 export function shipShieldMaxHp(
   ship: ShipDefinition,
   baseShieldHp = ship.sprite.hardpoints.shield.maxHp

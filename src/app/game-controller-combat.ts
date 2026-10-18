@@ -35,7 +35,7 @@ export function createPlayerCombatant(
     hullHp: runtime.hullMaxHp,
     weapons,
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
-    hitChance: 0.72 + runtime.crewEffects.sensors.weaponHitChanceBonus,
+    hitChance: 0.68 + runtime.crewEffects.sensors.weaponHitChanceBonus,
     dodgeChance: runtime.crewEffects.piloting.dodgeChance,
     damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
     criticalChance: runtime.crewEffects.weapons.criticalChance,
