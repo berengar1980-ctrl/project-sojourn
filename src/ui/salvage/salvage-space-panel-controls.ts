@@ -66,7 +66,7 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button type="button" data-tactic="flee">FLUCHT</button>',
     '<button type="button" data-grapple>GREIFHAKEN</button></div>',
     '<aside class="salvage-event" hidden></aside>',
-    '<div class="local-cargo-panel">',
+    '<div class="local-operations-dock"><div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // BERGUNG</div>',
     '<div class="local-cargo-total">BELEGT · <strong>0 / 0</strong></div>',
     '<div class="local-cargo-list"></div></div>',
@@ -80,7 +80,7 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<button class="salvage-inspect-button" type="button">NAHBEREICHSSCAN</button>',
     '<aside class="sector-salvage-event" hidden></aside>',
     '<button class="salvage-attack-button" type="button" hidden>ANGREIFEN</button>',
-    '</div>',
+    '</div></div>',
   ].join('');
   options.root.replaceChildren(shell);
   return shell;
