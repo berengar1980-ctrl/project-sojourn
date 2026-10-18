@@ -3307,13 +3307,11 @@ body.app-has-system-bar #app {
   overflow: hidden;
 }
 
-body.app-has-system-bar #app > :is(
-  .star-map-shell,
-  .local-space-shell,
-  .port-shell,
-  .strategic-combat-shell,
-  .harrow-duel
-) {
+body.app-has-system-bar #app > .star-map-shell,
+body.app-has-system-bar #app > .local-space-shell,
+body.app-has-system-bar #app > .port-shell,
+body.app-has-system-bar #app > .strategic-combat-shell,
+body.app-has-system-bar #app > .harrow-duel {
   width: 100%;
   height: 100%;
 }
