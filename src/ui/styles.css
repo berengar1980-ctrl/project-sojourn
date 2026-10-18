@@ -3298,16 +3298,16 @@ body {
   }
 }
 
-/* The menu tab has its own physical rail: no map contact, planet control or
-   local-operation button can occupy the same screen pixels while closed. */
-body:has(.settings-menu) #app {
-  width: calc(100% - 40px);
-  height: 100dvh;
+/* The global console owns a permanent viewport row. Scenes render beneath it
+   instead of sharing coordinates with Settings, independently of the current mode. */
+body.app-has-system-bar #app {
+  height: calc(100dvh - 42px);
   min-height: 0;
-  margin-left: 40px;
+  margin-top: 42px;
+  overflow: hidden;
 }
 
-body:has(.settings-menu) #app > :is(
+body.app-has-system-bar #app > :is(
   .star-map-shell,
   .local-space-shell,
   .port-shell,
@@ -3318,20 +3318,49 @@ body:has(.settings-menu) #app > :is(
   height: 100%;
 }
 
-@media (max-width: 650px) {
-  body:has(.settings-menu) .star-map-shell .selection-card,
-  body:has(.settings-menu) .local-space-shell .local-selection-card {
-    width: calc(100% - 32px);
-  }
-}
-
-/* A single settings surface independent of scene HUDs and selected objects. */
+/* One settings surface for campaign and duels; never anchor to HUD content. */
 .settings-menu {
   position: fixed;
   inset: 0;
   z-index: 1000;
   pointer-events: none;
   font-family: 'Courier New', ui-monospace, monospace;
+}
+
+.settings-menu__chrome {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(102, 160, 178, 0.33);
+  background: rgba(4, 13, 19, 0.97);
+  pointer-events: auto;
+}
+
+.settings-menu__brand {
+  display: flex;
+  gap: 13px;
+  align-items: baseline;
+  min-width: 0;
+  color: #91bdc8;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.settings-menu__brand strong {
+  color: #d1e5eb;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.settings-menu__brand span {
+  color: #77939e;
 }
 
 .settings-menu__toggle,
@@ -3346,33 +3375,16 @@ body:has(.settings-menu) #app > :is(
 }
 
 .settings-menu__toggle {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  display: grid;
-  place-items: center;
-  gap: 5px;
-  width: 36px;
-  padding: 10px 5px;
-  border-left: 0;
-  border-radius: 0 8px 8px 0;
-  background: rgba(5, 14, 19, 0.78);
-  box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.22);
-  transform: translateY(-50%);
-  pointer-events: auto;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 9px;
+  white-space: nowrap;
 }
 
-.settings-menu__icon {
-  color: #a8dce6;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.settings-menu__toggle-label {
-  color: #8aabb7;
-  font-size: 8px;
-  letter-spacing: 0.17em;
-  writing-mode: vertical-rl;
+.settings-menu__toggle span {
+  margin-left: 5px;
+  color: #809da8;
 }
 
 .settings-menu__toggle:hover,
