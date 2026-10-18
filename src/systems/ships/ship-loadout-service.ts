@@ -3,6 +3,10 @@ import type { InstalledShipComponents } from './ship-component-service';
 import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
 import { resolveShipGameplayStats } from './ship-stats';
+import {
+  isShipCombatWeaponSlotActive,
+  shipActiveCombatWeaponMounts,
+} from './ship-combat-role-policy';
 
 export type ShipLoadoutSnapshot = Readonly<Record<string, InstalledShipComponents>>;
 
@@ -30,8 +34,9 @@ export function fitsWeaponHardpoint(
   index: number,
   weapon: ShipWeaponProfile
 ): boolean {
+  if (!isShipCombatWeaponSlotActive(ship, index)) return false;
   const mounts = ship.sprite.hardpoints.weaponMounts;
-  if (!mounts) return true;
+  if (!mounts) return index < resolveShipGameplayStats(ship).weaponSlots;
   const point = mounts.find((mount) => mount.slotIndex === index);
   if (!point) return false;
   return (
@@ -43,7 +48,9 @@ export function fitsWeaponHardpoint(
 export function shipCanFitWeapon(ship: ShipDefinition, weapon: ShipWeaponProfile): boolean {
   const slots = ship.sprite.hardpoints.weaponMounts;
   if (!slots?.length) return resolveShipGameplayStats(ship).weaponSlots > 0;
-  return slots.some((slot) => fitsWeaponHardpoint(ship, slot.slotIndex, weapon));
+  return shipActiveCombatWeaponMounts(ship).some((slot) =>
+    fitsWeaponHardpoint(ship, slot.slotIndex, weapon)
+  );
 }
 
 function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
