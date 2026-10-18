@@ -48,6 +48,7 @@ function launchCampaign(root: HTMLElement): void {
 
 function showMainMenu(root: HTMLElement): void {
   document.querySelector('.settings-menu')?.remove();
+  document.body.classList.remove('app-has-system-bar');
   let current: { destroy(): void } | null = null;
   const navigate = (action: StartMenuAction): void => {
     current?.destroy();
