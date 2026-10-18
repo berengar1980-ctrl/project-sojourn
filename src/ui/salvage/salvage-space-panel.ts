@@ -359,10 +359,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
-      button.classList.toggle(
-        'is-active',
-        button.dataset.tactic === model.combat?.attacker.tactic
-      );
+      button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
     }
     updateCombatGrappleButton(ui.combatTactics, model.combat);
     renderSelection(model, ui);
