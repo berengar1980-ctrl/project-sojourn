@@ -10,6 +10,7 @@ const scene = source('src/app/game-controller-salvage.ts');
 const callbacks = source('src/app/game-controller-events.ts');
 const rights = source('src/systems/salvage/distress-salvage-rights.ts');
 const panel = source('src/ui/salvage/salvage-space-panel.ts');
+const eventControls = source('src/ui/salvage/salvage-sector-event.ts');
 const miningPanel = source('src/ui/local-space/mining-event-panel.ts');
 const miningView = source('src/ui/local-space/local-space-panel-view.ts');
 const styles = source('src/ui/styles.css');
@@ -23,8 +24,8 @@ assert(
 );
 assert(!callbacks.includes('actions.mountSalvage(true)'));
 assert(callbacks.includes('state.salvageScene?.updateSectorEvent(event)'));
-assert(panel.includes('GREIFHAKEN AUSSER REICHWEITE'));
-assert(panel.includes('distressTowWithinRange(model.ship.position, wreck.position)'));
+assert(eventControls.includes('GREIFHAKEN AUSSER REICHWEITE'));
+assert(eventControls.includes('distressTowWithinRange(model.ship.position, wreck.position)'));
 assert(
   panel.includes("model.sectorEvent?.distressStage !== 'approach'"),
   'completed diagnosis must refresh action buttons without recreating the scene'
