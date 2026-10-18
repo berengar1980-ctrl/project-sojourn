@@ -10,20 +10,18 @@ const { describeCombatIntent, describeCombatStatus } = loadStandaloneTypeScriptM
 );
 
 const base = { tactic: 'fight', strategy: { kind: 'broadside' } };
-assert.equal(describeCombatIntent(base), 'BREITSEITE');
-assert.equal(
-  describeCombatIntent({ ...base, strategy: { kind: 'broadside', broadsideFacing: 'port' } }),
-  'BREITSEITE · BACKBORD'
-);
-assert.equal(
-  describeCombatIntent({ ...base, strategy: { kind: 'broadside', broadsideFacing: 'starboard' } }),
-  'BREITSEITE · STEUERBORD'
-);
-assert.equal(describeCombatIntent({ ...base, tactic: 'flee' }), 'FLIEHEN');
-assert.equal(describeCombatIntent({ tactic: 'fight', strategy: { kind: 'approach' } }), 'ANNÄHERN');
-assert.equal(describeCombatIntent({ tactic: 'fight', strategy: null }), 'KAMPFPOSITION SUCHEN');
+const port = { ...base, strategy: { kind: 'broadside', broadsideFacing: 'port' } };
+const starboard = { ...base, strategy: { kind: 'broadside', broadsideFacing: 'starboard' } };
 
-// A transient flight/action label may not hide the actual weapon posture.
+assert.equal(describeCombatIntent(base), 'BREITSEITE');
+assert.equal(describeCombatIntent(port), 'BREITSEITE · BACKBORD');
+assert.equal(describeCombatIntent(starboard), 'BREITSEITE · STEUERBORD');
+assert.equal(describeCombatIntent({ ...base, tactic: 'flee' }), 'FLIEHEN');
+assert.equal(describeCombatIntent({ tactic: 'fight', strategy: null }), 'KAMPFPOSITION SUCHEN');
+const approach = { tactic: 'fight', strategy: { kind: 'approach' } };
+assert.equal(describeCombatIntent(approach), 'ANNÄHERN');
+
+// The current flight maneuver must not overwrite the chosen weapon posture.
 const snapshot = {
   tactic: 'fight',
   strategy: { kind: 'broadside', broadsideFacing: 'starboard' },
@@ -31,51 +29,59 @@ const snapshot = {
   mineCount: 0,
   combatIntent: 'ANGRIFFSPASSAGE',
 };
-assert.deepEqual(describeCombatStatus(snapshot), {
-  strategy: 'BREITSEITE · STEUERBORD',
-  maneuver: 'ANGRIFFSPASSAGE',
-});
-assert.deepEqual(describeCombatStatus({ ...snapshot, combatIntent: 'ABSTAND GEWINNEN' }), {
-  strategy: 'BREITSEITE · STEUERBORD',
-  maneuver: 'ABSTAND GEWINNEN',
-});
-assert.deepEqual(describeCombatStatus({ ...snapshot, combatIntent: 'BREITSEITE' }), {
-  strategy: 'BREITSEITE · STEUERBORD',
-  maneuver: null,
-});
-assert.deepEqual(
-  describeCombatStatus({ ...snapshot, combatIntent: 'BREITSEITE · STEUERBORD' }),
-  { strategy: 'BREITSEITE · STEUERBORD', maneuver: null }
-);
-assert.deepEqual(describeCombatStatus({ ...snapshot, tactic: 'flee', combatIntent: 'FLIEHEN' }), {
-  strategy: 'FLIEHEN',
-  maneuver: null,
-});
-assert.deepEqual(describeCombatStatus({ ...snapshot, tactic: 'kite' }), {
-  strategy: 'BREITSEITE · STEUERBORD',
-  maneuver: 'ANGRIFFSPASSAGE',
-});
-assert.deepEqual(
-  describeCombatStatus({
-    ...snapshot,
-    strategy: { kind: 'frontal' },
-    combatIntent: 'FRONTALANGRIFF',
-  }),
-  { strategy: 'FRONTALANGRIFF', maneuver: null }
-);
-assert.deepEqual(
-  describeCombatStatus({
-    ...snapshot,
-    strategy: { kind: 'skirmish' },
-    tactic: 'kite',
-    combatIntent: 'ABSTAND HALTEN',
-  }),
-  { strategy: 'ABSTAND HALTEN', maneuver: null }
-);
-assert.deepEqual(
-  describeCombatStatus({ ...snapshot, strategy: { kind: 'frontal' }, combatIntent: 'VERFOLGEN' }),
-  { strategy: 'FRONTALANGRIFF', maneuver: 'VERFOLGEN' }
-);
+
+const cases = [
+  {
+    overrides: {},
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: 'ANGRIFFSPASSAGE',
+  },
+  {
+    overrides: { combatIntent: 'ABSTAND GEWINNEN' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: 'ABSTAND GEWINNEN',
+  },
+  {
+    overrides: { combatIntent: 'BREITSEITE' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: null,
+  },
+  {
+    overrides: { combatIntent: 'BREITSEITE · STEUERBORD' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: null,
+  },
+  {
+    overrides: { tactic: 'kite' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: 'ANGRIFFSPASSAGE',
+  },
+  {
+    overrides: { tactic: 'flee', combatIntent: 'FLIEHEN' },
+    strategy: 'FLIEHEN',
+    maneuver: null,
+  },
+  {
+    overrides: { strategy: { kind: 'frontal' }, combatIntent: 'FRONTALANGRIFF' },
+    strategy: 'FRONTALANGRIFF',
+    maneuver: null,
+  },
+  {
+    overrides: { strategy: { kind: 'frontal' }, combatIntent: 'VERFOLGEN' },
+    strategy: 'FRONTALANGRIFF',
+    maneuver: 'VERFOLGEN',
+  },
+  {
+    overrides: { strategy: { kind: 'skirmish' }, tactic: 'kite', combatIntent: 'ABSTAND HALTEN' },
+    strategy: 'ABSTAND HALTEN',
+    maneuver: null,
+  },
+];
+
+for (const test of cases) {
+  const actual = describeCombatStatus({ ...snapshot, ...test.overrides });
+  assert.deepEqual(actual, { strategy: test.strategy, maneuver: test.maneuver });
+}
 
 const telemetry = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-telemetry.ts'),
