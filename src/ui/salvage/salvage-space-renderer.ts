@@ -16,10 +16,7 @@ import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-th
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
