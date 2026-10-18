@@ -37,9 +37,8 @@ function statusText(model: SalvageSpaceViewModel): string {
   if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
   if (model.phase === 'approaching') {
     const target = model.wrecks.find((wreck) => wreck.isWorkTarget);
-    return target && !target.inspected
-      ? 'ANFLUG FÜR NAHBEREICHSSCAN'
-      : 'ANFLUG AUF BERGUNGSPOSITION';
+    if (target && !target.inspected) return 'ANFLUG FÜR NAHBEREICHSSCAN';
+    return 'ANFLUG AUF BERGUNGSPOSITION';
   }
   if (model.phase === 'inspecting') {
     return 'NAHBEREICHSSCAN · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
@@ -133,11 +132,9 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
     model.salvageEventRecoverySeconds > 0;
 
   if (!wreck.inspected) {
-    ui.meta.textContent =
-      (wreck.scanLevel === 'surveyed'
-        ? 'FERNBEREICHSSCAN · KONTAKT ERFASST'
-        : 'KONTAKT UNBEKANNT') +
-      ' · NAHBEREICHSSCAN ERFORDERLICH';
+    const contactStatus =
+      wreck.scanLevel === 'surveyed' ? 'FERNBEREICHSSCAN · KONTAKT ERFASST' : 'KONTAKT UNBEKANNT';
+    ui.meta.textContent = contactStatus + ' · NAHBEREICHSSCAN ERFORDERLICH';
     ui.inspectButton.hidden = false;
     ui.inspectButton.textContent =
       model.phase === 'approaching' || model.phase === 'inspecting'
