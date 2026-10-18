@@ -58,7 +58,10 @@ function createScene() {
 }
 
 assert.equal(DISTRESS_DIAGNOSIS_SECONDS, 3);
-assert(DISTRESS_DIAGNOSIS_STANDOFF < 105, 'diagnosis standoff must be closer than ordinary salvage');
+assert(
+  DISTRESS_DIAGNOSIS_STANDOFF < 105,
+  'diagnosis standoff must be closer than ordinary salvage'
+);
 
 const { service, wreck } = createScene();
 assert.equal(service.startDistressDiagnosis(wreck.id).phase, 'idle', 'must select havarist first');
@@ -88,18 +91,29 @@ canceled.service.selectWreck(canceled.wreck.id);
 canceled.service.startDistressDiagnosis(canceled.wreck.id);
 canceled.service.cancelOperation();
 for (let step = 0; step < 40; step++) canceled.service.tick(0.1);
-assert.equal(canceled.service.getSnapshot().diagnosisSerial, 0, 'cancel prevents remote resolution');
+assert.equal(
+  canceled.service.getSnapshot().diagnosisSerial,
+  0,
+  'cancel prevents remote resolution'
+);
 
 const retarget = createScene();
 retarget.service.selectWreck(retarget.wreck.id);
 retarget.service.startDistressDiagnosis(retarget.wreck.id);
 retarget.service.selectWreck(null);
 for (let step = 0; step < 40; step++) retarget.service.tick(0.1);
-assert.equal(retarget.service.getSnapshot().diagnosisSerial, 0, 'deselecting the target cancels diagnosis');
+assert.equal(
+  retarget.service.getSnapshot().diagnosisSerial,
+  0,
+  'deselecting the target cancels diagnosis'
+);
 
 const nearby = createScene();
 nearby.service.syncCombatPose(
-  { x: nearby.wreck.position.x + nearby.wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF, y: nearby.wreck.position.y },
+  {
+    x: nearby.wreck.position.x + nearby.wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF,
+    y: nearby.wreck.position.y,
+  },
   0,
   0
 );
@@ -109,14 +123,24 @@ for (let step = 0; step < 29; step++) nearby.service.tick(0.1);
 assert.equal(nearby.service.getSnapshot().diagnosisSerial, 0, 'no early results');
 nearby.service.cancelOperation();
 for (let step = 0; step < 35; step++) nearby.service.tick(0.1);
-assert.equal(nearby.service.getSnapshot().diagnosisSerial, 0, 'cancel during scanning stops result');
+assert.equal(
+  nearby.service.getSnapshot().diagnosisSerial,
+  0,
+  'cancel during scanning stops result'
+);
 
 const ui = fs.readFileSync(path.join(root, 'src/ui/salvage/salvage-space-panel.ts'), 'utf8');
 const controls = fs.readFileSync(path.join(root, 'src/ui/salvage/salvage-sector-event.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller-salvage.ts'), 'utf8');
-const renderer = fs.readFileSync(path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'), 'utf8');
+const renderer = fs.readFileSync(
+  path.join(root, 'src/ui/salvage/salvage-space-renderer.ts'),
+  'utf8'
+);
 assert(ui.includes('options.onStartDistressDiagnosis(id)'));
-assert(!ui.includes('diagnosisTimer'), 'diagnosis must be driven by operation time, not a UI timer');
+assert(
+  !ui.includes('diagnosisTimer'),
+  'diagnosis must be driven by operation time, not a UI timer'
+);
 assert(controls.includes('model.selectedWreck?.id'), 'event actions require selected target');
 assert(controller.includes('service.startDistressDiagnosis(wreck.id)'));
 assert(controller.includes('service.getSnapshot().diagnosisSerial !== diagnosisSerial'));
