@@ -31,13 +31,17 @@ export function workPoint(ship: LocalShipState, wreck: SalvageWreck): WorldPoint
 }
 
 export function salvageWorkInRange(ship: WorldPoint, wreck: SalvageWreck): boolean {
-  return Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
-    wreck.radius + WORK_STANDOFF + 6;
+  return (
+    Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
+    wreck.radius + WORK_STANDOFF + 6
+  );
 }
 
 export function distressDiagnosisInRange(ship: WorldPoint, wreck: SalvageWreck): boolean {
-  return Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
-    wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6;
+  return (
+    Math.hypot(ship.x - wreck.position.x, ship.y - wreck.position.y) <=
+    wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6
+  );
 }
 
 export function planSalvageRoute(
