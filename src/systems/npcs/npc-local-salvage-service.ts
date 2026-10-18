@@ -12,11 +12,7 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import {
-  getShipDefinition,
-  resolveShipLocalCruiseSpeed,
-  resolveShipRuntimeSetup,
-} from '../ships';
+import { getShipDefinition, resolveShipLocalCruiseSpeed, resolveShipRuntimeSetup } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 import {
   FLIGHT_SPEED,
