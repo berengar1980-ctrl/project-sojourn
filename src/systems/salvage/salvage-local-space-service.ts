@@ -229,7 +229,6 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       (entry) => entry.resourceId === resourceId && entry.remainingAmount > 0
     );
     if (!deposit) return this.getSnapshot();
-
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = resourceId;
@@ -248,7 +247,6 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     ) {
       return this.getSnapshot();
     }
-
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = null;
