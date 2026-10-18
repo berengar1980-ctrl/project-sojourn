@@ -90,6 +90,13 @@ canceled.service.cancelOperation();
 for (let step = 0; step < 40; step++) canceled.service.tick(0.1);
 assert.equal(canceled.service.getSnapshot().diagnosisSerial, 0, 'cancel prevents remote resolution');
 
+const retarget = createScene();
+retarget.service.selectWreck(retarget.wreck.id);
+retarget.service.startDistressDiagnosis(retarget.wreck.id);
+retarget.service.selectWreck(null);
+for (let step = 0; step < 40; step++) retarget.service.tick(0.1);
+assert.equal(retarget.service.getSnapshot().diagnosisSerial, 0, 'deselecting the target cancels diagnosis');
+
 const nearby = createScene();
 nearby.service.syncCombatPose(
   { x: nearby.wreck.position.x + nearby.wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF, y: nearby.wreck.position.y },
