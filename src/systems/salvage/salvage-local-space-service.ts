@@ -376,6 +376,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     );
   }
 
+  private withinApproachRange(wreck: SalvageWreck): boolean {
+    return this.approachPurpose === 'diagnose'
+      ? this.withinDiagnosisRange(wreck)
+      : this.withinWorkRange(wreck);
+  }
+
   private beginApproach(wreck: SalvageWreck, purpose: ApproachPurpose): void {
     this.approachPurpose = purpose;
     this.beginRoute(
@@ -424,12 +430,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       return;
     }
     const target = this.findWreck(this.workTargetId);
-    if (
-      target &&
-      !(this.approachPurpose === 'diagnose'
-        ? this.withinDiagnosisRange(target)
-        : this.withinWorkRange(target))
-    ) {
+    if (target && !this.withinApproachRange(target)) {
       this.beginApproach(target, this.approachPurpose ?? 'inspect');
       return;
     }
