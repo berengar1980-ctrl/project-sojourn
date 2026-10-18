@@ -8,6 +8,10 @@ export function localOperationsHeader(kind: string, title: string): string {
     '<button class="long-scan-button" type="button">FERNBEREICHSSCAN</button>',
     '<button class="scan-label-toggle is-active" type="button">SCAN-DATEN AN</button>',
     '</nav>',
+    '<div class="local-operations-feedback">',
+    '<div class="local-operations-status" role="status" aria-live="polite" hidden></div>',
+    '<button class="operations-cancel-button" type="button" hidden>VORGANG ABBRECHEN</button>',
+    '</div>',
   ].join('');
 }
 
