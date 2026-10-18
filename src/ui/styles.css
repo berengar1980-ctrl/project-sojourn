@@ -3636,7 +3636,6 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
   }
 }
 
-
 /* Shared local-operations layout: mining, standard wrecks and distress missions. */
 .local-operations-toolbar {
   position: absolute;
