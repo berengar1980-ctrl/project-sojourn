@@ -37,12 +37,16 @@ function npcCombatSkill(npc: SectorNpcState): number {
 
 export function npcCombatDoctrine(
   npc: SectorNpcState,
-  armedMines: boolean
+  armedMines: boolean,
+  armedWeapons = false
 ): 'fight' | 'kite' | 'flee' | 'minefield' {
+  if (npc.job === 'miner' || npc.job === 'salvager') {
+    const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
+    if (hullRatio <= 0.3 || (!armedWeapons && !armedMines)) return 'flee';
+    return armedMines && npc.aggression < 65 ? 'minefield' : 'fight';
+  }
   if (npcDefenseReaction(npc) === 'flee') return 'flee';
   if (npc.job === 'freighter' && npc.aggression < 80) return 'flee';
-  if ((npc.job === 'miner' || npc.job === 'salvager') && npc.aggression < 65)
-    return armedMines ? 'minefield' : 'flee';
   if (npc.job === 'pirate' || npc.pirate)
     return armedMines && npc.aggression >= 70 ? 'minefield' : 'fight';
   if (npc.job === 'patrol') return npc.aggression >= 70 ? 'kite' : 'fight';
@@ -83,7 +87,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     criticalChance: weaponCriticalChance(skill),
     cycleTimeMultiplier: weaponCycleTimeMultiplier(skill),
     // Role doctrine changes the chosen maneuver, never weapon or damage statistics.
-    preferredTactic: npcCombatDoctrine(npc, mines.length > 0),
+    preferredTactic: npcCombatDoctrine(npc, mines.length > 0, equippedWeapons.length > 0),
     ...movement,
     mines,
     tractorRangeMeters: shipCombatTractorRange(installed),
