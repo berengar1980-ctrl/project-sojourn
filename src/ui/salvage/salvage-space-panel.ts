@@ -343,7 +343,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? 'Zur Sternkarte wechseln'
       : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
-    eventPanel.update(model.salvageEvent);
+    eventPanel.update(model.salvageEvent, model.salvageEventRecoverySeconds);
     if (
       model.sectorEvent?.distressStage !== 'approach' ||
       !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
