@@ -32,7 +32,7 @@ import {
   destroyScenePanels,
   sectorEventLocation,
 } from './game-controller-events';
-import { createLocalPanelActions, type LocalPanelActions } from './game-controller-local-actions';
+import { createControllerLocalActions } from './game-controller-local-actions';
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
@@ -43,7 +43,6 @@ import {
   controllerShipRuntimeOptions,
   controllerStarModel,
   createControllerLog,
-  createStarMapReturnAction,
   enteredMiningLocation,
   enteredSalvageLocation,
   localSeed,
@@ -145,20 +144,6 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
   mountControllerSwitcher(context);
 }
-function controllerLocalActions(context: ControllerRuntimeContext): LocalPanelActions {
-  return createLocalPanelActions({
-    getSpace: () => context.state.localSpace,
-    refresh: () => {
-      if (context.state.localSpace) {
-        context.state.panels.local?.update(controllerLocalModel(context));
-      }
-    },
-    systemLog: context.systemLog,
-    returnToStarMap: createStarMapReturnAction(context.root, context.systemLog, () =>
-      mountControllerStarMap(context)
-    ),
-  });
-}
 function mountControllerMining(
   context: ControllerRuntimeContext,
   reuseSeed = false,
@@ -184,7 +169,7 @@ function mountControllerMining(
     root: context.root,
     model: controllerLocalModel(context),
     log: context.systemLog,
-    ...controllerLocalActions(context),
+    ...createControllerLocalActions(context, () => mountControllerStarMap(context)),
     onSelectNpc: (id) => {
       state.selectedNpcId = id;
       state.panels.local?.update(controllerLocalModel(context));
@@ -201,6 +186,11 @@ function mountControllerMining(
       const started = context.engagements.engageNpcInArena(id, {
         ...arena,
         defenderPosition: { ...target.position },
+        defenderHeadingRadians: target.headingRadians,
+        defenderVelocity: {
+          x: Math.cos(target.headingRadians) * target.speed,
+          y: Math.sin(target.headingRadians) * target.speed,
+        },
       });
       if (started) {
         state.embeddedCombat = 'local-space';

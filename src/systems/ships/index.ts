@@ -43,6 +43,7 @@ export {
 export {
   resolveShipGameplayStats,
   resolveShipCombatMovementStats,
+  resolveShipLocalCruiseSpeed,
   shipHullMaxHp,
   shipRoleGameplayProfile,
   shipShieldMaxHp,

@@ -1,4 +1,6 @@
 import type { SystemLogService } from '../core/system-log-types';
+import { controllerLocalModel, createStarMapReturnAction } from './game-controller-models';
+import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { WorldPoint } from '../core/world-types';
 import { playerAtLocalExit } from '../ui/map/local-space-exit-gate';
 import {
@@ -112,4 +114,20 @@ export function createLocalPanelActions(context: LocalActionContext): LocalPanel
       context.returnToStarMap();
     },
   };
+}
+
+export function createControllerLocalActions(
+  context: ControllerRuntimeContext,
+  mountStarMap: () => void
+): LocalPanelActions {
+  return createLocalPanelActions({
+    getSpace: () => context.state.localSpace,
+    refresh: () => {
+      if (context.state.localSpace) {
+        context.state.panels.local?.update(controllerLocalModel(context));
+      }
+    },
+    systemLog: context.systemLog,
+    returnToStarMap: createStarMapReturnAction(context.root, context.systemLog, mountStarMap),
+  });
 }

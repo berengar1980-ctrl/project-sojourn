@@ -12,7 +12,7 @@ import {
   resolveShipShieldObstacleCollisions,
   type LocalShieldShipBody,
 } from '../local-space/ship-shield-collision';
-import { getShipDefinition, resolveShipRuntimeSetup } from '../ships';
+import { getShipDefinition, resolveShipLocalCruiseSpeed, resolveShipRuntimeSetup } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 import {
   FLIGHT_SPEED,
@@ -64,6 +64,11 @@ export interface NpcLocalSalvageOptions {
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
 
+function localCruiseSpeed(shipId: string): number {
+  const ship = getShipDefinition(shipId);
+  return ship ? resolveShipLocalCruiseSpeed(ship) : FLIGHT_SPEED;
+}
+
 class LocalSalvageService implements NpcLocalSalvageService {
   readonly ships: LocalNpcSalvagerState[] = [];
   private readonly byId: Map<string, SectorNpcState>;
@@ -104,7 +109,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         shipId: npc.shipId,
         position: { ...entry },
         headingRadians: 0,
-        speed: FLIGHT_SPEED,
+        speed: localCruiseSpeed(npc.shipId),
         phase: 'entering',
         targetWreckId: null,
         salvageActive: false,
@@ -240,7 +245,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.assignTarget(ship, npc);
       return;
     }
-    if (moveToward(ship, workPoint(npc.id, wreck), FLIGHT_SPEED, dt)) {
+    if (moveToward(ship, workPoint(npc.id, wreck), localCruiseSpeed(ship.shipId), dt)) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -333,7 +338,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
 
       ship.salvageActive = false;
-      if (moveToward(ship, ship.exitPoint, FLIGHT_SPEED * 1.15, dt)) {
+      if (moveToward(ship, ship.exitPoint, localCruiseSpeed(ship.shipId), dt)) {
         this.ships.splice(index, 1);
         this.options.depart(npc);
       }
