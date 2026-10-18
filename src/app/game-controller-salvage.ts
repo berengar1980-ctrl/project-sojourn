@@ -25,10 +25,7 @@ import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-v
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
 import type { SectorNpcState } from '../core/npc-types';
-import {
-  createNpcLocalSalvageService,
-  type NpcLocalSalvageService,
-} from '../systems/npcs/npc-local-salvage-service';
+import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
@@ -39,6 +36,11 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
+import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import {
+  requestDistressDiagnosis,
+  tickDistressDiagnosis,
+} from './game-controller-salvage-diagnosis';
 
 export interface SalvageSceneController {
   getField(): SalvageField;
@@ -74,10 +76,10 @@ interface SalvageSceneOptions {
       readonly height: number;
       readonly attackerPosition: { readonly x: number; readonly y: number };
       readonly defenderPosition: { readonly x: number; readonly y: number };
-      readonly attackerVelocity?: { readonly x: number; readonly y: number };
-      readonly attackerHeadingRadians?: number;
       readonly defenderHeadingRadians?: number;
       readonly defenderVelocity?: { readonly x: number; readonly y: number };
+      readonly attackerVelocity?: { readonly x: number; readonly y: number };
+      readonly attackerHeadingRadians?: number;
       readonly asteroids?: readonly CombatVisualAsteroid[];
       readonly obstacles?: readonly {
         readonly id: string;
@@ -118,26 +120,6 @@ interface SalvageSceneRuntime {
   readonly service: SalvageLocalService;
   readonly npcSalvage: NpcLocalSalvageService;
   readonly state: SalvageSceneState;
-}
-
-function createNpcSalvageRuntime(
-  options: SalvageSceneOptions,
-  field: SalvageField,
-  service: SalvageLocalService
-): NpcLocalSalvageService {
-  return createNpcLocalSalvageService({
-    locationId: options.location.id,
-    field,
-    salvagers: options.sectorNpcs.filter(
-      (npc) => npc.job === 'salvager' && npc.workLocationId === options.location.id
-    ),
-    recover: (npc, resourceId, requested) =>
-      options.npcEconomy.salvageLocal(npc, resourceId, requested),
-    depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
-    playerShip: options.ship,
-    getPlayerShipState: () => service.getSnapshot().ship,
-    onPlayerShieldContact: (normal, overlap) => service.recordShipShieldContact(normal, overlap),
-  });
 }
 
 function salvageSceneModel(context: SalvageSceneRuntime) {
@@ -245,6 +227,10 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
       refresh();
     },
+    onStartDistressDiagnosis(eventId) {
+      requestDistressDiagnosis(context, eventId);
+      refresh();
+    },
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
@@ -265,7 +251,6 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
       return result;
     },
-    ...(options.onDiagnoseDistress ? { onDiagnoseDistress: options.onDiagnoseDistress } : {}),
     ...(options.onRepairDistress ? { onRepairDistress: options.onRepairDistress } : {}),
     ...(options.onTowDistress ? { onTowDistress: options.onTowDistress } : {}),
     ...(options.onEvacuateDistress ? { onEvacuateDistress: options.onEvacuateDistress } : {}),
@@ -322,7 +307,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
-    service.tick(deltaSeconds);
+    tickDistressDiagnosis(context, deltaSeconds);
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();
       const wreck = context.field.wrecks[0];

@@ -39,17 +39,12 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
   protected hasFitted = false;
-  protected diagnosisStartedAt = -1;
   private scanLabelsVisible = true;
   setScanLabelsVisible(visible: boolean): void {
     this.scanLabelsVisible = visible;
     this.draw();
   }
   private lastFrameAt = -Infinity;
-  startDistressDiagnosis(): void {
-    this.diagnosisStartedAt = performance.now() / 1000;
-    this.draw();
-  }
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: SalvageSpaceViewModel
@@ -199,14 +194,16 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawLongRangeSalvageScan(width, height, timeSeconds);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
-    drawDistressScanEffect(
-      this.context,
-      this.camera,
-      this.model,
-      timeSeconds - this.diagnosisStartedAt,
-      width,
-      height
-    );
+    if (this.model.phase === 'diagnosing') {
+      drawDistressScanEffect(
+        this.context,
+        this.camera,
+        this.model,
+        (this.model.operationProgress ?? 0) * 3,
+        width,
+        height
+      );
+    }
     const geometry = this.shipGeometry(width, height);
     drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
       this.ensureNpcImage(url)
@@ -292,21 +289,32 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     point: { x: number; y: number },
     radius: number
   ): void {
-    if (
-      (wreck.isSelected || wreck.isWorkTarget) &&
-      !wreck.id.startsWith('event-wreck-salvage-distress-')
-    ) {
-      this.context.save();
-      this.context.strokeStyle = wreck.isWorkTarget
-        ? 'rgba(232, 184, 96, 0.95)'
-        : 'rgba(130, 206, 224, 0.86)';
-      this.context.lineWidth = 1.5;
-      this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
-      this.context.beginPath();
+    if (!wreck.isSelected && !wreck.isWorkTarget) return;
+    this.context.save();
+    this.context.strokeStyle = wreck.isWorkTarget
+      ? 'rgba(232, 184, 96, 0.95)'
+      : 'rgba(130, 206, 224, 0.86)';
+    this.context.lineWidth = 1.5;
+    this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
+    this.context.beginPath();
+    if (!wreck.id.startsWith('event-wreck-salvage-distress-')) {
       this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
-      this.context.stroke();
-      this.context.restore();
+    } else {
+      // Open target corners indicate selection without resembling a shield bubble.
+      const extent = radius + 12;
+      const arm = 12;
+      for (const xSide of [-1, 1]) {
+        for (const ySide of [-1, 1]) {
+          const x = point.x + xSide * extent;
+          const y = point.y + ySide * extent;
+          this.context.moveTo(x - xSide * arm, y);
+          this.context.lineTo(x, y);
+          this.context.lineTo(x, y - ySide * arm);
+        }
+      }
     }
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawWreckScanCallout(

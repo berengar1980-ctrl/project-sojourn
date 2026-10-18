@@ -23,7 +23,7 @@ export interface SalvageSpacePanelOptions {
   readonly onStrip: (wreckId: string, resourceId: string) => void;
   readonly onRecoverComponent: (wreckId: string) => void;
   readonly onEventChoice: (choiceId: string) => SalvageSpaceViewModel['lastEventResolution'];
-  readonly onDiagnoseDistress?: (eventId: string) => void;
+  readonly onStartDistressDiagnosis: (eventId: string) => void;
   readonly onRepairDistress?: (eventId: string) => void;
   readonly onTowDistress?: (eventId: string) => void;
   readonly onEvacuateDistress?: (eventId: string) => void;

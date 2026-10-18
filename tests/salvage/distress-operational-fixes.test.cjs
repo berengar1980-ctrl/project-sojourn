@@ -37,7 +37,13 @@ const scan = fs.readFileSync(
 const panel = fs.readFileSync(path.join(root, 'src/ui/salvage/salvage-space-panel.ts'), 'utf8');
 assert(scan.includes('elapsed > 3'));
 assert(scan.includes('sweepAngle'));
-assert(panel.includes('}, 3000)'));
+const diagnosisTiming = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/salvage-operation-progress.ts'
+);
+assert.equal(diagnosisTiming.DISTRESS_DIAGNOSIS_SECONDS, 3);
+assert(panel.includes('options.onStartDistressDiagnosis(id)'));
+assert(!panel.includes('}, 3000)'), 'the old remote diagnosis timer must be removed');
 
 const { createSectorSalvageEventService } = loadStandaloneTypeScriptModule(
   root,
