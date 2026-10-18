@@ -37,7 +37,10 @@ function statusText(model: SalvageSpaceViewModel): string {
   if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
   if (model.phase === 'approaching') {
     const target = model.wrecks.find((wreck) => wreck.isWorkTarget);
-    if (target?.id.startsWith('event-wreck-salvage-distress-') && model.sectorEvent?.distressStage === 'approach') {
+    if (
+      target?.id.startsWith('event-wreck-salvage-distress-') &&
+      model.sectorEvent?.distressStage === 'approach'
+    ) {
       return 'ANFLUG FÜR TECHNISCHE DIAGNOSE';
     }
     if (target && !target.inspected) return 'ANFLUG FÜR NAHBEREICHSSCAN';
