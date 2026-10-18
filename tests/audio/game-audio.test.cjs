@@ -13,6 +13,8 @@ const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
+const duel = read('src/ui/start/duel-lobby.ts');
+const styles = read('src/ui/styles.css');
 
 const rcs = fs.readFileSync(path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg'));
 
@@ -65,12 +67,23 @@ assert(
     settings.includes('data-audio-volume="rcs"') &&
     settings.includes('settings-menu__main-menu') &&
     settings.includes('settings-menu__backdrop') &&
+    settings.includes('settings-menu__chrome') &&
+    settings.includes("document.body.classList.add('app-has-system-bar')") &&
     settings.includes('aria-modal="true"') &&
     settings.includes("event.key === 'Escape'") &&
     settings.includes("event.key !== 'Tab'") &&
     settings.includes("backdrop.addEventListener('click', onClose)") &&
     settings.includes('onReturnToMainMenu()'),
   'general settings menu must expose audio controls and a main-menu return action'
+);
+
+assert(
+  duel.includes('createSettingsMenu(audio, onBack)') &&
+    duel.includes('settingsMenu.destroy()') &&
+    styles.includes('.settings-menu__chrome') &&
+    styles.includes('body.app-has-system-bar #app') &&
+    !styles.includes('body:has(.local-space-shell) .settings-menu'),
+  'duels and campaign must share one scene-independent system console'
 );
 
 assert(
