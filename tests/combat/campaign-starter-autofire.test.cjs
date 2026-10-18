@@ -20,7 +20,10 @@ assert.equal(
   'weapon-front-repeater-1',
   'salvager receives only a front repeater'
 );
-assert(equipment.weapon.slice(1).every((id) => !id), 'civilian mounts cannot be armed by default');
+assert(
+  equipment.weapon.slice(1).every((id) => !id),
+  'civilian mounts cannot be armed by default'
+);
 assert(
   componentService.calculateShipEnergy(equipment).combatFree >= 0,
   'starter equipment must not overload Mk I reactor'
