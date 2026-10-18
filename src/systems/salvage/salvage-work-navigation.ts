@@ -1,5 +1,6 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalShipState } from '../../core/local-space-types';
+import { seededLocalGate } from '../../core/local-space-exit';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { routeAroundDistressShip } from './distress-navigation';
@@ -59,4 +60,15 @@ export function planSalvageRoute(
     width: field.width,
     height: field.height,
   }).route;
+}
+
+export function createInitialSalvageShip(field: SalvageField): LocalShipState {
+  return {
+    position: seededLocalGate(field.width, field.height, field.seed),
+    headingRadians: 0,
+    speed: 0,
+    turnRateRadiansPerSecond: 0,
+    angularThrust: 0,
+    lateralThrust: 0,
+  };
 }
