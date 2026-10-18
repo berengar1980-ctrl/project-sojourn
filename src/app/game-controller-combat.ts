@@ -5,6 +5,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
+  resolveShipArmorProtection,
   resolveShipRuntimeSetup,
   resolveShipCombatMovementStats,
   shipCombatTractorRange,
@@ -17,7 +18,7 @@ export function createPlayerCombatant(
   options: ShipRuntimeOptions
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
-  const movement = resolveShipCombatMovementStats(ship);
+  const movement = resolveShipCombatMovementStats(ship, runtime.installed);
   const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);
   const sensor = (runtime.installed.sensor ?? [])
@@ -35,6 +36,7 @@ export function createPlayerCombatant(
     shieldHp: runtime.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
+    armor: resolveShipArmorProtection(runtime.installed),
     weapons,
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.68 + runtime.crewEffects.sensors.weaponHitChanceBonus,
