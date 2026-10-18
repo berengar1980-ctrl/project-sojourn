@@ -200,10 +200,7 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
-function requestDistressDiagnosis(
-  context: SalvageSceneRuntime,
-  eventId: string
-): void {
+function requestDistressDiagnosis(context: SalvageSceneRuntime, eventId: string): void {
   const { service, field, options, state } = context;
   if (
     state.activeSectorEvent?.id !== eventId ||
