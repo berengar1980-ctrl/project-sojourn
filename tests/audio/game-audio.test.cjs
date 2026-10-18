@@ -64,6 +64,11 @@ assert(
     settings.includes('data-audio-volume="ambience"') &&
     settings.includes('data-audio-volume="rcs"') &&
     settings.includes('settings-menu__main-menu') &&
+    settings.includes('settings-menu__backdrop') &&
+    settings.includes('aria-modal="true"') &&
+    settings.includes("event.key === 'Escape'") &&
+    settings.includes("event.key !== 'Tab'") &&
+    settings.includes("backdrop.addEventListener('click', onClose)") &&
     settings.includes('onReturnToMainMenu()'),
   'general settings menu must expose audio controls and a main-menu return action'
 );
