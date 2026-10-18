@@ -237,6 +237,21 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       options.log.write('SCAN > LANGREICHWEITENSCAN GESTARTET');
       refresh();
     },
+    onStartDistressDiagnosis(eventId) {
+      if (
+        state.activeSectorEvent?.id !== eventId ||
+        state.activeSectorEvent.type !== 'distress-rescue' ||
+        state.activeSectorEvent.distressStage !== 'approach'
+      ) return;
+      const wreck = context.field.wrecks[0];
+      if (!wreck) return;
+      const before = service.getSnapshot().phase;
+      const after = service.startDistressDiagnosis(wreck.id);
+      if (before === 'idle' && after.phase !== 'idle') {
+        options.log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
+      }
+      refresh();
+    },
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
@@ -257,7 +272,6 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
       return result;
     },
-    ...(options.onDiagnoseDistress ? { onDiagnoseDistress: options.onDiagnoseDistress } : {}),
     ...(options.onRepairDistress ? { onRepairDistress: options.onRepairDistress } : {}),
     ...(options.onTowDistress ? { onTowDistress: options.onTowDistress } : {}),
     ...(options.onEvacuateDistress ? { onEvacuateDistress: options.onEvacuateDistress } : {}),
@@ -314,7 +328,17 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
+    const diagnosisSerial = service.getSnapshot().diagnosisSerial;
     service.tick(deltaSeconds);
+    if (service.getSnapshot().diagnosisSerial !== diagnosisSerial) {
+      const event = context.state.activeSectorEvent;
+      if (
+        event?.type === 'distress-rescue' &&
+        event.distressStage === 'approach'
+      ) {
+        options.onDiagnoseDistress?.(event.id);
+      }
+    }
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();
       const wreck = context.field.wrecks[0];
