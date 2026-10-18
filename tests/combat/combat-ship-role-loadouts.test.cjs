@@ -17,12 +17,12 @@ const physics = load('src/systems/combat/combat-inertial-thrust.ts');
 const grapplePhysics = load('src/systems/combat/combat-grapple-physics.ts');
 const throwLogic = load('src/systems/combat/combat-tractor-asteroid-throw.ts');
 
-const maxWeapons = { patrol: 6, freighter: 2, mining: 1, salvage: 1 };
+const maxWeapons = { patrol: 6, freighter: 4, mining: 3, salvage: 3 };
 const activeSlots = {
   patrol: [0, 1, 2, 3, 4, 5],
-  freighter: [0, 3],
-  mining: [0],
-  salvage: [0],
+  freighter: [0, 1, 2, 3],
+  mining: [0, 1, 2],
+  salvage: [0, 1, 2],
 };
 const isIndustrial = (role) => role === 'mining' || role === 'salvage';
 const fitting = [
@@ -43,6 +43,14 @@ for (const ship of ships.getAllShipDefinitions()) {
   );
   assert.equal(stats.resolveShipGameplayStats(ship).weaponSlots, maxWeapons[role]);
   assert.equal(policy.shipHasIndustrialTractor(ship), isIndustrial(role));
+  const sideMounts = policy.shipActiveCombatWeaponMounts(ship).filter((mount) =>
+    mount.facing === 'port' || mount.facing === 'starboard'
+  );
+  assert.deepEqual(
+    sideMounts.map((mount) => mount.facing),
+    ['port', 'starboard'],
+    ship.id + ': both broadside guns are available'
+  );
 
   const configured = { ...equipment.defaultInstalledShipComponents(ship), weapon: fitting };
   const armed = mounts.combatEquippedWeapons(ship, fitting);
