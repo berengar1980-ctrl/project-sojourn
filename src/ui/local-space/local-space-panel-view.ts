@@ -135,6 +135,23 @@ function updateLocalExitButton(
   button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
 }
 
+function showEmptyMiningSelection(
+  card: HTMLElement,
+  name: HTMLElement,
+  meta: HTMLElement,
+  oreBar: HTMLElement,
+  scanButton: HTMLButtonElement,
+  mineButton: HTMLButtonElement
+): void {
+  const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind) kind.textContent = 'MINING // ZIELAUSWAHL';
+  name.textContent = 'ASTEROID AUSWÄHLEN';
+  meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
+  oreBar.style.width = '0%';
+  scanButton.hidden = true;
+  mineButton.hidden = true;
+}
+
 export function updateLocalOverlay(context: LocalOverlayContext): void {
   const {
     model,
@@ -213,13 +230,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   shortScanButton.hidden = false;
   mineButton.hidden = false;
   if (!selected) {
-    const kind = card.querySelector<HTMLElement>('.local-selection-kind');
-    if (kind) kind.textContent = 'MINING // ZIELAUSWAHL';
-    name.textContent = 'ASTEROID AUSWÄHLEN';
-    meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
-    oreBar.style.width = '0%';
-    shortScanButton.hidden = true;
-    mineButton.hidden = true;
+    showEmptyMiningSelection(card, name, meta, oreBar, shortScanButton, mineButton);
     miningResourceSelector.update(model, true, false);
     return;
   }
