@@ -7,8 +7,14 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const registry = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
 const movement = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-stats.ts');
-const components = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-component-service.ts');
-const damage = loadStandaloneTypeScriptModule(root, 'src/systems/combat/strategic-combat-damage.ts');
+const components = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-component-service.ts'
+);
+const damage = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-damage.ts'
+);
 const ships = registry.getAllShipDefinitions();
 const ship = (role) => ships.find((entry) => entry.role === role);
 
@@ -28,7 +34,10 @@ for (let tier = 1; tier <= 6; tier++) {
   const baseline = movement.resolveShipCombatMovementStats(ship('freighter'));
   const upgraded = movement.resolveShipCombatMovementStats(ship('freighter'), installed);
   assert.equal(upgraded.combatSpeed, Math.round(69 * (1 + bonus)));
-  assert.equal(movement.resolveShipLocalCruiseSpeed(ship('freighter'), installed), upgraded.combatSpeed);
+  assert.equal(
+    movement.resolveShipLocalCruiseSpeed(ship('freighter'), installed),
+    upgraded.combatSpeed
+  );
   assert(upgraded.accelerationMetersPerSecond2 >= baseline.accelerationMetersPerSecond2);
   assert.equal(components.engineSpeedMultiplier(installed), 1 + bonus);
 }
@@ -68,4 +77,6 @@ const hit = damage.applyDamage(target, 0, 40, attacker, false, { x: 100, y: 0 },
 assert.equal(hit.damage, 20);
 assert.equal(target.hullHp, 80);
 assert.equal(components.resolveShipArmorProtection({ armor: [''] }), undefined);
-console.log('PASS engine speeds, freighter baseline and six tiers of four directional armor patterns');
+console.log(
+  'PASS engine speeds, freighter baseline and six tiers of four directional armor patterns'
+);

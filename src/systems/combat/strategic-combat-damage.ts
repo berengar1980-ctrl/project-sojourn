@@ -96,10 +96,15 @@ export function directionalHullDamage(
     { x: sourcePosition.x - target.position.x, y: sourcePosition.y - target.position.y },
     -target.headingRadians
   );
-  const facing = Math.abs(local.x) >= Math.abs(local.y)
-    ? local.x >= 0 ? 'front' : 'rear'
-    : local.y >= 0 ? 'starboard' : 'port';
-  return rawDamage * (1 - Math.max(0, Math.min(1, armor[facing])));
+  const reduction =
+    Math.abs(local.x) >= Math.abs(local.y)
+      ? local.x >= 0
+        ? armor.front
+        : armor.rear
+      : local.y >= 0
+        ? armor.starboard
+        : armor.port;
+  return rawDamage * (1 - Math.max(0, Math.min(1, reduction)));
 }
 
 export function applyDamage(

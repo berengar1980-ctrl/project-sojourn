@@ -36,9 +36,8 @@ export function resolveShipCombatMovementStats(
   readonly turnRateRadiansPerSecond: number;
   readonly accelerationMetersPerSecond2: number;
 } {
-  const baseSpeed = ship.role === 'freighter'
-    ? 69
-    : Math.max(78, Math.min(160, ship.navigation.cruiseSpeed * 0.28));
+  const normalBaseSpeed = Math.max(78, Math.min(160, ship.navigation.cruiseSpeed * 0.28));
+  const baseSpeed = ship.role === 'freighter' ? 69 : normalBaseSpeed;
   const patrolSpeedFactor = ship.role === 'patrol' ? 1.3 : 1;
   const drive = installed ? engineSpeedMultiplier(installed) : 1;
   return {
