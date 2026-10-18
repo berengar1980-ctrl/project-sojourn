@@ -39,17 +39,12 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
   protected hasFitted = false;
-  protected diagnosisStartedAt = -1;
   private scanLabelsVisible = true;
   setScanLabelsVisible(visible: boolean): void {
     this.scanLabelsVisible = visible;
     this.draw();
   }
   private lastFrameAt = -Infinity;
-  startDistressDiagnosis(): void {
-    this.diagnosisStartedAt = performance.now() / 1000;
-    this.draw();
-  }
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: SalvageSpaceViewModel
@@ -199,14 +194,16 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.drawLongRangeSalvageScan(width, height, timeSeconds);
     this.drawPlayerScanCone(width, height, timeSeconds);
     this.drawPlayerSalvageEffect(width, height, timeSeconds);
-    drawDistressScanEffect(
-      this.context,
-      this.camera,
-      this.model,
-      timeSeconds - this.diagnosisStartedAt,
-      width,
-      height
-    );
+    if (this.model.phase === 'diagnosing') {
+      drawDistressScanEffect(
+        this.context,
+        this.camera,
+        this.model,
+        (this.model.operationProgress ?? 0) * 3,
+        width,
+        height
+      );
+    }
     const geometry = this.shipGeometry(width, height);
     drawDistressTow(this.context, this.camera, this.model, width, height, geometry, (url) =>
       this.ensureNpcImage(url)
@@ -292,10 +289,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     point: { x: number; y: number },
     radius: number
   ): void {
-    if (
-      (wreck.isSelected || wreck.isWorkTarget) &&
-      !wreck.id.startsWith('event-wreck-salvage-distress-')
-    ) {
+    if (wreck.isSelected || wreck.isWorkTarget) {
       this.context.save();
       this.context.strokeStyle = wreck.isWorkTarget
         ? 'rgba(232, 184, 96, 0.95)'
