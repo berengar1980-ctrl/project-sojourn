@@ -33,17 +33,21 @@ export function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLE
 
   let actions = '<span>EINSATZ ABGESCHLOSSEN</span>';
   if (stage === 'approach') {
-    const underway = !!wreck?.isWorkTarget &&
+    const underway =
+      !!wreck?.isWorkTarget &&
       (model.phase === 'approaching' || model.phase === 'diagnosing');
     const progress = Math.round((model.operationProgress ?? 0) * 100);
-    const label =
-      model.phase === 'diagnosing' ? 'TECHNISCHE DIAGNOSE · ' + progress + ' %' : 'ANFLUG ZUR DIAGNOSE';
-    const unavailable = !model.scanAvailable || model.phase !== 'idle';
-    actions = underway
-      ? '<button type="button" data-distress-action="diagnose" disabled>' + label + '</button>'
-      : unavailable
-        ? '<button type="button" data-distress-action="diagnose" disabled>SCANSYSTEM NICHT BEREIT</button>'
-        : '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
+    const progressLabel = 'TECHNISCHE DIAGNOSE · ' + progress + ' %';
+    const label = model.phase === 'diagnosing' ? progressLabel : 'ANFLUG ZUR DIAGNOSE';
+    if (underway) {
+      actions = '<button type="button" data-distress-action="diagnose" disabled>' + label + '</button>';
+    } else if (!model.scanAvailable) {
+      actions = '<button type="button" data-distress-action="diagnose" disabled>SCANSYSTEM FEHLT</button>';
+    } else if (model.phase !== 'idle') {
+      actions = '<button type="button" data-distress-action="diagnose" disabled>VORGANG LÄUFT</button>';
+    } else {
+      actions = '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>';
+    }
   } else if (stage === 'diagnosed') {
     actions = [
       '<button type="button" data-distress-action="repair">NOTREPARATUR</button>',
