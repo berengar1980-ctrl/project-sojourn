@@ -309,10 +309,7 @@ export function createNavigationService(
     return snapshot();
   };
 
-  const setCruiseSpeed = (
-    nextCruiseSpeed: number,
-    turnRateMultiplier = 1
-  ): NavigationSnapshot => {
+  const setCruiseSpeed = (nextCruiseSpeed: number, turnRateMultiplier = 1): NavigationSnapshot => {
     if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0) {
       throw new Error('Navigation cruise speed must be positive.');
     }
