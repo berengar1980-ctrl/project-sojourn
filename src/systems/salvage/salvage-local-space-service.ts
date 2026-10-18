@@ -1,5 +1,10 @@
 import { routeAroundDistressShip } from './distress-navigation';
-import { WORK_STANDOFF, clampPoint, workPoint } from './salvage-work-navigation';
+import {
+  DISTRESS_DIAGNOSIS_STANDOFF,
+  WORK_STANDOFF,
+  clampPoint,
+  workPoint,
+} from './salvage-work-navigation';
 import {
   advanceSalvageContainerDrift,
   resolveSalvageShieldContacts,
@@ -31,9 +36,10 @@ import {
 } from './salvage-field-service';
 
 const INSPECTION_SECONDS = 2.8;
+export const DISTRESS_DIAGNOSIS_SECONDS = 3;
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
-type ApproachPurpose = 'inspect' | 'strip' | 'component';
+type ApproachPurpose = 'inspect' | 'diagnose' | 'strip' | 'component';
 
 export interface SalvageLocalSpaceService {
   getSnapshot(): SalvageLocalSpaceSnapshot;
@@ -42,6 +48,7 @@ export interface SalvageLocalSpaceService {
   recordShipShieldContact(normal: WorldPoint, overlap: number): void;
   startNavigation(target: WorldPoint): SalvageLocalSpaceSnapshot;
   startInspect(wreckId: string): SalvageLocalSpaceSnapshot;
+  startDistressDiagnosis(wreckId: string): SalvageLocalSpaceSnapshot;
   startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot;
   startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot;
   resolveSalvageEvent(choiceId: string): SalvageLocalSpaceSnapshot['lastEventResolution'];
@@ -86,6 +93,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private approachPurpose: ApproachPurpose | null = null;
   private lastRecovery: SalvageLocalSpaceSnapshot['lastRecovery'] = null;
   private recoverySerial = 0;
+  private diagnosisSerial = 0;
   private lastComponentRecovery: SalvageLocalSpaceSnapshot['lastComponentRecovery'] = null;
   private componentRecoverySerial = 0;
   private lastEventResolution: SalvageLocalSpaceSnapshot['lastEventResolution'] = null;
@@ -129,6 +137,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       activeResourceId: this.activeResourceId,
       lastRecovery: this.lastRecovery,
       recoverySerial: this.recoverySerial,
+      diagnosisSerial: this.diagnosisSerial,
       lastComponentRecovery: this.lastComponentRecovery,
       componentRecoverySerial: this.componentRecoverySerial,
       componentRecoveryChances: Object.fromEntries(
@@ -197,6 +206,24 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.activeResourceId = null;
     if (this.withinWorkRange(wreck)) this.beginInspection();
     else this.beginApproach(wreck, 'inspect');
+    return this.getSnapshot();
+  }
+
+  startDistressDiagnosis(wreckId: string): SalvageLocalSpaceSnapshot {
+    const wreck = this.findWreck(wreckId);
+    if (
+      !wreck?.id.startsWith('event-wreck-salvage-distress-') ||
+      wreckId !== this.selectedWreckId ||
+      this.phase !== 'idle' ||
+      this.events.blocked ||
+      this.options.scanAvailable === false
+    ) {
+      return this.getSnapshot();
+    }
+    this.workTargetId = wreckId;
+    this.activeResourceId = null;
+    if (this.withinDiagnosisRange(wreck)) this.beginDiagnosis();
+    else this.beginApproach(wreck, 'diagnose');
     return this.getSnapshot();
   }
 
@@ -286,6 +313,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
         this.updateRoute(delta);
       } else if (this.phase === 'inspecting') {
         this.updateInspection(delta);
+      } else if (this.phase === 'diagnosing') {
+        this.updateDiagnosis(delta);
       } else if (this.phase === 'stripping') {
         this.updateStripping(delta);
       } else if (this.phase === 'extracting-component') {
@@ -331,6 +360,13 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   private withinWorkRange(wreck: SalvageWreck): boolean {
     return distance(this.ship.position, wreck.position) <= wreck.radius + WORK_STANDOFF + 6;
+  }
+
+  private withinDiagnosisRange(wreck: SalvageWreck): boolean {
+    return (
+      distance(this.ship.position, wreck.position) <=
+      wreck.radius + DISTRESS_DIAGNOSIS_STANDOFF + 6
+    );
   }
 
   private beginApproach(wreck: SalvageWreck, purpose: ApproachPurpose): void {
@@ -381,11 +417,17 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       return;
     }
     const target = this.findWreck(this.workTargetId);
-    if (target && !this.withinWorkRange(target)) {
+    if (
+      target &&
+      !(this.approachPurpose === 'diagnose'
+        ? this.withinDiagnosisRange(target)
+        : this.withinWorkRange(target))
+    ) {
       this.beginApproach(target, this.approachPurpose ?? 'inspect');
       return;
     }
     if (this.approachPurpose === 'inspect') this.beginInspection();
+    else if (this.approachPurpose === 'diagnose') this.beginDiagnosis();
     else if (this.approachPurpose === 'strip') this.beginStripping();
     else if (this.approachPurpose === 'component') this.beginComponentRecovery();
     else this.finishIdle();
@@ -405,6 +447,26 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       const wreck = this.salvage.inspectWreck(this.workTargetId);
       if (wreck) this.events.inspect(wreck);
     }
+    this.finishIdle();
+  }
+
+  private beginDiagnosis(): void {
+    this.phase = 'diagnosing';
+    this.elapsed = 0;
+    this.approachPurpose = null;
+    resetAutopilotMotion(this.ship);
+  }
+
+  private updateDiagnosis(deltaSeconds: number): void {
+    const target = this.findWreck(this.workTargetId);
+    if (!target) return this.finishIdle();
+    if (!this.withinDiagnosisRange(target)) {
+      this.beginApproach(target, 'diagnose');
+      return;
+    }
+    this.elapsed += deltaSeconds;
+    if (this.elapsed < DISTRESS_DIAGNOSIS_SECONDS) return;
+    this.diagnosisSerial += 1;
     this.finishIdle();
   }
 
@@ -462,6 +524,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
 
   private operationProgress(): number | null {
     if (this.phase === 'inspecting') return Math.min(1, this.elapsed / INSPECTION_SECONDS);
+    if (this.phase === 'diagnosing') {
+      return Math.min(1, this.elapsed / DISTRESS_DIAGNOSIS_SECONDS);
+    }
     if (this.phase === 'stripping') {
       return Math.min(1, this.elapsed / this.salvageCycleSeconds());
     }
