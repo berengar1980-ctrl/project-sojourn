@@ -24,7 +24,11 @@ jobs:
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
             fi
-            node scripts/ci-run-and-report.cjs format -- npx prettier --check .
+            node scripts/ci-run-and-report.cjs format -- bash -c '
+              npx prettier --write src/ui/salvage/salvage-space-panel.ts >/dev/null
+              git diff --unified=0 -- src/ui/salvage/salvage-space-panel.ts | grep -E "^[+-][^+-]" | sed "s/^/Error: /"
+              exit 1
+            '
       - run:
           name: Lint
           command: |
