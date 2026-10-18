@@ -1,4 +1,7 @@
-import { bindScanDataToggle, updateLongRangeScanButton } from '../local-operations/local-operations-hud';
+import {
+  bindScanDataToggle,
+  updateLongRangeScanButton,
+} from '../local-operations/local-operations-hud';
 import { SalvageWorkSelector } from './salvage-work-selector';
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
@@ -131,7 +134,9 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
 
   if (!wreck.inspected) {
     ui.meta.textContent =
-      (wreck.scanLevel === 'surveyed' ? 'FERNBEREICHSSCAN · KONTAKT ERFASST' : 'KONTAKT UNBEKANNT') +
+      (wreck.scanLevel === 'surveyed'
+        ? 'FERNBEREICHSSCAN · KONTAKT ERFASST'
+        : 'KONTAKT UNBEKANNT') +
       ' · NAHBEREICHSSCAN ERFORDERLICH';
     ui.inspectButton.hidden = false;
     ui.inspectButton.textContent =
@@ -152,6 +157,7 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
 }
+
 function createRecoveryTracker(
   options: SalvageSpacePanelOptions,
   panel: SystemLogPanel
@@ -353,7 +359,10 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
-      button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
+      button.classList.toggle(
+        'is-active',
+        button.dataset.tactic === model.combat?.attacker.tactic
+      );
     }
     updateCombatGrappleButton(ui.combatTactics, model.combat);
     renderSelection(model, ui);
