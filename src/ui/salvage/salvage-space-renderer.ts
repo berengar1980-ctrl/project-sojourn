@@ -11,15 +11,12 @@ import type {
 } from '../../features/salvage/salvage-space-view-model';
 import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
 import { drawDistressTow } from './distress-tow-renderer';
+import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  projectHardpoint,
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
@@ -43,6 +40,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected loadedShipUrl = '';
   protected hasFitted = false;
   protected diagnosisStartedAt = -1;
+  private scanLabelsVisible = true;
+  setScanLabelsVisible(visible: boolean): void {
+    this.scanLabelsVisible = visible;
+    this.draw();
+  }
   private lastFrameAt = -Infinity;
   startDistressDiagnosis(): void {
     this.diagnosisStartedAt = performance.now() / 1000;
@@ -312,6 +314,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     point: { x: number; y: number },
     radius: number
   ): void {
+    if (!this.scanLabelsVisible) return;
     // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
       const lines =
@@ -342,60 +345,30 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
   }
 
-  protected drawLongRangeSalvageScan(width: number, height: number, _timeSeconds: number): void {
+  protected drawLongRangeSalvageScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
-    const ship = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const radius = Math.max(8, Math.max(width, height) * 0.68 * (0.08 + progress * 0.92));
-    this.context.save();
-    this.context.strokeStyle = `rgba(97,222,242,${0.48 * (1 - progress * 0.42)})`;
-    this.context.lineWidth = 1.4;
-    this.context.beginPath();
-    this.context.arc(ship.x, ship.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
+    drawWideAreaScan(
+      this.context,
+      this.camera.worldToScreen(this.model.ship.position, width, height),
+      progress,
+      timeSeconds,
+      width,
+      height
+    );
   }
 
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
     if (!wreck) return;
-    const geometry = this.shipGeometry(width, height);
-    const target = this.camera.worldToScreen(wreck.position, width, height);
-    const hardpoints = this.model.ship.hardpoints.tractorBeams ?? [];
-    const origin =
-      hardpoints.length > 0
-        ? projectHardpoint(hardpoints[0]!, this.model.ship.hardpoints, geometry)
-        : geometry.center;
-    const dx = target.x - origin.x;
-    const dy = target.y - origin.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance < 1) return;
-    const angle = Math.atan2(dy, dx);
-    const halfAngle = Math.PI / 9;
-    const progress = Math.max(0, Math.min(1, this.model.operationProgress ?? 0));
-    const pulse = 0.55 + Math.sin(timeSeconds * 9) * 0.12;
-    const sweepAngle = angle - halfAngle + 2 * halfAngle * progress;
-    this.context.save();
-    this.context.beginPath();
-    this.context.moveTo(origin.x, origin.y);
-    this.context.arc(origin.x, origin.y, distance, angle - halfAngle, angle + halfAngle);
-    this.context.closePath();
-    this.context.fillStyle = `rgba(95, 223, 237, ${0.1 + pulse * 0.1})`;
-    this.context.fill();
-    this.context.strokeStyle = `rgba(130, 242, 255, ${0.35 + pulse * 0.3})`;
-    this.context.lineWidth = 1.2;
-    this.context.stroke();
-    this.context.beginPath();
-    this.context.moveTo(origin.x, origin.y);
-    this.context.lineTo(
-      origin.x + Math.cos(sweepAngle) * distance,
-      origin.y + Math.sin(sweepAngle) * distance
+    drawTargetDetailScan(
+      this.context,
+      this.camera.worldToScreen(wreck.position, width, height),
+      Math.max(14, this.camera.scale(wreck.radius) + 9),
+      Math.max(0, Math.min(1, this.model.operationProgress ?? 0)),
+      timeSeconds
     );
-    this.context.strokeStyle = 'rgba(210, 253, 255, 0.85)';
-    this.context.lineWidth = 2;
-    this.context.stroke();
-    this.context.restore();
   }
   protected drawPlayerSalvageEffect(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'stripping' && this.model.phase !== 'extracting-component') return;

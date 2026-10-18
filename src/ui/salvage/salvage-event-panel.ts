@@ -1,3 +1,4 @@
+import { renderOperationEventFeedback } from '../local-operations/event-feedback';
 import type { SalvageEventResolution, SalvageEventState } from '../../core/salvage-types';
 import type { SystemLogService } from '../../core/system-log-types';
 import type { SystemLogPanel } from '../system-log/system-log-panel';
@@ -10,7 +11,7 @@ interface SalvageEventPanelOptions {
 }
 
 export interface SalvageEventPanel {
-  update(event: SalvageEventState | null): void;
+  update(event: SalvageEventState | null, recoverySeconds: number): void;
 }
 
 function choiceButton(
@@ -32,6 +33,7 @@ function choiceButton(
   button.addEventListener('click', () => {
     const result = options.onChoice(choice.id);
     if (!result) return;
+    renderOperationEventFeedback(options.container, result, null, 'salvage');
     options.log.write('BERGUNG > ' + result.title.toUpperCase());
     options.log.write('BERGUNG > ' + result.resultText);
     options.logPanel.update();
@@ -60,10 +62,15 @@ function render(event: SalvageEventState, options: SalvageEventPanelOptions): vo
 export function createSalvageEventPanel(options: SalvageEventPanelOptions): SalvageEventPanel {
   let renderedId: string | null = null;
   return {
-    update(event) {
-      options.container.hidden = event === null;
+    update(event, recoverySeconds) {
+      options.container.hidden = event === null && recoverySeconds <= 0;
       if (!event) {
         renderedId = null;
+        if (recoverySeconds > 0) {
+          renderOperationEventFeedback(options.container, null, recoverySeconds, 'salvage');
+        } else {
+          options.container.replaceChildren();
+        }
         return;
       }
       if (renderedId === event.id) return;

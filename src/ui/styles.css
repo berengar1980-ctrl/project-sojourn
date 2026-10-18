@@ -3635,3 +3635,321 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
     left: 12px;
   }
 }
+
+/* Shared local-operations layout: mining, standard wrecks and distress missions. */
+.local-operations-toolbar {
+  position: absolute;
+  top: 22px;
+  right: 148px;
+  z-index: 11;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.local-operations-toolbar .return-map-button,
+.local-operations-toolbar .long-scan-button,
+.local-operations-toolbar .scan-label-toggle {
+  position: static;
+  min-height: 34px;
+  padding: 8px 10px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.local-operations-toolbar .return-map-button:disabled,
+.local-operations-toolbar .long-scan-button:disabled {
+  opacity: 0.43;
+  cursor: default;
+}
+
+.local-operations-feedback {
+  position: absolute;
+  top: 65px;
+  right: 148px;
+  z-index: 11;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.local-operations-status {
+  padding: 8px 10px;
+  border: 1px solid rgba(81, 184, 212, 0.32);
+  background: rgba(5, 13, 20, 0.86);
+  color: #83d4e8;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.local-operations-status[hidden],
+.operations-cancel-button[hidden] {
+  display: none;
+}
+
+.operations-cancel-button {
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid rgba(185, 108, 108, 0.42);
+  background: rgba(55, 22, 22, 0.76);
+  color: #d9a3a3;
+  cursor: pointer;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+body:has(.local-space-shell) .settings-menu,
+body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu {
+  top: 22px;
+  right: 18px;
+  bottom: auto;
+  left: auto;
+}
+
+body:has(.local-space-shell) .settings-menu__panel {
+  right: 0;
+  bottom: auto;
+  left: auto;
+  top: 42px;
+}
+
+.local-operations-dock {
+  position: absolute;
+  right: 24px;
+  bottom: 20px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.local-operations-dock .local-selection-card,
+.local-operations-dock .local-cargo-panel {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  left: auto;
+}
+
+.local-operations-dock .local-selection-card {
+  order: 0;
+  max-height: min(70vh, 660px);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.local-operations-dock .local-cargo-panel {
+  order: 1;
+  flex: 0 0 218px;
+  margin-left: auto;
+}
+
+.local-operations-dock .local-selection-card[hidden] {
+  display: none;
+}
+
+.local-operations-dock .salvage-resource-list {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(115, 164, 181, 0.18);
+}
+
+.local-operations-dock .salvage-resource-list[hidden],
+.local-operations-dock .salvage-work-button[hidden] {
+  display: none;
+}
+
+.salvage-work-button {
+  margin-top: 13px;
+  padding: 9px 12px;
+  border: 1px solid rgba(113, 202, 224, 0.42);
+  background: rgba(45, 101, 118, 0.22);
+  color: #b9eaf3;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.salvage-work-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.local-operations-dock .sector-salvage-event {
+  position: static;
+  display: grid;
+  width: auto;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(219, 164, 84, 0.34);
+  background: transparent;
+}
+
+.local-operations-dock .sector-salvage-actions button:disabled {
+  opacity: 0.43;
+  cursor: default;
+}
+
+.local-mining-event,
+.salvage-event {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.local-space-shell:has(.combat-tactics:not([hidden])) .local-operations-dock {
+  bottom: 74px;
+}
+
+@media (max-width: 850px) {
+  .local-space-title {
+    top: 14px;
+    left: 16px;
+  }
+
+  .local-operations-toolbar {
+    top: 62px;
+    right: 16px;
+    left: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .local-operations-toolbar .return-map-button,
+  .local-operations-toolbar .long-scan-button,
+  .local-operations-toolbar .scan-label-toggle {
+    min-height: 32px;
+    font-size: 8px;
+  }
+
+  .local-operations-feedback {
+    top: 140px;
+    right: 16px;
+    left: 16px;
+    justify-content: flex-end;
+  }
+
+  body:has(.local-space-shell) .settings-menu,
+  body:has(.local-space-shell .local-selection-card:not([hidden])) .settings-menu {
+    top: 14px;
+    right: 16px;
+    bottom: auto;
+    left: auto;
+  }
+
+  .local-operations-dock {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .local-operations-dock .local-selection-card {
+    width: min(340px, 52vw);
+  }
+
+  .local-operations-dock .local-cargo-panel {
+    flex-basis: 180px;
+  }
+
+  .local-space-shell .system-log {
+    top: 115px;
+    max-height: 110px;
+  }
+}
+
+@media (max-width: 650px) {
+  .local-operations-toolbar {
+    justify-content: flex-start;
+  }
+
+  .local-operations-toolbar .return-map-button,
+  .local-operations-toolbar .long-scan-button,
+  .local-operations-toolbar .scan-label-toggle {
+    flex: 1 1 110px;
+  }
+
+  .local-operations-feedback {
+    top: 148px;
+    flex-wrap: wrap;
+  }
+
+  .local-space-shell .system-log {
+    top: 208px;
+    left: 16px;
+    max-height: 78px;
+  }
+
+  .local-operations-dock {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    max-height: 58vh;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+
+  .local-operations-dock .local-cargo-panel {
+    order: 0;
+    flex: 0 0 auto;
+    margin-left: 0;
+    width: 100%;
+    padding: 7px 10px;
+    max-height: 70px;
+    overflow: hidden;
+  }
+
+  .local-operations-dock .local-selection-card {
+    order: 1;
+    width: 100%;
+    max-height: 42vh;
+  }
+
+  .local-space-shell:has(.combat-tactics:not([hidden])) .local-operations-dock {
+    bottom: 78px;
+  }
+
+  .local-mining-event,
+  .salvage-event {
+    left: 50%;
+    width: calc(100vw - 32px);
+  }
+}
+
+/* Shared decision feedback for mining incidents and salvage events. */
+.operations-event-feedback__busy {
+  margin-top: 16px;
+  color: #e9bb76;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.operations-event-feedback__activity {
+  position: relative;
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(180, 142, 83, 0.2);
+}
+
+.operations-event-feedback__activity::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  background: #e5aa56;
+  box-shadow: 0 0 12px rgba(241, 183, 97, 0.68);
+  animation: mining-decision-processing 1.25s ease-in-out infinite alternate;
+  content: '';
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operations-event-feedback__activity::after {
+    left: 32%;
+    animation: none;
+  }
+}

@@ -15,6 +15,8 @@ const salvageNpc = fs.readFileSync(
   'utf8'
 );
 const salvagePanel = readModuleSource(root, 'src/ui/salvage/salvage-space-panel.ts');
+const salvageControls = readModuleSource(root, 'src/ui/salvage/salvage-space-panel-controls.ts');
+const salvageWorkSelector = readModuleSource(root, 'src/ui/salvage/salvage-work-selector.ts');
 
 assert(
   mapPanel.includes('NAMEN // AN') &&
@@ -33,17 +35,19 @@ assert(
   'player and NPC ships must collide with wrecks in salvage space'
 );
 assert(
-  salvagePanel.includes('ANFLIEGEN & SCANNEN') &&
-    salvagePanel.includes('ANFLIEGEN & BERGEN') &&
-    salvagePanel.includes('KEIN BERGUNGSSYSTEM'),
-  'salvage UI must explain the workflow and clearly expose missing salvage equipment'
+  salvagePanel.includes('NAHBEREICHSSCAN ERFORDERLICH') &&
+    salvagePanel.includes('ANFLUG FÜR NAHBEREICHSSCAN') &&
+    salvageControls.includes('BERGUNG STARTEN') &&
+    salvageWorkSelector.includes('BERGUNGSMODUL FEHLT'),
+  'salvage UI must explain scanning, expose one central work action and missing equipment'
 );
 assert(
-  salvagePanel.includes("ui.resources.addEventListener('pointerdown'") &&
-    salvagePanel.includes('button[data-salvage-action]') &&
-    salvagePanel.includes("dataset.salvageAction = 'strip'") &&
-    salvagePanel.includes('event.preventDefault()'),
-  'frame-rebuilt salvage buttons must fire on pointerdown before the button node is replaced'
+  salvagePanel.includes('new SalvageWorkSelector(') &&
+    salvageWorkSelector.includes("container.addEventListener('click'") &&
+    salvageWorkSelector.includes('button[data-work-choice]') &&
+    salvageWorkSelector.includes('this.container.replaceChildren(heading, buttons, hint)') &&
+    salvageWorkSelector.includes("startButton.addEventListener('click'"),
+  'persistent selectable salvage work buttons must dispatch via the central start action'
 );
 
 console.log('PASS local collision wiring, star-map name toggle and salvage guidance');

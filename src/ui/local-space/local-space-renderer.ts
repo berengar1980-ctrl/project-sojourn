@@ -19,6 +19,7 @@ import {
   type NpcHitArea,
 } from './local-space-scene-layers';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
+import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   protected readonly camera: MapCamera;
@@ -359,85 +360,27 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.shortRangeScanProgress;
     const target = this.model.scanTarget;
-    if (progress == null || !target) return;
-
-    const point = this.camera.worldToScreen(target.position, width, height);
-    const radius = Math.max(14, this.camera.scale(target.radius) + 9);
-    const sweepY = point.y - radius + radius * 2 * progress;
-    const pulse = 0.72 + Math.sin(timeSeconds * 18) * 0.2;
-
-    this.context.save();
-    this.context.strokeStyle = `rgba(116, 235, 248, ${0.68 + pulse * 0.2})`;
-    this.context.lineWidth = 1.4;
-    this.context.shadowColor = 'rgba(91, 223, 244, .78)';
-    this.context.shadowBlur = 7;
-
-    this.context.beginPath();
-    this.context.arc(
-      point.x,
-      point.y,
-      radius + 5,
-      timeSeconds * 1.8,
-      timeSeconds * 1.8 + Math.PI * 1.35
+    if (progress === null || !target) return;
+    drawTargetDetailScan(
+      this.context,
+      this.camera.worldToScreen(target.position, width, height),
+      Math.max(14, this.camera.scale(target.radius) + 9),
+      progress,
+      timeSeconds
     );
-    this.context.stroke();
-
-    this.context.beginPath();
-    this.context.arc(
-      point.x,
-      point.y,
-      radius + 10,
-      -timeSeconds * 1.25,
-      -timeSeconds * 1.25 + Math.PI * 0.72
-    );
-    this.context.stroke();
-
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    this.context.clip();
-
-    const scannedHeight = Math.max(0, sweepY - (point.y - radius));
-    this.context.fillStyle = 'rgba(79, 211, 233, .075)';
-    this.context.fillRect(point.x - radius, point.y - radius, radius * 2, scannedHeight);
-
-    this.context.strokeStyle = 'rgba(205, 253, 255, .96)';
-    this.context.lineWidth = 1.2;
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius, sweepY);
-    this.context.lineTo(point.x + radius, sweepY);
-    this.context.stroke();
-
-    this.context.strokeStyle = 'rgba(93, 224, 244, .26)';
-    this.context.lineWidth = 4;
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius, sweepY - 3);
-    this.context.lineTo(point.x + radius, sweepY - 3);
-    this.context.stroke();
-    this.context.restore();
   }
+
   protected drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
-    if (progress == null) return;
-
-    const center = this.camera.worldToScreen(this.model.ship.position, width, height);
-    const maximumRadius = Math.max(width, height) * 0.68;
-    const radius = Math.max(8, maximumRadius * (0.08 + progress * 0.92));
-    const pulse = 0.72 + Math.sin(timeSeconds * 9) * 0.18;
-
-    this.context.save();
-    this.context.strokeStyle = `rgba(97, 222, 242, ${0.48 * (1 - progress * 0.42)})`;
-    this.context.lineWidth = 1.4;
-    this.context.shadowColor = 'rgba(84, 207, 238, .55)';
-    this.context.shadowBlur = 5;
-    this.context.beginPath();
-    this.context.arc(center.x, center.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-
-    this.context.globalAlpha = pulse * 0.45;
-    this.context.beginPath();
-    this.context.arc(center.x, center.y, radius * 0.72, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
+    if (progress === null) return;
+    drawWideAreaScan(
+      this.context,
+      this.camera.worldToScreen(this.model.ship.position, width, height),
+      progress,
+      timeSeconds,
+      width,
+      height
+    );
   }
   protected drawNavigationRoute(width: number, height: number): void {
     const route = this.model.navigationRoute;

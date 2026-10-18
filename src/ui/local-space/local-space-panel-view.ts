@@ -1,3 +1,4 @@
+import { updateLongRangeScanButton } from '../local-operations/local-operations-hud';
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
@@ -18,7 +19,7 @@ function miningStatus(model: LocalSpaceViewModel): string {
     return 'MINING-SYSTEME NEUSTART · ' + Math.ceil(model.miningRecoverySeconds) + ' s';
   }
   if (model.longRangeScanProgress != null) {
-    return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
+    return 'FERNBEREICHSSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
   }
   if (model.shortRangeScanProgress != null) {
     return 'NAHBEREICHSSCAN · ' + Math.round(model.shortRangeScanProgress * 100) + ' %';
@@ -102,7 +103,7 @@ function updateMiningButton(
             (deposit.estimatedAmount ?? 0) > 0
         );
   const depleted = selected.scanLevel === 'analyzed' && !targetedRemaining;
-  button.textContent = model.miningAvailable ? 'MINING' : 'MINING NICHT VERFÜGBAR';
+  button.textContent = model.miningAvailable ? 'MINING STARTEN' : 'MINING NICHT VERFÜGBAR';
   button.title = model.miningAvailable
     ? ''
     : 'Dieses Schiff hat kein einsatzfähiges Mining-System.';
@@ -132,6 +133,23 @@ function updateLocalExitButton(
   );
   button.disabled = eventActive || !atExit;
   button.title = atExit ? 'Zur Sternkarte wechseln' : 'Zuerst den markierten Ausgang anfliegen';
+}
+
+function showEmptyMiningSelection(
+  card: HTMLElement,
+  name: HTMLElement,
+  meta: HTMLElement,
+  oreBar: HTMLElement,
+  scanButton: HTMLButtonElement,
+  mineButton: HTMLButtonElement
+): void {
+  const kind = card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind) kind.textContent = 'MINING // ZIELAUSWAHL';
+  name.textContent = 'ASTEROID AUSWÄHLEN';
+  meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
+  oreBar.style.width = '0%';
+  scanButton.hidden = true;
+  mineButton.hidden = true;
 }
 
 export function updateLocalOverlay(context: LocalOverlayContext): void {
@@ -170,17 +188,20 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   const selected = model.selectedAsteroid;
   const miningActive = model.miningPhase !== 'idle';
   const eventActive = model.miningEvent !== null;
-  const longScanActive = model.longRangeScanProgress != null;
   trackScanCompletion(model);
   miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
   canvas.classList.toggle('is-locked', eventActive);
-  card.hidden = !selected && !selectedNpc;
+  card.hidden = false;
   cancelButton.hidden = !miningActive;
   cancelButton.disabled = eventActive;
   updateLocalExitButton(backButton, model, eventActive);
   renderCargo(model, cargoTotal, cargoList);
-  longScanButton.disabled = eventActive || !model.scanAvailable || longScanActive;
-  longScanButton.textContent = model.scanAvailable ? 'LANGREICHWEITENSCAN' : 'SCAN NICHT VERFÜGBAR';
+  updateLongRangeScanButton(
+    longScanButton,
+    model.scanAvailable,
+    model.longRangeScanProgress,
+    eventActive
+  );
 
   trackIntegrity(model);
 
@@ -209,6 +230,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   shortScanButton.hidden = false;
   mineButton.hidden = false;
   if (!selected) {
+    showEmptyMiningSelection(card, name, meta, oreBar, shortScanButton, mineButton);
     miningResourceSelector.update(model, true, false);
     return;
   }

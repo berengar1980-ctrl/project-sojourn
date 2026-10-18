@@ -1,3 +1,8 @@
+import {
+  bindScanDataToggle,
+  updateLongRangeScanButton,
+} from '../local-operations/local-operations-hud';
+import { SalvageWorkSelector } from './salvage-work-selector';
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
@@ -27,12 +32,16 @@ export interface SalvageSpacePanel {
 
 function statusText(model: SalvageSpaceViewModel): string {
   if (model.longRangeScanProgress !== null) {
-    return 'LANGREICHWEITENSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
+    return 'FERNBEREICHSSCAN · ' + Math.round(model.longRangeScanProgress * 100) + ' %';
   }
   if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
-  if (model.phase === 'approaching') return 'ANFLUG AUF BERGUNGSPOSITION';
+  if (model.phase === 'approaching') {
+    const target = model.wrecks.find((wreck) => wreck.isWorkTarget);
+    if (target && !target.inspected) return 'ANFLUG FÜR NAHBEREICHSSCAN';
+    return 'ANFLUG AUF BERGUNGSPOSITION';
+  }
   if (model.phase === 'inspecting') {
-    return 'WRACKANALYSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+    return 'NAHBEREICHSSCAN · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
   }
   if (model.phase === 'stripping') {
     return 'BERGUNG AKTIV · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
@@ -79,117 +88,68 @@ function renderCargo(model: SalvageSpaceViewModel, total: HTMLElement, list: HTM
   }
 }
 
-function resourceRow(
+type SelectedWreck = NonNullable<SalvageSpaceViewModel['selectedWreck']>;
+type SelectedNpc = SalvageSpaceViewModel['npcShips'][number];
+
+function showSalvageNpc(model: SalvageSpaceViewModel, ui: SalvageControls, npc: SelectedNpc): void {
+  const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind) kind.textContent = 'SCHIFF';
+  ui.name.textContent = npc.name;
+  ui.meta.textContent = model.combat
+    ? 'GEFECHT · SCHILD ' +
+      Math.round(model.combat.defender.shieldHp) +
+      ' · HÜLLE ' +
+      Math.round(model.combat.defender.hullHp)
+    : 'SCHIFF · ' + npc.phase.toUpperCase();
+  ui.integrity.style.width = '100%';
+  ui.attackButton.hidden = model.combat !== null;
+}
+
+function showSalvageContactHint(model: SalvageSpaceViewModel, ui: SalvageControls): void {
+  const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
+  if (kind) kind.textContent = model.sectorEvent ? 'NOTRUF // HAVARIST' : 'BERGUNG // ZIELAUSWAHL';
+  ui.name.textContent = model.sectorEvent ? 'HAVARIST AUSWÄHLEN' : 'WRACK AUSWÄHLEN';
+  ui.meta.textContent = '1 · FERNBEREICHSSCAN  2 · KONTAKT WÄHLEN  3 · NAHBEREICHSSCAN';
+  ui.integrity.style.width = '0%';
+}
+
+function showUninspectedWreck(
   model: SalvageSpaceViewModel,
-  wreckId: string,
-  resource: SalvageSpaceViewModel['selectedWreck'] extends infer _T
-    ? { readonly resourceId: string; readonly name: string; readonly remaining: number }
-    : never
-): HTMLElement {
-  const row = document.createElement('div');
-  row.className = 'salvage-resource-row';
-  const label = document.createElement('span');
-  label.textContent = resource.name.toUpperCase();
-  const amount = document.createElement('strong');
-  amount.textContent = Math.round(resource.remaining) + ' t';
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = !model.salvageAvailable
-    ? 'BERGUNGSMODUL FEHLT'
-    : model.phase === 'stripping' && model.activeResourceId === resource.resourceId
-      ? 'BERGUNG LÄUFT'
-      : 'ANFLIEGEN & BERGEN';
-  button.disabled =
-    !model.salvageAvailable ||
+  ui: SalvageControls,
+  wreck: SelectedWreck
+): void {
+  const contactStatus =
+    wreck.scanLevel === 'surveyed' ? 'FERNBEREICHSSCAN · KONTAKT ERFASST' : 'KONTAKT UNBEKANNT';
+  ui.meta.textContent = contactStatus + ' · NAHBEREICHSSCAN ERFORDERLICH';
+  ui.inspectButton.hidden = false;
+  ui.inspectButton.textContent =
+    model.phase === 'approaching' || model.phase === 'inspecting'
+      ? 'NAHBEREICHSSCAN LÄUFT'
+      : 'NAHBEREICHSSCAN';
+  ui.inspectButton.disabled =
     model.phase !== 'idle' ||
     model.salvageEvent !== null ||
     model.salvageEventRecoverySeconds > 0 ||
-    resource.remaining <= 0;
-  button.dataset.salvageAction = 'strip';
-  button.dataset.wreckId = wreckId;
-  button.dataset.resourceId = resource.resourceId;
-  row.append(label, amount, button);
-  return row;
+    !model.scanAvailable;
+  ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
 }
 
-function componentRow(model: SalvageSpaceViewModel, wreckId: string): HTMLElement | null {
-  const component = model.selectedWreck?.component;
-  if (!component) return null;
-  const row = document.createElement('div');
-  row.className = 'salvage-component-row';
-  const copy = document.createElement('div');
-  const label = document.createElement('span');
-  const detail = document.createElement('strong');
-  label.textContent = 'SCHIFFSKOMPONENTE';
-  detail.textContent =
-    component.name.toUpperCase() + ' · MK ' + component.tier + ' · ' + component.cargoTons + ' t';
-  copy.append(label, detail);
-
-  const button = document.createElement('button');
-  button.type = 'button';
-  if (component.status === 'recovered') button.textContent = 'GEBORGEN';
-  else if (component.status === 'destroyed') button.textContent = 'ZERSTÖRT';
-  else button.textContent = 'KOMPONENTE BERGEN · ' + component.chancePercent + ' %';
-  button.disabled =
-    component.status !== 'available' ||
-    !model.salvageAvailable ||
-    model.phase !== 'idle' ||
-    model.salvageEvent !== null ||
-    model.salvageEventRecoverySeconds > 0;
-  button.dataset.salvageAction = 'component';
-  button.dataset.wreckId = wreckId;
-  row.append(copy, button);
-  return row;
-}
-
-function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
-  const npc = model.npcShips.find((entry) => entry.isSelected);
-  const wreck = model.selectedWreck;
-  ui.card.hidden = !wreck && !npc;
-  if (npc) {
-    const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-    if (kind) kind.textContent = 'SCHIFF';
-    ui.name.textContent = npc.name;
-    ui.meta.textContent = model.combat
-      ? 'GEFECHT · SCHILD ' +
-        Math.round(model.combat.defender.shieldHp) +
-        ' · HÜLLE ' +
-        Math.round(model.combat.defender.hullHp)
-      : 'SCHIFF · ' + npc.phase.toUpperCase();
-    ui.integrity.style.width = '100%';
-    ui.resources.replaceChildren();
-    ui.inspectButton.hidden = true;
-    ui.attackButton.hidden = model.combat !== null;
-    return;
-  }
-  ui.attackButton.hidden = true;
-  if (!wreck) return;
-
+function showSalvageWreck(
+  model: SalvageSpaceViewModel,
+  ui: SalvageControls,
+  wreck: SelectedWreck
+): void {
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
-  if (kind)
-    kind.textContent = wreck.inspected
-      ? wreck.containerVariant
-        ? 'CONTAINER'
-        : 'WRACK'
-      : 'KONTAKT';
+  if (kind) {
+    if (!wreck.inspected) kind.textContent = 'KONTAKT';
+    else kind.textContent = wreck.containerVariant ? 'CONTAINER' : 'WRACK';
+  }
   ui.name.textContent = wreck.inspected ? wreck.name : 'UNBEKANNTER BERGUNGSKONTAKT';
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
-  const busy =
-    model.phase !== 'idle' || model.salvageEvent !== null || model.salvageEventRecoverySeconds > 0;
   if (!wreck.inspected) {
-    ui.meta.textContent =
-      (wreck.scanLevel === 'surveyed' ? 'KONTAKT ERFASST · ???' : 'OBJEKT NICHT GESCANNT') +
-      ' · ANALYSE ERFORDERLICH';
-    ui.inspectButton.textContent =
-      model.phase === 'approaching' || model.phase === 'inspecting'
-        ? 'SCAN LÄUFT'
-        : 'ANFLIEGEN & SCANNEN';
-    ui.resources.replaceChildren();
-    ui.inspectButton.hidden = false;
-    ui.inspectButton.disabled = busy;
+    showUninspectedWreck(model, ui, wreck);
     return;
   }
-
   ui.meta.textContent =
     wreck.kindLabel +
     ' · QUALITÄT ' +
@@ -198,20 +158,20 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
     wreck.integrity +
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
-  ui.inspectButton.hidden = true;
-  ui.resources.replaceChildren();
-  const component = componentRow(model, wreck.id);
-  if (component) ui.resources.append(component);
+}
 
-  if (wreck.depleted) {
-    const empty = document.createElement('div');
-    empty.className = 'salvage-resource-empty';
-    empty.textContent = 'WRACK AUSGESCHLACHTET';
-    ui.resources.append(empty);
-    return;
-  }
-  for (const resource of wreck.resources) {
-    ui.resources.append(resourceRow(model, wreck.id, resource));
+function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
+  const npc = model.npcShips.find((entry) => entry.isSelected);
+  const wreck = model.selectedWreck;
+  ui.card.hidden = false;
+  ui.attackButton.hidden = true;
+  ui.inspectButton.hidden = true;
+  if (npc) {
+    showSalvageNpc(model, ui, npc);
+  } else if (wreck) {
+    showSalvageWreck(model, ui, wreck);
+  } else {
+    showSalvageContactHint(model, ui);
   }
 }
 
@@ -286,22 +246,6 @@ function bindSalvagePanelActions(
     onSelectNpc: options.onSelectNpc,
     onNavigate: (x, y) => options.onNavigate({ x, y }),
   });
-  ui.resources.addEventListener('pointerdown', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const button = target.closest<HTMLButtonElement>('button[data-salvage-action]');
-    if (!button || button.disabled) return;
-    const wreckId = button.dataset.wreckId;
-    if (!wreckId) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (button.dataset.salvageAction === 'strip') {
-      const resourceId = button.dataset.resourceId;
-      if (resourceId) options.onStrip(wreckId, resourceId);
-      return;
-    }
-    if (button.dataset.salvageAction === 'component') options.onRecoverComponent(wreckId);
-  });
   ui.sectorEventContainer.addEventListener('pointerdown', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -335,6 +279,7 @@ function bindSalvagePanelActions(
     }
   });
   ui.longScanButton.addEventListener('click', options.onLongRangeScan);
+  bindScanDataToggle(ui.scanLabelsButton, (visible) => renderer.setScanLabelsVisible(visible));
   ui.inspectButton.addEventListener('click', () => {
     const wreck = getModel().selectedWreck;
     if (wreck) options.onInspect(wreck.id);
@@ -367,6 +312,12 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
   const ui = controls(shell);
   let model = options.model;
   const renderer = new SalvageSpaceRenderer(ui.canvas, model);
+  const workSelector = new SalvageWorkSelector(
+    ui.resources,
+    ui.workButton,
+    options.onStrip,
+    options.onRecoverComponent
+  );
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
@@ -393,17 +344,12 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     const status = statusText(model);
     ui.status.hidden = status.length === 0;
     ui.status.textContent = status;
-    ui.help.classList.toggle('is-warning', !model.salvageAvailable);
-    ui.help.innerHTML = model.salvageAvailable
-      ? '<strong>BERGUNG:</strong> 1 · Wrack anklicken & scannen &nbsp; 2 · Material oder Komponente wählen &nbsp; 3 · Schiff fliegt automatisch auf Arbeitsdistanz und birgt in Zyklen.'
-      : '<strong>KEIN BERGUNGSSYSTEM:</strong> Scannen ist möglich, Bergen nicht. Wechsle auf ein Bergungsschiff oder montiere später ein Bergungssystem Mk I.';
-    ui.longScanButton.disabled = !model.scanAvailable || model.longRangeScanProgress !== null;
-    ui.longScanButton.textContent =
-      model.longRangeScanProgress !== null
-        ? 'SCAN LÄUFT · ' + Math.round(model.longRangeScanProgress * 100) + ' %'
-        : model.scanAvailable
-          ? 'LANGREICHWEITENSCAN'
-          : 'SCAN NICHT VERFÜGBAR';
+    updateLongRangeScanButton(
+      ui.longScanButton,
+      model.scanAvailable,
+      model.longRangeScanProgress,
+      model.salvageEvent !== null
+    );
     ui.cancelButton.hidden = model.phase === 'idle';
     const atExit = playerAtLocalExit(
       model.ship.position,
@@ -420,7 +366,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       ? 'Zur Sternkarte wechseln'
       : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
-    eventPanel.update(model.salvageEvent);
+    eventPanel.update(model.salvageEvent, model.salvageEventRecoverySeconds);
     if (
       model.sectorEvent?.distressStage !== 'approach' ||
       !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
@@ -434,6 +380,9 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
     }
     updateCombatGrappleButton(ui.combatTactics, model.combat);
     renderSelection(model, ui);
+    const npcSelected = model.npcShips.some((entry) => entry.isSelected);
+    workSelector.update(model, !npcSelected);
+    if (npcSelected) ui.sectorEventContainer.hidden = true;
     trackRecovery(model);
   };
 

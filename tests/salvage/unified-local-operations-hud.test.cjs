@@ -1,0 +1,67 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '../..');
+const source = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+const common = source('src/ui/local-operations/local-operations-hud.ts');
+const effects = source('src/ui/local-operations/scan-effects.ts');
+const feedback = source('src/ui/local-operations/event-feedback.ts');
+const miningShell = source('src/ui/local-space/local-space-panel-controls.ts');
+const salvageShell = source('src/ui/salvage/salvage-space-panel-controls.ts');
+const mining = source('src/ui/local-space/local-space-panel.ts');
+const salvage = source('src/ui/salvage/salvage-space-panel.ts');
+const selector = source('src/ui/salvage/salvage-work-selector.ts');
+const miningRenderer = source('src/ui/local-space/local-space-renderer.ts');
+const salvageRenderer = source('src/ui/salvage/salvage-space-renderer.ts');
+const miningEvent = source('src/ui/local-space/mining-event-panel.ts');
+const salvageEvent = source('src/ui/salvage/salvage-event-panel.ts');
+const css = source('src/ui/styles.css');
+
+assert(common.includes('localOperationsHeader'));
+assert(common.includes('FERNBEREICHSSCAN'));
+assert(common.includes('SCAN-DATEN AN'));
+assert(common.includes('local-operations-toolbar'));
+assert(common.includes('local-operations-status'));
+assert(common.includes('operations-cancel-button'));
+assert(common.includes('updateLongRangeScanButton'));
+assert(common.includes('bindScanDataToggle'));
+for (const shell of [miningShell, salvageShell]) {
+  assert(shell.includes('localOperationsHeader('));
+  assert(shell.includes('local-operations-dock'));
+  assert(shell.includes("'.long-scan-button'"));
+  assert(shell.includes("'.scan-label-toggle'"));
+  assert(shell.includes("'.operations-cancel-button'"));
+  assert(shell.includes("'.local-operations-status'"));
+}
+assert(miningShell.includes('NAHBEREICHSSCAN'));
+assert(salvageShell.includes('NAHBEREICHSSCAN'));
+assert(salvageShell.includes('salvage-work-button'));
+assert(salvageShell.includes('sector-salvage-event'));
+assert(mining.includes('bindScanDataToggle'));
+assert(salvage.includes('bindScanDataToggle'));
+assert(miningRenderer.includes('drawTargetDetailScan('));
+assert(miningRenderer.includes('drawWideAreaScan('));
+assert(salvageRenderer.includes('drawTargetDetailScan('));
+assert(salvageRenderer.includes('drawWideAreaScan('));
+assert(salvageRenderer.includes('setScanLabelsVisible(visible: boolean)'));
+assert(effects.includes('export function drawTargetDetailScan'));
+assert(effects.includes('export function drawWideAreaScan'));
+assert(salvage.includes('new SalvageWorkSelector('));
+assert(selector.includes('this.onStrip(wreck.id,'));
+assert(selector.includes('this.onComponent(wreck.id)'));
+assert(selector.includes('key !== this.layoutKey'), 'keep resource DOM stable during HUD ticks');
+assert(selector.includes('BERGUNG STARTEN'));
+assert(!salvage.includes("button.dataset.salvageAction = 'strip'"));
+assert(salvage.includes('renderSectorEvent(model, ui.sectorEventContainer)'));
+assert(miningEvent.includes('renderOperationEventFeedback('));
+assert(salvageEvent.includes('renderOperationEventFeedback('));
+assert(salvage.includes('model.salvageEventRecoverySeconds'));
+assert(feedback.includes("busy.setAttribute('aria-live', 'polite')"));
+assert(css.includes('.local-operations-toolbar'));
+assert(css.includes('.local-operations-dock'));
+assert(css.includes('.local-operations-dock .sector-salvage-event'));
+assert(css.includes('body:has(.local-space-shell) .settings-menu'));
+console.log('PASS shared mining/salvage/rescue HUD, scans, actions and feedback');

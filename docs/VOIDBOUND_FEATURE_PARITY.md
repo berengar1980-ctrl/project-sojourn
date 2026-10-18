@@ -837,3 +837,7 @@ während das Schiff eine Angriffspassage fliegt oder Abstand gewinnt.
 Die Anzeige nutzt ausschließlich bestehende Kampfplan- und Bewegungsstatusdaten.
 KI-Entscheidungen, Navigation, Physik, Waffen, Feuerleitung und Schaden bleiben unverändert.
 Die bestehenden 241 Voidbound-Paritätsbewertungen ändern sich nicht.
+
+## Review-Log (2026-10-18): Einheitliche lokale Einsatzoberfläche – Mining, Bergung und Notruf
+
+**keine Statusänderung.** Mining, normale Wrackfelder und Notruf-Bergung teilen sich dieselbe Werkzeugleiste, Statusanzeige, Bildschirmaufteilung, Scan-Bezeichnungen und visuelle Fern-/Nahscan-Effekte. Der Nahbereichsscan der Wrackbergung verwendet weiterhin die bestehende Wrackinspektion samt Anflug und Reichweite; die besondere technische Notrufdiagnose bleibt eine separate Aktion. Bergbare Ressourcen und Komponenten werden nun im gemeinsamen Zielbereich ausgewählt und über einen Hauptbutton mit der vorhandenen Bergungslogik gestartet. Notrufaktionen erscheinen im Zielbereich statt über dem Systemlog. Mining- und Bergungsereignisse teilen sich die Fortschrittsrückmeldung. Sensorwerte, Navigations-/Abbau-/Bergungsphysik, Notrufentscheidungen, Loot und alle bisherigen Voidbound-Paritätsbewertungen bleiben unverändert. Ein UI-Regressionstest prüft die gemeinsame Integration; visuelle Browser-Abnahme bleibt vor dem Merge erforderlich.

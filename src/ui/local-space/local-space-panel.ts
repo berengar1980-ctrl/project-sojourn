@@ -2,6 +2,8 @@ import type { CombatTactic } from '../../systems/combat/strategic-combat-service
 
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 
+import { bindScanDataToggle } from '../local-operations/local-operations-hud';
+
 import { bindLocalSpaceInput } from './local-space-input';
 
 import { LocalSpaceRenderer } from './local-space-renderer';
@@ -95,16 +97,6 @@ function bindNavigationInput(
           systemLog.update();
         });
     },
-  });
-}
-
-function bindScanLabelButton(button: HTMLButtonElement, renderer: LocalSpaceRenderer): void {
-  let visible = true;
-  button.addEventListener('click', () => {
-    visible = !visible;
-    renderer.setScanLabelsVisible(visible);
-    button.classList.toggle('is-active', visible);
-    button.textContent = visible ? 'SCAN-DATEN AN' : 'SCAN-DATEN AUS';
   });
 }
 
@@ -202,7 +194,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
   bindShortScanPlanning(shortScanButton, options, systemLog, updateOverlay);
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
-  bindScanLabelButton(scanLabelsButton, renderer);
+  bindScanDataToggle(scanLabelsButton, (visible) => renderer.setScanLabelsVisible(visible));
   attackButton.addEventListener('click', () => {
     const selected = model.npcShips.find((npc) => npc.isSelected);
     if (selected) options.onAttackNpc(selected.id);

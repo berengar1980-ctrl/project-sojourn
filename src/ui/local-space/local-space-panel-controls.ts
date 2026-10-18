@@ -1,3 +1,5 @@
+import { localOperationsHeader } from '../local-operations/local-operations-hud';
+
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 
 import type { WorldPoint } from '../../core/world-types';
@@ -65,21 +67,15 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
   shell.className = 'local-space-shell';
   shell.innerHTML = [
     '<canvas class="local-space-canvas" aria-label="Lokales Abbaugebiet"></canvas>',
-    '<div class="local-space-title"><span>GREYROCK BELT</span>',
-    '<strong>' + options.model.title + '</strong></div>',
-    '<button class="return-map-button" type="button">ZUR STERNKARTE</button>',
-    '<button class="long-scan-button" type="button">LANGREICHWEITENSCAN</button>',
-    '<button class="scan-label-toggle is-active" type="button">SCAN-DATEN AN</button>',
+    localOperationsHeader('MINING // LOKALER EINSATZ', options.model.title),
     '<div class="local-combat-tactics combat-tactics" hidden>',
     '<button type="button" data-tactic="fight">KAMPF</button>',
     '<button type="button" data-tactic="kite">DISTANZ</button>',
     '<button type="button" data-tactic="minefield">MINEN</button>',
     '<button type="button" data-tactic="flee">FLUCHT</button>',
     '<button type="button" data-grapple>GREIFHAKEN</button></div>',
-    '<div class="local-mining-status" hidden></div>',
-    '<button class="cancel-mining-button" type="button" hidden>ABBRECHEN</button>',
     '<aside class="local-mining-event" hidden></aside>',
-    '<div class="local-cargo-panel">',
+    '<div class="local-operations-dock"><div class="local-cargo-panel">',
     '<div class="local-cargo-title">FRACHT // CONTAINER</div>',
     '<div class="local-cargo-total">GESAMT · <strong>0</strong></div>',
     '<div class="local-cargo-list"></div></div>',
@@ -90,7 +86,7 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
     '<div class="mining-resource-selector" hidden></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
     '<button class="mine-button" type="button">MINING</button>',
-    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div>',
+    '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div></div>',
   ].join('');
   options.root.replaceChildren(shell);
   return shell;
@@ -114,9 +110,9 @@ export function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
     attackButton: query<HTMLButtonElement>('.local-attack-button'),
     longScanButton: query<HTMLButtonElement>('.long-scan-button'),
-    cancelButton: query<HTMLButtonElement>('.cancel-mining-button'),
+    cancelButton: query<HTMLButtonElement>('.operations-cancel-button'),
     backButton: query<HTMLButtonElement>('.return-map-button'),
-    status: query<HTMLElement>('.local-mining-status'),
+    status: query<HTMLElement>('.local-operations-status'),
     scanLabelsButton: query<HTMLButtonElement>('.scan-label-toggle'),
     cargoTotal: query<HTMLElement>('.local-cargo-total strong'),
     cargoList: query<HTMLElement>('.local-cargo-list'),

@@ -38,6 +38,14 @@ const hardpointDebug = fs.readFileSync(
 );
 const input = fs.readFileSync(path.join(root, 'src/ui/local-space/local-space-input.ts'), 'utf8');
 const panel = readModuleSource(root, 'src/ui/local-space/local-space-panel.ts');
+const operationsHud = fs.readFileSync(
+  path.join(root, 'src/ui/local-operations/local-operations-hud.ts'),
+  'utf8'
+);
+const scanEffects = fs.readFileSync(
+  path.join(root, 'src/ui/local-operations/scan-effects.ts'),
+  'utf8'
+);
 const controller = readModuleSource(root, 'src/app/game-controller.ts');
 const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const viewModel = fs.readFileSync(
@@ -240,8 +248,8 @@ assert(
   'mining and tractor effects must support above/below ship layers'
 );
 assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
-assert(panel.includes('ABBRECHEN'), 'active mining must provide a cancel action');
-assert(panel.includes('LANGREICHWEITENSCAN'), 'local UI must expose long-range scanning');
+assert(operationsHud.includes('VORGANG ABBRECHEN'), 'active mining must provide a cancel action');
+assert(operationsHud.includes('FERNBEREICHSSCAN'), 'local UI must expose long-range scanning');
 assert(
   renderer.includes('drawLongRangeScan'),
   'long-range scan must have a visible expanding wave'
@@ -258,12 +266,13 @@ assert(
 );
 assert(
   renderer.includes('drawShortRangeScan') &&
-    renderer.includes('const sweepY') &&
-    renderer.includes('this.context.clip()'),
+    renderer.includes('drawTargetDetailScan') &&
+    scanEffects.includes('const sweepY') &&
+    scanEffects.includes('context.clip()'),
   'close-range scan must visibly sweep across the moving target asteroid'
 );
 assert(
-  panel.includes('SCAN-DATEN AN') && panel.includes('SCAN-DATEN AUS'),
+  operationsHud.includes('SCAN-DATEN AN') && operationsHud.includes('SCAN-DATEN AUS'),
   'local UI must expose a scan-callout visibility toggle'
 );
 assert(
