@@ -95,6 +95,7 @@ export function maybeLaunchTractorAsteroid(
   ship: MutableCombatant,
   target: MutableCombatant
 ): void {
+  if (!ship.setup.tractorCanManipulateObjects) return;
   if (ship.shieldHp > 0 || ship.subsystems.tractor <= 0 || ship.tactic === 'flee') return;
   if ((ship.tractorThrowCooldown ?? 0) > 0 || target.hullHp <= 0) return;
   const reach = Math.min(700, ship.setup.tractorRangeMeters ?? 0);
