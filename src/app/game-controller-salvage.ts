@@ -242,7 +242,9 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         state.activeSectorEvent?.id !== eventId ||
         state.activeSectorEvent.type !== 'distress-rescue' ||
         state.activeSectorEvent.distressStage !== 'approach'
-      ) return;
+      ) {
+        return;
+      }
       const wreck = context.field.wrecks[0];
       if (!wreck) return;
       const before = service.getSnapshot().phase;
@@ -332,10 +334,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     service.tick(deltaSeconds);
     if (service.getSnapshot().diagnosisSerial !== diagnosisSerial) {
       const event = context.state.activeSectorEvent;
-      if (
-        event?.type === 'distress-rescue' &&
-        event.distressStage === 'approach'
-      ) {
+      if (event?.type === 'distress-rescue' && event.distressStage === 'approach') {
         options.onDiagnoseDistress?.(event.id);
       }
     }
