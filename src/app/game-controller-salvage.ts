@@ -38,7 +38,10 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
-import { requestDistressDiagnosis, tickDistressDiagnosis } from './game-controller-salvage-diagnosis';
+import {
+  requestDistressDiagnosis,
+  tickDistressDiagnosis,
+} from './game-controller-salvage-diagnosis';
 
 export interface SalvageSceneController {
   getField(): SalvageField;
@@ -239,7 +242,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onStartDistressDiagnosis(eventId) {
-      requestDistressDiagnosis(state.activeSectorEvent, eventId, context.field.wrecks[0], service, options.log);
+      requestDistressDiagnosis(context, eventId);
       refresh();
     },
     onInspect(wreckId) {
@@ -318,7 +321,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
-    tickDistressDiagnosis(service, deltaSeconds, context.state.activeSectorEvent, options.onDiagnoseDistress);
+    tickDistressDiagnosis(context, deltaSeconds);
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();
       const wreck = context.field.wrecks[0];
