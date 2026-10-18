@@ -289,18 +289,32 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     point: { x: number; y: number },
     radius: number
   ): void {
-    if (wreck.isSelected || wreck.isWorkTarget) {
-      this.context.save();
-      this.context.strokeStyle = wreck.isWorkTarget
-        ? 'rgba(232, 184, 96, 0.95)'
-        : 'rgba(130, 206, 224, 0.86)';
-      this.context.lineWidth = 1.5;
-      this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
-      this.context.beginPath();
+    if (!wreck.isSelected && !wreck.isWorkTarget) return;
+    this.context.save();
+    this.context.strokeStyle = wreck.isWorkTarget
+      ? 'rgba(232, 184, 96, 0.95)'
+      : 'rgba(130, 206, 224, 0.86)';
+    this.context.lineWidth = 1.5;
+    this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
+    this.context.beginPath();
+    if (!wreck.id.startsWith('event-wreck-salvage-distress-')) {
       this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
-      this.context.stroke();
-      this.context.restore();
+    } else {
+      // Open target corners indicate selection without resembling a shield bubble.
+      const extent = radius + 12;
+      const arm = 12;
+      for (const xSide of [-1, 1]) {
+        for (const ySide of [-1, 1]) {
+          const x = point.x + xSide * extent;
+          const y = point.y + ySide * extent;
+          this.context.moveTo(x - xSide * arm, y);
+          this.context.lineTo(x, y);
+          this.context.lineTo(x, y - ySide * arm);
+        }
+      }
     }
+    this.context.stroke();
+    this.context.restore();
   }
 
   private drawWreckScanCallout(
