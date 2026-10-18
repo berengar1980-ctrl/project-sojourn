@@ -39,13 +39,7 @@ export function drawTargetDetailScan(
   context.shadowColor = 'rgba(91, 223, 244, .78)';
   context.shadowBlur = 7;
   context.beginPath();
-  context.arc(
-    point.x,
-    point.y,
-    radius + 5,
-    timeSeconds * 1.8,
-    timeSeconds * 1.8 + Math.PI * 1.35
-  );
+  context.arc(point.x, point.y, radius + 5, timeSeconds * 1.8, timeSeconds * 1.8 + Math.PI * 1.35);
   context.stroke();
   context.beginPath();
   context.arc(
