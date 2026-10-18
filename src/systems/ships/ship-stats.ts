@@ -4,6 +4,7 @@ import type {
   ShipGameplayProfile,
 } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
+import { shipActiveCombatWeaponMounts } from './ship-combat-role-policy';
 
 export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGameplayStats {
   const role = getShipRoleProfile(ship.role);
@@ -12,7 +13,9 @@ export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGame
   return {
     ...role,
     ...overrides,
-    weaponSlots: ship.sprite.hardpoints.weaponMounts?.length ?? role.weaponSlots,
+    weaponSlots: ship.sprite.hardpoints.weaponMounts
+      ? shipActiveCombatWeaponMounts(ship).length
+      : role.weaponSlots,
     stations: role.stations,
     specialCargo:
       overrides && 'specialCargo' in overrides

@@ -17,6 +17,7 @@ function ship(x, shieldHp) {
     setup: {
       name: 'Test ship',
       tractorRangeMeters: 500,
+      tractorCanManipulateObjects: true,
       shieldGeometry: { radiusX: 25, radiusY: 20 },
     },
     tactic: 'fight',

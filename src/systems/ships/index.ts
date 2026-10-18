@@ -21,6 +21,13 @@ export {
   sensorRangeMultiplier,
 } from './ship-component-service';
 export { canShipCarryResource } from './ship-cargo-policy';
+export {
+  isShipCombatWeaponSlotActive,
+  shipActiveCombatWeaponMounts,
+  shipHasIndustrialTractor,
+  shipCombatTractorRange,
+  STANDARD_MANEUVER_TRACTOR_RANGE_METERS,
+} from './ship-combat-role-policy';
 export { defaultInstalledShipComponents, resolveShipMiningSetup } from './ship-mining-capability';
 export { resolveShipSalvageSetup } from './ship-salvage-capability';
 export {

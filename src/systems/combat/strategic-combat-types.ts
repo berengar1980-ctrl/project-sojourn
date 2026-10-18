@@ -119,6 +119,8 @@ export interface StrategicCombatantSetup {
   readonly accelerationMetersPerSecond2?: number;
   readonly mines?: readonly ShipMineDefinition[];
   readonly tractorRangeMeters?: number;
+  /** Industrial cargo/rock/mine handling; normal maneuver/boarding tractors cannot throw. */
+  readonly tractorCanManipulateObjects?: boolean;
   readonly sensorCrewSkill?: number;
   readonly sensorTier?: number;
   readonly sensorRangeMeters?: number;

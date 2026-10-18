@@ -7,6 +7,7 @@ import {
   type InstalledShipComponents,
 } from './ship-component-service';
 import { resolveShipGameplayStats } from './ship-stats';
+import { isShipCombatWeaponSlotActive } from './ship-combat-role-policy';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 
 /** Starter armament must respect the actual hardpoint mount and family.
@@ -17,6 +18,7 @@ export function defaultStarterWeaponId(ship: ShipDefinition, slotIndex: number):
   const hardpoint = ship.sprite.hardpoints.weaponMounts?.find(
     (slot) => slot.slotIndex === slotIndex
   );
+  if (!isShipCombatWeaponSlotActive(ship, slotIndex)) return '';
   if (!hardpoint && ship.sprite.hardpoints.weaponMounts?.length) return '';
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter(
     (component) =>
@@ -28,6 +30,7 @@ export function defaultStarterWeaponId(ship: ShipDefinition, slotIndex: number):
   );
   const preferred =
     weapons.find((component) => component.weapon?.family === 'pulse_laser') ??
+    weapons.find((component) => component.weapon?.family === 'front_repeater') ??
     weapons.find((component) => component.weapon?.family === 'railgun') ??
     weapons.find((component) => component.weapon?.family === 'plasma_battery') ??
     weapons.find((component) => component.weapon?.family === 'autocannon') ??
@@ -51,7 +54,9 @@ export interface ShipMiningSetup {
 
 export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledShipComponents {
   const stats = resolveShipGameplayStats(ship);
-  const compatibleStarters = Array.from({ length: stats.weaponSlots }, (_, index) =>
+  // Keep physical slot indices stable: the freighter turret is slot 3, not slot 1.
+  const slotCount = ship.sprite.hardpoints.weaponMounts?.length ?? stats.weaponSlots;
+  const compatibleStarters = Array.from({ length: slotCount }, (_, index) =>
     defaultStarterWeaponId(ship, index)
   );
   // Prefer an actual defensive pulse laser turret: it can track a pirate
@@ -68,7 +73,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     cargo: ['cargo1'],
     // One affordable defensive Mk I gun as the campaign baseline. Remaining
     // slots stay free for upgrades, not silently filled with incompatible gear.
-    weapon: Array.from({ length: stats.weaponSlots }, (_, index) =>
+    weapon: Array.from({ length: slotCount }, (_, index) =>
       index === starterSlot ? compatibleStarters[index]! : ''
     ),
     mine: [''],

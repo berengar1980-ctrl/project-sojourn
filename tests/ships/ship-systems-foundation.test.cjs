@@ -23,7 +23,7 @@ function stationSkill(profile, stationId) {
   const salvage = roleProfiles.getShipRoleProfile('salvage');
   const patrol = roleProfiles.getShipRoleProfile('patrol');
 
-  assert.equal(freighter.hullPoints, 78);
+  assert.equal(freighter.hullPoints, 115);
   assert.equal(mining.hullPoints, 72);
   assert.equal(salvage.hullPoints, 82);
   assert.equal(patrol.hullPoints, 96);
@@ -33,10 +33,10 @@ function stationSkill(profile, stationId) {
   assert.equal(salvage.shieldModifier, 0.8125);
   assert.equal(patrol.shieldModifier, 1.1875);
 
-  assert.equal(freighter.weaponSlots, 2);
-  assert.equal(mining.weaponSlots, 1);
-  assert.equal(salvage.weaponSlots, 1);
-  assert.equal(patrol.weaponSlots, 3);
+  assert.equal(freighter.weaponSlots, 4);
+  assert.equal(mining.weaponSlots, 3);
+  assert.equal(salvage.weaponSlots, 3);
+  assert.equal(patrol.weaponSlots, 6);
 
   assert.deepEqual(freighter.specialCargo, null);
   assert.deepEqual(mining.specialCargo, { kind: 'mining' });

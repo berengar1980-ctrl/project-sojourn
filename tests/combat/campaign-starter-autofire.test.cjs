@@ -15,16 +15,24 @@ const componentService = load('src/systems/ships/ship-component-service.ts');
 const ship = registry.getAllShipDefinitions().find((s) => s.role === 'salvage');
 assert(ship, 'expected a campaign salvager');
 const equipment = loadouts.createShipLoadoutService().get(ship);
-assert.equal(equipment.weapon[3], 'weapon1', 'salvager gets a directional-compatible turret');
+assert.equal(
+  equipment.weapon[0],
+  'weapon-front-repeater-1',
+  'salvager receives only a front repeater'
+);
+assert(
+  equipment.weapon.slice(1).every((id) => !id),
+  'civilian mounts cannot be armed by default'
+);
 assert(
   componentService.calculateShipEnergy(equipment).combatFree >= 0,
   'starter equipment must not overload Mk I reactor'
 );
 const player = combatants.createPlayerCombatant(ship, { installed: equipment });
 assert.equal(player.weapons.length, 1);
-assert.equal(player.weapons[0].weapon.family, 'pulse_laser');
+assert.equal(player.weapons[0].weapon.family, 'front_repeater');
 assert.equal(player.weaponMounts[0].facing, 'forward');
-assert.equal(player.weaponMounts[0].arcDegrees, 360);
+assert.equal(player.weaponMounts[0].arcDegrees, 60);
 const enemy = { ...player, id: 'enemy', name: 'Hostile', aiControlled: true };
 const duel = combat.createStrategicCombatService(player, enemy, 1037, {
   width: 1800,
@@ -47,22 +55,20 @@ const badLegacy = {
 };
 const healed = npcUpgrades.ensureNpcInstalledComponents(badLegacy);
 assert.equal(
-  healed.weapon[3],
-  'weapon1',
-  'a saved pirate with only an incompatible mount must regain a valid turret'
+  healed.weapon[0],
+  'weapon-front-repeater-1',
+  'a saved pirate with only an incompatible mount must regain its permitted front gun'
 );
 const validLegacy = {
   job: 'pirate',
   pirate: true,
   shipId: ship.id,
-  installedComponents: { weapon: ['', '', '', 'weapon1'] },
+  installedComponents: { weapon: ['weapon-front-repeater-1', '', '', ''] },
 };
 npcUpgrades.ensureNpcInstalledComponents(validLegacy);
 assert.deepEqual(
   validLegacy.installedComponents.weapon,
-  ['', '', '', 'weapon1'],
-  'already armed NPC loadouts must not be changed'
+  ['weapon-front-repeater-1', '', '', ''],
+  'already valid NPC front loadouts remain unchanged'
 );
-console.log(
-  'PASS campaign salvager auto-fire, reactor power and legacy pirate starter-gun recovery'
-);
+console.log('PASS front-only salvager auto-fire, reactor power and pirate starter recovery');

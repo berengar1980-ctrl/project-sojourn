@@ -57,8 +57,8 @@ export const DUEL_ENCOUNTERS: readonly DuelEncounter[] = [
     title: 'Gamma · Breitseiten',
     purpose: 'Backbord- und Steuerbord-Orientierung',
     seed: 1003,
-    first: side('salvage', 1, [rail, plasma, plasma, laser], 4),
-    second: side('salvage', 2, [rail, cannon, cannon, laser], 5),
+    first: side('patrol', 1, [rail, plasma, plasma, laser], 4),
+    second: side('patrol', 2, [rail, cannon, cannon, laser], 5),
   },
   {
     id: 'delta',
