@@ -46,7 +46,8 @@ assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNK
 assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('drawCombatEscapeGate('));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));
 assert(read('src/systems/ships/ship-registry.ts').includes('ensureUtilityHardpoints'));
-assert(read('src/ui/salvage/salvage-space-panel.ts').includes('TECHNISCHE DIAGNOSE LÄUFT'));
+assert(read('src/ui/salvage/salvage-space-panel.ts').includes('TECHNISCHE DIAGNOSE · '));
+assert(read('src/ui/salvage/salvage-space-panel.ts').includes('onStartDistressDiagnosis(id)'));
 assert(read('src/ui/salvage/salvage-space-renderer.ts').includes('drawDistressScanEffect('));
 assert(read('src/app/game-controller-events.ts').includes('showDistressReward('));
 console.log('PASS fixed local exits, combat escape marker, distress scan and utility mounts');
