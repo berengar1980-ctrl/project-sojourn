@@ -448,11 +448,7 @@ export class StrategicCombatRenderer {
     this.context.textAlign = 'center';
     this.context.font = 'bold 10px ui-monospace, monospace';
     this.context.fillStyle = status.strategy === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
-    this.context.fillText(
-      status.strategy,
-      geometry.center.x,
-      statusY - (status.maneuver ? 12 : 0)
-    );
+    this.context.fillText(status.strategy, geometry.center.x, statusY - (status.maneuver ? 12 : 0));
     if (status.maneuver) {
       this.context.font = '9px ui-monospace, monospace';
       this.context.fillStyle = '#a7bac7';
