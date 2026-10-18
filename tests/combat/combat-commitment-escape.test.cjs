@@ -156,6 +156,26 @@ for (const at of [16, 32, 48]) {
     'committed flight may not silently abort when pursuer reduces escape odds'
   );
 }
+const npcCombat = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/npc-combatant-setup.ts'
+);
+for (const job of ['miner', 'salvager']) {
+  const worker = { job, aggression: 15, hullHp: 100, hullMaxHp: 100 };
+  assert.equal(npcCombat.npcCombatDoctrine(worker, false, true), 'fight');
+  assert.equal(npcCombat.npcCombatDoctrine(worker, false, false), 'flee');
+  assert.equal(npcCombat.npcCombatDoctrine(worker, true, true), 'minefield');
+  assert.equal(npcCombat.npcCombatDoctrine({ ...worker, hullHp: 22 }, false, true), 'flee');
+}
+const peerMiner = ship('mining-80m-variant-01', 800, pirate.setup.weapons);
+const peerSalvager = ship('salvage-100m-variant-01', 1300, pirate.setup.weapons);
+peerMiner.setup.aiAggression = 15;
+peerSalvager.setup.aiAggression = 15;
+assert.equal(estimatedVictoryChance(peerMiner, peerSalvager), 0.5);
+reviewCombatCommitment(peerMiner, peerSalvager, arena, 0);
+reviewCombatCommitment(peerSalvager, peerMiner, arena, 0);
+assert.equal(peerMiner.tactic, 'fight', 'armed miner fights an equally armed salvager');
+assert.equal(peerSalvager.tactic, 'fight', 'armed salvager fights an equally armed miner');
 console.log(
-  'PASS combat confidence, retreat commitment, escape feasibility and rear-guard mine geometry'
+  'PASS combat confidence, civilian peer engagements and defensive escape'
 );
