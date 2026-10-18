@@ -419,6 +419,7 @@ export function createActivePortPanel(
   const installed = loadouts.get(ship);
   const runtime = resolveShipRuntimeSetup(ship, { ...crew.runtimeOptions(ship), installed });
   const gameplay = resolveShipGameplayStats(ship);
+  navigation.setTurnRateMultiplier(engineSpeedMultiplier(runtime.installed));
   navigation.setCruiseSpeed(
     ship.navigation.cruiseSpeed *
       engineSpeedMultiplier(runtime.installed) *

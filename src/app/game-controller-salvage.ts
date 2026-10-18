@@ -30,6 +30,7 @@ import { createSalvageLocalSpaceService, generateSalvageField } from '../systems
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
   resolveShipLocalCruiseSpeed,
+  engineSpeedMultiplier,
   resolveShipRuntimeSetup,
   type ShipComponentInventoryService,
   type ShipRuntimeOptions,
@@ -407,8 +408,9 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     approachSpeed: resolveShipLocalCruiseSpeed(
       options.ship,
-      resolveShipRuntimeSetup(options.ship, options.runtimeOptions).installed
+      runtime.installed
     ),
+    turnRateMultiplier: engineSpeedMultiplier(runtime.installed),
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });

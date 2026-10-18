@@ -29,5 +29,6 @@ export interface NavigationService {
   stopPursuit(): NavigationSnapshot;
   recoverToNearestDock(): NavigationSnapshot;
   setCruiseSpeed(cruiseSpeed: number): NavigationSnapshot;
+  setTurnRateMultiplier(multiplier: number): NavigationSnapshot;
   tick(deltaSeconds: number): NavigationSnapshot;
 }

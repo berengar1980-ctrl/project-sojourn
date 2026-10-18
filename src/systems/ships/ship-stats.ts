@@ -44,10 +44,8 @@ export function resolveShipCombatMovementStats(
   const acceleration = Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18));
   return {
     combatSpeed: Math.round(baseSpeed * patrolSpeedFactor * drive),
-    turnRateRadiansPerSecond: Math.max(
-      0.4,
-      Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)
-    ),
+    turnRateRadiansPerSecond:
+      Math.max(0.4, Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)) * drive,
     accelerationMetersPerSecond2: acceleration * (1 + (drive - 1) * 0.5),
   };
 }

@@ -46,6 +46,7 @@ import { createLocalSpaceShipSystems } from './local-space-ship-systems';
 class LocalSpaceRuntime implements LocalSpaceService {
   private readonly instance: LocalSpaceInstance;
   private readonly approachSpeed: number;
+  private readonly turnRateMultiplier: number;
   private readonly shield: ShieldWorldGeometry;
   private readonly hardpoints: ShipHardpoints;
   private readonly nominalLengthMeters: number;
@@ -77,6 +78,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   constructor(options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
     this.approachSpeed = options.approachSpeed;
+    this.turnRateMultiplier = options.turnRateMultiplier ?? 1;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
@@ -375,7 +377,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachSpeed,
       deltaSeconds,
       true,
-      true
+      true,
+      this.turnRateMultiplier
     );
     this.navigationIndex = result.nextIndex;
     if (result.completed) this.finishManualNavigation();
@@ -400,7 +403,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachSpeed,
       deltaSeconds,
       false,
-      true
+      true,
+      this.turnRateMultiplier
     );
     this.approachIndex = result.nextIndex;
     if (result.completed) this.finishApproachFacing(deltaSeconds, asteroid);
@@ -408,7 +412,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   private finishApproachFacing(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
-    if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds)) return;
+    if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds, this.turnRateMultiplier)) return;
 
     if (this.approachPurpose === 'scan') {
       resetAutopilotMotion(ship);

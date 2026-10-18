@@ -64,7 +64,8 @@ export function advanceAutopilotRoute(
   cruiseSpeed: number,
   deltaSeconds: number,
   brakeAtFinalWaypoint: boolean,
-  allowReverseCorrection = false
+  allowReverseCorrection = false,
+  turnRateMultiplier = 1
 ): RouteAdvanceResult {
   if (index >= route.length) return { nextIndex: index, completed: true };
 
@@ -90,7 +91,8 @@ export function advanceAutopilotRoute(
       deltaSeconds,
       remainingDistance,
       finalWaypoint,
-      brakeAtFinalWaypoint
+      brakeAtFinalWaypoint,
+      turnRateMultiplier
     );
   }
 
@@ -112,14 +114,15 @@ function advanceForwardRoute(
   deltaSeconds: number,
   remainingDistance: number,
   finalWaypoint: boolean,
-  brakeAtFinalWaypoint: boolean
+  brakeAtFinalWaypoint: boolean,
+  turnRateMultiplier: number
 ): void {
   const desiredHeading = heading(ship.position, waypoint);
   const previousHeading = ship.headingRadians;
   ship.headingRadians = turnToward(
     ship.headingRadians,
     desiredHeading,
-    MAX_TURN_RATE * deltaSeconds
+    MAX_TURN_RATE * turnRateMultiplier * deltaSeconds
   );
   ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
   ship.angularThrust = Math.max(
@@ -142,14 +145,15 @@ function advanceForwardRoute(
 export function faceAutopilotTarget(
   ship: LocalShipState,
   target: WorldPoint,
-  deltaSeconds: number
+  deltaSeconds: number,
+  turnRateMultiplier = 1
 ): boolean {
   const desiredHeading = heading(ship.position, target);
   const previousHeading = ship.headingRadians;
   ship.headingRadians = turnToward(
     ship.headingRadians,
     desiredHeading,
-    MAX_TURN_RATE * deltaSeconds
+    MAX_TURN_RATE * turnRateMultiplier * deltaSeconds
   );
   ship.turnRateRadiansPerSecond = angleDelta(previousHeading, ship.headingRadians) / deltaSeconds;
   ship.angularThrust = Math.max(
