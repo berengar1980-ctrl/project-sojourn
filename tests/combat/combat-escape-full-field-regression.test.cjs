@@ -70,24 +70,38 @@ for (const [kind, seed] of scenarios) {
   for (let tick = 0; tick < maxTicks && !frame.winner; tick += 1) {
     frame = battle.tick(stepSeconds);
     const heading = frame.attacker.headingRadians;
-    const turn = Math.abs(Math.atan2(Math.sin(heading - previousHeading), Math.cos(heading - previousHeading)));
+    const delta = heading - previousHeading;
+    const turn = Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta)));
     totalTurn += turn;
     largestTurn = Math.max(largestTurn, turn);
     previousHeading = heading;
-    assert(Number.isFinite(frame.attacker.position.x) && Number.isFinite(frame.attacker.position.y));
-    assert.equal(frame.attacker.tactic, 'flee', kind + ' seed ' + seed + ': no AI flight reversal');
-    assert.deepEqual(frame.exitPoint, gate, kind + ' seed ' + seed + ': exit must never move');
+    assert(
+      Number.isFinite(frame.attacker.position.x) && Number.isFinite(frame.attacker.position.y)
+    );
+    const label = kind + ' seed ' + seed;
+    assert.equal(frame.attacker.tactic, 'flee', label + ': no AI flight reversal');
+    assert.deepEqual(frame.exitPoint, gate, label + ': exit must never move');
   }
   const label = kind + ' seed ' + seed;
-  const residual = Math.hypot(frame.attacker.position.x - gate.x, frame.attacker.position.y - gate.y);
+  const residual = Math.hypot(
+    frame.attacker.position.x - gate.x,
+    frame.attacker.position.y - gate.y
+  );
   assert.equal(
     frame.outcomeReason,
     'escape',
-    label + ': must actually reach exit before ' + maxTicks * stepSeconds +
-      ' s; remaining ' + residual.toFixed(1) + 'm, turns ' + totalTurn.toFixed(1)
+    label +
+      ': must actually reach exit before ' +
+      maxTicks * stepSeconds +
+      ' s; remaining ' +
+      residual.toFixed(1) +
+      'm, turns ' +
+      totalTurn.toFixed(1)
   );
   assert.equal(frame.winner, 'defender', label + ': escaped attacker ends the encounter');
   assert(totalTurn < 60, label + ': excess aggregate turning ' + totalTurn.toFixed(1));
   assert(largestTurn < 0.5, label + ': discontinuous heading jump');
 }
-console.log('PASS six full seeded asteroid/scrap escapes, stable gate, committed flight and steering');
+console.log(
+  'PASS six full seeded asteroid/scrap escapes, stable gate, committed flight and steering'
+);
