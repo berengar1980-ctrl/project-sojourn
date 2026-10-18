@@ -43,9 +43,9 @@ for (const ship of ships.getAllShipDefinitions()) {
   );
   assert.equal(stats.resolveShipGameplayStats(ship).weaponSlots, maxWeapons[role]);
   assert.equal(policy.shipHasIndustrialTractor(ship), isIndustrial(role));
-  const sideMounts = policy.shipActiveCombatWeaponMounts(ship).filter((mount) =>
-    mount.facing === 'port' || mount.facing === 'starboard'
-  );
+  const sideMounts = policy
+    .shipActiveCombatWeaponMounts(ship)
+    .filter((mount) => mount.facing === 'port' || mount.facing === 'starboard');
   assert.deepEqual(
     sideMounts.map((mount) => mount.facing),
     ['port', 'starboard'],
