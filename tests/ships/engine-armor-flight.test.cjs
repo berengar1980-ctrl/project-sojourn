@@ -122,6 +122,4 @@ fastNav.startPursuit('target', { x: 0, y: 500 });
 const normalTurn = normalNav.tick(0.1).turnRateRadiansPerSecond;
 const fastTurn = fastNav.tick(0.1).turnRateRadiansPerSecond;
 assert(Math.abs(fastTurn / normalTurn - 1.78) < 1e-10);
-console.log(
-  'PASS engine speeds, directional armor and drive-adjusted RCS across flight modes'
-);
+console.log('PASS engine speeds, directional armor and drive-adjusted RCS across flight modes');
