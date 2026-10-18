@@ -3559,7 +3559,6 @@ body:has(.salvage-space-shell .salvage-selection-card:not([hidden])) .settings-m
   color: #91c6a5;
 }
 
-
 .settings-menu__main-menu {
   min-height: 36px;
   border: 1px solid rgba(104, 159, 176, 0.35);
