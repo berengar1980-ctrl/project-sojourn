@@ -200,6 +200,28 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
+function requestDistressDiagnosis(
+  context: SalvageSceneRuntime,
+  eventId: string
+): void {
+  const { service, field, options, state } = context;
+  if (
+    state.activeSectorEvent?.id !== eventId ||
+    state.activeSectorEvent.type !== 'distress-rescue' ||
+    state.activeSectorEvent.distressStage !== 'approach'
+  ) {
+    return;
+  }
+  const wreck = field.wrecks[0];
+  if (!wreck) return;
+  const before = service.getSnapshot().phase;
+  const after = service.startDistressDiagnosis(wreck.id);
+  if (before === 'idle' && after.phase !== 'idle') {
+    options.log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
+  }
+  refreshSalvageScene(context);
+}
+
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -238,21 +260,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onStartDistressDiagnosis(eventId) {
-      if (
-        state.activeSectorEvent?.id !== eventId ||
-        state.activeSectorEvent.type !== 'distress-rescue' ||
-        state.activeSectorEvent.distressStage !== 'approach'
-      ) {
-        return;
-      }
-      const wreck = context.field.wrecks[0];
-      if (!wreck) return;
-      const before = service.getSnapshot().phase;
-      const after = service.startDistressDiagnosis(wreck.id);
-      if (before === 'idle' && after.phase !== 'idle') {
-        options.log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
-      }
-      refresh();
+      requestDistressDiagnosis(context, eventId);
     },
     onInspect(wreckId) {
       service.startInspect(wreckId);
