@@ -1,5 +1,5 @@
 import type { ShipDefinition } from '../../systems/ships';
-import { fitsWeaponHardpoint } from '../../systems/ships';
+import { fitsWeaponHardpoint, shipActiveCombatWeaponMounts } from '../../systems/ships';
 import type { ShipWeaponHardpoint } from '../../core/ship-types';
 import {
   weaponHardpointName,
@@ -96,7 +96,7 @@ function weaponSlotCard(
 
 /** UI order only: maintain the original mount slot indices for the real loadout. */
 export function buildDuelWeaponSections(draft: DuelDraft, ship: ShipDefinition): HTMLElement[] {
-  const mounts = [...(ship.sprite.hardpoints.weaponMounts ?? [])].sort(
+  const mounts = [...shipActiveCombatWeaponMounts(ship)].sort(
     (a, b) => weaponUiOrder(a) - weaponUiOrder(b)
   );
   const sectionNames = {
