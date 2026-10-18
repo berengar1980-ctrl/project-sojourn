@@ -32,12 +32,12 @@ import {
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
 import {
-  getShipDefinition,
   resolveShipRuntimeSetup,
   type ShipComponentInventoryService,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
+import { salvageNpcShips } from './game-controller-salvage-npc-view';
 
 export interface SalvageSceneController {
   getField(): SalvageField;
@@ -134,30 +134,6 @@ function createNpcSalvageRuntime(
     playerShip: options.ship,
     getPlayerShipState: () => service.getSnapshot().ship,
     onPlayerShieldContact: (normal, overlap) => service.recordShipShieldContact(normal, overlap),
-  });
-}
-
-function salvageNpcShips(npcSalvage: NpcLocalSalvageService) {
-  return npcSalvage.ships.flatMap((npc) => {
-    const definition = getShipDefinition(npc.shipId);
-    if (!definition) return [];
-    return [
-      {
-        id: npc.npcId,
-        name: npc.name,
-        position: npc.position,
-        headingRadians: npc.headingRadians,
-        speed: npc.speed,
-        phase: npc.phase,
-        targetWreckId: npc.targetWreckId,
-        salvageActive: npc.salvageActive,
-        scanProgress: npc.scanProgress,
-        nominalLengthMeters: definition.nominalLengthMeters,
-        spriteUrl: definition.sprite.assetUrl,
-        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-        hardpoints: definition.sprite.hardpoints,
-      },
-    ];
   });
 }
 
