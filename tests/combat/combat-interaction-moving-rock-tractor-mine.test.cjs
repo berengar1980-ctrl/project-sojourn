@@ -62,6 +62,7 @@ const ship = (x, shieldHp) => ({
   setup: {
     name: 'Tester',
     tractorRangeMeters: 600,
+    tractorCanManipulateObjects: true,
     damageMultiplier: 1,
     shieldGeometry: { centerOffset: { x: 0, y: 0 }, radiusX: 25, radiusY: 20, modifier: 1 },
   },
