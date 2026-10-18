@@ -3,6 +3,7 @@ import { SHIP_MINE_CATALOG } from '../combat/ship-mines';
 
 import type {
   ShipComponentType,
+  ShipArmorProtection,
   ShipWeaponFamily,
   ShipWeaponProfile,
   ShipWeaponRole,
@@ -21,6 +22,7 @@ export interface ShipComponentDefinition {
   readonly output?: number;
   readonly speed?: number;
   readonly bonus?: number;
+  readonly armor?: ShipArmorProtection;
   readonly range?: number;
   readonly yield?: number;
   readonly chance?: number;
@@ -293,6 +295,39 @@ function weaponDefinitions(seed: WeaponFamilySeed): readonly ShipComponentDefini
   });
 }
 
+/** Four placement options per tier, each with the same total armor allocation. */
+const ARMOR_STRENGTH_PCT = [15, 22, 29, 36, 43, 50] as const;
+const ARMOR_FACINGS = [
+  { id: 'rear', label: 'Heck' },
+  { id: 'front', label: 'Bug' },
+  { id: 'sides', label: 'Backbord / Steuerbord' },
+  { id: 'all', label: 'Rundum' },
+] as const;
+
+function armorDefinitions(): readonly ShipComponentDefinition[] {
+  return ARMOR_STRENGTH_PCT.flatMap((percent, index) =>
+    ARMOR_FACINGS.map(({ id, label }) => {
+      const full = percent / 100;
+      const sides = full / 2;
+      const all = full / 4;
+      return {
+        id: `armor-${id}-${index + 1}`,
+        type: 'armor' as const,
+        name: `Hüllenpanzerung ${label} Mk ${ROMAN_TIERS[index]}`,
+        tier: index + 1,
+        power: 0,
+        cost: index === 0 ? 120000 : Math.round(120000 * (index + 1) ** 2.1),
+        armor: {
+          front: id === 'front' ? full : id === 'all' ? all : 0,
+          rear: id === 'rear' ? full : id === 'all' ? all : 0,
+          port: id === 'sides' ? sides : id === 'all' ? all : 0,
+          starboard: id === 'sides' ? sides : id === 'all' ? all : 0,
+        },
+      };
+    })
+  );
+}
+
 export const SHIP_COMPONENT_CATALOG: Readonly<
   Partial<Record<ShipComponentType, readonly ShipComponentDefinition[]>>
 > = {
@@ -332,6 +367,7 @@ export const SHIP_COMPONENT_CATALOG: Readonly<
     ],
     'bonus'
   ),
+  armor: armorDefinitions(),
   hull: definitions(
     'hull',
     [

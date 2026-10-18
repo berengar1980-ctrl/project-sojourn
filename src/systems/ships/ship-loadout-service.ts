@@ -88,7 +88,7 @@ export function createShipLoadoutService(): ShipLoadoutService {
 
       if (componentId) {
         const component = getShipComponent(type, componentId);
-        if (!component || component.tier > resolveShipGameplayStats(ship).maxComponentTier) {
+        if (!component || component.tier > (type === 'armor' ? 6 : resolveShipGameplayStats(ship).maxComponentTier)) {
           return false;
         }
         if (

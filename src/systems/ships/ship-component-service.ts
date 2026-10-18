@@ -294,6 +294,11 @@ export function componentCargoBonus(installed: InstalledShipComponents): number 
   return sumField(installed, 'cargo', 'bonus');
 }
 
+/** Independent directional protection; hull modules still increase hit points. */
+export function resolveShipArmorProtection(installed: InstalledShipComponents) {
+  return getShipComponent('armor', installed.armor?.[0] ?? '')?.armor;
+}
+
 export function engineSpeedMultiplier(installed: InstalledShipComponents): number {
   return 1 + sumField(installed, 'engine', 'speed');
 }

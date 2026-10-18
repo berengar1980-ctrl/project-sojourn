@@ -5,6 +5,7 @@ export type ShipComponentType =
   | 'engine'
   | 'shield'
   | 'hull'
+  | 'armor'
   | 'sensor'
   | 'weapon'
   | 'mine'
@@ -12,6 +13,14 @@ export type ShipComponentType =
   | 'mining'
   | 'salvage'
   | 'tractor';
+
+/** Directional hull damage mitigation, from 0 to 1. */
+export interface ShipArmorProtection {
+  readonly front: number;
+  readonly rear: number;
+  readonly port: number;
+  readonly starboard: number;
+}
 
 export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
 export type ShipWeaponMountKind = 'turret' | 'broadside' | 'forward' | 'guided';

@@ -69,6 +69,7 @@ export function defaultInstalledShipComponents(ship: ShipDefinition): InstalledS
     engine: ['engine1'],
     shield: ['shield1'],
     hull: ['hull1'],
+    armor: [''],
     sensor: ['sensor1'],
     cargo: ['cargo1'],
     // One affordable defensive Mk I gun as the campaign baseline. Remaining
