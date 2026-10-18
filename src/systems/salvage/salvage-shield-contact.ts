@@ -1,6 +1,6 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
-import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
+import type { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
 
 export function applySalvageShieldContact(
   shields: ReturnType<typeof createLocalSpaceShipSystems>,
