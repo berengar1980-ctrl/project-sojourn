@@ -54,6 +54,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
   const movement = resolveShipCombatMovementStats(ship, installed);
+  const armor = resolveShipArmorProtection(installed);
   const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
@@ -73,7 +74,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     shieldHp: Math.max(1, shieldMax),
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
-    armor: resolveShipArmorProtection(installed),
+    ...(armor ? { armor } : {}),
     weapons: equippedWeapons.map((entry) => entry.component),
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),

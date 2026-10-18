@@ -17,6 +17,7 @@ const UPGRADE_TYPES: readonly ShipComponentType[] = [
   'engine',
   'shield',
   'hull',
+  'armor',
   'sensor',
   'weapon',
   'mine',
@@ -69,11 +70,12 @@ function nextUpgradeForType(
   const fitsSlot = (component: ShipComponentDefinition, index: number): boolean =>
     type !== 'weapon' ||
     Boolean(component.weapon && fitsWeaponHardpoint(ship, index, component.weapon));
+  const maxTier = type === 'armor' ? 6 : stats.maxComponentTier;
   const compatible = [
-    ...getCompatibleShipComponents(type, stats.maxComponentTier),
+    ...getCompatibleShipComponents(type, maxTier),
     ...extraComponents.filter(
       (component): component is ShipComponentDefinition =>
-        component !== null && component.type === type && component.tier <= stats.maxComponentTier
+        component !== null && component.type === type && component.tier <= maxTier
     ),
   ];
 
@@ -112,7 +114,7 @@ function nextUpgradeForType(
   if (sameTierVariant) {
     return { index: bestIndex, nextId: sameTierVariant.id, cost: sameTierVariant.cost };
   }
-  if (bestTier >= stats.maxComponentTier) return null;
+  if (bestTier >= maxTier) return null;
 
   const next = compatible
     .filter((component) => component.tier === bestTier + 1 && fitsSlot(component, bestIndex))
@@ -140,7 +142,7 @@ function rolePriority(npc: SectorNpcState, type: ShipComponentType): number {
     if (type === 'shield') return 3;
     if (type === 'engine') return 2;
   }
-  return type === 'reactor' ? 1.5 : 1;
+  return type === 'reactor' ? 1.5 : type === 'armor' ? 1.8 : 1;
 }
 
 export function npcOperationalSpeed(npc: SectorNpcState): number {

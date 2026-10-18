@@ -19,6 +19,7 @@ export function createPlayerCombatant(
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
   const movement = resolveShipCombatMovementStats(ship, runtime.installed);
+  const armor = resolveShipArmorProtection(runtime.installed);
   const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);
   const sensor = (runtime.installed.sensor ?? [])
@@ -36,7 +37,7 @@ export function createPlayerCombatant(
     shieldHp: runtime.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
-    armor: resolveShipArmorProtection(runtime.installed),
+    ...(armor ? { armor } : {}),
     weapons,
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.68 + runtime.crewEffects.sensors.weaponHitChanceBonus,

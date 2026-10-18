@@ -1,5 +1,5 @@
 import { nativeMineDamage } from './combat-native-damage';
-import { applyDamage } from './strategic-combat-damage';
+import { applyDamage, directionalHullDamage } from './strategic-combat-damage';
 import { distance, normalize } from './strategic-combat-geometry';
 import type {
   MutableCombatant,
@@ -188,7 +188,7 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
   }
   const shieldDamage = Math.min(enemy.shieldHp, 130);
   enemy.shieldHp -= shieldDamage;
-  const hullDamage = enemy.shieldHp <= 0 ? 95 : 0;
+  const hullDamage = directionalHullDamage(enemy, enemy.shieldHp <= 0 ? 95 : 0, rock.position);
   enemy.hullHp = Math.max(0, enemy.hullHp - hullDamage);
   runtime.impactSerial += 1;
   runtime.lastImpact = {

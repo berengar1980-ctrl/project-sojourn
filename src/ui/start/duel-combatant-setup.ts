@@ -44,6 +44,7 @@ export function duelCombatant(
     engine: [draft.engineId ?? 'engine1'],
     armor: [draft.armorId ?? ''],
   };
+  const armor = resolveShipArmorProtection(installed);
   const pilotSkill = crew?.skills.piloting ?? 50;
   const weaponSkill = crew?.skills.weapons ?? 50;
   const sensorSkill = crew?.skills.sensors ?? 50;
@@ -54,7 +55,7 @@ export function duelCombatant(
     shieldHp: shipShieldMaxHp(ship),
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
     hullHp: shipHullMaxHp(ship),
-    armor: resolveShipArmorProtection(installed),
+    ...(armor ? { armor } : {}),
     weapons: equipped.map((entry) => entry.component),
     mines: draft.mines.flatMap((id) => {
       const mine = SHIP_MINE_CATALOG.find((entry) => entry.id === id);
