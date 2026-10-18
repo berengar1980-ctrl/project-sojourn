@@ -280,8 +280,9 @@ assert(
   'idle attitude correction must drive RCS turn commands'
 );
 assert(
-  miningController.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship)'),
-  'local-space travel must use the hull-specific unboosted combat cruise speed'
+  miningController.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed)') &&
+    miningController.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'),
+  'local-space navigation must use fitted engine cruise speed and RCS turn rate'
 );
 assert(
   service.includes('miningHoldOffset'),

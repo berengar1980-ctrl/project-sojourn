@@ -90,7 +90,7 @@ export function directionalHullDamage(
   rawDamage: number,
   sourcePosition: CombatPoint
 ): number {
-  const armor = target.setup.armor;
+  const armor = target.setup?.armor;
   if (!armor || rawDamage <= 0) return rawDamage;
   const local = rotate(
     { x: sourcePosition.x - target.position.x, y: sourcePosition.y - target.position.y },
@@ -151,9 +151,12 @@ export function applyDamage(
   }
 
   const directed = targetSubsystem !== 'hull' && target.subsystems[targetSubsystem] > 0;
+  const scaled = scaledDamage(hullDamage, attacker, critical);
+  // Armor is for hull HP. Targeted subsystem attacks retain their own balancing.
+  const effective = directed ? scaled : directionalHullDamage(target, scaled, sourcePosition);
   const damage = Math.min(
     directed ? target.subsystems[targetSubsystem] : target.hullHp,
-    directionalHullDamage(target, scaledDamage(hullDamage, attacker, critical), sourcePosition)
+    effective
   );
   if (directed)
     target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);

@@ -1,5 +1,6 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import { clamp, distance, normalize } from './strategic-combat-geometry';
+import { requiredCombatConfidence } from './combat-civilian-policy';
 
 const RETHINK_PERIOD = 8;
 
@@ -39,19 +40,6 @@ function combatPower(ship: MutableCombatant, opponent: MutableCombatant): number
 export function estimatedVictoryChance(ship: MutableCombatant, enemy: MutableCombatant): number {
   const ours = combatPower(ship, enemy);
   return clamp(ours / Math.max(1, ours + combatPower(enemy, ship)), 0, 1);
-}
-
-function requiredConfidence(ship: MutableCombatant, opponent: MutableCombatant): number {
-  const civilianPattern = /freight|cargo|miner|mining|salvag|scaveng/;
-  const role = ship.setup.shipId.toLowerCase();
-  const civilian = civilianPattern.test(role);
-  const otherCivilian = civilianPattern.test(opponent.setup.shipId.toLowerCase());
-  // Armed working vessels should not immediately retreat from equally matched peers.
-  // Against combat hulls, keep the original cautious civilian confidence threshold.
-  const nonCivilianBase = /patrol|cutter/.test(role) ? 0.32 : 0.4;
-  const base = civilian ? (otherCivilian ? 0.4 : 0.68) : nonCivilianBase;
-  const confidence = clamp(base - ((ship.setup.aiAggression ?? 50) - 50) * 0.0025, 0.16, 0.85);
-  return civilian && otherCivilian ? Math.min(0.48, confidence) : confidence;
 }
 
 /** Estimate viability of escape from the current actual motion and exit location. */
@@ -145,7 +133,11 @@ export function reviewCombatCommitment(
     strength,
     escape,
     elapsed,
-    requiredConfidence(ship, enemy)
+    requiredCombatConfidence(
+      ship.setup.shipId,
+      enemy.setup.shipId,
+      ship.setup.aiAggression ?? 50
+    )
   );
 }
 

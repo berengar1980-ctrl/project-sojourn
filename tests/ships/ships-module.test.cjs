@@ -37,8 +37,9 @@ assert(
   'test ship switcher must receive the full ship registry'
 );
 assert(
-  controller.includes('navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed)'),
-  'ship switching must apply the selected navigation stats'
+  controller.includes('onSwitch(nextShip)') &&
+    !controller.includes('navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed)'),
+  'ship switching must delegate fitted drive and crew navigation synchronization'
 );
 
 let count = 0;

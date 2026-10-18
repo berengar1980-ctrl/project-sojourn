@@ -24,6 +24,7 @@ for (const role of ['freighter', 'mining', 'salvage', 'patrol']) {
 
 assert.equal(ship('freighter').navigation.cruiseSpeed, 195);
 assert.equal(movement.resolveShipCombatMovementStats(ship('freighter')).combatSpeed, 69);
+assert.equal(movement.resolveShipGameplayStats(ship('freighter')).combatBaseSpeed, 69);
 assert.equal(movement.resolveShipLocalCruiseSpeed(ship('freighter')), 69);
 assert.equal(movement.resolveShipCombatMovementStats(ship('mining')).combatSpeed, 78);
 assert.equal(movement.resolveShipCombatMovementStats(ship('patrol')).combatSpeed, 101);

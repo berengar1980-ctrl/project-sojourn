@@ -23,6 +23,7 @@ import {
 } from '../ships';
 
 import { npcDefenseReaction } from '../npcs/npc-combat-ai';
+import { civilianCombatOpening, civilianCombatRole } from './combat-civilian-policy';
 
 import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 
@@ -40,13 +41,11 @@ export function npcCombatDoctrine(
   armedMines: boolean,
   armedWeapons = false
 ): 'fight' | 'kite' | 'flee' | 'minefield' {
-  if (npc.job === 'miner' || npc.job === 'salvager') {
+  if (civilianCombatRole(npc.job)) {
     const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
-    if (hullRatio <= 0.3 || (!armedWeapons && !armedMines)) return 'flee';
-    return armedMines && npc.aggression < 65 ? 'minefield' : 'fight';
+    return civilianCombatOpening(hullRatio, npc.aggression, armedWeapons, armedMines);
   }
   if (npcDefenseReaction(npc) === 'flee') return 'flee';
-  if (npc.job === 'freighter' && npc.aggression < 80) return 'flee';
   if (npc.job === 'pirate' || npc.pirate)
     return armedMines && npc.aggression >= 70 ? 'minefield' : 'fight';
   if (npc.job === 'patrol') return npc.aggression >= 70 ? 'kite' : 'fight';

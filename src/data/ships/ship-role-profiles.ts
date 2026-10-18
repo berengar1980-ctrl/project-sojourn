@@ -9,6 +9,7 @@ const COMMON_STATIONS = [
 
 const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
   freighter: {
+    combatBaseSpeed: 69,
     hullPoints: 115,
     shieldModifier: 1,
     fuelCapacity: 150,

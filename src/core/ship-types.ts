@@ -78,6 +78,8 @@ export interface ShipSpecialCargoProfile {
 }
 
 export interface ShipGameplayProfile {
+  /** Role-defined local/combat cruise speed before engine upgrades. */
+  readonly combatBaseSpeed?: number;
   readonly hullPoints: number;
   readonly shieldModifier: number;
   readonly fuelCapacity: number;
