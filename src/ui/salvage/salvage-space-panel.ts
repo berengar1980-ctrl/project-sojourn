@@ -37,11 +37,17 @@ function statusText(model: SalvageSpaceViewModel): string {
   if (model.phase === 'navigating') return 'NAVIGATION IM BERGUNGSFELD';
   if (model.phase === 'approaching') {
     const target = model.wrecks.find((wreck) => wreck.isWorkTarget);
+    if (target?.id.startsWith('event-wreck-salvage-distress-') && model.sectorEvent?.distressStage === 'approach') {
+      return 'ANFLUG FÜR TECHNISCHE DIAGNOSE';
+    }
     if (target && !target.inspected) return 'ANFLUG FÜR NAHBEREICHSSCAN';
     return 'ANFLUG AUF BERGUNGSPOSITION';
   }
   if (model.phase === 'inspecting') {
     return 'NAHBEREICHSSCAN · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
+  }
+  if (model.phase === 'diagnosing') {
+    return 'TECHNISCHE DIAGNOSE · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
   }
   if (model.phase === 'stripping') {
     return 'BERGUNG AKTIV · ' + Math.round((model.operationProgress ?? 0) * 100) + ' %';
@@ -146,6 +152,16 @@ function showSalvageWreck(
   }
   ui.name.textContent = wreck.inspected ? wreck.name : 'UNBEKANNTER BERGUNGSKONTAKT';
   ui.integrity.style.width = Math.max(0, Math.min(100, wreck.integrity)) + '%';
+  if (
+    model.sectorEvent?.type === 'distress-rescue' &&
+    model.sectorEvent.distressStage === 'approach' &&
+    wreck.id === model.wrecks[0]?.id
+  ) {
+    if (kind) kind.textContent = 'NOTRUF // HAVARIST';
+    ui.name.textContent = model.sectorEvent.title;
+    ui.meta.textContent = 'TECHNISCHE DIAGNOSE ERFORDERLICH';
+    return;
+  }
   if (!wreck.inspected) {
     showUninspectedWreck(model, ui, wreck);
     return;
@@ -238,7 +254,6 @@ function bindSalvagePanelActions(
   options: SalvageSpacePanelOptions,
   getModel: () => SalvageSpaceViewModel
 ): () => void {
-  let diagnosisTimer: ReturnType<typeof setTimeout> | null = null;
   const unbindInput = bindSalvageSpaceInput({
     canvas: ui.canvas,
     renderer,
@@ -258,14 +273,8 @@ function bindSalvagePanelActions(
     const id = model.sectorEvent.id;
     switch (button.dataset.distressAction) {
       case 'diagnose':
-        if (diagnosisTimer) break;
-        button.disabled = true;
-        button.textContent = 'TECHNISCHE DIAGNOSE LÄUFT…';
-        renderer.startDistressDiagnosis();
-        diagnosisTimer = setTimeout(() => {
-          diagnosisTimer = null;
-          options.onDiagnoseDistress?.(id);
-        }, 3000);
+        if (model.selectedWreck?.id !== model.wrecks[0]?.id) break;
+        options.onStartDistressDiagnosis(id);
         break;
       case 'repair':
         options.onRepairDistress?.(id);
@@ -302,7 +311,6 @@ function bindSalvagePanelActions(
   ui.cancelButton.addEventListener('click', options.onCancel);
   ui.backButton.addEventListener('click', options.onReturnToStarMap);
   return () => {
-    if (diagnosisTimer) clearTimeout(diagnosisTimer);
     unbindInput();
   };
 }
@@ -367,12 +375,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
       : 'Zuerst den markierten Ausgang anfliegen';
     ui.canvas.classList.toggle('is-locked', model.salvageEvent !== null);
     eventPanel.update(model.salvageEvent, model.salvageEventRecoverySeconds);
-    if (
-      model.sectorEvent?.distressStage !== 'approach' ||
-      !ui.sectorEventContainer.querySelector('button[data-distress-action="diagnose"]:disabled')
-    ) {
-      renderSectorEvent(model, ui.sectorEventContainer);
-    }
+    renderSectorEvent(model, ui.sectorEventContainer);
     renderCargo(model, ui.cargoTotal, ui.cargoList);
     ui.combatTactics.hidden = model.combat === null;
     for (const button of ui.combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
