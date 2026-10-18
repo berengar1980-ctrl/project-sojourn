@@ -7,6 +7,7 @@ import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
   createDistressTowState,
+  distressTowWithinRange,
   towShipAtExit,
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
@@ -28,7 +29,11 @@ import {
   createNpcLocalSalvageService,
   type NpcLocalSalvageService,
 } from '../systems/npcs/npc-local-salvage-service';
-import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
+import {
+  createSalvageLocalSpaceService,
+  generateSalvageField,
+  generateSectorSalvageEventField,
+} from '../systems/salvage';
 import {
   getShipDefinition,
   resolveShipRuntimeSetup,
@@ -40,6 +45,8 @@ import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/s
 export interface SalvageSceneController {
   getField(): SalvageField;
   beginDistressTow(event: SectorSalvageEvent): void;
+  canAttachDistressTow(): boolean;
+  updateSectorEvent(event: SectorSalvageEvent | null): void;
   beginDistressRepair(): void;
   tick(deltaSeconds: number): void;
   finishCombat(snapshot: StrategicCombatSnapshot): void;
@@ -314,9 +321,9 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
 function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   const { options, service, state } = context;
   if (
-    !options.sectorEvent ||
+    !state.activeSectorEvent ||
     state.sectorEventResolved ||
-    (options.sectorEvent.type !== 'special-wreck' && !options.sectorEvent.salvageRights)
+    (state.activeSectorEvent.type !== 'special-wreck' && !state.activeSectorEvent.salvageRights)
   ) {
     return;
   }
@@ -328,7 +335,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   );
   if (!complete) return;
   state.sectorEventResolved = true;
-  options.onSectorEventResolved?.(options.sectorEvent.id);
+  options.onSectorEventResolved?.(state.activeSectorEvent.id);
 }
 
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
@@ -469,11 +476,35 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     getField() {
       return field;
     },
+    canAttachDistressTow() {
+      const wreck = context.field.wrecks[0];
+      return !!wreck && distressTowWithinRange(service.getSnapshot().ship.position, wreck.position);
+    },
+    updateSectorEvent(event) {
+      const previous = context.state.activeSectorEvent;
+      context.state.activeSectorEvent = event;
+      if (event?.salvageRights && !previous?.salvageRights) {
+        // Unlock loot on the existing field without reconstructing the ship or its route.
+        const replacement = generateSectorSalvageEventField(event).wrecks[0];
+        const current = context.field.wrecks[0];
+        if (replacement && current) {
+          context.field.wrecks[0] = {
+            ...current,
+            quality: replacement.quality,
+            resources: replacement.resources,
+            component: replacement.component,
+            componentStatus: replacement.componentStatus,
+          };
+        }
+      }
+      refreshSalvageScene(context);
+    },
     beginDistressRepair() {
       context.state.distressRepairing = true;
       refreshSalvageScene(context);
     },
     beginDistressTow(event) {
+      if (!this.canAttachDistressTow()) return;
       context.state.activeSectorEvent = event;
       const wreck = context.field.wrecks[0];
       if (wreck) context.state.distressTow = createDistressTowState(wreck.position, wreck.rotation);
