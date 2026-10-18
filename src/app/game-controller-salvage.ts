@@ -38,6 +38,7 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
+import { requestDistressDiagnosis, tickDistressDiagnosis } from './game-controller-salvage-diagnosis';
 
 export interface SalvageSceneController {
   getField(): SalvageField;
@@ -200,25 +201,6 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
-function requestDistressDiagnosis(context: SalvageSceneRuntime, eventId: string): void {
-  const { service, field, options, state } = context;
-  if (
-    state.activeSectorEvent?.id !== eventId ||
-    state.activeSectorEvent.type !== 'distress-rescue' ||
-    state.activeSectorEvent.distressStage !== 'approach'
-  ) {
-    return;
-  }
-  const wreck = field.wrecks[0];
-  if (!wreck) return;
-  const before = service.getSnapshot().phase;
-  const after = service.startDistressDiagnosis(wreck.id);
-  if (before === 'idle' && after.phase !== 'idle') {
-    options.log.write('NOTRUF > ANFLUG ZUR TECHNISCHEN DIAGNOSE');
-  }
-  refreshSalvageScene(context);
-}
-
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -257,7 +239,8 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onStartDistressDiagnosis(eventId) {
-      requestDistressDiagnosis(context, eventId);
+      requestDistressDiagnosis(state.activeSectorEvent, eventId, context.field.wrecks[0], service, options.log);
+      refresh();
     },
     onInspect(wreckId) {
       service.startInspect(wreckId);
@@ -335,14 +318,7 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
-    const diagnosisSerial = service.getSnapshot().diagnosisSerial;
-    service.tick(deltaSeconds);
-    if (service.getSnapshot().diagnosisSerial !== diagnosisSerial) {
-      const event = context.state.activeSectorEvent;
-      if (event?.type === 'distress-rescue' && event.distressStage === 'approach') {
-        options.onDiagnoseDistress?.(event.id);
-      }
-    }
+    tickDistressDiagnosis(service, deltaSeconds, context.state.activeSectorEvent, options.onDiagnoseDistress);
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();
       const wreck = context.field.wrecks[0];
