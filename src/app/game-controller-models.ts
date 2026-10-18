@@ -2,7 +2,11 @@ import type { ShipDefinition } from '../core/ship-types';
 
 import type { SystemLogService } from '../core/system-log-types';
 
-import { engineSpeedMultiplier, resolveShipRuntimeSetup, type ShipRuntimeOptions } from '../systems/ships';
+import {
+  engineSpeedMultiplier,
+  resolveShipRuntimeSetup,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 

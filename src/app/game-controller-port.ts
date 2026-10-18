@@ -147,7 +147,10 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       catalog: shipyardTypes.flatMap((type) =>
         [
           ...getCompatibleShipComponents(type, type === 'armor' ? 6 : gameplay.maxComponentTier),
-          ...context.shipyardResearch.variants(type, type === 'armor' ? 6 : gameplay.maxComponentTier),
+          ...context.shipyardResearch.variants(
+            type,
+            type === 'armor' ? 6 : gameplay.maxComponentTier
+          ),
         ].filter(
           (component) =>
             type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon))
@@ -325,9 +328,10 @@ function createShipyardCallbacks(
     onBuyShip: (id) => buyShipAtShipyard(context, id),
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
-      const baseOffer = getCompatibleShipComponents(type, type === 'armor' ? 6 : context.gameplay.maxComponentTier).some(
-        (entry) => entry.id === componentId
-      );
+      const baseOffer = getCompatibleShipComponents(
+        type,
+        type === 'armor' ? 6 : context.gameplay.maxComponentTier
+      ).some((entry) => entry.id === componentId);
       const discovered = context.shipyardResearch
         .variants(type, type === 'armor' ? 6 : context.gameplay.maxComponentTier)
         .some((entry) => entry.id === componentId);

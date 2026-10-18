@@ -405,7 +405,10 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         null
       );
     },
-    approachSpeed: resolveShipLocalCruiseSpeed(options.ship, resolveShipRuntimeSetup(options.ship, options.runtimeOptions).installed),
+    approachSpeed: resolveShipLocalCruiseSpeed(
+      options.ship,
+      resolveShipRuntimeSetup(options.ship, options.runtimeOptions).installed
+    ),
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });
