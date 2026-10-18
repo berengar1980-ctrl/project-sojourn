@@ -141,7 +141,13 @@ export interface SalvageEventResolution {
 }
 
 export type SalvageLocalPhase =
-  'idle' | 'navigating' | 'approaching' | 'inspecting' | 'diagnosing' | 'stripping' | 'extracting-component';
+  | 'idle'
+  | 'navigating'
+  | 'approaching'
+  | 'inspecting'
+  | 'diagnosing'
+  | 'stripping'
+  | 'extracting-component';
 
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
