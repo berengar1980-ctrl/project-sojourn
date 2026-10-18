@@ -8,9 +8,9 @@ import { getShipComponent, type InstalledShipComponents } from './ship-component
  */
 const ACTIVE_WEAPON_SLOTS: Readonly<Record<ShipRole, readonly number[]>> = {
   patrol: [0, 1, 2, 3, 4, 5],
-  freighter: [0, 3],
-  mining: [0],
-  salvage: [0],
+  freighter: [0, 1, 2, 3],
+  mining: [0, 1, 2],
+  salvage: [0, 1, 2],
 };
 
 /** Every hull carries a standard maneuver/boarding tractor. Fitted upgrades extend its reach. */
