@@ -463,6 +463,48 @@ body {
   letter-spacing: 0.1em;
 }
 
+.local-mining-event__busy {
+  margin-top: 16px;
+  color: #e9bb76;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.local-mining-event__activity {
+  position: relative;
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(180, 142, 83, 0.2);
+}
+
+.local-mining-event__activity::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  background: #e5aa56;
+  box-shadow: 0 0 12px rgba(241, 183, 97, 0.68);
+  animation: mining-decision-processing 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes mining-decision-processing {
+  from {
+    left: -36%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .local-mining-event__activity::after {
+    animation: none;
+    left: 32%;
+  }
+}
+
 .salvage-event {
   position: absolute;
   top: 50%;
