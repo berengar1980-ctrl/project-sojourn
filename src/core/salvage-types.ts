@@ -141,7 +141,7 @@ export interface SalvageEventResolution {
 }
 
 export type SalvageLocalPhase =
-  'idle' | 'navigating' | 'approaching' | 'inspecting' | 'stripping' | 'extracting-component';
+  'idle' | 'navigating' | 'approaching' | 'inspecting' | 'diagnosing' | 'stripping' | 'extracting-component';
 
 export interface SalvageLocalSpaceSnapshot {
   readonly field: SalvageField;
@@ -157,6 +157,7 @@ export interface SalvageLocalSpaceSnapshot {
   readonly activeResourceId: EconomyResourceId | null;
   readonly lastRecovery: SalvageRecoveryResult | null;
   readonly recoverySerial: number;
+  readonly diagnosisSerial: number;
   readonly lastComponentRecovery: SalvageComponentRecoveryResult | null;
   readonly componentRecoverySerial: number;
   readonly componentRecoveryChances: Readonly<Record<string, number>>;
