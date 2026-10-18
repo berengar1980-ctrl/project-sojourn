@@ -9,8 +9,12 @@ const renderer = fs.readFileSync(
   'utf8'
 );
 assert(
-  renderer.includes('combatant.combatIntent,'),
-  'tactical status contains only the chosen maneuver'
+  renderer.includes('const status = describeCombatStatus(combatant);'),
+  'combat HUD derives strategy and maneuver labels independently'
+);
+assert(
+  renderer.includes('status.maneuver, geometry.center.x, statusY'),
+  'the maneuver is rendered on its own line'
 );
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
 assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
