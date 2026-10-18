@@ -27,8 +27,8 @@ assert(callbacks.includes('state.salvageScene?.updateSectorEvent(event)'));
 assert(eventControls.includes('GREIFHAKEN AUSSER REICHWEITE'));
 assert(eventControls.includes('distressTowWithinRange(model.ship.position, wreck.position)'));
 assert(
-  panel.includes("model.sectorEvent?.distressStage !== 'approach'"),
-  'completed diagnosis must refresh action buttons without recreating the scene'
+  panel.includes('renderSectorEvent(model, ui.sectorEventContainer)'),
+  'diagnosis state and follow-up actions must refresh from the live scene model'
 );
 assert(
   miningPanel.includes("renderOperationEventFeedback(options.container, result, null, 'mining')")
