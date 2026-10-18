@@ -16,7 +16,9 @@ for (const role of ['patrol', 'mining', 'salvage', 'freighter']) {
   assert(hull);
   const baseline = stats.resolveShipCombatMovementStats(hull, { engine: ['engine1'] });
   const upgraded = stats.resolveShipCombatMovementStats(hull, { engine: ['engine6'] });
-  assert(Math.abs(upgraded.turnRateRadiansPerSecond / baseline.turnRateRadiansPerSecond - 1.78) < 1e-10);
+  assert(
+    Math.abs(upgraded.turnRateRadiansPerSecond / baseline.turnRateRadiansPerSecond - 1.78) < 1e-10
+  );
   assert(upgraded.combatSpeed > baseline.combatSpeed);
 }
 function localShip() {
@@ -35,7 +37,11 @@ const upgradedLocal = localShip();
 autopilot.advanceAutopilotRoute(normalLocal, route, 1, 78, 0.1, false, false, 1);
 autopilot.advanceAutopilotRoute(upgradedLocal, route, 1, 78, 0.1, false, false, 1.78);
 assert(Math.abs(upgradedLocal.headingRadians / normalLocal.headingRadians - 1.78) < 1e-10);
-const sector = { locations: [{ id: 'start', position: { x: 0, y: 0 } }], width: 2000, height: 1200 };
+const sector = {
+  locations: [{ id: 'start', position: { x: 0, y: 0 } }],
+  width: 2000,
+  height: 1200,
+};
 const normalNav = nav.createNavigationService(sector, 'start', 220);
 const enhancedNav = nav.createNavigationService(sector, 'start', 220);
 normalNav.startPursuit('target', { x: 0, y: 500 });
@@ -91,8 +97,16 @@ const combatArena = { width: 2400, height: 1100, exitPoint: { x: 100, y: 500 } }
 assert.equal(commitment.estimatedVictoryChance(miner, salvager), 0.5);
 commitment.reviewCombatCommitment(miner, salvager, combatArena, 0);
 commitment.reviewCombatCommitment(salvager, miner, combatArena, 0);
-assert.equal(miner.tactic, 'fight', 'armed miner should not immediately flee from an equal salvager');
-assert.equal(salvager.tactic, 'fight', 'armed salvager should not immediately flee from an equal miner');
+assert.equal(
+  miner.tactic,
+  'fight',
+  'armed miner should not immediately flee from an equal salvager'
+);
+assert.equal(
+  salvager.tactic,
+  'fight',
+  'armed salvager should not immediately flee from an equal miner'
+);
 const overpoweringPirate = fighter('pirate-vessel', 1400);
 overpoweringPirate.setup.weapons[0].weapon.shieldDamage = 240;
 overpoweringPirate.setup.weapons[0].weapon.hullDamage = 140;

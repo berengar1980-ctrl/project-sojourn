@@ -412,7 +412,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   private finishApproachFacing(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
-    if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds, this.turnRateMultiplier)) return;
+    if (!faceAutopilotTarget(
+      ship,
+      asteroid.position,
+      deltaSeconds,
+      this.turnRateMultiplier
+    )) return;
 
     if (this.approachPurpose === 'scan') {
       resetAutopilotMotion(ship);
