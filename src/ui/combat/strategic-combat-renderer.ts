@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { describeCombatStatus } from '../../systems/combat/combat-intent-labels';
 import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
@@ -442,15 +443,20 @@ export class StrategicCombatRenderer {
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
     drawCombatShipCaption(this.context, combatant.name, hullRatio, geometry);
-    if (combatant.combatIntent) {
-      this.context.font = 'bold 10px ui-monospace, monospace';
-      this.context.textAlign = 'center';
-      this.context.fillStyle = combatant.combatIntent === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
-      this.context.fillText(
-        combatant.combatIntent,
-        geometry.center.x,
-        geometry.center.y - geometry.height * 0.8 - 13
-      );
+    const status = describeCombatStatus(combatant);
+    const statusY = geometry.center.y - geometry.height * 0.8 - 13;
+    this.context.textAlign = 'center';
+    this.context.font = 'bold 10px ui-monospace, monospace';
+    this.context.fillStyle = status.strategy === 'FLIEHEN' ? '#ffd18b' : '#95d9f2';
+    this.context.fillText(
+      status.strategy,
+      geometry.center.x,
+      statusY - (status.maneuver ? 12 : 0)
+    );
+    if (status.maneuver) {
+      this.context.font = '9px ui-monospace, monospace';
+      this.context.fillStyle = '#a7bac7';
+      this.context.fillText(status.maneuver, geometry.center.x, statusY);
     }
     drawCombatBoostMeter(
       this.context,
