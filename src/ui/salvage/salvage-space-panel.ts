@@ -135,7 +135,11 @@ function showUninspectedWreck(
   ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
 }
 
-function showSalvageWreck(model: SalvageSpaceViewModel, ui: SalvageControls, wreck: SelectedWreck): void {
+function showSalvageWreck(
+  model: SalvageSpaceViewModel,
+  ui: SalvageControls,
+  wreck: SelectedWreck
+): void {
   const kind = ui.card.querySelector<HTMLElement>('.local-selection-kind');
   if (kind) {
     if (!wreck.inspected) kind.textContent = 'KONTAKT';
