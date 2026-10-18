@@ -93,7 +93,7 @@ export function resolveCombatAsteroidContacts(
     if (ship.shieldHp <= 0) {
       ship.hullHp = Math.max(
         0,
-        ship.hullHp - directionalHullDamage(ship, damage, rock?.position ?? hit.point)
+        ship.hullHp - directionalHullDamage(ship, damage, hit.point)
       );
       continue;
     }
@@ -111,7 +111,7 @@ export function resolveCombatAsteroidContacts(
     ship.shieldHp -= effect.absorbedDamage;
     ship.hullHp = Math.max(
       0,
-      ship.hullHp - directionalHullDamage(ship, effect.overflowDamage, rock?.position ?? hit.point)
+      ship.hullHp - directionalHullDamage(ship, effect.overflowDamage, hit.point)
     );
     ship.shieldImpacts.push(effect.impact);
   }

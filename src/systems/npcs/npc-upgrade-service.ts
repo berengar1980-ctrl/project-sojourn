@@ -122,6 +122,11 @@ function nextUpgradeForType(
   return next ? { index: bestIndex, nextId: next.id, cost: next.cost } : null;
 }
 
+const FALLBACK_UPGRADE_PRIORITY: Readonly<Partial<Record<ShipComponentType, number>>> = {
+  reactor: 1.5,
+  armor: 1.8,
+};
+
 function rolePriority(npc: SectorNpcState, type: ShipComponentType): number {
   if (npc.job === 'freighter') {
     if (type === 'cargo') return 4;
@@ -142,7 +147,7 @@ function rolePriority(npc: SectorNpcState, type: ShipComponentType): number {
     if (type === 'shield') return 3;
     if (type === 'engine') return 2;
   }
-  return type === 'reactor' ? 1.5 : type === 'armor' ? 1.8 : 1;
+  return FALLBACK_UPGRADE_PRIORITY[type] ?? 1;
 }
 
 export function npcOperationalSpeed(npc: SectorNpcState): number {
