@@ -90,6 +90,10 @@ for (const name of ['patrol-60m', 'miner-80m', 'freighter-120m', 'salvage-100m']
       assert.equal(fitsWeaponHardpoint(ship, slot, rail.weapon), allowed);
       assert(!fitsWeaponHardpoint(ship, slot, missile.weapon), id + ': no front missiles');
     }
+    for (const slot of [1, 2]) {
+      const sideWeapon = slot === 1 ? plasma.weapon : autocannon.weapon;
+      assert(fitsWeaponHardpoint(ship, slot, sideWeapon), id + ': broadside mount active');
+    }
     for (const slot of [3, 4]) {
       assert.equal(mounts[slot].arcDegrees, 360);
       const allowed = role === 'patrol' || (role === 'freighter' && slot === 3);
@@ -105,7 +109,7 @@ for (const name of ['patrol-60m', 'miner-80m', 'freighter-120m', 'salvage-100m']
       missile.id,
       rail.id,
     ]);
-    const expected = name.startsWith('patrol') ? 6 : name.startsWith('freighter') ? 2 : 1;
+    const expected = name.startsWith('patrol') ? 6 : name.startsWith('freighter') ? 4 : 3;
     assert.equal(fitted.length, expected, id + ': only role-authorized mounts resolve');
     const world = combatWeaponMounts(ship, fitted);
     assert.equal(world.length, expected);
