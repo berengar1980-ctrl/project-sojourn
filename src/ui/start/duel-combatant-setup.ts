@@ -4,6 +4,8 @@ import {
 } from '../../systems/combat/combat-loadout-mounts';
 import {
   resolveShipCombatMovementStats,
+  shipCombatTractorRange,
+  shipHasIndustrialTractor,
   shipHullMaxHp,
   shipShieldMaxHp,
   type ShipDefinition,
@@ -58,7 +60,8 @@ export function duelCombatant(
     cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
     preferredTactic: 'fight',
     ...resolveShipCombatMovementStats(ship),
-    tractorRangeMeters: (points.tractorBeams?.length ?? 0) > 0 ? 400 : 0,
+    tractorRangeMeters: shipCombatTractorRange(),
+    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     aiControlled: true,
     aiAggression: 90,
   };
