@@ -1,6 +1,7 @@
 import { updateCombatGrappleButton } from '../combat/combat-grapple-controls';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 import { playerAtLocalExit } from '../map/local-space-exit-gate';
+import { distressTowWithinRange, DISTRESS_TOW_ATTACH_RANGE } from '../../systems/salvage/distress-tow-physics';
 
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 
@@ -38,13 +39,21 @@ function renderSectorEvent(model: SalvageSpaceViewModel, container: HTMLElement)
   }
   const damage = event.distressDamage?.replaceAll('_', ' ').toUpperCase() ?? 'UNBEKANNT';
   const stage = event.distressStage ?? 'approach';
+  const wreck = model.wrecks[0];
+  const towInRange = !!wreck && distressTowWithinRange(model.ship.position, wreck.position);
+  const towButton = towInRange
+    ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button>'
+    : '<button type="button" data-distress-action="tow" disabled title="Zuerst den Havaristen anfliegen">GREIFHAKEN AUSSER REICHWEITE</button>';
+  const towHint = towInRange
+    ? ''
+    : '<span>ANFLUG ERFORDERLICH · GREIFHAKENREICHWEITE ' + DISTRESS_TOW_ATTACH_RANGE + ' m</span>';
   const actions =
     stage === 'approach'
       ? '<button type="button" data-distress-action="diagnose">TECHNISCHE DIAGNOSE</button>'
       : stage === 'diagnosed'
-        ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button><button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
+        ? '<button type="button" data-distress-action="repair">NOTREPARATUR</button>' + towButton + '<button type="button" data-distress-action="evacuate">EVAKUIEREN</button>' + towHint
         : stage === 'tow_required'
-          ? '<button type="button" data-distress-action="tow">ABSCHLEPPEN</button><button type="button" data-distress-action="evacuate">EVAKUIEREN</button>'
+          ? towButton + '<button type="button" data-distress-action="evacuate">EVAKUIEREN</button>' + towHint
           : stage === 'towing'
             ? '<span class="port-positive">SCHLEPPEN VORBEREITET · ZUM MARKIERTEN KARTENAUSGANG FLIEGEN</span>'
             : stage === 'salvage_rights'
