@@ -148,5 +148,4 @@ export class SalvageWorkSelector {
     this.updateChoiceButtons(model, wreck, busy);
     this.updateStartButton(model, busy);
   }
-
 }
