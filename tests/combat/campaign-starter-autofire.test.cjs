@@ -15,7 +15,11 @@ const componentService = load('src/systems/ships/ship-component-service.ts');
 const ship = registry.getAllShipDefinitions().find((s) => s.role === 'salvage');
 assert(ship, 'expected a campaign salvager');
 const equipment = loadouts.createShipLoadoutService().get(ship);
-assert.equal(equipment.weapon[0], 'weapon-front-repeater-1', 'salvager receives only a front repeater');
+assert.equal(
+  equipment.weapon[0],
+  'weapon-front-repeater-1',
+  'salvager receives only a front repeater'
+);
 assert(equipment.weapon.slice(1).every((id) => !id), 'civilian mounts cannot be armed by default');
 assert(
   componentService.calculateShipEnergy(equipment).combatFree >= 0,
