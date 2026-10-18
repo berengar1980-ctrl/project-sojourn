@@ -64,16 +64,18 @@ function fighter(id, x) {
       shipId: id,
       aiControlled: true,
       aiAggression: 15,
-      weapons: [{
-        weapon: {
-          family: 'pulse_laser',
-          mount: 'turret',
-          shieldDamage: 24,
-          hullDamage: 14,
-          cooldownSeconds: 1,
-          rangeMeters: 1000,
+      weapons: [
+        {
+          weapon: {
+            family: 'pulse_laser',
+            mount: 'turret',
+            shieldDamage: 24,
+            hullDamage: 14,
+            cooldownSeconds: 1,
+            rangeMeters: 1000,
+          },
         },
-      }],
+      ],
       combatSpeed: 78,
       turnRateRadiansPerSecond: 0.5,
       hitChance: 0.75,
