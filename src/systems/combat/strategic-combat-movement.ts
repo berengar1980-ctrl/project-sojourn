@@ -41,6 +41,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
     combatant.shieldHp <= 0 &&
     enemy.hullHp > 0 &&
     enemy.subsystems.tractor > 0 &&
+    enemy.powerFault !== 'total' &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   );
 }
