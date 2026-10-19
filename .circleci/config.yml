@@ -43,6 +43,12 @@ jobs:
           name: Dependency architecture
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
+          name: Isolated environmental damage fixtures
+          command: |
+            if [ "$CIRCLE_BRANCH" = "research/environment-map-damage-matrix" ]; then
+              node scripts/combat-environment-map-audit.cjs --fixtures-only
+            fi
+      - run:
           name: Tests
           command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
@@ -50,12 +56,6 @@ jobs:
           command: |
             if [ "$CIRCLE_BRANCH" = "refactor/combat-ai-architecture" ]; then
               node scripts/combat-ci-metrics.cjs
-            fi
-      - run:
-          name: Environmental combat impact research
-          command: |
-            if [ "$CIRCLE_BRANCH" = "research/environment-map-damage-matrix" ]; then
-              node scripts/combat-environment-map-audit.cjs
             fi
       - store_artifacts:
           path: environment-map-audit-output

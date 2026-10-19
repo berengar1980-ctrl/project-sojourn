@@ -268,6 +268,59 @@ function compact(result) {
 }
 
 async function main() {
+  if (process.argv.includes('--fixtures-only')) {
+    const results = [];
+    for (const map of DUEL_MAPS.map((item) => item.id)) {
+      const sample = createDuelArena(map, seeds[0]);
+      const observed = {
+        map,
+        ...mapProperties(sample),
+        collisionAsteroid: directCollision(sample, 'asteroid'),
+        collisionWreck: directCollision(sample, 'wreck'),
+        throw: directThrow(createDuelArena(map, seeds[0])),
+      };
+      results.push(observed);
+      const damage = (hit) => hit ? hit.shieldLoss + hit.hullLoss : 'n/a';
+      const description = [
+        map, 'rock=' + damage(observed.collisionAsteroid),
+        'wreck=' + damage(observed.collisionWreck),
+        'throw=' + damage(observed.throw),
+        'throwHits=' + (observed.throw?.hits ?? 0),
+      ].join(' ');
+      console.log('DIRECT_MAP ' + JSON.stringify(observed));
+      await postStatus('success', 'direct impact ' + map, description);
+    }
+    const mines = ['ion', 'shaped_charge', 'hunter'].flatMap((kind) => [
+      directMine(kind, 'shield'),
+      directMine(kind, 'hull'),
+    ]);
+    for (const entry of mines) {
+      console.log('DIRECT_MINE ' + JSON.stringify(entry));
+      await postStatus('success', 'direct mine ' + entry.kind + ' ' + entry.layer,
+        entry.kind + ' ' + entry.layer + ' shield=' + entry.shieldLoss +
+        ' hull=' + entry.hullLoss);
+    }
+    const missing = [
+      ['asteroid_field', 'collisions'],
+      ['asteroid_field', 'tractor'],
+      ['scrap_field', 'tractor'],
+      ['scrap_field', 'mines'],
+    ];
+    for (const [map, profile] of missing) {
+      const rows = seeds.flatMap((seed) => [
+        runFight(profile, map, seed, false),
+        runFight(profile, map, seed, true),
+      ]);
+      const result = summary(map, profile, rows);
+      console.log('RECHECK_MAP ' + compact(result));
+      await postStatus('success', 'recheck ' + map + ' ' + profile, compact(result));
+    }
+    const dir = path.join(root, 'environment-map-audit-output');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'environment-direct-fixtures.json'),
+      JSON.stringify({ maps: results, mines }, null, 2));
+    return;
+  }
   const groups = [];
   const fixtures = [];
   const mapData = [];
