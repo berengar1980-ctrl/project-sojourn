@@ -49,6 +49,15 @@ jobs:
               node scripts/combat-ci-metrics.cjs
             fi
       - run:
+          name: Combat balance audit (research branch)
+          command: |
+            if [ "$CIRCLE_BRANCH" = "analysis/combat-balance-132" ]; then
+              node scripts/combat-balance-audit.cjs
+            fi
+      - store_artifacts:
+          path: balance-audit-output
+          destination: combat-balance-audit
+      - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
 
