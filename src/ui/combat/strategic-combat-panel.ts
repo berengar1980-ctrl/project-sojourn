@@ -37,7 +37,11 @@ function combatantHud(
   const status = describeCombatStatus(combatant);
   const power = combatant.power;
   const energyLine = power
-    ? 'ENERGIE ' + power.combat + ' / ' + power.output + ' MW · ' +
+    ? 'ENERGIE ' +
+      power.combat +
+      ' / ' +
+      power.output +
+      ' MW · ' +
       (combatant.powerFault ? 'AUSFALL ' + combatant.powerFault : 'AKTIV')
     : '';
   return `

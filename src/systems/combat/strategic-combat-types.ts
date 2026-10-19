@@ -108,7 +108,13 @@ export interface StrategicCombatantSetup {
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
   readonly armor?: ShipArmorProtection;
-  readonly power?: { output: number; combat: number; industrial: number; total: number; shedInCombat: number };
+  readonly power?: {
+    output: number;
+    combat: number;
+    industrial: number;
+    total: number;
+    shedInCombat: number;
+  };
   readonly weapons: readonly ShipComponentDefinition[];
   readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
@@ -171,7 +177,13 @@ export interface StrategicCombatantSnapshot {
   readonly boostSeconds: number;
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
-  readonly power?: { output: number; combat: number; industrial: number; total: number; shedInCombat: number };
+  readonly power?: {
+    output: number;
+    combat: number;
+    industrial: number;
+    total: number;
+    shedInCombat: number;
+  };
   readonly powerFault?: 'weapons' | 'total';
   readonly combatIntent?: string;
   readonly ramPhase?: 'flank' | 'impact';
