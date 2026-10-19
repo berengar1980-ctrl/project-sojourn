@@ -1,4 +1,5 @@
-import type { MutableCombatant } from './strategic-combat-types';
+import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
+import { clamp, EDGE_PADDING } from './strategic-combat-geometry';
 
 /** Finite, deterministic brownouts from an overcommitted *active* combat bus. */
 export function advanceCombatPower(ship: MutableCombatant, dt: number): boolean {
@@ -26,4 +27,22 @@ export function advanceCombatPower(ship: MutableCombatant, dt: number): boolean 
 
 export function combatPowerDisabled(ship: MutableCombatant): boolean {
   return (ship.powerFaultRemaining ?? 0) > 0;
+}
+
+/** A total power loss preserves inertia without enabling engine/RCS authority. */
+export function advancePowerlessDrift(
+  ship: MutableCombatant,
+  arena: StrategicCombatArenaOptions,
+  dt: number
+): void {
+  ship.position.x = clamp(
+    ship.position.x + ship.velocity.x * dt,
+    EDGE_PADDING,
+    arena.width - EDGE_PADDING
+  );
+  ship.position.y = clamp(
+    ship.position.y + ship.velocity.y * dt,
+    EDGE_PADDING,
+    arena.height - EDGE_PADDING
+  );
 }

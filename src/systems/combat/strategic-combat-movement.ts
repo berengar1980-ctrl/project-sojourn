@@ -1,5 +1,6 @@
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { usefulRamAttempt } from './combat-ram-opportunity';
+import { advancePowerlessDrift } from './combat-power-service';
 import { chooseCombatFlightIntent } from './combat-flight-intent';
 import { steerCombatRoute } from './combat-route-steering';
 export { mineDetection, avoidDetectedMine } from './combat-route-steering';
@@ -217,16 +218,7 @@ export function moveCombatant(
     combatant.combatIntent = 'ENERGIEAUSFALL';
     combatant.turnRateRadiansPerSecond = 0;
     combatant.angularThrust = 0;
-    combatant.position.x = clamp(
-      combatant.position.x + combatant.velocity.x * deltaSeconds,
-      EDGE_PADDING,
-      arena.width - EDGE_PADDING
-    );
-    combatant.position.y = clamp(
-      combatant.position.y + combatant.velocity.y * deltaSeconds,
-      EDGE_PADDING,
-      arena.height - EDGE_PADDING
-    );
+    advancePowerlessDrift(combatant, arena, deltaSeconds);
     resolveArenaObstacles(combatant, arena);
     return;
   }
