@@ -78,11 +78,16 @@ assert(
 );
 assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
 assert(!torpedoRenderer.includes('lineTo(-8, 5)'), 'torpedo has no rocket fins');
+const impactBatch = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-impact-visual-batch.ts'),
+  'utf8'
+);
 assert(
-  renderer.includes('drawStrategicHullImpact(') &&
+  renderer.includes('drawCombatImpactBatch(') &&
+    impactBatch.includes('drawStrategicHullImpact(') &&
     fs
       .readFileSync(path.join(root, 'src/ui/combat/strategic-hull-impact-effect.ts'), 'utf8')
       .includes('drawCombatHullImpact('),
-  'combat renderer delegates explosions to the impact renderer'
+  'combat renderer delegates explosions through the impact batch to the impact renderer'
 );
 console.log('PASS projectile misses, shield contacts and distinctive missile impacts');

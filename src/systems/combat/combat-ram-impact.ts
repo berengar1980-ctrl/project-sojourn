@@ -1,6 +1,7 @@
 import type { StrategicCombatRuntime } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
 import { directionalHullDamage } from './strategic-combat-damage';
+import { captureRamVisuals, emitRamContactSpark } from './combat-ram-visual-events';
 
 function ramExposure(
   heading: number,
@@ -26,8 +27,7 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
     (attacker.velocity.y - defender.velocity.y) * ny;
   if (closing <= 0) return 0;
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
-  attacker.ramImpactAt = runtime.elapsedSeconds;
-  defender.ramImpactAt = runtime.elapsedSeconds;
+  const visual = captureRamVisuals(runtime);
   // A physical hit completes the approach. The AI must choose a fresh pass
   // rather than keep boosting into the same overlapping pair of hulls.
   delete attacker.ramApproach;
@@ -56,6 +56,7 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
       ship.subsystems.engine = Math.max(0, ship.subsystems.engine - armorAdjusted * 0.5);
     }
   }
+  emitRamContactSpark(runtime, visual, firstDamage, secondDamage);
   runtime.combatLog.push({
     timeSeconds: Number(runtime.elapsedSeconds.toFixed(2)),
     side: 'system',

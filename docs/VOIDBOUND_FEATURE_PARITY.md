@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-19 | PR #253 · Ramm-Bugeffekt und Ausblenden nach Kampfende | Voidbound-Parität geprüft: **keine Statusänderung** der 241 bestehenden Katalog-IDs. Der weiße Rammblitz wird nur bei tatsächlich eingeleitetem Ramm-Endanflug am Bug des angreifenden Schiffs markiert, nicht pauschal bei beiden Schiffen. Das getroffene Schiff erhält einen gewöhnlichen, lokalen Kontaktfunken aus dem rein visuellen Trefferereignis, ohne zusätzliche Schadensberechnung oder Kampflog-Duplikat. Der separate Effekt-Timer läuft nach Kampfende weiter, sodass Ramm- und Trefferanimationen ausblenden, auch wenn die Simulationszeit stillsteht. |
+
+
 | 2026-10-19 | Ram-Interzeption gegen kreisende Ziele und vollständiger Boost | Voidbound-Parität überprüft: **keine Statusänderung** für die vorhandenen 241 Katalog-IDs. Sojourn lässt aktivierte Boost-Schübe auch unter 0,8 Sekunden Restladung weiterlaufen und vollständig verbrauchen; taktische Sicherheitsabbrüche bleiben bestehen. Beim Rammen wird bei deutlich drehenden und bewegten Gegnern eine vorausberechnete Kollisionsposition anstelle eines jede Simulationseinheit rotierenden Flankenpunkts angesteuert; die Rammabsicht bleibt bis zum Kontakt erhalten. Bei langsam drehenden Zielen bleibt die Flankenanflug-Logik erhalten, ihr Richtungsvektor ist innerhalb eines Anflugs stabil. Die bestehende Ramm-Schadensberechnung bleibt unverändert. |
 
 
