@@ -212,6 +212,16 @@ export function moveCombatant(
   const range = Math.max(1, Math.hypot(dx, dy));
   const toward = normalize(dx, dy);
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
+  if (combatant.powerFault === 'total') {
+    combatant.boostActive = false;
+    combatant.combatIntent = 'ENERGIEAUSFALL';
+    combatant.turnRateRadiansPerSecond = 0;
+    combatant.angularThrust = 0;
+    combatant.position.x += combatant.velocity.x * deltaSeconds;
+    combatant.position.y += combatant.velocity.y * deltaSeconds;
+    resolveArenaObstacles(combatant, arena);
+    return;
+  }
   const deliberateRam = usefulRamAttempt(combatant, enemy);
   if (!deliberateRam) delete combatant.ramApproach;
   const intent = chooseCombatFlightIntent(

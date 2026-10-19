@@ -1,6 +1,7 @@
 import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { applyCombatRamImpact } from './combat-ram-impact';
+import { advanceCombatPower } from './combat-power-service';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import {
@@ -213,6 +214,14 @@ function tickStrategicCombat(
   }
   const dt = Math.min(deltaSeconds, 0.08);
   runtime.elapsedSeconds += dt;
+  for (const [ship, side] of [
+    [runtime.attacker, 'attacker'],
+    [runtime.defender, 'defender'],
+  ] as const) {
+    if (advanceCombatPower(ship, dt)) {
+      recordCombatLog(runtime, side, 'state', 'ENERGIEÜBERLAST · ' + ship.powerFault);
+    }
+  }
   advanceCombatAsteroids(runtime.arena, dt);
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);

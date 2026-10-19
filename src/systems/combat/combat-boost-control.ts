@@ -5,7 +5,7 @@ export const BOOST_DURATION_SECONDS = 3.5;
 export const BOOST_COOLDOWN_SECONDS = 14;
 
 export function activateCombatBoost(ship: MutableCombatant): boolean {
-  if (ship.subsystems.engine <= 0 || (ship.boostSeconds ?? BOOST_DURATION_SECONDS) <= 0)
+  if (ship.powerFault === 'total' || ship.subsystems.engine <= 0 || (ship.boostSeconds ?? BOOST_DURATION_SECONDS) <= 0)
     return false;
   ship.boostActive = true;
   return true;

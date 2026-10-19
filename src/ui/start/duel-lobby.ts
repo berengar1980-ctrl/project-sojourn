@@ -111,12 +111,16 @@ function powerBudget(draft: DuelDraft): HTMLElement {
   panel.className = 'harrow-duel__energy';
   const combatExcess = Math.max(0, energy.combat - energy.output);
   const industryExcess = Math.max(0, energy.industrial - energy.output);
-  panel.textContent =
-    'ENERGIE · REAKTOR ' + energy.output +
-    ' MW · KAMPF ' + energy.combat + ' MW · ARBEIT ' +
-    energy.industrial + ' MW · INDUSTRIE IM KAMPF AUS ' + energy.shedInCombat +
-    ' MW' + (combatExcess ? ' · KAMPF-ÜBERLAST +' + combatExcess + ' MW: Ausfallrisiko' : '') +
-    (industryExcess ? ' · INDUSTRIE-ÜBERLAST +' + industryExcess + ' MW' : '');
+  const draw = (label: string, value: number): string => label + ' ' + value + ' MW';
+  const summary = [
+    draw('REAKTOR', energy.output),
+    draw('KAMPF', energy.combat),
+    draw('ARBEIT', energy.industrial),
+    draw('INDUSTRIE IM KAMPF AUS', energy.shedInCombat),
+  ];
+  if (combatExcess) summary.push(draw('KAMPF-ÜBERLAST', combatExcess) + ' · Ausfallrisiko');
+  if (industryExcess) summary.push(draw('ARBEITS-ÜBERLAST', industryExcess));
+  panel.textContent = 'ENERGIE · ' + summary.join(' · ');
   return panel;
 }
 
@@ -181,9 +185,16 @@ function attachEncounterSelector(
         drafts[index]!.weapons = [...entry.weapons];
         drafts[index]!.mines = [];
         Object.assign(drafts[index]!, {
-          reactorId: 'reactor1', engineId: 'engine1', shieldId: 'shield1',
-          hullId: 'hull1', sensorId: 'sensor1', tractorId: 'tractor1',
-          miningId: '', salvageId: '', cargoId: '', armorId: '',
+          reactorId: 'reactor1',
+          engineId: 'engine1',
+          shieldId: 'shield1',
+          hullId: 'hull1',
+          sensorId: 'sensor1',
+          tractorId: 'tractor1',
+          miningId: '',
+          salvageId: '',
+          cargoId: '',
+          armorId: '',
         });
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });

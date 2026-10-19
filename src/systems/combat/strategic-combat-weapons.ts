@@ -231,7 +231,7 @@ export function advanceRuntimeWeapons(
 ): void {
   advanceWeaponCooldowns(source, deltaSeconds);
   // Movement tactics own retreat; cooldowns still advance while fleeing.
-  if (source.tactic === 'flee' || target.hullHp <= 0) return;
+  if (source.tactic === 'flee' || target.hullHp <= 0 || source.powerFault) return;
 
   const candidates = source.setup.weapons
     .map((component, index) => ({ component, index }))
