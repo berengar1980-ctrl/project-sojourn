@@ -157,7 +157,10 @@
   outline-offset: 2px;
   background: #0e1a22;
   color: #eff1e7;
-  font: 15px 'Courier New', ui-monospace, monospace;
+  font:
+    15px 'Courier New',
+    ui-monospace,
+    monospace;
 }
 .character-editor__fields input:focus {
   outline: 1px solid #d5b66d;
