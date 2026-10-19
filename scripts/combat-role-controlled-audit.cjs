@@ -134,6 +134,10 @@ function simulate(caseInfo, seed, reverse) {
   const secondSetup = reverse ? nativeA : nativeB;
   const arena = createDuelArena('empty', seed);
   const combat = createStrategicCombatService(firstSetup, secondSetup, seed, arena);
+  // A/B diagnosis: suppress only the autonomous fight/flee decision.
+  // Actual weapon mounts, AI strategy, flight physics and damage are unchanged.
+  combat.setTactic('attacker', 'fight');
+  combat.setTactic('defender', 'fight');
   const metrics = [newMetrics(), newMetrics()];
   let snapshot = combat.getSnapshot();
   for (let tick = 0; tick < Math.ceil(limit / step) && !snapshot.winner; tick += 1) {
@@ -148,6 +152,7 @@ function simulate(caseInfo, seed, reverse) {
   const secondStats = reverse ? metrics[0] : metrics[1];
   const result = {
     seed, reverse, duration: Number(snapshot.elapsedSeconds.toFixed(1)),
+    outcomeReason: snapshot.outcomeReason,
     winner: snapshot.winner === null ? 'timeout' :
       snapshot.winner === (reverse ? 'defender' : 'attacker') ? 'A' : 'B',
     shotsA: first.weaponTelemetry.reduce((sum, gun) => sum + gun.shotsFired, 0),
@@ -177,6 +182,7 @@ function summaryFor(group, rows) {
     winsA: rows.filter((r) => r.winner === 'A').length,
     winsB: rows.filter((r) => r.winner === 'B').length,
     timeouts: rows.filter((r) => r.winner === 'timeout').length,
+    escapes: rows.filter((r) => r.outcomeReason === 'escape').length,
     duration: average(rows, (r) => r.duration),
     shotsA: average(rows, (r) => r.shotsA),
     shotsB: average(rows, (r) => r.shotsB),
@@ -203,6 +209,7 @@ function describe(row) {
     'arc=' + row.arcA + '/' + row.arcB,
     'ready=' + row.readyA + '/' + row.readyB,
     'fault=' + row.powerFaults,
+    'escapes=' + row.escapes,
   ].join(' ');
 }
 
@@ -231,6 +238,7 @@ async function main() {
     commit: process.env.CIRCLE_SHA1 || null,
     engine: 'real strategic combat service',
     researchOnly: true,
+    explicitFightForBothSides: true,
     controlled: ['shared weapons', 'crew', 'accuracy', 'critical', 'weapon damage'],
     normalizedAdditionally: ['hull', 'shields', 'speed', 'turn rate', 'acceleration'],
     preserved: ['real mount geometry', 'weapon arcs', 'role', 'shield geometry'],

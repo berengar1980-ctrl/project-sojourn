@@ -24,7 +24,7 @@ jobs:
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
             fi
-            if [ "$CIRCLE_BRANCH" = "research/combat-equal-loadouts" ]; then
+            if [ "$CIRCLE_BRANCH" = "research/combat-equal-loadouts-forced-fight" ]; then
               npx prettier --write scripts/combat-role-controlled-audit.cjs scripts/combat-balance-audit.cjs
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
@@ -54,7 +54,7 @@ jobs:
       - run:
           name: Combat balance audit (research branch)
           command: |
-            if [ "$CIRCLE_BRANCH" = "research/combat-equal-loadouts" ]; then
+            if [ "$CIRCLE_BRANCH" = "research/combat-equal-loadouts-forced-fight" ]; then
               node scripts/combat-role-controlled-audit.cjs
             fi
       - store_artifacts:
