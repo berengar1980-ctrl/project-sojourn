@@ -37,10 +37,7 @@ const ram = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
 assert.notEqual(normal.kind, 'ram', 'ordinary tactic must not manufacture a ram');
 assert.equal(ram.kind, 'ram', 'a real ramming opportunity may change independent intention');
 assert(ram.direction.x > 0, 'ram begins on a flank approach toward the opponent');
-assert(
-  ram.destination && ram.destination.y > target.position.y,
-  'ram first stages on the side'
-);
+assert(ram.destination && ram.destination.y > target.position.y, 'ram first stages on the side');
 initiator.position = { x: 700, y: 660 };
 const finalRun = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
 assert.equal(initiator.ramApproach.phase, 'impact', 'ram commits after reaching the flank');
