@@ -131,7 +131,9 @@ export function createCharacterEditor(
     sync();
     onStart(profile);
   });
-  shell.querySelector<HTMLButtonElement>('.character-editor__back')!.addEventListener('click', onBack);
+  shell
+    .querySelector<HTMLButtonElement>('.character-editor__back')!
+    .addEventListener('click', onBack);
 
   selectPortrait(1);
   sync();
