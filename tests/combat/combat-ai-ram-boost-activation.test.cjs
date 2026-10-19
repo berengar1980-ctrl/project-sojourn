@@ -139,6 +139,9 @@ stopCombatBoost(booster);
 updateCombatBoost(booster, 0.5);
 assert.equal(booster.boostActive, false, 'stopped boost starts recharging');
 assert(booster.boostSeconds > 0, 'boost recharges between bursts');
+booster.boostSeconds = 3.5;
+assert.equal(activateCombatBoost(booster), true, 'recharged engine can boost again');
+stopCombatBoost(booster);
 const npcSetup = loadStandaloneTypeScriptModule(root, 'src/systems/combat/npc-combatant-setup.ts');
 const npc = (job, aggression, pirate = false) => ({
   job,
