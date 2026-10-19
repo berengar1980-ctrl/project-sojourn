@@ -95,9 +95,11 @@ function simulate(first, second, seed, arena, reverse) {
   for (let tick = 0; tick < Math.ceil(limitSeconds / stepSeconds) && !frame.winner; tick += 1) {
     frame = combat.tick(stepSeconds);
     if (tick % 12 !== 0) continue;
+    const attackerSpeed = reverse ? second.combatSpeed : first.combatSpeed;
+    const defenderSpeed = reverse ? first.combatSpeed : second.combatSpeed;
     const slow =
-      frame.attacker.speed < (first.combatSpeed ?? 120) * 0.15 &&
-      frame.defender.speed < (second.combatSpeed ?? 120) * 0.15;
+      frame.attacker.speed < (attackerSpeed ?? 120) * 0.15 &&
+      frame.defender.speed < (defenderSpeed ?? 120) * 0.15;
     currentSlow = slow ? currentSlow + 12 * stepSeconds : 0;
     if (slow) slowSeconds += 12 * stepSeconds;
     longestSlow = Math.max(longestSlow, currentSlow);
@@ -189,8 +191,10 @@ async function main() {
     const second = setupFor(kind.preset, 1);
     const runs = [];
     for (const [index, seed] of seeds.entries()) {
-      const arena = createDuelArena(maps[index % maps.length], seed);
       for (const reverse of [false, true]) {
+        // An arena's drifting asteroids are mutated during battle.
+        // Recreate it for each side order, otherwise swaps are not comparable.
+        const arena = createDuelArena(maps[index % maps.length], seed);
         runs.push(simulate(first, second, seed, arena, reverse));
       }
     }
