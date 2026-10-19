@@ -46,17 +46,30 @@ const ship = { id: 'salvage-v1', name: 'Default Ship', role: 'salvage' };
 const renamed = withPlayerShipName(ship, profile);
 assert.equal(renamed.name, 'Die Wanderin');
 assert.equal(ship.name, 'Default Ship', 'original definition is never mutated');
-assert.equal(withPlayerShipName(ship, profile, 'other-ship'), ship, 'other hulls retain their name');
+assert.equal(
+  withPlayerShipName(ship, profile, 'other-ship'),
+  ship,
+  'other hulls retain their name'
+);
 
 const bootstrap = read('src/app/bootstrap.ts');
 const controller = read('src/app/game-controller.ts');
 const editor = read('src/ui/start/character-editor.ts');
 const bar = read('src/ui/settings/settings-menu.ts');
 assert(bootstrap.includes('createCharacterEditor('), 'campaign enters character editor');
-assert(bootstrap.includes('launchCampaign(root, profile)'), 'submission launches existing campaign');
+assert(
+  bootstrap.includes('launchCampaign(root, profile)'),
+  'submission launches existing campaign'
+);
 assert(bootstrap.includes('withPlayerShipName(ship, profile)'), 'starter gets chosen name');
-assert(controller.includes('snapshotPlayerProfile(state.playerProfile)'), 'controller exposes snapshot');
-assert(controller.includes('withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)'), 'reselecting starting hull keeps name');
+assert(
+  controller.includes('snapshotPlayerProfile(state.playerProfile)'),
+  'controller exposes snapshot'
+);
+assert(
+  controller.includes('withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)'),
+  'reselecting starting hull keeps name'
+);
 assert(editor.includes('form.reportValidity()'), 'editor prevents incomplete submission');
 assert(editor.includes('onBack'), 'editor supports cancel / back');
 assert(bar.includes('settings-menu__identity'), 'captain and ship identity is displayed in play');

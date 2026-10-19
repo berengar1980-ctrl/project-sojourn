@@ -1,6 +1,10 @@
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
-import { createPlayerProfile, snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
+import {
+  createPlayerProfile,
+  snapshotPlayerProfile,
+  withPlayerShipName,
+} from '../core/player-profile';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
