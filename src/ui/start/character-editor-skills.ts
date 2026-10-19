@@ -51,7 +51,11 @@ function createSlider(
   return { input, output };
 }
 
-function createPanel(root: HTMLElement, title: string, points: number): {
+function createPanel(
+  root: HTMLElement,
+  title: string,
+  points: number
+): {
   rows: HTMLElement;
   total: HTMLElement;
 } {
@@ -80,10 +84,7 @@ export function createSkillAllocator(
   const combat = { ranged: 65, melee: 65 };
   const stationSkills = defaultStationSkills();
   const combatPanel = createPanel(root, 'KAMPFAUSBILDUNG', COMBAT_POINT_BUDGET);
-  const combatSliders = {} as Record<
-    'ranged' | 'melee',
-    ReturnType<typeof createSlider>
-  >;
+  const combatSliders = {} as Record<'ranged' | 'melee', ReturnType<typeof createSlider>>;
   for (const mode of ['ranged', 'melee'] as const) {
     combatSliders[mode] = createSlider(
       combatPanel.rows,

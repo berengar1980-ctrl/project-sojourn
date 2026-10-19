@@ -57,9 +57,7 @@ function verifySkills<K extends string>(
   if (
     names.some(
       (name) =>
-        !Number.isInteger(values[name]) ||
-        values[name]! < minimum ||
-        values[name]! > maximum
+        !Number.isInteger(values[name]) || values[name]! < minimum || values[name]! > maximum
     )
   ) {
     throw new Error('Ungültiger Fertigkeitswert.');

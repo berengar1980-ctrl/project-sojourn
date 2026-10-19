@@ -79,7 +79,8 @@ function createRosterManagement(
 
     hire(id, ship) {
       if (members.some((member) => member.id === id)) return null;
-      if (1 + members.filter((member) => member.id !== 'player').length >= crewCapacity(ship)) return null;
+      if (1 + members.filter((member) => member.id !== 'player').length >= crewCapacity(ship))
+        return null;
       const definition = crewDefinitions.find((entry) => entry.id === id);
       if (!definition) return null;
       const member = createCrewMember(definition);

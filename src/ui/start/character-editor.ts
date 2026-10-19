@@ -78,7 +78,8 @@ export function createCharacterEditor(
   const sync = (): void => {
     previewCaptain.textContent = captain.value.trim() || 'UNBENANNT';
     previewShip.textContent = ship.value.trim() || 'UNBENANNT';
-    launch.disabled = submitted || !captain.value.trim() || !ship.value.trim() || !allocator.valid();
+    launch.disabled =
+      submitted || !captain.value.trim() || !ship.value.trim() || !allocator.valid();
   };
   captain.addEventListener('input', sync);
   ship.addEventListener('input', sync);

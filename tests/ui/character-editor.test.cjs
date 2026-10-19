@@ -32,7 +32,10 @@ assert.deepEqual(Object.keys(profile).sort(), [
   'stationSkills',
 ]);
 assert.equal(profile.combatSkills.ranged + profile.combatSkills.melee, 130);
-assert.equal(Object.values(profile.stationSkills).reduce((sum, val) => sum + val, 0), 245);
+assert.equal(
+  Object.values(profile.stationSkills).reduce((sum, val) => sum + val, 0),
+  245
+);
 assert(Object.isFrozen(profile), 'profile is owned by immutable controller state');
 const detached = snapshotPlayerProfile(profile);
 assert.notStrictEqual(detached, profile, 'snapshot must be detached');
