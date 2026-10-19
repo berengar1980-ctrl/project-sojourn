@@ -20,11 +20,10 @@ const profile = createPlayerProfile({
   captainName: '  Mara Voss  ',
   shipName: '  Die Wanderin  ',
 });
-assert.deepEqual({ ...profile }, {
-  portraitId: 4,
-  captainName: 'Mara Voss',
-  shipName: 'Die Wanderin',
-});
+assert.equal(profile.portraitId, 4);
+assert.equal(profile.captainName, 'Mara Voss');
+assert.equal(profile.shipName, 'Die Wanderin');
+assert.deepEqual(Object.keys(profile).sort(), ['captainName', 'portraitId', 'shipName']);
 assert(Object.isFrozen(profile), 'profile is owned by immutable controller state');
 assert.notStrictEqual(snapshotPlayerProfile(profile), profile, 'snapshot must be detached');
 assert.deepEqual(PORTRAIT_IDS, [1, 2, 3, 4, 5]);
@@ -46,30 +45,19 @@ const ship = { id: 'salvage-v1', name: 'Default Ship', role: 'salvage' };
 const renamed = withPlayerShipName(ship, profile);
 assert.equal(renamed.name, 'Die Wanderin');
 assert.equal(ship.name, 'Default Ship', 'original definition is never mutated');
-assert.equal(
-  withPlayerShipName(ship, profile, 'other-ship'),
-  ship,
-  'other hulls retain their name'
-);
+const unchanged = withPlayerShipName(ship, profile, 'other-ship');
+assert.strictEqual(unchanged, ship, 'other hulls retain their name');
 
 const bootstrap = read('src/app/bootstrap.ts');
 const controller = read('src/app/game-controller.ts');
 const editor = read('src/ui/start/character-editor.ts');
 const bar = read('src/ui/settings/settings-menu.ts');
 assert(bootstrap.includes('createCharacterEditor('), 'campaign enters character editor');
-assert(
-  bootstrap.includes('launchCampaign(root, profile)'),
-  'submission launches existing campaign'
-);
+assert(bootstrap.includes('launchCampaign(root, profile)'), 'campaign launch');
 assert(bootstrap.includes('withPlayerShipName(ship, profile)'), 'starter gets chosen name');
-assert(
-  controller.includes('snapshotPlayerProfile(state.playerProfile)'),
-  'controller exposes snapshot'
-);
-assert(
-  controller.includes('withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)'),
-  'reselecting starting hull keeps name'
-);
+assert(controller.includes('snapshotPlayerProfile(state.playerProfile)'), 'profile snapshot');
+const renameOnSwitch = 'withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)';
+assert(controller.includes(renameOnSwitch), 'starting hull keeps its selected name');
 assert(editor.includes('form.reportValidity()'), 'editor prevents incomplete submission');
 assert(editor.includes('onBack'), 'editor supports cancel / back');
 assert(bar.includes('settings-menu__identity'), 'captain and ship identity is displayed in play');
