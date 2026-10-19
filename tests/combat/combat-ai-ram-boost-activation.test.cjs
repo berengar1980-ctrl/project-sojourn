@@ -93,10 +93,10 @@ const booster = {
   tactic: 'fight',
   ramApproach: { side: 1, phase: 'flank' },
 };
-updateStandardCombatBoost(booster, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
+updateStandardCombatBoost(booster, target, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
 assert.equal(booster.boostActive, false, 'flank staging saves boost for final approach');
 booster.ramApproach.phase = 'impact';
-updateStandardCombatBoost(booster, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
+updateStandardCombatBoost(booster, target, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
 assert.equal(booster.boostActive, true, 'ram uses boost when committed to side impact');
 stopCombatBoost(booster);
 assert.equal(activateCombatBoost(booster), true, 'charged engine can activate boost');

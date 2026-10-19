@@ -262,6 +262,7 @@ export function moveCombatant(
   const escapeStrafe = combatant.tactic === 'flee' && Math.abs(headingError) > 0.65;
   updateStandardCombatBoost(
     combatant,
+    enemy,
     headingDirection,
     range,
     desired,
