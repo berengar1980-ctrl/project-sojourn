@@ -11,7 +11,7 @@ export interface PlayerProfile {
 
 function validateName(value: string, label: string): string {
   const name = value.trim().normalize('NFC');
-  if (!name || name.length > 32 || /[\u0000-\u001f\u007f-\u009f]/u.test(name)) {
+  if (!name || name.length > 32 || /\p{Cc}/u.test(name)) {
     throw new Error(label + ' muss zwischen 1 und 32 sichtbare Zeichen enthalten.');
   }
   return name;
