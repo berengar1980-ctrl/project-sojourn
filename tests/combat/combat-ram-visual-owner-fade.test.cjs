@@ -7,6 +7,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (module) => loadStandaloneTypeScriptModule(root, module);
 const { applyCombatRamImpact } = load('src/systems/combat/combat-ram-impact.ts');
+const { shipContact } = load('src/systems/combat/combat-ship-contact-geometry.ts');
 const { drawCombatRamEffect, ramCameraImpulse } = load(
   'src/ui/combat/combat-ram-effect-renderer.ts'
 );
@@ -32,6 +33,8 @@ const collide = (attacker, defender) => {
     lastImpact: null,
     combatLog: [],
   };
+  const contact = shipContact(attacker, defender);
+  assert(contact.distance <= contact.required, 'the ram fixture starts in physical contact');
   assert(applyCombatRamImpact(runtime) > 0);
   assert.equal(runtime.recentImpacts.length, 1, 'one local contact spark per collision');
   assert.equal(runtime.lastImpact, null, 'contact spark does not replace real weapon impact');
@@ -40,7 +43,7 @@ const collide = (attacker, defender) => {
 };
 
 const attacker = vessel(200, 160, 0);
-const defender = vessel(245, -20, Math.PI / 2);
+const defender = vessel(240, -20, Math.PI / 2);
 attacker.ramApproach = { side: 1, phase: 'impact' };
 const contact = collide(attacker, defender);
 assert.equal(attacker.ramImpactAt, 2, 'only the attacking bow owns the white ram flash');
@@ -49,10 +52,10 @@ assert.equal(contact.recentImpacts[0].target, 'defender');
 assert.equal(contact.recentImpacts[0].layer, 'shield');
 assert.equal(contact.recentImpacts[0].serial, 1);
 assert(contact.recentImpacts[0].position.x > 200);
-assert(contact.recentImpacts[0].position.x < 245);
+assert(contact.recentImpacts[0].position.x < 240);
 
 const reverseAttacker = vessel(200, 20, 0);
-const reverseDefender = vessel(245, -160, Math.PI);
+const reverseDefender = vessel(240, -160, Math.PI);
 reverseDefender.ramApproach = { side: -1, phase: 'impact' };
 const reverse = collide(reverseAttacker, reverseDefender);
 assert.equal(reverseAttacker.ramImpactAt, undefined);
@@ -60,7 +63,7 @@ assert.equal(reverseDefender.ramImpactAt, 2);
 assert.equal(reverse.recentImpacts[0].target, 'attacker');
 
 const accidentalAttacker = vessel(200, 160, 0);
-const accidentalDefender = vessel(245, -20, Math.PI);
+const accidentalDefender = vessel(240, -20, Math.PI);
 collide(accidentalAttacker, accidentalDefender);
 assert.equal(accidentalAttacker.ramImpactAt, undefined, 'incidental bumps have no special flash');
 assert.equal(accidentalDefender.ramImpactAt, undefined);

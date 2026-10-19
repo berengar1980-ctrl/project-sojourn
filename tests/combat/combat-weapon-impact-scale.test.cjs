@@ -35,8 +35,13 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
-assert(renderer.includes('weaponImpactView('), 'renderer uses projected hit size');
-assert(renderer.includes('this.context.clip()'), 'oversized bloom is clipped to the contact');
-assert(renderer.includes('this.context.scale(view.scale, view.scale)'), 'impact scales with zoom');
+const impactBatch = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-impact-visual-batch.ts'),
+  'utf8'
+);
+assert(renderer.includes('drawCombatImpactBatch('), 'renderer delegates contact visuals');
+assert(impactBatch.includes('weaponImpactView('), 'contact renderer uses projected hit size');
+assert(impactBatch.includes('context.clip()'), 'oversized bloom is clipped to the contact');
+assert(impactBatch.includes('context.scale(view.scale, view.scale)'), 'impact scales with zoom');
 assert(renderer.includes('this.shieldImpacts.draw('), 'canonical shield effect remains');
 console.log('PASS scale-aware, shield-safe weapon impact effects');

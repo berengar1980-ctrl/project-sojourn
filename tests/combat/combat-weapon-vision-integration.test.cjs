@@ -170,6 +170,10 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
+const impactBatch = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-impact-visual-batch.ts'),
+  'utf8'
+);
 const types = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-types.ts'),
   'utf8'
@@ -191,7 +195,8 @@ assert(
   renderer.includes('drawVisionIonLaser(') &&
     renderer.includes('drawVisionPulseLaser(') &&
     renderer.includes('drawVisionAutocannon(') &&
-    renderer.includes('drawVisionWeaponImpact('),
+    renderer.includes('drawCombatImpactBatch(') &&
+    impactBatch.includes('drawVisionWeaponImpact('),
   'the game renderer uses the requested new beam, burst and contact effects'
 );
 assert(

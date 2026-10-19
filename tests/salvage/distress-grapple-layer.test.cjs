@@ -27,7 +27,9 @@ assert(
 );
 assert(
   combat.indexOf('drawCombatGrapple(') <
-    combat.indexOf('this.drawShip(this.model.attacker, width, height, timeSeconds)'),
+    combat.indexOf('this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed)') &&
+    combat.indexOf('drawCombatGrapple(') <
+      combat.indexOf('this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed)'),
   'combat grapple must render below both vessels'
 );
 assert(combatHook.includes("'#697379'"));
