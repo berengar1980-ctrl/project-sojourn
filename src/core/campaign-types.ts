@@ -1,0 +1,63 @@
+/** Public, serializable contract shared by campaign packages and the game. */
+export type CampaignValue =
+  | null
+  | boolean
+  | number
+  | string
+  | readonly CampaignValue[]
+  | { readonly [key: string]: CampaignValue };
+
+export type CampaignStatus = 'inactive' | 'active' | 'completed';
+export type CampaignCategory = 'core' | 'optional' | 'development';
+
+export interface CampaignPackageInfo {
+  readonly id: string;
+  readonly title: string;
+  readonly version: number;
+  readonly category: CampaignCategory;
+  readonly defaultEnabled: boolean;
+}
+
+export type CampaignEvent =
+  | {
+      readonly type: 'game.initialized';
+      readonly captainName: string;
+      readonly portraitId: number;
+      readonly shipId: string;
+      readonly stationId: string;
+    }
+  | {
+      readonly type: 'travel.started';
+      readonly fromLocationId: string | null;
+      readonly destinationId: string;
+    }
+  | {
+      readonly type: 'location.arrived';
+      readonly fromLocationId: string | null;
+      readonly locationId: string;
+    }
+  | {
+      readonly type: 'combat.ended';
+      readonly attackerId: string;
+      readonly defenderId: string;
+      readonly winner: 'attacker' | 'defender' | null;
+      readonly outcomeReason: 'destruction' | 'escape' | 'boarding' | 'surrender' | null;
+    }
+  | {
+      readonly type: 'boarding.ended';
+      readonly outcome: 'player_win' | 'enemy_win' | 'draw';
+    };
+
+export interface CampaignProgress {
+  readonly version: number;
+  readonly status: CampaignStatus;
+  readonly data: Readonly<Record<string, CampaignValue>>;
+  readonly outcome?: string;
+}
+
+/** Detached in-memory domain snapshot, not a game-save file format. */
+export interface CampaignSnapshot {
+  readonly snapshotVersion: 1;
+  readonly enabled: Readonly<Record<string, boolean>>;
+  readonly campaigns: Readonly<Record<string, CampaignProgress>>;
+}

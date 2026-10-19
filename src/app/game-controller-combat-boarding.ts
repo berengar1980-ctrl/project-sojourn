@@ -1,4 +1,5 @@
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
+import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
@@ -84,6 +85,15 @@ export function startCombatBoarding(
         context.systemLog.write('BOARDING > VERTEIDIGUNG VERLOREN · BERGUNG ZUR WERFT');
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
+      context.campaignEvents.emit({
+        type: 'boarding.ended',
+        outcome:
+          result.outcome === 'player_win'
+            ? 'player_win'
+            : result.outcome === 'enemy_win'
+              ? 'enemy_win'
+              : 'draw',
+      });
       context.engagements.finishPlayerCombat();
       showCampaignCombatSummary(
         context.root,
@@ -108,6 +118,7 @@ export function returnFromCombat(
     startCombatBoarding(context, snapshot, returnToMap);
     return;
   }
+  emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
   showCampaignCombatSummary(context.root, snapshot, () => {
     runSceneZoomTransition(context.root, returnToMap);
