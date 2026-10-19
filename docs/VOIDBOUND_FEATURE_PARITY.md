@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 43 |
+| ✅ Umgesetzt | 45 |
 | 🟨 Teilweise | 51 |
-| ⬜ Offen | 144 |
+| ⬜ Offen | 142 |
 | 🔁 Bewusst anders | 3 |
 | **Gesamt** | **241** |
 
@@ -48,7 +48,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Bereich | ✅ Umgesetzt | 🟨 Teilweise | ⬜ Offen | 🔁 Bewusst anders | Gesamt |
 |---|---:|---:|---:|---:|---:|
 | runtime | 1 | 3 | 1 | 1 | 6 |
-| character | 2 | 1 | 5 | 0 | 8 |
+| character | 4 | 1 | 3 | 0 | 8 |
 | prologue | 0 | 0 | 6 | 0 | 6 |
 | dialogue | 0 | 0 | 1 | 0 | 1 |
 | world | 2 | 0 | 1 | 0 | 3 |
@@ -87,6 +87,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 8. **Salvage Depth:** Distress-Rescue, Relics, Boarding-Wreck-Integration und Progression.
 
 ## Review-Log
+
+| 2026-10-19 | PR Charakterwerte und Schiffsstation | Von Voidbound übernommen: genau 130 Kampf- und 245 Stationspunkte. Der spielbare Kapitän erscheint als Crewmitglied `player`, besetzt eine frei gewählte Startstation und kann über die vorhandene Crewoberfläche versetzt werden. Keine sozialen Traits, keine parallele Stationsmechanik oder Savegames. `character.combat_points` und `character.station_points` jetzt umgesetzt; die übrigen 239 Feature-IDs behalten ihre Statusbewertung. |
+
 
 | 2026-10-19 | PR #255 · Sojourn-Charaktereditor vor Kampagnenstart | Voidbound-Parität überprüft: `character.start_screen` und `character.custom_ship_name` nun **umgesetzt**, `character.portraits` **teilweise** (Porträts 2 und 3 weiterhin Platzhalter). Sojourn eröffnet neue Kampagnendurchläufe mit Porträt, Kapitäns- und Schiffsnamen, validiert die Eingaben und übernimmt die Identität in einen vom UI getrennten Laufzeitzustand. Berufs-, Sozial- und Fertigkeitsauswahl sowie savegamepersistente Profile sind weiterhin nicht implementiert. Die übrigen 238 Katalog-IDs bleiben ohne Statusänderung. |
 
@@ -216,8 +219,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen | `character.four_careers` | Four starter careers remain selectable | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.social_questions` | Character social questions produce profile traits | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.social_points` | Completed social profile totals exactly 12 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
-| ⬜ Offen | `character.combat_points` | Combat skill allocation totals 130 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
-| ⬜ Offen | `character.station_points` | Station skill allocation totals 245 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
+| ✅ Umgesetzt | `character.combat_points` | Combat skill allocation totals 130 points | Kapitän verteilt 130 Punkte (Fern-/Nahkampf je 30–100); das Crew-System nutzt die Werte direkt. | ändern |
+| ✅ Umgesetzt | `character.station_points` | Station skill allocation totals 245 points | 245 Punkte für sieben Fähigkeiten (je 10–75), Kapitän wird einer echten Schiffsstation zugewiesen und über bestehendes Crew-System ausgewertet. | ändern |
 | ✅ Umgesetzt | `character.custom_ship_name` | Custom player and ship names survive initialization | Kapitäns- und Schiffsname werden validiert, bei Kampagnenstart übernommen und im laufenden Durchlauf angezeigt; der gewählte Startschiffname bleibt auch beim Testschiffwechsel erhalten. Keine Savegame-Persistenz. | ändern |
 
 ### prologue
