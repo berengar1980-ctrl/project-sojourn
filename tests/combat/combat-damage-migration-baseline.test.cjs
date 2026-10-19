@@ -31,7 +31,8 @@ const arena = {
 const tierScale = [1, 1.3, 1.65, 2.05, 2.5, 3];
 const weaponExpected = {
   pulse_laser: { shield: [4, 5.2, 6.6, 8.2, 10, 12], hull: [4, 5.2, 6.6, 8.2, 10, 12] },
-  front_repeater: { shield: [1, 1.3, 1.65, 2.05, 2.5, 3], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
+  front_repeater: { shield: [1.75, 2.28, 2.89, 3.59, 4.38, 5.25], hull: [1.75, 2.28, 2.89, 3.59, 4.38, 5.25] },
+  flux_projector: { shield: [15, 19.5, 24.75, 30.75, 37.5, 45], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
   plasma_battery: { shield: [12, 15.6, 19.8, 24.6, 30, 36], hull: [12, 15.6, 19.8, 24.6, 30, 36] },
   guided_missile: { shield: [5, 6.5, 8.25, 10.25, 12.5, 15], hull: [8, 10.4, 13.2, 16.4, 20, 24] },
   ion_laser: { shield: [8, 10.4, 13.2, 16.4, 20, 24], hull: [1, 1.3, 1.65, 2.05, 2.5, 3] },
