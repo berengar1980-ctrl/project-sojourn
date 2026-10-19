@@ -267,6 +267,14 @@ function compact(result) {
   ].join(' ');
 }
 
+async function safeFixtureStatus(title, description) {
+  try {
+    await postStatus('success', title, description);
+  } catch (error) {
+    console.warn('STATUS_WARN ' + title + ' ' + String(error));
+  }
+}
+
 async function main() {
   if (process.argv.includes('--fixtures-only')) {
     const results = [];
@@ -288,7 +296,7 @@ async function main() {
         'throwHits=' + (observed.throw?.hits ?? 0),
       ].join(' ');
       console.log('DIRECT_MAP ' + JSON.stringify(observed));
-      await postStatus('success', 'direct impact ' + map, description);
+      await safeFixtureStatus('direct impact ' + map, description);
     }
     const mines = ['ion', 'shaped_charge', 'hunter'].flatMap((kind) => [
       directMine(kind, 'shield'),
@@ -296,7 +304,7 @@ async function main() {
     ]);
     for (const entry of mines) {
       console.log('DIRECT_MINE ' + JSON.stringify(entry));
-      await postStatus('success', 'direct mine ' + entry.kind + ' ' + entry.layer,
+      await safeFixtureStatus('direct mine ' + entry.kind + ' ' + entry.layer,
         entry.kind + ' ' + entry.layer + ' shield=' + entry.shieldLoss +
         ' hull=' + entry.hullLoss);
     }
@@ -313,7 +321,7 @@ async function main() {
       ]);
       const result = summary(map, profile, rows);
       console.log('RECHECK_MAP ' + compact(result));
-      await postStatus('success', 'recheck ' + map + ' ' + profile, compact(result));
+      await safeFixtureStatus('recheck ' + map + ' ' + profile, compact(result));
     }
     const dir = path.join(root, 'environment-map-audit-output');
     fs.mkdirSync(dir, { recursive: true });
