@@ -69,7 +69,8 @@ export function drawFluxProjectorImpact(
   const fade = (1 - t) ** 1.5;
   context.save();
   ring(context, point, 6 + t * (shield ? 33 : 20), fade * 0.8);
-  ring(context, point, 3 + Math.max(0, t - 0.12) * (shield ? 26 : 17), fade * 0.45);
+  const secondaryRadius = 3 + Math.max(0, t - 0.12) * (shield ? 26 : 17);
+  ring(context, point, secondaryRadius, fade * 0.45);
   context.strokeStyle = '#e6ffff';
   context.lineWidth = 0.9;
   context.shadowBlur = 5;
@@ -79,8 +80,10 @@ export function drawFluxProjectorImpact(
     const outer = inner + 8 + t * 15;
     context.globalAlpha = fade * 0.8;
     context.beginPath();
-    context.moveTo(point.x + Math.cos(angle) * inner, point.y + Math.sin(angle) * inner);
-    context.lineTo(point.x + Math.cos(angle) * outer, point.y + Math.sin(angle) * outer);
+    const x = Math.cos(angle);
+    const y = Math.sin(angle);
+    context.moveTo(point.x + x * inner, point.y + y * inner);
+    context.lineTo(point.x + x * outer, point.y + y * outer);
     context.stroke();
   }
   context.restore();

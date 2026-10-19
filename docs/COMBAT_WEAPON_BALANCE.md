@@ -1,35 +1,28 @@
-# Weapon balance and loadout behavior
+# Combat weapon balance
 
-Combat uses `combatShieldDamage` and `combatHullDamage`, not the
-historical nominal damage values. Damage variants must update both.
+Combat reads `combatShieldDamage` and `combatHullDamage`.
+Damage variants must update those values.
 
-## MK I baseline
+## MK I
 
-| Weapon | Shield | Hull | Weapon CD | Range |
-| --- | ---: | ---: | ---: | ---: |
-| Front Repeater | 1.75 | 1.75 | 0.20 s | 600 m |
-| Flux Projector | 15 | 1 | 1.50 s | 700 m |
-| Railgun | 0.9 | 54 | 7.20 s | 1600 m |
+- Front Repeater: 1.75 shield, 1.75 hull, 0.20 s weapon CD.
+- Flux Projector: 15 shield, 1 hull, 1.50 s weapon CD.
+- Railgun: 0.9 shield, 54 hull, 7.20 s weapon CD.
 
-The ship-wide fire-control cadence remains 0.65 s. Two synchronized
-repeaters can deal 3.5 damage per volley: about 5.38 theoretical DPS
-with perfect hits. Both railguns and mixed forward batteries can share
-a salvo. Very weak hits and obvious overkill are avoided.
+The ship-wide fire-control CD remains 0.65 s.
 
-Weapon-posture scoring uses the achievable per-mount cadence rather
-than assuming a Repeater fires every 0.20 s. Enemy shields, crew
-skills, armor, accuracy and movement still alter real outcomes.
+Two loaded front repeaters may launch together for 3.5 damage per
+salvo, approximately 5.38 theoretical DPS at 100% hit chance.
 
-The Flux Projector creates a separate cyan energy packet and radial
-surface discharge without adding EMP or area damage.
+The Flux Projector has an independent cyan pulse and discharge effect.
+It does not inflict EMP or area damage.
 
-Only patrol ships currently have two **active** front hardpoints.
-Other ship roles each have one active front slot.
+Only patrol ships presently have two active front weapon slots.
 
-## Adding weapon families
+## Adding weapons
 
-1. Add all six tiers and the actual combat damage values.
-2. Register the family and presentation effects.
-3. Configure legal mounting families in the ship hardpoint JSON.
-4. Test volleys, damage, variants, arcs, AI, energy and effects.
-5. Review and test changes before any explicitly authorized merge.
+1. Define all six weapon tiers and actual combat damage.
+2. Register the weapon family and its presentation effects.
+3. Allow the family on compatible hardpoints.
+4. Test cooldowns, salvos, damage, variants, AI and visuals.
+5. Review passing checks before merging.

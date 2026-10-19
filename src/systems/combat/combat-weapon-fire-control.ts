@@ -136,8 +136,9 @@ export function selectFireControlVolley(
   }
 
   // Non-forward stations retain the bounded coordinated heavy salvo.
-  if (remaining <= health * 0.05 || best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5)
-    return volley;
+  const overkill = remaining <= health * 0.05;
+  const rapid = best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5;
+  if (overkill || rapid) return volley;
   for (const second of ready.slice(1)) {
     if (second.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) continue;
     if (second.expectedDamage < best.expectedDamage * 0.6) continue;
