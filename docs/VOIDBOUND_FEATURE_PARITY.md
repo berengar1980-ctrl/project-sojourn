@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-19 | Experiment: frühere Breitseiten-Ausrichtung im erlaubten Schussfenster | Voidbound-Parität geprüft: **keine Statusänderung** der 241 Katalog-IDs. Die einheitliche Kampf-KI darf bei tatsächlich erreichbarer Seitenwaffen-Reichweite bereits während `reach_range` das Ziel ausrichten; Anflugrichtung, Waffenreichweiten, Hardpoint-Rechte, Schaden, RCS- und Triebwerksphysik bleiben unverändert. Gesonderte Seed-Duelle prüfen Wirksamkeit und Regressionen. |
+
 | 2026-10-19 | PR #253 · Ramm-Bugeffekt und Ausblenden nach Kampfende | Voidbound-Parität geprüft: **keine Statusänderung** der 241 bestehenden Katalog-IDs. Der weiße Rammblitz wird nur bei tatsächlich eingeleitetem Ramm-Endanflug am Bug des angreifenden Schiffs markiert, nicht pauschal bei beiden Schiffen. Das getroffene Schiff erhält einen gewöhnlichen, lokalen Kontaktfunken aus dem rein visuellen Trefferereignis, ohne zusätzliche Schadensberechnung oder Kampflog-Duplikat. Der separate Effekt-Timer läuft nach Kampfende weiter, sodass Ramm- und Trefferanimationen ausblenden, auch wenn die Simulationszeit stillsteht. |
 
 
