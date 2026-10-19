@@ -26,6 +26,8 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
     (attacker.velocity.y - defender.velocity.y) * ny;
   if (closing <= 0) return 0;
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
+  attacker.ramImpactAt = runtime.elapsedSeconds;
+  defender.ramImpactAt = runtime.elapsedSeconds;
   // A physical hit completes the approach. The AI must choose a fresh pass
   // rather than keep boosting into the same overlapping pair of hulls.
   delete attacker.ramApproach;

@@ -9,11 +9,11 @@ const renderer = fs.readFileSync(
   'utf8'
 );
 assert(
-  renderer.includes('const status = describeCombatStatus(combatant);'),
+  renderer.includes('drawCombatShipStatus(this.context, combatant, geometry);'),
   'combat HUD derives strategy and maneuver labels independently'
 );
 assert(
-  renderer.includes('status.maneuver, geometry.center.x, statusY'),
+  renderer.includes('drawCombatRamEffect(this.context, combatant, geometry, timeSeconds)'),
   'the maneuver is rendered on its own line'
 );
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
