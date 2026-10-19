@@ -25,7 +25,7 @@ jobs:
               npm run format
             fi
             if [ "$CIRCLE_BRANCH" = "research/combat-equal-loadouts" ]; then
-              npx prettier --write scripts/combat-role-controlled-audit.cjs
+              npx prettier --write scripts/combat-role-controlled-audit.cjs scripts/combat-balance-audit.cjs
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
