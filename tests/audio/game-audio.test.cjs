@@ -15,6 +15,7 @@ const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
 const duel = read('src/ui/start/duel-lobby.ts');
 const styles = read('src/ui/styles.css');
+const settingsCall = controller.match(/createSettingsMenu\([^;]+\);/s)?.[0] ?? '';
 
 const rcs = fs.readFileSync(path.join(root, 'resources/audio/spacecraft-rcs-thruster-burst.ogg'));
 
@@ -61,7 +62,9 @@ assert(
 );
 
 assert(
-  /createSettingsMenu\(\s*context\.audio,\s*options\.onReturnToMainMenu,\s*state\.playerProfile\s*\)/.test(controller) &&
+  settingsCall.includes('context.audio') &&
+    settingsCall.includes('options.onReturnToMainMenu') &&
+    settingsCall.includes('state.playerProfile') &&
     settings.includes('EINSTELLUNGEN') &&
     settings.includes('data-audio-volume="ambience"') &&
     settings.includes('data-audio-volume="rcs"') &&
