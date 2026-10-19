@@ -47,9 +47,9 @@ function validateName(value: string, label: string): string {
   return name;
 }
 
-function verifySkills(
-  values: Readonly<Record<string, number>>,
-  names: readonly string[],
+function verifySkills<K extends string>(
+  values: Readonly<Record<K, number>>,
+  names: readonly K[],
   minimum: number,
   maximum: number,
   total: number
