@@ -73,7 +73,11 @@ assert.deepEqual(
 );
 fire.commitFireControlVolley(mixed, 5, [1]);
 assert.deepEqual(decide(mixed, target, 5.6), [], 'decision cadence reduces excess fire');
-assert.deepEqual(decide(mixed, target, 5.65), [1, 2], 'loaded forward repeaters share cadence');
+assert.deepEqual(
+  decide(mixed, target, 5.65).sort((a, b) => a - b),
+  [1, 2],
+  'two repeaters share the next cadence regardless of round-robin order'
+);
 assert.equal(mixed.cooldowns[1], 0, 'selection does not modify individual weapon reloads');
 
 const heavy = combatant('heavy', [rail, rail]);

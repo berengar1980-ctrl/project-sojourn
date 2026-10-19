@@ -37,6 +37,7 @@ for (const name of files) {
           [
             'pulse_laser',
             'front_repeater',
+            'flux_projector',
             'ion_laser',
             'plasma_battery',
             'ion_cannon',

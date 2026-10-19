@@ -14,12 +14,12 @@ for (const file of files) {
   assert.equal(mounts.length, 6, file + ': six independent weapon slots');
   const universalFamilies = ['pulse_laser', 'ion_laser', 'guided_missile', 'he_missile'];
   const expected = [
-    ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
+    ['forward', ['forward'], 60, ['railgun', 'front_repeater', 'flux_projector']],
     ['port', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
     ['starboard', ['broadside'], 90, ['plasma_battery', 'ion_cannon', 'autocannon']],
     ['forward', ['turret', 'guided'], 360, universalFamilies],
     ['forward', ['turret', 'guided'], 360, universalFamilies],
-    ['forward', ['forward'], 60, ['railgun', 'front_repeater']],
+    ['forward', ['forward'], 60, ['railgun', 'front_repeater', 'flux_projector']],
   ];
   mounts.forEach((mount, index) => {
     const [facing, kind, arc, families] = expected[index];

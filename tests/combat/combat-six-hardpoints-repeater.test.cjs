@@ -50,15 +50,19 @@ assert.equal(repeater.weapon.rangeMeters, 600);
 assert.equal(repeater.weapon.shieldDamage, 6, 'catalog damage scales with the rebalance');
 assert.equal(repeater.weapon.hullDamage, 6, 'catalog hull damage scales with the rebalance');
 
-const repeaterDamageByTier = [1, 1.3, 1.65, 2.05, 2.5, 3];
+const repeaterDamageByTier = [1.75, 2.28, 2.89, 3.59, 4.38, 5.25];
 for (let tier = 1; tier <= 6; tier += 1) {
   const current = weapon(`weapon-front-repeater-${tier}`).weapon;
   const expectedDamage = repeaterDamageByTier[tier - 1];
   assert.equal(current.combatShieldDamage, expectedDamage, 'shield damage Mk ' + tier);
   assert.equal(current.combatHullDamage, expectedDamage, 'hull damage Mk ' + tier);
 }
-assert.equal(repeater.weapon.combatShieldDamage / repeater.weapon.cooldownSeconds, 5);
-assert.equal(repeater.weapon.combatHullDamage / repeater.weapon.cooldownSeconds, 5);
+const { effectiveWeaponCycleSeconds, FIRE_CONTROL_CADENCE_SECONDS } =
+  loadStandaloneTypeScriptModule(root, 'src/systems/combat/combat-weapon-fire-control.ts');
+assert.equal(FIRE_CONTROL_CADENCE_SECONDS, 0.65);
+assert.equal(effectiveWeaponCycleSeconds(repeater.weapon, 1), FIRE_CONTROL_CADENCE_SECONDS);
+const pairedDps = (repeater.weapon.combatShieldDamage * 2) / FIRE_CONTROL_CADENCE_SECONDS;
+assert(Math.abs(pairedDps - 5.3846153846) < 0.000001);
 
 for (const name of ['patrol-60m', 'miner-80m', 'freighter-120m', 'salvage-100m']) {
   for (let variant = 1; variant <= 7; variant += 1) {
@@ -167,23 +171,23 @@ const runtime = {
   recentImpacts: [],
 };
 advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
-assert.equal(runtime.beams.length, 1, 'rapid bow guns share deliberately paced fire decisions');
-assert.equal(runtime.recentImpacts.length, 1, 'one real hit is recorded for one released shot');
-assert.equal(runtime.recentImpacts[0].weaponFamily, 'front_repeater');
+assert.equal(runtime.beams.length, 2, 'both front repeaters release a simultaneous salvo');
+assert.equal(runtime.recentImpacts.length, 2, 'both mounts register distinct physical hits');
+assert(runtime.recentImpacts.every((impact) => impact.weaponFamily === 'front_repeater'));
 assert.equal(attacker.cooldowns[0], 0.2);
-assert.equal(attacker.cooldowns[1], 0, 'unfired mount keeps its independent reload');
+assert.equal(attacker.cooldowns[1], 0.2, 'fired weapons reload independently');
 
 runtime.elapsedSeconds = 1.8;
-advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
-assert.equal(runtime.beams.length, 2, 'the second repeater can fire on the next control decision');
-assert.equal(runtime.recentImpacts.length, 2, 'consecutive impacts remain independently recorded');
+advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.2);
+assert.equal(runtime.beams.length, 4, 'both repeaters can fire again on the next decision');
+assert.equal(runtime.recentImpacts.length, 4, 'the second volley records both hits');
 
 attacker.tactic = 'flee';
 attacker.cooldowns[0] = 0;
 attacker.cooldowns[1] = 0;
 runtime.elapsedSeconds = 3;
 advanceRuntimeWeapons(runtime, 'attacker', attacker, defender, 0.08);
-assert.equal(runtime.beams.length, 2, 'fleeing never launches offensive repeater shots');
+assert.equal(runtime.beams.length, 4, 'fleeing never launches offensive repeater shots');
 
 const mixed = createCombatant(setup('mixed', [rail, repeater], fronts), 'attacker', arena);
 const far = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
@@ -195,4 +199,4 @@ mixed.setup.weapons[1] = {
 const long = scoreWeaponPosture(mixed, defender, { focus: 'forward' });
 assert(long && long.effectiveRange > far.effectiveRange, 'long rail prefers a different envelope');
 
-console.log('PASS 28 six-slot ships, coordinated repeater cadence and range scoring');
+console.log('PASS 28 six-slot ships, synchronized repeaters, cadence and range scoring');
