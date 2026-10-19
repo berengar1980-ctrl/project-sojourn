@@ -134,7 +134,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     context.systemLog,
     state.ownedShipIds,
     (nextShip) => {
-      state.activeShip = nextShip;
+      state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     }
