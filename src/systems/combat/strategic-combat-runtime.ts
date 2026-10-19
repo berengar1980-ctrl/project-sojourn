@@ -71,8 +71,8 @@ export function addRuntimeBeam(
   missed = false
 ): void {
   runtime.beamSerial += 1;
-  const maxTtlSeconds =
-    WEAPON_VISUALS[family].beamSeconds ?? (kind === 'laser' ? 0.16 : 0.09);
+  const fallbackSeconds = kind === 'laser' ? 0.16 : 0.09;
+  const maxTtlSeconds = WEAPON_VISUALS[family].beamSeconds ?? fallbackSeconds;
   runtime.beams.push({
     id: runtime.beamSerial,
     owner: side,

@@ -13,7 +13,8 @@ export function effectiveWeaponCycleSeconds(
   weapon: ShipWeaponProfile,
   crewMultiplier: number
 ): number {
-  return Math.max(FIRE_CONTROL_CADENCE_SECONDS, weaponCycleSeconds(weapon, crewMultiplier));
+  const cycle = weaponCycleSeconds(weapon, crewMultiplier);
+  return Math.max(FIRE_CONTROL_CADENCE_SECONDS, cycle);
 }
 
 export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
@@ -125,7 +126,9 @@ export function selectFireControlVolley(
     // Very weak shield hits reserve loaded anti-hull weapons for the exposed hull.
     for (const shot of ready.slice(1)) {
       if (!shot.forward || remaining <= health * 0.05) continue;
-      if (shot.score < best.score * 0.2 && remaining > shot.expectedDamage * 1.5) continue;
+      const veryWeak = shot.score < best.score * 0.2;
+      const notFinishing = remaining > shot.expectedDamage * 1.5;
+      if (veryWeak && notFinishing) continue;
       volley.push(shot.index);
       remaining = Math.max(0, remaining - shot.expectedDamage);
     }

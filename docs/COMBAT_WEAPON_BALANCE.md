@@ -1,37 +1,35 @@
-# Weapon balance and loadout behavior (MK I baseline)
+# Weapon balance and loadout behavior
 
-The combat runtime reads `combatShieldDamage` and `combatHullDamage`. The historical
-`shieldDamage` / `hullDamage` fields are not the canonical strategic-combat
-damage values. Damage variants must update both pairs consistently.
+Combat uses `combatShieldDamage` and `combatHullDamage`, not the
+historical nominal damage values. Damage variants must update both.
 
-- **Front Repeater Mk I:** 1.75 shield / 1.75 hull per shot; weapon cooldown
-  0.20 s, ship fire-control cadence 0.65 s. Two synchronized repeaters reach
-  3.50 damage per volley, or about 5.38 sustained theoretical DPS at 100% hit chance.
-- **Flux Projector Mk I:** 15 shield / 1 hull per shot; 1.50 s weapon cooldown;
-  range 700 m, forward 60-degree arc. Its cyan projectile and radial shield
-  discharge are presentation only, not EMP or area damage.
-- **Railgun Mk I:** 0.9 shield / 54 hull; 7.2 s individual reload.
-  Two loaded forward railguns can launch a coordinated salvo.
-- **Shared fire-control cadence:** remains 0.65 s per ship. Independent weapon
-  reloads continue to tick even while another hardpoint fires.
-- **Salvo scheduling:** multiple valid, ready forward mounts may fire in one
-  decision; shield-phase inefficiency and obvious overkill are checked.
-- **AI:** weapon-posture scoring uses the effective per-weapon cadence instead
-  of assuming a 0.20-second repeater can fire five times per second in isolation.
+## MK I baseline
 
-These are *upper bounds*, not battle outcome guarantees. Crew bonuses, shield
-modifiers, armor, line of sight, arc, movement and misses change observed DPS.
-Only patrol ships presently have two active forward mounts; freighters, miners,
-and salvagers have one active forward mount even though additional unused
-physical hardpoints may exist in the sprite metadata.
+| Weapon | Shield | Hull | Weapon CD | Range |
+| --- | ---: | ---: | ---: | ---: |
+| Front Repeater | 1.75 | 1.75 | 0.20 s | 600 m |
+| Flux Projector | 15 | 1 | 1.50 s | 700 m |
+| Railgun | 0.9 | 54 | 7.20 s | 1600 m |
 
-## New weapon checklist
+The ship-wide fire-control cadence remains 0.65 s. Two synchronized
+repeaters can deal 3.5 damage per volley: about 5.38 theoretical DPS
+with perfect hits. Both railguns and mixed forward batteries can share
+a salvo. Very weak hits and obvious overkill are avoided.
 
-1. Define all six tiers in the ship component catalog, including native combat
-   damage and mounting constraints.
-2. Register its family in the weapon union, visual timings and shield/hull
-   contact renderer when it has a genuinely new effect.
-3. Admit the family to appropriate forward / broadside / universal JSON hardpoints.
-4. Test the canonical weapon-fire-control scheduler, AI posture scoring,
-   variants, multi-weapon volleys, compatibility, energy usage and visuals.
-5. Keep a separate branch and merge only after review and passing checks.
+Weapon-posture scoring uses the achievable per-mount cadence rather
+than assuming a Repeater fires every 0.20 s. Enemy shields, crew
+skills, armor, accuracy and movement still alter real outcomes.
+
+The Flux Projector creates a separate cyan energy packet and radial
+surface discharge without adding EMP or area damage.
+
+Only patrol ships currently have two **active** front hardpoints.
+Other ship roles each have one active front slot.
+
+## Adding weapon families
+
+1. Add all six tiers and the actual combat damage values.
+2. Register the family and presentation effects.
+3. Configure legal mounting families in the ship hardpoint JSON.
+4. Test volleys, damage, variants, arcs, AI, energy and effects.
+5. Review and test changes before any explicitly authorized merge.
