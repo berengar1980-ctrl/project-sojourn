@@ -39,8 +39,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 |---|---:|
 | ✅ Umgesetzt | 43 |
 | 🟨 Teilweise | 51 |
-| ⬜ Offen | 145 |
-| 🔁 Bewusst anders | 2 |
+| ⬜ Offen | 144 |
+| 🔁 Bewusst anders | 3 |
 | **Gesamt** | **241** |
 
 ## Status nach Bereich
@@ -66,7 +66,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | operations | 2 | 8 | 9 | 0 | 19 |
 | patrol | 0 | 1 | 6 | 0 | 7 |
 | customs | 0 | 0 | 10 | 0 | 10 |
-| combat | 2 | 1 | 11 | 0 | 14 |
+| combat | 2 | 1 | 10 | 1 | 14 |
 | boarding | 0 | 3 | 3 | 0 | 6 |
 | save | 0 | 0 | 5 | 0 | 5 |
 | audio | 0 | 1 | 1 | 0 | 2 |
