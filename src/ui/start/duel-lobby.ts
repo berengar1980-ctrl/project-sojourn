@@ -95,7 +95,8 @@ function equipmentSelector(
   for (const component of SHIP_COMPONENT_CATALOG[type] ?? []) {
     const amount = type === 'reactor' ? (component.output ?? 0) : component.power;
     const labelText = type === 'reactor' ? 'Erzeugung' : 'Verbrauch';
-    select.append(new Option(component.name + ' · ' + labelText + ' ' + amount + ' MW', component.id));
+    const optionText = component.name + ' · ' + labelText + ' ' + amount + ' MW';
+    select.append(new Option(optionText, component.id));
   }
   const stored = draft[key];
   const defaults: Partial<Record<ShipComponentType, string>> = {
