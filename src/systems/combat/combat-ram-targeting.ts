@@ -1,10 +1,6 @@
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
 
-/**
- * Approach a target from its port/starboard flank before committing to impact.
- * The target is recomputed from the enemy's actual heading, not a fixed screen axis.
- * No extra AI state: a ship already approaching one flank stays on that flank.
- */
+/** Approach the opponent's broadside and commit to a stable final impact run. */
 export function ramFlankTarget(ship: MutableCombatant, enemy: MutableCombatant): CombatPoint {
   if (!Number.isFinite(enemy.headingRadians)) return enemy.position;
   const sideX = -Math.sin(enemy.headingRadians);
@@ -15,10 +11,17 @@ export function ramFlankTarget(ship: MutableCombatant, enemy: MutableCombatant):
   const relativeY = ship.position.y - enemy.position.y;
   const alongSide = relativeX * sideX + relativeY * sideY;
   const alongBow = relativeX * forwardX + relativeY * forwardY;
-  const side = alongSide < 0 ? -1 : 1;
-  const stagingDistance = Math.max(150, (enemy.setup.shieldGeometry?.radiusY ?? 25) * 4);
-  const staged = Math.abs(alongSide) >= stagingDistance * 0.8 && Math.abs(alongBow) < 100;
-  if (staged) {
+  const side = ship.ramApproach?.side ?? (alongSide < 0 ? -1 : 1);
+  const stagingDistance = Math.max(150, (enemy.setup?.shieldGeometry?.radiusY ?? 25) * 4);
+  if (!ship.ramApproach) ship.ramApproach = { side, phase: 'flank' };
+  if (
+    ship.ramApproach.phase === 'flank' &&
+    alongSide * side >= stagingDistance * 0.8 &&
+    Math.abs(alongBow) < 100
+  ) {
+    ship.ramApproach.phase = 'impact';
+  }
+  if (ship.ramApproach.phase === 'impact') {
     const lead = 0.25;
     return {
       x: enemy.position.x + enemy.velocity.x * lead,

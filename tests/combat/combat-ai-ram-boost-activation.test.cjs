@@ -27,7 +27,16 @@ const normal = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, fal
 const ram = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
 assert.notEqual(normal.kind, 'ram', 'ordinary tactic must not manufacture a ram');
 assert.equal(ram.kind, 'ram', 'a real ramming opportunity may change independent intention');
-assert(ram.direction.x > 0, 'ram must aim at the actual opponent');
+assert(ram.direction.x > 0, 'ram begins on a flank approach toward the opponent');
+assert(ram.destination && ram.destination.y > target.position.y, 'ram first stages on the side');
+initiator.position = { x: 700, y: 660 };
+const finalRun = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
+assert.equal(initiator.ramApproach.phase, 'impact', 'ram commits after reaching the flank');
+assert(finalRun.direction.y < 0, 'final approach now drives directly into the enemy side');
+initiator.position = { x: 700, y: 580 };
+const committed = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
+assert.equal(initiator.ramApproach.phase, 'impact', 'final impact approach cannot oscillate back out');
+assert(committed.direction.y < 0, 'approach stays committed through contact');
 const booster = {
   subsystems: { engine: 80 },
   boostSeconds: 3.5,

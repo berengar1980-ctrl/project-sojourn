@@ -213,6 +213,7 @@ export function moveCombatant(
   const toward = normalize(dx, dy);
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
   const deliberateRam = usefulRamAttempt(combatant, enemy);
+  if (!deliberateRam) delete combatant.ramApproach;
   const intent = chooseCombatFlightIntent(
     combatant,
     enemy,
