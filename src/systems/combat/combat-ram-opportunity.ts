@@ -2,7 +2,9 @@ import type { MutableCombatant } from './strategic-combat-types';
 
 /** Deliberate ram doctrine: reinforced bows justify higher but still bounded risk. */
 export function usefulRamAttempt(attacker: MutableCombatant, defender: MutableCombatant): boolean {
-  if (!attacker.setup.aiControlled || attacker.tactic === 'flee') return false;
+  // Campaign players use the same autonomous steering but intentionally omit
+  // aiControlled to keep their chosen fight/flee tactic authoritative.
+  if (attacker.setup.aiControlled === false || attacker.tactic === 'flee') return false;
   // Even all-around plating protects the bow, but less than focused bow armor.
   const bowArmor = Math.max(0, attacker.setup?.armor?.front ?? 0);
   const confidence = Math.min(1, bowArmor / 0.15);

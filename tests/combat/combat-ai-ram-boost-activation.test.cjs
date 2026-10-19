@@ -68,6 +68,9 @@ const potentialVictim = {
 };
 assert.equal(usefulRamAttempt(ramOpportunityShip(undefined), potentialVictim), false);
 assert.equal(usefulRamAttempt(ramOpportunityShip({ front: 0.15 }), potentialVictim), true);
+const campaignPlayer = ramOpportunityShip({ front: 0.15 });
+delete campaignPlayer.setup.aiControlled;
+assert.equal(usefulRamAttempt(campaignPlayer, potentialVictim), true);
 const surrounded = ramOpportunityShip({ front: 0.125 });
 assert.equal(usefulRamAttempt(surrounded, potentialVictim), true);
 const finalCharge = {
