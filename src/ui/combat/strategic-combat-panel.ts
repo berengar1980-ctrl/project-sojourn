@@ -39,9 +39,8 @@ function combatantHud(
   const faultLabel = combatant.powerFault === 'total' ? 'GESAMT' : 'WAFFEN';
   const powerState = combatant.powerFault ? 'AUSFALL ' + faultLabel : 'AKTIV';
   const energyLine = power ? `ENERGIE ${power.combat} / ${power.output} MW · ${powerState}` : '';
-  const maneuver = combatant.powerFault === 'total'
-    ? 'ENERGIEAUSFALL'
-    : (status.maneuver ?? 'KEIN AKTIVES MANÖVER');
+  let maneuver = status.maneuver ?? 'KEIN AKTIVES MANÖVER';
+  if (combatant.powerFault === 'total') maneuver = 'ENERGIEAUSFALL';
   return `
     <strong>${combatant.name}</strong>
     <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
