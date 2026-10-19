@@ -181,9 +181,20 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
   const dx = enemy.position.x - combatant.position.x;
   const dy = enemy.position.y - combatant.position.y;
   const broadside = broadsideSteering(combatant, enemy, range, dx, dy);
+  // Even while approaching the preferred range, a broadside that is
+  // already in real firing range should track its target. RCS continues
+  // travelling along the flight intent instead of abandoning the approach.
+  const gunInRange = combatant.setup.weapons.some((component, index) => {
+    const mount = combatant.setup.weaponMounts?.find((point) => point.slotIndex === index);
+    return (
+      component.weapon?.mount === 'broadside' &&
+      mount?.facing === combatant.strategy?.broadsideFacing &&
+      range <= component.weapon.rangeMeters
+    );
+  });
   const broadsideReady =
     broadside &&
-    combatant.strategy?.phase !== 'reach_range' &&
+    (combatant.strategy?.phase !== 'reach_range' || gunInRange) &&
     range >= Math.max(155, desired * 0.66);
   if (broadsideReady) return { heading: broadside, strafe: travel };
 
