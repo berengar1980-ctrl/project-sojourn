@@ -60,7 +60,6 @@ function fireRuntimeInstantWeapon(
 ): string {
   if (!weapon.weapon) return '';
   const muzzle = weaponMuzzle(source, weaponIndex);
-  const shield = combatShieldGeometry(target);
   const center = combatShieldCenter(target);
   const aimCenter = target.shieldHp > 0 ? center : target.position;
   const targetPoint = hit ? aimCenter : missedShotEnd(muzzle, aimCenter);

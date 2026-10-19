@@ -13,7 +13,6 @@ import type { ShipWeaponFamily } from '../../core/ship-types';
 
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { CombatPowerBudget } from './combat-power-types';
-
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 

@@ -1,4 +1,5 @@
 import type { MutableCombatant } from './strategic-combat-types';
+import { estimateRamExchange } from './combat-ram-risk';
 
 /** Deliberate ram doctrine: reinforced bows justify higher but still bounded risk. */
 export function usefulRamAttempt(attacker: MutableCombatant, defender: MutableCombatant): boolean {
@@ -21,22 +22,13 @@ export function usefulRamAttempt(attacker: MutableCombatant, defender: MutableCo
   // Once the ship reaches a broadside, do not abort its committed impact
   // inside 160 m, where the original opportunity check used to switch off.
   const committed = attacker.ramApproach?.phase === 'impact';
-  const approachSpeed = Math.max(80, attacker.setup.combatSpeed ?? 120);
-  const kinetic = 0.2 + 90 * (1 - Math.exp(-(Math.max(0, approachSpeed - 35) ** 2) / 30000));
-  const ownOverflow = Math.max(0, kinetic * 0.7 - attacker.shieldHp);
-  const ownHullCost = ownOverflow * (1 - bowArmor);
-  const enemySideArmor = Math.min(
-    defender.setup?.armor?.port ?? 0,
-    defender.setup?.armor?.starboard ?? 0
-  );
-  const theirOverflow = Math.max(0, kinetic * 1.95 - defender.shieldHp);
-  const theirHullCost = theirOverflow * (1 - enemySideArmor);
-  const favorable = theirHullCost > ownHullCost * 1.2 && ownHullCost < attacker.hullHp * 0.45;
+  const { ownCost, enemyCost } = estimateRamExchange(attacker, defender, bowArmor);
+  const favorable = enemyCost > ownCost * 1.2 && ownCost < attacker.hullHp * 0.45;
   return (
     (range >= 160 || committed) &&
     range <= 850 + 250 * confidence &&
     defender.hullHp < attacker.hullHp * (0.65 + 0.5 * confidence) &&
     (favorable || defender.shieldHp <= defender.shieldMaxHp * (0.3 + 0.4 * confidence)) &&
-    ownHullCost < attacker.hullHp * 0.45
+    ownCost < attacker.hullHp * 0.45
   );
 }
