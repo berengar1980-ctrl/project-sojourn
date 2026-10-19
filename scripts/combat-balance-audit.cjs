@@ -76,13 +76,7 @@ function sumTelemetry(snapshot, key) {
   return snapshot.weaponTelemetry.reduce((total, weapon) => total + weapon[key], 0);
 }
 
-function simulate(first, second, seed, arena, reverse) {
-  const combat = createStrategicCombatService(
-    reverse ? second : first,
-    reverse ? first : second,
-    seed,
-    arena
-  );
+function simulateSteps(combat, first, second, reverse) {
   let frame = combat.getSnapshot();
   const initialHp = [
     frame.attacker.shieldHp + frame.attacker.hullHp,
@@ -111,6 +105,22 @@ function simulate(first, second, seed, arena, reverse) {
       )
     );
   }
+  return { frame, initialHp, longestSlow, slowSeconds, minimumRange };
+}
+
+function simulate(first, second, seed, arena, reverse) {
+  const combat = createStrategicCombatService(
+    reverse ? second : first,
+    reverse ? first : second,
+    seed,
+    arena
+  );
+  const { frame, initialHp, longestSlow, slowSeconds, minimumRange } = simulateSteps(
+    combat,
+    first,
+    second,
+    reverse
+  );
   const dealtToAttacker =
     initialHp[0] - (frame.attacker.shieldHp + frame.attacker.hullHp);
   const dealtToDefender =
