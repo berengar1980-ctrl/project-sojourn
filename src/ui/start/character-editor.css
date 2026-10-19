@@ -182,7 +182,10 @@
   border: 1px solid #867649;
   background: #1a2329;
   color: #e7ddc2;
-  font: 12px 'Courier New', ui-monospace, monospace;
+  font:
+    12px 'Courier New',
+    ui-monospace,
+    monospace;
   letter-spacing: 0.09em;
   cursor: pointer;
 }
