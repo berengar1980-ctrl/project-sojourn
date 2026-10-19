@@ -143,8 +143,10 @@ assert(
   'both maps must use one asteroid physics impulse and damage resolver'
 );
 assert(
-  throwLogic.includes('const shieldDamage = Math.min(enemy.shieldHp, 130)'),
-  'both maps must preserve the same existing tractor-throw impact model'
+  throwLogic.includes('const THROWN_OBJECT_SHIELD_DAMAGE = 130 / 3') &&
+    throwLogic.includes('const THROWN_OBJECT_HULL_DAMAGE = 95 / 3') &&
+    throwLogic.includes('Math.min(enemy.shieldHp, THROWN_OBJECT_SHIELD_DAMAGE)'),
+  'asteroid and wreck maps must share the reduced tractor impact damage model'
 );
 
 console.log('PASS PvP asteroid/scrap shield, hull, spawn, cover, and physics parity');
