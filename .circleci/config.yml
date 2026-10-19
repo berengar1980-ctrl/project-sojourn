@@ -24,6 +24,7 @@ jobs:
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
             fi
+            node scripts/ci-css-preview.cjs
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
           name: Lint
