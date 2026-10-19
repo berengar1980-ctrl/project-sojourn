@@ -61,7 +61,7 @@ assert(
 );
 
 assert(
-  controller.includes('createSettingsMenu(context.audio, options.onReturnToMainMenu)') &&
+  /createSettingsMenu\(\s*context\.audio,\s*options\.onReturnToMainMenu,\s*state\.playerProfile\s*\)/.test(controller) &&
     settings.includes('EINSTELLUNGEN') &&
     settings.includes('data-audio-volume="ambience"') &&
     settings.includes('data-audio-volume="rcs"') &&
