@@ -68,6 +68,16 @@ const potentialVictim = {
 };
 assert.equal(usefulRamAttempt(ramOpportunityShip(undefined), potentialVictim), false);
 assert.equal(usefulRamAttempt(ramOpportunityShip({ front: 0.15 }), potentialVictim), true);
+const surrounded = ramOpportunityShip({ front: 0.125 });
+assert.equal(usefulRamAttempt(surrounded, potentialVictim), true);
+const finalCharge = {
+  ...ramOpportunityShip({ front: 0.15 }),
+  position: { x: 750, y: 500 },
+  ramApproach: { side: 1, phase: 'impact' },
+};
+assert.equal(usefulRamAttempt(finalCharge, potentialVictim), true);
+delete finalCharge.ramApproach;
+assert.equal(usefulRamAttempt(finalCharge, potentialVictim), false);
 const fleeingBowShip = { ...ramOpportunityShip({ front: 0.5 }), tactic: 'flee' };
 assert.equal(usefulRamAttempt(fleeingBowShip, potentialVictim), false);
 const damagedBowShip = { ...ramOpportunityShip({ front: 0.5 }), hullHp: 90 };
@@ -125,7 +135,9 @@ const impactRuntime = {
   elapsedSeconds: 12,
   combatLog: [],
 };
+impactRuntime.attacker.ramApproach = { side: 1, phase: 'impact' };
 assert(applyCombatRamImpact(impactRuntime) > 0, 'closing velocity causes ram damage');
+assert.equal(impactRuntime.attacker.ramApproach, undefined, 'collision completes ram commitment');
 assert(impactRuntime.attacker.shieldHp < 100);
 assert(impactRuntime.defender.shieldHp < 100);
 const afterImpact = impactRuntime.attacker.shieldHp;

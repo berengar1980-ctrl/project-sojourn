@@ -26,6 +26,10 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
     (attacker.velocity.y - defender.velocity.y) * ny;
   if (closing <= 0) return 0;
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
+  // A physical hit completes the approach. The AI must choose a fresh pass
+  // rather than keep boosting into the same overlapping pair of hulls.
+  delete attacker.ramApproach;
+  delete defender.ramApproach;
   // Monotonic kinetic damage: boost speed always matters, with diminishing returns.
   const energy = Math.max(0, closing - 35) ** 2;
   const damage = closing < 35 ? 0.2 : 0.2 + 90 * (1 - Math.exp(-energy / 30000));
