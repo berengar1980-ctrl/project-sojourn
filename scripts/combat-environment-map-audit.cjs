@@ -275,8 +275,7 @@ async function safeFixtureStatus(title, description) {
   }
 }
 
-async function main() {
-  if (process.argv.includes('--fixtures-only')) {
+async function runFixtureAudit() {
     const results = [];
     for (const map of DUEL_MAPS.map((item) => item.id)) {
       const sample = createDuelArena(map, seeds[0]);
@@ -327,8 +326,10 @@ async function main() {
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'environment-direct-fixtures.json'),
       JSON.stringify({ maps: results, mines }, null, 2));
-    return;
-  }
+}
+
+async function main() {
+  if (process.argv.includes('--fixtures-only')) return runFixtureAudit();
   const groups = [];
   const fixtures = [];
   const mapData = [];
