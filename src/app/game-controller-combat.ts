@@ -5,6 +5,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
+  calculateShipModeEnergy,
   resolveShipArmorProtection,
   resolveShipRuntimeSetup,
   resolveShipCombatMovementStats,
@@ -49,6 +50,7 @@ export function createPlayerCombatant(
     ...movement,
     mines,
     tractorRangeMeters: shipCombatTractorRange(runtime.installed),
+    power: calculateShipModeEnergy(runtime.installed),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     sensorCrewSkill: runtime.sensorCrewSkill,
     sensorTier: sensor?.tier ?? 0,

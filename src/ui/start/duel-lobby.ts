@@ -123,7 +123,9 @@ function powerBudget(draft: DuelDraft): HTMLElement {
   const summary = [
     draw('REAKTOR', energy.output),
     draw('KAMPF', energy.combat),
-    draw('ARBEIT', energy.industrial),
+    draw('MINING', energy.mining),
+    draw('BERGUNG', energy.salvage),
+    draw('REISE', energy.travel),
     draw('INDUSTRIE IM KAMPF AUS', energy.shedInCombat),
   ];
   if (combatExcess) summary.push(draw('KAMPF-ÜBERLAST', combatExcess) + ' · Ausfallrisiko');
