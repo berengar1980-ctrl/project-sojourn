@@ -39,6 +39,7 @@ import {
 } from './combat-weapon-fire-control';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 import { ballisticInterceptPoint } from './combat-weapon-aim';
+import { missedShotEnd } from './combat-miss-depth';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import {
   effectiveTargetSubsystem,
@@ -61,17 +62,11 @@ function fireRuntimeInstantWeapon(
   const muzzle = weaponMuzzle(source, weaponIndex);
   const shield = combatShieldGeometry(target);
   const center = combatShieldCenter(target);
-  const missDistance = Math.max(shield.radiusX, shield.radiusY) + 55;
   const aimCenter = target.shieldHp > 0 ? center : target.position;
-  const targetPoint = hit
-    ? aimCenter
-    : {
-        x: aimCenter.x + Math.cos(target.headingRadians + Math.PI / 2) * missDistance,
-        y: aimCenter.y + Math.sin(target.headingRadians + Math.PI / 2) * missDistance,
-      };
+  const targetPoint = hit ? aimCenter : missedShotEnd(muzzle, aimCenter);
   const shieldHit = hit ? segmentShieldHit(muzzle, targetPoint, target) : null;
   const beamEnd = shieldHit?.point ?? targetPoint;
-  const obstacle = firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? []);
+  const obstacle = hit ? firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? []) : null;
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
@@ -88,7 +83,7 @@ function fireRuntimeInstantWeapon(
     return source.setup.name + ': ' + weapon.name + ' trifft Hindernis';
   }
 
-  addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, beamEnd, weaponIndex);
+  addRuntimeBeam(runtime, side, kind, weapon.weapon.family, muzzle, beamEnd, weaponIndex, !hit);
   if (!hit) {
     noteRuntimeImpact(runtime, targetSide, 'miss', 0, targetPoint, kind, weapon.weapon.family);
     return source.setup.name + ': ' + weapon.name + ' verfehlt';
@@ -153,12 +148,7 @@ function fireRuntimeProjectileWeapon(
     kind === 'missile'
       ? target.position
       : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
-  const targetPoint = hit
-    ? aim
-    : {
-        x: aim.x + Math.cos(target.headingRadians + Math.PI / 2) * 170,
-        y: aim.y + Math.sin(target.headingRadians + Math.PI / 2) * 170,
-      };
+  const targetPoint = hit ? aim : missedShotEnd(muzzle, aim);
   runtime.projectileSerial += 1;
   runtime.projectiles.push({
     id: runtime.projectileSerial,

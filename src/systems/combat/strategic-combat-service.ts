@@ -108,6 +108,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       target: { ...runtimeEnemy(runtime, projectile.owner).position },
       ttlSeconds: projectile.ttlSeconds,
       direction: { ...projectile.direction },
+      missed: projectile.missed === true,
     })),
     beams: runtime.beams.map((beam) => ({
       ...beam,

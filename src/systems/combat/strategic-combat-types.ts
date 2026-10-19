@@ -200,6 +200,7 @@ export interface CombatProjectileSnapshot {
   readonly target: CombatPoint;
   readonly ttlSeconds: number;
   readonly direction: CombatPoint;
+  readonly missed?: boolean;
 }
 
 export interface CombatBeamSnapshot {
@@ -212,6 +213,7 @@ export interface CombatBeamSnapshot {
   readonly weaponIndex: number;
   readonly ttlSeconds: number;
   readonly maxTtlSeconds: number;
+  readonly missed?: boolean;
 }
 
 export interface CombatMineSnapshot {
@@ -431,6 +433,7 @@ interface MutableBeam {
   weaponIndex: number;
   ttlSeconds: number;
   maxTtlSeconds: number;
+  missed?: boolean;
 }
 
 export interface MutableMine {

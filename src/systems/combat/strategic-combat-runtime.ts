@@ -73,7 +73,8 @@ export function addRuntimeBeam(
   family: ShipWeaponFamily,
   origin: CombatPoint,
   end: CombatPoint,
-  weaponIndex: number
+  weaponIndex: number,
+  missed = false
 ): void {
   runtime.beamSerial += 1;
   const maxTtlSeconds =
@@ -98,6 +99,7 @@ export function addRuntimeBeam(
     origin: { ...origin },
     end: { ...end },
     weaponIndex,
+    missed,
     ttlSeconds: maxTtlSeconds,
     maxTtlSeconds,
   });
