@@ -25,8 +25,10 @@ export function updateStandardCombatBoost(
     deliberateRam,
     targetSpeedFactor
   );
-  if (corridorClear && wantsBoost && facing > 0.8 && (ship.boostSeconds ?? 0) > 0.8)
-    activateCombatBoost(ship);
+  // Require a useful minimum charge to start, but an ongoing burst may
+  // spend its final 0.8 s rather than switching off at 23% remaining.
+  const canSustain = ship.boostActive === true || (ship.boostSeconds ?? 0) > 0.8;
+  if (corridorClear && wantsBoost && facing > 0.8 && canSustain) activateCombatBoost(ship);
   else stopCombatBoost(ship);
   updateCombatBoost(ship, dt);
   ship.boostRampSeconds =

@@ -362,7 +362,12 @@ export interface MutableCombatant {
   /** Stable side while clearing an enemy hull on the escape corridor. */
   escapeAvoidanceSide?: -1 | 1;
   /** Stable approach side and impact commitment for autonomous ramming. */
-  ramApproach?: { side: -1 | 1; phase: 'flank' | 'impact' };
+  ramApproach?: {
+    side: -1 | 1;
+    phase: 'flank' | 'impact';
+    flankDirection?: CombatPoint;
+    intercept?: boolean;
+  };
   ramImpactAt?: number;
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {

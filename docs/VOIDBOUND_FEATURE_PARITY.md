@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-10-19 | Ram-Interzeption gegen kreisende Ziele und vollständiger Boost | Voidbound-Parität überprüft: **keine Statusänderung** für die vorhandenen 241 Katalog-IDs. Sojourn lässt aktivierte Boost-Schübe auch unter 0,8 Sekunden Restladung weiterlaufen und vollständig verbrauchen; taktische Sicherheitsabbrüche bleiben bestehen. Beim Rammen wird bei deutlich drehenden und bewegten Gegnern eine vorausberechnete Kollisionsposition anstelle eines jede Simulationseinheit rotierenden Flankenpunkts angesteuert; die Rammabsicht bleibt bis zum Kontakt erhalten. Bei langsam drehenden Zielen bleibt die Flankenanflug-Logik erhalten, ihr Richtungsvektor ist innerhalb eines Anflugs stabil. Die bestehende Ramm-Schadensberechnung bleibt unverändert. |
+
+
 | 2026-10-19 | PR #251 · Frontsalven, Flux Projector und Repeater-Rebalance | Voidbound-Parität geprüft: **keine Statusänderung** für die 241 Katalog-IDs. Repeater Mk I verursacht nun 1,75 Schild-/Hüllenschaden pro Schuss; Mk II–VI skalieren entsprechend. Ein schiffweiter Feuerleitentscheid alle 0,65 s erlaubt gemeinsame Frontsalven und weiterhin unabhängige Waffen-Cooldowns. Flux Projector Mk I–VI ergänzt eine schildorientierte Frontwaffe mit eigenem visuellen Effekt und Freigaben in 28 Schiffs-Hardpoint-Konfigurationen. Taktikbewertung berücksichtigt die tatsächlich durch den Feuerleittakt begrenzte Schussfrequenz; Schadensvarianten wirken auch im Raumkampf. `combat.fire_control` bleibt bewusst anders (nicht Voidbounds slotbasierte Feuerleit-Impulse), `combat.weapon_fire` teilweise (u. a. keine vollständige Munitionspersistenz), `ship.weapon_roles` umgesetzt. Die Testfälle für Salven, Repeater-Werte und Hardpoints sind an die beabsichtigten Mechaniken angepasst. |
 
 
