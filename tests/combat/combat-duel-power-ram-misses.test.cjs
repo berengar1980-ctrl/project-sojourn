@@ -50,7 +50,8 @@ const power = calculateShipModeEnergy(installed);
 assert.equal(power.output, 40);
 assert(power.combat > power.output, 'over-equipping is accepted, not blocked by UI');
 assert(power.industrial > power.output, 'industrial mode has its own demand');
-assert.equal(power.total - power.combat, 35 + 33, 'industry sheds mining and salvage draws in combat');
+const industrialShed = power.total - power.combat;
+assert.equal(industrialShed, 35 + 33, 'combat sheds mining and salvage loads');
 const ships = getAllShipDefinitions();
 const ship = ships.find((entry) => entry.role === 'salvage');
 assert(ship);
@@ -63,11 +64,11 @@ assert.equal(setup.power.combat, power.combat, 'combat setup uses canonical powe
 const faulted = { setup: { power }, powerStress: 0, powerFaultRemaining: 0, boostActive: true };
 assert.equal(advanceCombatPower(faulted, 0.08), false);
 let tripped = false;
-for (let n = 0; n < 60; n++) {
-  tripped ||= advanceCombatPower(faulted, 0.08);
+for (let n = 0; n < 60 && !tripped; n++) {
+  tripped = advanceCombatPower(faulted, 0.08);
 }
 assert(tripped, 'sustained power excess causes a deterministic temporary brownout');
-assert.equal(faulted.powerFault, 'total', 'major oversubscription disables propulsion and guns');
+assert.equal(faulted.powerFault, 'total', 'severe overload disables propulsion and guns');
 assert.equal(faulted.boostActive, false);
 const stable = {
   setup: { power: { ...power, combat: 25 } },
@@ -95,18 +96,21 @@ const second = {
   shieldHp: 0,
   shieldMaxHp: 88,
 };
-assert.equal(usefulRamAttempt(first, second), true, 'shieldless Mk VI bow may ram inferior hull');
+const armoredRam = usefulRamAttempt(first, second);
+assert.equal(armoredRam, true, 'shieldless Mk VI bow may ram an inferior hull');
 first.setup.armor.front = 0;
-assert.equal(usefulRamAttempt(first, second), false, 'unarmored zero-shield ram remains risky');
+const bareRam = usefulRamAttempt(first, second);
+assert.equal(bareRam, false, 'unarmored zero-shield ram remains risky');
 const origin = { x: 10, y: 50 };
 const target = { x: 410, y: 50 };
 const miss = missedShotEnd(origin, target);
 assert.equal(miss.y, target.y, 'miss has no sideways deviation');
 assert(miss.x > target.x && miss.x < target.x + 40);
-assert.notEqual(missedShotAbove(2), missedShotAbove(3), 'miss layer alternates above and below');
+const oppositeDepth = missedShotAbove(2) !== missedShotAbove(3);
+assert(oppositeDepth, 'miss layer alternates above and below');
 const weaponSource = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-weapons.ts'),
   'utf8'
 );
 assert(!weaponSource.includes('Math.cos(target.headingRadians + Math.PI / 2)'));
-console.log('PASS complete duel loadout, power brownout, shieldless ram and depth-projected misses');
+console.log('PASS full duel loadout, power brownout, armored ram and depth misses');

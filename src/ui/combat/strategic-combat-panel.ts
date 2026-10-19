@@ -36,14 +36,11 @@ function combatantHud(
   const tractorInstalled = combatant.tractorRangeMeters > 0;
   const status = describeCombatStatus(combatant);
   const power = combatant.power;
-  const energyLine = power
-    ? 'ENERGIE ' +
-      power.combat +
-      ' / ' +
-      power.output +
-      ' MW · ' +
-      (combatant.powerFault ? 'AUSFALL ' + combatant.powerFault : 'AKTIV')
-    : '';
+  const powerState = combatant.powerFault ? 'AUSFALL ' + combatant.powerFault : 'AKTIV';
+  const energyLine = power ? `ENERGIE ${power.combat} / ${power.output} MW · ${powerState}` : '';
+  const maneuver = combatant.powerFault
+    ? 'ENERGIEAUSFALL'
+    : (status.maneuver ?? 'KEIN AKTIVES MANÖVER');
   return `
     <strong>${combatant.name}</strong>
     <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
@@ -56,7 +53,7 @@ function combatantHud(
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
     <small>STRATEGIE · ${status.strategy}</small>
-    <small>MANÖVER · ${combatant.powerFault ? 'ENERGIEAUSFALL' : status.maneuver ?? 'KEIN AKTIVES MANÖVER'}</small>
+    <small>MANÖVER · ${maneuver}</small>
     <small>${energyLine}</small>
     <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
     ${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}
