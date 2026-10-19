@@ -1,0 +1,140 @@
+import {
+  PORTRAIT_IDS,
+  createPlayerProfile,
+  playerPortraitUrl,
+  type PlayerProfile,
+  type PortraitId,
+} from '../../core/player-profile';
+
+export interface CharacterEditor {
+  destroy(): void;
+}
+
+export function createCharacterEditor(
+  root: HTMLElement,
+  onStart: (profile: PlayerProfile) => void,
+  onBack: () => void
+): CharacterEditor {
+  const shell = document.createElement('section');
+  shell.className = 'character-editor';
+  shell.setAttribute('aria-label', 'Charakter erstellen');
+  shell.innerHTML = `
+    <div class="character-editor__shade" aria-hidden="true"></div>
+    <main class="character-editor__layout">
+      <header class="character-editor__header">
+        <span class="character-editor__eyebrow">SOJOURN / NEUER DURCHLAUF / 01</span>
+        <h1>DEINE REISE BEGINNT</h1>
+        <p>Wähle ein Porträt und registriere deinen Kapitän und dein Schiff.</p>
+      </header>
+      <div class="character-editor__columns">
+        <aside class="character-editor__preview" aria-label="Charaktervorschau">
+          <div class="character-editor__preview-image"></div>
+          <div class="character-editor__preview-details">
+            <span>PERSONALAKTE / KAPITÄN</span>
+            <strong data-preview-captain>UNBENANNT</strong>
+            <span>SCHIFFSREGISTRIERUNG</span>
+            <strong data-preview-ship>UNBENANNT</strong>
+          </div>
+        </aside>
+        <form class="character-editor__form">
+          <h2>01 / PORTRÄT</h2>
+          <div class="character-editor__portraits" role="group" aria-label="Porträt auswählen"></div>
+          <h2>02 / IDENTITÄT</h2>
+          <div class="character-editor__fields">
+            <label>CHARAKTERNAME
+              <input name="captainName" type="text" maxlength="32" autocomplete="off"
+                placeholder="Name des Kapitäns" required />
+            </label>
+            <label>SCHIFFSNAME
+              <input name="shipName" type="text" maxlength="32" autocomplete="off"
+                placeholder="Name deines Schiffs" required />
+            </label>
+          </div>
+          <p class="character-editor__note">Der Name wird dem Bergungsschiff deiner ersten Reise zugewiesen. Spielstände folgen später.</p>
+          <div class="character-editor__actions">
+            <button class="character-editor__back" type="button">ZURÜCK</button>
+            <button class="character-editor__launch" type="submit" disabled>REISE BEGINNEN →</button>
+          </div>
+        </form>
+      </div>
+    </main>`;
+
+  const gallery = shell.querySelector<HTMLElement>('.character-editor__portraits')!;
+  const previewImage = shell.querySelector<HTMLElement>('.character-editor__preview-image')!;
+  const form = shell.querySelector<HTMLFormElement>('.character-editor__form')!;
+  const captain = form.querySelector<HTMLInputElement>('[name="captainName"]')!;
+  const ship = form.querySelector<HTMLInputElement>('[name="shipName"]')!;
+  const launch = form.querySelector<HTMLButtonElement>('.character-editor__launch')!;
+  const previewCaptain = shell.querySelector<HTMLElement>('[data-preview-captain]')!;
+  const previewShip = shell.querySelector<HTMLElement>('[data-preview-ship]')!;
+  const portraitButtons = new Map<PortraitId, HTMLButtonElement>();
+  let selectedPortrait: PortraitId = 1;
+  let submitted = false;
+
+  const portraitElement = (portraitId: PortraitId): HTMLElement => {
+    const url = playerPortraitUrl(portraitId);
+    if (!url) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'character-editor__placeholder';
+      placeholder.textContent = String(portraitId).padStart(2, '0');
+      return placeholder;
+    }
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = 'Porträt ' + portraitId;
+    image.draggable = false;
+    return image;
+  };
+
+  const selectPortrait = (portraitId: PortraitId): void => {
+    selectedPortrait = portraitId;
+    previewImage.replaceChildren(portraitElement(portraitId));
+    for (const [id, button] of portraitButtons) {
+      button.setAttribute('aria-pressed', String(id === portraitId));
+      button.classList.toggle('is-selected', id === portraitId);
+    }
+  };
+
+  for (const portraitId of PORTRAIT_IDS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'character-editor__portrait';
+    button.setAttribute('aria-label', 'Porträt ' + portraitId);
+    button.setAttribute('aria-pressed', 'false');
+    button.append(portraitElement(portraitId));
+    const caption = document.createElement('span');
+    caption.textContent = playerPortraitUrl(portraitId)
+      ? 'PORTRÄT ' + String(portraitId).padStart(2, '0')
+      : 'PLATZHALTER ' + String(portraitId).padStart(2, '0');
+    button.append(caption);
+    button.addEventListener('click', () => selectPortrait(portraitId));
+    portraitButtons.set(portraitId, button);
+    gallery.append(button);
+  }
+
+  const sync = (): void => {
+    previewCaptain.textContent = captain.value.trim() || 'UNBENANNT';
+    previewShip.textContent = ship.value.trim() || 'UNBENANNT';
+    launch.disabled = submitted || !captain.value.trim() || !ship.value.trim();
+  };
+  captain.addEventListener('input', sync);
+  ship.addEventListener('input', sync);
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (submitted || !form.reportValidity()) return;
+    const profile = createPlayerProfile({
+      portraitId: selectedPortrait,
+      captainName: captain.value,
+      shipName: ship.value,
+    });
+    submitted = true;
+    sync();
+    onStart(profile);
+  });
+  shell.querySelector<HTMLButtonElement>('.character-editor__back')!.addEventListener('click', onBack);
+
+  selectPortrait(1);
+  sync();
+  root.replaceChildren(shell);
+  return { destroy: () => shell.remove() };
+}
