@@ -10,9 +10,7 @@ const { moveCombatant } = load('src/systems/combat/strategic-combat-movement.ts'
 const { weaponInArc } = load('src/systems/combat/combat-weapon-geometry.ts');
 const { SHIP_COMPONENT_CATALOG } = load('src/data/ships/ship-component-catalog.ts');
 
-const ion = SHIP_COMPONENT_CATALOG.weapon.find(
-  (item) => item.id === 'weapon-ion-cannon-1'
-);
+const ion = SHIP_COMPONENT_CATALOG.weapon.find((item) => item.id === 'weapon-ion-cannon-1');
 assert(ion?.weapon);
 const arena = { width: 4200, height: 2600, obstacles: [] };
 const makeShip = (id, x) =>
@@ -72,8 +70,10 @@ assert(incoming.velocity.x > 0, 'RCS must still advance toward the opponent');
 const distant = makeShip('distant', 650);
 distant.strategy = { ...incoming.strategy };
 distant.headingRadians = 0;
-assert(Math.hypot(enemy.position.x - distant.position.x, enemy.position.y - distant.position.y) >
-  ion.weapon.rangeMeters * 1.2);
+assert(
+  Math.hypot(enemy.position.x - distant.position.x, enemy.position.y - distant.position.y) >
+    ion.weapon.rangeMeters * 1.2
+);
 moveCombatant(distant, enemy, 'attacker', 0.08, arena, []);
 assert(
   Math.abs(distant.angularThrust) < 0.1,
