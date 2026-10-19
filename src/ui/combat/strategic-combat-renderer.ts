@@ -1,5 +1,9 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
-import type { Point, AutocannonVisualBurst, VisibleCombatImpact } from './strategic-combat-renderer-types';
+import type {
+  Point,
+  AutocannonVisualBurst,
+  VisibleCombatImpact,
+} from './strategic-combat-renderer-types';
 import { drawCombatShipStatus } from './combat-status-renderer';
 import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-renderer';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
