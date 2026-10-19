@@ -70,6 +70,7 @@ interface SalvageRuntimeOptions {
   readonly collect: SalvageResourceCollector;
   readonly collectComponent?: SalvageComponentCollector;
   readonly approachSpeed: number;
+  readonly turnRateMultiplier?: number;
   readonly hardpoints?: ShipHardpoints;
   readonly shipLengthMeters?: number;
   readonly scanAvailable?: boolean;
@@ -228,7 +229,6 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       (entry) => entry.resourceId === resourceId && entry.remainingAmount > 0
     );
     if (!deposit) return this.getSnapshot();
-
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = resourceId;
@@ -247,7 +247,6 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     ) {
       return this.getSnapshot();
     }
-
     this.selectedWreckId = wreckId;
     this.workTargetId = wreckId;
     this.activeResourceId = null;
@@ -373,7 +372,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.approachSpeed,
       deltaSeconds,
       true,
-      true
+      true,
+      this.options.turnRateMultiplier ?? 1
     );
     this.routeIndex = result.nextIndex;
     if (!result.completed) return;

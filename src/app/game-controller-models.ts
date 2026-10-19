@@ -2,7 +2,11 @@ import type { ShipDefinition } from '../core/ship-types';
 
 import type { SystemLogService } from '../core/system-log-types';
 
-import { resolveShipRuntimeSetup, type ShipRuntimeOptions } from '../systems/ships';
+import {
+  engineSpeedMultiplier,
+  resolveShipRuntimeSetup,
+  type ShipRuntimeOptions,
+} from '../systems/ships';
 
 import { createSystemLogService } from '../systems/system-log/system-log-service';
 
@@ -68,8 +72,10 @@ export function controllerShipRuntimeOptions(
 export function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {
   const ship = context.state.activeShip;
   const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
+  const drive = engineSpeedMultiplier(runtime.installed);
   context.navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+    ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
+    drive
   );
 }
 

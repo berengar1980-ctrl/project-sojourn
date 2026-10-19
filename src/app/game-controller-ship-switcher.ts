@@ -19,7 +19,7 @@ export function createControllerShipSwitcher(
     onSelect: (shipId) => {
       const nextShip = getShipDefinition(shipId);
       if (!nextShip || nextShip.id === activeShip.id) return;
-      navigation.setCruiseSpeed(nextShip.navigation.cruiseSpeed);
+      // The scene switch computes fitted engine and crew values atomically.
       onSwitch(nextShip);
     },
   });

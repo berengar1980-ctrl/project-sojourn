@@ -5,6 +5,7 @@ import type {
 import { StrategicCombatRenderer } from './strategic-combat-renderer';
 import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 import { combatWeaponTelemetryHtml } from './combat-weapon-telemetry-panel';
+import { describeCombatStatus } from '../../systems/combat/combat-intent-labels';
 
 export interface StrategicCombatPanel {
   update(): void;
@@ -33,6 +34,7 @@ function combatantHud(
   const enginePercent = Math.round(percent(engine, combatant.subsystems.maximum));
   const tractorPercent = Math.round(percent(tractor, combatant.subsystems.maximum));
   const tractorInstalled = combatant.tractorRangeMeters > 0;
+  const status = describeCombatStatus(combatant);
   return `
     <strong>${combatant.name}</strong>
     <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
@@ -44,6 +46,8 @@ function combatantHud(
     <span>TRAKTOR ${tractorInstalled ? tractor + ' / ' + combatant.subsystems.maximum + ' (' + tractorPercent + ' %)' : 'NICHT MONTIERT'} ${tractorInstalled && tractor <= 0 ? '· AUSGEFALLEN' : tractorInstalled && tractorPercent < 100 ? '· BESCHÄDIGT' : ''}</span>
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
+    <small>STRATEGIE · ${status.strategy}</small>
+    <small>MANÖVER · ${status.maneuver ?? 'KEIN AKTIVES MANÖVER'}</small>
     <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
     ${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}
     <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>

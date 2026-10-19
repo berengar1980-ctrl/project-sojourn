@@ -14,6 +14,7 @@ import {
   resolveShipGameplayStats,
   resolveShipRuntimeSetup,
   getShipComponent,
+  engineSpeedMultiplier,
   getAllShipDefinitions,
   getCompatibleShipComponents,
   shipCanFitWeapon,
@@ -97,6 +98,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     'engine',
     'shield',
     'hull',
+    'armor',
     'sensor',
     'weapon',
     'mine',
@@ -136,7 +138,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       loose: context.componentInventory.list(),
       variants: shipyardTypes.flatMap((type) =>
         context.shipyardResearch
-          .variants(type, gameplay.maxComponentTier)
+          .variants(type, type === 'armor' ? 6 : gameplay.maxComponentTier)
           .filter(
             (component) =>
               type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon))
@@ -144,8 +146,11 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       ),
       catalog: shipyardTypes.flatMap((type) =>
         [
-          ...getCompatibleShipComponents(type, gameplay.maxComponentTier),
-          ...context.shipyardResearch.variants(type, gameplay.maxComponentTier),
+          ...getCompatibleShipComponents(type, type === 'armor' ? 6 : gameplay.maxComponentTier),
+          ...context.shipyardResearch.variants(
+            type,
+            type === 'armor' ? 6 : gameplay.maxComponentTier
+          ),
         ].filter(
           (component) =>
             type !== 'weapon' || (component.weapon && shipCanFitWeapon(ship, component.weapon))
@@ -323,11 +328,12 @@ function createShipyardCallbacks(
     onBuyShip: (id) => buyShipAtShipyard(context, id),
     onBuyShipyardVariant: (type, componentId) => {
       const definition = getShipComponent(type, componentId);
-      const baseOffer = getCompatibleShipComponents(type, context.gameplay.maxComponentTier).some(
-        (entry) => entry.id === componentId
-      );
+      const baseOffer = getCompatibleShipComponents(
+        type,
+        type === 'armor' ? 6 : context.gameplay.maxComponentTier
+      ).some((entry) => entry.id === componentId);
       const discovered = context.shipyardResearch
-        .variants(type, context.gameplay.maxComponentTier)
+        .variants(type, type === 'armor' ? 6 : context.gameplay.maxComponentTier)
         .some((entry) => entry.id === componentId);
       if (
         !definition ||
@@ -413,8 +419,10 @@ export function createActivePortPanel(
   const installed = loadouts.get(ship);
   const runtime = resolveShipRuntimeSetup(ship, { ...crew.runtimeOptions(ship), installed });
   const gameplay = resolveShipGameplayStats(ship);
+  const drive = engineSpeedMultiplier(runtime.installed);
   navigation.setCruiseSpeed(
-    ship.navigation.cruiseSpeed * runtime.crewEffects.piloting.travelSpeedMultiplier
+    ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
+    drive
   );
 
   const context: ActivePortContext = {

@@ -7,6 +7,7 @@ import { normalize, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
+import { ramFlankTarget } from './combat-ram-targeting';
 
 type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
 type FlightKind = TacticalKind | 'intercept' | 'pass' | 'extend';
@@ -15,6 +16,7 @@ export interface CombatFlightIntent {
   readonly direction: CombatPoint;
   readonly speedFactor: number;
   readonly kind: FlightKind;
+  readonly destination?: CombatPoint;
 }
 
 /** Do not turn back into the arena when the ship has reached its exit marker. */
@@ -140,11 +142,18 @@ function readyForAttackPass(
   // The second AI planner starts four seconds later; unplanned ships may
   // approach but cannot lock in an unarmed twenty-second attack passage.
   if (!ship.strategy || !firingLane || ship.subsystems.engine <= 0) return false;
-  if (range > desiredRange * 1.12) return false;
+  // Forward guns may commit from their wider true firing envelope. Waiting
+  // for the closer optimal range stalled passes after conserving opening boost.
+  const passRangeFactor = ship.strategy.focus === 'forward' ? 1.35 : 1.12;
+  if (range > desiredRange * passRangeFactor) return false;
   if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
-  return relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy);
+  const closing = relativeX * toward.x + relativeY * toward.y;
+  // A front-gun ship with a clear aligned shot may start a passage from rest
+  // rather than wait forever for speed it cannot build while orbiting.
+  const momentumReady = ship.strategy.focus === 'forward' || closing > 14;
+  return momentumReady && forwardPassReady(ship, enemy);
 }
 
 /** Fix a destination beyond the enemy so asteroid routing can complete the passage. */
@@ -219,7 +228,13 @@ export function chooseCombatFlightIntent(
   }
   if (deliberateRam) {
     delete ship.flightPass;
-    return { kind: 'ram', direction: toward, speedFactor: 1 };
+    const destination = ramFlankTarget(ship, enemy);
+    return {
+      kind: 'ram',
+      destination,
+      direction: normalize(destination.x - ship.position.x, destination.y - ship.position.y),
+      speedFactor: 1,
+    };
   }
   const pursuing = pursuitManeuver(ship, enemy);
   if (pursuing) {

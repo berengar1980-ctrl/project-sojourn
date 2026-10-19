@@ -129,14 +129,14 @@ function combatRouteDestination(
   enemy: MutableCombatant,
   arena: StrategicCombatArenaOptions,
   direction: CombatPoint,
-  intentKind: CombatFlightIntent['kind']
+  intentKind: CombatFlightIntent['kind'],
+  ramDestination?: CombatPoint
 ): CombatPoint {
   if (ship.tactic === 'flee') return ship.escapeGate ?? arena.exitPoint ?? ship.position;
   // A fixed pass destination prevents ship-relative route orbiting.
   if (intentKind === 'pass') return ship.flightPass?.destination ?? enemy.position;
-  if (intentKind === 'intercept' || intentKind === 'pursuit' || intentKind === 'ram') {
-    return enemy.position;
-  }
+  if (intentKind === 'ram') return ramDestination ?? enemy.position;
+  if (intentKind === 'intercept' || intentKind === 'pursuit') return enemy.position;
 
   return { x: ship.position.x + direction.x * 700, y: ship.position.y + direction.y * 700 };
 }
@@ -154,6 +154,7 @@ export function steerCombatRoute(
     direction: CombatPoint;
     targetSpeedFactor: number;
     intentKind: CombatFlightIntent['kind'];
+    destination?: CombatPoint;
   }
 ): {
   direction: CombatPoint;
@@ -176,7 +177,7 @@ export function steerCombatRoute(
   }
 
   if (deliberateRam) {
-    direction = toward;
+    direction = posture.direction;
     targetSpeedFactor = 1;
     combatant.combatIntent = 'RAMMEN';
   }
@@ -186,7 +187,8 @@ export function steerCombatRoute(
     enemy,
     arena,
     direction,
-    posture.intentKind
+    posture.intentKind,
+    posture.destination
   );
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
   direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);

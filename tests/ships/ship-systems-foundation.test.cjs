@@ -24,6 +24,7 @@ function stationSkill(profile, stationId) {
   const patrol = roleProfiles.getShipRoleProfile('patrol');
 
   assert.equal(freighter.hullPoints, 115);
+  assert.equal(freighter.combatBaseSpeed, 69);
   assert.equal(mining.hullPoints, 72);
   assert.equal(salvage.hullPoints, 82);
   assert.equal(patrol.hullPoints, 96);

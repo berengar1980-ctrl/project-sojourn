@@ -60,7 +60,7 @@ export function describeCombatIntent(ship: MutableCombatant): string {
 export function describeCombatStatus(
   ship: Pick<
     StrategicCombatantSnapshot,
-    'tactic' | 'strategy' | 'combatIntent' | 'installedWeapons' | 'mineCount'
+    'tactic' | 'strategy' | 'combatIntent' | 'installedWeapons' | 'mineCount' | 'ramPhase'
   >
 ): { readonly strategy: string; readonly maneuver: string | null } {
   const strategy = describeStrategy(
@@ -68,7 +68,11 @@ export function describeCombatStatus(
     ship.strategy,
     ship.installedWeapons === 0 && ship.mineCount === 0
   );
-  const currentAction = ship.combatIntent;
+  const currentAction = ship.ramPhase
+    ? ship.ramPhase === 'flank'
+      ? 'RAMMKURS · FLANKENANFLUG'
+      : 'RAMMKURS · ENDANFLUG'
+    : ship.combatIntent;
   const duplicateBroadside = strategy.startsWith('BREITSEITE') && currentAction === 'BREITSEITE';
   return {
     strategy,

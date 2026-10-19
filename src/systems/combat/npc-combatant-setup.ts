@@ -15,6 +15,7 @@ import {
   getShipComponent,
   getShipDefinition,
   resolveShipCombatMovementStats,
+  resolveShipArmorProtection,
   shipCombatTractorRange,
   shipHasIndustrialTractor,
   shipHullMaxHp,
@@ -22,6 +23,7 @@ import {
 } from '../ships';
 
 import { npcDefenseReaction } from '../npcs/npc-combat-ai';
+import { civilianCombatOpening, civilianCombatRole } from './combat-civilian-policy';
 
 import { ensureNpcInstalledComponents } from '../npcs/npc-upgrade-service';
 
@@ -36,12 +38,14 @@ function npcCombatSkill(npc: SectorNpcState): number {
 
 export function npcCombatDoctrine(
   npc: SectorNpcState,
-  armedMines: boolean
+  armedMines: boolean,
+  armedWeapons = false
 ): 'fight' | 'kite' | 'flee' | 'minefield' {
+  if (civilianCombatRole(npc.job)) {
+    const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
+    return civilianCombatOpening(hullRatio, npc.aggression, armedWeapons, armedMines);
+  }
   if (npcDefenseReaction(npc) === 'flee') return 'flee';
-  if (npc.job === 'freighter' && npc.aggression < 80) return 'flee';
-  if ((npc.job === 'miner' || npc.job === 'salvager') && npc.aggression < 65)
-    return armedMines ? 'minefield' : 'flee';
   if (npc.job === 'pirate' || npc.pirate)
     return armedMines && npc.aggression >= 70 ? 'minefield' : 'fight';
   if (npc.job === 'patrol') return npc.aggression >= 70 ? 'kite' : 'fight';
@@ -52,7 +56,8 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   const ship = getShipDefinition(npc.shipId);
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
-  const movement = resolveShipCombatMovementStats(ship);
+  const movement = resolveShipCombatMovementStats(ship, installed);
+  const armor = resolveShipArmorProtection(installed);
   const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
@@ -72,6 +77,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     shieldHp: Math.max(1, shieldMax),
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
+    ...(armor ? { armor } : {}),
     weapons: equippedWeapons.map((entry) => entry.component),
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
     hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
@@ -80,7 +86,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     criticalChance: weaponCriticalChance(skill),
     cycleTimeMultiplier: weaponCycleTimeMultiplier(skill),
     // Role doctrine changes the chosen maneuver, never weapon or damage statistics.
-    preferredTactic: npcCombatDoctrine(npc, mines.length > 0),
+    preferredTactic: npcCombatDoctrine(npc, mines.length > 0, equippedWeapons.length > 0),
     ...movement,
     mines,
     tractorRangeMeters: shipCombatTractorRange(installed),

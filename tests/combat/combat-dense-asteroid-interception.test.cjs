@@ -136,6 +136,15 @@ const passIntent = chooseCombatFlightIntent(
   false
 );
 assert.equal(passIntent.kind, 'pass', 'front-gun passage starts after a real intercept');
+const stationaryPass = chooseCombatFlightIntent(
+  { ...forwardPilot, velocity: { x: 0, y: 0 } },
+  targetPilot,
+  1280,
+  { ...arena, obstacles: [] },
+  0.08,
+  false
+);
+assert.equal(stationaryPass.kind, 'pass', 'aligned front guns may start a pass from rest');
 const passDestination = { ...passing.flightPass.destination };
 passing.position = { x: 725, y: 1050 };
 chooseCombatFlightIntent(passing, targetPilot, 1280, { ...arena, obstacles: [] }, 0.08, false);

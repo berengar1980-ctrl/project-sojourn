@@ -57,6 +57,16 @@ const cases = [
     maneuver: 'ANGRIFFSPASSAGE',
   },
   {
+    overrides: { ramPhase: 'flank', combatIntent: 'RAMMEN' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: 'RAMMKURS · FLANKENANFLUG',
+  },
+  {
+    overrides: { ramPhase: 'impact', combatIntent: 'RAMMEN' },
+    strategy: 'BREITSEITE · STEUERBORD',
+    maneuver: 'RAMMKURS · ENDANFLUG',
+  },
+  {
     overrides: { tactic: 'flee', combatIntent: 'FLIEHEN' },
     strategy: 'FLIEHEN',
     maneuver: null,
@@ -88,12 +98,10 @@ const telemetry = fs.readFileSync(
   'utf8'
 );
 assert(telemetry.includes('ship.combatIntent = describeCombatIntent(ship)'));
-const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+const statusRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-status-renderer.ts'),
   'utf8'
 );
-assert(
-  renderer.includes('describeCombatStatus(combatant)'),
-  'the ship caption must render the separate strategy and action labels'
-);
+assert(statusRenderer.includes('describeCombatStatus(combatant)'));
+assert(statusRenderer.includes('STRATEGIE: ') && statusRenderer.includes('MANÖVER: '));
 console.log('PASS independent combat strategy and movement status labels');

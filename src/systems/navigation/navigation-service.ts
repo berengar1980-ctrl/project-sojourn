@@ -26,9 +26,17 @@ interface NavigationRuntimeState {
   travel: TravelState | null;
   pursuit: PursuitState | null;
   cruiseSpeed: number;
+  turnRateMultiplier: number;
 }
 
 const MAX_TURN_RATE = 0.9;
+
+function validTurnRateMultiplier(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('Navigation turn rate multiplier must be positive.');
+  }
+  return value;
+}
 
 function locationPosition(world: WorldMap, id: string): WorldPoint {
   const location = world.locations.find((candidate) => candidate.id === id);
@@ -172,7 +180,11 @@ function advanceTravel(state: NavigationRuntimeState, deltaSeconds: number): voi
     Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
   );
   const previousHeading = state.currentHeading;
-  state.currentHeading = turnToward(state.currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+  state.currentHeading = turnToward(
+    state.currentHeading,
+    desiredHeading,
+    MAX_TURN_RATE * state.turnRateMultiplier * clamped
+  );
   state.currentTurnRate = angleDelta(previousHeading, state.currentHeading) / clamped;
   const turnRemaining = Math.abs(angleDelta(state.currentHeading, desiredHeading));
   const alignment = Math.max(0, Math.cos(turnRemaining));
@@ -210,7 +222,11 @@ function advancePursuit(state: NavigationRuntimeState, deltaSeconds: number): vo
     -1,
     Math.min(1, angleDelta(state.currentHeading, desiredHeading) / (Math.PI / 4))
   );
-  state.currentHeading = turnToward(state.currentHeading, desiredHeading, MAX_TURN_RATE * clamped);
+  state.currentHeading = turnToward(
+    state.currentHeading,
+    desiredHeading,
+    MAX_TURN_RATE * state.turnRateMultiplier * clamped
+  );
   state.currentTurnRate = angleDelta(previousHeading, state.currentHeading) / clamped;
 
   const turnRemaining = Math.abs(angleDelta(state.currentHeading, desiredHeading));
@@ -274,6 +290,7 @@ export function createNavigationService(
     travel: null,
     pursuit: null,
     cruiseSpeed: initialCruiseSpeed,
+    turnRateMultiplier: 1,
   };
   const snapshot = (): NavigationSnapshot => createSnapshot(world, state);
 
@@ -292,11 +309,11 @@ export function createNavigationService(
     return snapshot();
   };
 
-  const setCruiseSpeed = (nextCruiseSpeed: number): NavigationSnapshot => {
-    if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0) {
+  const setCruiseSpeed = (nextCruiseSpeed: number, turnRateMultiplier = 1): NavigationSnapshot => {
+    if (!Number.isFinite(nextCruiseSpeed) || nextCruiseSpeed <= 0)
       throw new Error('Navigation cruise speed must be positive.');
-    }
     state.cruiseSpeed = nextCruiseSpeed;
+    state.turnRateMultiplier = validTurnRateMultiplier(turnRateMultiplier);
     return snapshot();
   };
 

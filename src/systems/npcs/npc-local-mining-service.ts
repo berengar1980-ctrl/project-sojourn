@@ -14,6 +14,7 @@ import {
 } from '../local-space/ship-shield-collision';
 
 import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../ships';
+import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 import {
   type NpcLocalMiningOptions,
@@ -40,9 +41,9 @@ export type { NpcLocalMiningService } from './npc-mining-targets';
 
 export type { NpcLocalMiningOptions } from './npc-mining-targets';
 
-function localCruiseSpeed(shipId: string): number {
-  const ship = getShipDefinition(shipId);
-  return ship ? resolveShipLocalCruiseSpeed(ship) : FLIGHT_SPEED;
+function localCruiseSpeed(npc: SectorNpcState): number {
+  const ship = getShipDefinition(npc.shipId);
+  return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
 }
 
 interface MinerRuntime {
@@ -79,7 +80,7 @@ function syncArrivals(runtime: MinerRuntime): void {
       shipId: npc.shipId,
       position: { ...entry },
       headingRadians: 0,
-      speed: localCruiseSpeed(npc.shipId),
+      speed: localCruiseSpeed(npc),
       phase: 'entering',
       targetAsteroidId: null,
       laserActive: false,
@@ -209,7 +210,7 @@ function advanceApproaching(
       return;
     }
     const point = approachPoint(npc.id, asteroid);
-    if (moveToward(ship, point, localCruiseSpeed(ship.shipId), dt)) {
+    if (moveToward(ship, point, localCruiseSpeed(npc), dt)) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -306,7 +307,7 @@ function advanceMiner(
     return false;
   }
   ship.laserActive = false;
-  if (moveToward(ship, ship.exitPoint, localCruiseSpeed(ship.shipId), dt)) {
+  if (moveToward(ship, ship.exitPoint, localCruiseSpeed(npc), dt)) {
     runtime.options.depart(npc);
     return true;
   }

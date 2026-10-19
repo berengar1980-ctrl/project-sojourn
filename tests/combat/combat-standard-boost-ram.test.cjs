@@ -39,7 +39,7 @@ for (let i = 0; i < 60; i += 1) {
   const model = normal.tick(0.1);
   boostSeen ||= model.attacker.boostActive || model.defender.boostActive;
 }
-assert(boostSeen, 'regular campaign fights use boost even without exchange seed 1001');
+assert.equal(boostSeen, false, 'unarmed ships should not waste boost on an opening rush');
 const ramming = createStrategicCombatService(
   ship('rammer', 100, 200),
   ship('vulnerable', 0, 35),

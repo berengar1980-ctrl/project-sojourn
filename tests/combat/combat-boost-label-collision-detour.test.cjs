@@ -9,13 +9,19 @@ const renderer = fs.readFileSync(
   'utf8'
 );
 assert(
-  renderer.includes('const status = describeCombatStatus(combatant);'),
+  renderer.includes('drawCombatShipStatus(this.context, combatant, geometry);'),
   'combat HUD derives strategy and maneuver labels independently'
 );
-assert(
-  renderer.includes('status.maneuver, geometry.center.x, statusY'),
-  'the maneuver is rendered on its own line'
+const statusRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-status-renderer.ts'),
+  'utf8'
 );
+assert(statusRenderer.includes("'MANÖVER: ' + status.maneuver"));
+const ramEffectCall = [
+  'drawCombatRamEffect(this.context, combatant, geometry,',
+  'this.model.elapsedSeconds)',
+].join(' ');
+assert(renderer.includes(ramEffectCall), 'ram effects must use combat simulation time');
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
 assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
 assert(renderer.includes('combatant.boostActive'), 'engine boost visual effects remain');

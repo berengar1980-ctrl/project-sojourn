@@ -4,6 +4,7 @@ import {
 } from '../../systems/combat/combat-loadout-mounts';
 import {
   resolveShipCombatMovementStats,
+  resolveShipArmorProtection,
   shipCombatTractorRange,
   shipHasIndustrialTractor,
   shipHullMaxHp,
@@ -26,6 +27,8 @@ export interface DuelDraft {
   weapons: string[];
   mines: string[];
   crewId: string;
+  engineId?: string;
+  armorId?: string;
 }
 
 export function duelCombatant(
@@ -37,6 +40,11 @@ export function duelCombatant(
   const equipped = combatEquippedWeapons(ship, draft.weapons);
   const mounts = combatWeaponMounts(ship, equipped);
   const crew = crewDefinitionById(draft.crewId);
+  const installed = {
+    engine: [draft.engineId ?? 'engine1'],
+    armor: [draft.armorId ?? ''],
+  };
+  const armor = resolveShipArmorProtection(installed);
   const pilotSkill = crew?.skills.piloting ?? 50;
   const weaponSkill = crew?.skills.weapons ?? 50;
   const sensorSkill = crew?.skills.sensors ?? 50;
@@ -47,6 +55,7 @@ export function duelCombatant(
     shieldHp: shipShieldMaxHp(ship),
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
     hullHp: shipHullMaxHp(ship),
+    ...(armor ? { armor } : {}),
     weapons: equipped.map((entry) => entry.component),
     mines: draft.mines.flatMap((id) => {
       const mine = SHIP_MINE_CATALOG.find((entry) => entry.id === id);
@@ -59,7 +68,7 @@ export function duelCombatant(
     criticalChance: weaponCriticalChance(weaponSkill),
     cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
     preferredTactic: 'fight',
-    ...resolveShipCombatMovementStats(ship),
+    ...resolveShipCombatMovementStats(ship, installed),
     tractorRangeMeters: shipCombatTractorRange(),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     aiControlled: true,

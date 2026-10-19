@@ -1,6 +1,7 @@
 import { applyShieldHit } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
+import { directionalHullDamage } from './strategic-combat-damage';
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 
 function separateShipFromRock(
@@ -90,7 +91,7 @@ export function resolveCombatAsteroidContacts(
       Math.max(0.1, geometry?.modifier ?? 1);
     if (damage <= 0) continue;
     if (ship.shieldHp <= 0) {
-      ship.hullHp = Math.max(0, ship.hullHp - damage);
+      ship.hullHp = Math.max(0, ship.hullHp - directionalHullDamage(ship, damage, hit.point));
       continue;
     }
     const effect = applyShieldHit(
@@ -105,7 +106,10 @@ export function resolveCombatAsteroidContacts(
       Math.floor((ship.shieldImpacts.length + 1) * 100000 + hit.impactSpeed * 100)
     );
     ship.shieldHp -= effect.absorbedDamage;
-    ship.hullHp = Math.max(0, ship.hullHp - effect.overflowDamage);
+    ship.hullHp = Math.max(
+      0,
+      ship.hullHp - directionalHullDamage(ship, effect.overflowDamage, hit.point)
+    );
     ship.shieldImpacts.push(effect.impact);
   }
 }

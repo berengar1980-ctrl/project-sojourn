@@ -1,5 +1,6 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import { clamp, distance, normalize } from './strategic-combat-geometry';
+import { requiredCombatConfidence } from './combat-civilian-policy';
 
 const RETHINK_PERIOD = 8;
 
@@ -39,13 +40,6 @@ function combatPower(ship: MutableCombatant, opponent: MutableCombatant): number
 export function estimatedVictoryChance(ship: MutableCombatant, enemy: MutableCombatant): number {
   const ours = combatPower(ship, enemy);
   return clamp(ours / Math.max(1, ours + combatPower(enemy, ship)), 0, 1);
-}
-
-function requiredConfidence(ship: MutableCombatant): number {
-  const role = ship.setup.shipId.toLowerCase();
-  const civilian = /freight|cargo|miner|mining|salvag|scaveng/.test(role);
-  const base = civilian ? 0.68 : /patrol|cutter/.test(role) ? 0.32 : 0.4;
-  return clamp(base - ((ship.setup.aiAggression ?? 50) - 50) * 0.0025, 0.16, 0.85);
 }
 
 /** Estimate viability of escape from the current actual motion and exit location. */
@@ -134,14 +128,20 @@ export function reviewCombatCommitment(
   ship.nextCommitmentReviewAt = elapsed + RETHINK_PERIOD;
   const strength = estimatedVictoryChance(ship, enemy);
   const escape = escapeViability(ship, enemy, arena);
-  return chooseCommitmentTransition(ship, strength, escape, elapsed);
+  const confidence = requiredCombatConfidence(
+    ship.setup.shipId,
+    enemy.setup.shipId,
+    ship.setup.aiAggression ?? 50
+  );
+  return chooseCommitmentTransition(ship, strength, escape, elapsed, confidence);
 }
 
 function chooseCommitmentTransition(
   ship: MutableCombatant,
   strength: number,
   escape: number,
-  elapsed: number
+  elapsed: number,
+  confidence: number
 ): CombatCommitmentReview | null {
   const currentlyFleeing = ship.tactic === 'flee';
   if (currentlyFleeing) {
@@ -164,7 +164,7 @@ function chooseCommitmentTransition(
   }
   // Avoid re-entering a doomed escape immediately after abandoning it.
   if (elapsed - (ship.escapeAbandonedAt ?? -10000) < 24) return null;
-  if (strength < requiredConfidence(ship) && escape > 0.5) {
+  if (strength < confidence && escape > 0.5) {
     ship.tactic = 'flee';
     ship.strategy = null;
     delete ship.escapeGate;

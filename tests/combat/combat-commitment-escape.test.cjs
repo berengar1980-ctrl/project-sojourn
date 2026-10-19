@@ -156,6 +156,31 @@ for (const at of [16, 32, 48]) {
     'committed flight may not silently abort when pursuer reduces escape odds'
   );
 }
-console.log(
-  'PASS combat confidence, retreat commitment, escape feasibility and rear-guard mine geometry'
-);
+const npcAi = loadStandaloneTypeScriptModule(root, 'src/systems/combat/npc-combatant-setup.ts');
+for (const job of ['miner', 'salvager', 'freighter']) {
+  const worker = { job, aggression: 15, hullHp: 100, hullMaxHp: 100 };
+  assert.equal(npcAi.npcCombatDoctrine(worker, false, true), 'fight');
+  assert.equal(npcAi.npcCombatDoctrine(worker, false, false), 'flee');
+  assert.equal(npcAi.npcCombatDoctrine(worker, true, true), 'minefield');
+  assert.equal(npcAi.npcCombatDoctrine({ ...worker, hullHp: 22 }, false, true), 'flee');
+}
+const peerMiner = ship('mining-80m-variant-01', 800, pirate.setup.weapons);
+const peerSalvager = ship('salvage-100m-variant-01', 1300, pirate.setup.weapons);
+peerMiner.setup.aiAggression = 15;
+peerSalvager.setup.aiAggression = 15;
+assert.equal(estimatedVictoryChance(peerMiner, peerSalvager), 0.5);
+reviewCombatCommitment(peerMiner, peerSalvager, arena, 0);
+reviewCombatCommitment(peerSalvager, peerMiner, arena, 0);
+assert.equal(peerMiner.tactic, 'fight', 'armed miner fights an equally armed salvager');
+assert.equal(peerSalvager.tactic, 'fight', 'armed salvager fights an equally armed miner');
+const peerFreighter = ship('freighter-120m-variant-01', 800, pirate.setup.weapons);
+peerFreighter.setup.aiAggression = 15;
+reviewCombatCommitment(peerFreighter, peerMiner, arena, 0);
+assert.equal(peerFreighter.tactic, 'fight', 'armed freighter fights an equally armed worker');
+const overwhelmingPirate = ship('pirate-elite', 1300, [
+  { weapon: { hullDamage: 250, shieldDamage: 250, cooldownSeconds: 0.5 } },
+]);
+const weakFreighter = ship('freighter-120m-variant-02', 800, pirate.setup.weapons);
+reviewCombatCommitment(weakFreighter, overwhelmingPirate, arena, 0);
+assert.equal(weakFreighter.tactic, 'flee', 'outclassed freighter may still flee');
+console.log('PASS combat confidence, civilian peer engagements and defensive escape');

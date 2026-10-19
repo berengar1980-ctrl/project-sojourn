@@ -64,9 +64,9 @@ export interface NpcLocalSalvageOptions {
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
 
-function localCruiseSpeed(shipId: string): number {
-  const ship = getShipDefinition(shipId);
-  return ship ? resolveShipLocalCruiseSpeed(ship) : FLIGHT_SPEED;
+function localCruiseSpeed(npc: SectorNpcState): number {
+  const ship = getShipDefinition(npc.shipId);
+  return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
 }
 
 class LocalSalvageService implements NpcLocalSalvageService {
@@ -109,7 +109,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         shipId: npc.shipId,
         position: { ...entry },
         headingRadians: 0,
-        speed: localCruiseSpeed(npc.shipId),
+        speed: localCruiseSpeed(npc),
         phase: 'entering',
         targetWreckId: null,
         salvageActive: false,
@@ -245,7 +245,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.assignTarget(ship, npc);
       return;
     }
-    if (moveToward(ship, workPoint(npc.id, wreck), localCruiseSpeed(ship.shipId), dt)) {
+    if (moveToward(ship, workPoint(npc.id, wreck), localCruiseSpeed(npc), dt)) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -338,7 +338,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
 
       ship.salvageActive = false;
-      if (moveToward(ship, ship.exitPoint, localCruiseSpeed(ship.shipId), dt)) {
+      if (moveToward(ship, ship.exitPoint, localCruiseSpeed(npc), dt)) {
         this.ships.splice(index, 1);
         this.options.depart(npc);
       }

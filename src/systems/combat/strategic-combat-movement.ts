@@ -213,6 +213,7 @@ export function moveCombatant(
   const toward = normalize(dx, dy);
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
   const deliberateRam = usefulRamAttempt(combatant, enemy);
+  if (!deliberateRam) delete combatant.ramApproach;
   const intent = chooseCombatFlightIntent(
     combatant,
     enemy,
@@ -235,7 +236,12 @@ export function moveCombatant(
     activeMines,
     toward,
     deliberateRam,
-    { direction, targetSpeedFactor, intentKind: intent.kind }
+    {
+      direction,
+      targetSpeedFactor,
+      intentKind: intent.kind,
+      ...(intent.destination ? { destination: intent.destination } : {}),
+    }
   );
   direction = steering.direction;
   targetSpeedFactor = steering.targetSpeedFactor;
@@ -256,6 +262,7 @@ export function moveCombatant(
   const escapeStrafe = combatant.tactic === 'flee' && Math.abs(headingError) > 0.65;
   updateStandardCombatBoost(
     combatant,
+    enemy,
     headingDirection,
     range,
     desired,

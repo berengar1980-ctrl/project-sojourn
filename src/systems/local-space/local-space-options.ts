@@ -12,6 +12,8 @@ export interface LocalSpaceMiningOptions {
 export interface LocalSpaceServiceOptions {
   readonly instance: LocalSpaceInstance;
   readonly approachSpeed: number;
+  /** Fitted drive multiplier for maneuvering RCS, independent of travel speed. */
+  readonly turnRateMultiplier?: number;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
   readonly mining?: LocalSpaceMiningOptions;

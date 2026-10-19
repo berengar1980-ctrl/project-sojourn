@@ -109,7 +109,8 @@ const COMPONENT_LABELS: Readonly<Record<ShipComponentType, string>> = {
   reactor: 'Reaktor',
   engine: 'Antrieb',
   shield: 'Schildgenerator',
-  hull: 'Hüllenverstärkung',
+  hull: 'Hüllenstruktur (HP)',
+  armor: 'Richtungs-Panzerung',
   sensor: 'Sensoren',
   weapon: 'Waffe',
   mine: 'Minen',
@@ -125,6 +126,7 @@ function componentTypesForShip(ship: ShipDefinition): ShipComponentType[] {
     'engine',
     'shield',
     'hull',
+    'armor',
     'sensor',
     'cargo',
     'mine',
@@ -196,6 +198,14 @@ export function componentSlots(
   return slots;
 }
 
+function directionalArmorLabel(component: ShipComponentDefinition): string | null {
+  if (!component.armor) return null;
+  return Object.entries(component.armor)
+    .filter(([, value]) => value > 0)
+    .map(([side, value]) => `${side}: −${(value * 100).toLocaleString('de-DE')} %`)
+    .join(', ');
+}
+
 export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
   return {
     loose: state.loose.map((item) => {
@@ -234,11 +244,12 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
       tier: component.tier,
       cost: component.cost,
       modifierLabel:
-        component.salvageModifier === 'efficiency'
+        directionalArmorLabel(component) ??
+        (component.salvageModifier === 'efficiency'
           ? `−${component.salvageModifierPct ?? 0} % Energie`
           : component.salvageModifier === 'performance'
             ? `+${component.salvageModifierPct ?? 0} % Leistung`
-            : 'Ohne Bonus',
+            : 'Ohne Bonus'),
     })),
     variants: state.variants.map((component) => ({
       id: component.id,
@@ -247,9 +258,10 @@ export function shipyardView(state: PortShipyardStateInput): PortShipyardView {
       tier: component.tier,
       cost: component.cost,
       modifierLabel:
-        component.salvageModifier === 'efficiency'
+        directionalArmorLabel(component) ??
+        (component.salvageModifier === 'efficiency'
           ? `−${component.salvageModifierPct ?? 0} % Energie`
-          : `+${component.salvageModifierPct ?? 0} % Schaden`,
+          : `+${component.salvageModifierPct ?? 0} % Schaden`),
     })),
   };
 }

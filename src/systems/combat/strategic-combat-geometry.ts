@@ -157,6 +157,8 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     boostSeconds: combatant.boostSeconds ?? 3.5,
     boostActive: combatant.boostActive === true,
     ...(combatant.combatIntent !== undefined ? { combatIntent: combatant.combatIntent } : {}),
+    ...(combatant.ramApproach ? { ramPhase: combatant.ramApproach.phase } : {}),
+    ...(combatant.ramImpactAt !== undefined ? { ramImpactAt: combatant.ramImpactAt } : {}),
     mineCount: combatant.mineStock.length,
     readyWeapons: combatant.cooldowns.filter((seconds) => seconds <= 0).length,
     installedWeapons: combatant.setup.weapons.length,

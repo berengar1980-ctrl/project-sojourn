@@ -1,3 +1,4 @@
+import type { ShipArmorProtection } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -106,6 +107,7 @@ export interface StrategicCombatantSetup {
   readonly shieldHp: number;
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
+  readonly armor?: ShipArmorProtection;
   readonly weapons: readonly ShipComponentDefinition[];
   readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
@@ -169,6 +171,8 @@ export interface StrategicCombatantSnapshot {
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
   readonly combatIntent?: string;
+  readonly ramPhase?: 'flank' | 'impact';
+  readonly ramImpactAt?: number;
   readonly mineCount: number;
   readonly readyWeapons: number;
   readonly installedWeapons: number;
@@ -349,6 +353,9 @@ export interface MutableCombatant {
   escapeGate?: CombatPoint;
   /** Stable side while clearing an enemy hull on the escape corridor. */
   escapeAvoidanceSide?: -1 | 1;
+  /** Stable approach side and impact commitment for autonomous ramming. */
+  ramApproach?: { side: -1 | 1; phase: 'flank' | 'impact' };
+  ramImpactAt?: number;
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {
     readonly direction: CombatPoint;

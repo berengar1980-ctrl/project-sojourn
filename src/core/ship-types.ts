@@ -5,6 +5,7 @@ export type ShipComponentType =
   | 'engine'
   | 'shield'
   | 'hull'
+  | 'armor'
   | 'sensor'
   | 'weapon'
   | 'mine'
@@ -12,6 +13,14 @@ export type ShipComponentType =
   | 'mining'
   | 'salvage'
   | 'tractor';
+
+/** Directional hull damage mitigation, from 0 to 1. */
+export interface ShipArmorProtection {
+  readonly front: number;
+  readonly rear: number;
+  readonly port: number;
+  readonly starboard: number;
+}
 
 export type ShipWeaponRole = 'balanced' | 'shield' | 'hull';
 export type ShipWeaponMountKind = 'turret' | 'broadside' | 'forward' | 'guided';
@@ -69,6 +78,8 @@ export interface ShipSpecialCargoProfile {
 }
 
 export interface ShipGameplayProfile {
+  /** Role-defined local/combat cruise speed before engine upgrades. */
+  readonly combatBaseSpeed?: number;
   readonly hullPoints: number;
   readonly shieldModifier: number;
   readonly fuelCapacity: number;
@@ -81,6 +92,7 @@ export interface ShipGameplayProfile {
 }
 
 export interface ShipGameplayOverrides {
+  readonly combatBaseSpeed?: number;
   readonly hullPoints?: number;
   readonly shieldModifier?: number;
   readonly fuelCapacity?: number;

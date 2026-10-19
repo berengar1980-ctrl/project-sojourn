@@ -33,6 +33,7 @@ const COMPONENT_TYPES: readonly ShipComponentType[] = [
   'engine',
   'shield',
   'hull',
+  'armor',
   'sensor',
   'weapon',
   'cargo',
@@ -79,7 +80,7 @@ function compatibleInstalledComponents(
     // Filtering empty slots shifts a valid weapon into an incompatible mount.
     const valid = (id: string): boolean => {
       const component = getShipComponent(type, id);
-      return component !== null && component.tier <= maxTier;
+      return component !== null && component.tier <= (type === 'armor' ? 6 : maxTier);
     };
     const ids =
       type === 'weapon' ? source.map((id) => (valid(id) ? id : '')) : source.filter(valid);

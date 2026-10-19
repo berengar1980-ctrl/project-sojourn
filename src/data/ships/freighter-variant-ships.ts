@@ -24,7 +24,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints1 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-02',
@@ -42,7 +42,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints2 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-03',
@@ -60,7 +60,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints3 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-04',
@@ -78,7 +78,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints4 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-05',
@@ -96,7 +96,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints5 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-06',
@@ -114,7 +114,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints6 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
   {
     id: 'freighter-120m-variant-07',
@@ -132,6 +132,6 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
       facing: 'right',
       hardpoints: hardpoints7 as ShipHardpoints,
     },
-    navigation: { cruiseSpeed: 220 },
+    navigation: { cruiseSpeed: 195 },
   },
 ];

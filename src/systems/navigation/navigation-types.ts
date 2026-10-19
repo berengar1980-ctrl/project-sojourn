@@ -28,6 +28,6 @@ export interface NavigationService {
   updatePursuitTarget(targetPosition: WorldPoint): NavigationSnapshot;
   stopPursuit(): NavigationSnapshot;
   recoverToNearestDock(): NavigationSnapshot;
-  setCruiseSpeed(cruiseSpeed: number): NavigationSnapshot;
+  setCruiseSpeed(cruiseSpeed: number, turnRateMultiplier?: number): NavigationSnapshot;
   tick(deltaSeconds: number): NavigationSnapshot;
 }
