@@ -61,7 +61,7 @@ assert(Math.abs(muzzle.x - 112) < 0.0001 && Math.abs(muzzle.y - 110) < 0.0001);
 assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, broadside));
 
 const allWeapons = SHIP_COMPONENT_CATALOG.weapon ?? [];
-assert.equal(allWeapons.length, 54);
+assert.equal(allWeapons.length, 60);
 for (const weapon of allWeapons) {
   assert(weapon.weapon.mount, weapon.name + ' must have an explicit mount role');
   assert(weapon.weapon.arcDegrees > 0, weapon.name + ' needs a firing arc');
