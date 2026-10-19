@@ -63,7 +63,11 @@ assert(power.salvage < power.total, 'salvage shuts off mining and shields');
 assert.equal(power.industrial, Math.max(power.mining, power.salvage));
 const industrialShed = power.total - power.combat;
 assert.equal(industrialShed, 35 + 33, 'combat sheds mining and salvage loads');
-assert.equal(power.shedInCombat, industrialShed, 'UI reports the complete shut-down industrial load');
+assert.equal(
+  power.shedInCombat,
+  industrialShed,
+  'UI reports the complete shut-down industrial load'
+);
 const ships = getAllShipDefinitions();
 const ship = ships.find((entry) => entry.role === 'salvage');
 assert(ship);
@@ -138,12 +142,14 @@ assert.equal(blackout.defender.powerFault, undefined, 'adequate reactor supply r
 const drifting = duelling.tick(0.08);
 assert.equal(drifting.attacker.powerFault, 'total');
 assert.equal(drifting.attacker.headingRadians, blackout.attacker.headingRadians);
+const expectedDriftX = blackout.attacker.position.x + blackout.attacker.velocity.x * 0.08;
+const expectedDriftY = blackout.attacker.position.y + blackout.attacker.velocity.y * 0.08;
 assert(
-  Math.abs(drifting.attacker.position.x - (blackout.attacker.position.x + blackout.attacker.velocity.x * 0.08)) < 0.001,
+  Math.abs(drifting.attacker.position.x - expectedDriftX) < 0.001,
   'powerless ships drift without gaining horizontal thrust'
 );
 assert(
-  Math.abs(drifting.attacker.position.y - (blackout.attacker.position.y + blackout.attacker.velocity.y * 0.08)) < 0.001,
+  Math.abs(drifting.attacker.position.y - expectedDriftY) < 0.001,
   'powerless ships drift without gaining vertical thrust'
 );
 assert(
