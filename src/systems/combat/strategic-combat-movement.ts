@@ -236,7 +236,12 @@ export function moveCombatant(
     activeMines,
     toward,
     deliberateRam,
-    { direction, targetSpeedFactor, intentKind: intent.kind, destination: intent.destination }
+    {
+      direction,
+      targetSpeedFactor,
+      intentKind: intent.kind,
+      ...(intent.destination ? { destination: intent.destination } : {}),
+    }
   );
   direction = steering.direction;
   targetSpeedFactor = steering.targetSpeedFactor;
