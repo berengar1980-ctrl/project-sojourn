@@ -142,7 +142,10 @@ function readyForAttackPass(
   // The second AI planner starts four seconds later; unplanned ships may
   // approach but cannot lock in an unarmed twenty-second attack passage.
   if (!ship.strategy || !firingLane || ship.subsystems.engine <= 0) return false;
-  if (range > desiredRange * 1.12) return false;
+  // Forward guns may commit from their wider true firing envelope. Waiting
+  // for the closer optimal range stalled passes after conserving opening boost.
+  const passRangeFactor = ship.strategy.focus === 'forward' ? 1.35 : 1.12;
+  if (range > desiredRange * passRangeFactor) return false;
   if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
