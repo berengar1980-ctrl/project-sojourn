@@ -14,6 +14,8 @@ export function pulseCombatTractor(
   dt: number
 ): void {
   ship.tractorPulseCooldown = Math.max(0, (ship.tractorPulseCooldown ?? 0) - dt);
+  // A total reactor brownout also disables active tractor impulses.
+  if (ship.powerFault === 'total') return;
   const range = ship.setup.tractorRangeMeters ?? 0;
   if (range <= 0 || ship.shieldHp > 0 || ship.subsystems.tractor <= 0 || enemy.hullHp <= 0) return;
   const separation = distance(ship.position, enemy.position);
