@@ -1,5 +1,10 @@
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
+import {
+  createPlayerProfile,
+  snapshotPlayerProfile,
+  withPlayerShipName,
+} from '../core/player-profile';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
@@ -59,7 +64,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     state.activeShip,
     context.navigation,
     (nextShip) => {
-      state.activeShip = nextShip;
+      state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
       if (state.mode === 'local-space') mountControllerMining(context, true);
@@ -133,7 +138,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     context.systemLog,
     state.ownedShipIds,
     (nextShip) => {
-      state.activeShip = nextShip;
+      state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     }
@@ -428,6 +433,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 export function createGameController(options: GameControllerOptions): GameController {
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
+    starterShipId: options.ship.id,
+    playerProfile: createPlayerProfile(options.playerProfile),
     ownedShipIds: new Set([options.ship.id]),
     mode: 'star-map',
     panels: { star: null, local: null, port: null },
@@ -476,9 +483,14 @@ export function createGameController(options: GameControllerOptions): GameContro
     options.navigation.getSnapshot().currentPosition,
     state.activeShip.role === 'salvage'
   );
-  const settingsMenu = createSettingsMenu(context.audio, options.onReturnToMainMenu);
+  const settingsMenu = createSettingsMenu(
+    context.audio,
+    options.onReturnToMainMenu,
+    state.playerProfile
+  );
   mountControllerStarMap(context);
   return {
+    profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
     },

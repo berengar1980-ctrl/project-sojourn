@@ -1,0 +1,290 @@
+.character-editor {
+  position: relative;
+  height: 100dvh;
+  overflow-y: auto;
+  background: #05080d url('/startscreen-background.webp') center / cover fixed;
+  color: #dce1e6;
+  font-family: 'Courier New', ui-monospace, monospace;
+}
+.character-editor__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, #03070bf7, #04080cdb 56%, #04080cad);
+}
+.character-editor__layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 58px);
+}
+.character-editor__header {
+  margin-bottom: 32px;
+  padding-bottom: 23px;
+  border-bottom: 1px solid rgba(202, 168, 92, 0.55);
+}
+.character-editor__eyebrow,
+.character-editor__preview-details span {
+  color: #ad9461;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+.character-editor__header h1 {
+  margin: 12px 0;
+  font-size: clamp(27px, 3.9vw, 52px);
+  letter-spacing: 0.11em;
+}
+.character-editor__header p,
+.character-editor__note {
+  color: #9eafba;
+  line-height: 1.5;
+  font-size: 13px;
+}
+.character-editor__columns {
+  display: grid;
+  grid-template-columns: minmax(210px, 350px) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 44px);
+}
+.character-editor__preview {
+  align-self: start;
+  border: 1px solid rgba(174, 147, 94, 0.48);
+  background: #081017;
+  box-shadow: 0 18px 50px #0009;
+}
+.character-editor__preview-image {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #20272b;
+}
+.character-editor__preview-image img,
+.character-editor__portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.character-editor__preview-details {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+.character-editor__preview-details strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin-bottom: 9px;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+.character-editor__form {
+  min-width: 0;
+  padding: clamp(16px, 2.7vw, 32px);
+  border: 1px solid #344652;
+  background: rgba(6, 14, 19, 0.93);
+}
+.character-editor__form h2 {
+  margin: 0 0 15px;
+  color: #d3b878;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+.character-editor__form h2:not(:first-child) {
+  margin-top: 32px;
+}
+.character-editor__portraits {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+.character-editor__portrait {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 4px 9px;
+  border: 1px solid #41505c;
+  background: #111b22;
+  color: #8094a1;
+  cursor: pointer;
+}
+.character-editor__portrait img,
+.character-editor__portrait .character-editor__placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+}
+.character-editor__portrait > span:last-child {
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+.character-editor__placeholder {
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(135deg, #141e25 0 6px, #1b2932 6px 12px);
+  color: #6d808b;
+  font-size: clamp(18px, 2.5vw, 34px);
+}
+.character-editor__portrait:hover,
+.character-editor__portrait:focus-visible,
+.character-editor__portrait.is-selected {
+  border-color: #d2b56d;
+  color: #f0dbab;
+}
+.character-editor__portrait.is-selected {
+  box-shadow: inset 0 -3px #d2b56d;
+}
+.character-editor__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.character-editor__fields label {
+  display: grid;
+  gap: 9px;
+  color: #b5c0c7;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.character-editor__fields input {
+  min-width: 0;
+  width: 100%;
+  height: 48px;
+  padding: 11px 13px;
+  border: 1px solid #52606a;
+  border-radius: 0;
+  outline-offset: 2px;
+  background: #0e1a22;
+  color: #eff1e7;
+  font:
+    15px 'Courier New',
+    ui-monospace,
+    monospace;
+}
+.character-editor__fields input:focus {
+  outline: 1px solid #d5b66d;
+  border-color: #d5b66d;
+}
+.character-editor__note {
+  margin: 20px 0 26px;
+  font-size: 11px;
+}
+.character-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.character-editor__actions button {
+  min-height: 45px;
+  padding: 10px 18px;
+  border: 1px solid #867649;
+  background: #1a2329;
+  color: #e7ddc2;
+  font:
+    12px 'Courier New',
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.09em;
+  cursor: pointer;
+}
+.character-editor__actions .character-editor__launch {
+  background: #ad9160;
+  border-color: #d9be82;
+  color: #0b1115;
+  font-weight: 700;
+}
+.character-editor__actions button:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+.character-editor__actions button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.settings-menu__identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  margin-left: auto;
+  font-size: 10px;
+  color: #e4ddd0;
+}
+.settings-menu__identity-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #8d7a53;
+  background: #19242a;
+  color: #af9e76;
+}
+.settings-menu__identity-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.settings-menu__identity-labels {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.settings-menu__identity-labels strong,
+.settings-menu__identity-labels span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-menu__identity-labels span {
+  color: #8da6b1;
+  font-size: 9px;
+}
+@media (max-width: 800px) {
+  .character-editor__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .character-editor__preview {
+    display: flex;
+  }
+  .character-editor__preview-image {
+    width: 160px;
+    flex: 0 0 160px;
+    aspect-ratio: 1;
+  }
+  .character-editor__preview-details {
+    align-content: center;
+  }
+  .settings-menu__identity-labels {
+    max-width: 150px;
+  }
+}
+@media (max-width: 550px) {
+  .character-editor__portraits {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .character-editor__portrait > span:last-child {
+    font-size: 7px;
+  }
+  .character-editor__fields {
+    grid-template-columns: 1fr;
+  }
+  .character-editor__preview-image {
+    width: 116px;
+    flex-basis: 116px;
+  }
+  .character-editor__preview-details {
+    padding: 12px;
+    font-size: 12px;
+  }
+  .settings-menu__brand span,
+  .settings-menu__identity-labels span {
+    display: none;
+  }
+  .settings-menu__identity-labels {
+    max-width: 120px;
+  }
+}

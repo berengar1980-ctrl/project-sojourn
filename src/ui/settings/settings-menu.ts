@@ -1,4 +1,5 @@
 import type { GameAudioService } from '../../systems/audio/game-audio-service';
+import { playerPortraitUrl, type PlayerProfile } from '../../core/player-profile';
 
 export interface SettingsMenu {
   destroy(): void;
@@ -123,13 +124,40 @@ function createSettingsKeyHandler(
   };
 }
 
+function appendProfileIdentity(shell: HTMLDivElement, profile: PlayerProfile): void {
+  const identity = document.createElement('div');
+  identity.className = 'settings-menu__identity';
+  const icon = document.createElement('div');
+  icon.className = 'settings-menu__identity-icon';
+  const portrait = playerPortraitUrl(profile.portraitId);
+  if (portrait) {
+    const image = document.createElement('img');
+    image.src = portrait;
+    image.alt = 'Kapitänsporträt';
+    icon.append(image);
+  } else {
+    icon.textContent = String(profile.portraitId).padStart(2, '0');
+  }
+  const labels = document.createElement('div');
+  labels.className = 'settings-menu__identity-labels';
+  const captainName = document.createElement('strong');
+  captainName.textContent = profile.captainName;
+  const shipName = document.createElement('span');
+  shipName.textContent = profile.shipName;
+  labels.append(captainName, shipName);
+  identity.append(icon, labels);
+  shell.querySelector('.settings-menu__toggle')?.before(identity);
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
-  onReturnToMainMenu: () => void
+  onReturnToMainMenu: () => void,
+  profile?: PlayerProfile
 ): SettingsMenu {
   document.querySelector('.settings-menu')?.remove();
 
   const shell = createSettingsShell();
+  if (profile) appendProfileIdentity(shell, profile);
 
   const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;

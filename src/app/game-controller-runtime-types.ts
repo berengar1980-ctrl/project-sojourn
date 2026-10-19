@@ -1,5 +1,6 @@
 import type { SalvageField } from '../core/salvage-types';
 import type { ShipDefinition } from '../core/ship-types';
+import type { PlayerProfile } from '../core/player-profile';
 import type { SystemLogService } from '../core/system-log-types';
 import type { GameAudioService } from '../systems/audio/game-audio-service';
 import type { StarMapEngagementService } from '../systems/combat';
@@ -28,6 +29,8 @@ export interface ControllerPanels {
 
 export interface ControllerRuntimeState {
   activeShip: ShipDefinition;
+  readonly starterShipId: string;
+  readonly playerProfile: PlayerProfile;
   ownedShipIds: Set<string>;
   mode: SceneMode;
   readonly panels: ControllerPanels;

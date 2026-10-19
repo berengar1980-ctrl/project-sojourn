@@ -1,4 +1,6 @@
 import { createStartMenu, type StartMenuAction } from '../ui/start/start-menu';
+import { createCharacterEditor } from '../ui/start/character-editor';
+import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
 import { createDuelLobby } from '../ui/start/duel-lobby';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -12,7 +14,7 @@ export function bootstrap(root: HTMLElement | null): void {
   showMainMenu(root);
 }
 
-function launchCampaign(root: HTMLElement): void {
+function launchCampaign(root: HTMLElement, profile: PlayerProfile): void {
   const ship = getShipDefinition('salvage-100m-variant-01');
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
@@ -24,7 +26,8 @@ function launchCampaign(root: HTMLElement): void {
   let running = true;
   const game: GameController = createGameController({
     root,
-    ship,
+    ship: withPlayerShipName(ship, profile),
+    playerProfile: profile,
     navigation,
     onReturnToMainMenu: () => {
       if (!running) return;
@@ -53,7 +56,14 @@ function showMainMenu(root: HTMLElement): void {
   const navigate = (action: StartMenuAction): void => {
     current?.destroy();
     if (action === 'campaign') {
-      launchCampaign(root);
+      current = createCharacterEditor(
+        root,
+        (profile) => {
+          current?.destroy();
+          launchCampaign(root, profile);
+        },
+        () => showMainMenu(root)
+      );
     } else if (action === 'pvp') {
       current = createDuelLobby(root, () => {
         current?.destroy();
