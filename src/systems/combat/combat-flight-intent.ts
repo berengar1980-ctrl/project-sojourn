@@ -149,7 +149,11 @@ function readyForAttackPass(
   if (!preferredBroadsideAligned(ship, enemy, range, arena)) return false;
   const relativeX = ship.velocity.x - enemy.velocity.x;
   const relativeY = ship.velocity.y - enemy.velocity.y;
-  return relativeX * toward.x + relativeY * toward.y > 14 && forwardPassReady(ship, enemy);
+  const closing = relativeX * toward.x + relativeY * toward.y;
+  // A front-gun ship with a clear aligned shot may start a passage from rest
+  // rather than wait forever for speed it cannot build while orbiting.
+  const momentumReady = ship.strategy.focus === 'forward' || closing > 14;
+  return momentumReady && forwardPassReady(ship, enemy);
 }
 
 /** Fix a destination beyond the enemy so asteroid routing can complete the passage. */
