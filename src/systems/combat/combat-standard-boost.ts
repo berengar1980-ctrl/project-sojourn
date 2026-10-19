@@ -15,10 +15,10 @@ export function updateStandardCombatBoost(
   const facing =
     Math.cos(ship.headingRadians) * headingDirection.x +
     Math.sin(ship.headingRadians) * headingDirection.y;
-  const wantsBoost =
-    ship.tactic === 'flee' ||
-    (deliberateRam && distance <= 450) ||
-    (distance > Math.max(650, desiredRange * 1.45) && targetSpeedFactor > 0.7);
+  const wantsBoost = deliberateRam
+    ? ship.ramApproach?.phase === 'impact' && distance <= 450
+    : ship.tactic === 'flee' ||
+      (distance > Math.max(650, desiredRange * 1.45) && targetSpeedFactor > 0.7);
   if (corridorClear && wantsBoost && facing > 0.7 && (ship.boostSeconds ?? 0) > 0.8)
     activateCombatBoost(ship);
   else stopCombatBoost(ship);

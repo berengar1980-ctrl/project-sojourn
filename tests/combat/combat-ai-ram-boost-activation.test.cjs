@@ -12,9 +12,18 @@ const { activateCombatBoost, stopCombatBoost, updateCombatBoost } = loadStandalo
   root,
   'src/systems/combat/combat-boost-control.ts'
 );
+const { updateStandardCombatBoost } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-standard-boost.ts'
+);
+const { usefulRamAttempt } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-ram-opportunity.ts'
+);
 const actor = (x) => ({
   position: { x, y: 500 },
   velocity: { x: 0, y: 0 },
+  headingRadians: 0,
   tactic: 'fight',
   mineStock: [],
   setup: { combatSpeed: 120 },
@@ -37,11 +46,40 @@ initiator.position = { x: 700, y: 580 };
 const committed = chooseCombatFlightIntent(initiator, target, 500, arena, 0.08, true);
 assert.equal(initiator.ramApproach.phase, 'impact', 'final impact approach cannot oscillate back out');
 assert(committed.direction.y < 0, 'approach stays committed through contact');
+const ramOpportunityShip = (armor) => ({
+  setup: { aiControlled: true, armor },
+  tactic: 'fight',
+  position: { x: 250, y: 500 },
+  hullHp: 180,
+  hullMaxHp: 200,
+  shieldHp: 90,
+  shieldMaxHp: 100,
+  subsystems: { engine: 100 },
+});
+const potentialVictim = {
+  position: { x: 800, y: 500 },
+  hullHp: 160,
+  shieldHp: 50,
+  shieldMaxHp: 100,
+};
+assert.equal(usefulRamAttempt(ramOpportunityShip(undefined), potentialVictim), false);
+assert.equal(usefulRamAttempt(ramOpportunityShip({ front: 0.15 }), potentialVictim), true);
+assert.equal(usefulRamAttempt({ ...ramOpportunityShip({ front: 0.5 }), tactic: 'flee' }, potentialVictim), false);
+assert.equal(usefulRamAttempt({ ...ramOpportunityShip({ front: 0.5 }), hullHp: 90 }, potentialVictim), false);
 const booster = {
   subsystems: { engine: 80 },
   boostSeconds: 3.5,
   boostActive: false,
+  headingRadians: 0,
+  tactic: 'fight',
+  ramApproach: { side: 1, phase: 'flank' },
 };
+updateStandardCombatBoost(booster, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
+assert.equal(booster.boostActive, false, 'flank staging saves boost for final approach');
+booster.ramApproach.phase = 'impact';
+updateStandardCombatBoost(booster, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
+assert.equal(booster.boostActive, true, 'ram uses boost when committed to side impact');
+stopCombatBoost(booster);
 assert.equal(activateCombatBoost(booster), true, 'charged engine can activate boost');
 updateCombatBoost(booster, 0.5);
 assert(booster.boostActive, 'boost remains active while commanded');

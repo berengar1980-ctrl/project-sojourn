@@ -30,6 +30,17 @@ const flank = impact(0, Math.PI / 2);
 assert(flank[1] > flank[0], 'ramming broadside takes more damage than armored nose');
 const rear = impact(0, 0);
 assert(flank[1] > rear[1], 'side hit receives the additional 50% ram vulnerability');
+assert(Math.abs(flank[1] / (rear[1] / 1.6) - 1.95) < 0.001);
+function damageAtSpeed(closing) {
+  const first = makeShip(200, 0, closing / 2);
+  const second = makeShip(240, Math.PI, -closing / 2);
+  first.shieldHp = 1000;
+  second.shieldHp = 1000;
+  applyCombatRamImpact({ attacker: first, defender: second, elapsedSeconds: 2, combatLog: [] });
+  return 1000 - second.shieldHp;
+}
+assert(damageAtSpeed(240) > damageAtSpeed(180), 'boosted approach speed must increase damage');
+assert(damageAtSpeed(180) > damageAtSpeed(120), 'damage grows across normal attack speeds');
 const unshieldedAttacker = makeShip(200, 0, 180);
 const unshieldedDefender = makeShip(240, 0, -180);
 unshieldedDefender.shieldHp = 0;
