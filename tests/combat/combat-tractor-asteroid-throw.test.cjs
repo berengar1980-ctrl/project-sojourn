@@ -61,6 +61,21 @@ assert.equal(runtime.thrownAsteroids[0].phase, 'flight');
 assert.equal(defender.shieldHp, 120, 'no damage before projectile physically arrives');
 for (let i = 0; i < 28; i += 1) advanceThrownAsteroids(runtime, 0.08);
 assert.equal(runtime.thrownAsteroids.length, 0, 'asteroid hit or left field');
-assert(defender.shieldHp < 120, 'throw delivers substantial shield damage');
-assert(defender.hullHp < 300, 'overwhelming rock collision also reaches hull');
+assert(Math.abs(defender.shieldHp - (120 - 130 / 3)) < 1e-8, 'throw uses one-third shield damage');
+assert.equal(defender.hullHp, 300, 'weaker throw does not bypass remaining shields');
+const wreck = {
+  owner: 'attacker',
+  asteroidId: 'wreck-fragment',
+  sectionVariant: 'hull',
+  position: { ...defender.position },
+  origin: { ...attacker.position },
+  velocity: { x: 0, y: 0 },
+  radius: 12,
+  ageSeconds: 1,
+  phase: 'flight',
+};
+defender.shieldHp = 0;
+runtime.thrownAsteroids.push(wreck);
+advanceThrownAsteroids(runtime, 0.08);
+assert(Math.abs(defender.hullHp - (300 - 95 / 3)) < 1e-8, 'wreck throw uses one-third hull damage');
 console.log('PASS shield-gated tractor asteroid projectile and dual-layer impact');

@@ -29,7 +29,7 @@ assert(Math.abs(headOn[0] - headOn[1]) < 0.001, 'nose-to-nose deals equal damage
 const flank = impact(0, Math.PI / 2);
 assert(flank[1] > flank[0], 'ramming broadside takes more damage than armored nose');
 const rear = impact(0, 0);
-assert(rear[1] > flank[1], 'stern receives more impact damage than broadside');
+assert(flank[1] > rear[1], 'side hit receives the additional 50% ram vulnerability');
 const unshieldedAttacker = makeShip(200, 0, 180);
 const unshieldedDefender = makeShip(240, 0, -180);
 unshieldedDefender.shieldHp = 0;

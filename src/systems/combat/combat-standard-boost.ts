@@ -17,7 +17,7 @@ export function updateStandardCombatBoost(
     Math.sin(ship.headingRadians) * headingDirection.y;
   const wantsBoost =
     ship.tactic === 'flee' ||
-    deliberateRam ||
+    (deliberateRam && distance <= 450) ||
     (distance > Math.max(650, desiredRange * 1.45) && targetSpeedFactor > 0.7);
   if (corridorClear && wantsBoost && facing > 0.7 && (ship.boostSeconds ?? 0) > 0.8)
     activateCombatBoost(ship);

@@ -7,6 +7,7 @@ import { normalize, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import { mineBaitManeuver, pursuitManeuver } from './combat-tactical-maneuvers';
+import { ramFlankTarget } from './combat-ram-targeting';
 
 type TacticalKind = 'escape' | 'ram' | 'pursuit' | 'minefield';
 type FlightKind = TacticalKind | 'intercept' | 'pass' | 'extend';
@@ -15,6 +16,7 @@ export interface CombatFlightIntent {
   readonly direction: CombatPoint;
   readonly speedFactor: number;
   readonly kind: FlightKind;
+  readonly destination?: CombatPoint;
 }
 
 /** Do not turn back into the arena when the ship has reached its exit marker. */
@@ -219,7 +221,13 @@ export function chooseCombatFlightIntent(
   }
   if (deliberateRam) {
     delete ship.flightPass;
-    return { kind: 'ram', direction: toward, speedFactor: 1 };
+    const destination = ramFlankTarget(ship, enemy);
+    return {
+      kind: 'ram',
+      destination,
+      direction: normalize(destination.x - ship.position.x, destination.y - ship.position.y),
+      speedFactor: 1,
+    };
   }
   const pursuing = pursuitManeuver(ship, enemy);
   if (pursuing) {

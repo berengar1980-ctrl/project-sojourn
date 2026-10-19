@@ -15,6 +15,10 @@ const THROW_SPEED = 420;
 const COOLDOWN_SECONDS = 6;
 const CAPTURE_SECONDS = 0.65;
 const CHARGE_SECONDS = 0.85;
+// Physical asteroid and wreck throws now deal one third of their original damage.
+// Thrown mines still use the unmodified mine definitions.
+const THROWN_OBJECT_SHIELD_DAMAGE = 130 / 3;
+const THROWN_OBJECT_HULL_DAMAGE = 95 / 3;
 
 function selectThrowable(
   runtime: StrategicCombatRuntime,
@@ -186,9 +190,13 @@ function hitThrownAsteroid(runtime: StrategicCombatRuntime, rock: MutableThrownA
     });
     return true;
   }
-  const shieldDamage = Math.min(enemy.shieldHp, 130);
+  const shieldDamage = Math.min(enemy.shieldHp, THROWN_OBJECT_SHIELD_DAMAGE);
   enemy.shieldHp -= shieldDamage;
-  const hullDamage = directionalHullDamage(enemy, enemy.shieldHp <= 0 ? 95 : 0, rock.position);
+  const hullDamage = directionalHullDamage(
+    enemy,
+    enemy.shieldHp <= 0 ? THROWN_OBJECT_HULL_DAMAGE : 0,
+    rock.position
+  );
   enemy.hullHp = Math.max(0, enemy.hullHp - hullDamage);
   runtime.impactSerial += 1;
   runtime.lastImpact = {
