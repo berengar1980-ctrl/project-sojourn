@@ -4,7 +4,7 @@ import type { MutableCombatant } from './strategic-combat-types';
 export function advanceCombatPower(ship: MutableCombatant, dt: number): boolean {
   const power = ship.setup.power;
   if (!power || power.combat <= power.output) {
-    ship.powerFault = undefined;
+    delete ship.powerFault;
     ship.powerFaultRemaining = 0;
     ship.powerStress = 0;
     return false;
@@ -12,7 +12,7 @@ export function advanceCombatPower(ship: MutableCombatant, dt: number): boolean 
   const remaining = Math.max(0, (ship.powerFaultRemaining ?? 0) - dt);
   ship.powerFaultRemaining = remaining;
   if (remaining > 0) return false;
-  if (ship.powerFault) ship.powerFault = undefined;
+  if (ship.powerFault) delete ship.powerFault;
   const excess = power.combat - power.output;
   const severity = excess / Math.max(1, power.output);
   ship.powerStress = (ship.powerStress ?? 0) + dt * severity;
