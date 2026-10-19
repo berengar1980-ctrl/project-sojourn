@@ -46,10 +46,21 @@ function variantWeapon(
   pct: number
 ) {
   if (modifier !== 'damage' || !base.weapon) return base.weapon;
+  const boostCombat = (value: number): number => Math.round(value * (1 + pct / 100) * 100) / 100;
   return {
     ...base.weapon,
     shieldDamage: Math.round(base.weapon.shieldDamage * (1 + pct / 100) * 10) / 10,
     hullDamage: Math.round(base.weapon.hullDamage * (1 + pct / 100) * 10) / 10,
+    ...(base.weapon.combatShieldDamage !== undefined
+      ? {
+          combatShieldDamage: boostCombat(base.weapon.combatShieldDamage),
+        }
+      : {}),
+    ...(base.weapon.combatHullDamage !== undefined
+      ? {
+          combatHullDamage: boostCombat(base.weapon.combatHullDamage),
+        }
+      : {}),
   };
 }
 

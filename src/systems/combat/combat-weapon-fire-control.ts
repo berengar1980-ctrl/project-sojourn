@@ -8,6 +8,15 @@ import { effectiveTargetSubsystem } from './combat-subsystem-targeting';
 export const FIRE_CONTROL_CADENCE_SECONDS = 0.65;
 export const FIRE_CONTROL_LOOKAHEAD_SECONDS = 0.24;
 
+/** Account for the ship-wide launch cadence when evaluating one installed weapon. */
+export function effectiveWeaponCycleSeconds(
+  weapon: ShipWeaponProfile,
+  crewMultiplier: number
+): number {
+  const cycle = weaponCycleSeconds(weapon, crewMultiplier);
+  return Math.max(FIRE_CONTROL_CADENCE_SECONDS, cycle);
+}
+
 export function weaponCycleSeconds(weapon: ShipWeaponProfile, crewMultiplier: number): number {
   const adjustedCrew = Math.max(0.4, Math.min(2, crewMultiplier));
   return Math.max(0.05, weapon.cooldownSeconds * adjustedCrew);
@@ -31,6 +40,7 @@ interface ScoredShot {
   readonly cycle: number;
   readonly score: number;
   readonly readyIn: number;
+  readonly forward: boolean;
 }
 
 /** Score actual combat damage, never nominal catalog numbers or weapon-family labels. */
@@ -60,7 +70,16 @@ function scoreShots(
     const cycleFactor = Math.sqrt(Math.max(1, cycle / FIRE_CONTROL_CADENCE_SECONDS));
     const score = expectedDamage / cycleFactor;
     const readyIn = source.cooldowns[index] ?? 0;
-    return [{ index, expectedDamage, cycle, score, readyIn }];
+    return [
+      {
+        index,
+        expectedDamage,
+        cycle,
+        score,
+        readyIn,
+        forward: component.weapon.mount === 'forward',
+      },
+    ];
   });
   return { shots, health };
 }
@@ -100,9 +119,26 @@ export function selectFireControlVolley(
   if (betterSoon) return [];
 
   const volley = [best.index];
-  const remaining = Math.max(0, health - best.expectedDamage);
-  if (remaining <= 0 || best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) return volley;
+  let remaining = Math.max(0, health - best.expectedDamage);
 
+  if (best.forward) {
+    // All valid forward stations can share one aiming solution and launch together.
+    // Very weak shield hits reserve loaded anti-hull weapons for the exposed hull.
+    for (const shot of ready.slice(1)) {
+      if (!shot.forward || remaining <= health * 0.05) continue;
+      const veryWeak = shot.score < best.score * 0.2;
+      const notFinishing = remaining > shot.expectedDamage * 1.5;
+      if (veryWeak && notFinishing) continue;
+      volley.push(shot.index);
+      remaining = Math.max(0, remaining - shot.expectedDamage);
+    }
+    return volley;
+  }
+
+  // Non-forward stations retain the bounded coordinated heavy salvo.
+  const overkill = remaining <= health * 0.05;
+  const rapid = best.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5;
+  if (overkill || rapid) return volley;
   for (const second of ready.slice(1)) {
     if (second.cycle < FIRE_CONTROL_CADENCE_SECONDS * 1.5) continue;
     if (second.expectedDamage < best.expectedDamage * 0.6) continue;

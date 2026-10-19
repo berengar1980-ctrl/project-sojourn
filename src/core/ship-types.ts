@@ -29,6 +29,7 @@ export type ShipWeaponFacing = 'port' | 'starboard' | 'forward';
 export type ShipWeaponFamily =
   | 'pulse_laser'
   | 'front_repeater'
+  | 'flux_projector'
   | 'plasma_battery'
   | 'guided_missile'
   | 'ion_laser'

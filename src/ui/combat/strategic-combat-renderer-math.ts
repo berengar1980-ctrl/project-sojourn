@@ -22,6 +22,7 @@ export function weaponImpactView(
   const extent: Record<ShipWeaponFamily, number> = {
     pulse_laser: 22,
     front_repeater: 25,
+    flux_projector: 52,
     plasma_battery: 55,
     guided_missile: 45,
     ion_laser: 80,

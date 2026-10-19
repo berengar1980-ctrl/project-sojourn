@@ -2,7 +2,7 @@ import type { MutableCombatant } from './strategic-combat-types';
 import type { ShipWeaponProfile } from '../../core/ship-types';
 import { clamp, wrapAngle } from './strategic-combat-geometry';
 import { weaponInArc } from './combat-weapon-geometry';
-import { weaponCycleSeconds } from './combat-weapon-fire-control';
+import { effectiveWeaponCycleSeconds } from './combat-weapon-fire-control';
 
 export type WeaponPostureGroup = {
   readonly focus: 'forward' | 'broadside' | 'turret';
@@ -51,7 +51,9 @@ function damageRate(ship: MutableCombatant, profile: ShipWeaponProfile, shielded
   const damage = shielded
     ? (profile.combatShieldDamage ?? profile.shieldDamage)
     : (profile.combatHullDamage ?? profile.hullDamage);
-  return Math.max(0, damage) / weaponCycleSeconds(profile, ship.setup.cycleTimeMultiplier ?? 1);
+  const crewMultiplier = ship.setup.cycleTimeMultiplier ?? 1;
+  const effectiveCycle = effectiveWeaponCycleSeconds(profile, crewMultiplier);
+  return Math.max(0, damage) / effectiveCycle;
 }
 
 function coverageFactor(degrees: number): number {

@@ -47,7 +47,7 @@
       "layer": "below",
       "arcDegrees": 60,
       "allowedMounts": ["forward"],
-      "allowedFamilies": ["railgun", "front_repeater"]
+      "allowedFamilies": ["railgun", "front_repeater", "flux_projector"]
     },
     {
       "id": "weapon-port",
@@ -107,7 +107,7 @@
       "layer": "below",
       "arcDegrees": 60,
       "allowedMounts": ["forward"],
-      "allowedFamilies": ["railgun", "front_repeater"]
+      "allowedFamilies": ["railgun", "front_repeater", "flux_projector"]
     }
   ],
   "miningLasers": [

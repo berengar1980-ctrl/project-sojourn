@@ -13,6 +13,7 @@ const { weaponImpactView } = loadStandaloneTypeScriptModule(
 const weapons = [
   'pulse_laser',
   'front_repeater',
+  'flux_projector',
   'plasma_battery',
   'guided_missile',
   'ion_laser',

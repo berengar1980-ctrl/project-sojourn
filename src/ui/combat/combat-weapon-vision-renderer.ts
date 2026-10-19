@@ -1,4 +1,5 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
+import { drawFluxProjectorImpact } from './combat-flux-projector-fx';
 import {
   VISION_IMPACT_SECONDS,
   VISION_PULSE_SECONDS,
@@ -442,6 +443,9 @@ export function drawVisionWeaponImpact(
   switch (family) {
     case 'front_repeater':
       drawVisionRepeaterImpact(ctx, point, ageSeconds, seed, shield);
+      return;
+    case 'flux_projector':
+      drawFluxProjectorImpact(ctx, point, ageSeconds, seed, shield);
       return;
     case 'pulse_laser':
       drawPulseImpact(frame);

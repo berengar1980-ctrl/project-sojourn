@@ -19,6 +19,8 @@ import {
   drawCombatShipCaption,
 } from './combat-ship-detail-renderer';
 import { drawIonCannonArc, drawRailgunLance } from './combat-weapon-fx-renderer';
+import { drawFluxProjectorPulse } from './combat-flux-projector-fx';
+import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import {
   drawVisionAutocannon,
   drawVisionIonLaser,
@@ -99,12 +101,9 @@ export class StrategicCombatRenderer {
       .sort((a, b) => a.serial - b.serial);
     for (const impact of unseen) {
       this.seenImpactSerial = impact.serial;
-      let flightDelay = 0;
-      if (impact.weaponFamily === 'pulse_laser') flightDelay = 0.42;
-      if (impact.weaponFamily === 'front_repeater') flightDelay = 0.045;
-      if (impact.weaponFamily === 'ion_laser') flightDelay = 0.1;
-      if (impact.weaponFamily === 'ion_cannon') flightDelay = 0.075;
-      if (impact.weaponFamily === 'railgun') flightDelay = 0.045;
+      const flightDelay = impact.weaponFamily
+        ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
+        : 0;
       this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
     }
     for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
@@ -262,6 +261,10 @@ export class StrategicCombatRenderer {
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
+    if (beam.family === 'flux_projector') {
+      drawFluxProjectorPulse(this.context, start, end, ageSeconds);
+      return;
+    }
     if (beam.family === 'front_repeater') {
       drawVisionFrontRepeater(this.context, start, end, ageSeconds);
       return;

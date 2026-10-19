@@ -24,6 +24,7 @@ const weapons = catalog.SHIP_COMPONENT_CATALOG.weapon ?? [];
 const expectedFamilies = [
   'pulse_laser',
   'front_repeater',
+  'flux_projector',
   'plasma_battery',
   'guided_missile',
   'ion_laser',
