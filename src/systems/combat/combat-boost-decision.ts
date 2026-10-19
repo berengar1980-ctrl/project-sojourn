@@ -48,10 +48,8 @@ export function usefulCombatBoost(
   const ownCanFire = canFireSoon(ship, enemy, range);
   if (ownCanFire) return false;
   const enemyCanFire = canFireSoon(enemy, ship, range);
-  const maxRange = Math.max(
-    0,
-    ...ship.setup.weapons.map((part) => part.weapon?.rangeMeters ?? 0)
-  );
+  const ranges = ship.setup.weapons.map((part) => part.weapon?.rangeMeters ?? 0);
+  const maxRange = Math.max(0, ...ranges);
   // Under hostile fire while outranged: close the gap to the first legal shot.
   if (enemyCanFire && range > maxRange && maxRange > 0) return true;
   const needsToClose = range > desiredRange * 1.2;

@@ -31,11 +31,13 @@ export function drawCombatRamEffect(
       const ripple = charging ? (elapsed * 35) % 10 : 0;
       const offset = 6 + arc * 10 + ripple;
       const extent = width * (1 + arc * 0.3);
-      context.globalAlpha = (charging ? 0.65 : 0.22) * pulse / (1 + arc * 0.3);
+      const brightness = charging ? 0.65 : 0.22;
+      context.globalAlpha = (brightness * pulse) / (1 + arc * 0.3);
       context.beginPath();
       for (let step = -7; step <= 7; step += 1) {
         const y = (step / 7) * extent;
-        const x = bow + offset + 5 * (1 - (y / extent) ** 2);
+        const bend = Math.pow(y / extent, 2);
+        const x = bow + offset + 5 * (1 - bend);
         if (step === -7) context.moveTo(x, y);
         else context.lineTo(x, y);
       }
