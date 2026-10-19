@@ -22,7 +22,7 @@ export function usefulRamAttempt(attacker: MutableCombatant, defender: MutableCo
   // inside 160 m, where the original opportunity check used to switch off.
   const committed = attacker.ramApproach?.phase === 'impact';
   const approachSpeed = Math.max(80, attacker.setup.combatSpeed ?? 120);
-  const kinetic = 0.2 + 90 * (1 - Math.exp(-Math.max(0, approachSpeed - 35) ** 2 / 30000));
+  const kinetic = 0.2 + 90 * (1 - Math.exp(-(Math.max(0, approachSpeed - 35) ** 2) / 30000));
   const ownOverflow = Math.max(0, kinetic * 0.7 - attacker.shieldHp);
   const ownHullCost = ownOverflow * (1 - bowArmor);
   const enemySideArmor = Math.min(
