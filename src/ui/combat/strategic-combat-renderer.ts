@@ -108,9 +108,10 @@ export class StrategicCombatRenderer {
         : 0;
       this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
     }
+    const visualNow = this.effectClock.elapsed(performance.now() / 1000);
     for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
       const visible = this.visibleImpacts[index]!;
-      if (this.effectClock.elapsed(performance.now() / 1000) - visible.startedAt >= VISION_IMPACT_SECONDS) {
+      if (visualNow - visible.startedAt >= VISION_IMPACT_SECONDS) {
         this.visibleImpacts.splice(index, 1);
       }
     }
