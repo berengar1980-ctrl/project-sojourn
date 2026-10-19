@@ -206,12 +206,10 @@ function attachEncounterSelector(
         });
         // Curated encounters need a reactor capable of their intended weapon loadout.
         // Free duels still allow deliberate oversubscription.
-        const combatDraw = calculateShipModeEnergy(
-          duelInstalledComponents(drafts[index]!)
-        ).combat;
-        const reactor = SHIP_COMPONENT_CATALOG.reactor?.find(
-          (part) => (part.output ?? 0) >= combatDraw
-        );
+        const activeLoadout = duelInstalledComponents(drafts[index]!);
+        const combatDraw = calculateShipModeEnergy(activeLoadout).combat;
+        const reactors = SHIP_COMPONENT_CATALOG.reactor ?? [];
+        const reactor = reactors.find((part) => (part.output ?? 0) >= combatDraw);
         drafts[index]!.reactorId = reactor?.id ?? 'reactor6';
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });
