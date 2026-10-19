@@ -288,7 +288,12 @@ async function main() {
       groups.push(result);
       const message = compact(result);
       console.log('ENVIRONMENT_GROUP ' + message);
-      assert(await postStatus('success', 'environment ' + map + ' ' + profile, message));
+      try {
+        await postStatus('success', 'environment ' + map + ' ' + profile, message);
+      } catch (error) {
+        // A transient external status API outage must not abort real physics measurements.
+        console.warn('STATUS_WARN ' + String(error));
+      }
     }
   }
   const mineFixtures = ['ion', 'shaped_charge', 'hunter'].flatMap((kind) => [
@@ -317,7 +322,11 @@ async function main() {
   for (const mine of mineFixtures) console.log('ENVIRONMENT_MINE ' + JSON.stringify(mine));
   const message = '200 map fights, 5 maps, 25 groups; actual contact/throw and mine fixtures';
   console.log('ENVIRONMENT_TOTAL ' + message);
-  assert(await postStatus('success', 'environment total', message));
+  try {
+    await postStatus('success', 'environment total', message);
+  } catch (error) {
+    console.warn('STATUS_WARN ' + String(error));
+  }
 }
 
 main().catch(async (error) => {
