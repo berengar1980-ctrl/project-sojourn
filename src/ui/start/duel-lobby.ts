@@ -93,7 +93,9 @@ function equipmentSelector(
   const optional = !['reactor', 'engine'].includes(type);
   if (optional) select.append(new Option('Nicht installiert', ''));
   for (const component of SHIP_COMPONENT_CATALOG[type] ?? []) {
-    select.append(new Option(component.name + ' · ' + component.power + ' MW', component.id));
+    const amount = type === 'reactor' ? (component.output ?? 0) : component.power;
+    const labelText = type === 'reactor' ? 'Erzeugung' : 'Verbrauch';
+    select.append(new Option(component.name + ' · ' + labelText + ' ' + amount + ' MW', component.id));
   }
   const stored = draft[key];
   const defaults: Partial<Record<ShipComponentType, string>> = {
