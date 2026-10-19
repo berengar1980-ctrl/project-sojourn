@@ -190,11 +190,7 @@ export class StrategicCombatRenderer {
     const timeSeconds = performance.now() / 1000;
     const visualElapsed = this.effectClock.elapsed(timeSeconds);
     this.context.clearRect(0, 0, width, height);
-    const shake = ramCameraImpulse(
-      this.model.attacker,
-      this.model.defender,
-      visualElapsed
-    );
+    const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
     this.context.save();
     this.context.translate(shake.x, shake.y);
     drawCombatBackground(
