@@ -20,6 +20,14 @@ const { advanceCombatPower } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-power-service.ts'
 );
+const { pulseCombatTractor } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-tractor-pulse.ts'
+);
+const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
+);
 const { usefulRamAttempt } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-ram-opportunity.ts'
@@ -55,6 +63,7 @@ assert(power.salvage < power.total, 'salvage shuts off mining and shields');
 assert.equal(power.industrial, Math.max(power.mining, power.salvage));
 const industrialShed = power.total - power.combat;
 assert.equal(industrialShed, 35 + 33, 'combat sheds mining and salvage loads');
+assert.equal(power.shedInCombat, industrialShed, 'UI reports the complete shut-down industrial load');
 const ships = getAllShipDefinitions();
 const ship = ships.find((entry) => entry.role === 'salvage');
 assert(ship);
@@ -80,6 +89,67 @@ const stable = {
 };
 advanceCombatPower(stable, 0.08);
 assert.equal(stable.powerFault, undefined, 'normal supply clears the failure state');
+
+// Full power loss must also shut down active tractor pulses. Weapons-only
+// brownouts still leave the tractor and flight controls operational.
+const pulseSource = {
+  setup: { tractorRangeMeters: 600, name: 'Test tractor' },
+  shieldHp: 0,
+  subsystems: { tractor: 80 },
+  powerFault: 'total',
+  tactic: 'fight',
+  position: { x: 100, y: 100 },
+  velocity: { x: 0, y: 0 },
+  tractorPulseCooldown: 0,
+};
+const pulseEnemy = {
+  hullHp: 80,
+  position: { x: 400, y: 100 },
+  velocity: { x: 80, y: 0 },
+  speed: 80,
+};
+const pulseRuntime = { elapsedSeconds: 10, beams: [], beamSerial: 0, combatLog: [] };
+pulseCombatTractor(pulseRuntime, 'attacker', pulseSource, pulseEnemy, 0.08);
+assert.equal(pulseRuntime.beams.length, 0, 'total power loss prevents tractor impulse');
+assert.equal(pulseEnemy.velocity.x, 80, 'disabled tractor leaves the target untouched');
+pulseSource.powerFault = 'weapons';
+pulseCombatTractor(pulseRuntime, 'attacker', pulseSource, pulseEnemy, 0.08);
+assert.equal(pulseRuntime.beams.length, 1, 'tractor remains available in weapons-only fault');
+assert(pulseEnemy.velocity.x < 80, 'operational tractor brakes a departing opponent');
+
+// End-to-end: the real duel tick must apply temporary overloads and preserve
+// inertia and heading while both propulsion and RCS are powerless.
+const duelling = createStrategicCombatService(
+  setup,
+  { ...setup, id: 'stable-test-ship', power: { ...power, combat: power.output } },
+  901,
+  { width: 4200, height: 2600, obstacles: [], asteroids: [] }
+);
+let blackout = null;
+for (let i = 0; i < 80; i += 1) {
+  const snapshot = duelling.tick(0.08);
+  if (snapshot.attacker.powerFault === 'total') {
+    blackout = snapshot;
+    break;
+  }
+}
+assert(blackout, 'combat runtime develops a total brownout from excessive MW draw');
+assert.equal(blackout.defender.powerFault, undefined, 'adequate reactor supply remains stable');
+const drifting = duelling.tick(0.08);
+assert.equal(drifting.attacker.powerFault, 'total');
+assert.equal(drifting.attacker.headingRadians, blackout.attacker.headingRadians);
+assert(
+  Math.abs(drifting.attacker.position.x - (blackout.attacker.position.x + blackout.attacker.velocity.x * 0.08)) < 0.001,
+  'powerless ships drift without gaining horizontal thrust'
+);
+assert(
+  Math.abs(drifting.attacker.position.y - (blackout.attacker.position.y + blackout.attacker.velocity.y * 0.08)) < 0.001,
+  'powerless ships drift without gaining vertical thrust'
+);
+assert(
+  duelling.getCombatLog().some((entry) => entry.detail.includes('ENERGIEÜBERLAST')),
+  'the real combat HUD/log receives the brownout event'
+);
 
 const first = {
   setup: { armor: { front: 0.5, port: 0, starboard: 0 } },
