@@ -81,6 +81,7 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
         runtime.defender.shieldHp <= 0 &&
         runtime.attacker.hullHp > 0 &&
         runtime.attacker.subsystems.tractor > 0 &&
+        runtime.attacker.powerFault !== 'total' &&
         distance(runtime.defender.position, runtime.attacker.position) <=
           (runtime.attacker.setup.tractorRangeMeters ?? 0),
     },
