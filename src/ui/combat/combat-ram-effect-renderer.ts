@@ -28,7 +28,8 @@ export function drawCombatRamEffect(
     context.shadowBlur = charging ? 11 : 4;
     context.lineWidth = charging ? 1.35 : 0.8;
     for (let arc = 0; arc < count; arc += 1) {
-      const offset = 6 + arc * 10 + (charging ? (elapsed * 35) % 10 : 0);
+      const ripple = charging ? (elapsed * 35) % 10 : 0;
+      const offset = 6 + arc * 10 + ripple;
       const extent = width * (1 + arc * 0.3);
       context.globalAlpha = (charging ? 0.65 : 0.22) * pulse / (1 + arc * 0.3);
       context.beginPath();
