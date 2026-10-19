@@ -155,8 +155,12 @@ function advanceRuntimeBeams(runtime: StrategicCombatRuntime, deltaSeconds: numb
   }
 }
 function updateCombatAsteroidThrows(runtime: StrategicCombatRuntime, dt: number): void {
-  maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
-  maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
+  if (runtime.attacker.powerFault !== 'total') {
+    maybeLaunchTractorAsteroid(runtime, 'attacker', runtime.attacker, runtime.defender);
+  }
+  if (runtime.defender.powerFault !== 'total') {
+    maybeLaunchTractorAsteroid(runtime, 'defender', runtime.defender, runtime.attacker);
+  }
   advanceThrownAsteroids(runtime, dt);
   pulseCombatTractor(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
   pulseCombatTractor(runtime, 'defender', runtime.defender, runtime.attacker, dt);
@@ -228,8 +232,12 @@ function tickStrategicCombat(
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
   // The exit is fixed for the duration of a duel; only the flight path detours.
-  reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
-  reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
+  if (runtime.attacker.powerFault !== 'total') {
+    reviewAndExecute(runtime, runtime.attacker, runtime.defender, 'attacker');
+  }
+  if (runtime.defender.powerFault !== 'total') {
+    reviewAndExecute(runtime, runtime.defender, runtime.attacker, 'defender');
+  }
   moveCombatant(runtime.attacker, runtime.defender, 'attacker', dt, runtime.arena, runtime.mines);
   moveCombatant(runtime.defender, runtime.attacker, 'defender', dt, runtime.arena, runtime.mines);
   // A connected hook constrains positions, but regular guns and projectiles
@@ -243,8 +251,12 @@ function tickStrategicCombat(
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
   updateCombatAsteroidThrows(runtime, dt);
-  maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
-  maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  if (runtime.attacker.powerFault !== 'total') {
+    maybeDropRuntimeMine(runtime, 'attacker', runtime.attacker, runtime.defender, dt);
+  }
+  if (runtime.defender.powerFault !== 'total') {
+    maybeDropRuntimeMine(runtime, 'defender', runtime.defender, runtime.attacker, dt);
+  }
   const previousShields = [runtime.attacker.shieldHp, runtime.defender.shieldHp];
   const previousSubsystems: [number, number, number, number] = [
     runtime.attacker.subsystems.engine,
@@ -302,6 +314,7 @@ function createStrategicCombatRuntime(
 }
 function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'defender'): boolean {
   if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
+  if (runtimeCombatant(runtime, side).powerFault === 'total') return false;
   const attacker = runtimeCombatant(runtime, side);
   const victim = runtimeEnemy(runtime, side);
   if (distance(attacker.position, victim.position) > 900) return false;

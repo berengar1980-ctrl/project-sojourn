@@ -36,7 +36,8 @@ function combatantHud(
   const tractorInstalled = combatant.tractorRangeMeters > 0;
   const status = describeCombatStatus(combatant);
   const power = combatant.power;
-  const powerState = combatant.powerFault ? 'AUSFALL ' + combatant.powerFault : 'AKTIV';
+  const faultLabel = combatant.powerFault === 'total' ? 'GESAMT' : 'WAFFEN';
+  const powerState = combatant.powerFault ? 'AUSFALL ' + faultLabel : 'AKTIV';
   const energyLine = power ? `ENERGIE ${power.combat} / ${power.output} MW · ${powerState}` : '';
   const maneuver = combatant.powerFault
     ? 'ENERGIEAUSFALL'

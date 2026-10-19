@@ -217,8 +217,16 @@ export function moveCombatant(
     combatant.combatIntent = 'ENERGIEAUSFALL';
     combatant.turnRateRadiansPerSecond = 0;
     combatant.angularThrust = 0;
-    combatant.position.x += combatant.velocity.x * deltaSeconds;
-    combatant.position.y += combatant.velocity.y * deltaSeconds;
+    combatant.position.x = clamp(
+      combatant.position.x + combatant.velocity.x * deltaSeconds,
+      EDGE_PADDING,
+      arena.width - EDGE_PADDING
+    );
+    combatant.position.y = clamp(
+      combatant.position.y + combatant.velocity.y * deltaSeconds,
+      EDGE_PADDING,
+      arena.height - EDGE_PADDING
+    );
     resolveArenaObstacles(combatant, arena);
     return;
   }
