@@ -231,6 +231,33 @@ function installedDefinitions(
     .filter((component): component is ShipComponentDefinition => component !== null);
 }
 
+/** Modes share the canonical catalog's MW power values. Idle industry shuts down in combat. */
+export function calculateShipModeEnergy(installed: InstalledShipComponents): {
+  readonly output: number;
+  readonly combat: number;
+  readonly industrial: number;
+  readonly total: number;
+  readonly shedInCombat: number;
+} {
+  const output = Number(installedDefinitions(installed, 'reactor')[0]?.output ?? 0);
+  const draw = (type: ShipComponentType): number =>
+    installedDefinitions(installed, type).reduce((sum, part) => sum + part.power, 0);
+  const engine = draw('engine');
+  const shields = draw('shield');
+  const guns = draw('weapon');
+  const systems = draw('sensor') + draw('tractor');
+  const industry = draw('mining') + draw('salvage');
+  const combat = engine + shields + guns + systems;
+  const industrial = engine + systems + industry;
+  return {
+    output,
+    combat,
+    industrial,
+    total: combat + industry,
+    shedInCombat: industry,
+  };
+}
+
 export function calculateShipEnergy(installed: InstalledShipComponents): ShipEnergySnapshot {
   const reactor = installedDefinitions(installed, 'reactor')[0];
   const output = Number(reactor?.output ?? 0);
