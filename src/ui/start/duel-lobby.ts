@@ -96,7 +96,15 @@ function equipmentSelector(
     select.append(new Option(component.name + ' · ' + component.power + ' MW', component.id));
   }
   const stored = draft[key];
-  select.value = typeof stored === 'string' ? stored : optional ? '' : type + '1';
+  const defaults: Partial<Record<ShipComponentType, string>> = {
+    reactor: 'reactor1',
+    engine: 'engine1',
+    shield: 'shield1',
+    hull: 'hull1',
+    sensor: 'sensor1',
+    tractor: 'tractor1',
+  };
+  select.value = typeof stored === 'string' ? stored : (defaults[type] ?? '');
   select.addEventListener('change', () => {
     // The selector keys are all optional scalar component identifiers.
     Object.assign(draft, { [key]: select.value });

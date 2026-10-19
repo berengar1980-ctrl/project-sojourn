@@ -14,7 +14,7 @@ const { duelInstalledComponents, duelCombatant } = loadStandaloneTypeScriptModul
 );
 const { getAllShipDefinitions } = loadStandaloneTypeScriptModule(
   root,
-  'src/systems/ships/ship-catalog.ts'
+  'src/systems/ships/ship-registry.ts'
 );
 const { advanceCombatPower } = loadStandaloneTypeScriptModule(
   root,
