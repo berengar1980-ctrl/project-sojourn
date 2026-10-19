@@ -288,3 +288,75 @@
     max-width: 120px;
   }
 }
+
+.character-editor__skills {
+  display: grid;
+  gap: 22px;
+}
+.character-editor__skill-panel {
+  padding: 16px;
+  border: 1px solid #31414a;
+  background: #0b151c;
+}
+.character-editor__skill-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+  color: #ddc48f;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.character-editor__skill-points.is-invalid {
+  color: #e38a80;
+}
+.character-editor__skill-rows {
+  display: grid;
+  gap: 12px;
+}
+.character-editor__skill-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #b9c8cc;
+}
+.character-editor__skill-row output {
+  text-align: right;
+  color: #e8d7b2;
+  font-variant-numeric: tabular-nums;
+}
+.character-editor__skill-row input {
+  width: 100%;
+  min-width: 0;
+  accent-color: #bd9e68;
+}
+.character-editor__skill-hint {
+  margin: 12px 0 0;
+  color: #8498a2;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.character-editor__station-choice {
+  display: grid;
+  gap: 8px;
+  color: #d8c491;
+  font-size: 12px;
+}
+.character-editor__station-choice select {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #52606a;
+  background: #0e1a22;
+  color: #eff1e7;
+  font: inherit;
+}
+@media (max-width: 550px) {
+  .character-editor__skill-row {
+    grid-template-columns: 82px minmax(0, 1fr) 28px;
+    gap: 8px;
+  }
+}
