@@ -24,6 +24,9 @@ jobs:
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
             fi
+            if [ "$CIRCLE_BRANCH" = "research/environment-map-damage-matrix" ]; then
+              npx prettier --write scripts/combat-environment-map-audit.cjs
+            fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
           name: Lint
@@ -48,6 +51,15 @@ jobs:
             if [ "$CIRCLE_BRANCH" = "refactor/combat-ai-architecture" ]; then
               node scripts/combat-ci-metrics.cjs
             fi
+      - run:
+          name: Environmental combat impact research
+          command: |
+            if [ "$CIRCLE_BRANCH" = "research/environment-map-damage-matrix" ]; then
+              node scripts/combat-environment-map-audit.cjs
+            fi
+      - store_artifacts:
+          path: environment-map-audit-output
+          destination: environment-map-damage-matrix
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
