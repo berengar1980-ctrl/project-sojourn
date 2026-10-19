@@ -50,6 +50,31 @@ assert.equal(
   'final impact approach cannot oscillate back out'
 );
 assert(committed.direction.y < 0, 'approach stays committed through contact');
+
+// A target turning through an orbit must be intercepted ahead of its motion,
+// rather than chasing a flank waypoint that rotates with the target's hull.
+const orbiter = actor(700);
+orbiter.position = { x: 700, y: 500 };
+orbiter.velocity = { x: 0, y: 110 };
+orbiter.turnRateRadiansPerSecond = 0.6;
+const interceptor = actor(350);
+const orbitRun = chooseCombatFlightIntent(interceptor, orbiter, 500, arena, 0.08, true);
+assert.equal(interceptor.ramApproach.intercept, true, 'circling target triggers interception');
+assert.equal(interceptor.ramApproach.phase, 'impact', 'close turning target permits direct impact');
+assert(orbitRun.destination.x < 680, 'lead predicts curvature rather than chasing hull heading');
+assert(orbitRun.destination.y > 520, 'aim ahead of the orbiting target');
+const stableIntercept = { ...orbitRun.destination };
+orbiter.headingRadians = Math.PI;
+const rotatedHull = chooseCombatFlightIntent(interceptor, orbiter, 500, arena, 0.08, true);
+assert.deepEqual(
+  rotatedHull.destination,
+  stableIntercept,
+  'rotating enemy hull does not swing the interceptor to the opposite broadside'
+);
+orbiter.turnRateRadiansPerSecond = 0;
+const resumed = chooseCombatFlightIntent(interceptor, orbiter, 500, arena, 0.08, true);
+assert.equal(interceptor.ramApproach.intercept, true, 'intercept commitment is not lost');
+assert(resumed.destination.y > 500, 'still lead moving target after angular rate subsides');
 const ramOpportunityShip = (armor) => ({
   setup: { aiControlled: true, armor },
   tactic: 'fight',
@@ -103,10 +128,20 @@ assert.equal(activateCombatBoost(booster), true, 'charged engine can activate bo
 updateCombatBoost(booster, 0.5);
 assert(booster.boostActive, 'boost remains active while commanded');
 assert(booster.boostSeconds < 3.5, 'boost consumes energy');
+booster.boostSeconds = 0.85;
+updateStandardCombatBoost(booster, target, { x: 1, y: 0 }, 350, 500, 1, true, true, 0.1);
+assert(booster.boostActive, 'active ram boost continues below 0.8 seconds');
+assert(booster.boostSeconds < 0.8, 'the last part of the boost charge is usable');
+updateStandardCombatBoost(booster, target, { x: 1, y: 0 }, 350, 500, 1, true, true, 1);
+assert.equal(booster.boostSeconds, 0, 'committed ram boost can empty its charge');
+assert.equal(booster.boostActive, false, 'zero charge ends the boost naturally');
 stopCombatBoost(booster);
 updateCombatBoost(booster, 0.5);
 assert.equal(booster.boostActive, false, 'stopped boost starts recharging');
-assert(booster.boostSeconds > 3, 'boost recharges between bursts');
+assert(booster.boostSeconds > 0, 'boost recharges between bursts');
+booster.boostSeconds = 3.5;
+assert.equal(activateCombatBoost(booster), true, 'recharged engine can boost again');
+stopCombatBoost(booster);
 const npcSetup = loadStandaloneTypeScriptModule(root, 'src/systems/combat/npc-combatant-setup.ts');
 const npc = (job, aggression, pirate = false) => ({
   job,

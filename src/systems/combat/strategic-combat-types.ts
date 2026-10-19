@@ -1,4 +1,4 @@
-import type { ShipArmorProtection } from '../../core/ship-types';
+import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -9,10 +9,9 @@ import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-typ
 
 import type { ShieldImpactEffect } from '../../core/shield-types';
 
-import type { ShipWeaponFamily } from '../../core/ship-types';
-
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { CombatPowerBudget } from './combat-power-types';
+import type { RamApproachState } from './combat-ram-approach-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 
@@ -362,7 +361,7 @@ export interface MutableCombatant {
   /** Stable side while clearing an enemy hull on the escape corridor. */
   escapeAvoidanceSide?: -1 | 1;
   /** Stable approach side and impact commitment for autonomous ramming. */
-  ramApproach?: { side: -1 | 1; phase: 'flank' | 'impact' };
+  ramApproach?: RamApproachState;
   ramImpactAt?: number;
   /** Current geometric flyby, owned only by the ship's tactical flight controller. */
   flightPass?: {
