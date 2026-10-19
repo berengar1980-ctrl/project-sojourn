@@ -63,7 +63,7 @@ export function drawFluxProjectorImpact(
   context.strokeStyle = '#e6ffff';
   context.lineWidth = 0.9;
   for (let index = 0; index < 7; index += 1) {
-    const angle = ((index + seed % 5) * Math.PI * 2) / 7;
+    const angle = (index + seed) * 0.897597901;
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
     const inner = 6 + progress * 9;
