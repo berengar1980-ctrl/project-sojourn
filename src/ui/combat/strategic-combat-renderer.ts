@@ -6,6 +6,8 @@ import type {
 } from './strategic-combat-renderer-types';
 import { drawCombatShipStatus } from './combat-status-renderer';
 import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-renderer';
+import { CombatEffectClock } from './combat-effect-clock';
+import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
 import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
@@ -27,15 +29,13 @@ import {
   drawVisionProjectile,
   drawVisionPulseLaser,
   drawVisionFrontRepeater,
-  drawVisionWeaponImpact,
 } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
-import { clamp01, weaponImpactView } from './strategic-combat-renderer-math';
+import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
-import { drawStrategicHullImpact } from './strategic-hull-impact-effect';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
@@ -62,6 +62,7 @@ export class StrategicCombatRenderer {
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
+  private readonly effectClock = new CombatEffectClock();
   private seenImpactSerial = -1;
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
@@ -76,6 +77,7 @@ export class StrategicCombatRenderer {
     this.resize();
   }
   update(model: StrategicCombatSnapshot): void {
+    this.effectClock.update(model.elapsedSeconds, model.winner !== null, performance.now() / 1000);
     for (const projectile of model.projectiles) {
       if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(projectile.id)) continue;
       const origin = projectile.origin;
@@ -108,7 +110,7 @@ export class StrategicCombatRenderer {
     }
     for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
       const visible = this.visibleImpacts[index]!;
-      if (model.elapsedSeconds - visible.startedAt >= VISION_IMPACT_SECONDS) {
+      if (this.effectClock.elapsed(performance.now() / 1000) - visible.startedAt >= VISION_IMPACT_SECONDS) {
         this.visibleImpacts.splice(index, 1);
       }
     }
@@ -185,11 +187,12 @@ export class StrategicCombatRenderer {
     const width = rect.width;
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
+    const visualElapsed = this.effectClock.elapsed(timeSeconds);
     this.context.clearRect(0, 0, width, height);
     const shake = ramCameraImpulse(
       this.model.attacker,
       this.model.defender,
-      this.model.elapsedSeconds
+      visualElapsed
     );
     this.context.save();
     this.context.translate(shake.x, shake.y);
@@ -240,13 +243,13 @@ export class StrategicCombatRenderer {
       const mount = points?.grapplingHooks?.[0];
       return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
     });
-    this.drawShip(this.model.attacker, width, height, timeSeconds);
+    this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
     this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
-    this.drawShip(this.model.defender, width, height, timeSeconds);
+    this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
-    this.drawHullImpacts(width, height);
+    this.drawHullImpacts(width, height, visualElapsed);
     this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
@@ -388,7 +391,8 @@ export class StrategicCombatRenderer {
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
     height: number,
-    timeSeconds: number
+    timeSeconds: number,
+    visualElapsed: number
   ): void {
     const definition = getShipDefinition(combatant.shipId);
     const geometry = this.shipGeometry(combatant, width, height);
@@ -451,7 +455,7 @@ export class StrategicCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-    drawCombatRamEffect(this.context, combatant, geometry, this.model.elapsedSeconds);
+    drawCombatRamEffect(this.context, combatant, geometry, visualElapsed);
     drawCombatShipCaption(this.context, combatant.name, hullRatio, geometry);
     drawCombatShipStatus(this.context, combatant, geometry);
     drawCombatBoostMeter(
@@ -462,36 +466,13 @@ export class StrategicCombatRenderer {
       combatant.boostActive
     );
   }
-  private drawHullImpacts(width: number, height: number): void {
-    for (const visible of this.visibleImpacts) {
-      const impact = visible.impact;
-      const age = this.model.elapsedSeconds - visible.startedAt;
-      if (age < 0) continue;
-      const point = this.screen(impact.position, width, height);
-      if (impact.weaponFamily && impact.layer !== 'miss') {
-        const view = weaponImpactView(
-          this.shipGeometry(this.model[impact.target], width, height).height,
-          impact.weaponFamily,
-          impact.layer === 'shield'
-        );
-        this.context.save();
-        this.context.beginPath();
-        this.context.arc(point.x, point.y, view.radius, 0, Math.PI * 2);
-        this.context.clip();
-        this.context.translate(point.x, point.y);
-        this.context.scale(view.scale, view.scale);
-        drawVisionWeaponImpact(
-          this.context,
-          impact.weaponFamily,
-          { x: 0, y: 0 },
-          age,
-          impact.serial,
-          impact.layer === 'shield'
-        );
-        this.context.restore();
-      } else {
-        drawStrategicHullImpact(this.context, impact, clamp01(age / 0.7), point);
-      }
-    }
+  private drawHullImpacts(width: number, height: number, visualElapsed: number): void {
+    drawCombatImpactBatch(
+      this.context,
+      this.visibleImpacts,
+      visualElapsed,
+      (point) => this.screen(point, width, height),
+      (side) => this.shipGeometry(this.model[side], width, height).height
+    );
   }
 }

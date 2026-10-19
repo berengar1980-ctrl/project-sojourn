@@ -17,11 +17,10 @@ const statusRenderer = fs.readFileSync(
   'utf8'
 );
 assert(statusRenderer.includes("'MANÖVER: ' + status.maneuver"));
-const ramEffectCall = [
-  'drawCombatRamEffect(this.context, combatant, geometry,',
-  'this.model.elapsedSeconds)',
-].join(' ');
-assert(renderer.includes(ramEffectCall), 'ram effects must use combat simulation time');
+assert(
+  renderer.includes('drawCombatRamEffect(this.context, combatant, geometry, visualElapsed)'),
+  'ram effects fade using visual time even after the winner freezes combat'
+);
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
 assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
 assert(renderer.includes('combatant.boostActive'), 'engine boost visual effects remain');
