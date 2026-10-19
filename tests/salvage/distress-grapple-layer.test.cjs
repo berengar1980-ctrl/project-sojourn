@@ -25,11 +25,11 @@ assert(
   salvage.indexOf('drawDistressTow(') < salvage.indexOf('this.drawShip(geometry, timeSeconds)'),
   'tow cable must render below player ship'
 );
+const grappleIndex = combat.indexOf('drawCombatGrapple(');
+const attackerDraw = combat.indexOf('this.drawShip(this.model.attacker');
+const defenderDraw = combat.indexOf('this.drawShip(this.model.defender');
 assert(
-  combat.indexOf('drawCombatGrapple(') <
-    combat.indexOf('this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed)') &&
-    combat.indexOf('drawCombatGrapple(') <
-      combat.indexOf('this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed)'),
+  grappleIndex >= 0 && attackerDraw > grappleIndex && defenderDraw > grappleIndex,
   'combat grapple must render below both vessels'
 );
 assert(combatHook.includes("'#697379'"));
