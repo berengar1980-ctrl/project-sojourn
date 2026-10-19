@@ -1,4 +1,5 @@
-import type { CrewDefinition, CrewMember } from '../../core/crew-types';
+import type { CrewDefinition, CrewMember, CrewSocialTraits } from '../../core/crew-types';
+import type { PlayerProfile } from '../../core/player-profile';
 import type { ShipDefinition, ShipStationSkill } from '../../core/ship-types';
 import type { ShipRuntimeOptions } from '../ships/ship-runtime';
 import { resolveShipGameplayStats } from '../ships/ship-stats';
@@ -78,7 +79,8 @@ function createRosterManagement(
 
     hire(id, ship) {
       if (members.some((member) => member.id === id)) return null;
-      if (1 + members.length >= crewCapacity(ship)) return null;
+      if (1 + members.filter((member) => member.id !== 'player').length >= crewCapacity(ship))
+        return null;
       const definition = crewDefinitions.find((entry) => entry.id === id);
       if (!definition) return null;
       const member = createCrewMember(definition);
@@ -87,6 +89,7 @@ function createRosterManagement(
     },
 
     dismiss(id) {
+      if (id === 'player') return null;
       const index = members.findIndex((member) => member.id === id);
       if (index < 0) return null;
       const [member] = members.splice(index, 1);
@@ -228,8 +231,33 @@ function createRosterTraining(
   };
 }
 
-export function createCrewRosterService(): CrewRosterService {
-  const members: CrewMember[] = [];
+function createCaptainCrewMember(profile: PlayerProfile): CrewMember {
+  const socialTraits: CrewSocialTraits = {
+    loyalty: 0,
+    order: 0,
+    duty: 0,
+    risk: 0,
+    empathy: 0,
+    faith: 0,
+    cunning: 0,
+    trust: 0,
+  };
+  return {
+    ...createCrewMember({
+      id: 'player',
+      name: profile.captainName,
+      title: 'Kapitän',
+      share: 0,
+      socialTraits,
+      skills: profile.stationSkills,
+      combatSkills: profile.combatSkills,
+    }),
+    portraitAssetUrl: null,
+  };
+}
+
+export function createCrewRosterService(profile?: PlayerProfile): CrewRosterService {
+  const members: CrewMember[] = profile ? [createCaptainCrewMember(profile)] : [];
   const boardingEquipment: string[] = [];
   const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
 
@@ -238,12 +266,15 @@ export function createCrewRosterService(): CrewRosterService {
     if (existing) return existing;
     const record: Record<string, string | undefined> = {};
     for (const station of resolveShipGameplayStats(ship).stations) record[station.id] = undefined;
+    if (profile && Object.hasOwn(record, profile.stationId)) {
+      record[profile.stationId] = 'player';
+    }
     assignmentsByShip.set(ship.id, record);
     return record;
   }
 
   function activeManningCount(): number {
-    return members.filter(canOperateStation).length;
+    return members.filter((member) => member.id !== 'player' && canOperateStation(member)).length;
   }
 
   const context: RosterContext = {

@@ -454,7 +454,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   const systemLog = createControllerLog();
   const economy = createControllerEconomy(options.navigation);
-  const crew = createCrewRosterService();
+  const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,

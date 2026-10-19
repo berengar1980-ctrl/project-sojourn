@@ -4,7 +4,8 @@ The project does **not** yet support saving or loading games. Old development sa
 
 ## Current owners of mutable state
 
-- `ControllerRuntimeState.playerProfile`: immutable captain/ship identity and portrait selection created before a campaign; exposed via detached `GameController.profileSnapshot()`. A transient in-memory owner, not a savegame format. The starting ship definition is copied with the chosen name, never mutated globally.
+- `ControllerRuntimeState.playerProfile`: immutable captain/ship identity, combat and station skills, and selected starting station created before a campaign; exposed via detached `GameController.profileSnapshot()`. A transient in-memory owner, not a savegame format. The starting ship definition is copied with the chosen name, never mutated globally.
+- `CrewRosterService`: canonical captain crew member with ID `player`, live station assignment and skill progression. The selected initial station is applied in the existing roster's assignment records. Detached member and assignment snapshots prevent UI from mutating roster state.
 - `ControllerRuntimeState.activeShip` and `ownedShipIds`: currently active hull and purchased hull IDs. The unrestricted **test ship switcher** remains separate from ownership checks.
 - `ShipLoadoutService`: installed component IDs per hull ID. A component ID includes its Mk tier and any single recovered modifier.
 - `ShipComponentInventoryService`: loose component IDs, provenance, cargo reservation, and the next identifier counter.

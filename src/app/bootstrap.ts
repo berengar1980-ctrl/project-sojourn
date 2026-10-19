@@ -5,7 +5,7 @@ import { createDuelLobby } from '../ui/start/duel-lobby';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
-import { getShipDefinition } from '../systems/ships';
+import { getShipDefinition, resolveShipGameplayStats } from '../systems/ships';
 import { createGameController } from './game-controller';
 import type { GameController } from './game-controller-types';
 
@@ -62,7 +62,8 @@ function showMainMenu(root: HTMLElement): void {
           current?.destroy();
           launchCampaign(root, profile);
         },
-        () => showMainMenu(root)
+        () => showMainMenu(root),
+        resolveShipGameplayStats(getShipDefinition('salvage-100m-variant-01')!).stations
       );
     } else if (action === 'pvp') {
       current = createDuelLobby(root, () => {

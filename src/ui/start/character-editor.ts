@@ -1,5 +1,7 @@
 import { createPlayerProfile, type PlayerProfile } from '../../core/player-profile';
 import { createPortraitPicker } from './character-editor-portraits';
+import { createSkillAllocator } from './character-editor-skills';
+import type { ShipStationDefinition } from '../../core/ship-types';
 
 export interface CharacterEditor {
   destroy(): void;
@@ -8,7 +10,8 @@ export interface CharacterEditor {
 export function createCharacterEditor(
   root: HTMLElement,
   onStart: (profile: PlayerProfile) => void,
-  onBack: () => void
+  onBack: () => void,
+  stations: readonly ShipStationDefinition[]
 ): CharacterEditor {
   const shell = document.createElement('section');
   shell.className = 'character-editor';
@@ -45,7 +48,9 @@ export function createCharacterEditor(
                 placeholder="Name deines Schiffs" required />
             </label>
           </div>
-          <p class="character-editor__note">Der Name wird dem Bergungsschiff deiner ersten Reise zugewiesen. Spielstände folgen später.</p>
+          <h2>03 / AUSBILDUNG UND SCHIFFSDIENST</h2>
+          <div class="character-editor__skills"></div>
+          <p class="character-editor__note">Deine Werte gelten für den Kapitän im Crew- und Stationssystem. Spielstände folgen später.</p>
           <div class="character-editor__actions">
             <button class="character-editor__back" type="button">ZURÜCK</button>
             <button class="character-editor__launch" type="submit" disabled>REISE BEGINNEN →</button>
@@ -63,22 +68,29 @@ export function createCharacterEditor(
   const previewCaptain = shell.querySelector<HTMLElement>('[data-preview-captain]')!;
   const previewShip = shell.querySelector<HTMLElement>('[data-preview-ship]')!;
   const portraitPicker = createPortraitPicker(gallery, previewImage);
+  const allocator = createSkillAllocator(
+    shell.querySelector<HTMLElement>('.character-editor__skills')!,
+    stations,
+    () => sync()
+  );
   let submitted = false;
 
   const sync = (): void => {
     previewCaptain.textContent = captain.value.trim() || 'UNBENANNT';
     previewShip.textContent = ship.value.trim() || 'UNBENANNT';
-    launch.disabled = submitted || !captain.value.trim() || !ship.value.trim();
+    launch.disabled =
+      submitted || !captain.value.trim() || !ship.value.trim() || !allocator.valid();
   };
   captain.addEventListener('input', sync);
   ship.addEventListener('input', sync);
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (submitted || !form.reportValidity()) return;
+    if (submitted || !form.reportValidity() || !allocator.valid()) return;
     const profile = createPlayerProfile({
       portraitId: portraitPicker.selectedPortrait(),
       captainName: captain.value,
       shipName: ship.value,
+      ...allocator.values(),
     });
     submitted = true;
     sync();
