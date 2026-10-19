@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Anzahl |
 |---|---:|
-| ✅ Umgesetzt | 41 |
-| 🟨 Teilweise | 50 |
-| ⬜ Offen | 148 |
+| ✅ Umgesetzt | 43 |
+| 🟨 Teilweise | 51 |
+| ⬜ Offen | 145 |
 | 🔁 Bewusst anders | 2 |
 | **Gesamt** | **241** |
 
@@ -48,7 +48,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | Bereich | ✅ Umgesetzt | 🟨 Teilweise | ⬜ Offen | 🔁 Bewusst anders | Gesamt |
 |---|---:|---:|---:|---:|---:|
 | runtime | 1 | 3 | 1 | 1 | 6 |
-| character | 0 | 0 | 8 | 0 | 8 |
+| character | 2 | 1 | 5 | 0 | 8 |
 | prologue | 0 | 0 | 6 | 0 | 6 |
 | dialogue | 0 | 0 | 1 | 0 | 1 |
 | world | 2 | 0 | 1 | 0 | 3 |
@@ -87,6 +87,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 8. **Salvage Depth:** Distress-Rescue, Relics, Boarding-Wreck-Integration und Progression.
 
 ## Review-Log
+
+| 2026-10-19 | PR #255 · Sojourn-Charaktereditor vor Kampagnenstart | Voidbound-Parität überprüft: `character.start_screen` und `character.custom_ship_name` nun **umgesetzt**, `character.portraits` **teilweise** (Porträts 2 und 3 weiterhin Platzhalter). Sojourn eröffnet neue Kampagnendurchläufe mit Porträt, Kapitäns- und Schiffsnamen, validiert die Eingaben und übernimmt die Identität in einen vom UI getrennten Laufzeitzustand. Berufs-, Sozial- und Fertigkeitsauswahl sowie savegamepersistente Profile sind weiterhin nicht implementiert. Die übrigen 238 Katalog-IDs bleiben ohne Statusänderung. |
 
 | 2026-10-19 | PR #253 · Ramm-Bugeffekt und Ausblenden nach Kampfende | Voidbound-Parität geprüft: **keine Statusänderung** der 241 bestehenden Katalog-IDs. Der weiße Rammblitz wird nur bei tatsächlich eingeleitetem Ramm-Endanflug am Bug des angreifenden Schiffs markiert, nicht pauschal bei beiden Schiffen. Das getroffene Schiff erhält einen gewöhnlichen, lokalen Kontaktfunken aus dem rein visuellen Trefferereignis, ohne zusätzliche Schadensberechnung oder Kampflog-Duplikat. Der separate Effekt-Timer läuft nach Kampfende weiter, sodass Ramm- und Trefferanimationen ausblenden, auch wenn die Simulationszeit stillsteht. |
 
@@ -209,14 +211,14 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status | Feature-ID | Voidbound-Feature | Sojourn-Bewertung | Entscheidung |
 |---|---|---|---|---|
-| ⬜ Offen | `character.start_screen` | Character creation start screen | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
-| ⬜ Offen | `character.portraits` | Portrait selection remains available | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
+| ✅ Umgesetzt | `character.start_screen` | Character creation start screen | Vor einem neuen Kampagnendurchlauf erscheint ein Sojourn-eigener Charaktereditor mit Porträtauswahl, Charakter- und Schiffsnamen sowie Zurück-/Start-Aktion. | ändern |
+| 🟨 Teilweise | `character.portraits` | Portrait selection remains available | Fünf auswählbare Porträtplätze vorhanden: drei echte Porträts (1, 4, 5), für 2 und 3 vorläufig Platzhalter; Profilanzeige in der Systemleiste. | ändern |
 | ⬜ Offen | `character.four_careers` | Four starter careers remain selectable | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.social_questions` | Character social questions produce profile traits | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.social_points` | Completed social profile totals exactly 12 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.combat_points` | Combat skill allocation totals 130 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
 | ⬜ Offen | `character.station_points` | Station skill allocation totals 245 points | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
-| ⬜ Offen | `character.custom_ship_name` | Custom player and ship names survive initialization | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen |
+| ✅ Umgesetzt | `character.custom_ship_name` | Custom player and ship names survive initialization | Kapitäns- und Schiffsname werden validiert, bei Kampagnenstart übernommen und im laufenden Durchlauf angezeigt; der gewählte Startschiffname bleibt auch beim Testschiffwechsel erhalten. Keine Savegame-Persistenz. | ändern |
 
 ### prologue
 
