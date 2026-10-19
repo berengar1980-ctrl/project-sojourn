@@ -54,6 +54,30 @@ export function drawCombatRamEffect(
     context.beginPath();
     context.arc(bow, 0, 5 + progress * 22, -Math.PI * 0.7, Math.PI * 0.7);
     context.stroke();
+    for (let spark = 0; spark < 5; spark += 1) {
+      const angle = (spark - 2) * 0.48;
+      const length = (11 + spark * 2) * (1 - progress);
+      context.beginPath();
+      context.moveTo(bow, 0);
+      context.lineTo(bow + Math.cos(angle) * length, Math.sin(angle) * length);
+      context.stroke();
+    }
   }
   context.restore();
+}
+
+/** A bounded, deterministic camera jolt only after physical hull contact. */
+export function ramCameraImpulse(
+  attacker: StrategicCombatantSnapshot,
+  defender: StrategicCombatantSnapshot,
+  elapsed: number
+): { x: number; y: number } {
+  const last = Math.max(attacker.ramImpactAt ?? -100, defender.ramImpactAt ?? -100);
+  const age = elapsed - last;
+  if (age < 0 || age >= 0.22) return { x: 0, y: 0 };
+  const strength = 4 * (1 - age / 0.22);
+  return {
+    x: Math.sin(elapsed * 180) * strength,
+    y: Math.cos(elapsed * 127) * strength,
+  };
 }
