@@ -1,11 +1,5 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
-import {
-  ION_CANNON_ARC_SECONDS,
-  RAIL_LANCE_SECONDS,
-  VISION_ION_LASER_SECONDS,
-  VISION_PULSE_SECONDS,
-  VISION_REPEATER_SECONDS,
-} from '../../core/combat-visual-timings';
+import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 
 import type {
   StrategicCombatRuntime,
@@ -78,19 +72,7 @@ export function addRuntimeBeam(
 ): void {
   runtime.beamSerial += 1;
   const maxTtlSeconds =
-    family === 'front_repeater'
-      ? VISION_REPEATER_SECONDS
-      : family === 'railgun'
-        ? RAIL_LANCE_SECONDS
-        : family === 'ion_cannon'
-          ? ION_CANNON_ARC_SECONDS
-          : family === 'ion_laser'
-            ? VISION_ION_LASER_SECONDS
-            : family === 'pulse_laser'
-              ? VISION_PULSE_SECONDS
-              : kind === 'laser'
-                ? 0.16
-                : 0.09;
+    WEAPON_VISUALS[family].beamSeconds ?? (kind === 'laser' ? 0.16 : 0.09);
   runtime.beams.push({
     id: runtime.beamSerial,
     owner: side,
