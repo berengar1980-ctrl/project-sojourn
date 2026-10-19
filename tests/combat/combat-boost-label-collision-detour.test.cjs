@@ -12,9 +12,14 @@ assert(
   renderer.includes('drawCombatShipStatus(this.context, combatant, geometry);'),
   'combat HUD derives strategy and maneuver labels independently'
 );
+const statusRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-status-renderer.ts'),
+  'utf8'
+);
+assert(statusRenderer.includes("'MANÖVER: ' + status.maneuver"));
 assert(
-  renderer.includes('drawCombatRamEffect(this.context, combatant, geometry, timeSeconds)'),
-  'the maneuver is rendered on its own line'
+  renderer.includes('drawCombatRamEffect(this.context, combatant, geometry, this.model.elapsedSeconds)'),
+  'ram effects must use combat simulation time'
 );
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
 assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
