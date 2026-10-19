@@ -17,7 +17,15 @@ const profile = player.createPlayerProfile({
   captainName: 'Mara Voss',
   shipName: 'Die Wanderin',
   combatSkills: { ranged: 100, melee: 30 },
-  stationSkills: player.defaultStationSkills(),
+  stationSkills: {
+    piloting: 75,
+    sensors: 75,
+    weapons: 25,
+    engineering: 25,
+    salvage: 20,
+    mining: 15,
+    logistics: 10,
+  },
   stationId: 'sensor_station',
 });
 const roster = crew.createCrewRosterService(profile);
@@ -25,7 +33,7 @@ const captain = roster.member('player');
 assert.equal(captain.name, 'Mara Voss');
 assert.equal(captain.combatSkills.ranged, 100);
 assert.equal(captain.combatSkills.melee, 30);
-assert.equal(captain.skills.sensors, 35);
+assert.equal(captain.skills.sensors, 75);
 assert.equal(roster.assignments(ship).sensor_station, 'player');
 assert.equal(roster.runtimeOptions(ship).assignments.sensor_station, 'player');
 assert.equal(roster.dismiss('player'), null, 'captain is not dismissible');
@@ -37,7 +45,7 @@ view.skills.sensors = 0;
 view.combatSkills.ranged = 0;
 const assignmentView = roster.assignments(ship);
 assignmentView.sensor_station = 'fake';
-assert.equal(roster.member('player').skills.sensors, 35);
+assert.equal(roster.member('player').skills.sensors, 75);
 assert.equal(roster.assignments(ship).sensor_station, 'player');
 
 assert.equal(roster.assign(ship, 'helm', 'player'), true);
