@@ -1,6 +1,12 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import type {
+  Point,
+  AutocannonVisualBurst,
+  VisibleCombatImpact,
+} from './strategic-combat-renderer-types';
 import { drawCombatShipStatus } from './combat-status-renderer';
 import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-renderer';
+import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
 import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
@@ -32,7 +38,6 @@ import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
-  CombatImpactSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
@@ -43,20 +48,6 @@ import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-interface Point {
-  readonly x: number;
-  readonly y: number;
-}
-interface AutocannonVisualBurst {
-  readonly origin: Point;
-  readonly target: Point;
-  readonly spawnedAt: number;
-  readonly flightSeconds: number;
-}
-interface VisibleCombatImpact {
-  readonly impact: CombatImpactSnapshot;
-  readonly startedAt: number;
-}
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
@@ -240,9 +231,9 @@ export class StrategicCombatRenderer {
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
-    this.drawProjectiles(width, height);
+    this.drawProjectiles(width, height, false);
     this.drawAutocannonBursts(width, height);
-    this.drawBeams(width, height);
+    this.drawBeams(width, height, false);
     drawCombatGrapple(this.context, this.model, (side) => {
       const combatant = this.model[side];
       const geometry = this.shipGeometry(combatant, width, height);
@@ -254,11 +245,16 @@ export class StrategicCombatRenderer {
     this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
     this.drawShip(this.model.defender, width, height, timeSeconds);
     this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
+    this.drawProjectiles(width, height, true);
+    this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height);
     this.context.restore();
   }
-  private drawBeams(width: number, height: number): void {
-    for (const beam of this.model.beams) this.drawBeam(beam, width, height);
+  private drawBeams(width: number, height: number, above: boolean): void {
+    for (const beam of this.model.beams) {
+      if (Boolean(beam.missed && missedShotAbove(beam.id)) !== above) continue;
+      this.drawBeam(beam, width, height);
+    }
   }
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
     // The beam origin is captured at fire time, so it cannot slide with a
@@ -288,9 +284,10 @@ export class StrategicCombatRenderer {
     }
     drawLegacyCombatBeam(this.context, beam, start, end);
   }
-  private drawProjectiles(width: number, height: number): void {
+  private drawProjectiles(width: number, height: number, above: boolean): void {
     for (const projectile of this.model.projectiles) {
       if (projectile.kind === 'autocannon') continue;
+      if (Boolean(projectile.missed && missedShotAbove(projectile.id)) !== above) continue;
       const point = this.screen(projectile.position, width, height);
       const target = this.screen(projectile.target, width, height);
       this.drawProjectile(projectile, point, target);

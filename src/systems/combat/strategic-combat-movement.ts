@@ -1,5 +1,6 @@
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { usefulRamAttempt } from './combat-ram-opportunity';
+import { advancePowerlessDrift } from './combat-power-service';
 import { chooseCombatFlightIntent } from './combat-flight-intent';
 import { steerCombatRoute } from './combat-route-steering';
 export { mineDetection, avoidDetectedMine } from './combat-route-steering';
@@ -40,6 +41,7 @@ function isTractorLocked(combatant: MutableCombatant, enemy: MutableCombatant): 
     combatant.shieldHp <= 0 &&
     enemy.hullHp > 0 &&
     enemy.subsystems.tractor > 0 &&
+    enemy.powerFault !== 'total' &&
     distance(combatant.position, enemy.position) <= (enemy.setup.tractorRangeMeters ?? 0)
   );
 }
@@ -212,6 +214,15 @@ export function moveCombatant(
   const range = Math.max(1, Math.hypot(dx, dy));
   const toward = normalize(dx, dy);
   const desired = combatant.strategy?.desiredRange ?? preferredRange(combatant);
+  if (combatant.powerFault === 'total') {
+    combatant.boostActive = false;
+    combatant.combatIntent = 'ENERGIEAUSFALL';
+    combatant.turnRateRadiansPerSecond = 0;
+    combatant.angularThrust = 0;
+    advancePowerlessDrift(combatant, arena, deltaSeconds);
+    resolveArenaObstacles(combatant, arena);
+    return;
+  }
   const deliberateRam = usefulRamAttempt(combatant, enemy);
   if (!deliberateRam) delete combatant.ramApproach;
   const intent = chooseCombatFlightIntent(

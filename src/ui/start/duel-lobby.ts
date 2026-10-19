@@ -1,4 +1,6 @@
-import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
+import { duelCombatant, duelInstalledComponents, type DuelDraft } from './duel-combatant-setup';
+import { calculateShipModeEnergy } from '../../systems/ships/ship-component-service';
+import type { ShipComponentType } from '../../core/ship-types';
 import { buildDuelWeaponSections } from './duel-weapon-cards';
 import { getAllShipDefinitions, type ShipDefinition } from '../../systems/ships';
 import { createStrategicCombatService } from '../../systems/combat';
@@ -45,14 +47,14 @@ function shipSelector(
   return createLabel('Schiff', select);
 }
 
-function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
+function mineSelectors(draft: DuelDraft, rerender: () => void): HTMLLabelElement[] {
   return [0, 1, 2].map((index) => {
     const select = document.createElement('select');
     const empty = document.createElement('option');
     empty.value = '';
     empty.textContent = 'Keine Mine';
     select.append(empty);
-    for (const mine of SHIP_MINE_CATALOG.filter((entry) => entry.tier === 2)) {
+    for (const mine of SHIP_MINE_CATALOG) {
       const option = document.createElement('option');
       option.value = mine.id;
       option.textContent = mine.name;
@@ -61,33 +63,78 @@ function mineSelectors(draft: DuelDraft): HTMLLabelElement[] {
     select.value = draft.mines[index] ?? '';
     select.addEventListener('change', () => {
       draft.mines[index] = select.value;
+      rerender();
     });
     return createLabel('Minenplatz ' + (index + 1), select);
   });
 }
 
-function equipmentSelector(draft: DuelDraft, type: 'engine' | 'armor'): HTMLLabelElement {
+const COMPONENT_SELECTORS = [
+  ['reactor', 'reactorId', 'Plasma-Reaktor / Energiekern'],
+  ['engine', 'engineId', 'Plasma-Triebwerk'],
+  ['shield', 'shieldId', 'Schildgenerator'],
+  ['hull', 'hullId', 'Hüllenstruktur'],
+  ['armor', 'armorId', 'Richtungs-Hüllenpanzerung'],
+  ['sensor', 'sensorId', 'Sensoren'],
+  ['tractor', 'tractorId', 'Traktorstrahl'],
+  ['mining', 'miningId', 'Mining-Laser'],
+  ['salvage', 'salvageId', 'Bergungssystem'],
+  ['cargo', 'cargoId', 'Frachtmodul'],
+] as const satisfies readonly (readonly [ShipComponentType, keyof DuelDraft, string])[];
+
+function equipmentSelector(
+  draft: DuelDraft,
+  type: ShipComponentType,
+  key: keyof DuelDraft,
+  label: string,
+  rerender: () => void
+): HTMLLabelElement {
   const select = document.createElement('select');
-  if (type === 'armor') {
-    select.append(new Option('Keine Richtungs-Panzerung', ''));
-  }
+  const optional = !['reactor', 'engine'].includes(type);
+  if (optional) select.append(new Option('Nicht installiert', ''));
   for (const component of SHIP_COMPONENT_CATALOG[type] ?? []) {
-    select.append(new Option(component.name, component.id));
+    const amount = type === 'reactor' ? (component.output ?? 0) : component.power;
+    const labelText = type === 'reactor' ? 'Erzeugung' : 'Verbrauch';
+    const optionText = component.name + ' · ' + labelText + ' ' + amount + ' MW';
+    select.append(new Option(optionText, component.id));
   }
-  if (type === 'engine') {
-    select.value = draft.engineId ?? 'engine1';
-  } else {
-    select.value = draft.armorId ?? '';
-  }
+  const stored = draft[key];
+  const defaults: Partial<Record<ShipComponentType, string>> = {
+    reactor: 'reactor1',
+    engine: 'engine1',
+    shield: 'shield1',
+    hull: 'hull1',
+    sensor: 'sensor1',
+    tractor: 'tractor1',
+  };
+  select.value = typeof stored === 'string' ? stored : (defaults[type] ?? '');
   select.addEventListener('change', () => {
-    if (type === 'engine') {
-      draft.engineId = select.value;
-    } else {
-      draft.armorId = select.value;
-    }
+    // The selector keys are all optional scalar component identifiers.
+    Object.assign(draft, { [key]: select.value });
+    rerender();
   });
-  const label = type === 'engine' ? 'Plasma-Triebwerk' : 'Richtungs-Hüllenpanzerung';
   return createLabel(label, select);
+}
+
+function powerBudget(draft: DuelDraft): HTMLElement {
+  const energy = calculateShipModeEnergy(duelInstalledComponents(draft));
+  const panel = document.createElement('p');
+  panel.className = 'harrow-duel__energy';
+  const combatExcess = Math.max(0, energy.combat - energy.output);
+  const industryExcess = Math.max(0, energy.industrial - energy.output);
+  const draw = (label: string, value: number): string => label + ' ' + value + ' MW';
+  const summary = [
+    draw('REAKTOR', energy.output),
+    draw('KAMPF', energy.combat),
+    draw('MINING', energy.mining),
+    draw('BERGUNG', energy.salvage),
+    draw('REISE', energy.travel),
+    draw('INDUSTRIE IM KAMPF AUS', energy.shedInCombat),
+  ];
+  if (combatExcess) summary.push(draw('KAMPF-ÜBERLAST', combatExcess) + ' · Ausfallrisiko');
+  if (industryExcess) summary.push(draw('ARBEITS-ÜBERLAST', industryExcess));
+  panel.textContent = 'ENERGIE · ' + summary.join(' · ');
+  return panel;
 }
 
 function crewSelector(draft: DuelDraft): HTMLLabelElement {
@@ -125,9 +172,12 @@ function playerCard(
   heading.textContent = 'Spieler ' + (index + 1);
   const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
   card.append(heading, shipSelector(draft, ships, rerender));
-  card.append(...buildDuelWeaponSections(draft, ship));
-  card.append(equipmentSelector(draft, 'engine'), equipmentSelector(draft, 'armor'));
-  card.append(...mineSelectors(draft));
+  card.append(...buildDuelWeaponSections(draft, ship, rerender));
+  for (const [type, key, label] of COMPONENT_SELECTORS) {
+    card.append(equipmentSelector(draft, type, key, label, rerender));
+  }
+  card.append(...mineSelectors(draft, rerender));
+  card.append(powerBudget(draft));
   card.append(crewSelector(draft));
   return card;
 }
@@ -147,8 +197,25 @@ function attachEncounterSelector(
         drafts[index]!.shipId = entry.shipId;
         drafts[index]!.weapons = [...entry.weapons];
         drafts[index]!.mines = [];
-        drafts[index]!.engineId = 'engine1';
-        drafts[index]!.armorId = '';
+        Object.assign(drafts[index]!, {
+          reactorId: 'reactor1',
+          engineId: 'engine1',
+          shieldId: 'shield1',
+          hullId: 'hull1',
+          sensorId: 'sensor1',
+          tractorId: 'tractor1',
+          miningId: '',
+          salvageId: '',
+          cargoId: '',
+          armorId: '',
+        });
+        // Curated encounters need a reactor capable of their intended weapon loadout.
+        // Free duels still allow deliberate oversubscription.
+        const activeLoadout = duelInstalledComponents(drafts[index]!);
+        const combatDraw = calculateShipModeEnergy(activeLoadout).combat;
+        const reactors = SHIP_COMPONENT_CATALOG.reactor ?? [];
+        const reactor = reactors.find((part) => (part.output ?? 0) >= combatDraw);
+        drafts[index]!.reactorId = reactor?.id ?? 'reactor6';
         drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
       });
     }

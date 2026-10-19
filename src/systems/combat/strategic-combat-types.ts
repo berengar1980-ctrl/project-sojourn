@@ -12,7 +12,7 @@ import type { ShieldImpactEffect } from '../../core/shield-types';
 import type { ShipWeaponFamily } from '../../core/ship-types';
 
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
-
+import type { CombatPowerBudget } from './combat-power-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 
@@ -108,6 +108,7 @@ export interface StrategicCombatantSetup {
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
   readonly armor?: ShipArmorProtection;
+  readonly power?: CombatPowerBudget;
   readonly weapons: readonly ShipComponentDefinition[];
   readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
@@ -170,6 +171,8 @@ export interface StrategicCombatantSnapshot {
   readonly boostSeconds: number;
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
+  readonly power?: CombatPowerBudget;
+  readonly powerFault?: 'weapons' | 'total';
   readonly combatIntent?: string;
   readonly ramPhase?: 'flank' | 'impact';
   readonly ramImpactAt?: number;
@@ -197,6 +200,7 @@ export interface CombatProjectileSnapshot {
   readonly target: CombatPoint;
   readonly ttlSeconds: number;
   readonly direction: CombatPoint;
+  readonly missed?: boolean;
 }
 
 export interface CombatBeamSnapshot {
@@ -209,6 +213,7 @@ export interface CombatBeamSnapshot {
   readonly weaponIndex: number;
   readonly ttlSeconds: number;
   readonly maxTtlSeconds: number;
+  readonly missed?: boolean;
 }
 
 export interface CombatMineSnapshot {
@@ -348,6 +353,9 @@ export interface MutableCombatant {
   longitudinalThrust?: number;
   boostSeconds?: number;
   boostActive?: boolean;
+  powerStress?: number;
+  powerFaultRemaining?: number;
+  powerFault?: 'weapons' | 'total';
   combatIntent?: string;
   /** Alternate escape gate selected only when the current gate is blocked. */
   escapeGate?: CombatPoint;
@@ -425,6 +433,7 @@ interface MutableBeam {
   weaponIndex: number;
   ttlSeconds: number;
   maxTtlSeconds: number;
+  missed?: boolean;
 }
 
 export interface MutableMine {

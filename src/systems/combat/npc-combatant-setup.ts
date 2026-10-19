@@ -12,6 +12,7 @@ import {
 import {
   componentHullBonus,
   componentShieldBonus,
+  calculateShipModeEnergy,
   getShipComponent,
   getShipDefinition,
   resolveShipCombatMovementStats,
@@ -90,6 +91,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     ...movement,
     mines,
     tractorRangeMeters: shipCombatTractorRange(installed),
+    power: calculateShipModeEnergy(installed),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     sensorCrewSkill: skill,
     sensorTier: sensor?.tier ?? 0,

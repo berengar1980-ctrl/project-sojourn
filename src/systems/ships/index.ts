@@ -6,6 +6,7 @@ export {
 } from './ship-registry';
 export {
   calculateShipEnergy,
+  calculateShipModeEnergy,
   componentCargoBonus,
   componentHullBonus,
   componentShieldBonus,

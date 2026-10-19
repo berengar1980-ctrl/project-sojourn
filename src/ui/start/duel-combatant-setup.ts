@@ -5,6 +5,10 @@ import {
 import {
   resolveShipCombatMovementStats,
   resolveShipArmorProtection,
+  componentHullBonus,
+  componentShieldBonus,
+  calculateShipModeEnergy,
+  getShipComponent,
   shipCombatTractorRange,
   shipHasIndustrialTractor,
   shipHullMaxHp,
@@ -29,6 +33,33 @@ export interface DuelDraft {
   crewId: string;
   engineId?: string;
   armorId?: string;
+  reactorId?: string;
+  shieldId?: string;
+  hullId?: string;
+  sensorId?: string;
+  tractorId?: string;
+  miningId?: string;
+  salvageId?: string;
+  cargoId?: string;
+}
+
+/** A single canonical installed loadout powers both the UI readout and combat. */
+export function duelInstalledComponents(draft: DuelDraft) {
+  const one = (id: string | undefined): string[] => (id ? [id] : []);
+  return {
+    reactor: one(draft.reactorId ?? 'reactor1'),
+    engine: one(draft.engineId ?? 'engine1'),
+    shield: one(draft.shieldId ?? 'shield1'),
+    hull: one(draft.hullId ?? 'hull1'),
+    armor: one(draft.armorId),
+    sensor: one(draft.sensorId ?? 'sensor1'),
+    tractor: one(draft.tractorId ?? 'tractor1'),
+    mining: one(draft.miningId),
+    salvage: one(draft.salvageId),
+    cargo: one(draft.cargoId),
+    weapon: draft.weapons.filter((id) => !!id),
+    mine: draft.mines.filter((id) => !!id),
+  };
 }
 
 export function duelCombatant(
@@ -40,10 +71,9 @@ export function duelCombatant(
   const equipped = combatEquippedWeapons(ship, draft.weapons);
   const mounts = combatWeaponMounts(ship, equipped);
   const crew = crewDefinitionById(draft.crewId);
-  const installed = {
-    engine: [draft.engineId ?? 'engine1'],
-    armor: [draft.armorId ?? ''],
-  };
+  const installed = duelInstalledComponents(draft);
+  const power = calculateShipModeEnergy(installed);
+  const sensor = getShipComponent('sensor', draft.sensorId ?? 'sensor1');
   const armor = resolveShipArmorProtection(installed);
   const pilotSkill = crew?.skills.piloting ?? 50;
   const weaponSkill = crew?.skills.weapons ?? 50;
@@ -52,9 +82,9 @@ export function duelCombatant(
     id: 'duelist-' + index,
     name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
     shipId: ship.id,
-    shieldHp: shipShieldMaxHp(ship),
+    shieldHp: shipShieldMaxHp(ship) + componentShieldBonus(installed),
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
-    hullHp: shipHullMaxHp(ship),
+    hullHp: shipHullMaxHp(ship, componentHullBonus(installed)),
     ...(armor ? { armor } : {}),
     weapons: equipped.map((entry) => entry.component),
     mines: draft.mines.flatMap((id) => {
@@ -69,7 +99,11 @@ export function duelCombatant(
     cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
     preferredTactic: 'fight',
     ...resolveShipCombatMovementStats(ship, installed),
-    tractorRangeMeters: shipCombatTractorRange(),
+    tractorRangeMeters: shipCombatTractorRange(installed),
+    power,
+    sensorTier: sensor?.tier ?? 0,
+    sensorCrewSkill: sensorSkill,
+    sensorRangeMeters: sensor ? 1000 : 0,
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     aiControlled: true,
     aiAggression: 90,

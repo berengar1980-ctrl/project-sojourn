@@ -1,3 +1,4 @@
+import type { ShipPowerBudget } from '../../core/ship-power-types';
 import {
   SHIP_COMPONENT_CATALOG,
   type ShipComponentDefinition,
@@ -229,6 +230,33 @@ function installedDefinitions(
   return (installed[type] ?? [])
     .map((id) => getShipComponent(type, id))
     .filter((component): component is ShipComponentDefinition => component !== null);
+}
+
+/** Modes share the canonical catalog's MW power values. Idle industry shuts down in combat. */
+export function calculateShipModeEnergy(installed: InstalledShipComponents): ShipPowerBudget {
+  const output = Number(installedDefinitions(installed, 'reactor')[0]?.output ?? 0);
+  const draw = (type: ShipComponentType): number =>
+    installedDefinitions(installed, type).reduce((sum, part) => sum + part.power, 0);
+  const engine = draw('engine');
+  const shields = draw('shield');
+  const guns = draw('weapon');
+  const systems = draw('sensor') + draw('tractor');
+  const industry = draw('mining') + draw('salvage');
+  const combat = engine + shields + guns + systems;
+  const travel = engine + draw('sensor');
+  const mining = engine + systems + draw('mining');
+  const salvage = engine + systems + draw('salvage');
+  const industrial = Math.max(mining, salvage);
+  return {
+    output,
+    combat,
+    travel,
+    mining,
+    salvage,
+    industrial,
+    total: combat + industry,
+    shedInCombat: industry,
+  };
 }
 
 export function calculateShipEnergy(installed: InstalledShipComponents): ShipEnergySnapshot {

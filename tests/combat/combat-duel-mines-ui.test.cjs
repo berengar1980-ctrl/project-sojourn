@@ -9,7 +9,7 @@ const lobby = read('src/ui/start/duel-lobby.ts');
 const setup = read('src/ui/start/duel-combatant-setup.ts');
 const panel = read('src/ui/combat/strategic-combat-panel.ts');
 const mines = read('src/systems/combat/strategic-combat-mines.ts');
-assert(lobby.includes('mineSelectors(draft)'), 'mine selector exists for players');
+assert(lobby.includes('mineSelectors(draft, rerender)'), 'mine selector exists for players');
 assert(setup.includes('mines: draft.mines.flatMap'), 'mine loadout reaches combat setup');
 assert(
   lobby.includes('drafts[index]!.mines = [];'),

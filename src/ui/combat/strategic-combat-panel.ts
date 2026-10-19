@@ -35,6 +35,12 @@ function combatantHud(
   const tractorPercent = Math.round(percent(tractor, combatant.subsystems.maximum));
   const tractorInstalled = combatant.tractorRangeMeters > 0;
   const status = describeCombatStatus(combatant);
+  const power = combatant.power;
+  const faultLabel = combatant.powerFault === 'total' ? 'GESAMT' : 'WAFFEN';
+  const powerState = combatant.powerFault ? 'AUSFALL ' + faultLabel : 'AKTIV';
+  const energyLine = power ? `ENERGIE ${power.combat} / ${power.output} MW · ${powerState}` : '';
+  let maneuver = status.maneuver ?? 'KEIN AKTIVES MANÖVER';
+  if (combatant.powerFault === 'total') maneuver = 'ENERGIEAUSFALL';
   return `
     <strong>${combatant.name}</strong>
     <span>SCHILD ${Math.round(combatant.shieldHp)} / ${combatant.shieldMaxHp}</span>
@@ -47,7 +53,8 @@ function combatantHud(
     <div class="combat-hud-bar combat-hud-bar--tractor"><i data-layer="tractor" style="width:${tractorInstalled ? tractorPercent : 0}%"></i></div>
     <small>${combatant.tactic.toUpperCase()} · ${Math.round(combatant.speed)} m/s · ZIEL ${combatant.strategy?.targetSubsystem?.toUpperCase() ?? 'HÜLLE'}</small>
     <small>STRATEGIE · ${status.strategy}</small>
-    <small>MANÖVER · ${status.maneuver ?? 'KEIN AKTIVES MANÖVER'}</small>
+    <small>MANÖVER · ${maneuver}</small>
+    <small>${energyLine}</small>
     <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
     ${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}
     <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>

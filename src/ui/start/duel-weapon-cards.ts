@@ -65,7 +65,8 @@ function weaponSlotCard(
   draft: DuelDraft,
   ship: ShipDefinition,
   mount: ShipWeaponHardpoint,
-  title: string
+  title: string,
+  onChange: () => void
 ): HTMLElement {
   const card = element('div', 'duel-weapon');
   const label = element('label', 'duel-weapon__label', title);
@@ -89,13 +90,18 @@ function weaponSlotCard(
   select.addEventListener('change', () => {
     draft.weapons[mount.slotIndex] = select.value;
     updateStats(stats, select.value, mount);
+    onChange();
   });
   card.append(label, stats);
   return card;
 }
 
 /** UI order only: maintain the original mount slot indices for the real loadout. */
-export function buildDuelWeaponSections(draft: DuelDraft, ship: ShipDefinition): HTMLElement[] {
+export function buildDuelWeaponSections(
+  draft: DuelDraft,
+  ship: ShipDefinition,
+  onChange: () => void = () => {}
+): HTMLElement[] {
   const mounts = [...shipActiveCombatWeaponMounts(ship)].sort(
     (a, b) => weaponUiOrder(a) - weaponUiOrder(b)
   );
@@ -139,7 +145,7 @@ export function buildDuelWeaponSections(draft: DuelDraft, ship: ShipDefinition):
             : group.key === 'turret'
               ? 'Universalwaffe ' + (index + 1)
               : weaponHardpointName(mount);
-        grid.append(weaponSlotCard(draft, ship, mount, label));
+        grid.append(weaponSlotCard(draft, ship, mount, label, onChange));
       }
       section.append(title, grid);
       return section;
