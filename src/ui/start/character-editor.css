@@ -1,6 +1,6 @@
 .character-editor {
   position: relative;
-  min-height: 100dvh;
+  height: 100dvh;
   overflow-y: auto;
   background: #05080d url('/startscreen-background.webp') center / cover fixed;
   color: #dce1e6;
