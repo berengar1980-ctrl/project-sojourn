@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import type { Point, AutocannonVisualBurst, VisibleCombatImpact } from './strategic-combat-renderer-types';
 import { drawCombatShipStatus } from './combat-status-renderer';
 import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-renderer';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
@@ -33,7 +34,6 @@ import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
-  CombatImpactSnapshot,
   CombatProjectileSnapshot,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
@@ -44,20 +44,6 @@ import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-interface Point {
-  readonly x: number;
-  readonly y: number;
-}
-interface AutocannonVisualBurst {
-  readonly origin: Point;
-  readonly target: Point;
-  readonly spawnedAt: number;
-  readonly flightSeconds: number;
-}
-interface VisibleCombatImpact {
-  readonly impact: CombatImpactSnapshot;
-  readonly startedAt: number;
-}
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;

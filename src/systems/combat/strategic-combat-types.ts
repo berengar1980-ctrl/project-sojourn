@@ -12,6 +12,7 @@ import type { ShieldImpactEffect } from '../../core/shield-types';
 import type { ShipWeaponFamily } from '../../core/ship-types';
 
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
+import type { CombatPowerBudget } from './combat-power-types';
 
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
@@ -108,13 +109,7 @@ export interface StrategicCombatantSetup {
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;
   readonly armor?: ShipArmorProtection;
-  readonly power?: {
-    output: number;
-    combat: number;
-    industrial: number;
-    total: number;
-    shedInCombat: number;
-  };
+  readonly power?: CombatPowerBudget;
   readonly weapons: readonly ShipComponentDefinition[];
   readonly weaponMounts?: readonly CombatWeaponMount[];
   readonly hitChance: number;
@@ -177,13 +172,7 @@ export interface StrategicCombatantSnapshot {
   readonly boostSeconds: number;
   readonly boostActive: boolean;
   readonly boostCooldownSeconds: number;
-  readonly power?: {
-    output: number;
-    combat: number;
-    industrial: number;
-    total: number;
-    shedInCombat: number;
-  };
+  readonly power?: CombatPowerBudget;
   readonly powerFault?: 'weapons' | 'total';
   readonly combatIntent?: string;
   readonly ramPhase?: 'flank' | 'impact';
