@@ -215,7 +215,7 @@ async function main() {
           name: first + '_' + second + '_' + kit + '_' + mode };
         const rows = [];
         for (const seed of seeds) {
-          for (const reverse of [false, true]) rows.push(simulate(group, seed, reverse));
+          rows.push(simulate(group, seed, false), simulate(group, seed, true));
         }
         const summary = summaryFor(group, rows);
         groups.push(summary);
