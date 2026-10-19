@@ -268,10 +268,13 @@ function compact(result) {
 }
 
 async function safeFixtureStatus(title, description) {
-  try {
-    await postStatus('success', title, description);
-  } catch (error) {
-    console.warn('STATUS_WARN ' + title + ' ' + String(error));
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await postStatus('success', title, description);
+      return;
+    } catch (error) {
+      console.warn('STATUS_WARN ' + title + ' attempt ' + attempt + ': ' + String(error));
+    }
   }
 }
 
@@ -307,10 +310,10 @@ async function runFixtureAudit() {
         entry.kind + ' ' + entry.layer + ' shield=' + entry.shieldLoss +
         ' hull=' + entry.hullLoss);
     }
+    // Two groups are already measured in the full archived JSON, but their
+    // transient status updates were lost; re-run only those two cases.
     const missing = [
       ['asteroid_field', 'collisions'],
-      ['asteroid_field', 'tractor'],
-      ['scrap_field', 'tractor'],
       ['scrap_field', 'mines'],
     ];
     for (const [map, profile] of missing) {
