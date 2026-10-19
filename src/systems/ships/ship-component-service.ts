@@ -50,6 +50,18 @@ function variantWeapon(
     ...base.weapon,
     shieldDamage: Math.round(base.weapon.shieldDamage * (1 + pct / 100) * 10) / 10,
     hullDamage: Math.round(base.weapon.hullDamage * (1 + pct / 100) * 10) / 10,
+    ...(base.weapon.combatShieldDamage !== undefined
+      ? {
+          combatShieldDamage:
+            Math.round(base.weapon.combatShieldDamage * (1 + pct / 100) * 100) / 100,
+        }
+      : {}),
+    ...(base.weapon.combatHullDamage !== undefined
+      ? {
+          combatHullDamage:
+            Math.round(base.weapon.combatHullDamage * (1 + pct / 100) * 100) / 100,
+        }
+      : {}),
   };
 }
 
