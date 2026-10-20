@@ -5,10 +5,7 @@ function percent(value: number): string {
   return (value * 100).toFixed(1).replace('.', ',') + ' %';
 }
 
-export function stationEffectSummary(
-  skill: ShipStationSkill,
-  effects: CrewSkillEffects
-): string {
+export function stationEffectSummary(skill: ShipStationSkill, effects: CrewSkillEffects): string {
   switch (skill) {
     case 'piloting':
       return (
