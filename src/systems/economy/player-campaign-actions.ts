@@ -1,4 +1,8 @@
-import type { EconomyResourceId, PlayerCargoLot, PlayerEconomyState } from '../../core/economy-types';
+import type {
+  EconomyResourceId,
+  PlayerCargoLot,
+  PlayerEconomyState,
+} from '../../core/economy-types';
 
 /** Exact player-economy transactions. They never touch a market's stock or price. */
 export interface PlayerCampaignEconomyActions {

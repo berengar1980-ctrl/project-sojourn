@@ -73,11 +73,7 @@ assert.equal(port.apply({ type: 'crew.assign', crewId, stationId }), true);
 assert.equal(crew.assignments(ship)[stationId], crewId);
 assert.equal(port.apply({ type: 'crew.dismiss', crewId }), true);
 assert.equal(crew.member(crewId), null);
-assert.notEqual(
-  crew.assignments(ship)[stationId],
-  crewId,
-  'dismissal clears station assignment'
-);
+assert.notEqual(crew.assignments(ship)[stationId], crewId, 'dismissal clears station assignment');
 
 const bus = eventsModule.createCampaignEventBus();
 const engine = campaignModule.createCampaignRuntime(bus, undefined, undefined, port);
@@ -89,7 +85,10 @@ engine.register({
   onEvent(event, ctx) {
     if (event.type !== 'game.initialized') return;
     ctx.start();
-    assert.equal(ctx.applyAction('reward:opening', { type: 'credits.grant', amount: 25 }), 'applied');
+    assert.equal(
+      ctx.applyAction('reward:opening', { type: 'credits.grant', amount: 25 }),
+      'applied'
+    );
     assert.equal(
       ctx.applyAction('reward:opening', { type: 'credits.grant', amount: 25 }),
       'already_applied'
@@ -168,4 +167,6 @@ active.destroy();
 
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
 assert(controller.includes('createCampaignActionGateway('), 'controller wires real domain owners');
-console.log('PASS campaign gateway exact economy actions, crew transactions and once-only receipts');
+console.log(
+  'PASS campaign gateway exact economy actions, crew transactions and once-only receipts'
+);
