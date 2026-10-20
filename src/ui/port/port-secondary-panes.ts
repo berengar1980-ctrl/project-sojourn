@@ -94,7 +94,7 @@ export function crewPane(model: PortViewModel): string {
             .map(
               (station) => `
                 <label class="port-station-assignment">
-                  <span>${station.label}<small>${station.skill.toUpperCase()}</small></span>
+                  <span>${station.label}<small>${station.skill.toUpperCase()} · STATION ${station.performance}/100</small>${station.effectSummary ? `<small>${station.effectSummary}</small>` : ''}</span>
                   <select data-station-id="${station.id}">
                     <option value="">AUTOMATIK</option>
                     ${model.crew.hired
