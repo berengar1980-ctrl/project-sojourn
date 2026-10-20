@@ -1,5 +1,6 @@
 import type {
-  CampaignCategory,
+  CampaignContext,
+  CampaignDefinition,
   CampaignEvent,
   CampaignPackageInfo,
   CampaignProgress,
@@ -9,25 +10,7 @@ import type {
 } from '../../core/campaign-types';
 import type { CampaignEventBus } from './campaign-event-bus';
 
-export interface CampaignContext {
-  readonly id: string;
-  status(): CampaignStatus;
-  start(): boolean;
-  complete(outcome: string): boolean;
-  get(key: string): CampaignValue | null;
-  set(key: string, value: CampaignValue): void;
-}
-
-export interface CampaignDefinition {
-  readonly id: string;
-  readonly title: string;
-  readonly version: number;
-  readonly category?: CampaignCategory;
-  readonly defaultEnabled?: boolean;
-  readonly onEvent?: (event: CampaignEvent, campaign: CampaignContext) => void;
-  /** Converts an earlier package's data, without accessing game services. */
-  readonly migrate?: (previous: CampaignProgress) => CampaignProgress;
-}
+export type { CampaignContext, CampaignDefinition } from '../../core/campaign-types';
 
 export interface CampaignEntry extends CampaignPackageInfo {
   readonly status: CampaignStatus;
