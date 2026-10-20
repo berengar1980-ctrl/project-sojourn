@@ -30,6 +30,7 @@ export const freighterVariantShips: readonly ShipDefinition[] = [
     id: 'freighter-120m-variant-02',
     name: '120 m Freighter V2',
     role: 'freighter',
+    gameplayOverrides: { stationBonuses: { cargo_control: 6, helm: 8 } },
     nominalLengthMeters: 120,
     cargoCapacityTons: 900,
     sprite: {
