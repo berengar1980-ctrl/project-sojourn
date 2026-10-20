@@ -91,7 +91,7 @@ function fakeMarkets(initialStock = 20, initialPrice = 100) {
   assert.equal(markets.entry.stock, afterBuyStock + 2);
   assert.equal(trade.player.cargo.steel.qty, cargoBeforeSell - 2);
   assert(result.realizedProfit > 0, 'selling above weighted cost must realize profit');
-  assert.equal(result.creditsDelta, 2 * Math.round(150 * 0.94));
+  assert.equal(result.creditsDelta, 2 * Math.round(150 * 0.75));
 }
 
 {
@@ -114,6 +114,22 @@ function fakeMarkets(initialStock = 20, initialPrice = 100) {
   assert(result);
   assert.equal(result.unitPrice, 150, 'logistics fee must affect actual sale payout');
   assert.equal(result.creditsDelta, 150);
+}
+
+{
+  const markets = fakeMarkets(20, 100);
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const purchase = trade.buy('haven', 'steel', 2, 10);
+  assert.equal(purchase.unitPrice, 100, 'buying must not charge a sale commission');
+  assert.equal(trade.player.credits, 800);
+  markets.entry.price = 200;
+
+  const fullFee = trade.sell('haven', 'steel', 1, 0.25);
+  assert.equal(fullFee.unitPrice, 150, 'zero logistics must retain 25 percent on sales');
+  const noFee = trade.sell('haven', 'steel', 1, 0);
+  assert.equal(noFee.unitPrice, 200, 'max logistics must eliminate the sales fee');
+  assert.equal(trade.player.credits, 1150, 'no fee may be charged on purchases');
+  assert.equal(tradeModule.playerSaleUnitPrice(200), 150, 'default commission is 25 percent');
 }
 
 console.log('PASS player trade transactions, cargo limits, cost basis and logistics fees');
