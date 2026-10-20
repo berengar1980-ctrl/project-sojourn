@@ -11,7 +11,7 @@ import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary'
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
-import { createShipLoadoutService } from '../systems/ships';
+import { createShipLoadoutService, createShipOwnershipService } from '../systems/ships';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
@@ -145,8 +145,9 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     () => runSceneZoomTransition(context.root, () => mountControllerStarMap(context)),
     () => mountControllerPort(context, false),
     context.systemLog,
-    state.ownedShipIds,
+    state.shipOwnership,
     (nextShip) => {
+      context.crew.transferAssignments(state.activeShip, nextShip);
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
@@ -415,11 +416,12 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
+  const economy = createControllerEconomy(options.navigation);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
     starterShipId: options.ship.id,
     playerProfile: createPlayerProfile(options.playerProfile),
-    ownedShipIds: new Set([options.ship.id]),
+    shipOwnership: createShipOwnershipService(options.ship.id, economy.trade),
     mode: 'star-map',
     panels: { star: null, local: null, port: null },
     shipSwitcher: null,
@@ -438,7 +440,6 @@ export function createGameController(options: GameControllerOptions): GameContro
     displayedWorldId: '',
   };
   const systemLog = createControllerLog();
-  const economy = createControllerEconomy(options.navigation);
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   let foreignWorld = () => false;
