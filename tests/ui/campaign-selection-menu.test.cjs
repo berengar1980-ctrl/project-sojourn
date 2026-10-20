@@ -82,7 +82,12 @@ try {
 
   let backs = 0;
   let launches = 0;
-  const select = createCampaignSelectionMenu(host, selections, () => backs++, () => launches++);
+  const select = createCampaignSelectionMenu(
+    host,
+    selections,
+    () => backs++,
+    () => launches++
+  );
   const switches = descendants(host, 'input');
   assert.equal(switches.length, 3, 'render all packages from registry');
   assert.equal(switches[0].checked, false);
@@ -99,7 +104,12 @@ try {
   assert.equal(backs, 1);
   assert.equal(launches, 1);
   select.destroy();
-  const reopened = createCampaignSelectionMenu(host, selections, () => {}, () => {});
+  const reopened = createCampaignSelectionMenu(
+    host,
+    selections,
+    () => {},
+    () => {}
+  );
   const restored = descendants(host, 'input');
   assert.equal(restored[0].checked, true, 'menu reopening keeps the pending selection');
   assert.equal(restored[1].checked, false);
