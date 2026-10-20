@@ -119,6 +119,91 @@ function parseSave(candidate?: CampaignSnapshot): CampaignSnapshot {
   return { snapshotVersion: 1, enabled, campaigns };
 }
 
+function createCampaignRegistry(
+  definitions: Map<string, CampaignDefinition>,
+  progress: Map<string, CampaignProgress>,
+  enabled: Map<string, boolean>,
+  mismatched: Set<string>,
+  state: (id: string) => CampaignProgress
+) {
+  return {
+    register(definition: CampaignDefinition, destroyed: boolean) {
+      if (destroyed) throw new Error('Campaign runtime is destroyed.');
+      if (!PACKAGE_ID.test(definition.id) || !definition.title.trim()) {
+        throw new Error('Invalid campaign package metadata.');
+      }
+      if (!Number.isSafeInteger(definition.version) || definition.version <= 0) {
+        throw new Error('Invalid campaign version.');
+      }
+      if (definitions.has(definition.id)) throw new Error('Duplicate campaign: ' + definition.id);
+      const record = progress.get(definition.id);
+      if (record && record.version !== definition.version) {
+        if (!definition.migrate) mismatched.add(definition.id);
+        else {
+          const migrated = cloneProgress(definition.migrate(cloneProgress(record)));
+          if (migrated.version !== definition.version) {
+            throw new Error('Campaign migration did not reach current version.');
+          }
+          progress.set(definition.id, migrated);
+        }
+      }
+      if (!record) {
+        progress.set(definition.id, { version: definition.version, status: 'inactive', data: {} });
+      }
+      if (!enabled.has(definition.id)) {
+        enabled.set(
+          definition.id,
+          definition.category === 'core' || definition.defaultEnabled !== false
+        );
+      }
+      if (definition.category === 'core') enabled.set(definition.id, true);
+      definitions.set(definition.id, definition);
+    },
+    list() {
+      return [...definitions.values()].map((definition) => ({
+        id: definition.id,
+        title: definition.title,
+        version: definition.version,
+        category: definition.category ?? 'optional',
+        defaultEnabled: definition.defaultEnabled !== false,
+        status: state(definition.id).status,
+        unavailableReason: mismatched.has(definition.id) ? ('version_mismatch' as const) : null,
+      }));
+    },
+    unavailableIds() {
+      const missing = [...progress.keys()].filter((id) => !definitions.has(id));
+      return [...new Set([...missing, ...mismatched])];
+    },
+  };
+}
+
+function campaignEventListener(
+  definitions: Map<string, CampaignDefinition>,
+  accessible: (id: string) => boolean,
+  state: (id: string) => CampaignProgress,
+  actions: Pick<CampaignRuntime, 'start' | 'complete' | 'get' | 'set'>,
+  reportError: (id: string, error: unknown) => void
+): (event: CampaignEvent) => void {
+  return (event) => {
+    for (const [id, definition] of definitions) {
+      if (!accessible(id) || state(id).status === 'completed' || !definition.onEvent) continue;
+      const context: CampaignContext = {
+        id,
+        status: () => state(id).status,
+        start: () => actions.start(id),
+        complete: (outcome) => actions.complete(id, outcome),
+        get: (key) => actions.get(id, key),
+        set: (key, value) => actions.set(id, key, value),
+      };
+      try {
+        definition.onEvent(event, context);
+      } catch (error) {
+        reportError(id, error);
+      }
+    }
+  };
+}
+
 export function createCampaignRuntime(
   events: CampaignEventBus,
   restored?: CampaignSnapshot,
@@ -168,69 +253,20 @@ export function createCampaignRuntime(
     progress.set(id, { ...state(id), data: { ...state(id).data, [key]: cloneValue(value) } });
   }
 
-  const unsubscribe = events.subscribe((event) => {
-    for (const [id, definition] of definitions) {
-      if (!accessible(id) || state(id).status === 'completed' || !definition.onEvent) continue;
-      const context: CampaignContext = {
-        id,
-        status: () => state(id).status,
-        start: () => start(id),
-        complete: (outcome) => complete(id, outcome),
-        get: (key) => get(id, key),
-        set: (key, value) => set(id, key, value),
-      };
-      try {
-        definition.onEvent(event, context);
-      } catch (error) {
-        reportError(id, error);
-      }
-    }
-  });
+  const registry = createCampaignRegistry(definitions, progress, enabled, mismatched, state);
+  const unsubscribe = events.subscribe(
+    campaignEventListener(
+      definitions,
+      accessible,
+      state,
+      { start, complete, get, set },
+      reportError
+    )
+  );
 
   return {
-    register(definition) {
-      if (destroyed) throw new Error('Campaign runtime is destroyed.');
-      if (!PACKAGE_ID.test(definition.id) || !definition.title.trim()) {
-        throw new Error('Invalid campaign package metadata.');
-      }
-      if (!Number.isSafeInteger(definition.version) || definition.version <= 0) {
-        throw new Error('Invalid campaign version.');
-      }
-      if (definitions.has(definition.id)) throw new Error('Duplicate campaign: ' + definition.id);
-      const record = progress.get(definition.id);
-      if (record && record.version !== definition.version) {
-        if (!definition.migrate) mismatched.add(definition.id);
-        else {
-          const migrated = cloneProgress(definition.migrate(cloneProgress(record)));
-          if (migrated.version !== definition.version) {
-            throw new Error('Campaign migration did not reach current version.');
-          }
-          progress.set(definition.id, migrated);
-        }
-      }
-      if (!record) {
-        progress.set(definition.id, { version: definition.version, status: 'inactive', data: {} });
-      }
-      if (!enabled.has(definition.id)) {
-        enabled.set(
-          definition.id,
-          definition.category === 'core' || definition.defaultEnabled !== false
-        );
-      }
-      if (definition.category === 'core') enabled.set(definition.id, true);
-      definitions.set(definition.id, definition);
-    },
-    list() {
-      return [...definitions.values()].map((definition) => ({
-        id: definition.id,
-        title: definition.title,
-        version: definition.version,
-        category: definition.category ?? 'optional',
-        defaultEnabled: definition.defaultEnabled !== false,
-        status: state(definition.id).status,
-        unavailableReason: mismatched.has(definition.id) ? ('version_mismatch' as const) : null,
-      }));
-    },
+    register: (definition) => registry.register(definition, destroyed),
+    list: registry.list,
     isActive(id) {
       return accessible(id) && state(id).status === 'active';
     },
@@ -245,10 +281,7 @@ export function createCampaignRuntime(
     complete,
     get,
     set,
-    unavailableIds() {
-      const missing = [...progress.keys()].filter((id) => !definitions.has(id));
-      return [...new Set([...missing, ...mismatched])];
-    },
+    unavailableIds: registry.unavailableIds,
     snapshot() {
       return parseSave({
         snapshotVersion: 1,
