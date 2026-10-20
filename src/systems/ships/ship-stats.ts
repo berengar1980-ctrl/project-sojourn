@@ -4,6 +4,10 @@ import type {
   ShipGameplayProfile,
 } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
+import {
+  pilotingTravelSpeedMultiplier,
+  pilotingTurnRateMultiplier,
+} from '../crew/crew-skill-effects';
 import { engineSpeedMultiplier } from './ship-component-service';
 import type { InstalledShipComponents } from './ship-component-service';
 import { shipActiveCombatWeaponMounts } from './ship-combat-role-policy';
@@ -31,7 +35,8 @@ export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGame
 /** Canonical combat movement values for either player or NPCs in the same hull. */
 export function resolveShipCombatMovementStats(
   ship: ShipDefinition,
-  installed?: InstalledShipComponents
+  installed?: InstalledShipComponents,
+  pilotingSkill = 0
 ): {
   readonly combatSpeed: number;
   readonly turnRateRadiansPerSecond: number;
@@ -44,11 +49,15 @@ export function resolveShipCombatMovementStats(
     normalBaseSpeed;
   const patrolSpeedFactor = ship.role === 'patrol' ? 1.3 : 1;
   const drive = installed ? engineSpeedMultiplier(installed) : 1;
+  const crewSpeed = pilotingTravelSpeedMultiplier(pilotingSkill);
+  const crewTurn = pilotingTurnRateMultiplier(pilotingSkill);
   const acceleration = Math.max(20, Math.min(38, 46 - ship.nominalLengthMeters * 0.18));
   return {
-    combatSpeed: Math.round(baseSpeed * patrolSpeedFactor * drive),
+    combatSpeed: Math.round(baseSpeed * patrolSpeedFactor * drive * crewSpeed),
     turnRateRadiansPerSecond:
-      Math.max(0.4, Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)) * drive,
+      Math.max(0.4, Math.min(0.86, 1.02 - ship.nominalLengthMeters * 0.006)) *
+      drive *
+      crewTurn,
     accelerationMetersPerSecond2: acceleration * (1 + (drive - 1) * 0.5),
   };
 }
@@ -56,9 +65,10 @@ export function resolveShipCombatMovementStats(
 /** Unboosted local travel uses the same hull speed as ordinary combat thrust. */
 export function resolveShipLocalCruiseSpeed(
   ship: ShipDefinition,
-  installed?: InstalledShipComponents
+  installed?: InstalledShipComponents,
+  pilotingSkill = 0
 ): number {
-  return resolveShipCombatMovementStats(ship, installed).combatSpeed;
+  return resolveShipCombatMovementStats(ship, installed, pilotingSkill).combatSpeed;
 }
 
 export function shipShieldMaxHp(
