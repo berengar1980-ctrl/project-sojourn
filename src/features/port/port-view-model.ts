@@ -105,6 +105,8 @@ export interface PortStationView {
   readonly label: string;
   readonly skill: ShipStationSkill;
   readonly assignedCrewId: string | null;
+  readonly bonus: number;
+  readonly bonusActive: boolean;
 }
 
 export interface PortCrewStateView {
@@ -419,6 +421,15 @@ export function createPortViewModel(
         label: STATION_LABELS[station.id] ?? station.id,
         skill: station.skill,
         assignedCrewId: crewState.assignments[station.id] ?? null,
+        bonus: station.bonus ?? 0,
+        bonusActive:
+          (station.bonus ?? 0) > 0 &&
+          crewState.hired.some(
+            (member) =>
+              member.id === crewState.assignments[station.id] &&
+              member.injuryState !== 'incapacitated' &&
+              member.injuryState !== 'dead'
+          ),
       })),
     },
     player: {
