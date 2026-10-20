@@ -22,7 +22,12 @@ assert.equal(
   'specialist supplies 60 percent when no other trained crew is aboard'
 );
 assert.equal(
-  stations.calculateStationSkill(helmStation, { helm: 'captain' }, [captain, assistant], 'piloting'),
+  stations.calculateStationSkill(
+    helmStation,
+    { helm: 'captain' },
+    [captain, assistant],
+    'piloting'
+  ),
   100,
   'the other crew member provides the remaining 40 percent'
 );
@@ -106,7 +111,8 @@ assert(fullFreight.shieldMaxHp > emptyFreight.shieldMaxHp);
 assert.equal(
   fullFreight.shieldMaxHp,
   Math.round(
-    (movement.shipShieldMaxHp(freighter) + components.componentShieldBonus(fullFreight.installed)) * 1.15
+    (movement.shipShieldMaxHp(freighter) +
+      components.componentShieldBonus(fullFreight.installed)) * 1.15
   )
 );
 
