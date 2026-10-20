@@ -104,7 +104,11 @@ unknown.campaigns.deleted_package = {
 };
 const loaded = runtime.createCampaignRuntime(bus.createCampaignEventBus(), unknown);
 loaded.register(registration);
-assert.deepEqual(loaded.unavailableIds(), ['deleted_package'], 'missing packages survive load');
+assert.deepEqual(
+  loaded.unavailableIds(),
+  ['story_two', 'deleted_package'],
+  'all unregistered packages survive load'
+);
 assert.equal(loaded.get('story_one', 'station'), 'sensor_station');
 assert.equal(loaded.start('story_one'), false, 'completed story must stay completed');
 assert.equal(loaded.snapshot().campaigns.deleted_package.data.chapter, 2);
