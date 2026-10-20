@@ -104,6 +104,32 @@ function createRosterManagement(
   };
 }
 
+function transferRosterAssignments(
+  context: RosterContext,
+  from: ShipDefinition,
+  to: ShipDefinition
+): void {
+  const { members, assignmentsByShip, assignmentRecord } = context;
+  // An already configured hull keeps its own station layout on return.
+  if (assignmentsByShip.has(to.id)) return;
+  const oldAssignments = assignmentRecord(from);
+  const next: Record<string, string | undefined> = {};
+  const stations = resolveShipGameplayStats(to).stations;
+  for (const station of stations) {
+    const crewId = oldAssignments[station.id];
+    if (!crewId) continue;
+    const member = members.find((entry) => entry.id === crewId);
+    if (member && canOperateStation(member)) next[station.id] = crewId;
+  }
+  // The captain must retain a post even when a different hull has no matching station.
+  if (!Object.values(next).includes('player')) {
+    const captain = members.find((entry) => entry.id === 'player');
+    const firstFree = stations.find((station) => !next[station.id]);
+    if (captain && canOperateStation(captain) && firstFree) next[firstFree.id] = 'player';
+  }
+  assignmentsByShip.set(to.id, next);
+}
+
 function createRosterAssignments(
   context: RosterContext
 ): Pick<
@@ -143,26 +169,7 @@ function createRosterAssignments(
     },
 
     transferAssignments(from, to) {
-      // An already configured hull keeps its own station layout on return.
-      if (assignmentsByShip.has(to.id)) return;
-      const oldAssignments = assignmentRecord(from);
-      const next: Record<string, string | undefined> = {};
-      const stations = resolveShipGameplayStats(to).stations;
-      for (const station of stations) {
-        const crewId = oldAssignments[station.id];
-        if (!crewId) continue;
-        const member = members.find((entry) => entry.id === crewId);
-        if (member && canOperateStation(member)) next[station.id] = crewId;
-      }
-      // The captain must retain a post even when a different hull has no matching station.
-      if (!Object.values(next).includes('player')) {
-        const captain = members.find((entry) => entry.id === 'player');
-        const firstFree = stations.find((station) => !next[station.id]);
-        if (captain && canOperateStation(captain) && firstFree) {
-          next[firstFree.id] = 'player';
-        }
-      }
-      assignmentsByShip.set(to.id, next);
+      transferRosterAssignments(context, from, to);
     },
 
     shipCrewMembers() {
