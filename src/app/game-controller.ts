@@ -90,9 +90,9 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   syncControllerNavigationCrewPerformance(context);
   context.audio.clearPlayerRcs();
   state.panels.star = createControllerStarPanel({
+    ...context,
     root: context.root,
     navigation: context.navigation,
-    ...context,
     world: () => context.world.world(),
     exitLocationId: () => context.world.exitLocationId(),
     returnFromCampaignSystem: () => context.world.returnFromSystem(),

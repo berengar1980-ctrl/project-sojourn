@@ -175,7 +175,7 @@ function makeDialogue(
   speaker: string,
   text: string,
   choices: readonly { readonly id: string; readonly label: string }[]
-): CampaignJournalView['dialogue'] {
+): NonNullable<CampaignJournalView['dialogue']> {
   return { id, speaker, text, choices };
 }
 
