@@ -17,7 +17,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     weaponSlots: 4,
     crewBerths: 5,
     maxComponentTier: 3,
-    stations: [...COMMON_STATIONS, { id: 'cargo_control', skill: 'logistics' }],
+    stations: [...COMMON_STATIONS, { id: 'cargo_control', skill: 'logistics', bonus: 12 }],
     specialCargo: null,
   },
   mining: {
@@ -28,7 +28,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     weaponSlots: 3,
     crewBerths: 5,
     maxComponentTier: 3,
-    stations: [...COMMON_STATIONS, { id: 'mining_station', skill: 'mining' }],
+    stations: [...COMMON_STATIONS, { id: 'mining_station', skill: 'mining', bonus: 12 }],
     specialCargo: { kind: 'mining' },
   },
   salvage: {
@@ -39,7 +39,7 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     weaponSlots: 3,
     crewBerths: 5,
     maxComponentTier: 3,
-    stations: [...COMMON_STATIONS, { id: 'salvage_control', skill: 'salvage' }],
+    stations: [...COMMON_STATIONS, { id: 'salvage_control', skill: 'salvage', bonus: 12 }],
     specialCargo: { kind: 'salvage' },
   },
   patrol: {
@@ -50,7 +50,12 @@ const ROLE_PROFILES: Readonly<Record<ShipRole, ShipGameplayProfile>> = {
     weaponSlots: 6,
     crewBerths: 5,
     maxComponentTier: 3,
-    stations: [...COMMON_STATIONS, { id: 'damage_control', skill: 'engineering' }],
+    stations: [
+      ...COMMON_STATIONS.map((station) =>
+        station.id === 'weapon_station' ? { ...station, bonus: 10 } : station
+      ),
+      { id: 'damage_control', skill: 'engineering', bonus: 5 },
+    ],
     specialCargo: null,
   },
 };
