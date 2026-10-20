@@ -64,7 +64,7 @@ export function shipActivationBlock(
   loadouts: ShipLoadoutService
 ): ShipActivationBlock {
   if (!ownership.owns(next.id)) return 'not-owned';
-  const capacity = resolveShipRuntimeSetup(next, { installed: loadouts.get(next) })
+  const capacity = resolveShipRuntimeSetup(next, { installed: loadouts.preview(next) })
     .cargoCapacityTons;
   if (playerCargoUsed(trade.player) > capacity) return 'cargo-overflow';
   if (Object.entries(trade.player.cargo).some(
