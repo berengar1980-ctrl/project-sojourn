@@ -24,13 +24,13 @@ Sojourn additionally already applies injury, motivation and social-trait modifie
 
 ## Piloting
 
-| Effect                     | Voidbound formula / behavior                                             | Sojourn                                                                           |
-| -------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Ship speed / strategic travel | `1 + skill/100 × 0.15`                                                 | **LIVE** – +15 % maximum speed in map, combat and local space                  |
-| RCS angular turn rate       | `1 + skill/100 × 0.15`                                                  | **LIVE** – +15 % turn rate in map, combat and local space                       |
-| Strategic fuel use         | `1 - skill/100 × 0.10`                                                   | **READY** – exact formula ported; player strategic fuel system is not implemented |
-| Combat dodge               | `skill/100 × 0.20`                                                       | **READY** – exact formula ported; full ship combat firing loop is not implemented |
-| Corsair interception evade | average Sensors + Piloting, then `clamp((navigation-25)×0.006, 0, 0.45)` | **READY** – exact formula ported; player interception/Corsair system is open      |
+| Effect                        | Voidbound formula / behavior                                             | Sojourn                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Ship speed / strategic travel | `1 + skill/100 × 0.15`                                                   | **LIVE** – +15 % maximum speed in map, combat and local space                     |
+| RCS angular turn rate         | `1 + skill/100 × 0.15`                                                   | **LIVE** – +15 % turn rate in map, combat and local space                         |
+| Strategic fuel use            | `1 - skill/100 × 0.10`                                                   | **READY** – exact formula ported; player strategic fuel system is not implemented |
+| Combat dodge                  | `skill/100 × 0.20`                                                       | **READY** – exact formula ported; full ship combat firing loop is not implemented |
+| Corsair interception evade    | average Sensors + Piloting, then `clamp((navigation-25)×0.006, 0, 0.45)` | **READY** – exact formula ported; player interception/Corsair system is open      |
 
 At skill 100, Sojourn Piloting gives **+15 % ship speed**, **+15 % RCS turn rate**, a calculated 10 % lower fuel-use multiplier (READY for a future player fuel system), and up to 20 % dodge.
 
@@ -72,9 +72,9 @@ Sojourn now has Mk I–VI weapon definitions and layered shield/hull damage, but
 
 | Effect                           | Voidbound formula / behavior                                                                              | Sojourn                                                                 |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Maximum shield strength           | base shield HP × `1 + skill/100×0.15`                                                                   | **LIVE** in local-space systems and player combat                       |
-| Shield regeneration              | base **0.4 HP/s**, without additional Engineering multiplier                                                 | **LIVE** baseline                                                      |
-| Fuel use                         | `1 - skill/100×0.10`                                                                                       | **READY** – player fuel consumption is not implemented                 |
+| Maximum shield strength          | base shield HP × `1 + skill/100×0.15`                                                                     | **LIVE** in local-space systems and player combat                       |
+| Shield regeneration              | base **0.4 HP/s**, without additional Engineering multiplier                                              | **LIVE** baseline                                                       |
+| Fuel use                         | `1 - skill/100×0.10`                                                                                      | **READY** – player fuel consumption is not implemented                  |
 | Post-hit regen lock              | **3 seconds**                                                                                             | **LIVE**                                                                |
 | Collapsed-shield offline delay   | **7 seconds**                                                                                             | **LIVE**                                                                |
 | Repair cost                      | `1 - skill/100×0.15`                                                                                      | **READY** – exact formula ported; persistent player repair service open |
@@ -118,11 +118,11 @@ The remaining effects depend on Voidbound-style prospecting, claims and deep min
 
 ## Logistics
 
-| Effect                  | Voidbound formula / behavior                   | Sojourn                                                                    |
-| ----------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- |
-| Goods sale fee           | `0.25 × (1-skill/100)` on **sales only**    | **LIVE** – deducted from the selling price and shown at the port. No purchase fee  |
-| Usable cargo capacity    | `(base hold + module bonus) × (1 + skill/100 × 0.15)` | **LIVE** – rounded down, used in transactions and ship-switch preflight       |
-| Captain commercial edge | subtract `(cunning-trust)×0.005`, clamp 0–25 % | **READY** – formula ported; player-captain trait model not yet implemented |
+| Effect                  | Voidbound formula / behavior                          | Sojourn                                                                           |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Goods sale fee          | `0.25 × (1-skill/100)` on **sales only**              | **LIVE** – deducted from the selling price and shown at the port. No purchase fee |
+| Usable cargo capacity   | `(base hold + module bonus) × (1 + skill/100 × 0.15)` | **LIVE** – rounded down, used in transactions and ship-switch preflight           |
+| Captain commercial edge | subtract `(cunning-trust)×0.005`, clamp 0–25 %        | **READY** – formula ported; player-captain trait model not yet implemented        |
 
 Ships without a Logistics station receive no Logistics skill benefit, matching Voidbound.
 
