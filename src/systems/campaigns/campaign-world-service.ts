@@ -130,9 +130,7 @@ function snapshotCampaignWorld(
     locations: Object.fromEntries(
       [...locations].map(([id, records]) => [id, [...records.values()]])
     ),
-    systems: Object.fromEntries(
-      [...systems].map(([id, records]) => [id, [...records.values()]])
-    ),
+    systems: Object.fromEntries([...systems].map(([id, records]) => [id, [...records.values()]])),
   });
 }
 
