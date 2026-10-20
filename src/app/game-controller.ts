@@ -49,6 +49,7 @@ import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene } from './game-controller-salvage';
 import { generateSectorSalvageEventField } from '../systems/salvage';
 import {
+  controllerLocalModel,
   controllerShipRuntimeOptions,
   controllerStarModel,
   createControllerLog,
