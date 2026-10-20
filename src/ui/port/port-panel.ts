@@ -255,7 +255,7 @@ function tradePane(model: PortViewModel): string {
           <button type="button" data-trade-view="system">SYSTEMMARKT</button>
         </nav>
         <section class="port-trade-view" data-trade-section="cargo">
-          <div class="port-panel-heading"><span>MEINE FRACHT</span><small>NETTOERLÖS · ${(model.saleFeeRate * 100).toFixed(1).replace('.', ',')} % VERKAUFSGEBÜHR</small></div>
+          <div class="port-panel-heading"><span>MEINE FRACHT</span><small>WO VERKAUFE ICH MEINE LADUNG? · ${(model.saleFeeRate * 100).toFixed(1).replace('.', ',')} % VERKAUFSGEBÜHR</small></div>
           <div class="port-cargo-head"><span>WARE</span><span>HIER</span><span>BESTER BEKANNTER MARKT</span><span>AKTION</span></div>
           <div class="port-cargo-sale-list">${cargoSaleRows(model)}</div>
         </section>
