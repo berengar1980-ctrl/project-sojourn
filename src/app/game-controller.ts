@@ -460,7 +460,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     crew,
     loadouts,
     engagements,
-    options.navigation
+    options
   );
   foreignWorld = () => campaignServices.world.inForeignSystem();
   const context: ControllerRuntimeContext = {

@@ -310,7 +310,9 @@ export const silentSignalCampaign: CampaignDefinition = {
   id: CAMPAIGN_ID,
   title: 'Das verstummte Signal',
   version: 1,
-  category: 'core',
+  category: 'development',
+  defaultEnabled: false,
+  description: 'Dreiteilige Referenzkampagne: Notsignal, fremdes Sternensystem und zwei Enden.',
   onEvent: onMissionEvent,
   present: journal,
 };

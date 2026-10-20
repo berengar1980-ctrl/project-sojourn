@@ -1,4 +1,10 @@
 import { createStartMenu, type StartMenuAction } from '../ui/start/start-menu';
+import { createCampaignSelectionMenu } from '../ui/start/campaign-selection-menu';
+import { campaignPackages } from '../data/campaigns/manifest';
+import {
+  createCampaignSelection,
+  type CampaignSelection,
+} from '../systems/campaigns/campaign-selection';
 import { createCharacterEditor } from '../ui/start/character-editor';
 import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
 import { createDuelLobby } from '../ui/start/duel-lobby';
@@ -11,10 +17,14 @@ import type { GameController } from './game-controller-types';
 
 export function bootstrap(root: HTMLElement | null): void {
   if (!root) throw new Error('HARROWDRIFT app root is missing.');
-  showMainMenu(root);
+  showMainMenu(root, createCampaignSelection(campaignPackages));
 }
 
-function launchCampaign(root: HTMLElement, profile: PlayerProfile): void {
+function launchCampaign(
+  root: HTMLElement,
+  profile: PlayerProfile,
+  selection: CampaignSelection
+): void {
   const ship = getShipDefinition('salvage-100m-variant-01');
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
@@ -29,11 +39,12 @@ function launchCampaign(root: HTMLElement, profile: PlayerProfile): void {
     ship: withPlayerShipName(ship, profile),
     playerProfile: profile,
     navigation,
+    campaignSelection: selection.snapshot(),
     onReturnToMainMenu: () => {
       if (!running) return;
       running = false;
       game.destroy();
-      showMainMenu(root);
+      showMainMenu(root, selection);
     },
   });
 
@@ -49,7 +60,7 @@ function launchCampaign(root: HTMLElement, profile: PlayerProfile): void {
   requestAnimationFrame(frame);
 }
 
-function showMainMenu(root: HTMLElement): void {
+function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
   document.querySelector('.settings-menu')?.remove();
   document.body.classList.remove('app-has-system-bar');
   let current: { destroy(): void } | null = null;
@@ -60,23 +71,30 @@ function showMainMenu(root: HTMLElement): void {
         root,
         (profile) => {
           current?.destroy();
-          launchCampaign(root, profile);
+          launchCampaign(root, profile, selection);
         },
-        () => showMainMenu(root),
+        () => showMainMenu(root, selection),
         resolveShipGameplayStats(getShipDefinition('salvage-100m-variant-01')!).stations
+      );
+    } else if (action === 'campaigns') {
+      current = createCampaignSelectionMenu(
+        root,
+        selection,
+        () => showMainMenu(root, selection),
+        () => navigate('campaign')
       );
     } else if (action === 'pvp') {
       current = createDuelLobby(root, () => {
         current?.destroy();
-        showMainMenu(root);
+        showMainMenu(root, selection);
       });
     } else if (action === 'options') {
-      showStartOptions(root, () => showMainMenu(root));
+      showStartOptions(root, () => showMainMenu(root, selection));
     } else {
       root.replaceChildren();
       const button = document.createElement('button');
       button.textContent = 'Zurück zum Hauptmenü';
-      button.addEventListener('click', () => showMainMenu(root));
+      button.addEventListener('click', () => showMainMenu(root, selection));
       root.append(button);
     }
   };

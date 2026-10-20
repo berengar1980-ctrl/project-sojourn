@@ -76,7 +76,7 @@ const editor = read('src/ui/start/character-editor.ts');
 const allocator = read('src/ui/start/character-editor-skills.ts');
 const bar = read('src/ui/settings/settings-menu.ts');
 assert(bootstrap.includes('createCharacterEditor('), 'campaign enters character editor');
-assert(bootstrap.includes('launchCampaign(root, profile)'), 'campaign launch');
+assert(bootstrap.includes('launchCampaign(root, profile, selection)'), 'campaign launch');
 assert(bootstrap.includes('withPlayerShipName(ship, profile)'), 'starter gets chosen name');
 assert(controller.includes('snapshotPlayerProfile(state.playerProfile)'), 'profile snapshot');
 const renameOnSwitch = 'withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)';

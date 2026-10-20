@@ -159,3 +159,29 @@ Both endings are tested with the authoritative navigation, world service and
 campaign runtime. Game snapshots remain **observational in-memory snapshots**
 and there is deliberately no save/load UI. The foreign system does not yet
 simulate independent markets, pirates or crew boarding.
+
+## Campaign selection in the main menu
+
+The main-menu **Kampagnen** action shows every registered package from
+`src/data/campaigns/manifest.ts` in a scrollable list: title, version,
+category, optional description and the current checkbox selection.
+New packages appear automatically in this UI as soon as their definitions
+are registered in that manifest (there is no browser filesystem traversal).
+The separate **Kampagnenspiel** action and the selector's **Neues Spiel**
+button both proceed through the existing character editor.
+
+`CampaignSelection` owns the in-memory selection for the present application
+session and returns detached, JSON-compatible `snapshot()` values.
+The selection is passed through the game controller setup and applied to the
+`CampaignRuntime` **after registration and before `game.initialized`**.
+Unknown identifiers are ignored by the game runtime and cannot be toggled in
+the selector. `core` packages remain mandatory; they are visible but their
+checkboxes are locked. Optional and development packages can be switched on
+or off. Selection changes affect only **new** games, not an active runtime.
+
+`Das verstummte Signal` is a `development` reference campaign with
+`defaultEnabled: false`. It is not launched by default, but can be selected
+for integration testing. No selection is written to persistent storage;
+restarting the application resets to package defaults because full-game
+save/persistence is not implemented. This behavior is covered by runtime
+and UI interaction tests.

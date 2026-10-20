@@ -152,6 +152,7 @@ export interface CampaignDefinition {
   readonly version: number;
   readonly category?: CampaignCategory;
   readonly defaultEnabled?: boolean;
+  readonly description?: string;
   readonly onEvent?: (event: CampaignEvent, campaign: CampaignContext) => void;
   /** Pure projection from campaign progress; UI never owns quest progression. */
   readonly present?: (

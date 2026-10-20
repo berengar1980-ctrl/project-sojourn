@@ -1,4 +1,4 @@
-export type StartMenuAction = 'campaign' | 'pvp' | 'options' | 'quit';
+export type StartMenuAction = 'campaign' | 'campaigns' | 'pvp' | 'options' | 'quit';
 
 export interface StartMenu {
   destroy(): void;
@@ -26,7 +26,7 @@ export function createStartMenu(
   const entries: readonly { label: string; action?: StartMenuAction }[] = [
     { label: 'Kampagnenspiel', action: 'campaign' },
     { label: 'PvP-Modus', action: 'pvp' },
-    { label: 'Kampagnen' },
+    { label: 'Kampagnen', action: 'campaigns' },
     { label: 'Speichern / Laden' },
     { label: 'Optionen', action: 'options' },
     { label: 'Beenden', action: 'quit' },
@@ -37,10 +37,7 @@ export function createStartMenu(
     button.textContent = entry.label;
     button.disabled = !entry.action;
     if (!entry.action) {
-      button.title =
-        entry.label === 'Kampagnen'
-          ? 'Kampagnenverwaltung folgt in einer späteren Version'
-          : 'Spielstände sind noch nicht implementiert';
+      button.title = 'Spielstände sind noch nicht implementiert';
     } else {
       button.dataset.action = entry.action;
       button.addEventListener('click', () => onAction(entry.action!));

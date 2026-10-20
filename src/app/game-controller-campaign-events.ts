@@ -50,11 +50,18 @@ export function createControllerCampaignServices(
   shipId: string,
   navigation: NavigationSnapshot,
   packages: readonly CampaignDefinition[] = campaignPackages,
-  actionPort?: CampaignActionPort
+  actionPort?: CampaignActionPort,
+  selection?: Readonly<Record<string, boolean>>
 ) {
   const campaignEvents = createCampaignEventBus();
   const campaigns = createCampaignRuntime(campaignEvents, undefined, undefined, actionPort);
   for (const campaign of packages) campaigns.register(campaign);
+  if (selection) {
+    for (const campaign of packages) {
+      const enabled = selection[campaign.id];
+      if (typeof enabled === 'boolean') campaigns.setEnabled(campaign.id, enabled);
+    }
+  }
   const campaignNavigation = createCampaignNavigationTracker(campaignEvents, navigation);
   campaignEvents.emit({
     type: 'game.initialized',

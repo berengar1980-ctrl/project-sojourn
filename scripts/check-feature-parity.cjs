@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const DOC_PATH = 'docs/VOIDBOUND_FEATURE_PARITY.md';
+const DOC_PATH = 'docs/SOJOURN_FEATURE_PARITY.md';
 const EXPECTED_FEATURES = 241;
 const VALID_STATUSES = new Set(['✅ Umgesetzt', '🟨 Teilweise', '⬜ Offen', '🔁 Bewusst anders']);
 const VALID_DECISIONS = new Set(['offen', 'übernehmen', 'ändern', 'verwerfen', 'später']);
@@ -92,7 +92,7 @@ function enforceChangedFileGate(files) {
       [
         'Feature parity review required.',
         `This PR changes feature-bearing files: ${relevant.join(', ')}`,
-        `Review Voidbound parity and update ${DOC_PATH} before merge.`,
+        `Review Sojourn feature parity and update ${DOC_PATH} before merge.`,
         'If no status changes, add a "keine Statusänderung" entry to the Review-Log.',
       ].join('\n')
     );

@@ -56,6 +56,7 @@ function createScenario() {
   };
   const engine = runtimeModule.createCampaignRuntime(bus, undefined, undefined, port);
   engine.register(story);
+  assert.equal(engine.setEnabled(story.id, true), true, 'development story is opt-in');
   bus.emit({
     type: 'game.initialized',
     captainName: 'Test',
