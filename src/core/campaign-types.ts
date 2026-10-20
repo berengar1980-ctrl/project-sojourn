@@ -1,3 +1,5 @@
+import type { ShipComponentType } from './ship-types';
+
 /** Public, serializable contract shared by campaign packages and the game. */
 export type CampaignValue =
   | null
@@ -59,7 +61,7 @@ export type CampaignAction =
   | { readonly type: 'reputation.change'; readonly factionId: string; readonly delta: number }
   | {
       readonly type: 'component.grant';
-      readonly componentType: import('./ship-types').ShipComponentType;
+      readonly componentType: ShipComponentType;
       readonly componentId: string;
     }
   | {
