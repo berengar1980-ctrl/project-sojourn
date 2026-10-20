@@ -16,6 +16,7 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { createCampaignActionGateway } from '../systems/campaigns/campaign-action-gateway';
 import {
   createControllerCampaignServices,
   emitCampaignCombatEnded,
@@ -438,7 +439,13 @@ export function createGameController(options: GameControllerOptions): GameContro
   const campaignServices = createControllerCampaignServices(
     state.playerProfile,
     state.activeShip.id,
-    options.navigation.getSnapshot()
+    options.navigation.getSnapshot(),
+    undefined,
+    createCampaignActionGateway({
+      trade: economy.trade,
+      crew,
+      getShip: () => state.activeShip,
+    })
   );
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,

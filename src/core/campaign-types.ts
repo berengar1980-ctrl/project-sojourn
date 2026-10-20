@@ -48,7 +48,30 @@ export type CampaignEvent =
       readonly outcome: 'player_win' | 'enemy_win' | 'draw';
     };
 
+/** An individual, validated game-domain operation; not an arbitrary state mutation. */
+export type CampaignAction =
+  | { readonly type: 'credits.grant' | 'credits.take'; readonly amount: number }
+  | {
+      readonly type: 'cargo.grant' | 'cargo.take';
+      readonly resourceId: string;
+      readonly quantity: number;
+    }
+  | { readonly type: 'crew.hire' | 'crew.dismiss'; readonly crewId: string }
+  | {
+      readonly type: 'crew.assign';
+      readonly stationId: string;
+      readonly crewId: string | null;
+    };
+
+export type CampaignActionResult = 'applied' | 'already_applied' | 'rejected';
+
+export interface CampaignActionPort {
+  apply(action: CampaignAction): boolean;
+}
+
 export interface CampaignProgress {
+  /** In-memory receipt identifiers scoped to this package; never a standalone save file. */
+  readonly appliedActionIds?: readonly string[];
   readonly version: number;
   readonly status: CampaignStatus;
   readonly data: Readonly<Record<string, CampaignValue>>;
@@ -62,6 +85,7 @@ export interface CampaignContext {
   complete(outcome: string): boolean;
   get(key: string): CampaignValue | null;
   set(key: string, value: CampaignValue): void;
+  applyAction(actionId: string, action: CampaignAction): CampaignActionResult;
 }
 
 export interface CampaignDefinition {

@@ -5,6 +5,10 @@ import type {
   TradeResult,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import {
+  createPlayerCampaignEconomyActions,
+  type PlayerCampaignEconomyActions,
+} from './player-campaign-actions';
 
 const DEFAULT_SALE_FEE_RATE = 0.06;
 
@@ -32,7 +36,7 @@ function weightedCostAfterPurchase(
   return Math.max(0, (lot?.totalCost ?? 0) + quantity * cost);
 }
 
-export interface PlayerTradeService {
+export interface PlayerTradeService extends PlayerCampaignEconomyActions {
   readonly player: PlayerEconomyState;
   buy(
     locationId: string,
@@ -65,6 +69,7 @@ export function createPlayerTradeService(
 
   return {
     player,
+    ...createPlayerCampaignEconomyActions(player, () => playerCargoUsed(player)),
 
     buy(locationId, resourceId, requestedQuantity, cargoCapacityTons) {
       const entry = markets.getEntry(locationId, resourceId);
