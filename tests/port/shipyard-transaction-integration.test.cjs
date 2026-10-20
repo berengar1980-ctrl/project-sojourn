@@ -72,19 +72,9 @@ function workshop() {
 }
 
 // 2. Recover a rare efficient engine, sell/analyze it, and unlock that exact model variant.
-const specialId = components.createSpecialSalvageComponentId(
-  'engine',
-  'engine1',
-  'efficiency',
-  15
-);
+const specialId = components.createSpecialSalvageComponentId('engine', 'engine1', 'efficiency', 15);
 assert(specialId);
-const salvaged = inventory.store(
-  'engine',
-  specialId,
-  'wreck-integration',
-  workshop().cargoCapacityTons
-);
+const salvaged = inventory.store('engine', specialId, 'wreck-integration', workshop().cargoCapacityTons);
 assert(salvaged);
 const sale = transactions.sellShipyardComponent(workshop(), salvaged.uid);
 assert(sale && sale.researched);
@@ -115,7 +105,10 @@ assert.deepEqual(inventory.snapshot(), inventoryBeforeRejectedInstall);
 assert.deepEqual(loadouts.snapshot(), loadoutsBeforeRejectedInstall);
 assert.equal(transactions.installShipyardComponent(workshop(), 'engine', 0, purchased.uid), true);
 assert.equal(loadouts.get(active).engine[0], improvedId);
-assert(!inventory.list().some((part) => part.uid === purchased.uid), 'fitted part consumed once');
+assert(
+  !inventory.list().some((part) => part.uid === purchased.uid),
+  'fitted part consumed once'
+);
 assert.equal(
   inventory.list().filter((part) => part.componentId === improvedId).length,
   0,
@@ -158,12 +151,9 @@ activate(freighter);
 assert.equal(loadouts.get(active).engine[0], 'engine2', 'second hull loadout preserved');
 assert.equal(crew.assignments(active).helm, recruit.id, 'second hull assignment preserved');
 assert.equal(ownership.snapshot().ownedShipIds.length, 2);
-assert.equal(
-  trade.player.credits,
-  initialCredits - hullPrice + sale.credits - improvement.cost -
-    components.getShipComponent('engine', 'engine2').cost,
-  'transactions retain exact total credit balance through swaps'
-);
+const secondEngineCost = components.getShipComponent('engine', 'engine2').cost;
+const expectedCredits = initialCredits - hullPrice + sale.credits - improvement.cost - secondEngineCost;
+assert.equal(trade.player.credits, expectedCredits, 'exact credit balance after two ship changes');
 
 // UI adapters must invoke the same transaction functions that are covered above.
 const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
@@ -176,7 +166,8 @@ for (const method of [
 ]) {
   assert(portController.includes(method), 'port controller missing transaction ' + method);
 }
+const dockMarkup = shipyardUi + readModuleSource(root, 'src/ui/port/port-panel.ts');
 for (const hook of ['data-buy-ship-id', 'data-buy-catalog', 'data-component-slot-select']) {
-  assert(shipyardUi.includes(hook) || readModuleSource(root, 'src/ui/port/port-panel.ts').includes(hook));
+  assert(dockMarkup.includes(hook), 'missing dock control ' + hook);
 }
-console.log('PASS ship purchase -> salvage research -> component buy/install -> hull switching -> credits, cargo, crew and loadouts');
+console.log('PASS shipyard integration: purchases, research, fitting, switching and crew continuity');
