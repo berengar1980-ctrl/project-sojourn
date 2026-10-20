@@ -72,7 +72,12 @@ function workshop() {
 }
 
 // 2. Recover a rare efficient engine, sell/analyze it, and unlock that exact model variant.
-const specialId = components.createSpecialSalvageComponentId('engine', 'engine1', 'efficiency', 15);
+const specialId = components.createSpecialSalvageComponentId(
+  'engine',
+  'engine1',
+  'efficiency',
+  15
+);
 assert(specialId);
 const salvaged = inventory.store(
   'engine',
@@ -145,7 +150,8 @@ assert.equal(crew.assignments(active).sensor_station, recruit.id);
 assert.equal(transactions.purchaseShipyardComponent(workshop(), 'engine', 'engine2'), true);
 const otherEngine = inventory.list().find((part) => part.componentId === 'engine2');
 assert(otherEngine);
-assert.equal(transactions.installShipyardComponent(workshop(), 'engine', 0, otherEngine.uid), true);
+const equipped = transactions.installShipyardComponent(workshop(), 'engine', 0, otherEngine.uid);
+assert.equal(equipped, true);
 assert.equal(loadouts.get(active).engine[0], 'engine2');
 assert.equal(crew.assign(active, 'helm', recruit.id), true);
 activate(starter);
@@ -159,7 +165,7 @@ assert.equal(ownership.snapshot().ownedShipIds.length, 2);
 const secondEngineCost = components.getShipComponent('engine', 'engine2').cost;
 const purchaseTotal = improvement.cost + secondEngineCost;
 const expectedCredits = initialCredits - hullPrice + sale.credits - purchaseTotal;
-assert.equal(trade.player.credits, expectedCredits, 'exact credit balance after two ship changes');
+assert.equal(trade.player.credits, expectedCredits, 'balance survives ship changes');
 
 // UI adapters must invoke the same transaction functions that are covered above.
 const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
