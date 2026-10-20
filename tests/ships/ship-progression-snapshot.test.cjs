@@ -50,7 +50,7 @@ assert.equal(owned.purchase(otherShip.id), ownershipModule.shipPurchasePrice(oth
 bag.take(part.uid);
 found.registerComponent('weapon', 'special_performance_20_weapon1');
 assert.equal(initial.inventory.components.length, 1, 'snapshot is not a live inventory reference');
-assert.deepEqual(initial.ownedShipIds, ['miner', 'patrol']);
+assert.deepEqual(initial.ownedShipIds, [ship.id]);
 assert.equal(initial.discoveredBonuses['weapon:weapon1'].performance, 12);
 
 // A snapshot must be an observation, never a mutable handle into the owning services.
