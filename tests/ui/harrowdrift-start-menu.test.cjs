@@ -14,7 +14,10 @@ const css = read('src/ui/start/start-menu.css');
 const duel = read('src/ui/start/duel-lobby.ts');
 const html = read('index.html');
 
-assert(bootstrap.includes('showMainMenu(root);'), 'game boots to the menu');
+assert(
+  bootstrap.includes('showMainMenu(root, createCampaignSelection(campaignPackages));'),
+  'game boots with a campaign selection'
+);
 assert(bootstrap.includes("action === 'campaign'"), 'campaign opens the existing game');
 assert(bootstrap.includes('createDuelLobby'), 'PvP enters the duel lobby');
 assert(main.includes("import './ui/start/start-menu.css'"), 'menu CSS loaded');
@@ -29,7 +32,8 @@ for (const title of [
   'Beenden',
 ])
   assert(menu.includes(title), 'missing menu entry: ' + title);
-assert(menu.includes('button.disabled = !entry.action'), 'future features must be disabled');
+assert(menu.includes("action: 'campaigns'"), 'campaign manager must be available');
+assert(menu.includes('button.disabled = !entry.action'), 'unimplemented features remain disabled');
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
 const weaponCards = read('src/ui/start/duel-weapon-cards.ts');

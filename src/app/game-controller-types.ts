@@ -9,6 +9,7 @@ export interface GameControllerOptions {
   readonly playerProfile: PlayerProfile;
   readonly navigation: NavigationService;
   readonly onReturnToMainMenu: () => void;
+  readonly campaignSelection?: Readonly<Record<string, boolean>>;
 }
 
 export interface GameController {

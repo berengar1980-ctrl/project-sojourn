@@ -300,3 +300,122 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* The campaign selection is part of the new-game configuration, not a savegame. */
+.harrow-campaigns {
+  box-sizing: border-box;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding: clamp(24px, 5vw, 68px);
+  background: #05080d url('/startscreen-background.webp') center / cover fixed;
+  color: #dce1e6;
+  font-family: 'Courier New', ui-monospace, monospace;
+}
+
+.harrow-campaigns__layout {
+  max-width: 880px;
+  padding: clamp(18px, 3vw, 35px);
+  background: rgba(5, 12, 18, 0.93);
+  border: 1px solid rgba(164, 152, 117, 0.4);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+}
+
+.harrow-campaigns__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #c2af7f;
+}
+
+.harrow-campaigns h1 {
+  margin: 12px 0;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: 0.1em;
+}
+
+.harrow-campaigns__layout > p {
+  max-width: 670px;
+  line-height: 1.7;
+  font-size: 12px;
+  color: #b5c5cc;
+}
+
+.harrow-campaigns__counter {
+  color: #c8b678 !important;
+  letter-spacing: 0.08em;
+}
+
+.harrow-campaigns__list {
+  display: grid;
+  gap: 12px;
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  margin: 20px 0 25px;
+}
+
+.harrow-campaigns__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 16px;
+  background: rgba(12, 27, 34, 0.95);
+  border: 1px solid #526370;
+  cursor: pointer;
+}
+
+.harrow-campaigns__item:focus-within {
+  border-color: #d8bc52;
+}
+
+.harrow-campaigns__item input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: #d8bc52;
+  cursor: pointer;
+}
+
+.harrow-campaigns__item input:disabled {
+  cursor: not-allowed;
+}
+
+.harrow-campaigns__item-content {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.harrow-campaigns__item-content strong {
+  font-size: 16px;
+  color: #e2e8ea;
+}
+
+.harrow-campaigns__item-content small {
+  color: #c2aa71;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.harrow-campaigns__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.harrow-campaigns__actions button {
+  padding: 12px 18px;
+  background: #111d24;
+  border: 1px solid #7c8581;
+  color: #f1e2c3;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.harrow-campaigns__actions button:hover {
+  border-color: #d8bc52;
+  color: #efd66b;
+}

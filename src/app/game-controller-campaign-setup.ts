@@ -3,7 +3,6 @@ import { narrowsSector } from '../data/maps/narrows-sector';
 import { createCampaignWorldService } from '../systems/campaigns/campaign-world-service';
 import type { CrewRosterService } from '../systems/crew/crew-roster-service';
 import type { StarMapEngagementService } from '../systems/combat/star-map-engagement-service';
-import type { NavigationService } from '../systems/navigation';
 import type { ShipLoadoutService } from '../systems/ships/ship-loadout-service';
 import { createFactionReputationService } from '../systems/reputation/faction-reputation-service';
 import { createCampaignActionGateway } from '../systems/campaigns/campaign-action-gateway';
@@ -11,6 +10,7 @@ import { createCampaignCombatActions } from '../systems/campaigns/campaign-comba
 import { createCampaignShipActions } from '../systems/campaigns/campaign-ship-actions';
 import type { ControllerEconomy } from './game-controller-economy';
 import type { ControllerRuntimeState } from './game-controller-runtime-types';
+import type { GameControllerOptions } from './game-controller-types';
 import { createControllerCampaignServices } from './game-controller-campaign-events';
 
 /** Build all campaign authority only after canonical gameplay services exist. */
@@ -20,8 +20,9 @@ export function createControllerCampaignServicesWithActions(
   crew: CrewRosterService,
   loadouts: ShipLoadoutService,
   engagements: StarMapEngagementService,
-  navigation: NavigationService
+  options: Pick<GameControllerOptions, 'navigation' | 'campaignSelection'>
 ) {
+  const { navigation } = options;
   const world = createCampaignWorldService(narrowsSector, navigation);
   const reputation = createFactionReputationService(
     factionDefinitions.map((faction) => faction.id)
@@ -45,7 +46,8 @@ export function createControllerCampaignServicesWithActions(
     state.activeShip.id,
     navigation.getSnapshot(),
     undefined,
-    actionPort
+    actionPort,
+    options.campaignSelection
   );
   return { ...campaignServices, reputation, world };
 }
