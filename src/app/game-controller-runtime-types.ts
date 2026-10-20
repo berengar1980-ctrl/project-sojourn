@@ -13,7 +13,7 @@ import type { CrewRosterService } from '../systems/crew';
 import type { LocalSpaceService } from '../systems/local-space';
 import type { NavigationService } from '../systems/navigation';
 import type { NpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
-import type { ShipLoadoutService } from '../systems/ships';
+import type { ShipLoadoutService, ShipOwnershipService } from '../systems/ships';
 import type { BoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import type { StrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import type { LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -36,7 +36,7 @@ export interface ControllerRuntimeState {
   activeShip: ShipDefinition;
   readonly starterShipId: string;
   readonly playerProfile: PlayerProfile;
-  ownedShipIds: Set<string>;
+  readonly shipOwnership: ShipOwnershipService;
   mode: SceneMode;
   readonly panels: ControllerPanels;
   shipSwitcher: ShipTestSwitcher | null;
