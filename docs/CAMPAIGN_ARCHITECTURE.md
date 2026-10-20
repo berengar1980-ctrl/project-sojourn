@@ -81,3 +81,29 @@ The source-of-truth Voidbound repo remains read-only.
   required before introducing actual save/load.
 - There is no multi-operation batch with rollback yet; campaign authors use
   separately validated actions and explicit outcomes until that exists.
+
+## Phase 3 – faction reputation, ship equipment and live NPC combat
+
+The Action Gateway additionally supports:
+
+- `reputation.change`: signed integer change for a registered faction,
+  accepted only if the resulting value remains within -100..100. The
+  `FactionReputationService` is the authority and exposes detached snapshots.
+- `component.grant`: a catalog-validated loose ship component is inserted into
+  the existing components inventory with normal cargo-capacity reservation and
+  an explicit campaign provenance.
+- `component.install`: installs a component from the player's loose inventory
+  into a **vacant, fitting slot only**. The normal hardpoint/tier checks run;
+  only then is the loose component consumed and its reserved cargo released.
+  Existing equipped modules are never silently destroyed.
+- `combat.start`: uses `StarMapEngagementService.engageNpcNow` for a **live,
+  existing NPC only**, from the star map, within 650 world units, while not
+  travelling, pursuing, or already fighting. The normal controller presents
+  the battle on its next tick. No alternative combat rules or enemy spawns.
+
+The faction manifest contains stable directorate, free-trader, and corsair
+IDs. This phase introduces storage and action semantics; it does not yet
+connect faction scores to trade pricing, patrol responses, or UI. It does
+not spawn new NPC opponents, transfer installed equipment between ships, or
+provide cross-service atomic batches. The snapshot and exactly-once receipts
+remain in-memory until career-wide persistence is implemented.

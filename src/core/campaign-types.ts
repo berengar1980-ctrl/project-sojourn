@@ -1,3 +1,5 @@
+import type { ShipComponentType } from './ship-types';
+
 /** Public, serializable contract shared by campaign packages and the game. */
 export type CampaignValue =
   | null
@@ -56,6 +58,18 @@ export type CampaignAction =
       readonly resourceId: string;
       readonly quantity: number;
     }
+  | { readonly type: 'reputation.change'; readonly factionId: string; readonly delta: number }
+  | {
+      readonly type: 'component.grant';
+      readonly componentType: ShipComponentType;
+      readonly componentId: string;
+    }
+  | {
+      readonly type: 'component.install';
+      readonly componentUid: string;
+      readonly slotIndex: number;
+    }
+  | { readonly type: 'combat.start'; readonly npcId: string }
   | { readonly type: 'crew.hire' | 'crew.dismiss'; readonly crewId: string }
   | {
       readonly type: 'crew.assign';
