@@ -144,6 +144,7 @@ export interface PortViewModel {
   readonly security: string;
   readonly description: string;
   readonly shipyardAvailable: boolean;
+  readonly saleFeeRate: number;
   readonly shipyard: PortShipyardView;
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
   readonly market: readonly PortMarketRowView[];
@@ -368,7 +369,7 @@ export function createPortViewModel(
   systemMarketInput: readonly PortSystemMarketInput[],
   currentDay: number,
   cargoCapacityTons = ship.cargoCapacityTons,
-  saleFeeRate = 0.06,
+  saleFeeRate = 0.25,
   shipyardState: PortShipyardStateInput = { loose: [], variants: [] }
 ): PortViewModel {
   const localMarket = marketRows(market, player, saleFeeRate);
@@ -395,6 +396,7 @@ export function createPortViewModel(
     security: port.security.toUpperCase(),
     description: location.description,
     shipyardAvailable: port.shipyard,
+    saleFeeRate,
     shipyard: shipyardView(shipyardState),
     tabs: [
       { id: 'trade', label: 'HANDEL', enabled: true },
