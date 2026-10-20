@@ -62,7 +62,11 @@ export type CampaignAction =
       readonly componentType: import('./ship-types').ShipComponentType;
       readonly componentId: string;
     }
-  | { readonly type: 'component.install'; readonly componentUid: string; readonly slotIndex: number }
+  | {
+      readonly type: 'component.install';
+      readonly componentUid: string;
+      readonly slotIndex: number;
+    }
   | { readonly type: 'combat.start'; readonly npcId: string }
   | { readonly type: 'crew.hire' | 'crew.dismiss'; readonly crewId: string }
   | {

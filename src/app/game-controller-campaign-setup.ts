@@ -20,16 +20,14 @@ export function createControllerCampaignServicesWithActions(
   engagements: StarMapEngagementService,
   navigation: NavigationService
 ) {
-  const reputation = createFactionReputationService(factionDefinitions.map((faction) => faction.id));
+  const reputation = createFactionReputationService(
+    factionDefinitions.map((faction) => faction.id)
+  );
   const actionPort = createCampaignActionGateway({
     trade: economy.trade,
     crew,
     reputation,
-    equipment: createCampaignShipActions(
-      economy.components,
-      loadouts,
-      () => state.activeShip
-    ),
+    equipment: createCampaignShipActions(economy.components, loadouts, () => state.activeShip),
     combat: createCampaignCombatActions(
       engagements,
       economy.sectorNpcs,
