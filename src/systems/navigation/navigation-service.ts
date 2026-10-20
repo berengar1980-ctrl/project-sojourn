@@ -279,6 +279,7 @@ export function createNavigationService(
   startLocationId: string,
   initialCruiseSpeed: number
 ): NavigationService {
+  let currentWorld = world;
   const state: NavigationRuntimeState = {
     currentLocationId: startLocationId,
     pointDestination: null,
@@ -292,10 +293,10 @@ export function createNavigationService(
     cruiseSpeed: initialCruiseSpeed,
     turnRateMultiplier: 1,
   };
-  const snapshot = (): NavigationSnapshot => createSnapshot(world, state);
+  const snapshot = (): NavigationSnapshot => createSnapshot(currentWorld, state);
 
   const selectDestination = (locationId: string | null): NavigationSnapshot => {
-    if (locationId !== null && !world.locations.some((location) => location.id === locationId)) {
+    if (locationId !== null && !currentWorld.locations.some((location) => location.id === locationId)) {
       throw new Error('Unknown navigation destination: ' + locationId);
     }
     state.selectedDestinationId = locationId;
@@ -318,7 +319,7 @@ export function createNavigationService(
   };
 
   const startTravel = (): NavigationSnapshot => {
-    startSelectedTravel(world, state);
+    startSelectedTravel(currentWorld, state);
     return snapshot();
   };
 
@@ -329,6 +330,37 @@ export function createNavigationService(
 
   return {
     getSnapshot: snapshot,
+    replaceWorld(nextWorld) {
+      currentWorld = nextWorld;
+      const exists = (id: string | null) =>
+        id !== null && currentWorld.locations.some((location) => location.id === id);
+      if (state.travel && !exists(state.travel.destinationId)) {
+        state.travel = null;
+        state.currentTurnRate = 0;
+        state.currentAngularThrust = 0;
+      }
+      if (state.pointDestination === null && !exists(state.selectedDestinationId)) {
+        state.selectedDestinationId = null;
+      }
+      if (state.currentLocationId && !exists(state.currentLocationId)) {
+        state.currentLocationId = null;
+      }
+    },
+    setWorld(nextWorld, locationId) {
+      const location = nextWorld.locations.find((item) => item.id === locationId);
+      if (!location) return false;
+      currentWorld = nextWorld;
+      state.travel = null;
+      state.pursuit = null;
+      state.pointDestination = null;
+      state.currentLocationId = locationId;
+      state.selectedDestinationId = locationId;
+      state.currentPosition = { ...location.position };
+      state.currentHeading = 0;
+      state.currentTurnRate = 0;
+      state.currentAngularThrust = 0;
+      return true;
+    },
     selectDestination,
     selectPointDestination,
     startTravel,
@@ -344,7 +376,7 @@ export function createNavigationService(
       return snapshot();
     },
     recoverToNearestDock() {
-      const destination = world.locations
+      const destination = currentWorld.locations
         .filter(
           (location) =>
             location.activities.shipyard || location.activities.dock || location.activities.refuel

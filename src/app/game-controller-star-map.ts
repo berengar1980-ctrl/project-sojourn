@@ -1,7 +1,7 @@
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
-import { narrowsSector } from '../data/maps/narrows-sector';
+import type { WorldMap } from '../core/world-types';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { NavigationService } from '../systems/navigation';
 import { sectorSensorContactInfo } from '../systems/scanning/sensor-contact-service';
@@ -9,13 +9,20 @@ import { getShipDefinition } from '../systems/ships';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import type { ControllerEconomy } from './game-controller-economy';
 
-function locationHasActivity(locationId: string, activity: 'mine' | 'salvage'): boolean {
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+function locationHasActivity(
+  world: WorldMap,
+  locationId: string,
+  activity: 'mine' | 'salvage'
+): boolean {
+  const location = world.locations.find((entry) => entry.id === locationId);
   return Boolean(location?.activities[activity]);
 }
 
 export function createControllerStarPanel(options: {
   readonly root: HTMLElement;
+  readonly world: () => WorldMap;
+  readonly exitLocationId: () => string | null;
+  readonly returnFromCampaignSystem: () => boolean;
   readonly navigation: NavigationService;
   readonly log: SystemLogService;
   readonly getModel: () => ReturnType<typeof createStarMapViewModel>;
@@ -38,11 +45,15 @@ export function createControllerStarPanel(options: {
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
       if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
-        if (locationHasActivity(id, 'mine')) {
+        if (options.exitLocationId() === id) {
+          if (options.returnFromCampaignSystem()) panel?.update(options.getModel());
+          return;
+        }
+        if (locationHasActivity(options.world(), id, 'mine')) {
           options.onEnterLocalSpace();
           return;
         }
-        if (locationHasActivity(id, 'salvage') || options.eventById?.(id)) {
+        if (locationHasActivity(options.world(), id, 'salvage') || options.eventById?.(id)) {
           options.onEnterSalvageSpace();
           return;
         }
@@ -72,11 +83,13 @@ export function createControllerStarModel(
   economy: ControllerEconomy,
   selectedNpcId: string | null,
   sensorCrewSkill: number,
-  sensorModifier: number
+  sensorModifier: number,
+  world: WorldMap,
+  foreignSystem = false
 ) {
   const navigationSnapshot = navigation.getSnapshot();
-  economy.marketIntel.observeFromSensors(
-    narrowsSector.locations.map((location) => ({
+  if (!foreignSystem) economy.marketIntel.observeFromSensors(
+    world.locations.map((location) => ({
       locationId: location.id,
       position: location.position,
     })),
@@ -86,7 +99,7 @@ export function createControllerStarModel(
     sensorModifier
   );
 
-  const npcShips = economy.sectorNpcs.npcs.flatMap((npc) => {
+  const npcShips = foreignSystem ? [] : economy.sectorNpcs.npcs.flatMap((npc) => {
     if (npc.hullHp <= 0) return [];
     const definition = getShipDefinition(npc.shipId);
     if (!definition) return [];
@@ -120,7 +133,7 @@ export function createControllerStarModel(
     ];
   });
 
-  const eventLocations = economy.salvageEvents.playerVisible.map((event) => ({
+  const eventLocations = (foreignSystem ? [] : economy.salvageEvents.playerVisible).map((event) => ({
     id: event.id,
     name: event.title,
     kind: 'wreck' as const,
@@ -131,22 +144,22 @@ export function createControllerStarModel(
     dangerLevel:
       event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
   }));
-  const cargoScanner = scanCargoMarkets({
+  const cargoScanner = foreignSystem ? null : scanCargoMarkets({
     player: economy.trade.player,
     intel: economy.marketIntel,
-    locations: narrowsSector.locations,
+    locations: world.locations,
     origin: navigationSnapshot.currentPosition,
     currentDay: economy.situations.currentDay,
   });
   return {
     ...createStarMapViewModel(
-      narrowsSector,
+      world,
       navigationSnapshot,
       ship,
       npcShips,
       selectedNpcId,
       eventLocations
     ),
-    cargoScanner,
+    ...(cargoScanner ? { cargoScanner } : {}),
   };
 }

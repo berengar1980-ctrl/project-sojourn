@@ -7,6 +7,7 @@ import { resolveShipGameplayStats } from '../ships/ship-stats';
 import type { FactionReputationService } from '../reputation/faction-reputation-service';
 import type { CampaignShipActions } from './campaign-ship-actions';
 import type { CampaignCombatActions } from './campaign-combat-actions';
+import type { CampaignWorldService } from './campaign-world-service';
 
 export interface CampaignActionServices {
   readonly trade: PlayerTradeService;
@@ -14,6 +15,7 @@ export interface CampaignActionServices {
   readonly reputation: FactionReputationService;
   readonly equipment: CampaignShipActions;
   readonly combat: CampaignCombatActions;
+  readonly world: CampaignWorldService;
   getShip(): ShipDefinition;
 }
 
@@ -25,7 +27,8 @@ function positiveAmount(value: number): boolean {
 export function createCampaignActionGateway(services: CampaignActionServices): CampaignActionPort {
   const { trade, crew, getShip } = services;
   return {
-    apply(action: CampaignAction): boolean {
+    releaseCampaign: (campaignId) => services.world.releaseCampaign(campaignId),
+    apply(action: CampaignAction, campaignId?: string): boolean {
       switch (action.type) {
         case 'credits.grant':
           return positiveAmount(action.amount) && trade.grantCredits(action.amount);
@@ -55,6 +58,21 @@ export function createCampaignActionGateway(services: CampaignActionServices): C
           return services.equipment.install(action.componentUid, action.slotIndex);
         case 'combat.start':
           return services.combat.startExistingNpcEncounter(action.npcId);
+        case 'world.location.add':
+          return !!campaignId && services.world.addLocation(campaignId, action.location);
+        case 'world.system.add':
+          return (
+            !!campaignId &&
+            services.world.addSystem(campaignId, {
+              map: action.map,
+              entryLocationId: action.entryLocationId,
+              exitLocationId: action.exitLocationId,
+            })
+          );
+        case 'world.system.enter':
+          return !!campaignId && services.world.enterSystem(campaignId, action.systemId);
+        case 'world.system.return':
+          return !!campaignId && services.world.returnFromSystem(campaignId);
         case 'crew.hire':
           return (
             crew.availableDefinitions().some((entry) => entry.id === action.crewId) &&

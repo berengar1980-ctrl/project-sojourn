@@ -55,6 +55,7 @@ export interface StarMapEngagementService {
 
 export interface StarMapEngagementOptions {
   readonly navigation: NavigationService;
+  readonly isPlayerInCampaignSystem?: () => boolean;
   readonly sectorNpcs: NpcSectorService;
   readonly getPlayerShip: () => ShipDefinition;
   readonly getPlayerCombatant: () => StrategicCombatantSetup;
@@ -155,6 +156,7 @@ function startNpcAttack(
 }
 
 function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
+  if (runtime.options.isPlayerInCampaignSystem?.()) return;
   if (runtime.playerCombat || runtime.playerChase || runtime.piratePlayerChase) return;
   const navigation = runtime.options.navigation.getSnapshot();
   if (!navigation.isTravelling || navigation.isPursuing) return;
@@ -362,7 +364,7 @@ function engageNpc(
   npcId: string,
   arena?: StrategicCombatArenaOptions
 ): boolean {
-  if (runtime.playerCombat) return false;
+  if (runtime.playerCombat || runtime.options.isPlayerInCampaignSystem?.()) return false;
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
   beginPlayerCombat(runtime, target, arena);
@@ -396,6 +398,10 @@ function syncPlayerPursuitTarget(runtime: EngagementRuntime): void {
 }
 
 function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void {
+  if (runtime.options.isPlayerInCampaignSystem?.()) {
+    resolveBackgroundCombats(runtime, deltaSeconds);
+    return;
+  }
   runtime.attackScanAccumulator += Math.max(0, deltaSeconds);
   if (runtime.attackScanAccumulator >= 1) {
     runtime.attackScanAccumulator = 0;

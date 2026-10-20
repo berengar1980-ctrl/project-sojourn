@@ -57,7 +57,6 @@ import {
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
-
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;
@@ -87,11 +86,15 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   state.localNpcMining = null;
   state.embeddedCombat = null;
   state.mode = 'star-map';
+  state.displayedWorldId = context.world.world().id;
   syncControllerNavigationCrewPerformance(context);
   context.audio.clearPlayerRcs();
   state.panels.star = createControllerStarPanel({
     root: context.root,
     navigation: context.navigation,
+    world: () => context.world.world(),
+    exitLocationId: () => context.world.exitLocationId(),
+    returnFromCampaignSystem: () => context.world.returnFromSystem(),
     log: context.systemLog,
     getModel: () => controllerStarModel(context),
     onEnterLocalSpace: () =>
@@ -110,7 +113,9 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
     eventById: (id) =>
-      context.economy.salvageEvents.playerVisible.find((event) => event.id === id) ?? null,
+      context.world.inForeignSystem()
+        ? null
+        : (context.economy.salvageEvents.playerVisible.find((event) => event.id === id) ?? null),
     onAcceptEvent: (id) => context.economy.salvageEvents.acceptForPlayer(id),
   });
   mountControllerSwitcher(context);
@@ -363,7 +368,6 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
   });
 }
-
 function handleControllerLocationEntry(
   context: ControllerRuntimeContext,
   currentLocationId: string | null
@@ -405,6 +409,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);
+  if (state.mode === 'star-map' && state.displayedWorldId !== context.world.world().id) {
+    mountControllerStarMap(context);
+  }
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
@@ -428,14 +435,17 @@ export function createGameController(options: GameControllerOptions): GameContro
     salvageEventFields: new Map(),
     visitCounter: 0,
     previousLocationId: options.navigation.getSnapshot().currentLocationId,
+    displayedWorldId: '',
   };
   const systemLog = createControllerLog();
   const economy = createControllerEconomy(options.navigation);
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
+  let foreignWorld = () => false;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
+    isPlayerInCampaignSystem: () => foreignWorld(),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       createPlayerCombatant(state.activeShip, {
@@ -452,6 +462,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     engagements,
     options.navigation
   );
+  foreignWorld = () => campaignServices.world.inForeignSystem();
   const context: ControllerRuntimeContext = {
     root: options.root,
     navigation: options.navigation,

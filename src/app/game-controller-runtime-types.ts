@@ -1,6 +1,7 @@
 import type { SalvageField } from '../core/salvage-types';
 import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import type { CampaignRuntime } from '../systems/campaigns/campaign-runtime';
+import type { CampaignWorldService } from '../systems/campaigns/campaign-world-service';
 import type { FactionReputationService } from '../systems/reputation/faction-reputation-service';
 import type { createCampaignNavigationTracker } from './game-controller-campaign-events';
 import type { ShipDefinition } from '../core/ship-types';
@@ -51,6 +52,7 @@ export interface ControllerRuntimeState {
   readonly salvageEventFields: Map<string, SalvageField>;
   visitCounter: number;
   previousLocationId: string | null;
+  displayedWorldId: string;
 }
 
 export interface ControllerRuntimeContext {
@@ -64,6 +66,7 @@ export interface ControllerRuntimeContext {
   readonly engagements: StarMapEngagementService;
   readonly campaignEvents: CampaignEventBus;
   readonly campaigns: CampaignRuntime;
+  readonly world: CampaignWorldService;
   readonly reputation: FactionReputationService;
   readonly campaignNavigation: ReturnType<typeof createCampaignNavigationTracker>;
   readonly state: ControllerRuntimeState;

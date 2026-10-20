@@ -24,7 +24,7 @@ import { ProceduralStationRenderer } from '../space/procedural-station-renderer'
 export type StarMapDisplayMode = 'physical' | 'nav';
 export class TopdownMapRenderer {
   private readonly context: CanvasRenderingContext2D;
-  private readonly camera: MapCamera;
+  private camera: MapCamera;
   private readonly shipRenderer: PlayerShipRenderer;
   private readonly navRenderer: NavMapRenderer;
   private readonly backgroundRenderer: SpaceBackgroundRenderer;
@@ -60,8 +60,13 @@ export class TopdownMapRenderer {
   }
 
   update(model: StarMapViewModel): void {
+    if (model.worldId !== this.model.worldId) {
+      this.camera = new MapCamera(model.width, model.height);
+      this.hasFitted = false;
+    }
     this.model = model;
-    this.draw();
+    if (!this.hasFitted) this.resize();
+    else this.draw();
   }
 
   resize(): void {

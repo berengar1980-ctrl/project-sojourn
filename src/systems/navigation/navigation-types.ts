@@ -1,4 +1,4 @@
-import type { WorldPoint } from '../../core/world-types';
+import type { WorldMap, WorldPoint } from '../../core/world-types';
 import type { RoutePlan } from './route-planner';
 
 export interface NavigationSnapshot {
@@ -21,6 +21,10 @@ export interface NavigationSnapshot {
 
 export interface NavigationService {
   getSnapshot(): NavigationSnapshot;
+  /** Update mission overlays without disrupting travel to still-existing locations. */
+  replaceWorld(world: WorldMap): void;
+  /** Safely rebase at an entry/exit location when changing star systems. */
+  setWorld(world: WorldMap, locationId: string): boolean;
   selectDestination(locationId: string | null): NavigationSnapshot;
   selectPointDestination(id: string, position: WorldPoint): NavigationSnapshot;
   startTravel(): NavigationSnapshot;

@@ -29,3 +29,9 @@ This is an **in-memory data contract**, not an on-disk format. It does not promi
 3. Keep snapshots detached from mutable references; they are observations, not transactions.
 4. Never infer a component's properties from visible labels; use canonical component IDs.
 5. No `localStorage`, IndexedDB, filesystem saves, load buttons, or compatibility shims at this stage.
+
+- `CampaignWorldService` owns temporary mission locations and foreign-world
+  definitions. `snapshot()` detaches nested world geometry; the authoritative
+  NavigationService owns position, routes and arrival state. Neither snapshot
+  is a durable game save. Closing or disabling a campaign removes its overlays
+  and safely returns ships stranded in a campaign-owned system.
