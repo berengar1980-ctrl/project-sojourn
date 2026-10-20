@@ -19,6 +19,9 @@ import {
   getCompatibleShipComponents,
   shipCanFitWeapon,
   salvagedComponentAppraisal,
+  shipPurchasePrice,
+  shipActivationBlock,
+  type ShipOwnershipService,
   type ShipComponentInventoryService,
   type ShipLoadoutService,
   type ShipyardResearchService,
@@ -80,7 +83,7 @@ interface ActivePortContext {
   readonly marketIntel: MarketIntelService;
   readonly componentInventory: ShipComponentInventoryService;
   readonly shipyardResearch: ShipyardResearchService;
-  readonly ownedShipIds: Set<string>;
+  readonly shipOwnership: ShipOwnershipService;
   readonly onChangeShip: (ship: ShipDefinition) => void;
   readonly installed: ActivePortInstalled;
   readonly runtime: ActivePortRuntime;
@@ -160,8 +163,9 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         id: offer.id,
         name: offer.name,
         role: offer.role,
-        price: Math.round(offer.nominalLengthMeters * 12000),
-        owned: context.ownedShipIds.has(offer.id),
+        price: shipPurchasePrice(offer),
+        owned: context.shipOwnership.owns(offer.id),
+        active: ship.id === offer.id,
         spriteUrl: offer.sprite.assetUrl,
         lengthMeters: offer.nominalLengthMeters,
         cargoCapacityTons: offer.cargoCapacityTons,
@@ -228,19 +232,42 @@ function createTradeCallbacks(
   };
 }
 
+function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition): void {
+  if (context.ship.id === ship.id) return;
+  const blocked = shipActivationBlock(
+    ship,
+    context.shipOwnership,
+    context.trade,
+    context.crew,
+    context.loadouts
+  );
+  if (blocked) {
+    const explanation: Record<Exclude<typeof blocked, null>, string> = {
+      'not-owned': 'SCHIFF NICHT IN BESITZ',
+      'cargo-overflow': 'FRACHT ÜBERSCHREITET NEUE KAPAZITÄT',
+      'cargo-incompatible': 'FRACHT NICHT FÜR NEUEN SCHIFFSTYP GEEIGNET',
+      'crew-overflow': 'ZU VIELE CREWMITGLIEDER FÜR NEUE KOJEN',
+    };
+    context.log.write('WERFT > WECHSEL ABGELEHNT · ' + explanation[blocked]);
+    context.onRefresh();
+    return;
+  }
+  context.log.write('WERFT > SCHIFF GEWECHSELT · ' + ship.name.toUpperCase());
+  context.onChangeShip(ship);
+}
+
 function buyShipAtShipyard(context: ActivePortContext, id: string): void {
   const next = getAllShipDefinitions().find((entry) => entry.id === id);
   if (!next || !context.port.shipyard) return;
-  if (context.ownedShipIds.has(id)) {
-    context.onChangeShip(next);
-    return;
+  if (!context.shipOwnership.owns(id)) {
+    const price = context.shipOwnership.purchase(id);
+    if (price === null) {
+      context.log.write('WERFT > KAUF ABGELEHNT · UNGENÜGEND CREDITS ODER UNGÜLTIGES MODELL');
+      return;
+    }
+    context.log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
   }
-  const price = Math.round(next.nominalLengthMeters * 12000);
-  if (context.trade.player.credits < price) return;
-  context.trade.player.credits -= price;
-  context.ownedShipIds.add(id);
-  context.log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
-  context.onChangeShip(next);
+  activateShipAtShipyard(context, next);
 }
 
 function rollbackShipyardSwap(
@@ -406,7 +433,7 @@ export function createActivePortPanel(
   onReturnToStarMap: () => void,
   onRefresh: () => void,
   log: SystemLogService,
-  ownedShipIds: Set<string>,
+  shipOwnership: ShipOwnershipService,
   onChangeShip: (ship: ShipDefinition) => void
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
@@ -437,7 +464,7 @@ export function createActivePortPanel(
     marketIntel,
     componentInventory,
     shipyardResearch,
-    ownedShipIds,
+    shipOwnership,
     onChangeShip,
     installed,
     runtime,
