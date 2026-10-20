@@ -30,6 +30,7 @@ export const patrolVariantShips: readonly ShipDefinition[] = [
     id: 'patrol-60m-variant-02',
     name: '60 m Patrol V2',
     role: 'patrol',
+    gameplayOverrides: { stationBonuses: { weapon_station: 3, damage_control: 12 } },
     nominalLengthMeters: 60,
     cargoCapacityTons: 120,
     sprite: {
