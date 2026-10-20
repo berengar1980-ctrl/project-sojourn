@@ -10,6 +10,7 @@ const ships = load('src/systems/ships/ship-registry.ts');
 const stations = load('src/systems/ships/station-performance.ts');
 const runtime = load('src/systems/ships/ship-runtime.ts');
 const movement = load('src/systems/ships/ship-stats.ts');
+const components = load('src/systems/ships/ship-component-service.ts');
 const tradeModule = load('src/systems/economy/player-trade-service.ts');
 
 const helmStation = [{ id: 'helm', skill: 'piloting' }];
@@ -79,7 +80,7 @@ assert.equal(fullFreight.crewEffects.logistics.saleFeeRate, 0);
 assert.equal(
   fullFreight.cargoCapacityTons,
   Math.floor(
-    (freighter.cargoCapacityTons + 30) * 1.15
+    (freighter.cargoCapacityTons + components.componentCargoBonus(fullFreight.installed)) * 1.15
   ),
   'fitted cargo modules and 15 percent logistics hold bonus must stack'
 );
@@ -105,7 +106,7 @@ assert(fullFreight.shieldMaxHp > emptyFreight.shieldMaxHp);
 assert.equal(
   fullFreight.shieldMaxHp,
   Math.round(
-    (movement.shipShieldMaxHp(freighter) + 12) * 1.15
+    (movement.shipShieldMaxHp(freighter) + components.componentShieldBonus(fullFreight.installed)) * 1.15
   )
 );
 
