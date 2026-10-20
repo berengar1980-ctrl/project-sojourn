@@ -31,9 +31,7 @@ import {
   shipyardView,
   type PortShipComponentSlotView,
   type PortShipStateInput,
-  type PortShipyardLooseComponentView,
   type PortShipyardStateInput,
-  type PortShipyardVariantView,
   type PortShipyardView,
 } from './port-ship-view-model';
 
