@@ -34,40 +34,27 @@ assert.equal(
   'unmanned automation retains its 20-point specialist component and crew synergy'
 );
 
-const crew = [
-  {
-    id: 'captain',
-    skills: {
-      piloting: 100,
-      sensors: 100,
-      weapons: 100,
-      engineering: 100,
-      logistics: 100,
-      mining: 100,
-      salvage: 100,
-    },
-  },
-  {
-    id: 'assistant',
-    skills: {
-      piloting: 100,
-      sensors: 100,
-      weapons: 100,
-      engineering: 100,
-      logistics: 100,
-      mining: 100,
-      salvage: 100,
-    },
-  },
-];
+const perfectSkills = {
+  piloting: 100,
+  sensors: 100,
+  weapons: 100,
+  engineering: 100,
+  logistics: 100,
+  mining: 100,
+  salvage: 100,
+};
+const crew = ['captain', 'assistant', 'gunner', 'engineer', 'specialist'].map((id) => ({
+  id,
+  skills: perfectSkills,
+}));
 const assignments = {
   helm: 'captain',
   sensor_station: 'assistant',
-  weapon_station: 'captain',
-  engine_room: 'assistant',
-  cargo_control: 'captain',
-  mining_station: 'captain',
-  salvage_control: 'captain',
+  weapon_station: 'gunner',
+  engine_room: 'engineer',
+  cargo_control: 'specialist',
+  mining_station: 'specialist',
+  salvage_control: 'specialist',
 };
 const options = { crew, assignments, manningFactor: 1 };
 
@@ -99,9 +86,7 @@ const crewHull = movement.resolveShipCombatMovementStats(
   fullFreight.stationSkills.piloting
 );
 assert.equal(crewHull.combatSpeed, Math.round(hull.combatSpeed * 1.15));
-assert(
-  Math.abs(crewHull.turnRateRadiansPerSecond / hull.turnRateRadiansPerSecond - 1.15) < 1e-9
-);
+assert(Math.abs(crewHull.turnRateRadiansPerSecond / hull.turnRateRadiansPerSecond - 1.15) < 1e-9);
 
 const emptyFreight = runtime.resolveShipRuntimeSetup(freighter);
 assert(fullFreight.shieldMaxHp > emptyFreight.shieldMaxHp);
