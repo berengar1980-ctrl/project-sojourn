@@ -30,6 +30,7 @@ export const salvageVariantShips: readonly ShipDefinition[] = [
     id: 'salvage-100m-variant-02',
     name: '100 m Salvager V2',
     role: 'salvage',
+    gameplayOverrides: { stationBonuses: { salvage_control: 6, sensor_station: 8 } },
     nominalLengthMeters: 100,
     cargoCapacityTons: 500,
     sprite: {
