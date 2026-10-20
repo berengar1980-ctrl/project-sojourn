@@ -91,40 +91,61 @@ export function sellShipyardComponent(
   };
 }
 
+type LoosePart = ReturnType<ShipComponentInventoryService['take']>;
+
+function rollbackComponentInstall(
+  context: ShipyardTransactionContext,
+  type: ShipComponentType,
+  taken: LoosePart,
+  removed: LoosePart
+): void {
+  if (removed) context.inventory.take(removed.uid);
+  if (!taken) return;
+  context.inventory.store(
+    type,
+    taken.componentId,
+    taken.sourceWreckId,
+    context.cargoCapacityTons,
+    taken.source
+  );
+}
+
+function exchangeInstalledComponent(
+  context: ShipyardTransactionContext,
+  type: ShipComponentType,
+  index: number,
+  oldId: string | null,
+  selected: LoosePart
+): boolean {
+  const { ship, inventory, loadouts, cargoCapacityTons } = context;
+  const taken = selected ? inventory.take(selected.uid) : null;
+  if (selected && !taken) return false;
+  const removed = oldId
+    ? inventory.store(type, oldId, 'removed-' + ship.id, cargoCapacityTons, 'removed')
+    : null;
+  if (oldId && !removed) {
+    rollbackComponentInstall(context, type, taken, removed);
+    return false;
+  }
+  if (!loadouts.setSlot(ship, type, index, selected?.componentId ?? null)) {
+    rollbackComponentInstall(context, type, taken, removed);
+    return false;
+  }
+  return true;
+}
+
 export function installShipyardComponent(
   context: ShipyardTransactionContext,
   type: ShipComponentType,
   index: number,
   uid: string | null
 ): boolean {
-  const { ship, inventory, loadouts, cargoCapacityTons } = context;
+  const { ship, inventory, loadouts } = context;
   const selected = uid ? inventory.list().find((item) => item.uid === uid) : null;
   if (uid && (!selected || selected.type !== type)) return false;
-  if (!loadouts.canSetSlot(ship, type, index, selected?.componentId ?? null)) return false;
+  const componentId = selected?.componentId ?? null;
+  if (!loadouts.canSetSlot(ship, type, index, componentId)) return false;
   const before = loadouts.get(ship)[type]?.[index] ?? null;
-  if (before === (selected?.componentId ?? null)) return false;
-
-  const taken = selected ? inventory.take(selected.uid) : null;
-  if (selected && !taken) return false;
-  const removed = before
-    ? inventory.store(type, before, 'removed-' + ship.id, cargoCapacityTons, 'removed')
-    : null;
-  const canReturnOldPart = !before || removed !== null;
-  const installed = canReturnOldPart
-    ? loadouts.setSlot(ship, type, index, selected?.componentId ?? null)
-    : false;
-  if (!installed) {
-    if (removed) inventory.take(removed.uid);
-    if (taken) {
-      inventory.store(
-        type,
-        taken.componentId,
-        taken.sourceWreckId,
-        cargoCapacityTons,
-        taken.source
-      );
-    }
-    return false;
-  }
-  return true;
+  if (before === componentId) return false;
+  return exchangeInstalledComponent(context, type, index, before, selected);
 }
