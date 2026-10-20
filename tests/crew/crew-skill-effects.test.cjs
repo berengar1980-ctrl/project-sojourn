@@ -12,8 +12,9 @@ function close(actual, expected, message) {
 }
 
 close(effects.pilotingDodgeChance(100), 0.2);
-close(effects.pilotingTravelTimeMultiplier(100), 0.85);
-close(effects.pilotingTravelSpeedMultiplier(100), 1 / 0.85);
+close(effects.pilotingTravelTimeMultiplier(100), 1 / 1.15);
+close(effects.pilotingTravelSpeedMultiplier(100), 1.15);
+close(effects.pilotingTurnRateMultiplier(100), 1.15);
 close(effects.pilotingFuelUseMultiplier(100), 0.9);
 
 close(effects.sensorWeaponHitChanceBonus(100), 0.15);
@@ -45,7 +46,9 @@ close(effects.weaponCriticalChance(100), 0.1);
 close(effects.weaponCycleTimeMultiplier(100), 0.88);
 close(effects.weaponInspectionPowerBonus(100), 18);
 
-close(effects.engineeringShieldRegenMultiplier(100), 1.25);
+close(effects.engineeringShieldRegenMultiplier(100), 1);
+close(effects.engineeringShieldStrengthMultiplier(100), 1.15);
+close(effects.engineeringFuelUseMultiplier(100), 0.9);
 close(effects.engineeringRepairCostMultiplier(100), 0.85);
 close(effects.engineeringOverloadFailureMultiplier(100), 0.75);
 
@@ -58,7 +61,7 @@ assert.equal(effects.salvageWreckResourceQuantity(100), 9);
 assert.equal(effects.salvageActionChance(100, 'board', false, 0), 90);
 assert.equal(effects.salvageActionChance(100, 'component', true, 0), 64);
 
-close(effects.miningYieldMultiplier(100), 1.4);
+close(effects.miningYieldMultiplier(100), 1.35);
 close(effects.miningWorkTimeMultiplier(100), 0.75);
 close(effects.miningProspectTimeMultiplier(100), 0.8);
 close(effects.miningFuelUseMultiplier(100), 0.9);
@@ -73,6 +76,8 @@ close(effects.miningDeepSignatureChance(100), 0.74);
 
 close(effects.logisticsSaleFeeRate(0), 0.25);
 close(effects.logisticsSaleFeeRate(100), 0);
+close(effects.logisticsCargoCapacityMultiplier(0), 1);
+close(effects.logisticsCargoCapacityMultiplier(100), 1.15);
 close(effects.logisticsSaleFeeRate(0, 2, -2), 0.23);
 close(effects.navigationEvadeChance(100, 100), 0.45);
 close(effects.navigationEvadeChance(0, 0), 0);
@@ -86,7 +91,9 @@ const profile = effects.crewSkillEffects({
   mining: 30,
   logistics: 20,
 });
-close(profile.piloting.travelTimeMultiplier, 0.88);
+close(profile.piloting.travelTimeMultiplier, 1 / 1.12);
+close(profile.piloting.travelSpeedMultiplier, 1.12);
+close(profile.piloting.turnRateMultiplier, 1.12);
 close(profile.sensors.weaponHitChanceBonus, 0.105);
 close(profile.sensors.contactBaseRange, 4.55);
 close(profile.sensors.civilianTransponderRange, 40);
@@ -94,12 +101,15 @@ close(profile.sensors.salvageWreckRange, 12.7);
 close(profile.weapons.damageMultiplier, 1.12);
 close(profile.engineering.repairCostMultiplier, 0.925);
 close(profile.salvage.yieldMultiplier, 1.14);
-close(profile.mining.yieldMultiplier, 1.12);
+close(profile.mining.yieldMultiplier, 1.105);
 close(profile.mining.deepYieldMultiplier, 1.105);
 close(profile.logistics.saleFeeRate, 0.2);
+close(profile.logistics.cargoCapacityMultiplier, 1.03);
+close(profile.engineering.shieldStrengthMultiplier, 1.075);
+close(profile.engineering.fuelUseMultiplier, 0.95);
 
 assert.equal(effects.normalizedCrewSkill(-5), 0);
 assert.equal(effects.normalizedCrewSkill(140), 100);
 assert.equal(effects.normalizedCrewSkill(Number.NaN), 0);
 
-console.log('PASS Voidbound crew skill effects are preserved in Sojourn');
+console.log('PASS Voidbound 60/40-derived station effects with Sojourn skill caps');
