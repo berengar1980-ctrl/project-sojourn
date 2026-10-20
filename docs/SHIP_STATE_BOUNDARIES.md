@@ -11,6 +11,8 @@ The project does **not** yet support saving or loading games. Old development sa
 - `ShipComponentInventoryService`: loose component IDs, provenance, cargo reservation, and the next identifier counter.
 - `ShipyardResearchService`: maximum discovered percentage per exact component model and modifier kind. NPC and player vendors use the same research instance.
 - `CampaignRuntime`: independent, in-memory package progress, activation selection and completion outcomes. Its detached `snapshot()` includes per-package JSON data without exposing mutable references; unknown packages remain unavailable without data loss. This is not a complete career save format.
+- `PlayerTradeService`: canonical player credit balance, cargo lots, weighted cost basis and exact campaign grants/removals. The new detached `snapshot()` exposes current balances and cargo without allowing edits to the owner; it is not a save format.
+- `CampaignRuntime`: also owns per-package successful action receipt IDs; an already applied ID is inert. These receipts and the underlying gameplay state must eventually be restored atomically, never separately.
 
 None of these objects should be stored in the view layer.
 

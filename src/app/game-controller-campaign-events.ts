@@ -1,4 +1,5 @@
 import type { PlayerProfile } from '../core/player-profile';
+import type { CampaignActionPort } from '../core/campaign-types';
 import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import { createCampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import {
@@ -48,10 +49,11 @@ export function createControllerCampaignServices(
   profile: PlayerProfile,
   shipId: string,
   navigation: NavigationSnapshot,
-  packages: readonly CampaignDefinition[] = campaignPackages
+  packages: readonly CampaignDefinition[] = campaignPackages,
+  actionPort?: CampaignActionPort
 ) {
   const campaignEvents = createCampaignEventBus();
-  const campaigns = createCampaignRuntime(campaignEvents);
+  const campaigns = createCampaignRuntime(campaignEvents, undefined, undefined, actionPort);
   for (const campaign of packages) campaigns.register(campaign);
   const campaignNavigation = createCampaignNavigationTracker(campaignEvents, navigation);
   campaignEvents.emit({

@@ -1,4 +1,7 @@
 import type {
+  CampaignAction,
+  CampaignActionPort,
+  CampaignActionResult,
   CampaignContext,
   CampaignDefinition,
   CampaignEvent,
@@ -27,12 +30,14 @@ export interface CampaignRuntime {
   complete(id: string, outcome: string): boolean;
   get(id: string, key: string): CampaignValue | null;
   set(id: string, key: string, value: CampaignValue): void;
+  applyAction(id: string, actionId: string, action: CampaignAction): CampaignActionResult;
   unavailableIds(): readonly string[];
   snapshot(): CampaignSnapshot;
   destroy(): void;
 }
 
 const PACKAGE_ID = /^[a-z0-9][a-z0-9_-]*$/u;
+const ACTION_ID = /^[a-z0-9][a-z0-9_.:-]{0,119}$/u;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -67,10 +72,19 @@ function cloneProgress(value: CampaignProgress): CampaignProgress {
   for (const [key, entry] of Object.entries(value.data)) {
     data[key] = cloneValue(entry as CampaignValue);
   }
+  const ids = value.appliedActionIds ?? [];
+  if (
+    !Array.isArray(ids) ||
+    ids.some((id) => typeof id !== 'string' || !ACTION_ID.test(id)) ||
+    new Set(ids).size !== ids.length
+  ) {
+    throw new Error('Invalid campaign action receipts.');
+  }
   return {
     version: value.version,
     status: value.status,
     data,
+    appliedActionIds: [...ids],
     ...(value.outcome !== undefined ? { outcome: value.outcome } : {}),
   };
 }
@@ -160,11 +174,41 @@ function createCampaignRegistry(
   };
 }
 
+function createCampaignActionDispatch(
+  progress: Map<string, CampaignProgress>,
+  accessible: (id: string) => boolean,
+  state: (id: string) => CampaignProgress,
+  port: CampaignActionPort | undefined,
+  reportError: (id: string, error: unknown) => void
+): CampaignRuntime['applyAction'] {
+  return (id, actionId, action) => {
+    if (!accessible(id) || state(id).status !== 'active' || !ACTION_ID.test(actionId)) {
+      return 'rejected';
+    }
+    const current = state(id);
+    if (current.appliedActionIds?.includes(actionId)) return 'already_applied';
+    if (!port) return 'rejected';
+    let applied = false;
+    try {
+      applied = port.apply(action);
+    } catch (error) {
+      reportError(id, error);
+      return 'rejected';
+    }
+    if (!applied) return 'rejected';
+    progress.set(id, {
+      ...current,
+      appliedActionIds: [...(current.appliedActionIds ?? []), actionId],
+    });
+    return 'applied';
+  };
+}
+
 function campaignEventListener(
   definitions: Map<string, CampaignDefinition>,
   accessible: (id: string) => boolean,
   state: (id: string) => CampaignProgress,
-  actions: Pick<CampaignRuntime, 'start' | 'complete' | 'get' | 'set'>,
+  actions: Pick<CampaignRuntime, 'start' | 'complete' | 'get' | 'set' | 'applyAction'>,
   reportError: (id: string, error: unknown) => void
 ): (event: CampaignEvent) => void {
   return (event) => {
@@ -177,6 +221,7 @@ function campaignEventListener(
         complete: (outcome) => actions.complete(id, outcome),
         get: (key) => actions.get(id, key),
         set: (key, value) => actions.set(id, key, value),
+        applyAction: (actionId, action) => actions.applyAction(id, actionId, action),
       };
       try {
         definition.onEvent(event, context);
@@ -191,7 +236,8 @@ export function createCampaignRuntime(
   events: CampaignEventBus,
   restored?: CampaignSnapshot,
   reportError: (id: string, error: unknown) => void = (id, error) =>
-    console.error('Campaign ' + id + ':', error)
+    console.error('Campaign ' + id + ':', error),
+  actionPort?: CampaignActionPort
 ): CampaignRuntime {
   const save = parseSave(restored);
   const definitions = new Map<string, CampaignDefinition>();
@@ -237,12 +283,19 @@ export function createCampaignRuntime(
   }
 
   const registry = createCampaignRegistry(definitions, progress, enabled, mismatched, state);
+  const applyAction = createCampaignActionDispatch(
+    progress,
+    accessible,
+    state,
+    actionPort,
+    reportError
+  );
   const unsubscribe = events.subscribe(
     campaignEventListener(
       definitions,
       accessible,
       state,
-      { start, complete, get, set },
+      { start, complete, get, set, applyAction },
       reportError
     )
   );
@@ -264,6 +317,7 @@ export function createCampaignRuntime(
     complete,
     get,
     set,
+    applyAction,
     unavailableIds: registry.unavailableIds,
     snapshot() {
       return parseSave({
