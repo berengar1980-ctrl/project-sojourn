@@ -81,6 +81,7 @@ export interface PortShipyardStateInput {
     weaponSlots: number;
     crewBerths: number;
     maxComponentTier: number;
+    stationBonuses: readonly { skill: string; bonus: number }[];
   }[];
 }
 
@@ -104,6 +105,7 @@ export interface PortShipyardView {
     weaponSlots: number;
     crewBerths: number;
     maxComponentTier: number;
+    stationBonuses: readonly { skill: string; bonus: number }[];
   }[];
 }
 
