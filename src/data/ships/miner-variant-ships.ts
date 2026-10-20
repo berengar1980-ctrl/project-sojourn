@@ -28,6 +28,7 @@ export const minerVariantShips: readonly ShipDefinition[] = [
     id: 'miner-80m-variant-02',
     name: '80 m Miner V2',
     role: 'mining',
+    gameplayOverrides: { stationBonuses: { mining_station: 6, sensor_station: 8 } },
     nominalLengthMeters: 80,
     cargoCapacityTons: 360,
     sprite: {
