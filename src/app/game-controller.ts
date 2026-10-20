@@ -481,11 +481,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     options.navigation.getSnapshot().currentPosition,
     state.activeShip.role === 'salvage'
   );
-  const settingsMenu = createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    state.playerProfile
-  );
+  const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
@@ -494,7 +490,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     },
     destroy: () => {
       campaignServices.campaigns.destroy();
-      destroyGameController(context, settingsMenu);
+      destroyGameController(context, menu);
     },
   };
 }
