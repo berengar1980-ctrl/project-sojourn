@@ -1,4 +1,4 @@
-import type { ShipComponentType, ShipDefinition } from '../core/ship-types';
+import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
