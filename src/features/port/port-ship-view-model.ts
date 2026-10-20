@@ -71,6 +71,7 @@ export interface PortShipyardStateInput {
     role: string;
     price: number;
     owned: boolean;
+    active: boolean;
     spriteUrl: string;
     lengthMeters: number;
     cargoCapacityTons: number;
@@ -93,6 +94,7 @@ export interface PortShipyardView {
     role: string;
     price: number;
     owned: boolean;
+    active: boolean;
     spriteUrl: string;
     lengthMeters: number;
     cargoCapacityTons: number;
