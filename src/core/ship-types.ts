@@ -70,6 +70,8 @@ export type ShipStationSkill =
 export interface ShipStationDefinition {
   readonly id: string;
   readonly skill: ShipStationSkill;
+  /** Hull specialization: effective skill points gained when a capable crew member mans this station. */
+  readonly bonus?: number;
 }
 
 export type ShipSpecialCargoKind = 'mining' | 'salvage';
@@ -102,6 +104,8 @@ export interface ShipGameplayOverrides {
   readonly crewBerths?: number;
   readonly maxComponentTier?: number;
   readonly specialCargo?: ShipSpecialCargoProfile | null;
+  /** Per-hull overrides keyed by canonical station ID; unspecified stations retain role bonuses. */
+  readonly stationBonuses?: Readonly<Record<string, number>>;
 }
 
 export interface ResolvedShipGameplayStats extends ShipGameplayProfile {
