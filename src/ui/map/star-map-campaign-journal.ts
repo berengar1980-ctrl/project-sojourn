@@ -44,10 +44,14 @@ export function renderCampaignJournal(
       line(entry.objective, 'campaign-journal__objective'),
       line(entry.detail, 'campaign-journal__detail')
     );
-    if (entry.status === 'active' && entry.targetLocationId &&
-      entry.targetLocationId !== currentLocationId) {
-      article.append(button('ZIEL AUF STERNKARTE WÄHLEN', () =>
-        actions.selectLocation(entry.targetLocationId!)));
+    if (
+      entry.status === 'active' &&
+      entry.targetLocationId &&
+      entry.targetLocationId !== currentLocationId
+    ) {
+      article.append(
+        button('ZIEL AUF STERNKARTE WÄHLEN', () => actions.selectLocation(entry.targetLocationId!))
+      );
     }
     if (entry.status === 'active' && entry.dialogue) {
       const dialogue = entry.dialogue;

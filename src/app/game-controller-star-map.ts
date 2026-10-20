@@ -45,17 +45,25 @@ export function createControllerStarPanel(options: {
     root: options.root,
     model: options.getModel(),
     log: options.log,
-    getCampaignJournal: () => options.campaigns.journal(options.navigation.getSnapshot().currentLocationId),
+    getCampaignJournal: () =>
+      options.campaigns.journal(options.navigation.getSnapshot().currentLocationId),
     onCampaignChoice: (id, dialogueId, choiceId) => {
       const nav = options.navigation.getSnapshot();
       if (!nav.currentLocationId || nav.isTravelling) return;
-      const dialogue = options.campaigns.journal(nav.currentLocationId)
+      const dialogue = options.campaigns
+        .journal(nav.currentLocationId)
         .find((entry) => entry.id === id)?.dialogue;
-      if (dialogue?.id !== dialogueId || !dialogue.choices.some((choice) => choice.id === choiceId)) {
+      if (
+        dialogue?.id !== dialogueId ||
+        !dialogue.choices.some((choice) => choice.id === choiceId)
+      ) {
         return;
       }
       options.campaignEvents.emit({
-        type: 'dialogue.choice', campaignId: id, dialogueId, choiceId,
+        type: 'dialogue.choice',
+        campaignId: id,
+        dialogueId,
+        choiceId,
         locationId: nav.currentLocationId,
       });
       panel?.update(options.getModel());

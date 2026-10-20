@@ -112,7 +112,12 @@ function runEnding(ending) {
 
   const fromExit = arriveAt(nav, 'silent-exit');
   bus.emit({ type: 'location.arrived', fromLocationId: fromExit, locationId: 'silent-exit' });
-  assert.equal(world.returnFromSystem(), true);
+  if (ending === 'rescue') {
+    assert.equal(engine.journal('silent-exit')[0].dialogue.id, 'exit');
+    emitChoice('exit', 'home', 'silent-exit');
+  } else {
+    assert.equal(world.returnFromSystem(), true, 'map gate permits manual return');
+  }
   assert.equal(nav.getSnapshot().currentLocationId, 'silent-beacon');
   bus.emit({
     type: 'location.arrived',

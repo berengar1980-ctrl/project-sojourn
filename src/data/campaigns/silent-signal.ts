@@ -52,7 +52,13 @@ const reach: WorldMap = {
     missionLocation(EXIT_ID, 'Rückkehrkorridor', 280, 280),
   ],
   regions: [
-    { id: 'silent-field', name: 'Stille Zone', center: { x: 950, y: 410 }, radius: 260, dangerLevel: 2 },
+    {
+      id: 'silent-field',
+      name: 'Stille Zone',
+      center: { x: 950, y: 410 },
+      radius: 260,
+      dangerLevel: 2,
+    },
   ],
 };
 
@@ -60,7 +66,12 @@ function state(progress: CampaignProgress): string {
   return typeof progress.data.stage === 'string' ? progress.data.stage : 'unknown';
 }
 
-function choice(event: CampaignEvent, dialogueId: string, choiceId: string, location: string): boolean {
+function choice(
+  event: CampaignEvent,
+  dialogueId: string,
+  choiceId: string,
+  location: string
+): boolean {
   return (
     event.type === 'dialogue.choice' &&
     event.campaignId === CAMPAIGN_ID &&
@@ -70,7 +81,11 @@ function choice(event: CampaignEvent, dialogueId: string, choiceId: string, loca
   );
 }
 
-function applyOnce(ctx: CampaignContext, id: string, action: Parameters<CampaignContext['applyAction']>[1]): boolean {
+function applyOnce(
+  ctx: CampaignContext,
+  id: string,
+  action: Parameters<CampaignContext['applyAction']>[1]
+): boolean {
   return ctx.applyAction(id, action) !== 'rejected';
 }
 
@@ -95,11 +110,14 @@ function finishMission(ctx: CampaignContext): void {
   const credits = rescued ? 220 : 300;
   const factionId = rescued ? 'free_traders' : 'terran_directorate';
   if (!applyOnce(ctx, 'reward.credits', { type: 'credits.grant', amount: credits })) return;
-  if (!applyOnce(ctx, 'reward.reputation', {
-    type: 'reputation.change',
-    factionId,
-    delta: 6,
-  })) return;
+  if (
+    !applyOnce(ctx, 'reward.reputation', {
+      type: 'reputation.change',
+      factionId,
+      delta: 6,
+    })
+  )
+    return;
   ctx.complete(rescued ? 'crew_rescued' : 'ship_quarantined');
 }
 
@@ -111,12 +129,15 @@ function onMissionEvent(event: CampaignEvent, ctx: CampaignContext): void {
   if (ctx.status() !== 'active') return;
   const stage = ctx.get('stage');
   if (stage === 'beacon' && choice(event, 'beacon', 'decode', BEACON_ID)) {
-    if (!applyOnce(ctx, 'system.add', {
-      type: 'world.system.add',
-      map: reach,
-      entryLocationId: ENTRY_ID,
-      exitLocationId: EXIT_ID,
-    })) return;
+    if (
+      !applyOnce(ctx, 'system.add', {
+        type: 'world.system.add',
+        map: reach,
+        entryLocationId: ENTRY_ID,
+        exitLocationId: EXIT_ID,
+      })
+    )
+      return;
     ctx.set('stage', 'gate');
   } else if (stage === 'gate' && choice(event, 'gate', 'enter', BEACON_ID)) {
     if (applyOnce(ctx, 'system.enter', { type: 'world.system.enter', systemId: SYSTEM_ID })) {
@@ -130,6 +151,8 @@ function onMissionEvent(event: CampaignEvent, ctx: CampaignContext): void {
     ctx.set('stage', 'decision');
   } else if (stage === 'decision') {
     decide(ctx, event);
+  } else if (stage === 'return' && choice(event, 'exit', 'home', EXIT_ID)) {
+    applyOnce(ctx, 'system.return', { type: 'world.system.return' });
   } else if (
     stage === 'return' &&
     event.type === 'location.arrived' &&
@@ -150,80 +173,130 @@ function makeDialogue(
   return { id, speaker, text, choices };
 }
 
-function journal(progress: CampaignProgress, at: string | null): CampaignJournalView {
-  const stage = state(progress);
-  if (progress.status === 'completed') {
-    return {
-      chapter: 'ABSCHLUSS',
-      objective: 'Auftrag abgeschlossen',
-      detail: progress.outcome === 'crew_rescued'
-        ? 'Die Besatzung wurde evakuiert. Der Vorfall ist protokolliert.'
-        : 'Das Forschungsschiff wurde unter Quarantäne gestellt.',
-    };
-  }
-  if (stage === 'beacon') {
-    return {
-      chapter: 'I · DAS SIGNAL',
-      objective: 'Untersuche den unbekannten Sender nahe Haven',
-      detail: 'Ein beschädigter Notruf nennt ein verschollenes Forschungsschiff.',
-      targetLocationId: BEACON_ID,
-      ...(at === BEACON_ID ? {
-        dialogue: makeDialogue('beacon', 'Archivierte Vox-Aufnahme',
-          '»Hier Elara. Wir haben etwas geborgen. Unser Navigator weigert sich weiterzufliegen. Koordinaten folgen.«',
-          [{ id: 'decode', label: 'Koordinaten entschlüsseln' }]),
-      } : {}),
-    };
-  }
-  if (stage === 'gate') {
-    return {
-      chapter: 'II · DER SPRUNG',
-      objective: 'Folge den entschlüsselten Koordinaten',
-      detail: 'Ein verborgenes Sternensystem liegt jenseits der bekannten Routen.',
-      targetLocationId: BEACON_ID,
-      ...(at === BEACON_ID ? {
-        dialogue: makeDialogue('gate', 'Navigation',
-          '»Der Korridor ist instabil. Wir können den Sprung jetzt auslösen.«',
-          [{ id: 'enter', label: 'Sprung einleiten' }]),
-      } : {}),
-    };
-  }
-  if (stage === 'search') return {
-    chapter: 'II · DER SPRUNG',
-    objective: 'Erreiche das Forschungsschiff Elara',
-    detail: 'Die Sensoren zeigen ein einzelnes Schiff in der stillen Zone.',
-    targetLocationId: SHIP_ID,
+function beaconJournal(at: string | null): CampaignJournalView {
+  return {
+    chapter: 'I · DAS SIGNAL',
+    objective: 'Untersuche den unbekannten Sender nahe Haven',
+    detail: 'Ein beschädigter Notruf nennt ein verschollenes Forschungsschiff.',
+    targetLocationId: BEACON_ID,
+    ...(at === BEACON_ID
+      ? {
+          dialogue: makeDialogue(
+            'beacon',
+            'Archivierte Vox-Aufnahme',
+            '»Hier Elara. Wir haben etwas geborgen. Unser Navigator weigert sich weiterzufliegen. Koordinaten folgen.«',
+            [{ id: 'decode', label: 'Koordinaten entschlüsseln' }]
+          ),
+        }
+      : {}),
   };
-  if (stage === 'decision') return {
+}
+
+function gateJournal(at: string | null): CampaignJournalView {
+  return {
+    chapter: 'II · DER SPRUNG',
+    objective: 'Folge den entschlüsselten Koordinaten',
+    detail: 'Ein verborgenes Sternensystem liegt jenseits der bekannten Routen.',
+    targetLocationId: BEACON_ID,
+    ...(at === BEACON_ID
+      ? {
+          dialogue: makeDialogue(
+            'gate',
+            'Navigation',
+            '»Der Korridor ist instabil. Wir können den Sprung jetzt auslösen.«',
+            [{ id: 'enter', label: 'Sprung einleiten' }]
+          ),
+        }
+      : {}),
+  };
+}
+
+function decisionJournal(at: string | null): CampaignJournalView {
+  return {
     chapter: 'III · DIE ENTSCHEIDUNG',
     objective: 'Entscheide über die Besatzung der Elara',
     detail: 'Eine verschlossene Schleuse und ein unvollständiges medizinisches Protokoll.',
     targetLocationId: SHIP_ID,
-    ...(at === SHIP_ID ? {
-      dialogue: makeDialogue('crew', 'Kommandantin der Elara',
-        '»Wir sind noch am Leben. Aber unser Frachtraum darf nie wieder geöffnet werden. Holt uns heraus – oder versiegelt alles.«',
-        [
-          { id: 'rescue', label: 'Besatzung evakuieren' },
-          { id: 'quarantine', label: 'Schiff unter Quarantäne stellen' },
-        ]),
-    } : {}),
+    ...(at === SHIP_ID
+      ? {
+          dialogue: makeDialogue(
+            'crew',
+            'Kommandantin der Elara',
+            '»Wir sind noch am Leben. Aber unser Frachtraum darf nie wieder geöffnet werden. Holt uns heraus – oder versiegelt alles.«',
+            [
+              { id: 'rescue', label: 'Besatzung evakuieren' },
+              { id: 'quarantine', label: 'Schiff unter Quarantäne stellen' },
+            ]
+          ),
+        }
+      : {}),
   };
-  if (stage === 'return') return {
-    chapter: 'III · DIE RÜCKKEHR',
-    objective: 'Reise über den Rückkehrkorridor zum Ausgangssystem',
-    detail: 'Erreiche den Rückkehrkorridor und wähle ihn erneut aus, sobald du angekommen bist.',
-    targetLocationId: EXIT_ID,
-  };
+}
+
+function reportJournal(at: string | null): CampaignJournalView {
   return {
     chapter: 'III · DER BERICHT',
     objective: 'Übermittle deinen Abschlussbericht',
     detail: 'Die Auftraggeber warten beim ursprünglichen Notsignal.',
     targetLocationId: BEACON_ID,
-    ...(at === BEACON_ID ? {
-      dialogue: makeDialogue('report', 'Direktoratsarchiv',
-        '»Wir haben den Telemetriebericht empfangen. Bestätigen Sie die Übergabe.«',
-        [{ id: 'deliver', label: 'Bericht übermitteln und Belohnung erhalten' }]),
-    } : {}),
+    ...(at === BEACON_ID
+      ? {
+          dialogue: makeDialogue(
+            'report',
+            'Direktoratsarchiv',
+            '»Wir haben den Telemetriebericht empfangen. Bestätigen Sie die Übergabe.«',
+            [{ id: 'deliver', label: 'Bericht übermitteln und Belohnung erhalten' }]
+          ),
+        }
+      : {}),
   };
+}
+
+function journal(progress: CampaignProgress, at: string | null): CampaignJournalView {
+  if (progress.status === 'completed') {
+    return {
+      chapter: 'ABSCHLUSS',
+      objective: 'Auftrag abgeschlossen',
+      detail:
+        progress.outcome === 'crew_rescued'
+          ? 'Die Besatzung wurde evakuiert. Der Vorfall ist protokolliert.'
+          : 'Das Forschungsschiff wurde unter Quarantäne gestellt.',
+    };
+  }
+  switch (state(progress)) {
+    case 'beacon':
+      return beaconJournal(at);
+    case 'gate':
+      return gateJournal(at);
+    case 'search':
+      return {
+        chapter: 'II · DER SPRUNG',
+        objective: 'Erreiche das Forschungsschiff Elara',
+        detail: 'Die Sensoren zeigen ein einzelnes Schiff in der stillen Zone.',
+        targetLocationId: SHIP_ID,
+      };
+    case 'decision':
+      return decisionJournal(at);
+    case 'return':
+      return {
+        chapter: 'III · DIE RÜCKKEHR',
+        objective: 'Reise über den Rückkehrkorridor zum Ausgangssystem',
+        detail: 'Erreiche den Rückkehrkorridor und wähle ihn erneut aus, sobald du angekommen bist.',
+        targetLocationId: EXIT_ID,
+        ...(at === EXIT_ID
+          ? {
+              dialogue: makeDialogue(
+                'exit',
+                'Navigatorin',
+                '»Rückkehrkorridor stabilisiert. Bereit zum Übergang.«',
+                [{ id: 'home', label: 'Zum Ausgangssystem zurückkehren' }]
+              ),
+            }
+          : {}),
+      };
+    default:
+      return reportJournal(at);
+  }
 }
 
 export const silentSignalCampaign: CampaignDefinition = {
