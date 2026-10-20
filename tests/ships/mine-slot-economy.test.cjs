@@ -42,5 +42,5 @@ assert(port.includes('installShipyardComponent(shipyardTransactions(context)'));
 assert(shop.includes('rollbackComponentInstall(context, type, taken, removed)'));
 assert(shop.includes('inventory.take(removed.uid)'));
 assert(shop.includes('inventory.store('), 'failed component swap must restore reserved cargo');
-assert(shop.includes('loadouts.canSetSlot'), 'invalid slots must be rejected before inventory changes');
+assert(shop.includes('loadouts.canSetSlot'), 'invalid slots must be rejected before mutation');
 console.log('PASS mine modules, NPC salvage, and shipyard rollback wiring');
