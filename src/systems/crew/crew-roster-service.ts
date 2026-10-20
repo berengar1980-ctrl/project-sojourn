@@ -25,6 +25,7 @@ export interface CrewRosterService {
   dismiss(id: string): CrewMember | null;
   assign(ship: ShipDefinition, stationId: string, crewId: string | null): boolean;
   assignments(ship: ShipDefinition): ShipStationAssignments;
+  transferAssignments(from: ShipDefinition, to: ShipDefinition): void;
   shipCrewMembers(): readonly ShipCrewMember[];
   runtimeOptions(ship: ShipDefinition): ShipRuntimeOptions;
   manningFactor(ship: ShipDefinition): number;
@@ -109,6 +110,7 @@ function createRosterAssignments(
   CrewRosterService,
   | 'assign'
   | 'assignments'
+  | 'transferAssignments'
   | 'shipCrewMembers'
   | 'runtimeOptions'
   | 'manningFactor'
@@ -138,6 +140,29 @@ function createRosterAssignments(
 
     assignments(ship) {
       return { ...assignmentRecord(ship) };
+    },
+
+    transferAssignments(from, to) {
+      // An already configured hull keeps its own station layout on return.
+      if (assignmentsByShip.has(to.id)) return;
+      const oldAssignments = assignmentRecord(from);
+      const next: Record<string, string | undefined> = {};
+      const stations = resolveShipGameplayStats(to).stations;
+      for (const station of stations) {
+        const crewId = oldAssignments[station.id];
+        if (!crewId) continue;
+        const member = members.find((entry) => entry.id === crewId);
+        if (member && canOperateStation(member)) next[station.id] = crewId;
+      }
+      // The captain must retain a post even when a different hull has no matching station.
+      if (!Object.values(next).includes('player')) {
+        const captain = members.find((entry) => entry.id === 'player');
+        const firstFree = stations.find((station) => !next[station.id]);
+        if (captain && canOperateStation(captain) && firstFree) {
+          next[firstFree.id] = 'player';
+        }
+      }
+      assignmentsByShip.set(to.id, next);
     },
 
     shipCrewMembers() {
