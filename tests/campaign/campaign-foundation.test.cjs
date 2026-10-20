@@ -6,15 +6,9 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const bus = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/campaigns/campaign-event-bus.ts'
-);
+const bus = loadStandaloneTypeScriptModule(root, 'src/systems/campaigns/campaign-event-bus.ts');
 const runtime = loadStandaloneTypeScriptModule(root, 'src/systems/campaigns/campaign-runtime.ts');
-const bridge = loadStandaloneTypeScriptModule(
-  root,
-  'src/app/game-controller-campaign-events.ts'
-);
+const bridge = loadStandaloneTypeScriptModule(root, 'src/app/game-controller-campaign-events.ts');
 
 const errors = [];
 const events = bus.createCampaignEventBus((error) => errors.push(error));
@@ -162,9 +156,20 @@ const services = bridge.createControllerCampaignServices(
   { captainName: 'Mara', portraitId: 4, stationId: 'helm' },
   'salvage-v1',
   { currentLocationId: 'haven', isTravelling: false, isPursuing: false },
-  [{ id: 'startup', title: 'Startup', version: 1, category: 'core', onEvent(event, context) {
-    if (event.type === 'game.initialized') { context.start(); context.set('captain', event.captainName); }
-  } }]
+  [
+    {
+      id: 'startup',
+      title: 'Startup',
+      version: 1,
+      category: 'core',
+      onEvent(event, context) {
+        if (event.type === 'game.initialized') {
+          context.start();
+          context.set('captain', event.captainName);
+        }
+      },
+    },
+  ]
 );
 assert.equal(services.campaigns.get('startup', 'captain'), 'Mara');
 services.campaigns.destroy();
@@ -174,8 +179,18 @@ const navBus = bus.createCampaignEventBus();
 navBus.subscribe((event) => navEvents.push(event));
 const initial = { currentLocationId: 'haven', isTravelling: false, isPursuing: false };
 const tracker = bridge.createCampaignNavigationTracker(navBus, initial);
-tracker.observe({ ...initial, currentLocationId: null, isTravelling: true, destinationId: 'relay' });
-tracker.observe({ ...initial, currentLocationId: null, isTravelling: true, destinationId: 'relay' });
+tracker.observe({
+  ...initial,
+  currentLocationId: null,
+  isTravelling: true,
+  destinationId: 'relay',
+});
+tracker.observe({
+  ...initial,
+  currentLocationId: null,
+  isTravelling: true,
+  destinationId: 'relay',
+});
 tracker.observe({ ...initial, currentLocationId: 'relay', isTravelling: false });
 assert.deepEqual(navEvents, [
   { type: 'travel.started', fromLocationId: 'haven', destinationId: 'relay' },
@@ -197,6 +212,9 @@ const boarding = fs.readFileSync(
 assert.match(controller, /createControllerCampaignServices/);
 assert.match(controller, /campaignNavigation\.observe\(navigationSnapshot\)/);
 assert.match(controller, /emitCampaignCombatEnded\(/);
-assert.match(fs.readFileSync(path.join(root, 'src/app/game-controller-campaign-events.ts'), 'utf8'), /type: 'game.initialized'/);
+assert.match(
+  fs.readFileSync(path.join(root, 'src/app/game-controller-campaign-events.ts'), 'utf8'),
+  /type: 'game.initialized'/
+);
 assert.match(boarding, /type: 'boarding.ended'/);
 console.log('PASS campaign event bus, isolated runtime, versioned snapshots and gameplay hooks');

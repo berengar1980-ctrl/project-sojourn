@@ -1,7 +1,10 @@
 import type { PlayerProfile } from '../core/player-profile';
 import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import { createCampaignEventBus } from '../systems/campaigns/campaign-event-bus';
-import { createCampaignRuntime, type CampaignDefinition } from '../systems/campaigns/campaign-runtime';
+import {
+  createCampaignRuntime,
+  type CampaignDefinition,
+} from '../systems/campaigns/campaign-runtime';
 import { campaignPackages } from '../data/campaigns/manifest';
 import type { NavigationSnapshot } from '../systems/navigation/navigation-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';

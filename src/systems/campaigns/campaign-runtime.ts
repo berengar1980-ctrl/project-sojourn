@@ -212,7 +212,10 @@ export function createCampaignRuntime(
         progress.set(definition.id, { version: definition.version, status: 'inactive', data: {} });
       }
       if (!enabled.has(definition.id)) {
-        enabled.set(definition.id, definition.category === 'core' || definition.defaultEnabled !== false);
+        enabled.set(
+          definition.id,
+          definition.category === 'core' || definition.defaultEnabled !== false
+        );
       }
       if (definition.category === 'core') enabled.set(definition.id, true);
       definitions.set(definition.id, definition);
@@ -243,12 +246,8 @@ export function createCampaignRuntime(
     get,
     set,
     unavailableIds() {
-      return [
-        ...new Set([
-          ...[...progress.keys()].filter((id) => !definitions.has(id)),
-          ...mismatched,
-        ]),
-      ];
+      const missing = [...progress.keys()].filter((id) => !definitions.has(id));
+      return [...new Set([...missing, ...mismatched])];
     },
     snapshot() {
       return parseSave({
