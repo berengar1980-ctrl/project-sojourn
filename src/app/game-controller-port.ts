@@ -128,6 +128,8 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       assignments: crew.assignments(ship),
       stations: gameplay.stations,
       capacity: crewCapacity(ship),
+      stationSkills: runtime.stationSkills,
+      effects: runtime.crewEffects,
     },
     {
       installed,
