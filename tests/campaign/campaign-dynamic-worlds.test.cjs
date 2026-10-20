@@ -162,11 +162,7 @@ assert.equal(
 assert.equal(
   runtime.applyAction('story_c', 'system:new', {
     type: 'world.system.add',
-    map: world(
-      'other-system',
-      location('other-entry', 100, 200),
-      location('other-exit', 800, 300)
-    ),
+    map: world('other-system', location('other-entry', 100, 200), location('other-exit', 800, 300)),
     entryLocationId: 'other-entry',
     exitLocationId: 'other-exit',
   }),
@@ -183,6 +179,9 @@ assert.equal(registry.inForeignSystem(), true);
 assert.equal(runtime.complete('story_c', 'finished'), true);
 assert.equal(registry.inForeignSystem(), false, 'completion ejects player safely');
 assert.equal(nav.getSnapshot().currentLocationId, 'harbor');
-assert.equal(registry.world().locations.some((entry) => entry.id === 'mission-three'), false);
+assert.equal(
+  registry.world().locations.some((entry) => entry.id === 'mission-three'),
+  false
+);
 runtime.destroy();
 console.log('PASS campaign world overlays, remote system travel, receipts and cleanup');

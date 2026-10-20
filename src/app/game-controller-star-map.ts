@@ -88,69 +88,76 @@ export function createControllerStarModel(
   foreignSystem = false
 ) {
   const navigationSnapshot = navigation.getSnapshot();
-  if (!foreignSystem) economy.marketIntel.observeFromSensors(
-    world.locations.map((location) => ({
-      locationId: location.id,
-      position: location.position,
-    })),
-    navigationSnapshot.currentPosition,
-    economy.situations.currentDay,
-    sensorCrewSkill,
-    sensorModifier
+  if (!foreignSystem)
+    economy.marketIntel.observeFromSensors(
+      world.locations.map((location) => ({
+        locationId: location.id,
+        position: location.position,
+      })),
+      navigationSnapshot.currentPosition,
+      economy.situations.currentDay,
+      sensorCrewSkill,
+      sensorModifier
+    );
+
+  const npcShips = foreignSystem
+    ? []
+    : economy.sectorNpcs.npcs.flatMap((npc) => {
+        if (npc.hullHp <= 0) return [];
+        const definition = getShipDefinition(npc.shipId);
+        if (!definition) return [];
+        const position = economy.sectorNpcs.livePosition(npc);
+        const contact = sectorSensorContactInfo({
+          playerPosition: navigationSnapshot.currentPosition,
+          targetPosition: position,
+          sensorSkill: sensorCrewSkill,
+          sensorModifier,
+          civilianTransponder: npc.pirate !== true,
+          pirate: npc.pirate === true,
+        });
+        if (!contact.visible) return [];
+        return [
+          {
+            id: npc.id,
+            name: contact.identified ? npc.name : 'Unbekannter Kontakt',
+            job: contact.identified ? npc.job : 'patrol',
+            ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
+            ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
+            position,
+            headingRadians: economy.sectorNpcs.liveHeading(npc),
+            isTravelling: economy.sectorNpcs.isTravelling(npc),
+            activity: npc.activity,
+            combatMode: economy.sectorNpcs.combatMode(npc),
+            nominalLengthMeters: definition.nominalLengthMeters,
+            spriteUrl: definition.sprite.assetUrl,
+            spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+            hardpoints: definition.sprite.hardpoints,
+          },
+        ];
+      });
+
+  const eventLocations = (foreignSystem ? [] : economy.salvageEvents.playerVisible).map(
+    (event) => ({
+      id: event.id,
+      name: event.title,
+      kind: 'wreck' as const,
+      position: event.position,
+      radius: event.type === 'distress-rescue' ? 12 : 9,
+      description: event.description,
+      activities: { salvage: true, missions: event.type === 'distress-rescue' },
+      dangerLevel:
+        event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
+    })
   );
-
-  const npcShips = foreignSystem ? [] : economy.sectorNpcs.npcs.flatMap((npc) => {
-    if (npc.hullHp <= 0) return [];
-    const definition = getShipDefinition(npc.shipId);
-    if (!definition) return [];
-    const position = economy.sectorNpcs.livePosition(npc);
-    const contact = sectorSensorContactInfo({
-      playerPosition: navigationSnapshot.currentPosition,
-      targetPosition: position,
-      sensorSkill: sensorCrewSkill,
-      sensorModifier,
-      civilianTransponder: npc.pirate !== true,
-      pirate: npc.pirate === true,
-    });
-    if (!contact.visible) return [];
-    return [
-      {
-        id: npc.id,
-        name: contact.identified ? npc.name : 'Unbekannter Kontakt',
-        job: contact.identified ? npc.job : 'patrol',
-        ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
-        ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
-        position,
-        headingRadians: economy.sectorNpcs.liveHeading(npc),
-        isTravelling: economy.sectorNpcs.isTravelling(npc),
-        activity: npc.activity,
-        combatMode: economy.sectorNpcs.combatMode(npc),
-        nominalLengthMeters: definition.nominalLengthMeters,
-        spriteUrl: definition.sprite.assetUrl,
-        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-        hardpoints: definition.sprite.hardpoints,
-      },
-    ];
-  });
-
-  const eventLocations = (foreignSystem ? [] : economy.salvageEvents.playerVisible).map((event) => ({
-    id: event.id,
-    name: event.title,
-    kind: 'wreck' as const,
-    position: event.position,
-    radius: event.type === 'distress-rescue' ? 12 : 9,
-    description: event.description,
-    activities: { salvage: true, missions: event.type === 'distress-rescue' },
-    dangerLevel:
-      event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
-  }));
-  const cargoScanner = foreignSystem ? null : scanCargoMarkets({
-    player: economy.trade.player,
-    intel: economy.marketIntel,
-    locations: world.locations,
-    origin: navigationSnapshot.currentPosition,
-    currentDay: economy.situations.currentDay,
-  });
+  const cargoScanner = foreignSystem
+    ? null
+    : scanCargoMarkets({
+        player: economy.trade.player,
+        intel: economy.marketIntel,
+        locations: world.locations,
+        origin: navigationSnapshot.currentPosition,
+        currentDay: economy.situations.currentDay,
+      });
   return {
     ...createStarMapViewModel(
       world,

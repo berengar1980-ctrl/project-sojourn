@@ -296,7 +296,10 @@ export function createNavigationService(
   const snapshot = (): NavigationSnapshot => createSnapshot(currentWorld, state);
 
   const selectDestination = (locationId: string | null): NavigationSnapshot => {
-    if (locationId !== null && !currentWorld.locations.some((location) => location.id === locationId)) {
+    if (
+      locationId !== null &&
+      !currentWorld.locations.some((location) => location.id === locationId)
+    ) {
       throw new Error('Unknown navigation destination: ' + locationId);
     }
     state.selectedDestinationId = locationId;

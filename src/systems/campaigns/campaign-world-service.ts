@@ -70,7 +70,8 @@ function validSystem(system: CampaignSystem, base: WorldMap): boolean {
     map.locations.length < 2 ||
     map.locations.length > 60 ||
     map.regions.length > 30
-  ) return false;
+  )
+    return false;
   const ids = new Set(map.locations.map((location) => location.id));
   return (
     ids.size === map.locations.length &&
@@ -164,9 +165,10 @@ export function createCampaignWorldService(
       const system = systems.get(campaignId)?.get(systemId);
       if (!system) return false;
       const locationId = navigation.getSnapshot().currentLocationId;
-      const home = locationId && baseView.locations.some((location) => location.id === locationId)
-        ? locationId
-        : baseWorld.startLocationId;
+      const home =
+        locationId && baseView.locations.some((location) => location.id === locationId)
+          ? locationId
+          : baseWorld.startLocationId;
       if (!navigation.setWorld(system.map, system.entryLocationId)) return false;
       active = { owner: campaignId, id: systemId, returnLocationId: home };
       return true;
