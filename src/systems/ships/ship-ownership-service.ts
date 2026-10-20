@@ -64,12 +64,13 @@ export function shipActivationBlock(
   loadouts: ShipLoadoutService
 ): ShipActivationBlock {
   if (!ownership.owns(next.id)) return 'not-owned';
-  const capacity = resolveShipRuntimeSetup(next, { installed: loadouts.preview(next) })
-    .cargoCapacityTons;
+  const installed = loadouts.preview(next);
+  const capacity = resolveShipRuntimeSetup(next, { installed }).cargoCapacityTons;
   if (playerCargoUsed(trade.player) > capacity) return 'cargo-overflow';
-  if (Object.entries(trade.player.cargo).some(
+  const incompatibleCargo = Object.entries(trade.player.cargo).some(
     ([resourceId, lot]) => lot.qty > 0 && !canShipCarryResource(next, resourceId)
-  )) return 'cargo-incompatible';
+  );
+  if (incompatibleCargo) return 'cargo-incompatible';
   if (crew.list().length > crewCapacity(next)) return 'crew-overflow';
   return null;
 }
