@@ -109,10 +109,20 @@ export function installShipyardComponent(
   const removed = before
     ? inventory.store(type, before, 'removed-' + ship.id, cargoCapacityTons, 'removed')
     : null;
-  if ((before && !removed) || !loadouts.setSlot(ship, type, index, selected?.componentId ?? null)) {
+  const canReturnOldPart = !before || removed !== null;
+  const installed = canReturnOldPart
+    ? loadouts.setSlot(ship, type, index, selected?.componentId ?? null)
+    : false;
+  if (!installed) {
     if (removed) inventory.take(removed.uid);
     if (taken) {
-      inventory.store(type, taken.componentId, taken.sourceWreckId, cargoCapacityTons, taken.source);
+      inventory.store(
+        type,
+        taken.componentId,
+        taken.sourceWreckId,
+        cargoCapacityTons,
+        taken.source
+      );
     }
     return false;
   }
