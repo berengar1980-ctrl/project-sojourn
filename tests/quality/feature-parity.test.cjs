@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const path = require('path');
 const {
+  DOC_PATH,
   EXPECTED_FEATURES,
   validateParityDocument,
   needsParityReview,
@@ -13,6 +14,8 @@ const {
 const root = path.resolve(__dirname, '../..');
 const result = validateParityDocument(root);
 
+assert.equal(DOC_PATH, 'docs/SOJOURN_FEATURE_PARITY.md');
+
 assert.equal(result.featureCount, EXPECTED_FEATURES);
 assert.equal(new Set(result.rows.map((row) => row.id)).size, EXPECTED_FEATURES);
 
@@ -22,7 +25,7 @@ assert.equal(needsParityReview(['resources/example.json']), true);
 assert.equal(needsParityReview(['docs/README.md']), false);
 
 assert.doesNotThrow(() =>
-  enforceChangedFileGate(['src/systems/example.ts', 'docs/VOIDBOUND_FEATURE_PARITY.md'])
+  enforceChangedFileGate(['src/systems/example.ts', 'docs/SOJOURN_FEATURE_PARITY.md'])
 );
 assert.throws(
   () => enforceChangedFileGate(['src/systems/example.ts']),

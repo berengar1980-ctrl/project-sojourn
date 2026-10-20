@@ -1,7 +1,7 @@
-# Voidbound → Project Sojourn Feature-Parity-Matrix
+# Project Sojourn – Feature-Paritätsmatrix
 
 **Snapshot:** 2026-10-06  
-**Voidbound main:** `830ff178cb94eec1da7ded77888a922f51af944c`  
+**Historischer Referenzstand (Voidbound):** `830ff178cb94eec1da7ded77888a922f51af944c`  
 **Project Sojourn baseline:** `a19a3e8c4818aa9aef5bc17cd9030937e657a379`
 
 ## Zweck
