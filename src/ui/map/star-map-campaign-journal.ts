@@ -60,7 +60,9 @@ export function renderCampaignJournal(
         line(dialogue.text, 'campaign-journal__detail')
       );
       for (const option of dialogue.choices) {
-        article.append(button(option.label, () => actions.choose(entry.id, dialogue.id, option.id)));
+        article.append(
+          button(option.label, () => actions.choose(entry.id, dialogue.id, option.id))
+        );
       }
     }
     container.append(article);

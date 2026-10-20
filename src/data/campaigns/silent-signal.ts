@@ -281,7 +281,8 @@ function journal(progress: CampaignProgress, at: string | null): CampaignJournal
       return {
         chapter: 'III · DIE RÜCKKEHR',
         objective: 'Reise über den Rückkehrkorridor zum Ausgangssystem',
-        detail: 'Erreiche den Rückkehrkorridor und wähle ihn erneut aus, sobald du angekommen bist.',
+        detail:
+          'Erreiche den Rückkehrkorridor und wähle ihn erneut aus, sobald du angekommen bist.',
         targetLocationId: EXIT_ID,
         ...(at === EXIT_ID
           ? {
