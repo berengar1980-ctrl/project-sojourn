@@ -104,6 +104,15 @@ assert.equal(transactions.purchaseShipyardComponent(workshop(), 'engine', improv
 assert.equal(trade.player.credits, creditsBeforeComponent - improvement.cost);
 const purchased = inventory.list().find((part) => part.componentId === improvedId);
 assert(purchased && purchased.source === 'purchased');
+const inventoryBeforeRejectedInstall = inventory.snapshot();
+const loadoutsBeforeRejectedInstall = loadouts.snapshot();
+assert.equal(
+  transactions.installShipyardComponent(workshop(), 'engine', 99, purchased.uid),
+  false,
+  'invalid slot must be rejected before consuming an upgrade'
+);
+assert.deepEqual(inventory.snapshot(), inventoryBeforeRejectedInstall);
+assert.deepEqual(loadouts.snapshot(), loadoutsBeforeRejectedInstall);
 assert.equal(transactions.installShipyardComponent(workshop(), 'engine', 0, purchased.uid), true);
 assert.equal(loadouts.get(active).engine[0], improvedId);
 assert(!inventory.list().some((part) => part.uid === purchased.uid), 'fitted part consumed once');
