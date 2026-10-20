@@ -78,13 +78,14 @@ function runEnding(ending) {
   prompt.dialogue.choices[0].label = 'tampered';
   assert.notEqual(engine.journal('silent-beacon')[0].dialogue.choices[0].label, 'tampered');
 
-  const emitChoice = (dialogueId, choiceId, locationId) => bus.emit({
-    type: 'dialogue.choice',
-    campaignId: story.id,
-    dialogueId,
-    choiceId,
-    locationId,
-  });
+  const emitChoice = (dialogueId, choiceId, locationId) =>
+    bus.emit({
+      type: 'dialogue.choice',
+      campaignId: story.id,
+      dialogueId,
+      choiceId,
+      locationId,
+    });
   emitChoice('beacon', 'decode', 'haven');
   assert.equal(
     engine.journal('silent-beacon')[0].dialogue.id,
@@ -136,7 +137,10 @@ function runEnding(ending) {
   assert.deepEqual(wallet.changes, [
     [ending === 'rescue' ? 'free_traders' : 'terran_directorate', 6],
   ]);
-  assert.equal(world.world().locations.some((item) => item.id === 'silent-beacon'), false);
+  assert.equal(
+    world.world().locations.some((item) => item.id === 'silent-beacon'),
+    false
+  );
   assert.equal(world.snapshot().systems[story.id], undefined);
   emitChoice('report', 'deliver', 'silent-beacon');
   assert.equal(wallet.changes.length, 1, 'completed rewards never duplicate');
