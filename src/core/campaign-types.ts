@@ -47,6 +47,13 @@ export type CampaignEvent =
       readonly outcomeReason: 'destruction' | 'escape' | 'boarding' | 'surrender' | null;
     }
   | {
+      readonly type: 'dialogue.choice';
+      readonly campaignId: string;
+      readonly dialogueId: string;
+      readonly choiceId: string;
+      readonly locationId: string;
+    }
+  | {
       readonly type: 'boarding.ended';
       readonly outcome: 'player_win' | 'enemy_win' | 'draw';
     };
@@ -113,6 +120,32 @@ export interface CampaignContext {
   applyAction(actionId: string, action: CampaignAction): CampaignActionResult;
 }
 
+export interface CampaignDialogueChoice {
+  readonly id: string;
+  readonly label: string;
+}
+
+export interface CampaignDialogue {
+  readonly id: string;
+  readonly speaker: string;
+  readonly text: string;
+  readonly choices: readonly CampaignDialogueChoice[];
+}
+
+export interface CampaignJournalView {
+  readonly chapter: string;
+  readonly objective: string;
+  readonly detail: string;
+  readonly targetLocationId?: string;
+  readonly dialogue?: CampaignDialogue;
+}
+
+export interface CampaignJournalEntry extends CampaignJournalView {
+  readonly id: string;
+  readonly title: string;
+  readonly status: CampaignStatus;
+}
+
 export interface CampaignDefinition {
   readonly id: string;
   readonly title: string;
@@ -120,6 +153,11 @@ export interface CampaignDefinition {
   readonly category?: CampaignCategory;
   readonly defaultEnabled?: boolean;
   readonly onEvent?: (event: CampaignEvent, campaign: CampaignContext) => void;
+  /** Pure projection from campaign progress; UI never owns quest progression. */
+  readonly present?: (
+    progress: CampaignProgress,
+    currentLocationId: string | null
+  ) => CampaignJournalView | null;
   /** Converts an earlier package's data, without accessing game services. */
   readonly migrate?: (previous: CampaignProgress) => CampaignProgress;
 }

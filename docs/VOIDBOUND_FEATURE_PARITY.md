@@ -893,3 +893,19 @@ Die bestehenden 241 Voidbound-Paritätsbewertungen ändern sich nicht.
 ## Review-Log (2026-10-20): Phase 4 – dynamische Missionsorte und temporäre Sternensysteme (Draft)
 
 **Keine Statusänderung.** Gegen Voidbound wurden vor allem `campaign.infrastructure`, `campaign.rogue_trader_expedition`, `campaign.hotplug` und dynamische Missionsmarker der `campaign.missing_cargo_001` überprüft. Sojourn erhält einen paketgebundenen, flüchtigen World-Service mit unabhängig registrierten Missionsmarkern, validierten temporären Sternkarten, Ein-/Ausreisepunkten und autoritativem Navigationswechsel. Eine Rückkehr ist am Ausgang möglich; beim Abschließen, Deaktivieren oder Entfernen werden alle zur Kampagne gehörigen Objekte abgeräumt. Die Heimatsystemkarte und normale Routen bleiben geschützt. In fremden Systemen sind Handel, alte Sektor-NPCs und nicht vorhandene Mining-/Salvage-Services bewusst nicht verfügbar. Vollwertige fremde Ökonomien/NPC-Gruppen, Missionskämpfe gegen eigens erzeugte NPCs, Questdialoge und Karriere-Persistenz sind weiterhin nicht implementiert. Es wurden keine Voidbound-Geschichten und keine der 241 Feature-IDs oder Statusbewertungen verändert. Vor Merge sind CI und Nutzerfreigabe erforderlich.
+
+## Review-Log (2026-10-20): Phase 5 – Dialogsystem, Questjournal und erste Kampagne (Draft)
+
+**Keine pauschale Statusänderung.** Sojourn erhält eine datengetriebene
+Kampagnenanzeige im vorhandenen Sternkarten-Auftragsmenü, ein typed
+`dialogue.choice`-Ereignis mit Ort-/Dialog-/Antwortprüfung sowie das
+unabhängige, dreiteilige Kampagnenpaket **Das verstummte Signal**. Zwei
+Enden belohnen den Spieler unterschiedlich; die Belohnungen laufen
+quittungsbasiert über die vorhandenen Domänen-Services. Die Prüfung der
+beiden vollständigen Routen erfolgt über Verhaltenstests, einschließlich
+temporärer Karte, Rückreise, Journalansicht und Bereinigung.
+Voidbound wird ausschließlich als Referenz verwendet; die 241
+Feature-Paritätseinträge und ihre Bewertungen bleiben unverändert. Noch
+fehlen ein vollwertiges NPC-/Kampf-/Wirtschaftssystem im Fremdsektor und
+dauerhafte Spielstandspeicherung. Merge ausschließlich nach grüner CI
+und erneuter Nutzerfreigabe.

@@ -441,3 +441,38 @@
   font-size: 9px;
   letter-spacing: 0.1em;
 }
+
+/* Questjournal – uses the existing right-hand star map drawer. */
+.campaign-journal__entry {
+  display: grid;
+  gap: 8px;
+  padding: 12px 10px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(124, 184, 174, 0.28);
+  border-left: 2px solid #8bb9af;
+  background: rgba(13, 31, 37, 0.85);
+}
+
+.campaign-journal__entry > strong {
+  color: #c8e5df;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.campaign-journal__objective {
+  margin: 0;
+  font-weight: 650;
+  color: #e5efec;
+}
+
+.campaign-journal__detail {
+  margin: 0;
+  color: #a8c0c3;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.campaign-journal__entry .star-map-directory__item {
+  font-size: 11px;
+  border-left-color: rgba(105, 196, 177, 0.6);
+}

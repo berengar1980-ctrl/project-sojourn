@@ -2,6 +2,8 @@ import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { WorldMap } from '../core/world-types';
+import type { CampaignRuntime } from '../systems/campaigns/campaign-runtime';
+import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { NavigationService } from '../systems/navigation';
 import { sectorSensorContactInfo } from '../systems/scanning/sensor-contact-service';
@@ -21,6 +23,8 @@ function locationHasActivity(
 export function createControllerStarPanel(options: {
   readonly root: HTMLElement;
   readonly world: () => WorldMap;
+  readonly campaigns: CampaignRuntime;
+  readonly campaignEvents: CampaignEventBus;
   readonly exitLocationId: () => string | null;
   readonly returnFromCampaignSystem: () => boolean;
   readonly navigation: NavigationService;
@@ -41,6 +45,29 @@ export function createControllerStarPanel(options: {
     root: options.root,
     model: options.getModel(),
     log: options.log,
+    getCampaignJournal: () =>
+      options.campaigns.journal(options.navigation.getSnapshot().currentLocationId),
+    onCampaignChoice: (id, dialogueId, choiceId) => {
+      const nav = options.navigation.getSnapshot();
+      if (!nav.currentLocationId || nav.isTravelling) return;
+      const dialogue = options.campaigns
+        .journal(nav.currentLocationId)
+        .find((entry) => entry.id === id)?.dialogue;
+      if (
+        dialogue?.id !== dialogueId ||
+        !dialogue.choices.some((choice) => choice.id === choiceId)
+      ) {
+        return;
+      }
+      options.campaignEvents.emit({
+        type: 'dialogue.choice',
+        campaignId: id,
+        dialogueId,
+        choiceId,
+        locationId: nav.currentLocationId,
+      });
+      panel?.update(options.getModel());
+    },
     onSelectLocation: (id) => {
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
