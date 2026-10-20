@@ -34,6 +34,7 @@ import {
   type PortShipyardLooseComponentView,
   type PortShipyardStateInput,
   type PortShipyardVariantView,
+  type PortShipyardView,
 } from './port-ship-view-model';
 
 import { type PortCrewView, crewMemberView } from './port-crew-view';
@@ -145,27 +146,7 @@ export interface PortViewModel {
   readonly security: string;
   readonly description: string;
   readonly shipyardAvailable: boolean;
-  readonly shipyard: {
-    readonly loose: readonly PortShipyardLooseComponentView[];
-    readonly variants: readonly PortShipyardVariantView[];
-    readonly catalog: readonly PortShipyardVariantView[];
-    readonly ships: readonly {
-      id: string;
-      name: string;
-      role: string;
-      price: number;
-      owned: boolean;
-      spriteUrl: string;
-      lengthMeters: number;
-      cargoCapacityTons: number;
-      speed: number;
-      hullMaxHp: number;
-      shieldMaxHp: number;
-      weaponSlots: number;
-      crewBerths: number;
-      maxComponentTier: number;
-    }[];
-  };
+  readonly shipyard: PortShipyardView;
   readonly tabs: readonly { id: PortTab; label: string; enabled: boolean }[];
   readonly market: readonly PortMarketRowView[];
   readonly cargoSales: readonly PortCargoSaleView[];
