@@ -5,14 +5,13 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const ships = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
-const yard = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-ownership-service.ts');
-const loadoutsModule = loadStandaloneTypeScriptModule(
-  root, 'src/systems/ships/ship-loadout-service.ts'
-);
-const crewModule = loadStandaloneTypeScriptModule(root, 'src/systems/crew/crew-roster-service.ts');
-const profileModule = loadStandaloneTypeScriptModule(root, 'src/core/player-profile.ts');
-const resources = loadStandaloneTypeScriptModule(root, 'src/data/economy/economy-resources.ts');
+const load = (file) => loadStandaloneTypeScriptModule(root, file);
+const ships = load('src/systems/ships/ship-registry.ts');
+const yard = load('src/systems/ships/ship-ownership-service.ts');
+const loadoutsModule = load('src/systems/ships/ship-loadout-service.ts');
+const crewModule = load('src/systems/crew/crew-roster-service.ts');
+const profileModule = load('src/core/player-profile.ts');
+const resources = load('src/data/economy/economy-resources.ts');
 
 const starter = ships.getShipsByRole('salvage')[0];
 const miner = ships.getShipsByRole('mining')[0];
@@ -52,30 +51,33 @@ const loadouts = loadoutsModule.createShipLoadoutService();
 const emptyCrew = { list: () => [] };
 const player = { credits: 1000, cargo: {}, reservedCargoTons: 0 };
 const trade = { player };
-assert.equal(yard.shipActivationBlock(freighter, ownership, trade, emptyCrew, loadouts), 'not-owned');
+const activation = (ship, roster) => yard.shipActivationBlock(ship, ownership, trade, roster, loadouts);
+assert.equal(activation(freighter, emptyCrew), 'not-owned');
 const beforeActivationCheck = loadouts.snapshot();
-assert.equal(yard.shipActivationBlock(miner, ownership, trade, emptyCrew, loadouts), null);
+assert.equal(activation(miner, emptyCrew), null);
 assert.deepEqual(loadouts.snapshot(), beforeActivationCheck, 'activation preview is read-only');
 
 const manufactured = resources.economyResources.find((entry) => entry.categoryId !== 'raw');
 assert(manufactured);
 player.cargo[manufactured.id] = { qty: 1, totalCost: 100 };
 assert.equal(
-  yard.shipActivationBlock(miner, ownership, trade, emptyCrew, loadouts),
+  activation(miner, emptyCrew),
   'cargo-incompatible',
   'mining ship rejects non-raw cargo'
 );
 delete player.cargo[manufactured.id];
 player.reservedCargoTons = 999999;
 assert.equal(
-  yard.shipActivationBlock(miner, ownership, trade, emptyCrew, loadouts),
+  activation(miner, emptyCrew),
   'cargo-overflow',
   'loose component reservations count toward cargo'
 );
 player.reservedCargoTons = 0;
-const overfullCrew = { list: () => Array.from({ length: 100 }, (_, i) => ({ id: String(i) })) };
-assert.equal(yard.shipActivationBlock(miner, ownership, trade, overfullCrew, loadouts), 'crew-overflow');
-assert.equal(yard.shipActivationBlock(miner, ownership, trade, emptyCrew, loadouts), null);
+const overfullCrew = {
+  list: () => Array.from({ length: 100 }, (_, index) => ({ id: String(index) })),
+};
+assert.equal(activation(miner, overfullCrew), 'crew-overflow');
+assert.equal(activation(miner, emptyCrew), null);
 assert.equal(credits, before - yard.shipPurchasePrice(miner), 'activation checks must not spend money');
 
 const profile = profileModule.createPlayerProfile({
@@ -84,8 +86,13 @@ const profile = profileModule.createPlayerProfile({
   shipName: 'Die Wanderin',
   combatSkills: { ranged: 80, melee: 50 },
   stationSkills: {
-    piloting: 75, sensors: 75, weapons: 25, engineering: 25,
-    salvage: 20, mining: 15, logistics: 10,
+    piloting: 75,
+    sensors: 75,
+    weapons: 25,
+    engineering: 25,
+    salvage: 20,
+    mining: 15,
+    logistics: 10,
   },
   stationId: 'helm',
 });
