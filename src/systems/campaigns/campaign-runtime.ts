@@ -2,6 +2,7 @@ import type {
   CampaignAction,
   CampaignActionPort,
   CampaignActionResult,
+  CampaignJournalEntry,
   CampaignContext,
   CampaignDefinition,
   CampaignEvent,
@@ -33,6 +34,7 @@ export interface CampaignRuntime {
   applyAction(id: string, actionId: string, action: CampaignAction): CampaignActionResult;
   unavailableIds(): readonly string[];
   snapshot(): CampaignSnapshot;
+  journal(currentLocationId: string | null): readonly CampaignJournalEntry[];
   destroy(): void;
 }
 
@@ -230,6 +232,21 @@ function campaignEventListener(
   };
 }
 
+function readCampaignJournal(
+  definitions: ReadonlyMap<string, CampaignDefinition>,
+  accessible: (id: string) => boolean,
+  state: (id: string) => CampaignProgress,
+  currentLocationId: string | null
+): readonly CampaignJournalEntry[] {
+  return [...definitions].flatMap(([id, definition]) => {
+    if (!accessible(id) || !definition.present) return [];
+    const progress = cloneProgress(state(id));
+    const view = definition.present(progress, currentLocationId);
+    if (!view) return [];
+    return [structuredClone({ ...view, id, title: definition.title, status: progress.status })];
+  });
+}
+
 export function createCampaignRuntime(
   events: CampaignEventBus,
   restored?: CampaignSnapshot,
@@ -319,6 +336,7 @@ export function createCampaignRuntime(
     set,
     applyAction,
     unavailableIds: registry.unavailableIds,
+    journal: (locationId) => readCampaignJournal(definitions, accessible, state, locationId),
     snapshot() {
       return parseSave({
         snapshotVersion: 1,

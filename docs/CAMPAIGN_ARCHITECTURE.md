@@ -135,3 +135,27 @@ NPCs and local hostile engagements in its map view. It does not yet offer an
 independent market, NPC simulation, planetary landing, fleet spawning or
 mission-specific local-space/mining scene. This is a **runtime map scope**
 rather than a second full sector simulation or a persistent savegame.
+
+## Phase 5 – quest presentation and first playable campaign
+
+Campaign packages may implement the **pure** `present(progress, currentLocationId)`
+projection to show a chapter, current objective, optional map target and
+location-gated dialogue choices. The CampaignRuntime's `journal(locationId)`
+reads that projection from a detached campaign progress record and returns
+detached journal entries. Choice controls are rendered in the existing
+star-map **Aufträge** drawer; a chosen response becomes a validated
+`dialogue.choice` event routed through the campaign event bus. The UI does
+not own progression, currency or location state.
+
+The first package `src/data/campaigns/silent-signal.ts`, registered in the
+manifest, implements **Das verstummte Signal**:
+
+1. Decode a signal near Haven to register a temporary foreign system
+2. Travel to the research ship Elara and decide between evacuation and quarantine
+3. Return through the exit gate, deliver the report, collect credits and faction
+   reputation, and complete/clean up all temporary mission worlds
+
+Both endings are tested with the authoritative navigation, world service and
+campaign runtime. Game snapshots remain **observational in-memory snapshots**
+and there is deliberately no save/load UI. The foreign system does not yet
+simulate independent markets, pirates or crew boarding.

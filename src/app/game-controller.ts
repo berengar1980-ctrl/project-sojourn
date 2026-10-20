@@ -92,6 +92,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   state.panels.star = createControllerStarPanel({
     root: context.root,
     navigation: context.navigation,
+    ...context,
     world: () => context.world.world(),
     exitLocationId: () => context.world.exitLocationId(),
     returnFromCampaignSystem: () => context.world.returnFromSystem(),
@@ -388,7 +389,6 @@ function handleControllerLocationEntry(
     runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
   }
 }
-
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');

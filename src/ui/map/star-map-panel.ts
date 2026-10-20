@@ -1,3 +1,5 @@
+import type { CampaignJournalEntry } from '../../core/campaign-types';
+import { renderCampaignJournal } from './star-map-campaign-journal';
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
 import { bindCargoMarketScanner } from './star-map-cargo-scanner';
@@ -24,6 +26,8 @@ interface StarMapPanelOptions {
   readonly onAttackNpc: (id: string) => void;
   readonly onStartTravel: () => void;
   readonly onDock: () => void;
+  readonly getCampaignJournal?: () => readonly CampaignJournalEntry[];
+  readonly onCampaignChoice?: (campaignId: string, dialogueId: string, choiceId: string) => void;
 }
 
 function activityLabels(model: StarMapViewModel): string {
@@ -301,7 +305,10 @@ function createMenuContentRefresher(
   getModel: () => StarMapViewModel,
   renderCargoScanner: () => void,
   systemLog: { update(): void },
-  actions: Pick<StarMapPanelOptions, 'onSelectNpc' | 'onSelectLocation'>
+  actions: Pick<
+    StarMapPanelOptions,
+    'onSelectNpc' | 'onSelectLocation' | 'getCampaignJournal' | 'onCampaignChoice'
+  >
 ): () => void {
   const directoryActions = {
     onSelectNpc(id: string): void {
@@ -313,15 +320,30 @@ function createMenuContentRefresher(
       actions.onSelectLocation(id);
     },
   };
-  return (): void => {
+  const refreshMissionView = (): void => {
+    if (menu.activeSection() === 'missions') refresh();
+  };
+  const refresh = (): void => {
     const section = menu.activeSection();
     if (section === 'trade') renderCargoScanner();
     else if (section === 'contacts') {
       renderStarMapContacts(getModel(), menu.contactsPane, directoryActions);
     } else if (section === 'missions') {
-      renderStarMapEvents(getModel(), menu.missionsPane, directoryActions);
+      const journalPane = document.createElement('div');
+      const signalsPane = document.createElement('div');
+      const currentLocationId = getModel().navigation.currentLocationId;
+      renderCampaignJournal(journalPane, actions.getCampaignJournal?.() ?? [], currentLocationId, {
+        selectLocation: (id) => directoryActions.onSelectLocation(id),
+        choose: (id, dialogueId, choiceId) => {
+          actions.onCampaignChoice?.(id, dialogueId, choiceId);
+          refreshMissionView();
+        },
+      });
+      renderStarMapEvents(getModel(), signalsPane, directoryActions);
+      menu.missionsPane.replaceChildren(journalPane, signalsPane);
     } else if (section === 'system') systemLog.update();
   };
+  return refresh;
 }
 
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {

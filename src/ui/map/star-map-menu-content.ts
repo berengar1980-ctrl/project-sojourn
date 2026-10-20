@@ -117,8 +117,9 @@ export function renderStarMapEvents(
   actions: DirectoryActions
 ): void {
   const events = model.locations.filter((location) => {
-    if (location.kind !== 'wreck') return false;
-    return Boolean(location.activities.salvage || location.activities.missions);
+    if (location.kind === 'wreck') return Boolean(location.activities.salvage || location.activities.missions);
+    return location.activities.missions === true &&
+      !location.activities.dock && !location.activities.trade;
   });
   const summary = document.createElement('p');
   summary.className = 'star-map-directory__summary';
