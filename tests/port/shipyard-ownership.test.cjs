@@ -51,7 +51,8 @@ const loadouts = loadoutsModule.createShipLoadoutService();
 const emptyCrew = { list: () => [] };
 const player = { credits: 1000, cargo: {}, reservedCargoTons: 0 };
 const trade = { player };
-const activation = (ship, roster) => yard.shipActivationBlock(ship, ownership, trade, roster, loadouts);
+const activation = (ship, roster) =>
+  yard.shipActivationBlock(ship, ownership, trade, roster, loadouts);
 assert.equal(activation(freighter, emptyCrew), 'not-owned');
 const beforeActivationCheck = loadouts.snapshot();
 assert.equal(activation(miner, emptyCrew), null);
@@ -78,7 +79,7 @@ const overfullCrew = {
 };
 assert.equal(activation(miner, overfullCrew), 'crew-overflow');
 assert.equal(activation(miner, emptyCrew), null);
-assert.equal(credits, before - yard.shipPurchasePrice(miner), 'activation checks must not spend money');
+assert.equal(credits, before - yard.shipPurchasePrice(miner), 'no debit on activation');
 
 const profile = profileModule.createPlayerProfile({
   portraitId: 1,
