@@ -48,12 +48,9 @@ export function createShipOwnershipService(
   };
 }
 
-export type ShipActivationBlock =
-  | 'not-owned'
-  | 'cargo-overflow'
-  | 'cargo-incompatible'
-  | 'crew-overflow'
-  | null;
+type HullAccessBlock = 'not-owned' | 'crew-overflow';
+type HullCargoBlock = 'cargo-overflow' | 'cargo-incompatible';
+export type ShipActivationBlock = HullAccessBlock | HullCargoBlock | null;
 
 /** Read-only preflight: rejects impossible transfers without touching credits or cargo. */
 export function shipActivationBlock(
