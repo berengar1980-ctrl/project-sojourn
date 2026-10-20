@@ -9,6 +9,9 @@ import type { CampaignShipActions } from './campaign-ship-actions';
 import type { CampaignCombatActions } from './campaign-combat-actions';
 import type { CampaignWorldService } from './campaign-world-service';
 
+type WorldAction = Extract<CampaignAction, { readonly type: `world.${string}` }>;
+type CargoAction = Extract<CampaignAction, { readonly type: 'cargo.grant' | 'cargo.take' }>;
+
 export interface CampaignActionServices {
   readonly trade: PlayerTradeService;
   readonly crew: CrewRosterService;
@@ -23,6 +26,44 @@ function positiveAmount(value: number): boolean {
   return Number.isSafeInteger(value) && value > 0;
 }
 
+function applyWorldAction(
+  action: WorldAction,
+  campaignId: string | undefined,
+  world: CampaignWorldService
+): boolean {
+  if (!campaignId) return false;
+  switch (action.type) {
+    case 'world.location.add':
+      return world.addLocation(campaignId, action.location);
+    case 'world.system.add':
+      return world.addSystem(campaignId, {
+        map: action.map,
+        entryLocationId: action.entryLocationId,
+        exitLocationId: action.exitLocationId,
+      });
+    case 'world.system.enter':
+      return world.enterSystem(campaignId, action.systemId);
+    case 'world.system.return':
+      return world.returnFromSystem(campaignId);
+  }
+}
+
+function applyCargoAction(
+  action: CargoAction,
+  trade: PlayerTradeService,
+  ship: ShipDefinition
+): boolean {
+  if (!positiveAmount(action.quantity) || !economyResourceById(action.resourceId)) {
+    return false;
+  }
+  if (action.type === 'cargo.take') return trade.removeCargo(action.resourceId, action.quantity);
+  return trade.grantCargo(
+    action.resourceId,
+    action.quantity,
+    resolveShipGameplayStats(ship).cargoCapacityTons
+  );
+}
+
 /** Only domain owners can mutate gameplay. Failures must leave state unchanged. */
 export function createCampaignActionGateway(services: CampaignActionServices): CampaignActionPort {
   const { trade, crew, getShip } = services;
@@ -35,21 +76,8 @@ export function createCampaignActionGateway(services: CampaignActionServices): C
         case 'credits.take':
           return positiveAmount(action.amount) && trade.takeCredits(action.amount);
         case 'cargo.grant':
-          return (
-            positiveAmount(action.quantity) &&
-            !!economyResourceById(action.resourceId) &&
-            trade.grantCargo(
-              action.resourceId,
-              action.quantity,
-              resolveShipGameplayStats(getShip()).cargoCapacityTons
-            )
-          );
         case 'cargo.take':
-          return (
-            positiveAmount(action.quantity) &&
-            !!economyResourceById(action.resourceId) &&
-            trade.removeCargo(action.resourceId, action.quantity)
-          );
+          return applyCargoAction(action, trade, getShip());
         case 'reputation.change':
           return services.reputation.change(action.factionId, action.delta);
         case 'component.grant':
@@ -59,20 +87,10 @@ export function createCampaignActionGateway(services: CampaignActionServices): C
         case 'combat.start':
           return services.combat.startExistingNpcEncounter(action.npcId);
         case 'world.location.add':
-          return !!campaignId && services.world.addLocation(campaignId, action.location);
         case 'world.system.add':
-          return (
-            !!campaignId &&
-            services.world.addSystem(campaignId, {
-              map: action.map,
-              entryLocationId: action.entryLocationId,
-              exitLocationId: action.exitLocationId,
-            })
-          );
         case 'world.system.enter':
-          return !!campaignId && services.world.enterSystem(campaignId, action.systemId);
         case 'world.system.return':
-          return !!campaignId && services.world.returnFromSystem(campaignId);
+          return applyWorldAction(action, campaignId, services.world);
         case 'crew.hire':
           return (
             crew.availableDefinitions().some((entry) => entry.id === action.crewId) &&

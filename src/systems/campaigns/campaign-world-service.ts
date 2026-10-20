@@ -53,25 +53,28 @@ function validLocation(location: WorldLocation, world: WorldMap): boolean {
   );
 }
 
+function validSystemBounds(map: WorldMap, base: WorldMap): boolean {
+  return (
+    ID.test(map.id) &&
+    map.id !== base.id &&
+    !!map.name.trim() &&
+    Number.isFinite(map.width) &&
+    Number.isFinite(map.height) &&
+    map.width >= 300 &&
+    map.height >= 300 &&
+    map.width <= 20000 &&
+    map.height <= 20000 &&
+    Number.isFinite(map.star.position.x) &&
+    Number.isFinite(map.star.position.y) &&
+    map.locations.length >= 2 &&
+    map.locations.length <= 60 &&
+    map.regions.length <= 30
+  );
+}
+
 function validSystem(system: CampaignSystem, base: WorldMap): boolean {
   const map = system.map;
-  if (
-    !ID.test(map.id) ||
-    map.id === base.id ||
-    !map.name.trim() ||
-    !Number.isFinite(map.width) ||
-    !Number.isFinite(map.height) ||
-    map.width < 300 ||
-    map.height < 300 ||
-    map.width > 20000 ||
-    map.height > 20000 ||
-    !Number.isFinite(map.star.position.x) ||
-    !Number.isFinite(map.star.position.y) ||
-    map.locations.length < 2 ||
-    map.locations.length > 60 ||
-    map.regions.length > 30
-  )
-    return false;
+  if (!validSystemBounds(map, base)) return false;
   const ids = new Set(map.locations.map((location) => location.id));
   return (
     ids.size === map.locations.length &&
@@ -82,6 +85,55 @@ function validSystem(system: CampaignSystem, base: WorldMap): boolean {
     system.entryLocationId !== system.exitLocationId &&
     map.locations.every((location) => validLocation(location, map))
   );
+}
+
+function registerMissionLocation(
+  campaignId: string,
+  location: WorldLocation,
+  baseWorld: WorldMap,
+  records: Map<string, Map<string, WorldLocation>>,
+  existingId: (id: string) => boolean,
+  rebuildBase: () => void
+): boolean {
+  if (!ID.test(campaignId) || existingId(location.id) || !validLocation(location, baseWorld)) {
+    return false;
+  }
+  const record = records.get(campaignId) ?? new Map<string, WorldLocation>();
+  record.set(location.id, detached(location));
+  records.set(campaignId, record);
+  rebuildBase();
+  return true;
+}
+
+function registerMissionSystem(
+  campaignId: string,
+  system: CampaignSystem,
+  baseWorld: WorldMap,
+  records: Map<string, Map<string, CampaignSystem>>
+): boolean {
+  if (!ID.test(campaignId) || !validSystem(system, baseWorld)) return false;
+  const taken = [...records.values()].some((entries) => entries.has(system.map.id));
+  if (taken) return false;
+  const record = records.get(campaignId) ?? new Map<string, CampaignSystem>();
+  record.set(system.map.id, detached(system));
+  records.set(campaignId, record);
+  return true;
+}
+
+function snapshotCampaignWorld(
+  activeId: string | null,
+  locations: Map<string, Map<string, WorldLocation>>,
+  systems: Map<string, Map<string, CampaignSystem>>
+): CampaignWorldSnapshot {
+  return detached({
+    activeSystemId: activeId,
+    locations: Object.fromEntries(
+      [...locations].map(([id, records]) => [id, [...records.values()]])
+    ),
+    systems: Object.fromEntries(
+      [...systems].map(([id, records]) => [id, [...records.values()]])
+    ),
+  });
 }
 
 export function createCampaignWorldService(
@@ -141,25 +193,9 @@ export function createCampaignWorldService(
     exitLocationId() {
       return foreign()?.exitLocationId ?? null;
     },
-    addLocation(campaignId, location) {
-      if (!ID.test(campaignId) || existingId(location.id) || !validLocation(location, baseWorld)) {
-        return false;
-      }
-      const record = locations.get(campaignId) ?? new Map<string, WorldLocation>();
-      record.set(location.id, detached(location));
-      locations.set(campaignId, record);
-      rebuildBase();
-      return true;
-    },
-    addSystem(campaignId, system) {
-      if (!ID.test(campaignId) || !validSystem(system, baseWorld)) return false;
-      const taken = [...systems.values()].some((records) => records.has(system.map.id));
-      if (taken) return false;
-      const record = systems.get(campaignId) ?? new Map<string, CampaignSystem>();
-      record.set(system.map.id, detached(system));
-      systems.set(campaignId, record);
-      return true;
-    },
+    addLocation: (id, location) =>
+      registerMissionLocation(id, location, baseWorld, locations, existingId, rebuildBase),
+    addSystem: (id, system) => registerMissionSystem(id, system, baseWorld, systems),
     enterSystem(campaignId, systemId) {
       if (active || navigation.getSnapshot().isTravelling) return false;
       const system = systems.get(campaignId)?.get(systemId);
@@ -187,16 +223,6 @@ export function createCampaignWorldService(
       systems.delete(campaignId);
       rebuildBase();
     },
-    snapshot() {
-      return detached({
-        activeSystemId: active?.id ?? null,
-        locations: Object.fromEntries(
-          [...locations].map(([id, records]) => [id, [...records.values()]])
-        ),
-        systems: Object.fromEntries(
-          [...systems].map(([id, records]) => [id, [...records.values()]])
-        ),
-      });
-    },
+    snapshot: () => snapshotCampaignWorld(active?.id ?? null, locations, systems),
   };
 }

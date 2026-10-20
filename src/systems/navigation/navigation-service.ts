@@ -274,6 +274,70 @@ function startNavigationPursuit(
   state.pointDestination = null;
 }
 
+function pruneMissingDestinations(state: NavigationRuntimeState, world: WorldMap): void {
+  const exists = (id: string | null) =>
+    id !== null && world.locations.some((location) => location.id === id);
+  if (state.travel && !exists(state.travel.destinationId)) {
+    state.travel = null;
+    state.currentTurnRate = 0;
+    state.currentAngularThrust = 0;
+  }
+  if (state.pointDestination === null && !exists(state.selectedDestinationId)) {
+    state.selectedDestinationId = null;
+  }
+  if (state.currentLocationId && !exists(state.currentLocationId)) {
+    state.currentLocationId = null;
+  }
+}
+
+function recoverNavigationToDock(world: WorldMap, state: NavigationRuntimeState): void {
+  const destination = world.locations
+    .filter(
+      (location) =>
+        location.activities.shipyard || location.activities.dock || location.activities.refuel
+    )
+    .map((location) => ({
+      location,
+      priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
+      distance: Math.hypot(
+        location.position.x - state.currentPosition.x,
+        location.position.y - state.currentPosition.y
+      ),
+    }))
+    .sort(
+      (first, second) => first.priority - second.priority || first.distance - second.distance
+    )[0]?.location;
+  if (!destination) return;
+  state.travel = null;
+  state.pursuit = null;
+  state.currentLocationId = destination.id;
+  state.selectedDestinationId = destination.id;
+  state.pointDestination = null;
+  state.currentPosition = { ...destination.position };
+  state.currentHeading = 0;
+  state.currentTurnRate = 0;
+  state.currentAngularThrust = 0;
+}
+
+function moveNavigationToWorld(
+  state: NavigationRuntimeState,
+  world: WorldMap,
+  locationId: string
+): boolean {
+  const location = world.locations.find((item) => item.id === locationId);
+  if (!location) return false;
+  state.travel = null;
+  state.pursuit = null;
+  state.pointDestination = null;
+  state.currentLocationId = locationId;
+  state.selectedDestinationId = locationId;
+  state.currentPosition = { ...location.position };
+  state.currentHeading = 0;
+  state.currentTurnRate = 0;
+  state.currentAngularThrust = 0;
+  return true;
+}
+
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
@@ -335,33 +399,11 @@ export function createNavigationService(
     getSnapshot: snapshot,
     replaceWorld(nextWorld) {
       currentWorld = nextWorld;
-      const exists = (id: string | null) =>
-        id !== null && currentWorld.locations.some((location) => location.id === id);
-      if (state.travel && !exists(state.travel.destinationId)) {
-        state.travel = null;
-        state.currentTurnRate = 0;
-        state.currentAngularThrust = 0;
-      }
-      if (state.pointDestination === null && !exists(state.selectedDestinationId)) {
-        state.selectedDestinationId = null;
-      }
-      if (state.currentLocationId && !exists(state.currentLocationId)) {
-        state.currentLocationId = null;
-      }
+      pruneMissingDestinations(state, nextWorld);
     },
     setWorld(nextWorld, locationId) {
-      const location = nextWorld.locations.find((item) => item.id === locationId);
-      if (!location) return false;
+      if (!moveNavigationToWorld(state, nextWorld, locationId)) return false;
       currentWorld = nextWorld;
-      state.travel = null;
-      state.pursuit = null;
-      state.pointDestination = null;
-      state.currentLocationId = locationId;
-      state.selectedDestinationId = locationId;
-      state.currentPosition = { ...location.position };
-      state.currentHeading = 0;
-      state.currentTurnRate = 0;
-      state.currentAngularThrust = 0;
       return true;
     },
     selectDestination,
@@ -379,33 +421,7 @@ export function createNavigationService(
       return snapshot();
     },
     recoverToNearestDock() {
-      const destination = currentWorld.locations
-        .filter(
-          (location) =>
-            location.activities.shipyard || location.activities.dock || location.activities.refuel
-        )
-        .map((location) => ({
-          location,
-          priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
-          distance: Math.hypot(
-            location.position.x - state.currentPosition.x,
-            location.position.y - state.currentPosition.y
-          ),
-        }))
-        .sort(
-          (first, second) => first.priority - second.priority || first.distance - second.distance
-        )[0]?.location;
-      if (!destination) return snapshot();
-
-      state.travel = null;
-      state.pursuit = null;
-      state.currentLocationId = destination.id;
-      state.selectedDestinationId = destination.id;
-      state.pointDestination = null;
-      state.currentPosition = { ...destination.position };
-      state.currentHeading = 0;
-      state.currentTurnRate = 0;
-      state.currentAngularThrust = 0;
+      recoverNavigationToDock(currentWorld, state);
       return snapshot();
     },
     setCruiseSpeed,
