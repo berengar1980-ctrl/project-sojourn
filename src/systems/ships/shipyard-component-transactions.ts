@@ -35,7 +35,7 @@ export function purchaseShipyardComponent(
   const { ship, inventory, research, trade, cargoCapacityTons, locationId } = context;
   const component = getShipComponent(type, componentId);
   const maxTier = type === 'armor' ? 6 : resolveShipGameplayStats(ship).maxComponentTier;
-  if (!component || component.tier > maxTier || component.cost <= 0) return false;
+  if (!component || component.tier > maxTier || component.cost < 0) return false;
   const standard = getCompatibleShipComponents(type, maxTier).some(
     (entry) => entry.id === componentId
   );
@@ -55,7 +55,7 @@ export function purchaseShipyardComponent(
     'purchased'
   );
   if (!stored) return false;
-  if (!trade.takeCredits(component.cost)) {
+  if (component.cost > 0 && !trade.takeCredits(component.cost)) {
     inventory.take(stored.uid);
     return false;
   }
