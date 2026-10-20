@@ -98,3 +98,13 @@ export { createShipProgressionSnapshot } from './ship-progression-snapshot';
 export type { ShipProgressionSnapshot } from './ship-progression-snapshot';
 export type { ShipLoadoutSnapshot } from './ship-loadout-service';
 export type { ShipComponentInventorySnapshot } from './ship-component-inventory-service';
+export {
+  createShipOwnershipService,
+  shipPurchasePrice,
+  shipActivationBlock,
+} from './ship-ownership-service';
+export type {
+  ShipOwnershipService,
+  ShipOwnershipSnapshot,
+  ShipActivationBlock,
+} from './ship-ownership-service';

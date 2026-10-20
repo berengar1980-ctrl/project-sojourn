@@ -11,6 +11,7 @@ const owners = [
   'src/systems/ships/ship-loadout-service.ts',
   'src/systems/ships/ship-component-inventory-service.ts',
   'src/systems/ships/shipyard-research-service.ts',
+  'src/systems/ships/ship-ownership-service.ts',
 ];
 for (const file of owners) {
   const text = source(file);

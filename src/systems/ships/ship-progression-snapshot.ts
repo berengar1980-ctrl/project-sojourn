@@ -1,5 +1,6 @@
 import type { ShipComponentInventoryService } from './ship-component-inventory-service';
 import type { ShipLoadoutService } from './ship-loadout-service';
+import type { ShipOwnershipService } from './ship-ownership-service';
 import type { ShipyardResearchService } from './shipyard-research-service';
 
 // Pure in-memory boundary for a future save format. No storage, loading, or migrations.
@@ -13,14 +14,14 @@ export interface ShipProgressionSnapshot {
 
 export function createShipProgressionSnapshot(
   activeShipId: string,
-  ownedShipIds: ReadonlySet<string>,
+  ownership: ShipOwnershipService,
   loadouts: ShipLoadoutService,
   inventory: ShipComponentInventoryService,
   research: ShipyardResearchService
 ): ShipProgressionSnapshot {
   return {
     activeShipId,
-    ownedShipIds: [...ownedShipIds].sort(),
+    ownedShipIds: ownership.snapshot().ownedShipIds,
     loadouts: loadouts.snapshot(),
     inventory: inventory.snapshot(),
     discoveredBonuses: research.snapshot(),

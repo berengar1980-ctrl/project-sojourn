@@ -151,7 +151,7 @@ function shipyardShipOffers(model: PortViewModel): string {
           </div>
           <div class="port-yard-buy-footer">
             <div><small>${offer.owned ? 'BEREITS IN BESITZ' : 'KAUFPREIS'}</small><strong>${offer.owned ? 'EIGENES SCHIFF' : offer.price.toLocaleString('de-DE') + ' CR'}</strong></div>
-            <button type="button" data-buy-ship-id="${offer.id}" ${!offer.owned && model.player.credits < offer.price ? 'disabled' : ''}>${offer.owned ? 'SCHIFF AUSWÄHLEN' : 'SCHIFF KAUFEN'}</button>
+            <button type="button" data-buy-ship-id="${offer.id}" ${offer.active || (!offer.owned && model.player.credits < offer.price) ? 'disabled' : ''}>${offer.active ? 'AKTIVES SCHIFF' : offer.owned ? 'SCHIFF AUSWÄHLEN' : 'SCHIFF KAUFEN'}</button>
           </div>
         </article>
       `

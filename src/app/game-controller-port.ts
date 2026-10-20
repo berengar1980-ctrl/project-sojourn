@@ -1,4 +1,4 @@
-import type { ShipComponentType, ShipDefinition } from '../core/ship-types';
+import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -18,12 +18,20 @@ import {
   getAllShipDefinitions,
   getCompatibleShipComponents,
   shipCanFitWeapon,
-  salvagedComponentAppraisal,
+  shipPurchasePrice,
+  shipActivationBlock,
+  type ShipOwnershipService,
   type ShipComponentInventoryService,
   type ShipLoadoutService,
   type ShipyardResearchService,
 } from '../systems/ships';
 import { createPortPanel, type PortPanel } from '../ui/port/port-panel';
+import {
+  installShipyardComponent,
+  purchaseShipyardComponent,
+  sellShipyardComponent,
+  type ShipyardTransactionContext,
+} from '../systems/ships/shipyard-component-transactions';
 
 function systemMarketRows(
   fromLocationId: string,
@@ -80,7 +88,7 @@ interface ActivePortContext {
   readonly marketIntel: MarketIntelService;
   readonly componentInventory: ShipComponentInventoryService;
   readonly shipyardResearch: ShipyardResearchService;
-  readonly ownedShipIds: Set<string>;
+  readonly shipOwnership: ShipOwnershipService;
   readonly onChangeShip: (ship: ShipDefinition) => void;
   readonly installed: ActivePortInstalled;
   readonly runtime: ActivePortRuntime;
@@ -160,8 +168,9 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         id: offer.id,
         name: offer.name,
         role: offer.role,
-        price: Math.round(offer.nominalLengthMeters * 12000),
-        owned: context.ownedShipIds.has(offer.id),
+        price: shipPurchasePrice(offer),
+        owned: context.shipOwnership.owns(offer.id),
+        active: ship.id === offer.id,
         spriteUrl: offer.sprite.assetUrl,
         lengthMeters: offer.nominalLengthMeters,
         cargoCapacityTons: offer.cargoCapacityTons,
@@ -228,76 +237,54 @@ function createTradeCallbacks(
   };
 }
 
+function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition): void {
+  if (context.ship.id === ship.id) return;
+  const blocked = shipActivationBlock(
+    ship,
+    context.shipOwnership,
+    context.trade,
+    context.crew,
+    context.loadouts
+  );
+  if (blocked) {
+    const explanation: Record<Exclude<typeof blocked, null>, string> = {
+      'not-owned': 'SCHIFF NICHT IN BESITZ',
+      'cargo-overflow': 'FRACHT ÜBERSCHREITET NEUE KAPAZITÄT',
+      'cargo-incompatible': 'FRACHT NICHT FÜR NEUEN SCHIFFSTYP GEEIGNET',
+      'crew-overflow': 'ZU VIELE CREWMITGLIEDER FÜR NEUE KOJEN',
+    };
+    context.log.write('WERFT > WECHSEL ABGELEHNT · ' + explanation[blocked]);
+    context.onRefresh();
+    return;
+  }
+  context.log.write('WERFT > SCHIFF GEWECHSELT · ' + ship.name.toUpperCase());
+  context.onChangeShip(ship);
+}
+
 function buyShipAtShipyard(context: ActivePortContext, id: string): void {
   const next = getAllShipDefinitions().find((entry) => entry.id === id);
   if (!next || !context.port.shipyard) return;
-  if (context.ownedShipIds.has(id)) {
-    context.onChangeShip(next);
-    return;
+  if (!context.shipOwnership.owns(id)) {
+    const price = context.shipOwnership.purchase(id);
+    if (price === null) {
+      context.log.write('WERFT > KAUF ABGELEHNT · UNGENÜGEND CREDITS ODER UNGÜLTIGES MODELL');
+      return;
+    }
+    context.log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
   }
-  const price = Math.round(next.nominalLengthMeters * 12000);
-  if (context.trade.player.credits < price) return;
-  context.trade.player.credits -= price;
-  context.ownedShipIds.add(id);
-  context.log.write(`WERFT > ${next.name.toUpperCase()} GEKAUFT · -${price} CR`);
-  context.onChangeShip(next);
+  activateShipAtShipyard(context, next);
 }
 
-function rollbackShipyardSwap(
-  context: ActivePortContext,
-  type: ShipComponentType,
-  removedUid: string | null,
-  selected: ReturnType<ShipComponentInventoryService['take']>
-): void {
-  const { componentInventory, runtime } = context;
-  if (removedUid) componentInventory.take(removedUid);
-  if (selected) {
-    componentInventory.store(
-      type,
-      selected.componentId,
-      selected.sourceWreckId,
-      runtime.cargoCapacityTons,
-      selected.source
-    );
-  }
-}
-
-function storeRemovedShipyardComponent(
-  context: ActivePortContext,
-  type: ShipComponentType,
-  before: string | null
-): ReturnType<ShipComponentInventoryService['store']> {
-  if (!before) return null;
-  return context.componentInventory.store(
-    type,
-    before,
-    'removed-' + context.ship.id,
-    context.runtime.cargoCapacityTons,
-    'removed'
-  );
-}
-
-function setShipyardComponentSlot(
-  context: ActivePortContext,
-  type: ShipComponentType,
-  index: number,
-  uid: string | null
-): void {
-  const { componentInventory, loadouts, ship, log, onRefresh } = context;
-  const item = uid ? componentInventory.list().find((part) => part.uid === uid) : null;
-  if (uid && (!item || item.type !== type)) return;
-  const before = loadouts.get(ship)[type]?.[index] ?? null;
-  if (before === (item?.componentId ?? null)) return;
-  const selected = item ? componentInventory.take(item.uid) : null;
-  if (item && !selected) return;
-  const removed = storeRemovedShipyardComponent(context, type, before);
-  if ((before && !removed) || !loadouts.setSlot(ship, type, index, item?.componentId ?? null)) {
-    rollbackShipyardSwap(context, type, removed?.uid ?? null, selected);
-    log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
-    return;
-  }
-  log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
-  onRefresh();
+function shipyardTransactions(context: ActivePortContext): ShipyardTransactionContext {
+  return {
+    ship: context.ship,
+    trade: context.trade,
+    inventory: context.componentInventory,
+    loadouts: context.loadouts,
+    research: context.shipyardResearch,
+    cargoCapacityTons: context.runtime.cargoCapacityTons,
+    locationId: context.location.id,
+  };
 }
 
 function createShipyardCallbacks(
@@ -306,57 +293,34 @@ function createShipyardCallbacks(
   PortPanelOptions,
   'onSetComponentSlot' | 'onSellLooseComponent' | 'onBuyShipyardVariant' | 'onBuyShip'
 > {
-  const { componentInventory, shipyardResearch, trade, runtime, location, log, onRefresh } =
-    context;
-
+  const { log, onRefresh } = context;
   return {
-    onSetComponentSlot: (type, index, uid) => setShipyardComponentSlot(context, type, index, uid),
+    onSetComponentSlot: (type, index, uid) => {
+      if (!installShipyardComponent(shipyardTransactions(context), type, index, uid)) {
+        log.write('WERFT > EINBAU ABGEBROCHEN · KOMPONENTEN NICHT VERÄNDERT');
+        return;
+      }
+      log.write(`WERFT > ${type.toUpperCase()} SLOT ${index + 1} AKTUALISIERT`);
+      onRefresh();
+    },
     onSellLooseComponent: (uid) => {
-      const item = componentInventory.list().find((component) => component.uid === uid);
-      if (!item) return;
-      const appraisal = salvagedComponentAppraisal(item.type, item.componentId);
-      const definition = getShipComponent(item.type, item.componentId);
-      if (appraisal.sell <= 0 || !componentInventory.take(uid)) return;
-      trade.player.credits += appraisal.sell;
-      const learned = shipyardResearch.registerComponent(item.type, item.componentId);
+      const result = sellShipyardComponent(shipyardTransactions(context), uid);
+      if (!result) return;
       log.write(
-        `WERFT > ${definition?.name ?? item.name} VERKAUFT · +${appraisal.sell} CR` +
-          (learned ? ' · NEUER FERTIGUNGSSTANDARD FREIGESCHALTET' : '')
+        `WERFT > ${result.name.toUpperCase()} VERKAUFT · +${result.credits} CR` +
+          (result.researched ? ' · NEUER FERTIGUNGSSTANDARD FREIGESCHALTET' : '')
       );
       onRefresh();
     },
     onBuyShip: (id) => buyShipAtShipyard(context, id),
     onBuyShipyardVariant: (type, componentId) => {
-      const definition = getShipComponent(type, componentId);
-      const baseOffer = getCompatibleShipComponents(
-        type,
-        type === 'armor' ? 6 : context.gameplay.maxComponentTier
-      ).some((entry) => entry.id === componentId);
-      const discovered = context.shipyardResearch
-        .variants(type, type === 'armor' ? 6 : context.gameplay.maxComponentTier)
-        .some((entry) => entry.id === componentId);
-      if (
-        !definition ||
-        (type === 'weapon' &&
-          (!definition.weapon || !shipCanFitWeapon(context.ship, definition.weapon))) ||
-        (!baseOffer && !discovered) ||
-        trade.player.credits < definition.cost ||
-        definition.tier > context.gameplay.maxComponentTier
-      )
-        return;
-      const stored = componentInventory.store(
-        type,
-        componentId,
-        'shipyard-' + location.id,
-        runtime.cargoCapacityTons,
-        'purchased'
-      );
-      if (!stored) {
-        log.write('WERFT > NICHT GENÜGEND FRACHTRAUM FÜR KOMPONENTE');
+      if (!purchaseShipyardComponent(shipyardTransactions(context), type, componentId)) {
+        log.write('WERFT > KAUF ABGEBROCHEN · CREDITS, FRACHTRAUM ODER FREIGABE PRÜFEN');
         return;
       }
-      trade.player.credits -= definition.cost;
-      log.write(`WERFT > ${definition.name.toUpperCase()} GEKAUFT · -${definition.cost} CR`);
+      const name = getShipComponent(type, componentId)?.name ?? componentId;
+      const cost = getShipComponent(type, componentId)?.cost ?? 0;
+      log.write(`WERFT > ${name.toUpperCase()} GEKAUFT · -${cost} CR`);
       onRefresh();
     },
   };
@@ -406,7 +370,7 @@ export function createActivePortPanel(
   onReturnToStarMap: () => void,
   onRefresh: () => void,
   log: SystemLogService,
-  ownedShipIds: Set<string>,
+  shipOwnership: ShipOwnershipService,
   onChangeShip: (ship: ShipDefinition) => void
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
@@ -437,7 +401,7 @@ export function createActivePortPanel(
     marketIntel,
     componentInventory,
     shipyardResearch,
-    ownedShipIds,
+    shipOwnership,
     onChangeShip,
     installed,
     runtime,

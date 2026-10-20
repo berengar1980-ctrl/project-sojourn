@@ -10,6 +10,10 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const controllerRuntimeTypes = readModuleSource(root, 'src/app/game-controller-runtime-types.ts');
 const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
+const shipyardTransactions = readModuleSource(
+  root,
+  'src/systems/ships/shipyard-component-transactions.ts'
+);
 const starPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const portPanel = fs.readFileSync(path.join(root, 'src/ui/port/port-panel.ts'), 'utf8');
 const portSecondaryPanes = fs.readFileSync(
@@ -144,7 +148,8 @@ assert(
 assert(
   portUi.includes('EINBAU / AUSTAUSCH') &&
     portUi.includes('data-component-slot-select') &&
-    portController.includes('componentInventory.take(item.uid)'),
+    portController.includes('installShipyardComponent(') &&
+    shipyardTransactions.includes('inventory.take(selected.uid)'),
   'ship UI must equip inventory-owned modules rather than granting free weapons'
 );
 assert(
@@ -152,8 +157,9 @@ assert(
     portUi.includes('FREIGESCHALTETE WERFTVARIANTEN') &&
     portUi.includes('data-sell-loose-component') &&
     portUi.includes('data-buy-yard-id') &&
-    portController.includes('shipyardResearch.registerComponent') &&
-    portController.includes('salvagedComponentAppraisal'),
+    portController.includes('sellShipyardComponent(') &&
+    shipyardTransactions.includes('research.registerComponent') &&
+    shipyardTransactions.includes('salvagedComponentAppraisal'),
   'shipyard must sell and research real salvage variants instead of showing fake upgrades'
 );
 assert(starPanel.includes('ANDOCKEN'), 'current dockable locations must expose docking');

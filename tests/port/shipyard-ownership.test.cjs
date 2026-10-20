@@ -1,0 +1,113 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+
+const root = path.resolve(__dirname, '../..');
+const load = (file) => loadStandaloneTypeScriptModule(root, file);
+const ships = load('src/systems/ships/ship-registry.ts');
+const yard = load('src/systems/ships/ship-ownership-service.ts');
+const loadoutsModule = load('src/systems/ships/ship-loadout-service.ts');
+const crewModule = load('src/systems/crew/crew-roster-service.ts');
+const profileModule = load('src/core/player-profile.ts');
+const resources = load('src/data/economy/economy-resources.ts');
+
+const starter = ships.getShipsByRole('salvage')[0];
+const miner = ships.getShipsByRole('mining')[0];
+const freighter = ships.getShipsByRole('freighter')[0];
+assert(starter && miner && freighter);
+
+let credits = yard.shipPurchasePrice(miner) * 2;
+let withdrawals = 0;
+const wallet = {
+  takeCredits(amount) {
+    if (amount <= 0 || credits < amount) return false;
+    credits -= amount;
+    withdrawals++;
+    return true;
+  },
+};
+const ownership = yard.createShipOwnershipService(starter.id, wallet);
+assert.equal(ownership.owns(starter.id), true);
+assert.equal(ownership.owns(miner.id), false);
+assert.equal(ownership.purchase('nonexistent-hull'), null, 'no forged ship purchase');
+assert.equal(withdrawals, 0);
+const before = credits;
+assert.equal(ownership.purchase(miner.id), yard.shipPurchasePrice(miner));
+assert.equal(credits, before - yard.shipPurchasePrice(miner));
+assert.equal(ownership.purchase(miner.id), null, 'hull cannot be purchased twice');
+assert.equal(withdrawals, 1, 'charge exactly once');
+const detached = ownership.snapshot();
+detached.ownedShipIds.push('fake');
+assert.equal(ownership.owns('fake'), false, 'ownership snapshot cannot mutate state');
+assert.equal(ownership.owns(miner.id), true);
+
+const broke = yard.createShipOwnershipService(starter.id, { takeCredits: () => false });
+assert.equal(broke.purchase(freighter.id), null);
+assert.equal(broke.owns(freighter.id), false, 'failed debit cannot grant ownership');
+
+const loadouts = loadoutsModule.createShipLoadoutService();
+const emptyCrew = { list: () => [] };
+const player = { credits: 1000, cargo: {}, reservedCargoTons: 0 };
+const trade = { player };
+const activation = (ship, roster) =>
+  yard.shipActivationBlock(ship, ownership, trade, roster, loadouts);
+assert.equal(activation(freighter, emptyCrew), 'not-owned');
+const beforeActivationCheck = loadouts.snapshot();
+assert.equal(activation(miner, emptyCrew), null);
+assert.deepEqual(loadouts.snapshot(), beforeActivationCheck, 'activation preview is read-only');
+
+const manufactured = resources.economyResources.find((entry) => entry.categoryId !== 'raw');
+assert(manufactured);
+player.cargo[manufactured.id] = { qty: 1, totalCost: 100 };
+assert.equal(
+  activation(miner, emptyCrew),
+  'cargo-incompatible',
+  'mining ship rejects non-raw cargo'
+);
+delete player.cargo[manufactured.id];
+player.reservedCargoTons = 999999;
+assert.equal(
+  activation(miner, emptyCrew),
+  'cargo-overflow',
+  'loose component reservations count toward cargo'
+);
+player.reservedCargoTons = 0;
+const overfullCrew = {
+  list: () => Array.from({ length: 100 }, (_, index) => ({ id: String(index) })),
+};
+assert.equal(activation(miner, overfullCrew), 'crew-overflow');
+assert.equal(activation(miner, emptyCrew), null);
+assert.equal(credits, before - yard.shipPurchasePrice(miner), 'no debit on activation');
+
+const profile = profileModule.createPlayerProfile({
+  portraitId: 1,
+  captainName: 'Mara Voss',
+  shipName: 'Die Wanderin',
+  combatSkills: { ranged: 80, melee: 50 },
+  stationSkills: {
+    piloting: 75,
+    sensors: 75,
+    weapons: 25,
+    engineering: 25,
+    salvage: 20,
+    mining: 15,
+    logistics: 10,
+  },
+  stationId: 'helm',
+});
+const crew = crewModule.createCrewRosterService(profile);
+assert.equal(crew.assign(starter, 'helm', 'player'), true);
+const recruit = crew.hire('torven_kray', starter);
+assert(recruit);
+assert.equal(crew.assign(starter, 'sensor_station', recruit.id), true);
+crew.transferAssignments(starter, miner);
+assert.equal(crew.assignments(miner).helm, 'player');
+assert.equal(crew.assignments(miner).sensor_station, recruit.id);
+assert.equal(crew.assignments(starter).sensor_station, recruit.id, 'old hull keeps assignments');
+assert.equal(crew.assign(miner, 'helm', recruit.id), true);
+crew.transferAssignments(starter, miner);
+assert.equal(crew.assignments(miner).helm, recruit.id, 'return to a configured hull is stable');
+
+console.log('PASS shipyard purchases, detached ownership, transfer preflight and crew continuity');

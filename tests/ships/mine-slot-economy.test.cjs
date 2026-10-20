@@ -27,6 +27,7 @@ const player = source('src/app/game-controller-combat.ts');
 const npc = source('src/systems/combat/npc-combatant-setup.ts');
 const ship = source('src/systems/ships/ship-mining-capability.ts');
 const port = source('src/app/game-controller-port.ts');
+const shop = source('src/systems/ships/shipyard-component-transactions.ts');
 const localNpc = source('src/systems/npcs/npc-local-salvage-service.ts');
 
 assert(player.includes('runtime.installed.mine'));
@@ -37,7 +38,9 @@ assert(ship.includes("mine: ['']"), 'ship starts with empty dedicated mine slot'
 assert(port.includes("'mine'"), 'mine modules must appear in shipyard catalog');
 assert(localNpc.includes('salvage.recoverComponent(wreck.id)'));
 assert(localNpc.includes('npc.salvageComponents = stored'));
-assert(port.includes('if (removedUid) componentInventory.take(removedUid)'));
-assert(port.includes('rollbackShipyardSwap(context, type, removed?.uid ?? null, selected)'));
-assert(port.includes('if (selected)'), 'failed swaps must restore selected inventory parts');
+assert(port.includes('installShipyardComponent(shipyardTransactions(context)'));
+assert(shop.includes('rollbackComponentInstall(context, type, taken, removed)'));
+assert(shop.includes('inventory.take(removed.uid)'));
+assert(shop.includes('inventory.store('), 'failed component swap must restore reserved cargo');
+assert(shop.includes('loadouts.canSetSlot'), 'invalid slots must be rejected before mutation');
 console.log('PASS mine modules, NPC salvage, and shipyard rollback wiring');

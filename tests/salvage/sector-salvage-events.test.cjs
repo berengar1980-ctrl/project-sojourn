@@ -172,6 +172,10 @@ const controller = readModuleSource(root, 'src/app/game-controller.ts');
 const controllerEvents = readModuleSource(root, 'src/app/game-controller-events.ts');
 const starController = readModuleSource(root, 'src/app/game-controller-star-map.ts');
 const portController = readModuleSource(root, 'src/app/game-controller-port.ts');
+const shipyardTransactions = readModuleSource(
+  root,
+  'src/systems/ships/shipyard-component-transactions.ts'
+);
 const npcEvents = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-salvage-event-service.ts'),
   'utf8'
@@ -189,8 +193,9 @@ assert(
   'active salvage events must appear as selectable dynamic world-map targets'
 );
 assert(
-  portController.includes('shipyardResearch.registerComponent') &&
-    portController.includes('salvagedComponentAppraisal'),
+  portController.includes('sellShipyardComponent(shipyardTransactions(context), uid)') &&
+    shipyardTransactions.includes('research.registerComponent') &&
+    shipyardTransactions.includes('salvagedComponentAppraisal'),
   'player sale of salvage components must feed the shared shipyard research store'
 );
 assert(
