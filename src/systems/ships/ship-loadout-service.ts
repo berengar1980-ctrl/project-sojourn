@@ -13,6 +13,13 @@ export type ShipLoadoutSnapshot = Readonly<Record<string, InstalledShipComponent
 export interface ShipLoadoutService {
   snapshot(): ShipLoadoutSnapshot;
   get(ship: ShipDefinition): InstalledShipComponents;
+  preview(ship: ShipDefinition): InstalledShipComponents;
+  canSetSlot(
+    ship: ShipDefinition,
+    type: ShipComponentType,
+    index: number,
+    componentId: string | null
+  ): boolean;
   setSlot(
     ship: ShipDefinition,
     type: ShipComponentType,
@@ -64,6 +71,27 @@ function slotLimit(ship: ShipDefinition, type: ShipComponentType): number {
   return 1;
 }
 
+function validSlotChange(
+  ship: ShipDefinition,
+  type: ShipComponentType,
+  index: number,
+  componentId: string | null
+): boolean {
+  const limit = slotLimit(ship, type);
+  if (!Number.isInteger(index) || index < 0 || index >= limit) return false;
+  if (!componentId) return true;
+  const component = getShipComponent(type, componentId);
+  const maxTier = type === 'armor' ? 6 : resolveShipGameplayStats(ship).maxComponentTier;
+  if (!component || component.tier > maxTier) return false;
+  if (
+    type === 'weapon' &&
+    (!component.weapon || !fitsWeaponHardpoint(ship, index, component.weapon))
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function createShipLoadoutService(): ShipLoadoutService {
   const byShipId = new Map<string, InstalledShipComponents>();
 
@@ -82,24 +110,13 @@ export function createShipLoadoutService(): ShipLoadoutService {
         [...byShipId].map(([id, installed]) => [id, cloneInstalled(installed)])
       );
     },
+    preview(ship) {
+      return cloneInstalled(byShipId.get(ship.id) ?? defaultInstalledShipComponents(ship));
+    },
+    canSetSlot: validSlotChange,
     setSlot(ship, type, index, componentId) {
+      if (!validSlotChange(ship, type, index, componentId)) return false;
       const limit = slotLimit(ship, type);
-      if (index < 0 || index >= limit) return false;
-
-      if (componentId) {
-        const component = getShipComponent(type, componentId);
-        const maxTier = type === 'armor' ? 6 : resolveShipGameplayStats(ship).maxComponentTier;
-        if (!component || component.tier > maxTier) {
-          return false;
-        }
-        if (
-          type === 'weapon' &&
-          (!component.weapon || !fitsWeaponHardpoint(ship, index, component.weapon))
-        ) {
-          return false;
-        }
-      }
-
       const current = cloneInstalled(get(ship));
       const slots = [...(current[type] ?? [])];
       while (slots.length < limit) slots.push('');
