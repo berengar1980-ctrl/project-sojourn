@@ -10,13 +10,18 @@ const inventory = load('src/systems/ships/ship-component-inventory-service.ts');
 const loadouts = load('src/systems/ships/ship-loadout-service.ts');
 const research = load('src/systems/ships/shipyard-research-service.ts');
 const snapshots = load('src/systems/ships/ship-progression-snapshot.ts');
+const ownershipModule = load('src/systems/ships/ship-ownership-service.ts');
 
 const registry = load('src/systems/ships/ship-registry.ts');
 const ship = registry.getAllShipDefinitions()[0];
 assert(ship, 'a ship fixture must exist for loadout invariants');
 
 const player = { cargo: {}, reservedCargoTons: 0 };
-const owned = new Set(['miner', 'patrol']);
+const otherShip = registry.getAllShipDefinitions().find((entry) => entry.id !== ship.id);
+assert(otherShip);
+const owned = ownershipModule.createShipOwnershipService(ship.id, {
+  takeCredits: () => true,
+});
 const bag = inventory.createShipComponentInventoryService(player);
 const part = bag.store('mine', 'mine-ion-1', 'wreck-1', 200, 'salvage');
 assert(part);
@@ -34,14 +39,14 @@ assert.equal(loads.setSlot(ship, 'mine', 1, 'mine-ion-1'), false);
 assert.equal(loads.get(ship).mine[0], '', 'invalid slot index must not mutate loadout');
 
 assert(found.registerComponent('weapon', 'special_performance_12_weapon1'));
-const initial = snapshots.createShipProgressionSnapshot('miner', owned, loads, bag, found);
+const initial = snapshots.createShipProgressionSnapshot(ship.id, owned, loads, bag, found);
 
 assert.equal(initial.inventory.components.length, 1);
-assert.deepEqual(initial.ownedShipIds, ['miner', 'patrol']);
+assert.deepEqual(initial.ownedShipIds, [ship.id]);
 assert.equal(initial.discoveredBonuses['weapon:weapon1'].performance, 12);
 assert.doesNotThrow(() => JSON.stringify(initial), 'snapshot must contain plain JSON data');
 
-owned.add('salvage');
+assert.equal(owned.purchase(otherShip.id), ownershipModule.shipPurchasePrice(otherShip));
 bag.take(part.uid);
 found.registerComponent('weapon', 'special_performance_20_weapon1');
 assert.equal(initial.inventory.components.length, 1, 'snapshot is not a live inventory reference');
@@ -53,8 +58,9 @@ initial.inventory.components[0].name = 'tampered';
 initial.inventory.components.push({ ...initial.inventory.components[0], uid: 'fake' });
 initial.ownedShipIds.push('fake');
 initial.discoveredBonuses['weapon:weapon1'].performance = 99;
-const current = snapshots.createShipProgressionSnapshot('miner', owned, loads, bag, found);
+const current = snapshots.createShipProgressionSnapshot(ship.id, owned, loads, bag, found);
 assert.equal(current.inventory.components.length, 0, 'mutating snapshot must not create cargo');
+assert.deepEqual(current.ownedShipIds, [ship.id, otherShip.id].sort());
 assert(!current.ownedShipIds.includes('fake'), 'snapshot mutation must not change ship ownership');
 assert.equal(current.discoveredBonuses['weapon:weapon1'].performance, 20);
 assert.equal(
