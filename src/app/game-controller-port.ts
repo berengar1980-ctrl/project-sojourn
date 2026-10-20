@@ -386,7 +386,7 @@ export function createActivePortPanel(
   const drive = engineSpeedMultiplier(runtime.installed);
   navigation.setCruiseSpeed(
     ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
-    drive
+    drive * runtime.crewEffects.piloting.turnRateMultiplier
   );
 
   const context: ActivePortContext = {
