@@ -86,8 +86,11 @@ function runEnding(ending) {
     locationId,
   });
   emitChoice('beacon', 'decode', 'haven');
-  assert.equal(engine.journal('silent-beacon')[0].dialogue.id, 'beacon',
-    'choices at incorrect locations cannot advance a stage');
+  assert.equal(
+    engine.journal('silent-beacon')[0].dialogue.id,
+    'beacon',
+    'choices at incorrect locations cannot advance a stage'
+  );
   emitChoice('beacon', 'decode', 'silent-beacon');
   assert.equal(engine.journal('silent-beacon')[0].dialogue.id, 'gate');
   emitChoice('beacon', 'decode', 'silent-beacon');
@@ -130,9 +133,9 @@ function runEnding(ending) {
   assert.equal(result.status, 'completed');
   assert.equal(result.outcome, ending === 'rescue' ? 'crew_rescued' : 'ship_quarantined');
   assert.equal(wallet.credits, ending === 'rescue' ? 220 : 300);
-  assert.deepEqual(wallet.changes, [[
-    ending === 'rescue' ? 'free_traders' : 'terran_directorate', 6,
-  ]]);
+  assert.deepEqual(wallet.changes, [
+    [ending === 'rescue' ? 'free_traders' : 'terran_directorate', 6],
+  ]);
   assert.equal(world.world().locations.some((item) => item.id === 'silent-beacon'), false);
   assert.equal(world.snapshot().systems[story.id], undefined);
   emitChoice('report', 'deliver', 'silent-beacon');
