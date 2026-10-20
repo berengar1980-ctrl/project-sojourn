@@ -147,5 +147,5 @@ export function installShipyardComponent(
   if (!loadouts.canSetSlot(ship, type, index, componentId)) return false;
   const before = loadouts.get(ship)[type]?.[index] ?? null;
   if (before === componentId) return false;
-  return exchangeInstalledComponent(context, type, index, before, selected);
+  return exchangeInstalledComponent(context, type, index, before, selected ?? null);
 }
