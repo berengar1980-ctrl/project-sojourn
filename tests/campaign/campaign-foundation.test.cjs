@@ -144,11 +144,12 @@ assert.equal(migratable.get('legacy', 'chapter'), 2, 'snapshots cannot mutate en
 assert.throws(() => migratable.set('legacy', 'invalid', Number.NaN), /Non-JSON/);
 migratable.destroy();
 assert.throws(
-  () => runtime.createCampaignRuntime(bus.createCampaignEventBus(), {
-    snapshotVersion: 20,
-    enabled: {},
-    campaigns: {},
-  }),
+  () =>
+    runtime.createCampaignRuntime(bus.createCampaignEventBus(), {
+      snapshotVersion: 20,
+      enabled: {},
+      campaigns: {},
+    }),
   /Unsupported campaign snapshot version/
 );
 

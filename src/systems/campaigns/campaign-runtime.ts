@@ -228,7 +228,7 @@ export function createCampaignRuntime(
         category: definition.category ?? 'optional',
         defaultEnabled: definition.defaultEnabled !== false,
         status: state(definition.id).status,
-        unavailableReason: mismatched.has(definition.id) ? 'version_mismatch' as const : null,
+        unavailableReason: mismatched.has(definition.id) ? ('version_mismatch' as const) : null,
       }));
     },
     isActive(id) {
