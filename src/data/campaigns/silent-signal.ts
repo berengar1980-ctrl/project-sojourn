@@ -121,6 +121,20 @@ function finishMission(ctx: CampaignContext): void {
   ctx.complete(rescued ? 'crew_rescued' : 'ship_quarantined');
 }
 
+function handleMissionReturn(event: CampaignEvent, ctx: CampaignContext, stage: string): void {
+  if (stage === 'return' && choice(event, 'exit', 'home', EXIT_ID)) {
+    applyOnce(ctx, 'system.return', { type: 'world.system.return' });
+  } else if (
+    stage === 'return' &&
+    event.type === 'location.arrived' &&
+    event.locationId === BEACON_ID
+  ) {
+    ctx.set('stage', 'report');
+  } else if (stage === 'report' && choice(event, 'report', 'deliver', BEACON_ID)) {
+    finishMission(ctx);
+  }
+}
+
 function onMissionEvent(event: CampaignEvent, ctx: CampaignContext): void {
   if (event.type === 'game.initialized' && ctx.status() === 'inactive') {
     launchMission(ctx);
@@ -151,16 +165,8 @@ function onMissionEvent(event: CampaignEvent, ctx: CampaignContext): void {
     ctx.set('stage', 'decision');
   } else if (stage === 'decision') {
     decide(ctx, event);
-  } else if (stage === 'return' && choice(event, 'exit', 'home', EXIT_ID)) {
-    applyOnce(ctx, 'system.return', { type: 'world.system.return' });
-  } else if (
-    stage === 'return' &&
-    event.type === 'location.arrived' &&
-    event.locationId === BEACON_ID
-  ) {
-    ctx.set('stage', 'report');
-  } else if (stage === 'report' && choice(event, 'report', 'deliver', BEACON_ID)) {
-    finishMission(ctx);
+  } else if (typeof stage === 'string') {
+    handleMissionReturn(event, ctx, stage);
   }
 }
 

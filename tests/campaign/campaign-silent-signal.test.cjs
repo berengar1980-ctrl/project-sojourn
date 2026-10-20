@@ -25,7 +25,7 @@ function arriveAt(nav, destinationId) {
   return before;
 }
 
-function runEnding(ending) {
+function createScenario() {
   const nav = navigationModule.createNavigationService(narrowsSector, 'haven', 240);
   const world = worldModule.createCampaignWorldService(narrowsSector, nav);
   const bus = busModule.createCampaignEventBus();
@@ -41,6 +41,7 @@ function runEnding(ending) {
         });
       }
       if (action.type === 'world.system.enter') return world.enterSystem(owner, action.systemId);
+      if (action.type === 'world.system.return') return world.returnFromSystem(owner);
       if (action.type === 'credits.grant') {
         wallet.credits += action.amount;
         return true;
@@ -63,6 +64,11 @@ function runEnding(ending) {
     stationId: 'bridge',
   });
   assert.equal(engine.isActive(story.id), true);
+  return { nav, world, bus, wallet, engine };
+}
+
+function runEnding(ending) {
+  const { nav, world, bus, wallet, engine } = createScenario();
   assert(world.world().locations.some((item) => item.id === 'silent-beacon'));
   assert.equal(engine.journal('haven')[0].targetLocationId, 'silent-beacon');
   assert.equal(engine.journal('haven')[0].dialogue, undefined, 'dialogues stay location-gated');
