@@ -166,7 +166,12 @@ assert.equal(trade.player.credits, 120, 'receipt keys must be scoped to campaign
 active.destroy();
 
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
-assert(controller.includes('createCampaignActionGateway('), 'controller wires real domain owners');
+const setup = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-campaign-setup.ts'),
+  'utf8'
+);
+assert(controller.includes('createControllerCampaignServicesWithActions('));
+assert(setup.includes('createCampaignActionGateway('), 'controller wires real domain owners');
 console.log(
   'PASS campaign gateway exact economy actions, crew transactions and once-only receipts'
 );

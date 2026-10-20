@@ -56,6 +56,14 @@ export type CampaignAction =
       readonly resourceId: string;
       readonly quantity: number;
     }
+  | { readonly type: 'reputation.change'; readonly factionId: string; readonly delta: number }
+  | {
+      readonly type: 'component.grant';
+      readonly componentType: import('./ship-types').ShipComponentType;
+      readonly componentId: string;
+    }
+  | { readonly type: 'component.install'; readonly componentUid: string; readonly slotIndex: number }
+  | { readonly type: 'combat.start'; readonly npcId: string }
   | { readonly type: 'crew.hire' | 'crew.dismiss'; readonly crewId: string }
   | {
       readonly type: 'crew.assign';

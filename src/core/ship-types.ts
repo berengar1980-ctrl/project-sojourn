@@ -61,7 +61,7 @@ export interface LooseShipComponent {
   readonly tier: number;
   readonly cargoTons: number;
   readonly sourceWreckId: string;
-  readonly source?: 'salvage' | 'removed' | 'purchased';
+  readonly source?: 'salvage' | 'removed' | 'purchased' | 'campaign';
 }
 
 export type ShipStationSkill =

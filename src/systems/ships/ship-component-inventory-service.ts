@@ -30,7 +30,7 @@ export interface ShipComponentInventoryService {
     componentId: string,
     sourceWreckId: string,
     cargoCapacityTons: number,
-    source?: 'salvage' | 'removed' | 'purchased'
+    source?: 'salvage' | 'removed' | 'purchased' | 'campaign'
   ): LooseShipComponent | null;
 }
 

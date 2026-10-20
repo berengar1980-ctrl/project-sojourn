@@ -4,10 +4,16 @@ import { economyResourceById } from '../../data/economy/economy-resources';
 import type { CrewRosterService } from '../crew/crew-roster-service';
 import type { PlayerTradeService } from '../economy/player-trade-service';
 import { resolveShipGameplayStats } from '../ships/ship-stats';
+import type { FactionReputationService } from '../reputation/faction-reputation-service';
+import type { CampaignShipActions } from './campaign-ship-actions';
+import type { CampaignCombatActions } from './campaign-combat-actions';
 
 export interface CampaignActionServices {
   readonly trade: PlayerTradeService;
   readonly crew: CrewRosterService;
+  readonly reputation: FactionReputationService;
+  readonly equipment: CampaignShipActions;
+  readonly combat: CampaignCombatActions;
   getShip(): ShipDefinition;
 }
 
@@ -41,6 +47,14 @@ export function createCampaignActionGateway(services: CampaignActionServices): C
             !!economyResourceById(action.resourceId) &&
             trade.removeCargo(action.resourceId, action.quantity)
           );
+        case 'reputation.change':
+          return services.reputation.change(action.factionId, action.delta);
+        case 'component.grant':
+          return services.equipment.grant(action.componentType, action.componentId);
+        case 'component.install':
+          return services.equipment.install(action.componentUid, action.slotIndex);
+        case 'combat.start':
+          return services.combat.startExistingNpcEncounter(action.npcId);
         case 'crew.hire':
           return (
             crew.availableDefinitions().some((entry) => entry.id === action.crewId) &&

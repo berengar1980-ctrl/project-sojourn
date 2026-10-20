@@ -16,11 +16,8 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
-import { createCampaignActionGateway } from '../systems/campaigns/campaign-action-gateway';
-import {
-  createControllerCampaignServices,
-  emitCampaignCombatEnded,
-} from './game-controller-campaign-events';
+import { emitCampaignCombatEnded } from './game-controller-campaign-events';
+import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
 import { createPlayerCombatant } from './game-controller-combat';
 import { startCombatBoarding } from './game-controller-combat-boarding';
@@ -436,17 +433,6 @@ export function createGameController(options: GameControllerOptions): GameContro
   const economy = createControllerEconomy(options.navigation);
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
-  const campaignServices = createControllerCampaignServices(
-    state.playerProfile,
-    state.activeShip.id,
-    options.navigation.getSnapshot(),
-    undefined,
-    createCampaignActionGateway({
-      trade: economy.trade,
-      crew,
-      getShip: () => state.activeShip,
-    })
-  );
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
@@ -458,6 +444,14 @@ export function createGameController(options: GameControllerOptions): GameContro
       }),
     log: (message) => systemLog.write(message),
   });
+  const campaignServices = createControllerCampaignServicesWithActions(
+    state,
+    economy,
+    crew,
+    loadouts,
+    engagements,
+    options.navigation
+  );
   const context: ControllerRuntimeContext = {
     root: options.root,
     navigation: options.navigation,
