@@ -13,7 +13,9 @@ export interface CampaignSelection {
 }
 
 /** Selection belongs to the current main-menu session, not to the DOM. */
-export function createCampaignSelection(packages: readonly CampaignDefinition[]): CampaignSelection {
+export function createCampaignSelection(
+  packages: readonly CampaignDefinition[]
+): CampaignSelection {
   const definitions = new Map<string, CampaignDefinition>();
   const enabled = new Map<string, boolean>();
   for (const definition of packages) {
