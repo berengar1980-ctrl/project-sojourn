@@ -50,6 +50,18 @@ function stationPerformanceForOperator(
   return clamp(specialist * 0.6 + synergy * 0.4, 0, 100);
 }
 
+/** Ship bonuses are fixed hull properties, not crew attributes or free automation boosts. */
+function staffedStationBonus(
+  station: ShipStationDefinition,
+  assignments: ShipStationAssignments,
+  crew: readonly ShipCrewMember[]
+): number {
+  const operator = crew.find((member) => member.id === assignments[station.id]);
+  if (!operator || crewInjuryFactor(operator.injuryState) === 0) return 0;
+  const bonus = Number(station.bonus ?? 0);
+  return Number.isFinite(bonus) ? clamp(Math.round(bonus), 0, 20) : 0;
+}
+
 export function calculateStationSkill(
   stations: readonly ShipStationDefinition[],
   assignments: ShipStationAssignments,
@@ -60,7 +72,11 @@ export function calculateStationSkill(
 ): number {
   const values = stations
     .filter((station) => station.skill === skill)
-    .map((station) => stationPerformanceForOperator(skill, assignments[station.id], crew))
+    .map(
+      (station) =>
+        stationPerformanceForOperator(skill, assignments[station.id], crew) +
+        staffedStationBonus(station, assignments, crew)
+    )
     .sort((a, b) => b - a);
 
   if (!values.length) return AUTOMATION_SKILL;
