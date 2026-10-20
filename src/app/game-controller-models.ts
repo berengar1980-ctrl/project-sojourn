@@ -75,7 +75,7 @@ export function syncControllerNavigationCrewPerformance(context: ControllerRunti
   const drive = engineSpeedMultiplier(runtime.installed);
   context.navigation.setCruiseSpeed(
     ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
-    drive
+    drive * runtime.crewEffects.piloting.turnRateMultiplier
   );
 }
 
