@@ -1,4 +1,4 @@
-# Voidbound Crew Skill Runtime Audit
+# Project Sojourn – Crew Skill Runtime Audit
 
 **Audit basis:** Voidbound `main` → Project Sojourn  
 **Scope:** every runtime use of `stationSkill`, `stationFactor` and `stationReduction` plus sensor/transponder extensions.
