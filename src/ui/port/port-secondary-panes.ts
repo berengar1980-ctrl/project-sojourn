@@ -94,7 +94,7 @@ export function crewPane(model: PortViewModel): string {
             .map(
               (station) => `
                 <label class="port-station-assignment">
-                  <span>${station.label}<small>${station.skill.toUpperCase()}</small></span>
+                  <span>${station.label}<small>${station.skill.toUpperCase()}</small>${station.bonus > 0 ? `<small>SCHIFF +${station.bonus} ${station.bonusActive ? 'AKTIV' : 'BEI BESETZUNG'}</small>` : ''}</span>
                   <select data-station-id="${station.id}">
                     <option value="">AUTOMATIK</option>
                     ${model.crew.hired
@@ -148,6 +148,10 @@ function shipyardShipOffers(model: PortViewModel): string {
             <div><span>FRACHTRAUM</span><strong>${offer.cargoCapacityTons} t</strong></div>
             <div><span>WAFFENSLOTS</span><strong>${offer.weaponSlots}</strong></div>
             <div><span>CREW-KOJEN</span><strong>${offer.crewBerths}</strong></div>
+          </div>
+          <div class="port-yard-station-bonuses">
+            <small>CREW-STATIONSBONI · NUR BEI BESETZUNG</small>
+            <strong>${offer.stationBonuses.map((station) => `${station.skill.toUpperCase()} +${station.bonus}`).join(' · ') || 'KEINE'}</strong>
           </div>
           <div class="port-yard-buy-footer">
             <div><small>${offer.owned ? 'BEREITS IN BESITZ' : 'KAUFPREIS'}</small><strong>${offer.owned ? 'EIGENES SCHIFF' : offer.price.toLocaleString('de-DE') + ' CR'}</strong></div>
