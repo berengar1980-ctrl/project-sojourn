@@ -100,6 +100,7 @@ export function installShipyardComponent(
   const { ship, inventory, loadouts, cargoCapacityTons } = context;
   const selected = uid ? inventory.list().find((item) => item.uid === uid) : null;
   if (uid && (!selected || selected.type !== type)) return false;
+  if (!loadouts.canSetSlot(ship, type, index, selected?.componentId ?? null)) return false;
   const before = loadouts.get(ship)[type]?.[index] ?? null;
   if (before === (selected?.componentId ?? null)) return false;
 
