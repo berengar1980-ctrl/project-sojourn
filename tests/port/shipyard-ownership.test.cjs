@@ -53,7 +53,9 @@ const emptyCrew = { list: () => [] };
 const player = { credits: 1000, cargo: {}, reservedCargoTons: 0 };
 const trade = { player };
 assert.equal(yard.shipActivationBlock(freighter, ownership, trade, emptyCrew, loadouts), 'not-owned');
+const beforeActivationCheck = loadouts.snapshot();
 assert.equal(yard.shipActivationBlock(miner, ownership, trade, emptyCrew, loadouts), null);
+assert.deepEqual(loadouts.snapshot(), beforeActivationCheck, 'activation preview is read-only');
 
 const manufactured = resources.economyResources.find((entry) => entry.categoryId !== 'raw');
 assert(manufactured);
