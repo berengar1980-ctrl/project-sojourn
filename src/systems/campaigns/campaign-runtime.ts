@@ -188,14 +188,12 @@ function createCampaignActionDispatch(
     const current = state(id);
     if (current.appliedActionIds?.includes(actionId)) return 'already_applied';
     if (!port) return 'rejected';
-    let applied = false;
     try {
-      applied = port.apply(action);
+      if (!port.apply(action)) return 'rejected';
     } catch (error) {
       reportError(id, error);
       return 'rejected';
     }
-    if (!applied) return 'rejected';
     progress.set(id, {
       ...current,
       appliedActionIds: [...(current.appliedActionIds ?? []), actionId],
