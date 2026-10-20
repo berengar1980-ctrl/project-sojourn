@@ -18,7 +18,7 @@ export interface CampaignActionServices {
   readonly reputation: FactionReputationService;
   readonly equipment: CampaignShipActions;
   readonly combat: CampaignCombatActions;
-  readonly world: CampaignWorldService;
+  readonly world?: CampaignWorldService;
   getShip(): ShipDefinition;
 }
 
@@ -29,9 +29,9 @@ function positiveAmount(value: number): boolean {
 function applyWorldAction(
   action: WorldAction,
   campaignId: string | undefined,
-  world: CampaignWorldService
+  world: CampaignWorldService | undefined
 ): boolean {
-  if (!campaignId) return false;
+  if (!campaignId || !world) return false;
   switch (action.type) {
     case 'world.location.add':
       return world.addLocation(campaignId, action.location);
@@ -68,7 +68,7 @@ function applyCargoAction(
 export function createCampaignActionGateway(services: CampaignActionServices): CampaignActionPort {
   const { trade, crew, getShip } = services;
   return {
-    releaseCampaign: (campaignId) => services.world.releaseCampaign(campaignId),
+    releaseCampaign: (campaignId) => services.world?.releaseCampaign(campaignId),
     apply(action: CampaignAction, campaignId?: string): boolean {
       switch (action.type) {
         case 'credits.grant':

@@ -41,6 +41,7 @@ const stationKeeping = readModuleSource(
   'src/systems/local-space/local-space-station-keeping.ts'
 );
 const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const starController = readModuleSource(root, 'src/app/game-controller-star-map.ts');
 const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const miningController = readModuleSource(root, 'src/app/game-controller-mining.ts');
 const shieldService = fs.readFileSync(
@@ -487,8 +488,8 @@ assert(
   'shield damage model must be reusable by future weapon sources'
 );
 assert(
-  controller.includes("locationHasActivity(id, 'mine')") &&
-    controller.includes('snapshot.currentLocationId === id'),
+  starController.includes("locationHasActivity(options.world(), id, 'mine')") &&
+    starController.includes('snapshot.currentLocationId === id'),
   'every mining location must support direct re-entry'
 );
 assert(!service.includes('document.'), 'local-space simulation must stay DOM-independent');

@@ -26,6 +26,11 @@ const trade = trades.createPlayerTradeService({}, 100);
 const crew = crews.createCrewRosterService(player);
 const port = gatewayModule.createCampaignActionGateway({ trade, crew, getShip: () => ship });
 
+assert.equal(
+  port.apply({ type: 'world.system.return' }, 'test_a'),
+  false,
+  'world actions without a registered world service must reject'
+);
 assert.equal(port.apply({ type: 'credits.take', amount: 101 }), false);
 assert.equal(port.apply({ type: 'credits.grant', amount: Number.NaN }), false);
 assert.equal(port.apply({ type: 'credits.grant', amount: 0 }), false);
