@@ -72,12 +72,8 @@ function workshop() {
 }
 
 // 2. Recover a rare efficient engine, sell/analyze it, and unlock that exact model variant.
-const specialId = components.createSpecialSalvageComponentId(
-  'engine',
-  'engine1',
-  'efficiency',
-  15
-);
+const specialFactory = components.createSpecialSalvageComponentId;
+const specialId = specialFactory('engine', 'engine1', 'efficiency', 15);
 assert(specialId);
 const salvaged = inventory.store(
   'engine',
@@ -115,10 +111,7 @@ assert.deepEqual(inventory.snapshot(), inventoryBeforeRejectedInstall);
 assert.deepEqual(loadouts.snapshot(), loadoutsBeforeRejectedInstall);
 assert.equal(transactions.installShipyardComponent(workshop(), 'engine', 0, purchased.uid), true);
 assert.equal(loadouts.get(active).engine[0], improvedId);
-assert(
-  !inventory.list().some((part) => part.uid === purchased.uid),
-  'fitted part consumed once'
-);
+assert(!inventory.list().some((part) => part.uid === purchased.uid), 'fitted part consumed once');
 assert.equal(
   inventory.list().filter((part) => part.componentId === improvedId).length,
   0,
