@@ -11,6 +11,7 @@ const audio = read('src/systems/audio/game-audio-service.ts');
 const bursts = read('src/systems/ships/ship-maneuver-thrusters.ts');
 const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
+const sceneTick = read('src/app/game-controller-scene-tick.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
 const duel = read('src/ui/start/duel-lobby.ts');
@@ -48,7 +49,8 @@ assert(
 );
 
 assert(
-  controller.includes('context.audio.updatePlayerRcs') &&
+  controller.includes('tickControllerScene(context, deltaSeconds)') &&
+    sceneTick.includes('context.audio.updatePlayerRcs') &&
     salvage.includes('options.audio.updatePlayerRcs'),
   'player RCS audio must run in mining/local and salvage spaces'
 );

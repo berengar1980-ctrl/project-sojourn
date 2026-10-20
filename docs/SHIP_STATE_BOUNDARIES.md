@@ -10,6 +10,7 @@ The project does **not** yet support saving or loading games. Old development sa
 - `ShipLoadoutService`: installed component IDs per hull ID. A component ID includes its Mk tier and any single recovered modifier.
 - `ShipComponentInventoryService`: loose component IDs, provenance, cargo reservation, and the next identifier counter.
 - `ShipyardResearchService`: maximum discovered percentage per exact component model and modifier kind. NPC and player vendors use the same research instance.
+- `CampaignRuntime`: independent, in-memory package progress, activation selection and completion outcomes. Its detached `snapshot()` includes per-package JSON data without exposing mutable references; unknown packages remain unavailable without data loss. This is not a complete career save format.
 
 None of these objects should be stored in the view layer.
 

@@ -16,6 +16,11 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import {
+  createControllerCampaignServices,
+  emitCampaignCombatEnded,
+} from './game-controller-campaign-events';
+import { tickControllerScene } from './game-controller-scene-tick';
 import { createPlayerCombatant } from './game-controller-combat';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
@@ -353,6 +358,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   } else {
     state.salvageScene?.finishCombat(snapshot);
   }
+  emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
   state.embeddedCombat = null;
   showCampaignCombatSummary(context.root, snapshot, () => {
@@ -381,34 +387,6 @@ function handleControllerLocationEntry(
   }
 }
 
-function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
-  const { state } = context;
-  if (state.mode === 'combat') {
-    state.combatPanel?.update();
-    return;
-  }
-  if (state.mode === 'star-map') {
-    state.panels.star?.update(controllerStarModel(context));
-    return;
-  }
-  if (state.mode === 'salvage-space') {
-    state.salvageScene?.tick(deltaSeconds);
-    return;
-  }
-  if (state.mode !== 'local-space' || !state.localSpace) return;
-  if (state.embeddedCombat !== 'local-space') {
-    state.localSpace.tick(deltaSeconds);
-    const localSnapshot = state.localSpace.getSnapshot();
-    context.audio.updatePlayerRcs(
-      state.activeShip.sprite.hardpoints,
-      localSnapshot.instance.ship,
-      performance.now() / 1000
-    );
-    state.localNpcMining?.tick(deltaSeconds);
-  }
-  state.panels.local?.update(controllerLocalModel(context));
-}
-
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
@@ -417,6 +395,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
@@ -456,6 +435,11 @@ export function createGameController(options: GameControllerOptions): GameContro
   const economy = createControllerEconomy(options.navigation);
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
+  const campaignServices = createControllerCampaignServices(
+    state.playerProfile,
+    state.activeShip.id,
+    options.navigation.getSnapshot()
+  );
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
@@ -476,6 +460,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     loadouts,
     audio: createGameAudioService(),
     engagements,
+    ...campaignServices,
     state,
   };
   economy.salvageEvents.advanceDay(
@@ -494,6 +479,9 @@ export function createGameController(options: GameControllerOptions): GameContro
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
     },
-    destroy: () => destroyGameController(context, settingsMenu),
+    destroy: () => {
+      campaignServices.campaigns.destroy();
+      destroyGameController(context, settingsMenu);
+    },
   };
 }

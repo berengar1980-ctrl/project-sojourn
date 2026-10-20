@@ -1,4 +1,7 @@
 import type { SalvageField } from '../core/salvage-types';
+import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
+import type { CampaignRuntime } from '../systems/campaigns/campaign-runtime';
+import type { createCampaignNavigationTracker } from './game-controller-campaign-events';
 import type { ShipDefinition } from '../core/ship-types';
 import type { PlayerProfile } from '../core/player-profile';
 import type { SystemLogService } from '../core/system-log-types';
@@ -58,5 +61,8 @@ export interface ControllerRuntimeContext {
   readonly loadouts: ShipLoadoutService;
   readonly audio: GameAudioService;
   readonly engagements: StarMapEngagementService;
+  readonly campaignEvents: CampaignEventBus;
+  readonly campaigns: CampaignRuntime;
+  readonly campaignNavigation: ReturnType<typeof createCampaignNavigationTracker>;
   readonly state: ControllerRuntimeState;
 }
