@@ -32,7 +32,10 @@ assert(panel.includes('const updateTicker = createStarMapTicker('));
 assert(panel.includes('menu.destroy()'));
 
 assert(lists.includes('model.npcShips.map('));
-assert(lists.includes("location.kind !== 'wreck'"));
+assert(lists.includes("if (location.kind === 'wreck')"));
+assert(lists.includes('location.activities.missions === true'));
+assert(lists.includes('!location.activities.dock'));
+assert(lists.includes('!location.activities.trade'));
 assert(lists.includes('actions.onSelectNpc(npc.id)'));
 assert(lists.includes('actions.onSelectLocation(location.id)'));
 assert(market.includes('preferredCargoVisible ? cargoMarkers('));
