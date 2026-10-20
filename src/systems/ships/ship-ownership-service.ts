@@ -67,10 +67,11 @@ export function shipActivationBlock(
   const installed = loadouts.preview(next);
   const capacity = resolveShipRuntimeSetup(next, { installed }).cargoCapacityTons;
   if (playerCargoUsed(trade.player) > capacity) return 'cargo-overflow';
-  const incompatibleCargo = Object.entries(trade.player.cargo).some(
-    ([resourceId, lot]) => lot.qty > 0 && !canShipCarryResource(next, resourceId)
-  );
-  if (incompatibleCargo) return 'cargo-incompatible';
+  for (const [resourceId, lot] of Object.entries(trade.player.cargo)) {
+    if (lot.qty > 0 && !canShipCarryResource(next, resourceId)) {
+      return 'cargo-incompatible';
+    }
+  }
   if (crew.list().length > crewCapacity(next)) return 'crew-overflow';
   return null;
 }
