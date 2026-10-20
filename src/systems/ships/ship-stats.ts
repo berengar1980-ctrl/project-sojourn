@@ -18,7 +18,10 @@ export function resolveShipGameplayStats(ship: ShipDefinition): ResolvedShipGame
     weaponSlots: ship.sprite.hardpoints.weaponMounts
       ? shipActiveCombatWeaponMounts(ship).length
       : role.weaponSlots,
-    stations: role.stations,
+    stations: role.stations.map((station) => ({
+      ...station,
+      bonus: overrides?.stationBonuses?.[station.id] ?? station.bonus ?? 0,
+    })),
     specialCargo:
       overrides && 'specialCargo' in overrides
         ? (overrides.specialCargo ?? null)
