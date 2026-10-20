@@ -1,4 +1,6 @@
 import type { CrewMember } from '../../core/crew-types';
+import type { CrewSkillEffects } from '../../systems/crew/crew-skill-effects';
+import { stationEffectSummary } from './port-station-effect-summary';
 
 import type {
   EconomyMarketState,
@@ -105,6 +107,8 @@ export interface PortStationView {
   readonly label: string;
   readonly skill: ShipStationSkill;
   readonly assignedCrewId: string | null;
+  readonly performance: number;
+  readonly effectSummary: string;
 }
 
 export interface PortCrewStateView {
@@ -131,6 +135,8 @@ export interface PortCrewStateInput {
   readonly assignments: Readonly<Record<string, string | undefined>>;
   readonly stations: readonly ShipStationDefinition[];
   readonly capacity: number;
+  readonly stationSkills?: Readonly<Record<ShipStationSkill, number>>;
+  readonly effects?: CrewSkillEffects;
 }
 
 export interface PortViewModel {
@@ -421,6 +427,10 @@ export function createPortViewModel(
         label: STATION_LABELS[station.id] ?? station.id,
         skill: station.skill,
         assignedCrewId: crewState.assignments[station.id] ?? null,
+        performance: crewState.stationSkills?.[station.skill] ?? 20,
+        effectSummary: crewState.effects
+          ? stationEffectSummary(station.skill, crewState.effects)
+          : '',
       })),
     },
     player: {
