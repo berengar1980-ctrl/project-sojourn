@@ -182,6 +182,9 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         weaponSlots: resolveShipGameplayStats(offer).weaponSlots,
         crewBerths: resolveShipGameplayStats(offer).crewBerths,
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
+        stationBonuses: resolveShipGameplayStats(offer)
+          .stations.filter((station) => (station.bonus ?? 0) > 0)
+          .map((station) => ({ skill: station.skill, bonus: station.bonus ?? 0 })),
       })),
     }
   );
