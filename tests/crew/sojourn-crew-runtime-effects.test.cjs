@@ -16,23 +16,20 @@ const tradeModule = load('src/systems/economy/player-trade-service.ts');
 const helmStation = [{ id: 'helm', skill: 'piloting' }];
 const captain = { id: 'captain', skills: { piloting: 100 } };
 const assistant = { id: 'assistant', skills: { piloting: 100 } };
+const helmAssignments = { helm: 'captain' };
+const twoPilots = [captain, assistant];
 assert.equal(
-  stations.calculateStationSkill(helmStation, { helm: 'captain' }, [captain], 'piloting'),
+  stations.calculateStationSkill(helmStation, helmAssignments, [captain], 'piloting'),
   60,
   'specialist supplies 60 percent when no other trained crew is aboard'
 );
 assert.equal(
-  stations.calculateStationSkill(
-    helmStation,
-    { helm: 'captain' },
-    [captain, assistant],
-    'piloting'
-  ),
+  stations.calculateStationSkill(helmStation, helmAssignments, twoPilots, 'piloting'),
   100,
   'the other crew member provides the remaining 40 percent'
 );
 assert.equal(
-  stations.calculateStationSkill(helmStation, {}, [captain, assistant], 'piloting'),
+  stations.calculateStationSkill(helmStation, {}, twoPilots, 'piloting'),
   52,
   'unmanned automation retains its 20-point specialist component and crew synergy'
 );
@@ -82,11 +79,11 @@ assert(freighter && miner && salvager);
 const fullFreight = runtime.resolveShipRuntimeSetup(freighter, options);
 assert.equal(fullFreight.stationSkills.logistics, 100);
 assert.equal(fullFreight.crewEffects.logistics.saleFeeRate, 0);
+const baseFreightCapacity =
+  freighter.cargoCapacityTons + components.componentCargoBonus(fullFreight.installed);
 assert.equal(
   fullFreight.cargoCapacityTons,
-  Math.floor(
-    (freighter.cargoCapacityTons + components.componentCargoBonus(fullFreight.installed)) * 1.15
-  ),
+  Math.floor(baseFreightCapacity * 1.15),
   'fitted cargo modules and 15 percent logistics hold bonus must stack'
 );
 assert.equal(fullFreight.crewEffects.piloting.travelSpeedMultiplier, 1.15);
@@ -108,13 +105,9 @@ assert(
 
 const emptyFreight = runtime.resolveShipRuntimeSetup(freighter);
 assert(fullFreight.shieldMaxHp > emptyFreight.shieldMaxHp);
-assert.equal(
-  fullFreight.shieldMaxHp,
-  Math.round(
-    (movement.shipShieldMaxHp(freighter) +
-      components.componentShieldBonus(fullFreight.installed)) * 1.15
-  )
-);
+const fittedShieldHp =
+  movement.shipShieldMaxHp(freighter) + components.componentShieldBonus(fullFreight.installed);
+assert.equal(fullFreight.shieldMaxHp, Math.round(fittedShieldHp * 1.15));
 
 const minerRuntime = runtime.resolveShipRuntimeSetup(miner, options);
 const salvagerRuntime = runtime.resolveShipRuntimeSetup(salvager, options);
