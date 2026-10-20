@@ -90,7 +90,9 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     context.economy,
     context.state.selectedNpcId,
     runtime.sensorCrewSkill,
-    runtime.sensorModifier
+    runtime.sensorModifier,
+    context.world.world(),
+    context.world.inForeignSystem()
   );
 }
 

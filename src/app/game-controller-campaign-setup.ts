@@ -1,4 +1,6 @@
 import { factionDefinitions } from '../data/factions/faction-manifest';
+import { narrowsSector } from '../data/maps/narrows-sector';
+import { createCampaignWorldService } from '../systems/campaigns/campaign-world-service';
 import type { CrewRosterService } from '../systems/crew/crew-roster-service';
 import type { StarMapEngagementService } from '../systems/combat/star-map-engagement-service';
 import type { NavigationService } from '../systems/navigation';
@@ -20,6 +22,7 @@ export function createControllerCampaignServicesWithActions(
   engagements: StarMapEngagementService,
   navigation: NavigationService
 ) {
+  const world = createCampaignWorldService(narrowsSector, navigation);
   const reputation = createFactionReputationService(
     factionDefinitions.map((faction) => faction.id)
   );
@@ -27,6 +30,7 @@ export function createControllerCampaignServicesWithActions(
     trade: economy.trade,
     crew,
     reputation,
+    world,
     equipment: createCampaignShipActions(economy.components, loadouts, () => state.activeShip),
     combat: createCampaignCombatActions(
       engagements,
@@ -43,5 +47,5 @@ export function createControllerCampaignServicesWithActions(
     undefined,
     actionPort
   );
-  return { ...campaignServices, reputation };
+  return { ...campaignServices, reputation, world };
 }

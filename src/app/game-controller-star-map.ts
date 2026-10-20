@@ -1,7 +1,7 @@
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
-import { narrowsSector } from '../data/maps/narrows-sector';
+import type { WorldMap } from '../core/world-types';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { NavigationService } from '../systems/navigation';
 import { sectorSensorContactInfo } from '../systems/scanning/sensor-contact-service';
@@ -9,13 +9,20 @@ import { getShipDefinition } from '../systems/ships';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import type { ControllerEconomy } from './game-controller-economy';
 
-function locationHasActivity(locationId: string, activity: 'mine' | 'salvage'): boolean {
-  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+function locationHasActivity(
+  world: WorldMap,
+  locationId: string,
+  activity: 'mine' | 'salvage'
+): boolean {
+  const location = world.locations.find((entry) => entry.id === locationId);
   return Boolean(location?.activities[activity]);
 }
 
 export function createControllerStarPanel(options: {
   readonly root: HTMLElement;
+  readonly world: () => WorldMap;
+  readonly exitLocationId: () => string | null;
+  readonly returnFromCampaignSystem: () => boolean;
   readonly navigation: NavigationService;
   readonly log: SystemLogService;
   readonly getModel: () => ReturnType<typeof createStarMapViewModel>;
@@ -38,11 +45,15 @@ export function createControllerStarPanel(options: {
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
       if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
-        if (locationHasActivity(id, 'mine')) {
+        if (options.exitLocationId() === id) {
+          if (options.returnFromCampaignSystem()) panel?.update(options.getModel());
+          return;
+        }
+        if (locationHasActivity(options.world(), id, 'mine')) {
           options.onEnterLocalSpace();
           return;
         }
-        if (locationHasActivity(id, 'salvage') || options.eventById?.(id)) {
+        if (locationHasActivity(options.world(), id, 'salvage') || options.eventById?.(id)) {
           options.onEnterSalvageSpace();
           return;
         }
@@ -72,81 +83,90 @@ export function createControllerStarModel(
   economy: ControllerEconomy,
   selectedNpcId: string | null,
   sensorCrewSkill: number,
-  sensorModifier: number
+  sensorModifier: number,
+  world: WorldMap,
+  foreignSystem = false
 ) {
   const navigationSnapshot = navigation.getSnapshot();
-  economy.marketIntel.observeFromSensors(
-    narrowsSector.locations.map((location) => ({
-      locationId: location.id,
-      position: location.position,
-    })),
-    navigationSnapshot.currentPosition,
-    economy.situations.currentDay,
-    sensorCrewSkill,
-    sensorModifier
+  if (!foreignSystem)
+    economy.marketIntel.observeFromSensors(
+      world.locations.map((location) => ({
+        locationId: location.id,
+        position: location.position,
+      })),
+      navigationSnapshot.currentPosition,
+      economy.situations.currentDay,
+      sensorCrewSkill,
+      sensorModifier
+    );
+
+  const npcShips = foreignSystem
+    ? []
+    : economy.sectorNpcs.npcs.flatMap((npc) => {
+        if (npc.hullHp <= 0) return [];
+        const definition = getShipDefinition(npc.shipId);
+        if (!definition) return [];
+        const position = economy.sectorNpcs.livePosition(npc);
+        const contact = sectorSensorContactInfo({
+          playerPosition: navigationSnapshot.currentPosition,
+          targetPosition: position,
+          sensorSkill: sensorCrewSkill,
+          sensorModifier,
+          civilianTransponder: npc.pirate !== true,
+          pirate: npc.pirate === true,
+        });
+        if (!contact.visible) return [];
+        return [
+          {
+            id: npc.id,
+            name: contact.identified ? npc.name : 'Unbekannter Kontakt',
+            job: contact.identified ? npc.job : 'patrol',
+            ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
+            ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
+            position,
+            headingRadians: economy.sectorNpcs.liveHeading(npc),
+            isTravelling: economy.sectorNpcs.isTravelling(npc),
+            activity: npc.activity,
+            combatMode: economy.sectorNpcs.combatMode(npc),
+            nominalLengthMeters: definition.nominalLengthMeters,
+            spriteUrl: definition.sprite.assetUrl,
+            spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+            hardpoints: definition.sprite.hardpoints,
+          },
+        ];
+      });
+
+  const eventLocations = (foreignSystem ? [] : economy.salvageEvents.playerVisible).map(
+    (event) => ({
+      id: event.id,
+      name: event.title,
+      kind: 'wreck' as const,
+      position: event.position,
+      radius: event.type === 'distress-rescue' ? 12 : 9,
+      description: event.description,
+      activities: { salvage: true, missions: event.type === 'distress-rescue' },
+      dangerLevel:
+        event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
+    })
   );
-
-  const npcShips = economy.sectorNpcs.npcs.flatMap((npc) => {
-    if (npc.hullHp <= 0) return [];
-    const definition = getShipDefinition(npc.shipId);
-    if (!definition) return [];
-    const position = economy.sectorNpcs.livePosition(npc);
-    const contact = sectorSensorContactInfo({
-      playerPosition: navigationSnapshot.currentPosition,
-      targetPosition: position,
-      sensorSkill: sensorCrewSkill,
-      sensorModifier,
-      civilianTransponder: npc.pirate !== true,
-      pirate: npc.pirate === true,
-    });
-    if (!contact.visible) return [];
-    return [
-      {
-        id: npc.id,
-        name: contact.identified ? npc.name : 'Unbekannter Kontakt',
-        job: contact.identified ? npc.job : 'patrol',
-        ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),
-        ...(contact.identified && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
-        position,
-        headingRadians: economy.sectorNpcs.liveHeading(npc),
-        isTravelling: economy.sectorNpcs.isTravelling(npc),
-        activity: npc.activity,
-        combatMode: economy.sectorNpcs.combatMode(npc),
-        nominalLengthMeters: definition.nominalLengthMeters,
-        spriteUrl: definition.sprite.assetUrl,
-        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-        hardpoints: definition.sprite.hardpoints,
-      },
-    ];
-  });
-
-  const eventLocations = economy.salvageEvents.playerVisible.map((event) => ({
-    id: event.id,
-    name: event.title,
-    kind: 'wreck' as const,
-    position: event.position,
-    radius: event.type === 'distress-rescue' ? 12 : 9,
-    description: event.description,
-    activities: { salvage: true, missions: event.type === 'distress-rescue' },
-    dangerLevel:
-      event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
-  }));
-  const cargoScanner = scanCargoMarkets({
-    player: economy.trade.player,
-    intel: economy.marketIntel,
-    locations: narrowsSector.locations,
-    origin: navigationSnapshot.currentPosition,
-    currentDay: economy.situations.currentDay,
-  });
+  const cargoScanner = foreignSystem
+    ? null
+    : scanCargoMarkets({
+        player: economy.trade.player,
+        intel: economy.marketIntel,
+        locations: world.locations,
+        origin: navigationSnapshot.currentPosition,
+        currentDay: economy.situations.currentDay,
+      });
   return {
     ...createStarMapViewModel(
-      narrowsSector,
+      world,
       navigationSnapshot,
       ship,
       npcShips,
       selectedNpcId,
       eventLocations
     ),
-    cargoScanner,
+    ...(cargoScanner ? { cargoScanner } : {}),
   };
 }

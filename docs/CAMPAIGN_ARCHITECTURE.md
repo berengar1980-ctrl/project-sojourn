@@ -107,3 +107,31 @@ connect faction scores to trade pricing, patrol responses, or UI. It does
 not spawn new NPC opponents, transfer installed equipment between ships, or
 provide cross-service atomic batches. The snapshot and exactly-once receipts
 remain in-memory until career-wide persistence is implemented.
+
+## Phase 4 – runtime mission locations and temporary star systems
+
+`CampaignWorldService` owns campaign-scoped mission locations and detached,
+JSON-compatible **observational** snapshots. The regular Narrows world definition
+is never modified. A runtime composition exposes the current world's markers
+through the existing star-map model and the normal NavigationService. Actions:
+
+- `world.location.add`: add a uniquely identified mission-only marker to
+  Narrows; no unimplemented trade, dock, mining or salvage service is advertised.
+- `world.system.add`: register a finite, validated mission-only WorldMap with
+  its own star, locations, regions, entry and exit IDs.
+- `world.system.enter`: switch the authoritative navigation context to a
+  registered foreign system while not travelling.
+- `world.system.return`: return only from the registered exit gate. The map's
+  exit is also usable by selecting the current exit marker on the star map.
+
+Each successful action uses the existing campaign receipt. When a package is
+disabled, completed or unloaded, its markers and systems disappear; a ship in
+that package's world returns safely to the original system. Removing a
+selected mission destination clears the target and cancels a flight to a
+removed destination; otherwise existing travel continues.
+
+A foreign system suppresses Narrows' economy scanner, salvage events, sector
+NPCs and local hostile engagements in its map view. It does not yet offer an
+independent market, NPC simulation, planetary landing, fleet spawning or
+mission-specific local-space/mining scene. This is a **runtime map scope**
+rather than a second full sector simulation or a persistent savegame.

@@ -189,7 +189,7 @@ function createCampaignActionDispatch(
     if (current.appliedActionIds?.includes(actionId)) return 'already_applied';
     if (!port) return 'rejected';
     try {
-      if (!port.apply(action)) return 'rejected';
+      if (!port.apply(action, id)) return 'rejected';
     } catch (error) {
       reportError(id, error);
       return 'rejected';
@@ -264,6 +264,7 @@ export function createCampaignRuntime(
   function complete(id: string, outcome: string): boolean {
     if (!accessible(id) || state(id).status !== 'active' || !outcome.trim()) return false;
     progress.set(id, { ...state(id), status: 'completed', outcome: outcome.trim() });
+    actionPort?.releaseCampaign?.(id);
     return true;
   }
 
@@ -309,6 +310,7 @@ export function createCampaignRuntime(
       const def = definitions.get(id);
       if (!def || def.category === 'core' || destroyed) return false;
       enabled.set(id, value);
+      if (!value) actionPort?.releaseCampaign?.(id);
       return true;
     },
     start,
@@ -326,6 +328,7 @@ export function createCampaignRuntime(
     },
     destroy() {
       destroyed = true;
+      for (const id of definitions.keys()) actionPort?.releaseCampaign?.(id);
       unsubscribe();
       definitions.clear();
     },

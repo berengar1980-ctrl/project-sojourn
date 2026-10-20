@@ -1,3 +1,4 @@
+import type { WorldLocation, WorldMap } from './world-types';
 import type { ShipComponentType } from './ship-types';
 
 /** Public, serializable contract shared by campaign packages and the game. */
@@ -70,6 +71,15 @@ export type CampaignAction =
       readonly slotIndex: number;
     }
   | { readonly type: 'combat.start'; readonly npcId: string }
+  | { readonly type: 'world.location.add'; readonly location: WorldLocation }
+  | {
+      readonly type: 'world.system.add';
+      readonly map: WorldMap;
+      readonly entryLocationId: string;
+      readonly exitLocationId: string;
+    }
+  | { readonly type: 'world.system.enter'; readonly systemId: string }
+  | { readonly type: 'world.system.return' }
   | { readonly type: 'crew.hire' | 'crew.dismiss'; readonly crewId: string }
   | {
       readonly type: 'crew.assign';
@@ -80,7 +90,8 @@ export type CampaignAction =
 export type CampaignActionResult = 'applied' | 'already_applied' | 'rejected';
 
 export interface CampaignActionPort {
-  apply(action: CampaignAction): boolean;
+  apply(action: CampaignAction, campaignId?: string): boolean;
+  releaseCampaign?(campaignId: string): void;
 }
 
 export interface CampaignProgress {
