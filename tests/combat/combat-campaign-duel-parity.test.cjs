@@ -97,12 +97,12 @@ assert(
 const mining = read('src/app/game-controller-mining.ts');
 const npcMining = read('src/systems/npcs/npc-local-mining-service.ts');
 const npcSalvage = read('src/systems/npcs/npc-local-salvage-service.ts');
-assert(mining.includes('approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed)'));
-assert(mining.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'));
-assert(
-  salvage.includes('approachSpeed: resolveShipLocalCruiseSpeed(options.ship, runtime.installed)')
-);
-assert(salvage.includes('turnRateMultiplier: engineSpeedMultiplier(runtime.installed)'));
+for (const localSetup of [mining, salvage]) {
+  assert(localSetup.includes('resolveShipLocalCruiseSpeed('));
+  assert(localSetup.includes('runtime.stationSkills.piloting'));
+  assert(localSetup.includes('engineSpeedMultiplier(runtime.installed)'));
+  assert(localSetup.includes('runtime.crewEffects.piloting.turnRateMultiplier'));
+}
 assert(npcMining.includes('localCruiseSpeed(npc)'));
 assert(npcMining.includes('ensureNpcInstalledComponents(npc)'));
 assert(npcSalvage.includes('localCruiseSpeed(npc)'));
