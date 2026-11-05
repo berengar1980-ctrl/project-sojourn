@@ -26,7 +26,6 @@ The star-map fuel display shows current/maximum fuel, the effective consumption 
 
 The forecast displays estimated fuel **purchased en route**, not a fee on travel itself or an invoice for docking at the final destination. If the current state cannot fund a route, the travel button is disabled. These are in-session runtime features, not savegame persistence.
 
-
 ## NPC business decisions – projected operating costs
 
 NPC traders now evaluate cargo margins **after their expected travel fuel expense**, rather than choosing routes from gross commodity spread alone. The sector service quotes the actual reachable fuel itinerary, including intermediate fuel expenses and the NPC's own credit balance. Loading rechecks these costs against current market prices, reducing the purchase quantity if money must remain available for a paid tank stop. A buyer does not buy cargo that makes its planned trip impossible; NPC cargo stock, credits and actual market transactions remain owned by the existing economy services.
