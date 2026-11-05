@@ -9,7 +9,8 @@ export function canStartPlayerTravel(context: ControllerRuntimeContext): boolean
   const route = context.navigation.getSnapshot().previewRoute;
   if (!route) return true;
   const effects = resolveShipRuntimeSetup(
-    activeShip, controllerShipRuntimeOptions(context, activeShip)
+    activeShip,
+    controllerShipRuntimeOptions(context, activeShip)
   ).crewEffects;
   const available = context.shipOperations.hasFuelForRoute(
     activeShip,
@@ -37,7 +38,8 @@ export function advancePlayerFuel(
   if (distance <= 0) return;
   const ship = context.state.activeShip;
   const effects = resolveShipRuntimeSetup(
-    ship, controllerShipRuntimeOptions(context, ship)
+    ship,
+    controllerShipRuntimeOptions(context, ship)
   ).crewEffects;
   context.shipOperations.burn(
     ship, distance, effects.piloting.fuelUseMultiplier, effects.engineering.fuelUseMultiplier
@@ -53,10 +55,6 @@ export function recordPlayerCombatHull(
   snapshot: StrategicCombatSnapshot
 ): void {
   const ship = context.state.activeShip;
-  const runtime = resolveShipRuntimeSetup(
-    ship, controllerShipRuntimeOptions(context, ship)
-  );
-  context.shipOperations.recordHull(
-    ship, snapshot.attacker.hullHp, runtime.hullMaxHp
-  );
+  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
+  context.shipOperations.recordHull(ship, snapshot.attacker.hullHp, runtime.hullMaxHp);
 }
