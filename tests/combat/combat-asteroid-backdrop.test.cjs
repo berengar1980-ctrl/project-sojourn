@@ -85,8 +85,14 @@ try {
     screen.images[1][1] < screen.images[0][1],
     'camera pan right must move backdrop right more slowly than the real rocks'
   );
-  assert.ok(screen.images.every((args) => args[7] <= 1200), 'clip source to viewport width');
-  assert.ok(screen.images.every((args) => args[8] <= 800), 'clip source to viewport height');
+  assert.ok(
+    screen.images.every((args) => args[7] <= 1200),
+    'clip source to viewport width'
+  );
+  assert.ok(
+    screen.images.every((args) => args[8] <= 800),
+    'clip source to viewport height'
+  );
   camera.zoomAt(1.4, 600, 400, 1200, 800);
   field.draw(1200, 800, camera);
   assert.equal(generated.length, 1, 'zoom must never rebuild the texture');
