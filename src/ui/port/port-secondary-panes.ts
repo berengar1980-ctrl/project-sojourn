@@ -15,6 +15,14 @@ export function shipPane(model: PortViewModel): string {
             <div><span>ENERGIERESERVE</span><strong class="${model.ship.combatPowerFree >= 0 ? 'port-positive' : 'port-negative'}">${model.ship.combatPowerFree}</strong></div>
           </div>
         </div>
+        <div class="port-info-box">
+          <strong>VERSORGUNG & HÜLLENREPARATUR</strong>
+          <p>TREIBSTOFF: ${model.operations.fuel.toFixed(1)} / ${model.operations.fuelCapacity.toFixed(1)} EINHEITEN · 10 CR / EINHEIT · AUTOMATISCH BEIM ANLEGEN</p>
+          <p>HÜLLE: ${model.operations.hullHp.toFixed(0)} / ${model.operations.hullMaxHp.toFixed(0)} HP</p>
+          <p>${model.operations.shipyardDiscount ? 'WERFT: 20 % REPARATURRABATT' : 'REPARATUR ZUM REGULÄREN HAFENTARIF'} · CREW-TECHNIKBONUS WIRD ANGEWANDT</p>
+          <button type="button" data-repair-ship ${model.operations.repairPoints === 0 ? 'disabled' : ''}>REPARIEREN · +${model.operations.repairPoints} HP · ${model.operations.affordableRepairCost.toLocaleString('de-DE')} CR</button>
+          <small>GESAMTPREIS BIS ZUR VOLLEN HÜLLE: ${model.operations.repairPrice.toLocaleString('de-DE')} CR</small>
+        </div>
       </div>
       <div class="port-ship-components">
         <div class="port-panel-heading"><span>KOMPONENTEN</span><small>EINBAU / AUSTAUSCH</small></div>
