@@ -30,6 +30,7 @@ import {
 } from './npc-sector-routing';
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
+import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
 
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 
@@ -81,11 +82,8 @@ class SectorService implements NpcSectorService {
     delete npc.travel;
     delete npc.combatMovement;
     npc.locationId = destinationId;
-    npc.hullHp = Math.max(
-      1,
-      Math.round(npc.hullMaxHp * (npc.job === 'patrol' || npc.pirate ? 0.4 : 0.2))
-    );
-    npc.fuel = Math.max(npc.fuel, npc.fuelCapacity * 0.2);
+    // Emergency recovery returns a disabled ship to port, not a free full repair.
+    npc.hullHp = 1;
     npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
     npc.combatRecoveryLocationId = destinationId;
     npc.combatRecoverySeconds =
@@ -101,9 +99,8 @@ class SectorService implements NpcSectorService {
     npc.combatRecoverySeconds = Math.max(0, remaining - deltaSeconds);
     if (npc.combatRecoverySeconds > 0) return true;
 
-    npc.hullHp = npc.hullMaxHp;
     const location = this.world.locations.find((candidate) => candidate.id === npc.locationId);
-    if (location?.activities.refuel) npc.fuel = npc.fuelCapacity;
+    serviceNpcAtPort(npc, location);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
     npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
@@ -174,7 +171,7 @@ class SectorService implements NpcSectorService {
         (location) =>
           location.id !== npc.locationId &&
           location.id !== destinationId &&
-          location.activities.refuel
+          isServicedPort(location)
       )
       .map((location) => location.id);
     const nodeIds = [npc.locationId, ...refuelIds, destinationId];
@@ -404,9 +401,7 @@ class SectorService implements NpcSectorService {
     const travel = npc.travel;
     if (!travel) {
       const current = this.world.locations.find((location) => location.id === npc.locationId);
-      if (current?.activities.refuel && npc.fuel < npc.fuelCapacity * 0.92) {
-        npc.fuel = npc.fuelCapacity;
-      }
+      serviceNpcAtPort(npc, current);
       if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
       return;
     }
@@ -432,11 +427,15 @@ class SectorService implements NpcSectorService {
     npc.successfulRuns += 1;
 
     const arrival = this.world.locations.find((location) => location.id === npc.locationId);
-    if (arrival?.activities.refuel) npc.fuel = npc.fuelCapacity;
+    if (reachedFinal && isServicedPort(arrival)) payNpcPatrolContract(npc);
+    serviceNpcAtPort(npc, arrival);
 
     if (!reachedFinal) {
       const nextTarget = remainingStops[0] ?? finalTargetId;
-      this.startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp');
+      if (!this.startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp')) {
+        npc.activityId = 'dock';
+        npc.activity = 'Tankstopp · nicht genügend Treibstoff';
+      }
     } else {
       npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
       npc.activity = npc.pirate
