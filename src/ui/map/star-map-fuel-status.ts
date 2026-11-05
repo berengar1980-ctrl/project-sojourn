@@ -7,6 +7,10 @@ function number(value: number, fractionDigits = 1): string {
   });
 }
 
+function stopName(model: StarMapViewModel, id: string): string {
+  return model.locations.find((location) => location.id === id)?.name ?? id;
+}
+
 export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLElement): void {
   const fuel = model.fuelStatus;
   if (!fuel) {
@@ -21,9 +25,7 @@ export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLEl
   ];
   if (fuel.planned) {
     const route = fuel.planned;
-    const names = route.stopIds.map((id) =>
-      model.locations.find((location) => location.id === id)?.name ?? id
-    );
+    const names = route.stopIds.map((id) => stopName(model, id));
     const distance = number(route.totalDistance, 0);
     lines.push('ROUTE  ' + number(route.totalFuel) + ' E · ' + distance + ' u');
     lines.push('TANKSTOPPS  ' + (names.length ? names.join(' → ') : 'KEINE'));
