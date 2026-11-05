@@ -58,7 +58,11 @@ import {
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
-import { advancePlayerFuel, canStartPlayerTravel, recordPlayerCombatHull } from './game-controller-ship-service';
+import {
+  advancePlayerFuel,
+  canStartPlayerTravel,
+  recordPlayerCombatHull,
+} from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;
@@ -471,10 +475,7 @@ export function createGameController(options: GameControllerOptions): GameContro
       });
       return {
         ...setup,
-        hullHp: Math.max(
-          1,
-          shipOperations.snapshot(state.activeShip, setup.hullHp).hullHp
-        ),
+        hullHp: Math.max(1, shipOperations.snapshot(state.activeShip, setup.hullHp).hullHp),
       };
     },
     log: (message) => systemLog.write(message),
