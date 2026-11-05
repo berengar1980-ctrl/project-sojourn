@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
   Point,
   AutocannonVisualBurst,
@@ -53,6 +54,7 @@ import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 export class StrategicCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
+  private readonly asteroidBackdrop: CombatAsteroidBackdrop;
   private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
@@ -73,6 +75,7 @@ export class StrategicCombatRenderer {
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
     this.context = context;
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
+    this.asteroidBackdrop = new CombatAsteroidBackdrop(context, model.arena);
     this.model = model;
     this.resize();
   }
@@ -120,7 +123,7 @@ export class StrategicCombatRenderer {
   }
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -200,6 +203,7 @@ export class StrategicCombatRenderer {
       this.model.attacker.id,
       this.model.defender.id
     );
+    this.asteroidBackdrop.draw(width, height, this.camera);
     drawCombatAsteroids(
       this.spaceBodies,
       this.model.arena.asteroids ?? [],

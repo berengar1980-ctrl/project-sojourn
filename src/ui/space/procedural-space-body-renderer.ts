@@ -75,6 +75,10 @@ export class ProceduralSpaceBodyRenderer {
     );
     context.restore();
 
+    // Tiny debris is too small for a meaningful lighting pass.
+    // Avoid per-frame clipping and gradient creation at this LOD.
+    if (options.radius < 5) return;
+
     context.save();
     context.translate(options.x, options.y);
     this.traceOutline(surface.outline, options.radius, options.rotation);

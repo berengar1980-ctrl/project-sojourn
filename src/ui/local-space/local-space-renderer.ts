@@ -18,6 +18,7 @@ import {
   LocalSpaceSceneLayers,
   type NpcHitArea,
 } from './local-space-scene-layers';
+import { AsteroidBackdropRenderer } from '../space/asteroid-backdrop-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
@@ -30,6 +31,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly shipLighting = new ShipLightingRenderer();
   protected readonly shieldImpacts = new ShieldImpactRenderer();
   protected readonly backgroundRenderer: SpaceBackgroundRenderer;
+  protected readonly asteroidBackdrop: AsteroidBackdropRenderer;
   protected readonly spaceBodies: ProceduralSpaceBodyRenderer;
   protected readonly shipImage = new Image();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
@@ -55,6 +57,12 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.camera = new MapCamera(model.width, model.height);
     this.miningEffects = new MiningEffectsRenderer(context, this.camera);
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, model.backgroundSeed);
+    this.asteroidBackdrop = new AsteroidBackdropRenderer(
+      context,
+      model.backgroundSeed,
+      model.width,
+      model.height
+    );
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.resize();
   }
@@ -73,7 +81,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   }
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -145,6 +153,12 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       cameraCenter: this.camera.getCenter(),
       cameraZoom: this.camera.getZoom(),
       timeSeconds,
+    });
+    this.asteroidBackdrop.draw({
+      width,
+      height,
+      cameraCenter: this.camera.getCenter(),
+      cameraZoom: this.camera.getZoom(),
     });
     const hitAreas: AsteroidHitArea[] = [];
     for (const asteroid of this.model.asteroids) {

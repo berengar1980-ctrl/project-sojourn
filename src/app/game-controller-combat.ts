@@ -68,6 +68,7 @@ export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: W
   return {
     width: instance.width,
     height: instance.height,
+    backdropSeed: instance.seed,
     attackerPosition: { ...instance.ship.position },
     attackerHeadingRadians: instance.ship.headingRadians,
     attackerVelocity: velocity,

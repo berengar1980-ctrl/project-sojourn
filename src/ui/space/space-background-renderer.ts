@@ -20,7 +20,9 @@ interface NebulaCloud {
   readonly driftX: number;
   readonly driftY: number;
   readonly warm: boolean;
-  readonly lobes: readonly NebulaLobe[];
+  readonly sprite: HTMLCanvasElement;
+  readonly spriteLeft: number;
+  readonly spriteTop: number;
 }
 
 export interface SpaceBackgroundView {
@@ -111,14 +113,34 @@ export class SpaceBackgroundRenderer {
         });
       }
 
-      result.push({
-        x: random(),
-        y: random(),
-        driftX: -3 + random() * 6,
-        driftY: -1.4 + random() * 2.8,
-        warm: cloudIndex % 2 === 0,
-        lobes,
-      });
+      const x = random();
+      const y = random();
+      const driftX = -3 + random() * 6;
+      const driftY = -1.4 + random() * 2.8;
+      const warm = cloudIndex % 2 === 0;
+      const spriteLeft = Math.floor(Math.min(...lobes.map((lobe) => lobe.offsetX - lobe.radius)));
+      const spriteTop = Math.floor(Math.min(...lobes.map((lobe) => lobe.offsetY - lobe.radius)));
+      const right = Math.ceil(Math.max(...lobes.map((lobe) => lobe.offsetX + lobe.radius)));
+      const bottom = Math.ceil(Math.max(...lobes.map((lobe) => lobe.offsetY + lobe.radius)));
+
+      // Cache expensive per-lobe gradients once instead of recreating them each draw.
+      const sprite = document.createElement('canvas');
+      sprite.width = right - spriteLeft;
+      sprite.height = bottom - spriteTop;
+      const spriteContext = sprite.getContext('2d');
+      if (!spriteContext) throw new Error('Nebula sprite canvas unavailable.');
+      spriteContext.globalCompositeOperation = 'screen';
+      for (const lobe of lobes) {
+        this.drawNebulaLobe(
+          spriteContext,
+          lobe.offsetX - spriteLeft,
+          lobe.offsetY - spriteTop,
+          lobe,
+          warm
+        );
+      }
+
+      result.push({ x, y, driftX, driftY, warm, sprite, spriteLeft, spriteTop });
     }
     return result;
   }
@@ -196,16 +218,20 @@ export class SpaceBackgroundRenderer {
       const centerY =
         wrap(cloud.y * spanY + offsetY + cloud.driftY * view.timeSeconds, spanY) - 280;
 
-      for (const lobe of cloud.lobes) {
-        this.drawNebulaLobe(centerX + lobe.offsetX, centerY + lobe.offsetY, lobe, cloud.warm);
-      }
+      this.context.drawImage(cloud.sprite, centerX + cloud.spriteLeft, centerY + cloud.spriteTop);
     }
 
     this.context.restore();
   }
 
-  private drawNebulaLobe(x: number, y: number, lobe: NebulaLobe, warm: boolean): void {
-    const gradient = this.context.createRadialGradient(
+  private drawNebulaLobe(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    lobe: NebulaLobe,
+    warm: boolean
+  ): void {
+    const gradient = context.createRadialGradient(
       x - lobe.radius * 0.18,
       y - lobe.radius * 0.12,
       lobe.radius * 0.04,
@@ -224,9 +250,9 @@ export class SpaceBackgroundRenderer {
       gradient.addColorStop(1, 'rgba(24, 38, 55, 0)');
     }
 
-    this.context.fillStyle = gradient;
-    this.context.beginPath();
-    this.context.arc(x, y, lobe.radius, 0, Math.PI * 2);
-    this.context.fill();
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(x, y, lobe.radius, 0, Math.PI * 2);
+    context.fill();
   }
 }

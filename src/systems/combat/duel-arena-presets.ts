@@ -89,6 +89,7 @@ export function createDuelArena(kind: DuelMapKind, seed: number): StrategicComba
   return {
     width,
     height,
+    backdropSeed: seed,
     asteroids,
     // Small drifting debris is visual-only, exactly as in the local asteroid field.
     obstacles: asteroids

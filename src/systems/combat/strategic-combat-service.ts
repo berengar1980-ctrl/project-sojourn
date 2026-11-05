@@ -147,6 +147,9 @@ function runtimeSnapshot(runtime: StrategicCombatRuntime): StrategicCombatSnapsh
       height: runtime.arena.height,
       obstacles: runtime.arena.obstacles ?? [],
       asteroids: runtime.arena.asteroids ?? [],
+      ...(runtime.arena.backdropSeed !== undefined
+        ? { backdropSeed: runtime.arena.backdropSeed }
+        : {}),
     },
   };
 }
