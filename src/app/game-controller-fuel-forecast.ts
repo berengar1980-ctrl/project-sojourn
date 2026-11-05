@@ -4,7 +4,8 @@ import { resolveShipRuntimeSetup } from '../systems/ships';
 import { fuelForDistance } from '../systems/ships/ship-operating-costs';
 import { planFuelRoute, type FuelRoutePlan } from '../systems/navigation/fuel-route-planner';
 
-const forecastCache = new WeakMap<ControllerRuntimeContext, { key: string; plan: FuelRoutePlan | null }>();
+type ForecastCacheEntry = { key: string; plan: FuelRoutePlan | null };
+const forecastCache = new WeakMap<ControllerRuntimeContext, ForecastCacheEntry>();
 
 export function fuelPerTravelUnit(context: ControllerRuntimeContext): number {
   const ship = context.state.activeShip;
@@ -31,10 +32,18 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   const fuelPerDistance = fuelPerTravelUnit(context);
   const credits = context.economy.trade.player.credits;
   const key = [
-    world.id, world.locations.length, navigation.currentLocationId,
-    navigation.currentPosition.x, navigation.currentPosition.y,
-    to, navigation.previewRoute.profile, ship.id, tank.fuel,
-    tank.fuelCapacity, credits, fuelPerDistance,
+    world.id,
+    world.locations.length,
+    navigation.currentLocationId,
+    navigation.currentPosition.x,
+    navigation.currentPosition.y,
+    to,
+    navigation.previewRoute.profile,
+    ship.id,
+    tank.fuel,
+    tank.fuelCapacity,
+    credits,
+    fuelPerDistance,
   ].join('|');
   const cached = forecastCache.get(context);
   if (cached?.key === key) return cached.plan;
