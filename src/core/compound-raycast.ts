@@ -42,11 +42,7 @@ function intersectionTime(
   return t >= 0 && t <= 1 ? t : null;
 }
 
-function shapeTime(
-  from: WorldPoint,
-  delta: WorldPoint,
-  shape: RockContactShape
-): number | null {
+function shapeTime(from: WorldPoint, delta: WorldPoint, shape: RockContactShape): number | null {
   const translated = { x: from.x - shape.x, y: from.y - shape.y };
   if (shape.kind === 'circle') {
     return intersectionTime(translated, delta, shape.radius, shape.radius);
