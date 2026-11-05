@@ -58,11 +58,9 @@ import {
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
 import {
-  advancePlayerFuel,
-  canStartPlayerTravel,
   recordPlayerCombatHull,
-  processPlayerFuelStop,
   startPlayerFuelTravel,
+  tickPlayerFuelJourney,
   refuelAtPort,
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
@@ -393,8 +391,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
-  advancePlayerFuel(context, navigationBefore, navigationSnapshot);
-  const atFuelStop = processPlayerFuelStop(context, navigationBefore, navigationSnapshot);
+  const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
