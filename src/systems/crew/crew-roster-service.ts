@@ -28,6 +28,7 @@ export interface CrewRosterService {
   transferAssignments(from: ShipDefinition, to: ShipDefinition): void;
   shipCrewMembers(): readonly ShipCrewMember[];
   runtimeOptions(ship: ShipDefinition): ShipRuntimeOptions;
+  previewRuntimeOptions(ship: ShipDefinition, from?: ShipDefinition): ShipRuntimeOptions;
   manningFactor(ship: ShipDefinition): number;
   shareRate(): number;
   setInjuryState(id: string, state: CrewMember['injuryState']): CrewMember | null;
@@ -56,6 +57,7 @@ interface RosterContext {
   readonly members: CrewMember[];
   readonly assignmentsByShip: Map<string, Record<string, string | undefined>>;
   assignmentRecord(ship: ShipDefinition): Record<string, string | undefined>;
+  peekAssignmentRecord(ship: ShipDefinition): Record<string, string | undefined>;
   activeManningCount(): number;
 }
 
@@ -104,15 +106,13 @@ function createRosterManagement(
   };
 }
 
-function transferRosterAssignments(
+function projectedRosterAssignments(
   context: RosterContext,
   from: ShipDefinition,
   to: ShipDefinition
-): void {
-  const { members, assignmentsByShip, assignmentRecord } = context;
-  // An already configured hull keeps its own station layout on return.
-  if (assignmentsByShip.has(to.id)) return;
-  const oldAssignments = assignmentRecord(from);
+): Record<string, string | undefined> {
+  const { members, peekAssignmentRecord } = context;
+  const oldAssignments = peekAssignmentRecord(from);
   const next: Record<string, string | undefined> = {};
   const stations = resolveShipGameplayStats(to).stations;
   for (const station of stations) {
@@ -127,7 +127,17 @@ function transferRosterAssignments(
     const firstFree = stations.find((station) => !next[station.id]);
     if (captain && canOperateStation(captain) && firstFree) next[firstFree.id] = 'player';
   }
-  assignmentsByShip.set(to.id, next);
+  return next;
+}
+
+function transferRosterAssignments(
+  context: RosterContext,
+  from: ShipDefinition,
+  to: ShipDefinition
+): void {
+  // An already configured hull keeps its own station layout on return.
+  if (context.assignmentsByShip.has(to.id)) return;
+  context.assignmentsByShip.set(to.id, projectedRosterAssignments(context, from, to));
 }
 
 function createRosterAssignments(
@@ -139,6 +149,7 @@ function createRosterAssignments(
   | 'transferAssignments'
   | 'shipCrewMembers'
   | 'runtimeOptions'
+  | 'previewRuntimeOptions'
   | 'manningFactor'
   | 'shareRate'
   | 'setInjuryState'
@@ -190,6 +201,23 @@ function createRosterAssignments(
           injuryState: member.injuryState,
         })),
         assignments: { ...assignmentRecord(ship) },
+        manningFactor: crewManningStatus(ship, activeManningCount()).factor,
+      };
+    },
+
+    previewRuntimeOptions(ship, from) {
+      const assigned = assignmentsByShip.get(ship.id);
+      const projected = from
+        ? projectedRosterAssignments(context, from, ship)
+        : context.peekAssignmentRecord(ship);
+      return {
+        crew: members.map((member) => ({
+          id: member.id,
+          skills: effectiveCrewSkills(member),
+          stationModifiers: crewStationModifiers(member),
+          injuryState: member.injuryState,
+        })),
+        assignments: { ...(assigned ?? projected) },
         manningFactor: crewManningStatus(ship, activeManningCount()).factor,
       };
     },
@@ -293,7 +321,7 @@ export function createCrewRosterService(profile?: PlayerProfile): CrewRosterServ
   const boardingEquipment: string[] = [];
   const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
 
-  function assignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
+  function peekAssignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
     const existing = assignmentsByShip.get(ship.id);
     if (existing) return existing;
     const record: Record<string, string | undefined> = {};
@@ -301,6 +329,13 @@ export function createCrewRosterService(profile?: PlayerProfile): CrewRosterServ
     if (profile && Object.hasOwn(record, profile.stationId)) {
       record[profile.stationId] = 'player';
     }
+    return record;
+  }
+
+  function assignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
+    const existing = assignmentsByShip.get(ship.id);
+    if (existing) return existing;
+    const record = peekAssignmentRecord(ship);
     assignmentsByShip.set(ship.id, record);
     return record;
   }
@@ -313,6 +348,7 @@ export function createCrewRosterService(profile?: PlayerProfile): CrewRosterServ
     members,
     assignmentsByShip,
     assignmentRecord,
+    peekAssignmentRecord,
     activeManningCount,
   };
   return {
