@@ -39,6 +39,11 @@ assert.equal(
   null,
   'broad phase rejects distant bodies'
 );
+const enclosed = compoundContact(
+  smallCircle,
+  shieldContactBody({ x: 0, y: 0 }, 0, 30, 20)
+);
+assert(enclosed && enclosed.depth > 15, 'nested solids must separate to the nearest exit');
 
 let elongated = 0;
 for (let i = 0; i < 100; i += 1) {
