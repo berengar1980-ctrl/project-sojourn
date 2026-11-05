@@ -4,6 +4,7 @@ import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
 import { createPortViewModel, type PortSystemMarketInput } from '../features/port/port-view-model';
+import { repairCost, type ShipOperatingService } from '../systems/ships/ship-operating-costs';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
@@ -89,6 +90,7 @@ interface ActivePortContext {
   readonly componentInventory: ShipComponentInventoryService;
   readonly shipyardResearch: ShipyardResearchService;
   readonly shipOwnership: ShipOwnershipService;
+  readonly shipOperations: ShipOperatingService;
   readonly onChangeShip: (ship: ShipDefinition) => void;
   readonly installed: ActivePortInstalled;
   readonly runtime: ActivePortRuntime;
@@ -97,6 +99,25 @@ interface ActivePortContext {
   readonly onReturnToStarMap: () => void;
   readonly onRefresh: () => void;
   readonly log: SystemLogService;
+}
+
+function portOperatingView(context: ActivePortContext) {
+  const { ship, runtime, port } = context;
+  const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
+  const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
+  const estimate = context.shipOperations.repairEstimate(
+    ship,
+    runtime.hullMaxHp,
+    port.shipyard,
+    engineering
+  );
+  return {
+    ...condition,
+    repairPrice: repairCost(condition.hullMaxHp - condition.hullHp, port.shipyard, engineering),
+    repairPoints: estimate.points,
+    affordableRepairCost: estimate.cost,
+    shipyardDiscount: port.shipyard,
+  };
 }
 
 function createActivePortModel(context: ActivePortContext): PortPanelOptions['model'] {
@@ -185,7 +206,8 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         crewBerths: resolveShipGameplayStats(offer).crewBerths,
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
-    }
+    },
+    portOperatingView(context)
   );
 }
 
@@ -374,7 +396,8 @@ export function createActivePortPanel(
   onRefresh: () => void,
   log: SystemLogService,
   shipOwnership: ShipOwnershipService,
-  onChangeShip: (ship: ShipDefinition) => void
+  onChangeShip: (ship: ShipDefinition) => void,
+  shipOperations: ShipOperatingService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = narrowsSector.locations.find((entry) => entry.id === locationId);
@@ -405,6 +428,7 @@ export function createActivePortPanel(
     componentInventory,
     shipyardResearch,
     shipOwnership,
+    shipOperations,
     onChangeShip,
     installed,
     runtime,
@@ -419,6 +443,20 @@ export function createActivePortPanel(
     root,
     model: createActivePortModel(context),
     onReturnToStarMap,
+    onRepairShip: () => {
+      const result = shipOperations.repair(
+        ship,
+        runtime.hullMaxHp,
+        port.shipyard,
+        runtime.crewEffects.engineering.repairCostMultiplier
+      );
+      if (result.points > 0) {
+        log.write('WERFT > HÜLLE +' + result.points + ' HP · ' + result.cost + ' CR');
+      } else {
+        log.write('WARTUNG > REPARATUR NICHT NÖTIG ODER NICHT BEZAHLBAR');
+      }
+      onRefresh();
+    },
     ...createTradeCallbacks(context),
     ...createShipyardCallbacks(context),
     ...createCrewCallbacks(context),

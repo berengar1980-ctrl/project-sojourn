@@ -12,6 +12,7 @@ import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
 import { createShipLoadoutService, createShipOwnershipService } from '../systems/ships';
+import { createShipOperatingService } from '../systems/ships/ship-operating-costs';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
@@ -19,7 +20,6 @@ import { createControllerEconomy } from './game-controller-economy';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
-import { createPlayerCombatant } from './game-controller-combat';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
@@ -41,6 +41,7 @@ import {
   sectorEventLocation,
 } from './game-controller-events';
 import { createControllerLocalActions } from './game-controller-local-actions';
+import { handleControllerLocationEntry } from './game-controller-location-entry';
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
@@ -51,12 +52,17 @@ import {
   controllerShipRuntimeOptions,
   controllerStarModel,
   createControllerLog,
-  enteredMiningLocation,
-  enteredSalvageLocation,
   localSeed,
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
+import {
+  advancePlayerFuel,
+  canStartPlayerTravel,
+  recordPlayerCombatHull,
+  refuelAtPort,
+  servicedPlayerCombatant,
+} from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   const { state } = context;
@@ -113,6 +119,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
+    canStartTravel: () => canStartPlayerTravel(context),
     eventById: (id) =>
       context.world.inForeignSystem()
         ? null
@@ -124,6 +131,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
+  refuelAtPort(context);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -151,7 +159,8 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
-    }
+    },
+    context.shipOperations
   );
   if (!state.panels.port) return;
   state.mode = 'port';
@@ -320,6 +329,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
+  recordPlayerCombatHull(context, snapshot);
   if (snapshot.boardingInitiator) {
     const origin = state.embeddedCombat;
     const preservedSalvageField =
@@ -370,26 +380,6 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
   });
 }
-function handleControllerLocationEntry(
-  context: ControllerRuntimeContext,
-  currentLocationId: string | null
-): void {
-  const { state, economy } = context;
-  if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
-    runSceneZoomTransition(context.root, () => mountControllerMining(context));
-    return;
-  }
-  const enteredSalvage =
-    state.mode === 'star-map' &&
-    state.previousLocationId !== currentLocationId &&
-    (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId) ||
-      economy.salvageEvents.event(currentLocationId) !== null);
-  if (enteredSalvage) {
-    if (economy.salvageEvents.event(currentLocationId))
-      economy.salvageEvents.acceptForPlayer(currentLocationId!);
-    runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
-  }
-}
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
@@ -397,7 +387,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
+  const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  advancePlayerFuel(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
@@ -405,7 +397,12 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
     completeDistressTowOnArrival(context, currentLocationId);
   }
-  handleControllerLocationEntry(context, currentLocationId);
+  handleControllerLocationEntry(
+    context,
+    currentLocationId,
+    () => mountControllerMining(context),
+    () => mountControllerSalvage(context)
+  );
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
@@ -442,6 +439,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const systemLog = createControllerLog();
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
+  const shipOperations = createShipOperatingService(economy.trade);
   let foreignWorld = () => false;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
@@ -449,10 +447,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     isPlayerInCampaignSystem: () => foreignWorld(),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
-      createPlayerCombatant(state.activeShip, {
-        ...crew.runtimeOptions(state.activeShip),
-        installed: loadouts.get(state.activeShip),
-      }),
+      servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
     log: (message) => systemLog.write(message),
   });
   const campaignServices = createControllerCampaignServicesWithActions(
@@ -471,6 +466,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     economy,
     crew,
     loadouts,
+    shipOperations,
     audio: createGameAudioService(),
     engagements,
     ...campaignServices,

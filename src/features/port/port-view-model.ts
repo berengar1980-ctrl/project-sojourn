@@ -139,7 +139,19 @@ export interface PortCrewStateInput {
   readonly effects?: CrewSkillEffects;
 }
 
+export interface PortOperationsView {
+  readonly fuel: number;
+  readonly fuelCapacity: number;
+  readonly hullHp: number;
+  readonly hullMaxHp: number;
+  readonly repairPrice: number;
+  readonly repairPoints: number;
+  readonly affordableRepairCost: number;
+  readonly shipyardDiscount: boolean;
+}
+
 export interface PortViewModel {
+  readonly operations: PortOperationsView;
   readonly locationId: string;
   readonly locationName: string;
   readonly locationKind: string;
@@ -363,6 +375,19 @@ function resourceName(id: string): string {
   return economyResourceById(id)?.name ?? id;
 }
 
+function defaultPortOperations(shipState: PortShipStateInput): PortOperationsView {
+  return {
+    fuel: 0,
+    fuelCapacity: 0,
+    hullHp: shipState.hullMaxHp,
+    hullMaxHp: shipState.hullMaxHp,
+    repairPrice: 0,
+    repairPoints: 0,
+    affordableRepairCost: 0,
+    shipyardDiscount: false,
+  };
+}
+
 export function createPortViewModel(
   port: PortDefinition,
   market: EconomyMarketState,
@@ -376,11 +401,13 @@ export function createPortViewModel(
   currentDay: number,
   cargoCapacityTons = ship.cargoCapacityTons,
   saleFeeRate = 0.25,
-  shipyardState: PortShipyardStateInput = { loose: [], variants: [] }
+  shipyardState: PortShipyardStateInput = { loose: [], variants: [] },
+  operations: PortOperationsView = defaultPortOperations(shipState)
 ): PortViewModel {
   const localMarket = marketRows(market, player, saleFeeRate);
   const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
   return {
+    operations,
     locationId: location.id,
     locationName: location.name,
     locationKind: location.kind === 'station' ? 'ORBITALSTATION' : 'PLANET',

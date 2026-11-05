@@ -18,7 +18,8 @@ export function createMiningLocalSpace(
   seed: number,
   mining: MiningEconomyService,
   location: WorldLocation,
-  runtimeOptions: ShipRuntimeOptions = {}
+  runtimeOptions: ShipRuntimeOptions = {},
+  currentHullHp?: number
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
@@ -42,6 +43,7 @@ export function createMiningLocalSpace(
       shieldMaxHp: runtime.shieldMaxHp,
       shieldModifier: runtime.shieldModifier,
       hullMaxHp: runtime.hullMaxHp,
+      ...(currentHullHp === undefined ? {} : { hullCurrentHp: currentHullHp }),
       scanAvailable: runtime.scanAvailable,
       sensorModifier: runtime.sensorModifier,
       sensorCrewSkill: runtime.sensorCrewSkill,

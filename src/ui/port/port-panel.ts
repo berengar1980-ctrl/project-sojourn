@@ -20,6 +20,7 @@ interface PortPanelOptions {
   readonly onBuy: (resourceId: string) => void;
   readonly onSell: (resourceId: string) => void;
   readonly onSellAll: (resourceId: string) => void;
+  readonly onRepairShip: () => void;
   readonly onSetComponentSlot: (
     type: ShipComponentType,
     index: number,
@@ -428,6 +429,8 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
     button.addEventListener('click', () => options.onBuyShip(button.dataset.buyShipId ?? ''));
   }
+  const repairButton = shell.querySelector<HTMLButtonElement>('[data-repair-ship]');
+  repairButton?.addEventListener('click', options.onRepairShip);
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
     button.addEventListener('click', () => options.onHireCrew(button.dataset.hireCrewId ?? ''));
   }

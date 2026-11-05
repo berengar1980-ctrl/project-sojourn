@@ -35,6 +35,7 @@ export function createControllerStarPanel(options: {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
+  readonly canStartTravel?: () => boolean;
   readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
@@ -95,6 +96,7 @@ export function createControllerStarPanel(options: {
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
     onStartTravel: () => {
+      if (options.canStartTravel?.() === false) return;
       options.navigation.startTravel();
       options.log.write('NAV > FLUG GESTARTET');
       panel?.update(options.getModel());
