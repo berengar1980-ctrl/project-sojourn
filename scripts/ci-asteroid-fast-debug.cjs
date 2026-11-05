@@ -16,10 +16,15 @@ const files = [
 ];
 let failed = false;
 for (const file of files) {
-  const result = spawnSync(process.execPath, [file], { stdio: 'inherit' });
+  const result = spawnSync(process.execPath, [file], { encoding: 'utf8' });
   if (result.status !== 0) {
-    console.error('FAIL ' + file);
+    const detail = (result.stderr + '\\n' + result.stdout)
+      .split(/\\r?\\n/)
+      .find((line) => line.includes('AssertionError') || line.startsWith('Error:'));
+    console.error('FAIL ' + file + (detail ? ' · ' + detail.trim() : ''));
     failed = true;
+  } else {
+    process.stdout.write('PASS ' + file + '\\n');
   }
 }
 if (failed) process.exitCode = 1;
