@@ -80,7 +80,9 @@ export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: W
       angularVelocity: asteroid.physics.angularVelocity,
       physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
       radius: asteroid.radius,
-      collisionRadius: asteroid.collisionRadius,
+      ...(asteroid.collisionRadius !== undefined
+        ? { collisionRadius: asteroid.collisionRadius }
+        : {}),
       rotation: asteroid.rotation,
     })),
     obstacles: instance.asteroids
