@@ -99,7 +99,10 @@ assert.deepEqual(
   [200, 400, 800, 1200],
   'map must not redraw already traversed geometry'
 );
-assert.equal(journey.arrived('refuel-a', navigation, () => true), true);
+assert.equal(
+  journey.arrived('refuel-a', navigation, () => true),
+  true
+);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b']);
 const secondNavigation = {
   ...mapNavigation,
@@ -119,9 +122,15 @@ const observed = journey.snapshot();
 observed.remainingIds.pop();
 const detachedLength = journey.snapshot().remainingIds.length;
 assert.equal(detachedLength, 2, 'itinerary snapshots must be detached');
-assert.equal(journey.arrived('refuel-b', navigation, () => true), true);
+assert.equal(
+  journey.arrived('refuel-b', navigation, () => true),
+  true
+);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b', 'destination']);
-assert.equal(journey.arrived('destination', navigation, () => true), false);
+assert.equal(
+  journey.arrived('destination', navigation, () => true),
+  false
+);
 assert.equal(journey.snapshot().destinationId, null);
 
 const npcPopulation = createSectorNpcEconomyStates();
