@@ -43,7 +43,7 @@ function inside(point: WorldPoint, outline: readonly WorldPoint[]): boolean {
     const a = outline[i]!;
     const b = outline[j]!;
     if (
-      (a.y > point.y) !== (b.y > point.y) &&
+      a.y > point.y !== b.y > point.y &&
       point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x
     )
       contains = !contains;
@@ -88,9 +88,7 @@ export function asteroidContactProfile(
   const cached = profileCache.get(key);
   if (cached) return cached;
 
-  const outline = curvedOutline(
-    createAsteroidOutline(kind, asteroidRandom(hashAsteroidSeed(key)))
-  );
+  const outline = curvedOutline(createAsteroidOutline(kind, asteroidRandom(hashAsteroidSeed(key))));
   const xs = outline.map((p) => p.x);
   const ys = outline.map((p) => p.y);
   const width = (Math.max(...xs) - Math.min(...xs)) / 2;
@@ -120,7 +118,10 @@ export function asteroidContactProfile(
     let best: RockContactShape | null = null;
     let bestGain = 0;
     for (const tip of candidates) {
-      const center = { x: centerX + (tip.x - centerX) * 0.67, y: centerY + (tip.y - centerY) * 0.67 };
+      const center = {
+        x: centerX + (tip.x - centerX) * 0.67,
+        y: centerY + (tip.y - centerY) * 0.67,
+      };
       const circle: RockContactShape = {
         kind: 'circle',
         x: center.x,
@@ -152,9 +153,10 @@ export function asteroidContactProfile(
 
 export function asteroidContactBound(id: string, kind: 'resource' | 'debris'): number {
   return Math.max(
-    ...asteroidContactProfile(id, kind).map((shape) =>
-      Math.hypot(shape.x, shape.y) +
-      (shape.kind === 'circle' ? shape.radius : Math.max(shape.radiusX, shape.radiusY))
+    ...asteroidContactProfile(id, kind).map(
+      (shape) =>
+        Math.hypot(shape.x, shape.y) +
+        (shape.kind === 'circle' ? shape.radius : Math.max(shape.radiusX, shape.radiusY))
     )
   );
 }
