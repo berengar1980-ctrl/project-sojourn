@@ -101,6 +101,22 @@ interface ActivePortContext {
   readonly log: SystemLogService;
 }
 
+function portOperatingView(context: ActivePortContext) {
+  const { ship, runtime, port } = context;
+  const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
+  const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
+  const estimate = context.shipOperations.repairEstimate(
+    ship, runtime.hullMaxHp, port.shipyard, engineering
+  );
+  return {
+    ...condition,
+    repairPrice: repairCost(condition.hullMaxHp - condition.hullHp, port.shipyard, engineering),
+    repairPoints: estimate.points,
+    affordableRepairCost: estimate.cost,
+    shipyardDiscount: port.shipyard,
+  };
+}
+
 function createActivePortModel(context: ActivePortContext): PortPanelOptions['model'] {
   const { port, market, trade, location, ship, crew, installed, runtime, gameplay } = context;
   const shipyardTypes = [
@@ -188,29 +204,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
     },
-    (() => {
-      const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
-      const repair = context.shipOperations.repairEstimate(
-        ship,
-        runtime.hullMaxHp,
-        port.shipyard,
-        runtime.crewEffects.engineering.repairCostMultiplier
-      );
-      return {
-        fuel: condition.fuel,
-        fuelCapacity: condition.fuelCapacity,
-        hullHp: condition.hullHp,
-        hullMaxHp: condition.hullMaxHp,
-        repairPrice: repairCost(
-          condition.hullMaxHp - condition.hullHp,
-          port.shipyard,
-          runtime.crewEffects.engineering.repairCostMultiplier
-        ),
-        repairPoints: repair.points,
-        affordableRepairCost: repair.cost,
-        shipyardDiscount: port.shipyard,
-      };
-    })()
+    portOperatingView(context)
   );
 }
 
