@@ -35,6 +35,7 @@ export function createControllerStarPanel(options: {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
+  readonly canStartTravel?: () => boolean;
   readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
