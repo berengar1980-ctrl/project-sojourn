@@ -25,13 +25,8 @@ export function fuelForDistance(
 ): number {
   const values = [distance, shipFuelUse, pilotingFuelMultiplier, engineeringFuelMultiplier];
   if (values.some((value) => !Number.isFinite(value) || value < 0)) return 0;
-  return (
-    distance *
-    shipFuelUse *
-    FUEL_DISTANCE_SCALE *
-    pilotingFuelMultiplier *
-    engineeringFuelMultiplier
-  );
+  const base = distance * shipFuelUse * FUEL_DISTANCE_SCALE;
+  return base * pilotingFuelMultiplier * engineeringFuelMultiplier;
 }
 
 /** Credit-precise tenths: ten credits buy one fuel unit at every inhabited port. */
@@ -44,12 +39,9 @@ export function quoteRefuel(fuel: number, capacity: number, credits: number): Fu
 export function repairCost(points: number, shipyard: boolean, engineeringMultiplier = 1): number {
   if (points <= 0 || !Number.isFinite(points)) return 0;
   const engineering = Math.max(0, Math.min(1, engineeringMultiplier));
-  return Math.ceil(
-    points *
-      REPAIR_PRICE_PER_HULL_HP *
-      (shipyard ? SHIPYARD_REPAIR_MULTIPLIER : 1) *
-      engineering
-  );
+  const yardMultiplier = shipyard ? SHIPYARD_REPAIR_MULTIPLIER : 1;
+  const cost = points * REPAIR_PRICE_PER_HULL_HP * yardMultiplier;
+  return Math.ceil(cost * engineering);
 }
 
 export function quoteRepair(
@@ -138,19 +130,15 @@ export function createShipOperatingService(
       hullMaxHp,
     };
   };
-  const estimate = (
+  function estimate(
     ship: ShipDefinition,
     hullMaxHp: number,
     shipyard: boolean,
     engineeringMultiplier = 1
-  ) =>
-    quoteRepair(
-      snapshot(ship, hullMaxHp).hullHp,
-      hullMaxHp,
-      wallet.player.credits,
-      shipyard,
-      engineeringMultiplier
-    );
+  ): RepairQuote {
+    const hull = snapshot(ship, hullMaxHp);
+    return quoteRepair(hull.hullHp, hullMaxHp, wallet.player.credits, shipyard, engineeringMultiplier);
+  }
   return {
     snapshotAll() {
       return {
@@ -163,35 +151,24 @@ export function createShipOperatingService(
     },
     snapshot,
     hasFuelForRoute(ship, distance, pilotingMultiplier = 1, engineeringMultiplier = 1) {
-      const required = fuelForDistance(
-        distance,
-        getShipRoleProfile(ship.role).fuelUse,
-        pilotingMultiplier,
-        engineeringMultiplier
-      );
+      const use = getShipRoleProfile(ship.role).fuelUse;
+      const required = fuelForDistance(distance, use, pilotingMultiplier, engineeringMultiplier);
       return ensure(ship).fuel + 1e-6 >= required * 1.02;
     },
     burn(ship, distance, pilotingMultiplier = 1, engineeringMultiplier = 1) {
       const state = ensure(ship);
-      const amount = fuelForDistance(
-        distance,
-        getShipRoleProfile(ship.role).fuelUse,
-        pilotingMultiplier,
-        engineeringMultiplier
-      );
+      const use = getShipRoleProfile(ship.role).fuelUse;
+      const amount = fuelForDistance(distance, use, pilotingMultiplier, engineeringMultiplier);
       const burned = Math.min(state.fuel, amount);
       state.fuel = Math.max(0, state.fuel - burned);
       return burned;
     },
     refuel(ship) {
       const state = ensure(ship);
-      const quote = quoteRefuel(
-        state.fuel,
-        getShipRoleProfile(ship.role).fuelCapacity,
-        wallet.player.credits
-      );
+      const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+      const quote = quoteRefuel(state.fuel, capacity, wallet.player.credits);
       if (quote.cost > 0 && wallet.takeCredits(quote.cost)) {
-        state.fuel = Math.min(getShipRoleProfile(ship.role).fuelCapacity, state.fuel + quote.units);
+        state.fuel = Math.min(capacity, state.fuel + quote.units);
         return quote;
       }
       return { units: 0, cost: 0 };
