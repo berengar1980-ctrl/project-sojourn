@@ -290,10 +290,7 @@ function sideTradeWorthTaking(
   return returnRate >= minimumReturn;
 }
 
-function returnDamagedWorkerToPort(
-  npc: NpcEconomyState,
-  quoteTravel?: NpcTravelQuoteFn
-): boolean {
+function returnDamagedWorkerToPort(npc: NpcEconomyState, quoteTravel?: NpcTravelQuoteFn): boolean {
   const worker = npc as NpcEconomyState & { hullHp?: number; hullMaxHp?: number };
   if (!npcNeedsSafeReturn(worker)) return false;
   if (npc.homePortId && npc.homePortId !== npc.locationId) {
@@ -371,7 +368,9 @@ function arrangeWorkerJourney(
     resources,
     positions,
   });
-  const funded = plan ? quoteTravel?.(npc, plan.tradeLocationId, npc.credits - plan.costBasis) : null;
+  const funded = plan
+    ? quoteTravel?.(npc, plan.tradeLocationId, npc.credits - plan.costBasis)
+    : null;
   const netProfit = plan ? plan.expectedProfit - (funded?.fuelExpense ?? 0) : 0;
   const viable = !quoteTravel || Boolean(funded);
   if (plan && viable && sideTradeWorthTaking(npc, netProfit, plan.costBasis)) {
