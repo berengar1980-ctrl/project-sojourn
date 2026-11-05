@@ -107,7 +107,13 @@ class SectorService implements NpcSectorService {
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
     const intact = npc.hullHp >= npc.hullMaxHp;
-    npc.activityId = intact ? (npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock') : 'maintenance';
+    npc.activityId = intact
+      ? npc.pirate
+        ? 'raiding'
+        : npc.job === 'patrol'
+          ? 'patrol'
+          : 'dock'
+      : 'maintenance';
     npc.activity = intact
       ? 'Reparatur abgeschlossen · bereit'
       : 'Teilreparatur · weitere Wartung nur gegen Credits';
@@ -273,7 +279,7 @@ class SectorService implements NpcSectorService {
       npc.combatMovement ||
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
-      npcNeedsSafeReturn(npc) ||
+      (npcNeedsSafeReturn(npc) && destinationId !== npc.homePortId) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
