@@ -112,7 +112,8 @@ export function createControllerStarModel(
   sensorCrewSkill: number,
   sensorModifier: number,
   world: WorldMap,
-  foreignSystem = false
+  foreignSystem = false,
+  saleFeeRate = 0.25
 ) {
   const navigationSnapshot = navigation.getSnapshot();
   if (!foreignSystem)
