@@ -38,3 +38,6 @@ This is an **in-memory data contract**, not an on-disk format. It does not promi
   NavigationService owns position, routes and arrival state. Neither snapshot
   is a durable game save. Closing or disabling a campaign removes its overlays
   and safely returns ships stranded in a campaign-owned system.
+
+
+- `FuelJourneyService`: in-session owner of the player's accepted destination and remaining fuel-route legs. Its `snapshot()` returns detached station-ID arrays, and it clears the journey on new route selection or after the final arrival. Fuel and credits remain exclusively owned by `ShipOperatingService` and `PlayerTradeService`; the itinerary is never used as a second tank or wallet state.
