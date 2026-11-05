@@ -36,6 +36,8 @@ export function createControllerStarPanel(options: {
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
   readonly canStartTravel?: () => boolean;
+  readonly startFuelTravel?: () => boolean;
+  readonly onRouteSelectionChanged?: () => void;
   readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
