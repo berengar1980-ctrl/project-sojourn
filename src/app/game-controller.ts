@@ -443,6 +443,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const systemLog = createControllerLog();
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
+  const shipOperations = createShipOperatingService(economy.trade);
   let foreignWorld = () => false;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
