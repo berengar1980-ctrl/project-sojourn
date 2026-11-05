@@ -4,19 +4,26 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerShipRuntimeOptions } from './game-controller-models';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 
+function liveFuelMultipliers(context: ControllerRuntimeContext) {
+  const ship = context.state.activeShip;
+  const options = controllerShipRuntimeOptions(context, ship);
+  const effects = resolveShipRuntimeSetup(ship, options).crewEffects;
+  return {
+    piloting: effects.piloting.fuelUseMultiplier,
+    engineering: effects.engineering.fuelUseMultiplier,
+  };
+}
+
 export function canStartPlayerTravel(context: ControllerRuntimeContext): boolean {
-  const { activeShip } = context.state;
+  const ship = context.state.activeShip;
   const route = context.navigation.getSnapshot().previewRoute;
   if (!route) return true;
-  const effects = resolveShipRuntimeSetup(
-    activeShip,
-    controllerShipRuntimeOptions(context, activeShip)
-  ).crewEffects;
+  const fuel = liveFuelMultipliers(context);
   const available = context.shipOperations.hasFuelForRoute(
-    activeShip,
+    ship,
     route.distance,
-    effects.piloting.fuelUseMultiplier,
-    effects.engineering.fuelUseMultiplier
+    fuel.piloting,
+    fuel.engineering
   );
   if (!available) {
     context.systemLog.write('TREIBSTOFF > REICHWEITE NICHT AUSREICHEND · ZUERST TANKEN');
@@ -31,19 +38,13 @@ export function advancePlayerFuel(
   after: NavigationSnapshot
 ): void {
   if (!before.isTravelling) return;
-  const distance = Math.hypot(
-    after.currentPosition.x - before.currentPosition.x,
-    after.currentPosition.y - before.currentPosition.y
-  );
+  const dx = after.currentPosition.x - before.currentPosition.x;
+  const dy = after.currentPosition.y - before.currentPosition.y;
+  const distance = Math.hypot(dx, dy);
   if (distance <= 0) return;
   const ship = context.state.activeShip;
-  const effects = resolveShipRuntimeSetup(
-    ship,
-    controllerShipRuntimeOptions(context, ship)
-  ).crewEffects;
-  context.shipOperations.burn(
-    ship, distance, effects.piloting.fuelUseMultiplier, effects.engineering.fuelUseMultiplier
-  );
+  const fuel = liveFuelMultipliers(context);
+  context.shipOperations.burn(ship, distance, fuel.piloting, fuel.engineering);
   if (before.isPursuing && context.shipOperations.snapshot(ship, 1).fuel <= 0) {
     context.navigation.stopPursuit();
     context.systemLog.write('TREIBSTOFF > TANK LEER · VERFOLGUNG ABGEBROCHEN');
@@ -55,6 +56,7 @@ export function recordPlayerCombatHull(
   snapshot: StrategicCombatSnapshot
 ): void {
   const ship = context.state.activeShip;
-  const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
+  const options = controllerShipRuntimeOptions(context, ship);
+  const runtime = resolveShipRuntimeSetup(ship, options);
   context.shipOperations.recordHull(ship, snapshot.attacker.hullHp, runtime.hullMaxHp);
 }
