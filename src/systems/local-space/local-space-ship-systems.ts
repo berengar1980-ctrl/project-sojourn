@@ -12,6 +12,7 @@ export interface LocalSpaceSystemsOptions {
   readonly shieldMaxHp: number;
   readonly shieldModifier: number;
   readonly hullMaxHp: number;
+  readonly hullCurrentHp?: number;
   readonly scanAvailable: boolean;
   readonly sensorModifier: number;
   readonly sensorCrewSkill: number;
