@@ -8,7 +8,12 @@ import {
   salvagedComponentAppraisal,
   type ShipyardResearchService,
 } from '../ships';
-import { planRouteFromPoint, type RouteProfile } from '../navigation/route-planner';
+import {
+  planRouteFromPoint,
+  repointRouteEndpoints,
+  type RouteProfile,
+} from '../navigation/route-planner';
+import { npcOrbitDestination } from './npc-orbit';
 import type { NpcSectorService } from './npc-sector-service';
 import { tryNpcComponentUpgrade } from './npc-upgrade-service';
 
@@ -80,7 +85,11 @@ function startReturnTravel(
   destinationId: string,
   reason: string
 ): boolean {
-  const route = planRouteFromPoint(world, from, destinationId, npcRouteProfile(npc));
+  const route = repointRouteEndpoints(
+    planRouteFromPoint(world, from, destinationId, npcRouteProfile(npc)),
+    from,
+    npcOrbitDestination(world, npc, destinationId)
+  );
   const fuelRequired = eventTravelFuel(npc, route.distance);
   if (fuelRequired > npc.fuel + 0.001) return false;
   npc.travel = {

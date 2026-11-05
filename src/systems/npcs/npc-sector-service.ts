@@ -13,12 +13,12 @@ import { npcOperationalSpeed, tryNpcComponentUpgrade } from './npc-upgrade-servi
 import {
   planRouteFromPoint,
   planRouteWithProfile,
+  repointRouteEndpoints,
   type RoutePlan,
 } from '../navigation/route-planner';
 
 import {
   hashId,
-  locationPoint,
   nearestLocation,
   patrolDestination,
   pirateHuntDestination,
@@ -30,6 +30,13 @@ import {
 } from './npc-sector-routing';
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
+import {
+  advanceNpcOrbit,
+  npcOrbitDestination,
+  npcOrbitHeading,
+  npcOrbitPosition,
+  npcOrbitStateFor,
+} from './npc-orbit';
 import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
@@ -85,6 +92,7 @@ class SectorService implements NpcSectorService {
     delete npc.travel;
     delete npc.combatMovement;
     npc.locationId = destinationId;
+    npc.orbit = npcOrbitStateFor(this.world, npc, destinationId);
     // Emergency recovery returns a disabled ship to port, not a free full repair.
     npc.hullHp = 1;
     npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
@@ -120,7 +128,12 @@ class SectorService implements NpcSectorService {
     return true;
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    return planRouteWithProfile(this.world, fromId, toId, routeProfile(npc));
+    const base = planRouteWithProfile(this.world, fromId, toId, routeProfile(npc));
+    return repointRouteEndpoints(
+      base,
+      this.livePosition(npc),
+      npcOrbitDestination(this.world, npc, toId)
+    );
   };
   private startLeg = (
     npc: SectorNpcState,
@@ -152,7 +165,11 @@ class SectorService implements NpcSectorService {
     destinationId: string,
     reason: string
   ): boolean => {
-    const route = planRouteFromPoint(this.world, from, destinationId, routeProfile(npc));
+    const route = repointRouteEndpoints(
+      planRouteFromPoint(this.world, from, destinationId, routeProfile(npc)),
+      from,
+      npcOrbitDestination(this.world, npc, destinationId)
+    );
     const fuelRequired = routeFuel(npc, route);
     if (fuelRequired > npc.fuel + 0.001) return false;
     npc.travel = {
@@ -250,13 +267,17 @@ class SectorService implements NpcSectorService {
     const planned = planFuelRoute({
       world: this.world,
       fromId: npc.locationId,
-      fromPosition: locationPoint(this.world, npc.locationId),
+      fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,
       fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+      locationPosition: (id) =>
+        id === npc.locationId
+          ? this.livePosition(npc)
+          : npcOrbitDestination(this.world, npc, id),
     });
     if (!planned) return null;
     return {
@@ -290,13 +311,17 @@ class SectorService implements NpcSectorService {
     const itinerary = planFuelRoute({
       world: this.world,
       fromId: npc.locationId,
-      fromPosition: locationPoint(this.world, npc.locationId),
+      fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: npc.credits,
       fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+      locationPosition: (id) =>
+        id === npc.locationId
+          ? this.livePosition(npc)
+          : npcOrbitDestination(this.world, npc, id),
     });
     if (!itinerary) return false;
     const stops = itinerary.stopIds;
@@ -403,11 +428,13 @@ class SectorService implements NpcSectorService {
     if (npc.combatMovement) return npc.combatMovement.position;
     return npc.travel
       ? routePoint(npc.travel.routePoints, npc.travel.distanceTravelled)
-      : locationPoint(this.world, npc.locationId);
+      : npcOrbitPosition(this.world, npc);
   };
   liveHeading = (npc: SectorNpcState): number => {
     if (npc.combatMovement) return npc.combatMovement.headingRadians;
-    return npc.travel ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled) : 0;
+    return npc.travel
+      ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled)
+      : npcOrbitHeading(this.world, npc);
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     const travel = npc.travel;
@@ -431,6 +458,16 @@ class SectorService implements NpcSectorService {
     if (travel.distanceTravelled + 0.001 < travel.routeDistance) return;
 
     npc.locationId = travel.targetLocationId;
+    const arrivalBerth = npcOrbitStateFor(this.world, npc, npc.locationId);
+    npc.orbit =
+      arrivalBerth.radius > 0
+        ? arrivalBerth
+        : {
+            locationId: npc.locationId,
+            center: routePoint(travel.routePoints, travel.routeDistance),
+            radius: 0,
+            angleRadians: 0,
+          };
     const finalTargetId = travel.finalTargetId;
     const reachedFinal = npc.locationId === finalTargetId;
     const remainingStops =
@@ -478,6 +515,7 @@ class SectorService implements NpcSectorService {
         continue;
       }
 
+      if (!npc.travel) advanceNpcOrbit(this.world, npc, dt);
       this.advanceTravel(npc, dt);
     }
   };
