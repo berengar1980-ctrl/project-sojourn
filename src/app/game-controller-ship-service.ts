@@ -8,6 +8,8 @@ import type { CrewRosterService } from '../systems/crew';
 import type { ShipLoadoutService } from '../systems/ships';
 import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
 import { createPlayerCombatant } from './game-controller-combat';
+import { canFuelAt } from '../systems/navigation/fuel-route-planner';
+import { forecastPlayerFuelRoute } from './game-controller-fuel-forecast';
 
 function liveFuelMultipliers(context: ControllerRuntimeContext) {
   const ship = context.state.activeShip;
@@ -45,7 +47,11 @@ export function advancePlayerFuel(
   if (!before.isTravelling) return;
   const dx = after.currentPosition.x - before.currentPosition.x;
   const dy = after.currentPosition.y - before.currentPosition.y;
-  const distance = Math.hypot(dx, dy);
+  const distance = before.activeRoute
+    ? before.activeRoute.distance * (
+        after.activeRoute ? Math.max(0, after.progress - before.progress) : 1 - before.progress
+      )
+    : Math.hypot(dx, dy);
   if (distance <= 0) return;
   const ship = context.state.activeShip;
   const fuel = liveFuelMultipliers(context);
@@ -92,4 +98,69 @@ export function servicedPlayerCombatant(
     ...setup,
     hullHp: Math.max(1, operations.snapshot(ship, setup.hullHp).hullHp),
   };
+}
+
+/** Starts every planned refueling leg instead of blocking long but serviceable routes. */
+export function startPlayerFuelTravel(context: ControllerRuntimeContext): boolean {
+  const navigation = context.navigation;
+  const selected = navigation.getSnapshot().selectedDestinationId;
+  const isStatic = context.world.world().locations.some((location) => location.id === selected);
+  if (!isStatic) {
+    if (!canStartPlayerTravel(context)) return false;
+    context.fuelJourney.cancel();
+    navigation.startTravel();
+    return true;
+  }
+  const plan = forecastPlayerFuelRoute(context);
+  if (!plan) {
+    context.systemLog.write('TREIBSTOFF > ROUTE NICHT ERREICHBAR · REICHWEITE ODER CREDITS');
+    return false;
+  }
+  if (!context.fuelJourney.start(plan, navigation)) return false;
+  if (plan.stopIds.length > 0) {
+    context.systemLog.write('NAV > ' + plan.stopIds.length + ' TANKSTOPP(S) EINGEPLANT');
+  }
+  return true;
+}
+
+/** Called once on completion of a real intermediate leg; paid refill precedes departure. */
+export function processPlayerFuelStop(
+  context: ControllerRuntimeContext,
+  before: NavigationSnapshot,
+  after: NavigationSnapshot
+): boolean {
+  const journey = context.fuelJourney.plan();
+  if (!journey || !before.isTravelling || after.isTravelling) return false;
+  const at = after.currentLocationId;
+  const pending = context.fuelJourney.snapshot().remainingIds;
+  if (!at || at !== pending[0]) return false;
+  if (!journey.stopIds.includes(at)) {
+    context.fuelJourney.arrived(at, context.navigation, () => true);
+    return false;
+  }
+  const dock = context.world.world().locations.find((location) => location.id === at);
+  if (!canFuelAt(dock)) {
+    context.fuelJourney.cancel();
+    return true;
+  }
+  const refilled = context.shipOperations.refuel(context.state.activeShip);
+  context.systemLog.write(
+    'TANKSTOPP > ' + dock!.name.toUpperCase() + ' · +' +
+      refilled.units.toFixed(1) + ' TREIBSTOFF · ' + refilled.cost + ' CR'
+  );
+  const nextLeg = journey.legs.find((leg) => leg.destinationId === pending[1]);
+  const multipliers = liveFuelMultipliers(context);
+  const canContinue = Boolean(
+    nextLeg && context.shipOperations.hasFuelForRoute(
+      context.state.activeShip,
+      nextLeg.route.distance,
+      multipliers.piloting,
+      multipliers.engineering
+    )
+  );
+  context.fuelJourney.arrived(at, context.navigation, () => canContinue);
+  if (!canContinue) {
+    context.systemLog.write('TANKSTOPP > REISE PAUSIERT · TREIBSTOFF ODER CREDITS FEHLEN');
+  }
+  return true;
 }
