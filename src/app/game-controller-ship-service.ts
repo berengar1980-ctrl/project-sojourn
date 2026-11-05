@@ -164,3 +164,12 @@ export function processPlayerFuelStop(
   }
   return true;
 }
+
+export function tickPlayerFuelJourney(
+  context: ControllerRuntimeContext,
+  before: NavigationSnapshot,
+  after: NavigationSnapshot
+): boolean {
+  advancePlayerFuel(context, before, after);
+  return processPlayerFuelStop(context, before, after);
+}
