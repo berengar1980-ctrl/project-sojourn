@@ -3,6 +3,7 @@ import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-se
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerShipRuntimeOptions } from './game-controller-models';
 import { createMiningLocalSpace } from './game-controller-mining';
+import { resolveShipRuntimeSetup } from '../systems/ships';
 
 /** Keep original mutable field/traffic objects when returning from boarding. */
 export function ensureMiningCombatWorld(
