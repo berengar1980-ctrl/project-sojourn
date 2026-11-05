@@ -218,10 +218,7 @@ export function repointRouteEndpoints(
   from: WorldPoint,
   to: WorldPoint
 ): RoutePlan {
-  const points =
-    route.points.length > 2
-      ? [from, ...route.points.slice(1, -1), to]
-      : [from, to];
+  const points = route.points.length > 2 ? [from, ...route.points.slice(1, -1), to] : [from, to];
   return { ...route, points, distance: pathDistance(points) };
 }
 

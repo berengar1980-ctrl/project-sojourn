@@ -275,9 +275,7 @@ class SectorService implements NpcSectorService {
       credits: availableCredits,
       fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
       locationPosition: (id) =>
-        id === npc.locationId
-          ? this.livePosition(npc)
-          : npcOrbitDestination(this.world, npc, id),
+        id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     });
     if (!planned) return null;
     return {
@@ -319,9 +317,7 @@ class SectorService implements NpcSectorService {
       credits: npc.credits,
       fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
       locationPosition: (id) =>
-        id === npc.locationId
-          ? this.livePosition(npc)
-          : npcOrbitDestination(this.world, npc, id),
+        id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     });
     if (!itinerary) return false;
     const stops = itinerary.stopIds;

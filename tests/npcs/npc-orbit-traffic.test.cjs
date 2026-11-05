@@ -45,7 +45,10 @@ assert(route);
 assert.deepEqual(route.routePoints[0], orbitMoved, 'departure must start from the visible ship');
 const flightStart = sector.livePosition(freighter);
 assert.deepEqual(flightStart, orbitMoved, 'launch must not teleport the ship to world center');
-assert(Math.abs(route.routeDistance - quote.distance) < 1, 'route must be fuel-quoted using orbital positions');
+assert(
+  Math.abs(route.routeDistance - quote.distance) < 1,
+  'route must be fuel-quoted using orbital positions'
+);
 for (let i = 0; i < 2000 && sector.isTravelling(freighter); i += 1) sector.tick(0.25);
 assert.equal(sector.isTravelling(freighter), false, 'ship must reach its orbital destination');
 const arrival = sector.livePosition(freighter);
@@ -56,8 +59,17 @@ let sectorTicks = 0;
 let economyTicks = 0;
 let totalSectorTime = 0;
 warmStartNpcTraffic(
-  { tick(dt) { sectorTicks += 1; totalSectorTime += dt; } },
-  { tick() { economyTicks += 1; } }
+  {
+    tick(dt) {
+      sectorTicks += 1;
+      totalSectorTime += dt;
+    },
+  },
+  {
+    tick() {
+      economyTicks += 1;
+    },
+  }
 );
 assert.equal(sectorTicks, economyTicks, 'startup must advance physical travel and trade together');
 assert.equal(totalSectorTime, NPC_TRAFFIC_PREHISTORY_SECONDS);

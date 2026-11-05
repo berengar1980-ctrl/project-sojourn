@@ -32,15 +32,20 @@ export function npcOrbitStateFor(
     locationId,
     center: { ...location.position },
     radius: orbitRadius(location.kind, location.radius, lane),
-    angleRadians:
-      ((hashId(npc.id + ':' + locationId + ':angle') % 10000) / 10000) * FULL_CIRCLE,
+    angleRadians: ((hashId(npc.id + ':' + locationId + ':angle') % 10000) / 10000) * FULL_CIRCLE,
   };
 }
 
 function positionOf(world: WorldMap, orbit: NpcOrbitState): WorldPoint {
   return {
-    x: Math.max(0, Math.min(world.width, orbit.center.x + orbit.radius * Math.cos(orbit.angleRadians))),
-    y: Math.max(0, Math.min(world.height, orbit.center.y + orbit.radius * Math.sin(orbit.angleRadians))),
+    x: Math.max(
+      0,
+      Math.min(world.width, orbit.center.x + orbit.radius * Math.cos(orbit.angleRadians))
+    ),
+    y: Math.max(
+      0,
+      Math.min(world.height, orbit.center.y + orbit.radius * Math.sin(orbit.angleRadians))
+    ),
   };
 }
 
@@ -76,7 +81,8 @@ export function advanceNpcOrbit(world: WorldMap, npc: SectorNpcState, seconds: n
   if (!npc.orbit || npc.orbit.radius <= 0 || seconds <= 0) return;
   const period = 200 + (hashId(npc.id + ':orbit-period') % 151);
   npc.orbit.angleRadians =
-    (npc.orbit.angleRadians + (orbitDirection(npc) * FULL_CIRCLE * seconds) / period +
+    (npc.orbit.angleRadians +
+      (orbitDirection(npc) * FULL_CIRCLE * seconds) / period +
       FULL_CIRCLE) %
     FULL_CIRCLE;
 }
