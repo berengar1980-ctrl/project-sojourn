@@ -31,6 +31,7 @@ import {
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
 import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
+import { planFuelRoute } from '../navigation/fuel-route-planner';
 
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 
@@ -161,62 +162,6 @@ class SectorService implements NpcSectorService {
     npc.activity = reason;
     return true;
   };
-  private refuelItinerary = (
-    npc: SectorNpcState,
-    destinationId: string
-  ): readonly string[] | null => {
-    const profile = routeProfile(npc);
-    const refuelIds = this.world.locations
-      .filter(
-        (location) =>
-          location.id !== npc.locationId &&
-          location.id !== destinationId &&
-          isServicedPort(location)
-      )
-      .map((location) => location.id);
-    const nodeIds = [npc.locationId, ...refuelIds, destinationId];
-    const distances = nodeIds.map(() => Number.POSITIVE_INFINITY);
-    const previous = nodeIds.map(() => -1);
-    const visited = new Set<number>();
-    distances[0] = 0;
-
-    while (visited.size < nodeIds.length) {
-      let current = -1;
-      let best = Number.POSITIVE_INFINITY;
-      for (let index = 0; index < nodeIds.length; index += 1) {
-        if (!visited.has(index) && distances[index]! < best) {
-          current = index;
-          best = distances[index]!;
-        }
-      }
-      if (current < 0 || current === nodeIds.length - 1) break;
-      visited.add(current);
-
-      const availableFuel = current === 0 ? npc.fuel * 0.96 : npc.fuelCapacity * 0.94;
-      for (let next = 1; next < nodeIds.length; next += 1) {
-        if (next === current || visited.has(next)) continue;
-        const route = planRouteWithProfile(this.world, nodeIds[current]!, nodeIds[next]!, profile);
-        if (routeFuel(npc, route) > availableFuel) continue;
-        const score = distances[current]! + route.distance;
-        if (score < distances[next]!) {
-          distances[next] = score;
-          previous[next] = current;
-        }
-      }
-    }
-
-    const targetIndex = nodeIds.length - 1;
-    if (!Number.isFinite(distances[targetIndex]!)) return null;
-    const path: string[] = [];
-    let cursor = targetIndex;
-    while (cursor > 0) {
-      path.push(nodeIds[cursor]!);
-      cursor = previous[cursor]!;
-      if (cursor < 0) return null;
-    }
-    path.reverse();
-    return path.slice(0, -1);
-  };
   private beginCombatMovement = (
     npc: SectorNpcState,
     mode: 'pursue' | 'flee',
@@ -306,15 +251,23 @@ class SectorService implements NpcSectorService {
       return false;
     }
     if (!this.world.locations.some((location) => location.id === destinationId)) return false;
-    const direct = this.buildRoute(npc, npc.locationId, destinationId);
-    const directFuel = routeFuel(npc, direct);
-    if (directFuel <= npc.fuel * 0.96) {
-      return this.startLeg(npc, destinationId, destinationId, [], reason);
-    }
-
-    const stops = this.refuelItinerary(npc, destinationId);
-    if (!stops || stops.length === 0) return false;
-    return this.startLeg(npc, stops[0]!, destinationId, stops, reason + ' · Tankstopp');
+    const itinerary = planFuelRoute({
+      world: this.world,
+      fromId: npc.locationId,
+      fromPosition: locationPoint(this.world, npc.locationId),
+      destinationId,
+      profile: routeProfile(npc),
+      fuel: npc.fuel,
+      capacity: npc.fuelCapacity,
+      credits: npc.credits,
+      fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+    });
+    if (!itinerary) return false;
+    const stops = itinerary.stopIds;
+    const next = itinerary.legs[0]?.destinationId;
+    if (!next) return false;
+    const activity = stops.length > 0 ? reason + ' · Tankstopp' : reason;
+    return this.startLeg(npc, next, destinationId, stops, activity);
   };
   requestPatrol = (npc: SectorNpcState): boolean => {
     if (
