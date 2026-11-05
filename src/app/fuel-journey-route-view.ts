@@ -4,7 +4,11 @@ import type { RoutePlan } from '../systems/navigation/route-planner';
 import type { FuelRoutePlan } from '../systems/navigation/fuel-route-planner';
 
 /** Keep only the untraveled geometry of the current leg and the later tank-stop legs. */
-function remainingLegPoints(route: RoutePlan, progress: number, position: WorldPoint): WorldPoint[] {
+function remainingLegPoints(
+  route: RoutePlan,
+  progress: number,
+  position: WorldPoint
+): WorldPoint[] {
   const distance = Math.max(0, Math.min(1, progress)) * route.distance;
   let passed = 0;
   const points: WorldPoint[] = [{ ...position }];
