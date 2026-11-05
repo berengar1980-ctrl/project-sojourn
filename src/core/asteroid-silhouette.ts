@@ -26,12 +26,20 @@ export function createAsteroidOutline(
   random: () => number
 ): WorldPoint[] {
   const vertices = kind === 'debris' ? 12 : 24;
+  const family = random();
+  // The longest dimension stays within the nominal sprite radius. The
+  // other axis varies by family, creating actual oblong/compact silhouettes.
+  const stretchX = kind === 'debris' || family < 0.4 ? 1 : family < 0.7 ? 0.73 : 0.88;
+  const stretchY = kind === 'debris' || family < 0.4 ? 1 : family < 0.7 ? 1 : 0.65;
   const outline: WorldPoint[] = [];
   for (let index = 0; index < vertices; index += 1) {
     const angle = (index / vertices) * Math.PI * 2;
     const broad = Math.sin(angle * 2 + random() * 0.8) * 0.035;
     const radius = 0.79 + random() * 0.2 + broad;
-    outline.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius });
+    outline.push({
+      x: Math.cos(angle) * radius * stretchX,
+      y: Math.sin(angle) * radius * stretchY,
+    });
   }
   return outline;
 }
