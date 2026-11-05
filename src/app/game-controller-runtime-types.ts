@@ -63,6 +63,7 @@ export interface ControllerRuntimeContext {
   readonly economy: ControllerEconomy;
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
+  readonly shipOperations: ShipOperatingService;
   readonly audio: GameAudioService;
   readonly engagements: StarMapEngagementService;
   readonly campaignEvents: CampaignEventBus;
