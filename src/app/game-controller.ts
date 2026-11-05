@@ -400,14 +400,16 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
-    completeDistressTowOnArrival(context, currentLocationId);
+    if (!atFuelStop) completeDistressTowOnArrival(context, currentLocationId);
   }
-  handleControllerLocationEntry(
-    context,
-    currentLocationId,
-    () => mountControllerMining(context),
-    () => mountControllerSalvage(context)
-  );
+  if (!atFuelStop) {
+    handleControllerLocationEntry(
+      context,
+      currentLocationId,
+      () => mountControllerMining(context),
+      () => mountControllerSalvage(context)
+    );
+  }
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
