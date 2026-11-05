@@ -28,20 +28,21 @@ export function visibleFuelJourneyRoute(
   if (first < 0) return null;
   const remainingLegs = journey.legs.slice(first);
   const currentLeg = remainingLegs[0]!;
-  const live =
-    navigation.isTravelling &&
-    navigation.activeRoute &&
-    navigation.destinationId === currentLeg.destinationId
-      ? navigation.activeRoute
-      : null;
-  const points = live
-    ? remainingLegPoints(live, navigation.progress, navigation.currentPosition)
-    : [...currentLeg.route.points];
-  for (const leg of remainingLegs.slice(1)) points.push(...leg.route.points.slice(1));
+  let live: RoutePlan | null = null;
+  if (navigation.isTravelling && navigation.destinationId === currentLeg.destinationId) {
+    live = navigation.activeRoute;
+  }
+  let points: WorldPoint[] = [...currentLeg.route.points];
+  if (live) {
+    points = remainingLegPoints(live, navigation.progress, navigation.currentPosition);
+  }
+  for (const leg of remainingLegs.slice(1)) {
+    points.push(...leg.route.points.slice(1));
+  }
 
-  const distance =
-    (live ? live.distance * (1 - navigation.progress) : currentLeg.route.distance) +
-    remainingLegs.slice(1).reduce((total, leg) => total + leg.route.distance, 0);
+  let distance = currentLeg.route.distance;
+  if (live) distance = live.distance * (1 - navigation.progress);
+  for (const leg of remainingLegs.slice(1)) distance += leg.route.distance;
   return {
     ...journey.route,
     fromId: live ? 'deep-space' : currentLeg.route.fromId,
