@@ -1,4 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
+import { createAsteroidOutline } from '../../core/asteroid-silhouette';
 
 interface BackdropView {
   readonly width: number;
@@ -16,7 +17,7 @@ interface RockPoint {
 const PARALLAX = 0.72;
 const WORLD_PADDING = 0.32;
 const TEXTURE_WIDTH = 2048;
-const ROCK_COUNT = 340;
+const ROCK_COUNT = { sparse: 55, dense: 160 } as const;
 
 function createRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -34,24 +35,23 @@ function drawDistantRock(
   x: number,
   y: number,
   radius: number,
-  random: () => number
+  random: () => number,
+  far: boolean
 ): void {
-  const vertices = 8 + Math.floor(random() * 5);
+  // Same seeded contour family as the foreground renderer and collision profile.
   const phase = random() * Math.PI * 2;
-  const points: RockPoint[] = [];
-  for (let index = 0; index < vertices; index += 1) {
-    const angle = phase + (index / vertices) * Math.PI * 2;
-    const distance = radius * (0.75 + random() * 0.3);
-    points.push({
-      x: x + Math.cos(angle) * distance,
-      y: y + Math.sin(angle) * distance,
-    });
-  }
+  const c = Math.cos(phase);
+  const s = Math.sin(phase);
+  const outline = createAsteroidOutline('resource', random);
+  const points: RockPoint[] = outline.map((point) => ({
+    x: x + (point.x * c - point.y * s) * radius,
+    y: y + (point.x * s + point.y * c) * radius,
+  }));
 
   const gradient = context.createLinearGradient(x - radius, y - radius, x + radius, y + radius);
-  gradient.addColorStop(0, '#46515c');
-  gradient.addColorStop(0.34, '#303b46');
-  gradient.addColorStop(1, '#141d29');
+  gradient.addColorStop(0, far ? '#26313c' : '#46515c');
+  gradient.addColorStop(0.34, far ? '#1d2731' : '#303b46');
+  gradient.addColorStop(1, far ? '#101822' : '#141d29');
   context.fillStyle = gradient;
   context.beginPath();
   context.moveTo(points[0]!.x, points[0]!.y);
@@ -86,7 +86,8 @@ export class AsteroidBackdropRenderer {
     private readonly context: CanvasRenderingContext2D,
     seed: number,
     private readonly worldWidth: number,
-    private readonly worldHeight: number
+    private readonly worldHeight: number,
+    density: 'sparse' | 'dense' = 'dense'
   ) {
     this.left = -worldWidth * WORLD_PADDING;
     this.top = -worldHeight * WORLD_PADDING;
@@ -102,14 +103,29 @@ export class AsteroidBackdropRenderer {
     const random = createRandom(seed ^ 0x6d8a72f1);
     offscreen.scale(texture.width / this.spanWidth, texture.height / this.spanHeight);
 
-    for (let index = 0; index < ROCK_COUNT; index += 1) {
-      const radius = 14 + random() * 39;
-      const normalizedX = random();
-      const band = 0.49 + Math.sin(normalizedX * Math.PI * 2.5) * 0.12;
-      const normalizedY = random() < 0.63 ? band + (random() - 0.5) * 0.46 : random();
-      const x = radius + normalizedX * (this.spanWidth - radius * 2);
-      const y = radius + Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
-      drawDistantRock(offscreen, x, y, radius, random);
+    const placed: { x: number; y: number; radius: number }[] = [];
+    for (let index = 0; index < ROCK_COUNT[density]; index += 1) {
+      // Every fifth rock sits deeper and darker. In the middle distance,
+      // reject overlap instead of drawing dozens of identical dark blobs.
+      const far = index % 5 === 0;
+      const radius = far ? 7 + random() * 14 : 14 + random() * 29;
+      for (let attempt = 0; attempt < 18; attempt += 1) {
+        const normalizedX = random();
+        const band = 0.49 + Math.sin(normalizedX * Math.PI * 2.5) * 0.12;
+        const normalizedY = random() < 0.63 ? band + (random() - 0.5) * 0.46 : random();
+        const x = radius + normalizedX * (this.spanWidth - radius * 2);
+        const y =
+          radius + Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
+        const clear = placed.every(
+          (previous) =>
+            Math.hypot(previous.x - x, previous.y - y) >=
+            (previous.radius + radius) * (far ? 0.85 : 1.05)
+        );
+        if (!clear) continue;
+        drawDistantRock(offscreen, x, y, radius, random, far);
+        placed.push({ x, y, radius });
+        break;
+      }
     }
     this.texture = texture;
   }
