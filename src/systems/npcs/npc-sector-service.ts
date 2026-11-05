@@ -31,7 +31,9 @@ import {
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
 import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
+import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
+import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
 
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 
@@ -104,12 +106,17 @@ class SectorService implements NpcSectorService {
     serviceNpcAtPort(npc, location);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
-    npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
-    npc.activity = npc.pirate
-      ? 'Reparatur abgeschlossen · auf Beutezug'
-      : npc.job === 'patrol'
-        ? 'Reparatur abgeschlossen · Sicherheitspatrouille'
-        : 'Reparatur abgeschlossen · Liegezeit';
+    const intact = npc.hullHp >= npc.hullMaxHp;
+    npc.activityId = intact
+      ? npc.pirate
+        ? 'raiding'
+        : npc.job === 'patrol'
+          ? 'patrol'
+          : 'dock'
+      : 'maintenance';
+    npc.activity = intact
+      ? 'Reparatur abgeschlossen · bereit'
+      : 'Teilreparatur · weitere Wartung nur gegen Credits';
     return true;
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
@@ -236,6 +243,28 @@ class SectorService implements NpcSectorService {
     };
     npc.fuel = Math.max(0, npc.fuel - moved * npc.fuelUse * FUEL_DISTANCE_SCALE);
   };
+  quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
+    if (npc.locationId === destinationId) {
+      return { distance: 0, refuelCost: 0, fuelExpense: 0 };
+    }
+    const planned = planFuelRoute({
+      world: this.world,
+      fromId: npc.locationId,
+      fromPosition: locationPoint(this.world, npc.locationId),
+      destinationId,
+      profile: routeProfile(npc),
+      fuel: npc.fuel,
+      capacity: npc.fuelCapacity,
+      credits: availableCredits,
+      fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+    });
+    if (!planned) return null;
+    return {
+      distance: planned.totalDistance,
+      refuelCost: planned.fuelCost,
+      fuelExpense: Math.ceil(planned.totalFuel * FUEL_PRICE_PER_UNIT),
+    };
+  };
   requestTravel = (
     npc: SectorNpcState,
     destinationId: string,
@@ -246,6 +275,7 @@ class SectorService implements NpcSectorService {
       npc.combatMovement ||
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
+      (npcNeedsSafeReturn(npc) && destinationId !== npc.homePortId) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
@@ -275,6 +305,7 @@ class SectorService implements NpcSectorService {
       npc.travel ||
       npc.combatMovement ||
       npc.hullHp <= 0 ||
+      npcNeedsSafeReturn(npc) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;

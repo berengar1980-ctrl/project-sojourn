@@ -40,3 +40,5 @@ This is an **in-memory data contract**, not an on-disk format. It does not promi
   and safely returns ships stranded in a campaign-owned system.
 
 - `FuelJourneyService`: in-session owner of the player's accepted destination and remaining fuel-route legs. Its `snapshot()` returns detached station-ID arrays, and it clears the journey on new route selection or after the final arrival. Fuel and credits remain exclusively owned by `ShipOperatingService` and `PlayerTradeService`; the itinerary is never used as a second tank or wallet state.
+
+- The NPC operating-cost quote is a derived, read-only result from `NpcSectorService.quoteTravel()` and the shared fuel route planner, not a second NPC wallet or tank. `NpcEconomyService` continues to own cargo transactions and autonomously scheduled orders; `NpcSectorService` and `SectorNpcState` remain the owners of fuel, hull, credits, component upgrades and physical travel. The newly recorded `homePortId` is a fixed NPC creation attribute, not mutable savegame state.
