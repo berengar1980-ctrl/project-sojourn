@@ -3,6 +3,11 @@ import type { NavigationSnapshot } from '../systems/navigation/navigation-types'
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerShipRuntimeOptions } from './game-controller-models';
 import { resolveShipRuntimeSetup } from '../systems/ships';
+import type { ShipDefinition } from '../core/ship-types';
+import type { CrewRosterService } from '../systems/crew';
+import type { ShipLoadoutService } from '../systems/ships';
+import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import { createPlayerCombatant } from './game-controller-combat';
 
 function liveFuelMultipliers(context: ControllerRuntimeContext) {
   const ship = context.state.activeShip;
@@ -59,4 +64,32 @@ export function recordPlayerCombatHull(
   const options = controllerShipRuntimeOptions(context, ship);
   const runtime = resolveShipRuntimeSetup(ship, options);
   context.shipOperations.recordHull(ship, snapshot.attacker.hullHp, runtime.hullMaxHp);
+}
+
+/** Docking and docked market transactions share the same automatic top-up. */
+export function refuelAtPort(context: ControllerRuntimeContext): void {
+  const locationId = context.navigation.getSnapshot().currentLocationId;
+  if (!locationId || !context.economy.markets.getMarket(locationId)) return;
+  const purchased = context.shipOperations.refuel(context.state.activeShip);
+  if (purchased.cost === 0) return;
+  context.systemLog.write(
+    'TREIBSTOFF > +' + purchased.units.toFixed(1) + ' · -' + purchased.cost + ' CR'
+  );
+}
+
+/** Spawn with the persistent hull condition, not an automatically repaired hull. */
+export function servicedPlayerCombatant(
+  ship: ShipDefinition,
+  crew: CrewRosterService,
+  loadouts: ShipLoadoutService,
+  operations: ShipOperatingService
+) {
+  const setup = createPlayerCombatant(ship, {
+    ...crew.runtimeOptions(ship),
+    installed: loadouts.get(ship),
+  });
+  return {
+    ...setup,
+    hullHp: Math.max(1, operations.snapshot(ship, setup.hullHp).hullHp),
+  };
 }
