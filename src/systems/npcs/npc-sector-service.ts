@@ -320,6 +320,14 @@ class SectorService implements NpcSectorService {
       return false;
     }
     if (npc.pirate) {
+      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+      const lootUnits = Object.values(npc.cargo).reduce(
+        (sum, amount) => sum + Math.max(0, Math.floor(amount)),
+        0
+      );
+      if (lootUnits > 0 && npc.locationId !== homeId) {
+        return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
+      }
       const target = pirateHuntDestination(
         this.world,
         npc,
