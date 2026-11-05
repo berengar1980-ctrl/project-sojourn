@@ -17,7 +17,14 @@ export function ensureMiningCombatWorld(
     state.localSpaceSeed,
     economy.mining,
     location,
-    controllerShipRuntimeOptions(context, state.activeShip)
+    controllerShipRuntimeOptions(context, state.activeShip),
+    context.shipOperations.snapshot(
+      state.activeShip,
+      resolveShipRuntimeSetup(
+        state.activeShip,
+        controllerShipRuntimeOptions(context, state.activeShip)
+      ).hullMaxHp
+    ).hullHp
   );
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
