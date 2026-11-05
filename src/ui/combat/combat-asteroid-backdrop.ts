@@ -1,6 +1,6 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 import { AsteroidBackdropRenderer } from '../space/asteroid-backdrop-renderer';
-import { CombatCamera } from './combat-camera';
+import type { CombatCamera } from './combat-camera';
 import { hash } from './strategic-combat-renderer-math';
 
 type CombatArena = StrategicCombatSnapshot['arena'];
