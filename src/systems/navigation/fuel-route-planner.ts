@@ -170,11 +170,39 @@ function acceptState(
   queue.push(state);
 }
 
+function directFuelPlan(request: FuelRouteRequest, origin: string): FuelRoutePlan | null {
+  const route = legBetween(request, origin, request.destinationId);
+  const required = Math.max(0.1, route.distance * request.fuelPerDistance);
+  const fuel = Math.max(0, Math.min(request.fuel, request.capacity));
+  if (required * FUEL_RESERVE > fuel + 1e-6) return null;
+  const next: SearchState = {
+    at: request.destinationId,
+    fuel: Math.max(0, fuel - required),
+    credits: request.credits,
+    distance: route.distance,
+    usedFuel: required,
+    spent: 0,
+    visited: [origin, request.destinationId],
+    legs: [
+      {
+        destinationId: request.destinationId,
+        route,
+        fuelRequired: required,
+        refuelUnits: 0,
+        refuelCost: 0,
+      },
+    ],
+  };
+  return assemblePlan(request, next);
+}
+
 /** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
 export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   if (!validRequest(request)) return null;
   const origin = request.fromId ?? 'deep-space';
   if (origin === request.destinationId) return null;
+  const direct = directFuelPlan(request, origin);
+  if (direct) return direct;
   const candidates = fuelingCandidates(request, origin);
   const queue: SearchState[] = [
     {
