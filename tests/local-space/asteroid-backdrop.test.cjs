@@ -8,7 +8,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '../..');
 const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
-const backdropSource = read('src/ui/local-space/asteroid-backdrop-renderer.ts');
+const backdropSource = read('src/ui/space/asteroid-backdrop-renderer.ts');
 const localSpaceSource = read('src/ui/local-space/local-space-renderer.ts');
 const spaceBackgroundSource = read('src/ui/space/space-background-renderer.ts');
 const surfaceSource = read('src/ui/space/procedural-space-body-renderer.ts');
@@ -97,6 +97,12 @@ assert.ok(
 
 backdrop.draw({ ...centered, cameraZoom: 0 });
 assert.equal(display.images.length, 2, 'invalid zoom should not render');
+
+backdrop.draw({ ...centered, cameraZoomY: 0.3 });
+assert.ok(
+  display.images[2][4] > display.images[0][4],
+  'independent vertical zoom should crop more of the same cached texture'
+);
 
 const otherBackdrop = new AsteroidBackdropRenderer(createContext(), 12345, 4400, 2570);
 assert.ok(otherBackdrop, 'constructor succeeds with the same deterministic seed');
