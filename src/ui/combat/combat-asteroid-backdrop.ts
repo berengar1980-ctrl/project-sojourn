@@ -5,22 +5,7 @@ import { hash } from './strategic-combat-renderer-math';
 
 type CombatArena = StrategicCombatSnapshot['arena'];
 
-/**
- * Only natural asteroid maps receive distant rock silhouettes. Empty-space and
- * wreck/scrap arenas keep their distinct backgrounds and gameplay geometry.
- */
-export function hasNaturalAsteroids(arena: CombatArena): boolean {
-  return (
-    arena.asteroids?.some(
-      (rock) =>
-        rock.kind === 'resource' &&
-        !rock.debrisVariant &&
-        !rock.sectionVariant &&
-        !rock.containerVariant
-    ) ?? false
-  );
-}
-
+/** Backdrop only on real asteroid arenas; never in empty space or wreck fields. */
 export class CombatAsteroidBackdrop {
   private readonly backdrop: AsteroidBackdropRenderer | null;
   private readonly worldWidth: number;
