@@ -5,7 +5,10 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const { pirateHuntDestination } = load('src/systems/npcs/npc-sector-routing.ts');
+const { pirateHuntDestination } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-sector-routing.ts'
+);
 
 function location(id, x, trade = false) {
   return {
@@ -45,7 +48,7 @@ const vessel = {
   cargo: { ore: 50 },
   locationId: 'rich',
 };
-const livePosition = (npc) => world.locations.find((location) => location.id === npc.locationId).position;
+const livePosition = (npc) => world.locations.find((entry) => entry.id === npc.locationId).position;
 const quote = (destinationId) => ({
   fuelExpense: destinationId === 'rich' ? 400 : 200,
 });
