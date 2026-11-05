@@ -12,14 +12,38 @@ const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts'
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 
 const locations = [
-  { id: 'origin', name: 'Origin', position: { x: 0, y: 0 }, kind: 'station',
-    activities: { dock: true }, dangerLevel: 0 },
-  { id: 'refuel-a', name: 'A', position: { x: 400, y: 0 }, kind: 'planet',
-    activities: { trade: true }, dangerLevel: 0 },
-  { id: 'refuel-b', name: 'B', position: { x: 800, y: 0 }, kind: 'station',
-    activities: { shipyard: true }, dangerLevel: 0 },
-  { id: 'destination', name: 'Destination', position: { x: 1200, y: 0 },
-    kind: 'moon', activities: { dock: true }, dangerLevel: 0 },
+  {
+    id: 'origin',
+    name: 'Origin',
+    position: { x: 0, y: 0 },
+    kind: 'station',
+    activities: { dock: true },
+    dangerLevel: 0,
+  },
+  {
+    id: 'refuel-a',
+    name: 'A',
+    position: { x: 400, y: 0 },
+    kind: 'planet',
+    activities: { trade: true },
+    dangerLevel: 0,
+  },
+  {
+    id: 'refuel-b',
+    name: 'B',
+    position: { x: 800, y: 0 },
+    kind: 'station',
+    activities: { shipyard: true },
+    dangerLevel: 0,
+  },
+  {
+    id: 'destination',
+    name: 'Destination',
+    position: { x: 1200, y: 0 },
+    kind: 'moon',
+    activities: { dock: true },
+    dangerLevel: 0,
+  },
 ];
 const world = {
   id: 'test-fueled-routing',
@@ -60,8 +84,12 @@ assert.equal(planFuelRoute({ ...input, fuel: 130, capacity: 130 }).stopIds.lengt
 const navigation = {
   selected: null,
   departures: [],
-  selectDestination(id) { this.selected = id; },
-  startTravel() { this.departures.push(this.selected); },
+  selectDestination(id) {
+    this.selected = id;
+  },
+  startTravel() {
+    this.departures.push(this.selected);
+  },
 };
 const journey = createFuelJourneyService();
 assert.equal(journey.start(route, navigation), true);
