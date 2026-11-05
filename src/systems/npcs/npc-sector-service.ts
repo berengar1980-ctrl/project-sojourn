@@ -275,7 +275,13 @@ class SectorService implements NpcSectorService {
       npc.combatMovement ||
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
-      (npcNeedsSafeReturn(npc) && destinationId !== npc.homePortId) ||
+      (npcNeedsSafeReturn(npc) &&
+        destinationId !==
+          (npc.pirate
+            ? npc.factionId === 'pirates2'
+              ? 'gallows-anchor'
+              : 'blackjaw-outpost'
+            : npc.homePortId)) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
@@ -305,7 +311,7 @@ class SectorService implements NpcSectorService {
       npc.travel ||
       npc.combatMovement ||
       npc.hullHp <= 0 ||
-      npcNeedsSafeReturn(npc) ||
+      (!npc.pirate && npcNeedsSafeReturn(npc)) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
