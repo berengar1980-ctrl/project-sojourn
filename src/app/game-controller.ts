@@ -127,6 +127,14 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
+  if (locationId && economy.markets.getMarket(locationId)) {
+    const purchased = context.shipOperations.refuel(state.activeShip);
+    if (purchased.cost > 0) {
+      context.systemLog.write(
+        'TREIBSTOFF > +' + purchased.units.toFixed(1) + ' · -' + purchased.cost + ' CR'
+      );
+    }
+  }
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -154,7 +162,8 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
-    }
+    },
+    context.shipOperations
   );
   if (!state.panels.port) return;
   state.mode = 'port';
