@@ -311,8 +311,30 @@ class SectorService implements NpcSectorService {
       return false;
     }
     if (npc.pirate) {
-      const target = pirateHuntDestination(this.world, npc, this.npcs, this.livePosition);
-      return target ? this.requestTravel(npc, target, 'Auf Beutezug · Jagdrevier') : false;
+      const target = pirateHuntDestination(
+        this.world,
+        npc,
+        this.npcs,
+        this.livePosition,
+        (destinationId) => this.quoteTravel(npc, destinationId)
+      );
+      if (!target) {
+        npc.activityId = 'dock';
+        npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
+        return false;
+      }
+      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+      const retreating = target === homeId;
+      const accepted = this.requestTravel(
+        npc,
+        target,
+        retreating ? 'Rückzug · Betriebsmittel sichern' : 'Auf Beutezug · Jagdrevier'
+      );
+      if (!accepted && retreating) {
+        npc.activityId = 'maintenance';
+        npc.activity = 'Rückzug nicht finanzierbar';
+      }
+      return accepted;
     }
     const target = patrolDestination(this.world, npc);
     return target ? this.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
