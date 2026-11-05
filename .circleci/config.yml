@@ -41,7 +41,7 @@ jobs:
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
           name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- npm test
+          command: node scripts/ci-run-and-report.cjs tests -- node scripts/ci-asteroid-fast-debug.cjs
       - run:
           name: Combat motion comparison
           command: |
