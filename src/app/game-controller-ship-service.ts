@@ -50,9 +50,7 @@ export function advancePlayerFuel(
   const progress = after.activeRoute
     ? Math.max(0, after.progress - before.progress)
     : 1 - before.progress;
-  const distance = before.activeRoute
-    ? before.activeRoute.distance * progress
-    : Math.hypot(dx, dy);
+  const distance = before.activeRoute ? before.activeRoute.distance * progress : Math.hypot(dx, dy);
   if (distance <= 0) return;
   const ship = context.state.activeShip;
   const fuel = liveFuelMultipliers(context);
@@ -150,15 +148,15 @@ export function processPlayerFuelStop(
   context.systemLog.write(message + ' · +' + amount + ' TREIBSTOFF · ' + refilled.cost + ' CR');
   const nextLeg = journey.legs.find((leg) => leg.destinationId === pending[1]);
   const multipliers = liveFuelMultipliers(context);
-  const canContinue = Boolean(
-    nextLeg &&
-      context.shipOperations.hasFuelForRoute(
-        context.state.activeShip,
-        nextLeg.route.distance,
-        multipliers.piloting,
-        multipliers.engineering
-      )
-  );
+  let canContinue = false;
+  if (nextLeg) {
+    canContinue = context.shipOperations.hasFuelForRoute(
+      context.state.activeShip,
+      nextLeg.route.distance,
+      multipliers.piloting,
+      multipliers.engineering
+    );
+  }
   context.fuelJourney.arrived(at, context.navigation, () => canContinue);
   if (!canContinue) {
     context.systemLog.write('TANKSTOPP > REISE PAUSIERT · TREIBSTOFF ODER CREDITS FEHLEN');
