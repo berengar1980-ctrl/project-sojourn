@@ -165,6 +165,7 @@ function createSelectionUpdater(
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
     const isCurrent = selected.id === model.navigation.currentLocationId;
     travelButton.hidden = model.navigation.isTravelling || isCurrent;
+    travelButton.disabled = model.fuelStatus?.unreachable ?? false;
     dockButton.hidden = model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
     attackButton.hidden = true;
     return true;
