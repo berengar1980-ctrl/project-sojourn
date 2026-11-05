@@ -7,10 +7,7 @@ function number(value: number, fractionDigits = 1): string {
   });
 }
 
-export function updateStarMapFuelStatus(
-  model: StarMapViewModel,
-  element: HTMLElement
-): void {
+export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLElement): void {
   const fuel = model.fuelStatus;
   if (!fuel) {
     element.hidden = true;
@@ -27,7 +24,8 @@ export function updateStarMapFuelStatus(
     const names = route.stopIds.map((id) =>
       model.locations.find((location) => location.id === id)?.name ?? id
     );
-    lines.push('ROUTE  ' + number(route.totalFuel) + ' E · ' + number(route.totalDistance, 0) + ' u');
+    const distance = number(route.totalDistance, 0);
+    lines.push('ROUTE  ' + number(route.totalFuel) + ' E · ' + distance + ' u');
     lines.push('TANKSTOPPS  ' + (names.length ? names.join(' → ') : 'KEINE'));
     lines.push('UNTERWEGS TANKEN  ' + route.fuelCost.toLocaleString('de-DE') + ' CR');
   } else if (fuel.unreachable) {
