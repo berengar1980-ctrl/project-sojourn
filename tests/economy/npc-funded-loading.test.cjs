@@ -52,12 +52,7 @@ const trader = {
   cargo: {},
   workResourceIds: [],
 };
-const service = economy.createNpcEconomyService(
-  markets,
-  allocator,
-  resources,
-  [trader],
-  {
+const service = economy.createNpcEconomyService(markets, allocator, resources, [trader], {
     positions: {
       source: { x: 0, y: 0 },
       destination: { x: 100, y: 0 },
@@ -68,8 +63,7 @@ const service = economy.createNpcEconomyService(
       quoteTravel: (_npc, _destination, availableCredits) =>
         availableCredits >= 200 ? { distance: 100, fuelExpense: 50, refuelCost: 200 } : null,
     },
-  }
-);
+});
 trader.autonomy.pendingTrade = {
   resourceId: 'steel',
   destinationId: 'destination',
