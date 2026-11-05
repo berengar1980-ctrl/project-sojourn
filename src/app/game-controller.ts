@@ -441,6 +441,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   const shipOperations = createShipOperatingService(economy.trade);
+  const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
