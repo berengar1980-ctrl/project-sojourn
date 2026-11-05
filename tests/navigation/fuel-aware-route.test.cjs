@@ -71,7 +71,7 @@ assert.equal(journey.arrived('refuel-a', navigation, () => true), true);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b']);
 const observed = journey.snapshot();
 observed.remainingIds.pop();
-assert.equal(journey.snapshot().remainingIds.length, 2, false);
+assert.equal(journey.snapshot().remainingIds.length, 2, 'itinerary snapshots must be detached');
 assert.equal(journey.arrived('refuel-b', navigation, () => true), true);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b', 'destination']);
 assert.equal(journey.arrived('destination', navigation, () => true), false);
