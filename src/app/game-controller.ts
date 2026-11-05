@@ -323,6 +323,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
+  recordPlayerCombatHull(context, snapshot);
   if (snapshot.boardingInitiator) {
     const origin = state.embeddedCombat;
     const preservedSalvageField =
