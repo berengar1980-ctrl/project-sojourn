@@ -375,6 +375,19 @@ function resourceName(id: string): string {
   return economyResourceById(id)?.name ?? id;
 }
 
+function defaultPortOperations(shipState: PortShipStateInput): PortOperationsView {
+  return {
+    fuel: 0,
+    fuelCapacity: 0,
+    hullHp: shipState.hullMaxHp,
+    hullMaxHp: shipState.hullMaxHp,
+    repairPrice: 0,
+    repairPoints: 0,
+    affordableRepairCost: 0,
+    shipyardDiscount: false,
+  };
+}
+
 export function createPortViewModel(
   port: PortDefinition,
   market: EconomyMarketState,
@@ -389,16 +402,7 @@ export function createPortViewModel(
   cargoCapacityTons = ship.cargoCapacityTons,
   saleFeeRate = 0.25,
   shipyardState: PortShipyardStateInput = { loose: [], variants: [] },
-  operations: PortOperationsView = {
-    fuel: 0,
-    fuelCapacity: 0,
-    hullHp: shipState.hullMaxHp,
-    hullMaxHp: shipState.hullMaxHp,
-    repairPrice: 0,
-    repairPoints: 0,
-    affordableRepairCost: 0,
-    shipyardDiscount: false,
-  }
+  operations: PortOperationsView = defaultPortOperations(shipState)
 ): PortViewModel {
   const localMarket = marketRows(market, player, saleFeeRate);
   const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
