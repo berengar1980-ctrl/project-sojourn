@@ -19,8 +19,10 @@ export function npcRepairPriority(
 }
 
 /** A severely damaged worker should head back to its assigned home port instead of mining. */
-export function npcNeedsSafeReturn(
-  npc: Pick<SectorNpcState, 'hullHp' | 'hullMaxHp'>
-): boolean {
+export function npcNeedsSafeReturn(npc: {
+  readonly hullHp?: number;
+  readonly hullMaxHp?: number;
+}): boolean {
+  if (npc.hullHp === undefined || npc.hullMaxHp === undefined) return false;
   return npc.hullMaxHp > 0 && npc.hullHp / npc.hullMaxHp < 0.4;
 }
