@@ -34,7 +34,9 @@ function createArenaOptions(
     ...initialCombatMotion(arenaOptions),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
-    ...(arenaOptions?.backdropSeed !== undefined ? { backdropSeed: arenaOptions.backdropSeed } : {}),
+    ...(arenaOptions?.backdropSeed !== undefined
+      ? { backdropSeed: arenaOptions.backdropSeed }
+      : {}),
   };
   return arena;
 }
