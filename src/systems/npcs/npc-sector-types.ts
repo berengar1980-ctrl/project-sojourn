@@ -5,6 +5,7 @@ import type {
 } from '../../core/npc-types';
 
 import type { WorldPoint } from '../../core/world-types';
+import type { NpcTravelOperatingQuote } from '../economy/npc-economy-types';
 
 export interface NpcSectorServiceOptions {
   readonly getPlayerPosition?: () => WorldPoint;
@@ -13,6 +14,11 @@ export interface NpcSectorServiceOptions {
 export interface NpcSectorService {
   readonly npcs: readonly SectorNpcState[];
   requestTravel(npc: SectorNpcState, destinationId: string, reason?: string): boolean;
+  quoteTravel(
+    npc: SectorNpcState,
+    destinationId: string,
+    availableCredits?: number
+  ): NpcTravelOperatingQuote | null;
   requestPatrol(npc: SectorNpcState): boolean;
   startPursuit(
     npc: SectorNpcState,
