@@ -74,15 +74,11 @@ const candidate = decisions.evaluateNpcPurchaseVoyage(npc, 'near', 10, 100, 150,
 assert.equal(candidate.quantity, 8);
 assert.equal(candidate.netProfit, 350);
 assert.equal(
-  decisions.evaluateNpcPurchaseVoyage(
-    npc,
-    'far',
-    10,
-    100,
-    150,
-    600,
-    () => ({ distance: 600, fuelExpense: 1000, refuelCost: 0 })
-  ),
+  decisions.evaluateNpcPurchaseVoyage(npc, 'far', 10, 100, 150, 600, () => ({
+    distance: 600,
+    fuelExpense: 1000,
+    refuelCost: 0,
+  })),
   null,
   'a nominally profitable trade must not survive operating costs'
 );
@@ -103,14 +99,11 @@ const poor = {
   cargo: {},
   autonomy: undefined,
 };
-actions.chooseTraderAction(
-  poor,
-  markets,
-  resources,
-  positions,
-  0,
-  () => ({ distance: 10, fuelExpense: 99999, refuelCost: 0 })
-);
+actions.chooseTraderAction(poor, markets, resources, positions, 0, () => ({
+  distance: 10,
+  fuelExpense: 99999,
+  refuelCost: 0,
+}));
 assert.equal(poor.autonomy.pendingTrade, undefined);
 assert.equal(poor.autonomy.phase, 'resting');
 
@@ -146,4 +139,6 @@ limited.hullHp = 20;
 limited.credits = 100;
 assert.equal(operating.npcRepairPriority(limited, false), 'critical');
 
-console.log('PASS NPC net-trading decisions, cargo liquidity, worker retreat and repair priorities');
+console.log(
+  'PASS NPC net-trading decisions, cargo liquidity, worker retreat and repair priorities'
+);
