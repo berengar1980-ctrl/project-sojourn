@@ -66,6 +66,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
       <strong>${options.model.title}</strong>
     </div>
     <div class="travel-status" hidden></div>
+    <div class="map-fuel-status" aria-live="off"></div>
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <button class="map-label-toggle" type="button">NAMEN // AN</button>
     <button class="map-cargo-toggle" type="button">FRACHT // AUS</button>
