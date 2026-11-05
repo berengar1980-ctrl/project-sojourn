@@ -20,7 +20,6 @@ import { createControllerEconomy } from './game-controller-economy';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
-import { createPlayerCombatant } from './game-controller-combat';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
@@ -62,6 +61,8 @@ import {
   advancePlayerFuel,
   canStartPlayerTravel,
   recordPlayerCombatHull,
+  refuelAtPort,
+  servicedPlayerCombatant,
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
@@ -131,14 +132,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
   const locationId = context.navigation.getSnapshot().currentLocationId;
-  if (locationId && economy.markets.getMarket(locationId)) {
-    const purchased = context.shipOperations.refuel(state.activeShip);
-    if (purchased.cost > 0) {
-      context.systemLog.write(
-        'TREIBSTOFF > +' + purchased.units.toFixed(1) + ' · -' + purchased.cost + ' CR'
-      );
-    }
-  }
+  refuelAtPort(context);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -468,16 +462,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
     getPlayerShip: () => state.activeShip,
-    getPlayerCombatant: () => {
-      const setup = createPlayerCombatant(state.activeShip, {
-        ...crew.runtimeOptions(state.activeShip),
-        installed: loadouts.get(state.activeShip),
-      });
-      return {
-        ...setup,
-        hullHp: Math.max(1, shipOperations.snapshot(state.activeShip, setup.hullHp).hullHp),
-      };
-    },
+    getPlayerCombatant: () =>
+      servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
     log: (message) => systemLog.write(message),
   });
   const campaignServices = createControllerCampaignServicesWithActions(
