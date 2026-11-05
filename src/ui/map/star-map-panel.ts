@@ -406,6 +406,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   const updateSelection = (): void => {
     updateTravelStatus(model, travelStatus);
+    updateStarMapFuelStatus(model, fuelStatus);
     const hasSelection = updateNpcSelection() || updateLocationSelection();
     card.hidden = !hasSelection;
   };
