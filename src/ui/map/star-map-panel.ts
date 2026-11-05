@@ -8,6 +8,7 @@ import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-rende
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
 import { createStarMapMenu, type StarMapMenu } from './star-map-menu';
+import { updateStarMapFuelStatus } from './star-map-fuel-status';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
