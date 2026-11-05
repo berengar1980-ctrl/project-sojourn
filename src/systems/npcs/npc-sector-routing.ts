@@ -72,34 +72,63 @@ export function patrolDestination(world: WorldMap, npc: SectorNpcState): string 
   return candidates[0]?.id ?? null;
 }
 
+interface PirateHuntQuote {
+  readonly fuelExpense: number;
+}
+
+function pirateHomeId(npc: SectorNpcState): string {
+  return npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+}
+
+function pirateTrafficAt(
+  location: WorldPoint,
+  npcs: readonly SectorNpcState[],
+  livePosition: (entry: SectorNpcState) => WorldPoint,
+  pirateId: string
+): { traffic: number; cargoUnits: number; rivals: number; patrols: number } {
+  let traffic = 0;
+  let cargoUnits = 0;
+  let rivals = 0;
+  let patrols = 0;
+  for (const entry of npcs) {
+    const point = livePosition(entry);
+    const distance = Math.hypot(point.x - location.x, point.y - location.y);
+    const proximity = distance < 520 ? 1 : distance < 1000 ? 0.4 : 0;
+    if (!proximity) continue;
+    if (entry.pirate) {
+      if (entry.id !== pirateId) rivals += proximity;
+    } else if (entry.job === 'patrol') {
+      patrols += proximity;
+    } else if (
+      entry.job === 'freighter' ||
+      entry.job === 'miner' ||
+      entry.job === 'salvager'
+    ) {
+      traffic += proximity;
+      cargoUnits +=
+        proximity * Object.values(entry.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
+    }
+  }
+  return { traffic, cargoUnits, rivals, patrols };
+}
+
+/**
+ * Pirate hunting is funded by anticipated traffic, not an unconditional patrol wage.
+ * Cargo is a rough opportunity signal; no loot is minted when choosing a hunting ground.
+ */
 export function pirateHuntDestination(
   world: WorldMap,
   npc: SectorNpcState,
   npcs: readonly SectorNpcState[],
-  livePosition: (entry: SectorNpcState) => WorldPoint
+  livePosition: (entry: SectorNpcState) => WorldPoint,
+  quoteTravel?: (destinationId: string) => PirateHuntQuote | null
 ): string | null {
-  const currentZone = npc.pirateHuntZoneId
-    ? world.locations.find((location) => location.id === npc.pirateHuntZoneId)
-    : null;
-  const currentDensity = currentZone
-    ? npcs.filter(
-        (entry) =>
-          entry.pirate &&
-          entry.id !== npc.id &&
-          Math.hypot(
-            livePosition(entry).x - currentZone.position.x,
-            livePosition(entry).y - currentZone.position.y
-          ) < 850
-      ).length
-    : 0;
+  const homeId = pirateHomeId(npc);
+  const home = world.locations.find((location) => location.id === homeId);
+  const available = Math.max(0, npc.credits);
+  const hullFraction = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
+  if (hullFraction < 0.4) return home && home.id !== npc.locationId ? home.id : null;
 
-  if (currentZone && (npc.pirateHuntCycles ?? 0) > 0 && currentDensity < 3) {
-    npc.pirateHuntCycles = Math.max(0, (npc.pirateHuntCycles ?? 0) - 1);
-    if (currentZone.id !== npc.locationId) return currentZone.id;
-  }
-
-  const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-  const home = world.locations.find((location) => location.id === homeId)?.position;
   const candidates = world.locations
     .filter(
       (location) =>
@@ -108,54 +137,51 @@ export function pirateHuntDestination(
         (location.activities.trade || location.activities.mine || location.activities.salvage)
     )
     .map((location) => {
-      const traffic = npcs.reduce((sum, entry) => {
-        if (
-          entry.pirate ||
-          (entry.job !== 'freighter' && entry.job !== 'miner' && entry.job !== 'salvager')
-        ) {
-          return sum;
-        }
-        const point = livePosition(entry);
-        const range = Math.hypot(point.x - location.position.x, point.y - location.position.y);
-        return sum + (range < 520 ? 1 : range < 1000 ? 0.4 : 0);
-      }, 0);
-      const density = npcs.reduce((sum, entry) => {
-        if (!entry.pirate || entry.id === npc.id) return sum;
-        const point = livePosition(entry);
-        const range = Math.hypot(point.x - location.position.x, point.y - location.position.y);
-        return sum + (range < 520 ? 1.5 : range < 1000 ? 0.6 : 0);
-      }, 0);
-      const patrolPressure = npcs.reduce((sum, entry) => {
-        if (entry.pirate || entry.job !== 'patrol') return sum;
-        const point = livePosition(entry);
-        const range = Math.hypot(point.x - location.position.x, point.y - location.position.y);
-        return sum + (range < 520 ? 1 : range < 1000 ? 0.35 : 0);
-      }, 0);
-      const homeRange = home
-        ? Math.hypot(home.x - location.position.x, home.y - location.position.y)
+      const quote = quoteTravel?.(location.id);
+      if (quoteTravel && !quote) return null;
+      const fuelExpense = quote?.fuelExpense ?? 0;
+      const { traffic, cargoUnits, rivals, patrols } = pirateTrafficAt(
+        location.position,
+        npcs,
+        livePosition,
+        npc.id
+      );
+      const estimatedOpportunity = traffic * 1400 + Math.min(cargoUnits, 100) * 80;
+      const riskCost =
+        patrols * (1800 - npc.aggression * 9) +
+        rivals * 450 +
+        (1 - hullFraction) * 1400;
+      const homeDistance = home
+        ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
-      const homeBonus = Math.max(0, 1.4 - homeRange / 4200);
+      const returnFuelReserve = homeDistance * npc.fuelUse * FUEL_DISTANCE_SCALE * 10;
+      const net = estimatedOpportunity - riskCost - fuelExpense - returnFuelReserve;
+      const minimum = available < 1500 ? 350 : 0;
+      if (net <= minimum) return null;
       const jitter = (hashId(npc.id + ':' + npc.successfulRuns + ':' + location.id) % 1000) / 1000;
       return {
         id: location.id,
-        score:
-          2.2 +
-          traffic * 2.4 +
-          homeBonus +
-          location.dangerLevel * 0.55 +
-          jitter * 2.2 -
-          density * 3.4 -
-          patrolPressure * 0.85,
+        score: net + jitter * 125 + location.dangerLevel * 20,
       };
     })
+    .filter((entry): entry is { id: string; score: number } => entry !== null)
     .sort((first, second) => second.score - first.score);
 
-  const pool = candidates.slice(0, Math.min(3, candidates.length));
-  const pick = pool[hashId(npc.id + ':' + npc.successfulRuns) % Math.max(1, pool.length)];
-  if (!pick) return homeId;
-  npc.pirateHuntZoneId = pick.id;
-  npc.pirateHuntCycles = 2 + (hashId(npc.id + ':' + pick.id) % 5);
-  return pick.id;
+  const best = candidates[0];
+  if (!best) return home && home.id !== npc.locationId ? home.id : null;
+
+  // A remaining hunt cycle is not a reason to keep an unprofitable hunting ground.
+  if (
+    npc.pirateHuntZoneId === best.id &&
+    (npc.pirateHuntCycles ?? 0) > 0 &&
+    npc.locationId === best.id
+  ) {
+    npc.pirateHuntCycles = Math.max(0, (npc.pirateHuntCycles ?? 0) - 1);
+    return null;
+  }
+  npc.pirateHuntZoneId = best.id;
+  npc.pirateHuntCycles = 2 + (hashId(npc.id + ':' + best.id) % 5);
+  return best.id;
 }
 
 function angleDelta(current: number, target: number): number {
