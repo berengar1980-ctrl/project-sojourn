@@ -104,7 +104,9 @@ class SectorService implements NpcSectorService {
     if (npc.combatRecoverySeconds > 0) return true;
 
     const location = this.world.locations.find((candidate) => candidate.id === npc.locationId);
+    const creditsBefore = npc.credits;
     serviceNpcAtPort(npc, location);
+    if (npc.pirate) npc.pirateOperatingExpenses = (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
     const intact = npc.hullHp >= npc.hullMaxHp;
