@@ -115,6 +115,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
+    canStartTravel: () => canStartPlayerTravel(context),
     eventById: (id) =>
       context.world.inForeignSystem()
         ? null
