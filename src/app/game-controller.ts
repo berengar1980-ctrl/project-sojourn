@@ -469,6 +469,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     crew,
     loadouts,
     shipOperations,
+    fuelJourney,
     audio: createGameAudioService(),
     engagements,
     ...campaignServices,
