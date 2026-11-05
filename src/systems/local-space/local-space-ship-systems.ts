@@ -36,6 +36,14 @@ export interface LocalSpaceShipSystems {
   applyCollision(collision: ShieldCollisionImpact): void;
 }
 
+function initialHullState(
+  options: LocalSpaceSystemsOptions | undefined,
+  maxHp: number
+): LocalHullState {
+  const current = options?.hullCurrentHp ?? maxHp;
+  return { maxHp, currentHp: Math.max(0, Math.min(maxHp, current)) };
+}
+
 export function createLocalSpaceShipSystems(
   options: LocalSpaceSystemsOptions | undefined,
   hardpoints: ShipHardpoints
@@ -45,10 +53,7 @@ export function createLocalSpaceShipSystems(
     Math.max(0.01, options?.shieldModifier ?? hardpoints.shield.modifier)
   );
   const hullMaxHp = Math.max(1, options?.hullMaxHp ?? 100);
-  const hull: LocalHullState = {
-    maxHp: hullMaxHp,
-    currentHp: Math.max(0, Math.min(hullMaxHp, options?.hullCurrentHp ?? hullMaxHp)),
-  };
+  const hull = initialHullState(options, hullMaxHp);
   const reactorOutput = Math.max(0, options?.reactorOutput ?? 0);
   const continuousUsed = Math.max(0, options?.reactorContinuousUsed ?? 0);
   const reactor: LocalReactorState = {
