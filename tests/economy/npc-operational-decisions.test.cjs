@@ -32,8 +32,14 @@ const npc = {
   },
 };
 const resources = [
-  { id: 'steel', name: 'Steel', legality: 'legal', categoryId: 'industry', category: 'Industry',
-    basePrice: 100 },
+  {
+    id: 'steel',
+    name: 'Steel',
+    legality: 'legal',
+    categoryId: 'industry',
+    category: 'Industry',
+    basePrice: 100,
+  },
 ];
 const origin = { resourceId: 'steel', stock: 100, price: 100, demand: 0.5 };
 const markets = {
@@ -64,14 +70,17 @@ const affordable = (_ship, _destination, credits) =>
   credits >= 200 ? { distance: 100, fuelExpense: 50, refuelCost: 200 } : null;
 assert.equal(decisions.maxAffordableShipment(npc, 'near', 10, 100, affordable), 8);
 assert.equal(decisions.maxAffordableShipment(npc, 'near', 10, 100), 10);
-const candidate = decisions.evaluateNpcPurchaseVoyage(
-  npc, 'near', 10, 100, 150, 100, affordable
-);
+const candidate = decisions.evaluateNpcPurchaseVoyage(npc, 'near', 10, 100, 150, 100, affordable);
 assert.equal(candidate.quantity, 8);
 assert.equal(candidate.netProfit, 350);
 assert.equal(
   decisions.evaluateNpcPurchaseVoyage(
-    npc, 'far', 10, 100, 150, 600,
+    npc,
+    'far',
+    10,
+    100,
+    150,
+    600,
     () => ({ distance: 600, fuelExpense: 1000, refuelCost: 0 })
   ),
   null,
@@ -95,7 +104,11 @@ const poor = {
   autonomy: undefined,
 };
 actions.chooseTraderAction(
-  poor, markets, resources, positions, 0,
+  poor,
+  markets,
+  resources,
+  positions,
+  0,
   () => ({ distance: 10, fuelExpense: 99999, refuelCost: 0 })
 );
 assert.equal(poor.autonomy.pendingTrade, undefined);
@@ -115,8 +128,13 @@ const worker = {
   hullMaxHp: 100,
 };
 actions.chooseWorkerAction(
-  worker, markets, resources, positions, 0,
-  (_ship, dest) => dest === 'home' ? { distance: 100, fuelExpense: 20, refuelCost: 0 } : null
+  worker,
+  markets,
+  resources,
+  positions,
+  0,
+  (_ship, dest) =>
+    dest === 'home' ? { distance: 100, fuelExpense: 20, refuelCost: 0 } : null
 );
 assert.equal(worker.autonomy.pendingDestinationId, 'home');
 assert.equal(worker.autonomy.pendingReason, 'Notwendige Hüllenreparatur');
