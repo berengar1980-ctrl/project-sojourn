@@ -34,6 +34,7 @@ import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-po
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
+import { sellPirateLootAtHome } from '../economy/pirate-loot-market';
 
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 
@@ -413,8 +414,14 @@ class SectorService implements NpcSectorService {
     const travel = npc.travel;
     if (!travel) {
       const current = this.world.locations.find((location) => location.id === npc.locationId);
+      if (npc.pirate && this.options.markets) sellPirateLootAtHome(npc, this.options.markets);
+      const before = npc.credits;
       serviceNpcAtPort(npc, current);
       if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
+      if (npc.pirate) {
+        npc.pirateOperatingExpenses =
+          (npc.pirateOperatingExpenses ?? 0) + Math.max(0, before - npc.credits);
+      }
       return;
     }
 
