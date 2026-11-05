@@ -45,6 +45,8 @@ assert.equal(result.resources.length, 2);
 assert.equal(result.resources[0].best.locationId, 'c');
 assert.equal(result.markets[0].locationId, 'b');
 assert.equal(result.markets[0].revenue, 932, '25% goods selling fee applies per unit');
+assert.equal(run(0).markets[0].revenue, 1240, 'elite logistics must remove sale fees');
+assert.equal(run(0.125).markets[0].revenue, 1086, 'half-rate logistics applies per unit');
 assert.equal(result.markets[0].coveredQuantity, 14);
 assert.equal(result.markets.find((item) => item.locationId === 'c').coveredQuantity, 10);
 assert.equal(result.markets.find((item) => item.locationId === 'a').observedDay, 2);
