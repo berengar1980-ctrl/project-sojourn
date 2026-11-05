@@ -18,7 +18,8 @@ export function createMiningLocalSpace(
   seed: number,
   mining: MiningEconomyService,
   location: WorldLocation,
-  runtimeOptions: ShipRuntimeOptions = {}
+  runtimeOptions: ShipRuntimeOptions = {},
+  currentHullHp?: number
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
