@@ -28,13 +28,14 @@ export class CombatAsteroidBackdrop {
 
     // Mining encounters inherit the mining field seed. Standalone arena setups
     // without one derive a stable fallback from the existing rock geometry.
-    const seed =
-      arena.backdropSeed ??
-      hash(
-        [arena.width, arena.height, rock.id, Math.round(rock.position.x), Math.round(rock.position.y)].join(
-          ':'
-        )
-      );
+    const parts = [
+      arena.width,
+      arena.height,
+      rock.id,
+      Math.round(rock.position.x),
+      Math.round(rock.position.y),
+    ];
+    const seed = arena.backdropSeed ?? hash(parts.join(':'));
     this.backdrop = new AsteroidBackdropRenderer(context, seed, arena.width, arena.height);
   }
 
