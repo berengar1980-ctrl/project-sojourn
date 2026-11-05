@@ -9,6 +9,7 @@ const load = (name) => loadStandaloneTypeScriptModule(root, name);
 const routeTools = load('src/systems/navigation/fuel-route-planner.ts');
 const { planFuelRoute, canFuelAt } = routeTools;
 const { createFuelJourneyService } = load('src/app/game-controller-fuel-journey.ts');
+const { visibleFuelJourneyRoute } = load('src/app/fuel-journey-route-view.ts');
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 
@@ -84,11 +85,39 @@ const journey = createFuelJourneyService();
 assert.equal(journey.start(route, navigation), true);
 assert.deepEqual(navigation.departures, ['refuel-a']);
 assert.deepEqual(journey.snapshot().plannedStops, ['refuel-a', 'refuel-b']);
+const mapNavigation = {
+  isTravelling: true,
+  activeRoute: route.legs[0].route,
+  destinationId: 'refuel-a',
+  progress: 0.5,
+  currentPosition: { x: 200, y: 0 },
+};
+const remainingFirst = journey.snapshot().remainingIds;
+const duringFirstLeg = visibleFuelJourneyRoute(route, remainingFirst, mapNavigation);
+assert.deepEqual(
+  duringFirstLeg.points.map((point) => point.x),
+  [200, 400, 800, 1200],
+  'map must not redraw already traversed geometry'
+);
 assert.equal(
   journey.arrived('refuel-a', navigation, () => true),
   true
 );
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b']);
+const secondNavigation = {
+  ...mapNavigation,
+  activeRoute: route.legs[1].route,
+  destinationId: 'refuel-b',
+  progress: 0.5,
+  currentPosition: { x: 600, y: 0 },
+};
+const remainingSecond = journey.snapshot().remainingIds;
+const duringSecondLeg = visibleFuelJourneyRoute(route, remainingSecond, secondNavigation);
+assert.deepEqual(
+  duringSecondLeg.points.map((point) => point.x),
+  [600, 800, 1200],
+  'the previous fuel stop must disappear after arrival'
+);
 const observed = journey.snapshot();
 observed.remainingIds.pop();
 const detachedLength = journey.snapshot().remainingIds.length;

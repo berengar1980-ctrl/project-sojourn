@@ -14,6 +14,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 
 import { createControllerStarModel } from './game-controller-star-map';
 import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
+import { visibleFuelJourneyRoute } from './fuel-journey-route-view';
 
 import type { ControllerRuntimeContext, SceneMode } from './game-controller-runtime-types';
 
@@ -101,11 +102,14 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
   const journey = context.fuelJourney.plan();
   const planned = journey ?? forecast;
   const nav = context.navigation.getSnapshot();
+  const route = journey
+    ? visibleFuelJourneyRoute(journey, context.fuelJourney.snapshot().remainingIds, nav)
+    : forecast?.route;
   const target = nav.selectedDestinationId;
   const worldTarget = context.world.world().locations.some((location) => location.id === target);
   return {
     ...base,
-    ...(planned ? { route: planned.route } : {}),
+    ...(route ? { route } : {}),
     fuelStatus: {
       fuel: tank.fuel,
       capacity: tank.fuelCapacity,
