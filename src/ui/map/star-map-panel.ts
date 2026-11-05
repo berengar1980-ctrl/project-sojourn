@@ -130,6 +130,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
     dockButton,
     attackButton,
     travelStatus,
+    fuelStatus,
     modeToggle,
     labelToggle,
     cargoToggle,
