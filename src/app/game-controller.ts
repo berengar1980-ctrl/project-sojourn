@@ -13,6 +13,7 @@ import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
 import { createShipLoadoutService, createShipOwnershipService } from '../systems/ships';
 import { createShipOperatingService } from '../systems/ships/ship-operating-costs';
+import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
