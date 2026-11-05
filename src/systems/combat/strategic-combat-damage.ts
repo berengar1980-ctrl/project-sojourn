@@ -1,4 +1,5 @@
 import type { ShieldDamageSource } from '../../core/shield-types';
+import { segmentRockHit } from '../../core/compound-raycast';
 
 import { applyShieldHit } from '../shields/shield-service';
 
@@ -11,6 +12,7 @@ import type {
   CombatProjectileKind,
   CombatTargetSubsystem,
   StrategicCombatObstacle,
+  CombatVisualAsteroid,
 } from './strategic-combat-types';
 
 import { rotate, normalize } from './strategic-combat-geometry';
@@ -199,14 +201,25 @@ function segmentCircleHit(
 export function firstObstacleHit(
   from: CombatPoint,
   to: CombatPoint,
-  obstacles: readonly StrategicCombatObstacle[]
+  obstacles: readonly StrategicCombatObstacle[],
+  asteroids: readonly CombatVisualAsteroid[] = []
 ): { obstacle: StrategicCombatObstacle; point: CombatPoint; t: number } | null {
-  return (
-    obstacles
-      .flatMap((obstacle) => {
-        const hit = segmentCircleHit(from, to, obstacle);
-        return hit ? [{ obstacle, ...hit }] : [];
-      })
-      .sort((first, second) => first.t - second.t)[0] ?? null
+  const naturalRocks = new Map(
+    asteroids
+      .filter(
+        (rock) =>
+          rock.collisionRadius !== undefined &&
+          !rock.debrisVariant &&
+          !rock.sectionVariant &&
+          !rock.containerVariant
+      )
+      .map((rock) => [rock.id, rock])
   );
+  let nearest: { obstacle: StrategicCombatObstacle; point: CombatPoint; t: number } | null = null;
+  for (const obstacle of obstacles) {
+    const rock = naturalRocks.get(obstacle.id);
+    const hit = rock ? segmentRockHit(from, to, rock) : segmentCircleHit(from, to, obstacle);
+    if (hit && (!nearest || hit.t < nearest.t)) nearest = { obstacle, ...hit };
+  }
+  return nearest;
 }
