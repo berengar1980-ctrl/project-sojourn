@@ -10,6 +10,7 @@ const read = (file) => readModuleSource(root, file);
 
 const data = read('src/data/economy/sector-npc-economy.ts');
 const sector = read('src/systems/npcs/npc-sector-service.ts');
+const routing = read('src/systems/npcs/npc-sector-routing.ts');
 const engagement = read('src/systems/combat/star-map-engagement-service.ts');
 const starModel = read('src/app/game-controller-star-map.ts');
 const mapRenderer = read('src/ui/map/npc-ship-map-renderer.ts');
@@ -71,10 +72,13 @@ assert.equal(combatAi.npcLooksHostileToPatrol(pirate), true);
 assert.equal(combatAi.npcMayInitiateAttack(pirate), true);
 
 assert(
-  sector.includes('function pirateHuntDestination(') &&
-    sector.includes('traffic * 2.4') &&
-    sector.includes('density * 3.4') &&
-    sector.includes('patrolPressure * 0.85') &&
+  routing.includes('export function pirateHuntDestination(') &&
+    routing.includes('estimatedOpportunity') &&
+    routing.includes('cargoUnits') &&
+    routing.includes('riskCost') &&
+    routing.includes('patrols') &&
+    routing.includes('rivals') &&
+    routing.includes('fuelExpense') &&
     sector.includes("'Auf Beutezug · Jagdrevier'"),
   'pirates must choose traffic-rich hunt zones while avoiding clustering and patrol pressure'
 );
