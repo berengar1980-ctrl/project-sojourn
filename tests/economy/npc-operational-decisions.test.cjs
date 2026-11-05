@@ -133,8 +133,7 @@ actions.chooseWorkerAction(
   resources,
   positions,
   0,
-  (_ship, dest) =>
-    dest === 'home' ? { distance: 100, fuelExpense: 20, refuelCost: 0 } : null
+  (_ship, dest) => (dest === 'home' ? { distance: 100, fuelExpense: 20, refuelCost: 0 } : null)
 );
 assert.equal(worker.autonomy.pendingDestinationId, 'home');
 assert.equal(worker.autonomy.pendingReason, 'Notwendige Hüllenreparatur');
