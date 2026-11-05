@@ -447,7 +447,9 @@ class SectorService implements NpcSectorService {
 
     const arrival = this.world.locations.find((location) => location.id === npc.locationId);
     if (reachedFinal && isServicedPort(arrival)) payNpcPatrolContract(npc);
+    const creditsBefore = npc.credits;
     serviceNpcAtPort(npc, arrival);
+    if (npc.pirate) npc.pirateOperatingExpenses = (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
 
     if (!reachedFinal) {
       const nextTarget = remainingStops[0] ?? finalTargetId;
