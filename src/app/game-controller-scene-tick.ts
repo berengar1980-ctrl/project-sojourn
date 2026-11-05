@@ -20,6 +20,11 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
   if (state.embeddedCombat !== 'local-space') {
     state.localSpace.tick(deltaSeconds);
     const localSnapshot = state.localSpace.getSnapshot();
+    context.shipOperations.recordHull(
+      state.activeShip,
+      localSnapshot.hull.currentHp,
+      localSnapshot.hull.maxHp
+    );
     context.audio.updatePlayerRcs(
       state.activeShip.sprite.hardpoints,
       localSnapshot.instance.ship,
