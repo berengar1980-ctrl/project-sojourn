@@ -129,7 +129,7 @@ assert(recruit);
 assert.equal(crew.assign(starter, 'helm', 'player'), true);
 assert.equal(crew.assign(starter, 'sensor_station', recruit.id), true);
 function activate(next) {
-  assert.equal(ownershipApi.shipActivationBlock(next, ownership, trade, crew, loadouts), null);
+  assert.equal(ownershipApi.shipActivationBlock(next, ownership, trade, crew, loadouts, active), null);
   crew.transferAssignments(active, next);
   active = next;
 }
