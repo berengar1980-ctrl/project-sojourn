@@ -75,7 +75,15 @@ export interface ShipOperatingSnapshot {
   readonly hullMaxHp: number;
 }
 
+export interface ShipOperatingRecord {
+  readonly shipId: string;
+  readonly fuel: number;
+  readonly damage: number;
+}
+
 export interface ShipOperatingService {
+  /** Detached observational snapshot, not a savegame schema. */
+  snapshotAll(): { readonly hulls: readonly ShipOperatingRecord[] };
   snapshot(ship: ShipDefinition, hullMaxHp: number): ShipOperatingSnapshot;
   hasFuelForRoute(
     ship: ShipDefinition,
@@ -128,6 +136,15 @@ export function createShipOperatingService(
     engineeringMultiplier
   );
   return {
+    snapshotAll() {
+      return {
+        hulls: [...hulls].map(([shipId, state]) => ({
+          shipId,
+          fuel: state.fuel,
+          damage: state.damage,
+        })),
+      };
+    },
     snapshot,
     hasFuelForRoute(ship, distance, pilotingMultiplier = 1, engineeringMultiplier = 1) {
       const required = fuelForDistance(
