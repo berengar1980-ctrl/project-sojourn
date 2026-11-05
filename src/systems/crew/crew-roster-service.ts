@@ -140,6 +140,23 @@ function transferRosterAssignments(
   context.assignmentsByShip.set(to.id, projectedRosterAssignments(context, from, to));
 }
 
+function rosterRuntimeOptions(
+  context: RosterContext,
+  ship: ShipDefinition,
+  assignments: ShipStationAssignments
+): ShipRuntimeOptions {
+  return {
+    crew: context.members.map((member) => ({
+      id: member.id,
+      skills: effectiveCrewSkills(member),
+      stationModifiers: crewStationModifiers(member),
+      injuryState: member.injuryState,
+    })),
+    assignments: { ...assignments },
+    manningFactor: crewManningStatus(ship, context.activeManningCount()).factor,
+  };
+}
+
 function createRosterAssignments(
   context: RosterContext
 ): Pick<
@@ -193,33 +210,15 @@ function createRosterAssignments(
     },
 
     runtimeOptions(ship) {
-      return {
-        crew: members.map((member) => ({
-          id: member.id,
-          skills: effectiveCrewSkills(member),
-          stationModifiers: crewStationModifiers(member),
-          injuryState: member.injuryState,
-        })),
-        assignments: { ...assignmentRecord(ship) },
-        manningFactor: crewManningStatus(ship, activeManningCount()).factor,
-      };
+      return rosterRuntimeOptions(context, ship, assignmentRecord(ship));
     },
 
     previewRuntimeOptions(ship, from) {
       const assigned = assignmentsByShip.get(ship.id);
-      const projected = from
-        ? projectedRosterAssignments(context, from, ship)
-        : context.peekAssignmentRecord(ship);
-      return {
-        crew: members.map((member) => ({
-          id: member.id,
-          skills: effectiveCrewSkills(member),
-          stationModifiers: crewStationModifiers(member),
-          injuryState: member.injuryState,
-        })),
-        assignments: { ...(assigned ?? projected) },
-        manningFactor: crewManningStatus(ship, activeManningCount()).factor,
-      };
+      const options = assigned ?? (
+        from ? projectedRosterAssignments(context, from, ship) : context.peekAssignmentRecord(ship)
+      );
+      return rosterRuntimeOptions(context, ship, options);
     },
 
     manningFactor(ship) {
