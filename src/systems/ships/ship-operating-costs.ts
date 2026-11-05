@@ -137,7 +137,8 @@ export function createShipOperatingService(
     engineeringMultiplier = 1
   ): RepairQuote {
     const hull = snapshot(ship, hullMaxHp);
-    return quoteRepair(hull.hullHp, hullMaxHp, wallet.player.credits, shipyard, engineeringMultiplier);
+    const credits = wallet.player.credits;
+    return quoteRepair(hull.hullHp, hullMaxHp, credits, shipyard, engineeringMultiplier);
   }
   return {
     snapshotAll() {
