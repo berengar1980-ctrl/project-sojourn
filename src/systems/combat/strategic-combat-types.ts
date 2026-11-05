@@ -14,7 +14,6 @@ import type { CombatPowerBudget } from './combat-power-types';
 import type { RamApproachState } from './combat-ram-approach-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
-
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
 export type CombatTargetSubsystem = 'hull' | 'engine' | 'tractor';
