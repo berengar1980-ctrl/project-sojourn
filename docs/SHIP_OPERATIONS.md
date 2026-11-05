@@ -17,3 +17,12 @@ Player combat and mining asteroid impacts preserve hull losses on the owned ship
 ## Tests
 
 `tests/ships/ship-operating-costs.test.cjs` covers fuel, finance, repairs, discounts, and detached state; `tests/npcs/npc-port-servicing.test.cjs` covers NPC refueling, affordable repair, fuel starvation, port eligibility, and patrol income. Existing ship, navigation, crew, port and NPC CI suites remain mandatory.
+
+
+## Route-planning extension – fuel stops
+
+The star-map fuel display shows current/maximum fuel, the effective consumption per 100 world-distance units (with the current Piloting and Engineering crew multipliers), and a preview of total fuel use, required service stops and expected mid-route refueling costs. Multi-leg routes are drawn as one continuous journey.
+
+`planFuelRoute` is the **shared affordable itinerary planner** for player and NPC sector vessels. It considers fuel currently aboard, tank capacity, travel profile, ship fuel consumption, actual refuel infrastructure and available credits. It explores reachable legs through serviced planets/stations and never assumes free refueling at a stop. The player actually flies each leg; on reaching a scheduled stop, it purchases fuel from the authoritative player wallet and continues only when the next leg can be flown. If refueling fails, the journey pauses rather than teleporting or silently granting fuel. The NPC sector service uses the same planner with the NPC's own fuel and wallet and pays through its existing port servicing.
+
+The forecast displays estimated fuel **purchased en route**, not a fee on travel itself or an invoice for docking at the final destination. If the current state cannot fund a route, the travel button is disabled. These are in-session runtime features, not savegame persistence.
