@@ -92,7 +92,8 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     runtime.sensorCrewSkill,
     runtime.sensorModifier,
     context.world.world(),
-    context.world.inForeignSystem()
+    context.world.inForeignSystem(),
+    runtime.crewEffects.logistics.saleFeeRate
   );
 }
 
