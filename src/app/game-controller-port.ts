@@ -246,7 +246,8 @@ function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition
     context.shipOwnership,
     context.trade,
     context.crew,
-    context.loadouts
+    context.loadouts,
+    context.ship
   );
   if (blocked) {
     const explanation: Record<Exclude<typeof blocked, null>, string> = {
