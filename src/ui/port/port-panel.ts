@@ -429,6 +429,10 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
     button.addEventListener('click', () => options.onBuyShip(button.dataset.buyShipId ?? ''));
   }
+  shell.querySelector<HTMLButtonElement>('[data-repair-ship]')?.addEventListener(
+    'click',
+    options.onRepairShip
+  );
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
     button.addEventListener('click', () => options.onHireCrew(button.dataset.hireCrewId ?? ''));
   }
