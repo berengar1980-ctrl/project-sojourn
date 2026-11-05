@@ -96,6 +96,7 @@ export function createControllerStarPanel(options: {
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
     onStartTravel: () => {
+      if (options.canStartTravel?.() === false) return;
       options.navigation.startTravel();
       options.log.write('NAV > FLUG GESTARTET');
       panel?.update(options.getModel());
