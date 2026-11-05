@@ -21,7 +21,7 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
       ...(asteroid.collisionRadius !== undefined
         ? { collisionRadius: asteroid.collisionRadius }
         : {}),
-      ...(!asteroid.debrisVariant && !asteroid.sectionVariant && !asteroid.containerVariant
+      ...(asteroid.collisionRadius !== undefined && !asteroid.debrisVariant && !asteroid.sectionVariant && !asteroid.containerVariant
         ? { contactGeometry: 'silhouette' as const }
         : {}),
       rotation: asteroid.rotation ?? 0,
