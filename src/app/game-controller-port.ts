@@ -106,7 +106,10 @@ function portOperatingView(context: ActivePortContext) {
   const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
   const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
   const estimate = context.shipOperations.repairEstimate(
-    ship, runtime.hullMaxHp, port.shipyard, engineering
+    ship,
+    runtime.hullMaxHp,
+    port.shipyard,
+    engineering
   );
   return {
     ...condition,
