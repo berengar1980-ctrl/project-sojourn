@@ -103,6 +103,9 @@ export function resolveShieldCollisions(
     };
     const local = rotate(relative, -ship.headingRadians);
     const contactRadius = localAsteroidContactRadius(asteroid);
+    const maximumDistance = contactRadius + Math.max(shield.radiusX, shield.radiusY);
+    if (relative.x * relative.x + relative.y * relative.y > maximumDistance * maximumDistance)
+      continue;
     const contact =
       asteroid.contactGeometry === 'silhouette'
         ? compoundContact(
