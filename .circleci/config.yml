@@ -21,7 +21,7 @@ jobs:
       - run:
           name: Format
           command: |
-            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
+            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ] || [ "$CIRCLE_BRANCH" = "feat/asteroid-compound-collision-20261105" ]; then
               npm run format
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
