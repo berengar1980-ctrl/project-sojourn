@@ -121,7 +121,8 @@ assert.ok(
   surfaceSource.includes('if (options.radius < 5) return;'),
   'small asteroids must skip dynamic gradient lighting'
 );
-assert.ok(!/Math\\.random|setInterval|requestAnimationFrame/.test(backdropSource));
+assert.ok(!backdropSource.includes('Math.random'));
+assert.ok(!/setInterval|requestAnimationFrame/.test(backdropSource));
 assert.ok(!/routeBlocking|applyImpulse|scanLevel/.test(backdropSource));
 
 console.log('PASS cached parallax asteroid backdrop and rendering fast paths');
