@@ -7,8 +7,10 @@ export function isServicedPort(location: WorldLocation | undefined): boolean {
   return Boolean(
     location &&
       (location.kind === 'planet' || location.kind === 'moon' || location.kind === 'station') &&
-      (location.activities.refuel || location.activities.dock ||
-        location.activities.trade || location.activities.shipyard)
+      (location.activities.refuel ||
+        location.activities.dock ||
+        location.activities.trade ||
+        location.activities.shipyard)
   );
 }
 
@@ -21,8 +23,12 @@ export function serviceNpcAtPort(npc: SectorNpcState, location?: WorldLocation):
     npc.fuel = Math.min(npc.fuelCapacity, npc.fuel + fuel.units);
   }
   if (npc.hullHp >= npc.hullMaxHp) return;
-  const repair = quoteRepair(npc.hullHp, npc.hullMaxHp,
-    npc.credits, Boolean(location.activities.shipyard));
+  const repair = quoteRepair(
+    npc.hullHp,
+    npc.hullMaxHp,
+    npc.credits,
+    Boolean(location.activities.shipyard)
+  );
   if (repair.points > 0) {
     npc.credits -= repair.cost;
     npc.hullHp = Math.min(npc.hullMaxHp, npc.hullHp + repair.points);
