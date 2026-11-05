@@ -942,3 +942,7 @@ Auch NPCs verwenden dieselbe finanzierbarkeitsbewusste Wegsuche statt eines Mode
 ## Review-Log (2026-11-05): Sichtbare Reststrecke bei Tankstopps
 
 **keine Statusänderung** der 241 Voidbound-Feature-IDs. Die Sternkarte zeigt bei mehrteiligen Reisen nur noch verbleibende Etappen und bereits abgeflogene Wegpunkte werden ausgeblendet. Die vollständige Route bleibt für die Treibstoffprognose erhalten. Navigation, Treibstoffverbrauch, NPC-Verhalten und wirtschaftliche Transaktionen bleiben unverändert. Regressionstests prüfen die Routenanzeige vor und nach Tankstopps.
+
+## Review-Log (2026-11-05): Wirtschaftliche Jagdrevierwahl für Piraten
+
+**keine Statusänderung** der 241 Voidbound-Feature-IDs. Piraten bewerten erreichbare Jagdreviere jetzt nach zivilem Verkehr, sichtbarer Fracht als Beuteindikator, Patrouillen- und Konkurrenzdruck sowie realen Reisekosten aus dem gemeinsamen finanzierbaren Tankroutenplaner. Routen mit negativer erwarteter Bilanz werden verworfen; bei mangelnden Aussichten oder schweren Hüllenschäden wird nach Möglichkeit die eigene Piratenbasis als Rückzugsort gewählt. Entscheidungen minten keine Credits und ersetzen nicht das bestehende Kampf- und Beutesystem. Reparaturen und Betankung bleiben kostenpflichtig; der tatsächliche Beuteertrag wird in dieser Erweiterung noch nicht als Marktpreisprognose kalkuliert. Neue Tests decken rentable Ziele, unerreichbare Ziele, knappe Betriebsmittel und kritische Schäden ab.
