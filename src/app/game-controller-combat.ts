@@ -80,6 +80,7 @@ export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: W
       angularVelocity: asteroid.physics.angularVelocity,
       physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
       radius: asteroid.radius,
+      collisionRadius: asteroid.collisionRadius,
       rotation: asteroid.rotation,
     })),
     obstacles: instance.asteroids
@@ -87,7 +88,7 @@ export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: W
       .map((asteroid) => ({
         id: asteroid.id,
         position: { ...asteroid.position },
-        radius: asteroid.radius,
+        radius: asteroid.collisionRadius ?? asteroid.radius,
       })),
   };
 }
