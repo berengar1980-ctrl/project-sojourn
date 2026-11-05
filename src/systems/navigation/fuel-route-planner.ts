@@ -1,5 +1,10 @@
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
-import { planRouteFromPoint, planRouteWithProfile, type RoutePlan, type RouteProfile } from './route-planner';
+import {
+  planRouteFromPoint,
+  planRouteWithProfile,
+  type RoutePlan,
+  type RouteProfile,
+} from './route-planner';
 
 const FUEL_RESERVE = 1.02;
 const FUEL_PRICE = 10;
@@ -90,7 +95,8 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
     totalFuel: state.usedFuel,
     fuelCost: state.spent,
     arrivalFuel: state.fuel,
-    directFuel: legBetween(request, request.fromId ?? 'deep-space', request.destinationId).distance *
+    directFuel:
+      legBetween(request, request.fromId ?? 'deep-space', request.destinationId).distance *
       request.fuelPerDistance,
     route,
   };
@@ -106,23 +112,27 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     !Number.isFinite(request.fuel) ||
     !Number.isFinite(request.capacity) ||
     !Number.isFinite(request.credits)
-  ) return null;
+  ) {
+    return null;
+  }
   const origin = request.fromId ?? 'deep-space';
   if (origin === destinationId) return null;
-  const candidates = world.locations.filter(
-    (location) => canFuelAt(location) && location.id !== origin
-  ).map((location) => location.id);
+  const candidates = world.locations
+    .filter((location) => canFuelAt(location) && location.id !== origin)
+    .map((location) => location.id);
   if (!candidates.includes(destinationId)) candidates.push(destinationId);
-  const queue: SearchState[] = [{
-    at: origin,
-    fuel: Math.max(0, Math.min(request.fuel, request.capacity)),
-    credits: Math.max(0, request.credits),
-    distance: 0,
-    usedFuel: 0,
-    spent: 0,
-    visited: [origin],
-    legs: [],
-  }];
+  const queue: SearchState[] = [
+    {
+      at: origin,
+      fuel: Math.max(0, Math.min(request.fuel, request.capacity)),
+      credits: Math.max(0, request.credits),
+      distance: 0,
+      usedFuel: 0,
+      spent: 0,
+      visited: [origin],
+      legs: [],
+    },
+  ];
   const best = new Map<string, SearchState[]>();
   let explored = 0;
   while (queue.length && explored++ < MAX_SEARCH_STATES) {
@@ -144,7 +154,7 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
         destinationId: next,
         route: segment,
         fuelRequired: required,
-        refuelUnits: (bought.fuel - remaining),
+        refuelUnits: bought.fuel - remaining,
         refuelCost: bought.cost,
       };
       const state: SearchState = {
@@ -158,15 +168,22 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
         legs: [...current.legs, leg],
       };
       const prior = best.get(next) ?? [];
-      if (prior.some((item) =>
-        item.distance <= state.distance + 1e-6 &&
-        item.fuel >= state.fuel - 1e-6 &&
-        item.credits >= state.credits - 1e-6
-      )) continue;
-      best.set(next, [...prior.filter((item) =>
-        !(state.distance <= item.distance && state.fuel >= item.fuel &&
-          state.credits >= item.credits)
-      ), state]);
+      const dominated = prior.some(
+        (item) =>
+          item.distance <= state.distance + 1e-6 &&
+          item.fuel >= state.fuel - 1e-6 &&
+          item.credits >= state.credits - 1e-6
+      );
+      if (dominated) continue;
+      const better = prior.filter(
+        (item) =>
+          !(
+            state.distance <= item.distance &&
+            state.fuel >= item.fuel &&
+            state.credits >= item.credits
+          )
+      );
+      best.set(next, [...better, state]);
       queue.push(state);
     }
   }
