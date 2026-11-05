@@ -9,11 +9,9 @@ const load = (name) => loadStandaloneTypeScriptModule(root, name);
 const { asteroidContactProfile, asteroidContactBound } = load(
   'src/core/asteroid-contact-profile.ts'
 );
-const {
-  compoundContact,
-  rockContactBody,
-  shieldContactBody,
-} = load('src/core/compound-contact.ts');
+const { compoundContact, rockContactBody, shieldContactBody } = load(
+  'src/core/compound-contact.ts'
+);
 const { createAsteroidOutline, asteroidRandom, hashAsteroidSeed } = load(
   'src/core/asteroid-silhouette.ts'
 );
