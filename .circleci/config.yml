@@ -21,11 +21,8 @@ jobs:
       - run:
           name: Format
           command: |
-            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ] || [ "$CIRCLE_BRANCH" = "feat/asteroid-compound-collision-20261105" ]; then
+            if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
-              if [ "$CIRCLE_BRANCH" = "feat/asteroid-compound-collision-20261105" ]; then
-                node scripts/ci-format-chunks-debug.cjs
-              fi
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
@@ -44,7 +41,7 @@ jobs:
           command: node scripts/ci-run-and-report.cjs dependencies -- npm run deps:check
       - run:
           name: Tests
-          command: node scripts/ci-run-and-report.cjs tests -- node scripts/ci-asteroid-fast-debug.cjs
+          command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
           name: Combat motion comparison
           command: |
