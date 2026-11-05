@@ -160,9 +160,10 @@ export function rockContactBody(rock: RockContactData): ContactBody {
         }
   );
   const bound = Math.max(
-    ...scaled.map((shape) =>
-      Math.hypot(shape.x, shape.y) +
-      (shape.kind === 'circle' ? shape.radius : Math.max(shape.radiusX, shape.radiusY))
+    ...scaled.map(
+      (shape) =>
+        Math.hypot(shape.x, shape.y) +
+        (shape.kind === 'circle' ? shape.radius : Math.max(shape.radiusX, shape.radiusY))
     )
   );
   return { position: rock.position, angle: rock.rotation, shapes: scaled, bound };
