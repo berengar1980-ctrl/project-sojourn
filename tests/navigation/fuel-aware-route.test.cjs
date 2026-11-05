@@ -12,39 +12,22 @@ const { createFuelJourneyService } = load('src/app/game-controller-fuel-journey.
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 
+function location(id, x, kind, activities) {
+  return {
+    id,
+    name: id,
+    position: { x, y: 0 },
+    kind,
+    activities,
+    dangerLevel: 0,
+  };
+}
+
 const locations = [
-  {
-    id: 'origin',
-    name: 'Origin',
-    position: { x: 0, y: 0 },
-    kind: 'station',
-    activities: { dock: true },
-    dangerLevel: 0,
-  },
-  {
-    id: 'refuel-a',
-    name: 'A',
-    position: { x: 400, y: 0 },
-    kind: 'planet',
-    activities: { trade: true },
-    dangerLevel: 0,
-  },
-  {
-    id: 'refuel-b',
-    name: 'B',
-    position: { x: 800, y: 0 },
-    kind: 'station',
-    activities: { shipyard: true },
-    dangerLevel: 0,
-  },
-  {
-    id: 'destination',
-    name: 'Destination',
-    position: { x: 1200, y: 0 },
-    kind: 'moon',
-    activities: { dock: true },
-    dangerLevel: 0,
-  },
+  location('origin', 0, 'station', { dock: true }),
+  location('refuel-a', 400, 'planet', { trade: true }),
+  location('refuel-b', 800, 'station', { shipyard: true }),
+  location('destination', 1200, 'moon', { dock: true }),
 ];
 const world = {
   id: 'test-fueled-routing',
