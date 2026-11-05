@@ -185,6 +185,7 @@ export function createControllerStarModel(
         locations: world.locations,
         origin: navigationSnapshot.currentPosition,
         currentDay: economy.situations.currentDay,
+        saleFeeRate,
       });
   return {
     ...createStarMapViewModel(
