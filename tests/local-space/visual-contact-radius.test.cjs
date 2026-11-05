@@ -45,7 +45,7 @@ const distantHits = resolveShieldCollisions(ship(500 - 30 - drawGap), speed, [gh
 assert.equal(distantHits.length, 0, 'shield cannot hit the invisible draw-envelope margin');
 const solid = createTestRock();
 const impact = resolveShieldCollisions(
-  ship(500 - 30 - solid.collisionRadius + 2),
+  ship(500 - 30 - solid.collisionRadius * 0.35),
   speed,
   [solid],
   shield
