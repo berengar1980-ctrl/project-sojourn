@@ -432,7 +432,9 @@ class SectorService implements NpcSectorService {
 
     if (!reachedFinal) {
       const nextTarget = remainingStops[0] ?? finalTargetId;
-      if (!this.startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp')) {
+      if (
+        !this.startLeg(npc, nextTarget, finalTargetId, remainingStops, 'Weiterflug nach Tankstopp')
+      ) {
         npc.activityId = 'dock';
         npc.activity = 'Tankstopp · nicht genügend Treibstoff';
       }
