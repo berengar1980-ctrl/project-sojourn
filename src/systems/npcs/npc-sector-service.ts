@@ -243,11 +243,7 @@ class SectorService implements NpcSectorService {
     };
     npc.fuel = Math.max(0, npc.fuel - moved * npc.fuelUse * FUEL_DISTANCE_SCALE);
   };
-  quoteTravel = (
-    npc: SectorNpcState,
-    destinationId: string,
-    availableCredits = npc.credits
-  ) => {
+  quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
     if (npc.locationId === destinationId) {
       return { distance: 0, refuelCost: 0, fuelExpense: 0 };
     }
