@@ -215,9 +215,12 @@ function createRosterAssignments(
 
     previewRuntimeOptions(ship, from) {
       const assigned = assignmentsByShip.get(ship.id);
-      const options = assigned ?? (
-        from ? projectedRosterAssignments(context, from, ship) : context.peekAssignmentRecord(ship)
-      );
+      let options = assigned;
+      if (!options) {
+        options = from
+          ? projectedRosterAssignments(context, from, ship)
+          : context.peekAssignmentRecord(ship);
+      }
       return rosterRuntimeOptions(context, ship, options);
     },
 
