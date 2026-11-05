@@ -394,6 +394,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   advancePlayerFuel(context, navigationBefore, navigationSnapshot);
+  const atFuelStop = processPlayerFuelStop(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
