@@ -47,10 +47,11 @@ export function advancePlayerFuel(
   if (!before.isTravelling) return;
   const dx = after.currentPosition.x - before.currentPosition.x;
   const dy = after.currentPosition.y - before.currentPosition.y;
+  const progress = after.activeRoute
+    ? Math.max(0, after.progress - before.progress)
+    : 1 - before.progress;
   const distance = before.activeRoute
-    ? before.activeRoute.distance * (
-        after.activeRoute ? Math.max(0, after.progress - before.progress) : 1 - before.progress
-      )
+    ? before.activeRoute.distance * progress
     : Math.hypot(dx, dy);
   if (distance <= 0) return;
   const ship = context.state.activeShip;
@@ -144,19 +145,19 @@ export function processPlayerFuelStop(
     return true;
   }
   const refilled = context.shipOperations.refuel(context.state.activeShip);
-  context.systemLog.write(
-    'TANKSTOPP > ' + dock!.name.toUpperCase() + ' · +' +
-      refilled.units.toFixed(1) + ' TREIBSTOFF · ' + refilled.cost + ' CR'
-  );
+  const amount = refilled.units.toFixed(1);
+  const message = 'TANKSTOPP > ' + dock!.name.toUpperCase();
+  context.systemLog.write(message + ' · +' + amount + ' TREIBSTOFF · ' + refilled.cost + ' CR');
   const nextLeg = journey.legs.find((leg) => leg.destinationId === pending[1]);
   const multipliers = liveFuelMultipliers(context);
   const canContinue = Boolean(
-    nextLeg && context.shipOperations.hasFuelForRoute(
-      context.state.activeShip,
-      nextLeg.route.distance,
-      multipliers.piloting,
-      multipliers.engineering
-    )
+    nextLeg &&
+      context.shipOperations.hasFuelForRoute(
+        context.state.activeShip,
+        nextLeg.route.distance,
+        multipliers.piloting,
+        multipliers.engineering
+      )
   );
   context.fuelJourney.arrived(at, context.navigation, () => canContinue);
   if (!canContinue) {
