@@ -114,8 +114,7 @@ export class AsteroidBackdropRenderer {
         const band = 0.49 + Math.sin(normalizedX * Math.PI * 2.5) * 0.12;
         const normalizedY = random() < 0.63 ? band + (random() - 0.5) * 0.46 : random();
         const x = radius + normalizedX * (this.spanWidth - radius * 2);
-        const y =
-          radius + Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
+        const y = radius + Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
         const clear = placed.every(
           (previous) =>
             Math.hypot(previous.x - x, previous.y - y) >=
