@@ -58,7 +58,8 @@ export function shipActivationBlock(
   ownership: ShipOwnershipService,
   trade: PlayerTradeService,
   crew: CrewRosterService,
-  loadouts: ShipLoadoutService
+  loadouts: ShipLoadoutService,
+  current?: ShipDefinition
 ): ShipActivationBlock {
   if (!ownership.owns(next.id)) return 'not-owned';
   const installed = loadouts.preview(next);
