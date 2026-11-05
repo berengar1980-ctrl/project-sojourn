@@ -17,7 +17,13 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
       kind: asteroid.kind,
       routeBlocking: asteroid.kind === 'resource',
       position: asteroid.position,
-      radius: asteroid.collisionRadius ?? asteroid.radius,
+      radius: asteroid.radius,
+      ...(asteroid.collisionRadius !== undefined
+        ? { collisionRadius: asteroid.collisionRadius }
+        : {}),
+      ...(!asteroid.debrisVariant && !asteroid.sectionVariant && !asteroid.containerVariant
+        ? { contactGeometry: 'silhouette' as const }
+        : {}),
       rotation: asteroid.rotation ?? 0,
       // Combat rocks retain their campaign motion but large bodies carry much more inertia.
       // This suppresses unrealistic kickback when a 60 m ship strikes a massive asteroid.
