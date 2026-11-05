@@ -18,7 +18,7 @@ import {
   LocalSpaceSceneLayers,
   type NpcHitArea,
 } from './local-space-scene-layers';
-import { AsteroidBackdropRenderer } from './asteroid-backdrop-renderer';
+import { AsteroidBackdropRenderer } from '../space/asteroid-backdrop-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
