@@ -105,12 +105,10 @@ export class AsteroidBackdropRenderer {
       const radius = 14 + random() * 39;
       const normalizedX = random();
       const band = 0.49 + Math.sin(normalizedX * Math.PI * 2.5) * 0.12;
-      const normalizedY =
-        random() < 0.63 ? band + (random() - 0.5) * 0.46 : random();
+      const normalizedY = random() < 0.63 ? band + (random() - 0.5) * 0.46 : random();
       const x = radius + normalizedX * (this.spanWidth - radius * 2);
       const y =
-        radius +
-        Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
+        radius + Math.max(0, Math.min(1, normalizedY)) * (this.spanHeight - radius * 2);
       drawDistantRock(offscreen, x, y, radius, random);
     }
     this.texture = texture;
@@ -140,10 +138,8 @@ export class AsteroidBackdropRenderer {
     // Source cropping keeps the draw cost proportional to the visible viewport.
     const sourceX = ((visibleLeft - left) / scaledWidth) * this.texture.width;
     const sourceY = ((visibleTop - top) / scaledHeight) * this.texture.height;
-    const sourceWidth =
-      ((visibleRight - visibleLeft) / scaledWidth) * this.texture.width;
-    const sourceHeight =
-      ((visibleBottom - visibleTop) / scaledHeight) * this.texture.height;
+    const sourceWidth = ((visibleRight - visibleLeft) / scaledWidth) * this.texture.width;
+    const sourceHeight = ((visibleBottom - visibleTop) / scaledHeight) * this.texture.height;
     this.context.drawImage(
       this.texture,
       sourceX,
