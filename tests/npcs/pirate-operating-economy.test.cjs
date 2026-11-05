@@ -59,12 +59,8 @@ assert.equal(
   'pirates should favor cargo opportunities after operating costs'
 );
 assert.equal(
-  pirateHuntDestination(
-    world,
-    { ...pirate },
-    [vessel],
-    livePosition,
-    (destinationId) => (destinationId === 'rich' ? null : { fuelExpense: 200 })
+  pirateHuntDestination(world, { ...pirate }, [vessel], livePosition, (destinationId) =>
+    destinationId === 'rich' ? null : { fuelExpense: 200 }
   ),
   'blackjaw-outpost',
   'a lucrative but unreachable target must not be selected'

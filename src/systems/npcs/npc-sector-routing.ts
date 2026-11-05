@@ -99,11 +99,7 @@ function pirateTrafficAt(
       if (entry.id !== pirateId) rivals += proximity;
     } else if (entry.job === 'patrol') {
       patrols += proximity;
-    } else if (
-      entry.job === 'freighter' ||
-      entry.job === 'miner' ||
-      entry.job === 'salvager'
-    ) {
+    } else if (entry.job === 'freighter' || entry.job === 'miner' || entry.job === 'salvager') {
       traffic += proximity;
       cargoUnits +=
         proximity * Object.values(entry.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
@@ -148,9 +144,7 @@ export function pirateHuntDestination(
       );
       const estimatedOpportunity = traffic * 1400 + Math.min(cargoUnits, 100) * 80;
       const riskCost =
-        patrols * (1800 - npc.aggression * 9) +
-        rivals * 450 +
-        (1 - hullFraction) * 1400;
+        patrols * (1800 - npc.aggression * 9) + rivals * 450 + (1 - hullFraction) * 1400;
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
