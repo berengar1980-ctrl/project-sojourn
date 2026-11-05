@@ -18,7 +18,6 @@ Player combat and mining asteroid impacts preserve hull losses on the owned ship
 
 `tests/ships/ship-operating-costs.test.cjs` covers fuel, finance, repairs, discounts, and detached state; `tests/npcs/npc-port-servicing.test.cjs` covers NPC refueling, affordable repair, fuel starvation, port eligibility, and patrol income. Existing ship, navigation, crew, port and NPC CI suites remain mandatory.
 
-
 ## Route-planning extension – fuel stops
 
 The star-map fuel display shows current/maximum fuel, the effective consumption per 100 world-distance units (with the current Piloting and Engineering crew multipliers), and a preview of total fuel use, required service stops and expected mid-route refueling costs. Multi-leg routes are drawn as one continuous journey.
