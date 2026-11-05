@@ -281,6 +281,7 @@ export interface StrategicCombatSnapshot {
     readonly height: number;
     readonly obstacles?: readonly StrategicCombatObstacle[];
     readonly asteroids?: readonly CombatVisualAsteroid[];
+    readonly backdropSeed?: number;
   };
 }
 
@@ -321,6 +322,7 @@ export interface StrategicCombatArenaOptions {
   readonly obstacles?: readonly StrategicCombatObstacle[];
   readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
+  readonly backdropSeed?: number;
 }
 
 export interface StrategicCombatService {
