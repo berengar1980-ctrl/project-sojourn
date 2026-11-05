@@ -1,4 +1,4 @@
-import { asteroidSilhouetteInradius } from '../../core/asteroid-silhouette';
+import { asteroidContactBound } from '../../core/asteroid-contact-profile';
 import { salvageSolidContactRadius } from '../../core/salvage-contact-profile';
 import type { CombatVisualAsteroid } from './strategic-combat-types';
 
@@ -21,5 +21,5 @@ export function combatVisibleContactRadius(
   if (asteroid.containerVariant) return salvageSolidContactRadius(asteroid.radius, 'container');
   if (asteroid.debrisVariant) return salvageSolidContactRadius(asteroid.radius, 'debris');
   if (asteroid.sectionVariant) return salvageSolidContactRadius(asteroid.radius, 'section');
-  return asteroid.radius * asteroidSilhouetteInradius(asteroid.id, asteroid.kind);
+  return asteroid.radius * asteroidContactBound(asteroid.id, asteroid.kind);
 }
