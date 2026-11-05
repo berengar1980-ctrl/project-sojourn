@@ -103,12 +103,7 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
 }
 
 function validRequest(request: FuelRouteRequest): boolean {
-  const measures = [
-    request.fuelPerDistance,
-    request.fuel,
-    request.capacity,
-    request.credits,
-  ];
+  const measures = [request.fuelPerDistance, request.fuel, request.capacity, request.credits];
   return (
     request.world.locations.some((location) => location.id === request.destinationId) &&
     measures.every((value) => Number.isFinite(value) && value >= 0)
@@ -133,9 +128,10 @@ function nextState(
   const required = Math.max(0.1, segment.distance * request.fuelPerDistance);
   if (required * FUEL_RESERVE > current.fuel + 1e-6) return null;
   const remaining = Math.max(0, current.fuel - required);
-  const bought = next === request.destinationId
-    ? { fuel: remaining, cost: 0 }
-    : purchaseFuel(remaining, request.capacity, current.credits);
+  const bought =
+    next === request.destinationId
+      ? { fuel: remaining, cost: 0 }
+      : purchaseFuel(remaining, request.capacity, current.credits);
   const leg: FuelRouteLeg = {
     destinationId: next,
     route: segment,
