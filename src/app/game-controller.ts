@@ -61,6 +61,8 @@ import {
   advancePlayerFuel,
   canStartPlayerTravel,
   recordPlayerCombatHull,
+  processPlayerFuelStop,
+  startPlayerFuelTravel,
   refuelAtPort,
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
