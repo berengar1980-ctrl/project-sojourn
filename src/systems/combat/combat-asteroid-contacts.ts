@@ -21,7 +21,7 @@ function separateShipFromRock(
   const shieldY = ship.position.y + offset.x * sin + offset.y * cos;
   const dx = rock.position.x - shieldX;
   const dy = rock.position.y - shieldY;
-  if (!rock.debrisVariant && !rock.sectionVariant && !rock.containerVariant) {
+  if (rock.collisionRadius !== undefined && !rock.debrisVariant && !rock.sectionVariant && !rock.containerVariant) {
     const hit = compoundContact(
       shieldContactBody({ x: shieldX, y: shieldY }, heading, geometry?.radiusX ?? 30, geometry?.radiusY ?? 20),
       rockContactBody({
