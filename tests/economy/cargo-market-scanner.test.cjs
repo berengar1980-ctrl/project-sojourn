@@ -30,7 +30,7 @@ const locations = [
   { id: 'c', name: 'Gamma', position: { x: 30, y: 0 }, activities: { trade: true } },
   { id: 'field', name: 'Field', position: { x: 0, y: 0 }, activities: { trade: false } },
 ];
-const run = () =>
+const run = (saleFeeRate = 0.25) =>
   scanCargoMarkets({
     player,
     intel: { entry: (locationId, resourceId) => data.get(locationId + '|' + resourceId) ?? null },
