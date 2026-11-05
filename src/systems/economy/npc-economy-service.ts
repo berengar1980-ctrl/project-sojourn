@@ -31,6 +31,7 @@ import {
 import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowledge';
 
 import { npcCargoUsed, cargoFree, quantity } from './npc-cargo';
+import { maxAffordableShipment } from './npc-operating-decisions';
 
 export { npcCargoUsed } from './npc-cargo';
 
@@ -56,7 +57,12 @@ function requestNpcTravel(
   return true;
 }
 
-function completeLoading(npc: NpcEconomyState, markets: EconomyMarketService, day: number): void {
+function completeLoading(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  day: number,
+  options: NpcEconomyServiceOptions
+): void {
   const autonomy = ensureNpcAutonomy(npc);
   const pending = autonomy.pendingTrade;
   if (!pending) {
@@ -68,12 +74,23 @@ function completeLoading(npc: NpcEconomyState, markets: EconomyMarketService, da
     npc.sideTradePlan && pending.reason === 'Nebenhandel'
       ? (npc.normalCargoCapacity ?? npc.cargoCapacity)
       : npc.cargoCapacity;
+  const unitPrice = markets.getEntry(npc.locationId, pending.resourceId)?.price ?? 0;
+  const fundedQuantity =
+    unitPrice > 0
+      ? maxAffordableShipment(
+          npc,
+          pending.destinationId,
+          pending.quantity,
+          unitPrice,
+          options.travel?.quoteTravel
+        )
+      : 0;
   const moved = buyFromMarket(
     npc,
     markets,
     npc.locationId,
     pending.resourceId,
-    pending.quantity,
+    fundedQuantity,
     day,
     capacity
   );
@@ -159,11 +176,11 @@ function chooseReadyAction(
   }
 
   if (npc.role === 'trader' || npc.role === 'freighter') {
-    chooseTraderAction(npc, markets, resources, positions, day);
+    chooseTraderAction(npc, markets, resources, positions, day, options.travel?.quoteTravel);
     return;
   }
   if (npc.role === 'miner' || npc.role === 'salvager') {
-    chooseWorkerAction(npc, markets, resources, positions, day);
+    chooseWorkerAction(npc, markets, resources, positions, day, options.travel?.quoteTravel);
     return;
   }
   if (npc.role === 'patrol') {
@@ -228,7 +245,7 @@ function advanceNpcActivity(
     beginNpcAutonomyPhase(npc, 'ready', 0);
     chooseReadyAction(npc, markets, resources, positions, day, options);
   } else if (autonomy.phase === 'loading') {
-    completeLoading(npc, markets, day);
+    completeLoading(npc, markets, day, options);
   } else if (autonomy.phase === 'launch-prep') {
     startPendingTravel(npc, options);
   } else if (autonomy.phase === 'patrol-rest') {

@@ -49,4 +49,34 @@ assert.equal(npc.credits, 500);
 npc.pirate = true;
 assert.equal(service.payNpcPatrolContract(npc), 0, 'pirates have no patrol subsidy');
 
+{
+  const frugal = {
+    job: 'miner',
+    fuel: 20,
+    fuelCapacity: 20,
+    hullHp: 90,
+    hullMaxHp: 100,
+    credits: 500,
+  };
+  service.serviceNpcAtPort(frugal, port);
+  assert.equal(frugal.hullHp, 90, 'minor damage is deferred when repairs exhaust cash reserve');
+  assert.equal(frugal.credits, 500, 'deferred maintenance must not debit credits');
+  frugal.credits = 5000;
+  service.serviceNpcAtPort(frugal, shipyard);
+  assert.equal(frugal.hullHp, 100, 'well-funded NPC repairs minor damage');
+
+  const critical = {
+    job: 'salvager',
+    fuel: 0,
+    fuelCapacity: 10,
+    hullHp: 20,
+    hullMaxHp: 100,
+    credits: 300,
+  };
+  service.serviceNpcAtPort(critical, port);
+  assert.equal(critical.hullHp, 23, 'critical damage is repaired before optional refueling');
+  assert.equal(critical.fuel, 0, 'money spent on repairs cannot buy imaginary fuel');
+  assert.equal(critical.credits, 0);
+}
+
 console.log('PASS NPC refuel, repairs, port availability and contracted patrol funding');

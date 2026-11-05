@@ -1,6 +1,8 @@
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { NpcInstalledComponents, SectorNpcState } from '../../core/npc-types';
 import type { ShipComponentType } from '../../core/ship-types';
+import { repairCost, FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
+import { npcCanInvestAfterMaintenance } from '../economy/npc-operating-decisions';
 import {
   defaultInstalledShipComponents,
   engineSpeedMultiplier,
@@ -164,6 +166,8 @@ export function tryNpcComponentUpgrade(
   const lastUpgradeRun = npc.lastComponentUpgradeRun ?? 0;
   if (npc.successfulRuns < 8 || npc.successfulRuns - lastUpgradeRun < 8) return false;
   const reserve = 300000;
+  const maintenance = repairCost(npc.hullMaxHp - npc.hullHp, true);
+  const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
   const candidates = UPGRADE_TYPES.map((type) => {
     const ship = getShipDefinition(npc.shipId);
     const maxTier = ship ? resolveShipGameplayStats(ship).maxComponentTier : 1;
@@ -179,7 +183,14 @@ export function tryNpcComponentUpgrade(
         readonly nextId: string;
         readonly cost: number;
         readonly priority: number;
-      } => candidate !== null && npc.credits >= candidate.cost + reserve
+      } =>
+        candidate !== null &&
+        npcCanInvestAfterMaintenance(
+          npc.credits - reserve,
+          candidate.cost,
+          maintenance,
+          fuelReserve
+        )
     )
     .sort((a, b) => b.priority - a.priority || a.cost - b.cost);
 

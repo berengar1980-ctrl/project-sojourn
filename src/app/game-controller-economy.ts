@@ -99,6 +99,8 @@ export function createControllerEconomy(navigation: NavigationService): Controll
         sectorNpcs.requestTravel(npc as SectorNpcState, destinationId, reason),
       requestPatrol: (npc) => sectorNpcs.requestPatrol(npc as SectorNpcState),
       isTravelling: (npc) => sectorNpcs.isTravelling(npc as SectorNpcState),
+      quoteTravel: (npc, destinationId, availableCredits) =>
+        sectorNpcs.quoteTravel(npc as SectorNpcState, destinationId, availableCredits),
     },
   });
   npcEconomy.advanceDay(0);

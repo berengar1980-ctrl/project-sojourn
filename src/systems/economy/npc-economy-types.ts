@@ -30,6 +30,14 @@ export interface NpcEconomyService {
   advanceNextDay(): void;
 }
 
+/** Estimated cash requirements and fuel cost for a real, affordable physical voyage. */
+export interface NpcTravelOperatingQuote {
+  readonly distance: number;
+  readonly refuelCost: number;
+  /** Economic cost of consumed fuel, including fuel already aboard. */
+  readonly fuelExpense: number;
+}
+
 export interface NpcEconomyServiceOptions {
   readonly positions?: Readonly<Record<string, EconomyPoint>>;
   readonly travel?: {
@@ -40,5 +48,10 @@ export interface NpcEconomyServiceOptions {
     ) => boolean;
     readonly requestPatrol?: (npc: NpcEconomyState) => boolean;
     readonly isTravelling: (npc: NpcEconomyState) => boolean;
+    readonly quoteTravel?: (
+      npc: NpcEconomyState,
+      destinationId: string,
+      creditsAvailable: number
+    ) => NpcTravelOperatingQuote | null;
   };
 }

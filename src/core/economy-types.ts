@@ -148,6 +148,7 @@ export interface NpcEconomyState {
   readonly cargo: Record<EconomyResourceId, number>;
   readonly workResourceIds: readonly EconomyResourceId[];
   readonly workLocationId?: EconomyLocationId;
+  readonly homePortId?: EconomyLocationId;
   marketIntel?: Record<EconomyLocationId, NpcMarketIntelLocation>;
   personality?: NpcPersonality;
   autonomy?: NpcAutonomyState;
