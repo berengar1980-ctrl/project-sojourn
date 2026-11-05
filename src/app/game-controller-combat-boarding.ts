@@ -2,6 +2,7 @@ import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import { recordPlayerCombatHull } from './game-controller-ship-service';
 import type { StrategicCombatService } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import {
