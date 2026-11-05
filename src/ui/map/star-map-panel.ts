@@ -97,6 +97,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
   const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
   const attackButton = shell.querySelector<HTMLButtonElement>('.attack-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
+  const fuelStatus = shell.querySelector<HTMLElement>('.map-fuel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
   const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
   const cargoToggle = shell.querySelector<HTMLButtonElement>('.map-cargo-toggle');
