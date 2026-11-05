@@ -114,6 +114,7 @@ export function returnFromCombat(
   returnToMap: () => void
 ): void {
   const snapshot = combat.getSnapshot();
+  recordPlayerCombatHull(context, snapshot);
   if (!snapshot.boardingInitiator) context.systemLog.write(combatResultMessage(snapshot));
   if (snapshot.boardingInitiator) {
     startCombatBoarding(context, snapshot, returnToMap);
