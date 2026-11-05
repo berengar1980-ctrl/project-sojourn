@@ -23,6 +23,11 @@ import { quantity, cargoFreeFor, cargoFree, npcCargoUsed } from './npc-cargo';
 import { observeNpcMarket, npcKnownMarketViews } from './npc-market-knowledge';
 
 import type { TradeRoute } from './npc-economy-types';
+import {
+  evaluateNpcPurchaseVoyage,
+  evaluateNpcSaleVoyage,
+  type NpcTravelQuoteFn,
+} from './npc-operating-decisions';
 
 export function buyFromMarket(
   npc: NpcEconomyState,
@@ -90,52 +95,84 @@ function distanceBetween(
   return Math.hypot(to.x - from.x, to.y - from.y);
 }
 
+function candidateTradeRoute(
+  npc: NpcEconomyState,
+  resource: EconomyResourceDefinition,
+  buyPrice: number,
+  maxUnits: number,
+  destinationId: string,
+  sellPrice: number,
+  positions: Readonly<Record<string, EconomyPoint>>,
+  observedDay: number,
+  day: number,
+  quoteTravel?: NpcTravelQuoteFn
+): TradeRoute | null {
+  const unitSale = Math.max(1, Math.round(sellPrice * 0.94));
+  if (unitSale <= buyPrice) return null;
+  const straightDistance = distanceBetween(positions, npc.locationId, destinationId);
+  const estimate = evaluateNpcPurchaseVoyage(
+    npc,
+    destinationId,
+    maxUnits,
+    buyPrice,
+    unitSale,
+    straightDistance,
+    quoteTravel
+  );
+  if (!estimate) return null;
+  const age = Math.max(0, day - observedDay);
+  return {
+    resourceId: resource.id,
+    destinationId,
+    quantity: estimate.quantity,
+    margin: unitSale - buyPrice,
+    observedDay,
+    score: npcPersonalityTradeWeight(
+      npc,
+      estimate.netProfit,
+      estimate.distance,
+      age,
+      destinationId
+    ),
+  };
+}
+
 function bestTradeRoute(
   npc: NpcEconomyState,
   markets: EconomyMarketService,
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
-  day: number
+  day: number,
+  quoteTravel?: NpcTravelQuoteFn
 ): TradeRoute | null {
   const source = markets.getMarket(npc.locationId);
   const free = cargoFree(npc);
   if (!source || free <= 0) return null;
-
   let best: TradeRoute | null = null;
   for (const resource of resources) {
     if (resource.legality === 'illegal') continue;
     const buy = source.entries[resource.id];
     if (!buy || buy.stock <= 0 || buy.price <= 0) continue;
     const affordable = Math.floor(npc.credits / buy.price);
-    const maxQuantity = Math.min(free, quantity(buy.stock), affordable, 32);
-    if (maxQuantity <= 0) continue;
-
+    const maxUnits = Math.min(free, quantity(buy.stock), affordable, 32);
+    if (maxUnits <= 0) continue;
     for (const destination of Object.values(npc.marketIntel ?? {})) {
       if (destination.locationId === source.locationId) continue;
       const sell = destination.entries[resource.id];
       if (!sell) continue;
-      const margin = Math.round(sell.price * 0.94) - buy.price;
-      if (margin <= 0) continue;
-      const grossProfit = margin * maxQuantity;
-      const distance = distanceBetween(positions, source.locationId, destination.locationId);
-      const age = Math.max(0, day - destination.observedDay);
-      const score = npcPersonalityTradeWeight(
+      const route = candidateTradeRoute(
         npc,
-        grossProfit,
-        distance,
-        age,
-        destination.locationId
+        resource,
+        buy.price,
+        maxUnits,
+        destination.locationId,
+        sell.price,
+        positions,
+        destination.observedDay,
+        day,
+        quoteTravel
       );
-      if (!best || score > best.score) {
-        best = {
-          resourceId: resource.id,
-          destinationId: destination.locationId,
-          quantity: maxQuantity,
-          margin,
-          observedDay: destination.observedDay,
-          score,
-        };
-      }
+      if (route && (!best || route.score > best.score)) best = route;
     }
   }
   return best;
@@ -145,7 +182,8 @@ function bestSaleLocation(
   npc: NpcEconomyState,
   resourceId: EconomyResourceId,
   positions: Readonly<Record<string, EconomyPoint>>,
-  day: number
+  day: number,
+  quoteTravel?: NpcTravelQuoteFn
 ): { locationId: string; price: number; observedDay: number; score: number } | null {
   let best: { locationId: string; price: number; observedDay: number; score: number } | null = null;
   const aboard = Math.max(1, quantity(npc.cargo[resourceId] ?? 0));
@@ -154,8 +192,22 @@ function bestSaleLocation(
     if (!entry) continue;
     const expectedRevenue = Math.round(entry.price * 0.94) * aboard;
     const distance = distanceBetween(positions, npc.locationId, market.locationId);
+    const quote = evaluateNpcSaleVoyage(
+      npc,
+      market.locationId,
+      expectedRevenue,
+      distance,
+      quoteTravel
+    );
+    if (!quote) continue;
     const age = Math.max(0, day - market.observedDay);
-    const score = npcPersonalityTradeWeight(npc, expectedRevenue, distance, age, market.locationId);
+    const score = npcPersonalityTradeWeight(
+      npc,
+      quote.netRevenue,
+      quote.distance,
+      age,
+      market.locationId
+    );
     if (!best || score > best.score) {
       best = {
         locationId: market.locationId,
@@ -197,14 +249,15 @@ export function chooseTraderAction(
   markets: EconomyMarketService,
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
-  day: number
+  day: number,
+  quoteTravel?: NpcTravelQuoteFn
 ): void {
   const aboard = Object.entries(npc.cargo)
     .filter(([, value]) => quantity(value) > 0)
     .sort((first, second) => quantity(second[1]) - quantity(first[1]))[0];
 
   if (aboard) {
-    const destination = bestSaleLocation(npc, aboard[0], positions, day);
+    const destination = bestSaleLocation(npc, aboard[0], positions, day, quoteTravel);
     if (!destination) {
       beginRest(npc);
       return;
@@ -217,7 +270,7 @@ export function chooseTraderAction(
     return;
   }
 
-  const route = bestTradeRoute(npc, markets, resources, positions, day);
+  const route = bestTradeRoute(npc, markets, resources, positions, day, quoteTravel);
   if (!route || route.score <= npcDecisionThreshold(npc)) {
     beginRest(npc);
     return;
@@ -241,7 +294,8 @@ export function chooseWorkerAction(
   markets: EconomyMarketService,
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
-  day: number
+  day: number,
+  quoteTravel?: NpcTravelQuoteFn
 ): void {
   const autonomy = ensureNpcAutonomy(npc);
   const used = npcCargoUsed(npc);
@@ -269,7 +323,7 @@ export function chooseWorkerAction(
       beginRest(npc);
       return;
     }
-    const destination = bestSaleLocation(npc, first[0], positions, day);
+    const destination = bestSaleLocation(npc, first[0], positions, day, quoteTravel);
     if (!destination) {
       beginRest(npc);
       return;
