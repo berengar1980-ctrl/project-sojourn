@@ -56,4 +56,18 @@ assert.equal(npc.fuel, 50, 'quoting travel cannot alter the tank');
 assert.equal(npc.credits, 800, 'quoting travel cannot debit credits');
 assert.equal(npc.travel, undefined, 'quoting travel cannot start a flight');
 
-console.log('PASS NPC fuel route quote is affordable and does not mutate credits or travel');
+npc.hullHp = Math.floor(npc.hullMaxHp * 0.3);
+npc.homePortId = 'fuel-a';
+assert.equal(
+  sector.requestTravel(npc, 'destination', 'Handelsroute'),
+  false,
+  'critically damaged NPC must not start an ordinary commercial route'
+);
+assert.equal(
+  sector.requestTravel(npc, npc.homePortId, 'Notwendige Hüllenreparatur'),
+  true,
+  'critically damaged NPC must still be able to return to its home port'
+);
+assert.equal(npc.travel?.finalTargetId, 'fuel-a');
+
+console.log('PASS NPC fuel route quote, liquidity and critical-damage homeward flight');
