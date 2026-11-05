@@ -37,7 +37,7 @@ const run = (saleFeeRate = 0.25) =>
     locations,
     origin: { x: 0, y: 0 },
     currentDay: 5,
-    saleFeeRate: 0.25,
+    saleFeeRate,
   });
 
 const result = run();
