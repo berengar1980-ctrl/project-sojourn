@@ -400,7 +400,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
+  const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  advancePlayerFuel(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
