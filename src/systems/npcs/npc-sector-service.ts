@@ -103,13 +103,7 @@ class SectorService implements NpcSectorService {
     npc.combatRecoverySeconds = Math.max(0, remaining - deltaSeconds);
     if (npc.combatRecoverySeconds > 0) return true;
 
-    const location = this.world.locations.find((candidate) => candidate.id === npc.locationId);
-    const creditsBefore = npc.credits;
-    serviceNpcAtPort(npc, location);
-    if (npc.pirate) {
-      npc.pirateOperatingExpenses =
-        (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
-    }
+    this.serviceNpcAtLocation(npc);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
     const intact = npc.hullHp >= npc.hullMaxHp;
@@ -423,18 +417,33 @@ class SectorService implements NpcSectorService {
     if (npc.combatMovement) return npc.combatMovement.headingRadians;
     return npc.travel ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled) : 0;
   };
+  private serviceNpcAtLocation = (npc: SectorNpcState): void => {
+    const location = this.world.locations.find((candidate) => candidate.id === npc.locationId);
+    const creditsBefore = npc.credits;
+    serviceNpcAtPort(npc, location);
+    if (npc.pirate) {
+      npc.pirateOperatingExpenses =
+        (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
+    }
+  };
+  private serviceIdleNpc = (npc: SectorNpcState): void => {
+    if (npc.pirate && this.options.markets) {
+      sellPirateLootAtHome(npc, this.options.markets);
+    }
+    this.serviceNpcAtLocation(npc);
+    const current = this.world.locations.find((location) => location.id === npc.locationId);
+    if (!current?.activities.shipyard) return;
+    const creditsBefore = npc.credits;
+    tryNpcComponentUpgrade(npc);
+    if (npc.pirate) {
+      npc.pirateOperatingExpenses =
+        (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
+    }
+  };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     const travel = npc.travel;
     if (!travel) {
-      const current = this.world.locations.find((location) => location.id === npc.locationId);
-      if (npc.pirate && this.options.markets) sellPirateLootAtHome(npc, this.options.markets);
-      const before = npc.credits;
-      serviceNpcAtPort(npc, current);
-      if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
-      if (npc.pirate) {
-        npc.pirateOperatingExpenses =
-          (npc.pirateOperatingExpenses ?? 0) + Math.max(0, before - npc.credits);
-      }
+      this.serviceIdleNpc(npc);
       return;
     }
 
@@ -460,12 +469,7 @@ class SectorService implements NpcSectorService {
 
     const arrival = this.world.locations.find((location) => location.id === npc.locationId);
     if (reachedFinal && isServicedPort(arrival)) payNpcPatrolContract(npc);
-    const creditsBefore = npc.credits;
-    serviceNpcAtPort(npc, arrival);
-    if (npc.pirate) {
-      npc.pirateOperatingExpenses =
-        (npc.pirateOperatingExpenses ?? 0) + Math.max(0, creditsBefore - npc.credits);
-    }
+    this.serviceNpcAtLocation(npc);
 
     if (!reachedFinal) {
       const nextTarget = remainingStops[0] ?? finalTargetId;
