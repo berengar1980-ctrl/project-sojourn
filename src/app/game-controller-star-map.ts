@@ -72,6 +72,7 @@ export function createControllerStarPanel(options: {
       panel?.update(options.getModel());
     },
     onSelectLocation: (id) => {
+      options.onRouteSelectionChanged?.();
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
       if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
