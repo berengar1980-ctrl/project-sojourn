@@ -6,7 +6,8 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const load = (name) => loadStandaloneTypeScriptModule(root, name);
-const { planFuelRoute, canFuelAt } = load('src/systems/navigation/fuel-route-planner.ts');
+const routeTools = load('src/systems/navigation/fuel-route-planner.ts');
+const { planFuelRoute, canFuelAt } = routeTools;
 const { createFuelJourneyService } = load('src/app/game-controller-fuel-journey.ts');
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
@@ -79,7 +80,8 @@ assert.equal(route.fuelCost, 800);
 assert.equal(route.arrivalFuel, 10);
 assert.equal(route.directFuel, 120);
 assert.equal(route.route.points.length, 4);
-assert.equal(planFuelRoute({ ...input, fuel: 130, capacity: 130 }).stopIds.length, 0);
+const unrestrictedRoute = planFuelRoute({ ...input, fuel: 130, capacity: 130 });
+assert.equal(unrestrictedRoute.stopIds.length, 0);
 
 const navigation = {
   selected: null,
@@ -99,13 +101,15 @@ assert.equal(journey.arrived('refuel-a', navigation, () => true), true);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b']);
 const observed = journey.snapshot();
 observed.remainingIds.pop();
-assert.equal(journey.snapshot().remainingIds.length, 2, 'itinerary snapshots must be detached');
+const detachedLength = journey.snapshot().remainingIds.length;
+assert.equal(detachedLength, 2, 'itinerary snapshots must be detached');
 assert.equal(journey.arrived('refuel-b', navigation, () => true), true);
 assert.deepEqual(navigation.departures, ['refuel-a', 'refuel-b', 'destination']);
 assert.equal(journey.arrived('destination', navigation, () => true), false);
 assert.equal(journey.snapshot().destinationId, null);
 
-const npc = createSectorNpcEconomyStates().find((entry) => entry.job === 'freighter');
+const npcPopulation = createSectorNpcEconomyStates();
+const npc = npcPopulation.find((entry) => entry.job === 'freighter');
 assert(npc);
 npc.locationId = 'origin';
 npc.fuel = 50;
@@ -116,7 +120,8 @@ npc.hullHp = npc.hullMaxHp;
 delete npc.travel;
 delete npc.combatMovement;
 const npcs = createNpcSectorService(world, [npc]);
-assert.equal(npcs.requestTravel(npc, 'destination'), false, 'NPC cannot invent paid fuel');
+const startedWithoutCredits = npcs.requestTravel(npc, 'destination');
+assert.equal(startedWithoutCredits, false, 'NPC cannot invent paid fuel');
 npc.credits = 800;
 assert.equal(npcs.requestTravel(npc, 'destination'), true);
 assert.deepEqual(npc.travel.refuelStops, ['refuel-a', 'refuel-b']);
@@ -125,4 +130,4 @@ assert.equal(npc.locationId, 'destination');
 assert.equal(npc.credits, 0, 'NPC pays for both tank stops');
 assert.equal(npc.fuel < 50, true, 'NPC consumes actual leg fuel');
 
-console.log('PASS shared fuel-funded itineraries, pause/resume and NPC paid tank stops');
+console.log('PASS fuel-funded player and NPC itineraries');
