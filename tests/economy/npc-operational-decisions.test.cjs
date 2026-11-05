@@ -127,14 +127,11 @@ const worker = {
   hullHp: 35,
   hullMaxHp: 100,
 };
-actions.chooseWorkerAction(
-  worker,
-  markets,
-  resources,
-  positions,
-  0,
-  (_ship, dest) => (dest === 'home' ? { distance: 100, fuelExpense: 20, refuelCost: 0 } : null)
-);
+const homewardQuote = (_ship, destination) => {
+  if (destination !== 'home') return null;
+  return { distance: 100, fuelExpense: 20, refuelCost: 0 };
+};
+actions.chooseWorkerAction(worker, markets, resources, positions, 0, homewardQuote);
 assert.equal(worker.autonomy.pendingDestinationId, 'home');
 assert.equal(worker.autonomy.pendingReason, 'Notwendige Hüllenreparatur');
 assert.equal(worker.autonomy.phase, 'launch-prep');
