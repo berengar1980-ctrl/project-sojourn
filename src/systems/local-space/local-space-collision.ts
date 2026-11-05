@@ -3,6 +3,7 @@ import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
+import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
 
 export interface ShieldWorldGeometry {
   readonly centerOffset: WorldPoint;
@@ -102,17 +103,36 @@ export function resolveShieldCollisions(
     };
     const local = rotate(relative, -ship.headingRadians);
     const contactRadius = localAsteroidContactRadius(asteroid);
-    const separationLocal = separationVector(local, contactRadius, shield);
+    const maximumDistance = contactRadius + Math.max(shield.radiusX, shield.radiusY);
+    if (relative.x * relative.x + relative.y * relative.y > maximumDistance * maximumDistance)
+      continue;
+    const contact =
+      asteroid.contactGeometry === 'silhouette'
+        ? compoundContact(
+            shieldContactBody(center, ship.headingRadians, shield.radiusX, shield.radiusY),
+            rockContactBody(asteroid)
+          )
+        : null;
+    if (asteroid.contactGeometry === 'silhouette' && !contact) continue;
+    const separationLocal = contact
+      ? rotate(
+          {
+            x: contact.normal.x * (contact.depth + 0.5),
+            y: contact.normal.y * (contact.depth + 0.5),
+          },
+          -ship.headingRadians
+        )
+      : separationVector(local, contactRadius, shield);
     if (separationLocal.x === 0 && separationLocal.y === 0) continue;
 
     const separationWorld = rotate(separationLocal, ship.headingRadians);
-    const normal = normalized(separationWorld);
+    const normal = contact?.normal ?? normalized(separationWorld);
     asteroid.position = {
       x: asteroid.position.x + separationWorld.x,
       y: asteroid.position.y + separationWorld.y,
     };
 
-    const contactPoint = {
+    const contactPoint = contact?.point ?? {
       x: asteroid.position.x - normal.x * contactRadius,
       y: asteroid.position.y - normal.y * asteroid.radius,
     };
@@ -179,9 +199,12 @@ function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {
   return normalized(delta);
 }
 
-function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
-  const currentDistance = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y);
-  const overlap = localAsteroidContactRadius(a) + localAsteroidContactRadius(b) - currentDistance;
+function separatePair(
+  a: LocalAsteroid,
+  b: LocalAsteroid,
+  normal: WorldPoint,
+  overlap: number
+): void {
   if (overlap <= 0) return;
 
   const inverseA = 1 / a.physics.mass;
@@ -200,11 +223,12 @@ function separatePair(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): v
   };
 }
 
-function resolvePairImpulse(a: LocalAsteroid, b: LocalAsteroid, normal: WorldPoint): void {
-  const contactPoint = {
-    x: a.position.x + normal.x * localAsteroidContactRadius(a),
-    y: a.position.y + normal.y * a.radius,
-  };
+function resolvePairImpulse(
+  a: LocalAsteroid,
+  b: LocalAsteroid,
+  normal: WorldPoint,
+  contactPoint: WorldPoint
+): void {
   const velocityA = pointVelocity(a, contactPoint);
   const velocityB = pointVelocity(b, contactPoint);
   const relativeVelocity = {
@@ -255,9 +279,22 @@ function resolveCollisionPair(a: LocalAsteroid, b: LocalAsteroid): void {
   const dy = b.position.y - a.position.y;
   if (dx * dx + dy * dy >= maximumDistance * maximumDistance) return;
 
-  const normal = collisionNormal(a, b);
-  separatePair(a, b, normal);
-  resolvePairImpulse(a, b, normal);
+  const contact =
+    a.contactGeometry === 'silhouette' || b.contactGeometry === 'silhouette'
+      ? compoundContact(rockContactBody(a), rockContactBody(b))
+      : null;
+  if ((a.contactGeometry === 'silhouette' || b.contactGeometry === 'silhouette') && !contact)
+    return;
+
+  const distance = Math.hypot(dx, dy);
+  const normal = contact?.normal ?? collisionNormal(a, b);
+  const overlap = contact?.depth ?? maximumDistance - distance;
+  const contactPoint = contact?.point ?? {
+    x: a.position.x + normal.x * localAsteroidContactRadius(a),
+    y: a.position.y + normal.y * localAsteroidContactRadius(a),
+  };
+  separatePair(a, b, normal, overlap);
+  resolvePairImpulse(a, b, normal, contactPoint);
 }
 
 export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): void {

@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 const vm = require('vm');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
@@ -52,10 +53,15 @@ const compiled = ts.transpileModule(backdropSource, {
   },
 }).outputText;
 const moduleInstance = { exports: {} };
+const silhouette = loadStandaloneTypeScriptModule(root, 'src/core/asteroid-silhouette.ts');
 vm.runInNewContext(compiled, {
   module: moduleInstance,
   exports: moduleInstance.exports,
   document: fakeDocument,
+  require(specifier) {
+    assert.equal(specifier, '../../core/asteroid-silhouette');
+    return silhouette;
+  },
 });
 const { AsteroidBackdropRenderer } = moduleInstance.exports;
 

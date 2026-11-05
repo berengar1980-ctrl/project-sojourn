@@ -13,5 +13,5 @@ export function hasClearCombatShot(
   if (!arena.obstacles?.length) return true;
   const from = weaponMuzzle(source, weaponIndex);
   const to = target.shieldHp > 0 ? combatShieldCenter(target) : target.position;
-  return firstObstacleHit(from, to, arena.obstacles) === null;
+  return firstObstacleHit(from, to, arena.obstacles, arena.asteroids) === null;
 }

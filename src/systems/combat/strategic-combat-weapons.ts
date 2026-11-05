@@ -65,7 +65,9 @@ function fireRuntimeInstantWeapon(
   const targetPoint = hit ? aimCenter : missedShotEnd(muzzle, aimCenter);
   const shieldHit = hit ? segmentShieldHit(muzzle, targetPoint, target) : null;
   const beamEnd = shieldHit?.point ?? targetPoint;
-  const obstacle = hit ? firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? []) : null;
+  const obstacle = hit
+    ? firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? [], runtime.arena.asteroids)
+    : null;
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
@@ -381,7 +383,12 @@ function advanceRuntimeProjectile(
     projectile.shieldDamage > 0 || projectile.hullDamage > 0
       ? segmentShieldHit(projectile.position, next, target)
       : null;
-  const obstacle = firstObstacleHit(projectile.position, next, runtime.arena.obstacles ?? []);
+  const obstacle = firstObstacleHit(
+    projectile.position,
+    next,
+    runtime.arena.obstacles ?? [],
+    runtime.arena.asteroids
+  );
 
   if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
     noteRuntimeImpact(

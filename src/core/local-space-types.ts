@@ -26,8 +26,10 @@ export interface LocalAsteroid {
   readonly routeBlocking: boolean;
   position: WorldPoint;
   radius: number;
-  /** Contact radius derived from the rendered silhouette; radius stays the visual scale. */
+  /** Broad-phase/navigation bound; radius stays the visual scale. */
   readonly collisionRadius?: number;
+  /** Natural rocks use the same seeded contour for render and narrow-phase physics. */
+  readonly contactGeometry?: 'silhouette';
   rotation: number;
   physics: AsteroidPhysics;
   readonly deposits: AsteroidResourceDeposit[];

@@ -36,7 +36,21 @@ export class CombatAsteroidBackdrop {
       Math.round(rock.position.y),
     ];
     const seed = arena.backdropSeed ?? hash(parts.join(':'));
-    this.backdrop = new AsteroidBackdropRenderer(context, seed, arena.width, arena.height);
+    const naturalRockCount =
+      arena.asteroids?.filter(
+        (item) =>
+          item.kind === 'resource' &&
+          !item.debrisVariant &&
+          !item.sectionVariant &&
+          !item.containerVariant
+      ).length ?? 0;
+    this.backdrop = new AsteroidBackdropRenderer(
+      context,
+      seed,
+      arena.width,
+      arena.height,
+      naturalRockCount < 45 ? 'sparse' : 'dense'
+    );
   }
 
   draw(width: number, height: number, camera: CombatCamera): void {

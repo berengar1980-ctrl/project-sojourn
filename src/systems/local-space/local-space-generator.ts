@@ -1,5 +1,5 @@
 import { seededLocalGate } from '../../core/local-space-exit';
-import { asteroidSilhouetteInradius } from '../../core/asteroid-silhouette';
+import { asteroidContactBound } from '../../core/asteroid-contact-profile';
 import type {
   AsteroidPhysics,
   LocalAsteroid,
@@ -95,7 +95,7 @@ function createResourceAsteroids(
     const deposits = createDeposits(random, resourceIds);
 
     const id = `asteroid-${seed}-${index}`;
-    const collisionRadius = radius * asteroidSilhouetteInradius(id, 'resource');
+    const collisionRadius = radius * asteroidContactBound(id, 'resource');
     asteroids.push({
       id,
       kind: 'resource',
@@ -103,6 +103,7 @@ function createResourceAsteroids(
       position: { x, y },
       radius,
       collisionRadius,
+      contactGeometry: 'silhouette',
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 5.8, 0.1, 1.9),
       deposits,
@@ -125,7 +126,7 @@ function createDebris(
   for (let index = 0; index < count; index += 1) {
     const radius = 4 + random() * 9;
     const id = `debris-${seed}-${index}`;
-    const collisionRadius = radius * asteroidSilhouetteInradius(id, 'debris');
+    const collisionRadius = radius * asteroidContactBound(id, 'debris');
     debris.push({
       id,
       kind: 'debris',
@@ -136,6 +137,7 @@ function createDebris(
       },
       radius,
       collisionRadius,
+      contactGeometry: 'silhouette',
       rotation: random() * Math.PI * 2,
       physics: createPhysics(radius, random, 16.5, 0.36, 1.15),
       deposits: [],

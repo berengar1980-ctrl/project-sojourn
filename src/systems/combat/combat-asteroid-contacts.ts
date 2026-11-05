@@ -1,6 +1,7 @@
 import { applyShieldHit } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
+import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
 import { directionalHullDamage } from './strategic-combat-damage';
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 
@@ -20,6 +21,35 @@ function separateShipFromRock(
   const shieldY = ship.position.y + offset.x * sin + offset.y * cos;
   const dx = rock.position.x - shieldX;
   const dy = rock.position.y - shieldY;
+  if (
+    rock.collisionRadius !== undefined &&
+    !rock.debrisVariant &&
+    !rock.sectionVariant &&
+    !rock.containerVariant
+  ) {
+    const hit = compoundContact(
+      shieldContactBody(
+        { x: shieldX, y: shieldY },
+        heading,
+        geometry?.radiusX ?? 30,
+        geometry?.radiusY ?? 20
+      ),
+      rockContactBody({
+        id: rock.id,
+        kind: rock.kind,
+        radius: rock.radius,
+        collisionRadius: rock.collisionRadius,
+        rotation: rock.rotation,
+        position: rock.position,
+        contactGeometry: 'silhouette',
+      })
+    );
+    if (hit) {
+      ship.position.x -= hit.normal.x * (hit.depth + 0.5);
+      ship.position.y -= hit.normal.y * (hit.depth + 0.5);
+    }
+    return;
+  }
   const length = Math.max(0.001, Math.hypot(dx, dy));
   const localX = (dx * cos + dy * sin) / length;
   const localY = (-dx * sin + dy * cos) / length;

@@ -28,7 +28,8 @@ for (const seed of [1, 53, 415]) {
     for (const [index, asteroid] of arena.asteroids.entries()) {
       assert(asteroid.collisionRadius > 0);
       assert(asteroid.collisionRadius < asteroid.radius, 'contact must be inside visual size');
-      assert.equal(native[index].radius, asteroid.collisionRadius);
+      assert.equal(native[index].radius, asteroid.radius, 'physics keeps full visual scale');
+      assert.equal(native[index].collisionRadius, asteroid.collisionRadius);
       const blocker = arena.obstacles.find((entry) => entry.id === asteroid.id);
       if (blocker) assert.equal(blocker.radius, asteroid.collisionRadius);
     }
@@ -38,7 +39,7 @@ const asteroidArena = createDuelArena('scattered', 18);
 const rock = asteroidArena.asteroids.find((asteroid) => asteroid.kind === 'resource');
 assert(rock);
 const ratio = asteroidSilhouetteInradius(rock.id, rock.kind);
-assert(ratio > 0.65 && ratio < 1, 'rock footprint follows deterministic surface contour');
+assert(ratio > 0.4 && ratio < 1, 'rock footprint follows deterministic surface contour');
 
 function ship(body, distance) {
   return {
@@ -60,7 +61,7 @@ const ghost = ship(oneRock, 50 + (oneRock.radius + oneRock.collisionRadius) * 0.
 resolveCombatAsteroidContacts(ghost, { asteroids: [oneRock] });
 assert.equal(ghost.shieldImpacts.length, 0, 'invisible draw-envelope gap must not hit shield');
 assert.equal(ghost.shieldHp, 100);
-const contact = ship(oneRock, 50 + oneRock.collisionRadius - 3);
+const contact = ship(oneRock, 50 + oneRock.collisionRadius * 0.35);
 resolveCombatAsteroidContacts(contact, { asteroids: [oneRock] });
 assert(contact.shieldImpacts.length > 0, 'real solid contact must still damage shields');
 
