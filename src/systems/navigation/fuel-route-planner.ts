@@ -102,30 +102,89 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
   };
 }
 
-/** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
-export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
-  const { world, destinationId, fuelPerDistance } = request;
-  if (!world.locations.some((location) => location.id === destinationId)) return null;
-  if (
-    !Number.isFinite(fuelPerDistance) ||
-    fuelPerDistance < 0 ||
-    !Number.isFinite(request.fuel) ||
-    !Number.isFinite(request.capacity) ||
-    !Number.isFinite(request.credits)
-  ) {
-    return null;
-  }
-  const origin = request.fromId ?? 'deep-space';
-  if (origin === destinationId) return null;
-  const candidates = world.locations
+function validRequest(request: FuelRouteRequest): boolean {
+  const measures = [
+    request.fuelPerDistance,
+    request.fuel,
+    request.capacity,
+    request.credits,
+  ];
+  return (
+    request.world.locations.some((location) => location.id === request.destinationId) &&
+    measures.every((value) => Number.isFinite(value) && value >= 0)
+  );
+}
+
+function fuelingCandidates(request: FuelRouteRequest, origin: string): string[] {
+  const ids = request.world.locations
     .filter((location) => canFuelAt(location) && location.id !== origin)
     .map((location) => location.id);
-  if (!candidates.includes(destinationId)) candidates.push(destinationId);
+  if (!ids.includes(request.destinationId)) ids.push(request.destinationId);
+  return ids;
+}
+
+function nextState(
+  request: FuelRouteRequest,
+  current: SearchState,
+  next: string
+): SearchState | null {
+  if (next === current.at || current.visited.includes(next)) return null;
+  const segment = legBetween(request, current.at, next);
+  const required = Math.max(0.1, segment.distance * request.fuelPerDistance);
+  if (required * FUEL_RESERVE > current.fuel + 1e-6) return null;
+  const remaining = Math.max(0, current.fuel - required);
+  const bought = next === request.destinationId
+    ? { fuel: remaining, cost: 0 }
+    : purchaseFuel(remaining, request.capacity, current.credits);
+  const leg: FuelRouteLeg = {
+    destinationId: next,
+    route: segment,
+    fuelRequired: required,
+    refuelUnits: bought.fuel - remaining,
+    refuelCost: bought.cost,
+  };
+  return {
+    at: next,
+    fuel: bought.fuel,
+    credits: current.credits - bought.cost,
+    distance: current.distance + segment.distance,
+    usedFuel: current.usedFuel + required,
+    spent: current.spent + bought.cost,
+    visited: [...current.visited, next],
+    legs: [...current.legs, leg],
+  };
+}
+
+function dominates(first: SearchState, second: SearchState): boolean {
+  return (
+    first.distance <= second.distance &&
+    first.fuel >= second.fuel &&
+    first.credits >= second.credits
+  );
+}
+
+function acceptState(
+  state: SearchState,
+  queue: SearchState[],
+  best: Map<string, SearchState[]>
+): void {
+  const previous = best.get(state.at) ?? [];
+  if (previous.some((entry) => dominates(entry, state))) return;
+  best.set(state.at, [...previous.filter((entry) => !dominates(state, entry)), state]);
+  queue.push(state);
+}
+
+/** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
+export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
+  if (!validRequest(request)) return null;
+  const origin = request.fromId ?? 'deep-space';
+  if (origin === request.destinationId) return null;
+  const candidates = fuelingCandidates(request, origin);
   const queue: SearchState[] = [
     {
       at: origin,
       fuel: Math.max(0, Math.min(request.fuel, request.capacity)),
-      credits: Math.max(0, request.credits),
+      credits: request.credits,
       distance: 0,
       usedFuel: 0,
       spent: 0,
@@ -138,53 +197,11 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   while (queue.length && explored++ < MAX_SEARCH_STATES) {
     queue.sort((a, b) => a.distance - b.distance);
     const current = queue.shift()!;
-    if (current.at === destinationId) return assemblePlan(request, current);
+    if (current.at === request.destinationId) return assemblePlan(request, current);
     if (current.legs.length > MAX_STOPS) continue;
-    for (const next of candidates) {
-      if (next === current.at || current.visited.includes(next)) continue;
-      const segment = legBetween(request, current.at, next);
-      const required = Math.max(0.1, segment.distance * fuelPerDistance);
-      if (required * FUEL_RESERVE > current.fuel + 1e-6) continue;
-      const atDestination = next === destinationId;
-      const remaining = Math.max(0, current.fuel - required);
-      const bought = atDestination
-        ? { fuel: remaining, cost: 0 }
-        : purchaseFuel(remaining, request.capacity, current.credits);
-      const leg: FuelRouteLeg = {
-        destinationId: next,
-        route: segment,
-        fuelRequired: required,
-        refuelUnits: bought.fuel - remaining,
-        refuelCost: bought.cost,
-      };
-      const state: SearchState = {
-        at: next,
-        fuel: bought.fuel,
-        credits: current.credits - bought.cost,
-        distance: current.distance + segment.distance,
-        usedFuel: current.usedFuel + required,
-        spent: current.spent + bought.cost,
-        visited: [...current.visited, next],
-        legs: [...current.legs, leg],
-      };
-      const prior = best.get(next) ?? [];
-      const dominated = prior.some(
-        (item) =>
-          item.distance <= state.distance + 1e-6 &&
-          item.fuel >= state.fuel - 1e-6 &&
-          item.credits >= state.credits - 1e-6
-      );
-      if (dominated) continue;
-      const better = prior.filter(
-        (item) =>
-          !(
-            state.distance <= item.distance &&
-            state.fuel >= item.fuel &&
-            state.credits >= item.credits
-          )
-      );
-      best.set(next, [...better, state]);
-      queue.push(state);
+    for (const id of candidates) {
+      const state = nextState(request, current, id);
+      if (state) acceptState(state, queue, best);
     }
   }
   return null;
