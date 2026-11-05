@@ -13,6 +13,7 @@ import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
 import { createShipLoadoutService, createShipOwnershipService } from '../systems/ships';
 import { createShipOperatingService } from '../systems/ships/ship-operating-costs';
+import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
@@ -57,9 +58,9 @@ import {
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
 import {
-  advancePlayerFuel,
-  canStartPlayerTravel,
   recordPlayerCombatHull,
+  startPlayerFuelTravel,
+  tickPlayerFuelJourney,
   refuelAtPort,
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
@@ -119,7 +120,8 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
-    canStartTravel: () => canStartPlayerTravel(context),
+    startFuelTravel: () => startPlayerFuelTravel(context),
+    onRouteSelectionChanged: () => context.fuelJourney.cancel(),
     eventById: (id) =>
       context.world.inForeignSystem()
         ? null
@@ -389,20 +391,22 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
-  advancePlayerFuel(context, navigationBefore, navigationSnapshot);
+  const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
-    completeDistressTowOnArrival(context, currentLocationId);
+    if (!atFuelStop) completeDistressTowOnArrival(context, currentLocationId);
   }
-  handleControllerLocationEntry(
-    context,
-    currentLocationId,
-    () => mountControllerMining(context),
-    () => mountControllerSalvage(context)
-  );
+  if (!atFuelStop) {
+    handleControllerLocationEntry(
+      context,
+      currentLocationId,
+      () => mountControllerMining(context),
+      () => mountControllerSalvage(context)
+    );
+  }
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
@@ -440,6 +444,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   const shipOperations = createShipOperatingService(economy.trade);
+  const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
@@ -467,6 +472,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     crew,
     loadouts,
     shipOperations,
+    fuelJourney,
     audio: createGameAudioService(),
     engagements,
     ...campaignServices,

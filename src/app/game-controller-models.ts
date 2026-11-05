@@ -13,6 +13,7 @@ import { createSystemLogService } from '../systems/system-log/system-log-service
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
 import { createControllerStarModel } from './game-controller-star-map';
+import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
 
 import type { ControllerRuntimeContext, SceneMode } from './game-controller-runtime-types';
 
@@ -84,7 +85,7 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     context.state.activeShip,
     controllerShipRuntimeOptions(context)
   );
-  return createControllerStarModel(
+  const base = createControllerStarModel(
     context.navigation,
     context.state.activeShip,
     context.economy,
@@ -95,6 +96,24 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     context.world.inForeignSystem(),
     runtime.crewEffects.logistics.saleFeeRate
   );
+  const tank = context.shipOperations.snapshot(context.state.activeShip, runtime.hullMaxHp);
+  const forecast = forecastPlayerFuelRoute(context);
+  const journey = context.fuelJourney.plan();
+  const planned = journey ?? forecast;
+  const nav = context.navigation.getSnapshot();
+  const target = nav.selectedDestinationId;
+  const worldTarget = context.world.world().locations.some((location) => location.id === target);
+  return {
+    ...base,
+    ...(planned ? { route: planned.route } : {}),
+    fuelStatus: {
+      fuel: tank.fuel,
+      capacity: tank.fuelCapacity,
+      fuelPerHundred: fuelPerTravelUnit(context) * 100,
+      planned,
+      unreachable: Boolean(nav.previewRoute && worldTarget && !forecast),
+    },
+  };
 }
 
 export function controllerLocalModel(context: ControllerRuntimeContext) {

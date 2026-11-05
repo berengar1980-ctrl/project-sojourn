@@ -36,6 +36,8 @@ export function createControllerStarPanel(options: {
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
   readonly canStartTravel?: () => boolean;
+  readonly startFuelTravel?: () => boolean;
+  readonly onRouteSelectionChanged?: () => void;
   readonly onAcceptEvent?: (id: string) => void;
   readonly eventById?: (
     id: string
@@ -70,6 +72,7 @@ export function createControllerStarPanel(options: {
       panel?.update(options.getModel());
     },
     onSelectLocation: (id) => {
+      options.onRouteSelectionChanged?.();
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
       if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
@@ -96,8 +99,12 @@ export function createControllerStarPanel(options: {
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
     onStartTravel: () => {
-      if (options.canStartTravel?.() === false) return;
-      options.navigation.startTravel();
+      if (options.startFuelTravel) {
+        if (!options.startFuelTravel()) return;
+      } else {
+        if (options.canStartTravel?.() === false) return;
+        options.navigation.startTravel();
+      }
       options.log.write('NAV > FLUG GESTARTET');
       panel?.update(options.getModel());
     },

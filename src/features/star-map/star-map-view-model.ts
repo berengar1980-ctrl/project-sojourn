@@ -14,6 +14,7 @@ import type {
 } from '../../core/world-types';
 import type { NavigationSnapshot } from '../../systems/navigation/navigation-types';
 import type { RoutePlan } from '../../systems/navigation/route-planner';
+import type { FuelRoutePlan } from '../../systems/navigation/fuel-route-planner';
 
 export interface StarMapLocationView {
   readonly id: string;
@@ -69,7 +70,16 @@ export interface PlayerShipMapView {
   readonly hardpoints: ShipHardpoints;
 }
 
+export interface StarMapFuelView {
+  readonly fuel: number;
+  readonly capacity: number;
+  readonly fuelPerHundred: number;
+  readonly planned: FuelRoutePlan | null;
+  readonly unreachable: boolean;
+}
+
 export interface StarMapViewModel {
+  readonly fuelStatus?: StarMapFuelView;
   readonly worldId: string;
   readonly title: string;
   readonly cargoScanner?: CargoMarketScanner;

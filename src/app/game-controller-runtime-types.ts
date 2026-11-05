@@ -15,6 +15,7 @@ import type { NavigationService } from '../systems/navigation';
 import type { NpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import type { ShipLoadoutService, ShipOwnershipService } from '../systems/ships';
 import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import type { FuelJourneyService } from './game-controller-fuel-journey';
 import type { BoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import type { StrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import type { LocalSpacePanel } from '../ui/local-space/local-space-panel';
@@ -64,6 +65,7 @@ export interface ControllerRuntimeContext {
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
   readonly shipOperations: ShipOperatingService;
+  readonly fuelJourney: FuelJourneyService;
   readonly audio: GameAudioService;
   readonly engagements: StarMapEngagementService;
   readonly campaignEvents: CampaignEventBus;

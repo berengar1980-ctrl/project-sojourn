@@ -8,6 +8,7 @@ import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-rende
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
 import { createStarMapMenu, type StarMapMenu } from './star-map-menu';
+import { updateStarMapFuelStatus } from './star-map-fuel-status';
 
 export interface StarMapPanel {
   update(model: StarMapViewModel): void;
@@ -65,6 +66,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
       <strong>${options.model.title}</strong>
     </div>
     <div class="travel-status" hidden></div>
+    <div class="map-fuel-status" aria-live="off"></div>
     <button class="map-mode-toggle" type="button">ANSICHT // PHYSISCH</button>
     <button class="map-label-toggle" type="button">NAMEN // AN</button>
     <button class="map-cargo-toggle" type="button">FRACHT // AUS</button>
@@ -95,6 +97,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
   const dockButton = shell.querySelector<HTMLButtonElement>('.dock-button');
   const attackButton = shell.querySelector<HTMLButtonElement>('.attack-button');
   const travelStatus = shell.querySelector<HTMLElement>('.travel-status');
+  const fuelStatus = shell.querySelector<HTMLElement>('.map-fuel-status');
   const modeToggle = shell.querySelector<HTMLButtonElement>('.map-mode-toggle');
   const labelToggle = shell.querySelector<HTMLButtonElement>('.map-label-toggle');
   const cargoToggle = shell.querySelector<HTMLButtonElement>('.map-cargo-toggle');
@@ -108,6 +111,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
     !dockButton ||
     !attackButton ||
     !travelStatus ||
+    !fuelStatus ||
     !modeToggle ||
     !labelToggle ||
     !cargoToggle ||
@@ -126,6 +130,7 @@ function createStarMapControls(options: StarMapPanelOptions) {
     dockButton,
     attackButton,
     travelStatus,
+    fuelStatus,
     modeToggle,
     labelToggle,
     cargoToggle,
@@ -160,6 +165,7 @@ function createSelectionUpdater(
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
     const isCurrent = selected.id === model.navigation.currentLocationId;
     travelButton.hidden = model.navigation.isTravelling || isCurrent;
+    travelButton.disabled = model.fuelStatus?.unreachable ?? false;
     dockButton.hidden = model.navigation.isTravelling || !isCurrent || !selected.activities.dock;
     attackButton.hidden = true;
     return true;
@@ -356,6 +362,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     dockButton,
     attackButton,
     travelStatus,
+    fuelStatus,
     modeToggle,
     labelToggle,
     cargoToggle,
@@ -400,6 +407,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   const updateSelection = (): void => {
     updateTravelStatus(model, travelStatus);
+    updateStarMapFuelStatus(model, fuelStatus);
     const hasSelection = updateNpcSelection() || updateLocationSelection();
     card.hidden = !hasSelection;
   };
