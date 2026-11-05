@@ -20,6 +20,7 @@ interface PortPanelOptions {
   readonly onBuy: (resourceId: string) => void;
   readonly onSell: (resourceId: string) => void;
   readonly onSellAll: (resourceId: string) => void;
+  readonly onRepairShip: () => void;
   readonly onSetComponentSlot: (
     type: ShipComponentType,
     index: number,
