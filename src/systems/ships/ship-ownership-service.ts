@@ -58,11 +58,15 @@ export function shipActivationBlock(
   ownership: ShipOwnershipService,
   trade: PlayerTradeService,
   crew: CrewRosterService,
-  loadouts: ShipLoadoutService
+  loadouts: ShipLoadoutService,
+  current?: ShipDefinition
 ): ShipActivationBlock {
   if (!ownership.owns(next.id)) return 'not-owned';
   const installed = loadouts.preview(next);
-  const capacity = resolveShipRuntimeSetup(next, { installed }).cargoCapacityTons;
+  const capacity = resolveShipRuntimeSetup(next, {
+    ...(crew.previewRuntimeOptions?.(next, current) ?? {}),
+    installed,
+  }).cargoCapacityTons;
   if (playerCargoUsed(trade.player) > capacity) return 'cargo-overflow';
   for (const [resourceId, lot] of Object.entries(trade.player.cargo)) {
     if (lot.qty > 0 && !canShipCarryResource(next, resourceId)) {

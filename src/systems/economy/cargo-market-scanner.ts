@@ -81,6 +81,7 @@ export function scanCargoMarkets(options: {
   }[];
   origin: WorldPoint;
   currentDay: number;
+  saleFeeRate?: number;
 }): CargoMarketScanner {
   const cargo = Object.entries(options.player.cargo)
     .filter(([, lot]) => Number.isFinite(lot.qty) && lot.qty > 0)
@@ -99,7 +100,7 @@ export function scanCargoMarkets(options: {
       for (const item of cargo) {
         const entry = options.intel.entry(location.id, item.resourceId);
         if (!entry) continue;
-        revenue += playerSaleUnitPrice(entry.price) * item.quantity;
+        revenue += playerSaleUnitPrice(entry.price, options.saleFeeRate) * item.quantity;
         coveredQuantity += item.quantity;
         observedDay = Math.min(observedDay, entry.observedDay);
       }
@@ -134,7 +135,7 @@ export function scanCargoMarkets(options: {
           {
             locationId: location.id,
             name: location.name,
-            revenue: playerSaleUnitPrice(entry.price) * item.quantity,
+            revenue: playerSaleUnitPrice(entry.price, options.saleFeeRate) * item.quantity,
             distance: Math.hypot(
               location.position.x - options.origin.x,
               location.position.y - options.origin.y

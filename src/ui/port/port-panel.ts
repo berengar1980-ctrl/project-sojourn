@@ -58,7 +58,7 @@ function marketRows(model: PortViewModel): string {
       return `
         <div class="port-market-row" data-market-id="${row.id}">
           <span class="port-market-name">${row.name}<small class="port-legality port-legality--${row.legality}">${row.legalityLabel}</small><small class="port-owned">FRACHT ${row.owned}</small></span>
-          <div class="port-market-price"><strong>${row.buyPrice.toLocaleString('de-DE')} CR</strong><small class="port-price-band port-price-band--${band.className}">${band.label}</small></div>
+          <div class="port-market-price"><strong>${row.buyPrice.toLocaleString('de-DE')} CR</strong><small>VK NETTO ${row.sellPrice.toLocaleString('de-DE')} CR</small><small class="port-price-band port-price-band--${band.className}">${band.label}</small></div>
           <span>${row.stock.toLocaleString('de-DE')}</span>
           <span class="port-demand port-demand--${row.demandLabel.replace(' ', '-')}">${row.demandLabel}</span>
           <span>${row.productionLabel}</span>
@@ -255,12 +255,12 @@ function tradePane(model: PortViewModel): string {
           <button type="button" data-trade-view="system">SYSTEMMARKT</button>
         </nav>
         <section class="port-trade-view" data-trade-section="cargo">
-          <div class="port-panel-heading"><span>MEINE FRACHT</span><small>WO VERKAUFE ICH MEINE LADUNG?</small></div>
+          <div class="port-panel-heading"><span>MEINE FRACHT</span><small>WO VERKAUFE ICH MEINE LADUNG? · ${(model.saleFeeRate * 100).toFixed(1).replace('.', ',')} % VERKAUFSGEBÜHR</small></div>
           <div class="port-cargo-head"><span>WARE</span><span>HIER</span><span>BESTER BEKANNTER MARKT</span><span>AKTION</span></div>
           <div class="port-cargo-sale-list">${cargoSaleRows(model)}</div>
         </section>
         <section class="port-trade-view" data-trade-section="market" hidden>
-          <div class="port-panel-heading"><span>LOKALER MARKT</span><small>WAS KAUFE ODER VERKAUFE ICH HIER?</small></div>
+          <div class="port-panel-heading"><span>LOKALER MARKT</span><small>VERKAUFSGEBÜHR ${(model.saleFeeRate * 100).toFixed(1).replace('.', ',')} % · NUR BEIM VERKAUF</small></div>
           <div class="port-price-legend" aria-label="Preisbewertung">
             <span class="port-price-band port-price-band--very-cheap">SEHR BILLIG</span>
             <span class="port-price-band port-price-band--cheap">BILLIG</span>

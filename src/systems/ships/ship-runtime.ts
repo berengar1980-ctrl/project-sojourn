@@ -145,9 +145,21 @@ export function resolveShipRuntimeSetup(
     crewEffects: effects,
     miningCrewSkill: stationSkills.mining,
     salvageCrewSkill,
-    cargoCapacityTons: Math.max(0, stats.cargoCapacityTons + componentCargoBonus(installed)),
+    cargoCapacityTons: Math.max(
+      0,
+      Math.floor(
+        (stats.cargoCapacityTons + componentCargoBonus(installed)) *
+          effects.logistics.cargoCapacityMultiplier
+      )
+    ),
     hullMaxHp: shipHullMaxHp(ship, componentHullBonus(installed)),
-    shieldMaxHp: Math.max(1, shipShieldMaxHp(ship) + componentShieldBonus(installed)),
+    shieldMaxHp: Math.max(
+      1,
+      Math.round(
+        (shipShieldMaxHp(ship) + componentShieldBonus(installed)) *
+          effects.engineering.shieldStrengthMultiplier
+      )
+    ),
     shieldModifier: ship.sprite.hardpoints.shield.modifier,
     scanAvailable,
     sensorModifier: scanAvailable ? sensorRangeMultiplier(installed) : 0,

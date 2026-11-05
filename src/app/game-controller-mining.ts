@@ -24,8 +24,13 @@ export function createMiningLocalSpace(
 
   return createLocalSpaceService({
     instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
-    approachSpeed: resolveShipLocalCruiseSpeed(ship, runtime.installed),
-    turnRateMultiplier: engineSpeedMultiplier(runtime.installed),
+    approachSpeed: resolveShipLocalCruiseSpeed(
+      ship,
+      runtime.installed,
+      runtime.stationSkills.piloting
+    ),
+    turnRateMultiplier:
+      engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
     mining: {

@@ -75,7 +75,7 @@ export function syncControllerNavigationCrewPerformance(context: ControllerRunti
   const drive = engineSpeedMultiplier(runtime.installed);
   context.navigation.setCruiseSpeed(
     ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
-    drive
+    drive * runtime.crewEffects.piloting.turnRateMultiplier
   );
 }
 
@@ -92,7 +92,8 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     runtime.sensorCrewSkill,
     runtime.sensorModifier,
     context.world.world(),
-    context.world.inForeignSystem()
+    context.world.inForeignSystem(),
+    runtime.crewEffects.logistics.saleFeeRate
   );
 }
 

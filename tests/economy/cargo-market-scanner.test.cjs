@@ -30,20 +30,23 @@ const locations = [
   { id: 'c', name: 'Gamma', position: { x: 30, y: 0 }, activities: { trade: true } },
   { id: 'field', name: 'Field', position: { x: 0, y: 0 }, activities: { trade: false } },
 ];
-const run = () =>
+const run = (saleFeeRate = 0.25) =>
   scanCargoMarkets({
     player,
     intel: { entry: (locationId, resourceId) => data.get(locationId + '|' + resourceId) ?? null },
     locations,
     origin: { x: 0, y: 0 },
     currentDay: 5,
+    saleFeeRate,
   });
 
 const result = run();
 assert.equal(result.resources.length, 2);
 assert.equal(result.resources[0].best.locationId, 'c');
 assert.equal(result.markets[0].locationId, 'b');
-assert.equal(result.markets[0].revenue, 1166);
+assert.equal(result.markets[0].revenue, 932, '25% goods selling fee applies per unit');
+assert.equal(run(0).markets[0].revenue, 1240, 'elite logistics must remove sale fees');
+assert.equal(run(0.125).markets[0].revenue, 1086, 'half-rate logistics applies per unit');
 assert.equal(result.markets[0].coveredQuantity, 14);
 assert.equal(result.markets.find((item) => item.locationId === 'c').coveredQuantity, 10);
 assert.equal(result.markets.find((item) => item.locationId === 'a').observedDay, 2);

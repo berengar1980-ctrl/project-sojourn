@@ -19,7 +19,11 @@ export function createPlayerCombatant(
   options: ShipRuntimeOptions
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
-  const movement = resolveShipCombatMovementStats(ship, runtime.installed);
+  const movement = resolveShipCombatMovementStats(
+    ship,
+    runtime.installed,
+    runtime.stationSkills.piloting
+  );
   const armor = resolveShipArmorProtection(runtime.installed);
   const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);

@@ -128,6 +128,8 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
       assignments: crew.assignments(ship),
       stations: gameplay.stations,
       capacity: crewCapacity(ship),
+      stationSkills: runtime.stationSkills,
+      effects: runtime.crewEffects,
     },
     {
       installed,
@@ -244,7 +246,8 @@ function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition
     context.shipOwnership,
     context.trade,
     context.crew,
-    context.loadouts
+    context.loadouts,
+    context.ship
   );
   if (blocked) {
     const explanation: Record<Exclude<typeof blocked, null>, string> = {
@@ -386,7 +389,7 @@ export function createActivePortPanel(
   const drive = engineSpeedMultiplier(runtime.installed);
   navigation.setCruiseSpeed(
     ship.navigation.cruiseSpeed * drive * runtime.crewEffects.piloting.travelSpeedMultiplier,
-    drive
+    drive * runtime.crewEffects.piloting.turnRateMultiplier
   );
 
   const context: ActivePortContext = {

@@ -5,6 +5,7 @@ export interface CrewSkillEffects {
     readonly dodgeChance: number;
     readonly travelTimeMultiplier: number;
     readonly travelSpeedMultiplier: number;
+    readonly turnRateMultiplier: number;
     readonly fuelUseMultiplier: number;
   };
   readonly sensors: {
@@ -21,6 +22,8 @@ export interface CrewSkillEffects {
   };
   readonly engineering: {
     readonly shieldRegenMultiplier: number;
+    readonly shieldStrengthMultiplier: number;
+    readonly fuelUseMultiplier: number;
     readonly repairCostMultiplier: number;
     readonly overloadFailureMultiplier: number;
   };
@@ -47,6 +50,7 @@ export interface CrewSkillEffects {
   };
   readonly logistics: {
     readonly saleFeeRate: number;
+    readonly cargoCapacityMultiplier: number;
   };
 }
 
@@ -63,11 +67,15 @@ export function pilotingDodgeChance(skill: number): number {
 }
 
 export function pilotingTravelTimeMultiplier(skill: number): number {
-  return 1 - (normalizedCrewSkill(skill) / 100) * 0.15;
+  return 1 / pilotingTravelSpeedMultiplier(skill);
 }
 
 export function pilotingTravelSpeedMultiplier(skill: number): number {
-  return 1 / pilotingTravelTimeMultiplier(skill);
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.15;
+}
+
+export function pilotingTurnRateMultiplier(skill: number): number {
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.15;
 }
 
 export function pilotingFuelUseMultiplier(skill: number): number {
@@ -183,8 +191,17 @@ export function weaponInspectionPowerBonus(skill: number): number {
   return normalizedCrewSkill(skill) * 0.18;
 }
 
-export function engineeringShieldRegenMultiplier(skill: number): number {
-  return 1 + (normalizedCrewSkill(skill) / 100) * 0.25;
+/** Shield crew specialization improves maximum strength, not the regeneration rate. */
+export function engineeringShieldRegenMultiplier(_skill: number): number {
+  return 1;
+}
+
+export function engineeringShieldStrengthMultiplier(skill: number): number {
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.15;
+}
+
+export function engineeringFuelUseMultiplier(skill: number): number {
+  return 1 - (normalizedCrewSkill(skill) / 100) * 0.1;
 }
 
 export function engineeringRepairCostMultiplier(skill: number): number {
@@ -235,7 +252,7 @@ export function salvageActionChance(
 }
 
 export function miningYieldMultiplier(skill: number): number {
-  return 1 + (normalizedCrewSkill(skill) / 100) * 0.4;
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.35;
 }
 
 export function miningWorkTimeMultiplier(skill: number): number {
@@ -278,6 +295,10 @@ export function miningDeepSignatureChance(skill: number): number {
   return clamp(0.36 + normalizedCrewSkill(skill) / 220, 0.36, 0.74);
 }
 
+export function logisticsCargoCapacityMultiplier(skill: number): number {
+  return 1 + (normalizedCrewSkill(skill) / 100) * 0.15;
+}
+
 export function logisticsSaleFeeRate(skill: number, captainCunning = 0, captainTrust = 0): number {
   const base = 0.25 * (1 - normalizedCrewSkill(skill) / 100);
   const edge = Number(captainCunning || 0) - Number(captainTrust || 0);
@@ -307,6 +328,7 @@ export function crewSkillEffects(
       dodgeChance: pilotingDodgeChance(piloting),
       travelTimeMultiplier: pilotingTravelTimeMultiplier(piloting),
       travelSpeedMultiplier: pilotingTravelSpeedMultiplier(piloting),
+      turnRateMultiplier: pilotingTurnRateMultiplier(piloting),
       fuelUseMultiplier: pilotingFuelUseMultiplier(piloting),
     },
     sensors: {
@@ -323,6 +345,8 @@ export function crewSkillEffects(
     },
     engineering: {
       shieldRegenMultiplier: engineeringShieldRegenMultiplier(engineering),
+      shieldStrengthMultiplier: engineeringShieldStrengthMultiplier(engineering),
+      fuelUseMultiplier: engineeringFuelUseMultiplier(engineering),
       repairCostMultiplier: engineeringRepairCostMultiplier(engineering),
       overloadFailureMultiplier: engineeringOverloadFailureMultiplier(engineering),
     },
@@ -349,6 +373,7 @@ export function crewSkillEffects(
     },
     logistics: {
       saleFeeRate: logisticsSaleFeeRate(logistics),
+      cargoCapacityMultiplier: logisticsCargoCapacityMultiplier(logistics),
     },
   };
 }

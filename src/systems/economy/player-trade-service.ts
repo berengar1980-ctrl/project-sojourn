@@ -10,7 +10,8 @@ import {
   type PlayerCampaignEconomyActions,
 } from './player-campaign-actions';
 
-const DEFAULT_SALE_FEE_RATE = 0.06;
+// Without a working logistics station the vendor retains 25%; purchases pay no fee.
+const DEFAULT_SALE_FEE_RATE = 0.25;
 
 function finiteInteger(value: number): number {
   if (!Number.isFinite(value)) return 0;

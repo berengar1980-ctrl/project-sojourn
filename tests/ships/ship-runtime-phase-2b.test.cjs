@@ -58,7 +58,7 @@ const miner = createShip();
 const baseline = runtime.resolveShipRuntimeSetup(miner);
 
 assert.equal(baseline.hullMaxHp, 72);
-assert.equal(baseline.shieldMaxHp, 88);
+assert.equal(baseline.shieldMaxHp, 90, 'automation contributes a small Engineering shield bonus');
 assert.equal(baseline.energy.output, 40);
 assert.equal(baseline.energy.baseUsed, 22);
 assert.equal(baseline.scanAvailable, true);
@@ -88,7 +88,7 @@ const upgraded = runtime.resolveShipRuntimeSetup(miner, {
 });
 
 assert.equal(upgraded.hullMaxHp, 88);
-assert.equal(upgraded.shieldMaxHp, 106);
+assert.equal(upgraded.shieldMaxHp, 108, 'upgraded shield also inherits crew Engineering');
 assert.equal(upgraded.sensorModifier, 1.15);
 assert.equal(upgraded.cargoCapacityTons, 405);
 assert(upgraded.mining.cycleSeconds < baseline.mining.cycleSeconds);
