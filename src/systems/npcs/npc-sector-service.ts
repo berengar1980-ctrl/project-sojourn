@@ -31,6 +31,7 @@ import {
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
 import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
+import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
 
@@ -105,12 +106,11 @@ class SectorService implements NpcSectorService {
     serviceNpcAtPort(npc, location);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
-    npc.activityId = npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock';
-    npc.activity = npc.pirate
-      ? 'Reparatur abgeschlossen · auf Beutezug'
-      : npc.job === 'patrol'
-        ? 'Reparatur abgeschlossen · Sicherheitspatrouille'
-        : 'Reparatur abgeschlossen · Liegezeit';
+    const intact = npc.hullHp >= npc.hullMaxHp;
+    npc.activityId = intact ? (npc.pirate ? 'raiding' : npc.job === 'patrol' ? 'patrol' : 'dock') : 'maintenance';
+    npc.activity = intact
+      ? 'Reparatur abgeschlossen · bereit'
+      : 'Teilreparatur · weitere Wartung nur gegen Credits';
     return true;
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
@@ -273,6 +273,7 @@ class SectorService implements NpcSectorService {
       npc.combatMovement ||
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
+      npcNeedsSafeReturn(npc) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
@@ -302,6 +303,7 @@ class SectorService implements NpcSectorService {
       npc.travel ||
       npc.combatMovement ||
       npc.hullHp <= 0 ||
+      npcNeedsSafeReturn(npc) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
