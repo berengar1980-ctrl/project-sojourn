@@ -79,8 +79,14 @@ backdrop.draw({
 assert.equal(display.images.length, 2, 'draw only one cached image each frame');
 assert.equal(generatedCanvases.length, 1, 'panning must not regenerate the texture');
 assert.equal(display.images[0][0], display.images[1][0], 'reuse the same canvas');
-assert.ok(display.images.every((image) => image[7] <= centered.width), 'crop to viewport width');
-assert.ok(display.images.every((image) => image[8] <= centered.height), 'crop to viewport height');
+assert.ok(
+  display.images.every((image) => image[7] <= centered.width),
+  'crop to viewport width'
+);
+assert.ok(
+  display.images.every((image) => image[8] <= centered.height),
+  'crop to viewport height'
+);
 
 const horizontalShift = display.images[1][1] - display.images[0][1];
 const expectedShift = (100 * 0.72 * 2048) / (4400 * 1.64);
