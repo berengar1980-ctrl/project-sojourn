@@ -39,11 +39,13 @@ export function visibleFuelJourneyRoute(
     : [...currentLeg.route.points];
   for (const leg of remainingLegs.slice(1)) points.push(...leg.route.points.slice(1));
 
+  const distance =
+    (live ? live.distance * (1 - navigation.progress) : currentLeg.route.distance) +
+    remainingLegs.slice(1).reduce((total, leg) => total + leg.route.distance, 0);
   return {
     ...journey.route,
     fromId: live ? 'deep-space' : currentLeg.route.fromId,
     points,
-    distance: (live ? live.distance * (1 - navigation.progress) : currentLeg.route.distance) +
-      remainingLegs.slice(1).reduce((total, leg) => total + leg.route.distance, 0),
+    distance,
   };
 }
