@@ -113,8 +113,8 @@ assert.ok(
   'cap the local-space canvas DPR'
 );
 assert.ok(
-  spaceBackgroundSource.includes("this.context.drawImage(cloud.sprite") &&
-    spaceBackgroundSource.includes("this.drawNebulaLobe(\n          spriteContext"),
+  spaceBackgroundSource.includes('this.context.drawImage(cloud.sprite') &&
+    spaceBackgroundSource.includes('this.drawNebulaLobe(\n          spriteContext'),
   'nebula gradients must be rendered to reusable sprites'
 );
 assert.ok(
