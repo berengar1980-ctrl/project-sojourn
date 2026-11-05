@@ -19,6 +19,7 @@ import type { EconomyMarketService } from './market-service';
 import { findNpcResourceSideTrade, type EconomyPoint } from './npc-resource-side-trade';
 
 import { quantity, cargoFreeFor, cargoFree, npcCargoUsed } from './npc-cargo';
+import { npcNeedsSafeReturn } from '../npcs/npc-operating-policy';
 
 import { observeNpcMarket, npcKnownMarketViews } from './npc-market-knowledge';
 
@@ -298,6 +299,18 @@ export function chooseWorkerAction(
   quoteTravel?: NpcTravelQuoteFn
 ): void {
   const autonomy = ensureNpcAutonomy(npc);
+  const worker = npc as NpcEconomyState & { hullHp?: number; hullMaxHp?: number };
+  if (npcNeedsSafeReturn(worker)) {
+    if (npc.homePortId && npc.homePortId !== npc.locationId) {
+      const possible = quoteTravel?.(npc, npc.homePortId, npc.credits);
+      if (!quoteTravel || possible) {
+        scheduleNpcTravel(npc, npc.homePortId, 'Notwendige Hüllenreparatur');
+        return;
+      }
+    }
+    beginRest(npc);
+    return;
+  }
   const used = npcCargoUsed(npc);
   const threshold = Math.max(1, Math.floor(npc.cargoCapacity));
 
@@ -351,7 +364,12 @@ export function chooseWorkerAction(
       resources,
       positions,
     });
-    if (plan && sideTradeWorthTaking(npc, plan.expectedProfit, plan.costBasis)) {
+    const funded = plan
+      ? quoteTravel?.(npc, plan.tradeLocationId, npc.credits - plan.costBasis)
+      : null;
+    const netProfit = plan ? plan.expectedProfit - (funded?.fuelExpense ?? 0) : 0;
+    const viable = !quoteTravel || Boolean(funded);
+    if (plan && viable && sideTradeWorthTaking(npc, netProfit, plan.costBasis)) {
       npc.sideTradePlan = plan;
       const route: TradeRoute = {
         resourceId: plan.resourceId,
