@@ -4,14 +4,11 @@ import { quoteRefuel, quoteRepair } from '../ships/ship-operating-costs';
 
 /** Inhabited docks service civilian ships; barren fields and derelicts do not. */
 export function isServicedPort(location: WorldLocation | undefined): boolean {
-  return Boolean(
-    location &&
-      (location.kind === 'planet' || location.kind === 'moon' || location.kind === 'station') &&
-      (location.activities.refuel ||
-        location.activities.dock ||
-        location.activities.trade ||
-        location.activities.shipyard)
-  );
+  if (!location) return false;
+  const kind = location.kind;
+  if (kind !== 'planet' && kind !== 'moon' && kind !== 'station') return false;
+  const facilities = location.activities;
+  return Boolean(facilities.refuel || facilities.dock || facilities.trade || facilities.shipyard);
 }
 
 /** NPC operations use the same global fuel/repair prices as the player. */
@@ -23,12 +20,8 @@ export function serviceNpcAtPort(npc: SectorNpcState, location?: WorldLocation):
     npc.fuel = Math.min(npc.fuelCapacity, npc.fuel + fuel.units);
   }
   if (npc.hullHp >= npc.hullMaxHp) return;
-  const repair = quoteRepair(
-    npc.hullHp,
-    npc.hullMaxHp,
-    npc.credits,
-    Boolean(location.activities.shipyard)
-  );
+  const isYard = Boolean(location.activities.shipyard);
+  const repair = quoteRepair(npc.hullHp, npc.hullMaxHp, npc.credits, isYard);
   if (repair.points > 0) {
     npc.credits -= repair.cost;
     npc.hullHp = Math.min(npc.hullMaxHp, npc.hullHp + repair.points);
