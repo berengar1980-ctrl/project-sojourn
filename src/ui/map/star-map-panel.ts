@@ -361,6 +361,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     dockButton,
     attackButton,
     travelStatus,
+    fuelStatus,
     modeToggle,
     labelToggle,
     cargoToggle,
