@@ -120,11 +120,9 @@ export class AsteroidBackdropRenderer {
     const centerX = this.worldWidth * 0.5;
     const centerY = this.worldHeight * 0.5;
     const left =
-      view.width * 0.5 +
-      (this.left - centerX - (view.cameraCenter.x - centerX) * PARALLAX) * zoom;
+      view.width * 0.5 + (this.left - centerX - (view.cameraCenter.x - centerX) * PARALLAX) * zoom;
     const top =
-      view.height * 0.5 +
-      (this.top - centerY - (view.cameraCenter.y - centerY) * PARALLAX) * zoom;
+      view.height * 0.5 + (this.top - centerY - (view.cameraCenter.y - centerY) * PARALLAX) * zoom;
     const scaledWidth = this.spanWidth * zoom;
     const scaledHeight = this.spanHeight * zoom;
 
