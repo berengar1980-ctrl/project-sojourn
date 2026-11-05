@@ -23,6 +23,9 @@ jobs:
           command: |
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ] || [ "$CIRCLE_BRANCH" = "feat/asteroid-compound-collision-20261105" ]; then
               npm run format
+              if [ "$CIRCLE_BRANCH" = "feat/asteroid-compound-collision-20261105" ]; then
+                node scripts/ci-format-chunks-debug.cjs
+              fi
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
