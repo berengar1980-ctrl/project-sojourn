@@ -41,6 +41,7 @@ import {
   sectorEventLocation,
 } from './game-controller-events';
 import { createControllerLocalActions } from './game-controller-local-actions';
+import { handleControllerLocationEntry } from './game-controller-location-entry';
 import { miningLocationById, salvageLocationById } from './game-controller-local-model';
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
@@ -51,8 +52,6 @@ import {
   controllerShipRuntimeOptions,
   controllerStarModel,
   createControllerLog,
-  enteredMiningLocation,
-  enteredSalvageLocation,
   localSeed,
   syncControllerNavigationCrewPerformance,
 } from './game-controller-models';
@@ -381,26 +380,6 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
     if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
   });
 }
-function handleControllerLocationEntry(
-  context: ControllerRuntimeContext,
-  currentLocationId: string | null
-): void {
-  const { state, economy } = context;
-  if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
-    runSceneZoomTransition(context.root, () => mountControllerMining(context));
-    return;
-  }
-  const enteredSalvage =
-    state.mode === 'star-map' &&
-    state.previousLocationId !== currentLocationId &&
-    (enteredSalvageLocation(state.mode, state.previousLocationId, currentLocationId) ||
-      economy.salvageEvents.event(currentLocationId) !== null);
-  if (enteredSalvage) {
-    if (economy.salvageEvents.event(currentLocationId))
-      economy.salvageEvents.acceptForPlayer(currentLocationId!);
-    runSceneZoomTransition(context.root, () => mountControllerSalvage(context));
-  }
-}
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
@@ -418,7 +397,12 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
     completeDistressTowOnArrival(context, currentLocationId);
   }
-  handleControllerLocationEntry(context, currentLocationId);
+  handleControllerLocationEntry(
+    context,
+    currentLocationId,
+    () => mountControllerMining(context),
+    () => mountControllerSalvage(context)
+  );
   tickEconomy(context, deltaSeconds);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
