@@ -406,8 +406,13 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         null
       );
     },
-    approachSpeed: resolveShipLocalCruiseSpeed(options.ship, runtime.installed),
-    turnRateMultiplier: engineSpeedMultiplier(runtime.installed),
+    approachSpeed: resolveShipLocalCruiseSpeed(
+      options.ship,
+      runtime.installed,
+      runtime.stationSkills.piloting
+    ),
+    turnRateMultiplier:
+      engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });
