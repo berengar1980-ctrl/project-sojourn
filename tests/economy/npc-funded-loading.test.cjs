@@ -10,8 +10,14 @@ const economy = load('src/systems/economy/npc-economy-service.ts');
 const autonomy = load('src/systems/npcs/npc-autonomy.ts');
 
 const resources = [
-  { id: 'steel', name: 'Steel', categoryId: 'industry', category: 'Industry',
-    basePrice: 100, legality: 'legal' },
+  {
+    id: 'steel',
+    name: 'Steel',
+    categoryId: 'industry',
+    category: 'Industry',
+    basePrice: 100,
+    legality: 'legal',
+  },
 ];
 const source = {
   locationId: 'source',
@@ -60,9 +66,7 @@ const service = economy.createNpcEconomyService(
       requestTravel: () => true,
       isTravelling: () => false,
       quoteTravel: (_npc, _destination, availableCredits) =>
-        availableCredits >= 200
-          ? { distance: 100, fuelExpense: 50, refuelCost: 200 }
-          : null,
+        availableCredits >= 200 ? { distance: 100, fuelExpense: 50, refuelCost: 200 } : null,
     },
   }
 );
