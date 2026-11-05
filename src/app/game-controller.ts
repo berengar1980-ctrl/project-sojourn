@@ -455,11 +455,19 @@ export function createGameController(options: GameControllerOptions): GameContro
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
     getPlayerShip: () => state.activeShip,
-    getPlayerCombatant: () =>
-      createPlayerCombatant(state.activeShip, {
+    getPlayerCombatant: () => {
+      const setup = createPlayerCombatant(state.activeShip, {
         ...crew.runtimeOptions(state.activeShip),
         installed: loadouts.get(state.activeShip),
-      }),
+      });
+      return {
+        ...setup,
+        hullHp: Math.max(
+          1,
+          shipOperations.snapshot(state.activeShip, setup.hullHp).hullHp
+        ),
+      };
+    },
     log: (message) => systemLog.write(message),
   });
   const campaignServices = createControllerCampaignServicesWithActions(
