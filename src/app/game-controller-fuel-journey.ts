@@ -11,7 +11,11 @@ export interface FuelJourneyService {
   snapshot(): FuelJourneySnapshot;
   plan(): FuelRoutePlan | null;
   start(plan: FuelRoutePlan, navigation: NavigationService): boolean;
-  arrived(locationId: string | null, navigation: NavigationService, canContinue: () => boolean): boolean;
+  arrived(
+    locationId: string | null,
+    navigation: NavigationService,
+    canContinue: () => boolean
+  ): boolean;
   cancel(): void;
 }
 
