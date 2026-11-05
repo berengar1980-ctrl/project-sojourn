@@ -159,6 +159,39 @@ body {
   display: none;
 }
 
+.map-fuel-status {
+  position: absolute;
+  top: 75px;
+  left: 24px;
+  max-width: min(390px, calc(100vw - 48px));
+  padding: 10px 13px;
+  border-left: 2px solid rgba(105, 191, 207, 0.65);
+  background: rgba(5, 13, 21, 0.83);
+  color: #abc9da;
+  white-space: pre-line;
+  line-height: 1.65;
+  font-size: 11px;
+  letter-spacing: 0.035em;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.map-fuel-status.is-unreachable {
+  border-left-color: #d79976;
+  color: #e6b8a2;
+}
+
+.map-fuel-status[hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .map-fuel-status {
+    top: 66px;
+    left: 16px;
+  }
+}
+
 .selection-card {
   position: absolute;
   left: 24px;
