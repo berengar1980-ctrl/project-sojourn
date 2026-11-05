@@ -96,7 +96,9 @@ function polygonContact(a: readonly WorldPoint[], b: readonly WorldPoint[]): Con
       const normal = { x: -dy / length, y: dx / length };
       const [minA, maxA] = project(a, normal);
       const [minB, maxB] = project(b, normal);
-      const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
+      // Nested shapes need the distance to the nearest exit, not merely the
+      // length of their overlapping interval; otherwise they remain embedded.
+      const overlap = Math.min(maxA - minB, maxB - minA);
       if (overlap <= 0) return null;
       if (overlap < depth) {
         depth = overlap;
