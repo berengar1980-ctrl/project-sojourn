@@ -22,6 +22,14 @@ for (const locationId of neighboringPlaces) {
   assert(positions.every((point) => Number.isFinite(point.y)));
   const keys = positions.map((point) => `${point.x.toFixed(3)}:${point.y.toFixed(3)}`);
   assert.equal(new Set(keys).size, captains.length, 'every captain needs a distinct holding berth');
+  for (let first = 0; first < positions.length; first += 1) {
+    for (let second = first + 1; second < positions.length; second += 1) {
+      const a = positions[first];
+      const b = positions[second];
+      const gap = Math.hypot(a.x - b.x, a.y - b.y);
+      assert(gap > 60, 'captains at the same port require separate holding slots');
+    }
+  }
   for (const position of positions) {
     assert(
       Math.hypot(position.x - owner.position.x, position.y - owner.position.y) > owner.radius,
