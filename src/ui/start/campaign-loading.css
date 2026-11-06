@@ -18,15 +18,17 @@
 }
 .campaign-loading__eyebrow {
   color: #d3b176;
-  letter-spacing: .16em;
+  letter-spacing: 0.16em;
   font-size: 10px;
 }
 .campaign-loading h1 {
   margin: 14px 0 10px;
-  letter-spacing: .075em;
+  letter-spacing: 0.075em;
   font-size: clamp(22px, 3vw, 30px);
 }
-.campaign-loading p { color: #b2c2ca; }
+.campaign-loading p {
+  color: #b2c2ca;
+}
 .campaign-loading__track {
   height: 6px;
   margin-top: 26px;
@@ -37,6 +39,10 @@
   width: 0;
   height: 100%;
   background: #c3a16c;
-  transition: width .12s linear;
+  transition: width 0.12s linear;
 }
-.campaign-loading__percent { display: block; margin-top: 12px; color: #d3b176; }
+.campaign-loading__percent {
+  display: block;
+  margin-top: 12px;
+  color: #d3b176;
+}
