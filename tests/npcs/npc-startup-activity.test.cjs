@@ -42,9 +42,7 @@ assert(
   'docked and orbiting vessels must stay visible as actual NPC ships'
 );
 assert(
-  !readModuleSource(root, 'src/app/game-controller-star-map.ts').includes(
-    'npcVisibleInSpace'
-  ),
+  !readModuleSource(root, 'src/app/game-controller-star-map.ts').includes('npcVisibleInSpace'),
   'a ship must not disappear just because its economy is in a waiting phase'
 );
 assert(
