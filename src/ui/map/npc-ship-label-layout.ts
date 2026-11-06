@@ -48,12 +48,17 @@ export function layoutNpcMapLabels(
     const width = Math.max(20, npc.name.length * 5.8 + 10);
     const halfWidth = npc.shipWidth / 2;
     const halfHeight = npc.shipHeight / 2;
-    const options = [
-      { x: npc.x, baseline: npc.y + halfHeight + 13 },
-      { x: npc.x, baseline: npc.y - halfHeight - 6 },
-      { x: npc.x + halfWidth + width / 2 + 9, baseline: npc.y + 3 },
-      { x: npc.x - halfWidth - width / 2 - 9, baseline: npc.y + 3 },
-    ];
+    const options = [];
+    // Multiple small lanes keep visible contacts labelled at overview zoom,
+    // while never covering an already accepted name or a planet marker.
+    for (const extra of [0, 16, 32, 48, 64]) {
+      options.push(
+        { x: npc.x, baseline: npc.y + halfHeight + 13 + extra },
+        { x: npc.x, baseline: npc.y - halfHeight - 6 - extra },
+        { x: npc.x + halfWidth + width / 2 + 9 + extra, baseline: npc.y + 3 },
+        { x: npc.x - halfWidth - width / 2 - 9 - extra, baseline: npc.y + 3 }
+      );
+    }
     const pick = options.find((candidate) => {
       const box = { x: candidate.x, y: candidate.baseline - 4, width, height: 13 };
       return occupied.every((used) => !overlaps(box, used));

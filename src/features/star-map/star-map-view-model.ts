@@ -39,6 +39,8 @@ export interface StarMapLocationView {
 export interface NpcShipMapView {
   readonly id: string;
   readonly name: string;
+  /** The true station/planet where the NPC is docked or holding position. */
+  readonly locationId?: string;
   readonly job: 'freighter' | 'miner' | 'salvager' | 'patrol' | 'pirate';
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';

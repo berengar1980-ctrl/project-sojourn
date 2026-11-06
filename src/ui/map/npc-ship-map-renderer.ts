@@ -5,7 +5,8 @@ import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-rend
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { MapCamera } from './map-camera';
-import { mapSymbolScale, starMapShipWidth } from './map-visual-scale';
+import { mapLocationVisualRadius, starMapShipWidth } from './map-visual-scale';
+import { projectOrbitalMapShip } from './orbital-map-projection';
 import {
   layoutNpcMapLabels,
   type MapLabelBox,
@@ -46,9 +47,18 @@ export class NpcShipMapRenderer {
     const pendingLabels: NpcMapLabelRequest[] = [];
 
     for (const npc of model.npcShips) {
-      const point = camera.worldToScreen(npc.position, width, height);
       const image = navMode ? null : this.image(npc.spriteUrl);
       const widthPx = starMapShipWidth(npc.nominalLengthMeters, zoom);
+      const location = model.locations.find((entry) => entry.id === npc.locationId);
+      const point = projectOrbitalMapShip(
+        npc.position,
+        location,
+        camera,
+        width,
+        height,
+        widthPx,
+        !npc.isTravelling && !npc.combatMode
+      );
       const aspect =
         image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
           ? image.naturalWidth / image.naturalHeight
@@ -85,7 +95,7 @@ export class NpcShipMapRenderer {
         radius: navMode ? 19 : Math.max(20, Math.max(widthPx, geometry.height) * 0.85 + 8),
       });
 
-      if (labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
+      if (labelsVisible) {
         pendingLabels.push({
           id: npc.id,
           name: npc.name,
@@ -117,8 +127,7 @@ export class NpcShipMapRenderer {
     const obstacles: MapLabelBox[] = [];
     for (const location of model.locations) {
       const point = camera.worldToScreen(location.position, width, height);
-      const symbol = mapSymbolScale(zoom);
-      const radius = location.kind === 'planet' ? 30 * symbol : 17 * symbol;
+      const radius = mapLocationVisualRadius(location, zoom);
       obstacles.push({ x: point.x, y: point.y, width: radius * 2, height: radius * 2 });
       obstacles.push({
         x: point.x,
@@ -165,7 +174,16 @@ export class NpcShipMapRenderer {
     if (!target) return;
 
     const from = camera.worldToScreen(model.playerShip.position, width, height);
-    const to = camera.worldToScreen(target.position, width, height);
+    const location = model.locations.find((entry) => entry.id === target.locationId);
+    const to = projectOrbitalMapShip(
+      target.position,
+      location,
+      camera,
+      width,
+      height,
+      starMapShipWidth(target.nominalLengthMeters, camera.getRelativeZoom()),
+      !target.isTravelling && !target.combatMode
+    );
     this.context.save();
     this.context.strokeStyle = 'rgba(221, 82, 67, .58)';
     this.context.lineWidth = 1.3;

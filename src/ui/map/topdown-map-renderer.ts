@@ -10,7 +10,8 @@ import {
   type StarMapPick,
   type StarMapPickOption,
 } from './star-map-contact-picking';
-import { mapSymbolScale } from './map-visual-scale';
+import { mapLocationVisualRadius, mapSymbolScale, starMapShipWidth } from './map-visual-scale';
+import { projectOrbitalMapShip } from './orbital-map-projection';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
@@ -192,7 +193,19 @@ export class TopdownMapRenderer {
   }
 
   private drawPlayerShip(width: number, height: number): void {
-    const point = this.camera.worldToScreen(this.model.playerShip.position, width, height);
+    const player = this.model.playerShip;
+    const currentLocation = this.model.locations.find(
+      (location) => location.id === this.model.navigation.currentLocationId
+    );
+    const point = projectOrbitalMapShip(
+      player.position,
+      currentLocation,
+      this.camera,
+      width,
+      height,
+      starMapShipWidth(player.nominalLengthMeters, this.camera.getRelativeZoom()),
+      !player.isTravelling
+    );
     if (this.displayMode === 'nav') {
       this.navRenderer.drawShip(
         point,
@@ -334,8 +347,7 @@ export class TopdownMapRenderer {
 
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
-    const radius =
-      this.locationVisualRadius(location) * mapSymbolScale(this.camera.getRelativeZoom());
+    const radius = mapLocationVisualRadius(location, this.camera.getRelativeZoom());
 
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
@@ -379,14 +391,6 @@ export class TopdownMapRenderer {
       radius: radius + 12,
     };
   }
-  private locationVisualRadius(location: StarMapLocationView): number {
-    if (location.kind === 'asteroid-field') return 24;
-    if (location.kind === 'station') return Math.min(18, Math.max(10, location.radius * 0.72));
-    if (location.kind === 'wreck') return 9;
-    if (location.kind === 'moon') return Math.min(12, Math.max(4, location.radius * 0.65));
-    return Math.min(30, Math.max(8, location.radius * 0.55));
-  }
-
   private shouldDrawLabel(location: StarMapLocationView): boolean {
     if (location.isSelected || location.isCurrent) return true;
     if (location.id.startsWith('salvage-special-') || location.id.startsWith('salvage-distress-')) {
