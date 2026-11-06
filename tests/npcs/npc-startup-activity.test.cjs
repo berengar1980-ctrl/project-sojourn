@@ -86,7 +86,8 @@ const economySource = readModuleSource(root, 'src/app/game-controller-economy.ts
 const startupSource = readModuleSource(root, 'src/app/bootstrap.ts');
 assert(mapSource.includes('if (npc.hullHp <= 0) return []'));
 assert(!mapSource.includes('npcVisibleInSpace'));
-assert(economySource.includes('initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets)'));
+const scenarioCall = 'initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets)';
+assert(economySource.includes(scenarioCall));
 assert(!startupSource.includes('warmStartTraffic'));
 
 console.log('PASS funded freight, real work, resource conservation and no time warp');
