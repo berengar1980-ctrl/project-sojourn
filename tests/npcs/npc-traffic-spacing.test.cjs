@@ -31,10 +31,7 @@ for (const locationId of neighboringPlaces) {
     }
   }
   for (const position of positions) {
-    const radialDistance = Math.hypot(
-      position.x - owner.position.x,
-      position.y - owner.position.y
-    );
+    const radialDistance = Math.hypot(position.x - owner.position.x, position.y - owner.position.y);
     assert(radialDistance > owner.radius, 'no ship belongs inside its planet or station');
     assert(
       radialDistance < owner.radius + 115,

@@ -39,11 +39,7 @@ const resourceTotals = Object.fromEntries(
   economyResources.map((resource) => [resource.id, allocator.getResourceTotal(resource.id)])
 );
 const report = initializeNpcOpeningScenario(npcs, sector, economy, markets);
-assert.equal(
-  report.freightersInFlight,
-  8,
-  'eight of eleven freighters depart with funded loads'
-);
+assert.equal(report.freightersInFlight, 8, 'eight of eleven freighters depart with funded loads');
 assert.equal(report.minersWorking, 3);
 assert.equal(report.salvagersWorking, 2);
 assert.equal(report.patrolsInFlight, 2);
