@@ -11,7 +11,7 @@ export interface MapProjectionCamera {
 export interface OrbitalMapContact {
   readonly id: string;
   readonly position: WorldPoint;
-  readonly locationId?: string | null;
+  readonly locationId?: string | null | undefined;
   readonly shipWidth: number;
   readonly stationary: boolean;
 }
