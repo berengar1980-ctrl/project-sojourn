@@ -290,9 +290,7 @@ function mountControllerSalvage(
     log: context.systemLog,
     audio: context.audio,
     selectedNpcId: state.selectedNpcId,
-    onSelectNpc: (id) => {
-      state.selectedNpcId = id;
-    },
+    onSelectNpc: (id) => (state.selectedNpcId = id),
     onAttackNpc: (id, arena) => {
       state.selectedNpcId = id;
       if (context.engagements.engageNpcInArena(id, arena)) {
