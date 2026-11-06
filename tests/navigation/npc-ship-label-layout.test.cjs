@@ -37,11 +37,7 @@ for (let i = 0; i < labels.length; i += 1) {
   }
 }
 
-const contactsAtLowZoom = [
-  contact('a', 75),
-  contact('b', 78),
-  contact('c', 81),
-];
+const contactsAtLowZoom = [contact('a', 75), contact('b', 78), contact('c', 81)];
 const ringObstacle = [{ x: 78, y: 70, width: 85, height: 55 }];
 const distantLabels = layoutNpcMapLabels(contactsAtLowZoom, ringObstacle);
 assert.equal(distantLabels.length, 3, 'all nearby ships should find alternative name positions');
