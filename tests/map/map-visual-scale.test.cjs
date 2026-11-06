@@ -11,10 +11,7 @@ const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const scale = readModuleSource(root, 'src/ui/map/map-visual-scale.ts');
 const camera = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf8');
 
-assert(
-  scale.includes("location.kind === 'moon'"),
-  'moon symbols must stay subordinate to planets'
-);
+assert(scale.includes("location.kind === 'moon'"), 'moon symbols must stay subordinate to planets');
 assert(
   scale.includes('Math.min(30, Math.max(8, location.radius * 0.55))'),
   'planet symbols must stay compact while preserving size differences'
