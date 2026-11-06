@@ -39,8 +39,9 @@ for (let i = 0; i < labels.length; i += 1) {
     );
   }
 }
-const priority = layoutNpcMapLabels([npc('a', 75), npc('b', 78, true)], [
-  { x: 78, y: 80, width: 100, height: 30 },
-]);
+const priority = layoutNpcMapLabels(
+  [npc('a', 75), npc('b', 78, true)],
+  [{ x: 78, y: 80, width: 100, height: 30 }]
+);
 assert(priority.some((entry) => entry.id === 'b'), 'selected ship name always remains visible');
 console.log('PASS NPC map labels avoid overlap while preserving selected targets');

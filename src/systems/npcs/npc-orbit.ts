@@ -5,9 +5,7 @@ import { hashId } from './npc-sector-routing';
 const FULL_CIRCLE = Math.PI * 2;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const CLEARANCE = 78;
-const ANGLE_VARIANTS = [
-  0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.65, -1.65, 2.1, -2.1, Math.PI,
-];
+const ANGLE_VARIANTS = [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.65, -1.65, 2.1, -2.1, Math.PI];
 const berthCache = new WeakMap<WorldMap, Map<string, NpcOrbitState>>();
 
 function orbitRadius(kind: string, bodyRadius: number, lane: number): number {

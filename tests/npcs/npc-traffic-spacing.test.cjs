@@ -8,21 +8,21 @@ const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
-const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const ai = load('src/systems/npcs/npc-combat-ai.ts');
+const { npcOrbitDestination } = load('src/systems/npcs/npc-orbit.ts');
 
 const captains = createSectorNpcEconomyStates().slice(0, 9);
-const service = createNpcSectorService(narrowsSector, captains);
 const neighboringPlaces = ['haven', 'meridian-exchange', 'haven-moon'];
 
 for (const locationId of neighboringPlaces) {
   const owner = narrowsSector.locations.find((location) => location.id === locationId);
   assert(owner);
-  const { npcOrbitDestination } = load('src/systems/npcs/npc-orbit.ts');
-  const positions = captains.map((npc) =>
-    npcOrbitDestination(narrowsSector, npc, locationId)
+  const positions = captains.map((npc) => npcOrbitDestination(narrowsSector, npc, locationId));
+  assert(
+    positions.every(
+      (position) => Number.isFinite(position.x) && Number.isFinite(position.y)
+    )
   );
-  assert(positions.every((position) => position && Number.isFinite(position.x) && Number.isFinite(position.y)));
   const unique = new Set(positions.map((point) => point.x.toFixed(3) + ':' + point.y.toFixed(3)));
   assert.equal(unique.size, captains.length, 'every captain needs a distinct holding berth');
   for (const position of positions) {
