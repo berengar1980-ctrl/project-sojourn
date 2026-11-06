@@ -123,8 +123,9 @@ const summary = jobNames.map((job) => {
     startingCredits: aggregate((npc) => startingCredits.get(npc.id)),
     finalCredits: aggregate((npc) => npc.credits),
     completedLegs: aggregate((npc) => npc.successfulRuns - starts.get(npc.id)),
-    withoutCompletedLegs: members.filter((npc) => npc.successfulRuns === starts.get(npc.id))
-      .length,
+    withoutCompletedLegs: members.filter(
+      (npc) => npc.successfulRuns === starts.get(npc.id)
+    ).length,
     inactiveLast30Days: members.filter((npc) => DAYS - 1 - lastActive.get(npc.id) >= 30).length,
     zeroCreditDays: aggregate((npc) => zeroCreditDays.get(npc.id)),
     lowFuelShips: members.filter((npc) => npc.fuel < npc.fuelCapacity * 0.1).length,
@@ -156,7 +157,8 @@ assert(market && market.stock >= 5);
 market.stock -= 5;
 for (const resourceId of Object.keys(victim.cargo)) delete victim.cargo[resourceId];
 victim.cargo.ferrite = (victim.cargo.ferrite ?? 0) + 5;
-const beforeGoods = market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
+const beforeGoods =
+  market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
 const stolen = transferPirateLoot(pirate, victim);
 assert(stolen >= 5, 'scripted successful raid must transfer available physical cargo');
 pirate.locationId = 'blackjaw-outpost';
@@ -164,10 +166,18 @@ delete pirate.travel;
 delete pirate.combatMovement;
 const beforeRevenue = pirate.pirateLootRevenue ?? 0;
 sector.tick(0.25);
-const afterGoods = market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
+const afterGoods =
+  market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
 assert.equal(afterGoods, beforeGoods, 'raid and resale must conserve physical ferrite');
-assert((pirate.pirateLootRevenue ?? 0) > beforeRevenue, 'pirate must receive resale revenue');
+assert(
+  (pirate.pirateLootRevenue ?? 0) > beforeRevenue,
+  'pirate must receive resale revenue'
+);
 const afterRevenue = pirate.pirateLootRevenue;
 sector.tick(0.25);
-assert.equal(pirate.pirateLootRevenue, afterRevenue, 'repeat servicing must not duplicate sales');
+assert.equal(
+  pirate.pirateLootRevenue,
+  afterRevenue,
+  'repeat servicing must not duplicate sales'
+);
 console.log('PASS NPC economy audit and scripted physical pirate raid resale');
