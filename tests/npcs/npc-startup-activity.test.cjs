@@ -12,7 +12,9 @@ const { initializeNpcOpeningScenario } = load('src/systems/npcs/npc-opening-scen
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createEconomySimulationService } = load(
+  'src/systems/economy/economy-simulation-service.ts'
+);
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
 const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
@@ -37,7 +39,11 @@ const resourceTotals = Object.fromEntries(
   economyResources.map((resource) => [resource.id, allocator.getResourceTotal(resource.id)])
 );
 const report = initializeNpcOpeningScenario(npcs, sector, economy, markets);
-assert.equal(report.freightersInFlight, 8, 'eight of eleven freighters depart with funded loads');
+assert.equal(
+  report.freightersInFlight,
+  8,
+  'eight of eleven freighters depart with funded loads'
+);
 assert.equal(report.minersWorking, 3);
 assert.equal(report.salvagersWorking, 2);
 assert.equal(report.patrolsInFlight, 2);
@@ -96,4 +102,4 @@ assert(
   !readModuleSource(root, 'src/app/bootstrap.ts').includes('warmStartTraffic'),
   'campaign setup must not simulate any historical NPC time'
 );
-console.log('PASS funded in-flight freight, working NPCs, conserved resources and no time warp');
+console.log('PASS funded freight, working NPCs, conserved resources and no time warp');

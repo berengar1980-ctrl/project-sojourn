@@ -3,11 +3,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { EconomyMarketService } from '../economy/market-service';
 import { buyFromMarket } from '../economy/npc-trade-actions';
 import type { NpcEconomyService } from '../economy/npc-economy-types';
-import {
-  beginNpcAutonomyPhase,
-  ensureNpcAutonomy,
-  markNpcTravelStarted,
-} from './npc-autonomy';
+import { beginNpcAutonomyPhase, ensureNpcAutonomy, markNpcTravelStarted } from './npc-autonomy';
 import type { NpcSectorService } from './npc-sector-types';
 
 export interface NpcOpeningScenarioReport {
@@ -63,10 +59,7 @@ function seedWorkingCrew(
   return started;
 }
 
-function shipmentCandidates(
-  npc: SectorNpcState,
-  markets: EconomyMarketService
-): Shipment[] {
+function shipmentCandidates(npc: SectorNpcState, markets: EconomyMarketService): Shipment[] {
   const origin = markets.getMarket(npc.locationId);
   if (!origin) return [];
   const choices: Shipment[] = [];

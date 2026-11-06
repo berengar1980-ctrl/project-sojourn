@@ -1,5 +1,10 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-import { planRoute, planRouteFromPoint, repointRouteEndpoints, type RoutePlan } from './route-planner';
+import {
+  planRoute,
+  planRouteFromPoint,
+  repointRouteEndpoints,
+  type RoutePlan,
+} from './route-planner';
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
 

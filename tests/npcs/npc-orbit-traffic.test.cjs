@@ -82,7 +82,9 @@ assert.deepEqual(arrival, lastRoutePoint, 'arrival must not jump to the planet c
 const player = createNavigationService(narrowsSector, 'haven', 220);
 const playerStart = player.getSnapshot().currentPosition;
 assert.deepEqual(playerStart, navigationOrbitalBerth(narrowsSector, 'haven'));
-assert(Math.hypot(playerStart.x - haven.position.x, playerStart.y - haven.position.y) > haven.radius);
+assert(
+  Math.hypot(playerStart.x - haven.position.x, playerStart.y - haven.position.y) > haven.radius
+);
 player.selectDestination(destinationId);
 const startRoute = player.getSnapshot().previewRoute;
 assert(startRoute);

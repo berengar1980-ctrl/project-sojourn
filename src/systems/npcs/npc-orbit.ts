@@ -155,8 +155,14 @@ export function npcOrbitPosition(world: WorldMap, npc: SectorNpcState): WorldPoi
   }
   const orbit = npc.orbit;
   return {
-    x: Math.max(0, Math.min(world.width, orbit.center.x + orbit.radius * Math.cos(orbit.angleRadians))),
-    y: Math.max(0, Math.min(world.height, orbit.center.y + orbit.radius * Math.sin(orbit.angleRadians))),
+    x: Math.max(
+      0,
+      Math.min(world.width, orbit.center.x + orbit.radius * Math.cos(orbit.angleRadians))
+    ),
+    y: Math.max(
+      0,
+      Math.min(world.height, orbit.center.y + orbit.radius * Math.sin(orbit.angleRadians))
+    ),
   };
 }
 
