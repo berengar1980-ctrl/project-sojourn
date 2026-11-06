@@ -13,7 +13,6 @@ export interface GameControllerOptions {
 }
 
 export interface GameController {
-  warmStartTraffic(seconds: number): void;
   tick(deltaSeconds: number): void;
   profileSnapshot(): PlayerProfile;
   destroy(): void;

@@ -1,4 +1,4 @@
-import type { EconomyResourceId, NpcEconomyState } from '../../core/economy-types';
+import type { EconomyResourceId } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { EconomyMarketService } from '../economy/market-service';
 import { buyFromMarket } from '../economy/npc-trade-actions';
@@ -175,8 +175,8 @@ export function initializeNpcOpeningScenario(
 
   let freightersInFlight = 0;
   for (const [index, npc] of freighters.entries()) {
-    if (index < Math.floor(freighters.length * 0.75) &&
-        startLoadedFreighter(npc, index, sector, markets)) {
+    const shouldDepart = index < Math.floor(freighters.length * 0.75);
+    if (shouldDepart && startLoadedFreighter(npc, index, sector, markets)) {
       freightersInFlight += 1;
     } else {
       setWaiting(npc, index);
