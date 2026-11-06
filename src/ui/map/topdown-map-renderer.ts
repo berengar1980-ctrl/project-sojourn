@@ -3,15 +3,15 @@ import type {
   StarMapLocationView,
   StarMapViewModel,
 } from '../../features/star-map/star-map-view-model';
-import { MapCamera } from './map-camera';
+import { MapCamera, type ScreenPoint } from './map-camera';
 import {
   collectStarMapPickOptions,
   type StarMapHitArea as HitArea,
   type StarMapPick,
   type StarMapPickOption,
 } from './star-map-contact-picking';
-import { mapLocationVisualRadius, mapSymbolScale, starMapShipWidth } from './map-visual-scale';
-import { projectOrbitalMapShip } from './orbital-map-projection';
+import { mapLocationVisualRadius, mapSymbolScale } from './map-visual-scale';
+import { OrbitalMapSceneProjection } from './orbital-map-scene-projection';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
@@ -33,6 +33,7 @@ export class TopdownMapRenderer {
   private readonly planetRings: PlanetRingRenderer;
   private readonly stations: ProceduralStationRenderer;
   private readonly npcShips: NpcShipMapRenderer;
+  private readonly orbitalProjection = new OrbitalMapSceneProjection();
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'nav';
   private labelsVisible = true;
@@ -63,6 +64,8 @@ export class TopdownMapRenderer {
   update(model: StarMapViewModel): void {
     if (model.worldId !== this.model.worldId) {
       this.camera = new MapCamera(model.width, model.height);
+      this.orbitalProjection.reset();
+      this.npcShips.resetOrbitVisuals();
       this.hasFitted = false;
     }
     this.model = model;
@@ -160,18 +163,41 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
+    const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
+    const playerPoint = this.orbitalProjection.playerPoint(
+      this.model,
+      this.camera,
+      width,
+      height,
+      orbitalAngles
+    );
     this.drawOrbits(width, height);
     this.drawStar(width, height);
-    this.drawRoute(width, height);
-    this.npcShips.drawPursuitLine(this.model, this.camera, width, height);
+    this.drawRoute(width, height, playerPoint);
+    this.npcShips.drawPursuitLine(
+      this.model,
+      this.camera,
+      width,
+      height,
+      playerPoint,
+      orbitalAngles
+    );
     const locationHits = this.model.locations.map((location) =>
       this.drawLocation(location, width, height)
     );
     const npcHits = this.npcShips
-      .draw(this.model, this.camera, width, height, this.labelsVisible, this.displayMode === 'nav')
+      .draw(
+        this.model,
+        this.camera,
+        width,
+        height,
+        this.labelsVisible,
+        this.displayMode === 'nav',
+        orbitalAngles
+      )
       .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
-    this.drawPlayerShip(width, height);
+    this.drawPlayerShip(width, height, playerPoint);
   }
 
   private contentBounds() {
@@ -192,20 +218,7 @@ export class TopdownMapRenderer {
     };
   }
 
-  private drawPlayerShip(width: number, height: number): void {
-    const player = this.model.playerShip;
-    const currentLocation = this.model.locations.find(
-      (location) => location.id === this.model.navigation.currentLocationId
-    );
-    const point = projectOrbitalMapShip(
-      player.position,
-      currentLocation,
-      this.camera,
-      width,
-      height,
-      starMapShipWidth(player.nominalLengthMeters, this.camera.getRelativeZoom()),
-      !player.isTravelling
-    );
+  private drawPlayerShip(width: number, height: number, point: ScreenPoint): void {
     if (this.displayMode === 'nav') {
       this.navRenderer.drawShip(
         point,
@@ -324,7 +337,7 @@ export class TopdownMapRenderer {
     }
   }
 
-  private drawRoute(width: number, height: number): void {
+  private drawRoute(width: number, height: number, playerPoint: ScreenPoint): void {
     const route = this.model.route;
     if (!route || route.points.length < 2) return;
 
@@ -337,7 +350,7 @@ export class TopdownMapRenderer {
     this.context.setLineDash([6, 7]);
     this.context.beginPath();
     routePoints.forEach((point, index) => {
-      const screen = this.camera.worldToScreen(point, width, height);
+      const screen = index === 0 ? playerPoint : this.camera.worldToScreen(point, width, height);
       if (index === 0) this.context.moveTo(screen.x, screen.y);
       else this.context.lineTo(screen.x, screen.y);
     });

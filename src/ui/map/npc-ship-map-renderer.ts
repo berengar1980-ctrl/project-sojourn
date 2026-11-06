@@ -6,7 +6,7 @@ import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { MapCamera } from './map-camera';
 import { mapLocationVisualRadius, starMapShipWidth } from './map-visual-scale';
-import { projectOrbitalMapShip } from './orbital-map-projection';
+import { OrbitalMapTransitions, projectOrbitalMapShip } from './orbital-map-projection';
 import {
   layoutNpcMapLabels,
   type MapLabelBox,
@@ -26,11 +26,16 @@ export class NpcShipMapRenderer {
   private readonly maneuvers = new ShipManeuverEffectsRenderer();
   private readonly priorHeading = new Map<string, { angle: number; time: number }>();
   private readonly images = new Map<string, HTMLImageElement>();
+  private readonly orbitalTransitions = new OrbitalMapTransitions();
 
   constructor(
     private readonly context: CanvasRenderingContext2D,
     private readonly requestRedraw: () => void
   ) {}
+
+  resetOrbitVisuals(): void {
+    this.orbitalTransitions.reset();
+  }
 
   draw(
     model: StarMapViewModel,
@@ -38,7 +43,8 @@ export class NpcShipMapRenderer {
     width: number,
     height: number,
     labelsVisible: boolean,
-    navMode = false
+    navMode = false,
+    orbitalAngles: ReadonlyMap<string, number> = new Map()
   ): NpcShipMapHitArea[] {
     const hits: NpcShipMapHitArea[] = [];
     const zoom = camera.getRelativeZoom();
@@ -50,6 +56,7 @@ export class NpcShipMapRenderer {
       const image = navMode ? null : this.image(npc.spriteUrl);
       const widthPx = starMapShipWidth(npc.nominalLengthMeters, zoom);
       const location = model.locations.find((entry) => entry.id === npc.locationId);
+      const stationary = !npc.isTravelling && !npc.combatMode;
       const point = projectOrbitalMapShip(
         npc.position,
         location,
@@ -57,7 +64,9 @@ export class NpcShipMapRenderer {
         width,
         height,
         widthPx,
-        !npc.isTravelling && !npc.combatMode
+        stationary,
+        this.orbitalTransitions.blend(npc.id, stationary, timeSeconds * 1000),
+        this.orbitalTransitions.angle(npc.id, orbitalAngles.get(npc.id))
       );
       const aspect =
         image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
@@ -167,14 +176,22 @@ export class NpcShipMapRenderer {
     context.restore();
   }
 
-  drawPursuitLine(model: StarMapViewModel, camera: MapCamera, width: number, height: number): void {
+  drawPursuitLine(
+    model: StarMapViewModel,
+    camera: MapCamera,
+    width: number,
+    height: number,
+    playerPoint: { readonly x: number; readonly y: number },
+    orbitalAngles: ReadonlyMap<string, number>
+  ): void {
     const targetId = model.navigation.pursuitTargetId;
     if (!targetId) return;
     const target = model.npcShips.find((npc) => npc.id === targetId);
     if (!target) return;
 
-    const from = camera.worldToScreen(model.playerShip.position, width, height);
+    const from = playerPoint;
     const location = model.locations.find((entry) => entry.id === target.locationId);
+    const stationary = !target.isTravelling && !target.combatMode;
     const to = projectOrbitalMapShip(
       target.position,
       location,
@@ -182,7 +199,9 @@ export class NpcShipMapRenderer {
       width,
       height,
       starMapShipWidth(target.nominalLengthMeters, camera.getRelativeZoom()),
-      !target.isTravelling && !target.combatMode
+      stationary,
+      this.orbitalTransitions.blend(target.id, stationary, performance.now()),
+      this.orbitalTransitions.angle(target.id, orbitalAngles.get(target.id))
     );
     this.context.save();
     this.context.strokeStyle = 'rgba(221, 82, 67, .58)';
