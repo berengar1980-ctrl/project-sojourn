@@ -56,6 +56,43 @@ assert.equal(transitions.angle('npc-01', undefined), 1.25);
 transitions.reset();
 assert.equal(transitions.angle('npc-01', undefined), undefined);
 
+const { OrbitalMapSceneProjection } = load('src/ui/map/orbital-map-scene-projection.ts');
+const sceneTransition = new OrbitalMapSceneProjection();
+const dockedPlayer = {
+  playerShip: { position: orbit, nominalLengthMeters: 100, isTravelling: false },
+  navigation: { currentLocationId: 'haven' },
+  locations: [haven],
+  npcShips: [],
+};
+const initialAngles = sceneTransition.angles(dockedPlayer, camera(1));
+const initialPlayerPoint = sceneTransition.playerPoint(
+  dockedPlayer,
+  camera(1),
+  1200,
+  900,
+  initialAngles
+);
+const leavingPlayer = {
+  ...dockedPlayer,
+  playerShip: { ...dockedPlayer.playerShip, isTravelling: true },
+  navigation: { currentLocationId: null },
+};
+const leavingAngles = sceneTransition.angles(leavingPlayer, camera(1));
+const departingPlayerPoint = sceneTransition.playerPoint(
+  leavingPlayer,
+  camera(1),
+  1200,
+  900,
+  leavingAngles
+);
+assert(
+  Math.hypot(
+    departingPlayerPoint.x - initialPlayerPoint.x,
+    departingPlayerPoint.y - initialPlayerPoint.y
+  ) < 5,
+  'player must retain the last orbital port during departure, even with a null current port'
+);
+
 const contacts = [
   { id: 'player', locationId: 'haven', position: orbit, shipWidth: 22, stationary: true },
   { id: 'npc-01', locationId: 'haven', position: orbit, shipWidth: 22, stationary: true },

@@ -10,9 +10,11 @@ import {
 /** Shared player and NPC layout, including stable contact-relative angles. */
 export class OrbitalMapSceneProjection {
   private readonly playerTransitions = new OrbitalMapTransitions();
+  private previousPlayerLocationId: string | null = null;
 
   reset(): void {
     this.playerTransitions.reset();
+    this.previousPlayerLocationId = null;
   }
 
   angles(model: StarMapViewModel, camera: MapCamera): ReadonlyMap<string, number> {
@@ -48,9 +50,10 @@ export class OrbitalMapSceneProjection {
     angles: ReadonlyMap<string, number>
   ): ScreenPoint {
     const player = model.playerShip;
-    const location = model.locations.find(
-      (entry) => entry.id === model.navigation.currentLocationId
-    );
+    const currentLocationId = model.navigation.currentLocationId;
+    if (currentLocationId) this.previousPlayerLocationId = currentLocationId;
+    const locationId = currentLocationId ?? this.previousPlayerLocationId;
+    const location = model.locations.find((entry) => entry.id === locationId);
     return projectOrbitalMapShip(
       player.position,
       location,
