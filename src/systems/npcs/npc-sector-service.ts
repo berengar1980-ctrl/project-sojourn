@@ -8,7 +8,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 
 import { getShipDefinition } from '../ships';
 
-import { npcOperationalSpeed, tryNpcComponentUpgrade } from './npc-upgrade-service';
+import { npcOperationalSpeed } from './npc-upgrade-service';
 
 import {
   planRouteFromPoint,
@@ -37,7 +37,8 @@ import {
   npcOrbitPosition,
   npcOrbitStateFor,
 } from './npc-orbit';
-import { isServicedPort, payNpcPatrolContract, serviceNpcAtPort } from './npc-port-servicing';
+import { isServicedPort, payNpcPatrolContract } from './npc-port-servicing';
+import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
@@ -110,8 +111,7 @@ class SectorService implements NpcSectorService {
     npc.combatRecoverySeconds = Math.max(0, remaining - deltaSeconds);
     if (npc.combatRecoverySeconds > 0) return true;
 
-    const location = this.world.locations.find((candidate) => candidate.id === npc.locationId);
-    serviceNpcAtPort(npc, location);
+    serviceNpcAtLocation(this.world, npc);
     delete npc.combatRecoverySeconds;
     delete npc.combatRecoveryLocationId;
     const intact = npc.hullHp >= npc.hullMaxHp;
@@ -338,6 +338,14 @@ class SectorService implements NpcSectorService {
       return false;
     }
     if (npc.pirate) {
+      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+      const lootUnits = Object.values(npc.cargo).reduce(
+        (sum, amount) => sum + Math.max(0, Math.floor(amount)),
+        0
+      );
+      if (lootUnits > 0 && npc.locationId !== homeId) {
+        return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
+      }
       const target = pirateHuntDestination(
         this.world,
         npc,
@@ -435,9 +443,7 @@ class SectorService implements NpcSectorService {
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     const travel = npc.travel;
     if (!travel) {
-      const current = this.world.locations.find((location) => location.id === npc.locationId);
-      serviceNpcAtPort(npc, current);
-      if (current?.activities.shipyard) tryNpcComponentUpgrade(npc);
+      serviceIdleNpc(this.world, npc, this.options);
       return;
     }
 
@@ -473,7 +479,7 @@ class SectorService implements NpcSectorService {
 
     const arrival = this.world.locations.find((location) => location.id === npc.locationId);
     if (reachedFinal && isServicedPort(arrival)) payNpcPatrolContract(npc);
-    serviceNpcAtPort(npc, arrival);
+    serviceNpcAtLocation(this.world, npc);
 
     if (!reachedFinal) {
       const nextTarget = remainingStops[0] ?? finalTargetId;
