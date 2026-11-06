@@ -56,7 +56,7 @@ const eliteCivilian = sensors.sectorSensorContactInfo({
 assert.equal(eliteCivilian.visible, true, 'elite crews detect farther local civilian signals');
 assert.equal(eliteCivilian.identified, true);
 assert.equal(eliteCivilian.source, 'transponder');
-assert.equal(eliteCivilian.range, 1150, 'elite civilian reception must fit within local sector scale');
+assert.equal(eliteCivilian.range, 1150);
 
 const zoomedOutCivilian = sensors.sectorSensorContactInfo({
   playerPosition: origin,
