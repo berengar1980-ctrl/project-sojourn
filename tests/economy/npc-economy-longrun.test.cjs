@@ -131,6 +131,7 @@ assert(pirate && victim);
 const market = markets.getEntry('blackjaw-outpost', 'ferrite');
 assert(market && market.stock >= 5);
 market.stock -= 5;
+for (const resourceId of Object.keys(victim.cargo)) delete victim.cargo[resourceId];
 victim.cargo.ferrite = (victim.cargo.ferrite ?? 0) + 5;
 const beforeGoods = market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
 const stolen = transferPirateLoot(pirate, victim);
