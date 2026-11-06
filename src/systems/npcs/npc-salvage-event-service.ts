@@ -175,7 +175,9 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
       this.progressClaimedEvent(npc);
       return;
     }
-    if (!npc.travel) this.claimNextEvent(npc);
+    // A salvager assigned to a field is already executing a real work order.
+    // Do not pull it away for an unrelated distress event on the first tick.
+    if (!npc.travel && npc.autonomy?.phase !== 'working') this.claimNextEvent(npc);
   }
 
   private sellAtShipyard(npc: SectorNpcState): void {
