@@ -156,6 +156,7 @@ export function createControllerStarModel(
         return [
           {
             id: npc.id,
+            locationId: npc.locationId,
             name: contact.identified ? npc.name : 'Unbekannter Kontakt',
             job: contact.identified ? npc.job : 'patrol',
             ...(contact.identified && npc.factionId ? { factionId: npc.factionId } : {}),

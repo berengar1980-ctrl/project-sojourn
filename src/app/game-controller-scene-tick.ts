@@ -1,6 +1,11 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
 
+// The simulation still runs every animation frame. The full-resolution canvas
+// and sensor/market view-model need not be rebuilt 60+ times per second.
+const STAR_MAP_MIN_FRAME_MS = 1000 / 24;
+const lastStarMapUpdate = new WeakMap<ControllerRuntimeContext, number>();
+
 /** Presentation tick: the campaign engine never owns or mutates these scene services. */
 export function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state } = context;
@@ -9,7 +14,12 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     return;
   }
   if (state.mode === 'star-map') {
-    state.panels.star?.update(controllerStarModel(context));
+    const now = performance.now();
+    const previous = lastStarMapUpdate.get(context) ?? -Infinity;
+    if (now - previous >= STAR_MAP_MIN_FRAME_MS) {
+      lastStarMapUpdate.set(context, now);
+      state.panels.star?.update(controllerStarModel(context));
+    }
     return;
   }
   if (state.mode === 'salvage-space') {
