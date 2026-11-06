@@ -8,18 +8,60 @@ const { readModuleSource } = require('../module-source.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (pathInProject) => loadStandaloneTypeScriptModule(root, pathInProject);
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
-const { seedNpcStartupShifts } = load('src/systems/npcs/npc-startup-traffic.ts');
+const { initializeNpcOpeningScenario } = load('src/systems/npcs/npc-opening-scenario.ts');
+const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
+const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
+const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
+const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
+const { sectorPorts } = load('src/data/ports/sector-ports.ts');
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 
 const npcs = createSectorNpcEconomyStates();
-seedNpcStartupShifts(npcs);
-assert(
-  npcs.some((npc) => npc.autonomy && npc.autonomy.phase === 'ready'),
-  'some NPCs must start ready to begin real work instead of all resting'
+const markets = createEconomyMarketService(sectorPorts, economyResources);
+const player = createPlayerTradeService(markets).player;
+const allocator = createEconomySimulationService(markets, player, economyResources, 41, npcs);
+const sector = createNpcSectorService(narrowsSector, npcs, { markets });
+const economy = createNpcEconomyService(markets, allocator, economyResources, npcs, {
+  positions: Object.fromEntries(narrowsSector.locations.map((loc) => [loc.id, loc.position])),
+  travel: {
+    requestTravel: (npc, toId, reason) => sector.requestTravel(npc, toId, reason),
+    requestPatrol: (npc) => sector.requestPatrol(npc),
+    isTravelling: (npc) => sector.isTravelling(npc),
+    quoteTravel: (npc, toId, credits) => sector.quoteTravel(npc, toId, credits),
+  },
+});
+economy.advanceDay(0);
+const resourceTotals = Object.fromEntries(
+  economyResources.map((resource) => [resource.id, allocator.getResourceTotal(resource.id)])
 );
+const report = initializeNpcOpeningScenario(npcs, sector, economy, markets);
+assert.equal(report.freightersInFlight, 8, 'eight of eleven freighters depart with funded loads');
+assert.equal(report.minersWorking, 3);
+assert.equal(report.salvagersWorking, 2);
+assert.equal(report.patrolsInFlight, 2);
 assert(
-  npcs.some((npc) => npc.autonomy && npc.autonomy.phase === 'resting'),
-  'the starting sector must still have a mixture of activity and rest'
+  npcs.some((npc) => npc.autonomy?.phase === 'resting'),
+  'ships not assigned an active opening task must stay at their actual ports'
 );
+for (const npc of npcs.filter((entry) => entry.job === 'freighter' && entry.travel)) {
+  assert(Object.values(npc.cargo).some((amount) => amount > 0), 'cargo comes from the market');
+  assert(npc.credits < 3000000 + ((Number(npc.id.slice(4)) - 1) % 7) * 900000);
+  assert(npc.travel.distanceTravelled > 0, 'freighters have a genuine completed flight leg');
+  assert(npc.travel.distanceTravelled < npc.travel.routeDistance);
+  assert(npc.fuel < npc.fuelCapacity, 'travelled distance must already consume fuel');
+}
+for (const resource of economyResources) {
+  assert.equal(
+    allocator.getResourceTotal(resource.id),
+    resourceTotals[resource.id],
+    'opening cargo and local extraction must conserve physically available resources'
+  );
+}
+const workers = npcs.filter((npc) => npc.autonomy?.phase === 'working');
+assert.equal(workers.length, 5);
+assert(workers.every((npc) => npc.locationId === npc.workLocationId));
 
 const civilians = npcs.filter((npc) => !npc.pirate);
 const freighters = civilians.filter((npc) => npc.job === 'freighter');
@@ -47,13 +89,11 @@ assert(
 );
 assert(
   readModuleSource(root, 'src/app/game-controller-economy.ts').includes(
-    'seedNpcStartupShifts(npcStates)'
+    'initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets)'
   )
 );
 assert(
-  !readModuleSource(root, 'src/app/game-controller-economy.ts').includes(
-    'warmStartNpcTraffic(sectorNpcs, npcEconomy)'
-  ),
-  'expensive prehistory must no longer block synchronous controller creation'
+  !readModuleSource(root, 'src/app/bootstrap.ts').includes('warmStartTraffic'),
+  'campaign setup must not simulate any historical NPC time'
 );
-console.log('PASS NPC startup shifts, balanced sector ports and visible stationed ships');
+console.log('PASS funded in-flight freight, working NPCs, conserved resources and no time warp');
