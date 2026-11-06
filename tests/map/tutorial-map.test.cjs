@@ -45,7 +45,10 @@ assert(
     navRenderer.includes('spokes[stationType]'),
   'stations must retain type-specific symbols in physical and NAV views'
 );
-assert(!renderer.includes('locationId ='), 'renderer must not mutate player navigation state');
+assert(
+  !/\\.(?:currentLocationId|selectedDestinationId|destinationId)\\s*=(?!=)/.test(renderer),
+  'renderer must not mutate player navigation state'
+);
 assert(panel.includes("'WERFT'"), 'star map must identify shipyard locations');
 assert(
   panel.includes('map-mode-toggle') &&
