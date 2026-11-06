@@ -1,10 +1,11 @@
 import type { NpcOrbitState, SectorNpcState } from '../../core/npc-types';
-import type { WorldMap, WorldPoint } from '../../core/world-types';
+import type { WorldMap, WorldPoint, WorldLocation } from '../../core/world-types';
 import { hashId } from './npc-sector-routing';
 
 const FULL_CIRCLE = Math.PI * 2;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-const CLEARANCE = 78;
+const CLEARANCE = 72;
+const RADIAL_OFFSETS = [0, 42, 84, 126, 168, 210];
 const ANGLE_VARIANTS = [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.65, -1.65, 2.1, -2.1, Math.PI];
 const berthCache = new WeakMap<WorldMap, Map<string, NpcOrbitState>>();
 
@@ -24,6 +25,12 @@ function berthSlot(id: string): number {
   return hashId(id) % 67;
 }
 
+function standardId(slot: number): string | null {
+  if (slot >= 0 && slot < 24) return 'npc-' + String(slot + 1).padStart(2, '0');
+  if (slot >= 24 && slot < 33) return 'pirate-' + String(slot - 23).padStart(2, '0');
+  return null;
+}
+
 function berthPoint(center: WorldPoint, radius: number, angle: number): WorldPoint {
   return {
     x: center.x + radius * Math.cos(angle),
@@ -31,8 +38,13 @@ function berthPoint(center: WorldPoint, radius: number, angle: number): WorldPoi
   };
 }
 
-/** Clearance to ALL neighbouring world bodies, not just the selected planet. */
-function berthClearance(world: WorldMap, ownerId: string, point: WorldPoint): number {
+/** Clearance to other space bodies AND all already assigned ship holding slots. */
+function berthClearance(
+  world: WorldMap,
+  ownerId: string,
+  point: WorldPoint,
+  assigned: readonly WorldPoint[]
+): number {
   let clear = Math.min(
     point.x - 32,
     point.y - 32,
@@ -49,13 +61,65 @@ function berthClearance(world: WorldMap, ownerId: string, point: WorldPoint): nu
       Math.hypot(point.x - body.position.x, point.y - body.position.y) - safety
     );
   }
+  for (const berth of assigned) {
+    clear = Math.min(clear, Math.hypot(point.x - berth.x, point.y - berth.y) - 24);
+  }
   return clear;
 }
 
-/**
- * Stable holding lanes, spread across a planetary neighbourhood rather than
- * stacked over its surface or its nearby moon/station.
- */
+function makeBerth(
+  world: WorldMap,
+  location: WorldLocation,
+  id: string,
+  assigned: readonly WorldPoint[]
+): NpcOrbitState {
+  const slot = berthSlot(id);
+  const baseRadius = orbitRadius(location.kind, location.radius, slot % 5);
+  const phase = ((hashId(location.id + ':berth-phase') % 10000) / 10000) * FULL_CIRCLE;
+  const startingAngle = phase + slot * GOLDEN_ANGLE;
+  let chosenRadius = baseRadius;
+  let chosenAngle = startingAngle;
+  let bestClearance = Number.NEGATIVE_INFINITY;
+
+  for (const radial of RADIAL_OFFSETS) {
+    for (const offset of ANGLE_VARIANTS) {
+      const radius = baseRadius + radial;
+      const angle = startingAngle + offset;
+      const clearance = berthClearance(
+        world,
+        location.id,
+        berthPoint(location.position, radius, angle),
+        assigned
+      );
+      if (clearance > bestClearance) {
+        bestClearance = clearance;
+        chosenAngle = angle;
+        chosenRadius = radius;
+      }
+      if (clearance >= CLEARANCE) {
+        return {
+          locationId: location.id,
+          center: { ...location.position },
+          radius,
+          angleRadians: angle,
+          anchorAngleRadians: angle,
+          driftSeconds: 0,
+        };
+      }
+    }
+  }
+
+  return {
+    locationId: location.id,
+    center: { ...location.position },
+    radius: chosenRadius,
+    angleRadians: chosenAngle,
+    anchorAngleRadians: chosenAngle,
+    driftSeconds: 0,
+  };
+}
+
+/** Slots are built in stable captain-ID order, independent of active traffic. */
 export function npcOrbitStateFor(
   world: WorldMap,
   npc: SectorNpcState,
@@ -84,41 +148,29 @@ export function npcOrbitStateFor(
     cache = new Map();
     berthCache.set(world, cache);
   }
-  const cacheKey = locationId + ':' + npc.id;
-  const cached = cache.get(cacheKey);
+  const key = locationId + ':' + npc.id;
+  const cached = cache.get(key);
   if (cached) return { ...cached };
 
   const slot = berthSlot(npc.id);
-  const radius = orbitRadius(location.kind, location.radius, slot % 5);
-  const phase = ((hashId(locationId + ':berth-phase') % 10000) / 10000) * FULL_CIRCLE;
-  const startingAngle = phase + slot * GOLDEN_ANGLE;
-  let bestAngle = startingAngle;
-  let bestClearance = Number.NEGATIVE_INFINITY;
-  for (const offset of ANGLE_VARIANTS) {
-    const angle = startingAngle + offset;
-    const clearance = berthClearance(
-      world,
-      locationId,
-      berthPoint(location.position, radius, angle)
-    );
-    if (clearance > bestClearance) {
-      bestClearance = clearance;
-      bestAngle = angle;
+  const canonical = standardId(slot) === npc.id;
+  const assigned: WorldPoint[] = [];
+  if (canonical) {
+    for (let index = 0; index <= slot; index += 1) {
+      const id = standardId(index);
+      if (!id) continue;
+      const nextKey = locationId + ':' + id;
+      let berth = cache.get(nextKey);
+      if (!berth) {
+        berth = makeBerth(world, location, id, assigned);
+        cache.set(nextKey, berth);
+      }
+      assigned.push(berthPoint(berth.center, berth.radius, berth.anchorAngleRadians ?? 0));
     }
-    if (clearance >= CLEARANCE) {
-      bestAngle = angle;
-      break;
-    }
+    return { ...cache.get(key)! };
   }
-  const berth: NpcOrbitState = {
-    locationId,
-    center: { ...location.position },
-    radius,
-    angleRadians: bestAngle,
-    anchorAngleRadians: bestAngle,
-    driftSeconds: 0,
-  };
-  cache.set(cacheKey, berth);
+  const berth = makeBerth(world, location, npc.id, assigned);
+  cache.set(key, berth);
   return { ...berth };
 }
 
@@ -161,10 +213,7 @@ export function npcOrbitHeading(world: WorldMap, npc: SectorNpcState): number {
   return (npc.orbit?.angleRadians ?? 0) + orbitDirection(npc) * Math.PI * 0.5;
 }
 
-/**
- * Ships slowly patrol an assigned orbital arc. A full circle would intersect
- * nearby moons and stations even when the initial berth is collision-free.
- */
+/** Limited orbital movement avoids crossing nearby moons, stations and berths. */
 export function advanceNpcOrbit(world: WorldMap, npc: SectorNpcState, seconds: number): void {
   npcOrbitPosition(world, npc);
   if (!npc.orbit || npc.orbit.radius <= 0 || seconds <= 0) return;
