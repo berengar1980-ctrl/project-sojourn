@@ -8,17 +8,20 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const renderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
+const scale = readModuleSource(root, 'src/ui/map/map-visual-scale.ts');
 const camera = fs.readFileSync(path.join(root, 'src/ui/map/map-camera.ts'), 'utf8');
 
 assert(
-  renderer.includes(
-    "if (location.kind === 'moon') return Math.min(12, Math.max(4, location.radius * 0.65));"
-  ),
+  scale.includes("location.kind === 'moon'"),
   'moon symbols must stay subordinate to planets'
 );
 assert(
-  renderer.includes('return Math.min(30, Math.max(8, location.radius * 0.55));'),
+  scale.includes('Math.min(30, Math.max(8, location.radius * 0.55))'),
   'planet symbols must stay compact while preserving size differences'
+);
+assert(
+  renderer.includes('mapLocationVisualRadius(location, this.camera.getRelativeZoom())'),
+  'planet rendering and ship-ring projection must share exactly the same symbol radius'
 );
 assert(
   camera.includes('const MAX_RELATIVE_ZOOM = 4.6;') &&
