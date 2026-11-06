@@ -47,6 +47,8 @@ const vessel = {
   pirate: false,
   cargo: { ore: 50 },
   locationId: 'rich',
+  travel: { targetLocationId: 'rich' },
+  hullHp: 100,
 };
 const livePosition = (npc) => world.locations.find((entry) => entry.id === npc.locationId).position;
 const quote = (destinationId) => ({

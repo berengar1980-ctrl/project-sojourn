@@ -21,6 +21,8 @@ export interface NpcOrbitState {
   readonly locationId: string;
   readonly center: WorldPoint;
   angleRadians: number;
+  anchorAngleRadians?: number;
+  driftSeconds?: number;
   readonly radius: number;
 }
 

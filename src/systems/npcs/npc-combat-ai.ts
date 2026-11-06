@@ -19,9 +19,9 @@ export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
   if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
     return false;
   }
-  if (npc.pirate) return true;
-  if (npc.job === 'patrol') return false;
-  return npc.aggression >= 65;
+  // Aggression is a personality/combat-response trait, not evidence of a crime.
+  // Normal freighters, miners and salvagers are never automatic patrol targets.
+  return npc.pirate === true;
 }
 
 export function npcIsPiratePrey(npc: SectorNpcState): boolean {

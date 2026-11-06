@@ -99,10 +99,18 @@ function pirateTrafficAt(
       if (entry.id !== pirateId) rivals += proximity;
     } else if (entry.job === 'patrol') {
       patrols += proximity;
-    } else if (entry.job === 'freighter' || entry.job === 'miner' || entry.job === 'salvager') {
+    } else if (
+      entry.hullHp > 0 &&
+      !entry.combatMovement &&
+      (entry.job === 'freighter' || entry.job === 'miner' || entry.job === 'salvager')
+    ) {
+      const carried = Object.values(entry.cargo).reduce(
+        (sum, units) => sum + Math.max(0, Number(units) || 0),
+        0
+      );
+      if (carried <= 0 || (!entry.travel && entry.autonomy?.phase !== 'working')) continue;
       traffic += proximity;
-      cargoUnits +=
-        proximity * Object.values(entry.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
+      cargoUnits += proximity * carried;
     }
   }
   return { traffic, cargoUnits, rivals, patrols };

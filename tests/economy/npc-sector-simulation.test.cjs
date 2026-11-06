@@ -95,10 +95,18 @@ const pirate = npcs.find((npc) => npc.pirate);
 assert(pirate);
 delete pirate.travel;
 delete pirate.combatMovement;
+// A real pirate hunt requires a funded target carrying cargo outside a port.
+const prey = npcs.find((npc) => npc.job === 'freighter' && npc.id !== freighter.id);
+assert(prey);
+prey.locationId = 'meridian-exchange';
+prey.cargo = { ore: 200 };
+assert.equal(service.requestTravel(prey, 'haven'), true);
+pirate.locationId = 'meridian-exchange';
+pirate.fuel = pirate.fuelCapacity;
 assert.equal(
   service.requestPatrol(pirate),
   true,
-  'pirate autonomy must choose and travel toward a hunt zone'
+  'pirates with a viable cargo-bearing target must be able to hunt'
 );
 assert(service.isTravelling(pirate));
 assert(pirate.pirateHuntZoneId, 'pirate hunt-zone choice must persist on the NPC state');

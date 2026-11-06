@@ -197,7 +197,18 @@ function npcAttackTarget(
     runtime.options.sectorNpcs.npcs
       .filter((candidate) => {
         if (candidate.id === attacker.id) return false;
-        return attacker.pirate ? npcIsPiratePrey(candidate) : npcLooksHostileToPatrol(candidate);
+        if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
+        const cargoUnits = Object.values(candidate.cargo).reduce(
+          (total, units) => total + Math.max(0, Number(units) || 0),
+          0
+        );
+        // Port traffic is not an automatic raid. Hunt funded, actually loaded
+        // vessels in flight or at an active field operation.
+        return (
+          npcIsPiratePrey(candidate) &&
+          cargoUnits > 0 &&
+          (Boolean(candidate.travel) || candidate.autonomy?.phase === 'working')
+        );
       })
       .map((candidate) => ({
         candidate,

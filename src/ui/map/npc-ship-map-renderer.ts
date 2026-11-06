@@ -5,7 +5,12 @@ import { ShipManeuverEffectsRenderer } from '../ships/ship-maneuver-effects-rend
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { MapCamera } from './map-camera';
-import { starMapShipWidth } from './map-visual-scale';
+import { mapSymbolScale, starMapShipWidth } from './map-visual-scale';
+import {
+  layoutNpcMapLabels,
+  type MapLabelBox,
+  type NpcMapLabelRequest,
+} from './npc-ship-label-layout';
 
 export interface NpcShipMapHitArea {
   readonly id: string;
@@ -38,6 +43,7 @@ export class NpcShipMapRenderer {
     const zoom = camera.getRelativeZoom();
     const timeSeconds = performance.now() / 1000;
     const starPoint = camera.worldToScreen(model.star.position, width, height);
+    const pendingLabels: NpcMapLabelRequest[] = [];
 
     for (const npc of model.npcShips) {
       const point = camera.worldToScreen(npc.position, width, height);
@@ -80,18 +86,53 @@ export class NpcShipMapRenderer {
       });
 
       if (labelsVisible && (zoom >= 1.35 || npc.isSelected || npc.isPursuitTarget)) {
-        this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
-        this.context.font = '9px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(
-          npc.name,
-          point.x,
-          point.y + (navMode ? 21 : geometry.height / 2 + 11)
-        );
+        pendingLabels.push({
+          id: npc.id,
+          name: npc.name,
+          x: point.x,
+          y: point.y,
+          shipWidth: navMode ? 14 : widthPx,
+          shipHeight: navMode ? 14 : geometry.height,
+          isSelected: npc.isSelected === true,
+          isPursuitTarget: npc.isPursuitTarget === true,
+          isTravelling: npc.isTravelling,
+        });
       }
     }
 
+    this.drawNpcLabels(model, camera, width, height, zoom, navMode, pendingLabels);
     return hits;
+  }
+
+  private drawNpcLabels(
+    model: StarMapViewModel,
+    camera: MapCamera,
+    width: number,
+    height: number,
+    zoom: number,
+    navMode: boolean,
+    pendingLabels: readonly NpcMapLabelRequest[]
+  ): void {
+    if (pendingLabels.length === 0) return;
+    const obstacles: MapLabelBox[] = [];
+    for (const location of model.locations) {
+      const point = camera.worldToScreen(location.position, width, height);
+      const symbol = mapSymbolScale(zoom);
+      const radius = location.kind === 'planet' ? 30 * symbol : 17 * symbol;
+      obstacles.push({ x: point.x, y: point.y, width: radius * 2, height: radius * 2 });
+      obstacles.push({
+        x: point.x,
+        y: point.y + radius + 17,
+        width: Math.max(35, location.name.length * 6 + 12),
+        height: 15,
+      });
+    }
+    this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
+    this.context.font = '9px ui-monospace, monospace';
+    this.context.textAlign = 'center';
+    for (const label of layoutNpcMapLabels(pendingLabels, obstacles)) {
+      this.context.fillText(label.name, label.x, label.baseline);
+    }
   }
 
   private drawNavContact(
@@ -221,7 +262,8 @@ export class NpcShipMapRenderer {
     height: number
   ): void {
     const npc = model.npcShips.find((candidate) => candidate.id === npcId);
-    if (!npc || (!npc.isSelected && !npc.isPursuitTarget && !npc.combatMode)) return;
+    // Ordinary NPC pursuits must not cover an entire busy port in orange circles.
+    if (!npc || (!npc.isSelected && !npc.isPursuitTarget)) return;
 
     this.context.save();
     this.context.strokeStyle = npc.isPursuitTarget
