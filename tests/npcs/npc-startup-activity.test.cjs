@@ -9,7 +9,6 @@ const root = path.resolve(__dirname, '../..');
 const load = (pathInProject) => loadStandaloneTypeScriptModule(root, pathInProject);
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { seedNpcStartupShifts } = load('src/systems/npcs/npc-startup-traffic.ts');
-const { npcVisibleInSpace } = load('src/systems/npcs/npc-sector-visibility.ts');
 
 const npcs = createSectorNpcEconomyStates();
 seedNpcStartupShifts(npcs);
@@ -22,18 +21,32 @@ assert(
   'the starting sector must still have a mixture of activity and rest'
 );
 
-const civilian = npcs.find((npc) => npc.job === 'freighter');
-const worker = npcs.find((npc) => npc.job === 'miner');
-assert(civilian && worker);
-assert.equal(npcVisibleInSpace(civilian), false, 'docked freighter must not float on the map');
-civilian.travel = { targetLocationId: 'haven' };
-assert.equal(npcVisibleInSpace(civilian), true, 'real cargo journey must remain visible');
-delete civilian.travel;
-worker.locationId = worker.workLocationId;
-worker.autonomy.phase = 'working';
-assert.equal(npcVisibleInSpace(worker), true, 'working miner is visible at the actual field');
-worker.autonomy.phase = 'resting';
-assert.equal(npcVisibleInSpace(worker), false, 'resting miner stays docked');
+const civilians = npcs.filter((npc) => !npc.pirate);
+const freighters = civilians.filter((npc) => npc.job === 'freighter');
+assert.equal(
+  new Set(freighters.map((npc) => npc.homePortId)).size,
+  freighters.length,
+  'freighters must start at distinct real trade ports throughout the sector'
+);
+const cluster = civilians.filter(
+  (npc) => npc.locationId === 'haven' || npc.locationId === 'meridian-exchange'
+);
+assert(
+  cluster.length <= 3,
+  'Haven and its neighboring station must not contain the bulk of starting civilian traffic'
+);
+assert(
+  readModuleSource(root, 'src/app/game-controller-star-map.ts').includes(
+    'if (npc.hullHp <= 0) return []'
+  ),
+  'docked and orbiting vessels must stay visible as actual NPC ships'
+);
+assert(
+  !readModuleSource(root, 'src/app/game-controller-star-map.ts').includes(
+    'npcVisibleInSpace'
+  ),
+  'a ship must not disappear just because its economy is in a waiting phase'
+);
 assert(
   readModuleSource(root, 'src/app/game-controller-economy.ts').includes(
     'seedNpcStartupShifts(npcStates)'
@@ -45,4 +58,4 @@ assert(
   ),
   'expensive prehistory must no longer block synchronous controller creation'
 );
-console.log('PASS NPC startup shifts, docked ship visibility and responsive initialization');
+console.log('PASS NPC startup shifts, balanced sector ports and visible stationed ships');

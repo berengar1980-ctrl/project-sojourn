@@ -7,7 +7,6 @@ import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
 import type { NavigationService } from '../systems/navigation';
 import { sectorSensorContactInfo } from '../systems/scanning/sensor-contact-service';
-import { npcVisibleInSpace } from '../systems/npcs/npc-sector-visibility';
 import { getShipDefinition } from '../systems/ships';
 import { createStarMapPanel, type StarMapPanel } from '../ui/map/star-map-panel';
 import type { ControllerEconomy } from './game-controller-economy';
@@ -141,7 +140,7 @@ export function createControllerStarModel(
   const npcShips = foreignSystem
     ? []
     : economy.sectorNpcs.npcs.flatMap((npc) => {
-        if (npc.hullHp <= 0 || !npcVisibleInSpace(npc)) return [];
+        if (npc.hullHp <= 0) return [];
         const definition = getShipDefinition(npc.shipId);
         if (!definition) return [];
         const position = economy.sectorNpcs.livePosition(npc);
