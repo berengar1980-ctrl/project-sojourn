@@ -197,7 +197,7 @@ export class TopdownMapRenderer {
       )
       .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
-    this.drawPlayerShip(playerPoint);
+    this.drawPlayerShip(width, height, playerPoint);
   }
 
   private contentBounds() {
@@ -218,8 +218,7 @@ export class TopdownMapRenderer {
     };
   }
 
-  private drawPlayerShip(point: ScreenPoint): void {
-    const player = this.model.playerShip;
+  private drawPlayerShip(width: number, height: number, point: ScreenPoint): void {
     if (this.displayMode === 'nav') {
       this.navRenderer.drawShip(
         point,

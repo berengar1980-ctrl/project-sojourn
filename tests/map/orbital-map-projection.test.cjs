@@ -88,6 +88,6 @@ assert(contactsSource.includes('const to = projectOrbitalMapShip('));
 assert(contactsSource.includes('orbitalAngles.get(npc.id)'));
 assert(contactsSource.includes('this.orbitalTransitions.blend('));
 assert(map.includes('this.drawRoute(width, height, playerPoint)'));
-assert(map.includes('this.drawPlayerShip(playerPoint)'));
+assert(map.includes('this.drawPlayerShip(width, height, playerPoint)'));
 assert.deepEqual(orbit, { x: 500, y: 400 });
 console.log('PASS consistent orbital rings, separated ships and smooth state transitions');
