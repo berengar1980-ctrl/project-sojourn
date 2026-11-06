@@ -8,6 +8,7 @@ const { readModuleSource } = require('../module-source.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const projection = load('src/ui/map/orbital-map-projection.ts');
+const project = projection.projectOrbitalMapShip;
 const { mapLocationVisualRadius } = load('src/ui/map/map-visual-scale.ts');
 
 const haven = {
@@ -24,49 +25,29 @@ const camera = (zoom) => ({
 
 for (const zoom of [1, 1.4, 2.6, 3.3, 4.6]) {
   const center = camera(zoom).worldToScreen(haven.position);
-  const ship = projection.projectOrbitalMapShip(
-    orbit,
-    haven,
-    camera(zoom),
-    1200,
-    900,
-    22,
-    true
-  );
+  const ship = project(orbit, haven, camera(zoom), 1200, 900, 22, true);
   const distance = Math.hypot(ship.x - center.x, ship.y - center.y);
   const rim = mapLocationVisualRadius(haven, zoom) + 9;
-  assert.equal(
-    Math.round((distance - rim) * 100) / 100,
-    15,
-    'inner ship edge must remain outside the same orbit ring at every zoom'
-  );
+  assert.equal(Math.round((distance - rim) * 100) / 100, 15);
 
   const physical = camera(zoom).worldToScreen(orbit);
-  const travelling = projection.projectOrbitalMapShip(
-    orbit,
-    haven,
-    camera(zoom),
-    1200,
-    900,
-    22,
-    false
-  );
-  assert.deepEqual(travelling, physical, 'normal flight uses world coordinates');
+  const travelling = project(orbit, haven, camera(zoom), 1200, 900, 22, false);
+  assert.deepEqual(travelling, physical, 'flight must always use world coordinates');
 }
 
 const field = { ...haven, kind: 'asteroid-field' };
-const mining = projection.projectOrbitalMapShip(orbit, field, camera(1), 1200, 900, 22, true);
-assert.deepEqual(mining, orbit, 'mining fields do not use cosmetic dock positions');
+const mining = project(orbit, field, camera(1), 1200, 900, 22, true);
+assert.deepEqual(mining, orbit, 'fields do not use cosmetic dock positions');
 
 const transitions = new projection.OrbitalMapTransitions();
 assert.equal(transitions.blend('npc-01', false, 1000), 0);
 assert.equal(transitions.blend('npc-01', true, 1000), 0);
 const halfArrival = transitions.blend('npc-01', true, 1275);
-assert(Math.abs(halfArrival - 0.5) < 0.001, 'arrival must fade toward the orbit ring');
+assert(Math.abs(halfArrival - 0.5) < 0.001);
 assert.equal(transitions.blend('npc-01', true, 1550), 1);
 assert.equal(transitions.blend('npc-01', false, 1600), 1);
 const halfDeparture = transitions.blend('npc-01', false, 1875);
-assert(Math.abs(halfDeparture - 0.5) < 0.001, 'departures must fade toward real flight');
+assert(Math.abs(halfDeparture - 0.5) < 0.001);
 assert.equal(transitions.blend('npc-01', false, 2150), 0);
 transitions.reset();
 assert.equal(transitions.blend('npc-01', true, 2200), 1);
@@ -80,21 +61,15 @@ const contacts = [
 for (const zoom of [1, 2.6, 4.6]) {
   const angles = projection.layoutOrbitalShipAngles(contacts, [haven], zoom);
   assert.equal(angles.size, contacts.length);
-  const points = contacts.map((contact) => projection.projectOrbitalMapShip(
-    contact.position,
-    haven,
-    camera(zoom),
-    1200,
-    900,
-    contact.shipWidth,
-    true,
-    1,
-    angles.get(contact.id)
-  ));
+  const points = contacts.map((contact) => {
+    const angle = angles.get(contact.id);
+    return project(orbit, haven, camera(zoom), 1200, 900, 22, true, 1, angle);
+  });
   for (let i = 0; i < points.length; i += 1) {
     for (let j = i + 1; j < points.length; j += 1) {
-      const separation = Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
-      assert(separation > 20, 'ships assigned to the same dock must not stack');
+      const dx = points[i].x - points[j].x;
+      const dy = points[i].y - points[j].y;
+      assert(Math.hypot(dx, dy) > 20, 'ships at the same dock must not stack');
     }
   }
 }
@@ -103,12 +78,12 @@ const map = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const contactsSource = readModuleSource(root, 'src/ui/map/npc-ship-map-renderer.ts');
 const scene = readModuleSource(root, 'src/ui/map/orbital-map-scene-projection.ts');
 assert(scene.includes('layoutOrbitalShipAngles('));
-assert(scene.includes('projectOrbitalMapShip('), 'player uses the same projection');
+assert(scene.includes('projectOrbitalMapShip('));
 assert(map.includes('this.orbitalProjection.playerPoint('));
 assert(contactsSource.includes('const to = projectOrbitalMapShip('));
 assert(contactsSource.includes('orbitalAngles.get(npc.id)'));
 assert(contactsSource.includes('this.orbitalTransitions.blend('));
 assert(map.includes('this.drawRoute(width, height, playerPoint)'));
 assert(map.includes('this.drawPlayerShip(playerPoint)'));
-assert.deepEqual(orbit, { x: 500, y: 400 }, 'world coordinates remain untouched');
+assert.deepEqual(orbit, { x: 500, y: 400 });
 console.log('PASS consistent orbital rings, separated ships and smooth state transitions');

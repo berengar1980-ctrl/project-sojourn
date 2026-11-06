@@ -65,10 +65,8 @@ export function orbitalMapShipRadius(
   relativeZoom: number,
   shipWidth: number
 ): number {
-  return mapLocationVisualRadius(location, relativeZoom) +
-    ORBIT_OUTLINE_OFFSET +
-    shipWidth * 0.5 +
-    SHIP_GAP;
+  const bodyRadius = mapLocationVisualRadius(location, relativeZoom);
+  return bodyRadius + ORBIT_OUTLINE_OFFSET + shipWidth * 0.5 + SHIP_GAP;
 }
 
 /**
@@ -102,9 +100,10 @@ export function layoutOrbitalShipAngles(
           contact.position.x - location.position.x
         ),
       }))
-      .sort((first, second) =>
-        first.angle - second.angle || first.contact.id.localeCompare(second.contact.id)
-      );
+      .sort((first, second) => {
+        const difference = first.angle - second.angle;
+        return difference || first.contact.id.localeCompare(second.contact.id);
+      });
     const placed = ordered.map((entry) => entry.angle);
     const maxSeparation = (Math.PI * 2 * 0.85) / ordered.length;
     for (let round = 0; round < 18; round += 1) {
@@ -163,7 +162,9 @@ export function projectOrbitalMapShip(
 
   const deltaX = worldPosition.x - location.position.x;
   const deltaY = worldPosition.y - location.position.y;
-  if (Math.hypot(deltaX, deltaY) < 0.001 && assignedAngle === undefined) return physical;
+  if (Math.hypot(deltaX, deltaY) < 0.001 && assignedAngle === undefined) {
+    return physical;
+  }
 
   const center = camera.worldToScreen(location.position, viewportWidth, viewportHeight);
   const angle = assignedAngle ?? Math.atan2(deltaY, deltaX);
