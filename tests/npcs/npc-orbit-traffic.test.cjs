@@ -100,10 +100,10 @@ warmStartNpcTraffic(
 assert.equal(sectorTicks, economyTicks, 'startup must advance physical travel and trade together');
 assert.equal(totalSectorTime, NPC_TRAFFIC_PREHISTORY_SECONDS);
 assert(
-  readModuleSource(root, 'src/app/game-controller-economy.ts').includes(
-    'warmStartNpcTraffic(sectorNpcs, npcEconomy)'
+  readModuleSource(root, 'src/app/bootstrap.ts').includes(
+    'game.warmStartTraffic(seconds)'
   ),
-  'real NPC population must have an already-running prehistory at game start'
+  'real NPC startup history must be advanced in browser-friendly chunks'
 );
 
-console.log('PASS orbital NPC berths, moving idle traffic, physical trips and warm startup');
+console.log('PASS orbital berths, travel endpoints and chunked startup traffic');
