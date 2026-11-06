@@ -45,6 +45,7 @@ import {
   type SectorSalvageEventService,
 } from '../systems/salvage';
 import { createNpcSectorService, type NpcSectorService } from '../systems/npcs/npc-sector-service';
+import { warmStartNpcTraffic } from '../systems/npcs/npc-startup-traffic';
 import {
   createNpcSalvageEventService,
   type NpcSalvageEventService,
@@ -105,6 +106,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     },
   });
   npcEconomy.advanceDay(0);
+  warmStartNpcTraffic(sectorNpcs, npcEconomy);
   const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
   salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
   const npcSalvageEvents = createNpcSalvageEventService({

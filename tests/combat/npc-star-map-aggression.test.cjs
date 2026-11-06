@@ -40,7 +40,7 @@ defender.locationId = mapModule.narrowsSector.startLocationId;
 attacker.aggression = 95;
 defender.aggression = 90;
 
-const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, npcs, {
+const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, [attacker, defender], {
   getPlayerPosition: () => navigation.getSnapshot().currentPosition,
 });
 const weapon = components.getShipComponent('weapon', 'weapon1');
@@ -71,8 +71,17 @@ engagements.tick(1.1);
 
 assert.equal(
   sector.combatMode(attacker),
+  'pursue',
+  'an aggressive patrol must first intercept the hostile contact from its real orbital position'
+);
+for (let step = 0; step < 600 && sector.combatMode(attacker) !== 'engaged'; step += 1) {
+  sector.tick(0.25);
+  engagements.tick(0.25);
+}
+assert.equal(
+  sector.combatMode(attacker),
   'engaged',
-  'aggressive patrol must autonomously intercept a hostile NPC contact'
+  'aggressive patrol must physically close the gap and engage the hostile NPC'
 );
 assert.equal(
   sector.combatMode(defender),

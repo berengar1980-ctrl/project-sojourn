@@ -49,9 +49,13 @@ assert.equal(sector.quoteTravel(npc, 'destination', 400), null);
 
 const quoted = sector.quoteTravel(npc, 'destination', 800);
 assert(quoted, 'a sufficiently funded multi-stop route must be offered');
-assert.equal(quoted.distance, 1200);
-assert.equal(quoted.fuelExpense, 1200, 'includes consumption of fuel already aboard');
-assert.equal(quoted.refuelCost, 800, 'only fuel bought en route drains immediate liquidity');
+assert(quoted.distance > 1000, 'quote must include the physical route between orbital berths');
+assert.equal(
+  quoted.fuelExpense,
+  Math.ceil(quoted.distance * npc.fuelUse * 0.025 * 10),
+  'fuel expense must reflect actual orbital flight distance, including fuel already aboard'
+);
+assert(quoted.refuelCost > 0 && quoted.refuelCost <= 800, 'fuel purchases must stay within budget');
 assert.equal(npc.fuel, 50, 'quoting travel cannot alter the tank');
 assert.equal(npc.credits, 800, 'quoting travel cannot debit credits');
 assert.equal(npc.travel, undefined, 'quoting travel cannot start a flight');

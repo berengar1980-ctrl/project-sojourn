@@ -17,6 +17,13 @@ export interface NpcWorkEventRecord {
   readonly resultText: string;
 }
 
+export interface NpcOrbitState {
+  readonly locationId: string;
+  readonly center: WorldPoint;
+  angleRadians: number;
+  readonly radius: number;
+}
+
 export interface NpcTravelState {
   readonly finalTargetId: string;
   targetLocationId: string;
@@ -71,6 +78,7 @@ export interface SectorNpcState extends NpcEconomyState {
   componentUpgradeCount?: number;
   lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;
+  orbit?: NpcOrbitState;
   combatMovement?: NpcCombatMovementState;
 }
 

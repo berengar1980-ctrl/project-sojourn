@@ -212,6 +212,16 @@ export function planRouteFromPoint(
   ]);
 }
 
+/** Retain cached sector waypoints while using real orbital departure and arrival berths. */
+export function repointRouteEndpoints(
+  route: RoutePlan,
+  from: WorldPoint,
+  to: WorldPoint
+): RoutePlan {
+  const points = route.points.length > 2 ? [from, ...route.points.slice(1, -1), to] : [from, to];
+  return { ...route, points, distance: pathDistance(points) };
+}
+
 export function planRoute(world: WorldMap, fromId: string, toId: string): RoutePlan {
   return planRouteWithProfile(world, fromId, toId, 'balanced');
 }

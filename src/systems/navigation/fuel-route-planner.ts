@@ -2,6 +2,7 @@ import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types
 import {
   planRouteFromPoint,
   planRouteWithProfile,
+  repointRouteEndpoints,
   type RoutePlan,
   type RouteProfile,
 } from './route-planner';
@@ -41,6 +42,8 @@ export interface FuelRouteRequest {
   readonly capacity: number;
   readonly credits: number;
   readonly fuelPerDistance: number;
+  /** Optional physical berth positions for NPC-only routing; players retain legacy routes. */
+  readonly locationPosition?: (locationId: string) => WorldPoint;
 }
 
 interface SearchState {
@@ -68,10 +71,16 @@ function purchaseFuel(fuel: number, capacity: number, credits: number) {
 }
 
 function legBetween(request: FuelRouteRequest, fromId: string, toId: string): RoutePlan {
-  if (fromId === 'deep-space') {
-    return planRouteFromPoint(request.world, request.fromPosition, toId, request.profile);
-  }
-  return planRouteWithProfile(request.world, fromId, toId, request.profile);
+  const base =
+    fromId === 'deep-space'
+      ? planRouteFromPoint(request.world, request.fromPosition, toId, request.profile)
+      : planRouteWithProfile(request.world, fromId, toId, request.profile);
+  if (!request.locationPosition) return base;
+  return repointRouteEndpoints(
+    base,
+    fromId === 'deep-space' ? request.fromPosition : request.locationPosition(fromId),
+    request.locationPosition(toId)
+  );
 }
 
 function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRoutePlan {
