@@ -16,7 +16,8 @@ export function seedNpcStartupShifts(npcs: readonly NpcEconomyState[]): void {
   for (const npc of npcs) {
     ensureNpcAutonomy(npc);
     const shift = hashId(npc.id + ':shift') % 4;
-    if (shift === 0 || (npc.role === 'miner' || npc.role === 'salvager') && shift === 1) {
+    const isWorker = npc.role === 'miner' || npc.role === 'salvager';
+    if (shift === 0 || (isWorker && shift === 1)) {
       beginNpcAutonomyPhase(npc, 'ready', 0);
     } else if (shift === 1) {
       beginNpcAutonomyPhase(npc, 'thinking', 2 + (hashId(npc.id) % 4));
