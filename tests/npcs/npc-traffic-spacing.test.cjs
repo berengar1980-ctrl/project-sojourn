@@ -27,13 +27,15 @@ for (const locationId of neighboringPlaces) {
       const a = positions[first];
       const b = positions[second];
       const gap = Math.hypot(a.x - b.x, a.y - b.y);
-      assert(gap > 60, 'captains at the same port require separate holding slots');
+      assert(gap > 18, 'separate holding slots must not stack ships on top of one another');
     }
   }
   for (const position of positions) {
+    const radialDistance = Math.hypot(position.x - owner.position.x, position.y - owner.position.y);
+    assert(radialDistance > owner.radius, 'no ship belongs inside its planet or station');
     assert(
-      Math.hypot(position.x - owner.position.x, position.y - owner.position.y) > owner.radius,
-      'no ship belongs on its target planet or station'
+      radialDistance < owner.radius + 115,
+      'even crowded test harbours must not spread traffic far into deep space'
     );
     for (const neighborId of neighboringPlaces) {
       if (neighborId === locationId) continue;

@@ -3,16 +3,15 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
-const { readModuleSource } = require('../module-source.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const load = (name) => loadStandaloneTypeScriptModule(root, name);
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
-const { warmStartNpcTraffic, NPC_TRAFFIC_PREHISTORY_SECONDS } = load(
-  'src/systems/npcs/npc-startup-traffic.ts'
-);
+const { navigationOrbitalBerth } = load('src/systems/navigation/orbital-berth.ts');
+const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
+const { planFuelRoute } = load('src/systems/navigation/fuel-route-planner.ts');
 
 const states = createSectorNpcEconomyStates();
 
@@ -81,27 +80,40 @@ const arrival = sector.livePosition(freighter);
 const lastRoutePoint = route.routePoints[route.routePoints.length - 1];
 assert.deepEqual(arrival, lastRoutePoint, 'arrival must not jump to the planet center');
 
-let sectorTicks = 0;
-let economyTicks = 0;
-let totalSectorTime = 0;
-warmStartNpcTraffic(
-  {
-    tick(dt) {
-      sectorTicks += 1;
-      totalSectorTime += dt;
-    },
-  },
-  {
-    tick() {
-      economyTicks += 1;
-    },
-  }
-);
-assert.equal(sectorTicks, economyTicks, 'startup must advance physical travel and trade together');
-assert.equal(totalSectorTime, NPC_TRAFFIC_PREHISTORY_SECONDS);
+const player = createNavigationService(narrowsSector, 'haven', 220);
+const playerStart = player.getSnapshot().currentPosition;
+assert.deepEqual(playerStart, navigationOrbitalBerth(narrowsSector, 'haven'));
 assert(
-  readModuleSource(root, 'src/app/bootstrap.ts').includes('game.warmStartTraffic(seconds)'),
-  'real NPC startup history must be advanced in browser-friendly chunks'
+  Math.hypot(playerStart.x - haven.position.x, playerStart.y - haven.position.y) > haven.radius
 );
+player.selectDestination(destinationId);
+const startRoute = player.getSnapshot().previewRoute;
+assert(startRoute);
+assert.deepEqual(startRoute.points[0], playerStart);
+assert.deepEqual(
+  startRoute.points[startRoute.points.length - 1],
+  navigationOrbitalBerth(narrowsSector, destinationId)
+);
+const fueled = planFuelRoute({
+  world: narrowsSector,
+  fromId: 'haven',
+  fromPosition: playerStart,
+  destinationId,
+  profile: 'balanced',
+  fuel: 100000,
+  capacity: 100000,
+  credits: 100000,
+  fuelPerDistance: 1,
+  locationPosition: (id) => navigationOrbitalBerth(narrowsSector, id),
+});
+assert(fueled);
+assert.deepEqual(fueled.route.points[0], playerStart);
+assert.deepEqual(
+  fueled.route.points[fueled.route.points.length - 1],
+  startRoute.points[startRoute.points.length - 1]
+);
+assert(Math.abs(fueled.totalDistance - startRoute.distance) < 1);
+player.startTravel();
+assert.deepEqual(player.getSnapshot().currentPosition, playerStart);
 
-console.log('PASS orbital berths, travel endpoints and chunked startup traffic');
+console.log('PASS compact orbital berths and physical NPC/player route endpoints');

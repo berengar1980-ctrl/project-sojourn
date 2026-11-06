@@ -3,6 +3,7 @@ import { getShipRoleProfile } from '../data/ships/ship-role-profiles';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 import { fuelForDistance } from '../systems/ships/ship-operating-costs';
 import { planFuelRoute, type FuelRoutePlan } from '../systems/navigation/fuel-route-planner';
+import { navigationOrbitalBerth } from '../systems/navigation/orbital-berth';
 
 type ForecastCacheEntry = { key: string; plan: FuelRoutePlan | null };
 const forecastCache = new WeakMap<ControllerRuntimeContext, ForecastCacheEntry>();
@@ -57,6 +58,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     capacity: tank.fuelCapacity,
     credits,
     fuelPerDistance,
+    locationPosition: (id) => navigationOrbitalBerth(world, id),
   });
   forecastCache.set(context, { key, plan });
   return plan;

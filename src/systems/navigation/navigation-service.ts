@@ -1,5 +1,11 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-import { planRoute, planRouteFromPoint, type RoutePlan } from './route-planner';
+import {
+  planRoute,
+  planRouteFromPoint,
+  repointRouteEndpoints,
+  type RoutePlan,
+} from './route-planner';
+import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
 
 interface TravelState {
@@ -41,7 +47,7 @@ function validTurnRateMultiplier(value: number): number {
 function locationPosition(world: WorldMap, id: string): WorldPoint {
   const location = world.locations.find((candidate) => candidate.id === id);
   if (!location) throw new Error('Unknown navigation location: ' + id);
-  return location.position;
+  return navigationOrbitalBerth(world, id);
 }
 
 function interpolate(from: WorldPoint, to: WorldPoint, progress: number): WorldPoint {
@@ -138,8 +144,16 @@ function previewRoute(world: WorldMap, state: NavigationRuntimeState): RoutePlan
     state.currentLocationId !== null &&
     world.locations.some((location) => location.id === state.currentLocationId);
   return currentIsStatic
-    ? planRoute(world, state.currentLocationId!, state.selectedDestinationId)
-    : planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId);
+    ? repointRouteEndpoints(
+        planRoute(world, state.currentLocationId!, state.selectedDestinationId),
+        state.currentPosition,
+        navigationOrbitalBerth(world, state.selectedDestinationId)
+      )
+    : repointRouteEndpoints(
+        planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId),
+        state.currentPosition,
+        navigationOrbitalBerth(world, state.selectedDestinationId)
+      );
 }
 
 function createSnapshot(world: WorldMap, state: NavigationRuntimeState): NavigationSnapshot {
@@ -313,7 +327,7 @@ function recoverNavigationToDock(world: WorldMap, state: NavigationRuntimeState)
   state.currentLocationId = destination.id;
   state.selectedDestinationId = destination.id;
   state.pointDestination = null;
-  state.currentPosition = { ...destination.position };
+  state.currentPosition = navigationOrbitalBerth(world, destination.id);
   state.currentHeading = 0;
   state.currentTurnRate = 0;
   state.currentAngularThrust = 0;
@@ -331,7 +345,7 @@ function moveNavigationToWorld(
   state.pointDestination = null;
   state.currentLocationId = locationId;
   state.selectedDestinationId = locationId;
-  state.currentPosition = { ...location.position };
+  state.currentPosition = navigationOrbitalBerth(world, locationId);
   state.currentHeading = 0;
   state.currentTurnRate = 0;
   state.currentAngularThrust = 0;

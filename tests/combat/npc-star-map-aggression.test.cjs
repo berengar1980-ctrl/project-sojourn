@@ -36,7 +36,7 @@ const defender = npcs.find((npc) => npc.pirate);
 assert(attacker && defender);
 
 attacker.locationId = mapModule.narrowsSector.startLocationId;
-defender.locationId = mapModule.narrowsSector.startLocationId;
+defender.locationId = 'meridian-exchange';
 attacker.aggression = 95;
 defender.aggression = 90;
 

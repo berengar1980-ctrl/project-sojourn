@@ -7,7 +7,6 @@ import {
 } from '../systems/campaigns/campaign-selection';
 import { createCharacterEditor } from '../ui/start/character-editor';
 import { createCampaignLoadingScreen } from '../ui/start/campaign-loading';
-import { NPC_TRAFFIC_PREHISTORY_SECONDS } from '../systems/npcs/npc-startup-traffic';
 import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
 import { createDuelLobby } from '../ui/start/duel-lobby';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
@@ -33,7 +32,6 @@ function launchCampaign(
   const loading = createCampaignLoadingScreen();
   let running = true;
   let game: GameController | null = null;
-  let preparedSeconds = 0;
   let previousTime = 0;
 
   const frame = (time: number): void => {
@@ -41,23 +39,6 @@ function launchCampaign(
     const deltaSeconds = (time - previousTime) / 1000;
     previousTime = time;
     game.tick(deltaSeconds);
-    requestAnimationFrame(frame);
-  };
-
-  const prepareTraffic = (): void => {
-    if (!running || !game) return;
-    // One second of simulated NPC history per browser frame. Each batch
-    // returns control to Chrome, so the loading UI can paint and respond.
-    const seconds = Math.min(1, NPC_TRAFFIC_PREHISTORY_SECONDS - preparedSeconds);
-    game.warmStartTraffic(seconds);
-    preparedSeconds += seconds;
-    loading.update(preparedSeconds / NPC_TRAFFIC_PREHISTORY_SECONDS);
-    if (preparedSeconds < NPC_TRAFFIC_PREHISTORY_SECONDS) {
-      requestAnimationFrame(prepareTraffic);
-      return;
-    }
-    loading.destroy();
-    previousTime = performance.now();
     requestAnimationFrame(frame);
   };
 
@@ -83,7 +64,10 @@ function launchCampaign(
           showMainMenu(root, selection);
         },
       });
-      requestAnimationFrame(prepareTraffic);
+      loading.update(1);
+      loading.destroy();
+      previousTime = performance.now();
+      requestAnimationFrame(frame);
     } catch (error) {
       running = false;
       loading.destroy();
