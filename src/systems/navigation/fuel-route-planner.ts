@@ -70,6 +70,17 @@ function purchaseFuel(fuel: number, capacity: number, credits: number) {
   return { fuel: Math.min(capacity, fuel + cost / FUEL_PRICE), cost };
 }
 
+/**
+ * Event-only salvage/distress destinations are not entries in world.locations.
+ * After leaving one, the player's physical coordinates are the route origin.
+ */
+function routingOrigin(request: FuelRouteRequest): string {
+  const fromId = request.fromId;
+  return fromId && request.world.locations.some((location) => location.id === fromId)
+    ? fromId
+    : 'deep-space';
+}
+
 function legBetween(request: FuelRouteRequest, fromId: string, toId: string): RoutePlan {
   const base =
     fromId === 'deep-space'
@@ -89,7 +100,7 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
     index === 0 ? leg.route.points : leg.route.points.slice(1)
   );
   const route: RoutePlan = {
-    fromId: request.fromId ?? 'deep-space',
+    fromId: routingOrigin(request),
     toId: request.destinationId,
     points,
     distance: state.distance,
@@ -105,7 +116,7 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
     fuelCost: state.spent,
     arrivalFuel: state.fuel,
     directFuel:
-      legBetween(request, request.fromId ?? 'deep-space', request.destinationId).distance *
+      legBetween(request, routingOrigin(request), request.destinationId).distance *
       request.fuelPerDistance,
     route,
   };
@@ -208,7 +219,7 @@ function directFuelPlan(request: FuelRouteRequest, origin: string): FuelRoutePla
 /** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
 export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   if (!validRequest(request)) return null;
-  const origin = request.fromId ?? 'deep-space';
+  const origin = routingOrigin(request);
   if (origin === request.destinationId) return null;
   const direct = directFuelPlan(request, origin);
   if (direct) return direct;

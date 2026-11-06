@@ -68,6 +68,42 @@ assert.equal(route.fuelCost, 800);
 assert.equal(route.arrivalFuel, 10);
 assert.equal(route.directFuel, 120);
 assert.equal(route.route.points.length, 4);
+// Returning from a dynamic salvage mission does not leave a permanent world node.
+const missionOrigin = {
+  ...input,
+  fromId: 'salvage-special-0-1',
+  fromPosition: { x: 200, y: 0 },
+};
+const fromMission = planFuelRoute(missionOrigin);
+assert(fromMission, 'a valid salvage exit must not break normal fuel-aware destinations');
+assert.equal(fromMission.route.fromId, 'deep-space');
+assert.equal(fromMission.route.points[0].x, 200);
+assert.equal(fromMission.directFuel, 100);
+assert.deepEqual(fromMission.stopIds, ['refuel-a', 'refuel-b']);
+
+const fromMissionWithBerths = planFuelRoute({
+  ...missionOrigin,
+  locationPosition(id) {
+    const destination = locations.find((place) => place.id === id);
+    if (!destination) throw new Error('Invalid berth: ' + id);
+    return destination.position;
+  },
+});
+assert(fromMissionWithBerths);
+assert.deepEqual(fromMissionWithBerths.route.points[0], missionOrigin.fromPosition);
+
+const withoutEventId = planFuelRoute({ ...missionOrigin, fromId: null });
+assert(withoutEventId);
+assert.equal(withoutEventId.totalDistance, fromMission.totalDistance);
+
+const fromStaticSalvage = planFuelRoute({
+  ...input,
+  fromId: 'origin',
+  fromPosition: locations[0].position,
+  destinationId: 'refuel-a',
+});
+assert(fromStaticSalvage, 'ordinary mapped salvage sites must still use normal routing');
+
 const unrestrictedRoute = planFuelRoute({ ...input, fuel: 130, capacity: 130 });
 assert.equal(unrestrictedRoute.stopIds.length, 0);
 
