@@ -6,6 +6,8 @@ import {
   type CampaignSelection,
 } from '../systems/campaigns/campaign-selection';
 import { createCharacterEditor } from '../ui/start/character-editor';
+import { createCampaignLoadingScreen } from '../ui/start/campaign-loading';
+import { NPC_TRAFFIC_PREHISTORY_SECONDS } from '../systems/npcs/npc-startup-traffic';
 import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
 import { createDuelLobby } from '../ui/start/duel-lobby';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
@@ -28,36 +30,70 @@ function launchCampaign(
   const ship = getShipDefinition('salvage-100m-variant-01');
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
-  const navigation = createNavigationService(
-    narrowsSector,
-    narrowsSector.startLocationId,
-    ship.navigation.cruiseSpeed
-  );
+  const loading = createCampaignLoadingScreen();
   let running = true;
-  const game: GameController = createGameController({
-    root,
-    ship: withPlayerShipName(ship, profile),
-    playerProfile: profile,
-    navigation,
-    campaignSelection: selection.snapshot(),
-    onReturnToMainMenu: () => {
-      if (!running) return;
-      running = false;
-      game.destroy();
-      showMainMenu(root, selection);
-    },
-  });
+  let game: GameController | null = null;
+  let preparedSeconds = 0;
+  let previousTime = 0;
 
-  let previousTime = performance.now();
   const frame = (time: number): void => {
-    if (!running) return;
+    if (!running || !game) return;
     const deltaSeconds = (time - previousTime) / 1000;
     previousTime = time;
     game.tick(deltaSeconds);
     requestAnimationFrame(frame);
   };
 
-  requestAnimationFrame(frame);
+  const prepareTraffic = (): void => {
+    if (!running || !game) return;
+    // One second of simulated NPC history per browser frame. Each batch
+    // returns control to Chrome, so the loading UI can paint and respond.
+    const seconds = Math.min(1, NPC_TRAFFIC_PREHISTORY_SECONDS - preparedSeconds);
+    game.warmStartTraffic(seconds);
+    preparedSeconds += seconds;
+    loading.update(preparedSeconds / NPC_TRAFFIC_PREHISTORY_SECONDS);
+    if (preparedSeconds < NPC_TRAFFIC_PREHISTORY_SECONDS) {
+      requestAnimationFrame(prepareTraffic);
+      return;
+    }
+    loading.destroy();
+    previousTime = performance.now();
+    requestAnimationFrame(frame);
+  };
+
+  const start = (): void => {
+    if (!running) return;
+    try {
+      const navigation = createNavigationService(
+        narrowsSector,
+        narrowsSector.startLocationId,
+        ship.navigation.cruiseSpeed
+      );
+      game = createGameController({
+        root,
+        ship: withPlayerShipName(ship, profile),
+        playerProfile: profile,
+        navigation,
+        campaignSelection: selection.snapshot(),
+        onReturnToMainMenu: () => {
+          if (!running) return;
+          running = false;
+          loading.destroy();
+          game?.destroy();
+          showMainMenu(root, selection);
+        },
+      });
+      requestAnimationFrame(prepareTraffic);
+    } catch (error) {
+      running = false;
+      loading.destroy();
+      showMainMenu(root, selection);
+      throw error;
+    }
+  };
+
+  // Allow the loading screen to be painted before any world construction.
+  requestAnimationFrame(() => requestAnimationFrame(start));
 }
 
 function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {

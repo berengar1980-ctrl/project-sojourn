@@ -22,7 +22,43 @@ const weakCivilian = sensors.sectorSensorContactInfo({
 });
 assert.equal(weakCivilian.visible, false, 'weak sensors must lose distant civilian transponders');
 
+const standardCivilian = sensors.sectorSensorContactInfo({
+  playerPosition: origin,
+  targetPosition: { x: 800, y: 0 },
+  sensorSkill: 35,
+  sensorModifier: 1,
+  civilianTransponder: true,
+});
+assert.equal(standardCivilian.visible, true, 'nearby civilian traffic must remain visible');
+assert.equal(standardCivilian.identified, true);
+assert.equal(standardCivilian.source, 'transponder');
+
+const beyondLocalTraffic = sensors.sectorSensorContactInfo({
+  playerPosition: origin,
+  targetPosition: { x: 1800, y: 0 },
+  sensorSkill: 100,
+  sensorModifier: 1,
+  civilianTransponder: true,
+});
+assert.equal(
+  beyondLocalTraffic.visible,
+  false,
+  'even elite transponder reception must not expose distant sector traffic'
+);
+
 const eliteCivilian = sensors.sectorSensorContactInfo({
+  playerPosition: origin,
+  targetPosition: { x: 1100, y: 0 },
+  sensorSkill: 100,
+  sensorModifier: 1,
+  civilianTransponder: true,
+});
+assert.equal(eliteCivilian.visible, true, 'elite crews detect farther local civilian signals');
+assert.equal(eliteCivilian.identified, true);
+assert.equal(eliteCivilian.source, 'transponder');
+assert.equal(eliteCivilian.range, 1150);
+
+const zoomedOutCivilian = sensors.sectorSensorContactInfo({
   playerPosition: origin,
   targetPosition: { x: 3200, y: 0 },
   sensorSkill: 100,
@@ -30,12 +66,10 @@ const eliteCivilian = sensors.sectorSensorContactInfo({
   civilianTransponder: true,
 });
 assert.equal(
-  eliteCivilian.visible,
-  true,
-  'elite sensors must resolve distant civilian transponders'
+  zoomedOutCivilian.visible,
+  false,
+  'a distant ship must remain hidden even when the star map is fully zoomed out'
 );
-assert.equal(eliteCivilian.identified, true);
-assert.equal(eliteCivilian.source, 'transponder');
 
 const pirateContact = sensors.sectorSensorContactInfo({
   playerPosition: origin,
@@ -76,4 +110,4 @@ assert(
   'elite sensor crews must materially extend long-range asteroid scans'
 );
 
-console.log('PASS Voidbound sensor ranges drive contacts, identification and active scanning');
+console.log('PASS local civilian transponder range, pirate contacts and independent mining scan');

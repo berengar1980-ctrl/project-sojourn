@@ -7,6 +7,9 @@ import {
 } from '../crew/crew-skill-effects';
 
 export const SECTOR_UNITS_PER_VOIDBOUND_AU = 100;
+// Sector-local civilian transponder reception must not cover almost the entire map.
+// Keep the independent short-range sensor / pirate detection scale unchanged.
+export const LOCAL_TRANSPONDER_RANGE_FACTOR = 0.25;
 
 export interface SectorSensorContactOptions {
   readonly playerPosition: WorldPoint;
@@ -44,7 +47,8 @@ export function sectorSensorContactInfo(
 
   const tacticalBaseRange = worldRange(sensorContactBaseRange(options.sensorSkill), modifier);
   const range = transponder
-    ? worldRange(sensorCivilianTransponderRange(options.sensorSkill), modifier)
+    ? worldRange(sensorCivilianTransponderRange(options.sensorSkill), modifier) *
+      LOCAL_TRANSPONDER_RANGE_FACTOR
     : pirate
       ? worldRange(sensorPirateDetectionRange(options.sensorSkill), modifier)
       : tacticalBaseRange;

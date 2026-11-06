@@ -69,6 +69,9 @@ const TRADE_HOMES = [
   'crown',
   'eidolon',
   'coldwater-station',
+  'niveus',
+  'cinder',
+  'varras-prime',
 ] as const;
 
 const MINING_JOBS = [
@@ -93,7 +96,7 @@ const MINING_JOBS = [
     resources: ['silicite', 'iridite', 'rare-metals'],
   },
   {
-    locationId: 'haven',
+    locationId: 'ilex',
     workLocationId: 'outer-shards',
     resources: ['elydrase', 'orvessium', 'cyranthite', 'rare-metals'],
   },
@@ -106,12 +109,12 @@ const SALVAGE_JOBS = [
     resources: ['spare-parts', 'ship-parts', 'ferrite'],
   },
   {
-    locationId: 'meridian-exchange',
+    locationId: 'ilex',
     workLocationId: 'sargasso-graveyard',
     resources: ['machine-parts', 'electronics', 'steel'],
   },
   {
-    locationId: 'haven',
+    locationId: 'varras-prime',
     workLocationId: 'kestrel-breaker',
     resources: ['machine-parts', 'ship-parts', 'steel'],
   },
