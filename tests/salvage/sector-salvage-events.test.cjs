@@ -150,10 +150,35 @@ for (let index = 0; index < 600 && navigation.getSnapshot().isTravelling; index 
 snapshot = navigation.getSnapshot();
 assert.equal(snapshot.currentLocationId, 'test-salvage-event');
 navigation.selectDestination('karth-industrial');
+const returnPreview = navigation.getSnapshot().previewRoute;
 assert(
-  navigation.getSnapshot().previewRoute,
+  returnPreview,
   'after a dynamic salvage event the player must be able to plot a normal route from deep space'
 );
+// The star map calls the fuel planner while selecting a destination. Both the
+// preview and the funded itinerary must work when the current ID is an event.
+const fuelPlanner = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/navigation/fuel-route-planner.ts'
+);
+const orbitalBerths = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/navigation/orbital-berth.ts'
+);
+const returnFuelRoute = fuelPlanner.planFuelRoute({
+  world: narrowsSector,
+  fromId: navigation.getSnapshot().currentLocationId,
+  fromPosition: navigation.getSnapshot().currentPosition,
+  destinationId: 'karth-industrial',
+  profile: returnPreview.profile,
+  fuel: 100000,
+  capacity: 100000,
+  credits: 10000,
+  fuelPerDistance: 0.01,
+  locationPosition: (id) => orbitalBerths.navigationOrbitalBerth(narrowsSector, id),
+});
+assert(returnFuelRoute, 'fuel planner must accept an event-only salvage origin');
+assert.deepEqual(returnFuelRoute.route.points[0], eventPoint);
 navigation.startTravel();
 assert(navigation.getSnapshot().isTravelling);
 
