@@ -81,6 +81,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   const shipyardResearch = createShipyardResearchService();
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
+    markets,
   });
   const simulation = createEconomySimulationService(
     markets,

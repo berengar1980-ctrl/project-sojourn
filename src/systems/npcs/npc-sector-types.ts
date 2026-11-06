@@ -5,10 +5,12 @@ import type {
 } from '../../core/npc-types';
 
 import type { WorldPoint } from '../../core/world-types';
+import type { EconomyMarketService } from '../economy/market-service';
 import type { NpcTravelOperatingQuote } from '../economy/npc-economy-types';
 
 export interface NpcSectorServiceOptions {
   readonly getPlayerPosition?: () => WorldPoint;
+  readonly markets?: EconomyMarketService;
 }
 
 export interface NpcSectorService {
