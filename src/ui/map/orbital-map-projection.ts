@@ -91,8 +91,8 @@ function separateOrbitalContacts(
   for (let round = 0; round < 18; round += 1) {
     for (let i = 0; i < ordered.length; i += 1) {
       for (let j = i + 1; j < ordered.length; j += 1) {
-        const left = ordered[i].contact;
-        const right = ordered[j].contact;
+        const left = ordered[i]!.contact;
+        const right = ordered[j]!.contact;
         const radius = Math.min(
           orbitalMapShipRadius(location, relativeZoom, left.shipWidth),
           orbitalMapShipRadius(location, relativeZoom, right.shipWidth)
@@ -102,14 +102,14 @@ function separateOrbitalContacts(
           (left.shipWidth * 0.5 + right.shipWidth * 0.5 + SHIP_GAP) / radius
         );
         const difference = Math.atan2(
-          Math.sin(placed[j] - placed[i]),
-          Math.cos(placed[j] - placed[i])
+          Math.sin(placed[j]! - placed[i]!),
+          Math.cos(placed[j]! - placed[i]!)
         );
         if (Math.abs(difference) >= minimum) continue;
         const direction = difference < 0 ? -1 : 1;
         const correction = (minimum - Math.abs(difference)) * 0.5;
-        placed[i] -= direction * correction;
-        placed[j] += direction * correction;
+        placed[i] = placed[i]! - direction * correction;
+        placed[j] = placed[j]! + direction * correction;
       }
     }
   }
@@ -153,7 +153,7 @@ export function layoutOrbitalShipAngles(
     const placed = ordered.map((entry) => entry.angle);
     separateOrbitalContacts(ordered, placed, location, relativeZoom);
     for (let i = 0; i < ordered.length; i += 1) {
-      angles.set(ordered[i].contact.id, placed[i]);
+      angles.set(ordered[i]!.contact.id, placed[i]!);
     }
   }
   return angles;
