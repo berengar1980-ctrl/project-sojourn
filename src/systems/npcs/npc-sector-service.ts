@@ -36,6 +36,7 @@ import {
   npcOrbitHeading,
   npcOrbitPosition,
   npcOrbitStateFor,
+  prepareNpcOrbitBerths,
 } from './npc-orbit';
 import { isServicedPort, payNpcPatrolContract } from './npc-port-servicing';
 import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
@@ -58,7 +59,9 @@ class SectorService implements NpcSectorService {
     private readonly world: WorldMap,
     readonly npcs: readonly SectorNpcState[],
     private readonly options: NpcSectorServiceOptions = {}
-  ) {}
+  ) {
+    prepareNpcOrbitBerths(world, npcs);
+  }
   private recoveryLocation = (npc: SectorNpcState, position: WorldPoint): string | null => {
     if (npc.pirate) {
       const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
