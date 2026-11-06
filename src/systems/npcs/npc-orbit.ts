@@ -31,7 +31,9 @@ export function npcOrbitStateFor(
   return {
     locationId,
     center: { ...location.position },
-    radius: orbitRadius(location.kind, location.radius, lane),
+    // Incomplete/synthetic locations have no meaningful body size: use their center.
+    // Never let missing radius metadata create NaN travel and fuel quotations.
+    radius: Number.isFinite(location.radius) ? orbitRadius(location.kind, location.radius, lane) : 0,
     angleRadians: ((hashId(npc.id + ':' + locationId + ':angle') % 10000) / 10000) * FULL_CIRCLE,
   };
 }

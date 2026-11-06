@@ -15,6 +15,32 @@ const { warmStartNpcTraffic, NPC_TRAFFIC_PREHISTORY_SECONDS } = load(
 );
 
 const states = createSectorNpcEconomyStates();
+
+// A location without an authored radius is valid in test worlds. It must never
+// poison route lengths, cash requirements, or sensor positions with NaN.
+const incompleteWorld = {
+  id: 'missing-radius',
+  width: 500,
+  height: 500,
+  locations: [
+    {
+      id: 'synthetic-station',
+      kind: 'station',
+      position: { x: 250, y: 250 },
+      activities: { dock: true },
+      dangerLevel: 0,
+    },
+  ],
+  regions: [],
+};
+const testCaptain = { ...states[0], locationId: 'synthetic-station' };
+const incompleteSector = createNpcSectorService(incompleteWorld, [testCaptain]);
+assert.deepEqual(
+  incompleteSector.livePosition(testCaptain),
+  { x: 250, y: 250 },
+  'a body without a defined radius must fall back to its finite center'
+);
+
 const sector = createNpcSectorService(narrowsSector, states);
 const atHaven = states.filter((npc) => npc.locationId === 'haven');
 assert(atHaven.length >= 2, 'fixture must include multiple ships at a world');
