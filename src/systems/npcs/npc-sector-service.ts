@@ -358,7 +358,6 @@ class SectorService implements NpcSectorService {
         npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
         return false;
       }
-      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
       const retreating = target === homeId;
       const accepted = this.requestTravel(
         npc,
