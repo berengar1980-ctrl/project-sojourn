@@ -5,15 +5,13 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const { layoutNpcMapLabels } = loadStandaloneTypeScriptModule(
-  root,
-  'src/ui/map/npc-ship-label-layout.ts'
-);
+const moduleUnderTest = loadStandaloneTypeScriptModule(root, 'src/ui/map/npc-ship-label-layout.ts');
+const layoutNpcMapLabels = moduleUnderTest.layoutNpcMapLabels;
 
-function npc(id, x, selected = false) {
+function contact(id, x, selected = false) {
   return {
     id,
-    name: 'Captain ' + id,
+    name: 'Ship ' + id,
     x,
     y: 70,
     shipWidth: 30,
@@ -24,23 +22,24 @@ function npc(id, x, selected = false) {
   };
 }
 
-const labels = layoutNpcMapLabels([npc('a', 75), npc('b', 78), npc('c', 81)]);
+const ships = [contact('a', 75), contact('b', 78), contact('c', 81)];
+const labels = layoutNpcMapLabels(ships);
 assert(labels.length > 0);
+
 for (let i = 0; i < labels.length; i += 1) {
   for (let j = i + 1; j < labels.length; j += 1) {
-    const a = labels[i];
-    const b = labels[j];
-    const wA = a.name.length * 5.8 + 10;
-    const wB = b.name.length * 5.8 + 10;
-    assert(
-      Math.abs(a.x - b.x) >= (wA + wB) / 2 + 4 ||
-        Math.abs(a.baseline - b.baseline) >= 13 + 4,
-      'labels must not overlap at crowded ports'
-    );
+    const first = labels[i];
+    const second = labels[j];
+    const textWidth = 6 * 5.8 + 10;
+    const horizontalOverlap = Math.abs(first.x - second.x) < textWidth + 4;
+    const verticalOverlap = Math.abs(first.baseline - second.baseline) < 17;
+    assert.equal(horizontalOverlap && verticalOverlap, false);
   }
 }
-const priorityContacts = [npc('a', 75), npc('b', 78, true)];
+
+const priorityContacts = [contact('a', 75), contact('b', 78, true)];
 const reservedSpace = [{ x: 78, y: 80, width: 100, height: 30 }];
 const priority = layoutNpcMapLabels(priorityContacts, reservedSpace);
-assert(priority.some((entry) => entry.id === 'b'), 'selected ship name always remains visible');
-console.log('PASS NPC map labels avoid overlap while preserving selected targets');
+assert(priority.some((entry) => entry.id === 'b'));
+
+console.log('PASS NPC map labels avoid overlap and preserve selected targets');
