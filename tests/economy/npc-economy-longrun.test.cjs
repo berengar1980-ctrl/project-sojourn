@@ -37,12 +37,10 @@ for (const location of narrowsSector.locations) {
 const economy = createNpcEconomyService(markets, physical, economyResources, ships, {
   positions,
   travel: {
-    requestTravel: (npc, destination, reason) =>
-      sector.requestTravel(npc, destination, reason),
+    requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
     requestPatrol: (npc) => sector.requestPatrol(npc),
     isTravelling: (npc) => sector.isTravelling(npc),
-    quoteTravel: (npc, destination, credits) =>
-      sector.quoteTravel(npc, destination, credits),
+    quoteTravel: (npc, destination, credits) => sector.quoteTravel(npc, destination, credits),
   },
 });
 
@@ -126,8 +124,7 @@ assert(market && market.stock >= 5);
 market.stock -= 5;
 for (const id of Object.keys(victim.cargo)) delete victim.cargo[id];
 victim.cargo.ferrite = 5;
-const stock = () =>
-  market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
+const stock = () => market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
 const before = stock();
 assert(transferPirateLoot(pirate, victim) >= 5);
 pirate.locationId = 'blackjaw-outpost';
