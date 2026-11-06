@@ -100,29 +100,39 @@ export class NpcShipMapRenderer {
       }
     }
 
-    if (pendingLabels.length > 0) {
-      const obstacles: MapLabelBox[] = [];
-      for (const location of model.locations) {
-        const point = camera.worldToScreen(location.position, width, height);
-        const symbol = mapSymbolScale(zoom);
-        const radius = location.kind === 'planet' ? 30 * symbol : 17 * symbol;
-        obstacles.push({ x: point.x, y: point.y, width: radius * 2, height: radius * 2 });
-        obstacles.push({
-          x: point.x,
-          y: point.y + radius + 17,
-          width: Math.max(35, location.name.length * 6 + 12),
-          height: 15,
-        });
-      }
-      this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
-      this.context.font = '9px ui-monospace, monospace';
-      this.context.textAlign = 'center';
-      for (const label of layoutNpcMapLabels(pendingLabels, obstacles)) {
-        this.context.fillText(label.name, label.x, label.baseline);
-      }
-    }
-
+    this.drawNpcLabels(model, camera, width, height, zoom, navMode, pendingLabels);
     return hits;
+  }
+
+  private drawNpcLabels(
+    model: StarMapViewModel,
+    camera: MapCamera,
+    width: number,
+    height: number,
+    zoom: number,
+    navMode: boolean,
+    pendingLabels: readonly NpcMapLabelRequest[]
+  ): void {
+    if (pendingLabels.length === 0) return;
+    const obstacles: MapLabelBox[] = [];
+    for (const location of model.locations) {
+      const point = camera.worldToScreen(location.position, width, height);
+      const symbol = mapSymbolScale(zoom);
+      const radius = location.kind === 'planet' ? 30 * symbol : 17 * symbol;
+      obstacles.push({ x: point.x, y: point.y, width: radius * 2, height: radius * 2 });
+      obstacles.push({
+        x: point.x,
+        y: point.y + radius + 17,
+        width: Math.max(35, location.name.length * 6 + 12),
+        height: 15,
+      });
+    }
+    this.context.fillStyle = navMode ? '#8ed8ac' : 'rgba(196, 211, 221, .78)';
+    this.context.font = '9px ui-monospace, monospace';
+    this.context.textAlign = 'center';
+    for (const label of layoutNpcMapLabels(pendingLabels, obstacles)) {
+      this.context.fillText(label.name, label.x, label.baseline);
+    }
   }
 
   private drawNavContact(
