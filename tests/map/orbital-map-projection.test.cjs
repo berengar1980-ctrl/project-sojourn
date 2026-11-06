@@ -51,6 +51,10 @@ assert(Math.abs(halfDeparture - 0.5) < 0.001);
 assert.equal(transitions.blend('npc-01', false, 2150), 0);
 transitions.reset();
 assert.equal(transitions.blend('npc-01', true, 2200), 1);
+assert.equal(transitions.angle('npc-01', 1.25), 1.25);
+assert.equal(transitions.angle('npc-01', undefined), 1.25);
+transitions.reset();
+assert.equal(transitions.angle('npc-01', undefined), undefined);
 
 const contacts = [
   { id: 'player', locationId: 'haven', position: orbit, shipWidth: 22, stationary: true },

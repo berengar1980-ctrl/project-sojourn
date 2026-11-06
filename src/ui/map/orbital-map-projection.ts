@@ -33,6 +33,7 @@ function clamp(value: number, min: number, max: number): number {
 /** One transition per ship; never stores camera-dependent screen positions. */
 export class OrbitalMapTransitions {
   private readonly transitions = new Map<string, OrbitTransition>();
+  private readonly priorAngles = new Map<string, number>();
 
   blend(id: string, stationary: boolean, nowMs: number): number {
     let state = this.transitions.get(id);
@@ -47,8 +48,14 @@ export class OrbitalMapTransitions {
     return this.value(state, nowMs);
   }
 
+  angle(id: string, assignedAngle: number | undefined): number | undefined {
+    if (assignedAngle !== undefined) this.priorAngles.set(id, assignedAngle);
+    return assignedAngle ?? this.priorAngles.get(id);
+  }
+
   reset(): void {
     this.transitions.clear();
+    this.priorAngles.clear();
   }
 
   private value(state: OrbitTransition, nowMs: number): number {

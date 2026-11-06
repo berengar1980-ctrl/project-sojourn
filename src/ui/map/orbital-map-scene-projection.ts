@@ -60,7 +60,7 @@ export class OrbitalMapSceneProjection {
       starMapShipWidth(player.nominalLengthMeters, camera.getRelativeZoom()),
       !player.isTravelling,
       this.playerTransitions.blend('player', !player.isTravelling, performance.now()),
-      angles.get('player')
+      this.playerTransitions.angle('player', angles.get('player'))
     );
   }
 }

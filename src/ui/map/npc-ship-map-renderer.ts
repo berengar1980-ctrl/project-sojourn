@@ -66,7 +66,7 @@ export class NpcShipMapRenderer {
         widthPx,
         stationary,
         this.orbitalTransitions.blend(npc.id, stationary, timeSeconds * 1000),
-        orbitalAngles.get(npc.id)
+        this.orbitalTransitions.angle(npc.id, orbitalAngles.get(npc.id))
       );
       const aspect =
         image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
@@ -201,7 +201,7 @@ export class NpcShipMapRenderer {
       starMapShipWidth(target.nominalLengthMeters, camera.getRelativeZoom()),
       stationary,
       this.orbitalTransitions.blend(target.id, stationary, performance.now()),
-      orbitalAngles.get(target.id)
+      this.orbitalTransitions.angle(target.id, orbitalAngles.get(target.id))
     );
     this.context.save();
     this.context.strokeStyle = 'rgba(221, 82, 67, .58)';
