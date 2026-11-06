@@ -18,13 +18,10 @@ for (const locationId of neighboringPlaces) {
   const owner = narrowsSector.locations.find((location) => location.id === locationId);
   assert(owner);
   const positions = captains.map((npc) => npcOrbitDestination(narrowsSector, npc, locationId));
-  assert(
-    positions.every(
-      (position) => Number.isFinite(position.x) && Number.isFinite(position.y)
-    )
-  );
-  const unique = new Set(positions.map((point) => point.x.toFixed(3) + ':' + point.y.toFixed(3)));
-  assert.equal(unique.size, captains.length, 'every captain needs a distinct holding berth');
+  assert(positions.every((point) => Number.isFinite(point.x)));
+  assert(positions.every((point) => Number.isFinite(point.y)));
+  const keys = positions.map((point) => `${point.x.toFixed(3)}:${point.y.toFixed(3)}`);
+  assert.equal(new Set(keys).size, captains.length, 'every captain needs a distinct holding berth');
   for (const position of positions) {
     assert(
       Math.hypot(position.x - owner.position.x, position.y - owner.position.y) > owner.radius,
