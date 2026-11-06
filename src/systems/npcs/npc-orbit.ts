@@ -3,16 +3,59 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { hashId } from './npc-sector-routing';
 
 const FULL_CIRCLE = Math.PI * 2;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const CLEARANCE = 78;
+const ANGLE_VARIANTS = [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.65, -1.65, 2.1, -2.1, Math.PI];
+const berthCache = new WeakMap<WorldMap, Map<string, NpcOrbitState>>();
 
 function orbitRadius(kind: string, bodyRadius: number, lane: number): number {
-  if (kind === 'asteroid-field') return Math.max(22, bodyRadius * 0.3) + lane * 9;
-  if (kind === 'wreck') return Math.max(20, bodyRadius * 0.8) + lane * 9;
-  if (kind === 'station') return Math.max(29, bodyRadius + 18) + lane * 11;
-  if (kind === 'moon') return Math.max(26, bodyRadius + 19) + lane * 9;
-  return Math.max(54, bodyRadius + 31) + lane * 12;
+  if (kind === 'asteroid-field') return Math.max(84, bodyRadius * 0.55 + 36) + lane * 42;
+  if (kind === 'wreck') return Math.max(70, bodyRadius + 30) + lane * 42;
+  if (kind === 'station') return Math.max(82, bodyRadius + 44) + lane * 42;
+  if (kind === 'moon') return Math.max(70, bodyRadius + 35) + lane * 42;
+  return Math.max(90, bodyRadius + 52) + lane * 42;
 }
 
-/** Stable orbital berth for a particular captain at a particular world location. */
+function berthSlot(id: string): number {
+  const civilian = /^npc-(\d+)$/.exec(id);
+  if (civilian) return Number(civilian[1]) - 1;
+  const pirate = /^pirate-(\d+)$/.exec(id);
+  if (pirate) return 24 + Number(pirate[1]) - 1;
+  return hashId(id) % 67;
+}
+
+function berthPoint(center: WorldPoint, radius: number, angle: number): WorldPoint {
+  return {
+    x: center.x + radius * Math.cos(angle),
+    y: center.y + radius * Math.sin(angle),
+  };
+}
+
+/** Clearance to ALL neighbouring world bodies, not just the selected planet. */
+function berthClearance(world: WorldMap, ownerId: string, point: WorldPoint): number {
+  let clear = Math.min(
+    point.x - 32,
+    point.y - 32,
+    world.width - point.x - 32,
+    world.height - point.y - 32
+  );
+  const starDistance = Math.hypot(point.x - world.star.position.x, point.y - world.star.position.y);
+  clear = Math.min(clear, starDistance - world.star.radius - 45);
+  for (const body of world.locations) {
+    if (body.id === ownerId) continue;
+    const safety = Math.max(38, (Number.isFinite(body.radius) ? body.radius : 0) + 34);
+    clear = Math.min(
+      clear,
+      Math.hypot(point.x - body.position.x, point.y - body.position.y) - safety
+    );
+  }
+  return clear;
+}
+
+/**
+ * Stable holding lanes, spread across a planetary neighbourhood rather than
+ * stacked over its surface or its nearby moon/station.
+ */
 export function npcOrbitStateFor(
   world: WorldMap,
   npc: SectorNpcState,
@@ -27,17 +70,56 @@ export function npcOrbitStateFor(
       angleRadians: 0,
     };
   }
-  const lane = hashId(npc.id + ':' + locationId + ':lane') % 4;
-  return {
+  if (!Number.isFinite(location.radius)) {
+    return {
+      locationId,
+      center: { ...location.position },
+      radius: 0,
+      angleRadians: 0,
+    };
+  }
+
+  let cache = berthCache.get(world);
+  if (!cache) {
+    cache = new Map();
+    berthCache.set(world, cache);
+  }
+  const cacheKey = locationId + ':' + npc.id;
+  const cached = cache.get(cacheKey);
+  if (cached) return { ...cached };
+
+  const slot = berthSlot(npc.id);
+  const radius = orbitRadius(location.kind, location.radius, slot % 5);
+  const phase = ((hashId(locationId + ':berth-phase') % 10000) / 10000) * FULL_CIRCLE;
+  const startingAngle = phase + slot * GOLDEN_ANGLE;
+  let bestAngle = startingAngle;
+  let bestClearance = Number.NEGATIVE_INFINITY;
+  for (const offset of ANGLE_VARIANTS) {
+    const angle = startingAngle + offset;
+    const clearance = berthClearance(
+      world,
+      locationId,
+      berthPoint(location.position, radius, angle)
+    );
+    if (clearance > bestClearance) {
+      bestClearance = clearance;
+      bestAngle = angle;
+    }
+    if (clearance >= CLEARANCE) {
+      bestAngle = angle;
+      break;
+    }
+  }
+  const berth: NpcOrbitState = {
     locationId,
     center: { ...location.position },
-    // Incomplete/synthetic locations have no meaningful body size: use their center.
-    // Never let missing radius metadata create NaN travel and fuel quotations.
-    radius: Number.isFinite(location.radius)
-      ? orbitRadius(location.kind, location.radius, lane)
-      : 0,
-    angleRadians: ((hashId(npc.id + ':' + locationId + ':angle') % 10000) / 10000) * FULL_CIRCLE,
+    radius,
+    angleRadians: bestAngle,
+    anchorAngleRadians: bestAngle,
+    driftSeconds: 0,
   };
+  cache.set(cacheKey, berth);
+  return { ...berth };
 }
 
 function positionOf(world: WorldMap, orbit: NpcOrbitState): WorldPoint {
@@ -60,7 +142,7 @@ export function npcOrbitPosition(world: WorldMap, npc: SectorNpcState): WorldPoi
   return positionOf(world, npc.orbit);
 }
 
-/** Destination berth is computed without touching an NPC's current orbit. */
+/** Destination berth is computed without touching a captain's current orbit. */
 export function npcOrbitDestination(
   world: WorldMap,
   npc: SectorNpcState,
@@ -79,14 +161,18 @@ export function npcOrbitHeading(world: WorldMap, npc: SectorNpcState): number {
   return (npc.orbit?.angleRadians ?? 0) + orbitDirection(npc) * Math.PI * 0.5;
 }
 
-/** Only docked/working NPCs drift in their local orbital traffic lanes. */
+/**
+ * Ships slowly patrol an assigned orbital arc. A full circle would intersect
+ * nearby moons and stations even when the initial berth is collision-free.
+ */
 export function advanceNpcOrbit(world: WorldMap, npc: SectorNpcState, seconds: number): void {
   npcOrbitPosition(world, npc);
   if (!npc.orbit || npc.orbit.radius <= 0 || seconds <= 0) return;
-  const period = 200 + (hashId(npc.id + ':orbit-period') % 151);
+  const period = 220 + (hashId(npc.id + ':orbit-period') % 151);
+  const elapsed = (npc.orbit.driftSeconds ?? 0) + seconds;
+  const anchor = npc.orbit.anchorAngleRadians ?? npc.orbit.angleRadians;
+  npc.orbit.driftSeconds = elapsed;
+  npc.orbit.anchorAngleRadians = anchor;
   npc.orbit.angleRadians =
-    (npc.orbit.angleRadians +
-      (orbitDirection(npc) * FULL_CIRCLE * seconds) / period +
-      FULL_CIRCLE) %
-    FULL_CIRCLE;
+    anchor + orbitDirection(npc) * Math.sin((elapsed / period) * FULL_CIRCLE) * 0.075;
 }
