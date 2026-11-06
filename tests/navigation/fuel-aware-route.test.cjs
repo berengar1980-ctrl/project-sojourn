@@ -84,7 +84,7 @@ assert.deepEqual(fromMission.stopIds, ['refuel-a', 'refuel-b']);
 const fromMissionWithBerths = planFuelRoute({
   ...missionOrigin,
   locationPosition(id) {
-    const destination = locations.find((location) => location.id === id);
+    const destination = locations.find((place) => place.id === id);
     if (!destination) throw new Error('Invalid berth: ' + id);
     return destination.position;
   },
