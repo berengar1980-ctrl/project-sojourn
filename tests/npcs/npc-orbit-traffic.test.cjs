@@ -11,6 +11,7 @@ const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-econo
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { navigationOrbitalBerth } = load('src/systems/navigation/orbital-berth.ts');
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
+const { planFuelRoute } = load('src/systems/navigation/fuel-route-planner.ts');
 
 const states = createSectorNpcEconomyStates();
 
@@ -93,6 +94,22 @@ assert.deepEqual(
   startRoute.points[startRoute.points.length - 1],
   navigationOrbitalBerth(narrowsSector, destinationId)
 );
+const fueled = planFuelRoute({
+  world: narrowsSector,
+  fromId: 'haven',
+  fromPosition: playerStart,
+  destinationId,
+  profile: 'balanced',
+  fuel: 100000,
+  capacity: 100000,
+  credits: 100000,
+  fuelPerDistance: 1,
+  locationPosition: (id) => navigationOrbitalBerth(narrowsSector, id),
+});
+assert(fueled);
+assert.deepEqual(fueled.route.points[0], playerStart);
+assert.deepEqual(fueled.route.points[fueled.route.points.length - 1], startRoute.points[startRoute.points.length - 1]);
+assert(Math.abs(fueled.totalDistance - startRoute.distance) < 1);
 player.startTravel();
 assert.deepEqual(player.getSnapshot().currentPosition, playerStart);
 
