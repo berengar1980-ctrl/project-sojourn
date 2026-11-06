@@ -32,7 +32,7 @@ const navigation = navigationModule.createNavigationService(
 
 const npcs = data.createSectorNpcEconomyStates();
 const attacker = npcs.find((npc) => npc.job === 'patrol');
-const defender = npcs.find((npc) => npc.job === 'freighter');
+const defender = npcs.find((npc) => npc.pirate);
 assert(attacker && defender);
 
 attacker.locationId = mapModule.narrowsSector.startLocationId;
@@ -81,7 +81,7 @@ for (let step = 0; step < 600 && sector.combatMode(attacker) !== 'engaged'; step
 assert.equal(
   sector.combatMode(attacker),
   'engaged',
-  'aggressive patrol must physically close the gap and engage the hostile NPC'
+  'aggressive patrol must physically close the gap and engage an actual pirate'
 );
 assert.equal(
   sector.combatMode(defender),
