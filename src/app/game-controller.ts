@@ -18,6 +18,7 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { warmStartNpcTraffic } from '../systems/npcs/npc-startup-traffic';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
@@ -486,6 +487,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
   mountControllerStarMap(context);
   return {
+    warmStartTraffic: (seconds) => warmStartNpcTraffic(economy.sectorNpcs, economy.npcs, seconds),
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
