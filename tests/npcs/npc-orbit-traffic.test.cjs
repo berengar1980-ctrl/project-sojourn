@@ -108,7 +108,10 @@ const fueled = planFuelRoute({
 });
 assert(fueled);
 assert.deepEqual(fueled.route.points[0], playerStart);
-assert.deepEqual(fueled.route.points[fueled.route.points.length - 1], startRoute.points[startRoute.points.length - 1]);
+assert.deepEqual(
+  fueled.route.points[fueled.route.points.length - 1],
+  startRoute.points[startRoute.points.length - 1]
+);
 assert(Math.abs(fueled.totalDistance - startRoute.distance) < 1);
 player.startTravel();
 assert.deepEqual(player.getSnapshot().currentPosition, playerStart);
