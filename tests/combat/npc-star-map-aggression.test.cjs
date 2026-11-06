@@ -40,7 +40,7 @@ defender.locationId = mapModule.narrowsSector.startLocationId;
 attacker.aggression = 95;
 defender.aggression = 90;
 
-const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, npcs, {
+const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, [attacker, defender], {
   getPlayerPosition: () => navigation.getSnapshot().currentPosition,
 });
 const weapon = components.getShipComponent('weapon', 'weapon1');
