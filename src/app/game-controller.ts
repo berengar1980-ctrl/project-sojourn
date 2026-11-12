@@ -18,6 +18,7 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
@@ -73,6 +74,11 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     state.activeShip,
     context.navigation,
     (nextShip) => {
+      if (context.economy.smuggling.hiddenUsed() > 0) {
+        context.systemLog.write('SCHMUGGEL > VERDECKTEN FRACHTRAUM VOR SCHIFFSWECHSEL LEEREN');
+        return;
+      }
+      context.economy.smuggling.activateShip(nextShip.id);
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
@@ -162,12 +168,14 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     },
-    context.shipOperations
+    context.shipOperations,
+    economy.smuggling
   );
   if (!state.panels.port) return;
   state.mode = 'port';
   context.audio.clearPlayerRcs();
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
+  if (announce) inspectDockArrival(context);
   mountControllerSwitcher(context);
 }
 function mountControllerMining(
@@ -381,6 +389,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   });
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
+  if (tickCustoms(context)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   economy.sectorNpcs.tick(deltaSeconds);
@@ -391,6 +400,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
+  inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
@@ -416,6 +426,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
 export function createGameController(options: GameControllerOptions): GameController {
   const economy = createControllerEconomy(options.navigation);
+  economy.smuggling.activateShip(options.ship.id);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
     starterShipId: options.ship.id,
