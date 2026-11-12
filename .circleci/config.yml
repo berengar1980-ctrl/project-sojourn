@@ -21,6 +21,8 @@ jobs:
       - run:
           name: Format
           command: |
+            # TEMPORARY DIAGNOSTIC ONLY: run Prettier to expose subsequent CI failures.
+            npm run format
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
               npm run format
             fi
