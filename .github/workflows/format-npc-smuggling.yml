@@ -21,7 +21,7 @@ jobs:
       - run: npm ci
       - name: Format NPC smuggling refactor
         run: |
-          npx prettier --write src/data/economy/sector-npc-economy.ts src/systems/economy/npc-smuggling-service.ts src/systems/economy/npc-smuggling-inspection.ts
+          npx prettier --write src/app/game-controller-economy.ts src/app/game-controller.ts src/data/economy/sector-npc-economy.ts src/systems/economy/npc-smuggling-service.ts src/systems/economy/npc-smuggling-inspection.ts
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
