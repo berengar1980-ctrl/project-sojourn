@@ -130,7 +130,7 @@ function unit(service, id) {
 {
   const tactical = encounter();
   assert.equal(tactical.move('sentry', { q: 2, r: 1 }), true);
-  assert(tactical.shoot('sentry', 'intruder') === null, 'target initially out of range');
+  assert(tactical.shoot('sentry', 'intruder'), 'target now within rifle range');
   const checkpoint = tactical.getSnapshot();
   const restored = encounter({ restore: checkpoint });
   assert.deepEqual(restored.getSnapshot(), checkpoint);
@@ -138,6 +138,8 @@ function unit(service, id) {
   tactical.endTurn();
   restored.endTurn();
   restored.endTurn();
+  assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
+  assert.deepEqual(restored.shoot('sentry', 'intruder'), tactical.shoot('sentry', 'intruder'));
   assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
 }
 
