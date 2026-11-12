@@ -79,7 +79,10 @@ export interface ControllerEconomy {
   readonly sectorNpcs: NpcSectorService;
 }
 
-export function createControllerEconomy(navigation: NavigationService): ControllerEconomy {
+export function createControllerEconomy(
+  navigation: NavigationService,
+  onSmugglingNotice: (message: string) => void = () => {}
+): ControllerEconomy {
   const situations = createMarketSituationService(sectorPorts, economyResources, 73);
   const markets = createEconomyMarketService(sectorPorts, economyResources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
@@ -95,7 +98,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
   });
-  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs);
+  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
