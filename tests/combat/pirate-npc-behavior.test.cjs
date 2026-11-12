@@ -12,6 +12,7 @@ const data = read('src/data/economy/sector-npc-economy.ts');
 const sector = read('src/systems/npcs/npc-sector-service.ts');
 const routing = read('src/systems/npcs/npc-sector-routing.ts');
 const engagement = read('src/systems/combat/star-map-engagement-service.ts');
+const combatSetup = read('src/systems/combat/npc-combatant-setup.ts');
 const starModel = read('src/app/game-controller-star-map.ts');
 const mapRenderer = read('src/ui/map/npc-ship-map-renderer.ts');
 const combatRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
@@ -87,8 +88,9 @@ assert(
   engagement.includes('function scanForPiratePlayerAttack(') &&
     engagement.includes("'Korsaren-Abfangkurs'") &&
     engagement.includes('npcIsPiratePrey(candidate)') &&
-    engagement.includes('function transferPirateLoot(') &&
-    engagement.includes('remaining = 10'),
+    engagement.includes('settleNpcCombatPirateLoot(entry.first, entry.second, model.winner)') &&
+    combatSetup.includes('export function transferPirateLoot(') &&
+    combatSetup.includes('Math.min(10, Math.max(0, Math.floor(pirate.cargoCapacity - cargoUsed)))'),
   'pirates must intercept travelling players, raid civilian ships and steal up to ten cargo units'
 );
 
