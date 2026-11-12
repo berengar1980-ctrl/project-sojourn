@@ -1,6 +1,10 @@
-import type { createPortPanel } from './port-panel';
-
-type Options = Parameters<typeof createPortPanel>[0];
+interface Options {
+  readonly onBuyHoldIntel: () => void;
+  readonly onInstallHiddenHold: () => void;
+  readonly onConcealCargo: (resourceId: string) => void;
+  readonly onRevealCargo: (resourceId: string) => void;
+  readonly onPirateProtection: () => void;
+}
 
 export function bindSmugglingPortActions(shell: HTMLElement, options: Options): void {
   shell
