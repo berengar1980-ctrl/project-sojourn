@@ -39,7 +39,9 @@ export function createNpcPopulationService(
       if (!amount) continue;
       const preferred = original.homePortId ?? original.locationId;
       const market =
-        markets.snapshot().find((item) => item.locationId === preferred && item.entries[resourceId]) ??
+        markets
+          .snapshot()
+          .find((item) => item.locationId === preferred && item.entries[resourceId]) ??
         markets.snapshot().find((item) => item.entries[resourceId]);
       if (market) {
         market.entries[resourceId]!.stock += amount;
@@ -68,9 +70,15 @@ export function createNpcPopulationService(
     return true;
   };
   return {
-    get fundCredits() { return fund; },
-    get replacementCount() { return replacementCount; },
-    get outstanding() { return npcs.filter((npc) => npc.retiredUntilDay !== undefined).length; },
+    get fundCredits() {
+      return fund;
+    },
+    get replacementCount() {
+      return replacementCount;
+    },
+    get outstanding() {
+      return npcs.filter((npc) => npc.retiredUntilDay !== undefined).length;
+    },
     collectTradeCommission(credits) {
       if (Number.isFinite(credits) && credits > 0) fund += Math.floor(credits);
     },

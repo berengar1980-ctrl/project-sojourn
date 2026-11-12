@@ -414,7 +414,9 @@ export function createPortViewModel(
   const localMarket = marketRows(market, player, saleFeeRate);
   const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
   return {
-    ...(charter ? { charter: { active: charter.active, offers: charter.offers, feeRate: saleFeeRate } } : {}),
+    ...(charter
+      ? { charter: { active: charter.active, offers: charter.offers, feeRate: saleFeeRate } }
+      : {}),
     operations,
     locationId: location.id,
     locationName: location.name,

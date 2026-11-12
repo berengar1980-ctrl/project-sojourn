@@ -31,7 +31,10 @@ for (const days of horizons) {
     })
     .find((value) => value && value.days === days && value.automaticCombat);
   assert(summary, 'Missing economic audit report at day ' + days);
-  assert.equal(summary.report.reduce((sum, group) => sum + group.ships, 0), 33);
+  assert.equal(
+    summary.report.reduce((sum, group) => sum + group.ships, 0),
+    33
+  );
   assert(summary.population.insuranceFundCredits >= 0);
   assert(summary.report.every((group) => group.finalCredits >= 0));
   console.log(

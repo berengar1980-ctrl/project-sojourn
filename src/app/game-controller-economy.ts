@@ -52,8 +52,14 @@ import {
 } from '../systems/npcs/npc-salvage-event-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
-import { createNpcPopulationService, type NpcPopulationService } from '../systems/npcs/npc-population-service';
-import { createTradeCharterService, type TradeCharterService } from '../systems/economy/trade-charter-service';
+import {
+  createNpcPopulationService,
+  type NpcPopulationService,
+} from '../systems/npcs/npc-population-service';
+import {
+  createTradeCharterService,
+  type TradeCharterService,
+} from '../systems/economy/trade-charter-service';
 import {
   createNpcSmugglingService,
   type NpcSmugglingService,

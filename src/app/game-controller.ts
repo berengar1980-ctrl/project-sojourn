@@ -452,8 +452,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     playerProtectedFromPirate: (npc) =>
       Boolean(
         npc.pirate &&
-          (economy.smuggling.state.protectionFaction === npc.factionId ||
-            economy.charters.protectsPirate(npc.factionId))
+        (economy.smuggling.state.protectionFaction === npc.factionId ||
+          economy.charters.protectsPirate(npc.factionId))
       ),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
