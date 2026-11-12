@@ -133,6 +133,7 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.situations.advanceNextDay();
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
+  economy.sectorNpcs.advanceDay(economy.situations.currentDay);
   economy.npcSmuggling.advanceDay(economy.situations.currentDay);
   if (
     economy.situations.currentDay >= HIDDEN_HOLD_INTEL_DAY &&
