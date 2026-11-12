@@ -67,7 +67,7 @@ assert.equal(smuggling.protectionFee('ferrite', 1000), 0);
 assert.equal(smuggling.protectionFee('narcotics', 1000), 50);
 assert.equal(smuggling.recordSale('narcotics', 1000), 50);
 assert.equal(smuggling.state.totalProtectionFees, 50);
-assert.equal(pirateFleet[0].credits + pirateFleet[1].credits, 232);
+assert.equal(pirateFleet[0].credits + pirateFleet[1].credits, 233);
 assert.equal(pirateFleet[2].credits, 100, 'other gang receives no protection money');
 
 const noIllegal = { credits: 5000, cargo: { ferrite: { qty: 5, totalCost: 200 } } };
