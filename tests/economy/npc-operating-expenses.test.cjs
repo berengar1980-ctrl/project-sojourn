@@ -19,11 +19,7 @@ assert.equal(trader.credits, 10000 - charged);
 assert.equal(trader.civilianOperatingExpenses, charged);
 assert.equal(chargeNpcDailyOperatingExpenses(trader, 1), 0, 'day must not be charged twice');
 assert.equal(chargeNpcDailyOperatingExpenses(trader, 0), 0);
-assert.equal(
-  chargeNpcDailyOperatingExpenses(trader, 3),
-  2 * charged,
-  'missed days must settle'
-);
+assert.equal(chargeNpcDailyOperatingExpenses(trader, 3), 2 * charged, 'missed days must settle');
 assert.equal(trader.civilianOperatingExpenses, charged * 3);
 
 const poor = npc(10, 'miner');
