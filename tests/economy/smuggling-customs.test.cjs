@@ -10,7 +10,15 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createSmugglingService, HIDDEN_CARGO_HOLD } = load(
   'src/systems/economy/smuggling-service.ts'
 );
-const { playerCargoUsed } = load('src/systems/economy/player-trade-service.ts');
+const { playerCargoUsed, createPlayerTradeService } = load(
+  'src/systems/economy/player-trade-service.ts'
+);
+
+const delivery = createPlayerTradeService({ getEntry: () => null });
+delivery.player.smugglingNormalPenalty = 12;
+assert.equal(delivery.receiveCargo('ferrite', 50, 35), 23);
+assert.equal(delivery.receiveCargo('ferrite', 1, 35), 0);
+assert.equal(playerCargoUsed(delivery.player), 23);
 
 const pirateFleet = [
   { pirate: true, factionId: 'pirates', credits: 100 },
