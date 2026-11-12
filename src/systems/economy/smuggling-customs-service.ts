@@ -37,7 +37,8 @@ function scanCargo(
         ? cargo.visibleQty
         : 0;
     const hiddenQty =
-      rng() < clamp(0.16 + strength * 0.5 - concealment * 0.4 + state.suspicion * 0.0015, 0.03, 0.58)
+      rng() <
+      clamp(0.16 + strength * 0.5 - concealment * 0.4 + state.suspicion * 0.0015, 0.03, 0.58)
         ? cargo.hiddenQty
         : 0;
     if (visibleQty + hiddenQty > 0) {
@@ -117,11 +118,7 @@ function performInspection(
 }
 function attemptPapers(ctx: DecisionContext, inspection: CustomsInspection, rng: () => number) {
   inspection.papersTried = true;
-  const chance = clamp(
-    0.38 - inspection.strength * 0.16 - ctx.state.suspicion * 0.003,
-    0.08,
-    0.76
-  );
+  const chance = clamp(0.38 - inspection.strength * 0.16 - ctx.state.suspicion * 0.003, 0.08, 0.76);
   if (rng() < chance) {
     ctx.adjustSuspicion(-2);
     return finish(inspection, 'papers', 'Frachtpapiere akzeptiert · keine Durchsuchung');
@@ -191,7 +188,14 @@ function resolveCustomsDecision(
     return finish(inspection, 'resisted', 'Widerstand gegen die Flottenkontrolle');
   }
   if (action === 'comply') {
-    return performInspection(ctx, inspection, shipId, rng, false, inspection.papersTried ? 0.05 : 0);
+    return performInspection(
+      ctx,
+      inspection,
+      shipId,
+      rng,
+      false,
+      inspection.papersTried ? 0.05 : 0
+    );
   }
   return inspection;
 }
@@ -205,12 +209,15 @@ export function createSmugglingCustomsService(
   'scan' | 'inspectionChance' | 'startInspection' | 'bribeQuote' | 'decide'
 > {
   const scan: SmugglingService['scan'] = (strength, shipId, rng = Math.random) =>
-    scanCargo(player, state, strength, hiddenCapacity(shipId) > 0 ? HIDDEN_CARGO_HOLD.concealment : 0, rng);
-  const bribeQuote = (normalCapacity: number): number =>
-    Math.max(
-      4000,
-      Math.round((5500 + normalCapacity * 110 + state.suspicion * 260) / 500) * 500
+    scanCargo(
+      player,
+      state,
+      strength,
+      hiddenCapacity(shipId) > 0 ? HIDDEN_CARGO_HOLD.concealment : 0,
+      rng
     );
+  const bribeQuote = (normalCapacity: number): number =>
+    Math.max(4000, Math.round((5500 + normalCapacity * 110 + state.suspicion * 260) / 500) * 500);
   const ctx: DecisionContext = { player, state, scan, bribeQuote, adjustSuspicion };
   return {
     scan,
@@ -226,7 +233,8 @@ export function createSmugglingCustomsService(
           ? 0
           : clamp(
               (visible +
-                hidden * (1 - (hiddenCapacity(shipId) > 0 ? HIDDEN_CARGO_HOLD.concealment : 0) * 0.78)) /
+                hidden *
+                  (1 - (hiddenCapacity(shipId) > 0 ? HIDDEN_CARGO_HOLD.concealment : 0) * 0.78)) /
                 count,
               0.1,
               1
