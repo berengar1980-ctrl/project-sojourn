@@ -67,7 +67,7 @@ export function createUnit(template: BoardingUnitTemplate): BoardingUnit {
   };
 }
 
-export function spawnCandidates(map: BoardingMapDefinition, team: BoardingTeam): readonly BoardingHex[] {
+function spawnCandidates(map: BoardingMapDefinition, team: BoardingTeam): readonly BoardingHex[] {
   const left: BoardingHex[] = [];
   for (let q = 0; q < Math.min(3, map.columns); q += 1) {
     for (let r = 0; r < map.rows; r += 1) left.push({ q, r });
@@ -155,6 +155,10 @@ export function meleeChance(attacker: BoardingUnit): number {
   );
 }
 
-export function damageAfterArmor(damage: number, armorPenetration: number, targetArmor: number): number {
+export function damageAfterArmor(
+  damage: number,
+  armorPenetration: number,
+  targetArmor: number
+): number {
   return Math.max(1, damage - Math.max(0, targetArmor - armorPenetration));
 }
