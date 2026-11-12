@@ -120,7 +120,7 @@ export function createControllerEconomy(
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
     onSale: (npc, resourceId, quantity, gross) => {
       npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross);
-      population.collectTradeCommission(Math.round((gross * 0.06) / 0.94));
+      population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
     },
     positions: Object.fromEntries(
       narrowsSector.locations.map((location) => [location.id, location.position])
