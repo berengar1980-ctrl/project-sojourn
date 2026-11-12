@@ -8,6 +8,8 @@ import { repairCost, type ShipOperatingService } from '../systems/ships/ship-ope
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
+import type { SmugglingService } from '../systems/economy/smuggling-service';
+import { createSmugglingPortOptions } from './game-controller-port-smuggling';
 import { createCrewMember, crewCapacity, type CrewRosterService } from '../systems/crew';
 import { planRouteWithProfile, type NavigationService } from '../systems/navigation';
 import {
@@ -83,6 +85,7 @@ interface ActivePortContext {
   readonly market: ActivePortMarket;
   readonly navigation: NavigationService;
   readonly trade: PlayerTradeService;
+  readonly smuggling: SmugglingService;
   readonly ship: ShipDefinition;
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
@@ -163,7 +166,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     },
     systemMarketRows(location.id, context.marketIntel),
     Math.max(0, context.currentDay),
-    runtime.cargoCapacityTons,
+    runtime.cargoCapacityTons - context.smuggling.normalPenalty(ship.id),
     runtime.crewEffects.logistics.saleFeeRate,
     {
       loose: context.componentInventory.list(),
@@ -240,6 +243,8 @@ function createTradeCallbacks(
     onSell: (resourceId) => {
       const result = trade.sell(location.id, resourceId, 1, saleFeeRate);
       if (!result) return;
+      const protectionFee = context.smuggling.recordSale(resourceId, result.creditsDelta);
+      if (protectionFee) log.write('SCHMUGGEL > SCHUTZABGABE -' + protectionFee + ' CR');
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(
@@ -251,6 +256,8 @@ function createTradeCallbacks(
       const quantity = trade.player.cargo[resourceId]?.qty ?? 0;
       const result = trade.sell(location.id, resourceId, quantity, saleFeeRate);
       if (!result) return;
+      const protectionFee = context.smuggling.recordSale(resourceId, result.creditsDelta);
+      if (protectionFee) log.write('SCHMUGGEL > SCHUTZABGABE -' + protectionFee + ' CR');
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(
@@ -263,6 +270,10 @@ function createTradeCallbacks(
 
 function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition): void {
   if (context.ship.id === ship.id) return;
+  if (context.smuggling.hiddenUsed() > 0) {
+    context.log.write('WERFT > SCHIFFSWECHSEL ERFORDERT LEEREN DES VERDECKTEN FRACHTRAUMS');
+    return;
+  }
   const blocked = shipActivationBlock(
     ship,
     context.shipOwnership,
@@ -283,6 +294,7 @@ function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition
     return;
   }
   context.log.write('WERFT > SCHIFF GEWECHSELT · ' + ship.name.toUpperCase());
+  context.smuggling.activateShip(ship.id);
   context.onChangeShip(ship);
 }
 
@@ -397,7 +409,8 @@ export function createActivePortPanel(
   log: SystemLogService,
   shipOwnership: ShipOwnershipService,
   onChangeShip: (ship: ShipDefinition) => void,
-  shipOperations: ShipOperatingService
+  shipOperations: ShipOperatingService,
+  smuggling: SmugglingService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = narrowsSector.locations.find((entry) => entry.id === locationId);
@@ -421,6 +434,7 @@ export function createActivePortPanel(
     market,
     navigation,
     trade,
+    smuggling,
     ship,
     crew,
     loadouts,
@@ -439,9 +453,20 @@ export function createActivePortPanel(
     log,
   };
 
+  const underworldOptions = createSmugglingPortOptions(
+    smuggling,
+    trade,
+    ship,
+    location.id,
+    runtime.cargoCapacityTons,
+    currentDay,
+    log,
+    onRefresh
+  );
   return createPortPanel({
     root,
     model: createActivePortModel(context),
+    ...underworldOptions,
     onReturnToStarMap,
     onRepairShip: () => {
       const result = shipOperations.repair(

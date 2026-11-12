@@ -18,12 +18,13 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
-import { createControllerShipSwitcher } from './game-controller-ship-switcher';
+import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
 import type {
   ControllerRuntimeContext,
@@ -66,22 +67,12 @@ import {
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
-  const { state } = context;
-  state.shipSwitcher?.destroy();
-  state.shipSwitcher = createControllerShipSwitcher(
-    context.root,
-    state.activeShip,
-    context.navigation,
-    (nextShip) => {
-      state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
-      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
-      context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
-      if (state.mode === 'local-space') mountControllerMining(context, true);
-      else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
-      else if (state.mode === 'port') mountControllerPort(context);
-      else mountControllerStarMap(context);
-    }
-  );
+  mountControllerShipSwitcher(context, (mode) => {
+    if (mode === 'local-space') mountControllerMining(context, true);
+    else if (mode === 'salvage-space') mountControllerSalvage(context, true);
+    else if (mode === 'port') mountControllerPort(context, false);
+    else mountControllerStarMap(context);
+  });
 }
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
@@ -162,12 +153,14 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     },
-    context.shipOperations
+    context.shipOperations,
+    economy.smuggling
   );
   if (!state.panels.port) return;
   state.mode = 'port';
   context.audio.clearPlayerRcs();
   if (announce) context.systemLog.write('DOCK > ' + (locationId ?? 'UNKNOWN').toUpperCase());
+  if (announce) inspectDockArrival(context);
   mountControllerSwitcher(context);
 }
 function mountControllerMining(
@@ -381,6 +374,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   });
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
+  if (tickCustoms(context)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   economy.sectorNpcs.tick(deltaSeconds);
@@ -391,6 +385,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
   const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
+  inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
@@ -416,6 +411,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
 export function createGameController(options: GameControllerOptions): GameController {
   const economy = createControllerEconomy(options.navigation);
+  economy.smuggling.activateShip(options.ship.id);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
     starterShipId: options.ship.id,
@@ -448,6 +444,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
+    playerProtectedFromPirate: (npc) =>
+      Boolean(npc.pirate && economy.smuggling.state.protectionFaction === npc.factionId),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),

@@ -5,11 +5,15 @@ import { PortLocationRenderer } from './port-location-renderer';
 import './port-shipyard.css';
 import { bindShipyardBrowser } from './port-shipyard-browser';
 import { crewPane, equipmentPane, shipPane, shipyardPane } from './port-secondary-panes';
+import { smugglingPane } from './port-smuggling-pane';
+import type { SmugglingPortView } from './port-smuggling-types';
+export type { SmugglingPortView } from './port-smuggling-types';
+import { bindSmugglingPortActions } from './port-smuggling-events';
+import { bindPortTradeActions } from './port-trade-events';
 
 export interface PortPanel {
   destroy(): void;
 }
-
 let lastPortTab: PortTab = 'trade';
 
 interface PortPanelOptions {
@@ -18,6 +22,12 @@ interface PortPanelOptions {
   readonly onReturnToStarMap: () => void;
   readonly onMarketRoute: (locationId: string) => void;
   readonly onBuy: (resourceId: string) => void;
+  readonly smuggling: SmugglingPortView;
+  readonly onBuyHoldIntel: () => void;
+  readonly onInstallHiddenHold: () => void;
+  readonly onConcealCargo: (resourceId: string) => void;
+  readonly onRevealCargo: (resourceId: string) => void;
+  readonly onPirateProtection: () => void;
   readonly onSell: (resourceId: string) => void;
   readonly onSellAll: (resourceId: string) => void;
   readonly onRepairShip: () => void;
@@ -298,7 +308,7 @@ function tradePane(model: PortViewModel): string {
   `;
 }
 
-function shellMarkup(model: PortViewModel): string {
+function shellMarkup(model: PortViewModel, smuggling: SmugglingPortView): string {
   return `
     <header class="port-header">
       <div class="port-brand"><span>PROJECT SOJOURN</span><small>DOCKED OPERATIONS</small></div>
@@ -308,12 +318,14 @@ function shellMarkup(model: PortViewModel): string {
     </header>
     <nav class="port-tabs">
       ${model.tabs.map((tab) => `<button type="button" data-port-tab="${tab.id}" ${tab.enabled ? '' : 'disabled'}>${tab.label}${tab.id === 'shipyard' && !tab.enabled ? ' // NICHT VERFÜGBAR' : ''}</button>`).join('')}
+      <button type="button" data-port-tab="smuggling">SCHMUGGEL</button>
     </nav>
     <main class="port-content">
       ${tradePane(model)}
       ${shipPane(model)}
       ${crewPane(model)}
       ${equipmentPane()}
+      ${smugglingPane(smuggling)}
       ${model.shipyardAvailable ? shipyardPane(model) : ''}
     </main>
     <footer class="port-footer"><span>${model.description}</span><strong>HANDELN · SCHIFF · CREW</strong></footer>
@@ -352,7 +364,7 @@ function bindTradeViews(shell: HTMLElement): void {
 export function createPortPanel(options: PortPanelOptions): PortPanel {
   const shell = document.createElement('section');
   shell.className = 'port-shell';
-  shell.innerHTML = shellMarkup(options.model);
+  shell.innerHTML = shellMarkup(options.model, options.smuggling);
   options.root.replaceChildren(shell);
 
   const tabs = [...shell.querySelectorAll<HTMLButtonElement>('[data-port-tab]')];
@@ -378,18 +390,7 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       }
     });
   }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-id]')) {
-    button.addEventListener('click', () => options.onBuy(button.dataset.buyId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-id]')) {
-    button.addEventListener('click', () => options.onSell(button.dataset.sellId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-all-id]')) {
-    button.addEventListener('click', () => options.onSellAll(button.dataset.sellAllId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-market-route]')) {
-    button.addEventListener('click', () => options.onMarketRoute(button.dataset.marketRoute ?? ''));
-  }
+  bindPortTradeActions(shell, options);
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-component-type]')) {
     button.addEventListener('click', () => {
       const type = button.dataset.componentType as ShipComponentType;
@@ -440,6 +441,7 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
     );
   }
 
+  bindSmugglingPortActions(shell, options);
   bindSystemMarketFilter(shell);
   bindTradeViews(shell);
   bindShipyardBrowser(shell);

@@ -57,12 +57,14 @@ export interface PlayerCargoLot {
   qty: number;
   totalCost: number;
   lastOriginId?: EconomyLocationId;
+  hiddenQty?: number;
 }
 
 export interface PlayerEconomyState {
   credits: number;
   readonly cargo: Record<EconomyResourceId, PlayerCargoLot>;
   reservedCargoTons?: number;
+  smugglingNormalPenalty?: number;
 }
 
 export interface TradeResult {

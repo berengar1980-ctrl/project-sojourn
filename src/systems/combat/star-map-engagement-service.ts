@@ -56,6 +56,7 @@ export interface StarMapEngagementService {
 export interface StarMapEngagementOptions {
   readonly navigation: NavigationService;
   readonly isPlayerInCampaignSystem?: () => boolean;
+  readonly playerProtectedFromPirate?: (npc: SectorNpcState) => boolean;
   readonly sectorNpcs: NpcSectorService;
   readonly getPlayerShip: () => ShipDefinition;
   readonly getPlayerCombatant: () => StrategicCombatantSetup;
@@ -161,7 +162,10 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
   const navigation = runtime.options.navigation.getSnapshot();
   if (!navigation.isTravelling || navigation.isPursuing) return;
   const target = runtime.options.sectorNpcs.npcs
-    .filter((npc) => npc.pirate && npcMayInitiateAttack(npc))
+    .filter(
+      (npc) =>
+        npc.pirate && npcMayInitiateAttack(npc) && !runtime.options.playerProtectedFromPirate?.(npc)
+    )
     .map((npc) => ({
       npc,
       range: distance(runtime.options.sectorNpcs.livePosition(npc), navigation.currentPosition),

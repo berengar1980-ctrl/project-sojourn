@@ -1,6 +1,6 @@
 import type { EconomyResourceId } from './economy-types';
 
-export type PortTab = 'trade' | 'ship' | 'crew' | 'equipment' | 'shipyard';
+export type PortTab = 'trade' | 'ship' | 'crew' | 'equipment' | 'shipyard' | 'smuggling';
 
 export interface PortCommodityDefinition {
   readonly id: EconomyResourceId;

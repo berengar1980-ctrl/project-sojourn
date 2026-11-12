@@ -37,9 +37,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | Status            |  Anzahl |
 | ----------------- | ------: |
-| ✅ Umgesetzt      |      45 |
-| 🟨 Teilweise      |      51 |
-| ⬜ Offen          |     142 |
+| ✅ Umgesetzt      |      53 |
+| 🟨 Teilweise      |      60 |
+| ⬜ Offen          |     125 |
 | 🔁 Bewusst anders |       3 |
 | **Gesamt**        | **241** |
 
@@ -287,11 +287,11 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ### smuggling
 
-| Status   | Feature-ID                             | Voidbound-Feature                                                                                                                                                          | Sojourn-Bewertung                                                        | Entscheidung |
-| -------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------ |
-| ⬜ Offen | `smuggling.hidden_hold_intel`          | The concealed cargo hold is completely hidden from UI until the paid tavern rumor unlocks its pirate-yard installation channel                                             | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen | `smuggling.hidden_hold_intel_staged`   | The tavern informant teases an illegal opportunity, deferral preserves secrecy, return dialogue changes, and the actual hidden-hold channel is revealed only after payment | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen | `smuggling.hidden_hold_payment_action` | The 3000-Thrones tavern payment is reliably handled after modal rerenders and reveals the hidden-hold contacts only on successful payment                                  | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
+| Status       | Feature-ID                             | Voidbound-Feature                                                                                                                                                          | Sojourn-Bewertung                                                                                                               | Entscheidung |
+| ------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 🟨 Teilweise | `smuggling.hidden_hold_intel`          | The concealed cargo hold is completely hidden from UI until the paid tavern rumor unlocks its pirate-yard installation channel                                             | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ⬜ Offen     | `smuggling.hidden_hold_intel_staged`   | The tavern informant teases an illegal opportunity, deferral preserves secrecy, return dialogue changes, and the actual hidden-hold channel is revealed only after payment | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten.                                                        | offen        |
+| 🟨 Teilweise | `smuggling.hidden_hold_payment_action` | The 3000-Thrones tavern payment is reliably handled after modal rerenders and reveals the hidden-hold contacts only on successful payment                                  | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
 
 ### trade
 
@@ -470,31 +470,31 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ### smuggling
 
-| Status       | Feature-ID                    | Voidbound-Feature                                                    | Sojourn-Bewertung                                                        | Entscheidung |
-| ------------ | ----------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------ |
-| ✅ Umgesetzt | `smuggling.legality`          | Resources preserve legal/restricted/illegal categories               | Äquivalentes Kernverhalten ist in Sojourn main vorhanden.                | offen        |
-| ⬜ Offen     | `smuggling.ui_bindings`       | Smuggling and mandatory customs controls stay wired to their actions | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.hidden_hold`       | Hidden cargo hold can be installed under its conditions              | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.hidden_transfer`   | Cargo can move into/out of hidden storage with capacity limits       | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.pirate_protection` | Pirate protection can be accepted and tied to a corsair faction      | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.protection_fee`    | Pirate protection charges 5% only on illegal sales                   | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.suspicion`         | Smuggling activity changes visible suspicion/control risk            | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
-| ⬜ Offen     | `smuggling.illegal_supply`    | Illegal resources use separate black-market supply stabilization     | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten. | offen        |
+| Status       | Feature-ID                    | Voidbound-Feature                                                    | Sojourn-Bewertung                                                                                                               | Entscheidung |
+| ------------ | ----------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| ✅ Umgesetzt | `smuggling.legality`          | Resources preserve legal/restricted/illegal categories               | Äquivalentes Kernverhalten ist in Sojourn main vorhanden.                                                                       | offen        |
+| 🟨 Teilweise | `smuggling.ui_bindings`       | Smuggling and mandatory customs controls stay wired to their actions | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `smuggling.hidden_hold`       | Hidden cargo hold can be installed under its conditions              | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `smuggling.hidden_transfer`   | Cargo can move into/out of hidden storage with capacity limits       | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `smuggling.pirate_protection` | Pirate protection can be accepted and tied to a corsair faction      | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `smuggling.protection_fee`    | Pirate protection charges 5% only on illegal sales                   | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `smuggling.suspicion`         | Smuggling activity changes visible suspicion/control risk            | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ⬜ Offen     | `smuggling.illegal_supply`    | Illegal resources use separate black-market supply stabilization     | Schmuggel-/Zoll-Unterbau fehlt abgesehen von Ressourcen-Legalitätsdaten.                                                        | offen        |
 
 ### customs
 
-| Status   | Feature-ID                  | Voidbound-Feature                                                       | Sojourn-Bewertung                                                                                                      | Entscheidung |
-| -------- | --------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------ |
-| ⬜ Offen | `customs.harbor_trigger`    | Harbor customs inspections can trigger without pre-revealing contraband | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.patrol_trigger`    | Patrol inspections can trigger in space                                 | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.false_positive`    | Legal cargo can rarely produce a false-positive inspection              | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.mandatory_modal`   | Open customs encounters block underlying market/UI                      | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.papers`            | Player can submit freight papers                                        | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.bribe`             | Harbor inspection supports discrete payment attempt                     | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.physical_scan`     | Contraband scan occurs only on physical inspection                      | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.escape_resist`     | Space inspection supports escape/armed resistance outcomes              | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.confiscation_fine` | Detected contraband can be confiscated and fined                        | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
-| ⬜ Offen | `customs.context_artwork`   | Space and harbor inspections use distinct final officer artwork         | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden. | offen        |
+| Status       | Feature-ID                  | Voidbound-Feature                                                       | Sojourn-Bewertung                                                                                                               | Entscheidung |
+| ------------ | --------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| ✅ Umgesetzt | `customs.harbor_trigger`    | Harbor customs inspections can trigger without pre-revealing contraband | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `customs.patrol_trigger`    | Patrol inspections can trigger in space                                 | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `customs.false_positive`    | Legal cargo can rarely produce a false-positive inspection              | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `customs.mandatory_modal`   | Open customs encounters block underlying market/UI                      | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `customs.papers`            | Player can submit freight papers                                        | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `customs.bribe`             | Harbor inspection supports discrete payment attempt                     | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `customs.physical_scan`     | Contraband scan occurs only on physical inspection                      | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| 🟨 Teilweise | `customs.escape_resist`     | Space inspection supports escape/armed resistance outcomes              | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ✅ Umgesetzt | `customs.confiscation_fine` | Detected contraband can be confiscated and fined                        | Voidbound-Teilmechanik auf Sojourn mit realem Frachtraum, Kontrollen und Aktionen umgesetzt; fehlende Parität siehe Review-Log. | offen        |
+| ⬜ Offen     | `customs.context_artwork`   | Space and harbor inspections use distinct final officer artwork         | Kein äquivalentes Sojourn-System auf main; Mechanik/Inhalt muss für Sojourn neu entschieden oder neu gestaltet werden.          | offen        |
 
 ### smuggling
 
@@ -998,3 +998,11 @@ Schiffsnamen werden nicht mehr allein aufgrund der niedrigen Zoomstufe unterdrü
 ## Review-Log (2026-11-12): Physische Piratenbeute nach gewonnenen NPC-Gefechten
 
 **keine Statusänderung** der historischen Voidbound-Feature-IDs. Die 90- und 365-Tage-Wirtschaftstests mit automatischen NPC-Kämpfen meldeten viele Piraten-gegen-Zivilisten-Gefechte, aber keine einzige verbuchte Beute. Ursache: Die Abrechnung nach Kampfende verwendete die für die **Zielauswahl vor dem Kampf** bestimmte Prüfung `npcIsPiratePrey`, die einen intakten, nicht bereits im Gefecht befindlichen Gegner verlangt. Nach Kampfende sind die beteiligten Schiffe jedoch noch als `engaged` markiert; besiegte Gegner haben oft zusätzlich null Hüllenpunkte. Die neue Abrechnung überprüft statt des aktuellen Kampfzustands ausschließlich die Rolle des Siegers (Pirat) und des Verlierers (Frachter, Miner oder Berger). Es werden unverändert nur tatsächlich im Schiff vorhandene Ressourcen entnommen und übertragen; Gewinne entstehen erst durch deren späteren Verkauf am Gang-Heimathafen. Patrouillen, Pirat-gegen-Pirat-Gefechte und zivile Siege erzeugen keine Piratenbeute. Regressionstests sichern die Verwertung bereits kampfunfähiger und als `engaged` markierter ziviler Gegner ohne Frachtduplikation. Keine Änderung an Waffen, Gefechtsstärke oder Marktpreisen.
+
+## Review-Log (2026-11-12): Voidbound-Schmuggel, verdeckter Frachtraum, Zoll
+
+**17 Feature-IDs neu bewertet**, siehe Matrix. Sojourn übernimmt die Voidbound-Daten für den verdeckten Frachtraum (24 t versteckt, 12 t Verlust normaler Kapazität, Verschleierung 0,68, 750.000 Credits Umbau, 300.000 Credits Informantenwissen ab Welt-Tag 21) und dessen Installation ausschließlich an den beiden Piratenstützpunkten. Illegale Waren können separat verborgen und wieder ausgeräumt werden; Kapazitäten und tatsächliche Bestandsänderungen gelten für Spielerhandel. Ein fraktionsgebundener Unterwelt-Schutzbrief verhindert passive Angriffe der Schutzfraktion, kostet 5 % auf illegale Warenverkäufe und verteilt 65 % dieser Gebühr an die entsprechende lebende Piratenflotte.
+
+Hafenstichproben bei Ankunft sowie physische Patrouillenkontrollen während echter Raumreisen können als verpflichtende Begegnung erscheinen; auch legale Fracht kann eine Stichprobe auslösen. Frachtdokumente, Durchsuchung, Hafenzahlung sowie Flucht/Widerstand im Raum ändern die Kontrollausgänge. Scan findet sichtbare und versteckte Kontrabande probabilistisch; bei Nachweis werden tatsächliche Warenmengen und Kostengrundlagen gekürzt sowie Strafzahlungen/gestiegener Verdacht verbucht. Laufende Simulation pausiert, solange die verpflichtende Kontrollentscheidung offen ist.
+
+**Noch keine vollständige Voidbound-Parität:** Kein erzählter Tavernen-Informationskontakt mit Aufschubdialog, keine separate NPC-Schmuggler-KI/Zollkontrolle gegen NPCs, keine weltweiten Schwarzmarkt-Supply-Pools/Crime-Attention-Preise, kein eigenes Kampfkennzeichen für Zollwiderstand und kein vollständiges Save-System für Umbau/Schmuggelzustand. Die Auslegung von Raumflucht und Widerstand ist zunächst einfacher als das Voidbound-System. Keine fingierten Angaben zu fertiger Parität.
