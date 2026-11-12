@@ -1,0 +1,29 @@
+name: One-time parity formatter
+on:
+  push:
+    branches:
+      - feature/voidbound-npc-smuggling-notices
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/voidbound-npc-smuggling-notices
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Apply repository Prettier to parity matrix
+        run: |
+          npx prettier --write docs/SOJOURN_FEATURE_PARITY.md
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/SOJOURN_FEATURE_PARITY.md
+            git commit -m "style(parity): format NPC smuggling parity review"
+            git push origin HEAD:feature/voidbound-npc-smuggling-notices
+          fi
