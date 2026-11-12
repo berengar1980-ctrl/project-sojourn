@@ -3207,7 +3207,7 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 10px;
   height: 100%;
   padding: 14px;
@@ -3259,6 +3259,47 @@ body {
   letter-spacing: 0.05em;
 }
 
+.boarding-tactics {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 10px;
+  border: 1px solid rgba(100, 148, 164, 0.2);
+  background: rgba(7, 13, 17, 0.82);
+}
+
+.boarding-tactics-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.boarding-tactics-actions button {
+  padding: 7px 9px;
+  border: 1px solid rgba(98, 151, 168, 0.38);
+  background: rgba(22, 44, 53, 0.8);
+  color: #b4d6df;
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.boarding-tactics-actions button[aria-pressed='true'] {
+  border-color: #8bd6e4;
+  background: rgba(45, 103, 120, 0.7);
+}
+
+.boarding-tactics-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.boarding-unit-detail {
+  color: #9aacb2;
+  font-size: 10px;
+}
+
 .boarding-grid {
   display: grid;
   grid-template-columns: repeat(var(--boarding-columns), minmax(38px, 1fr));
@@ -3302,6 +3343,14 @@ body {
 
 .boarding-cell.is-selected {
   outline: 2px solid #b9eaf1;
+}
+
+.boarding-cell.is-cover {
+  box-shadow: inset 0 -4px 0 rgba(147, 194, 113, 0.35);
+}
+
+.boarding-cell.is-suppressed-zone {
+  border-color: rgba(221, 151, 86, 0.65);
 }
 
 .boarding-cell.is-door,
