@@ -187,8 +187,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '76.000',
     security: 'medium',
     produces: ['gems', 'luxury-food', 'art', 'aged-spirits'],
-    trades: ['narcotics', 'stolen-data'],
-    needs: ['rare-tech', 'spices', 'antiquities', 'medical', 'clothing', 'vegetables', 'meat'],
+    needs: ['narcotics', 'stolen-data', 'rare-tech', 'spices', 'antiquities', 'medical', 'clothing', 'vegetables', 'meat'],
   },
   {
     locationId: 'eidolon',
@@ -197,8 +196,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '2.2 Mio.',
     security: 'medium',
     produces: ['aged-spirits', 'art', 'antiquities'],
-    trades: ['stolen-data', 'alien-artifacts'],
-    needs: [
+    needs: ['stolen-data', 'alien-artifacts', 
       'water',
       'grain',
       'protein',
@@ -217,8 +215,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '190.000',
     security: 'medium',
     produces: ['antiquities'],
-    trades: ['narcotics', 'alien-artifacts'],
-    needs: ['medical', 'water', 'nutrient-paste', 'tools', 'batteries', 'aged-spirits'],
+    needs: ['narcotics', 'alien-artifacts', 'medical', 'water', 'nutrient-paste', 'tools', 'batteries', 'aged-spirits'],
   },
   {
     locationId: 'asterion-array',
