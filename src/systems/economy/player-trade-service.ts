@@ -25,7 +25,7 @@ export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_
 }
 
 export function playerCargoUsed(player: PlayerEconomyState): number {
-  const cargo = Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
+  const cargo = Object.values(player.cargo).reduce((sum, lot) => sum + Math.max(0, finiteInteger(lot.qty) - finiteInteger(lot.hiddenQty ?? 0)), 0);
   return cargo + finiteInteger(player.reservedCargoTons ?? 0);
 }
 
@@ -77,7 +77,7 @@ export function createPlayerTradeService(
       if (!entry) return null;
 
       const requested = finiteInteger(requestedQuantity);
-      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - playerCargoUsed(player));
+      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - (player.smugglingNormalPenalty ?? 0) - playerCargoUsed(player));
       const affordable = Math.floor(player.credits / Math.max(1, entry.price));
       const quantity = Math.min(requested, finiteInteger(entry.stock), cargoFree, affordable);
       if (quantity <= 0) return null;
@@ -91,6 +91,7 @@ export function createPlayerTradeService(
         qty: (lot?.qty ?? 0) + quantity,
         totalCost: weightedCostAfterPurchase(lot, quantity, entry.price),
         lastOriginId: locationId,
+        ...(lot?.hiddenQty ? { hiddenQty: lot.hiddenQty } : {}),
       };
       const unitPrice = entry.price;
       markets.recalculate(locationId, resourceId);
@@ -115,6 +116,7 @@ export function createPlayerTradeService(
         qty: (lot?.qty ?? 0) + quantity,
         totalCost: Math.max(0, lot?.totalCost ?? 0),
       };
+      if (lot?.hiddenQty) receivedLot.hiddenQty = lot.hiddenQty;
       const receivedOriginId = originId ?? lot?.lastOriginId;
       if (receivedOriginId) receivedLot.lastOriginId = receivedOriginId;
       player.cargo[resourceId] = receivedLot;
@@ -137,6 +139,9 @@ export function createPlayerTradeService(
       player.credits += revenue;
       entry.stock += quantity;
       entry.demand = Math.max(0, entry.demand - quantity / 5000);
+      const visibleQuantity = Math.max(0, lot.qty - (lot.hiddenQty ?? 0));
+      const hiddenSold = Math.max(0, quantity - visibleQuantity);
+      if (hiddenSold > 0) lot.hiddenQty = Math.max(0, (lot.hiddenQty ?? 0) - hiddenSold);
       lot.qty -= quantity;
       lot.totalCost = Math.max(0, lot.totalCost - averageCost * quantity);
       if (lot.qty <= 0) delete player.cargo[resourceId];
