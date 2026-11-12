@@ -52,6 +52,7 @@ import {
 } from '../systems/npcs/npc-salvage-event-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
+import { createNpcSmugglingService, type NpcSmugglingService } from '../systems/economy/npc-smuggling-service';
 import {
   createSmugglingService,
   type SmugglingService,
@@ -63,6 +64,7 @@ export interface ControllerEconomy {
   readonly marketIntel: MarketIntelService;
   readonly trade: PlayerTradeService;
   readonly smuggling: SmugglingService;
+  readonly npcSmuggling: NpcSmugglingService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
   readonly salvage: SalvageEconomyService;
@@ -90,6 +92,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
   });
+  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, markets);
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
@@ -99,6 +102,8 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   );
 
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
+    onSale: (npc, resourceId, quantity, gross) =>
+      npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross),
     positions: Object.fromEntries(
       narrowsSector.locations.map((location) => [location.id, location.position])
     ),
@@ -128,6 +133,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     marketIntel,
     trade,
     smuggling,
+    npcSmuggling,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
