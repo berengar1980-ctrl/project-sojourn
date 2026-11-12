@@ -234,6 +234,20 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
     const button = (action: typeof this.action, name: string, disabled = false): string =>
       `<button type="button" data-boarding-action="${action}" ${this.action === action ? 'aria-pressed="true"' : ''} ${!canAct || disabled ? 'disabled' : ''}>${name}</button>`;
+    const details = selected
+      ? selected.name +
+        ' · ' +
+        selected.weapon.name +
+        ' · Reichweite ' +
+        selected.weapon.range +
+        ' · Streuung ' +
+        selected.weapon.spread +
+        ' · RD ' +
+        selected.weapon.armorPenetration +
+        (selected.weapon.piercing
+          ? ' · Piercing +' + selected.weapon.piercing.bonusDamage
+          : '')
+      : 'Trupp wählen';
     const log = snapshot.log
       .slice(0, 8)
       .map((entry) => `<div>R${entry.round} · ${entry.text}</div>`)
@@ -257,7 +271,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
           ${button('overwatch', 'FEUERBEREITSCHAFT · 2 AP', !selected || selected.ap < 2 || selected.combatUsed)}
           <button type="button" data-boarding-hold ${!canAct || !selected || selected.ap < 1 || selected.combatUsed ? 'disabled' : ''}>DECKUNG HALTEN</button>
         </div>
-        <div class="boarding-unit-detail">${selected ? selected.name + ' · ' + selected.weapon.name + ' · Reichweite ' + selected.weapon.range + ' · Streuung ' + selected.weapon.spread + ' · RD ' + selected.weapon.armorPenetration + (selected.weapon.piercing ? ' · Piercing +' + selected.weapon.piercing.bonusDamage : '') : 'Trupp wählen'}</div>
+        <div class="boarding-unit-detail">${details}</div>
       </div>
       <div class="boarding-grid" style="--boarding-columns:${snapshot.map.columns}">${this.gridMarkup(snapshot, reachable)}</div>
       <aside class="boarding-log">${log}</aside>
@@ -275,12 +289,14 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
         }
       });
     }
-    this.shell.querySelector<HTMLButtonElement>('[data-boarding-hold]')?.addEventListener('click', () => {
-      const snapshot = this.tactical.getSnapshot();
-      if (snapshot.selectedUnitId) this.tactical.holdCover(snapshot.selectedUnitId);
-      this.action = 'move';
-      this.render();
-    });
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-hold]')
+      ?.addEventListener('click', () => {
+        const snapshot = this.tactical.getSnapshot();
+        if (snapshot.selectedUnitId) this.tactical.holdCover(snapshot.selectedUnitId);
+        this.action = 'move';
+        this.render();
+      });
     for (const button of this.shell.querySelectorAll<HTMLButtonElement>('.boarding-cell[data-q]')) {
       button.addEventListener('click', () =>
         this.actOnHex({ q: Number(button.dataset.q), r: Number(button.dataset.r) })

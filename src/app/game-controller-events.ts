@@ -2,7 +2,10 @@ import type { DistressActionResult, SalvageField } from '../core/salvage-types';
 import { HIDDEN_HOLD_INTEL_DAY } from '../systems/economy/smuggling-service';
 import { showUnderworldContactNotice } from '../ui/customs/underworld-contact-notice';
 import type { WorldLocation } from '../core/world-types';
-import { createCrewBoardingEncounter, crewBoardingUnits } from '../systems/boarding/crew-boarding-adapter';
+import {
+  createCrewBoardingEncounter,
+  crewBoardingUnits,
+} from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';

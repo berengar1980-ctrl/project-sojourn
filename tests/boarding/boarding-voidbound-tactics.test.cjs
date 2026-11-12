@@ -83,9 +83,7 @@ function unit(service, id) {
     ...initial,
     activeTeam: 'enemy',
     units: initial.units.map((entry) =>
-      entry.id === 'sentry'
-        ? { ...entry, q: 2, r: 1 }
-        : { ...entry, q: 3, r: 1 }
+      entry.id === 'sentry' ? { ...entry, q: 2, r: 1 } : { ...entry, q: 3, r: 1 }
     ),
   };
   const tactical = encounter({ restore: changed });
@@ -139,7 +137,10 @@ function unit(service, id) {
   restored.endTurn();
   restored.endTurn();
   assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
-  assert.deepEqual(restored.shoot('sentry', 'intruder'), tactical.shoot('sentry', 'intruder'));
+  assert.deepEqual(
+    restored.shoot('sentry', 'intruder'),
+    tactical.shoot('sentry', 'intruder')
+  );
   assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
 }
 

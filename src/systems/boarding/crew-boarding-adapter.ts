@@ -41,6 +41,7 @@ const RANGED: Readonly<Record<string, BoardingWeaponProfile>> = {
     armorPenetration: 2,
     spread: 2,
     canSuppress: true,
+    piercing: { maxArmor: 1, bonusDamage: 1 },
   },
   plasma_pistol: {
     id: 'plasma_pistol',

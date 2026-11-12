@@ -204,9 +204,11 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   constructor(private readonly options: CreateBoardingEncounterOptions) {
     this.random = createRandom(options.seed);
-    this.map = options.restore?.map ?? (options.mapId
-      ? (boardingMapById(options.mapId) ?? defaultMap(options.seed))
-      : defaultMap(options.seed));
+    this.map =
+      options.restore?.map ??
+      (options.mapId
+        ? (boardingMapById(options.mapId) ?? defaultMap(options.seed))
+        : defaultMap(options.seed));
     this.units = options.restore
       ? options.restore.units.map((unit) => ({
           ...unit,
@@ -255,14 +257,19 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
         ...zone,
         center: { ...zone.center },
       })),
-      allowRetreat: this.options.allowRetreat !== false,
+      allowRetreat:
+        (this.options.allowRetreat ?? this.options.restore?.allowRetreat) !== false,
       randomCalls: this.randomCalls,
     };
   }
 
   selectUnit(unitId: string | null): BoardingEncounterSnapshot {
     if (unitId === null) this.selectedUnitId = null;
-    else if (this.units.some((unit) => unit.id === unitId && unit.hp > 0 && unit.team === this.activeTeam))
+    else if (
+      this.units.some(
+        (unit) => unit.id === unitId && unit.hp > 0 && unit.team === this.activeTeam
+      )
+    )
       this.selectedUnitId = unitId;
     return this.getSnapshot();
   }
@@ -374,7 +381,9 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
         target.team !== unit.team &&
         target.hp > 0 &&
         boardingHexDistance(target, center) <= 1
-      ) target.suppressed = true;
+      ) {
+        target.suppressed = true;
+      }
     }
     this.writeLog(unit.name + ' legt ein Unterdrückungsfeld.');
     return true;
@@ -396,9 +405,13 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   holdCover(unitId: string): boolean {
     const unit = this.unitForAction(unitId);
-    if (!unit || unit.ap < 1 || unit.combatUsed || !this.map.cover.some(
-      (cover) => cover.q === unit.q && cover.r === unit.r
-    )) return false;
+    if (
+      !unit ||
+      unit.ap < 1 ||
+      unit.combatUsed ||
+      !this.map.cover.some((cover) => cover.q === unit.q && cover.r === unit.r)
+    )
+      return false;
     unit.ap -= 1;
     unit.combatUsed = true;
     unit.holdingCover = true;
@@ -418,16 +431,18 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
       unit.suppressed = false;
       unit.reactionUsed = false;
     }
-    this.suppressionZones = this.suppressionZones.filter(
-      (zone) => zone.team !== this.activeTeam
-    );
+    this.suppressionZones = this.suppressionZones.filter((zone) => zone.team !== this.activeTeam);
     this.selectedUnitId = this.aliveUnits(this.activeTeam)[0]?.id ?? null;
     this.writeLog((this.activeTeam === 'player' ? 'Eigener' : 'Feindlicher') + ' Zug beginnt.');
     return this.getSnapshot();
   }
 
   retreat(): BoardingEncounterSnapshot {
-    if (this.outcome === 'active' && this.activeTeam === 'player' && this.options.allowRetreat !== false) {
+    if (
+      this.outcome === 'active' &&
+      this.activeTeam === 'player' &&
+      (this.options.allowRetreat ?? this.options.restore?.allowRetreat) !== false
+    ) {
       this.outcome = 'retreat';
       this.writeLog('Entertrupp zieht sich zurück.');
     }
@@ -441,10 +456,12 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   private attackDamage(attacker: BoardingUnit, target: BoardingUnit, melee: boolean): number {
     const profile = melee ? attacker.meleeWeapon : attacker.weapon;
-    const piercing = !melee && attacker.weapon.piercing &&
+    const piercing =
+      !melee &&
+      attacker.weapon.piercing &&
       target.armor <= attacker.weapon.piercing.maxArmor
-      ? attacker.weapon.piercing.bonusDamage
-      : 0;
+        ? attacker.weapon.piercing.bonusDamage
+        : 0;
     return damageAfterArmor(profile.damage, profile.armorPenetration, target.armor) + piercing;
   }
 
@@ -460,8 +477,11 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     if (melee) attacker.meleeActions += 1;
     else attacker.rangedActions += 1;
     this.writeLog(
-      attacker.name + ' reagiert auf ' + target.name + ': ' +
-      (hit ? damage + ' Schaden.' : 'verfehlt.')
+      attacker.name +
+        ' reagiert auf ' +
+        target.name +
+        ': ' +
+        (hit ? damage + ' Schaden.' : 'verfehlt.')
     );
     this.updateOutcome();
   }
