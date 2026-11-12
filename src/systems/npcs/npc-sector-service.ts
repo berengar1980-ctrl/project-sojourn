@@ -83,6 +83,11 @@ class SectorService implements NpcSectorService {
       );
     return candidates[0]?.id ?? nearestLocation(this.world, position);
   };
+  private currentDay = 0;
+  advanceDay = (day: number): void => {
+    this.currentDay = Math.max(this.currentDay, Math.floor(day));
+    this.options.population?.advanceDay(this.currentDay);
+  };
   private beginCombatRecovery = (
     npc: SectorNpcState,
     position: WorldPoint,
@@ -98,6 +103,7 @@ class SectorService implements NpcSectorService {
     // Emergency recovery returns a disabled ship to port, not a free full repair.
     npc.hullHp = 1;
     npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
+    if (this.options.population?.scheduleDefeated(npc, this.currentDay)) return true;
     npc.combatRecoveryLocationId = destinationId;
     npc.combatRecoverySeconds =
       COMBAT_RECOVERY_MIN_SECONDS +
@@ -470,6 +476,7 @@ class SectorService implements NpcSectorService {
     const playerPosition = this.options.getPlayerPosition?.() ?? null;
 
     for (const npc of this.npcs) {
+      if (npc.retiredUntilDay !== undefined) continue;
       if (this.advanceCombatRecovery(npc, dt)) continue;
       if (npc.hullHp <= 0) {
         this.beginCombatRecovery(npc, this.livePosition(npc), 'Notbergung');
