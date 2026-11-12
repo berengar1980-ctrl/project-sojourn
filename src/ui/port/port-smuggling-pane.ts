@@ -1,4 +1,4 @@
-import type { SmugglingPortView } from './port-panel';
+import type { SmugglingPortView } from './port-smuggling-types';
 
 export function smugglingPane(view: SmugglingPortView): string {
   const intelAvailable = view.day >= view.intelDay;
