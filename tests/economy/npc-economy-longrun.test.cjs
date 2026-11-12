@@ -1,0 +1,140 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+
+const root = path.resolve(__dirname, '../..');
+const load = (file) => loadStandaloneTypeScriptModule(root, file);
+const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const { sectorPorts } = load('src/data/ports/sector-ports.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
+const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
+const simulationModule = load('src/systems/economy/economy-simulation-service.ts');
+const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
+const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
+const { transferPirateLoot } = load('src/systems/combat/npc-combatant-setup.ts');
+
+const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
+assert(Number.isInteger(days));
+assert(days >= 1 && days <= 365);
+const ships = createSectorNpcEconomyStates();
+const markets = createEconomyMarketService(sectorPorts, economyResources);
+const player = { credits: 0, cargo: {} };
+const physical = simulationModule.createEconomySimulationService(
+  markets,
+  player,
+  economyResources,
+  41,
+  ships
+);
+const sector = createNpcSectorService(narrowsSector, ships, { markets });
+const positions = {};
+for (const location of narrowsSector.locations) {
+  positions[location.id] = location.position;
+}
+const economy = createNpcEconomyService(markets, physical, economyResources, ships, {
+  positions,
+  travel: {
+    requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
+    requestPatrol: (npc) => sector.requestPatrol(npc),
+    isTravelling: (npc) => sector.isTravelling(npc),
+    quoteTravel: (npc, destination, credits) => sector.quoteTravel(npc, destination, credits),
+  },
+});
+
+const initial = {};
+const activity = {};
+const bankruptDays = {};
+for (const ship of ships) {
+  initial[ship.id] = { credits: ship.credits, runs: ship.successfulRuns };
+  activity[ship.id] = 0;
+  bankruptDays[ship.id] = 0;
+}
+
+function validate(day) {
+  for (const ship of ships) {
+    assert(Number.isFinite(ship.credits));
+    assert(ship.credits >= 0, ship.id + ' has negative credits');
+    assert(Number.isFinite(ship.fuel));
+    assert(ship.fuel >= 0, ship.id + ' has negative fuel');
+    assert(ship.fuel <= ship.fuelCapacity + 0.001);
+    assert(ship.hullHp >= 0 && ship.hullHp <= ship.hullMaxHp);
+    let units = 0;
+    for (const amount of Object.values(ship.cargo)) {
+      assert(Number.isFinite(amount) && amount >= 0);
+      units += amount;
+    }
+    assert(units <= ship.cargoCapacity, ship.id + ' exceeds cargo capacity');
+    if (ship.credits === 0) bankruptDays[ship.id] += 1;
+    if (ship.successfulRuns > initial[ship.id].runs) {
+      activity[ship.id] = day;
+    }
+  }
+  for (const market of markets.snapshot()) {
+    for (const entry of Object.values(market.entries)) {
+      assert(Number.isFinite(entry.stock) && entry.stock >= 0);
+      assert(Number.isFinite(entry.price) && entry.price > 0);
+    }
+  }
+}
+
+for (let day = 0; day < days; day += 1) {
+  physical.advanceDay(day);
+  economy.advanceDay(day);
+  for (let step = 0; step < 64; step += 1) {
+    economy.tick(0.25);
+    sector.tick(0.25);
+  }
+  validate(day);
+}
+
+const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
+const report = [];
+for (const role of roles) {
+  const members = ships.filter((ship) => ship.job === role);
+  const sum = (fn) => members.reduce((total, ship) => total + fn(ship), 0);
+  report.push({
+    role,
+    ships: members.length,
+    startingCredits: sum((ship) => initial[ship.id].credits),
+    finalCredits: sum((ship) => ship.credits),
+    completedLegs: sum((ship) => ship.successfulRuns - initial[ship.id].runs),
+    noTravel: members.filter((ship) => ship.successfulRuns === initial[ship.id].runs).length,
+    inactive30Days: members.filter((ship) => days - activity[ship.id] > 30).length,
+    zeroCreditDays: sum((ship) => bankruptDays[ship.id]),
+    lowFuel: members.filter((ship) => ship.fuel < ship.fuelCapacity * 0.1).length,
+    lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
+    expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
+  });
+}
+assert.equal(ships.length, 33);
+assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
+console.log('ECONOMY LONGRUN AUDIT');
+console.log(JSON.stringify({ days, automaticCombat: false, report }));
+
+// A scripted NPC raid checks conservation and one-time resale.
+// This does not imply that automatic pirate combat is profitable.
+const pirate = ships.find((ship) => ship.pirate);
+const victim = ships.find((ship) => ship.job === 'freighter');
+assert(pirate && victim);
+const market = markets.getEntry('blackjaw-outpost', 'ferrite');
+assert(market && market.stock >= 5);
+market.stock -= 5;
+for (const id of Object.keys(victim.cargo)) delete victim.cargo[id];
+victim.cargo.ferrite = 5;
+const stock = () => market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
+const before = stock();
+assert(transferPirateLoot(pirate, victim) >= 5);
+pirate.locationId = 'blackjaw-outpost';
+delete pirate.travel;
+delete pirate.combatMovement;
+const revenueBefore = pirate.pirateLootRevenue ?? 0;
+sector.tick(0.25);
+assert.equal(stock(), before, 'pirate trade must conserve physical goods');
+assert((pirate.pirateLootRevenue ?? 0) > revenueBefore);
+const revenueAfter = pirate.pirateLootRevenue;
+sector.tick(0.25);
+assert.equal(pirate.pirateLootRevenue, revenueAfter, 'no duplicate sales');
+console.log('PASS 90-day economic integrity and scripted pirate loot resale');
