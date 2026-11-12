@@ -23,8 +23,6 @@ export function npcRecoveryLocation(
       priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
       distance: Math.hypot(location.position.x - position.x, location.position.y - position.y),
     }))
-    .sort(
-      (first, second) => first.priority - second.priority || first.distance - second.distance
-    );
+    .sort((first, second) => first.priority - second.priority || first.distance - second.distance);
   return candidates[0]?.id ?? nearestLocation(world, position);
 }
