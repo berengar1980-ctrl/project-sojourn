@@ -334,7 +334,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 | ⬜ Offen     | `npc.ship_progression`      | Established civilian captains can spend accumulated profits on their role-specific Mk-IV hull at a real shipyard; subsequent route policy automatically re-evaluates the stronger ship | Kein vollständiges äquivalentes Verhalten in Sojourn main gefunden.                     | offen        |
 | ✅ Umgesetzt | `npc.component_progression` | Civilian NPCs purchase persistent reactor/engine/shield/hull/sensor/weapon upgrades at real shipyards; derived speed, fuel efficiency and route capability use the installed loadout   | NPCs kaufen persistente, rollenpriorisierte Komponenten-Upgrades an Werften.            | offen        |
 | ✅ Umgesetzt | `npc.physical_fuel`         | Civilian NPC travel consumes persistent fuel, plans refuelling legs through real service locations and resumes the final economic destination after intermediate stops                 | NPC-Flüge verbrauchen Fuel, planen Tankstopps und setzen das Endziel danach fort.       | offen        |
-| 🟨 Teilweise | `npc.capital_sinks` | Long-running civilian profits pay crew, maintenance, insurance and periodic reinvestment/dividends so liquid cash does not compound without bound | Zivile NPCs zahlen echte tägliche Betriebskosten; vollständige Versicherungs- und Dividendenmodelle fehlen. | offen |
+| 🟨 Teilweise | `npc.capital_sinks`         | Long-running civilian profits pay crew, maintenance, insurance and periodic reinvestment/dividends so liquid cash does not compound without bound                                      | Zivile NPCs zahlen echte tägliche Betriebskosten; vollständige Versicherungs- und Dividendenmodelle fehlen. | offen        |
 
 ### salvage
 
