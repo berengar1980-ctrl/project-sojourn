@@ -37,13 +37,16 @@ export function createNpcPopulationService(
     for (const [resourceId, units] of Object.entries(npc.cargo)) {
       const amount = Math.max(0, Math.floor(units));
       if (!amount) continue;
-      const entry =
-        markets.getEntry(original.homePortId ?? original.locationId, resourceId) ??
-        markets.snapshot().map((market) => markets.getEntry(market.locationId, resourceId)).find(Boolean);
-      if (entry) {
-        entry.stock += amount;
-        markets.recalculate(entry === markets.getEntry(original.homePortId ?? original.locationId, resourceId) ? original.homePortId ?? original.locationId : markets.snapshot().find((market) => market.entries[resourceId] === entry)?.locationId ?? original.locationId, resourceId);
-      } else recordLoss(resourceId, amount);
+      const preferred = original.homePortId ?? original.locationId;
+      const market =
+        markets.snapshot().find((item) => item.locationId === preferred && item.entries[resourceId]) ??
+        markets.snapshot().find((item) => item.entries[resourceId]);
+      if (market) {
+        market.entries[resourceId]!.stock += amount;
+        markets.recalculate(market.locationId, resourceId);
+      } else {
+        recordLoss(resourceId, amount);
+      }
     }
     fund -= cost;
     const generation = (npc.replacementGeneration ?? 0) + 1;
