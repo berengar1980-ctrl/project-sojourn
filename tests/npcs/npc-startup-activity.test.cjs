@@ -74,8 +74,21 @@ assert(workers.every((npc) => npc.locationId === npc.workLocationId));
 assert(npcs.some((npc) => npc.autonomy?.phase === 'resting'));
 
 const civilian = npcs.filter((npc) => !npc.pirate);
-const homes = new Set(freighters.map((npc) => npc.homePortId));
-assert.equal(homes.size, freighters.length);
+const regularFreighters = freighters.filter((npc) => !npc.smuggler);
+const regularHomes = new Set(regularFreighters.map((npc) => npc.homePortId));
+assert.equal(
+  regularHomes.size,
+  regularFreighters.length,
+  'ordinary freighters retain distinct home ports'
+);
+const smugglers = freighters.filter((npc) => npc.smuggler);
+assert.equal(smugglers.length, 3);
+assert(
+  smugglers.every((npc) =>
+    npc.homePortId === 'blackjaw-outpost' || npc.homePortId === 'gallows-anchor'
+  ),
+  'smuggler freighters share the two actual underworld bases'
+);
 const havenTraffic = civilian.filter((npc) => {
   return npc.locationId === 'haven' || npc.locationId === 'meridian-exchange';
 });
