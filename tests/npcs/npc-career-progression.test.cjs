@@ -1,0 +1,61 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+
+const root = path.resolve(__dirname, '../..');
+const load = (name) => loadStandaloneTypeScriptModule(root, name);
+const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
+const { createNpcPopulationService } = load('src/systems/npcs/npc-population-service.ts');
+const { tryNpcHullUpgrade } = load('src/systems/npcs/npc-upgrade-service.ts');
+const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
+const { sectorPorts } = load('src/data/ports/sector-ports.ts');
+const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
+
+const ships = createSectorNpcEconomyStates();
+const markets = createEconomyMarketService(sectorPorts, economyResources);
+const freighter = ships.find((npc) => npc.job === 'freighter' && !npc.smuggler);
+assert(freighter);
+const original = getShipDefinition(freighter.shipId);
+assert(original);
+freighter.successfulRuns = 12;
+freighter.credits = 10000000;
+const startingCredits = freighter.credits;
+assert.equal(tryNpcHullUpgrade(freighter), true);
+const upgraded = getShipDefinition(freighter.shipId);
+assert(upgraded);
+assert(upgraded.nominalLengthMeters > original.nominalLengthMeters);
+assert(upgraded.cargoCapacityTons > original.cargoCapacityTons);
+assert(freighter.credits < startingCredits);
+assert.equal(freighter.cargoCapacity, upgraded.cargoCapacityTons);
+assert.equal(tryNpcHullUpgrade(freighter), false);
+assert.equal(freighter.hullUpgradeCount, 1);
+
+const miner = ships.find((npc) => npc.job === 'miner');
+assert(miner);
+miner.combatDefeats = 3;
+miner.credits = 100;
+miner.cargo.ferrite = 5;
+const population = createNpcPopulationService(ships, markets);
+const fundStart = population.fundCredits;
+assert.equal(population.scheduleDefeated(miner, 1), true);
+assert.equal(miner.retiredUntilDay, 6);
+assert.equal(population.outstanding, 1);
+population.advanceDay(5);
+assert.equal(population.outstanding, 1);
+population.advanceDay(6);
+assert.equal(population.outstanding, 0);
+assert.equal(population.replacementCount, 1);
+assert.equal(miner.replacementGeneration, 1);
+assert.equal(miner.hullHp > 0, true);
+assert.equal(miner.credits, 300000);
+assert(population.fundCredits < fundStart);
+
+const pirate = ships.find((npc) => npc.pirate);
+assert(pirate);
+pirate.combatDefeats = 3;
+pirate.credits = 1;
+assert.equal(population.scheduleDefeated(pirate, 2), false);
+console.log('PASS funded NPC Mk IV upgrades and delayed civilian replacement');
