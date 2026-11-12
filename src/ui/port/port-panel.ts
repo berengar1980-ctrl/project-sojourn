@@ -7,6 +7,7 @@ import { bindShipyardBrowser } from './port-shipyard-browser';
 import { crewPane, equipmentPane, shipPane, shipyardPane } from './port-secondary-panes';
 import { smugglingPane } from './port-smuggling-pane';
 import { bindSmugglingPortActions } from './port-smuggling-events';
+import { bindPortTradeActions } from './port-trade-events';
 
 export interface PortPanel {
   destroy(): void;
@@ -410,18 +411,7 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
       }
     });
   }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-id]')) {
-    button.addEventListener('click', () => options.onBuy(button.dataset.buyId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-id]')) {
-    button.addEventListener('click', () => options.onSell(button.dataset.sellId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sell-all-id]')) {
-    button.addEventListener('click', () => options.onSellAll(button.dataset.sellAllId ?? ''));
-  }
-  for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-market-route]')) {
-    button.addEventListener('click', () => options.onMarketRoute(button.dataset.marketRoute ?? ''));
-  }
+  bindPortTradeActions(shell, options);
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-component-type]')) {
     button.addEventListener('click', () => {
       const type = button.dataset.componentType as ShipComponentType;
