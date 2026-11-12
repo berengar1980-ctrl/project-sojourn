@@ -19,6 +19,7 @@ const { createStarMapEngagementService } = load(
   'src/systems/combat/star-map-engagement-service.ts'
 );
 const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
+const { createNpcSmugglingService } = load('src/systems/economy/npc-smuggling-service.ts');
 
 const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
 assert(Number.isInteger(days));
@@ -38,7 +39,16 @@ const positions = {};
 for (const location of narrowsSector.locations) {
   positions[location.id] = location.position;
 }
+// Reproducible inspection sampling: the long-run audit must not depend on Math.random.
+let rng = 0x286;
+const nextRandom = () => {
+  rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0;
+  return rng / 0x100000000;
+};
+const smuggling = createNpcSmugglingService(ships, sector, () => {}, nextRandom);
 const economy = createNpcEconomyService(markets, physical, economyResources, ships, {
+  onSale: (npc, resourceId, quantity, gross) =>
+    smuggling.recordSale(npc, resourceId, quantity, gross),
   positions,
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
@@ -113,9 +123,11 @@ function validate(day) {
 for (let day = 0; day < days; day += 1) {
   physical.advanceDay(day);
   economy.advanceDay(day);
+  smuggling.advanceDay(day);
   for (let step = 0; step < 64; step += 1) {
     economy.tick(0.25);
     sector.tick(0.25);
+    smuggling.tick(0.25);
     engagements.tick(0.25);
   }
   validate(day);
@@ -140,6 +152,9 @@ for (const role of roles) {
     lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
     expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
     defeats: sum((ship) => ship.combatDefeats ?? 0),
+    smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
+    smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
+    smugglingProtectionFees: sum((ship) => ship.smugglingProtectionFees ?? 0),
     unsoldCargoUnits: sum((ship) =>
       Object.values(ship.cargo).reduce((total, units) => total + units, 0)
     ),
@@ -153,6 +168,7 @@ console.log(
     days,
     automaticCombat: true,
     combat: combatStats,
+    smuggling: smuggling.stats,
     report,
   })
 );
@@ -171,6 +187,8 @@ for (const ship of ships) {
       lootRevenue: ship.pirateLootRevenue ?? 0,
       operatingExpenses: ship.pirateOperatingExpenses ?? 0,
       defeats: ship.combatDefeats ?? 0,
+      smugglingFines: ship.smugglingFinesPaid ?? 0,
+      smugglingConfiscated: ship.smugglingConfiscated ?? 0,
     })
   );
 }
@@ -198,4 +216,4 @@ assert((pirate.pirateLootRevenue ?? 0) > revenueBefore);
 const revenueAfter = pirate.pirateLootRevenue;
 sector.tick(0.25);
 assert.equal(pirate.pirateLootRevenue, revenueAfter, 'no duplicate sales');
-console.log('PASS 90-day combat-enabled economic integrity and pirate loot resale');
+console.log('PASS '+days+'-day combat- and smuggling-enabled economic integrity and pirate loot resale');
