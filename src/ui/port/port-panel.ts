@@ -1,4 +1,5 @@
 import type { PortTab } from '../../core/port-types';
+import type { TradeCharterId } from '../../systems/economy/trade-charter-service';
 import type { ShipComponentType } from '../../core/ship-types';
 import type { PortViewModel } from '../../features/port/port-view-model';
 import { PortLocationRenderer } from './port-location-renderer';
@@ -21,6 +22,8 @@ interface PortPanelOptions {
   readonly model: PortViewModel;
   readonly onReturnToStarMap: () => void;
   readonly onMarketRoute: (locationId: string) => void;
+  readonly onJoinCharter?: (id: TradeCharterId) => void;
+  readonly onLeaveCharter?: () => void;
   readonly onBuy: (resourceId: string) => void;
   readonly smuggling: SmugglingPortView;
   readonly onBuyHoldIntel: () => void;
@@ -73,8 +76,8 @@ function marketRows(model: PortViewModel): string {
           <span>${row.stock.toLocaleString('de-DE')}</span>
           <span class="port-demand port-demand--${row.demandLabel.replace(' ', '-')}">${row.demandLabel}</span>
           <span>${row.productionLabel}</span>
-          <button class="port-buy" type="button" data-buy-id="${row.id}">+1 KAUFEN</button>
-          <button class="port-sell" type="button" data-sell-id="${row.id}" ${row.owned > 0 ? '' : 'disabled'}>-1 VERKAUFEN</button>
+          <button class="port-buy" type="button" data-buy-id="${row.id}" ${model.charter && !model.charter.active ? 'disabled' : ''}>+1 KAUFEN</button>
+          <button class="port-sell" type="button" data-sell-id="${row.id}" ${model.charter && !model.charter.active ? 'disabled' : ''} ${row.owned > 0 ? '' : 'disabled'}>-1 VERKAUFEN</button>
         </div>
       `;
     })
@@ -256,6 +259,31 @@ function systemMarket(model: PortViewModel): string {
   `;
 }
 
+function tradeCharterPane(model: PortViewModel): string {
+  const charter = model.charter;
+  if (!charter) return '<div class="port-info-box">Keine Handelsdaten.</div>';
+  const selected = charter.offers.find((offer) => offer.id === charter.active);
+  return `
+    <div class="port-panel-heading"><span>HANDELSMANDAT</span><small>MITGLIEDSCHAFT UND KONDITIONEN</small></div>
+    <div class="port-info-box">
+      <strong>${selected?.name ?? 'KEIN MANDAT'}</strong>
+      <p>Aktuelle Verkaufsgebühr: ${(charter.feeRate * 100).toFixed(1)} %. ${selected ? 'Kündigung ohne Erstattung möglich.' : 'Ohne gültiges Mandat ist Warenhandel gesperrt.'}</p>
+      ${selected ? '<button type="button" data-leave-charter>MANDAT KÜNDIGEN</button>' : ''}
+    </div>
+    ${charter.offers
+      .map(
+        (offer) => `
+          <div class="port-info-box">
+            <strong>${offer.name}</strong>
+            <p>Beitritt: ${offer.joiningFee.toLocaleString('de-DE')} CR · Gebührenerlass: ${Math.round(offer.discount * 100)} % · Hausabgabe: ${(offer.houseLevy * 100).toFixed(1)} %</p>
+            <small>${offer.protectedPirateFaction ? 'Schutzbrief gegen ' + offer.protectedPirateFaction : 'Kein Korsarenschutz'}</small>
+            <button type="button" data-join-charter="${offer.id}" ${charter.active ? 'disabled' : ''}>${charter.active === offer.id ? 'AKTIV' : 'MANDAT ERWERBEN'}</button>
+          </div>`
+      )
+      .join('')}
+  `;
+}
+
 function tradePane(model: PortViewModel): string {
   return `
     <section class="port-pane port-pane--trade" data-port-pane="trade">
@@ -264,6 +292,7 @@ function tradePane(model: PortViewModel): string {
           <button type="button" class="is-active" data-trade-view="cargo">FRACHT</button>
           <button type="button" data-trade-view="market">MARKT</button>
           <button type="button" data-trade-view="system">SYSTEMMARKT</button>
+          <button type="button" data-trade-view="charter">HANDELSMANDAT</button>
         </nav>
         <section class="port-trade-view" data-trade-section="cargo">
           <div class="port-panel-heading"><span>MEINE FRACHT</span><small>WO VERKAUFE ICH MEINE LADUNG? · ${(model.saleFeeRate * 100).toFixed(1).replace('.', ',')} % VERKAUFSGEBÜHR</small></div>
@@ -286,6 +315,9 @@ function tradePane(model: PortViewModel): string {
           <div class="port-market-list">${marketRows(model)}</div>
         </section>
         ${systemMarket(model)}
+        <section class="port-trade-view" data-trade-section="charter" hidden>
+          ${tradeCharterPane(model)}
+        </section>
       </div>
       <aside class="port-location-panel">
         <div class="port-location-hero">
