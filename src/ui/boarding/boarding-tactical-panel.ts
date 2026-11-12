@@ -46,6 +46,25 @@ function cellClasses(
     .join(' ');
 }
 
+function boardingUnitDetails(selected: BoardingUnit | null): string {
+  if (!selected) return 'Trupp wählen';
+  const weapon = selected.weapon;
+  const attributes = [
+    selected.name,
+    weapon.name,
+    'Reichweite ' + weapon.range,
+    'Streuung ' + weapon.spread,
+    'RD ' + weapon.armorPenetration,
+  ];
+  if (weapon.piercing) attributes.push('Piercing +' + weapon.piercing.bonusDamage);
+  return attributes.join(' · ');
+}
+
+function boardingStatusText(snapshot: BoardingEncounterSnapshot): string {
+  if (snapshot.outcome !== 'active') return 'ERGEBNIS: ' + snapshot.outcome.toUpperCase();
+  return 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
+}
+
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   private readonly shell: HTMLElement;
   private readonly tactical: CrewBoardingEncounter['tactical'];
@@ -242,21 +261,8 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const cannotSuppress = cannotShoot || !selected?.weapon.canSuppress;
     const cannotOverwatch = !selected || selected.ap < 2 || selected.combatUsed;
     const cannotHold = !canAct || cannotShoot;
-    const statusLabel = finished
-      ? 'ERGEBNIS: ' + snapshot.outcome.toUpperCase()
-      : 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
-    const details = selected
-      ? [
-          selected.name,
-          selected.weapon.name,
-          'Reichweite ' + selected.weapon.range,
-          'Streuung ' + selected.weapon.spread,
-          'RD ' + selected.weapon.armorPenetration,
-          ...(selected.weapon.piercing
-            ? ['Piercing +' + selected.weapon.piercing.bonusDamage]
-            : []),
-        ].join(' · ')
-      : 'Trupp wählen';
+    const statusLabel = boardingStatusText(snapshot);
+    const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
       .map((entry) => `<div>R${entry.round} · ${entry.text}</div>`)
