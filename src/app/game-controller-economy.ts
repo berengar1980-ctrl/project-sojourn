@@ -154,10 +154,8 @@ export function createControllerEconomy(
 
   return {
     protectsPirate(factionId) {
-      return Boolean(
-        factionId &&
-          (smuggling.state.protectionFaction === factionId || charters.protectsPirate(factionId))
-      );
+      if (!factionId) return false;
+      return smuggling.state.protectionFaction === factionId || charters.protectsPirate(factionId);
     },
     markets,
     situations,
