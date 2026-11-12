@@ -1013,7 +1013,6 @@ Hafenstichproben bei Ankunft sowie physische Patrouillenkontrollen während echt
 
 **Benachrichtigungen:** Ab Wirtschaftstag 21 erscheint einmalig eine verschlüsselte Unterwelt-Nachricht über den Kontakt zum Einbau des verdeckten Frachtraums; derselbe Vorgang wird im Bordcomputer protokolliert. Entdeckte NPC-Schmuggelereignisse werden ebenfalls im Bordcomputer-Log gemeldet. `smuggling.hidden_hold_intel_staged` bleibt **offen**, weil der vollständige Tavernendialog samt Aufschub- und Rückkehrvarianten noch fehlt. Für alle anderen historischen Voidbound-Feature-IDs **keine Statusänderung**. Kein vorzeitiges Hochstufen der Zollgefechte, des vollständigen NPC-Schwarzmarkts, der Save-Persistenz oder der globalen Markt-/Kriminalitätsdynamik.
 
-
 ## Review-Log (2026-11-12): NPC-Wirtschaftsprüfung mit Schmuggel und laufenden Kosten
 
 **Paritätsänderung:** `npc.capital_sinks` von **offen** auf **teilweise**. Zivile NPCs zahlen jetzt tägliche reale Betriebskosten auch auf Reisen, mit deckelnder Liquiditätsprüfung und einmaliger Tagesabrechnung. Der bestehende 90–365-Tage-Ökonomietest verarbeitet zusätzlich deterministische NPC-Schmugglerkontrollen, illegale Verkäufe und Schutzgebühren, mit getrennten Kennzahlen für Beschlagnahme, Bußgelder und Ausgaben. Die zugehörigen Tests sind hinzugefügt. Vollständige NPC-Schiffsklassen-Progression, Populationsneugründung und Spieler-Handelsmandate bleiben **offen**; dieses Paket behauptet keine solche Parität.
