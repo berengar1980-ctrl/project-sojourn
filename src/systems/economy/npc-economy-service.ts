@@ -32,6 +32,7 @@ import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowled
 
 import { npcCargoUsed, cargoFree, quantity } from './npc-cargo';
 import { maxAffordableShipment } from './npc-operating-decisions';
+import { chargeNpcDailyOperatingExpenses } from './npc-operating-expenses';
 
 export { npcCargoUsed } from './npc-cargo';
 
@@ -325,6 +326,8 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
+        // Wages and insurance are due whether docked or travelling.
+        if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
         if (options.travel?.isTravelling(npc)) continue;
         observeNpcMarket(npc, markets, npc.locationId, current);
         if (npc.role === 'miner' || npc.role === 'salvager') {
