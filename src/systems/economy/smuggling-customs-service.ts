@@ -8,8 +8,8 @@ import type {
   CustomsSource,
   SmugglingService,
   SmugglingState,
-} from './smuggling-service';
-import { HIDDEN_CARGO_HOLD } from './smuggling-service';
+} from './smuggling-types';
+import { HIDDEN_CARGO_HOLD } from './smuggling-types';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
