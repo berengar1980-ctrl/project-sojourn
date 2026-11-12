@@ -51,10 +51,20 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
 const combatStats = {
   encounters: 0,
   resolved: 0,
+  matchups: {},
 };
 const combatLog = (message) => {
-  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.encounters += 1;
-  else if (message.startsWith('NPC COMBAT > ') && !message.includes('VERFOLGT')) {
+  if (message.startsWith('NPC COMBAT > KONTAKT')) {
+    combatStats.encounters += 1;
+    const match = message.match(/KONTAKT · (.+) VS (.+)$/);
+    if (match) {
+      const attacker = ships.find((ship) => ship.name.toUpperCase() === match[1]);
+      const defender = ships.find((ship) => ship.name.toUpperCase() === match[2]);
+      const types = [attacker?.job ?? 'unknown', defender?.job ?? 'unknown'].sort();
+      const key = types.join(' vs ');
+      combatStats.matchups[key] = (combatStats.matchups[key] ?? 0) + 1;
+    }
+  } else if (message.startsWith('NPC COMBAT > ') && !message.includes('VERFOLGT')) {
     combatStats.resolved += 1;
   }
 };
