@@ -2,6 +2,7 @@ import type { ShipDefinition } from '../../core/ship-types';
 import { freighterVariantShips } from './freighter-variant-ships';
 import { minerVariantShips } from './miner-variant-ships';
 import { salvageVariantShips } from './salvage-variant-ships';
+import { getShipRoleProfile } from './ship-role-profiles';
 
 /**
  * Real Mk IV hulls, initially using the respective career's existing silhouette.
@@ -9,6 +10,7 @@ import { salvageVariantShips } from './salvage-variant-ships';
  * coordinates remain relative to their source sprite. Distinct artwork may follow.
  */
 function careerHull(base: ShipDefinition, length: number, capacity: number): ShipDefinition {
+  const original = getShipRoleProfile(base.role);
   return {
     ...base,
     id: base.id.replace(/-variant-\d+$/, '-mk4'),
@@ -18,9 +20,10 @@ function careerHull(base: ShipDefinition, length: number, capacity: number): Shi
     navigation: { cruiseSpeed: Math.round(base.navigation.cruiseSpeed * 1.06) },
     gameplayOverrides: {
       ...base.gameplayOverrides,
-      hullPoints: Math.round(base.sprite.hardpoints.shield.maxHp * 2.8),
-      maxComponentTier: 4,
-      fuelCapacity: 170,
+      hullPoints: Math.round(original.hullPoints * 1.4),
+      maxComponentTier: Math.max(4, original.maxComponentTier),
+      fuelCapacity: Math.round(original.fuelCapacity * 1.3),
+      fuelUse: original.fuelUse * 1.08,
     },
   };
 }
