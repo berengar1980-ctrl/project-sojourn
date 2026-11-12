@@ -155,6 +155,9 @@ export interface NpcEconomyState {
   personality?: NpcPersonality;
   autonomy?: NpcAutonomyState;
   sideTradePlan?: NpcResourceSideTradePlan;
+  /** Cumulative real operating charges; no money is created by bookkeeping. */
+  civilianOperatingExpenses?: number;
+  lastOperatingChargeDay?: number;
 }
 
 export type MarketSituationScope = 'local' | 'sector';
