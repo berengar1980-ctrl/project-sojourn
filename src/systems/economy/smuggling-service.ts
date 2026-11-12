@@ -1,4 +1,5 @@
 import type { PlayerEconomyState, EconomyResourceId } from '../../core/economy-types';
+import type { SectorNpcState } from '../../core/npc-types';
 import { economyResourceById, isIllegalResource } from '../../data/economy/economy-resources';
 
 export const HIDDEN_CARGO_HOLD = {
@@ -79,7 +80,10 @@ function pirateBase(locationId: string): PirateFaction | null {
   if (locationId === 'gallows-anchor') return 'pirates2';
   return null;
 }
-export function createSmugglingService(player: PlayerEconomyState): SmugglingService {
+export function createSmugglingService(
+  player: PlayerEconomyState,
+  sectorNpcs: readonly SectorNpcState[] = []
+): SmugglingService {
   const state: SmugglingState = {
     hiddenHoldIntel: false,
     hiddenHoldIntelContacted: false,
@@ -233,6 +237,15 @@ export function createSmugglingService(player: PlayerEconomyState): SmugglingSer
       if (fee > 0) {
         player.credits -= fee;
         state.totalProtectionFees += fee;
+        const fleet = sectorNpcs.filter(
+          (npc) => npc.pirate && npc.factionId === state.protectionFaction
+        );
+        const payout = Math.round(fee * 0.65);
+        const each = fleet.length ? Math.floor(payout / fleet.length) : 0;
+        const extra = fleet.length ? payout - each * fleet.length : 0;
+        fleet.forEach((npc, index) => {
+          npc.credits += each + (index < extra ? 1 : 0);
+        });
       }
       if (isIllegalResource(resourceId)) adjustSuspicion(2);
       return fee;
