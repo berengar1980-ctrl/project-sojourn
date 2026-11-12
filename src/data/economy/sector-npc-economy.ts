@@ -267,6 +267,15 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
           }
         : {}),
       successfulRuns: 0,
+      ...(job === 'freighter'
+        ? {
+            tradeCharter: smuggler
+              ? ('independent' as const)
+              : index % 2 === 0
+                ? ('veylan' as const)
+                : ('mercator' as const),
+          }
+        : {}),
     };
   });
 

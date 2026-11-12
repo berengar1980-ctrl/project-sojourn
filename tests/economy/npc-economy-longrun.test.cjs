@@ -14,6 +14,7 @@ const { createEconomyMarketService } = load('src/systems/economy/market-service.
 const simulationModule = load('src/systems/economy/economy-simulation-service.ts');
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
+const { createNpcPopulationService } = load('src/systems/npcs/npc-population-service.ts');
 const { transferPirateLoot } = load('src/systems/combat/npc-combatant-setup.ts');
 const { createStarMapEngagementService } = load(
   'src/systems/combat/star-map-engagement-service.ts'
@@ -34,7 +35,11 @@ const physical = simulationModule.createEconomySimulationService(
   41,
   ships
 );
-const sector = createNpcSectorService(narrowsSector, ships, { markets });
+const population = createNpcPopulationService(ships, markets, (id, units) => {
+  const pool = physical.pools[id];
+  if (pool) pool.recordedLosses += units;
+});
+const sector = createNpcSectorService(narrowsSector, ships, { markets, population });
 const positions = {};
 for (const location of narrowsSector.locations) {
   positions[location.id] = location.position;
@@ -47,8 +52,10 @@ const nextRandom = () => {
 };
 const smuggling = createNpcSmugglingService(ships, sector, () => {}, nextRandom);
 const economy = createNpcEconomyService(markets, physical, economyResources, ships, {
-  onSale: (npc, resourceId, quantity, gross) =>
-    smuggling.recordSale(npc, resourceId, quantity, gross),
+  onSale: (npc, resourceId, quantity, gross) => {
+    smuggling.recordSale(npc, resourceId, quantity, gross);
+    population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
+  },
   positions,
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
@@ -123,6 +130,7 @@ function validate(day) {
 for (let day = 0; day < days; day += 1) {
   physical.advanceDay(day);
   economy.advanceDay(day);
+  sector.advanceDay(day);
   smuggling.advanceDay(day);
   for (let step = 0; step < 64; step += 1) {
     economy.tick(0.25);
@@ -152,6 +160,8 @@ for (const role of roles) {
     lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
     expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
     civilianOperatingExpenses: sum((ship) => ship.civilianOperatingExpenses ?? 0),
+    hullUpgrades: sum((ship) => ship.hullUpgradeCount ?? 0),
+    replacements: sum((ship) => ship.replacementGeneration ?? 0),
     defeats: sum((ship) => ship.combatDefeats ?? 0),
     smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
     smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
@@ -170,6 +180,11 @@ console.log(
     automaticCombat: true,
     combat: combatStats,
     smuggling: smuggling.stats,
+    population: {
+      replacementCount: population.replacementCount,
+      outstanding: population.outstanding,
+      insuranceFundCredits: population.fundCredits,
+    },
     report,
   })
 );
@@ -188,6 +203,8 @@ for (const ship of ships) {
       lootRevenue: ship.pirateLootRevenue ?? 0,
       operatingExpenses: ship.pirateOperatingExpenses ?? 0,
       civilianOperatingExpenses: ship.civilianOperatingExpenses ?? 0,
+      hullUpgrades: ship.hullUpgradeCount ?? 0,
+      replacementGeneration: ship.replacementGeneration ?? 0,
       defeats: ship.combatDefeats ?? 0,
       smugglingFines: ship.smugglingFinesPaid ?? 0,
       smugglingConfiscated: ship.smugglingConfiscated ?? 0,

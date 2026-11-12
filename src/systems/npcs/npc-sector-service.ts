@@ -9,6 +9,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 
 import { npcOperationalSpeed } from './npc-upgrade-service';
+import { npcRecoveryLocation } from './npc-sector-recovery-location';
 import { advanceNpcCombatMovement } from './npc-sector-combat-movement';
 
 import {
@@ -62,33 +63,17 @@ class SectorService implements NpcSectorService {
   ) {
     prepareNpcOrbitBerths(world, npcs);
   }
-  private recoveryLocation = (npc: SectorNpcState, position: WorldPoint): string | null => {
-    if (npc.pirate) {
-      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-      if (this.world.locations.some((location) => location.id === homeId)) return homeId;
-    }
-
-    const candidates = this.world.locations
-      .filter(
-        (location) =>
-          location.activities.shipyard || location.activities.dock || location.activities.refuel
-      )
-      .map((location) => ({
-        id: location.id,
-        priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
-        distance: Math.hypot(location.position.x - position.x, location.position.y - position.y),
-      }))
-      .sort(
-        (first, second) => first.priority - second.priority || first.distance - second.distance
-      );
-    return candidates[0]?.id ?? nearestLocation(this.world, position);
+  private currentDay = 0;
+  advanceDay = (day: number): void => {
+    this.currentDay = Math.max(this.currentDay, Math.floor(day));
+    this.options.population?.advanceDay(this.currentDay);
   };
   private beginCombatRecovery = (
     npc: SectorNpcState,
     position: WorldPoint,
     reason: string = 'Kampfunfähig'
   ): boolean => {
-    const destinationId = this.recoveryLocation(npc, position);
+    const destinationId = npcRecoveryLocation(this.world, npc, position);
     if (!destinationId) return false;
 
     delete npc.travel;
@@ -98,6 +83,7 @@ class SectorService implements NpcSectorService {
     // Emergency recovery returns a disabled ship to port, not a free full repair.
     npc.hullHp = 1;
     npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
+    if (this.options.population?.scheduleDefeated(npc, this.currentDay)) return true;
     npc.combatRecoveryLocationId = destinationId;
     npc.combatRecoverySeconds =
       COMBAT_RECOVERY_MIN_SECONDS +
@@ -470,6 +456,7 @@ class SectorService implements NpcSectorService {
     const playerPosition = this.options.getPlayerPosition?.() ?? null;
 
     for (const npc of this.npcs) {
+      if (npc.retiredUntilDay !== undefined) continue;
       if (this.advanceCombatRecovery(npc, dt)) continue;
       if (npc.hullHp <= 0) {
         this.beginCombatRecovery(npc, this.livePosition(npc), 'Notbergung');

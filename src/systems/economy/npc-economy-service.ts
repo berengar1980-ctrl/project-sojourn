@@ -26,6 +26,7 @@ import {
   sellToMarket,
   chooseTraderAction,
   chooseWorkerAction,
+  npcNetSaleUnitPrice,
 } from './npc-trade-actions';
 
 import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowledge';
@@ -126,7 +127,7 @@ function completeUnloading(
       : Number.POSITIVE_INFINITY;
   const price = markets.getEntry(npc.locationId, resourceId)?.price ?? 0;
   const moved = sellToMarket(npc, markets, npc.locationId, resourceId, day, requested);
-  if (moved > 0) options.onSale?.(npc, resourceId, moved, moved * Math.round(price * 0.94));
+  if (moved > 0) options.onSale?.(npc, resourceId, moved, moved * npcNetSaleUnitPrice(npc, price));
   if (
     npc.sideTradePlan &&
     npc.sideTradePlan.resourceId === resourceId &&
@@ -326,6 +327,7 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
+        if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
         // Wages and insurance are due whether docked or travelling.
         if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
         if (options.travel?.isTravelling(npc)) continue;
@@ -367,6 +369,7 @@ export function createNpcEconomyService(
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
       const dt = Math.min(deltaSeconds, 0.25);
       for (const npc of npcs) {
+        if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
         advanceNpcActivity(npc, dt, markets, resources, positions, Math.max(0, lastDay), options);
       }
     },

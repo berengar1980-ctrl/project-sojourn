@@ -43,6 +43,9 @@ jobs:
           name: Tests
           command: node scripts/ci-run-and-report.cjs tests -- npm test
       - run:
+          name: Economy career horizons (90/180/365 days)
+          command: node scripts/ci-run-and-report.cjs economy-horizons -- npm run test:economy-horizons
+      - run:
           name: Combat motion comparison
           command: |
             if [ "$CIRCLE_BRANCH" = "refactor/combat-ai-architecture" ]; then

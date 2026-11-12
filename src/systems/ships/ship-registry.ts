@@ -6,6 +6,7 @@ import type {
   ShipRole,
 } from '../../core/ship-types';
 import { freighterVariantShips } from '../../data/ships/freighter-variant-ships';
+import { careerMk4Ships } from '../../data/ships/career-mk4-ships';
 import { minerVariantShips } from '../../data/ships/miner-variant-ships';
 import { patrolVariantShips } from '../../data/ships/patrol-variant-ships';
 import { salvageVariantShips } from '../../data/ships/salvage-variant-ships';
@@ -49,6 +50,7 @@ const definitions: readonly ShipDefinition[] = [
   ...minerVariantShips,
   ...salvageVariantShips,
   ...freighterVariantShips,
+  ...careerMk4Ships,
 ].map(ensureUtilityHardpoints);
 
 export function getShipDefinition(id: string): ShipDefinition | null {
@@ -61,9 +63,11 @@ export function getShipGameplayStats(id: string): ResolvedShipGameplayStats | nu
 }
 
 export function getShipsByRole(role: ShipRole): readonly ShipDefinition[] {
-  return definitions.filter((definition) => definition.role === role);
+  return definitions.filter(
+    (definition) => definition.role === role && !definition.id.endsWith('-mk4')
+  );
 }
 
 export function getAllShipDefinitions(): readonly ShipDefinition[] {
-  return definitions;
+  return definitions.filter((definition) => !definition.id.endsWith('-mk4'));
 }

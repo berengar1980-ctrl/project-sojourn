@@ -2,7 +2,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap } from '../../core/world-types';
 import type { NpcSectorServiceOptions } from './npc-sector-types';
 import { serviceNpcAtPort } from './npc-port-servicing';
-import { tryNpcComponentUpgrade } from './npc-upgrade-service';
+import { tryNpcComponentUpgrade, tryNpcHullUpgrade } from './npc-upgrade-service';
 import { sellPirateLootAtHome } from '../economy/pirate-loot-market';
 
 function accountPirateExpense(npc: SectorNpcState, creditsBefore: number): void {
@@ -28,6 +28,6 @@ export function serviceIdleNpc(
   const current = world.locations.find((location) => location.id === npc.locationId);
   if (!current?.activities.shipyard) return;
   const creditsBefore = npc.credits;
-  tryNpcComponentUpgrade(npc);
+  if (!tryNpcHullUpgrade(npc)) tryNpcComponentUpgrade(npc);
   accountPirateExpense(npc, creditsBefore);
 }

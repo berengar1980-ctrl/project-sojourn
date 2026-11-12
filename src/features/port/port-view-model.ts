@@ -1,6 +1,7 @@
 import type { CrewMember } from '../../core/crew-types';
 import type { CrewSkillEffects } from '../../systems/crew/crew-skill-effects';
 import { stationEffectSummary } from './port-station-effect-summary';
+import type { TradeCharterService } from '../../systems/economy/trade-charter-service';
 
 import type {
   EconomyMarketState,
@@ -151,6 +152,11 @@ export interface PortOperationsView {
 }
 
 export interface PortViewModel {
+  readonly charter?: {
+    readonly active: TradeCharterService['active'];
+    readonly offers: TradeCharterService['offers'];
+    readonly feeRate: number;
+  };
   readonly operations: PortOperationsView;
   readonly locationId: string;
   readonly locationName: string;
@@ -402,11 +408,15 @@ export function createPortViewModel(
   cargoCapacityTons = ship.cargoCapacityTons,
   saleFeeRate = 0.25,
   shipyardState: PortShipyardStateInput = { loose: [], variants: [] },
-  operations: PortOperationsView = defaultPortOperations(shipState)
+  operations: PortOperationsView = defaultPortOperations(shipState),
+  charter?: TradeCharterService
 ): PortViewModel {
   const localMarket = marketRows(market, player, saleFeeRate);
   const systemMarket = systemRows(systemMarketInput, player, currentDay, saleFeeRate);
   return {
+    ...(charter
+      ? { charter: { active: charter.active, offers: charter.offers, feeRate: saleFeeRate } }
+      : {}),
     operations,
     locationId: location.id,
     locationName: location.name,
