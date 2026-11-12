@@ -24,7 +24,7 @@ export interface SmugglingPortView {
   readonly intelPrice: number;
   readonly intelDay: number;
   readonly suspicion: number;
-  readonly protectionFaction?: 'pirates' | 'pirates2';
+  readonly protectionFaction: 'pirates' | 'pirates2' | undefined;
   readonly atPirateBase: boolean;
   readonly pirateFaction: 'pirates' | 'pirates2' | null;
   readonly hiddenRows: readonly {
