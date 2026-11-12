@@ -131,9 +131,7 @@ function candidateTradeRoute(
     score: npcPersonalityTradeWeight(
       npc,
       estimate.netProfit -
-        (resource.legality === 'illegal'
-          ? Math.round(maxUnits * buyPrice * 0.12)
-          : 0),
+        (resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0),
       estimate.distance,
       age,
       destinationId

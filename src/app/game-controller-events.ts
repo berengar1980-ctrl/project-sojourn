@@ -140,7 +140,9 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
     !economy.smuggling.state.hiddenHoldIntel
   ) {
     economy.smuggling.state.hiddenHoldIntelContacted = true;
-    context.systemLog.write('UNTERDECK > VERSCHLÜSSELTE NACHRICHT · INFORMANT BIETET VERDECKTEN FRACHTRAUM AN');
+    context.systemLog.write(
+      'UNTERDECK > VERSCHLÜSSELTE NACHRICHT · INFORMANT BIETET VERDECKTEN FRACHTRAUM AN'
+    );
     showUnderworldContactNotice(context.root);
   }
   economy.marketIntel.recordHistory(economy.situations.currentDay);

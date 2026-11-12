@@ -224,12 +224,14 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
       factionId: 'civilian',
-      ...(smuggler ? {
-        smuggler: true,
-        smugglingConcealment: 0.25 + (index % 3) * 0.18,
-        smugglingSuspicion: 6,
-        smugglingProtectionFaction: index === 13 ? 'pirates2' as const : 'pirates' as const,
-      } : {}),
+      ...(smuggler
+        ? {
+            smuggler: true,
+            smugglingConcealment: 0.25 + (index % 3) * 0.18,
+            smugglingSuspicion: 6,
+            smugglingProtectionFaction: index === 13 ? ('pirates2' as const) : ('pirates' as const),
+          }
+        : {}),
       successfulRuns: 0,
     };
   });

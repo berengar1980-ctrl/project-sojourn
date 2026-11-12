@@ -301,7 +301,13 @@ export function createNpcEconomyService(
   for (const npc of npcs) {
     initializeNpcMarketIntel(npc, markets, positions, 0);
     if ('smuggler' in npc && npc.smuggler) {
-      for (const locationId of ['blackjaw-outpost', 'gallows-anchor', 'crown', 'eidolon', 'aurora']) {
+      for (const locationId of [
+        'blackjaw-outpost',
+        'gallows-anchor',
+        'crown',
+        'eidolon',
+        'aurora',
+      ]) {
         observeNpcMarket(npc, markets, locationId, 0);
       }
     }

@@ -16,10 +16,10 @@ const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
 
 const npcs = createSectorNpcEconomyStates();
-const smugglers = npcs.filter(x => x.smuggler);
+const smugglers = npcs.filter((x) => x.smuggler);
 assert.equal(npcs.length, 33, 'use existing physical NPC fleet');
 assert.equal(smugglers.length, 3);
-assert(smugglers.every(x => x.job === 'freighter' && x.smugglingProtectionFaction));
+assert(smugglers.every((x) => x.job === 'freighter' && x.smugglingProtectionFaction));
 const market = createEconomyMarketService(sectorPorts, economyResources);
 assert(market.getEntry('blackjaw-outpost', 'narcotics'));
 assert(market.getEntry('crown', 'narcotics'));
@@ -27,7 +27,7 @@ assert(market.getEntry('eidolon', 'stolen-data'));
 assert(market.getEntry('aurora', 'alien-artifacts'));
 
 const trader = smugglers[0];
-const patrol = npcs.find(x => x.job === 'patrol');
+const patrol = npcs.find((x) => x.job === 'patrol');
 assert(patrol);
 trader.cargo.narcotics = 7;
 trader.smugglingConcealment = 0;
@@ -51,20 +51,31 @@ assert.equal(clean, 'clear', 'a scan is not an automatic confiscation');
 assert.equal(trader.cargo['stolen-data'], 4);
 
 const logs = [];
-const service = createNpcSmugglingService(npcs, {
-  livePosition: npc => npc.travel ? { x: 0, y: 0 } : { x: 8000, y: 8000 },
-}, message => logs.push(message), () => 0.99);
-const allied = npcs.filter(x => x.pirate && x.factionId === trader.smugglingProtectionFaction);
-const rival = npcs.filter(x => x.pirate && x.factionId !== trader.smugglingProtectionFaction);
-const alliedBefore = allied.reduce((s,x) => s + x.credits, 0);
-const rivalBefore = rival.reduce((s,x) => s + x.credits, 0);
+const service = createNpcSmugglingService(
+  npcs,
+  {
+    livePosition: (npc) => (npc.travel ? { x: 0, y: 0 } : { x: 8000, y: 8000 }),
+  },
+  (message) => logs.push(message),
+  () => 0.99
+);
+const allied = npcs.filter((x) => x.pirate && x.factionId === trader.smugglingProtectionFaction);
+const rival = npcs.filter((x) => x.pirate && x.factionId !== trader.smugglingProtectionFaction);
+const alliedBefore = allied.reduce((s, x) => s + x.credits, 0);
+const rivalBefore = rival.reduce((s, x) => s + x.credits, 0);
 const creditsBefore = trader.credits;
 service.recordSale(trader, 'stolen-data', 4, 10000);
 assert.equal(service.stats.illegalUnitsSold, 4);
 assert.equal(service.stats.protectionFees, 500);
 assert.equal(trader.credits, creditsBefore - 500);
-assert.equal(allied.reduce((s,x) => s + x.credits, 0), alliedBefore + 325);
-assert.equal(rival.reduce((s,x) => s + x.credits, 0), rivalBefore);
+assert.equal(
+  allied.reduce((s, x) => s + x.credits, 0),
+  alliedBefore + 325
+);
+assert.equal(
+  rival.reduce((s, x) => s + x.credits, 0),
+  rivalBefore
+);
 service.recordSale(trader, 'steel', 4, 10000);
 assert.equal(service.stats.protectionFees, 500, 'legal sales never pay protection');
 trader.smugglingSuspicion = 20;
@@ -86,4 +97,6 @@ assert(engagement.includes('candidate.smugglingProtectionFaction !== attacker.fa
 assert(events.includes('showUnderworldContactNotice(context.root)'));
 assert(events.includes('hiddenHoldIntelContacted = true'));
 assert(notice.includes('NACHRICHT SPEICHERN'));
-console.log('PASS actual NPC contraband sales, inspections, cargo seizure and underworld notice wiring');
+console.log(
+  'PASS actual NPC contraband sales, inspections, cargo seizure and underworld notice wiring'
+);

@@ -30,7 +30,10 @@ export function npcSmugglingScan(
       const signal = Math.min(1, qty / Math.max(1, target.cargoCapacity));
       const chance = Math.max(
         0.04,
-        Math.min(0.96, 0.18 + strength * 0.62 + signal * 0.2 + suspicion * 0.002 - concealment * 0.58)
+        Math.min(
+          0.96,
+          0.18 + strength * 0.62 + signal * 0.2 + suspicion * 0.002 - concealment * 0.58
+        )
       );
       return random() < chance ? [{ id, qty: Math.floor(qty) }] : [];
     });
@@ -64,8 +67,13 @@ export function resolveNpcSmugglingInspection(
     const speedAdvantage = patrol ? (target.fuelCapacity - patrol.fuelCapacity) / 200 : 0;
     const escapeChance = Math.max(0.1, Math.min(0.9, 0.5 + speedAdvantage));
     if (random() < (resisting ? escapeChance * 0.55 : escapeChance)) {
-      target.smugglingSuspicion = Math.min(100, (target.smugglingSuspicion ?? 0) + (resisting ? 28 : 18));
-      target.activity = resisting ? 'Zollwiderstand: Flucht gelungen' : 'Flottenkontrolle entkommen';
+      target.smugglingSuspicion = Math.min(
+        100,
+        (target.smugglingSuspicion ?? 0) + (resisting ? 28 : 18)
+      );
+      target.activity = resisting
+        ? 'Zollwiderstand: Flucht gelungen'
+        : 'Flottenkontrolle entkommen';
       target.smugglingEscapes = (target.smugglingEscapes ?? 0) + 1;
       if (resisting) {
         target.hullHp = Math.max(1, target.hullHp - Math.ceil(target.hullMaxHp * 0.12));
@@ -113,8 +121,14 @@ export function createNpcSmugglingService(
   random: () => number = Math.random
 ): NpcSmugglingService {
   const stats: NpcSmugglingStats = {
-    inspections: 0, cleanInspections: 0, confiscatedUnits: 0, finesPaid: 0,
-    escaped: 0, resisted: 0, illegalUnitsSold: 0, protectionFees: 0,
+    inspections: 0,
+    cleanInspections: 0,
+    confiscatedUnits: 0,
+    finesPaid: 0,
+    escaped: 0,
+    resisted: 0,
+    illegalUnitsSold: 0,
+    protectionFees: 0,
   };
   const elapsed = new Map<string, number>();
   const lastArrival = new Map<string, string>();
@@ -132,7 +146,8 @@ export function createNpcSmugglingService(
     if (result === 'clear') stats.cleanInspections++;
     if (result === 'escaped') stats.escaped++;
     if (result === 'resisted') stats.resisted++;
-    if (result !== 'clear') log('SEKTOR-ZOLL > ' + target.name.toUpperCase() + ' · ' + target.activity.toUpperCase());
+    if (result !== 'clear')
+      log('SEKTOR-ZOLL > ' + target.name.toUpperCase() + ' · ' + target.activity.toUpperCase());
   };
   return {
     stats,
@@ -153,16 +168,17 @@ export function createNpcSmugglingService(
       npc.credits = Math.max(0, npc.credits - fee);
       npc.smugglingProtectionFees = (npc.smugglingProtectionFees ?? 0) + fee;
       stats.protectionFees += fee;
-      const gang = npcs.filter(x => x.pirate && x.factionId === npc.smugglingProtectionFaction);
+      const gang = npcs.filter((x) => x.pirate && x.factionId === npc.smugglingProtectionFaction);
       const distributed = Math.round(fee * 0.65);
       gang.forEach((pirate, i) => {
-        pirate.credits += Math.floor(distributed / gang.length) + (i < distributed % gang.length ? 1 : 0);
+        pirate.credits +=
+          Math.floor(distributed / gang.length) + (i < distributed % gang.length ? 1 : 0);
       });
     },
     tick(dt) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       simulationSeconds += dt;
-      const patrols = npcs.filter(x => x.job === 'patrol' && !x.combatMovement && x.hullHp > 0);
+      const patrols = npcs.filter((x) => x.job === 'patrol' && !x.combatMovement && x.hullHp > 0);
       for (const target of npcs) {
         if (!target.smuggler || target.pirate || target.hullHp <= 0) continue;
         if ((inspectionCooldown.get(target.id) ?? 0) > simulationSeconds) continue;
@@ -171,9 +187,16 @@ export function createNpcSmugglingService(
         const prior = lastArrival.get(target.id);
         if (at && prior !== at) {
           lastArrival.set(target.id, at);
-          const security = at === 'blackjaw-outpost' || at === 'gallows-anchor'
-            ? 0 : at === 'haven' || at === 'karth-industrial' || at === 'vigil-station' ? 0.76 : 0.48;
-          if (security > 0 && random() < 0.05 + security * 0.38 + (target.smugglingSuspicion ?? 0) * 0.0035) {
+          const security =
+            at === 'blackjaw-outpost' || at === 'gallows-anchor'
+              ? 0
+              : at === 'haven' || at === 'karth-industrial' || at === 'vigil-station'
+                ? 0.76
+                : 0.48;
+          if (
+            security > 0 &&
+            random() < 0.05 + security * 0.38 + (target.smugglingSuspicion ?? 0) * 0.0035
+          ) {
             inspect(target, null, security);
           }
         } else if (!at) {
@@ -188,9 +211,15 @@ export function createNpcSmugglingService(
         elapsed.set(target.id, 0);
         const position = sector.livePosition(target);
         const nearest = patrols
-          .filter(x => x.id !== target.id)
-          .map(x => ({ npc: x, distance: Math.hypot(sector.livePosition(x).x - position.x, sector.livePosition(x).y - position.y) }))
-          .filter(x => x.distance <= 650)
+          .filter((x) => x.id !== target.id)
+          .map((x) => ({
+            npc: x,
+            distance: Math.hypot(
+              sector.livePosition(x).x - position.x,
+              sector.livePosition(x).y - position.y
+            ),
+          }))
+          .filter((x) => x.distance <= 650)
           .sort((a, b) => a.distance - b.distance)[0];
         if (!nearest || random() >= 0.07 + (target.smugglingSuspicion ?? 0) * 0.003) continue;
         inspect(target, nearest.npc, smugglingInspectorStrength(nearest.npc));
