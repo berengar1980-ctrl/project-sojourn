@@ -84,8 +84,8 @@ assert.equal(
 const smugglers = freighters.filter((npc) => npc.smuggler);
 assert.equal(smugglers.length, 3);
 assert(
-  smugglers.every((npc) =>
-    npc.homePortId === 'blackjaw-outpost' || npc.homePortId === 'gallows-anchor'
+  smugglers.every(
+    (npc) => npc.homePortId === 'blackjaw-outpost' || npc.homePortId === 'gallows-anchor'
   ),
   'smuggler freighters share the two actual underworld bases'
 );
