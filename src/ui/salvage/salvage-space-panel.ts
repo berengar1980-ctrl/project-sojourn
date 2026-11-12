@@ -313,7 +313,9 @@ function bindSalvagePanelActions(
       model.sectorEvent?.type === 'special-wreck' &&
       !wreck.containerVariant &&
       model.salvageAvailable
-    ) options.onBoardWreck?.(wreck.id);
+    ) {
+      options.onBoardWreck?.(wreck.id);
+    }
   });
   ui.attackButton.addEventListener('click', () => {
     const selected = getModel().npcShips.find((entry) => entry.isSelected);

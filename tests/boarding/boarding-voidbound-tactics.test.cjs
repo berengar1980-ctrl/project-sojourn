@@ -78,14 +78,14 @@ function unit(service, id) {
 
 // A melee disengagement reaction cannot be triggered repeatedly in one turn.
 {
-  const initial = encounter().getSnapshot();
-  const changed = {
-    ...initial,
-    activeTeam: 'enemy',
-    units: initial.units.map((entry) =>
-      entry.id === 'sentry' ? { ...entry, q: 2, r: 1 } : { ...entry, q: 3, r: 1 }
-    ),
-  };
+  const changed = structuredClone(encounter().getSnapshot());
+  changed.activeTeam = 'enemy';
+  const sentry = changed.units.find((entry) => entry.id === 'sentry');
+  const intruder = changed.units.find((entry) => entry.id === 'intruder');
+  sentry.q = 2;
+  sentry.r = 1;
+  intruder.q = 3;
+  intruder.r = 1;
   const tactical = encounter({ restore: changed });
   assert.equal(tactical.move('intruder', { q: 4, r: 1 }), true);
   assert.equal(unit(tactical, 'sentry').meleeActions, 1);
@@ -94,13 +94,10 @@ function unit(service, id) {
 
 // Holding directional cover costs AP and expires when a unit moves.
 {
-  const initial = encounter().getSnapshot();
-  const changed = {
-    ...initial,
-    units: initial.units.map((entry) =>
-      entry.id === 'sentry' ? { ...entry, q: 3, r: 1 } : entry
-    ),
-  };
+  const changed = structuredClone(encounter().getSnapshot());
+  const sentry = changed.units.find((entry) => entry.id === 'sentry');
+  sentry.q = 3;
+  sentry.r = 1;
   const tactical = encounter({ restore: changed });
   assert.equal(tactical.holdCover('sentry'), true);
   assert.equal(unit(tactical, 'sentry').holdingCover, true);
@@ -111,13 +108,10 @@ function unit(service, id) {
 
 // Closed bulkheads are passability obstacles until opened via the service.
 {
-  const initial = encounter({ mapId: 'bulkhead-door' }).getSnapshot();
-  const changed = {
-    ...initial,
-    units: initial.units.map((entry) =>
-      entry.id === 'sentry' ? { ...entry, q: 3, r: 3 } : entry
-    ),
-  };
+  const changed = structuredClone(encounter({ mapId: 'bulkhead-door' }).getSnapshot());
+  const sentry = changed.units.find((entry) => entry.id === 'sentry');
+  sentry.q = 3;
+  sentry.r = 3;
   const tactical = encounter({ restore: changed });
   assert.equal(tactical.move('sentry', { q: 4, r: 3 }), false);
   assert.equal(tactical.openDoor('sentry', 'door-4-3'), true);
@@ -137,10 +131,7 @@ function unit(service, id) {
   restored.endTurn();
   restored.endTurn();
   assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
-  assert.deepEqual(
-    restored.shoot('sentry', 'intruder'),
-    tactical.shoot('sentry', 'intruder')
-  );
+  assert.deepEqual(restored.shoot('sentry', 'intruder'), tactical.shoot('sentry', 'intruder'));
   assert.deepEqual(restored.getSnapshot(), tactical.getSnapshot());
 }
 
