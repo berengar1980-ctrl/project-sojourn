@@ -218,4 +218,6 @@ assert((pirate.pirateLootRevenue ?? 0) > revenueBefore);
 const revenueAfter = pirate.pirateLootRevenue;
 sector.tick(0.25);
 assert.equal(pirate.pirateLootRevenue, revenueAfter, 'no duplicate sales');
-console.log('PASS '+days+'-day combat- and smuggling-enabled economic integrity and pirate loot resale');
+console.log(
+  'PASS ' + days + '-day combat- and smuggling-enabled economic integrity and pirate loot resale'
+);
