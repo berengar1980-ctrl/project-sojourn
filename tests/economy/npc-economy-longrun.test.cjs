@@ -15,6 +15,10 @@ const simulationModule = load('src/systems/economy/economy-simulation-service.ts
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const { transferPirateLoot } = load('src/systems/combat/npc-combatant-setup.ts');
+const { createStarMapEngagementService } = load(
+  'src/systems/combat/star-map-engagement-service.ts'
+);
+const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
 
 const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
 assert(Number.isInteger(days));
@@ -42,6 +46,32 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
     isTravelling: (npc) => sector.isTravelling(npc),
     quoteTravel: (npc, destination, credits) => sector.quoteTravel(npc, destination, credits),
   },
+});
+
+const combatStats = {
+  encounters: 0,
+  resolved: 0,
+};
+const combatLog = (message) => {
+  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.encounters += 1;
+  else if (message.startsWith('NPC COMBAT > ') && !message.includes('VERFOLGT')) {
+    combatStats.resolved += 1;
+  }
+};
+const engagements = createStarMapEngagementService({
+  navigation: {
+    getSnapshot: () => ({
+      isTravelling: false,
+      isPursuing: false,
+      currentPosition: { x: -99999, y: -99999 },
+    }),
+  },
+  sectorNpcs: sector,
+  getPlayerShip: () => getShipDefinition(ships[0].shipId),
+  getPlayerCombatant: () => {
+    throw new Error('Player combat is excluded from this NPC-only audit');
+  },
+  log: combatLog,
 });
 
 const initial = {};
@@ -86,6 +116,7 @@ for (let day = 0; day < days; day += 1) {
   for (let step = 0; step < 64; step += 1) {
     economy.tick(0.25);
     sector.tick(0.25);
+    engagements.tick(0.25);
   }
   validate(day);
 }
@@ -100,6 +131,7 @@ for (const role of roles) {
     ships: members.length,
     startingCredits: sum((ship) => initial[ship.id].credits),
     finalCredits: sum((ship) => ship.credits),
+    netCreditChange: sum((ship) => ship.credits - initial[ship.id].credits),
     completedLegs: sum((ship) => ship.successfulRuns - initial[ship.id].runs),
     noTravel: members.filter((ship) => ship.successfulRuns === initial[ship.id].runs).length,
     inactive30Days: members.filter((ship) => days - activity[ship.id] > 30).length,
@@ -107,12 +139,41 @@ for (const role of roles) {
     lowFuel: members.filter((ship) => ship.fuel < ship.fuelCapacity * 0.1).length,
     lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
     expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
+    defeats: sum((ship) => ship.combatDefeats ?? 0),
+    unsoldCargoUnits: sum((ship) =>
+      Object.values(ship.cargo).reduce((total, units) => total + units, 0)
+    ),
   });
 }
 assert.equal(ships.length, 33);
 assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
 console.log('ECONOMY LONGRUN AUDIT');
-console.log(JSON.stringify({ days, automaticCombat: false, report }));
+console.log(
+  JSON.stringify({
+    days,
+    automaticCombat: true,
+    combat: combatStats,
+    report,
+  })
+);
+console.log('ECONOMY BY SHIP');
+for (const ship of ships) {
+  console.log(
+    JSON.stringify({
+      id: ship.id,
+      role: ship.job,
+      creditsStart: initial[ship.id].credits,
+      creditsEnd: ship.credits,
+      creditsDelta: ship.credits - initial[ship.id].credits,
+      completedLegs: ship.successfulRuns - initial[ship.id].runs,
+      fuel: ship.fuel,
+      hull: ship.hullHp,
+      lootRevenue: ship.pirateLootRevenue ?? 0,
+      operatingExpenses: ship.pirateOperatingExpenses ?? 0,
+      defeats: ship.combatDefeats ?? 0,
+    })
+  );
+}
 
 // A scripted NPC raid checks conservation and one-time resale.
 // This does not imply that automatic pirate combat is profitable.
@@ -137,4 +198,4 @@ assert((pirate.pirateLootRevenue ?? 0) > revenueBefore);
 const revenueAfter = pirate.pirateLootRevenue;
 sector.tick(0.25);
 assert.equal(pirate.pirateLootRevenue, revenueAfter, 'no duplicate sales');
-console.log('PASS 90-day economic integrity and scripted pirate loot resale');
+console.log('PASS 90-day combat-enabled economic integrity and pirate loot resale');
