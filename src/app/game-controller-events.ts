@@ -1,4 +1,6 @@
 import type { DistressActionResult } from '../core/salvage-types';
+import { HIDDEN_HOLD_INTEL_DAY } from '../systems/economy/smuggling-service';
+import { showUnderworldContactNotice } from '../ui/customs/underworld-contact-notice';
 import type { WorldLocation } from '../core/world-types';
 import { createCrewBoardingEncounter } from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
@@ -132,6 +134,15 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
   economy.npcSmuggling.advanceDay(economy.situations.currentDay);
+  if (
+    economy.situations.currentDay >= HIDDEN_HOLD_INTEL_DAY &&
+    !economy.smuggling.state.hiddenHoldIntelContacted &&
+    !economy.smuggling.state.hiddenHoldIntel
+  ) {
+    economy.smuggling.state.hiddenHoldIntelContacted = true;
+    context.systemLog.write('UNTERDECK > VERSCHLÜSSELTE NACHRICHT · INFORMANT BIETET VERDECKTEN FRACHTRAUM AN');
+    showUnderworldContactNotice(context.root);
+  }
   economy.marketIntel.recordHistory(economy.situations.currentDay);
   const before = new Set(economy.salvageEvents.playerVisible.map((event) => event.id));
   economy.salvageEvents.advanceDay(
