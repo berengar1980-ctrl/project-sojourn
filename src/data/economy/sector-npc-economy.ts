@@ -193,6 +193,9 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       locationId = TRADE_HOMES[freighterIndex++ % TRADE_HOMES.length]!;
     }
 
+    const smuggler = job === 'freighter' && (index === 6 || index === 13 || index === 21);
+    if (smuggler) locationId = index === 13 ? 'gallows-anchor' : 'blackjaw-outpost';
+
     return {
       id: `npc-${String(index + 1).padStart(2, '0')}`,
       name: CAPTAINS[index]!,
@@ -221,6 +224,12 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
       factionId: 'civilian',
+      ...(smuggler ? {
+        smuggler: true,
+        smugglingConcealment: 0.25 + (index % 3) * 0.18,
+        smugglingSuspicion: 6,
+        smugglingProtectionFaction: index === 13 ? 'pirates2' as const : 'pirates' as const,
+      } : {}),
       successfulRuns: 0,
     };
   });
