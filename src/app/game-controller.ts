@@ -411,7 +411,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
-  const economy = createControllerEconomy(options.navigation);
+  const systemLog = createControllerLog();
+  const economy = createControllerEconomy(options.navigation, (message) => systemLog.write(message));
   economy.smuggling.activateShip(options.ship.id);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
@@ -435,7 +436,65 @@ export function createGameController(options: GameControllerOptions): GameContro
     previousLocationId: options.navigation.getSnapshot().currentLocationId,
     displayedWorldId: '',
   };
-  const systemLog = createControllerLog();
+
+  const crew = createCrewRosterService(state.playerProfile);
+  const loadouts = createShipLoadoutService();
+  const shipOperations = createShipOperatingService(economy.trade);
+  const fuelJourney = createFuelJourneyService();
+  let foreignWorld = () => false;
+  const engagements = createStarMapEngagementService({
+    navigation: options.navigation,
+    sectorNpcs: economy.sectorNpcs,
+    isPlayerInCampaignSystem: () => foreignWorld(),
+    playerProtectedFromPirate: (npc) =>
+      Boolean(npc.pirate && economy.smuggling.state.protectionFaction === npc.factionId),
+    getPlayerShip: () => state.activeShip,
+    getPlayerCombatant: () =>
+      servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
+    log: (message) => systemLog.write(message),
+  });
+  const campaignServices = createControllerCampaignServicesWithActions(
+    state,
+    economy,
+    crew,
+    loadouts,
+    engagements,
+    options
+  );
+  foreignWorld = () => campaignServices.world.inForeignSystem();
+  const context: ControllerRuntimeContext = {
+    root: options.root,
+    navigation: options.navigation,
+    systemLog,
+    economy,
+    crew,
+    loadouts,
+    shipOperations,
+    fuelJourney,
+    audio: createGameAudioService(),
+    engagements,
+    ...campaignServices,
+    state,
+  };
+  economy.salvageEvents.advanceDay(
+    economy.situations.currentDay,
+    options.navigation.getSnapshot().currentPosition,
+    state.activeShip.role === 'salvage'
+  );
+  const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
+  mountControllerStarMap(context);
+  return {
+    profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
+    tick(deltaSeconds) {
+      tickController(context, deltaSeconds);
+    },
+    destroy: () => {
+      campaignServices.campaigns.destroy();
+      destroyGameController(context, menu);
+    },
+  };
+}
+
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   const shipOperations = createShipOperatingService(economy.trade);
