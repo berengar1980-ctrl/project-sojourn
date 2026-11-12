@@ -8,6 +8,12 @@ import { repairCost, type ShipOperatingService } from '../systems/ships/ship-ope
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
+import {
+  HIDDEN_CARGO_HOLD,
+  HIDDEN_HOLD_INTEL_COST,
+  HIDDEN_HOLD_INTEL_DAY,
+  type SmugglingService,
+} from '../systems/economy/smuggling-service';
 import { createCrewMember, crewCapacity, type CrewRosterService } from '../systems/crew';
 import { planRouteWithProfile, type NavigationService } from '../systems/navigation';
 import {
@@ -83,6 +89,7 @@ interface ActivePortContext {
   readonly market: ActivePortMarket;
   readonly navigation: NavigationService;
   readonly trade: PlayerTradeService;
+  readonly smuggling: SmugglingService;
   readonly ship: ShipDefinition;
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
@@ -163,7 +170,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     },
     systemMarketRows(location.id, context.marketIntel),
     Math.max(0, context.currentDay),
-    runtime.cargoCapacityTons,
+    runtime.cargoCapacityTons - context.smuggling.normalPenalty(ship.id),
     runtime.crewEffects.logistics.saleFeeRate,
     {
       loose: context.componentInventory.list(),
@@ -240,6 +247,8 @@ function createTradeCallbacks(
     onSell: (resourceId) => {
       const result = trade.sell(location.id, resourceId, 1, saleFeeRate);
       if (!result) return;
+      const protectionFee = context.smuggling.recordSale(resourceId, result.creditsDelta);
+      if (protectionFee) log.write('SCHMUGGEL > SCHUTZABGABE -' + protectionFee + ' CR');
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(
@@ -251,6 +260,8 @@ function createTradeCallbacks(
       const quantity = trade.player.cargo[resourceId]?.qty ?? 0;
       const result = trade.sell(location.id, resourceId, quantity, saleFeeRate);
       if (!result) return;
+      const protectionFee = context.smuggling.recordSale(resourceId, result.creditsDelta);
+      if (protectionFee) log.write('SCHMUGGEL > SCHUTZABGABE -' + protectionFee + ' CR');
       marketIntel.observeLocation(location.id, currentDay);
       const name = economyResourceById(resourceId)?.name ?? resourceId;
       log.write(
@@ -263,6 +274,10 @@ function createTradeCallbacks(
 
 function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition): void {
   if (context.ship.id === ship.id) return;
+  if (context.smuggling.hiddenUsed() > 0) {
+    context.log.write('WERFT > SCHIFFSWECHSEL ERFORDERT LEEREN DES VERDECKTEN FRACHTRAUMS');
+    return;
+  }
   const blocked = shipActivationBlock(
     ship,
     context.shipOwnership,
@@ -283,6 +298,7 @@ function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition
     return;
   }
   context.log.write('WERFT > SCHIFF GEWECHSELT · ' + ship.name.toUpperCase());
+  context.smuggling.activateShip(ship.id);
   context.onChangeShip(ship);
 }
 
@@ -397,7 +413,8 @@ export function createActivePortPanel(
   log: SystemLogService,
   shipOwnership: ShipOwnershipService,
   onChangeShip: (ship: ShipDefinition) => void,
-  shipOperations: ShipOperatingService
+  shipOperations: ShipOperatingService,
+  smuggling: SmugglingService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = narrowsSector.locations.find((entry) => entry.id === locationId);
@@ -421,6 +438,7 @@ export function createActivePortPanel(
     market,
     navigation,
     trade,
+    smuggling,
     ship,
     crew,
     loadouts,
@@ -439,9 +457,73 @@ export function createActivePortPanel(
     log,
   };
 
+  const faction =
+    location.id === 'blackjaw-outpost'
+      ? 'pirates'
+      : location.id === 'gallows-anchor'
+        ? 'pirates2'
+        : null;
+  const holdInstalled = smuggling.hiddenCapacity(ship.id) > 0;
+  const hiddenRows = Object.entries(trade.player.cargo)
+    .filter(([id, lot]) => lot.qty > 0 && economyResourceById(id)?.legality === 'illegal')
+    .map(([id, lot]) => ({
+      id,
+      name: economyResourceById(id)?.name ?? id,
+      visible: lot.qty - (lot.hiddenQty ?? 0),
+      hidden: lot.hiddenQty ?? 0,
+    }));
   return createPortPanel({
     root,
     model: createActivePortModel(context),
+    smuggling: {
+      day: currentDay,
+      known: smuggling.state.hiddenHoldIntel,
+      installed: holdInstalled,
+      hiddenCapacity: HIDDEN_CARGO_HOLD.capacity,
+      hiddenUsed: smuggling.hiddenUsed(),
+      normalPenalty: HIDDEN_CARGO_HOLD.normalCargoPenalty,
+      concealment: HIDDEN_CARGO_HOLD.concealment,
+      price: HIDDEN_CARGO_HOLD.cost,
+      intelPrice: HIDDEN_HOLD_INTEL_COST,
+      intelDay: HIDDEN_HOLD_INTEL_DAY,
+      suspicion: smuggling.state.suspicion,
+      protectionFaction: smuggling.state.protectionFaction,
+      atPirateBase: faction !== null,
+      pirateFaction: faction,
+      hiddenRows,
+    },
+    onBuyHoldIntel: () => {
+      if (!smuggling.learnIntel(currentDay)) {
+        log.write('UNTERDECK > KONTAKT NICHT VERFÜGBAR ODER CREDITS FEHLEN');
+      } else {
+        log.write('UNTERDECK > KONTAKT ZUR GEHEIMEN UNTERWELT-WERFT FREIGESCHALTET');
+      }
+      onRefresh();
+    },
+    onInstallHiddenHold: () => {
+      if (smuggling.install(ship.id, location.id, runtime.cargoCapacityTons)) {
+        log.write('UNTERWELT-WERFT > VERDECKTER FRACHTRAUM EINGEBAUT · 24 t VERDECKT · -12 t NORMAL');
+      } else {
+        log.write('UNTERWELT-WERFT > EINBAU NICHT MÖGLICH · KONTAKT, CREDITS, FRACHT UND ORT PRÜFEN');
+      }
+      onRefresh();
+    },
+    onConcealCargo: (resourceId) => {
+      const moved = smuggling.conceal(resourceId, 1, ship.id);
+      log.write('SCHMUGGEL > ' + moved + ' t IM VERDECKTEN FRACHTRAUM VERSTAUT');
+      onRefresh();
+    },
+    onRevealCargo: (resourceId) => {
+      const moved = smuggling.reveal(resourceId, 1, ship.id, runtime.cargoCapacityTons);
+      log.write('SCHMUGGEL > ' + moved + ' t IN DEN NORMALEN FRACHTRAUM VERLAGERT');
+      onRefresh();
+    },
+    onPirateProtection: () => {
+      if (faction && smuggling.protect(faction, location.id)) {
+        log.write('UNTERWELT > SCHUTZBRIEF AKTIV · 5 % ALLER ILLEGALEN VERKÄUFE');
+      }
+      onRefresh();
+    },
     onReturnToStarMap,
     onRepairShip: () => {
       const result = shipOperations.repair(
