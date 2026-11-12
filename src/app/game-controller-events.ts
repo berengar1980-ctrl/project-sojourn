@@ -131,6 +131,7 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.situations.advanceNextDay();
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
+  economy.npcSmuggling.advanceDay(economy.situations.currentDay);
   economy.marketIntel.recordHistory(economy.situations.currentDay);
   const before = new Set(economy.salvageEvents.playerVisible.map((event) => event.id));
   economy.salvageEvents.advanceDay(
