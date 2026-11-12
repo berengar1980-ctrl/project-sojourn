@@ -130,7 +130,8 @@ function candidateTradeRoute(
     observedDay,
     score: npcPersonalityTradeWeight(
       npc,
-      estimate.netProfit,
+      estimate.netProfit -
+        (resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0),
       estimate.distance,
       age,
       destinationId
@@ -151,7 +152,7 @@ function bestTradeRoute(
   if (!source || free <= 0) return null;
   let best: TradeRoute | null = null;
   for (const resource of resources) {
-    if (resource.legality === 'illegal') continue;
+    if (resource.legality === 'illegal' && !('smuggler' in npc && npc.smuggler)) continue;
     const buy = source.entries[resource.id];
     if (!buy || buy.stock <= 0 || buy.price <= 0) continue;
     const affordable = Math.floor(npc.credits / buy.price);

@@ -164,6 +164,40 @@ function activityFor(job: NpcJob): string {
   return 'Sicherheitspatrouille';
 }
 
+function createPirateNpc(name: (typeof PIRATE_NAMES)[number], index: number): SectorNpcState {
+  const factionId = index < 5 ? 'pirates' : 'pirates2';
+  const ship = patrolVariantShips[index % patrolVariantShips.length]!;
+  const profile = getShipRoleProfile(ship.role);
+  return {
+    id: `pirate-${String(index + 1).padStart(2, '0')}`,
+    name,
+    role: 'patrol',
+    job: 'pirate',
+    shipId: ship.id,
+    locationId: PIRATE_HOMES[factionId],
+    credits: 700000 + (index % 4) * 450000,
+    cargoCapacity: ship.cargoCapacityTons,
+    normalCargoCapacity: ship.cargoCapacityTons,
+    cargo: {},
+    marketIntel: {},
+    workResourceIds: [],
+    fuel: profile.fuelCapacity,
+    fuelCapacity: profile.fuelCapacity,
+    fuelUse: profile.fuelUse,
+    hullHp: profile.hullPoints,
+    hullMaxHp: profile.hullPoints,
+    aggression: 75 + ((index * 11 + 7) % 25),
+    factionId,
+    pirate: true,
+    pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
+    pirateHuntCycles: 2 + (index % 5),
+    workRiskPreference: 'risky',
+    activityId: 'raiding',
+    activity: 'Auf Beutezug',
+    successfulRuns: 0,
+  };
+}
+
 export function createSectorNpcEconomyStates(): SectorNpcState[] {
   let minerIndex = 0;
   let salvageIndex = 0;
@@ -193,6 +227,9 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       locationId = TRADE_HOMES[freighterIndex++ % TRADE_HOMES.length]!;
     }
 
+    const smuggler = job === 'freighter' && (index === 6 || index === 13 || index === 21);
+    if (smuggler) locationId = index === 13 ? 'gallows-anchor' : 'blackjaw-outpost';
+
     return {
       id: `npc-${String(index + 1).padStart(2, '0')}`,
       name: CAPTAINS[index]!,
@@ -221,43 +258,19 @@ export function createSectorNpcEconomyStates(): SectorNpcState[] {
       activityId: job === 'patrol' ? 'patrol' : 'dock',
       activity: activityFor(job),
       factionId: 'civilian',
+      ...(smuggler
+        ? {
+            smuggler: true,
+            smugglingConcealment: 0.25 + (index % 3) * 0.18,
+            smugglingSuspicion: 6,
+            smugglingProtectionFaction: index === 13 ? ('pirates2' as const) : ('pirates' as const),
+          }
+        : {}),
       successfulRuns: 0,
     };
   });
 
-  const pirates = PIRATE_NAMES.map((name, index): SectorNpcState => {
-    const factionId = index < 5 ? 'pirates' : 'pirates2';
-    const ship = patrolVariantShips[index % patrolVariantShips.length]!;
-    const profile = getShipRoleProfile(ship.role);
-    return {
-      id: `pirate-${String(index + 1).padStart(2, '0')}`,
-      name,
-      role: 'patrol',
-      job: 'pirate',
-      shipId: ship.id,
-      locationId: PIRATE_HOMES[factionId],
-      credits: 700000 + (index % 4) * 450000,
-      cargoCapacity: ship.cargoCapacityTons,
-      normalCargoCapacity: ship.cargoCapacityTons,
-      cargo: {},
-      marketIntel: {},
-      workResourceIds: [],
-      fuel: profile.fuelCapacity,
-      fuelCapacity: profile.fuelCapacity,
-      fuelUse: profile.fuelUse,
-      hullHp: profile.hullPoints,
-      hullMaxHp: profile.hullPoints,
-      aggression: 75 + ((index * 11 + 7) % 25),
-      factionId,
-      pirate: true,
-      pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
-      pirateHuntCycles: 2 + (index % 5),
-      workRiskPreference: 'risky',
-      activityId: 'raiding',
-      activity: 'Auf Beutezug',
-      successfulRuns: 0,
-    };
-  });
+  const pirates = PIRATE_NAMES.map(createPirateNpc);
 
   return [...civilians, ...pirates];
 }

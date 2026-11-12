@@ -39,6 +39,13 @@ export interface NpcTravelOperatingQuote {
 }
 
 export interface NpcEconomyServiceOptions {
+  /** Optional settlement hook for actual illegal cargo sales. */
+  readonly onSale?: (
+    npc: NpcEconomyState,
+    resourceId: string,
+    quantity: number,
+    gross: number
+  ) => void;
   readonly positions?: Readonly<Record<string, EconomyPoint>>;
   readonly travel?: {
     readonly requestTravel: (

@@ -378,6 +378,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   economy.sectorNpcs.tick(deltaSeconds);
+  economy.npcSmuggling.tick(deltaSeconds);
   economy.npcSalvageEvents.tick();
   economy.npcs.tick(deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
@@ -410,7 +411,10 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
-  const economy = createControllerEconomy(options.navigation);
+  const systemLog = createControllerLog();
+  const economy = createControllerEconomy(options.navigation, (message) =>
+    systemLog.write(message)
+  );
   economy.smuggling.activateShip(options.ship.id);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
@@ -434,7 +438,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     previousLocationId: options.navigation.getSnapshot().currentLocationId,
     displayedWorldId: '',
   };
-  const systemLog = createControllerLog();
+
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
   const shipOperations = createShipOperatingService(economy.trade);

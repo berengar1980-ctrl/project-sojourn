@@ -63,6 +63,17 @@ export interface SectorNpcState extends NpcEconomyState {
   pirateMark?: 'broken-spear' | 'black-tide';
   pirateHuntZoneId?: string;
   pirateHuntCycles?: number;
+  /** Risk traders use the same physical cargo and travel economy as other freighters. */
+  smuggler?: boolean;
+  smugglingConcealment?: number;
+  smugglingSuspicion?: number;
+  smugglingProtectionFaction?: 'pirates' | 'pirates2';
+  smugglingInspections?: number;
+  smugglingConfiscated?: number;
+  smugglingFinesPaid?: number;
+  smugglingUnpaidFines?: number;
+  smugglingEscapes?: number;
+  smugglingProtectionFees?: number;
   pirateLootRevenue?: number;
   pirateLootUnitsSold?: number;
   pirateOperatingExpenses?: number;

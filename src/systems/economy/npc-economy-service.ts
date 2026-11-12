@@ -106,7 +106,12 @@ function completeLoading(
   beginNpcAutonomyPhase(npc, 'launch-prep');
 }
 
-function completeUnloading(npc: NpcEconomyState, markets: EconomyMarketService, day: number): void {
+function completeUnloading(
+  npc: NpcEconomyState,
+  markets: EconomyMarketService,
+  day: number,
+  options: NpcEconomyServiceOptions
+): void {
   const autonomy = ensureNpcAutonomy(npc);
   const resourceId = autonomy.pendingSaleResourceId;
   if (!resourceId) {
@@ -118,7 +123,9 @@ function completeUnloading(npc: NpcEconomyState, markets: EconomyMarketService, 
     npc.sideTradePlan?.resourceId === resourceId
       ? npc.sideTradePlan.quantity
       : Number.POSITIVE_INFINITY;
-  sellToMarket(npc, markets, npc.locationId, resourceId, day, requested);
+  const price = markets.getEntry(npc.locationId, resourceId)?.price ?? 0;
+  const moved = sellToMarket(npc, markets, npc.locationId, resourceId, day, requested);
+  if (moved > 0) options.onSale?.(npc, resourceId, moved, moved * Math.round(price * 0.94));
   if (
     npc.sideTradePlan &&
     npc.sideTradePlan.resourceId === resourceId &&
@@ -238,7 +245,7 @@ function advanceNpcActivity(
   if (autonomy.phase === 'docking') {
     beginRest(npc);
   } else if (autonomy.phase === 'unloading') {
-    completeUnloading(npc, markets, day);
+    completeUnloading(npc, markets, day, options);
   } else if (autonomy.phase === 'resting') {
     beginNpcAutonomyPhase(npc, 'thinking');
   } else if (autonomy.phase === 'thinking') {
@@ -293,6 +300,17 @@ export function createNpcEconomyService(
 
   for (const npc of npcs) {
     initializeNpcMarketIntel(npc, markets, positions, 0);
+    if ('smuggler' in npc && npc.smuggler) {
+      for (const locationId of [
+        'blackjaw-outpost',
+        'gallows-anchor',
+        'crown',
+        'eidolon',
+        'aurora',
+      ]) {
+        observeNpcMarket(npc, markets, locationId, 0);
+      }
+    }
     const personality = ensureNpcPersonality(npc);
     ensureNpcAutonomy(npc);
     const sectorNpc = npc as NpcEconomyState & { workRiskPreference?: 'safe' | 'risky' };

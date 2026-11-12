@@ -210,6 +210,7 @@ function npcAttackTarget(
         // vessels in flight or at an active field operation.
         return (
           npcIsPiratePrey(candidate) &&
+          candidate.smugglingProtectionFaction !== attacker.factionId &&
           cargoUnits > 0 &&
           (Boolean(candidate.travel) || candidate.autonomy?.phase === 'working')
         );
