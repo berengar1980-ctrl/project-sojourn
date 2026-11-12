@@ -449,7 +449,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
-    playerProtectedFromPirate: (npc) => npc.pirate && economy.protectsPirate(npc.factionId),
+    playerProtectedFromPirate: (npc) => Boolean(npc.pirate) && economy.protectsPirate(npc.factionId),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
