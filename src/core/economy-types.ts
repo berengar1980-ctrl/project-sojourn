@@ -145,8 +145,8 @@ export interface NpcEconomyState {
   readonly role: NpcEconomyRole;
   locationId: EconomyLocationId;
   credits: number;
-  readonly cargoCapacity: number;
-  readonly normalCargoCapacity?: number;
+  cargoCapacity: number;
+  normalCargoCapacity?: number;
   readonly cargo: Record<EconomyResourceId, number>;
   readonly workResourceIds: readonly EconomyResourceId[];
   readonly workLocationId?: EconomyLocationId;
