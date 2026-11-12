@@ -11,6 +11,7 @@ const { chargeNpcDailyOperatingExpenses } = loadStandaloneTypeScriptModule(
 function npc(credits, role = 'freighter') {
   return { role, credits, cargoCapacity: 900, lastOperatingChargeDay: 0 };
 }
+
 const trader = npc(10000);
 const charged = chargeNpcDailyOperatingExpenses(trader, 1);
 assert(charged > 0);
