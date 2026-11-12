@@ -15,6 +15,7 @@ function ship(job, pirate, cargo) {
     job,
     pirate,
     cargo: { ...cargo },
+    cargoCapacity: 20,
     name: job,
     hullHp: 0,
     combatMovement: { mode: 'engaged' },
@@ -56,6 +57,16 @@ function ship(job, pirate, cargo) {
   const patrol = ship('patrol', false, { steel: 5 });
   assert.equal(settleNpcCombatPirateLoot(pirate, patrol, 'attacker'), 0);
   assert.deepEqual(patrol.cargo, { steel: 5 });
+}
+
+{
+  const pirate = ship('pirate', true, { steel: 7 });
+  pirate.cargoCapacity = 10;
+  const victim = ship('salvager', false, { ferrite: 8 });
+  assert.equal(settleNpcCombatPirateLoot(pirate, victim, 'attacker'), 3);
+  assert.deepEqual(pirate.cargo, { steel: 7, ferrite: 3 });
+  assert.deepEqual(victim.cargo, { ferrite: 5 });
+  assert.equal(settleNpcCombatPirateLoot(pirate, victim, 'attacker'), 0);
 }
 
 console.log('PASS pirate combat victory transfers disabled civilian cargo only');
