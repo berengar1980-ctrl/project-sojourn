@@ -9,6 +9,7 @@ import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
 import type { SmugglingService } from '../systems/economy/smuggling-service';
+import type { TradeCharterService, TradeCharterId } from '../systems/economy/trade-charter-service';
 import { createSmugglingPortOptions } from './game-controller-port-smuggling';
 import { createCrewMember, crewCapacity, type CrewRosterService } from '../systems/crew';
 import { planRouteWithProfile, type NavigationService } from '../systems/navigation';
@@ -86,6 +87,7 @@ interface ActivePortContext {
   readonly navigation: NavigationService;
   readonly trade: PlayerTradeService;
   readonly smuggling: SmugglingService;
+  readonly charters: TradeCharterService;
   readonly ship: ShipDefinition;
   readonly crew: CrewRosterService;
   readonly loadouts: ShipLoadoutService;
@@ -167,7 +169,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
     systemMarketRows(location.id, context.marketIntel),
     Math.max(0, context.currentDay),
     runtime.cargoCapacityTons - context.smuggling.normalPenalty(ship.id),
-    runtime.crewEffects.logistics.saleFeeRate,
+    context.charters.saleFeeRate(runtime.crewEffects.logistics.saleFeeRate),
     {
       loose: context.componentInventory.list(),
       variants: shipyardTypes.flatMap((type) =>
@@ -210,7 +212,8 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
     },
-    portOperatingView(context)
+    portOperatingView(context),
+    context.charters
   );
 }
 
@@ -219,7 +222,7 @@ function createTradeCallbacks(
 ): Pick<PortPanelOptions, 'onMarketRoute' | 'onBuy' | 'onSell' | 'onSellAll'> {
   const { navigation, trade, ship, marketIntel, location, currentDay, runtime, log, onRefresh } =
     context;
-  const saleFeeRate = runtime.crewEffects.logistics.saleFeeRate;
+  const saleFeeRate = context.charters.saleFeeRate(runtime.crewEffects.logistics.saleFeeRate);
 
   return {
     onMarketRoute: (destinationId) => {
@@ -229,6 +232,10 @@ function createTradeCallbacks(
       context.onReturnToStarMap();
     },
     onBuy: (resourceId) => {
+      if (!context.charters.mayTrade()) {
+        log.write('HANDEL > EIN GÜLTIGES HANDELSMANDAT IST ERFORDERLICH');
+        return;
+      }
       if (!canShipCarryResource(ship, resourceId)) {
         log.write('FRACHT > MINER NIMMT NUR ROHSTOFFE AUF');
         return;
@@ -241,6 +248,7 @@ function createTradeCallbacks(
       onRefresh();
     },
     onSell: (resourceId) => {
+      if (!context.charters.mayTrade()) return;
       const result = trade.sell(location.id, resourceId, 1, saleFeeRate);
       if (!result) return;
       const protectionFee = context.smuggling.recordSale(resourceId, result.creditsDelta);
@@ -253,6 +261,7 @@ function createTradeCallbacks(
       onRefresh();
     },
     onSellAll: (resourceId) => {
+      if (!context.charters.mayTrade()) return;
       const quantity = trade.player.cargo[resourceId]?.qty ?? 0;
       const result = trade.sell(location.id, resourceId, quantity, saleFeeRate);
       if (!result) return;
@@ -410,7 +419,8 @@ export function createActivePortPanel(
   shipOwnership: ShipOwnershipService,
   onChangeShip: (ship: ShipDefinition) => void,
   shipOperations: ShipOperatingService,
-  smuggling: SmugglingService
+  smuggling: SmugglingService,
+  charters?: TradeCharterService
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = narrowsSector.locations.find((entry) => entry.id === locationId);
@@ -428,6 +438,7 @@ export function createActivePortPanel(
     drive * runtime.crewEffects.piloting.turnRateMultiplier
   );
 
+  if (!charters) throw new Error('Trade charter service required for port commerce');
   const context: ActivePortContext = {
     location,
     port,
@@ -435,6 +446,7 @@ export function createActivePortPanel(
     navigation,
     trade,
     smuggling,
+    charters,
     ship,
     crew,
     loadouts,
@@ -483,6 +495,16 @@ export function createActivePortPanel(
       onRefresh();
     },
     ...createTradeCallbacks(context),
+    onJoinCharter: (id: TradeCharterId) => {
+      const cost = charters.join(id);
+      if (cost === null) log.write('HANDEL > MANDAT ABGELEHNT: GELD ODER MITGLIEDSCHAFT');
+      else log.write('HANDEL > NEUES MANDAT · -' + cost + ' CR');
+      onRefresh();
+    },
+    onLeaveCharter: () => {
+      if (charters.leave()) log.write('HANDEL > MANDAT GEKÜNDIGT · KEINE ERSTATTUNG');
+      onRefresh();
+    },
     ...createShipyardCallbacks(context),
     ...createCrewCallbacks(context),
   });
