@@ -7,10 +7,12 @@ import type {
 import type { WorldPoint } from '../../core/world-types';
 import type { EconomyMarketService } from '../economy/market-service';
 import type { NpcTravelOperatingQuote } from '../economy/npc-economy-types';
+import type { NpcPopulationService } from './npc-population-service';
 
 export interface NpcSectorServiceOptions {
   readonly getPlayerPosition?: () => WorldPoint;
   readonly markets?: EconomyMarketService;
+  readonly population?: NpcPopulationService;
 }
 
 export interface NpcSectorService {
@@ -48,4 +50,5 @@ export interface NpcSectorService {
   livePosition(npc: SectorNpcState): WorldPoint;
   liveHeading(npc: SectorNpcState): number;
   tick(deltaSeconds: number): void;
+  advanceDay(day: number): void;
 }
