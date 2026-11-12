@@ -443,9 +443,8 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   private attackDamage(attacker: BoardingUnit, target: BoardingUnit, melee: boolean): number {
     const profile = melee ? attacker.meleeWeapon : attacker.weapon;
     const piercing = melee ? undefined : attacker.weapon.piercing;
-    const bonus = piercing?.maxArmor !== undefined && target.armor <= piercing.maxArmor
-      ? piercing.bonusDamage
-      : 0;
+    let bonus = 0;
+    if (piercing && target.armor <= piercing.maxArmor) bonus = piercing.bonusDamage;
     return damageAfterArmor(profile.damage, profile.armorPenetration, target.armor) + bonus;
   }
 
