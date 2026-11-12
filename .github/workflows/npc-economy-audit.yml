@@ -15,12 +15,12 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Run 90-day economy and live combat diagnostics
+      - name: Run 365-day economy and live combat diagnostics
         run: |
-          SOJOURN_LONGRUN_DAYS=90 node tests/economy/npc-economy-longrun.test.cjs | tee /tmp/npc-economy-audit.log
+          SOJOURN_LONGRUN_DAYS=365 node tests/economy/npc-economy-longrun.test.cjs | tee /tmp/npc-economy-audit.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: npc-economy-audit-90-days
+          name: npc-economy-audit-365-days
           path: /tmp/npc-economy-audit.log
           if-no-files-found: ignore
