@@ -209,8 +209,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
       (zone) => boardingHexDistance(zone.center, { q, r }) <= 1
     );
     const cover = snapshot.map.cover.some((entry) => entry.q === q && entry.r === r);
-    const highlighting =
-      (suppression ? ' is-suppressed-zone' : '') + (cover ? ' is-cover' : '');
+    const highlighting = (suppression ? ' is-suppressed-zone' : '') + (cover ? ' is-cover' : '');
     const disabled = wall ? 'disabled' : '';
     return `<button type="button" class="${classes}${highlighting}" data-q="${q}" data-r="${r}" ${disabled}>${body}</button>`;
   }
@@ -247,18 +246,16 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
       ? 'ERGEBNIS: ' + snapshot.outcome.toUpperCase()
       : 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
     const details = selected
-      ? selected.name +
-        ' · ' +
-        selected.weapon.name +
-        ' · Reichweite ' +
-        selected.weapon.range +
-        ' · Streuung ' +
-        selected.weapon.spread +
-        ' · RD ' +
-        selected.weapon.armorPenetration +
-        (selected.weapon.piercing
-          ? ' · Piercing +' + selected.weapon.piercing.bonusDamage
-          : '')
+      ? [
+          selected.name,
+          selected.weapon.name,
+          'Reichweite ' + selected.weapon.range,
+          'Streuung ' + selected.weapon.spread,
+          'RD ' + selected.weapon.armorPenetration,
+          ...(selected.weapon.piercing
+            ? ['Piercing +' + selected.weapon.piercing.bonusDamage]
+            : []),
+        ].join(' · ')
       : 'Trupp wählen';
     const log = snapshot.log
       .slice(0, 8)

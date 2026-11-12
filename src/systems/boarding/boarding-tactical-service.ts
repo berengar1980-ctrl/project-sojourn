@@ -260,11 +260,12 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   }
 
   selectUnit(unitId: string | null): BoardingEncounterSnapshot {
-    if (unitId === null) this.selectedUnitId = null;
-    else if (
-      this.units.some((unit) => unit.id === unitId && unit.hp > 0 && unit.team === this.activeTeam)
-    )
-      this.selectedUnitId = unitId;
+    if (unitId === null) {
+      this.selectedUnitId = null;
+    } else {
+      const member = this.units.find((unit) => unit.id === unitId && unit.hp > 0);
+      if (member?.team === this.activeTeam) this.selectedUnitId = unitId;
+    }
     return this.getSnapshot();
   }
 
@@ -442,7 +443,9 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   private attackDamage(attacker: BoardingUnit, target: BoardingUnit, melee: boolean): number {
     const profile = melee ? attacker.meleeWeapon : attacker.weapon;
     const piercing = melee ? undefined : attacker.weapon.piercing;
-    const bonus = piercing && target.armor <= piercing.maxArmor ? piercing.bonusDamage : 0;
+    const bonus = piercing?.maxArmor !== undefined && target.armor <= piercing.maxArmor
+      ? piercing.bonusDamage
+      : 0;
     return damageAfterArmor(profile.damage, profile.armorPenetration, target.armor) + bonus;
   }
 
@@ -474,7 +477,9 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
         enemy.reactionUsed ||
         boardingHexDistance(enemy, previous) !== 1 ||
         boardingHexDistance(enemy, next) <= 1
-      ) continue;
+      ) {
+        continue;
+      }
       enemy.reactionUsed = true;
       this.reactiveAttack(enemy, mover, Math.max(5, meleeChance(enemy) - 20), true);
       if (mover.hp <= 0 || this.outcome !== 'active') break;
@@ -522,7 +527,9 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
         !this.inOverwatchArc(shooter, mover) ||
         boardingHexDistance(shooter, mover) > shooter.weapon.range ||
         !boardingHasLineOfSight(this.map, this.doorStates, shooter, mover)
-      ) continue;
+      ) {
+        continue;
+      }
       shooter.overwatch = false;
       shooter.overwatchTarget = null;
       this.reactiveAttack(
