@@ -9,6 +9,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 
 import { npcOperationalSpeed } from './npc-upgrade-service';
+import { npcRecoveryLocation } from './npc-sector-recovery-location';
 import { advanceNpcCombatMovement } from './npc-sector-combat-movement';
 
 import {
@@ -62,27 +63,6 @@ class SectorService implements NpcSectorService {
   ) {
     prepareNpcOrbitBerths(world, npcs);
   }
-  private recoveryLocation = (npc: SectorNpcState, position: WorldPoint): string | null => {
-    if (npc.pirate) {
-      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-      if (this.world.locations.some((location) => location.id === homeId)) return homeId;
-    }
-
-    const candidates = this.world.locations
-      .filter(
-        (location) =>
-          location.activities.shipyard || location.activities.dock || location.activities.refuel
-      )
-      .map((location) => ({
-        id: location.id,
-        priority: location.activities.shipyard ? 0 : location.activities.dock ? 1 : 2,
-        distance: Math.hypot(location.position.x - position.x, location.position.y - position.y),
-      }))
-      .sort(
-        (first, second) => first.priority - second.priority || first.distance - second.distance
-      );
-    return candidates[0]?.id ?? nearestLocation(this.world, position);
-  };
   private currentDay = 0;
   advanceDay = (day: number): void => {
     this.currentDay = Math.max(this.currentDay, Math.floor(day));
@@ -93,7 +73,7 @@ class SectorService implements NpcSectorService {
     position: WorldPoint,
     reason: string = 'Kampfunfähig'
   ): boolean => {
-    const destinationId = this.recoveryLocation(npc, position);
+    const destinationId = npcRecoveryLocation(this.world, npc, position);
     if (!destinationId) return false;
 
     delete npc.travel;
