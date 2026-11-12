@@ -187,6 +187,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '76.000',
     security: 'medium',
     produces: ['gems', 'luxury-food', 'art', 'aged-spirits'],
+    trades: ['narcotics', 'stolen-data'],
     needs: ['rare-tech', 'spices', 'antiquities', 'medical', 'clothing', 'vegetables', 'meat'],
   },
   {
@@ -196,6 +197,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '2.2 Mio.',
     security: 'medium',
     produces: ['aged-spirits', 'art', 'antiquities'],
+    trades: ['stolen-data', 'alien-artifacts'],
     needs: [
       'water',
       'grain',
@@ -215,6 +217,7 @@ export const sectorPortProfiles: readonly PortProfile[] = [
     population: '190.000',
     security: 'medium',
     produces: ['antiquities'],
+    trades: ['narcotics', 'alien-artifacts'],
     needs: ['medical', 'water', 'nutrient-paste', 'tools', 'batteries', 'aged-spirits'],
   },
   {
