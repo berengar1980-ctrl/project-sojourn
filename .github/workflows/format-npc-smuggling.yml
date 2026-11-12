@@ -1,0 +1,31 @@
+name: One-time Prettier for NPC smuggling
+on:
+  push:
+    branches:
+      - feature/voidbound-npc-smuggling-notices
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/voidbound-npc-smuggling-notices
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Format changed TypeScript and test files
+        run: |
+          npx prettier --write src/app/game-controller-economy.ts src/app/game-controller-events.ts src/app/game-controller.ts src/data/economy/sector-npc-economy.ts src/data/ports/sector-port-profiles.ts src/core/npc-types.ts src/systems/economy/npc-economy-service.ts src/systems/economy/npc-economy-types.ts src/systems/economy/npc-trade-actions.ts src/systems/economy/npc-smuggling-service.ts src/systems/combat/star-map-engagement-service.ts src/ui/customs/underworld-contact-notice.ts tests/economy/npc-smuggling.test.cjs
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "style(smuggling): apply repository Prettier formatting"
+            git push origin HEAD:feature/voidbound-npc-smuggling-notices
+          fi
