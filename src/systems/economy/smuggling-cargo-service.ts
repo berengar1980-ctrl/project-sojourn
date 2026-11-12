@@ -7,7 +7,7 @@ import {
   type SmugglingService,
   type SmugglingState,
   type PirateFaction,
-} from './smuggling-service';
+} from './smuggling-types';
 
 function pirateBase(locationId: string): PirateFaction | null {
   if (locationId === 'blackjaw-outpost') return 'pirates';
