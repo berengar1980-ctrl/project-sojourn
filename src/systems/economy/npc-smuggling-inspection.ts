@@ -1,5 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import { economyResourceById, isIllegalResource } from '../../data/economy/economy-resources';
+import { npcOperationalSpeed } from '../npcs/npc-upgrade-service';
 
 type Detection = { readonly id: string; readonly qty: number };
 type InspectionOutcome = 'clear' | 'seized' | 'escaped' | 'resisted';
@@ -65,8 +66,11 @@ function escapeInspection(
   resist: boolean,
   random: () => number
 ): boolean {
-  const speedAdvantage = (target.fuelCapacity - patrol.fuelCapacity) / 200;
-  const escapeChance = Math.max(0.1, Math.min(0.9, 0.5 + speedAdvantage));
+  const speedAdvantage = (npcOperationalSpeed(target) - npcOperationalSpeed(patrol)) * 0.08;
+  const escapeChance = Math.max(
+    0.1,
+    Math.min(0.9, 0.5 + speedAdvantage + (target.aggression - 35) * 0.002)
+  );
   if (random() >= (resist ? escapeChance * 0.55 : escapeChance)) return false;
   target.smugglingSuspicion = Math.min(100, (target.smugglingSuspicion ?? 0) + (resist ? 28 : 18));
   target.activity = resist ? 'Zollwiderstand: Flucht gelungen' : 'Flottenkontrolle entkommen';
