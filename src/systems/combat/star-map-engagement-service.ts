@@ -22,7 +22,7 @@ import {
   type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
-import { npcCombatant, transferPirateLoot } from './npc-combatant-setup';
+import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
 
 const PLAYER_ID = 'player';
 
@@ -358,11 +358,7 @@ function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: numb
     if (!model.winner) continue;
     entry.first.hullHp = Math.round(model.attacker.hullHp);
     entry.second.hullHp = Math.round(model.defender.hullHp);
-    if (model.winner === 'attacker' && entry.first.pirate && npcIsPiratePrey(entry.second)) {
-      transferPirateLoot(entry.first, entry.second);
-    } else if (model.winner === 'defender' && entry.second.pirate && npcIsPiratePrey(entry.first)) {
-      transferPirateLoot(entry.second, entry.first);
-    }
+    settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
     runtime.options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');
     runtime.backgroundCombats.delete(key);
