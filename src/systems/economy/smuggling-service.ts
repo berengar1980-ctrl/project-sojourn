@@ -49,6 +49,7 @@ export interface ContrabandDetection {
 }
 export interface SmugglingService {
   readonly state: SmugglingState;
+  activateShip(shipId: string): void;
   hiddenCapacity(shipId: string): number;
   normalPenalty(shipId: string): number;
   hiddenUsed(): number;
@@ -160,6 +161,9 @@ export function createSmugglingService(player: PlayerEconomyState): SmugglingSer
   }
   return {
     state,
+    activateShip(shipId) {
+      player.smugglingNormalPenalty = installed(shipId) ? HIDDEN_CARGO_HOLD.normalCargoPenalty : 0;
+    },
     hiddenCapacity,
     normalPenalty: (shipId) => (installed(shipId) ? HIDDEN_CARGO_HOLD.normalCargoPenalty : 0),
     hiddenUsed,
@@ -174,7 +178,10 @@ export function createSmugglingService(player: PlayerEconomyState): SmugglingSer
     },
     install(shipId, locationId, normalCapacity) {
       if (!state.hiddenHoldIntel || installed(shipId) || !pirateBase(locationId)) return false;
-      const normalUsed = Object.values(player.cargo).reduce((sum, lot) => sum + cargoVisible(player, lot === undefined ? '' : Object.keys(player.cargo).find((key) => player.cargo[key] === lot) ?? ''), player.reservedCargoTons ?? 0);
+      const normalUsed = Object.values(player.cargo).reduce(
+        (sum, lot) => sum + Math.max(0, lot.qty - (lot.hiddenQty ?? 0)),
+        player.reservedCargoTons ?? 0
+      );
       if (
         player.credits < HIDDEN_CARGO_HOLD.cost ||
         normalCapacity < HIDDEN_CARGO_HOLD.normalCargoPenalty ||
@@ -182,6 +189,7 @@ export function createSmugglingService(player: PlayerEconomyState): SmugglingSer
       ) return false;
       player.credits -= HIDDEN_CARGO_HOLD.cost;
       state.holds[shipId] = { shipId, installedAt: locationId };
+      player.smugglingNormalPenalty = HIDDEN_CARGO_HOLD.normalCargoPenalty;
       return true;
     },
     conceal(resourceId, qty, shipId) {
