@@ -105,7 +105,11 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
 }
 
 export function transferPirateLoot(pirate: SectorNpcState, victim: SectorNpcState): number {
-  let remaining = 10;
+  const cargoUsed = Object.values(pirate.cargo).reduce(
+    (sum, quantity) => sum + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0),
+    0
+  );
+  let remaining = Math.min(10, Math.max(0, Math.floor(pirate.cargoCapacity - cargoUsed)));
   let stolen = 0;
   const cargo = Object.entries(victim.cargo)
     .filter(([, quantity]) => quantity > 0)
