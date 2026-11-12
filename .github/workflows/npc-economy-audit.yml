@@ -1,0 +1,26 @@
+name: NPC economy audit (one-time)
+on:
+  push:
+    branches:
+      - audit/npc-economy-metrics-20261112
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Run 90-day economy and live combat diagnostics
+        run: |
+          SOJOURN_LONGRUN_DAYS=90 node tests/economy/npc-economy-longrun.test.cjs | tee /tmp/npc-economy-audit.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npc-economy-audit-90-days
+          path: /tmp/npc-economy-audit.log
+          if-no-files-found: ignore
