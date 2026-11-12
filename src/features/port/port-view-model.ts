@@ -26,7 +26,7 @@ import type {
 
 import { economyResourceById, resourceLegalityLabel } from '../../data/economy/economy-resources';
 
-import { playerSaleUnitPrice } from '../../systems/economy/player-trade-service';
+import { playerCargoUsed, playerSaleUnitPrice } from '../../systems/economy/player-trade-service';
 
 import {
   componentSlots,
@@ -462,7 +462,7 @@ export function createPortViewModel(
     },
     player: {
       credits: player.credits,
-      cargoUsed: Object.values(player.cargo).reduce((sum, lot) => sum + lot.qty, 0),
+      cargoUsed: playerCargoUsed(player),
       cargoCapacity: cargoCapacityTons,
     },
     ship: {
