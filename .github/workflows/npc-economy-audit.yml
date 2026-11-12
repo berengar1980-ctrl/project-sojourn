@@ -19,6 +19,7 @@ jobs:
       - run: npm ci
       - name: Run 365-day economy and live combat diagnostics
         run: |
+          set -o pipefail
           SOJOURN_LONGRUN_DAYS=365 node tests/economy/npc-economy-longrun.test.cjs | tee /tmp/npc-economy-audit.log
       - uses: actions/upload-artifact@v4
         if: always()
