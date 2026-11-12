@@ -1,8 +1,8 @@
-import type { DistressActionResult } from '../core/salvage-types';
+import type { DistressActionResult, SalvageField } from '../core/salvage-types';
 import { HIDDEN_HOLD_INTEL_DAY } from '../systems/economy/smuggling-service';
 import { showUnderworldContactNotice } from '../ui/customs/underworld-contact-notice';
 import type { WorldLocation } from '../core/world-types';
-import { createCrewBoardingEncounter } from '../systems/boarding/crew-boarding-adapter';
+import { createCrewBoardingEncounter, crewBoardingUnits } from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -182,7 +182,7 @@ export function mountControllerBoarding(
     actions.mountStarMap();
     return;
   }
-  if (context.crew.list().length === 0) {
+  if (crewBoardingUnits(context.crew).length === 0) {
     economy.salvageEvents.resolveBoarding(eventId, false);
     context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
     actions.mountStarMap();
@@ -222,6 +222,81 @@ export function mountControllerBoarding(
       context.systemLog.write('BOARDING > ' + (result?.text ?? 'ENTERKAMPF BEENDET').toUpperCase());
       applyDistressOutcome(context, result);
       runSceneZoomTransition(context.root, actions.mountStarMap);
+    },
+  });
+  state.shipSwitcher?.destroy();
+  state.shipSwitcher = null;
+}
+
+export function mountControllerWreckBoarding(
+  context: ControllerRuntimeContext,
+  wreckId: string,
+  returnToSalvage: (field: SalvageField) => void
+): void {
+  const { state } = context;
+  const event = context.economy.salvageEvents.event(
+    context.navigation.getSnapshot().currentLocationId
+  );
+  const field = state.salvageScene?.getField();
+  const wreck = field?.wrecks.find((entry) => entry.id === wreckId);
+  if (
+    event?.type !== 'special-wreck' ||
+    !field ||
+    !wreck ||
+    !wreck.inspected ||
+    wreck.boardingCleared ||
+    wreck.containerVariant ||
+    crewBoardingUnits(context.crew).length === 0
+  ) {
+    context.systemLog.write('BOARDING > WRACK NICHT ENTERBAR ODER KEIN EINSATZFÄHIGER TRUPP');
+    return;
+  }
+
+  destroyScenePanels(state.panels);
+  destroyControllerSalvage(context);
+  destroyControllerCombat(context);
+  destroyControllerBoarding(context);
+  state.localSpace = null;
+  state.localNpcMining = null;
+  state.mode = 'boarding';
+  context.audio.clearPlayerRcs();
+  const seed = event.fieldSeed ^ wreck.id.length ^ 0x574245;
+  const enemyCount = 2 + (Math.abs(seed) % 2);
+  const encounter = createCrewBoardingEncounter({
+    roster: context.crew,
+    seed,
+    enemyUnits: Array.from({ length: enemyCount }, (_, index) => ({
+      id: 'wreck-guard-' + index,
+      name: 'Wrackbesetzer ' + (index + 1),
+      team: 'enemy' as const,
+      hp: 9,
+      maxHp: 9,
+      armor: 1 + (index % 2),
+      rangedSkill: 46 + index * 4,
+      meleeSkill: 45 + index * 4,
+    })),
+  });
+  context.systemLog.write('BOARDING > ENTERTRUPP IM WRACK ' + wreck.name.toUpperCase());
+  state.boardingPanel = createBoardingTacticalPanel({
+    root: context.root,
+    encounter,
+    onFinish: (snapshot) => {
+      if (snapshot.outcome === 'player_win') {
+        wreck.boardingCleared = true;
+        context.systemLog.write('BOARDING > DECKS GESICHERT · BERGUNG FREIGEGEBEN');
+      } else {
+        context.systemLog.write('BOARDING > WRACKEINSATZ ' + snapshot.outcome.toUpperCase());
+      }
+      context.campaignEvents.emit({
+        type: 'boarding.ended',
+        outcome:
+          snapshot.outcome === 'player_win'
+            ? 'player_win'
+            : snapshot.outcome === 'enemy_win'
+              ? 'enemy_win'
+              : 'draw',
+      });
+      runSceneZoomTransition(context.root, () => returnToSalvage(field));
     },
   });
   state.shipSwitcher?.destroy();

@@ -78,6 +78,8 @@ export interface SalvageWreck {
   readonly component: SalvageComponentCandidate | null;
   componentStatus: 'none' | 'available' | 'recovered' | 'destroyed';
   inspected: boolean;
+  /** Cleared only after a victorious tactical wreck boarding. */
+  boardingCleared?: boolean;
   /** Shared scan states: surveyed = '?' only, analyzed = identified contents. */
   scanLevel?: AsteroidScanLevel;
 }

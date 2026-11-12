@@ -3203,6 +3203,21 @@ body {
   min-height: 32px;
 }
 
+.salvage-board-button {
+  padding: 9px 12px;
+  margin-top: 8px;
+  border: 1px solid rgba(204, 146, 93, 0.55);
+  background: rgba(70, 40, 22, 0.8);
+  color: #eed0a9;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.salvage-board-button:hover {
+  background: rgba(111, 62, 27, 0.88);
+}
+
 .boarding-shell {
   position: relative;
   display: grid;

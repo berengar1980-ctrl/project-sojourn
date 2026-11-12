@@ -36,6 +36,7 @@ import {
   controllerSalvageEventCallbacks,
   controllerSalvageExitAction,
   destroyControllerBoarding,
+  mountControllerWreckBoarding,
   destroyControllerCombat,
   destroyGameController,
   destroyControllerSalvage,
@@ -261,7 +262,7 @@ function mountControllerSalvage(
     seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
     location,
     ...(preservedField
-      ? { field: preservedField }
+      ? { field: preservedField, ...(sectorEvent ? { sectorEvent } : {}) }
       : sectorEvent
         ? {
             field:
@@ -305,6 +306,10 @@ function mountControllerSalvage(
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
     }),
+    onBoardWreck: (wreckId) =>
+      mountControllerWreckBoarding(context, wreckId, (field) =>
+        mountControllerSalvage(context, true, field)
+      ),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);

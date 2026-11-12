@@ -169,6 +169,12 @@ function showSalvageWreck(
     showUninspectedWreck(model, ui, wreck);
     return;
   }
+  ui.boardButton.hidden =
+    !model.sectorEvent ||
+    model.sectorEvent.type !== 'special-wreck' ||
+    wreck.boardingCleared ||
+    !!wreck.containerVariant ||
+    !model.salvageAvailable;
   ui.meta.textContent =
     wreck.kindLabel +
     ' · QUALITÄT ' +
@@ -176,7 +182,8 @@ function showSalvageWreck(
     ' · INTEGRITÄT ' +
     wreck.integrity +
     '%' +
-    (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '');
+    (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '') +
+    (wreck.boardingCleared ? ' · DECKS GESICHERT' : '');
 }
 
 function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {
@@ -185,6 +192,7 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   ui.card.hidden = false;
   ui.attackButton.hidden = true;
   ui.inspectButton.hidden = true;
+  ui.boardButton.hidden = true;
   if (npc) {
     showSalvageNpc(model, ui, npc);
   } else if (wreck) {
@@ -295,6 +303,17 @@ function bindSalvagePanelActions(
   ui.inspectButton.addEventListener('click', () => {
     const wreck = getModel().selectedWreck;
     if (wreck) options.onInspect(wreck.id);
+  });
+  ui.boardButton.addEventListener('click', () => {
+    const model = getModel();
+    const wreck = model.selectedWreck;
+    if (
+      wreck?.inspected &&
+      !wreck.boardingCleared &&
+      model.sectorEvent?.type === 'special-wreck' &&
+      !wreck.containerVariant &&
+      model.salvageAvailable
+    ) options.onBoardWreck?.(wreck.id);
   });
   ui.attackButton.addEventListener('click', () => {
     const selected = getModel().npcShips.find((entry) => entry.isSelected);
