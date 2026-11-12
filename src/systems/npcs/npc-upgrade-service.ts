@@ -12,6 +12,7 @@ import {
   fitsWeaponHardpoint,
   resolveShipGameplayStats,
   isShipCombatWeaponSlotActive,
+  shipPurchasePrice,
 } from '../ships';
 
 const UPGRADE_TYPES: readonly ShipComponentType[] = [
@@ -205,5 +206,49 @@ export function tryNpcComponentUpgrade(
   npc.lastComponentUpgradeRun = npc.successfulRuns;
   npc.activityId = 'shipyard-upgrade';
   npc.activity = `Werftumbau · ${getShipComponent(selected.type, selected.nextId)?.name ?? selected.nextId}`;
+  return true;
+}
+
+/**
+ * Hull progression is an actual purchase at a shipyard, not a free stat multiplier.
+ * Keep identity, cargo and location; re-equip the new hull's compatible factory loadout.
+ */
+export function tryNpcHullUpgrade(npc: SectorNpcState): boolean {
+  if (npc.pirate || npc.job === 'patrol' || npc.retiredUntilDay !== undefined) return false;
+  if (npc.hullUpgradeCount || npc.successfulRuns < 12) return false;
+  const targetId =
+    npc.job === 'freighter'
+      ? 'freighter-120m-mk4'
+      : npc.job === 'miner'
+        ? 'miner-80m-mk4'
+        : 'salvage-100m-mk4';
+  const ship = getShipDefinition(targetId);
+  if (!ship || npc.shipId === ship.id) return false;
+  const price = shipPurchasePrice(ship);
+  const reserve = 350000 + repairCost(npc.hullMaxHp - npc.hullHp, true);
+  const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
+  if (price <= 0 || npc.credits < price + reserve + fuelReserve) return false;
+  const capacityUsed = Object.values(npc.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
+  if (capacityUsed > ship.cargoCapacityTons) return false;
+  const stats = resolveShipGameplayStats(ship);
+  const priorHull = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 1;
+  const priorFuel = npc.fuelCapacity > 0 ? npc.fuel / npc.fuelCapacity : 1;
+  npc.credits -= price;
+  npc.shipId = ship.id;
+  npc.cargoCapacity = ship.cargoCapacityTons;
+  npc.normalCargoCapacity =
+    npc.job === 'miner' || npc.job === 'salvager'
+      ? Math.max(20, Math.round(ship.cargoCapacityTons * 0.35))
+      : ship.cargoCapacityTons;
+  npc.hullMaxHp = stats.hullPoints;
+  npc.hullHp = Math.max(1, Math.round(stats.hullPoints * priorHull));
+  npc.fuelCapacity = stats.fuelCapacity;
+  npc.fuel = Math.max(0, stats.fuelCapacity * priorFuel);
+  npc.fuelUse = stats.fuelUse;
+  npc.installedComponents = mutableInstalled(defaultInstalledShipComponents(ship));
+  npc.hullUpgradeCount = (npc.hullUpgradeCount ?? 0) + 1;
+  npc.lastHullUpgradeRun = npc.successfulRuns;
+  npc.activityId = 'shipyard-upgrade';
+  npc.activity = 'Neue Rumpfklasse · ' + ship.name;
   return true;
 }
