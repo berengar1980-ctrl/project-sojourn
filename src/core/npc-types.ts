@@ -89,6 +89,12 @@ export interface SectorNpcState extends NpcEconomyState {
   salvageComponents?: { type: ShipComponentType; componentId: string }[];
   salvageEventId?: string;
   componentUpgradeCount?: number;
+  hullUpgradeCount?: number;
+  lastHullUpgradeRun?: number;
+  retiredUntilDay?: number;
+  replacementGeneration?: number;
+  replacementCapitalSpent?: number;
+  tradeCharter?: 'independent' | 'veylan' | 'mercator';
   lastComponentUpgradeRun?: number;
   travel?: NpcTravelState;
   orbit?: NpcOrbitState;
