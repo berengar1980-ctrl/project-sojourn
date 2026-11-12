@@ -92,7 +92,7 @@ export function createControllerEconomy(navigation: NavigationService): Controll
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
   });
-  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, markets);
+  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs);
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
