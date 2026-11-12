@@ -1,0 +1,30 @@
+name: One-time test formatting
+on:
+  push:
+    branches:
+      - feature/voidbound-npc-smuggling-notices
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/voidbound-npc-smuggling-notices
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Format startup regression test
+        run: |
+          npx prettier --write tests/npcs/npc-startup-activity.test.cjs
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add tests/npcs/npc-startup-activity.test.cjs
+            git commit -m "style(tests): format smuggler startup regression"
+            git push origin HEAD:feature/voidbound-npc-smuggling-notices
+          fi
