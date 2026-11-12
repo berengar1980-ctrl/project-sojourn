@@ -36,7 +36,6 @@ import {
   controllerSalvageEventCallbacks,
   controllerSalvageExitAction,
   destroyControllerBoarding,
-  mountControllerWreckBoarding,
   destroyControllerCombat,
   destroyGameController,
   destroyControllerSalvage,
@@ -76,7 +75,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   });
 }
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
-  const { state } = context;
+  const { root, state } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
@@ -97,10 +96,8 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
     returnFromCampaignSystem: () => context.world.returnFromSystem(),
     log: context.systemLog,
     getModel: () => controllerStarModel(context),
-    onEnterLocalSpace: () =>
-      runSceneZoomTransition(context.root, () => mountControllerMining(context)),
-    onEnterSalvageSpace: () =>
-      runSceneZoomTransition(context.root, () => mountControllerSalvage(context)),
+    onEnterLocalSpace: () => runSceneZoomTransition(root, () => mountControllerMining(context)),
+    onEnterSalvageSpace: () => runSceneZoomTransition(root, () => mountControllerSalvage(context)),
     onSelectNpc: (id) => {
       state.selectedNpcId = id || null;
       if (id) context.navigation.selectDestination(null);
@@ -305,11 +302,8 @@ function mountControllerSalvage(
     },
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
+      mountSalvage: (field) => mountControllerSalvage(context, true, field),
     }),
-    onBoardWreck: (wreckId) =>
-      mountControllerWreckBoarding(context, wreckId, (field) =>
-        mountControllerSalvage(context, true, field)
-      ),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);

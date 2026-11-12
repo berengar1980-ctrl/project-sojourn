@@ -13,6 +13,7 @@ import type { ControllerPanels, ControllerRuntimeContext } from './game-controll
 
 export interface ControllerEventActions {
   readonly mountStarMap: () => void;
+  readonly mountSalvage?: (field: SalvageField) => void;
 }
 
 function showDistressReward(context: ControllerRuntimeContext, result: DistressActionResult): void {
@@ -329,6 +330,11 @@ export function controllerSalvageEventCallbacks(
 ) {
   const { state, economy } = context;
   return {
+    onBoardWreck: (wreckId: string) => {
+      if (actions.mountSalvage) {
+        mountControllerWreckBoarding(context, wreckId, actions.mountSalvage);
+      }
+    },
     onDiagnoseDistress: (eventId: string) => {
       const runtime = resolveShipRuntimeSetup(state.activeShip, {
         ...context.crew.runtimeOptions(state.activeShip),
