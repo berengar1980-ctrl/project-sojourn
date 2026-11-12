@@ -1,4 +1,4 @@
-import type { PlayerEconomyState, EconomyResourceId } from '../../core/economy-types';
+import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import { isIllegalResource } from '../../data/economy/economy-resources';
 import { createSmugglingCargoService } from './smuggling-cargo-service';
