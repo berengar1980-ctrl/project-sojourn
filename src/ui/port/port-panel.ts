@@ -6,35 +6,14 @@ import './port-shipyard.css';
 import { bindShipyardBrowser } from './port-shipyard-browser';
 import { crewPane, equipmentPane, shipPane, shipyardPane } from './port-secondary-panes';
 import { smugglingPane } from './port-smuggling-pane';
+import type { SmugglingPortView } from './port-smuggling-types';
+export type { SmugglingPortView } from './port-smuggling-types';
 import { bindSmugglingPortActions } from './port-smuggling-events';
 import { bindPortTradeActions } from './port-trade-events';
 
 export interface PortPanel {
   destroy(): void;
 }
-export interface SmugglingPortView {
-  readonly day: number;
-  readonly known: boolean;
-  readonly installed: boolean;
-  readonly hiddenCapacity: number;
-  readonly hiddenUsed: number;
-  readonly normalPenalty: number;
-  readonly concealment: number;
-  readonly price: number;
-  readonly intelPrice: number;
-  readonly intelDay: number;
-  readonly suspicion: number;
-  readonly protectionFaction: 'pirates' | 'pirates2' | undefined;
-  readonly atPirateBase: boolean;
-  readonly pirateFaction: 'pirates' | 'pirates2' | null;
-  readonly hiddenRows: readonly {
-    readonly id: string;
-    readonly name: string;
-    readonly visible: number;
-    readonly hidden: number;
-  }[];
-}
-
 let lastPortTab: PortTab = 'trade';
 
 interface PortPanelOptions {
