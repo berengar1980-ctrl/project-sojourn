@@ -205,15 +205,17 @@ export function createCrewBoardingEncounter(options: {
   readonly seed: number;
   readonly mapId?: string;
   readonly enemyUnits: readonly BoardingUnitTemplate[];
+  readonly allowRetreat?: boolean;
+  readonly restoreSnapshot?: BoardingEncounterSnapshot;
 }): CrewBoardingEncounter {
-  const rangedRounds = new Map<string, number>();
-  const meleeRounds = new Map<string, number>();
   let settled = false;
   const base = createBoardingTacticalService({
     seed: options.seed,
     ...(options.mapId ? { mapId: options.mapId } : {}),
     playerUnits: crewBoardingUnits(options.roster),
     enemyUnits: options.enemyUnits,
+    ...(options.allowRetreat === undefined ? {} : { allowRetreat: options.allowRetreat }),
+    ...(options.restoreSnapshot ? { restore: options.restoreSnapshot } : {}),
   });
 
   const tactical: BoardingTacticalService = {
@@ -222,27 +224,12 @@ export function createCrewBoardingEncounter(options: {
     reachable: (unitId, maximumAp) => base.reachable(unitId, maximumAp),
     move: (unitId, target) => base.move(unitId, target),
     openDoor: (unitId, doorId) => base.openDoor(unitId, doorId),
-    shoot: (attackerId, targetId) => {
-      const result = base.shoot(attackerId, targetId);
-      if (result && options.roster.member(attackerId)) {
-        rangedRounds.set(attackerId, (rangedRounds.get(attackerId) ?? 0) + 1);
-      }
-      return result;
-    },
-    melee: (attackerId, targetId) => {
-      const result = base.melee(attackerId, targetId);
-      if (result && options.roster.member(attackerId)) {
-        meleeRounds.set(attackerId, (meleeRounds.get(attackerId) ?? 0) + 1);
-      }
-      return result;
-    },
-    suppress: (attackerId, targetId) => {
-      const result = base.suppress(attackerId, targetId);
-      if (result && options.roster.member(attackerId)) {
-        rangedRounds.set(attackerId, (rangedRounds.get(attackerId) ?? 0) + 1);
-      }
-      return result;
-    },
+    shoot: (attackerId, targetId) => base.shoot(attackerId, targetId),
+    melee: (attackerId, targetId) => base.melee(attackerId, targetId),
+    suppress: (attackerId, targetId) => base.suppress(attackerId, targetId),
+    suppressArea: (unitId, center) => base.suppressArea(unitId, center),
+    overwatch: (unitId, target) => base.overwatch(unitId, target),
+    holdCover: (unitId) => base.holdCover(unitId),
     endTurn: () => base.endTurn(),
     retreat: () => base.retreat(),
   };
@@ -256,8 +243,8 @@ export function createCrewBoardingEncounter(options: {
       for (const unit of snapshot.units.filter((entry) => entry.team === 'player')) {
         if (!options.roster.member(unit.id)) continue;
         options.roster.setInjuryState(unit.id, injuryFromBoarding(unit.hp, unit.maxHp));
-        options.roster.accrueCombatTraining(unit.id, 'ranged', rangedRounds.get(unit.id) ?? 0);
-        options.roster.accrueCombatTraining(unit.id, 'melee', meleeRounds.get(unit.id) ?? 0);
+        options.roster.accrueCombatTraining(unit.id, 'ranged', unit.rangedActions);
+        options.roster.accrueCombatTraining(unit.id, 'melee', unit.meleeActions);
       }
       return snapshot;
     },

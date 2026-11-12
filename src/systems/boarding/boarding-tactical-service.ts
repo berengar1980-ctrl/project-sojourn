@@ -7,6 +7,7 @@ import type {
   BoardingTeam,
   BoardingUnit,
   BoardingUnitTemplate,
+  BoardingSuppressionZone,
 } from '../../core/boarding-types';
 import { boardingMapById, boardingMaps } from '../../data/boarding/boarding-maps';
 import { boardingMeleeWeapons, boardingRangedWeapons } from '../../data/boarding/boarding-weapons';
@@ -33,6 +34,9 @@ export interface BoardingTacticalService {
   shoot(attackerId: string, targetId: string): BoardingAttackResult | null;
   melee(attackerId: string, targetId: string): BoardingAttackResult | null;
   suppress(attackerId: string, targetId: string): BoardingAttackResult | null;
+  suppressArea(unitId: string, center: BoardingHex): boolean;
+  overwatch(unitId: string, target: BoardingHex): boolean;
+  holdCover(unitId: string): boolean;
   endTurn(): BoardingEncounterSnapshot;
   retreat(): BoardingEncounterSnapshot;
 }
@@ -42,6 +46,8 @@ interface CreateBoardingEncounterOptions {
   readonly mapId?: string;
   readonly playerUnits: readonly BoardingUnitTemplate[];
   readonly enemyUnits: readonly BoardingUnitTemplate[];
+  readonly allowRetreat?: boolean;
+  readonly restore?: BoardingEncounterSnapshot;
 }
 
 function createRandom(seed: number): () => number {
@@ -83,6 +89,11 @@ function createUnit(template: BoardingUnitTemplate): BoardingUnit {
     combatUsed: false,
     suppressed: false,
     overwatch: false,
+    overwatchTarget: null,
+    holdingCover: false,
+    reactionUsed: false,
+    rangedActions: 0,
+    meleeActions: 0,
   };
 }
 
@@ -147,7 +158,9 @@ function attackChance(
   target: BoardingUnit
 ): number {
   const range = boardingHexDistance(attacker, target);
-  const coverPenalty = boardingTargetHasCover(map, attacker, target) ? COVER_PENALTY : 0;
+  const coverPenalty =
+    (boardingTargetHasCover(map, attacker, target) ? COVER_PENALTY : 0) +
+    (target.holdingCover ? 15 : 0);
   const suppressionPenalty = attacker.suppressed ? SUPPRESSION_PENALTY : 0;
   return clamp(
     45 +
@@ -181,6 +194,8 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   private readonly map: BoardingMapDefinition;
   private readonly units: BoardingUnit[];
   private readonly doorStates: Record<string, boolean>;
+  private suppressionZones: BoardingSuppressionZone[] = [];
+  private randomCalls = 0;
   private round = 1;
   private activeTeam: BoardingTeam = 'player';
   private selectedUnitId: string | null = null;
@@ -189,16 +204,37 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
 
   constructor(private readonly options: CreateBoardingEncounterOptions) {
     this.random = createRandom(options.seed);
-    this.map = options.mapId
+    this.map = options.restore?.map ?? (options.mapId
       ? (boardingMapById(options.mapId) ?? defaultMap(options.seed))
-      : defaultMap(options.seed);
-    this.units = [...options.playerUnits, ...options.enemyUnits].map(createUnit);
-    this.doorStates = Object.fromEntries(this.map.doors.map((door) => [door.id, false]));
-    placeTeam(this.map, this.doorStates, this.units, 'player');
-    placeTeam(this.map, this.doorStates, this.units, 'enemy');
-    this.selectedUnitId = this.aliveUnits('player')[0]?.id ?? null;
-    this.writeLog('Entertrupps haben Position bezogen.');
-    this.updateOutcome();
+      : defaultMap(options.seed));
+    this.units = options.restore
+      ? options.restore.units.map((unit) => ({
+          ...unit,
+          overwatchTarget: unit.overwatchTarget ? { ...unit.overwatchTarget } : null,
+        }))
+      : [...options.playerUnits, ...options.enemyUnits].map(createUnit);
+    this.doorStates = options.restore
+      ? { ...options.restore.doorStates }
+      : Object.fromEntries(this.map.doors.map((door) => [door.id, false]));
+    if (options.restore) {
+      this.round = options.restore.round;
+      this.activeTeam = options.restore.activeTeam;
+      this.selectedUnitId = options.restore.selectedUnitId;
+      this.outcome = options.restore.outcome;
+      this.log = [...options.restore.log];
+      this.suppressionZones = options.restore.suppressionZones.map((zone) => ({
+        ...zone,
+        center: { ...zone.center },
+      }));
+      this.randomCalls = options.restore.randomCalls;
+      for (let index = 0; index < this.randomCalls; index += 1) this.random();
+    } else {
+      placeTeam(this.map, this.doorStates, this.units, 'player');
+      placeTeam(this.map, this.doorStates, this.units, 'enemy');
+      this.selectedUnitId = this.aliveUnits('player')[0]?.id ?? null;
+      this.writeLog('Entertrupps haben Position bezogen.');
+      this.updateOutcome();
+    }
   }
 
   getSnapshot(): BoardingEncounterSnapshot {
@@ -209,15 +245,24 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
       activeTeam: this.activeTeam,
       selectedUnitId: this.selectedUnitId,
       outcome: this.outcome,
-      units: this.units.map((unit) => ({ ...unit })),
+      units: this.units.map((unit) => ({
+        ...unit,
+        overwatchTarget: unit.overwatchTarget ? { ...unit.overwatchTarget } : null,
+      })),
       doorStates: { ...this.doorStates },
       log: [...this.log],
+      suppressionZones: this.suppressionZones.map((zone) => ({
+        ...zone,
+        center: { ...zone.center },
+      })),
+      allowRetreat: this.options.allowRetreat !== false,
+      randomCalls: this.randomCalls,
     };
   }
 
   selectUnit(unitId: string | null): BoardingEncounterSnapshot {
     if (unitId === null) this.selectedUnitId = null;
-    else if (this.units.some((unit) => unit.id === unitId && unit.hp > 0))
+    else if (this.units.some((unit) => unit.id === unitId && unit.hp > 0 && unit.team === this.activeTeam))
       this.selectedUnitId = unitId;
     return this.getSnapshot();
   }
@@ -240,10 +285,30 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     const costs = this.reachable(unitId);
     const cost = costs[boardingHexKey(target.q, target.r)];
     if (cost === undefined || cost <= 0 || cost > unit.ap) return false;
-    unit.q = target.q;
-    unit.r = target.r;
-    unit.ap -= cost;
-    this.writeLog(unit.name + ' bewegt sich ' + cost + ' Feld(er).');
+    const path: BoardingHex[] = [];
+    let current: BoardingHex = target;
+    for (let currentCost = cost; currentCost > 0; currentCost -= 1) {
+      path.unshift(current);
+      const previous = boardingHexNeighbours(this.map, current).find(
+        (hex) => costs[boardingHexKey(hex.q, hex.r)] === currentCost - 1
+      );
+      if (!previous) return false;
+      current = previous;
+    }
+    unit.holdingCover = false;
+    let travelled = 0;
+    for (const next of path) {
+      const from = { q: unit.q, r: unit.r };
+      this.triggerDisengagement(unit, from, next);
+      if (unit.hp <= 0 || this.outcome !== 'active') break;
+      unit.q = next.q;
+      unit.r = next.r;
+      unit.ap -= 1;
+      travelled += 1;
+      this.triggerReactions(unit);
+      if (unit.hp <= 0 || this.outcome !== 'active') break;
+    }
+    this.writeLog(unit.name + ' bewegt sich ' + travelled + ' Feld(er).');
     return true;
   }
 
@@ -290,6 +355,57 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     return result;
   }
 
+  suppressArea(unitId: string, center: BoardingHex): boolean {
+    const unit = this.unitForAction(unitId);
+    if (!unit || unit.ap < 1 || unit.combatUsed || !unit.weapon.canSuppress) return false;
+    if (boardingHexDistance(unit, center) > unit.weapon.range) return false;
+    if (boardingHexBlocked(this.map, this.doorStates, center.q, center.r)) return false;
+    if (!boardingHasLineOfSight(this.map, this.doorStates, unit, center)) return false;
+    unit.ap -= 1;
+    unit.combatUsed = true;
+    unit.rangedActions += 1;
+    this.suppressionZones.push({
+      ownerId: unit.id,
+      team: unit.team,
+      center: { ...center },
+    });
+    for (const target of this.units) {
+      if (
+        target.team !== unit.team &&
+        target.hp > 0 &&
+        boardingHexDistance(target, center) <= 1
+      ) target.suppressed = true;
+    }
+    this.writeLog(unit.name + ' legt ein Unterdrückungsfeld.');
+    return true;
+  }
+
+  overwatch(unitId: string, target: BoardingHex): boolean {
+    const unit = this.unitForAction(unitId);
+    if (!unit || unit.ap < 2 || unit.combatUsed || unit.weapon.range < 1) return false;
+    if (boardingHexDistance(unit, target) > unit.weapon.range) return false;
+    if (boardingHexBlocked(this.map, this.doorStates, target.q, target.r)) return false;
+    if (!boardingHasLineOfSight(this.map, this.doorStates, unit, target)) return false;
+    unit.ap -= 2;
+    unit.combatUsed = true;
+    unit.overwatch = true;
+    unit.overwatchTarget = { ...target };
+    this.writeLog(unit.name + ' sichert den Korridor.');
+    return true;
+  }
+
+  holdCover(unitId: string): boolean {
+    const unit = this.unitForAction(unitId);
+    if (!unit || unit.ap < 1 || unit.combatUsed || !this.map.cover.some(
+      (cover) => cover.q === unit.q && cover.r === unit.r
+    )) return false;
+    unit.ap -= 1;
+    unit.combatUsed = true;
+    unit.holdingCover = true;
+    this.writeLog(unit.name + ' hält die Deckung.');
+    return true;
+  }
+
   endTurn(): BoardingEncounterSnapshot {
     if (this.outcome !== 'active') return this.getSnapshot();
     this.activeTeam = this.activeTeam === 'player' ? 'enemy' : 'player';
@@ -298,19 +414,129 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
       unit.ap = MAX_AP;
       unit.combatUsed = false;
       unit.overwatch = false;
+      unit.overwatchTarget = null;
       unit.suppressed = false;
+      unit.reactionUsed = false;
     }
+    this.suppressionZones = this.suppressionZones.filter(
+      (zone) => zone.team !== this.activeTeam
+    );
     this.selectedUnitId = this.aliveUnits(this.activeTeam)[0]?.id ?? null;
     this.writeLog((this.activeTeam === 'player' ? 'Eigener' : 'Feindlicher') + ' Zug beginnt.');
     return this.getSnapshot();
   }
 
   retreat(): BoardingEncounterSnapshot {
-    if (this.outcome === 'active' && this.activeTeam === 'player') {
+    if (this.outcome === 'active' && this.activeTeam === 'player' && this.options.allowRetreat !== false) {
       this.outcome = 'retreat';
       this.writeLog('Entertrupp zieht sich zurück.');
     }
     return this.getSnapshot();
+  }
+
+  private roll(): number {
+    this.randomCalls += 1;
+    return this.random();
+  }
+
+  private attackDamage(attacker: BoardingUnit, target: BoardingUnit, melee: boolean): number {
+    const profile = melee ? attacker.meleeWeapon : attacker.weapon;
+    const piercing = !melee && attacker.weapon.piercing &&
+      target.armor <= attacker.weapon.piercing.maxArmor
+      ? attacker.weapon.piercing.bonusDamage
+      : 0;
+    return damageAfterArmor(profile.damage, profile.armorPenetration, target.armor) + piercing;
+  }
+
+  private reactiveAttack(
+    attacker: BoardingUnit,
+    target: BoardingUnit,
+    chance: number,
+    melee: boolean
+  ): void {
+    const hit = this.roll() * 100 < chance;
+    const damage = hit ? this.attackDamage(attacker, target, melee) : 0;
+    target.hp = Math.max(0, target.hp - damage);
+    if (melee) attacker.meleeActions += 1;
+    else attacker.rangedActions += 1;
+    this.writeLog(
+      attacker.name + ' reagiert auf ' + target.name + ': ' +
+      (hit ? damage + ' Schaden.' : 'verfehlt.')
+    );
+    this.updateOutcome();
+  }
+
+  private triggerDisengagement(
+    mover: BoardingUnit,
+    previous: BoardingHex,
+    next: BoardingHex
+  ): void {
+    for (const enemy of this.units) {
+      if (
+        enemy.team === mover.team ||
+        enemy.hp <= 0 ||
+        enemy.reactionUsed ||
+        boardingHexDistance(enemy, previous) !== 1 ||
+        boardingHexDistance(enemy, next) <= 1
+      ) continue;
+      enemy.reactionUsed = true;
+      this.reactiveAttack(enemy, mover, Math.max(5, meleeChance(enemy) - 20), true);
+      if (mover.hp <= 0 || this.outcome !== 'active') break;
+    }
+  }
+
+  private inOverwatchArc(shooter: BoardingUnit, target: BoardingHex): boolean {
+    const aimed = shooter.overwatchTarget;
+    if (!aimed) return false;
+    const axial = (hex: BoardingHex) => ({
+      x: hex.q + hex.r * 0.5,
+      y: hex.r * 0.8660254,
+    });
+    const origin = axial(shooter);
+    const direction = axial(aimed);
+    const destination = axial(target);
+    const ax = direction.x - origin.x;
+    const ay = direction.y - origin.y;
+    const bx = destination.x - origin.x;
+    const by = destination.y - origin.y;
+    const product = Math.hypot(ax, ay) * Math.hypot(bx, by);
+    return product > 0 && (ax * bx + ay * by) / product >= 0.5;
+  }
+
+  private triggerReactions(mover: BoardingUnit): void {
+    for (const zone of [...this.suppressionZones]) {
+      if (zone.team === mover.team || boardingHexDistance(zone.center, mover) > 1) continue;
+      const owner = this.units.find((unit) => unit.id === zone.ownerId && unit.hp > 0);
+      if (!owner || !boardingHasLineOfSight(this.map, this.doorStates, owner, mover)) continue;
+      this.suppressionZones = this.suppressionZones.filter((entry) => entry !== zone);
+      mover.suppressed = true;
+      this.reactiveAttack(
+        owner,
+        mover,
+        clamp(attackChance(this.map, this.doorStates, owner, mover) - 10, 5, 90),
+        false
+      );
+      if (mover.hp <= 0 || this.outcome !== 'active') return;
+    }
+    for (const shooter of this.units) {
+      if (
+        shooter.team === mover.team ||
+        shooter.hp <= 0 ||
+        !shooter.overwatch ||
+        !this.inOverwatchArc(shooter, mover) ||
+        boardingHexDistance(shooter, mover) > shooter.weapon.range ||
+        !boardingHasLineOfSight(this.map, this.doorStates, shooter, mover)
+      ) continue;
+      shooter.overwatch = false;
+      shooter.overwatchTarget = null;
+      this.reactiveAttack(
+        shooter,
+        mover,
+        attackChance(this.map, this.doorStates, shooter, mover),
+        false
+      );
+      if (mover.hp <= 0 || this.outcome !== 'active') return;
+    }
   }
 
   private unitForAction(unitId: string): BoardingUnit | null {
@@ -345,11 +571,10 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   ): BoardingAttackResult {
     attacker.ap -= 1;
     attacker.combatUsed = true;
-    const hit = this.random() * 100 < chancePercent;
-    const profile = melee ? attacker.meleeWeapon : attacker.weapon;
-    const damage = hit
-      ? damageAfterArmor(profile.damage, profile.armorPenetration, target.armor)
-      : 0;
+    const hit = this.roll() * 100 < chancePercent;
+    if (melee) attacker.meleeActions += 1;
+    else attacker.rangedActions += 1;
+    const damage = hit ? this.attackDamage(attacker, target, melee) : 0;
     target.hp = Math.max(0, target.hp - damage);
     const action = suppress ? 'unterdrückt' : melee ? 'greift an' : 'schießt auf';
     this.writeLog(
