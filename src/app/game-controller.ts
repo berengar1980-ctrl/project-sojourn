@@ -22,14 +22,13 @@ import {
   inspectDockArrival,
   tickCustoms,
   inspectPatrolTravel,
-  canSwitchSmugglingShip,
 } from './game-controller-customs';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
-import { createControllerShipSwitcher } from './game-controller-ship-switcher';
+import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
 import type {
   ControllerRuntimeContext,
@@ -72,23 +71,12 @@ import {
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
-  const { state } = context;
-  state.shipSwitcher?.destroy();
-  state.shipSwitcher = createControllerShipSwitcher(
-    context.root,
-    state.activeShip,
-    context.navigation,
-    (nextShip) => {
-      if (!canSwitchSmugglingShip(context, nextShip)) return;
-      state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
-      context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
-      context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
-      if (state.mode === 'local-space') mountControllerMining(context, true);
-      else if (state.mode === 'salvage-space') mountControllerSalvage(context, true);
-      else if (state.mode === 'port') mountControllerPort(context);
-      else mountControllerStarMap(context);
-    }
-  );
+  mountControllerShipSwitcher(context, (mode) => {
+    if (mode === 'local-space') mountControllerMining(context, true);
+    else if (mode === 'salvage-space') mountControllerSalvage(context, true);
+    else if (mode === 'port') mountControllerPort(context, false);
+    else mountControllerStarMap(context);
+  });
 }
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
