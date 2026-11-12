@@ -70,6 +70,7 @@ import {
 } from '../systems/economy/smuggling-service';
 
 export interface ControllerEconomy {
+  protectsPirate(factionId?: string): boolean;
   readonly markets: EconomyMarketService;
   readonly situations: MarketSituationService;
   readonly marketIntel: MarketIntelService;
@@ -152,6 +153,12 @@ export function createControllerEconomy(
   });
 
   return {
+    protectsPirate(factionId) {
+      return Boolean(
+        factionId &&
+          (smuggling.state.protectionFaction === factionId || charters.protectsPirate(factionId))
+      );
+    },
     markets,
     situations,
     marketIntel,
