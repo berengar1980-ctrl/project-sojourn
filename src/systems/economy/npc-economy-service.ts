@@ -26,6 +26,7 @@ import {
   sellToMarket,
   chooseTraderAction,
   chooseWorkerAction,
+  npcNetSaleUnitPrice,
 } from './npc-trade-actions';
 
 import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowledge';
@@ -126,7 +127,7 @@ function completeUnloading(
       : Number.POSITIVE_INFINITY;
   const price = markets.getEntry(npc.locationId, resourceId)?.price ?? 0;
   const moved = sellToMarket(npc, markets, npc.locationId, resourceId, day, requested);
-  if (moved > 0) options.onSale?.(npc, resourceId, moved, moved * Math.round(price * 0.94));
+  if (moved > 0) options.onSale?.(npc, resourceId, moved, moved * npcNetSaleUnitPrice(npc, price));
   if (
     npc.sideTradePlan &&
     npc.sideTradePlan.resourceId === resourceId &&
