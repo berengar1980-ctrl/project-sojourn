@@ -165,37 +165,37 @@ function activityFor(job: NpcJob): string {
 }
 
 function createPirateNpc(name: (typeof PIRATE_NAMES)[number], index: number): SectorNpcState {
-    const factionId = index < 5 ? 'pirates' : 'pirates2';
-    const ship = patrolVariantShips[index % patrolVariantShips.length]!;
-    const profile = getShipRoleProfile(ship.role);
-    return {
-      id: `pirate-${String(index + 1).padStart(2, '0')}`,
-      name,
-      role: 'patrol',
-      job: 'pirate',
-      shipId: ship.id,
-      locationId: PIRATE_HOMES[factionId],
-      credits: 700000 + (index % 4) * 450000,
-      cargoCapacity: ship.cargoCapacityTons,
-      normalCargoCapacity: ship.cargoCapacityTons,
-      cargo: {},
-      marketIntel: {},
-      workResourceIds: [],
-      fuel: profile.fuelCapacity,
-      fuelCapacity: profile.fuelCapacity,
-      fuelUse: profile.fuelUse,
-      hullHp: profile.hullPoints,
-      hullMaxHp: profile.hullPoints,
-      aggression: 75 + ((index * 11 + 7) % 25),
-      factionId,
-      pirate: true,
-      pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
-      pirateHuntCycles: 2 + (index % 5),
-      workRiskPreference: 'risky',
-      activityId: 'raiding',
-      activity: 'Auf Beutezug',
-      successfulRuns: 0,
-    };
+  const factionId = index < 5 ? 'pirates' : 'pirates2';
+  const ship = patrolVariantShips[index % patrolVariantShips.length]!;
+  const profile = getShipRoleProfile(ship.role);
+  return {
+    id: `pirate-${String(index + 1).padStart(2, '0')}`,
+    name,
+    role: 'patrol',
+    job: 'pirate',
+    shipId: ship.id,
+    locationId: PIRATE_HOMES[factionId],
+    credits: 700000 + (index % 4) * 450000,
+    cargoCapacity: ship.cargoCapacityTons,
+    normalCargoCapacity: ship.cargoCapacityTons,
+    cargo: {},
+    marketIntel: {},
+    workResourceIds: [],
+    fuel: profile.fuelCapacity,
+    fuelCapacity: profile.fuelCapacity,
+    fuelUse: profile.fuelUse,
+    hullHp: profile.hullPoints,
+    hullMaxHp: profile.hullPoints,
+    aggression: 75 + ((index * 11 + 7) % 25),
+    factionId,
+    pirate: true,
+    pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
+    pirateHuntCycles: 2 + (index % 5),
+    workRiskPreference: 'risky',
+    activityId: 'raiding',
+    activity: 'Auf Beutezug',
+    successfulRuns: 0,
+  };
 }
 
 export function createSectorNpcEconomyStates(): SectorNpcState[] {

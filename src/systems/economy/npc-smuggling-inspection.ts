@@ -129,7 +129,11 @@ export function resolveNpcSmugglingInspection(
   }
   const value = contrabandValue(detected);
   const response = inspectionResponse(target, patrol, value, random);
-  if (patrol && (response.flee || response.resist) && escapeInspection(target, patrol, response.resist, random)) {
+  if (
+    patrol &&
+    (response.flee || response.resist) &&
+    escapeInspection(target, patrol, response.resist, random)
+  ) {
     return response.resist ? 'resisted' : 'escaped';
   }
   return settleConfiscation(target, detected, value, response);

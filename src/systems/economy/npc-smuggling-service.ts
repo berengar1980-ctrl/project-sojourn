@@ -6,7 +6,11 @@ import {
   smugglingInspectorStrength,
 } from './npc-smuggling-inspection';
 
-export { npcSmugglingScan, resolveNpcSmugglingInspection, smugglingInspectorStrength } from './npc-smuggling-inspection';
+export {
+  npcSmugglingScan,
+  resolveNpcSmugglingInspection,
+  smugglingInspectorStrength,
+} from './npc-smuggling-inspection';
 
 export interface NpcSmugglingStats {
   inspections: number;
@@ -99,7 +103,12 @@ function nearestPatrol(
   );
 }
 
-function checkPatrol(ctx: Runtime, target: SectorNpcState, patrols: readonly SectorNpcState[], dt: number): void {
+function checkPatrol(
+  ctx: Runtime,
+  target: SectorNpcState,
+  patrols: readonly SectorNpcState[],
+  dt: number
+): void {
   if (!target.travel || target.combatMovement) return;
   const elapsed = (ctx.elapsed.get(target.id) ?? 0) + dt;
   if (elapsed < 4) {
@@ -134,7 +143,9 @@ function settleProtectionFee(ctx: Runtime, npc: SectorNpcState, gross: number): 
   npc.credits = Math.max(0, npc.credits - fee);
   npc.smugglingProtectionFees = (npc.smugglingProtectionFees ?? 0) + fee;
   ctx.stats.protectionFees += fee;
-  const fleet = ctx.npcs.filter((pirate) => pirate.pirate && pirate.factionId === npc.smugglingProtectionFaction);
+  const fleet = ctx.npcs.filter(
+    (pirate) => pirate.pirate && pirate.factionId === npc.smugglingProtectionFaction
+  );
   if (fleet.length === 0) return;
   const distributed = Math.round(fee * 0.65);
   fleet.forEach((pirate, index) => {
