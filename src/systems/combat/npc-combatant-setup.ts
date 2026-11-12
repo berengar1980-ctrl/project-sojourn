@@ -126,3 +126,21 @@ export function transferPirateLoot(pirate: SectorNpcState, victim: SectorNpcStat
   }
   return stolen;
 }
+
+/** Settle cargo after a completed NPC battle; victims may already be disabled and engaged. */
+export function settleNpcCombatPirateLoot(
+  attacker: SectorNpcState,
+  defender: SectorNpcState,
+  winner: 'attacker' | 'defender'
+): number {
+  const victor = winner === 'attacker' ? attacker : defender;
+  const victim = winner === 'attacker' ? defender : attacker;
+  if (
+    !victor.pirate ||
+    victim.pirate ||
+    (victim.job !== 'freighter' && victim.job !== 'miner' && victim.job !== 'salvager')
+  ) {
+    return 0;
+  }
+  return transferPirateLoot(victor, victim);
+}
