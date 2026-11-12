@@ -1,6 +1,9 @@
-import type { createPortPanel } from './port-panel';
-
-type Options = Parameters<typeof createPortPanel>[0];
+interface Options {
+  readonly onBuy: (resourceId: string) => void;
+  readonly onSell: (resourceId: string) => void;
+  readonly onSellAll: (resourceId: string) => void;
+  readonly onMarketRoute: (locationId: string) => void;
+}
 
 export function bindPortTradeActions(shell: HTMLElement, options: Options): void {
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-id]')) {
