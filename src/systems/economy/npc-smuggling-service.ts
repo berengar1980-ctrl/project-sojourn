@@ -118,11 +118,14 @@ export function createNpcSmugglingService(
   };
   const elapsed = new Map<string, number>();
   const lastArrival = new Map<string, string>();
+  const inspectionCooldown = new Map<string, number>();
+  let simulationSeconds = 0;
   let day = 0;
   const inspect = (target: SectorNpcState, patrol: SectorNpcState | null, strength: number) => {
     const beforeSeized = target.smugglingConfiscated ?? 0;
     const beforeFines = target.smugglingFinesPaid ?? 0;
     const result = resolveNpcSmugglingInspection(target, patrol, strength, random);
+    inspectionCooldown.set(target.id, simulationSeconds + (result === 'clear' ? 12 : 24));
     stats.inspections++;
     stats.confiscatedUnits += (target.smugglingConfiscated ?? 0) - beforeSeized;
     stats.finesPaid += (target.smugglingFinesPaid ?? 0) - beforeFines;
@@ -158,9 +161,11 @@ export function createNpcSmugglingService(
     },
     tick(dt) {
       if (!Number.isFinite(dt) || dt <= 0) return;
-      const patrols = npcs.filter(x => x.job === 'patrol' && !x.travel && !x.combatMovement && x.hullHp > 0);
+      simulationSeconds += dt;
+      const patrols = npcs.filter(x => x.job === 'patrol' && !x.combatMovement && x.hullHp > 0);
       for (const target of npcs) {
         if (!target.smuggler || target.pirate || target.hullHp <= 0) continue;
+        if ((inspectionCooldown.get(target.id) ?? 0) > simulationSeconds) continue;
         // Station customs: inspect a real arrival, not each simulated frame.
         const at = target.travel || target.combatMovement ? '' : target.locationId;
         const prior = lastArrival.get(target.id);
