@@ -52,6 +52,8 @@ import {
 } from '../systems/npcs/npc-salvage-event-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
+import { createNpcPopulationService, type NpcPopulationService } from '../systems/npcs/npc-population-service';
+import { createTradeCharterService, type TradeCharterService } from '../systems/economy/trade-charter-service';
 import {
   createNpcSmugglingService,
   type NpcSmugglingService,
@@ -67,6 +69,8 @@ export interface ControllerEconomy {
   readonly marketIntel: MarketIntelService;
   readonly trade: PlayerTradeService;
   readonly smuggling: SmugglingService;
+  readonly charters: TradeCharterService;
+  readonly population: NpcPopulationService;
   readonly npcSmuggling: NpcSmugglingService;
   readonly simulation: EconomySimulationService;
   readonly mining: MiningEconomyService;
@@ -89,16 +93,12 @@ export function createControllerEconomy(
   });
   situations.advanceDay(0);
   const trade = createPlayerTradeService(markets);
+  const charters = createTradeCharterService(trade.player);
   const marketIntel = createMarketIntelService(markets);
   marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
   const smuggling = createSmugglingService(trade.player, npcStates);
   const shipyardResearch = createShipyardResearchService();
-  const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
-    getPlayerPosition: () => navigation.getSnapshot().currentPosition,
-    markets,
-  });
-  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
@@ -106,10 +106,22 @@ export function createControllerEconomy(
     41,
     npcStates
   );
+  const population = createNpcPopulationService(npcStates, markets, (id, quantity) => {
+    const pool = simulation.pools[id];
+    if (pool) pool.recordedLosses += quantity;
+  });
+  const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
+    getPlayerPosition: () => navigation.getSnapshot().currentPosition,
+    markets,
+    population,
+  });
+  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
 
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-    onSale: (npc, resourceId, quantity, gross) =>
-      npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross),
+    onSale: (npc, resourceId, quantity, gross) => {
+      npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross);
+      population.collectTradeCommission(Math.round((gross * 0.06) / 0.94));
+    },
     positions: Object.fromEntries(
       narrowsSector.locations.map((location) => [location.id, location.position])
     ),
@@ -139,6 +151,8 @@ export function createControllerEconomy(
     marketIntel,
     trade,
     smuggling,
+    charters,
+    population,
     npcSmuggling,
     simulation,
     mining: createMiningEconomyService(simulation, trade),
