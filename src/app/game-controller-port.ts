@@ -277,6 +277,24 @@ function createTradeCallbacks(
   };
 }
 
+function createCharterCallbacks(
+  context: ActivePortContext
+): Pick<PortPanelOptions, 'onJoinCharter' | 'onLeaveCharter'> {
+  const { charters, log, onRefresh } = context;
+  return {
+    onJoinCharter: (id: TradeCharterId) => {
+      const cost = charters.join(id);
+      if (cost === null) log.write('HANDEL > MANDAT ABGELEHNT: GELD ODER MITGLIEDSCHAFT');
+      else log.write('HANDEL > NEUES MANDAT · -' + cost + ' CR');
+      onRefresh();
+    },
+    onLeaveCharter: () => {
+      if (charters.leave()) log.write('HANDEL > MANDAT GEKÜNDIGT · KEINE ERSTATTUNG');
+      onRefresh();
+    },
+  };
+}
+
 function activateShipAtShipyard(context: ActivePortContext, ship: ShipDefinition): void {
   if (context.ship.id === ship.id) return;
   if (context.smuggling.hiddenUsed() > 0) {
@@ -495,16 +513,7 @@ export function createActivePortPanel(
       onRefresh();
     },
     ...createTradeCallbacks(context),
-    onJoinCharter: (id: TradeCharterId) => {
-      const cost = charters.join(id);
-      if (cost === null) log.write('HANDEL > MANDAT ABGELEHNT: GELD ODER MITGLIEDSCHAFT');
-      else log.write('HANDEL > NEUES MANDAT · -' + cost + ' CR');
-      onRefresh();
-    },
-    onLeaveCharter: () => {
-      if (charters.leave()) log.write('HANDEL > MANDAT GEKÜNDIGT · KEINE ERSTATTUNG');
-      onRefresh();
-    },
+    ...createCharterCallbacks(context),
     ...createShipyardCallbacks(context),
     ...createCrewCallbacks(context),
   });
