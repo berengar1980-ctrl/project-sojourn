@@ -154,7 +154,8 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
       mountControllerPort(context, false);
     },
     context.shipOperations,
-    economy.smuggling
+    economy.smuggling,
+    economy.charters
   );
   if (!state.panels.port) return;
   state.mode = 'port';
@@ -449,7 +450,11 @@ export function createGameController(options: GameControllerOptions): GameContro
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
     playerProtectedFromPirate: (npc) =>
-      Boolean(npc.pirate && economy.smuggling.state.protectionFaction === npc.factionId),
+      Boolean(
+        npc.pirate &&
+          (economy.smuggling.state.protectionFaction === npc.factionId ||
+            economy.charters.protectsPirate(npc.factionId))
+      ),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
