@@ -1,9 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
-import type { EconomyMarketService } from './market-service';
 import { economyResourceById, isIllegalResource } from '../../data/economy/economy-resources';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
-
-const PIRATE_MARKETS = new Set(['blackjaw-outpost', 'gallows-anchor']);
 
 export interface NpcSmugglingStats {
   inspections: number;
@@ -112,7 +109,6 @@ export interface NpcSmugglingService {
 export function createNpcSmugglingService(
   npcs: readonly SectorNpcState[],
   sector: Pick<NpcSectorService, 'livePosition'>,
-  markets: EconomyMarketService,
   log: (message: string) => void = () => {},
   random: () => number = Math.random
 ): NpcSmugglingService {
