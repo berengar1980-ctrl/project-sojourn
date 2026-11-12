@@ -1,0 +1,31 @@
+name: Format smuggling implementation once
+on:
+  push:
+    branches:
+      - feature/voidbound-smuggling-customs
+permissions:
+  contents: write
+jobs:
+  format:
+    if: "!contains(github.event.head_commit.message, 'format(smuggling):')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Run canonical formatter and remove one-time workflow
+        shell: bash
+        run: |
+          npx prettier --write docs/SOJOURN_FEATURE_PARITY.md src/app/game-controller-customs.ts src/app/game-controller-economy.ts src/app/game-controller-port-smuggling.ts src/app/game-controller-port.ts src/app/game-controller-switcher-bridge.ts src/app/game-controller.ts src/core/economy-types.ts src/core/port-types.ts src/systems/combat/star-map-engagement-service.ts src/systems/economy/player-trade-service.ts src/systems/economy/smuggling-service.ts src/ui/customs/customs-inspection-panel.ts src/ui/port/port-panel.ts src/ui/port/port-smuggling-pane.ts tests/economy/smuggling-customs.test.cjs
+          rm .github/workflows/format-smuggling-once.yml
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git add -A
+          git diff --cached --quiet || git commit -m 'format(smuggling): apply canonical Prettier and remove one-time action'
+          git push origin HEAD:feature/voidbound-smuggling-customs
