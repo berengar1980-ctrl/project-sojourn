@@ -412,7 +412,9 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
 export function createGameController(options: GameControllerOptions): GameController {
   const systemLog = createControllerLog();
-  const economy = createControllerEconomy(options.navigation, (message) => systemLog.write(message));
+  const economy = createControllerEconomy(options.navigation, (message) =>
+    systemLog.write(message)
+  );
   economy.smuggling.activateShip(options.ship.id);
   const state: ControllerRuntimeState = {
     activeShip: options.ship,
