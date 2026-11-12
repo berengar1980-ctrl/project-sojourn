@@ -33,7 +33,11 @@ assert.equal(smuggling.learnIntel(20), false, 'informant is unavailable before d
 assert.equal(smuggling.learnIntel(21), true);
 assert.equal(player.credits, 2200000);
 assert.equal(smuggling.install('ship-a', 'ordinary-port', 45), false);
-assert.equal(smuggling.install('ship-a', 'blackjaw-outpost', 35), false, 'cargo must fit after retrofit');
+assert.equal(
+  smuggling.install('ship-a', 'blackjaw-outpost', 35),
+  false,
+  'cargo must fit after retrofit'
+);
 assert.equal(smuggling.install('ship-a', 'blackjaw-outpost', 45), true);
 assert.equal(smuggling.install('ship-a', 'blackjaw-outpost', 45), false, 'one upgrade per ship');
 assert.equal(player.credits, 1450000);
@@ -50,7 +54,11 @@ assert.equal(smuggling.conceal('alien-artifacts', 3, 'ship-a'), 0);
 assert.equal(smuggling.reveal('narcotics', 12, 'ship-a', 45), 12);
 assert.equal(smuggling.hiddenUsed(), 11);
 assert.equal(playerCargoUsed(player), 16);
-assert.equal(smuggling.reveal('alien-artifacts', 5, 'ship-a', 24), 0, 'cannot overflow normal hold');
+assert.equal(
+  smuggling.reveal('alien-artifacts', 5, 'ship-a', 24),
+  0,
+  'cannot overflow normal hold'
+);
 assert.equal(smuggling.conceal('narcotics', 12, 'ship-a'), 12);
 
 const visibleScan = smuggling.scan(0.5, 'ship-a', () => 0.4);
@@ -112,4 +120,6 @@ assert(space.includes("npc.job === 'patrol'"));
 assert(space.includes('context.economy.sectorNpcs.livePosition(npc)'));
 assert(port.includes('createSmugglingPortOptions('));
 assert(ui.includes('customs-mandatory-backdrop'));
-console.log('PASS Voidbound-style concealed hold, physical customs, confiscation, protection and wiring');
+console.log(
+  'PASS Voidbound-style concealed hold, physical customs, confiscation, protection and wiring'
+);

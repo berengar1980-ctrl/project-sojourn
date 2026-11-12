@@ -25,7 +25,10 @@ export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_
 }
 
 export function playerCargoUsed(player: PlayerEconomyState): number {
-  const cargo = Object.values(player.cargo).reduce((sum, lot) => sum + Math.max(0, finiteInteger(lot.qty) - finiteInteger(lot.hiddenQty ?? 0)), 0);
+  const cargo = Object.values(player.cargo).reduce(
+    (sum, lot) => sum + Math.max(0, finiteInteger(lot.qty) - finiteInteger(lot.hiddenQty ?? 0)),
+    0
+  );
   return cargo + finiteInteger(player.reservedCargoTons ?? 0);
 }
 
@@ -77,7 +80,12 @@ export function createPlayerTradeService(
       if (!entry) return null;
 
       const requested = finiteInteger(requestedQuantity);
-      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - (player.smugglingNormalPenalty ?? 0) - playerCargoUsed(player));
+      const cargoFree = Math.max(
+        0,
+        finiteInteger(cargoCapacityTons) -
+          (player.smugglingNormalPenalty ?? 0) -
+          playerCargoUsed(player)
+      );
       const affordable = Math.floor(player.credits / Math.max(1, entry.price));
       const quantity = Math.min(requested, finiteInteger(entry.stock), cargoFree, affordable);
       if (quantity <= 0) return null;

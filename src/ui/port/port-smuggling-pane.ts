@@ -14,27 +14,38 @@ export function smugglingPane(view: SmugglingPortView): string {
         </div>
         <div class="port-info-box">
           <strong>UNTERWELT-KONTAKT</strong>
-          <p>${known
-            ? 'Der Kontakt zur Unterwelt-Werft ist bekannt.'
-            : intelAvailable
-              ? 'Ein Informant kann den geheimen Umbau freischalten.'
-              : 'Der Informant erscheint ab Wirtschaftstag ' + view.intelDay + '.'}</p>
-          ${!known
-            ? `<button type="button" data-buy-hold-intel ${intelAvailable ? '' : 'disabled'}>
+          <p>${
+            known
+              ? 'Der Kontakt zur Unterwelt-Werft ist bekannt.'
+              : intelAvailable
+                ? 'Ein Informant kann den geheimen Umbau freischalten.'
+                : 'Der Informant erscheint ab Wirtschaftstag ' + view.intelDay + '.'
+          }</p>
+          ${
+            !known
+              ? `<button type="button" data-buy-hold-intel ${intelAvailable ? '' : 'disabled'}>
                 KONTAKT BEZAHLEN · ${view.intelPrice.toLocaleString('de-DE')} CR
               </button>`
-            : ''}
+              : ''
+          }
         </div>
-        ${known
-          ? `<div class="port-info-box">
+        ${
+          known
+            ? `<div class="port-info-box">
               <strong>VERDECKTER FRACHTRAUM · UNTERWELT-WERFT</strong>
-              <p>${view.installed
-                ? `INSTALLIERT · ${view.hiddenUsed} / ${view.hiddenCapacity} t verdeckt · Normalfracht -${view.normalPenalty} t · Verschleierung ${Math.round(view.concealment * 100)} %`
-                : `24 t verdeckte Kapazität · Normalfracht -12 t · ${view.price.toLocaleString('de-DE')} CR. Nur an Piratenstützpunkten erhältlich.`}</p>
-              ${view.atPirateBase && !view.installed
-                ? '<button type="button" data-install-hidden-hold>VERDECKTEN FRACHTRAUM EINBAUEN</button>'
-                : ''}
-              ${view.hiddenRows.map((lot) => `
+              <p>${
+                view.installed
+                  ? `INSTALLIERT · ${view.hiddenUsed} / ${view.hiddenCapacity} t verdeckt · Normalfracht -${view.normalPenalty} t · Verschleierung ${Math.round(view.concealment * 100)} %`
+                  : `24 t verdeckte Kapazität · Normalfracht -12 t · ${view.price.toLocaleString('de-DE')} CR. Nur an Piratenstützpunkten erhältlich.`
+              }</p>
+              ${
+                view.atPirateBase && !view.installed
+                  ? '<button type="button" data-install-hidden-hold>VERDECKTEN FRACHTRAUM EINBAUEN</button>'
+                  : ''
+              }
+              ${view.hiddenRows
+                .map(
+                  (lot) => `
                 <div style="margin:8px 0">
                   <strong>${lot.name}</strong> · sichtbar ${lot.visible} t · verdeckt ${lot.hidden} t
                   <button type="button" data-hide-cargo="${lot.id}"
@@ -45,16 +56,21 @@ export function smugglingPane(view: SmugglingPortView): string {
                     1 t AUSLADEN
                   </button>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>`
-          : ''}
+            : ''
+        }
         <div class="port-info-box">
           <strong>KORSAREN-SCHUTZBRIEF</strong>
           <p>${factionLabel} · 5 % Abgabe auf Verkäufe illegaler Waren.
              Schützt vor Überfällen der jeweiligen Korsarenfraktion.</p>
-          ${view.atPirateBase && view.pirateFaction !== view.protectionFaction
-            ? '<button type="button" data-pirate-protection>SCHUTZBRIEF DER LOKALEN FRAKTION ANNEHMEN</button>'
-            : ''}
+          ${
+            view.atPirateBase && view.pirateFaction !== view.protectionFaction
+              ? '<button type="button" data-pirate-protection>SCHUTZBRIEF DER LOKALEN FRAKTION ANNEHMEN</button>'
+              : ''
+          }
         </div>
         <div class="port-info-box">
           Hafenaufsicht und Raum-Patrouillen können Frachtkontrollen anordnen.

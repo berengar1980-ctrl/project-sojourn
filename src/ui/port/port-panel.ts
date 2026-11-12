@@ -471,9 +471,15 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
     );
   }
 
-  shell.querySelector<HTMLButtonElement>('[data-buy-hold-intel]')?.addEventListener('click', options.onBuyHoldIntel);
-  shell.querySelector<HTMLButtonElement>('[data-install-hidden-hold]')?.addEventListener('click', options.onInstallHiddenHold);
-  shell.querySelector<HTMLButtonElement>('[data-pirate-protection]')?.addEventListener('click', options.onPirateProtection);
+  shell
+    .querySelector<HTMLButtonElement>('[data-buy-hold-intel]')
+    ?.addEventListener('click', options.onBuyHoldIntel);
+  shell
+    .querySelector<HTMLButtonElement>('[data-install-hidden-hold]')
+    ?.addEventListener('click', options.onInstallHiddenHold);
+  shell
+    .querySelector<HTMLButtonElement>('[data-pirate-protection]')
+    ?.addEventListener('click', options.onPirateProtection);
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hide-cargo]')) {
     button.addEventListener('click', () => options.onConcealCargo(button.dataset.hideCargo ?? ''));
   }

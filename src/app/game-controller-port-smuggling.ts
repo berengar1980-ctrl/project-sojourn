@@ -72,9 +72,13 @@ export function createSmugglingPortOptions(
     },
     onInstallHiddenHold: () => {
       if (smuggling.install(ship.id, locationId, cargoCapacity)) {
-        log.write('UNTERWELT-WERFT > VERDECKTER FRACHTRAUM EINGEBAUT · 24 t VERDECKT · -12 t NORMAL');
+        log.write(
+          'UNTERWELT-WERFT > VERDECKTER FRACHTRAUM EINGEBAUT · 24 t VERDECKT · -12 t NORMAL'
+        );
       } else {
-        log.write('UNTERWELT-WERFT > EINBAU NICHT MÖGLICH · KONTAKT, CREDITS, FRACHT UND ORT PRÜFEN');
+        log.write(
+          'UNTERWELT-WERFT > EINBAU NICHT MÖGLICH · KONTAKT, CREDITS, FRACHT UND ORT PRÜFEN'
+        );
       }
       onRefresh();
     },

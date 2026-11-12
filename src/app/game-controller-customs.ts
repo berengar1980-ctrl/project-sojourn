@@ -1,7 +1,10 @@
 import type { ShipDefinition } from '../core/ship-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId, sectorPorts } from '../data/ports/sector-ports';
-import { createCustomsInspectionPanel, type CustomsInspectionPanel } from '../ui/customs/customs-inspection-panel';
+import {
+  createCustomsInspectionPanel,
+  type CustomsInspectionPanel,
+} from '../ui/customs/customs-inspection-panel';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
@@ -79,10 +82,7 @@ export function inspectDockArrival(context: ControllerRuntimeContext): void {
 }
 
 /** A patrol must physically encounter the travelling player; no omniscient inspection. */
-export function inspectPatrolTravel(
-  context: ControllerRuntimeContext,
-  deltaSeconds: number
-): void {
+export function inspectPatrolTravel(context: ControllerRuntimeContext, deltaSeconds: number): void {
   if (context.world.inForeignSystem() || context.economy.smuggling.state.inspection) return;
   const nav = context.navigation.getSnapshot();
   let check = patrolChecks.get(context);
@@ -120,7 +120,9 @@ export function inspectPatrolTravel(
   check.checked.add(patrol.npc.id);
   const nearPort = [...sectorPorts]
     .map((port) => {
-      const position = narrowsSector.locations.find((entry) => entry.id === port.locationId)?.position;
+      const position = narrowsSector.locations.find(
+        (entry) => entry.id === port.locationId
+      )?.position;
       return {
         port,
         distance: position

@@ -62,9 +62,23 @@ export interface SmugglingService {
   protect(faction: PirateFaction, locationId: string): boolean;
   protectionFee(resourceId: string, gross: number): number;
   recordSale(resourceId: string, gross: number): number;
-  inspectionChance(source: CustomsSource, security: 'low' | 'medium' | 'high', shipId: string): number;
-  startInspection(source: CustomsSource, locationId: string, strength: number, patrolId?: string): boolean;
-  decide(action: CustomsAction, shipId: string, normalCapacity: number, rng?: () => number): CustomsInspection | null;
+  inspectionChance(
+    source: CustomsSource,
+    security: 'low' | 'medium' | 'high',
+    shipId: string
+  ): number;
+  startInspection(
+    source: CustomsSource,
+    locationId: string,
+    strength: number,
+    patrolId?: string
+  ): boolean;
+  decide(
+    action: CustomsAction,
+    shipId: string,
+    normalCapacity: number,
+    rng?: () => number
+  ): CustomsInspection | null;
   scan(strength: number, shipId: string, rng?: () => number): readonly ContrabandDetection[];
   bribeQuote(normalCapacity: number): number;
 }
@@ -97,8 +111,7 @@ export function createSmugglingService(
     Object.values(player.cargo).reduce((total, lot) => total + (lot.hiddenQty ?? 0), 0);
   const hiddenCapacity = (shipId: string): number =>
     installed(shipId) ? HIDDEN_CARGO_HOLD.capacity : 0;
-  const hiddenFree = (shipId: string): number =>
-    Math.max(0, hiddenCapacity(shipId) - hiddenUsed());
+  const hiddenFree = (shipId: string): number => Math.max(0, hiddenCapacity(shipId) - hiddenUsed());
   const adjustSuspicion = (delta: number): void => {
     state.suspicion = clamp(state.suspicion + delta, 0, 100);
   };
@@ -120,11 +133,7 @@ export function createSmugglingService(
           : 0;
       const hiddenQty =
         rng() <
-        clamp(
-          0.16 + strength * 0.5 - concealment * 0.4 + state.suspicion * 0.0015,
-          0.03,
-          0.58
-        )
+        clamp(0.16 + strength * 0.5 - concealment * 0.4 + state.suspicion * 0.0015, 0.03, 0.58)
           ? entry.hiddenQty
           : 0;
       if (visibleQty + hiddenQty > 0) {
@@ -158,7 +167,9 @@ export function createSmugglingService(
       totalValue += quantity * (economyResourceById(item.id)?.basePrice ?? 0);
       seized += quantity;
     }
-    const fine = Math.round((50000 + totalValue * 1.5) * (1 + (hiddenFound ? 0.5 : 0) + (obstruction ? 0.25 : 0)));
+    const fine = Math.round(
+      (50000 + totalValue * 1.5) * (1 + (hiddenFound ? 0.5 : 0) + (obstruction ? 0.25 : 0))
+    );
     player.credits -= fine;
     adjustSuspicion(8 + (hiddenFound ? 12 : 0) + (obstruction ? 18 : 0));
     return `${seized} t Kontrabande beschlagnahmt · Geldstrafe ${fine.toLocaleString('de-DE')} CR`;
@@ -190,7 +201,8 @@ export function createSmugglingService(
         player.credits < HIDDEN_CARGO_HOLD.cost ||
         normalCapacity < HIDDEN_CARGO_HOLD.normalCargoPenalty ||
         normalUsed > normalCapacity - HIDDEN_CARGO_HOLD.normalCargoPenalty
-      ) return false;
+      )
+        return false;
       player.credits -= HIDDEN_CARGO_HOLD.cost;
       state.holds[shipId] = { shipId, installedAt: locationId };
       player.smugglingNormalPenalty = HIDDEN_CARGO_HOLD.normalCargoPenalty;
@@ -200,7 +212,11 @@ export function createSmugglingService(
       if (!installed(shipId) || !isIllegalResource(resourceId)) return 0;
       const lot = player.cargo[resourceId];
       if (!lot) return 0;
-      const moved = Math.min(Math.max(0, Math.floor(qty)), cargoVisible(player, resourceId), hiddenFree(shipId));
+      const moved = Math.min(
+        Math.max(0, Math.floor(qty)),
+        cargoVisible(player, resourceId),
+        hiddenFree(shipId)
+      );
       if (moved > 0) lot.hiddenQty = (lot.hiddenQty ?? 0) + moved;
       return moved;
     },
@@ -231,9 +247,10 @@ export function createSmugglingService(
         : 0;
     },
     recordSale(resourceId, gross) {
-      const fee = state.protectionFaction && isIllegalResource(resourceId)
-        ? Math.max(0, Math.round(gross * PIRATE_PROTECTION_RATE))
-        : 0;
+      const fee =
+        state.protectionFaction && isIllegalResource(resourceId)
+          ? Math.max(0, Math.round(gross * PIRATE_PROTECTION_RATE))
+          : 0;
       if (fee > 0) {
         player.credits -= fee;
         state.totalProtectionFees += fee;
@@ -256,15 +273,29 @@ export function createSmugglingService(
       const count = cargo.reduce((sum, item) => sum + item.qty, 0);
       const visible = cargo.reduce((sum, item) => sum + item.visibleQty, 0);
       const hidden = cargo.reduce((sum, item) => sum + item.hiddenQty, 0);
-      const exposure = count === 0 ? 0 : clamp(
-        (visible + hidden * (1 - (installed(shipId) ? HIDDEN_CARGO_HOLD.concealment : 0) * 0.78)) / count,
-        0.1,
-        1
-      );
-      if (count === 0) return clamp(0.03 * (0.65 + strength * 0.45) + state.suspicion * 0.00035, 0.008, 0.14);
+      const exposure =
+        count === 0
+          ? 0
+          : clamp(
+              (visible +
+                hidden * (1 - (installed(shipId) ? HIDDEN_CARGO_HOLD.concealment : 0) * 0.78)) /
+                count,
+              0.1,
+              1
+            );
+      if (count === 0)
+        return clamp(0.03 * (0.65 + strength * 0.45) + state.suspicion * 0.00035, 0.008, 0.14);
       return source === 'harbor'
-        ? clamp((0.05 + strength * 0.38 + state.suspicion * 0.0035) * (0.55 + 0.45 * exposure), 0.03, 0.8)
-        : clamp((0.07 + strength * 0.3 + state.suspicion * 0.003) * (0.55 + 0.45 * exposure), 0.05, 0.68);
+        ? clamp(
+            (0.05 + strength * 0.38 + state.suspicion * 0.0035) * (0.55 + 0.45 * exposure),
+            0.03,
+            0.8
+          )
+        : clamp(
+            (0.07 + strength * 0.3 + state.suspicion * 0.003) * (0.55 + 0.45 * exposure),
+            0.05,
+            0.68
+          );
     },
     startInspection(source, locationId, strength, patrolId) {
       if (state.inspection) return false;
@@ -281,9 +312,10 @@ export function createSmugglingService(
     },
     scan,
     bribeQuote(normalCapacity) {
-      return Math.max(4000, Math.round(
-        (5500 + normalCapacity * 110 + state.suspicion * 260) / 500
-      ) * 500);
+      return Math.max(
+        4000,
+        Math.round((5500 + normalCapacity * 110 + state.suspicion * 260) / 500) * 500
+      );
     },
     decide(action, shipId, normalCapacity, rng = Math.random) {
       const inspection = state.inspection;
@@ -316,9 +348,10 @@ export function createSmugglingService(
       if (action === 'bribe' && inspection.source === 'harbor' && !inspection.bribeTried) {
         inspection.bribeTried = true;
         const quote = this.bribeQuote(normalCapacity);
-        if (player.credits >= quote && rng() < clamp(
-          0.56 - inspection.strength * 0.25 - state.suspicion * 0.0022, 0.08, 0.62
-        )) {
+        if (
+          player.credits >= quote &&
+          rng() < clamp(0.56 - inspection.strength * 0.25 - state.suspicion * 0.0022, 0.08, 0.62)
+        ) {
           player.credits -= quote;
           adjustSuspicion(3);
           return finish('bribe', 'Diskrete Zahlung von ' + quote + ' CR akzeptiert');
@@ -338,7 +371,14 @@ export function createSmugglingService(
       }
       if (action === 'comply' || action === 'bribe' || action === 'flee') {
         const detected = scan(
-          clamp(inspection.strength + (inspection.papersTried ? 0.05 : 0) + (action === 'bribe' ? 0.14 : 0) + (action === 'flee' ? 0.18 : 0), 0, 1),
+          clamp(
+            inspection.strength +
+              (inspection.papersTried ? 0.05 : 0) +
+              (action === 'bribe' ? 0.14 : 0) +
+              (action === 'flee' ? 0.18 : 0),
+            0,
+            1
+          ),
           shipId,
           rng
         );

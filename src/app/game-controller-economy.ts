@@ -52,7 +52,10 @@ import {
 } from '../systems/npcs/npc-salvage-event-service';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NavigationService } from '../systems/navigation';
-import { createSmugglingService, type SmugglingService } from '../systems/economy/smuggling-service';
+import {
+  createSmugglingService,
+  type SmugglingService,
+} from '../systems/economy/smuggling-service';
 
 export interface ControllerEconomy {
   readonly markets: EconomyMarketService;

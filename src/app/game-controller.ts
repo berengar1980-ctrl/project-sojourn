@@ -18,11 +18,7 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
-import {
-  inspectDockArrival,
-  tickCustoms,
-  inspectPatrolTravel,
-} from './game-controller-customs';
+import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';

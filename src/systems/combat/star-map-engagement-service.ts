@@ -164,9 +164,7 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
   const target = runtime.options.sectorNpcs.npcs
     .filter(
       (npc) =>
-        npc.pirate &&
-        npcMayInitiateAttack(npc) &&
-        !runtime.options.playerProtectedFromPirate?.(npc)
+        npc.pirate && npcMayInitiateAttack(npc) && !runtime.options.playerProtectedFromPirate?.(npc)
     )
     .map((npc) => ({
       npc,
