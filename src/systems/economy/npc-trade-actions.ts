@@ -59,6 +59,12 @@ export function buyFromMarket(
   return moved;
 }
 
+export function npcNetSaleUnitPrice(npc: NpcEconomyState, price: number): number {
+  const charter = 'tradeCharter' in npc ? npc.tradeCharter : undefined;
+  const multiplier = charter === 'veylan' ? 0.93 : charter === 'mercator' ? 0.935 : 0.94;
+  return Math.max(1, Math.round(price * multiplier));
+}
+
 export function sellToMarket(
   npc: NpcEconomyState,
   markets: EconomyMarketService,
@@ -73,7 +79,7 @@ export function sellToMarket(
   const moved = Math.min(aboard, requestedQuantity);
   if (!entry || moved <= 0) return 0;
 
-  const unitPrice = Math.max(1, Math.round(entry.price * 0.94));
+  const unitPrice = npcNetSaleUnitPrice(npc, entry.price);
   npc.credits += moved * unitPrice;
   entry.stock += moved;
   entry.demand = Math.max(0, entry.demand - moved / 5000);
@@ -108,7 +114,7 @@ function candidateTradeRoute(
   day: number,
   quoteTravel?: NpcTravelQuoteFn
 ): TradeRoute | null {
-  const unitSale = Math.max(1, Math.round(sellPrice * 0.94));
+  const unitSale = npcNetSaleUnitPrice(npc, sellPrice);
   if (unitSale <= buyPrice) return null;
   const straightDistance = distanceBetween(positions, npc.locationId, destinationId);
   const estimate = evaluateNpcPurchaseVoyage(
