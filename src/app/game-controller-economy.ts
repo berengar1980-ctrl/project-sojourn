@@ -78,10 +78,10 @@ export function createControllerEconomy(navigation: NavigationService): Controll
   });
   situations.advanceDay(0);
   const trade = createPlayerTradeService(markets);
-  const smuggling = createSmugglingService(trade.player);
   const marketIntel = createMarketIntelService(markets);
   marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
+  const smuggling = createSmugglingService(trade.player, npcStates);
   const shipyardResearch = createShipyardResearchService();
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
