@@ -115,7 +115,12 @@ export function createPlayerTradeService(
 
     receiveCargo(resourceId, requestedQuantity, cargoCapacityTons, originId) {
       const requested = finiteInteger(requestedQuantity);
-      const cargoFree = Math.max(0, finiteInteger(cargoCapacityTons) - playerCargoUsed(player));
+      const cargoFree = Math.max(
+        0,
+        finiteInteger(cargoCapacityTons) -
+          (player.smugglingNormalPenalty ?? 0) -
+          playerCargoUsed(player)
+      );
       const quantity = Math.min(requested, cargoFree);
       if (quantity <= 0) return 0;
 
