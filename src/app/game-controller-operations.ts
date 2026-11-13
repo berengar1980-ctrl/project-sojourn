@@ -2,14 +2,12 @@ import type { SectorNpcState } from '../core/npc-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { economyResources } from '../data/economy/economy-resources';
-import { resolveShipRuntimeSetup } from '../systems/ships';
 import {
   createOperationsPanel,
   type OperationsAction,
   type OperationsModel,
 } from '../ui/operations/operations-panel';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { controllerShipRuntimeOptions } from './game-controller-models';
 
 function permissions(c: ControllerRuntimeContext) {
   const nav = c.navigation.getSnapshot();
@@ -28,14 +26,9 @@ function permissions(c: ControllerRuntimeContext) {
 function operationsModel(c: ControllerRuntimeContext): OperationsModel {
   const { economy: e, state } = c;
   const p = permissions(c);
-  const runtime = resolveShipRuntimeSetup(
-    state.activeShip,
-    controllerShipRuntimeOptions(c, state.activeShip)
-  );
   return {
     credits: e.trade.player.credits,
     port: p.port,
-    canProspect: p.field && state.activeShip.role === 'mining' && runtime.mining.available,
     patrolShip: state.activeShip.role === 'patrol',
     locationId: p.location?.id ?? null,
     locationName: p.location?.name ?? 'Unterwegs',
@@ -52,7 +45,6 @@ function operationsModel(c: ControllerRuntimeContext): OperationsModel {
       })),
     pirates: e.blockades.available().map((n) => ({ id: n.id, name: n.name })),
     blockades: e.blockades.snapshot(),
-    concessions: e.concessions.snapshot(),
     patrol: e.patrol.snapshot(),
     offers: e.patrol.offers(),
     names: Object.fromEntries(
@@ -99,11 +91,6 @@ function act(c: ControllerRuntimeContext, action: OperationsAction, values: stri
   if (action === 'order' && m.port)
     ok = e.blockades.order('player', id, values[1] ?? '', values.slice(3), Number(values[2]));
   if (action === 'cancel') ok = e.blockades.cancel(id);
-  if (action === 'prospect' && m.canProspect && m.locationId)
-    ok = e.concessions.prospect('player', m.locationId);
-  if (action === 'claim' && m.canProspect && m.locationId === id)
-    ok = e.concessions.claim('player', id);
-  if (action === 'abandon') ok = e.concessions.abandon('player', id);
   if (['enlist', 'resign', 'accept', 'reward'].includes(action))
     ok = patrolAction(c, m, action, values);
   if (action === 'navigate') {
@@ -141,6 +128,5 @@ export function operationsCombatHooks(economy: ControllerEconomy) {
 export function observeControllerOperations(c: ControllerRuntimeContext, seconds: number): void {
   const nav = c.navigation.getSnapshot();
   const location = !nav.isTravelling && !nav.isPursuing ? nav.currentLocationId : null;
-  c.economy.concessions.depart(location);
   if (c.state.activeShip.role === 'patrol') c.economy.patrol.observeArrival(location, seconds);
 }
