@@ -187,7 +187,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
   }
   const selected = model.selectedAsteroid;
-  claimButton.hidden = !selected || selected.scanLevel !== 'analyzed' || selected.totalRemaining === 0 || model.selectedAsteroidClaimOwner !== null && model.selectedAsteroidClaimOwner !== 'player';
+  claimButton.hidden = !selected || selected.scanLevel !== 'analyzed' || selected.totalRemaining === 0 || Boolean(model.selectedAsteroidClaimOwner && model.selectedAsteroidClaimOwner !== 'player');
   claimButton.textContent = model.selectedAsteroidClaimOwner === 'player' ? 'KONZESSION AUFGEBEN' : 'KONZESSION REGISTRIEREN · 2.500 CR';
   const miningActive = model.miningPhase !== 'idle';
   const eventActive = model.miningEvent !== null;
