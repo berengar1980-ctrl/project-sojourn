@@ -17,6 +17,8 @@ import {
   boardingHexKey,
   boardingHexNeighbours,
 } from './boarding-geometry';
+import { reactToDisengagement, reactToMovement } from './boarding-reactions';
+import { resolveBoardingCone } from './boarding-area-effects';
 import {
   MAX_AP,
   attackChance,
@@ -38,6 +40,7 @@ export interface BoardingTacticalService {
   openDoor(unitId: string, doorId: string): boolean;
   shoot(attackerId: string, targetId: string): BoardingAttackResult | null;
   melee(attackerId: string, targetId: string): BoardingAttackResult | null;
+  fireCone(attackerId: string, aim: BoardingHex): readonly BoardingAttackResult[] | null;
   suppress(attackerId: string, targetId: string): BoardingAttackResult | null;
   suppressArea(unitId: string, center: BoardingHex): boolean;
   overwatch(unitId: string, target: BoardingHex): boolean;
@@ -198,7 +201,29 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     if (range > pair.attacker.weapon.range) return null;
     if (!boardingHasLineOfSight(this.map, this.doorStates, pair.attacker, pair.target)) return null;
     const chance = attackChance(this.map, this.doorStates, pair.attacker, pair.target);
+    if (pair.attacker.weapon.spreadMode === 'cone') {
+      return this.fireCone(attackerId, pair.target)?.find((result) => result.targetId === targetId) ?? null;
+    }
     return this.resolveAttack(pair.attacker, pair.target, chance, false);
+  }
+
+  /** A directional flamer consumes one combat action even when the corridor is empty. */
+  fireCone(attackerId: string, aim: BoardingHex): readonly BoardingAttackResult[] | null {
+    const unit = this.unitForAction(attackerId);
+    if (!unit) return null;
+    const results = resolveBoardingCone(
+      this.map,
+      this.doorStates,
+      this.units,
+      unit,
+      aim,
+      () => this.roll(),
+      true
+    );
+    if (results === null) return null;
+    this.writeLog(unit.name + ' bestreicht den Korridor: ' + results.length + ' Ziel(e).');
+    this.updateOutcome();
+    return results;
   }
 
   melee(attackerId: string, targetId: string): BoardingAttackResult | null {
@@ -238,7 +263,7 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
       center: { ...center },
     });
     for (const target of this.units) {
-      if (target.team !== unit.team && target.hp > 0 && boardingHexDistance(target, center) <= 1) {
+      if (target.team !== unit.team && target.hp > 0 && boardingHexDistance(target, center) <= 1 && boardingHasLineOfSight(this.map, this.doorStates, unit, target)) {
         target.suppressed = true;
       }
     }
@@ -320,6 +345,16 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     chance: number,
     melee: boolean
   ): void {
+    if (!melee && attacker.weapon.spreadMode === 'cone') {
+      const hits = resolveBoardingCone(
+        this.map, this.doorStates, this.units, attacker, target, () => this.roll(), false
+      );
+      if (hits) {
+        this.writeLog(attacker.name + ' reagiert mit Flammenkegel: ' + hits.length + ' Ziel(e).');
+        this.updateOutcome();
+        return;
+      }
+    }
     const hit = this.roll() * 100 < chance;
     const damage = hit ? this.attackDamage(attacker, target, melee) : 0;
     target.hp = Math.max(0, target.hp - damage);
@@ -335,76 +370,26 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     previous: BoardingHex,
     next: BoardingHex
   ): void {
-    for (const enemy of this.units) {
-      if (
-        enemy.team === mover.team ||
-        enemy.hp <= 0 ||
-        enemy.reactionUsed ||
-        boardingHexDistance(enemy, previous) !== 1 ||
-        boardingHexDistance(enemy, next) <= 1
-      ) {
-        continue;
-      }
-      enemy.reactionUsed = true;
-      this.reactiveAttack(enemy, mover, Math.max(5, meleeChance(enemy) - 20), true);
-      if (mover.hp <= 0 || this.outcome !== 'active') break;
-    }
-  }
-
-  private inOverwatchArc(shooter: BoardingUnit, target: BoardingHex): boolean {
-    const aimed = shooter.overwatchTarget;
-    if (!aimed) return false;
-    const axial = (hex: BoardingHex) => ({
-      x: hex.q + hex.r * 0.5,
-      y: hex.r * 0.8660254,
-    });
-    const origin = axial(shooter);
-    const direction = axial(aimed);
-    const destination = axial(target);
-    const ax = direction.x - origin.x;
-    const ay = direction.y - origin.y;
-    const bx = destination.x - origin.x;
-    const by = destination.y - origin.y;
-    const product = Math.hypot(ax, ay) * Math.hypot(bx, by);
-    return product > 0 && (ax * bx + ay * by) / product >= 0.5;
+    reactToDisengagement(
+      this.units,
+      mover,
+      previous,
+      next,
+      (attacker, target, chance, melee) => this.reactiveAttack(attacker, target, chance, melee),
+      () => this.outcome === 'active'
+    );
   }
 
   private triggerReactions(mover: BoardingUnit): void {
-    for (const zone of [...this.suppressionZones]) {
-      if (zone.team === mover.team || boardingHexDistance(zone.center, mover) > 1) continue;
-      const owner = this.units.find((unit) => unit.id === zone.ownerId && unit.hp > 0);
-      if (!owner || !boardingHasLineOfSight(this.map, this.doorStates, owner, mover)) continue;
-      this.suppressionZones = this.suppressionZones.filter((entry) => entry !== zone);
-      mover.suppressed = true;
-      this.reactiveAttack(
-        owner,
-        mover,
-        clamp(attackChance(this.map, this.doorStates, owner, mover) - 10, 5, 90),
-        false
-      );
-      if (mover.hp <= 0 || this.outcome !== 'active') return;
-    }
-    for (const shooter of this.units) {
-      if (
-        shooter.team === mover.team ||
-        shooter.hp <= 0 ||
-        !shooter.overwatch ||
-        !this.inOverwatchArc(shooter, mover) ||
-        boardingHexDistance(shooter, mover) > shooter.weapon.range ||
-        !boardingHasLineOfSight(this.map, this.doorStates, shooter, mover)
-      ) {
-        continue;
-      }
-      shooter.overwatch = false;
-      shooter.overwatchTarget = null;
-      this.reactiveAttack(
-        shooter,
-        mover,
-        attackChance(this.map, this.doorStates, shooter, mover),
-        false
-      );
-      if (mover.hp <= 0 || this.outcome !== 'active') return;
-    }
+    this.suppressionZones = reactToMovement(
+      this.map,
+      this.doorStates,
+      this.units,
+      this.suppressionZones,
+      mover,
+      (attacker, target, chance, melee) => this.reactiveAttack(attacker, target, chance, melee),
+      () => this.outcome === 'active'
+    );
   }
 
   private unitForAction(unitId: string): BoardingUnit | null {

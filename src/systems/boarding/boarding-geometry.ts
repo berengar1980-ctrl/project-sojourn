@@ -126,3 +126,40 @@ export function boardingTargetHasCover(
       : false;
   });
 }
+
+
+/** Axial hex coordinates projected into a regular flat 2-D plane. */
+export function boardingHexPlane(hex: BoardingHex): { x: number; y: number } {
+  return { x: hex.q + hex.r * 0.5, y: hex.r * 0.8660254037844386 };
+}
+
+/** A 120-degree forward fire-watch sector, centred on the explicitly selected hex. */
+export function boardingInOverwatchArc(source: BoardingHex, aim: BoardingHex, test: BoardingHex): boolean {
+  const first = boardingHexPlane(source);
+  const second = boardingHexPlane(aim);
+  const third = boardingHexPlane(test);
+  const ax = second.x - first.x;
+  const ay = second.y - first.y;
+  const bx = third.x - first.x;
+  const by = third.y - first.y;
+  const magnitude = Math.hypot(ax, ay) * Math.hypot(bx, by);
+  return magnitude > 0 && (ax * bx + ay * by) / magnitude >= 0.5;
+}
+
+/** Fire-watchers do not deliberately fire through another member of their own team. */
+export function boardingAllyInFiringLine(
+  units: readonly BoardingUnit[],
+  source: BoardingUnit,
+  target: BoardingUnit
+): boolean {
+  return lineHexes(source, target).some((hex) =>
+    units.some(
+      (unit) =>
+        unit.id !== source.id &&
+        unit.hp > 0 &&
+        unit.team === source.team &&
+        unit.q === hex.q &&
+        unit.r === hex.r
+    )
+  );
+}
