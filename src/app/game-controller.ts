@@ -2,10 +2,7 @@ import { tickControllerNpcOperations } from './game-controller-npc-tick';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
-import {
-  snapshotPlayerProfile,
-  withPlayerShipName,
-} from '../core/player-profile';
+import { snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
@@ -30,9 +27,7 @@ import { startCombatBoarding } from './game-controller-combat-boarding';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
-import type {
-  ControllerRuntimeContext,
-} from './game-controller-runtime-types';
+import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   tickEconomy,
   completeDistressTowOnArrival,

@@ -208,7 +208,10 @@ function npcAttackTarget(
         // Keep existing target filters, but use the same geographic policy as player interception.
         if (!npcIsPiratePrey(candidate)) return false;
         return canRaidCivilianCargo(
-          world, attacker, candidate, runtime.options.sectorNpcs.livePosition(candidate)
+          world,
+          attacker,
+          candidate,
+          runtime.options.sectorNpcs.livePosition(candidate)
         );
       })
       .map((candidate) => ({

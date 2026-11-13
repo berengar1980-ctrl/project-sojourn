@@ -9,9 +9,10 @@ export function pirateMayIntercept(
   pirate: SectorNpcState,
   position: WorldPoint
 ): boolean {
-  return !world || (
-    !protectedBySafeDestination(world, position) &&
-    canPirateOperateAt(pirate, worldDangerAt(world, position))
+  return (
+    !world ||
+    (!protectedBySafeDestination(world, position) &&
+      canPirateOperateAt(pirate, worldDangerAt(world, position)))
   );
 }
 
