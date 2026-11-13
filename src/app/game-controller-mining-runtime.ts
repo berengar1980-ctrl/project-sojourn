@@ -26,7 +26,8 @@ export function ensureMiningCombatWorld(
         controllerShipRuntimeOptions(context, state.activeShip)
       ).hullMaxHp
     ).hullHp,
-    (message) => context.systemLog.write(message)
+    (message) => context.systemLog.write(message),
+    economy.asteroidClaims
   );
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
