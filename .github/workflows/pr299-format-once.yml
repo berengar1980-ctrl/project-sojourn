@@ -1,0 +1,39 @@
+name: One-time PR 299 Prettier repair
+on:
+  push:
+    branches:
+      - feature/asteroid-claims-foundation
+permissions:
+  contents: write
+concurrency:
+  group: one-time-pr299-format
+  cancel-in-progress: false
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install locked tooling
+        run: npm ci --no-audit --no-fund
+      - name: Format actual source
+        run: npm run format
+      - name: Verify formatting
+        run: npm run format:check
+      - name: Commit formatted source and remove one-time workflow
+        run: |
+          rm -f .github/workflows/pr299-format-once.yml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to change"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "style: apply Prettier on PR 299 and remove one-time formatter"
+          git push origin HEAD:feature/asteroid-claims-foundation
