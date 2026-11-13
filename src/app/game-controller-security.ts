@@ -1,6 +1,7 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
+import { localMiningCombatArena } from './game-controller-combat';
 
 const UNAUTHORIZED_MINING_PENALTY = 1500;
 
@@ -90,6 +91,29 @@ export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: nu
         );
         legal.reportSighting(shipId, locationId, day, 'distress');
         dispatchPatrolToReport(context, locationId, null);
+        const defender = economy.sectorNpcs.npcs.find(
+          (candidate) => candidate.id === 'security-drone:' + locationId
+        );
+        const currentDrone = drone.snapshot();
+        const space = context.state.localSpace;
+        if (defender && defender.hullHp > 0 && currentDrone.operational && space) {
+          const arena = localMiningCombatArena(
+            field.instance, space.getShipWorldVelocity()
+          );
+          const engaged = context.engagements.engageNpcInArena(defender.id, {
+            ...arena,
+            defenderPosition: { ...currentDrone.position },
+            defenderHeadingRadians: 0,
+            defenderVelocity: { x: 0, y: 0 },
+          });
+          if (engaged) {
+            context.state.embeddedCombat = 'local-space';
+            space.cancelMining();
+            context.systemLog.write(
+              'SEC-01 > GEWALTSAME DURCHSETZUNG · KI-KAMPFMODUS AKTIV'
+            );
+          }
+        }
       }
       continue;
     }
