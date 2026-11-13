@@ -367,6 +367,32 @@ function mountControllerSalvage(
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
+function synchronizeLocalDefender(context: ControllerRuntimeContext,
+  defender: { id: string; position: { x: number; y: number };
+    headingRadians: number; speed: number; hullHp: number }
+): void {
+  if (defender.id.startsWith('security-drone:')) {
+    const locationId = defender.id.slice('security-drone:'.length);
+    const drone = context.economy.securityDrones.get(locationId);
+    if (drone) {
+      drone.restore(defender.position, defender.hullHp > 0);
+      if (defender.hullHp <= 0) {
+        context.economy.legal.reportOffense(
+          context.state.activeShip.id, 'directorate',
+          'Zerstörung einer Sicherheitsdrohne', 12000,
+          context.economy.situations.currentDay
+        );
+        context.systemLog.write(
+          'DIREKTORUM > SICHERHEITSDROHNE ZERSTOERT · SCHWERE STRAFTAT REGISTRIERT'
+        );
+      }
+    }
+    return;
+  }
+  context.state.localNpcMining?.syncCombatPose(
+    defender.id, defender.position, defender.headingRadians, defender.speed
+  );
+}
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
   const { state } = context;
   const activeCombat = context.engagements.activePlayerCombat();
@@ -391,12 +417,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
         snapshot.attacker.headingRadians,
         snapshot.attacker.speed
       );
-      state.localNpcMining?.syncCombatPose(
-        snapshot.defender.id,
-        snapshot.defender.position,
-        snapshot.defender.headingRadians,
-        snapshot.defender.speed
-      );
+      synchronizeLocalDefender(context, snapshot.defender);
     }
     startCombatBoarding(context, snapshot, (boardingOutcome) => {
       if (boardingOutcome === 'enemy_win') return mountControllerStarMap(context);
@@ -415,12 +436,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
       snapshot.attacker.headingRadians,
       snapshot.attacker.speed
     );
-    state.localNpcMining?.syncCombatPose(
-      snapshot.defender.id,
-      snapshot.defender.position,
-      snapshot.defender.headingRadians,
-      snapshot.defender.speed
-    );
+    synchronizeLocalDefender(context, snapshot.defender);
   } else {
     state.salvageScene?.finishCombat(snapshot);
   }
