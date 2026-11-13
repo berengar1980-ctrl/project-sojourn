@@ -4,7 +4,6 @@ import {
   planRouteFromPoint,
   repointRouteEndpoints,
   type RoutePlan,
-  type RouteProfile,
 } from './route-planner';
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
