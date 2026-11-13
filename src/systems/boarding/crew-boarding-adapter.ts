@@ -1,9 +1,5 @@
-import type {
-  BoardingEncounterSnapshot,
-  BoardingMeleeProfile,
-  BoardingUnitTemplate,
-  BoardingWeaponProfile,
-} from '../../core/boarding-types';
+import type { BoardingEncounterSnapshot, BoardingUnitTemplate } from '../../core/boarding-types';
+import { personalMeleeProfile, personalRangedProfile } from './boarding-personal-profiles';
 import type { CrewInjuryState, CrewMember } from '../../core/crew-types';
 import type { CrewRosterService } from '../crew';
 import {
@@ -11,113 +7,13 @@ import {
   type BoardingTacticalService,
 } from './boarding-tactical-service';
 
-const RANGED: Readonly<Record<string, BoardingWeaponProfile>> = {
-  off_autopistol: {
-    id: 'off_autopistol',
-    name: 'Kompakte Autopistole',
-    range: 3,
-    hitBonus: 4,
-    damage: 3,
-    armorPenetration: 0,
-    spread: 5,
-    canSuppress: false,
-  },
-  boltgun: {
-    id: 'boltgun',
-    name: 'Bolter',
-    range: 5,
-    hitBonus: 6,
-    damage: 6,
-    armorPenetration: 2,
-    spread: 3,
-    canSuppress: true,
-  },
-  hotshot_lasgun: {
-    id: 'hotshot_lasgun',
-    name: 'Hot-shot Lasgun',
-    range: 6,
-    hitBonus: 8,
-    damage: 5,
-    armorPenetration: 2,
-    spread: 2,
-    canSuppress: true,
-    piercing: { maxArmor: 1, bonusDamage: 1 },
-  },
-  plasma_pistol: {
-    id: 'plasma_pistol',
-    name: 'Plasmapistole',
-    range: 4,
-    hitBonus: 4,
-    damage: 6,
-    armorPenetration: 3,
-    spread: 4,
-    canSuppress: false,
-  },
-  plasma_gun: {
-    id: 'plasma_gun',
-    name: 'Plasmagewehr',
-    range: 5,
-    hitBonus: 5,
-    damage: 7,
-    armorPenetration: 4,
-    spread: 3,
-    canSuppress: true,
-  },
-  melta_gun: {
-    id: 'melta_gun',
-    name: 'Meltergewehr',
-    range: 3,
-    hitBonus: 8,
-    damage: 8,
-    armorPenetration: 5,
-    spread: 5,
-    canSuppress: false,
-  },
-  needle_rifle: {
-    id: 'needle_rifle',
-    name: 'Nadelgewehr',
-    range: 6,
-    hitBonus: 10,
-    damage: 5,
-    armorPenetration: 2,
-    spread: 1,
-    canSuppress: false,
-  },
-};
-
-const MELEE: Readonly<Record<string, BoardingMeleeProfile>> = {
-  combat_knife: {
-    id: 'combat_knife',
-    name: 'Kampfmesser',
-    hitBonus: 10,
-    damage: 3,
-    armorPenetration: 0,
-  },
-  dueling_blade: {
-    id: 'dueling_blade',
-    name: 'Duellklinge',
-    hitBonus: 12,
-    damage: 4,
-    armorPenetration: 1,
-  },
-  power_axe: {
-    id: 'power_axe',
-    name: 'Energieaxt',
-    hitBonus: 4,
-    damage: 7,
-    armorPenetration: 4,
-  },
-  power_sword: {
-    id: 'power_sword',
-    name: 'Energieschwert',
-    hitBonus: 8,
-    damage: 8,
-    armorPenetration: 5,
-  },
-};
-
 const ARMOR: Readonly<Record<string, number>> = {
   flak_vest: 1,
+  flak_armour: 2,
+  naval_flak: 2,
+  mesh_armour: 3,
+  carapace: 4,
+  enforcer_carapace: 4,
   void_suit_armoured: 3,
   carapace_officer: 4,
   refractor_harness: 4,
@@ -126,6 +22,7 @@ const ARMOR: Readonly<Record<string, number>> = {
 
 const RANGED_GEAR_BONUS: Readonly<Record<string, number>> = {
   hand_auspex: 0,
+  auspex_pistol: 4,
   photo_visor: 4,
   preysense: 6,
 };
@@ -134,14 +31,12 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export function crewBoardingWeapon(member: CrewMember): BoardingWeaponProfile {
-  const id = member.personalEquipment.ranged ?? 'off_autopistol';
-  return RANGED[id] ?? RANGED.off_autopistol!;
+export function crewBoardingWeapon(member: CrewMember) {
+  return personalRangedProfile(member.personalEquipment.ranged);
 }
 
-export function crewBoardingMeleeWeapon(member: CrewMember): BoardingMeleeProfile {
-  const id = member.personalEquipment.melee ?? 'combat_knife';
-  return MELEE[id] ?? MELEE.combat_knife!;
+export function crewBoardingMeleeWeapon(member: CrewMember) {
+  return personalMeleeProfile(member.personalEquipment.melee);
 }
 
 export function crewBoardingArmor(member: CrewMember): number {
