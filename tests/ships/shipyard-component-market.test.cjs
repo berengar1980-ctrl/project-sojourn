@@ -73,6 +73,10 @@ assert.equal(research.variants('weapon', 6).length, 2, 'bonus types remain alter
 const port = fs.readFileSync(path.join(root, 'src/app/game-controller-port.ts'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'src/ui/port/port-secondary-panes.ts'), 'utf8');
 const controller = fs.readFileSync(path.join(root, 'src/app/game-controller.ts'), 'utf8');
+const startup = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-initial-state.ts'),
+  'utf8'
+);
 const transactions = fs.readFileSync(
   path.join(root, 'src/systems/ships/shipyard-component-transactions.ts'),
   'utf8'
@@ -84,6 +88,13 @@ assert(transactions.includes('inventory.store('));
 assert(transactions.includes('inventory.take(uid)'));
 assert(ui.includes('data-yard-catalog'));
 assert(ui.includes('data-buy-ship-id'));
-assert(controller.includes('createShipOwnershipService(options.ship.id, economy.trade)'));
+assert(
+  startup.includes('createShipOwnershipService(options.ship.id, economy.trade)'),
+  'initial player state must still create the canonical ship ownership service'
+);
+assert(
+  controller.includes('createInitialControllerState(options, economy)'),
+  'game controller must initialize ownership using the extracted state factory'
+);
 
 console.log('PASS shipyard sales, one selected component bonus, and owned-ship UI wiring');

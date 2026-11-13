@@ -3,6 +3,7 @@ import type { NpcJob, SectorNpcState } from '../../core/npc-types';
 import { freighterVariantShips } from '../ships/freighter-variant-ships';
 import { minerVariantShips } from '../ships/miner-variant-ships';
 import { patrolVariantShips } from '../ships/patrol-variant-ships';
+import { pirateClassShips } from '../ships/pirate-class-ships';
 import { salvageVariantShips } from '../ships/salvage-variant-ships';
 import { getShipRoleProfile } from '../ships/ship-role-profiles';
 
@@ -166,8 +167,11 @@ function activityFor(job: NpcJob): string {
 
 function createPirateNpc(name: (typeof PIRATE_NAMES)[number], index: number): SectorNpcState {
   const factionId = index < 5 ? 'pirates' : 'pirates2';
-  const ship = patrolVariantShips[index % patrolVariantShips.length]!;
+  // Every faction fields a mix; the regional hunting policy limits their normal operating area.
+  const ship = pirateClassShips[index % pirateClassShips.length]!;
+  const pirateClass = (['raider', 'reaver', 'marauder'] as const)[index % 3]!;
   const profile = getShipRoleProfile(ship.role);
+  const stats = ship.gameplayOverrides;
   return {
     id: `pirate-${String(index + 1).padStart(2, '0')}`,
     name,
@@ -184,11 +188,13 @@ function createPirateNpc(name: (typeof PIRATE_NAMES)[number], index: number): Se
     fuel: profile.fuelCapacity,
     fuelCapacity: profile.fuelCapacity,
     fuelUse: profile.fuelUse,
-    hullHp: profile.hullPoints,
-    hullMaxHp: profile.hullPoints,
-    aggression: 75 + ((index * 11 + 7) % 25),
+    hullHp: stats?.hullPoints ?? profile.hullPoints,
+    hullMaxHp: stats?.hullPoints ?? profile.hullPoints,
+    aggression:
+      (pirateClass === 'raider' ? 52 : pirateClass === 'reaver' ? 70 : 88) + ((index * 7) % 10),
     factionId,
     pirate: true,
+    pirateClass,
     pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide',
     pirateHuntCycles: 2 + (index % 5),
     workRiskPreference: 'risky',

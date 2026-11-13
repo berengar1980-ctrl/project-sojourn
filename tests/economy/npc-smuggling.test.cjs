@@ -98,7 +98,18 @@ assert(
   )
 );
 assert(economy.includes('npcSmuggling.recordSale('));
-assert(engagement.includes('candidate.smugglingProtectionFaction !== attacker.factionId'));
+const interceptionPolicy = readModuleSource(
+  root,
+  'src/systems/combat/pirate-interception-policy.ts'
+);
+assert(
+  engagement.includes('canRaidCivilianCargo('),
+  'combat must use the shared pirate interception policy'
+);
+assert(
+  interceptionPolicy.includes('civilian.smugglingProtectionFaction !== pirate.factionId'),
+  'pirates must still honor existing smuggler protection agreements'
+);
 assert(events.includes('showUnderworldContactNotice(context.root)'));
 assert(events.includes('hiddenHoldIntelContacted = true'));
 assert(notice.includes('NACHRICHT SPEICHERN'));

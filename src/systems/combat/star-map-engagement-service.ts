@@ -2,6 +2,9 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
+import type { WorldMap } from '../../core/world-types';
+import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
+import { protectedBySafeDestination } from '../navigation/route-safety';
 
 import type { NavigationService } from '../navigation';
 
@@ -61,6 +64,7 @@ export interface StarMapEngagementOptions {
   readonly onPlayerAttack?: (npc: SectorNpcState) => void;
   readonly onPlayerVictory?: (id: string) => void;
   readonly navigation: NavigationService;
+  readonly world?: () => WorldMap;
   readonly isPlayerInCampaignSystem?: () => boolean;
   readonly playerProtectedFromPirate?: (npc: SectorNpcState) => boolean;
   readonly sectorNpcs: NpcSectorService;
@@ -152,10 +156,13 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
   if (runtime.playerCombat || runtime.playerChase || runtime.piratePlayerChase) return;
   const navigation = runtime.options.navigation.getSnapshot();
   if (!navigation.isTravelling || navigation.isPursuing) return;
+  const world = runtime.options.world?.();
+  if (world && protectedBySafeDestination(world, navigation.currentPosition)) return;
   const target = runtime.options.sectorNpcs.npcs
     .filter(
       (npc) =>
         npc.pirate &&
+        pirateMayIntercept(world, npc, navigation.currentPosition) &&
         runtime.options.mayInitiateAttack?.(npc) !== false &&
         npcMayInitiateAttack(npc) &&
         !runtime.options.playerProtectedFromPirate?.(npc)
@@ -191,23 +198,20 @@ function npcAttackTarget(
   attacker: SectorNpcState
 ): SectorNpcState | null {
   const attackerPosition = runtime.options.sectorNpcs.livePosition(attacker);
+  const world = runtime.options.world?.();
   return (
     runtime.options.sectorNpcs.npcs
       .filter((candidate) => {
         if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
           return false;
         if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
-        const cargoUnits = Object.values(candidate.cargo).reduce(
-          (total, units) => total + Math.max(0, Number(units) || 0),
-          0
-        );
-        // Port traffic is not an automatic raid. Hunt funded, actually loaded
-        // vessels in flight or at an active field operation.
-        return (
-          npcIsPiratePrey(candidate) &&
-          candidate.smugglingProtectionFaction !== attacker.factionId &&
-          cargoUnits > 0 &&
-          (Boolean(candidate.travel) || candidate.autonomy?.phase === 'working')
+        // Keep existing target filters, but use the same geographic policy as player interception.
+        if (!npcIsPiratePrey(candidate)) return false;
+        return canRaidCivilianCargo(
+          world,
+          attacker,
+          candidate,
+          runtime.options.sectorNpcs.livePosition(candidate)
         );
       })
       .map((candidate) => ({
