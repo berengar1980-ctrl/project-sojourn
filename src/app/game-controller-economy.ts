@@ -3,6 +3,7 @@ import { BlockadeService } from '../systems/operations/blockade-service';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { PatrolCareerService } from '../systems/operations/patrol-career-service';
 import { economyResources } from '../data/economy/economy-resources';
 import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
@@ -80,6 +81,7 @@ export interface ControllerEconomy {
   readonly asteroidClaims: AsteroidClaimRegistry;
   readonly legal: SectorLegalRegistry;
   readonly securityDrones: Map<string, AsteroidSecurityDrone>;
+  readonly localPirates: Map<string, LocalPirateTraffic>;
   readonly patrol: PatrolCareerService;
   protectsPirate(factionId?: string): boolean;
   readonly markets: EconomyMarketService;
@@ -103,7 +105,10 @@ export interface ControllerEconomy {
 
 function npcOperationsPolicy(blockades: BlockadeService): NpcEconomyServiceOptions {
   return {
-    isManaged: (npc) => npc.id.startsWith('security-drone:') || blockades.assigned(npc.id),
+    isManaged: (npc) => npc.id.startsWith('security-drone:') ||
+      (Boolean('pirate' in npc && npc.pirate) &&
+        narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine) &&
+        !('travel' in npc && npc.travel)) || blockades.assigned(npc.id),
     canTrade: (npc, locationId, resourceId) =>
       !blockades.blocksTrader(npc.id, locationId, resourceId),
   };
@@ -234,6 +239,7 @@ export function createControllerEconomy(
     asteroidClaims: new AsteroidClaimRegistry(),
     legal: new SectorLegalRegistry(),
     securityDrones: new Map<string, AsteroidSecurityDrone>(),
+    localPirates: new Map<string, LocalPirateTraffic>(),
     patrol,
     markets,
     situations,
