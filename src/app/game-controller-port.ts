@@ -401,7 +401,8 @@ function registrationPanelOptions(
               originalTransponder: legal.registration(ship.id)!.originalTransponder,
               wanted: legal.isWanted(ship.id),
               debt: legal.debt(ship.id),
-              forged: legal.registration(ship.id)!.transponder !==
+              forged:
+                legal.registration(ship.id)!.transponder !==
                 legal.registration(ship.id)!.originalTransponder,
               pirateStation: location.stationType === 'pirate',
             },
@@ -416,8 +417,11 @@ function registrationPanelOptions(
         return;
       }
       const alias =
-        'PX-' + Math.floor(Math.random() * 0xffffffff)
-          .toString(36).toUpperCase().padStart(7, '0');
+        'PX-' +
+        Math.floor(Math.random() * 0xffffffff)
+          .toString(36)
+          .toUpperCase()
+          .padStart(7, '0');
       if (!legal.forgeTransponder(ship.id, alias)) {
         log.write('SCHWARZMARKT > KENNUNGSWECHSEL FEHLGESCHLAGEN');
         return;
