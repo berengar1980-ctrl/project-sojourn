@@ -1,4 +1,5 @@
 import type { ShipDefinition } from '../core/ship-types';
+import { getShipDefinition } from '../systems/ships';
 
 import type { SystemLogService } from '../core/system-log-types';
 
@@ -184,10 +185,35 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   const ownerByAsteroid = new Map(
     knownClaims.map((claim) => [claim.asteroidId, claim.ownerId])
   );
+  const pirateShips = locationId
+    ? (context.economy.localPirates.get(locationId)?.snapshot(
+        context.economy.sectorNpcs.npcs
+      ) ?? []).flatMap((contact) => {
+        const definition = getShipDefinition(contact.shipId);
+        if (!definition) return [];
+        return [{
+          id: contact.npcId,
+          name: contact.name,
+          position: contact.position,
+          headingRadians: contact.headingRadians,
+          speed: contact.speed,
+          phase: 'approaching' as const,
+          targetAsteroidId: null,
+          laserActive: false,
+          scanProgress: 0,
+          nominalLengthMeters: definition.nominalLengthMeters,
+          spriteUrl: definition.sprite.assetUrl,
+          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+          hardpoints: definition.sprite.hardpoints,
+          isSelected: context.state.selectedNpcId === contact.npcId,
+        }];
+      })
+    : [];
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
   return {
     ...model,
     selectedAsteroidClaimOwner: owner,
+    npcShips: [...model.npcShips, ...pirateShips],
     asteroids: model.asteroids.map((asteroid) => ({
       ...asteroid,
       claimOwnerId: ownerByAsteroid.get(asteroid.id) ?? null,
