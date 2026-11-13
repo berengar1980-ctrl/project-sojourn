@@ -169,6 +169,19 @@ function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
   }
 }
 
+function makeNpcSalvageEvents(
+  sector: ControllerEconomy['sectorNpcs'],
+  events: ControllerEconomy['salvageEvents'],
+  research: ControllerEconomy['shipyardResearch']
+) {
+  return createNpcSalvageEventService({
+    world: narrowsSector,
+    sector,
+    events,
+    research,
+  });
+}
+
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {}
@@ -236,12 +249,7 @@ export function createControllerEconomy(
   registerSecurityDroneCombatants(npcStates);
   const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
   salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
-  const npcSalvageEvents = createNpcSalvageEventService({
-    world: narrowsSector,
-    sector: sectorNpcs,
-    events: salvageEvents,
-    research: shipyardResearch,
-  });
+  const npcSalvageEvents = makeNpcSalvageEvents(sectorNpcs, salvageEvents, shipyardResearch);
 
   return {
     protectsPirate: (factionId) =>
