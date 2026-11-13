@@ -386,6 +386,49 @@ function createCrewCallbacks(
   };
 }
 
+function registrationPanelOptions(
+  context: ActivePortContext,
+  legal?: SectorLegalRegistry
+): Pick<PortPanelOptions, 'model' | 'onForgeTransponder'> {
+  const { ship, location, trade, log, onRefresh } = context;
+  return {
+    model: {
+      ...createActivePortModel(context),
+      ...(legal
+        ? {
+            shipRegistration: {
+              transponder: legal.registerShip(ship.id, 'player').transponder,
+              originalTransponder: legal.registration(ship.id)!.originalTransponder,
+              wanted: legal.isWanted(ship.id),
+              debt: legal.debt(ship.id),
+              forged: legal.registration(ship.id)!.transponder !==
+                legal.registration(ship.id)!.originalTransponder,
+              pirateStation: location.stationType === 'pirate',
+            },
+          }
+        : {}),
+    },
+    onForgeTransponder: () => {
+      if (location.stationType !== 'pirate' || !legal) return;
+      const cost = 18000;
+      if (trade.player.credits < cost) {
+        log.write('SCHWARZMARKT > NICHT GENUEGEND CREDITS');
+        return;
+      }
+      const alias =
+        'PX-' + Math.floor(Math.random() * 0xffffffff)
+          .toString(36).toUpperCase().padStart(7, '0');
+      if (!legal.forgeTransponder(ship.id, alias)) {
+        log.write('SCHWARZMARKT > KENNUNGSWECHSEL FEHLGESCHLAGEN');
+        return;
+      }
+      trade.player.credits -= cost;
+      log.write('SCHWARZMARKT > TRANSPONDERMANIPULATION ERFOLGREICH: ' + alias);
+      onRefresh();
+    },
+  };
+}
+
 export function createActivePortPanel(
   root: HTMLElement,
   navigation: NavigationService,
@@ -463,44 +506,7 @@ export function createActivePortPanel(
   );
   return createPortPanel({
     root,
-    model: {
-      ...createActivePortModel(context),
-      ...(legal
-        ? {
-            shipRegistration: {
-              transponder: legal.registerShip(ship.id, 'player').transponder,
-              originalTransponder: legal.registration(ship.id)!.originalTransponder,
-              wanted: legal.isWanted(ship.id),
-              debt: legal.debt(ship.id),
-              forged:
-                legal.registration(ship.id)!.transponder !==
-                legal.registration(ship.id)!.originalTransponder,
-              pirateStation: location.stationType === 'pirate',
-            },
-          }
-        : {}),
-    },
-    onForgeTransponder: () => {
-      if (location.stationType !== 'pirate' || !legal) return;
-      const cost = 18000;
-      if (trade.player.credits < cost) {
-        log.write('SCHWARZMARKT > NICHT GENUEGEND CREDITS');
-        return;
-      }
-      const alias =
-        'PX-' +
-        Math.floor(Math.random() * 0xffffffff)
-          .toString(36)
-          .toUpperCase()
-          .padStart(7, '0');
-      if (!legal.forgeTransponder(ship.id, alias)) {
-        log.write('SCHWARZMARKT > KENNUNGSWECHSEL FEHLGESCHLAGEN');
-        return;
-      }
-      trade.player.credits -= cost;
-      log.write('SCHWARZMARKT > TRANSPONDERMANIPULATION ERFOLGREICH: ' + alias);
-      onRefresh();
-    },
+    ...registrationPanelOptions(context, legal),
     ...underworldOptions,
     onReturnToStarMap,
     onRepairShip: () => {
