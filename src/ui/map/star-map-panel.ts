@@ -165,7 +165,11 @@ function createSelectionUpdater(
     name.textContent = selected.name;
     description.textContent = selected.description;
     const route = model.route ? ` · ROUTE ${Math.round(model.route.distance)}` : '';
-    meta.textContent = `GEFAHR ${selected.dangerLevel}/3 · ${activityLabels(model)}${route}`;
+    const assessment = model.fuelStatus?.personalRisk;
+    const personal = assessment
+      ? ' · FÜR SCHIFF ' + ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[assessment.tier]
+      : '';
+    meta.textContent = `GEFAHR ${selected.dangerLevel}/3${personal} · ${activityLabels(model)}${route}`;
     const isCurrent = selected.id === model.navigation.currentLocationId;
     travelButton.hidden = model.navigation.isTravelling || isCurrent;
     travelButton.disabled = model.fuelStatus?.unreachable ?? false;
