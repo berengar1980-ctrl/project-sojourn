@@ -96,7 +96,7 @@ function routeRelevantContacts(
   return contacts.filter((contact) =>
     points
       .slice(1)
-      .some((point, index) => distanceToSegment(contact.position, points[index]!, point) <= 1100)
+      .some((point, index) => distanceToSegment(contact.position, points[index]!, point) <= 650)
   );
 }
 
