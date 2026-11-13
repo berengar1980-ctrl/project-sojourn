@@ -25,8 +25,11 @@ function registerNpcAsteroidClaim(
   );
   if (oreValue < 15000 || npc.credits < 2500) return;
   const result = economy.asteroidClaims.register(
-    location.id, { ...asteroid, scanLevel: 'analyzed' },
-    npc.id, economy.situations.currentDay, npc.credits
+    location.id,
+    { ...asteroid, scanLevel: 'analyzed' },
+    npc.id,
+    economy.situations.currentDay,
+    npc.credits
   );
   if (result.ok) npc.credits -= result.fee;
 }
@@ -46,19 +49,28 @@ function recordNpcAsteroidTheft(
   const observer = state.localNpcMining?.ships.find((ship) => ship.npcId === npc.id);
   const detected =
     claim.ownerId === 'player' &&
-    Boolean(player && observer &&
-      Math.hypot(
-        player.position.x - observer.position.x,
-        player.position.y - observer.position.y
-      ) < 650);
+    Boolean(
+      player &&
+      observer &&
+      Math.hypot(player.position.x - observer.position.x, player.position.y - observer.position.y) <
+        650
+    );
   if (!detected) return;
-  const wasDetected = economy.asteroidClaims.snapshot().conflicts.some(
-    (conflict) => conflict.locationId === location.id &&
-      conflict.asteroidId === asteroid.id &&
-      conflict.intruderId === npc.id && conflict.status === 'detected'
-  );
+  const wasDetected = economy.asteroidClaims
+    .snapshot()
+    .conflicts.some(
+      (conflict) =>
+        conflict.locationId === location.id &&
+        conflict.asteroidId === asteroid.id &&
+        conflict.intruderId === npc.id &&
+        conflict.status === 'detected'
+    );
   const conflict = economy.asteroidClaims.recordTheft(
-    location.id, asteroid.id, npc.id, amount, true,
+    location.id,
+    asteroid.id,
+    npc.id,
+    amount,
+    true,
     miningResourceById(resourceId)?.baseValue ?? 1
   );
   if (conflict && !wasDetected)
@@ -124,7 +136,8 @@ export function ensureMiningCombatWorld(
     ),
     getAsteroids: () => state.localSpace?.getSnapshot().instance.asteroids ?? [],
     mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
-    onAsteroidScanned: (npc, asteroid) => registerNpcAsteroidClaim(context, location, npc, asteroid),
+    onAsteroidScanned: (npc, asteroid) =>
+      registerNpcAsteroidClaim(context, location, npc, asteroid),
     onAsteroidMined: (npc, asteroid, resourceId, amount) =>
       recordNpcAsteroidTheft(context, location, npc, asteroid, resourceId, amount),
     depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),

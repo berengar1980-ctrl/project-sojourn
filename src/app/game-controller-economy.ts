@@ -167,7 +167,6 @@ function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
       });
     }
   }
-
 }
 
 export function createControllerEconomy(
