@@ -148,6 +148,21 @@ function miningTest() {
   const caught = claims.recordTheft('field-a', asteroid.id, 'pirate', 5, true, 100);
   assert.equal(caught.compensation, 750);
   assert.equal(claims.resolveConflict('field-a', asteroid.id, 'pirate', 'paid').status, 'paid');
+  const second = claims.recordTheft('field-a', asteroid.id, 'other-miner', 7, true, 80);
+  assert.equal(second.compensation, 840);
+  assert.equal(claims.snapshot().conflicts.length, 2,
+    'A different intruder must not overwrite the first offender');
+  const loaded = new AsteroidClaimRegistry();
+  assert(loaded.restoreState(JSON.parse(JSON.stringify(claims.exportState()))));
+  assert.equal(loaded.claim('field-a', asteroid).ownerId, 'player');
+  assert.equal(loaded.seedFor('field-a', () => 999), 17);
+  const persistedRock = mkRock('asteroid-17-3');
+  persistedRock.scanLevel = 'unscanned';
+  persistedRock.deposits[0].oreRemaining = 100;
+  loaded.restoreField('field-a', [persistedRock]);
+  assert.equal(persistedRock.deposits[0].oreRemaining, 75);
+  assert.equal(persistedRock.scanLevel, 'analyzed');
+  assert.equal(loaded.snapshot().conflicts.length, 2);
   assert.equal(claims.abandon('field-a', asteroid.id, 'pirate'), false);
   assert.equal(claims.abandon('field-a', asteroid.id, 'player'), true);
   assert.equal(claims.claim('field-a', asteroid), null);
