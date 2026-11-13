@@ -1,4 +1,5 @@
 name: Navigation route one-shot format and economic smoke
+# Rerun on corrected 650-unit dynamic-contact corridor
 
 on:
   push:
