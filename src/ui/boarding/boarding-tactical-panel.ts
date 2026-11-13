@@ -317,7 +317,12 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const button = (action: BoardingAction, name: string, disabled = false): string =>
       boardingActionButton(action, this.action, name, !controls.canAct || disabled);
     const { cannotShoot, cannotSuppress, cannotOverwatch, cannotHold } = controls;
-    const statusLabel = boardingActionStatus(snapshot, selected, this.action, this.checkpointMessage);
+    const statusLabel = boardingActionStatus(
+      snapshot,
+      selected,
+      this.action,
+      this.checkpointMessage
+    );
     const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
