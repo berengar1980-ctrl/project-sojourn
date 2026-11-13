@@ -34,6 +34,9 @@ export class AsteroidClaimRegistry {
   private key(locationId: string, asteroidId: string): string {
     return JSON.stringify([locationId, asteroidId]);
   }
+  private disputeKey(locationId: string, asteroidId: string, intruderId: string): string {
+    return JSON.stringify([locationId, asteroidId, intruderId]);
+  }
 
   /** Use the same physical field every time the player returns. */
   seedFor(locationId: string, generate: () => number): number {
@@ -124,7 +127,8 @@ export class AsteroidClaimRegistry {
     const key = this.key(locationId, asteroidId);
     const claim = this.claims.get(key);
     if (!claim || claim.ownerId === intruderId || quantity <= 0 || !detected) return null;
-    const previous = this.disputes.get(key);
+    const disputeKey = this.disputeKey(locationId, asteroidId, intruderId);
+    const previous = this.disputes.get(disputeKey);
     const compensation = Math.max(1, Math.ceil(quantity * Math.max(0, unitValue) * 1.5));
     const conflict: AsteroidClaimConflict = {
       locationId,
@@ -135,7 +139,7 @@ export class AsteroidClaimRegistry {
       compensation: compensation + (previous?.status === 'detected' ? previous.compensation : 0),
       status: 'detected',
     };
-    this.disputes.set(key, conflict);
+    this.disputes.set(disputeKey, conflict);
     return { ...conflict };
   }
 
@@ -146,10 +150,11 @@ export class AsteroidClaimRegistry {
     choice: 'paid' | 'fight' | 'escaped'
   ): AsteroidClaimConflict | null {
     const key = this.key(locationId, asteroidId);
-    const dispute = this.disputes.get(key);
+    const disputeKey = this.disputeKey(locationId, asteroidId, intruderId);
+    const dispute = this.disputes.get(disputeKey);
     if (!dispute || dispute.status !== 'detected' || dispute.intruderId !== intruderId) return null;
     const result = { ...dispute, status: choice };
-    this.disputes.set(key, result);
+    this.disputes.set(disputeKey, result);
     return { ...result };
   }
 
