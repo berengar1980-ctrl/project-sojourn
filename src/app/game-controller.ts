@@ -197,6 +197,39 @@ function mountControllerMining(
     model: controllerLocalModel(context),
     log: context.systemLog,
     ...createControllerLocalActions(context, () => mountControllerStarMap(context)),
+    onToggleAsteroidClaim: () => {
+      const field = state.localSpace?.getSnapshot().instance;
+      const selectedId = state.localSpace?.getSnapshot().selectedAsteroidId;
+      const asteroid = field?.asteroids.find((entry) => entry.id === selectedId);
+      if (!field || !asteroid) return;
+      const claims = context.economy.asteroidClaims;
+      const existing = claims.claim(field.sourceLocationId, asteroid);
+      if (existing?.ownerId === 'player') {
+        if (claims.abandon(field.sourceLocationId, asteroid.id, 'player'))
+          context.systemLog.write('MINING > KONZESSION AUF ASTEROID AUFGEGEBEN');
+      } else {
+        const result = claims.register(
+          field.sourceLocationId,
+          asteroid,
+          'player',
+          context.economy.situations.currentDay,
+          context.economy.trade.player.credits
+        );
+        if (result.ok) {
+          context.economy.trade.player.credits -= result.fee;
+          context.systemLog.write('MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT');
+        } else {
+          const reasons = {
+            unscanned: 'ZUERST NAHBEREICHSSCAN ABSCHLIESSEN',
+            empty: 'KEINE VERWERTBAREN ERZRESERVEN',
+            occupied: 'ASTEROID HAT BEREITS EINEN EIGENTÜMER',
+            unaffordable: 'NICHT GENÜGEND CREDITS',
+          };
+          context.systemLog.write('MINING > ' + reasons[result.reason]);
+        }
+      }
+      state.panels.local?.update(controllerLocalModel(context));
+    },
     onSelectNpc: (id) => {
       state.selectedNpcId = id;
       state.panels.local?.update(controllerLocalModel(context));
