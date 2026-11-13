@@ -95,6 +95,14 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
   if (drone && defender && defender.hullHp <= 0 && drone.snapshot().operational) {
     drone.destroy();
     context.systemLog.write('SEC-01 > SICHERHEITSDROHNE IM GEFECHT ZERSTOERT');
+  } else if (drone && defender && defender.hullHp > 0 && defender.travel) {
+    // Strategic combat recovery may request a return trip. A surviving field
+    // defense drone instead remains assigned to its existing field.
+    delete defender.travel;
+    delete defender.combatMovement;
+    defender.locationId = locationId;
+    defender.activityId = 'patrol';
+    defender.activity = 'Lokale Konzessionsüberwachung';
   }
 }
 
