@@ -94,6 +94,14 @@ export class SectorLegalRegistry {
 
   isWanted(shipId: string): boolean { return this.debt(shipId) > 0; }
 
+  /** A forged transponder hides a warrant from ordinary scans. Only a
+   * positive deep identification connects it to the immutable hull record. */
+  isRecognizedWanted(shipId: string, deepIdentification = false): boolean {
+    const registration = this.registration(shipId);
+    if (!registration || !this.isWanted(shipId)) return false;
+    return registration.transponder === registration.originalTransponder || deepIdentification;
+  }
+
   /** Creditors receive the paid principal once, not on every encounter. */
   settle(shipId: string, availableCredits: number): {
     readonly paid: number;
