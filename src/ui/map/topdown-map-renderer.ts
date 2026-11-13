@@ -14,6 +14,7 @@ import { mapLocationVisualRadius, mapSymbolScale, mapBackgroundSeed } from './ma
 import { OrbitalMapSceneProjection } from './orbital-map-scene-projection';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawStarMapDangerRegions } from './star-map-danger-regions';
+import { drawStarMapWreckMarker } from './star-map-wreck-marker';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
@@ -391,7 +392,7 @@ export class TopdownMapRenderer {
         detailLevel: 'map',
         light,
       });
-    } else if (location.kind === 'wreck') this.drawWreck(point, radius);
+    } else if (location.kind === 'wreck') drawStarMapWreckMarker(this.context, point, radius);
     else this.drawPlanet(location, point, radius, light);
 
     drawSectorEventMarker(this.context, location.id, point, radius);
@@ -487,14 +488,5 @@ export class TopdownMapRenderer {
     if (location.ringStyle) this.planetRings.drawFront(location.ringStyle, point, radius);
   }
 
-  private drawWreck(point: WorldPoint, radius: number): void {
-    this.context.strokeStyle = '#a68d7d';
-    this.context.lineWidth = 3;
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius, point.y + radius * 0.5);
-    this.context.lineTo(point.x + radius * 0.8, point.y - radius * 0.5);
-    this.context.moveTo(point.x - radius * 0.6, point.y - radius * 0.7);
-    this.context.lineTo(point.x + radius, point.y + radius * 0.7);
-    this.context.stroke();
-  }
+
 }
