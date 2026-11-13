@@ -447,11 +447,7 @@ export interface MutableMine {
   definition: ShipMineDefinition;
 }
 
-export interface ShieldSegmentHit {
-  readonly point: CombatPoint;
-  readonly surfaceAnchor: CombatPoint;
-  readonly t: number;
-}
+export type { ShieldSegmentHit } from './combat-shield-segment-types';
 
 export interface MutableThrownAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;
