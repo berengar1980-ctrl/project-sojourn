@@ -1,5 +1,6 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
+import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 
 const UNAUTHORIZED_MINING_PENALTY = 1500;
 
@@ -87,6 +88,8 @@ export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: nu
         context.systemLog.write(
           'SEC-01 > NOTRUF ABGESETZT: SCHIFFSKENNUNG ZUR FAHNDUNG AUSGESCHRIEBEN'
         );
+        legal.reportSighting(shipId, locationId, day, 'distress');
+        dispatchPatrolToReport(context, locationId, null);
       }
       continue;
     }
@@ -109,6 +112,8 @@ export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: nu
       context.systemLog.write(
         'SEC-01 > NOTRUF: ' + npc.name.toUpperCase() + ' IST ZUR FAHNDUNG AUSGESCHRIEBEN'
       );
+      legal.reportSighting(shipId, locationId, day, 'distress');
+      dispatchPatrolToReport(context, locationId, null);
     }
   }
 }
