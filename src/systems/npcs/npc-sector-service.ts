@@ -9,6 +9,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 
 import { npcOperationalSpeed } from './npc-upgrade-service';
+import { replanNpcTravel } from './npc-sector-live-replan';
 import { npcRecoveryLocation } from './npc-sector-recovery-location';
 import { advanceNpcCombatMovement } from './npc-sector-combat-movement';
 
@@ -278,6 +279,7 @@ class SectorService implements NpcSectorService {
       fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
+      threatContacts: npcRouteThreats(npc, this.npcs, this.livePosition),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: npc.credits,
@@ -406,6 +408,7 @@ class SectorService implements NpcSectorService {
       : npcOrbitHeading(this.world, npc);
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
+    if (npc.travel) replanNpcTravel(this.world, npc, () => npcRouteThreats(npc, this.npcs, this.livePosition), dt);
     const travel = npc.travel;
     if (!travel) {
       serviceIdleNpc(this.world, npc, this.options);
