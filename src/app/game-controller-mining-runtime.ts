@@ -1,4 +1,5 @@
 import { miningResourceById } from '../data/resources/mining-resources';
+import { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import type { WorldLocation } from '../core/world-types';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -39,6 +40,12 @@ export function ensureMiningCombatWorld(
       );
     }
   );
+  if (!economy.securityDrones.has(location.id)) {
+    const field = state.localSpace.getSnapshot().instance;
+    economy.securityDrones.set(location.id, new AsteroidSecurityDrone(
+      field.width, field.height, field.asteroids
+    ));
+  }
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
     seed: state.localSpaceSeed,
