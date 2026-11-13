@@ -29,7 +29,6 @@ import { selectedAsteroid, selectedRouteOptions } from './local-space-scanning';
 import {
   createIdleStationKeepingState,
   resetIdleStationKeeping,
-  updateIdleStationKeeping,
   type IdleStationKeepingState,
 } from './local-space-station-keeping';
 import type { LocalSpaceService } from './local-space-api';
@@ -279,7 +278,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     } else if (this.miningPhase === 'idle' && this.navigationTarget) {
       this.updateManualNavigation(clamped);
     } else if (this.miningPhase === 'idle') {
-      this.updatePassiveStationKeeping(clamped);
+      this.scanClock.keepStation(clamped, this.idleStationKeeping, this.stationKeepingPosition);
     } else if (asteroid && this.miningPhase === 'approaching') {
       this.updateApproach(clamped, asteroid);
     } else if (asteroid && this.miningPhase === 'scanning') {
@@ -465,16 +464,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     if (!hasMineableDeposits(asteroid, selection)) this.finishMining();
-  }
-
-  private updatePassiveStationKeeping(deltaSeconds: number): void {
-    updateIdleStationKeeping(
-      this.idleStationKeeping,
-      this.instance.ship,
-      this.stationKeepingPosition,
-      this.instance.seed,
-      deltaSeconds
-    );
   }
 
   private updateMiningFormation(deltaSeconds: number, asteroid: LocalAsteroid): void {
