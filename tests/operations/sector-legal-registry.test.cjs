@@ -64,6 +64,23 @@ function sightingsRequireOutstandingDebtTest() {
   law.settle('player-ship', 900);
   assert.equal(law.reportSighting('player-ship', 'niveus', 4, 'arrival'), null);
 }
+function serializationTest() {
+  const legal = new SectorLegalRegistry();
+  legal.registerShip('ship-1', 'npc-1');
+  legal.reportOffense('ship-1', 'player', 'Raubbau', 500, 7);
+  legal.settle('ship-1', 120);
+  legal.reportSighting('ship-1', 'haven', 8, 'arrival');
+  const saved = JSON.parse(JSON.stringify(legal.exportState()));
+  const loaded = new SectorLegalRegistry();
+  assert(loaded.restoreState(saved));
+  assert.equal(loaded.registration('ship-1').ownerId, 'npc-1');
+  assert.equal(loaded.debt('ship-1'), 380);
+  assert.equal(loaded.latestSighting('ship-1').locationId, 'haven');
+  loaded.reportOffense('ship-1', 'directorate', 'Flucht', 100, 9);
+  assert.equal(loaded.snapshot().charges[1].id, 'charge-2',
+    'Restored sequence must not collide with existing charges');
+}
 registrationAndFraudTest();
+serializationTest();
 detentionDaysAndCreditorsTest();
 sightingsRequireOutstandingDebtTest();
