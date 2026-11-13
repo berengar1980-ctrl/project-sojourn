@@ -28,6 +28,7 @@ interface LocalActionContext {
   readonly refresh: () => void;
   readonly systemLog: SystemLogService;
   readonly returnToStarMap: () => void;
+  readonly confirmMining?: () => boolean;
 }
 
 async function calculateMiningRoute(service: LocalSpaceService): Promise<readonly WorldPoint[]> {
@@ -76,7 +77,7 @@ export function createLocalPanelActions(context: LocalActionContext): LocalPanel
     },
     async onStartMining() {
       const activeSpace = context.getSpace();
-      if (!activeSpace) return;
+      if (!activeSpace || (context.confirmMining && !context.confirmMining())) return;
       const route = await calculateMiningRoute(activeSpace);
       if (context.getSpace() !== activeSpace || route.length === 0) return;
       activeSpace.startMining(route);
@@ -128,6 +129,20 @@ export function createControllerLocalActions(
       }
     },
     systemLog: context.systemLog,
+    confirmMining: () => {
+      const space = context.state.localSpace?.getSnapshot();
+      if (!space?.selectedAsteroidId) return true;
+      const asteroid = space.instance.asteroids.find((entry) => entry.id === space.selectedAsteroidId);
+      if (!asteroid) return true;
+      const claim = context.economy.asteroidClaims.claim(space.instance.sourceLocationId, asteroid);
+      if (!claim || claim.ownerId === 'player') return true;
+      return window.confirm(
+        'FREMDKONZESSION – UNBEFUGTER ABBAU!\\n' +
+        'Asteroid: ' + asteroid.id + '\\n' +
+        'Eigentümer: ' + claim.ownerId + '\\n\\n' +
+        'Raubbau kann Geldstrafen und eine Fahndung auslösen. Trotzdem abbauen?'
+      );
+    },
     returnToStarMap: createStarMapReturnAction(context.root, context.systemLog, mountStarMap),
   });
 }
