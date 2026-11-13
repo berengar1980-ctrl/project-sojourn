@@ -178,10 +178,20 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
           (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
         )?.ownerId ?? null
       : null;
+  const knownClaims = context.economy.asteroidClaims.snapshot().claims.filter(
+    (claim) => claim.locationId === locationId
+  );
+  const ownerByAsteroid = new Map(
+    knownClaims.map((claim) => [claim.asteroidId, claim.ownerId])
+  );
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
   return {
     ...model,
     selectedAsteroidClaimOwner: owner,
+    asteroids: model.asteroids.map((asteroid) => ({
+      ...asteroid,
+      claimOwnerId: ownerByAsteroid.get(asteroid.id) ?? null,
+    })),
     securityDrone: drone?.snapshot() ?? null,
   };
 }
