@@ -49,13 +49,16 @@ function checkpointBoard(current: BoardingEncounterSnapshot, candidate: Boarding
   return true;
 }
 
-function compatibleCheckpointUnit(original: BoardingUnit | undefined, saved: BoardingUnit): boolean {
+function compatibleCheckpointUnit(
+  original: BoardingUnit | undefined,
+  saved: BoardingUnit
+): boolean {
   if (!original || original.team !== saved.team || original.maxHp !== saved.maxHp) return false;
   if (original.weapon.id !== saved.weapon?.id) return false;
   if (original.meleeWeapon.id !== saved.meleeWeapon?.id) return false;
   if (!validNumber(saved.hp, 0, saved.maxHp) || !validNumber(saved.ap, 0, 3)) return false;
   if (!Number.isInteger(saved.q) || !Number.isInteger(saved.r)) return false;
-  return saved.q < 0 || saved.r < 0 || (saved.q >= 0 && saved.r >= 0);
+  return true;
 }
 
 function checkpointUnits(current: BoardingEncounterSnapshot, candidate: BoardingEncounterSnapshot) {
