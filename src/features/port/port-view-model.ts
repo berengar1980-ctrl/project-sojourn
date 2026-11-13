@@ -152,6 +152,14 @@ export interface PortOperationsView {
 }
 
 export interface PortViewModel {
+  readonly shipRegistration?: {
+    readonly transponder: string;
+    readonly originalTransponder: string;
+    readonly wanted: boolean;
+    readonly debt: number;
+    readonly forged: boolean;
+    readonly pirateStation: boolean;
+  };
   readonly charter?: {
     readonly active: TradeCharterService['active'];
     readonly offers: TradeCharterService['offers'];
