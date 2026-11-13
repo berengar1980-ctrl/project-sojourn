@@ -5,6 +5,7 @@ import {
   repointRouteEndpoints,
   type RoutePlan,
   type RouteProfile,
+  type RouteThreatContact,
 } from './route-planner';
 
 const FUEL_RESERVE = 1.02;
@@ -38,6 +39,7 @@ export interface FuelRouteRequest {
   readonly fromPosition: WorldPoint;
   readonly destinationId: string;
   readonly profile: RouteProfile;
+  readonly threatContacts?: readonly RouteThreatContact[];
   readonly fuel: number;
   readonly capacity: number;
   readonly credits: number;
@@ -84,8 +86,8 @@ function routingOrigin(request: FuelRouteRequest): string {
 function legBetween(request: FuelRouteRequest, fromId: string, toId: string): RoutePlan {
   const base =
     fromId === 'deep-space'
-      ? planRouteFromPoint(request.world, request.fromPosition, toId, request.profile)
-      : planRouteWithProfile(request.world, fromId, toId, request.profile);
+      ? planRouteFromPoint(request.world, request.fromPosition, toId, request.profile, request.threatContacts)
+      : planRouteWithProfile(request.world, fromId, toId, request.profile, request.threatContacts);
   if (!request.locationPosition) return base;
   return repointRouteEndpoints(
     base,
