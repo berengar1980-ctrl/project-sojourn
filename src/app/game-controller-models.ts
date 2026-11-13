@@ -73,6 +73,7 @@ export function controllerShipRuntimeOptions(
 
 /** Dynamic traffic changes route exposure, never a location's permanent danger level. */
 export function updateSectorNavigationThreats(context: ControllerRuntimeContext): void {
+  const { economy } = context;
   // Current pirate raids and patrol cover affect navigation, not the permanent map zones.
   context.navigation.setThreatContacts(
     context.world.inForeignSystem()
