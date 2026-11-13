@@ -9,11 +9,11 @@ import {
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
+import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
+import { resolveControllerCombat } from './game-controller-combat-resolution';
 import type { SalvageField } from '../core/salvage-types';
 import { snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
-import { combatResultMessage } from '../systems/combat/combat-result-summary';
-import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
@@ -28,11 +28,8 @@ import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
 import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
-import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { tickControllerScene } from './game-controller-scene-tick';
-import { startCombatBoarding } from './game-controller-combat-boarding';
-import { mountCombatScene } from './game-controller-combat-scene';
 import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -66,7 +63,6 @@ import {
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
 import {
-  recordPlayerCombatHull,
   startPlayerFuelTravel,
   tickPlayerFuelJourney,
   refuelAtPort,
@@ -190,41 +186,6 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   if (announce) inspectDockArrival(context);
   mountControllerSwitcher(context);
 }
-function toggleControllerAsteroidClaim(context: ControllerRuntimeContext): void {
-  const { state, economy } = context;
-  const field = state.localSpace?.getSnapshot().instance;
-  const selectedId = state.localSpace?.getSnapshot().selectedAsteroidId;
-  const asteroid = field?.asteroids.find((entry) => entry.id === selectedId);
-  if (!field || !asteroid) return;
-  const claims = economy.asteroidClaims;
-  const existing = claims.claim(field.sourceLocationId, asteroid);
-  if (existing?.ownerId === 'player') {
-    if (claims.abandon(field.sourceLocationId, asteroid.id, 'player'))
-      context.systemLog.write('MINING > KONZESSION AUF ASTEROID AUFGEGEBEN');
-  } else {
-    const result = claims.register(
-      field.sourceLocationId,
-      asteroid,
-      'player',
-      economy.situations.currentDay,
-      economy.trade.player.credits
-    );
-    if (result.ok) {
-      economy.trade.player.credits -= result.fee;
-      context.systemLog.write('MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT');
-    } else {
-      const reasons = {
-        unscanned: 'ZUERST NAHBEREICHSSCAN ABSCHLIESSEN',
-        empty: 'KEINE VERWERTBAREN ERZRESERVEN',
-        occupied: 'ASTEROID HAT BEREITS EINEN EIGENTÜMER',
-        unaffordable: 'NICHT GENÜGEND CREDITS',
-      };
-      context.systemLog.write('MINING > ' + reasons[result.reason]);
-    }
-  }
-  state.panels.local?.update(controllerLocalModel(context));
-}
-
 function mountControllerMining(
   context: ControllerRuntimeContext,
   reuseSeed = false,
@@ -383,122 +344,6 @@ function mountControllerSalvage(
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
-function synchronizeLocalDefender(
-  context: ControllerRuntimeContext,
-  defender: {
-    id: string;
-    position: { x: number; y: number };
-    headingRadians: number;
-    speed: number;
-    hullHp: number;
-  }
-): void {
-  if (defender.id.startsWith('security-drone:')) {
-    const locationId = defender.id.slice('security-drone:'.length);
-    const drone = context.economy.securityDrones.get(locationId);
-    if (drone) {
-      drone.restore(defender.position, defender.hullHp > 0);
-      if (defender.hullHp <= 0) {
-        context.economy.legal.reportOffense(
-          context.state.activeShip.id,
-          'directorate',
-          'Zerstörung einer Sicherheitsdrohne',
-          12000,
-          context.economy.situations.currentDay
-        );
-        context.systemLog.write(
-          'DIREKTORUM > SICHERHEITSDROHNE ZERSTOERT · SCHWERE STRAFTAT REGISTRIERT'
-        );
-      }
-    }
-    return;
-  }
-  const localId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
-  if (
-    localId &&
-    context.economy.localPirates
-      .get(localId)
-      ?.snapshot(context.economy.sectorNpcs.npcs)
-      .some((ship) => ship.npcId === defender.id)
-  ) {
-    context.economy.localPirates
-      .get(localId)
-      ?.syncCombatPose(defender.id, defender.position, defender.headingRadians);
-    return;
-  }
-  context.state.localNpcMining?.syncCombatPose(
-    defender.id,
-    defender.position,
-    defender.headingRadians,
-    defender.speed
-  );
-}
-function resolveControllerCombat(context: ControllerRuntimeContext): void {
-  const { state } = context;
-  const activeCombat = context.engagements.activePlayerCombat();
-  if (
-    activeCombat &&
-    state.mode !== 'combat' &&
-    state.mode !== 'boarding' &&
-    state.embeddedCombat === null
-  ) {
-    mountCombatScene(context, () => mountControllerStarMap(context));
-  }
-  if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
-  const snapshot = activeCombat.getSnapshot();
-  recordPlayerCombatHull(context, snapshot);
-  if (snapshot.boardingInitiator) {
-    const origin = state.embeddedCombat;
-    const preservedSalvageField =
-      origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
-    if (origin === 'local-space') {
-      state.localSpace?.syncCombatPose(
-        snapshot.attacker.position,
-        snapshot.attacker.headingRadians,
-        snapshot.attacker.speed
-      );
-      synchronizeLocalDefender(context, snapshot.defender);
-    }
-    startCombatBoarding(context, snapshot, (boardingOutcome) => {
-      if (boardingOutcome === 'enemy_win') return mountControllerStarMap(context);
-      if (origin === 'local-space') mountControllerMining(context, true, true);
-      else if (origin === 'salvage-space')
-        mountControllerSalvage(context, true, preservedSalvageField, snapshot);
-      else mountControllerStarMap(context);
-    });
-    return;
-  }
-  context.systemLog.write(combatResultMessage(snapshot));
-  context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
-  if (state.embeddedCombat === 'local-space') {
-    state.localSpace?.syncCombatPose(
-      snapshot.attacker.position,
-      snapshot.attacker.headingRadians,
-      snapshot.attacker.speed
-    );
-    synchronizeLocalDefender(context, snapshot.defender);
-  } else {
-    state.salvageScene?.finishCombat(snapshot);
-  }
-  emitCampaignCombatEnded(context.campaignEvents, snapshot);
-  context.engagements.finishPlayerCombat();
-  if (snapshot.defender.id.startsWith('security-drone:') && snapshot.defender.hullHp > 0) {
-    const securityNpc = context.economy.sectorNpcs.npcs.find(
-      (npc) => npc.id === snapshot.defender.id
-    );
-    if (securityNpc) {
-      securityNpc.locationId = snapshot.defender.id.slice('security-drone:'.length);
-      delete securityNpc.travel;
-      delete securityNpc.combatMovement;
-      securityNpc.activityId = 'patrol';
-      securityNpc.activity = 'Lokale Konzessionsüberwachung';
-    }
-  }
-  state.embeddedCombat = null;
-  showCampaignCombatSummary(context.root, snapshot, () => {
-    if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
-  });
-}
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
   if (tickLegalDetention(context, deltaSeconds)) return;
   if (tickCustoms(context)) return;
@@ -516,7 +361,11 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
-  resolveControllerCombat(context);
+  resolveControllerCombat(context, {
+    starMap: () => mountControllerStarMap(context),
+    mining: (reuseSeed, preserveField) => mountControllerMining(context, reuseSeed, preserveField),
+    salvage: (reuseSeed, field, combat) => mountControllerSalvage(context, reuseSeed, field, combat),
+  });
   const currentLocationId = navigationSnapshot.currentLocationId;
   observeControllerOperations(context, deltaSeconds);
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
