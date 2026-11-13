@@ -1,5 +1,6 @@
 import type { CampaignJournalEntry } from '../../core/campaign-types';
 import { renderCampaignJournal } from './star-map-campaign-journal';
+import type { RouteProfile } from '../../systems/navigation/route-planner';
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
 import { bindCargoMarketScanner } from './star-map-cargo-scanner';
@@ -8,6 +9,7 @@ import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-rende
 import { createSystemLogPanel } from '../system-log/system-log-panel';
 import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
 import { createStarMapMenu, type StarMapMenu } from './star-map-menu';
+import { bindDangerAndRouteControls } from './star-map-navigation-controls';
 import { updateStarMapFuelStatus } from './star-map-fuel-status';
 
 export interface StarMapPanel {
@@ -26,6 +28,7 @@ interface StarMapPanelOptions {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onStartTravel: () => void;
+  readonly onRouteProfileChange?: (profile: RouteProfile) => void;
   readonly onDock: () => void;
   readonly getCampaignJournal?: () => readonly CampaignJournalEntry[];
   readonly onCampaignChoice?: (campaignId: string, dialogueId: string, choiceId: string) => void;
@@ -240,6 +243,10 @@ function populateStarMapMenu(
     '<p class="star-map-menu__help">KARTENDARSTELLUNG</p>'
   );
   menu.mapPane.append(modeToggle, labelToggle);
+  const hazardHelp = document.createElement('p');
+  hazardHelp.className = 'star-map-menu__help';
+  hazardHelp.textContent = 'GEFAHRENREGIONEN // FESTE WELTZONEN';
+  menu.mapPane.append(hazardHelp);
   const resetButton = document.createElement('button');
   resetButton.type = 'button';
   resetButton.className = 'star-map-menu__action';
@@ -352,6 +359,28 @@ function createMenuContentRefresher(
   return refresh;
 }
 
+function bindStarMapActions(
+  controls: ReturnType<typeof createStarMapControls>,
+  renderer: TopdownMapRenderer,
+  options: StarMapPanelOptions,
+  getModel: () => StarMapViewModel
+): () => void {
+  const unbindInput = bindStarMapInput({
+    canvas: controls.canvas,
+    shell: controls.shell,
+    renderer,
+    onSelectLocation: options.onSelectLocation,
+    onSelectNpc: options.onSelectNpc,
+  });
+  controls.travelButton.addEventListener('click', options.onStartTravel);
+  controls.dockButton.addEventListener('click', options.onDock);
+  controls.attackButton.addEventListener('click', () => {
+    const selected = getModel().npcShips.find((npc) => npc.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
+  return unbindInput;
+}
+
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const controls = createStarMapControls(options);
   const {
@@ -375,10 +404,16 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   let refreshMenuContent: () => void = () => {};
   const menu = createStarMapMenu(shell, () => refreshMenuContent());
 
-  const resetButton = populateStarMapMenu(menu, controls);
-  const updateTicker = createStarMapTicker(shell, options.log);
   const renderer = new TopdownMapRenderer(canvas, model);
+  const resetButton = populateStarMapMenu(menu, controls);
+  const refreshProfileButtons = bindDangerAndRouteControls(
+    menu,
+    renderer,
+    () => model,
+    options.onRouteProfileChange
+  );
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
+  const updateTicker = createStarMapTicker(shell, options.log);
 
   const renderCargoScanner = bindCargoMarketScanner(
     () => model,
@@ -415,19 +450,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
 
-  const unbindInput = bindStarMapInput({
-    canvas,
-    shell,
-    renderer,
-    onSelectLocation: options.onSelectLocation,
-    onSelectNpc: options.onSelectNpc,
-  });
-  travelButton.addEventListener('click', options.onStartTravel);
-  dockButton.addEventListener('click', options.onDock);
-  attackButton.addEventListener('click', () => {
-    const selected = model.npcShips.find((npc) => npc.isSelected);
-    if (selected) options.onAttackNpc(selected.id);
-  });
+  const unbindInput = bindStarMapActions(controls, renderer, options, () => model);
 
   refreshMenuContent = createMenuContentRefresher(
     menu,
@@ -444,6 +467,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       model = nextModel;
       renderer.update(model);
       updateSelection();
+      refreshProfileButtons();
       const now = performance.now();
       if (now - lastAuxiliaryUpdate >= 650) {
         lastAuxiliaryUpdate = now;

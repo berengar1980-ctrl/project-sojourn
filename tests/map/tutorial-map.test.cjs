@@ -28,8 +28,10 @@ assert(data.includes('salvage: true'), 'sector needs salvage locations');
 assert(data.includes("id: 'blackjaw-outpost'"), 'sector needs a pirate port');
 assert(data.includes("id: 'gallows-anchor'"), 'sector needs more than one pirate port');
 assert(
-  !renderer.includes('this.drawRegions(') && !navRenderer.includes('this.drawRegions('),
-  'danger regions must remain routing-only, without decorative map overlays'
+  renderer.includes('drawStarMapDangerRegions(') &&
+    renderer.includes('setDangerOverlay(visible: boolean)') &&
+    renderer.includes('setDangerBand('),
+  'the star map must expose fixed green/yellow/red danger overlays and toggles'
 );
 assert(renderer.includes('drawStar'), 'renderer must draw the system star');
 assert(renderer.includes('drawOrbits'), 'renderer must support orbital structure');

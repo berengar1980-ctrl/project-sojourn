@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import type { RouteThreatContact } from '../navigation/route-planner';
 
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 
@@ -25,6 +26,23 @@ export function routeProfile(npc: SectorNpcState): RouteProfile {
 
 export function routeFuel(npc: SectorNpcState, route: RoutePlan): number {
   return Math.max(0.1, route.distance * npc.fuelUse * FUEL_DISTANCE_SCALE);
+}
+
+/** NPC captains weigh nearby real piracy against patrol cover using their own risk preference. */
+export function npcRouteThreats(
+  self: SectorNpcState,
+  npcs: readonly SectorNpcState[],
+  livePosition: (npc: SectorNpcState) => WorldPoint
+): RouteThreatContact[] {
+  if (self.pirate || self.job === 'patrol') return [];
+  return npcs
+    .filter((npc) => npc.id !== self.id && npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
+    .slice(0, 12)
+    .map((npc) => ({
+      position: livePosition(npc),
+      kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
+      strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
+    }));
 }
 
 export function routePoint(route: readonly WorldPoint[], distance: number): WorldPoint {

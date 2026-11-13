@@ -58,6 +58,7 @@ import {
   createControllerLog,
   localSeed,
   syncControllerNavigationCrewPerformance,
+  updateSectorNavigationThreats,
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
 import {
@@ -380,6 +381,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   tickControllerNpcOperations(economy, deltaSeconds);
+  updateSectorNavigationThreats(context);
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);

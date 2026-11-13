@@ -1,5 +1,5 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-import type { RoutePlan } from './route-planner';
+import type { RoutePlan, RouteProfile, RouteThreatContact } from './route-planner';
 
 export interface NavigationSnapshot {
   readonly currentLocationId: string | null;
@@ -17,6 +17,9 @@ export interface NavigationSnapshot {
   readonly speed: number;
   readonly previewRoute: RoutePlan | null;
   readonly activeRoute: RoutePlan | null;
+  readonly routeProfile: RouteProfile;
+  readonly threatRevision: number;
+  readonly threatContacts: readonly RouteThreatContact[];
 }
 
 export interface NavigationService {
@@ -33,5 +36,7 @@ export interface NavigationService {
   stopPursuit(): NavigationSnapshot;
   recoverToNearestDock(): NavigationSnapshot;
   setCruiseSpeed(cruiseSpeed: number, turnRateMultiplier?: number): NavigationSnapshot;
+  setRouteProfile(profile: RouteProfile): NavigationSnapshot;
+  setThreatContacts(contacts: readonly RouteThreatContact[]): void;
   tick(deltaSeconds: number): NavigationSnapshot;
 }

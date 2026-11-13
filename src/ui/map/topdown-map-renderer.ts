@@ -10,9 +10,11 @@ import {
   type StarMapPick,
   type StarMapPickOption,
 } from './star-map-contact-picking';
-import { mapLocationVisualRadius, mapSymbolScale } from './map-visual-scale';
+import { mapLocationVisualRadius, mapSymbolScale, mapBackgroundSeed } from './map-visual-scale';
 import { OrbitalMapSceneProjection } from './orbital-map-scene-projection';
 import { NavMapRenderer } from './nav-map-renderer';
+import { drawStarMapDangerRegions } from './star-map-danger-regions';
+import { drawStarMapWreckMarker } from './star-map-wreck-marker';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
@@ -37,6 +39,8 @@ export class TopdownMapRenderer {
   private model: StarMapViewModel;
   private displayMode: StarMapDisplayMode = 'nav';
   private labelsVisible = true;
+  private dangerOverlayVisible = true;
+  private dangerBands = { green: true, yellow: true, red: true };
   private cargoOverlay: ReadonlyMap<string, 'best' | 'good' | 'low'> = new Map();
   private hasFitted = false;
   private hitAreas: readonly HitArea[] = [];
@@ -53,7 +57,10 @@ export class TopdownMapRenderer {
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.navRenderer = new NavMapRenderer(context);
-    this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
+    this.backgroundRenderer = new SpaceBackgroundRenderer(
+      context,
+      mapBackgroundSeed(model.worldId)
+    );
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
     this.stations = new ProceduralStationRenderer(context);
@@ -112,6 +119,16 @@ export class TopdownMapRenderer {
     this.draw();
   }
 
+  setDangerOverlay(visible: boolean): void {
+    this.dangerOverlayVisible = visible;
+    this.draw();
+  }
+
+  setDangerBand(band: 'green' | 'yellow' | 'red', visible: boolean): void {
+    this.dangerBands[band] = visible;
+    this.draw();
+  }
+
   setCargoOverlay(markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void {
     this.cargoOverlay = markers;
     this.draw();
@@ -137,7 +154,6 @@ export class TopdownMapRenderer {
     const first = this.pickContacts(x, y)[0];
     return first ? { kind: first.kind, id: first.id } : null;
   }
-
   private draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
@@ -163,6 +179,15 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
+    drawStarMapDangerRegions(
+      this.context,
+      this.camera,
+      this.model.regions,
+      this.dangerBands,
+      this.dangerOverlayVisible,
+      width,
+      height
+    );
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
     const playerPoint = this.orbitalProjection.playerPoint(
       this.model,
@@ -199,7 +224,6 @@ export class TopdownMapRenderer {
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height, playerPoint);
   }
-
   private contentBounds() {
     const points = [
       this.model.star.position,
@@ -217,7 +241,6 @@ export class TopdownMapRenderer {
       maxY: maxY + padding,
     };
   }
-
   private drawPlayerShip(width: number, height: number, point: ScreenPoint): void {
     if (this.displayMode === 'nav') {
       this.navRenderer.drawShip(
@@ -238,7 +261,6 @@ export class TopdownMapRenderer {
       { x: starPoint.x - point.x, y: starPoint.y - point.y }
     );
   }
-
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
     if (this.displayMode === 'nav') {
@@ -292,7 +314,6 @@ export class TopdownMapRenderer {
       this.context.fillText(this.model.star.name.toUpperCase(), point.x, point.y + radius + 22);
     }
   }
-
   private drawOrbits(width: number, height: number): void {
     const star = this.camera.worldToScreen(this.model.star.position, width, height);
     const starOrbits = this.model.locations
@@ -318,7 +339,6 @@ export class TopdownMapRenderer {
     if (this.camera.getRelativeZoom() >= 1.35) this.drawChildOrbits(width, height);
     this.context.restore();
   }
-
   private drawChildOrbits(width: number, height: number): void {
     const drawn = new Set<string>();
     for (const location of this.model.locations) {
@@ -336,7 +356,6 @@ export class TopdownMapRenderer {
       this.context.stroke();
     }
   }
-
   private drawRoute(width: number, height: number, playerPoint: ScreenPoint): void {
     const route = this.model.route;
     if (!route || route.points.length < 2) return;
@@ -357,7 +376,6 @@ export class TopdownMapRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius = mapLocationVisualRadius(location, this.camera.getRelativeZoom());
@@ -377,7 +395,7 @@ export class TopdownMapRenderer {
         detailLevel: 'map',
         light,
       });
-    } else if (location.kind === 'wreck') this.drawWreck(point, radius);
+    } else if (location.kind === 'wreck') drawStarMapWreckMarker(this.context, point, radius);
     else this.drawPlanet(location, point, radius, light);
 
     drawSectorEventMarker(this.context, location.id, point, radius);
@@ -471,25 +489,5 @@ export class TopdownMapRenderer {
       light,
     });
     if (location.ringStyle) this.planetRings.drawFront(location.ringStyle, point, radius);
-  }
-
-  private hashSeed(value: string): number {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
-  }
-
-  private drawWreck(point: WorldPoint, radius: number): void {
-    this.context.strokeStyle = '#a68d7d';
-    this.context.lineWidth = 3;
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius, point.y + radius * 0.5);
-    this.context.lineTo(point.x + radius * 0.8, point.y - radius * 0.5);
-    this.context.moveTo(point.x - radius * 0.6, point.y - radius * 0.7);
-    this.context.lineTo(point.x + radius, point.y + radius * 0.7);
-    this.context.stroke();
   }
 }

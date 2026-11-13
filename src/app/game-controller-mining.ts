@@ -19,7 +19,8 @@ export function createMiningLocalSpace(
   mining: MiningEconomyService,
   location: WorldLocation,
   runtimeOptions: ShipRuntimeOptions = {},
-  currentHullHp?: number
+  currentHullHp?: number,
+  onNavigationNotice?: (message: string) => void
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
@@ -34,6 +35,11 @@ export function createMiningLocalSpace(
       engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
+    hazardCrew: {
+      piloting: runtime.stationSkills.piloting,
+      sensors: runtime.stationSkills.sensors,
+    },
+    ...(onNavigationNotice ? { onNavigationNotice } : {}),
     mining: {
       enabled: runtime.mining.available,
       cycleSeconds: runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier,

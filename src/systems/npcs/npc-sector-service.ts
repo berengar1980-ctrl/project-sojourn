@@ -28,6 +28,7 @@ import {
   routeHeading,
   routePoint,
   routeProfile,
+  npcRouteThreats,
 } from './npc-sector-routing';
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
@@ -115,7 +116,13 @@ class SectorService implements NpcSectorService {
     return true;
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    const base = planRouteWithProfile(this.world, fromId, toId, routeProfile(npc));
+    const base = planRouteWithProfile(
+      this.world,
+      fromId,
+      toId,
+      routeProfile(npc),
+      npcRouteThreats(npc, this.npcs, this.livePosition)
+    );
     return repointRouteEndpoints(
       base,
       this.livePosition(npc),
@@ -153,7 +160,13 @@ class SectorService implements NpcSectorService {
     reason: string
   ): boolean => {
     const route = repointRouteEndpoints(
-      planRouteFromPoint(this.world, from, destinationId, routeProfile(npc)),
+      planRouteFromPoint(
+        this.world,
+        from,
+        destinationId,
+        routeProfile(npc),
+        npcRouteThreats(npc, this.npcs, this.livePosition)
+      ),
       from,
       npcOrbitDestination(this.world, npc, destinationId)
     );
@@ -222,6 +235,7 @@ class SectorService implements NpcSectorService {
       fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
+      threatContacts: npcRouteThreats(npc, this.npcs, this.livePosition),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,

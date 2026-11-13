@@ -98,6 +98,14 @@ export function createControllerStarPanel(options: {
     },
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
+    onRouteProfileChange: (profile) => {
+      options.onRouteSelectionChanged?.();
+      options.navigation.setRouteProfile(profile);
+      options.log.write(
+        'NAV > ROUTENMODUS ' + { fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' }[profile]
+      );
+      panel?.update(options.getModel());
+    },
     onStartTravel: () => {
       if (options.startFuelTravel) {
         if (!options.startFuelTravel()) return;
