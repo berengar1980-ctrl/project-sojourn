@@ -462,12 +462,18 @@ function setNavigationThreatContacts(
   state: NavigationRuntimeState,
   contacts: readonly RouteThreatContact[]
 ): void {
-  const signature = contacts.map((contact) =>
-    contact.kind + ':' +
-    Math.round(contact.position.x / 160) + ':' +
-    Math.round(contact.position.y / 160) + ':' +
-    Math.round((contact.strength ?? 1) * 2)
-  ).join('|');
+  const signature = contacts
+    .map(
+      (contact) =>
+        contact.kind +
+        ':' +
+        Math.round(contact.position.x / 160) +
+        ':' +
+        Math.round(contact.position.y / 160) +
+        ':' +
+        Math.round((contact.strength ?? 1) * 2)
+    )
+    .join('|');
   if (signature === state.threatSignature) return;
   state.threats = [...contacts];
   state.threatSignature = signature;
