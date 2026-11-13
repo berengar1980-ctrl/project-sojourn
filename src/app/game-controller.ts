@@ -20,6 +20,8 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { narrowsSector } from '../data/maps/narrows-sector';
+import type { WorldMap } from '../core/world-types';
 import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
@@ -446,10 +448,11 @@ export function createGameController(options: GameControllerOptions): GameContro
   const shipOperations = createShipOperatingService(economy.trade);
   const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
+  let engagementWorld: () => WorldMap = () => narrowsSector;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
-    world: () => options.world.world(),
+    world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
     getPlayerShip: () => state.activeShip,
@@ -466,6 +469,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     options
   );
   foreignWorld = () => campaignServices.world.inForeignSystem();
+  engagementWorld = () => campaignServices.world.world();
   const context: ControllerRuntimeContext = {
     root: options.root,
     navigation: options.navigation,
