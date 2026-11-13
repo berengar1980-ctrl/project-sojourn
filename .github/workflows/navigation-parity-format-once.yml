@@ -1,0 +1,33 @@
+name: One-shot navigation parity document formatting
+on:
+  push:
+    branches:
+      - feature/navigation-danger-crew-replanning
+    paths:
+      - .github/workflows/navigation-parity-format-once.yml
+permissions:
+  contents: write
+jobs:
+  format-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/navigation-danger-crew-replanning
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Format only reviewed feature parity document
+        run: npx prettier --write docs/SOJOURN_FEATURE_PARITY.md
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet -- docs/SOJOURN_FEATURE_PARITY.md; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add docs/SOJOURN_FEATURE_PARITY.md
+            git commit -m "style(parity): format reviewed feature matrix"
+            git push origin HEAD:feature/navigation-danger-crew-replanning
+          fi
