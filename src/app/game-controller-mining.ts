@@ -1,5 +1,6 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
+import type { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import type { MiningEconomyService } from '../systems/economy/mining-economy-service';
 import {
   createLocalSpaceService,
@@ -20,12 +21,15 @@ export function createMiningLocalSpace(
   location: WorldLocation,
   runtimeOptions: ShipRuntimeOptions = {},
   currentHullHp?: number,
-  onNavigationNotice?: (message: string) => void
+  onNavigationNotice?: (message: string) => void,
+  claims?: AsteroidClaimRegistry
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
+  const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
+  claims?.restoreField(location.id, instance.asteroids);
   return createLocalSpaceService({
-    instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
+    instance,
     approachSpeed: resolveShipLocalCruiseSpeed(
       ship,
       runtime.installed,
