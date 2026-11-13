@@ -190,8 +190,8 @@ function createPirateNpc(name: (typeof PIRATE_NAMES)[number], index: number): Se
     fuelUse: profile.fuelUse,
     hullHp: stats?.hullPoints ?? profile.hullPoints,
     hullMaxHp: stats?.hullPoints ?? profile.hullPoints,
-    aggression: (pirateClass === 'raider' ? 52 : pirateClass === 'reaver' ? 70 : 88) +
-      ((index * 7) % 10),
+    aggression:
+      (pirateClass === 'raider' ? 52 : pirateClass === 'reaver' ? 70 : 88) + ((index * 7) % 10),
     factionId,
     pirate: true,
     pirateClass,

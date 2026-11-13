@@ -20,7 +20,9 @@ export function drawSafeDestinationRings(
     if (!radius) continue;
     const center = camera.worldToScreen(location.position, width, height);
     const edge = camera.worldToScreen(
-      { x: location.position.x + radius, y: location.position.y }, width, height
+      { x: location.position.x + radius, y: location.position.y },
+      width,
+      height
     );
     const ringRadius = Math.hypot(edge.x - center.x, edge.y - center.y);
     if (ringRadius <= 2) continue;

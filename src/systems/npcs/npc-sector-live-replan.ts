@@ -10,12 +10,18 @@ import { npcOrbitDestination } from './npc-orbit';
 import { FUEL_DISTANCE_SCALE, routePoint } from './npc-sector-routing';
 
 function pressureSignature(contacts: readonly RouteThreatContact[]): string {
-  return contacts.map((contact) =>
-    contact.kind + ':' +
-    Math.round(contact.position.x / 160) + ':' +
-    Math.round(contact.position.y / 160) + ':' +
-    Math.round((contact.strength ?? 1) * 2)
-  ).join('|');
+  return contacts
+    .map(
+      (contact) =>
+        contact.kind +
+        ':' +
+        Math.round(contact.position.x / 160) +
+        ':' +
+        Math.round(contact.position.y / 160) +
+        ':' +
+        Math.round((contact.strength ?? 1) * 2)
+    )
+    .join('|');
 }
 
 function remainingRoute(

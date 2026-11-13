@@ -39,8 +39,9 @@ export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLEl
   if (fuel.personalRisk) {
     const risk = fuel.personalRisk;
     lines.push('REGIONSGEFAHR  ' + risk.worldDanger + '/3 (DAUERHAFT)');
-    lines.push('FÜR DEIN SCHIFF  ' +
-      ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[risk.tier]);
+    lines.push(
+      'FÜR DEIN SCHIFF  ' + ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[risk.tier]
+    );
     lines.push('ERFASSTE PIRATEN  ' + risk.contactCount);
   }
   element.textContent = lines.join('\n');

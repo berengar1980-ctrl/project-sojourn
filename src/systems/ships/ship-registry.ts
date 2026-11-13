@@ -66,10 +66,15 @@ export function getShipGameplayStats(id: string): ResolvedShipGameplayStats | nu
 
 export function getShipsByRole(role: ShipRole): readonly ShipDefinition[] {
   return definitions.filter(
-    (definition) => definition.role === role && !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-')
+    (definition) =>
+      definition.role === role &&
+      !definition.id.endsWith('-mk4') &&
+      !definition.id.startsWith('pirate-')
   );
 }
 
 export function getAllShipDefinitions(): readonly ShipDefinition[] {
-  return definitions.filter((definition) => !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-'));
+  return definitions.filter(
+    (definition) => !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-')
+  );
 }

@@ -49,15 +49,18 @@ function pirateFactoryLoadout(npc: SectorNpcState): NpcInstalledComponents {
   const weapons = [...(equipment.weapon ?? [])];
   for (const index of mounts) {
     const chosen = getCompatibleShipComponents('weapon', tier)
-      .filter((candidate) =>
-        candidate.tier === tier &&
-        Boolean(candidate.weapon && fitsWeaponHardpoint(ship, index, candidate.weapon))
+      .filter(
+        (candidate) =>
+          candidate.tier === tier &&
+          Boolean(candidate.weapon && fitsWeaponHardpoint(ship, index, candidate.weapon))
       )
       .sort((a, b) => a.cost - b.cost)[0];
     if (chosen) weapons[index] = chosen.id;
   }
   equipment.weapon = weapons;
-  equipment.reactor = [cls === 'marauder' ? 'reactor4' : cls === 'reaver' ? 'reactor3' : 'reactor2'];
+  equipment.reactor = [
+    cls === 'marauder' ? 'reactor4' : cls === 'reaver' ? 'reactor3' : 'reactor2',
+  ];
   equipment.shield = [cls === 'marauder' ? 'shield4' : cls === 'reaver' ? 'shield2' : 'shield1'];
   equipment.engine = [cls === 'marauder' ? 'engine3' : cls === 'reaver' ? 'engine2' : 'engine1'];
   equipment.sensor = [cls === 'marauder' ? 'sensor3' : cls === 'reaver' ? 'sensor2' : 'sensor1'];
@@ -84,7 +87,9 @@ export function ensureNpcInstalledComponents(npc: SectorNpcState): NpcInstalledC
   }
   npc.installedComponents = npc.pirateClass
     ? pirateFactoryLoadout(npc)
-    : ship ? mutableInstalled(defaultInstalledShipComponents(ship)) : {};
+    : ship
+      ? mutableInstalled(defaultInstalledShipComponents(ship))
+      : {};
   return npc.installedComponents;
 }
 

@@ -145,7 +145,11 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
               worldDanger: route.dangerLevel,
             },
             ...(planned
-              ? { estimatedSeconds: planned.totalDistance / Math.max(1, context.state.activeShip.navigation.cruiseSpeed) }
+              ? {
+                  estimatedSeconds:
+                    planned.totalDistance /
+                    Math.max(1, context.state.activeShip.navigation.cruiseSpeed),
+                }
               : {}),
           }
         : {}),

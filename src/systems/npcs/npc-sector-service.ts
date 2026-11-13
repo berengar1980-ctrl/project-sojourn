@@ -399,7 +399,13 @@ class SectorService implements NpcSectorService {
       : npcOrbitHeading(this.world, npc);
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
-    if (npc.travel) replanNpcTravel(this.world, npc, () => npcRouteThreats(npc, this.npcs, this.livePosition), dt);
+    if (npc.travel)
+      replanNpcTravel(
+        this.world,
+        npc,
+        () => npcRouteThreats(npc, this.npcs, this.livePosition),
+        dt
+      );
     const travel = npc.travel;
     if (!travel) {
       serviceIdleNpc(this.world, npc, this.options);

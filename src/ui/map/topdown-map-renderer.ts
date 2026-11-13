@@ -189,7 +189,8 @@ export class TopdownMapRenderer {
       width,
       height
     );
-    if (this.dangerOverlayVisible) drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
+    if (this.dangerOverlayVisible)
+      drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
     const playerPoint = this.orbitalProjection.playerPoint(
       this.model,

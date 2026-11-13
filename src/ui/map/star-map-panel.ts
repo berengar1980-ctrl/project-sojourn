@@ -167,7 +167,8 @@ function createSelectionUpdater(
     const route = model.route ? ` · ROUTE ${Math.round(model.route.distance)}` : '';
     const assessment = model.fuelStatus?.personalRisk;
     const personal = assessment
-      ? ' · FÜR SCHIFF ' + ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[assessment.tier]
+      ? ' · FÜR SCHIFF ' +
+        ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[assessment.tier]
       : '';
     meta.textContent = `GEFAHR ${selected.dangerLevel}/3${personal} · ${activityLabels(model)}${route}`;
     const isCurrent = selected.id === model.navigation.currentLocationId;
