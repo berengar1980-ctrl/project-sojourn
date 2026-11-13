@@ -134,7 +134,12 @@ assert.deepEqual(roster.boardingEquipment(), ['off_autopistol']);
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 assert(read('src/ui/combat/strategic-combat-panel.ts').includes("combat.fireGrapple('attacker')"));
 assert(read('src/ui/combat/combat-grapple-renderer.ts').includes('bounce'));
-assert(read('src/app/game-controller.ts').includes('startCombatBoarding(context, snapshot'));
+assert(read('src/app/game-controller.ts').includes('resolveControllerCombat(context,'));
+assert(
+  read('src/app/game-controller-combat-resolution.ts').includes(
+    'startCombatBoarding(context, snapshot'
+  )
+);
 assert(read('src/app/game-controller-combat-boarding.ts').includes('grantBoardingEquipment('));
 assert(read('src/app/game-controller-combat-boarding.ts').includes("id: 'off_autopistol'"));
 assert(

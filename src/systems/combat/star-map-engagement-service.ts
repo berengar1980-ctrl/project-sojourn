@@ -1,3 +1,4 @@
+import { reactToPlayerAttack } from './player-attack-reaction';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 
@@ -91,28 +92,6 @@ interface EngagementRuntime {
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
   return runtime.options.sectorNpcs.npcs.find((npc) => npc.id === id) ?? null;
-}
-
-function reactToPlayerAttack(
-  runtime: EngagementRuntime,
-  defender: SectorNpcState,
-  attackerId: string
-): void {
-  const playerPosition = runtime.options.navigation.getSnapshot().currentPosition;
-  const reaction = npcDefenseReaction(defender);
-  if (reaction === 'fight') {
-    runtime.options.sectorNpcs.startPursuit(
-      defender,
-      'player',
-      attackerId,
-      playerPosition,
-      'Gegenangriff'
-    );
-    runtime.options.log('COMBAT > ' + defender.name.toUpperCase() + ' DREHT ZUM GEGENANGRIFF');
-    return;
-  }
-  runtime.options.sectorNpcs.startFlee(defender, 'player', attackerId, playerPosition, 'Flucht');
-  runtime.options.log('COMBAT > ' + defender.name.toUpperCase() + ' VERSUCHT ZU FLIEHEN');
 }
 
 function startNpcAttack(
@@ -407,7 +386,7 @@ function attackNpc(runtime: EngagementRuntime, npcId: string): boolean {
     targetId: target.id,
     initialDistance: distance(playerPosition, targetPosition),
   };
-  reactToPlayerAttack(runtime, target, PLAYER_ID);
+  reactToPlayerAttack(runtime.options, target, PLAYER_ID);
   runtime.options.log('COMBAT > VERFOLGUNG ' + target.name.toUpperCase());
   return true;
 }

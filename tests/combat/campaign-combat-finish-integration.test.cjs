@@ -28,13 +28,19 @@ assert.equal(campaignCombatResult({ ...snapshot, boardingInitiator: 'attacker' }
 
 const source = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const controller = source('src/app/game-controller.ts');
+const resolution = source('src/app/game-controller-combat-resolution.ts');
 const boarding = source('src/app/game-controller-combat-boarding.ts');
 const salvage = source('src/app/game-controller-salvage.ts');
 assert(
-  controller.includes('mountControllerMining(context, true, true)'),
+  resolution.includes('scenes.mining(true, true)') &&
+    controller.includes('mountControllerMining(context, reuseSeed, preserveField)'),
   'boarding returns to existing mining instance'
 );
-assert(controller.includes('preservedSalvageField'), 'salvage boarding keeps existing wreck state');
+assert(
+  resolution.includes('scenes.salvage(true, preservedSalvageField, snapshot)') &&
+    controller.includes('mountControllerSalvage(context, reuseSeed, field, combat)'),
+  'salvage boarding keeps existing wreck state'
+);
 assert(
   controller.includes('state.salvageScene?.finishCombat(finalCombat)'),
   'salvage return restores last combat pose'
@@ -56,9 +62,9 @@ assert(
   salvage.includes('getField(): SalvageField'),
   'salvage scene exposes live field for restoration'
 );
-assert(controller.includes('showCampaignCombatSummary'), 'embedded fights show outcome summary');
+assert(resolution.includes('showCampaignCombatSummary'), 'embedded fights show outcome summary');
 assert(
-  controller.includes("state.mode !== 'boarding'"),
+  resolution.includes("state.mode !== 'boarding'"),
   'ongoing boarding must not remount space combat'
 );
 console.log('PASS campaign combat results, boarding scene continuity and outcome presentation');
