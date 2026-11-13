@@ -94,8 +94,8 @@ assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger 
 
 const rendererSource = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 assert(
-  !rendererSource.includes('this.drawRegions(width, height);'),
-  'danger regions must influence routing without being rendered on the star map'
+  rendererSource.includes('this.drawDangerRegions(width, height);'),
+  'fixed danger regions must now be visible on the star map'
 );
 
-console.log('PASS hidden danger regions and fast/balanced/safe route profiles');
+console.log('PASS visible fixed danger regions and fast/balanced/safe route profiles');
