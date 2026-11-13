@@ -16,7 +16,10 @@ export function portOperatingView(
   const condition = shipOperations.snapshot(ship, runtime.hullMaxHp);
   const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
   const estimate = shipOperations.repairEstimate(
-    ship, runtime.hullMaxHp, port.shipyard, engineering
+    ship,
+    runtime.hullMaxHp,
+    port.shipyard,
+    engineering
   );
   return {
     ...condition,
