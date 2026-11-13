@@ -1,5 +1,6 @@
 import type { BlockadeService } from '../../systems/operations/blockade-service';
 import type { PatrolCareerService } from '../../systems/operations/patrol-career-service';
+import type { AsteroidClaimRegistry } from '../../systems/operations/asteroid-claim-registry';
 import './operations.css';
 
 export interface OperationsModel {
@@ -13,6 +14,7 @@ export interface OperationsModel {
   blockades: ReturnType<BlockadeService['snapshot']>;
   patrol: ReturnType<PatrolCareerService['snapshot']>;
   offers: ReturnType<PatrolCareerService['offers']>;
+  claims: ReturnType<AsteroidClaimRegistry['snapshot']>['claims'];
   names: Record<string, string>;
 }
 export type OperationsAction =
@@ -22,7 +24,8 @@ export type OperationsAction =
   | 'resign'
   | 'accept'
   | 'reward'
-  | 'navigate';
+  | 'navigate'
+  | 'claim-route';
 interface Options {
   root: HTMLElement;
   onClose: () => void;
@@ -87,6 +90,29 @@ function patrolMarkup(m: OperationsModel): string {
       .join('')}</select></label>
     ${button('accept', 'Einsatz annehmen', '', !m.port || !p.mandate || !m.patrolShip || p.assignments.some((a) => ['active', 'completed'].includes(a.status)))}`;
 }
+function concessionMarkup(m: OperationsModel): string {
+  const claims = [...m.claims].sort(
+    (a, b) => b.registeredDay - a.registeredDay
+  );
+  const rows = claims.map((claim) => {
+    const isOwn = claim.ownerId === 'player';
+    const resources = Object.entries(claim.oreAtRegistration)
+      .map(([id, amount]) => escape(m.names[id] ?? id) + ' ~' + Math.round(amount) + ' t')
+      .join(' · ');
+    return `<li>
+      <strong>${escape(m.names[claim.locationId] ?? claim.locationId)} / ${escape(claim.asteroidId)}</strong>
+      <p>${isOwn ? 'EIGENE KONZESSION' : 'FREMDE KONZESSION · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)}
+      · registriert Tag ${claim.registeredDay}</p>
+      <p>${resources || 'Keine gemeldeten Reserven'}</p>
+      <small>Mengen entsprechen dem Registereintrag und können veraltet sein.</small>
+      ${button('claim-route', 'Kurs zum Abbaugebiet setzen', claim.locationId + '|' + claim.asteroidId)}
+    </li>`;
+  }).join('');
+  return `<h3>Öffentliches Konzessionsregister</h3>
+    <p>Registrierte Einzelasteroiden. Fremde Konzessionen können gezielt angeflogen
+    werden. Unbefugte Förderung kann zu Forderungen und Fahndungen führen.</p>
+    <ul>${rows || '<li>Noch keine registrierten Konzessionen.</li>'}</ul>`;
+}
 export function createOperationsPanel(options: Options): { destroy(): void } {
   const launch = document.createElement('button');
   launch.type = 'button';
@@ -128,13 +154,14 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
       <nav>${[
         ['blockades', 'Blockaden'],
         ['patrol', 'Patrouille'],
+        ['claims', 'Konzessionsregister'],
       ]
         .map(
           ([id, label]) =>
             `<button type="button" data-tab="${id}" aria-pressed="${tab === id}">${label}</button>`
         )
         .join('')}</nav>
-      <p role="status">${escape(message)}</p><section>${tab === 'blockades' ? blockadeMarkup(m) : patrolMarkup(m)}</section>`;
+      <p role="status">${escape(message)}</p><section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'claims' ? concessionMarkup(m) : patrolMarkup(m)}</section>`;
     resources();
     quote();
   }
