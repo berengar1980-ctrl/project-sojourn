@@ -12,7 +12,7 @@ const geography = loadStandaloneTypeScriptModule(
   'src/systems/navigation/fixed-danger-geography.ts'
 );
 const routing = loadStandaloneTypeScriptModule(root, 'src/systems/navigation/route-planner.ts');
-const mapY = (y) => narrowsSector.height - y;
+const { mapY } = loadStandaloneTypeScriptModule(root, 'src/data/maps/narrows-coordinates.ts');
 const bandAt = (x, y) =>
   geography.fixedDangerAtPoint(
     narrowsSector.regions,
