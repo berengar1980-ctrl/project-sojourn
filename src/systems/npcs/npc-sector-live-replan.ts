@@ -41,7 +41,7 @@ function remainingRoute(
 export function replanNpcTravel(
   world: WorldMap,
   npc: SectorNpcState,
-  liveContacts: readonly RouteThreatContact[],
+  getContacts: () => readonly RouteThreatContact[],
   seconds: number
 ): boolean {
   const travel = npc.travel;
@@ -50,6 +50,7 @@ export function replanNpcTravel(
   if (travel.replanCooldown > 0) return false;
   travel.replanCooldown = 9;
 
+  const liveContacts = getContacts();
   const signature = pressureSignature(liveContacts);
   if (travel.dangerSignature === signature) return false;
   travel.dangerSignature = signature;
