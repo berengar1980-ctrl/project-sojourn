@@ -94,9 +94,9 @@ function routeRelevantContacts(
 ): readonly RouteThreatContact[] {
   if (points.length < 2) return [];
   return contacts.filter((contact) =>
-    points.slice(1).some((point, index) =>
-      distanceToSegment(contact.position, points[index]!, point) <= 1100
-    )
+    points
+      .slice(1)
+      .some((point, index) => distanceToSegment(contact.position, points[index]!, point) <= 1100)
   );
 }
 
@@ -296,11 +296,15 @@ function createPlan(
 
 function dynamicSignature(contacts: readonly RouteThreatContact[]): string {
   return contacts
-    .map((contact) =>
-      contact.kind + ':' +
-      Math.round(contact.position.x / 160) + ':' +
-      Math.round(contact.position.y / 160) + ':' +
-      Math.round((contact.strength ?? 1) * 2)
+    .map(
+      (contact) =>
+        contact.kind +
+        ':' +
+        Math.round(contact.position.x / 160) +
+        ':' +
+        Math.round(contact.position.y / 160) +
+        ':' +
+        Math.round((contact.strength ?? 1) * 2)
     )
     .join(',');
 }
@@ -318,15 +322,10 @@ export function planRouteWithProfile(
   if (!base) {
     const from = findLocation(world, fromId);
     const to = findLocation(world, toId);
-    base = createPlan(
-      world,
-      fromId,
-      toId,
-      from.position,
-      to.position,
-      profile,
-      [from.dangerLevel, to.dangerLevel]
-    );
+    base = createPlan(world, fromId, toId, from.position, to.position, profile, [
+      from.dangerLevel,
+      to.dangerLevel,
+    ]);
     routeCache.set(cacheKey, base);
   }
   if (!contacts.length || profile === 'fast') return base;
@@ -341,8 +340,14 @@ export function planRouteWithProfile(
   const from = findLocation(world, fromId);
   const to = findLocation(world, toId);
   const plan = createPlan(
-    world, fromId, toId, from.position, to.position, profile,
-    [from.dangerLevel, to.dangerLevel], nearby
+    world,
+    fromId,
+    toId,
+    from.position,
+    to.position,
+    profile,
+    [from.dangerLevel, to.dangerLevel],
+    nearby
   );
   if (dynamicRouteCache.size >= MAX_DYNAMIC_ROUTES) dynamicRouteCache.clear();
   dynamicRouteCache.set(liveKey, plan);
@@ -358,17 +363,14 @@ export function planRouteFromPoint(
 ): RoutePlan {
   const to = findLocation(world, toId);
   const endpointDanger: readonly [0 | 1 | 2 | 3, 0 | 1 | 2 | 3] = [
-    pointDanger(world, from), to.dangerLevel,
+    pointDanger(world, from),
+    to.dangerLevel,
   ];
-  const base = createPlan(
-    world, 'deep-space', toId, from, to.position, profile, endpointDanger
-  );
+  const base = createPlan(world, 'deep-space', toId, from, to.position, profile, endpointDanger);
   if (!contacts.length || profile === 'fast') return base;
   const nearby = routeRelevantContacts(base.points, contacts);
   if (!nearby.length) return base;
-  return createPlan(
-    world, 'deep-space', toId, from, to.position, profile, endpointDanger, nearby
-  );
+  return createPlan(world, 'deep-space', toId, from, to.position, profile, endpointDanger, nearby);
 }
 
 /** Retain cached sector waypoints while using real orbital departure and arrival berths. */
