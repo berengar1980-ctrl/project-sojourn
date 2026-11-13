@@ -449,6 +449,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
+    world: () => options.world.world(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
     getPlayerShip: () => state.activeShip,
