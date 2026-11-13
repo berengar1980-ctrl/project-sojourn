@@ -73,4 +73,3 @@ export function setNavigationThreatContacts(
   state.threatRevision += 1;
   state.previewCache = null;
 }
-
