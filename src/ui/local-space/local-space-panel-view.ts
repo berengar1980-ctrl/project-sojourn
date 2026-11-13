@@ -36,6 +36,11 @@ function miningStatus(model: LocalSpaceViewModel): string {
 function asteroidStatus(model: LocalSpaceViewModel): string {
   const asteroid = model.selectedAsteroid;
   if (!asteroid) return '';
+  if (asteroid.registeredOre?.length && asteroid.scanLevel !== 'analyzed') {
+    return 'KONZESSIONSREGISTER · ' + asteroid.registeredOre.map(
+      (ore) => ore.resourceName + ' ~' + Math.round(ore.amount) + ' t'
+    ).join(' / ') + ' · MENGEN MOEGLICHERWEISE VERALTET';
+  }
 
   if (asteroid.scanLevel === 'unscanned') {
     const identified = asteroid.deposits
