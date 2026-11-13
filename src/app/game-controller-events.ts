@@ -1,5 +1,6 @@
 import type { DistressActionResult, SalvageField } from '../core/salvage-types';
 import { HIDDEN_HOLD_INTEL_DAY } from '../systems/economy/smuggling-service';
+import { narrowsSector } from '../data/maps/narrows-sector';
 import { showUnderworldContactNotice } from '../ui/customs/underworld-contact-notice';
 import type { WorldLocation } from '../core/world-types';
 import {
@@ -148,6 +149,29 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
   economy.sectorNpcs.advanceDay(economy.situations.currentDay);
+  // Pirate raiders travel along real sector routes to a mineable field.
+  // They must arrive before the local pirate traffic controller can spawn them.
+  if (economy.situations.currentDay % 5 === 1) {
+    const fields = narrowsSector.locations.filter((location) => location.activities.mine);
+    const target = fields[economy.situations.currentDay % fields.length];
+    if (target) {
+      const pirate = economy.sectorNpcs.npcs.find((npc) =>
+        npc.pirate && npc.hullHp > 0 &&
+        !economy.blockades.assigned(npc.id) &&
+        !economy.sectorNpcs.isTravelling(npc) &&
+        npc.locationId !== target.id &&
+        !fields.some((field) => field.id === npc.locationId)
+      );
+      if (pirate && economy.sectorNpcs.requestTravel(
+        pirate, target.id, 'Beutezug · Asteroidenfeld'
+      )) {
+        context.systemLog.write(
+          'PIRATENBEWEGUNG > ' + pirate.name.toUpperCase() +
+          ' FLIEGT ZU ' + target.name.toUpperCase()
+        );
+      }
+    }
+  }
   economy.npcSmuggling.advanceDay(economy.situations.currentDay);
   if (
     economy.situations.currentDay >= HIDDEN_HOLD_INTEL_DAY &&
