@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { edgePoint, hashId } from './npc-mining-targets';
 
@@ -71,6 +72,7 @@ export class LocalPirateTraffic {
     npcs: readonly SectorNpcState[],
     player: WorldPoint,
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint }>,
+    asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean
   ): void {
     const dt = Math.max(0, Math.min(0.25, deltaSeconds));
@@ -90,8 +92,39 @@ export class LocalPirateTraffic {
       );
       const target = targets[0];
       if (!target) continue;
-      const dx = target.position.x - pirate.position.x;
-      const dy = target.position.y - pirate.position.y;
+      // A local raider steers around shield-blocking asteroids instead of
+      // flying through the same rocks used by the combat arena.
+      let destination = target.position;
+      const directDx = destination.x - pirate.position.x;
+      const directDy = destination.y - pirate.position.y;
+      const directDistance2 = directDx * directDx + directDy * directDy;
+      const barrier = asteroids
+        .filter((rock) => rock.routeBlocking && rock.kind !== 'debris')
+        .map((rock) => {
+          const t = directDistance2 <= 1 ? 0 : Math.max(0, Math.min(1, (
+            (rock.position.x - pirate.position.x) * directDx +
+            (rock.position.y - pirate.position.y) * directDy
+          ) / directDistance2));
+          const px = pirate.position.x + directDx * t;
+          const py = pirate.position.y + directDy * t;
+          return { rock, t, clearance: Math.hypot(
+            rock.position.x - px, rock.position.y - py
+          ) };
+        })
+        .find((candidate) =>
+          candidate.t > 0.02 && candidate.t < 0.95 &&
+          candidate.clearance < candidate.rock.radius + 38
+        );
+      if (barrier) {
+        const side = hashId(pirate.npcId + barrier.rock.id) % 2 ? 1 : -1;
+        const angle = Math.atan2(directDy, directDx) + side * Math.PI / 2;
+        destination = {
+          x: barrier.rock.position.x + Math.cos(angle) * (barrier.rock.radius + 115),
+          y: barrier.rock.position.y + Math.sin(angle) * (barrier.rock.radius + 115),
+        };
+      }
+      const dx = destination.x - pirate.position.x;
+      const dy = destination.y - pirate.position.y;
       const distance = Math.hypot(dx, dy);
       pirate.headingRadians = Math.atan2(dy, dx);
       if (distance < 210) {
@@ -107,6 +140,24 @@ export class LocalPirateTraffic {
           y: pirate.position.y + (dy / distance) * step,
         };
       }
+      for (const rock of asteroids) {
+        if (!rock.routeBlocking) continue;
+        const dx = pirate.position.x - rock.position.x;
+        const dy = pirate.position.y - rock.position.y;
+        const gap = Math.hypot(dx, dy);
+        const minimum = rock.radius + 35;
+        if (gap >= minimum) continue;
+        const ux = gap > 0 ? dx / gap : 1;
+        const uy = gap > 0 ? dy / gap : 0;
+        pirate.position = {
+          x: rock.position.x + ux * minimum,
+          y: rock.position.y + uy * minimum,
+        };
+      }
+      pirate.position = {
+        x: Math.max(0, Math.min(this.width, pirate.position.x)),
+        y: Math.max(0, Math.min(this.height, pirate.position.y)),
+      };
       pirate.speed = speed;
     }
   }
