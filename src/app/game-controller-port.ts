@@ -7,7 +7,8 @@ import { createPortViewModel } from '../features/port/port-view-model';
 import { createPortRegistrationOptions } from './game-controller-port-registration';
 import type { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import { systemMarketRows } from './game-controller-port-market';
-import { repairCost, type ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import { portOperatingView } from './game-controller-port-operating';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
@@ -72,25 +73,6 @@ interface ActivePortContext {
   readonly onReturnToStarMap: () => void;
   readonly onRefresh: () => void;
   readonly log: SystemLogService;
-}
-
-function portOperatingView(context: ActivePortContext) {
-  const { ship, runtime, port } = context;
-  const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
-  const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
-  const estimate = context.shipOperations.repairEstimate(
-    ship,
-    runtime.hullMaxHp,
-    port.shipyard,
-    engineering
-  );
-  return {
-    ...condition,
-    repairPrice: repairCost(condition.hullMaxHp - condition.hullHp, port.shipyard, engineering),
-    repairPoints: estimate.points,
-    affordableRepairCost: estimate.cost,
-    shipyardDiscount: port.shipyard,
-  };
 }
 
 function createActivePortModel(context: ActivePortContext): PortPanelOptions['model'] {
@@ -180,7 +162,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
     },
-    portOperatingView(context),
+    portOperatingView(ship, runtime, port, context.shipOperations),
     context.charters
   );
 }
