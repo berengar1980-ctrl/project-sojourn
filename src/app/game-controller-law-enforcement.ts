@@ -163,6 +163,52 @@ export function reportLegalDeparture(
   }
 }
 
+/** NPC criminals are detained at Directorate ports under exactly the same
+ * creditor ledger and labor rate. Their economy autonomy remains paused while
+ * imprisoned, but the rest of the world continues normally. */
+export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void {
+  const { economy } = context;
+  const { legal } = economy;
+  const day = economy.situations.currentDay;
+  for (const npc of economy.sectorNpcs.npcs) {
+    if (npc.id.startsWith('security-drone:')) continue;
+    const shipId = npc.shipId + ':' + npc.id;
+    if (economy.npcPrisoners.has(npc.id)) {
+      const labor = legal.settle(shipId, PENAL_LABOR_CREDITS_PER_DAY);
+      for (const transfer of labor.transfers)
+        transferCredit(context, transfer.creditorId, transfer.amount);
+      if (legal.isWanted(shipId)) continue;
+      economy.npcPrisoners.delete(npc.id);
+      npc.activityId = 'dock';
+      npc.activity = 'Entlassung aus Straflager';
+      context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' ENTLASSEN');
+      continue;
+    }
+    if (!DIRECTORATE_PORTS.has(npc.locationId) ||
+      economy.sectorNpcs.isTravelling(npc) || !legal.isWanted(shipId)) continue;
+    // A false registration makes recognition harder, but not impossible.
+    const fingerprint = day + npc.id.length * 17 + npc.name.length * 13;
+    const deepCheck = fingerprint % 10 < 7;
+    if (!legal.isRecognizedWanted(shipId, deepCheck)) continue;
+    const payment = legal.settle(shipId, npc.credits);
+    npc.credits -= payment.paid;
+    for (const transfer of payment.transfers)
+      transferCredit(context, transfer.creditorId, transfer.amount);
+    if (!legal.isWanted(shipId)) {
+      context.systemLog.write(
+        'DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT'
+      );
+      continue;
+    }
+    economy.npcPrisoners.add(npc.id);
+    npc.activityId = 'dock';
+    npc.activity = 'Straflager · Schuld ' + legal.debt(shipId) + ' CR';
+    context.systemLog.write(
+      'DIREKTORUM > ' + npc.name.toUpperCase() + ' IN STRAFLAGER EINGEWIESEN'
+    );
+  }
+}
+
 /** During detention the ordinary game tick is frozen, but every day still
  * invokes the complete economic day transition. No credits are fabricated
  * outside the shared creditor ledger, and no second penalty is applied. */
