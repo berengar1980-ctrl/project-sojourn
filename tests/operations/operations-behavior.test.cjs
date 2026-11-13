@@ -17,7 +17,6 @@ const { createEconomySimulationService } = load(
   'src/systems/economy/economy-simulation-service.ts'
 );
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
-const { createMiningEconomyService } = load('src/systems/economy/mining-economy-service.ts');
 function fixture() {
   const ships = createSectorNpcEconomyStates();
   const markets = createEconomyMarketService(sectorPorts, economyResources);
