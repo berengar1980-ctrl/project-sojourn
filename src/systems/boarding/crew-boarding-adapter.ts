@@ -1,5 +1,6 @@
 import type { BoardingEncounterSnapshot, BoardingUnitTemplate } from '../../core/boarding-types';
 import { personalMeleeProfile, personalRangedProfile } from './boarding-personal-profiles';
+import { compatibleBoardingCheckpoint } from './boarding-checkpoint-service';
 import type { CrewInjuryState, CrewMember } from '../../core/crew-types';
 import type { CrewRosterService } from '../crew';
 import {
@@ -92,7 +93,9 @@ function injuryFromBoarding(hp: number, maxHp: number): CrewInjuryState {
 }
 
 export interface CrewBoardingEncounter {
-  readonly tactical: BoardingTacticalService;
+  readonly tactical: BoardingTacticalService & {
+    restoreCheckpoint(snapshot: BoardingEncounterSnapshot): boolean;
+  };
   settle(): BoardingEncounterSnapshot;
 }
 
@@ -105,16 +108,18 @@ export function createCrewBoardingEncounter(options: {
   readonly restoreSnapshot?: BoardingEncounterSnapshot;
 }): CrewBoardingEncounter {
   let settled = false;
-  const base = createBoardingTacticalService({
-    seed: options.seed,
-    ...(options.mapId ? { mapId: options.mapId } : {}),
-    playerUnits: crewBoardingUnits(options.roster),
-    enemyUnits: options.enemyUnits,
-    ...(options.allowRetreat === undefined ? {} : { allowRetreat: options.allowRetreat }),
-    ...(options.restoreSnapshot ? { restore: options.restoreSnapshot } : {}),
-  });
+  const build = (restore?: BoardingEncounterSnapshot) =>
+    createBoardingTacticalService({
+      seed: options.seed,
+      ...(options.mapId ? { mapId: options.mapId } : {}),
+      playerUnits: crewBoardingUnits(options.roster),
+      enemyUnits: options.enemyUnits,
+      ...(options.allowRetreat === undefined ? {} : { allowRetreat: options.allowRetreat }),
+      ...(restore ? { restore } : {}),
+    });
+  let base = build(options.restoreSnapshot);
 
-  const tactical: BoardingTacticalService = {
+  const tactical: CrewBoardingEncounter['tactical'] = {
     getSnapshot: () => base.getSnapshot(),
     selectUnit: (unitId) => base.selectUnit(unitId),
     reachable: (unitId, maximumAp) => base.reachable(unitId, maximumAp),
@@ -128,6 +133,11 @@ export function createCrewBoardingEncounter(options: {
     holdCover: (unitId) => base.holdCover(unitId),
     endTurn: () => base.endTurn(),
     retreat: () => base.retreat(),
+    restoreCheckpoint(snapshot) {
+      if (settled || !compatibleBoardingCheckpoint(base.getSnapshot(), snapshot)) return false;
+      base = build(snapshot);
+      return true;
+    },
   };
 
   return {
