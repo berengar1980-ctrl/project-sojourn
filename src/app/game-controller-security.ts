@@ -15,6 +15,89 @@ function creditOwner(context: ControllerRuntimeContext, ownerId: string, amount:
   if (npc) npc.credits += amount;
 }
 
+export function tickFieldPirates(context: ControllerRuntimeContext, seconds: number): void {
+  const space = context.state.localSpace;
+  const local = space?.getSnapshot();
+  if (!space || !local) return;
+  const locationId = local.instance.sourceLocationId;
+  const { economy, state } = context;
+  const traffic = economy.localPirates.get(locationId);
+  if (!traffic) return;
+  const pirates = economy.sectorNpcs.npcs.filter(
+    (npc) => npc.pirate && npc.locationId === locationId
+  );
+  traffic.reconcile(pirates);
+  traffic.tick(
+    seconds, pirates, local.instance.ship.position,
+    state.localNpcMining?.ships.map((ship) => ({
+      npcId: ship.npcId, position: ship.position,
+    })) ?? [],
+    (pirateId, targetId, piratePosition) => {
+      const pirate = economy.sectorNpcs.npcs.find((npc) => npc.id === pirateId);
+      if (!pirate || context.engagements.activePlayerCombat()) return false;
+      const arena = localMiningCombatArena(
+        local.instance, space.getShipWorldVelocity()
+      );
+      if (targetId === 'player') {
+        const engaged = context.engagements.engageNpcInArena(pirateId, {
+          ...arena,
+          defenderPosition: piratePosition,
+          defenderHeadingRadians: 0,
+          defenderVelocity: { x: 0, y: 0 },
+        });
+        if (engaged) {
+          state.embeddedCombat = 'local-space';
+          space.cancelMining();
+          context.systemLog.write('PIRATEN > UEBERFALL IM ASTEROIDENFELD · KI-KAMPFMODUS');
+        }
+        return engaged;
+      }
+      const miner = state.localNpcMining?.ships.find((ship) => ship.npcId === targetId);
+      if (!miner) return false;
+      const minerNpc = economy.sectorNpcs.npcs.find((npc) => npc.id === targetId);
+      if (!minerNpc || minerNpc.hullHp <= 0) return false;
+      const drone = economy.securityDrones.get(locationId);
+      const protector = economy.sectorNpcs.npcs.find(
+        (npc) => npc.id === 'security-drone:' + locationId
+      );
+      const protecting = Boolean(
+        drone?.snapshot().operational && protector && protector.hullHp > 0 &&
+        drone.detect(piratePosition, local.instance.asteroids)
+      );
+      const defenderId = protecting ? protector!.id : targetId;
+      const defenderPosition = protecting ? drone!.snapshot().position : miner.position;
+      const combatArena = {
+        ...arena,
+        attackerPosition: piratePosition,
+        attackerHeadingRadians: 0,
+        attackerVelocity: { x: 0, y: 0 },
+        defenderPosition,
+        defenderHeadingRadians: protecting ? 0 : miner.headingRadians,
+        defenderVelocity: { x: 0, y: 0 },
+      };
+      const started = context.engagements.engageNpcsInArena(
+        pirateId, defenderId, combatArena
+      );
+      if (started) {
+        context.systemLog.write(
+          'PIRATEN > ' + pirate.name.toUpperCase() +
+          (protecting ? ' VON SICHERHEITSDROHNE ABGEFANGEN' :
+            ' GREIFT MINER ' + minerNpc.name.toUpperCase() + ' AN')
+        );
+      }
+      return started;
+    }
+  );
+  const drone = economy.securityDrones.get(locationId);
+  const defender = economy.sectorNpcs.npcs.find(
+    (npc) => npc.id === 'security-drone:' + locationId
+  );
+  if (drone && defender && defender.hullHp <= 0 && drone.snapshot().operational) {
+    drone.destroy();
+    context.systemLog.write('SEC-01 > SICHERHEITSDROHNE IM GEFECHT ZERSTOERT');
+  }
+}
+
 export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: number): void {
   const field = context.state.localSpace?.getSnapshot();
   if (!field) return;
