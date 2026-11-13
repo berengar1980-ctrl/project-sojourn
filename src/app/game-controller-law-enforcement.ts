@@ -25,7 +25,7 @@ export function registerSectorShips(context: ControllerRuntimeContext): void {
   for (const npc of context.economy.sectorNpcs.npcs) register.registerShip(npc.shipId + ':' + npc.id, npc.id);
 }
 
-function transferCredit(context: ControllerRuntimeContext, creditorId: string, amount: number): void {
+export function transferCredit(context: ControllerRuntimeContext, creditorId: string, amount: number): void {
   if (creditorId === 'player') {
     context.economy.trade.player.credits += amount;
     context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
@@ -35,7 +35,7 @@ function transferCredit(context: ControllerRuntimeContext, creditorId: string, a
   }
 }
 
-function dispatchPatrolToReport(
+export function dispatchPatrolToReport(
   context: ControllerRuntimeContext, locationId: string,
   destinationId: string | null
 ): void {
