@@ -51,6 +51,7 @@ export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
   engageNpcNow(npcId: string): boolean;
   engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
+  engageNpcsInArena(attackerId: string, defenderId: string, arena: StrategicCombatArenaOptions): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -113,7 +114,8 @@ function reactToPlayerAttack(
 function startNpcAttack(
   runtime: EngagementRuntime,
   attacker: SectorNpcState,
-  defender: SectorNpcState
+  defender: SectorNpcState,
+  arena?: StrategicCombatArenaOptions
 ): void {
   const attackerPosition = runtime.options.sectorNpcs.livePosition(attacker);
   const defenderPosition = runtime.options.sectorNpcs.livePosition(defender);
@@ -324,7 +326,7 @@ function beginBackgroundCombat(
   runtime.backgroundCombats.set(key, {
     first: attacker,
     second: defender,
-    combat: createStrategicCombatService(attackerSetup, defenderSetup),
+    combat: createStrategicCombatService(attackerSetup, defenderSetup, undefined, arena),
   });
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
@@ -486,6 +488,17 @@ export function createStarMapEngagementService(
   return {
     engageNpcNow: (npcId) => engageNpc(runtime, npcId),
     engageNpcInArena: (npcId, arena) => engageNpc(runtime, npcId, arena),
+    engageNpcsInArena: (attackerId, defenderId, arena) => {
+      if (attackerId === defenderId) return false;
+      const attacker = engagementNpc(runtime, attackerId);
+      const defender = engagementNpc(runtime, defenderId);
+      if (!attacker || !defender || attacker.hullHp <= 0 || defender.hullHp <= 0 ||
+        runtime.backgroundCombats.has(pairKey(attackerId, defenderId)) ||
+        runtime.options.sectorNpcs.isTravelling(attacker) ||
+        runtime.options.sectorNpcs.isTravelling(defender)) return false;
+      beginBackgroundCombat(runtime, attacker, defender, arena);
+      return true;
+    },
     attackNpc: (npcId) => attackNpc(runtime, npcId),
     syncPlayerPursuitTarget: () => syncPlayerPursuitTarget(runtime),
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
