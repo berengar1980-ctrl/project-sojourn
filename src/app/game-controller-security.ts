@@ -31,7 +31,7 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
     seconds, pirates, local.instance.ship.position,
     state.localNpcMining?.ships.map((ship) => ({
       npcId: ship.npcId, position: ship.position,
-    })) ?? [],
+    })) ?? [], local.instance.asteroids,
     (pirateId, targetId, piratePosition) => {
       const pirate = economy.sectorNpcs.npcs.find((npc) => npc.id === pirateId);
       if (!pirate || context.engagements.activePlayerCombat()) return false;
