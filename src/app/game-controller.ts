@@ -203,14 +203,15 @@ function toggleControllerAsteroidClaim(context: ControllerRuntimeContext): void 
       context.systemLog.write('MINING > KONZESSION AUF ASTEROID AUFGEGEBEN');
   } else {
     const result = claims.register(
-      field.sourceLocationId, asteroid, 'player',
-      economy.situations.currentDay, economy.trade.player.credits
+      field.sourceLocationId,
+      asteroid,
+      'player',
+      economy.situations.currentDay,
+      economy.trade.player.credits
     );
     if (result.ok) {
       economy.trade.player.credits -= result.fee;
-      context.systemLog.write(
-        'MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT'
-      );
+      context.systemLog.write('MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT');
     } else {
       const reasons = {
         unscanned: 'ZUERST NAHBEREICHSSCAN ABSCHLIESSEN',

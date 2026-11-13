@@ -25,7 +25,9 @@ interface PirateRuntime {
  * strategic combat with the same asteroid arena.
  */
 function pirateDestination(
-  pirate: PirateRuntime, target: WorldPoint, asteroids: readonly LocalAsteroid[]
+  pirate: PirateRuntime,
+  target: WorldPoint,
+  asteroids: readonly LocalAsteroid[]
 ): WorldPoint {
   let destination = target;
   const directDx = destination.x - pirate.position.x;
@@ -34,16 +36,26 @@ function pirateDestination(
   const barrier = asteroids
     .filter((rock) => rock.routeBlocking && rock.kind !== 'debris')
     .map((rock) => {
-      const t = directDistance2 <= 1 ? 0 : Math.max(0, Math.min(1,
-        ((rock.position.x - pirate.position.x) * directDx +
-          (rock.position.y - pirate.position.y) * directDy) / directDistance2
-      ));
+      const t =
+        directDistance2 <= 1
+          ? 0
+          : Math.max(
+              0,
+              Math.min(
+                1,
+                ((rock.position.x - pirate.position.x) * directDx +
+                  (rock.position.y - pirate.position.y) * directDy) /
+                  directDistance2
+              )
+            );
       const px = pirate.position.x + directDx * t;
       const py = pirate.position.y + directDy * t;
       return { rock, t, clearance: Math.hypot(rock.position.x - px, rock.position.y - py) };
     })
-    .find((candidate) => candidate.t > 0.02 && candidate.t < 0.95 &&
-      candidate.clearance < candidate.rock.radius + 38);
+    .find(
+      (candidate) =>
+        candidate.t > 0.02 && candidate.t < 0.95 && candidate.clearance < candidate.rock.radius + 38
+    );
   if (barrier) {
     const side = hashId(pirate.npcId + barrier.rock.id) % 2 ? 1 : -1;
     const angle = Math.atan2(directDy, directDx) + (side * Math.PI) / 2;
@@ -56,7 +68,10 @@ function pirateDestination(
 }
 
 function resolvePirateCollisions(
-  position: WorldPoint, asteroids: readonly LocalAsteroid[], width: number, height: number
+  position: WorldPoint,
+  asteroids: readonly LocalAsteroid[],
+  width: number,
+  height: number
 ): WorldPoint {
   let result = { ...position };
   for (const rock of asteroids) {
@@ -73,8 +88,7 @@ function resolvePirateCollisions(
       y: rock.position.y + uy * minimum,
     };
   }
-  return { x: Math.max(0, Math.min(width, result.x)),
-    y: Math.max(0, Math.min(height, result.y)) };
+  return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
 }
 
 export class LocalPirateTraffic {
@@ -177,7 +191,12 @@ export class LocalPirateTraffic {
           y: pirate.position.y + (dy / distance) * step,
         };
       }
-      pirate.position = resolvePirateCollisions(pirate.position, asteroids, this.width, this.height);
+      pirate.position = resolvePirateCollisions(
+        pirate.position,
+        asteroids,
+        this.width,
+        this.height
+      );
       pirate.speed = speed;
     }
   }
