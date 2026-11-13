@@ -383,6 +383,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   let refreshMenuContent: () => void = () => {};
   const menu = createStarMapMenu(shell, () => refreshMenuContent());
 
+  const renderer = new TopdownMapRenderer(canvas, model);
   const resetButton = populateStarMapMenu(menu, controls);
   const hazardControls = document.createElement('div');
   hazardControls.className = 'star-map-danger-controls';
@@ -437,7 +438,6 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   menu.mapPane.append(routeHelp, ...profileButtons);
   refreshProfileButtons();
   const updateTicker = createStarMapTicker(shell, options.log);
-  const renderer = new TopdownMapRenderer(canvas, model);
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
 
   const renderCargoScanner = bindCargoMarketScanner(
