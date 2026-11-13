@@ -131,6 +131,9 @@ export function tickEconomy(context: ControllerRuntimeContext, dt: number): void
 export function advanceEconomyDay(context: ControllerRuntimeContext): void {
   const economy = context.economy;
   economy.situations.advanceNextDay();
+  economy.blockades.advanceDay(economy.situations.currentDay);
+  economy.concessions.advanceDay(economy.situations.currentDay);
+  economy.patrol.advanceDay(economy.situations.currentDay);
   economy.simulation.advanceNextDay();
   economy.npcs.advanceNextDay();
   economy.sectorNpcs.advanceDay(economy.situations.currentDay);

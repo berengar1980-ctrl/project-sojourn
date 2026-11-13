@@ -1,0 +1,73 @@
+.operations-launch {
+  position: absolute;
+  left: 18px;
+  bottom: 58px;
+  z-index: 65;
+  padding: 10px 14px;
+  color: #a9e5ef;
+  background: #10232e;
+  border: 1px solid #3e7888;
+  cursor: pointer;
+}
+.operations-dialog {
+  width: min(850px, 92vw);
+  max-height: 85vh;
+  overflow: auto;
+  color: #d0e3e8;
+  background: #101c26;
+  border: 1px solid #477b8b;
+  border-radius: 8px;
+  padding: 24px;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+}
+.operations-dialog::backdrop {
+  background: #02080dbb;
+}
+.operations-dialog header,
+.operations-dialog nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.operations-dialog h2 {
+  margin: 0;
+}
+.operations-dialog label {
+  display: block;
+  margin: 10px 0;
+}
+.operations-dialog select {
+  max-width: 100%;
+  margin-left: 8px;
+  padding: 7px;
+  color: #e0f3f6;
+  background: #172e3b;
+}
+.operations-dialog button {
+  padding: 9px 12px;
+  margin: 4px;
+  color: #c1ecf3;
+  background: #193847;
+  border: 1px solid #467c8c;
+  cursor: pointer;
+}
+.operations-dialog button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.operations-dialog button[aria-pressed='true'] {
+  background: #28576a;
+}
+.operations-dialog ul {
+  padding-left: 20px;
+}
+.operations-dialog li {
+  margin: 15px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #304652;
+}
+.operations-dialog [role='status'] {
+  color: #f3d29d;
+}

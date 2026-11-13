@@ -39,6 +39,10 @@ export interface NpcTravelOperatingQuote {
 }
 
 export interface NpcEconomyServiceOptions {
+  readonly isManaged?: (npc: NpcEconomyState) => boolean;
+  readonly canTrade?: (npc: NpcEconomyState, locationId: string, resourceId: string) => boolean;
+  readonly miningAllowance?: (npc: NpcEconomyState, resourceId: string, amount: number) => number;
+  readonly onMined?: (npc: NpcEconomyState, resourceId: string, amount: number) => void;
   /** Optional settlement hook for actual illegal cargo sales. */
   readonly onSale?: (
     npc: NpcEconomyState,

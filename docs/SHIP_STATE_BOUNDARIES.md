@@ -42,3 +42,12 @@ This is an **in-memory data contract**, not an on-disk format. It does not promi
 - `FuelJourneyService`: in-session owner of the player's accepted destination and remaining fuel-route legs. Its `snapshot()` returns detached station-ID arrays, and it clears the journey on new route selection or after the final arrival. Fuel and credits remain exclusively owned by `ShipOperatingService` and `PlayerTradeService`; the itinerary is never used as a second tank or wallet state.
 
 - The NPC operating-cost quote is a derived, read-only result from `NpcSectorService.quoteTravel()` and the shared fuel route planner, not a second NPC wallet or tank. `NpcEconomyService` continues to own cargo transactions and autonomously scheduled orders; `NpcSectorService` and `SectorNpcState` remain the owners of fuel, hull, credits, component upgrades and physical travel. The newly recorded `homePortId` is a fixed NPC creation attribute, not mutable savegame state.
+
+## Operations domain owners
+
+- `BlockadeService`: exclusive ship assignments, contract phase, price at deployment, duration, depot losses and house alarms. Ships remain in `NpcSectorService`; no spawn or teleport. `snapshot()` detaches records and pirate-ID arrays; current prices are observational.
+- `MiningConcessionService`: discoveries, ownership, remaining deposits and royalties. Allocation stays in the physical economy. Both local and abstract NPC mining and player collection apply allowance before allocation and consume only allocated material. `snapshot()` detaches deposits.
+- `PatrolCareerService`: mandate, reputation, rank progress, assignments, clear-destination dwell and settlement. Only gameplay events complete assignments. Snapshots detach visited-location arrays.
+- Trade charters now expose a detached `snapshot()` of their active mandate.
+
+These are runtime observations, not savegame formats. No storage or migration is introduced.

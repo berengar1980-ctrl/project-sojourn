@@ -54,6 +54,10 @@ export interface StarMapEngagementService {
 }
 
 export interface StarMapEngagementOptions {
+  readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
+  readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
+  readonly onPlayerAttack?: (npc: SectorNpcState) => void;
+  readonly onPlayerVictory?: (id: string) => void;
   readonly navigation: NavigationService;
   readonly isPlayerInCampaignSystem?: () => boolean;
   readonly playerProtectedFromPirate?: (npc: SectorNpcState) => boolean;
@@ -164,7 +168,10 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
   const target = runtime.options.sectorNpcs.npcs
     .filter(
       (npc) =>
-        npc.pirate && npcMayInitiateAttack(npc) && !runtime.options.playerProtectedFromPirate?.(npc)
+        npc.pirate &&
+        runtime.options.mayInitiateAttack?.(npc) !== false &&
+        npcMayInitiateAttack(npc) &&
+        !runtime.options.playerProtectedFromPirate?.(npc)
     )
     .map((npc) => ({
       npc,
@@ -200,7 +207,8 @@ function npcAttackTarget(
   return (
     runtime.options.sectorNpcs.npcs
       .filter((candidate) => {
-        if (candidate.id === attacker.id) return false;
+        if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
+          return false;
         if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
         const cargoUnits = Object.values(candidate.cargo).reduce(
           (total, units) => total + Math.max(0, Number(units) || 0),
@@ -228,7 +236,12 @@ function npcAttackTarget(
 
 function scanForNpcAttacks(runtime: EngagementRuntime): void {
   for (const attacker of runtime.options.sectorNpcs.npcs) {
-    if (!npcMayInitiateAttack(attacker) || runtime.npcChases.has(attacker.id)) continue;
+    if (
+      runtime.options.mayInitiateAttack?.(attacker) === false ||
+      !npcMayInitiateAttack(attacker) ||
+      runtime.npcChases.has(attacker.id)
+    )
+      continue;
     const target = npcAttackTarget(runtime, attacker);
     if (target) startNpcAttack(runtime, attacker, target);
   }
@@ -379,6 +392,7 @@ function engageNpc(
   if (runtime.playerCombat || runtime.options.isPlayerInCampaignSystem?.()) return false;
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
+  runtime.options.onPlayerAttack?.(target);
   beginPlayerCombat(runtime, target, arena);
   return runtime.playerCombat !== null;
 }
@@ -389,6 +403,7 @@ function attackNpc(runtime: EngagementRuntime, npcId: string): boolean {
   if (!target || target.hullHp <= 0 || target.combatMovement) return false;
   const playerPosition = runtime.options.navigation.getSnapshot().currentPosition;
   const targetPosition = runtime.options.sectorNpcs.livePosition(target);
+  runtime.options.onPlayerAttack?.(target);
   runtime.options.navigation.startPursuit(target.id, targetPosition);
   runtime.playerChase = {
     attackerId: PLAYER_ID,
@@ -434,6 +449,8 @@ function finishPlayerCombat(runtime: EngagementRuntime): void {
   if (!runtime.playerCombat || !runtime.playerEnemy) return;
   const model = runtime.playerCombat.getSnapshot();
   runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+  if (model.defender.hullHp <= 0 && model.attacker.hullHp > 0)
+    runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
   if (model.defender.hullHp <= 0) {
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
     runtime.options.log(
