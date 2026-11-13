@@ -82,6 +82,41 @@ export function inspectDockArrival(context: ControllerRuntimeContext): void {
   }
 }
 
+function handleWantedPatrol(
+  context: ControllerRuntimeContext,
+  patrol: { id: string; name: string }
+): boolean {
+  const shipId = context.state.activeShip.id;
+  if (context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.35)) {
+    const debt = context.economy.legal.debt(shipId);
+    const pay =
+      context.economy.trade.player.credits >= debt &&
+      window.confirm(
+        'DIREKTORUM-PATROUILLE ' +
+          patrol.name +
+          '\n' +
+          'Schiff zur Fahndung ausgeschrieben.\n' +
+          'Offene Forderungen: ' +
+          debt +
+          ' CR\n\n' +
+          'Alle Forderungen zahlen? ABBRECHEN = Flucht/Widerstand.'
+      );
+    if (pay) {
+      const payment = context.economy.legal.settle(shipId, context.economy.trade.player.credits);
+      context.economy.trade.player.credits -= payment.paid;
+      for (const transfer of payment.transfers)
+        transferCredit(context, transfer.creditorId, transfer.amount);
+      context.systemLog.write('PATROUILLE > ' + payment.paid + ' CR BEGLICHEN · FAHNDUNG BEENDET');
+    } else {
+      context.systemLog.write('PATROUILLE > ZAHLUNG VERWEIGERT · GEFECHT ODER FLUCHT');
+      context.engagements.engageNpcNow(patrol.id);
+    }
+    return true;
+  }
+
+  return false;
+}
+
 /** A patrol must physically encounter the travelling player; no omniscient inspection. */
 export function inspectPatrolTravel(context: ControllerRuntimeContext, deltaSeconds: number): void {
   if (context.world.inForeignSystem() || context.economy.smuggling.state.inspection) return;
@@ -119,33 +154,7 @@ export function inspectPatrolTravel(context: ControllerRuntimeContext, deltaSeco
     .sort((a, b) => a.distance - b.distance)[0];
   if (!patrol) return;
   check.checked.add(patrol.npc.id);
-  const shipId = context.state.activeShip.id;
-  if (context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.35)) {
-    const debt = context.economy.legal.debt(shipId);
-    const pay =
-      context.economy.trade.player.credits >= debt &&
-      window.confirm(
-        'DIREKTORUM-PATROUILLE ' +
-          patrol.npc.name +
-          '\n' +
-          'Schiff zur Fahndung ausgeschrieben.\n' +
-          'Offene Forderungen: ' +
-          debt +
-          ' CR\n\n' +
-          'Alle Forderungen zahlen? ABBRECHEN = Flucht/Widerstand.'
-      );
-    if (pay) {
-      const payment = context.economy.legal.settle(shipId, context.economy.trade.player.credits);
-      context.economy.trade.player.credits -= payment.paid;
-      for (const transfer of payment.transfers)
-        transferCredit(context, transfer.creditorId, transfer.amount);
-      context.systemLog.write('PATROUILLE > ' + payment.paid + ' CR BEGLICHEN · FAHNDUNG BEENDET');
-    } else {
-      context.systemLog.write('PATROUILLE > ZAHLUNG VERWEIGERT · GEFECHT ODER FLUCHT');
-      context.engagements.engageNpcNow(patrol.npc.id);
-    }
-    return;
-  }
+  if (handleWantedPatrol(context, patrol.npc)) return;
   const nearPort = [...sectorPorts]
     .map((port) => {
       const position = narrowsSector.locations.find(
