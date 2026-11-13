@@ -299,9 +299,9 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   }
 
   private bindControls(): void {
-    this.shell.querySelector<HTMLButtonElement>('[data-boarding-save]')?.addEventListener(
-      'click',
-      () => {
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-save]')
+      ?.addEventListener('click', () => {
         try {
           createBoardingCheckpointStore(window.localStorage).save(this.tactical.getSnapshot());
           this.checkpointMessage = 'ENTERKAMPF GESPEICHERT · NUR TAKTISCHER CHECKPOINT';
@@ -311,9 +311,9 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
         this.render();
       }
     );
-    this.shell.querySelector<HTMLButtonElement>('[data-boarding-load]')?.addEventListener(
-      'click',
-      () => {
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-load]')
+      ?.addEventListener('click', () => {
         try {
           const checkpoint = createBoardingCheckpointStore(window.localStorage).load();
           if (checkpoint && this.tactical.restoreCheckpoint(checkpoint)) {

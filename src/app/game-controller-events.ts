@@ -231,11 +231,12 @@ export function mountControllerBoarding(
       applyDistressOutcome(context, result);
       context.campaignEvents.emit({
         type: 'boarding.ended',
-        outcome: snapshot.outcome === 'player_win'
-          ? 'player_win'
-          : snapshot.outcome === 'enemy_win'
-            ? 'enemy_win'
-            : 'draw',
+        outcome:
+          snapshot.outcome === 'player_win'
+            ? 'player_win'
+            : snapshot.outcome === 'enemy_win'
+              ? 'enemy_win'
+              : 'draw',
       });
       runSceneZoomTransition(context.root, actions.mountStarMap);
     },

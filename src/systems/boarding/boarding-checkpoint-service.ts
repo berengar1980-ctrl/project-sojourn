@@ -14,7 +14,12 @@ interface SavedCheckpoint {
 }
 
 function validNumber(value: number, minimum: number, maximum: number): boolean {
-  return typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum;
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= minimum &&
+    value <= maximum
+  );
 }
 
 /** The saved snapshot may change HP/AP, but never identities, weapons, topology or seed. */
@@ -69,7 +74,9 @@ export function compatibleBoardingCheckpoint(
 export function createBoardingCheckpointStore(storage: BoardingCheckpointStorage) {
   return {
     save(snapshot: BoardingEncounterSnapshot): void {
-      if (snapshot.outcome !== 'active') throw new Error('Nur aktive Enterkämpfe sind speicherbar.');
+      if (snapshot.outcome !== 'active') {
+        throw new Error('Nur aktive Enterkämpfe sind speicherbar.');
+      }
       const record: SavedCheckpoint = { version: 1, snapshot };
       const serialized = JSON.stringify(record);
       if (serialized.length > 256_000) throw new Error('Der Enterkampfstand ist zu groß.');
