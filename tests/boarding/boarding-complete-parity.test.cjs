@@ -14,15 +14,39 @@ const rosterModule = load('src/systems/crew/crew-roster-service.ts');
 const ships = load('src/systems/ships/ship-registry.ts');
 
 const rangedIds = [
-  'laspistol', 'lasgun', 'hotshot_laspistol', 'hotshot_lasgun', 'autopistol',
-  'autogun', 'stub_revolver', 'naval_pistol', 'shotgun', 'bolt_pistol', 'boltgun',
-  'plasma_pistol', 'plasma_gun', 'melta_pistol', 'melta_gun', 'hand_flamer',
-  'flamer', 'needle_pistol', 'needle_rifle', 'laslock', 'off_laspistol',
+  'laspistol',
+  'lasgun',
+  'hotshot_laspistol',
+  'hotshot_lasgun',
+  'autopistol',
+  'autogun',
+  'stub_revolver',
+  'naval_pistol',
+  'shotgun',
+  'bolt_pistol',
+  'boltgun',
+  'plasma_pistol',
+  'plasma_gun',
+  'melta_pistol',
+  'melta_gun',
+  'hand_flamer',
+  'flamer',
+  'needle_pistol',
+  'needle_rifle',
+  'laslock',
+  'off_laspistol',
   'off_autopistol',
 ];
 const meleeIds = [
-  'combat_knife', 'mono_knife', 'chainsword_short', 'power_axe', 'power_sword',
-  'shock_maul', 'shock_baton', 'void_hatchet', 'dueling_blade',
+  'combat_knife',
+  'mono_knife',
+  'chainsword_short',
+  'power_axe',
+  'power_sword',
+  'shock_maul',
+  'shock_baton',
+  'void_hatchet',
+  'dueling_blade',
 ];
 assert.equal(Object.keys(profiles.personalRangedProfiles).length, rangedIds.length);
 assert.equal(Object.keys(profiles.personalMeleeProfiles).length, meleeIds.length);
@@ -48,19 +72,24 @@ const roster = rosterModule.createCrewRosterService();
 const miner = ships.getShipsByRole('mining')[0];
 assert(miner);
 assert(roster.hire('tiber_krane', miner));
-const begin = () => tactical.createCrewBoardingEncounter({
-  roster,
-  seed: 120,
-  mapId: 'long-corridor',
-  enemyUnits: [{ id: 'raider', name: 'Raider', team: 'enemy', hp: 10 }],
-});
+const begin = () =>
+  tactical.createCrewBoardingEncounter({
+    roster,
+    seed: 120,
+    mapId: 'long-corridor',
+    enemyUnits: [{ id: 'raider', name: 'Raider', team: 'enemy', hp: 10 }],
+  });
 const encounter = begin();
 const saved = encounter.tactical.getSnapshot();
 let value = null;
 const storage = {
   getItem: () => value,
-  setItem: (_, text) => { value = text; },
-  removeItem: () => { value = null; },
+  setItem: (_, text) => {
+    value = text;
+  },
+  removeItem: () => {
+    value = null;
+  },
 };
 const store = checkpoint.createBoardingCheckpointStore(storage);
 store.save(saved);
@@ -98,7 +127,11 @@ const salvage = fieldService.createSalvageFieldService({
 });
 assert(salvage.inspectWreck(wreck.id));
 assert(wreckRules.wreckCanBoard(wreck));
-assert.equal(salvage.recoverResource(wreck.id), null, 'guarded wreck cannot be looted before victory');
+assert.equal(
+  salvage.recoverResource(wreck.id),
+  null,
+  'guarded wreck cannot be looted before victory'
+);
 wreck.boardingCleared = true;
 assert(!wreckRules.wreckCanBoard(wreck));
 assert(salvage.recoverResource(wreck.id), 'loot is unlocked after boarding victory');
@@ -119,4 +152,6 @@ assert(app.includes('boardingMapForWreck(wreck)'));
 const ship = fs.readFileSync(path.join(root, 'src/app/game-controller-combat-boarding.ts'), 'utf8');
 assert(ship.includes('resumeAfterBoarding'));
 assert(ship.includes('emitCampaignCombatEnded'));
-console.log('PASS full personal weapon catalogue, secure wrecks, persistent tactical checkpoints and ship results');
+console.log(
+  'PASS full personal weapon catalogue, secure wrecks, persistent tactical checkpoints and ship results'
+);

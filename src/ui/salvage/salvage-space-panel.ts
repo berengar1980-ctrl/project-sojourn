@@ -302,11 +302,7 @@ function bindSalvagePanelActions(
   ui.boardButton.addEventListener('click', () => {
     const model = getModel();
     const wreck = model.selectedWreck;
-    if (
-      wreck?.inspected &&
-      wreck.boardable &&
-      model.salvageAvailable
-    ) {
+    if (wreck?.inspected && wreck.boardable && model.salvageAvailable) {
       options.onBoardWreck?.(wreck.id);
     }
   });
