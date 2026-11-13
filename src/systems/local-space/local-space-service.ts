@@ -343,7 +343,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.approachPurpose = null;
     this.miningAccumulator = 0;
     this.miningEvents.clear();
-    this.shortRangeScanElapsed = 0;
+    this.scanClock.resetShort();
     this.approachRoute = [];
     this.approachIndex = 0;
     resetAutopilotMotion(this.instance.ship);
@@ -416,7 +416,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.stationKeepingPosition = { ...ship.position };
       this.shipForwardVelocity = 0;
       this.shipLateralVelocity = 0;
-      this.shortRangeScanElapsed = 0;
+      this.scanClock.resetShort();
       this.miningPhase = 'scanning';
       return;
     }
