@@ -46,6 +46,10 @@ export class LocalSpaceScanClock {
     this.shortElapsed = 0;
   }
 
+  keepStation(seconds: number, idle: IdleStationKeepingState, station: WorldPoint): void {
+    updateIdleStationKeeping(idle, this.instance.ship, station, this.instance.seed, seconds);
+  }
+
   advanceShort(
     seconds: number,
     asteroid: LocalAsteroid,
