@@ -18,10 +18,39 @@ export function distanceToDangerCorridor(
   return Math.hypot(point.x - from.x - dx * t, point.y - from.y - dy * t);
 }
 
+const regionBounds = new WeakMap<WorldRegion, readonly [number, number, number, number]>();
+
+function boundsForRegion(region: WorldRegion): readonly [number, number, number, number] {
+  const cached = regionBounds.get(region);
+  if (cached) return cached;
+  const scale = region.scale ?? 1;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const lobe of region.lobes ?? []) {
+    minX = Math.min(minX, lobe.center.x - lobe.radiusX * scale);
+    maxX = Math.max(maxX, lobe.center.x + lobe.radiusX * scale);
+    minY = Math.min(minY, lobe.center.y - lobe.radiusY * scale);
+    maxY = Math.max(maxY, lobe.center.y + lobe.radiusY * scale);
+  }
+  for (const path of region.corridors ?? []) {
+    minX = Math.min(minX, path.from.x - path.width * scale, path.to.x - path.width * scale);
+    maxX = Math.max(maxX, path.from.x + path.width * scale, path.to.x + path.width * scale);
+    minY = Math.min(minY, path.from.y - path.width * scale, path.to.y - path.width * scale);
+    maxY = Math.max(maxY, path.from.y + path.width * scale, path.to.y + path.width * scale);
+  }
+  const bounds: readonly [number, number, number, number] = [minX, minY, maxX, maxY];
+  regionBounds.set(region, bounds);
+  return bounds;
+}
+
 export function pointInsideDangerRegion(region: WorldRegion, point: WorldPoint): boolean {
   if (!region.lobes?.length && !region.corridors?.length)
     return Math.hypot(point.x - region.center.x, point.y - region.center.y) <= region.radius;
 
+  const [minX, minY, maxX, maxY] = boundsForRegion(region);
+  if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) return false;
   const scale = region.scale ?? 1;
   if (
     region.lobes?.some((lobe) => {
@@ -41,11 +70,11 @@ export function fixedDangerAtPoint(
   point: WorldPoint,
   defaultDanger: 0 | 1 | 2 | 3 = 0
 ): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = defaultDanger;
-  for (const region of regions) {
-    if (pointInsideDangerRegion(region, point)) danger = region.dangerLevel;
+  for (let index = regions.length - 1; index >= 0; index -= 1) {
+    const region = regions[index]!;
+    if (pointInsideDangerRegion(region, point)) return region.dangerLevel;
   }
-  return danger;
+  return defaultDanger;
 }
 
 export function curatedZoneWaypoints(region: WorldRegion): readonly WorldPoint[] {
