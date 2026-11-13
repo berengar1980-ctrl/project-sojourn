@@ -369,6 +369,22 @@ function createCrewCallbacks(
   };
 }
 
+function repairShipAtPort(context: ActivePortContext): void {
+  const { shipOperations, ship, runtime, port, log, onRefresh } = context;
+  const result = shipOperations.repair(
+    ship,
+    runtime.hullMaxHp,
+    port.shipyard,
+    runtime.crewEffects.engineering.repairCostMultiplier
+  );
+  if (result.points > 0) {
+    log.write('WERFT > HÜLLE +' + result.points + ' HP · ' + result.cost + ' CR');
+  } else {
+    log.write('WARTUNG > REPARATUR NICHT NÖTIG ODER NICHT BEZAHLBAR');
+  }
+  onRefresh();
+}
+
 export function createActivePortPanel(
   root: HTMLElement,
   navigation: NavigationService,
@@ -457,20 +473,7 @@ export function createActivePortPanel(
     ),
     ...underworldOptions,
     onReturnToStarMap,
-    onRepairShip: () => {
-      const result = shipOperations.repair(
-        ship,
-        runtime.hullMaxHp,
-        port.shipyard,
-        runtime.crewEffects.engineering.repairCostMultiplier
-      );
-      if (result.points > 0) {
-        log.write('WERFT > HÜLLE +' + result.points + ' HP · ' + result.cost + ' CR');
-      } else {
-        log.write('WARTUNG > REPARATUR NICHT NÖTIG ODER NICHT BEZAHLBAR');
-      }
-      onRefresh();
-    },
+    onRepairShip: () => repairShipAtPort(context),
     ...createTradeCallbacks(context),
     ...createCharterCallbacks(context),
     ...createShipyardCallbacks(context),
