@@ -68,7 +68,10 @@ function boardingStatusText(snapshot: BoardingEncounterSnapshot): string {
 
 type BoardingAction = 'move' | 'shoot' | 'suppress' | 'overwatch';
 
-function boardingActionControls(snapshot: BoardingEncounterSnapshot, selected: BoardingUnit | null) {
+function boardingActionControls(
+  snapshot: BoardingEncounterSnapshot,
+  selected: BoardingUnit | null
+) {
   const finished = snapshot.outcome !== 'active';
   const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
   const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
