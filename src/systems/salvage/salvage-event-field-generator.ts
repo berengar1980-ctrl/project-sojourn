@@ -110,6 +110,7 @@ export function generateSectorSalvageEventField(event: SectorSalvageEvent): Salv
         }
       : {}),
     integrity: Math.round(48 + random() * 42),
+    ...(event.type === 'special-wreck' ? { boardingHostiles: 2 + (event.fieldSeed % 3) } : {}),
     resources:
       event.type === 'distress-rescue' && !event.salvageRights
         ? []

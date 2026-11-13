@@ -33,6 +33,8 @@ export interface BoardingWeaponProfile {
   readonly armorPenetration: number;
   readonly spread: number;
   readonly canSuppress: boolean;
+  readonly meleeBonus?: number;
+  readonly spreadMode?: 'cone';
   readonly piercing?: {
     readonly maxArmor: number;
     readonly bonusDamage: number;

@@ -101,6 +101,24 @@ for (let seed = 1; seed <= 20 && !victorious; seed += 1) {
 }
 assert(victorious, 'successful grapple must lead to boarding');
 
+{
+  const resumed = combat.createStrategicCombatService(ship('player'), ship('npc'), 2, arena);
+  if (resumed.fireGrapple('attacker') && resumed.getSnapshot().grapple.success) {
+    for (let i = 0; i < 250 && !resumed.getSnapshot().winner; i += 1) resumed.tick(0.08);
+    if (resumed.getSnapshot().boardingInitiator === 'attacker') {
+      const elapsed = resumed.getSnapshot().elapsedSeconds;
+      assert.equal(resumed.resumeAfterBoarding(), true, 'retreat must resume linked space combat');
+      assert.equal(resumed.getSnapshot().winner, null);
+      assert.equal(resumed.getSnapshot().boardingInitiator, null);
+      assert.equal(resumed.getSnapshot().grapple, null);
+      assert.equal(resumed.fireGrapple('attacker'), false, 'one grapple per fight');
+      assert.equal(resumed.resumeAfterBoarding(), false, 'resuming twice must be impossible');
+      resumed.tick(0.08);
+      assert(resumed.getSnapshot().elapsedSeconds > elapsed, 'the fight must advance');
+    }
+  }
+}
+
 const npcFight = combat.createStrategicCombatService(ship('player'), ship('npc', true), 5, arena);
 npcFight.tick(0.08);
 assert.equal(npcFight.getSnapshot().grappleUsed.defender, true, 'NPC must also launch a grapple');

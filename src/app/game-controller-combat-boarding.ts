@@ -11,16 +11,10 @@ import {
 } from '../systems/boarding/crew-boarding-adapter';
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
+import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
-export function startCombatBoarding(
-  context: ControllerRuntimeContext,
-  snapshot: StrategicCombatSnapshot,
-  returnToMap: (boardingOutcome?: string) => void
-): void {
-  if (!snapshot.boardingInitiator) return;
-  context.systemLog.write(combatResultMessage(snapshot));
-  const enemyName = snapshot.defender.name;
+function prepareShipBoardingScene(context: ControllerRuntimeContext): void {
   const { state } = context;
   state.panels.star?.destroy();
   state.panels.local?.destroy();
@@ -39,15 +33,11 @@ export function startCombatBoarding(
   state.embeddedCombat = null;
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
-  if (crewBoardingUnits(context.crew).length === 0) {
-    context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
-    context.engagements.finishPlayerCombat();
-    runSceneZoomTransition(context.root, returnToMap);
-    return;
-  }
+}
 
+function createShipBoarders(snapshot: StrategicCombatSnapshot) {
   const enemyCount = 2 + (Math.floor(snapshot.elapsedSeconds * 10) % 2);
-  const enemyUnits = Array.from({ length: enemyCount }, (_, index) => ({
+  return Array.from({ length: enemyCount }, (_, index) => ({
     id: 'ship-boarder-' + index,
     name: 'Entertrupp ' + (index + 1),
     team: 'enemy' as const,
@@ -62,6 +52,26 @@ export function startCombatBoarding(
         : { ...boardingRangedWeapons.sidearm, id: 'off_autopistol', name: 'Kompakte Autopistole' },
     meleeWeapon: boardingMeleeWeapons.baton,
   }));
+}
+
+export function startCombatBoarding(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot,
+  returnToMap: (boardingOutcome?: string) => void
+): void {
+  if (!snapshot.boardingInitiator) return;
+  context.systemLog.write(combatResultMessage(snapshot));
+  const enemyName = snapshot.defender.name;
+  prepareShipBoardingScene(context);
+  const { state } = context;
+  if (crewBoardingUnits(context.crew).length === 0) {
+    context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
+    context.engagements.finishPlayerCombat();
+    runSceneZoomTransition(context.root, returnToMap);
+    return;
+  }
+
+  const enemyUnits = createShipBoarders(snapshot);
   const encounter = createCrewBoardingEncounter({
     roster: context.crew,
     seed: Math.floor(snapshot.elapsedSeconds * 1000) ^ enemyName.length,
@@ -78,6 +88,22 @@ export function startCombatBoarding(
     root: context.root,
     encounter,
     onFinish: (result) => {
+      if (result.outcome === 'retreat') {
+        const combat = context.engagements.activePlayerCombat();
+        if (combat?.resumeAfterBoarding()) {
+          context.systemLog.write('BOARDING > RUECKZUG · RAUMKAMPF WIRD FORTGESETZT');
+          context.campaignEvents.emit({ type: 'boarding.ended', outcome: 'draw' });
+          state.boardingPanel?.destroy();
+          state.boardingPanel = null;
+          state.mode = 'combat';
+          state.combatPanel = createStrategicCombatPanel({
+            root: context.root,
+            combat,
+            onReturn: () => returnFromCombat(context, combat, () => returnToMap()),
+          });
+          return;
+        }
+      }
       if (result.outcome === 'player_win') {
         const captured = enemyUnits[0]!.weapon;
         context.crew.grantBoardingEquipment(captured.id);
@@ -96,7 +122,14 @@ export function startCombatBoarding(
               ? 'enemy_win'
               : 'draw',
       });
-      context.engagements.finishPlayerCombat();
+      if (result.outcome === 'player_win' || result.outcome === 'enemy_win') {
+        emitCampaignCombatEnded(context.campaignEvents, {
+          ...snapshot,
+          winner: result.outcome === 'player_win' ? 'attacker' : 'defender',
+          outcomeReason: 'boarding',
+        });
+      }
+      context.engagements.finishPlayerCombat(result.outcome);
       showCampaignCombatSummary(
         context.root,
         snapshot,

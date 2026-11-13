@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import type { BoardingOutcome } from '../../core/boarding-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
 
@@ -23,6 +24,7 @@ import {
 } from './strategic-combat-service';
 
 import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
+import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
 const PLAYER_ID = 'player';
 
@@ -50,7 +52,7 @@ export interface StarMapEngagementService {
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
   activePlayerEnemy(): SectorNpcState | null;
-  finishPlayerCombat(): void;
+  finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
 }
 
 export interface StarMapEngagementOptions {
@@ -65,21 +67,6 @@ export interface StarMapEngagementOptions {
   readonly getPlayerShip: () => ShipDefinition;
   readonly getPlayerCombatant: () => StrategicCombatantSetup;
   readonly log: (message: string) => void;
-}
-
-function distance(
-  a: { readonly x: number; readonly y: number },
-  b: { readonly x: number; readonly y: number }
-): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
-function engagementRange(first: ShipDefinition, second: ShipDefinition): number {
-  return Math.max(48, (first.nominalLengthMeters + second.nominalLengthMeters) * 0.35);
-}
-
-function pairKey(firstId: string, secondId: string): string {
-  return [firstId, secondId].sort().join(':');
 }
 
 interface EngagementRuntime {
@@ -445,12 +432,16 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   }
 }
 
-function finishPlayerCombat(runtime: EngagementRuntime): void {
+function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: BoardingOutcome): void {
   if (!runtime.playerCombat || !runtime.playerEnemy) return;
   const model = runtime.playerCombat.getSnapshot();
   runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
-  if (model.defender.hullHp <= 0 && model.attacker.hullHp > 0)
+  if (
+    (model.defender.hullHp <= 0 && model.attacker.hullHp > 0) ||
+    (model.boardingInitiator !== null && boardingOutcome === 'player_win')
+  ) {
     runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
+  }
   if (model.defender.hullHp <= 0) {
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
     runtime.options.log(
@@ -459,7 +450,9 @@ function finishPlayerCombat(runtime: EngagementRuntime): void {
         ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
     );
   } else {
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Nach Gefecht');
+    const reason =
+      boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
+    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, reason);
   }
   if (model.attacker.hullHp <= 0) {
     const recovery = runtime.options.navigation.recoverToNearestDock();
@@ -494,6 +487,6 @@ export function createStarMapEngagementService(
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
     activePlayerEnemy: () => runtime.playerEnemy,
-    finishPlayerCombat: () => finishPlayerCombat(runtime),
+    finishPlayerCombat: (boardingOutcome) => finishPlayerCombat(runtime, boardingOutcome),
   };
 }

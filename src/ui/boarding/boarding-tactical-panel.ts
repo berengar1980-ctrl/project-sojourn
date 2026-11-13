@@ -5,6 +5,7 @@ import type {
 } from '../../core/boarding-types';
 import type { CrewBoardingEncounter } from '../../systems/boarding/crew-boarding-adapter';
 import { boardingHexDistance, boardingHexKey } from '../../systems/boarding/boarding-geometry';
+import { createBoardingCheckpointStore } from '../../systems/boarding/boarding-checkpoint-service';
 
 export interface BoardingTacticalPanel {
   update(): void;
@@ -65,10 +66,40 @@ function boardingStatusText(snapshot: BoardingEncounterSnapshot): string {
   return 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
 }
 
+type BoardingAction = 'move' | 'shoot' | 'suppress' | 'overwatch';
+
+function boardingActionControls(
+  snapshot: BoardingEncounterSnapshot,
+  selected: BoardingUnit | null
+) {
+  const finished = snapshot.outcome !== 'active';
+  const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
+  const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
+  return {
+    canAct,
+    cannotShoot,
+    cannotSuppress: cannotShoot || !selected?.weapon.canSuppress,
+    cannotOverwatch: !selected || selected.ap < 2 || selected.combatUsed,
+    cannotHold: !canAct || cannotShoot,
+  };
+}
+
+function boardingActionButton(
+  action: BoardingAction,
+  selectedAction: BoardingAction,
+  name: string,
+  disabled: boolean
+): string {
+  const pressed = selectedAction === action ? 'aria-pressed="true"' : '';
+  const unavailable = disabled ? 'disabled' : '';
+  return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
+}
+
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   private readonly shell: HTMLElement;
   private readonly tactical: CrewBoardingEncounter['tactical'];
   private action: 'move' | 'shoot' | 'suppress' | 'overwatch' = 'move';
+  private checkpointMessage = '';
 
   constructor(private readonly options: BoardingTacticalPanelOptions) {
     this.shell = document.createElement('section');
@@ -251,17 +282,11 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const selected = snapshot.units.find((unit) => unit.id === snapshot.selectedUnitId) ?? null;
     const reachable = selected ? this.tactical.reachable(selected.id) : {};
     const finished = snapshot.outcome !== 'active';
-    const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
-    const button = (action: typeof this.action, name: string, disabled = false): string => {
-      const pressed = this.action === action ? 'aria-pressed="true"' : '';
-      const unavailable = !canAct || disabled ? 'disabled' : '';
-      return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
-    };
-    const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
-    const cannotSuppress = cannotShoot || !selected?.weapon.canSuppress;
-    const cannotOverwatch = !selected || selected.ap < 2 || selected.combatUsed;
-    const cannotHold = !canAct || cannotShoot;
-    const statusLabel = boardingStatusText(snapshot);
+    const controls = boardingActionControls(snapshot, selected);
+    const button = (action: BoardingAction, name: string, disabled = false): string =>
+      boardingActionButton(action, this.action, name, !controls.canAct || disabled);
+    const { cannotShoot, cannotSuppress, cannotOverwatch, cannotHold } = controls;
+    const statusLabel = this.checkpointMessage || boardingStatusText(snapshot);
     const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
@@ -274,6 +299,8 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
         <div class="boarding-actions">
           <button type="button" data-boarding-end ${finished || snapshot.activeTeam !== 'player' ? 'disabled' : ''}>ZUG BEENDEN</button>
           <button type="button" data-boarding-retreat ${finished || snapshot.activeTeam !== 'player' || !snapshot.allowRetreat ? 'disabled' : ''}>RÜCKZUG</button>
+          <button type="button" data-boarding-save ${finished ? 'disabled' : ''}>KAMPF SPEICHERN</button>
+          <button type="button" data-boarding-load ${finished ? 'disabled' : ''}>KAMPF LADEN</button>
           ${finished ? '<button type="button" data-boarding-finish>WEITER</button>' : ''}
         </div>
       </header>
@@ -295,6 +322,33 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   }
 
   private bindControls(): void {
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-save]')
+      ?.addEventListener('click', () => {
+        try {
+          createBoardingCheckpointStore(window.localStorage).save(this.tactical.getSnapshot());
+          this.checkpointMessage = 'ENTERKAMPF GESPEICHERT · NUR TAKTISCHER CHECKPOINT';
+        } catch {
+          this.checkpointMessage = 'SPEICHERN NICHT MÖGLICH · BROWSER-SPEICHER PRÜFEN';
+        }
+        this.render();
+      });
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-load]')
+      ?.addEventListener('click', () => {
+        try {
+          const checkpoint = createBoardingCheckpointStore(window.localStorage).load();
+          if (checkpoint && this.tactical.restoreCheckpoint(checkpoint)) {
+            this.checkpointMessage = 'TAKTISCHER CHECKPOINT GELADEN';
+            this.runEnemyTurn();
+          } else {
+            this.checkpointMessage = 'KEIN PASSENDER ENTERKAMPFSTAND VORHANDEN';
+          }
+        } catch {
+          this.checkpointMessage = 'ENTERKAMPFSTAND BESCHÄDIGT ODER NICHT LESBAR';
+        }
+        this.render();
+      });
     for (const action of this.shell.querySelectorAll<HTMLButtonElement>('[data-boarding-action]')) {
       action.addEventListener('click', () => {
         const next = action.dataset.boardingAction;
@@ -333,6 +387,11 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     this.shell
       .querySelector<HTMLButtonElement>('[data-boarding-finish]')
       ?.addEventListener('click', () => {
+        try {
+          createBoardingCheckpointStore(window.localStorage).clear();
+        } catch {
+          // A disabled browser store must not block finishing the encounter.
+        }
         this.options.onFinish(this.options.encounter.settle());
       });
   }
