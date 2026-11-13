@@ -364,7 +364,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   resolveControllerCombat(context, {
     starMap: () => mountControllerStarMap(context),
     mining: (reuseSeed, preserveField) => mountControllerMining(context, reuseSeed, preserveField),
-    salvage: (reuseSeed, field, combat) => mountControllerSalvage(context, reuseSeed, field, combat),
+    salvage: (reuseSeed, field, combat) =>
+      mountControllerSalvage(context, reuseSeed, field, combat),
   });
   const currentLocationId = navigationSnapshot.currentLocationId;
   observeControllerOperations(context, deltaSeconds);

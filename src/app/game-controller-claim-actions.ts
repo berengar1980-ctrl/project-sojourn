@@ -35,4 +35,3 @@ export function toggleControllerAsteroidClaim(context: ControllerRuntimeContext)
   }
   state.panels.local?.update(controllerLocalModel(context));
 }
-

@@ -96,8 +96,7 @@ export function resolveControllerCombat(
     startCombatBoarding(context, snapshot, (boardingOutcome) => {
       if (boardingOutcome === 'enemy_win') return scenes.starMap();
       if (origin === 'local-space') scenes.mining(true, true);
-      else if (origin === 'salvage-space')
-        scenes.salvage(true, preservedSalvageField, snapshot);
+      else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
       else scenes.starMap();
     });
     return;
