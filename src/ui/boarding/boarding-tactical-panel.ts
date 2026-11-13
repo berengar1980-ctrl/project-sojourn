@@ -309,8 +309,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
           this.checkpointMessage = 'SPEICHERN NICHT MÖGLICH · BROWSER-SPEICHER PRÜFEN';
         }
         this.render();
-      }
-    );
+      });
     this.shell
       .querySelector<HTMLButtonElement>('[data-boarding-load]')
       ?.addEventListener('click', () => {
@@ -326,8 +325,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
           this.checkpointMessage = 'ENTERKAMPFSTAND BESCHÄDIGT ODER NICHT LESBAR';
         }
         this.render();
-      }
-    );
+      });
     for (const action of this.shell.querySelectorAll<HTMLButtonElement>('[data-boarding-action]')) {
       action.addEventListener('click', () => {
         const next = action.dataset.boardingAction;
