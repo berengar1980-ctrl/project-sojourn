@@ -99,7 +99,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
     this.hazards = new LocalSpaceAutopilotHazards(
-      this.instance, this.shield, this.approachSpeed,
+      this.instance,
+      this.shield,
+      this.approachSpeed,
       options.hazardCrew ?? { piloting: 0, sensors: 0 },
       options.avoidanceRandom ?? Math.random,
       options.onNavigationNotice ?? (() => {})
@@ -408,7 +410,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    const reviewed = this.hazards.review(deltaSeconds, this.approachRoute, this.approachIndex, this.activeTargetId());
+    const reviewed = this.hazards.review(
+      deltaSeconds,
+      this.approachRoute,
+      this.approachIndex,
+      this.activeTargetId()
+    );
     this.approachRoute = reviewed.route;
     this.approachIndex = reviewed.index;
     const result = advanceAutopilotRoute(

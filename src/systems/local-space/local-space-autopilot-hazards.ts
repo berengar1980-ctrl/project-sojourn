@@ -36,17 +36,25 @@ export class LocalSpaceAutopilotHazards {
     if (!waypoint) return { route, index };
     const clearance = Math.max(this.shield.radiusX, this.shield.radiusY) + 24;
     const hazard = findRouteAsteroidHazard(
-      this.instance.ship, waypoint, this.instance.asteroids,
-      clearance, this.speed, excludedId
+      this.instance.ship,
+      waypoint,
+      this.instance.asteroids,
+      clearance,
+      this.speed,
+      excludedId
     );
     if (!hazard || this.checked.has(hazard.asteroid.id)) return { route, index };
     this.checked.add(hazard.asteroid.id);
-    if (!crewAvoidsAsteroid(this.crew.piloting, this.crew.sensors, hazard.timeToCrossing, this.random)) {
+    if (
+      !crewAvoidsAsteroid(this.crew.piloting, this.crew.sensors, hazard.timeToCrossing, this.random)
+    ) {
       this.notice('NAV > ASTEROID IM KURS · AUSWEICHREAKTION NICHT RECHTZEITIG');
       return { route, index };
     }
     const projected = this.instance.asteroids.map((asteroid) =>
-      asteroid.id === hazard.asteroid.id ? { ...asteroid, position: hazard.predictedPosition } : asteroid
+      asteroid.id === hazard.asteroid.id
+        ? { ...asteroid, position: hazard.predictedPosition }
+        : asteroid
     );
     const detour = planPointRoute({
       start: this.instance.ship.position,
