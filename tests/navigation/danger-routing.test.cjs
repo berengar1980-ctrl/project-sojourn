@@ -94,7 +94,7 @@ assert(sectorMap.regions.length >= 5, 'The Narrows must define strategic danger 
 
 const rendererSource = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 assert(
-  rendererSource.includes('this.drawDangerRegions(width, height);'),
+  rendererSource.includes('drawStarMapDangerRegions('),
   'fixed danger regions must now be visible on the star map'
 );
 
