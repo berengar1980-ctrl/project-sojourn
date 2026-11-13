@@ -1,4 +1,5 @@
 name: PR295 one-shot corridor geometry and route quality audit
+# Re-run after rebalance against actual fitted star-map viewport and red choke points
 on:
   push:
     branches: [feature/voidbound-corridor-danger-map]
