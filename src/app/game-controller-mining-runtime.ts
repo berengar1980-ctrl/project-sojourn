@@ -1,5 +1,6 @@
 import { miningResourceById } from '../data/resources/mining-resources';
 import { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { WorldLocation } from '../core/world-types';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -45,6 +46,12 @@ export function ensureMiningCombatWorld(
     economy.securityDrones.set(location.id, new AsteroidSecurityDrone(
       field.width, field.height, field.asteroids
     ));
+  }
+  if (!economy.localPirates.has(location.id)) {
+    const field = state.localSpace.getSnapshot().instance;
+    economy.localPirates.set(
+      location.id, new LocalPirateTraffic(field.width, field.height, field.seed)
+    );
   }
   state.localNpcMining = createNpcLocalMiningService({
     locationId: location.id,
