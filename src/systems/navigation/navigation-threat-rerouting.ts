@@ -1,5 +1,5 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-import type { RoutePlan } from './route-planner';
+import type { RoutePlan, RouteThreatContact } from './route-planner';
 import { planRouteFromPoint, routeThreatExposure, repointRouteEndpoints } from './route-planner';
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationRuntimeState } from './navigation-runtime-types';
@@ -51,3 +51,26 @@ export function reviewLiveRoute(
   travel.route = alternative;
   travel.distanceTravelled = 0;
 }
+export function setNavigationThreatContacts(
+  state: NavigationRuntimeState,
+  contacts: readonly RouteThreatContact[]
+): void {
+  const signature = contacts
+    .map(
+      (contact) =>
+        contact.kind +
+        ':' +
+        Math.round(contact.position.x / 160) +
+        ':' +
+        Math.round(contact.position.y / 160) +
+        ':' +
+        Math.round((contact.strength ?? 1) * 2)
+    )
+    .join('|');
+  if (signature === state.threatSignature) return;
+  state.threats = [...contacts];
+  state.threatSignature = signature;
+  state.threatRevision += 1;
+  state.previewCache = null;
+}
+
