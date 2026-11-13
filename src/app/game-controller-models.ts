@@ -71,6 +71,23 @@ export function controllerShipRuntimeOptions(
   };
 }
 
+/** Dynamic traffic changes route exposure, never a location's permanent danger level. */
+export function updateSectorNavigationThreats(context: ControllerRuntimeContext): void {
+  // Current pirate raids and patrol cover affect navigation, not the permanent map zones.
+  context.navigation.setThreatContacts(
+    context.world.inForeignSystem()
+      ? []
+      : economy.sectorNpcs.npcs
+          .filter((npc) => npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
+          .map((npc) => ({
+            position: economy.sectorNpcs.livePosition(npc),
+            kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
+            strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
+          }))
+  );
+
+}
+
 export function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {
   const ship = context.state.activeShip;
   const runtime = resolveShipRuntimeSetup(ship, controllerShipRuntimeOptions(context, ship));
