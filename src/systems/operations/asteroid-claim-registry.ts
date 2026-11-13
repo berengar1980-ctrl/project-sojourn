@@ -157,6 +157,50 @@ export class AsteroidClaimRegistry {
     return { ...result };
   }
 
+  /** Serializable world state: registrations, depleted rock ore, scan levels
+   * and stable procedural seeds survive a full game reload. */
+  exportState() {
+    return {
+      version: 1 as const,
+      claims: [...this.claims.values()].map((claim) => ({
+        ...claim, oreAtRegistration: { ...claim.oreAtRegistration },
+      })),
+      disputes: [...this.disputes.values()].map((dispute) => ({ ...dispute })),
+      remainingOre: [...this.remainingOre.entries()].map(([key, ore]) =>
+        [key, { ...ore }] as const
+      ),
+      surveyLevels: [...this.surveyLevels.entries()],
+      fieldSeeds: [...this.fieldSeeds.entries()],
+    };
+  }
+
+  restoreState(saved: ReturnType<AsteroidClaimRegistry['exportState']>): boolean {
+    if (!saved || saved.version !== 1) return false;
+    this.claims.clear();
+    this.disputes.clear();
+    this.remainingOre.clear();
+    this.surveyLevels.clear();
+    this.fieldSeeds.clear();
+    for (const claim of saved.claims) {
+      this.claims.set(this.key(claim.locationId, claim.asteroidId), {
+        ...claim, oreAtRegistration: { ...claim.oreAtRegistration },
+      });
+    }
+    for (const dispute of saved.disputes) {
+      this.disputes.set(
+        this.disputeKey(dispute.locationId, dispute.asteroidId, dispute.intruderId),
+        { ...dispute }
+      );
+    }
+    for (const [key, ore] of saved.remainingOre)
+      this.remainingOre.set(key, { ...ore });
+    for (const [key, level] of saved.surveyLevels)
+      this.surveyLevels.set(key, level);
+    for (const [key, seed] of saved.fieldSeeds)
+      this.fieldSeeds.set(key, seed);
+    return true;
+  }
+
   snapshot() {
     return {
       claims: [...this.claims.values()].map((c) => ({
