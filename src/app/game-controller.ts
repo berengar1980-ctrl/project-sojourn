@@ -500,7 +500,8 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   });
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
-  if (tickLegalDetention(context, deltaSeconds) || tickCustoms(context)) return;
+  if (tickLegalDetention(context, deltaSeconds)) return;
+  if (tickCustoms(context)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   tickControllerNpcOperations(economy, deltaSeconds);
