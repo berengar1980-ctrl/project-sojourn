@@ -34,9 +34,9 @@ function securityDroneTest() {
   assert.equal(drone.snapshot().operational, false);
 }
 function obstructionTest() {
-  const asteroids = [rock('a', 100, 100), rock('obstruction', 220, 100, 75)];
+  const asteroids = [rock('a', 100, 100), rock('obstruction', 320, 100, 75)];
   const drone = new AsteroidSecurityDrone(1000, 500, asteroids, 460);
-  const blocked = [{ shipId: 'thief', asteroidId: 'z', position: { x: 350, y: 100 } }];
+  const blocked = [{ shipId: 'thief', asteroidId: 'z', position: { x: 490, y: 100 } }];
   assert.deepEqual(drone.tick(0, asteroids, blocked), [], 'Asteroid shields the line of sight');
   assert.equal(drone.tick(0, [], blocked).length, 1, 'Clear sensor ray detects violation');
 }
