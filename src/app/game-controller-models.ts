@@ -209,22 +209,26 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
       })
     : [];
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
+  const asteroids = model.asteroids.map((asteroid) => ({
+    ...asteroid,
+    claimOwnerId: claimByAsteroid.get(asteroid.id)?.ownerId ?? null,
+    ...(claimByAsteroid.has(asteroid.id) ? {
+      registeredOre: Object.entries(claimByAsteroid.get(asteroid.id)!.oreAtRegistration).map(
+        ([resourceId, amount]) => ({
+          resourceName: miningResourceById(resourceId)?.name ?? resourceId,
+          amount,
+        })
+      ),
+    } : {}),
+  }));
   return {
     ...model,
     selectedAsteroidClaimOwner: owner,
     npcShips: [...model.npcShips, ...pirateShips],
-    asteroids: model.asteroids.map((asteroid) => ({
-      ...asteroid,
-      claimOwnerId: claimByAsteroid.get(asteroid.id)?.ownerId ?? null,
-      ...(claimByAsteroid.has(asteroid.id) ? {
-        registeredOre: Object.entries(claimByAsteroid.get(asteroid.id)!.oreAtRegistration).map(
-          ([resourceId, amount]) => ({
-            resourceName: miningResourceById(resourceId)?.name ?? resourceId,
-            amount,
-          })
-        ),
-      } : {}),
-    })),
+    asteroids,
+    selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
+    miningTarget: asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null,
+    scanTarget: asteroids.find((asteroid) => asteroid.isScanTarget) ?? null,
     securityDrone: drone?.snapshot() ?? null,
   };
 }
