@@ -262,4 +262,4 @@ assert(app.includes('recordWreckBoardingOutcome(wreck, snapshot)'));
 assert(app.includes('wreckDefenderCount(wreck)'));
 assert(panel.includes('this.tactical.fireCone'));
 assert(panel.includes('this.options.missionBriefing'));
-console.log('PASS eight navigable wreck decks, flamer friendlies and cover, suppressed overwatch, persistent casualties, campaign aftermath');
+console.log('PASS boarding wreck maps, flamer cone, overwatch safety and casualties');

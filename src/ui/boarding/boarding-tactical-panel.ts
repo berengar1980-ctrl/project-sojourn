@@ -337,7 +337,11 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
       <div class="boarding-tactics">
         <div class="boarding-tactics-actions">
           ${button('move', 'BEWEGEN')}
-          ${button('shoot', selected?.weapon.spreadMode === 'cone' ? 'FLAMMENKEGEL · 1 AP' : 'SCHIESSEN · 1 AP', cannotShoot)}
+          ${button(
+            'shoot',
+            selected?.weapon.spreadMode === 'cone' ? 'FLAMMENKEGEL · 1 AP' : 'SCHIESSEN · 1 AP',
+            cannotShoot
+          )}
           ${button('suppress', 'UNTERDRÜCKEN · 1 AP', cannotSuppress)}
           ${button('overwatch', 'FEUERBEREITSCHAFT · 2 AP', cannotOverwatch)}
           <button type="button" data-boarding-hold ${cannotHold ? 'disabled' : ''}>DECKUNG HALTEN</button>

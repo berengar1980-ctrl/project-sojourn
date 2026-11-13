@@ -134,7 +134,11 @@ export function boardingHexPlane(hex: BoardingHex): { x: number; y: number } {
 }
 
 /** A 120-degree forward fire-watch sector, centred on the explicitly selected hex. */
-export function boardingInOverwatchArc(source: BoardingHex, aim: BoardingHex, test: BoardingHex): boolean {
+export function boardingInOverwatchArc(
+  source: BoardingHex,
+  aim: BoardingHex,
+  test: BoardingHex
+): boolean {
   const first = boardingHexPlane(source);
   const second = boardingHexPlane(aim);
   const third = boardingHexPlane(test);

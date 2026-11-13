@@ -202,7 +202,10 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
     if (!boardingHasLineOfSight(this.map, this.doorStates, pair.attacker, pair.target)) return null;
     const chance = attackChance(this.map, this.doorStates, pair.attacker, pair.target);
     if (pair.attacker.weapon.spreadMode === 'cone') {
-      return this.fireCone(attackerId, pair.target)?.find((result) => result.targetId === targetId) ?? null;
+      return (
+        this.fireCone(attackerId, pair.target)?.find((result) => result.targetId === targetId) ??
+        null
+      );
     }
     return this.resolveAttack(pair.attacker, pair.target, chance, false);
   }
@@ -263,7 +266,12 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
       center: { ...center },
     });
     for (const target of this.units) {
-      if (target.team !== unit.team && target.hp > 0 && boardingHexDistance(target, center) <= 1 && boardingHasLineOfSight(this.map, this.doorStates, unit, target)) {
+      if (
+        target.team !== unit.team &&
+        target.hp > 0 &&
+        boardingHexDistance(target, center) <= 1 &&
+        boardingHasLineOfSight(this.map, this.doorStates, unit, target)
+      ) {
         target.suppressed = true;
       }
     }
@@ -347,7 +355,13 @@ class BoardingTacticalRuntime implements BoardingTacticalService {
   ): void {
     if (!melee && attacker.weapon.spreadMode === 'cone') {
       const hits = resolveBoardingCone(
-        this.map, this.doorStates, this.units, attacker, target, () => this.roll(), false
+        this.map,
+        this.doorStates,
+        this.units,
+        attacker,
+        target,
+        () => this.roll(),
+        false
       );
       if (hits) {
         this.writeLog(attacker.name + ' reagiert mit Flammenkegel: ' + hits.length + ' Ziel(e).');

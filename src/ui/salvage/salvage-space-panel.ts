@@ -181,7 +181,10 @@ function showSalvageWreck(
     (wreck.boardingCleared
       ? ' · DECKS GESICHERT'
       : wreck.boardable
-        ? ' · VERTEIDIGER ' + wreck.boardingHostilesRemaining + ' · ENTERVERSUCHE ' + wreck.boardingAttempts
+        ? ' · VERTEIDIGER ' +
+          wreck.boardingHostilesRemaining +
+          ' · ENTERVERSUCHE ' +
+          wreck.boardingAttempts
         : '');
 }
 

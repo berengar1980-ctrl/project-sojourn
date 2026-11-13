@@ -89,7 +89,7 @@ export function startCombatBoarding(
     root: context.root,
     encounter,
     missionTitle: 'Enterkampf · ' + enemyName,
-    missionBriefing: 'Schiffsenterung · Rückzug löst den Greifhaken und setzt das Raumgefecht fort.',
+    missionBriefing: 'Rückzug löst den Greifhaken; der laufende Raumkampf wird fortgesetzt.',
     onFinish: (result) => {
       const aftermath = boardingAfterAction(result, 'ship');
       context.systemLog.write(aftermath.report);

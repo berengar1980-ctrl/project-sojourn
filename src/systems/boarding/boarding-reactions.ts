@@ -12,7 +12,12 @@ import {
 } from './boarding-geometry';
 import { attackChance, clamp, meleeChance } from './boarding-tactical-rules';
 
-type Reaction = (attacker: BoardingUnit, target: BoardingUnit, chance: number, melee: boolean) => void;
+type Reaction = (
+  attacker: BoardingUnit,
+  target: BoardingUnit,
+  chance: number,
+  melee: boolean
+) => void;
 
 export function reactToDisengagement(
   units: readonly BoardingUnit[],
@@ -29,7 +34,9 @@ export function reactToDisengagement(
       enemy.reactionUsed ||
       boardingHexDistance(enemy, previous) !== 1 ||
       boardingHexDistance(enemy, next) <= 1
-    ) continue;
+    ) {
+      continue;
+    }
     enemy.reactionUsed = true;
     react(enemy, mover, Math.max(5, meleeChance(enemy) - 20), true);
     if (mover.hp <= 0 || !isActive()) break;
@@ -65,7 +72,9 @@ export function reactToMovement(
       boardingHexDistance(shooter, mover) > shooter.weapon.range ||
       !boardingHasLineOfSight(map, doors, shooter, mover) ||
       boardingAllyInFiringLine(units, shooter, mover)
-    ) continue;
+    ) {
+      continue;
+    }
     // Suppression disrupts fire-watch; that shot is lost rather than saved indefinitely.
     shooter.overwatch = false;
     shooter.overwatchTarget = null;

@@ -24,7 +24,10 @@ export function boardingConeTargets(
   aim: BoardingHex
 ): readonly BoardingUnit[] | null {
   if (shooter.weapon.spreadMode !== 'cone') return null;
-  if (boardingHexDistance(shooter, aim) < 1 || boardingHexDistance(shooter, aim) > shooter.weapon.range) {
+  if (
+    boardingHexDistance(shooter, aim) < 1 ||
+    boardingHexDistance(shooter, aim) > shooter.weapon.range
+  ) {
     return null;
   }
   if (
