@@ -1,4 +1,5 @@
-import type { WorldLocation, WorldMap, WorldPoint, WorldRegion } from '../../core/world-types';
+import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
+import { curatedZoneWaypoints, fixedDangerAtPoint } from './fixed-danger-geography';
 
 export type RouteProfile = 'fast' | 'balanced' | 'safe';
 
@@ -54,14 +55,14 @@ export interface RoutePlan {
 }
 
 const PROFILE_WEIGHTS: Readonly<Record<RouteProfile, readonly [number, number, number, number]>> = {
-  fast: [1, 1.02, 1.08, 1.18],
-  balanced: [1, 1.04, 1.22, 2.1],
-  safe: [1, 1.08, 1.55, 5.2],
+  fast: [1, 1, 1.02, 1.08],
+  balanced: [0.96, 0.96, 1.08, 2.1],
+  safe: [0.86, 0.86, 1.1, 5.2],
 };
 
-const REGION_CLEARANCE = 120;
-const REGION_NODE_COUNT = 10;
-const SAMPLE_STEP = 70;
+const SAMPLE_STEP = 115;
+const MAX_STRATEGIC_WAYPOINTS = 32;
+const MAX_DETOUR: Readonly<Record<RouteProfile, number>> = { fast: 1, balanced: 1.38, safe: 1.75 };
 // The stable geographic network is reused across the entire multi-year NPC simulation.
 const routeCache = new Map<string, RoutePlan>();
 // Moving contacts have a separate, bounded cache; they must never flush static routes.
@@ -101,13 +102,7 @@ function routeRelevantContacts(
 }
 
 function pointDanger(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = 0;
-  for (const region of world.regions) {
-    if (distanceBetween(point, region.center) <= region.radius) {
-      danger = Math.max(danger, region.dangerLevel) as 0 | 1 | 2 | 3;
-    }
-  }
-  return danger;
+  return fixedDangerAtPoint(world.regions, point, world.defaultDangerLevel ?? 0);
 }
 
 function segmentMetrics(
@@ -143,21 +138,6 @@ function segmentMetrics(
         (relevantContacts.length ? contactPressure(point, relevantContacts) * threatWeight : 0));
   }
   return { distance, cost, dangerLevel };
-}
-
-function regionNodes(world: WorldMap, region: WorldRegion): WorldPoint[] {
-  const radius = region.radius + REGION_CLEARANCE;
-  const points: WorldPoint[] = [];
-  for (let index = 0; index < REGION_NODE_COUNT; index += 1) {
-    const angle = (Math.PI * 2 * index) / REGION_NODE_COUNT;
-    const point = {
-      x: region.center.x + Math.cos(angle) * radius,
-      y: region.center.y + Math.sin(angle) * radius,
-    };
-    if (point.x < 0 || point.y < 0 || point.x > world.width || point.y > world.height) continue;
-    points.push(point);
-  }
-  return points;
 }
 
 function candidateNodes(
@@ -196,7 +176,17 @@ function candidateNodes(
     .filter(
       (point) => point.x >= 0 && point.x <= world.width && point.y >= 0 && point.y <= world.height
     );
-  return [from, to, ...world.regions.flatMap((region) => regionNodes(world, region)), ...detours];
+  const strategic = world.regions
+    .flatMap((region) => curatedZoneWaypoints(region))
+    .filter(
+      (point) => point.x >= 0 && point.y >= 0 && point.x <= world.width && point.y <= world.height
+    )
+    .map((point) => ({ point, proximity: distanceToSegment(point, from, to) }))
+    .filter((entry) => entry.proximity <= 1550)
+    .sort((a, b) => a.proximity - b.proximity)
+    .slice(0, MAX_STRATEGIC_WAYPOINTS)
+    .map((entry) => entry.point);
+  return [from, to, ...strategic, ...detours];
 }
 
 function reconstruct(
@@ -269,7 +259,12 @@ function routePoints(
     }
   }
 
-  return Number.isFinite(distances[1]!) ? reconstruct(nodes, previous, 1) : [from, to];
+  if (!Number.isFinite(distances[1]!)) return [from, to];
+  const chosen = reconstruct(nodes, previous, 1);
+  // A safe course may cut through a red frontier; it must not circle half the sector.
+  return pathDistance(chosen) > distanceBetween(from, to) * MAX_DETOUR[profile]
+    ? [from, to]
+    : chosen;
 }
 
 function createPlan(

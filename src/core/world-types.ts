@@ -49,12 +49,30 @@ export interface WorldLocation {
   readonly spriteUrl?: string;
 }
 
+/** Irregular fixed-zone clouds and connecting shipping corridors, shared by rendering and routing. */
+export interface WorldRegionLobe {
+  readonly center: WorldPoint;
+  readonly radiusX: number;
+  readonly radiusY: number;
+}
+
+export interface WorldRegionCorridor {
+  readonly from: WorldPoint;
+  readonly to: WorldPoint;
+  readonly width: number;
+}
+
 export interface WorldRegion {
   readonly id: string;
   readonly name: string;
   readonly center: WorldPoint;
+  /** Circular fallback for older maps; curated cloud maps use lobes instead. */
   readonly radius: number;
   readonly dangerLevel: 1 | 2 | 3;
+  readonly lobes?: readonly WorldRegionLobe[];
+  readonly corridors?: readonly WorldRegionCorridor[];
+  /** Fixed spatial calibration, not a dynamic danger multiplier. */
+  readonly scale?: number;
 }
 
 export interface WorldMap {
@@ -66,4 +84,6 @@ export interface WorldMap {
   readonly star: StarBody;
   readonly locations: readonly WorldLocation[];
   readonly regions: readonly WorldRegion[];
+  /** Curated worlds may use red frontier as the base with carved transit and safe passages. */
+  readonly defaultDangerLevel?: 0 | 1 | 2 | 3;
 }

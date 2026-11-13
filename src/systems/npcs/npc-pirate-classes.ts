@@ -1,5 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
+import { fixedDangerAtPoint } from '../navigation/fixed-danger-geography';
 
 export type PirateClass = 'raider' | 'reaver' | 'marauder';
 
@@ -26,19 +27,18 @@ export function canPirateOperateAt(pirate: SectorNpcState, danger: number): bool
 }
 
 export function worldDangerAt(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger = 0;
-  for (const region of world.regions) {
-    if (Math.hypot(point.x - region.center.x, point.y - region.center.y) <= region.radius) {
-      danger = Math.max(danger, region.dangerLevel);
-    }
-  }
+  let danger: 0 | 1 | 2 | 3 = fixedDangerAtPoint(
+    world.regions,
+    point,
+    world.defaultDangerLevel ?? 0
+  );
   // Location danger is authoritative near its real berth, even between region circles.
   for (const location of world.locations) {
     if (
       Math.hypot(point.x - location.position.x, point.y - location.position.y) <
       Math.max(125, location.radius * 2.5)
     ) {
-      danger = Math.max(danger, location.dangerLevel);
+      danger = location.dangerLevel;
     }
   }
   return danger as 0 | 1 | 2 | 3;

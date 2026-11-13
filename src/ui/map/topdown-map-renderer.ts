@@ -187,7 +187,10 @@ export class TopdownMapRenderer {
       this.dangerBands,
       this.dangerOverlayVisible,
       width,
-      height
+      height,
+      this.model.width,
+      this.model.height,
+      this.model.defaultDangerLevel ?? 0
     );
     if (this.dangerOverlayVisible)
       drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);

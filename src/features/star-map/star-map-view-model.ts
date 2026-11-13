@@ -97,6 +97,7 @@ export interface StarMapViewModel {
   readonly star: StarBody;
   readonly locations: readonly StarMapLocationView[];
   readonly regions: WorldMap['regions'];
+  readonly defaultDangerLevel?: WorldMap['defaultDangerLevel'];
   readonly npcShips: readonly NpcShipMapView[];
   readonly route: RoutePlan | null;
   readonly playerShip: PlayerShipMapView;
@@ -118,6 +119,7 @@ export function createStarMapViewModel(
     height: world.height,
     star: world.star,
     regions: world.regions,
+    defaultDangerLevel: world.defaultDangerLevel,
     npcShips: npcShips.map((npc) => ({
       ...npc,
       isSelected: npc.id === selectedNpcId,
