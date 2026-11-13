@@ -125,18 +125,32 @@ function failedAndNpcOrders() {
 function miningTest() {
   const claims = new AsteroidClaimRegistry();
   const mkRock = (id) => ({
-    id, kind: 'resource', scanLevel: 'analyzed',
-    deposits: [{ resourceId: 'ferrite', oreRemaining: 75, oreCapacity: 100, identified: true }]
+    id,
+    kind: 'resource',
+    scanLevel: 'analyzed',
+    deposits: [{ resourceId: 'ferrite', oreRemaining: 75, oreCapacity: 100, identified: true }],
   });
   const asteroid = mkRock('asteroid-17-3');
-  assert.equal(claims.register('field-a', { ...asteroid, scanLevel: 'unscanned' }, 'player', 1, 10000).ok, false);
+  assert.equal(
+    claims.register('field-a', { ...asteroid, scanLevel: 'unscanned' }, 'player', 1, 10000).ok,
+    false
+  );
   assert.equal(claims.register('field-a', asteroid, 'player', 1, 0).ok, false);
-  assert.deepEqual(claims.register('field-a', asteroid, 'player', 1, 10000), { ok: true, fee: 2500 });
+  assert.deepEqual(claims.register('field-a', asteroid, 'player', 1, 10000), {
+    ok: true,
+    fee: 2500,
+  });
   assert.equal(claims.register('field-a', asteroid, 'competitor', 1, 10000).ok, false);
   assert.equal(claims.claim('field-a', asteroid).ownerId, 'player');
   const sameFieldSeed = claims.seedFor('field-a', () => 17);
-  assert.equal(claims.seedFor('field-a', () => 999), sameFieldSeed);
-  assert.equal(claims.seedFor('field-b', () => 23), 23);
+  assert.equal(
+    claims.seedFor('field-a', () => 999),
+    sameFieldSeed
+  );
+  assert.equal(
+    claims.seedFor('field-b', () => 23),
+    23
+  );
   claims.rememberField('field-a', [asteroid]);
   const regenerated = mkRock('asteroid-17-3');
   regenerated.deposits[0].oreRemaining = 100;
@@ -150,12 +164,18 @@ function miningTest() {
   assert.equal(claims.resolveConflict('field-a', asteroid.id, 'pirate', 'paid').status, 'paid');
   const second = claims.recordTheft('field-a', asteroid.id, 'other-miner', 7, true, 80);
   assert.equal(second.compensation, 840);
-  assert.equal(claims.snapshot().conflicts.length, 2,
-    'A different intruder must not overwrite the first offender');
+  assert.equal(
+    claims.snapshot().conflicts.length,
+    2,
+    'A different intruder must not overwrite the first offender'
+  );
   const loaded = new AsteroidClaimRegistry();
   assert(loaded.restoreState(JSON.parse(JSON.stringify(claims.exportState()))));
   assert.equal(loaded.claim('field-a', asteroid).ownerId, 'player');
-  assert.equal(loaded.seedFor('field-a', () => 999), 17);
+  assert.equal(
+    loaded.seedFor('field-a', () => 999),
+    17
+  );
   const persistedRock = mkRock('asteroid-17-3');
   persistedRock.scanLevel = 'unscanned';
   persistedRock.deposits[0].oreRemaining = 100;

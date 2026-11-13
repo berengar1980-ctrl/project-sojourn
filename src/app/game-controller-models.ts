@@ -171,55 +171,62 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     context.state.embeddedCombat === 'local-space'
       ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
       : null
-  ); 
+  );
   const locationId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
   const asteroidId = model.selectedAsteroid?.id;
   const owner =
     locationId && asteroidId
-      ? context.economy.asteroidClaims.snapshot().claims.find(
-          (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
-        )?.ownerId ?? null
+      ? (context.economy.asteroidClaims
+          .snapshot()
+          .claims.find(
+            (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
+          )?.ownerId ?? null)
       : null;
-  const knownClaims = context.economy.asteroidClaims.snapshot().claims.filter(
-    (claim) => claim.locationId === locationId
-  );
+  const knownClaims = context.economy.asteroidClaims
+    .snapshot()
+    .claims.filter((claim) => claim.locationId === locationId);
   const claimByAsteroid = new Map(knownClaims.map((claim) => [claim.asteroidId, claim]));
   const pirateShips = locationId
-    ? (context.economy.localPirates.get(locationId)?.snapshot(
-        context.economy.sectorNpcs.npcs
-      ) ?? []).flatMap((contact) => {
+    ? (
+        context.economy.localPirates.get(locationId)?.snapshot(context.economy.sectorNpcs.npcs) ??
+        []
+      ).flatMap((contact) => {
         const definition = getShipDefinition(contact.shipId);
         if (!definition) return [];
-        return [{
-          id: contact.npcId,
-          name: contact.name,
-          position: contact.position,
-          headingRadians: contact.headingRadians,
-          speed: contact.speed,
-          phase: 'approaching' as const,
-          targetAsteroidId: null,
-          laserActive: false,
-          scanProgress: 0,
-          nominalLengthMeters: definition.nominalLengthMeters,
-          spriteUrl: definition.sprite.assetUrl,
-          spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-          hardpoints: definition.sprite.hardpoints,
-          isSelected: context.state.selectedNpcId === contact.npcId,
-        }];
+        return [
+          {
+            id: contact.npcId,
+            name: contact.name,
+            position: contact.position,
+            headingRadians: contact.headingRadians,
+            speed: contact.speed,
+            phase: 'approaching' as const,
+            targetAsteroidId: null,
+            laserActive: false,
+            scanProgress: 0,
+            nominalLengthMeters: definition.nominalLengthMeters,
+            spriteUrl: definition.sprite.assetUrl,
+            spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+            hardpoints: definition.sprite.hardpoints,
+            isSelected: context.state.selectedNpcId === contact.npcId,
+          },
+        ];
       })
     : [];
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
   const asteroids = model.asteroids.map((asteroid) => ({
     ...asteroid,
     claimOwnerId: claimByAsteroid.get(asteroid.id)?.ownerId ?? null,
-    ...(claimByAsteroid.has(asteroid.id) ? {
-      registeredOre: Object.entries(claimByAsteroid.get(asteroid.id)!.oreAtRegistration).map(
-        ([resourceId, amount]) => ({
-          resourceName: miningResourceById(resourceId)?.name ?? resourceId,
-          amount,
-        })
-      ),
-    } : {}),
+    ...(claimByAsteroid.has(asteroid.id)
+      ? {
+          registeredOre: Object.entries(claimByAsteroid.get(asteroid.id)!.oreAtRegistration).map(
+            ([resourceId, amount]) => ({
+              resourceName: miningResourceById(resourceId)?.name ?? resourceId,
+              amount,
+            })
+          ),
+        }
+      : {}),
   }));
   return {
     ...model,

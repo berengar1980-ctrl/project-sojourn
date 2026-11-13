@@ -18,14 +18,7 @@ export interface OperationsModel {
   names: Record<string, string>;
 }
 export type OperationsAction =
-  | 'order'
-  | 'cancel'
-  | 'enlist'
-  | 'resign'
-  | 'accept'
-  | 'reward'
-  | 'navigate'
-  | 'claim-route';
+  'order' | 'cancel' | 'enlist' | 'resign' | 'accept' | 'reward' | 'navigate' | 'claim-route';
 interface Options {
   root: HTMLElement;
   onClose: () => void;
@@ -91,15 +84,14 @@ function patrolMarkup(m: OperationsModel): string {
     ${button('accept', 'Einsatz annehmen', '', !m.port || !p.mandate || !m.patrolShip || p.assignments.some((a) => ['active', 'completed'].includes(a.status)))}`;
 }
 function concessionMarkup(m: OperationsModel): string {
-  const claims = [...m.claims].sort(
-    (a, b) => b.registeredDay - a.registeredDay
-  );
-  const rows = claims.map((claim) => {
-    const isOwn = claim.ownerId === 'player';
-    const resources = Object.entries(claim.oreAtRegistration)
-      .map(([id, amount]) => escape(m.names[id] ?? id) + ' ~' + Math.round(amount) + ' t')
-      .join(' · ');
-    return `<li>
+  const claims = [...m.claims].sort((a, b) => b.registeredDay - a.registeredDay);
+  const rows = claims
+    .map((claim) => {
+      const isOwn = claim.ownerId === 'player';
+      const resources = Object.entries(claim.oreAtRegistration)
+        .map(([id, amount]) => escape(m.names[id] ?? id) + ' ~' + Math.round(amount) + ' t')
+        .join(' · ');
+      return `<li>
       <strong>${escape(m.names[claim.locationId] ?? claim.locationId)} / ${escape(claim.asteroidId)}</strong>
       <p>${isOwn ? 'EIGENE KONZESSION' : 'FREMDE KONZESSION · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)}
       · registriert Tag ${claim.registeredDay}</p>
@@ -107,7 +99,8 @@ function concessionMarkup(m: OperationsModel): string {
       <small>Mengen entsprechen dem Registereintrag und können veraltet sein.</small>
       ${button('claim-route', 'Kurs zum Abbaugebiet setzen', claim.locationId + '|' + claim.asteroidId)}
     </li>`;
-  }).join('');
+    })
+    .join('');
   return `<h3>Öffentliches Konzessionsregister</h3>
     <p>Registrierte Einzelasteroiden. Fremde Konzessionen können gezielt angeflogen
     werden. Unbefugte Förderung kann zu Forderungen und Fahndungen führen.</p>

@@ -3,8 +3,10 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const { SectorLegalRegistry, PENAL_LABOR_CREDITS_PER_DAY } =
-  loadStandaloneTypeScriptModule(root, 'src/systems/operations/sector-legal-registry.ts');
+const { SectorLegalRegistry, PENAL_LABOR_CREDITS_PER_DAY } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/operations/sector-legal-registry.ts'
+);
 
 function registrationAndFraudTest() {
   const law = new SectorLegalRegistry();
@@ -26,8 +28,12 @@ function detentionDaysAndCreditorsTest() {
   law.reportOffense('ship-player', 'directorate', 'Widerstand', 300, 4);
   let days = 0;
   const ledger = new Map();
-  const result = law.detain('ship-player', 100,
-    () => { days += 1; },
+  const result = law.detain(
+    'ship-player',
+    100,
+    () => {
+      days += 1;
+    },
     (ownerId, credits) => ledger.set(ownerId, (ledger.get(ownerId) || 0) + credits),
     PENAL_LABOR_CREDITS_PER_DAY
   );
@@ -41,9 +47,15 @@ function detentionDaysAndCreditorsTest() {
   assert.equal(law.isWanted('ship-player'), false);
   assert.equal(ledger.get('miner-1'), 1200);
   assert.equal(ledger.get('directorate'), 300);
-  const again = law.detain('ship-player', 100,
-    () => { throw new Error('Already settled'); },
-    () => { throw new Error('Double payout'); }
+  const again = law.detain(
+    'ship-player',
+    100,
+    () => {
+      throw new Error('Already settled');
+    },
+    () => {
+      throw new Error('Double payout');
+    }
   );
   assert.equal(again.detained, false);
 }
@@ -56,7 +68,13 @@ function sightingsRequireOutstandingDebtTest() {
   const report = law.reportSighting('player-ship', 'meridian-exchange', 3, 'arrival');
   assert.equal(report.locationId, 'meridian-exchange');
   assert.equal(report.destinationId, null);
-  const departure = law.reportSighting('player-ship', 'meridian-exchange', 3, 'departure', 'niveus');
+  const departure = law.reportSighting(
+    'player-ship',
+    'meridian-exchange',
+    3,
+    'departure',
+    'niveus'
+  );
   assert.equal(departure.destinationId, 'niveus');
   const snapshot = law.snapshot();
   snapshot.charges[0].paid = 900;
@@ -77,8 +95,11 @@ function serializationTest() {
   assert.equal(loaded.debt('ship-1'), 380);
   assert.equal(loaded.latestSighting('ship-1').locationId, 'haven');
   loaded.reportOffense('ship-1', 'directorate', 'Flucht', 100, 9);
-  assert.equal(loaded.snapshot().charges[1].id, 'charge-2',
-    'Restored sequence must not collide with existing charges');
+  assert.equal(
+    loaded.snapshot().charges[1].id,
+    'charge-2',
+    'Restored sequence must not collide with existing charges'
+  );
 }
 registrationAndFraudTest();
 serializationTest();

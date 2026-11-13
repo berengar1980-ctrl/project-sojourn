@@ -73,11 +73,17 @@ export function createMiningLocalSpace(
           const unitValue = miningResourceById(resourceId)?.baseValue ?? 1;
           if (detected) {
             const conflict = claims.recordTheft(
-              location.id, asteroidId, 'player', accepted, true, unitValue
+              location.id,
+              asteroidId,
+              'player',
+              accepted,
+              true,
+              unitValue
             );
-            if (conflict) onNavigationNotice?.(
-              'MINING > FREMDER KONZESSIONSINHABER HAT UNBEFUGTEN ABBAU ENTDECKT'
-            );
+            if (conflict)
+              onNavigationNotice?.(
+                'MINING > FREMDER KONZESSIONSINHABER HAT UNBEFUGTEN ABBAU ENTDECKT'
+              );
           }
         }
       }

@@ -67,32 +67,48 @@ export class SectorLegalRegistry {
   /** A new public signal never changes the immutable ship ID or erases charges. */
   forgeTransponder(shipId: string, alias: string): boolean {
     const previous = this.registrations.get(shipId);
-    if (!previous || !alias.trim() || [...this.registrations.values()].some(
-      (other) => other.shipId !== shipId && other.transponder === alias
-    )) return false;
+    if (
+      !previous ||
+      !alias.trim() ||
+      [...this.registrations.values()].some(
+        (other) => other.shipId !== shipId && other.transponder === alias
+      )
+    )
+      return false;
     this.registrations.set(shipId, { ...previous, transponder: alias.trim() });
     return true;
   }
 
   reportOffense(
-    shipId: string, creditorId: string, offense: string, amount: number, day: number
+    shipId: string,
+    creditorId: string,
+    offense: string,
+    amount: number,
+    day: number
   ): LegalCharge | null {
-    if (!this.registrations.has(shipId) || !Number.isFinite(amount) || amount <= 0)
-      return null;
+    if (!this.registrations.has(shipId) || !Number.isFinite(amount) || amount <= 0) return null;
     const charge: LegalCharge = {
-      id: 'charge-' + ++this.sequence, shipId, creditorId, offense,
-      amount: Math.ceil(amount), paid: 0, day: Math.floor(day),
+      id: 'charge-' + ++this.sequence,
+      shipId,
+      creditorId,
+      offense,
+      amount: Math.ceil(amount),
+      paid: 0,
+      day: Math.floor(day),
     };
     this.charges.push(charge);
     return { ...charge };
   }
 
   debt(shipId: string): number {
-    return this.charges.filter((c) => c.shipId === shipId)
+    return this.charges
+      .filter((c) => c.shipId === shipId)
       .reduce((sum, c) => sum + (c.amount - c.paid), 0);
   }
 
-  isWanted(shipId: string): boolean { return this.debt(shipId) > 0; }
+  isWanted(shipId: string): boolean {
+    return this.debt(shipId) > 0;
+  }
 
   /** A forged transponder hides a warrant from ordinary scans. Only a
    * positive deep identification connects it to the immutable hull record. */
@@ -103,7 +119,10 @@ export class SectorLegalRegistry {
   }
 
   /** Creditors receive the paid principal once, not on every encounter. */
-  settle(shipId: string, availableCredits: number): {
+  settle(
+    shipId: string,
+    availableCredits: number
+  ): {
     readonly paid: number;
     readonly transfers: ReadonlyArray<{ creditorId: string; amount: number }>;
   } {
@@ -122,13 +141,21 @@ export class SectorLegalRegistry {
 
   /** Docking at a Directorate installation results in compulsory settlement. */
   detain(
-    shipId: string, availableCredits: number,
+    shipId: string,
+    availableCredits: number,
     onAdvanceDay: () => void,
     onTransfer: (creditorId: string, amount: number) => void,
     perDay = PENAL_LABOR_CREDITS_PER_DAY
   ): DetentionResult {
     if (!this.isWanted(shipId)) {
-      return { detained: false, confiscated: 0, days: 0, laborCredits: 0, released: true, remainingDebt: 0 };
+      return {
+        detained: false,
+        confiscated: 0,
+        days: 0,
+        laborCredits: 0,
+        released: true,
+        remainingDebt: 0,
+      };
     }
     const first = this.settle(shipId, availableCredits);
     for (const transfer of first.transfers) onTransfer(transfer.creditorId, transfer.amount);
@@ -144,20 +171,33 @@ export class SectorLegalRegistry {
       for (const transfer of payment.transfers) onTransfer(transfer.creditorId, transfer.amount);
     }
     return {
-      detained: true, confiscated: first.paid, days, laborCredits,
-      released: !this.isWanted(shipId), remainingDebt: this.debt(shipId),
+      detained: true,
+      confiscated: first.paid,
+      days,
+      laborCredits,
+      released: !this.isWanted(shipId),
+      remainingDebt: this.debt(shipId),
     };
   }
 
   /** Reports are generated only at lawful port encounters and route departures. */
   reportSighting(
-    shipId: string, locationId: string, day: number,
-    kind: ShipSighting['kind'], destinationId: string | null = null
+    shipId: string,
+    locationId: string,
+    day: number,
+    kind: ShipSighting['kind'],
+    destinationId: string | null = null
   ): ShipSighting | null {
     const registration = this.registration(shipId);
     if (!registration || !this.isWanted(shipId)) return null;
-    const report = { shipId, transponder: registration.transponder, locationId,
-      destinationId, day: Math.floor(day), kind };
+    const report = {
+      shipId,
+      transponder: registration.transponder,
+      locationId,
+      destinationId,
+      day: Math.floor(day),
+      kind,
+    };
     this.sightings.push(report);
     return report;
   }
@@ -177,10 +217,8 @@ export class SectorLegalRegistry {
     this.sightings.length = 0;
     for (const registration of saved.registrations)
       this.registrations.set(registration.shipId, { ...registration });
-    for (const charge of saved.charges)
-      this.charges.push({ ...charge });
-    for (const sighting of saved.sightings)
-      this.sightings.push({ ...sighting });
+    for (const charge of saved.charges) this.charges.push({ ...charge });
+    for (const sighting of saved.sightings) this.sightings.push({ ...sighting });
     this.sequence = Math.max(
       saved.sequence,
       ...this.charges.map((charge) => Number(charge.id.replace(/^charge-/, '')) || 0),

@@ -16,16 +16,24 @@ const LABOR_DAYS_PER_SECOND = 12;
 // Central Directorate institutions make arrests. Other lawful ports report
 // sightings but do not perform Directorate detention. Pirate docks do neither.
 export const DIRECTORATE_PORTS: ReadonlySet<string> = new Set([
-  'haven', 'vigil-station', 'karth-industrial', 'helix-shipyards',
+  'haven',
+  'vigil-station',
+  'karth-industrial',
+  'helix-shipyards',
 ]);
 
 export function registerSectorShips(context: ControllerRuntimeContext): void {
   const register = context.economy.legal;
   register.registerShip(context.state.activeShip.id, 'player');
-  for (const npc of context.economy.sectorNpcs.npcs) register.registerShip(npc.shipId + ':' + npc.id, npc.id);
+  for (const npc of context.economy.sectorNpcs.npcs)
+    register.registerShip(npc.shipId + ':' + npc.id, npc.id);
 }
 
-export function transferCredit(context: ControllerRuntimeContext, creditorId: string, amount: number): void {
+export function transferCredit(
+  context: ControllerRuntimeContext,
+  creditorId: string,
+  amount: number
+): void {
   if (creditorId === 'player') {
     context.economy.trade.player.credits += amount;
     context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
@@ -36,7 +44,8 @@ export function transferCredit(context: ControllerRuntimeContext, creditorId: st
 }
 
 export function dispatchPatrolToReport(
-  context: ControllerRuntimeContext, locationId: string,
+  context: ControllerRuntimeContext,
+  locationId: string,
   destinationId: string | null
 ): void {
   const world = context.world.world();
@@ -46,23 +55,28 @@ export function dispatchPatrolToReport(
   const position = world.locations.find((entry) => entry.id === targetId)?.position;
   if (!position) return;
   const candidates = context.economy.sectorNpcs.npcs
-    .filter((npc) =>
-      npc.job === 'patrol' && !npc.pirate && npc.hullHp > 0 &&
-      !context.economy.sectorNpcs.isTravelling(npc)
+    .filter(
+      (npc) =>
+        npc.job === 'patrol' &&
+        !npc.pirate &&
+        npc.hullHp > 0 &&
+        !context.economy.sectorNpcs.isTravelling(npc)
     )
     .sort((a, b) => {
       const pa = context.economy.sectorNpcs.livePosition(a);
       const pb = context.economy.sectorNpcs.livePosition(b);
-      return Math.hypot(pa.x - position.x, pa.y - position.y) -
-        Math.hypot(pb.x - position.x, pb.y - position.y);
+      return (
+        Math.hypot(pa.x - position.x, pa.y - position.y) -
+        Math.hypot(pb.x - position.x, pb.y - position.y)
+      );
     });
   for (const patrol of candidates) {
-    if (context.economy.sectorNpcs.requestTravel(
-      patrol, targetId, 'Fahndung · Sichtungsmeldung'
-    )) {
+    if (context.economy.sectorNpcs.requestTravel(patrol, targetId, 'Fahndung · Sichtungsmeldung')) {
       context.systemLog.write(
-        'PATROUILLE > ' + patrol.name.toUpperCase() +
-        ' SUCHT GESUCHTES SCHIFF BEI ' + targetId.toUpperCase()
+        'PATROUILLE > ' +
+          patrol.name.toUpperCase() +
+          ' SUCHT GESUCHTES SCHIFF BEI ' +
+          targetId.toUpperCase()
       );
       break;
     }
@@ -72,16 +86,19 @@ export function dispatchPatrolToReport(
 /** A friendly non-Directorate faction broadcasts an orbital sighting even
  * when the wanted ship does not dock; police custody still requires docking. */
 export function reportLegalOrbitalArrival(
-  context: ControllerRuntimeContext, locationId: string | null
+  context: ControllerRuntimeContext,
+  locationId: string | null
 ): void {
-  if (context.world.inForeignSystem() || !locationId ||
-    DIRECTORATE_PORTS.has(locationId)) return;
+  if (context.world.inForeignSystem() || !locationId || DIRECTORATE_PORTS.has(locationId)) return;
   const location = context.world.world().locations.find((entry) => entry.id === locationId);
   if (location?.stationType === 'pirate' || !sectorPortByLocationId(locationId)) return;
   const shipId = context.state.activeShip.id;
   if (!context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.15)) return;
   const report = context.economy.legal.reportSighting(
-    shipId, locationId, context.economy.situations.currentDay, 'arrival'
+    shipId,
+    locationId,
+    context.economy.situations.currentDay,
+    'arrival'
   );
   if (report) {
     context.systemLog.write('FAHNDUNG > ORBITALE SICHTUNG BEI ' + locationId.toUpperCase());
@@ -99,14 +116,16 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
   const shipId = context.state.activeShip.id;
   legal.registerShip(shipId, 'player');
   const directorate = DIRECTORATE_PORTS.has(locationId);
-  const recognized = legal.isRecognizedWanted(
-    shipId, Math.random() < (directorate ? 0.7 : 0.15)
-  );
+  const recognized = legal.isRecognizedWanted(shipId, Math.random() < (directorate ? 0.7 : 0.15));
   if (!recognized) return;
-  const report = legal.reportSighting(shipId, locationId, context.economy.situations.currentDay, 'arrival');
-  if (report) context.systemLog.write(
-    'FAHNDUNG > SICHTUNG AN ' + locationId.toUpperCase() + ' UEBERMITTELT'
+  const report = legal.reportSighting(
+    shipId,
+    locationId,
+    context.economy.situations.currentDay,
+    'arrival'
   );
+  if (report)
+    context.systemLog.write('FAHNDUNG > SICHTUNG AN ' + locationId.toUpperCase() + ' UEBERMITTELT');
   if (!directorate || !legal.isWanted(shipId)) {
     dispatchPatrolToReport(context, locationId, null);
     return;
@@ -130,8 +149,11 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
     panel: null,
   });
   context.systemLog.write(
-    'DIREKTORUM > STRAFLAGER: RESTSCHULD ' + legal.debt(shipId) +
-    ' CR, TAGESVERDIENST ' + PENAL_LABOR_CREDITS_PER_DAY + ' CR'
+    'DIREKTORUM > STRAFLAGER: RESTSCHULD ' +
+      legal.debt(shipId) +
+      ' CR, TAGESVERDIENST ' +
+      PENAL_LABOR_CREDITS_PER_DAY +
+      ' CR'
   );
 }
 
@@ -147,17 +169,21 @@ export function reportLegalDeparture(
   if (context.world.inForeignSystem() || !originId) return;
   const location = context.world.world().locations.find((entry) => entry.id === originId);
   if (location?.stationType === 'pirate' || !sectorPortByLocationId(originId)) return;
-  if (!context.economy.legal.isRecognizedWanted(
-    context.state.activeShip.id, Math.random() < 0.15
-  )) return;
+  if (!context.economy.legal.isRecognizedWanted(context.state.activeShip.id, Math.random() < 0.15))
+    return;
   const report = context.economy.legal.reportSighting(
-    context.state.activeShip.id, originId, context.economy.situations.currentDay,
-    'departure', destinationId
+    context.state.activeShip.id,
+    originId,
+    context.economy.situations.currentDay,
+    'departure',
+    destinationId
   );
   if (report) {
     context.systemLog.write(
-      'FAHNDUNG > ABFLUG AUS ' + originId.toUpperCase() +
-      (destinationId ? ', KURS ' + destinationId.toUpperCase() : '') + ' GEMELDET'
+      'FAHNDUNG > ABFLUG AUS ' +
+        originId.toUpperCase() +
+        (destinationId ? ', KURS ' + destinationId.toUpperCase() : '') +
+        ' GEMELDET'
     );
     dispatchPatrolToReport(context, originId, destinationId);
   }
@@ -184,8 +210,12 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
       context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' ENTLASSEN');
       continue;
     }
-    if (!DIRECTORATE_PORTS.has(npc.locationId) ||
-      economy.sectorNpcs.isTravelling(npc) || !legal.isWanted(shipId)) continue;
+    if (
+      !DIRECTORATE_PORTS.has(npc.locationId) ||
+      economy.sectorNpcs.isTravelling(npc) ||
+      !legal.isWanted(shipId)
+    )
+      continue;
     // A false registration makes recognition harder, but not impossible.
     const fingerprint = day + npc.id.length * 17 + npc.name.length * 13;
     const deepCheck = fingerprint % 10 < 7;
@@ -195,9 +225,7 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
     for (const transfer of payment.transfers)
       transferCredit(context, transfer.creditorId, transfer.amount);
     if (!legal.isWanted(shipId)) {
-      context.systemLog.write(
-        'DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT'
-      );
+      context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT');
       continue;
     }
     economy.npcPrisoners.add(npc.id);
@@ -213,7 +241,8 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
  * invokes the complete economic day transition. No credits are fabricated
  * outside the shared creditor ledger, and no second penalty is applied. */
 export function tickLegalDetention(
-  context: ControllerRuntimeContext, deltaSeconds: number
+  context: ControllerRuntimeContext,
+  deltaSeconds: number
 ): boolean {
   const session = detentions.get(context);
   if (!session) return false;
@@ -235,9 +264,7 @@ export function tickLegalDetention(
   for (let i = 0; i < days && context.economy.legal.isWanted(session.shipId); i++) {
     advanceEconomyDay(context);
     session.days++;
-    const payment = context.economy.legal.settle(
-      session.shipId, PENAL_LABOR_CREDITS_PER_DAY
-    );
+    const payment = context.economy.legal.settle(session.shipId, PENAL_LABOR_CREDITS_PER_DAY);
     session.laborCredits += payment.paid;
     for (const transfer of payment.transfers)
       transferCredit(context, transfer.creditorId, transfer.amount);
@@ -246,18 +273,24 @@ export function tickLegalDetention(
   if (session.panel) {
     session.panel.textContent =
       'TERRANISCHES DIREKTORUM – STRAFLAGER\n' +
-      'Hafttag: ' + session.days + '\n' +
-      'Restschuld: ' + debt.toLocaleString('de-DE') + ' CR\n' +
-      'Arbeitsgutschrift: ' + session.laborCredits.toLocaleString('de-DE') +
-      ' CR (' + PENAL_LABOR_CREDITS_PER_DAY + ' CR / Tag)';
+      'Hafttag: ' +
+      session.days +
+      '\n' +
+      'Restschuld: ' +
+      debt.toLocaleString('de-DE') +
+      ' CR\n' +
+      'Arbeitsgutschrift: ' +
+      session.laborCredits.toLocaleString('de-DE') +
+      ' CR (' +
+      PENAL_LABOR_CREDITS_PER_DAY +
+      ' CR / Tag)';
     session.panel.style.whiteSpace = 'pre-line';
   }
   if (debt > 0) return true;
   session.panel?.remove();
   detentions.delete(context);
   context.systemLog.write(
-    'DIREKTORUM > NACH ' + session.days +
-    ' HAFTTAGEN ENTLASSEN. SCHULDEN VOLLSTAENDIG BEGLICHEN'
+    'DIREKTORUM > NACH ' + session.days + ' HAFTTAGEN ENTLASSEN. SCHULDEN VOLLSTAENDIG BEGLICHEN'
   );
   return true;
 }

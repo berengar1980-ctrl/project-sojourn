@@ -51,7 +51,11 @@ export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
   engageNpcNow(npcId: string): boolean;
   engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
-  engageNpcsInArena(attackerId: string, defenderId: string, arena: StrategicCombatArenaOptions): boolean;
+  engageNpcsInArena(
+    attackerId: string,
+    defenderId: string,
+    arena: StrategicCombatArenaOptions
+  ): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -492,10 +496,16 @@ export function createStarMapEngagementService(
       if (attackerId === defenderId) return false;
       const attacker = engagementNpc(runtime, attackerId);
       const defender = engagementNpc(runtime, defenderId);
-      if (!attacker || !defender || attacker.hullHp <= 0 || defender.hullHp <= 0 ||
+      if (
+        !attacker ||
+        !defender ||
+        attacker.hullHp <= 0 ||
+        defender.hullHp <= 0 ||
         runtime.backgroundCombats.has(pairKey(attackerId, defenderId)) ||
         runtime.options.sectorNpcs.isTravelling(attacker) ||
-        runtime.options.sectorNpcs.isTravelling(defender)) return false;
+        runtime.options.sectorNpcs.isTravelling(defender)
+      )
+        return false;
       beginBackgroundCombat(runtime, attacker, defender, arena);
       return true;
     },

@@ -465,17 +465,20 @@ export function createActivePortPanel(
     root,
     model: {
       ...createActivePortModel(context),
-      ...(legal ? {
-        shipRegistration: {
-          transponder: legal.registerShip(ship.id, 'player').transponder,
-          originalTransponder: legal.registration(ship.id)!.originalTransponder,
-          wanted: legal.isWanted(ship.id),
-          debt: legal.debt(ship.id),
-          forged: legal.registration(ship.id)!.transponder !==
-            legal.registration(ship.id)!.originalTransponder,
-          pirateStation: location.stationType === 'pirate',
-        },
-      } : {}),
+      ...(legal
+        ? {
+            shipRegistration: {
+              transponder: legal.registerShip(ship.id, 'player').transponder,
+              originalTransponder: legal.registration(ship.id)!.originalTransponder,
+              wanted: legal.isWanted(ship.id),
+              debt: legal.debt(ship.id),
+              forged:
+                legal.registration(ship.id)!.transponder !==
+                legal.registration(ship.id)!.originalTransponder,
+              pirateStation: location.stationType === 'pirate',
+            },
+          }
+        : {}),
     },
     onForgeTransponder: () => {
       if (location.stationType !== 'pirate' || !legal) return;
@@ -484,8 +487,12 @@ export function createActivePortPanel(
         log.write('SCHWARZMARKT > NICHT GENUEGEND CREDITS');
         return;
       }
-      const alias = 'PX-' + Math.floor(Math.random() * 0xFFFFFFFF)
-        .toString(36).toUpperCase().padStart(7, '0');
+      const alias =
+        'PX-' +
+        Math.floor(Math.random() * 0xffffffff)
+          .toString(36)
+          .toUpperCase()
+          .padStart(7, '0');
       if (!legal.forgeTransponder(ship.id, alias)) {
         log.write('SCHWARZMARKT > KENNUNGSWECHSEL FEHLGESCHLAGEN');
         return;

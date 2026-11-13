@@ -4,23 +4,27 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { AsteroidSecurityDrone } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/operations/asteroid-security-drone.ts'
+  root,
+  'src/systems/operations/asteroid-security-drone.ts'
 );
 function rock(id, x, y, radius = 25, routeBlocking = true) {
   return {
-    id, kind: 'resource', routeBlocking, position: { x, y }, radius,
-    deposits: [], scanLevel: 'unscanned',
+    id,
+    kind: 'resource',
+    routeBlocking,
+    position: { x, y },
+    radius,
+    deposits: [],
+    scanLevel: 'unscanned',
   };
 }
 function securityDroneTest() {
-  const asteroids = [
-    rock('a', 100, 100),
-    rock('b', 600, 100),
-    rock('c', 800, 300),
-  ];
+  const asteroids = [rock('a', 100, 100), rock('b', 600, 100), rock('c', 800, 300)];
   const drone = new AsteroidSecurityDrone(1000, 500, asteroids, 400);
   const contact = {
-    shipId: 'miner:12', asteroidId: 'b', position: { x: 390, y: 100 },
+    shipId: 'miner:12',
+    asteroidId: 'b',
+    position: { x: 390, y: 100 },
   };
   assert.equal(drone.snapshot().operational, true);
   // Line between a and contact passes through rock b? The drone starts on rock a.

@@ -98,9 +98,9 @@ function act(c: ControllerRuntimeContext, action: OperationsAction, values: stri
     ok = patrolAction(c, m, action, values);
   if (action === 'claim-route') {
     const [fieldId, asteroidId] = id.split('|');
-    const known = e.asteroidClaims.snapshot().claims.some(
-      (claim) => claim.locationId === fieldId && claim.asteroidId === asteroidId
-    );
+    const known = e.asteroidClaims
+      .snapshot()
+      .claims.some((claim) => claim.locationId === fieldId && claim.asteroidId === asteroidId);
     if (known && fieldId && asteroidId) {
       c.state.selectedClaimTarget = { locationId: fieldId, asteroidId };
       c.navigation.selectDestination(fieldId);

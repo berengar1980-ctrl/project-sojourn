@@ -41,32 +41,47 @@ export class AsteroidSecurityDrone {
           y: asteroid.position.y + Math.sin(angle) * (asteroid.radius + 95),
         };
       });
-    this.patrol = points.length > 0
-      ? points
-      : [{ x: width * 0.25, y: height * 0.25 }, { x: width * 0.75, y: height * 0.75 }];
+    this.patrol =
+      points.length > 0
+        ? points
+        : [
+            { x: width * 0.25, y: height * 0.25 },
+            { x: width * 0.75, y: height * 0.75 },
+          ];
     this.position = { ...this.patrol[0]! };
   }
 
   snapshot(): SecurityDroneSnapshot {
-    return { position: { ...this.position }, scanRadius: this.scanRadius, operational: this.operational };
+    return {
+      position: { ...this.position },
+      scanRadius: this.scanRadius,
+      operational: this.operational,
+    };
   }
-  destroy(): void { this.operational = false; }
+  destroy(): void {
+    this.operational = false;
+  }
   restore(position: WorldPoint, operational: boolean): void {
     this.position = { ...position };
     this.operational = operational;
   }
 
-  tick(dt: number, asteroids: readonly LocalAsteroid[], contacts: readonly DroneContact[]): string[] {
+  tick(
+    dt: number,
+    asteroids: readonly LocalAsteroid[],
+    contacts: readonly DroneContact[]
+  ): string[] {
     if (!this.operational) return [];
     const destination = this.patrol[this.nextWaypoint]!;
     const dx = destination.x - this.position.x;
     const dy = destination.y - this.position.y;
     const distance = Math.hypot(dx, dy);
     const move = Math.min(distance, DRONE_CRUISE * Math.max(0, Math.min(dt, 0.25)));
-    if (distance > 0) this.position = {
-      x: this.position.x + (dx / distance) * move,
-      y: this.position.y + (dy / distance) * move,
-    };
+    if (distance > 0)
+      this.position = {
+        x: this.position.x + (dx / distance) * move,
+        y: this.position.y + (dy / distance) * move,
+      };
     for (const rock of asteroids) {
       if (!rock.routeBlocking) continue;
       const px = this.position.x - rock.position.x;
@@ -81,7 +96,9 @@ export class AsteroidSecurityDrone {
     }
     if (distance <= move + 0.001) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
 
-    const active = new Set(contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId])));
+    const active = new Set(
+      contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
+    );
     for (const key of this.observed) if (!active.has(key)) this.observed.delete(key);
 
     const newlyDetected: string[] = [];
@@ -108,10 +125,15 @@ export class AsteroidSecurityDrone {
     // Asteroids blocking the physical sensor ray shield illegal miners.
     for (const asteroid of asteroids) {
       if (!asteroid.routeBlocking) continue;
-      const t = Math.max(0, Math.min(1, (
-        (asteroid.position.x - this.position.x) * dx +
-        (asteroid.position.y - this.position.y) * dy
-      ) / distanceSquared));
+      const t = Math.max(
+        0,
+        Math.min(
+          1,
+          ((asteroid.position.x - this.position.x) * dx +
+            (asteroid.position.y - this.position.y) * dy) /
+            distanceSquared
+        )
+      );
       if (t <= 0.02 || t >= 0.98) continue;
       const closestX = this.position.x + t * dx;
       const closestY = this.position.y + t * dy;

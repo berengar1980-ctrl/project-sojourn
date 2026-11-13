@@ -37,9 +37,13 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
   const asteroid = model.selectedAsteroid;
   if (!asteroid) return '';
   if (asteroid.registeredOre?.length && asteroid.scanLevel !== 'analyzed') {
-    return 'KONZESSIONSREGISTER · ' + asteroid.registeredOre.map(
-      (ore) => ore.resourceName + ' ~' + Math.round(ore.amount) + ' t'
-    ).join(' / ') + ' · MENGEN MOEGLICHERWEISE VERALTET';
+    return (
+      'KONZESSIONSREGISTER · ' +
+      asteroid.registeredOre
+        .map((ore) => ore.resourceName + ' ~' + Math.round(ore.amount) + ' t')
+        .join(' / ') +
+      ' · MENGEN MOEGLICHERWEISE VERALTET'
+    );
   }
 
   if (asteroid.scanLevel === 'unscanned') {
@@ -192,8 +196,15 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
   }
   const selected = model.selectedAsteroid;
-  claimButton.hidden = !selected || selected.scanLevel !== 'analyzed' || selected.totalRemaining === 0 || Boolean(model.selectedAsteroidClaimOwner && model.selectedAsteroidClaimOwner !== 'player');
-  claimButton.textContent = model.selectedAsteroidClaimOwner === 'player' ? 'KONZESSION AUFGEBEN' : 'KONZESSION REGISTRIEREN · 2.500 CR';
+  claimButton.hidden =
+    !selected ||
+    selected.scanLevel !== 'analyzed' ||
+    selected.totalRemaining === 0 ||
+    Boolean(model.selectedAsteroidClaimOwner && model.selectedAsteroidClaimOwner !== 'player');
+  claimButton.textContent =
+    model.selectedAsteroidClaimOwner === 'player'
+      ? 'KONZESSION AUFGEBEN'
+      : 'KONZESSION REGISTRIEREN · 2.500 CR';
   const miningActive = model.miningPhase !== 'idle';
   const eventActive = model.miningEvent !== null;
   trackScanCompletion(model);
@@ -248,7 +259,11 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     selected.scanLevel === 'analyzed' && selected.deposits.length > 0
       ? 'ASTEROID · ' + selected.deposits.length + ' VORKOMMEN'
       : 'ASTEROID';
-  meta.textContent = asteroidStatus(model) + (model.selectedAsteroidClaimOwner ? ' · KONZESSION: ' + (model.selectedAsteroidClaimOwner === 'player' ? 'EIGEN' : 'FREMD') : '');
+  meta.textContent =
+    asteroidStatus(model) +
+    (model.selectedAsteroidClaimOwner
+      ? ' · KONZESSION: ' + (model.selectedAsteroidClaimOwner === 'player' ? 'EIGEN' : 'FREMD')
+      : '');
   const remaining =
     selected.totalCapacity && selected.totalRemaining != null
       ? (selected.totalRemaining / selected.totalCapacity) * 100

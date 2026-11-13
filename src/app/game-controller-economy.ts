@@ -104,12 +104,20 @@ export interface ControllerEconomy {
   readonly sectorNpcs: NpcSectorService;
 }
 
-function npcOperationsPolicy(blockades: BlockadeService, prisoners: ReadonlySet<string>): NpcEconomyServiceOptions {
+function npcOperationsPolicy(
+  blockades: BlockadeService,
+  prisoners: ReadonlySet<string>
+): NpcEconomyServiceOptions {
   return {
-    isManaged: (npc) => prisoners.has(npc.id) || npc.id.startsWith('security-drone:') ||
+    isManaged: (npc) =>
+      prisoners.has(npc.id) ||
+      npc.id.startsWith('security-drone:') ||
       (Boolean('pirate' in npc && npc.pirate) &&
-        narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine) &&
-        !('travel' in npc && npc.travel)) || blockades.assigned(npc.id),
+        narrowsSector.locations.some(
+          (entry) => entry.id === npc.locationId && entry.activities.mine
+        ) &&
+        !('travel' in npc && npc.travel)) ||
+      blockades.assigned(npc.id),
     canTrade: (npc, locationId, resourceId) =>
       !blockades.blocksTrader(npc.id, locationId, resourceId),
   };

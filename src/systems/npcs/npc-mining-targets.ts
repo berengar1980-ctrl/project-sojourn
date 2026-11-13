@@ -43,7 +43,12 @@ export interface NpcLocalMiningOptions {
   readonly getAsteroids: () => readonly LocalAsteroid[];
   readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
-  readonly onAsteroidMined?: (npc: SectorNpcState, asteroid: LocalAsteroid, resourceId: string, amount: number) => void;
+  readonly onAsteroidMined?: (
+    npc: SectorNpcState,
+    asteroid: LocalAsteroid,
+    resourceId: string,
+    amount: number
+  ) => void;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly playerShip?: ShipDefinition;
   readonly getPlayerShipState?: () => LocalShipState;

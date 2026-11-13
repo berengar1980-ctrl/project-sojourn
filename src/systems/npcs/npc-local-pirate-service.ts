@@ -38,22 +38,32 @@ export class LocalPirateTraffic {
     return [...this.ships.values()].flatMap((ship) => {
       const npc = byId.get(ship.npcId);
       if (!npc) return [];
-      return [{
-        npcId: npc.id,
-        shipId: npc.shipId,
-        name: npc.name,
-        position: { ...ship.position },
-        headingRadians: ship.headingRadians,
-        speed: ship.speed,
-      }];
+      return [
+        {
+          npcId: npc.id,
+          shipId: npc.shipId,
+          name: npc.name,
+          position: { ...ship.position },
+          headingRadians: ship.headingRadians,
+          speed: ship.speed,
+        },
+      ];
     });
   }
 
   reconcile(pirates: readonly SectorNpcState[]): void {
-    const active = new Set(pirates.filter(
-      (npc) => npc.pirate && !npc.travel && !npc.combatMovement &&
-        npc.hullHp > 0 && !npc.combatRecoverySeconds
-    ).map((npc) => npc.id));
+    const active = new Set(
+      pirates
+        .filter(
+          (npc) =>
+            npc.pirate &&
+            !npc.travel &&
+            !npc.combatMovement &&
+            npc.hullHp > 0 &&
+            !npc.combatRecoverySeconds
+        )
+        .map((npc) => npc.id)
+    );
     for (const id of this.ships.keys()) if (!active.has(id)) this.ships.delete(id);
     for (const id of active) {
       if (this.ships.has(id)) continue;
@@ -81,14 +91,18 @@ export class LocalPirateTraffic {
       const npc = npcs.find((entry) => entry.id === pirate.npcId);
       if (!npc || npc.hullHp <= 0) continue;
       const targets = [
-        ...miners.filter((miner) => miner.npcId !== pirate.npcId).map((miner) => ({
-          id: miner.npcId, position: miner.position,
-        })),
+        ...miners
+          .filter((miner) => miner.npcId !== pirate.npcId)
+          .map((miner) => ({
+            id: miner.npcId,
+            position: miner.position,
+          })),
         { id: 'player', position: player },
       ];
-      targets.sort((a, b) =>
-        Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
-        Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
+      targets.sort(
+        (a, b) =>
+          Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
+          Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
       );
       const target = targets[0];
       if (!target) continue;
@@ -101,23 +115,31 @@ export class LocalPirateTraffic {
       const barrier = asteroids
         .filter((rock) => rock.routeBlocking && rock.kind !== 'debris')
         .map((rock) => {
-          const t = directDistance2 <= 1 ? 0 : Math.max(0, Math.min(1, (
-            (rock.position.x - pirate.position.x) * directDx +
-            (rock.position.y - pirate.position.y) * directDy
-          ) / directDistance2));
+          const t =
+            directDistance2 <= 1
+              ? 0
+              : Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    ((rock.position.x - pirate.position.x) * directDx +
+                      (rock.position.y - pirate.position.y) * directDy) /
+                      directDistance2
+                  )
+                );
           const px = pirate.position.x + directDx * t;
           const py = pirate.position.y + directDy * t;
-          return { rock, t, clearance: Math.hypot(
-            rock.position.x - px, rock.position.y - py
-          ) };
+          return { rock, t, clearance: Math.hypot(rock.position.x - px, rock.position.y - py) };
         })
-        .find((candidate) =>
-          candidate.t > 0.02 && candidate.t < 0.95 &&
-          candidate.clearance < candidate.rock.radius + 38
+        .find(
+          (candidate) =>
+            candidate.t > 0.02 &&
+            candidate.t < 0.95 &&
+            candidate.clearance < candidate.rock.radius + 38
         );
       if (barrier) {
         const side = hashId(pirate.npcId + barrier.rock.id) % 2 ? 1 : -1;
-        const angle = Math.atan2(directDy, directDx) + side * Math.PI / 2;
+        const angle = Math.atan2(directDy, directDx) + (side * Math.PI) / 2;
         destination = {
           x: barrier.rock.position.x + Math.cos(angle) * (barrier.rock.radius + 115),
           y: barrier.rock.position.y + Math.sin(angle) * (barrier.rock.radius + 115),

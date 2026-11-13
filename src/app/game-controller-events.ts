@@ -155,19 +155,24 @@ export function advanceEconomyDay(context: ControllerRuntimeContext): void {
     const fields = narrowsSector.locations.filter((location) => location.activities.mine);
     const target = fields[economy.situations.currentDay % fields.length];
     if (target) {
-      const pirate = economy.sectorNpcs.npcs.find((npc) =>
-        npc.pirate && npc.hullHp > 0 &&
-        !economy.blockades.assigned(npc.id) &&
-        !economy.sectorNpcs.isTravelling(npc) &&
-        npc.locationId !== target.id &&
-        !fields.some((field) => field.id === npc.locationId)
+      const pirate = economy.sectorNpcs.npcs.find(
+        (npc) =>
+          npc.pirate &&
+          npc.hullHp > 0 &&
+          !economy.blockades.assigned(npc.id) &&
+          !economy.sectorNpcs.isTravelling(npc) &&
+          npc.locationId !== target.id &&
+          !fields.some((field) => field.id === npc.locationId)
       );
-      if (pirate && economy.sectorNpcs.requestTravel(
-        pirate, target.id, 'Beutezug · Asteroidenfeld'
-      )) {
+      if (
+        pirate &&
+        economy.sectorNpcs.requestTravel(pirate, target.id, 'Beutezug · Asteroidenfeld')
+      ) {
         context.systemLog.write(
-          'PIRATENBEWEGUNG > ' + pirate.name.toUpperCase() +
-          ' FLIEGT ZU ' + target.name.toUpperCase()
+          'PIRATENBEWEGUNG > ' +
+            pirate.name.toUpperCase() +
+            ' FLIEGT ZU ' +
+            target.name.toUpperCase()
         );
       }
     }

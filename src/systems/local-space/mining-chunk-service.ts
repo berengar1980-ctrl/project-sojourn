@@ -170,7 +170,12 @@ export function advanceMiningChunk(
 export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCollector): number {
   const accepted = Math.max(
     0,
-    Math.min(chunk.amount, Math.floor(collector?.(chunk.resourceId, chunk.amount, chunk.sourceAsteroidId) ?? chunk.amount))
+    Math.min(
+      chunk.amount,
+      Math.floor(
+        collector?.(chunk.resourceId, chunk.amount, chunk.sourceAsteroidId) ?? chunk.amount
+      )
+    )
   );
   chunk.amount -= accepted;
   return accepted;

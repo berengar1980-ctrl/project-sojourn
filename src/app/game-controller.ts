@@ -1,5 +1,12 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture, reportLegalOrbitalArrival, advanceNpcPenalCustody, tickLegalDetention } from './game-controller-law-enforcement';
+import {
+  registerSectorShips,
+  inspectLegalDockArrival,
+  reportLegalDeparture,
+  reportLegalOrbitalArrival,
+  advanceNpcPenalCustody,
+  tickLegalDetention,
+} from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
@@ -120,7 +127,8 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       const started = startPlayerFuelTravel(context);
       if (started) {
         reportLegalDeparture(
-          context, before.currentLocationId,
+          context,
+          before.currentLocationId,
           context.navigation.getSnapshot().destinationId
         );
       }
@@ -233,7 +241,9 @@ function mountControllerMining(
         );
         if (result.ok) {
           context.economy.trade.player.credits -= result.fee;
-          context.systemLog.write('MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT');
+          context.systemLog.write(
+            'MINING > KONZESSION AUF ASTEROID ' + asteroid.id + ' REGISTRIERT'
+          );
         } else {
           const reasons = {
             unscanned: 'ZUERST NAHBEREICHSSCAN ABSCHLIESSEN',
@@ -253,10 +263,12 @@ function mountControllerMining(
     onAttackNpc: (id) => {
       state.selectedNpcId = id;
       const local = state.localSpace?.getSnapshot();
-      const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id) ??
-        context.economy.localPirates.get(local?.instance.sourceLocationId ?? '')?.snapshot(
-          context.economy.sectorNpcs.npcs
-        ).find((entry) => entry.npcId === id);
+      const target =
+        state.localNpcMining?.ships.find((entry) => entry.npcId === id) ??
+        context.economy.localPirates
+          .get(local?.instance.sourceLocationId ?? '')
+          ?.snapshot(context.economy.sectorNpcs.npcs)
+          .find((entry) => entry.npcId === id);
       if (!local || !target) return;
       const arena = localMiningCombatArena(
         local.instance,
@@ -370,9 +382,15 @@ function mountControllerSalvage(
   if (finalCombat) state.salvageScene?.finishCombat(finalCombat);
   mountControllerSwitcher(context);
 }
-function synchronizeLocalDefender(context: ControllerRuntimeContext,
-  defender: { id: string; position: { x: number; y: number };
-    headingRadians: number; speed: number; hullHp: number }
+function synchronizeLocalDefender(
+  context: ControllerRuntimeContext,
+  defender: {
+    id: string;
+    position: { x: number; y: number };
+    headingRadians: number;
+    speed: number;
+    hullHp: number;
+  }
 ): void {
   if (defender.id.startsWith('security-drone:')) {
     const locationId = defender.id.slice('security-drone:'.length);
@@ -381,8 +399,10 @@ function synchronizeLocalDefender(context: ControllerRuntimeContext,
       drone.restore(defender.position, defender.hullHp > 0);
       if (defender.hullHp <= 0) {
         context.economy.legal.reportOffense(
-          context.state.activeShip.id, 'directorate',
-          'Zerstörung einer Sicherheitsdrohne', 12000,
+          context.state.activeShip.id,
+          'directorate',
+          'Zerstörung einer Sicherheitsdrohne',
+          12000,
           context.economy.situations.currentDay
         );
         context.systemLog.write(
@@ -393,16 +413,23 @@ function synchronizeLocalDefender(context: ControllerRuntimeContext,
     return;
   }
   const localId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
-  if (localId && context.economy.localPirates.get(localId)?.snapshot(
-    context.economy.sectorNpcs.npcs
-  ).some((ship) => ship.npcId === defender.id)) {
-    context.economy.localPirates.get(localId)?.syncCombatPose(
-      defender.id, defender.position, defender.headingRadians
-    );
+  if (
+    localId &&
+    context.economy.localPirates
+      .get(localId)
+      ?.snapshot(context.economy.sectorNpcs.npcs)
+      .some((ship) => ship.npcId === defender.id)
+  ) {
+    context.economy.localPirates
+      .get(localId)
+      ?.syncCombatPose(defender.id, defender.position, defender.headingRadians);
     return;
   }
   context.state.localNpcMining?.syncCombatPose(
-    defender.id, defender.position, defender.headingRadians, defender.speed
+    defender.id,
+    defender.position,
+    defender.headingRadians,
+    defender.speed
   );
 }
 function resolveControllerCombat(context: ControllerRuntimeContext): void {
@@ -504,8 +531,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   }
   const dayBeforeEconomy = economy.situations.currentDay;
   tickEconomy(context, deltaSeconds);
-  if (economy.situations.currentDay !== dayBeforeEconomy)
-    advanceNpcPenalCustody(context);
+  if (economy.situations.currentDay !== dayBeforeEconomy) advanceNpcPenalCustody(context);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);

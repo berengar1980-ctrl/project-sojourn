@@ -68,7 +68,10 @@ export class AsteroidClaimRegistry {
       if (remaining) {
         for (const deposit of asteroid.deposits) {
           if (remaining[deposit.resourceId] !== undefined) {
-            deposit.oreRemaining = Math.max(0, Math.min(deposit.oreCapacity, remaining[deposit.resourceId]!));
+            deposit.oreRemaining = Math.max(
+              0,
+              Math.min(deposit.oreCapacity, remaining[deposit.resourceId]!)
+            );
           }
         }
       }
@@ -163,11 +166,12 @@ export class AsteroidClaimRegistry {
     return {
       version: 1 as const,
       claims: [...this.claims.values()].map((claim) => ({
-        ...claim, oreAtRegistration: { ...claim.oreAtRegistration },
+        ...claim,
+        oreAtRegistration: { ...claim.oreAtRegistration },
       })),
       disputes: [...this.disputes.values()].map((dispute) => ({ ...dispute })),
-      remainingOre: [...this.remainingOre.entries()].map(([key, ore]) =>
-        [key, { ...ore }] as const
+      remainingOre: [...this.remainingOre.entries()].map(
+        ([key, ore]) => [key, { ...ore }] as const
       ),
       surveyLevels: [...this.surveyLevels.entries()],
       fieldSeeds: [...this.fieldSeeds.entries()],
@@ -183,7 +187,8 @@ export class AsteroidClaimRegistry {
     this.fieldSeeds.clear();
     for (const claim of saved.claims) {
       this.claims.set(this.key(claim.locationId, claim.asteroidId), {
-        ...claim, oreAtRegistration: { ...claim.oreAtRegistration },
+        ...claim,
+        oreAtRegistration: { ...claim.oreAtRegistration },
       });
     }
     for (const dispute of saved.disputes) {
@@ -192,12 +197,9 @@ export class AsteroidClaimRegistry {
         { ...dispute }
       );
     }
-    for (const [key, ore] of saved.remainingOre)
-      this.remainingOre.set(key, { ...ore });
-    for (const [key, level] of saved.surveyLevels)
-      this.surveyLevels.set(key, level);
-    for (const [key, seed] of saved.fieldSeeds)
-      this.fieldSeeds.set(key, seed);
+    for (const [key, ore] of saved.remainingOre) this.remainingOre.set(key, { ...ore });
+    for (const [key, level] of saved.surveyLevels) this.surveyLevels.set(key, level);
+    for (const [key, seed] of saved.fieldSeeds) this.fieldSeeds.set(key, seed);
     return true;
   }
 

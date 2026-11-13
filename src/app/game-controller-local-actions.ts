@@ -132,15 +132,21 @@ export function createControllerLocalActions(
     confirmMining: () => {
       const space = context.state.localSpace?.getSnapshot();
       if (!space?.selectedAsteroidId) return true;
-      const asteroid = space.instance.asteroids.find((entry) => entry.id === space.selectedAsteroidId);
+      const asteroid = space.instance.asteroids.find(
+        (entry) => entry.id === space.selectedAsteroidId
+      );
       if (!asteroid) return true;
       const claim = context.economy.asteroidClaims.claim(space.instance.sourceLocationId, asteroid);
       if (!claim || claim.ownerId === 'player') return true;
       return window.confirm(
         'FREMDKONZESSION – UNBEFUGTER ABBAU!\n' +
-        'Asteroid: ' + asteroid.id + '\n' +
-        'Eigentümer: ' + claim.ownerId + '\n\n' +
-        'Raubbau kann Geldstrafen und eine Fahndung auslösen. Trotzdem abbauen?'
+          'Asteroid: ' +
+          asteroid.id +
+          '\n' +
+          'Eigentümer: ' +
+          claim.ownerId +
+          '\n\n' +
+          'Raubbau kann Geldstrafen und eine Fahndung auslösen. Trotzdem abbauen?'
       );
     },
     returnToStarMap: createStarMapReturnAction(context.root, context.systemLog, mountStarMap),

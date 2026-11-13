@@ -36,21 +36,23 @@ export function ensureMiningCombatWorld(
       const player = state.localSpace?.getSnapshot().instance.ship;
       return Boolean(
         owner &&
-          player &&
-          Math.hypot(owner.position.x - player.position.x, owner.position.y - player.position.y) < 650
+        player &&
+        Math.hypot(owner.position.x - player.position.x, owner.position.y - player.position.y) < 650
       );
     }
   );
   if (!economy.securityDrones.has(location.id)) {
     const field = state.localSpace.getSnapshot().instance;
-    economy.securityDrones.set(location.id, new AsteroidSecurityDrone(
-      field.width, field.height, field.asteroids
-    ));
+    economy.securityDrones.set(
+      location.id,
+      new AsteroidSecurityDrone(field.width, field.height, field.asteroids)
+    );
   }
   if (!economy.localPirates.has(location.id)) {
     const field = state.localSpace.getSnapshot().instance;
     economy.localPirates.set(
-      location.id, new LocalPirateTraffic(field.width, field.height, field.seed)
+      location.id,
+      new LocalPirateTraffic(field.width, field.height, field.seed)
     );
   }
   state.localNpcMining = createNpcLocalMiningService({
@@ -72,8 +74,11 @@ export function ensureMiningCombatWorld(
       );
       if (oreValue < 15000 || npc.credits < 2500) return;
       const result = economy.asteroidClaims.register(
-        location.id, { ...asteroid, scanLevel: 'analyzed' }, npc.id,
-        economy.situations.currentDay, npc.credits
+        location.id,
+        { ...asteroid, scanLevel: 'analyzed' },
+        npc.id,
+        economy.situations.currentDay,
+        npc.credits
       );
       if (result.ok) npc.credits -= result.fee;
     },
@@ -82,21 +87,38 @@ export function ensureMiningCombatWorld(
       if (!claim || claim.ownerId === npc.id) return;
       const player = state.localSpace?.getSnapshot().instance.ship;
       const observer = state.localNpcMining?.ships.find((ship) => ship.npcId === npc.id);
-      const detected = claim.ownerId === 'player' && Boolean(
-        player && observer &&
-        Math.hypot(player.position.x - observer.position.x, player.position.y - observer.position.y) < 650
-      );
-      const wasDetected = economy.asteroidClaims.snapshot().conflicts.some(
-        (c) => c.locationId === location.id && c.asteroidId === asteroid.id &&
-          c.intruderId === npc.id && c.status === 'detected'
-      );
+      const detected =
+        claim.ownerId === 'player' &&
+        Boolean(
+          player &&
+          observer &&
+          Math.hypot(
+            player.position.x - observer.position.x,
+            player.position.y - observer.position.y
+          ) < 650
+        );
+      const wasDetected = economy.asteroidClaims
+        .snapshot()
+        .conflicts.some(
+          (c) =>
+            c.locationId === location.id &&
+            c.asteroidId === asteroid.id &&
+            c.intruderId === npc.id &&
+            c.status === 'detected'
+        );
       if (!detected) return;
       const conflict = economy.asteroidClaims.recordTheft(
-        location.id, asteroid.id, npc.id, amount, true,
+        location.id,
+        asteroid.id,
+        npc.id,
+        amount,
+        true,
         miningResourceById(resourceId)?.baseValue ?? 1
       );
       if (conflict && !wasDetected)
-        context.systemLog.write('MINING > FREMDER MINER BAUT DEINE KONZESSION UNBEFUGT AB: ' + npc.name);
+        context.systemLog.write(
+          'MINING > FREMDER MINER BAUT DEINE KONZESSION UNBEFUGT AB: ' + npc.name
+        );
     },
     depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
     playerShip: state.activeShip,
