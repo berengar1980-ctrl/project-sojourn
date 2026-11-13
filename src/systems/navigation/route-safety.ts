@@ -3,7 +3,7 @@ import type { RoutePlan, RouteThreatContact } from './route-planner';
 import { routeThreatExposure } from './route-planner';
 
 /** Protected approach perimeter around populated, low-danger civilian ports. */
-export function safeDestinationRadius(location: WorldLocation): number {
+export function safeDestinationRadius(location: Pick<WorldLocation, 'dangerLevel' | 'stationType' | 'kind' | 'activities' | 'radius'>): number {
   if (location.dangerLevel > 1 || location.stationType === 'pirate') return 0;
   if (!['planet', 'moon', 'station'].includes(location.kind)) return 0;
   if (!location.activities.dock && !location.activities.refuel) return 0;
