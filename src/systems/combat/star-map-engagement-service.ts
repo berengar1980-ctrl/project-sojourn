@@ -118,8 +118,7 @@ function reactToPlayerAttack(
 function startNpcAttack(
   runtime: EngagementRuntime,
   attacker: SectorNpcState,
-  defender: SectorNpcState,
-  arena?: StrategicCombatArenaOptions
+  defender: SectorNpcState
 ): void {
   const attackerPosition = runtime.options.sectorNpcs.livePosition(attacker);
   const defenderPosition = runtime.options.sectorNpcs.livePosition(defender);
@@ -319,7 +318,8 @@ function updatePlayerChase(runtime: EngagementRuntime): void {
 function beginBackgroundCombat(
   runtime: EngagementRuntime,
   attacker: SectorNpcState,
-  defender: SectorNpcState
+  defender: SectorNpcState,
+  arena?: StrategicCombatArenaOptions
 ): void {
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
