@@ -179,9 +179,9 @@ export function tickLegalDetention(
   const debt = context.economy.legal.debt(session.shipId);
   if (session.panel) {
     session.panel.textContent =
-      'TERRANISCHES DIREKTORUM – STRAFLAGER\\n' +
-      'Hafttag: ' + session.days + '\\n' +
-      'Restschuld: ' + debt.toLocaleString('de-DE') + ' CR\\n' +
+      'TERRANISCHES DIREKTORUM – STRAFLAGER\n' +
+      'Hafttag: ' + session.days + '\n' +
+      'Restschuld: ' + debt.toLocaleString('de-DE') + ' CR\n' +
       'Arbeitsgutschrift: ' + session.laborCredits.toLocaleString('de-DE') +
       ' CR (' + PENAL_LABOR_CREDITS_PER_DAY + ' CR / Tag)';
     session.panel.style.whiteSpace = 'pre-line';
