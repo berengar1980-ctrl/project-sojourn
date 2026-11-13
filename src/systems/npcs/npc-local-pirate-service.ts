@@ -24,6 +24,59 @@ interface PirateRuntime {
  * Player attacks use the existing local AI battle; miner raids use background
  * strategic combat with the same asteroid arena.
  */
+function pirateDestination(
+  pirate: PirateRuntime, target: WorldPoint, asteroids: readonly LocalAsteroid[]
+): WorldPoint {
+  let destination = target;
+  const directDx = destination.x - pirate.position.x;
+  const directDy = destination.y - pirate.position.y;
+  const directDistance2 = directDx * directDx + directDy * directDy;
+  const barrier = asteroids
+    .filter((rock) => rock.routeBlocking && rock.kind !== 'debris')
+    .map((rock) => {
+      const t = directDistance2 <= 1 ? 0 : Math.max(0, Math.min(1,
+        ((rock.position.x - pirate.position.x) * directDx +
+          (rock.position.y - pirate.position.y) * directDy) / directDistance2
+      ));
+      const px = pirate.position.x + directDx * t;
+      const py = pirate.position.y + directDy * t;
+      return { rock, t, clearance: Math.hypot(rock.position.x - px, rock.position.y - py) };
+    })
+    .find((candidate) => candidate.t > 0.02 && candidate.t < 0.95 &&
+      candidate.clearance < candidate.rock.radius + 38);
+  if (barrier) {
+    const side = hashId(pirate.npcId + barrier.rock.id) % 2 ? 1 : -1;
+    const angle = Math.atan2(directDy, directDx) + (side * Math.PI) / 2;
+    destination = {
+      x: barrier.rock.position.x + Math.cos(angle) * (barrier.rock.radius + 115),
+      y: barrier.rock.position.y + Math.sin(angle) * (barrier.rock.radius + 115),
+    };
+  }
+  return destination;
+}
+
+function resolvePirateCollisions(
+  position: WorldPoint, asteroids: readonly LocalAsteroid[], width: number, height: number
+): WorldPoint {
+  let result = { ...position };
+  for (const rock of asteroids) {
+    if (!rock.routeBlocking) continue;
+    const dx = result.x - rock.position.x;
+    const dy = result.y - rock.position.y;
+    const gap = Math.hypot(dx, dy);
+    const minimum = rock.radius + 35;
+    if (gap >= minimum) continue;
+    const ux = gap > 0 ? dx / gap : 1;
+    const uy = gap > 0 ? dy / gap : 0;
+    result = {
+      x: rock.position.x + ux * minimum,
+      y: rock.position.y + uy * minimum,
+    };
+  }
+  return { x: Math.max(0, Math.min(width, result.x)),
+    y: Math.max(0, Math.min(height, result.y)) };
+}
+
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
 
@@ -106,45 +159,7 @@ export class LocalPirateTraffic {
       );
       const target = targets[0];
       if (!target) continue;
-      // A local raider steers around shield-blocking asteroids instead of
-      // flying through the same rocks used by the combat arena.
-      let destination = target.position;
-      const directDx = destination.x - pirate.position.x;
-      const directDy = destination.y - pirate.position.y;
-      const directDistance2 = directDx * directDx + directDy * directDy;
-      const barrier = asteroids
-        .filter((rock) => rock.routeBlocking && rock.kind !== 'debris')
-        .map((rock) => {
-          const t =
-            directDistance2 <= 1
-              ? 0
-              : Math.max(
-                  0,
-                  Math.min(
-                    1,
-                    ((rock.position.x - pirate.position.x) * directDx +
-                      (rock.position.y - pirate.position.y) * directDy) /
-                      directDistance2
-                  )
-                );
-          const px = pirate.position.x + directDx * t;
-          const py = pirate.position.y + directDy * t;
-          return { rock, t, clearance: Math.hypot(rock.position.x - px, rock.position.y - py) };
-        })
-        .find(
-          (candidate) =>
-            candidate.t > 0.02 &&
-            candidate.t < 0.95 &&
-            candidate.clearance < candidate.rock.radius + 38
-        );
-      if (barrier) {
-        const side = hashId(pirate.npcId + barrier.rock.id) % 2 ? 1 : -1;
-        const angle = Math.atan2(directDy, directDx) + (side * Math.PI) / 2;
-        destination = {
-          x: barrier.rock.position.x + Math.cos(angle) * (barrier.rock.radius + 115),
-          y: barrier.rock.position.y + Math.sin(angle) * (barrier.rock.radius + 115),
-        };
-      }
+      const destination = pirateDestination(pirate, target.position, asteroids);
       const dx = destination.x - pirate.position.x;
       const dy = destination.y - pirate.position.y;
       const distance = Math.hypot(dx, dy);
@@ -162,24 +177,7 @@ export class LocalPirateTraffic {
           y: pirate.position.y + (dy / distance) * step,
         };
       }
-      for (const rock of asteroids) {
-        if (!rock.routeBlocking) continue;
-        const dx = pirate.position.x - rock.position.x;
-        const dy = pirate.position.y - rock.position.y;
-        const gap = Math.hypot(dx, dy);
-        const minimum = rock.radius + 35;
-        if (gap >= minimum) continue;
-        const ux = gap > 0 ? dx / gap : 1;
-        const uy = gap > 0 ? dy / gap : 0;
-        pirate.position = {
-          x: rock.position.x + ux * minimum,
-          y: rock.position.y + uy * minimum,
-        };
-      }
-      pirate.position = {
-        x: Math.max(0, Math.min(this.width, pirate.position.x)),
-        y: Math.max(0, Math.min(this.height, pirate.position.y)),
-      };
+      pirate.position = resolvePirateCollisions(pirate.position, asteroids, this.width, this.height);
       pirate.speed = speed;
     }
   }
