@@ -16,7 +16,7 @@ export interface LegalCharge {
   readonly offense: string;
   readonly amount: number;
   readonly day: number;
-  readonly paid: number;
+  paid: number;
 }
 export interface ShipSighting {
   readonly shipId: string;
