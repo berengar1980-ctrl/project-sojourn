@@ -178,7 +178,14 @@ function showSalvageWreck(
     wreck.integrity +
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '') +
-    (wreck.boardingCleared ? ' · DECKS GESICHERT' : '');
+    (wreck.boardingCleared
+      ? ' · DECKS GESICHERT'
+      : wreck.boardable
+        ? ' · VERTEIDIGER ' +
+          wreck.boardingHostilesRemaining +
+          ' · ENTERVERSUCHE ' +
+          wreck.boardingAttempts
+        : '');
 }
 
 function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): void {

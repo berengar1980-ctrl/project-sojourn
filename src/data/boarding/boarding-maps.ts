@@ -88,6 +88,111 @@ export const boardingMaps = [
   },
 ] as const satisfies readonly BoardingMapDefinition[];
 
-export function boardingMapById(id: string): BoardingMapDefinition | null {
-  return boardingMaps.find((map) => map.id === id) ?? null;
+/**
+ * Author each salvage interior as a compact, visibly distinct 9×7 deck plan.
+ * # = wall, D = closed bulkhead, . = traversable floor.
+ */
+function wreckDeck(
+  id: string,
+  name: string,
+  layout: readonly string[],
+  cover: BoardingMapDefinition['cover']
+): BoardingMapDefinition {
+  if (layout.length !== 7 || layout.some((row) => row.length !== 9)) {
+    throw new Error('Ungültiger Wrack-Deckplan: ' + id);
+  }
+  const walls: string[] = [];
+  const doors: { id: string; q: number; r: number }[] = [];
+  for (const [r, line] of layout.entries()) {
+    for (const [q, symbol] of [...line].entries()) {
+      if (symbol === '#') walls.push(q + ',' + r);
+      if (symbol === 'D') doors.push({ id: 'door-' + q + '-' + r, q, r });
+    }
+  }
+  return { id, name, columns: 9, rows: 7, walls, doors, cover };
 }
+
+const wreckLayouts = [
+  {
+    id: 'wreck-corridors',
+    name: 'Korridorlabyrinth',
+    rows: '#########|..#..#...|..#..#...|..D..D...|..#..#...|.........|#########',
+    cover: [
+      { q: 3, r: 3, side: 3 },
+      { q: 6, r: 3, side: 3 },
+    ],
+  },
+  {
+    id: 'wreck-double-deck',
+    name: 'Doppeldeck-Verbindung',
+    rows: '#########|.........|##.###.##|.........|##.###.##|.........|#########',
+    cover: [
+      { q: 3, r: 1, side: 3 },
+      { q: 5, r: 5, side: 0 },
+    ],
+  },
+  {
+    id: 'wreck-engine',
+    name: 'Maschinenraum',
+    rows: '#########|...##....|...##....|.........|...##....|...##....|#########',
+    cover: [
+      { q: 2, r: 3, side: 0 },
+      { q: 6, r: 3, side: 3 },
+    ],
+  },
+  {
+    id: 'wreck-cargo',
+    name: 'Verstellter Frachtraum',
+    rows: '#########|..##.....|......##.|.........|..##.....|.....##..|#########',
+    cover: [
+      { q: 4, r: 3, side: 3 },
+      { q: 5, r: 3, side: 0 },
+    ],
+  },
+  {
+    id: 'wreck-quarters',
+    name: 'Mannschaftsquartiere',
+    rows: '#########|...#.#...|...D.D...|...#.#...|...D.D...|...#.#...|#########',
+    cover: [
+      { q: 4, r: 3, side: 3 },
+      { q: 6, r: 4, side: 0 },
+    ],
+  },
+  {
+    id: 'wreck-bridge',
+    name: 'Brückendeck',
+    rows: '#########|....##...|...#.....|...D.....|...#.....|....##...|#########',
+    cover: [
+      { q: 5, r: 3, side: 3 },
+      { q: 6, r: 2, side: 0 },
+    ],
+  },
+  {
+    id: 'wreck-reactor',
+    name: 'Reaktorring',
+    rows: '#########|...###...|...#.#...|...D.D...|...#.#...|...###...|#########',
+    cover: [
+      { q: 2, r: 3, side: 0 },
+      { q: 6, r: 3, side: 3 },
+    ],
+  },
+  {
+    id: 'wreck-medbay',
+    name: 'Isolationsstation',
+    rows: '#########|..#...#..|..D...D..|..#...#..|..D...D..|..#...#..|#########',
+    cover: [
+      { q: 3, r: 3, side: 3 },
+      { q: 5, r: 3, side: 0 },
+    ],
+  },
+] as const;
+
+const wreckDecks: readonly BoardingMapDefinition[] = wreckLayouts.map((layout) =>
+  wreckDeck(layout.id, layout.name, layout.rows.split('|'), layout.cover)
+);
+
+export function boardingMapById(id: string): BoardingMapDefinition | null {
+  return [...boardingMaps, ...wreckDecks].find((map) => map.id === id) ?? null;
+}
+
+export const boardingWreckDecks: readonly BoardingMapDefinition[] = wreckDecks;

@@ -82,6 +82,10 @@ export interface SalvageWreck {
   readonly boardingHostiles?: number;
   /** Cleared only after a victorious tactical wreck boarding. */
   boardingCleared?: boolean;
+  /** Survivors of earlier boarding attempts do not spontaneously respawn. */
+  boardingHostilesRemaining?: number;
+  boardingAttempts?: number;
+  boardingLastOutcome?: 'player_win' | 'enemy_win' | 'retreat';
   /** Shared scan states: surveyed = '?' only, analyzed = identified contents. */
   scanLevel?: AsteroidScanLevel;
 }
