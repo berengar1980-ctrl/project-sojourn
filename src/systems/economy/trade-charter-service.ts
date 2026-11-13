@@ -39,6 +39,7 @@ export const TRADE_CHARTERS: readonly TradeCharterOffer[] = [
 ];
 
 export interface TradeCharterService {
+  snapshot(): { active: TradeCharterId | null };
   readonly active: TradeCharterId | null;
   readonly offers: readonly TradeCharterOffer[];
   join(id: TradeCharterId): number | null;
@@ -54,6 +55,7 @@ export function createTradeCharterService(
 ): TradeCharterService {
   let active: TradeCharterId | null = initial;
   return {
+    snapshot: () => ({ active }),
     offers: TRADE_CHARTERS,
     get active() {
       return active;

@@ -91,7 +91,12 @@ const events = readModuleSource(root, 'src/app/game-controller-events.ts');
 const engagement = readModuleSource(root, 'src/systems/combat/star-map-engagement-service.ts');
 const notice = readModuleSource(root, 'src/ui/customs/underworld-contact-notice.ts');
 assert(tradeSource.includes('npc.smuggler'), 'non-smugglers must not buy contraband');
-assert(runtime.includes('economy.npcSmuggling.tick(deltaSeconds)'));
+assert(runtime.includes('tickControllerNpcOperations(economy, deltaSeconds)'));
+assert(
+  readModuleSource(root, 'src/app/game-controller-npc-tick.ts').includes(
+    'economy.npcSmuggling.tick(deltaSeconds)'
+  )
+);
 assert(economy.includes('npcSmuggling.recordSale('));
 assert(engagement.includes('candidate.smugglingProtectionFaction !== attacker.factionId'));
 assert(events.includes('showUnderworldContactNotice(context.root)'));

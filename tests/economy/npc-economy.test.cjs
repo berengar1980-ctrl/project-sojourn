@@ -253,7 +253,10 @@ const resources = [
 const controllerSource = readModuleSource(root, 'src/app/game-controller.ts');
 const controllerEventsSource = readModuleSource(root, 'src/app/game-controller-events.ts');
 assert(
-  controllerSource.includes('economy.npcs.tick(deltaSeconds)') &&
+  controllerSource.includes('tickControllerNpcOperations(economy, deltaSeconds)') &&
+    readModuleSource(root, 'src/app/game-controller-npc-tick.ts').includes(
+      'economy.npcs.tick(deltaSeconds)'
+    ) &&
     controllerEventsSource.includes('economy.npcs.advanceNextDay()'),
   'NPC autonomy must tick continuously while daily resource simulation remains preserved'
 );
