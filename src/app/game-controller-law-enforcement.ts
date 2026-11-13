@@ -5,7 +5,6 @@ import { sectorPortByLocationId } from '../data/ports/sector-ports';
 
 interface DetentionSession {
   readonly shipId: string;
-  readonly initialDebt: number;
   days: number;
   laborCredits: number;
   accumulator: number;
@@ -36,6 +35,40 @@ function transferCredit(context: ControllerRuntimeContext, creditorId: string, a
   }
 }
 
+function dispatchPatrolToReport(
+  context: ControllerRuntimeContext, locationId: string,
+  destinationId: string | null
+): void {
+  const world = context.world.world();
+  const targetId = world.locations.some((entry) => entry.id === destinationId)
+    ? destinationId!
+    : locationId;
+  const position = world.locations.find((entry) => entry.id === targetId)?.position;
+  if (!position) return;
+  const candidates = context.economy.sectorNpcs.npcs
+    .filter((npc) =>
+      npc.job === 'patrol' && !npc.pirate && npc.hullHp > 0 &&
+      !context.economy.sectorNpcs.isTravelling(npc)
+    )
+    .sort((a, b) => {
+      const pa = context.economy.sectorNpcs.livePosition(a);
+      const pb = context.economy.sectorNpcs.livePosition(b);
+      return Math.hypot(pa.x - position.x, pa.y - position.y) -
+        Math.hypot(pb.x - position.x, pb.y - position.y);
+    });
+  for (const patrol of candidates) {
+    if (context.economy.sectorNpcs.requestTravel(
+      patrol, targetId, 'Fahndung · Sichtungsmeldung'
+    )) {
+      context.systemLog.write(
+        'PATROUILLE > ' + patrol.name.toUpperCase() +
+        ' SUCHT GESUCHTES SCHIFF BEI ' + targetId.toUpperCase()
+      );
+      break;
+    }
+  }
+}
+
 export function inspectLegalDockArrival(context: ControllerRuntimeContext): void {
   if (context.world.inForeignSystem()) return;
   const locationId = context.navigation.getSnapshot().currentLocationId;
@@ -45,11 +78,19 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
   const { legal } = context.economy;
   const shipId = context.state.activeShip.id;
   legal.registerShip(shipId, 'player');
+  const directorate = DIRECTORATE_PORTS.has(locationId);
+  const recognized = legal.isRecognizedWanted(
+    shipId, Math.random() < (directorate ? 0.7 : 0.15)
+  );
+  if (!recognized) return;
   const report = legal.reportSighting(shipId, locationId, context.economy.situations.currentDay, 'arrival');
   if (report) context.systemLog.write(
     'FAHNDUNG > SICHTUNG AN ' + locationId.toUpperCase() + ' UEBERMITTELT'
   );
-  if (!DIRECTORATE_PORTS.has(locationId) || !legal.isWanted(shipId)) return;
+  if (!directorate || !legal.isWanted(shipId)) {
+    dispatchPatrolToReport(context, locationId, null);
+    return;
+  }
   context.systemLog.write('DIREKTORUM > FESTNAHME BEI DER ANDOCKKONTROLLE');
   const immediate = legal.settle(shipId, context.economy.trade.player.credits);
   context.economy.trade.player.credits -= immediate.paid;
@@ -63,7 +104,6 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
   }
   detentions.set(context, {
     shipId,
-    initialDebt: legal.debt(shipId),
     days: 0,
     laborCredits: 0,
     accumulator: 0,
@@ -87,14 +127,20 @@ export function reportLegalDeparture(
   if (context.world.inForeignSystem() || !originId) return;
   const location = context.world.world().locations.find((entry) => entry.id === originId);
   if (location?.stationType === 'pirate' || !sectorPortByLocationId(originId)) return;
+  if (!context.economy.legal.isRecognizedWanted(
+    context.state.activeShip.id, Math.random() < 0.15
+  )) return;
   const report = context.economy.legal.reportSighting(
     context.state.activeShip.id, originId, context.economy.situations.currentDay,
     'departure', destinationId
   );
-  if (report) context.systemLog.write(
-    'FAHNDUNG > ABFLUG AUS ' + originId.toUpperCase() +
-    (destinationId ? ', KURS ' + destinationId.toUpperCase() : '') + ' GEMELDET'
-  );
+  if (report) {
+    context.systemLog.write(
+      'FAHNDUNG > ABFLUG AUS ' + originId.toUpperCase() +
+      (destinationId ? ', KURS ' + destinationId.toUpperCase() : '') + ' GEMELDET'
+    );
+    dispatchPatrolToReport(context, originId, destinationId);
+  }
 }
 
 /** During detention the ordinary game tick is frozen, but every day still
