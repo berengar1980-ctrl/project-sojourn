@@ -165,7 +165,7 @@ class SectorService implements NpcSectorService {
         from,
         destinationId,
         routeProfile(npc),
-        this.routeThreats(npc)
+        npcRouteThreats(npc, this.npcs, this.livePosition)
       ),
       from,
       npcOrbitDestination(this.world, npc, destinationId)
@@ -235,7 +235,7 @@ class SectorService implements NpcSectorService {
       fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
-      threatContacts: this.routeThreats(npc),
+      threatContacts: npcRouteThreats(npc, this.npcs, this.livePosition),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,
