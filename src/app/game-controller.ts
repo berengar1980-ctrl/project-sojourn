@@ -192,6 +192,8 @@ function mountControllerMining(
     );
   }
   ensureMiningCombatWorld(context, location, preserveField);
+  if (state.selectedClaimTarget?.locationId === location.id)
+    state.localSpace?.selectAsteroid(state.selectedClaimTarget.asteroidId);
   context.systemLog.write(
     reuseSeed ? 'TEST > SCHIFFSWECHSEL' : 'LOCAL OPS > ' + location.name.toUpperCase()
   );
