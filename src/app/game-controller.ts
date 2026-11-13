@@ -182,8 +182,8 @@ function mountControllerMining(
   state.embeddedCombat = null;
   const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
+  if (!preserveField) rememberMiningField(context);
   if (!reuseSeed || state.localSpaceSeed === 0) {
-    rememberMiningField(context);
     state.localSpaceSeed = context.economy.asteroidClaims.seedFor(location.id, () =>
       localSeed((state.visitCounter += 1))
     );
