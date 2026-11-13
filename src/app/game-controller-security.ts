@@ -1,0 +1,114 @@
+import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import type { DroneContact } from '../systems/operations/asteroid-security-drone';
+
+const UNAUTHORIZED_MINING_PENALTY = 1500;
+
+function creditOwner(context: ControllerRuntimeContext, ownerId: string, amount: number): void {
+  if (ownerId === 'player') {
+    context.economy.trade.player.credits += amount;
+    context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
+    return;
+  }
+  const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === ownerId);
+  if (npc) npc.credits += amount;
+}
+
+export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: number): void {
+  const field = context.state.localSpace?.getSnapshot();
+  if (!field) return;
+  const { economy } = context;
+  const locationId = field.instance.sourceLocationId;
+  const drone = economy.securityDrones.get(locationId);
+  if (!drone) return;
+
+  const contacts: DroneContact[] = [];
+  if (field.laserActive && field.miningTargetId) {
+    const asteroid = field.instance.asteroids.find((entry) => entry.id === field.miningTargetId);
+    const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
+    if (claim && claim.ownerId !== 'player') {
+      contacts.push({
+        shipId: context.state.activeShip.id,
+        asteroidId: asteroid!.id,
+        position: field.instance.ship.position,
+      });
+    }
+  }
+  for (const ship of context.state.localNpcMining?.ships ?? []) {
+    if (!ship.laserActive || !ship.targetAsteroidId) continue;
+    const asteroid = field.instance.asteroids.find(
+      (entry) => entry.id === ship.targetAsteroidId
+    );
+    const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
+    if (claim && claim.ownerId !== ship.npcId) {
+      const npc = economy.sectorNpcs.npcs.find((entry) => entry.id === ship.npcId);
+      if (npc) contacts.push({
+        shipId: npc.shipId + ':' + npc.id,
+        asteroidId: asteroid!.id,
+        position: ship.position,
+      });
+    }
+  }
+
+  for (const key of drone.tick(seconds, field.instance.asteroids, contacts)) {
+    const [shipId, asteroidId] = JSON.parse(key) as [string, string];
+    const asteroid = field.instance.asteroids.find((entry) => entry.id === asteroidId);
+    const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
+    if (!claim) continue;
+    const day = economy.situations.currentDay;
+    const legal = economy.legal;
+    const charge = legal.reportOffense(
+      shipId, claim.ownerId, 'Unbefugter Konzessionsabbau', UNAUTHORIZED_MINING_PENALTY, day
+    );
+    if (!charge) continue;
+    const registration = legal.registration(shipId);
+    context.systemLog.write(
+      'SEC-01 > ILLEGALER ABBAU ERKANNT: ' + (registration?.transponder ?? shipId) +
+      ' / ASTEROID ' + asteroidId
+    );
+
+    if (shipId === context.state.activeShip.id) {
+      const debt = legal.debt(shipId);
+      const canPay = economy.trade.player.credits >= debt;
+      const pay = canPay && window.confirm(
+        'SEC-01 / KONZESSIONSVERSTOSS\\n' +
+        'Ihre Schiffskennung wurde erfasst.\\n' +
+        'Offene Forderungen: ' + debt + ' CR.\\n\\n' +
+        'Jetzt bezahlen? ABBRECHEN bedeutet Zahlungsverweigerung und Fahndung.'
+      );
+      if (pay) {
+        const payment = legal.settle(shipId, economy.trade.player.credits);
+        economy.trade.player.credits -= payment.paid;
+        for (const transfer of payment.transfers)
+          creditOwner(context, transfer.creditorId, transfer.amount);
+        context.systemLog.write(
+          'SEC-01 > ZAHLUNG AKZEPTIERT: ' + payment.paid + ' CR'
+        );
+      } else {
+        context.systemLog.write(
+          'SEC-01 > NOTRUF ABGESETZT: SCHIFFSKENNUNG ZUR FAHNDUNG AUSGESCHRIEBEN'
+        );
+      }
+      continue;
+    }
+
+    const npc = economy.sectorNpcs.npcs.find(
+      (entry) => entry.shipId + ':' + entry.id === shipId
+    );
+    if (!npc) continue;
+    const debt = legal.debt(shipId);
+    const willPay = npc.credits >= debt && npc.aggression < 55;
+    if (willPay) {
+      const payment = legal.settle(shipId, npc.credits);
+      npc.credits -= payment.paid;
+      for (const transfer of payment.transfers)
+        creditOwner(context, transfer.creditorId, transfer.amount);
+      context.systemLog.write(
+        'SEC-01 > ' + npc.name.toUpperCase() + ' ZAHLT ' + payment.paid + ' CR'
+      );
+    } else {
+      context.systemLog.write(
+        'SEC-01 > NOTRUF: ' + npc.name.toUpperCase() + ' IST ZUR FAHNDUNG AUSGESCHRIEBEN'
+      );
+    }
+  }
+}
