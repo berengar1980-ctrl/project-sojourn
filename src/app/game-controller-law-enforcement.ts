@@ -69,6 +69,26 @@ export function dispatchPatrolToReport(
   }
 }
 
+/** A friendly non-Directorate faction broadcasts an orbital sighting even
+ * when the wanted ship does not dock; police custody still requires docking. */
+export function reportLegalOrbitalArrival(
+  context: ControllerRuntimeContext, locationId: string | null
+): void {
+  if (context.world.inForeignSystem() || !locationId ||
+    DIRECTORATE_PORTS.has(locationId)) return;
+  const location = context.world.world().locations.find((entry) => entry.id === locationId);
+  if (location?.stationType === 'pirate' || !sectorPortByLocationId(locationId)) return;
+  const shipId = context.state.activeShip.id;
+  if (!context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.15)) return;
+  const report = context.economy.legal.reportSighting(
+    shipId, locationId, context.economy.situations.currentDay, 'arrival'
+  );
+  if (report) {
+    context.systemLog.write('FAHNDUNG > ORBITALE SICHTUNG BEI ' + locationId.toUpperCase());
+    dispatchPatrolToReport(context, locationId, null);
+  }
+}
+
 export function inspectLegalDockArrival(context: ControllerRuntimeContext): void {
   if (context.world.inForeignSystem()) return;
   const locationId = context.navigation.getSnapshot().currentLocationId;
