@@ -64,4 +64,25 @@ for (const profile of ['fast', 'balanced', 'safe']) {
   assert(plan.distance <= direct * limit + 0.001,
     profile + ' must not create absurd sector-wide detours');
 }
+
+// When no reasonable detour exists, even a safe pilot must cross the red band.
+const forcedCrossing = {
+  id: 'red-shortcut-is-unavoidable', name: 'Red Shortcut', width: 2800, height: 850,
+  defaultDangerLevel: 1,
+  startLocationId: 'from',
+  star: { id: 'sun', name: 'Sun', position: { x: 1400, y: 80 }, radius: 10,
+    colorCore: '#fff', colorCorona: '#ccc' },
+  locations: [
+    { id: 'from', name: 'From', kind: 'station', position: { x: 150, y: 430 },
+      radius: 10, activities: {}, description: '', dangerLevel: 1 },
+    { id: 'to', name: 'To', kind: 'station', position: { x: 2650, y: 430 },
+      radius: 10, activities: {}, description: '', dangerLevel: 1 },
+  ],
+  regions: [{ id: 'red-barrier', name: 'Red Barrier', dangerLevel: 3,
+    center: { x: 1400, y: 430 }, radius: 250,
+    lobes: [{ center: { x: 1400, y: 430 }, radiusX: 690, radiusY: 1600 }] }],
+};
+const unavoidable = routing.planRouteWithProfile(forcedCrossing, 'from', 'to', 'safe');
+assert.equal(unavoidable.dangerLevel, 3, 'safe routes must sometimes cross red territory');
+assert(unavoidable.distance <= 2500 * 1.75 + 0.001, 'no sector-wide red bypass');
 console.log('PASS one-third danger regions, connected corridors, real map/routing agreement and bounded red-zone crossings');
