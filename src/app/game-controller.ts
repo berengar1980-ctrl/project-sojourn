@@ -1,4 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
+import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
@@ -128,6 +129,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
   const { state, economy } = context;
   rememberMiningField(context);
   const locationId = context.navigation.getSnapshot().currentLocationId;
+  if (announce) inspectLegalDockArrival(context);
   refuelAtPort(context);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
@@ -154,6 +156,7 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     (nextShip) => {
       context.crew.transferAssignments(state.activeShip, nextShip);
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
+      economy.legal.registerShip(state.activeShip.id, 'player');
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       mountControllerPort(context, false);
     },
@@ -424,6 +427,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
+  if (!navigationBefore.isTravelling && navigationSnapshot.isTravelling)
+    reportLegalDeparture(context, navigationBefore.currentLocationId, navigationSnapshot.destinationId);
   const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
@@ -500,6 +505,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...campaignServices,
     state,
   };
+  registerSectorShips(context);
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,
