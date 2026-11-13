@@ -1,4 +1,5 @@
 name: PR293 one-shot formatting and targeted smoke checks
+# Recheck campaign world provider after typed-integration fix
 on:
   push:
     branches: [feature/region-pirates-route-safety]
