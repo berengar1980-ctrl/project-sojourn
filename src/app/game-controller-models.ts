@@ -1,5 +1,6 @@
 import type { ShipDefinition } from '../core/ship-types';
 import { getShipDefinition } from '../systems/ships';
+import { miningResourceById } from '../data/resources/mining-resources';
 
 import type { SystemLogService } from '../core/system-log-types';
 
@@ -182,9 +183,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   const knownClaims = context.economy.asteroidClaims.snapshot().claims.filter(
     (claim) => claim.locationId === locationId
   );
-  const ownerByAsteroid = new Map(
-    knownClaims.map((claim) => [claim.asteroidId, claim.ownerId])
-  );
+  const claimByAsteroid = new Map(knownClaims.map((claim) => [claim.asteroidId, claim]));
   const pirateShips = locationId
     ? (context.economy.localPirates.get(locationId)?.snapshot(
         context.economy.sectorNpcs.npcs
@@ -216,7 +215,15 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     npcShips: [...model.npcShips, ...pirateShips],
     asteroids: model.asteroids.map((asteroid) => ({
       ...asteroid,
-      claimOwnerId: ownerByAsteroid.get(asteroid.id) ?? null,
+      claimOwnerId: claimByAsteroid.get(asteroid.id)?.ownerId ?? null,
+      ...(claimByAsteroid.has(asteroid.id) ? {
+        registeredOre: Object.entries(claimByAsteroid.get(asteroid.id)!.oreAtRegistration).map(
+          ([resourceId, amount]) => ({
+            resourceName: miningResourceById(resourceId)?.name ?? resourceId,
+            amount,
+          })
+        ),
+      } : {}),
     })),
     securityDrone: drone?.snapshot() ?? null,
   };
