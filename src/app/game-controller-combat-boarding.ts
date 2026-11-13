@@ -66,6 +66,7 @@ export function startCombatBoarding(
     roster: context.crew,
     seed: Math.floor(snapshot.elapsedSeconds * 1000) ^ enemyName.length,
     enemyUnits,
+    allowRetreat: snapshot.boardingInitiator === 'attacker',
   });
   context.systemLog.write(
     'BOARDING > ' +

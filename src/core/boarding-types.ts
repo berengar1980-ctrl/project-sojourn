@@ -33,6 +33,10 @@ export interface BoardingWeaponProfile {
   readonly armorPenetration: number;
   readonly spread: number;
   readonly canSuppress: boolean;
+  readonly piercing?: {
+    readonly maxArmor: number;
+    readonly bonusDamage: number;
+  };
 }
 
 export interface BoardingMeleeProfile {
@@ -60,6 +64,11 @@ export interface BoardingUnit {
   combatUsed: boolean;
   suppressed: boolean;
   overwatch: boolean;
+  overwatchTarget: BoardingHex | null;
+  holdingCover: boolean;
+  reactionUsed: boolean;
+  rangedActions: number;
+  meleeActions: number;
 }
 
 export interface BoardingUnitTemplate {
@@ -73,6 +82,12 @@ export interface BoardingUnitTemplate {
   readonly meleeSkill?: number;
   readonly weapon?: BoardingWeaponProfile;
   readonly meleeWeapon?: BoardingMeleeProfile;
+}
+
+export interface BoardingSuppressionZone {
+  readonly ownerId: string;
+  readonly team: BoardingTeam;
+  readonly center: BoardingHex;
 }
 
 export interface BoardingCombatLogEntry {
@@ -90,6 +105,9 @@ export interface BoardingEncounterSnapshot {
   readonly units: readonly BoardingUnit[];
   readonly doorStates: Readonly<Record<string, boolean>>;
   readonly log: readonly BoardingCombatLogEntry[];
+  readonly suppressionZones: readonly BoardingSuppressionZone[];
+  readonly allowRetreat: boolean;
+  readonly randomCalls: number;
 }
 
 export interface BoardingAttackResult {

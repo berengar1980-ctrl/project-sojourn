@@ -93,6 +93,7 @@ interface SalvageSceneOptions {
   readonly field?: SalvageField;
   readonly sectorEvent?: SectorSalvageEvent | null;
   readonly onDiagnoseDistress?: (eventId: string) => void;
+  readonly onBoardWreck?: (wreckId: string) => void;
   readonly onRepairDistress?: (eventId: string) => void;
   readonly onTowDistress?: (eventId: string) => void;
   readonly onEvacuateDistress?: (eventId: string) => void;
@@ -231,6 +232,9 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onStartDistressDiagnosis(eventId) {
       requestDistressDiagnosis(context, eventId);
       refresh();
+    },
+    onBoardWreck(wreckId) {
+      options.onBoardWreck?.(wreckId);
     },
     onInspect(wreckId) {
       service.startInspect(wreckId);

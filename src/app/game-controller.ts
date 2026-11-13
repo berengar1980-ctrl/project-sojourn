@@ -261,7 +261,7 @@ function mountControllerSalvage(
     seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
     location,
     ...(preservedField
-      ? { field: preservedField }
+      ? { field: preservedField, ...(sectorEvent ? { sectorEvent } : {}) }
       : sectorEvent
         ? {
             field:
@@ -304,6 +304,7 @@ function mountControllerSalvage(
     },
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
+      mountSalvage: (field) => mountControllerSalvage(context, true, field),
     }),
     onReturnToStarMap: controllerSalvageExitAction(context, () => mountControllerStarMap(context)),
   });

@@ -46,9 +46,29 @@ function cellClasses(
     .join(' ');
 }
 
+function boardingUnitDetails(selected: BoardingUnit | null): string {
+  if (!selected) return 'Trupp wählen';
+  const weapon = selected.weapon;
+  const attributes = [
+    selected.name,
+    weapon.name,
+    'Reichweite ' + weapon.range,
+    'Streuung ' + weapon.spread,
+    'RD ' + weapon.armorPenetration,
+  ];
+  if (weapon.piercing) attributes.push('Piercing +' + weapon.piercing.bonusDamage);
+  return attributes.join(' · ');
+}
+
+function boardingStatusText(snapshot: BoardingEncounterSnapshot): string {
+  if (snapshot.outcome !== 'active') return 'ERGEBNIS: ' + snapshot.outcome.toUpperCase();
+  return 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
+}
+
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   private readonly shell: HTMLElement;
   private readonly tactical: CrewBoardingEncounter['tactical'];
+  private action: 'move' | 'shoot' | 'suppress' | 'overwatch' = 'move';
 
   constructor(private readonly options: BoardingTacticalPanelOptions) {
     this.shell = document.createElement('section');
@@ -93,10 +113,26 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
       this.tactical.melee(enemy.id, target.id);
       return;
     }
-    if (range <= enemy.weapon.range && this.tactical.shoot(enemy.id, target.id)) return;
+    if (range <= enemy.weapon.range && this.enemyFire(enemy, target)) return;
 
+    const adjacentDoor = snapshot.map.doors.find(
+      (door) => !snapshot.doorStates[door.id] && boardingHexDistance(enemy, door) === 1
+    );
+    if (adjacentDoor) this.tactical.openDoor(enemy.id, adjacentDoor.id);
     this.moveEnemyToward(enemy, target);
     this.attackAfterEnemyMove(enemy.id, target.id);
+    const after = this.tactical.getSnapshot();
+    const unit = after.units.find((entry) => entry.id === enemy.id);
+    if (unit && unit.hp > 0 && unit.ap >= 2 && !unit.combatUsed) {
+      this.tactical.overwatch(unit.id, target);
+    }
+  }
+
+  private enemyFire(enemy: BoardingUnit, target: BoardingUnit): boolean {
+    if (enemy.weapon.canSuppress && target.holdingCover) {
+      if (this.tactical.suppress(enemy.id, target.id)) return true;
+    }
+    return this.tactical.shoot(enemy.id, target.id) !== null;
   }
 
   private moveEnemyToward(enemy: BoardingUnit, target: BoardingUnit): void {
@@ -125,7 +161,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     if (!enemy || !target) return;
     const range = boardingHexDistance(enemy, target);
     if (range === 1) this.tactical.melee(enemy.id, target.id);
-    else if (range <= enemy.weapon.range) this.tactical.shoot(enemy.id, target.id);
+    else if (range <= enemy.weapon.range) this.enemyFire(enemy, target);
   }
 
   private actOnHex(hex: BoardingHex): void {
@@ -135,14 +171,26 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const target = snapshot.units.find(
       (unit) => unit.q === hex.q && unit.r === hex.r && unit.hp > 0
     );
-    if (target?.team === 'player') this.tactical.selectUnit(target.id);
-    else if (selected && target?.team === 'enemy') this.attackSelected(selected, target);
-    else if (selected) this.tactical.move(selected.id, hex);
+    if (target?.team === 'player') {
+      this.tactical.selectUnit(target.id);
+      this.action = 'move';
+    } else if (selected) {
+      const door = snapshot.map.doors.find(
+        (entry) => entry.q === hex.q && entry.r === hex.r && !snapshot.doorStates[entry.id]
+      );
+      if (door) this.tactical.openDoor(selected.id, door.id);
+      else if (this.action === 'overwatch') {
+        if (this.tactical.overwatch(selected.id, hex)) this.action = 'move';
+      } else if (this.action === 'suppress') {
+        if (this.tactical.suppressArea(selected.id, hex)) this.action = 'move';
+      } else if (target?.team === 'enemy') this.attackSelected(selected, target);
+      else if (this.action === 'move') this.tactical.move(selected.id, hex);
+    }
     this.render();
   }
 
   private attackSelected(selected: BoardingUnit, target: BoardingUnit): void {
-    if (boardingHexDistance(selected, target) === 1) {
+    if (boardingHexDistance(selected, target) === 1 && this.action !== 'shoot') {
       this.tactical.melee(selected.id, target.id);
     } else {
       this.tactical.shoot(selected.id, target.id);
@@ -168,12 +216,21 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
       unit,
       snapshot.selectedUnitId
     );
+    const flags = unit
+      ? (unit.overwatch ? ' · WACHE' : '') + (unit.suppressed ? ' · NIEDER' : '')
+      : '';
     const body = unit
-      ? `<strong>${unit.name}</strong><small>HP ${unit.hp}/${unit.maxHp} · AP ${unit.ap}</small>`
+      ? `<strong>${unit.name}</strong><small>HP ${unit.hp}/${unit.maxHp} · AP ${unit.ap}${flags}</small>`
       : door
         ? '<span>SCHOTT</span>'
         : '';
-    return `<button type="button" class="${classes}" data-q="${q}" data-r="${r}" ${wall ? 'disabled' : ''}>${body}</button>`;
+    const suppression = snapshot.suppressionZones.some(
+      (zone) => boardingHexDistance(zone.center, { q, r }) <= 1
+    );
+    const cover = snapshot.map.cover.some((entry) => entry.q === q && entry.r === r);
+    const highlighting = (suppression ? ' is-suppressed-zone' : '') + (cover ? ' is-cover' : '');
+    const disabled = wall ? 'disabled' : '';
+    return `<button type="button" class="${classes}${highlighting}" data-q="${q}" data-r="${r}" ${disabled}>${body}</button>`;
   }
 
   private gridMarkup(
@@ -194,6 +251,18 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const selected = snapshot.units.find((unit) => unit.id === snapshot.selectedUnitId) ?? null;
     const reachable = selected ? this.tactical.reachable(selected.id) : {};
     const finished = snapshot.outcome !== 'active';
+    const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
+    const button = (action: typeof this.action, name: string, disabled = false): string => {
+      const pressed = this.action === action ? 'aria-pressed="true"' : '';
+      const unavailable = !canAct || disabled ? 'disabled' : '';
+      return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
+    };
+    const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
+    const cannotSuppress = cannotShoot || !selected?.weapon.canSuppress;
+    const cannotOverwatch = !selected || selected.ap < 2 || selected.combatUsed;
+    const cannotHold = !canAct || cannotShoot;
+    const statusLabel = boardingStatusText(snapshot);
+    const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
       .map((entry) => `<div>R${entry.round} · ${entry.text}</div>`)
@@ -204,11 +273,21 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
         <div><span>ENTERKAMPF</span><strong>${snapshot.map.name}</strong><small>RUNDE ${snapshot.round} · ${snapshot.activeTeam === 'player' ? 'EIGENER ZUG' : 'FEINDLICHER ZUG'}</small></div>
         <div class="boarding-actions">
           <button type="button" data-boarding-end ${finished || snapshot.activeTeam !== 'player' ? 'disabled' : ''}>ZUG BEENDEN</button>
-          <button type="button" data-boarding-retreat ${finished || snapshot.activeTeam !== 'player' ? 'disabled' : ''}>RÜCKZUG</button>
+          <button type="button" data-boarding-retreat ${finished || snapshot.activeTeam !== 'player' || !snapshot.allowRetreat ? 'disabled' : ''}>RÜCKZUG</button>
           ${finished ? '<button type="button" data-boarding-finish>WEITER</button>' : ''}
         </div>
       </header>
-      <div class="boarding-status">${finished ? 'ERGEBNIS: ' + snapshot.outcome.toUpperCase() : 'Einheit wählen · Feld anklicken zum Bewegen · Gegner anklicken zum Angreifen'}</div>
+      <div class="boarding-status">${statusLabel}</div>
+      <div class="boarding-tactics">
+        <div class="boarding-tactics-actions">
+          ${button('move', 'BEWEGEN')}
+          ${button('shoot', 'SCHIESSEN · 1 AP', cannotShoot)}
+          ${button('suppress', 'UNTERDRÜCKEN · 1 AP', cannotSuppress)}
+          ${button('overwatch', 'FEUERBEREITSCHAFT · 2 AP', cannotOverwatch)}
+          <button type="button" data-boarding-hold ${cannotHold ? 'disabled' : ''}>DECKUNG HALTEN</button>
+        </div>
+        <div class="boarding-unit-detail">${details}</div>
+      </div>
       <div class="boarding-grid" style="--boarding-columns:${snapshot.map.columns}">${this.gridMarkup(snapshot, reachable)}</div>
       <aside class="boarding-log">${log}</aside>
     `;
@@ -216,6 +295,23 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   }
 
   private bindControls(): void {
+    for (const action of this.shell.querySelectorAll<HTMLButtonElement>('[data-boarding-action]')) {
+      action.addEventListener('click', () => {
+        const next = action.dataset.boardingAction;
+        if (next === 'move' || next === 'shoot' || next === 'suppress' || next === 'overwatch') {
+          this.action = next;
+          this.render();
+        }
+      });
+    }
+    this.shell
+      .querySelector<HTMLButtonElement>('[data-boarding-hold]')
+      ?.addEventListener('click', () => {
+        const snapshot = this.tactical.getSnapshot();
+        if (snapshot.selectedUnitId) this.tactical.holdCover(snapshot.selectedUnitId);
+        this.action = 'move';
+        this.render();
+      });
     for (const button of this.shell.querySelectorAll<HTMLButtonElement>('.boarding-cell[data-q]')) {
       button.addEventListener('click', () =>
         this.actOnHex({ q: Number(button.dataset.q), r: Number(button.dataset.r) })
