@@ -73,6 +73,7 @@ assert.strictEqual(unchanged, ship, 'other hulls retain their name');
 const bootstrap = read('src/app/bootstrap.ts');
 const controller = read('src/app/game-controller.ts');
 const editor = read('src/ui/start/character-editor.ts');
+const editorStyles = read('src/ui/start/character-editor.css');
 const allocator = read('src/ui/start/character-editor-skills.ts');
 const bar = read('src/ui/settings/settings-menu.ts');
 assert(bootstrap.includes('createCharacterEditor('), 'campaign enters character editor');
@@ -82,6 +83,14 @@ assert(controller.includes('snapshotPlayerProfile(state.playerProfile)'), 'profi
 const renameOnSwitch = 'withPlayerShipName(nextShip, state.playerProfile, state.starterShipId)';
 assert(controller.includes(renameOnSwitch), 'starting hull keeps its selected name');
 assert(editor.includes('form.reportValidity()'), 'editor prevents incomplete submission');
+assert(
+  /\.character-editor__shade\s*\{[^}]*position:\s*fixed\s*;/s.test(editorStyles),
+  'dark overlay must remain viewport-fixed while the character form scrolls'
+);
+assert(
+  /\.character-editor\s*\{[^}]*height:\s*100dvh\s*;[^}]*overflow-y:\s*auto\s*;/s.test(editorStyles),
+  'the character creator retains its own scrollable full-screen viewport'
+);
 assert(editor.includes('onBack'), 'editor supports cancel / back');
 assert(editor.includes('allocator.valid()'), 'skill allocations must be valid');
 assert(allocator.includes('station.id'), 'station selection uses canonical station IDs');
