@@ -265,6 +265,18 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       light: { x: -0.72, y: -0.56 },
     });
 
+    if (asteroid.claimOwnerId) {
+      const blink = 0.55 + 0.45 * Math.sin(performance.now() / 360);
+      this.context.save();
+      this.context.fillStyle = asteroid.claimOwnerId === 'player'
+        ? 'rgba(118, 225, 168, ' + blink + ')'
+        : 'rgba(242, 195, 101, ' + blink + ')';
+      this.context.beginPath();
+      this.context.arc(point.x + radius + 6, point.y - radius - 6, 3.5, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.restore();
+    }
+
     if (asteroid.kind === 'resource') {
       this.drawScanMarker(asteroid, point, radius);
       this.drawScanCallout(asteroid, point, radius);
