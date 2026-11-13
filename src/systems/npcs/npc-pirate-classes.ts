@@ -27,7 +27,11 @@ export function canPirateOperateAt(pirate: SectorNpcState, danger: number): bool
 }
 
 export function worldDangerAt(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = fixedDangerAtPoint(world.regions, point, world.defaultDangerLevel ?? 0);
+  let danger: 0 | 1 | 2 | 3 = fixedDangerAtPoint(
+    world.regions,
+    point,
+    world.defaultDangerLevel ?? 0
+  );
   // Location danger is authoritative near its real berth, even between region circles.
   for (const location of world.locations) {
     if (

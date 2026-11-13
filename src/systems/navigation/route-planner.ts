@@ -176,9 +176,10 @@ function candidateNodes(
     .filter(
       (point) => point.x >= 0 && point.x <= world.width && point.y >= 0 && point.y <= world.height
     );
-  const strategic = world.regions.flatMap((region) => curatedZoneWaypoints(region))
-    .filter((point) =>
-      point.x >= 0 && point.y >= 0 && point.x <= world.width && point.y <= world.height
+  const strategic = world.regions
+    .flatMap((region) => curatedZoneWaypoints(region))
+    .filter(
+      (point) => point.x >= 0 && point.y >= 0 && point.x <= world.width && point.y <= world.height
     )
     .map((point) => ({ point, proximity: distanceToSegment(point, from, to) }))
     .filter((entry) => entry.proximity <= 1550)

@@ -10,9 +10,11 @@ const ellipse = (x: number, y: number, radiusX: number, radiusY: number) => ({
   radiusX,
   radiusY,
 });
-const corridor = (
-  ax: number, ay: number, bx: number, by: number, width: number
-) => ({ from: point(ax, ay), to: point(bx, by), width });
+const corridor = (ax: number, ay: number, bx: number, by: number, width: number) => ({
+  from: point(ax, ay),
+  to: point(bx, by),
+  width,
+});
 
 export const narrowsDangerZones: readonly WorldRegion[] = [
   // YELLOW: linked frontier rooms and transit lanes, also running through inner space.
@@ -23,12 +25,17 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     radius: 350,
     dangerLevel: 2,
     scale: 1.2,
-    lobes: [ellipse(1850, 2100, 900, 750), ellipse(2850, 2150, 930, 700),
-      ellipse(3760, 2550, 850, 680)],
-    corridors: [corridor(790, 1800, 1550, 1950, 480),
+    lobes: [
+      ellipse(1850, 2100, 900, 750),
+      ellipse(2850, 2150, 930, 700),
+      ellipse(3760, 2550, 850, 680),
+    ],
+    corridors: [
+      corridor(790, 1800, 1550, 1950, 480),
       corridor(1550, 1950, 2300, 2280, 450),
       corridor(2300, 2280, 3350, 2200, 450),
-      corridor(3350, 2200, 4650, 2650, 440)],
+      corridor(3350, 2200, 4650, 2650, 440),
+    ],
   },
   {
     id: 'sargasso-drift',
@@ -37,12 +44,17 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     radius: 330,
     dangerLevel: 2,
     scale: 1.2,
-    lobes: [ellipse(1000, 3450, 760, 720), ellipse(1840, 4080, 950, 750),
-      ellipse(3020, 4550, 930, 570)],
-    corridors: [corridor(650, 2450, 870, 3400, 430),
+    lobes: [
+      ellipse(1000, 3450, 760, 720),
+      ellipse(1840, 4080, 950, 750),
+      ellipse(3020, 4550, 930, 570),
+    ],
+    corridors: [
+      corridor(650, 2450, 870, 3400, 430),
       corridor(870, 3400, 1600, 3940, 450),
       corridor(1600, 3940, 2450, 4500, 470),
-      corridor(2450, 4500, 4000, 4700, 430)],
+      corridor(2450, 4500, 4000, 4700, 430),
+    ],
   },
   {
     id: 'frostline-fringe',
@@ -51,12 +63,17 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     radius: 350,
     dangerLevel: 2,
     scale: 1.2,
-    lobes: [ellipse(4500, 1300, 720, 700), ellipse(5200, 2250, 730, 800),
-      ellipse(4700, 3400, 800, 700)],
-    corridors: [corridor(4400, 750, 4850, 1500, 430),
+    lobes: [
+      ellipse(4500, 1300, 720, 700),
+      ellipse(5200, 2250, 730, 800),
+      ellipse(4700, 3400, 800, 700),
+    ],
+    corridors: [
+      corridor(4400, 750, 4850, 1500, 430),
       corridor(4850, 1500, 5150, 2500, 470),
       corridor(5150, 2500, 4680, 3250, 460),
-      corridor(4680, 3250, 5400, 3910, 450)],
+      corridor(4680, 3250, 5400, 3910, 450),
+    ],
   },
   // GREEN: connected, defensible civilian pockets and narrow safe shipping corridors.
   {
@@ -66,11 +83,16 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     radius: 320,
     dangerLevel: 1,
     scale: 0.9,
-    lobes: [ellipse(3440, 4000, 800, 700), ellipse(2240, 3220, 590, 530),
-      ellipse(4100, 4700, 700, 550)],
-    corridors: [corridor(2240, 3220, 2850, 3450, 440),
+    lobes: [
+      ellipse(3440, 4000, 800, 700),
+      ellipse(2240, 3220, 590, 530),
+      ellipse(4100, 4700, 700, 550),
+    ],
+    corridors: [
+      corridor(2240, 3220, 2850, 3450, 440),
       corridor(2850, 3450, 3500, 4050, 500),
-      corridor(3500, 4050, 4080, 4700, 480)],
+      corridor(3500, 4050, 4080, 4700, 480),
+    ],
   },
   {
     id: 'helix-passage',
@@ -80,8 +102,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     dangerLevel: 1,
     scale: 0.9,
     lobes: [ellipse(1800, 950, 630, 580), ellipse(1456, 2000, 610, 520)],
-    corridors: [corridor(1900, 650, 1650, 1250, 400),
-      corridor(1650, 1250, 1420, 1980, 440)],
+    corridors: [corridor(1900, 650, 1650, 1250, 400), corridor(1650, 1250, 1420, 1980, 440)],
   },
   {
     id: 'niveus-passage',
@@ -90,11 +111,16 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     radius: 270,
     dangerLevel: 1,
     scale: 0.9,
-    lobes: [ellipse(4600, 750, 620, 560), ellipse(5500, 1740, 580, 600),
-      ellipse(4950, 2580, 570, 560)],
-    corridors: [corridor(4550, 750, 4930, 1250, 390),
+    lobes: [
+      ellipse(4600, 750, 620, 560),
+      ellipse(5500, 1740, 580, 600),
+      ellipse(4950, 2580, 570, 560),
+    ],
+    corridors: [
+      corridor(4550, 750, 4930, 1250, 390),
       corridor(4930, 1250, 5480, 1770, 400),
-      corridor(5480, 1770, 5000, 2650, 430)],
+      corridor(5480, 1770, 5000, 2650, 430),
+    ],
   },
   {
     id: 'inner-civilian-link',
@@ -104,9 +130,11 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     dangerLevel: 1,
     scale: 0.9,
     lobes: [ellipse(2090, 4300, 630, 550), ellipse(4150, 1850, 560, 530)],
-    corridors: [corridor(2090, 4300, 2460, 3600, 400),
+    corridors: [
+      corridor(2090, 4300, 2460, 3600, 400),
       corridor(4130, 1870, 4240, 2650, 420),
-      corridor(4240, 2650, 3650, 3900, 450)],
+      corridor(4240, 2650, 3650, 3900, 450),
+    ],
   },
   // RED: real pirate areas and special-value frontiers cut into the safer network.
   {

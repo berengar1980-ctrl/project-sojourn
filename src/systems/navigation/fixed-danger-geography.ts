@@ -58,11 +58,15 @@ export function pointInsideDangerRegion(region: WorldRegion, point: WorldPoint):
       const dy = (point.y - lobe.center.y) / Math.max(1, lobe.radiusY * scale);
       return dx * dx + dy * dy <= 1;
     })
-  ) return true;
+  )
+    return true;
 
-  return region.corridors?.some((corridor) =>
-    distanceToDangerCorridor(point, corridor.from, corridor.to) <= corridor.width * scale
-  ) ?? false;
+  return (
+    region.corridors?.some(
+      (corridor) =>
+        distanceToDangerCorridor(point, corridor.from, corridor.to) <= corridor.width * scale
+    ) ?? false
+  );
 }
 
 export function fixedDangerAtPoint(
@@ -81,7 +85,7 @@ export function curatedZoneWaypoints(region: WorldRegion): readonly WorldPoint[]
   if (!region.lobes?.length && !region.corridors?.length) {
     const radius = region.radius + 120;
     return Array.from({ length: 8 }, (_, index) => {
-      const angle = Math.PI * 2 * index / 8;
+      const angle = (Math.PI * 2 * index) / 8;
       return {
         x: region.center.x + Math.cos(angle) * radius,
         y: region.center.y + Math.sin(angle) * radius,

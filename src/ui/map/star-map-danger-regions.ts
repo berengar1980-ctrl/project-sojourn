@@ -1,5 +1,8 @@
 import type { WorldRegion } from '../../core/world-types';
-import { fixedDangerAtPoint, pointInsideDangerRegion } from '../../systems/navigation/fixed-danger-geography';
+import {
+  fixedDangerAtPoint,
+  pointInsideDangerRegion,
+} from '../../systems/navigation/fixed-danger-geography';
 import type { MapCamera } from './map-camera';
 
 type DangerBand = 'green' | 'yellow' | 'red';
@@ -27,11 +30,16 @@ function createCloudLayer(width: number, height: number): HTMLCanvasElement {
 
 function cloudDensity(x: number, y: number): number {
   // Slow-frequency deterministic bands give a feathered nebula texture, not flat colored discs.
-  return Math.max(0.4, Math.min(1.05,
-    0.77 + Math.sin(x * 0.0047 + y * 0.0021) * 0.13 +
-    Math.sin(x * 0.0082 - y * 0.0036) * 0.09 +
-    Math.cos(x * 0.0027 + y * 0.0073) * 0.08
-  ));
+  return Math.max(
+    0.4,
+    Math.min(
+      1.05,
+      0.77 +
+        Math.sin(x * 0.0047 + y * 0.0021) * 0.13 +
+        Math.sin(x * 0.0082 - y * 0.0036) * 0.09 +
+        Math.cos(x * 0.0027 + y * 0.0073) * 0.08
+    )
+  );
 }
 
 function buildDangerClouds(
@@ -54,19 +62,21 @@ function buildDangerClouds(
   });
 
   for (let row = 0; row < pixelHeight; row += 1) {
-    const y = (row + 0.5) * worldHeight / pixelHeight;
+    const y = ((row + 0.5) * worldHeight) / pixelHeight;
     for (let col = 0; col < pixelWidth; col += 1) {
-      const x = (col + 0.5) * worldWidth / pixelWidth;
+      const x = ((col + 0.5) * worldWidth) / pixelWidth;
       const point = { x, y };
       const danger = fixedDangerAtPoint(regions, point, defaultDanger);
       const band: DangerBand = danger >= 3 ? 'red' : danger === 2 ? 'yellow' : 'green';
-      const highlightedPocket = danger === 3 && regions.some((region) =>
-        region.dangerLevel === 3 && pointInsideDangerRegion(region, point)
-      );
+      const highlightedPocket =
+        danger === 3 &&
+        regions.some(
+          (region) => region.dangerLevel === 3 && pointInsideDangerRegion(region, point)
+        );
       const noise = cloudDensity(x, y);
-      const opacity = Math.round((band === 'red'
-        ? highlightedPocket ? 68 : 39
-        : band === 'yellow' ? 72 : 62) * noise);
+      const opacity = Math.round(
+        (band === 'red' ? (highlightedPocket ? 68 : 39) : band === 'yellow' ? 72 : 62) * noise
+      );
       const { image } = images.find((entry) => entry.band === band)!;
       const index = (row * pixelWidth + col) * 4;
       image.data[index] = palettes[band][0];
@@ -95,8 +105,10 @@ export function drawStarMapDangerRegions(
   if (!visible) return;
   let cached = cloudCache.get(regions);
   if (
-    !cached || cached.width !== worldWidth ||
-    cached.height !== worldHeight || cached.defaultDanger !== defaultDanger
+    !cached ||
+    cached.width !== worldWidth ||
+    cached.height !== worldHeight ||
+    cached.defaultDanger !== defaultDanger
   ) {
     cached = buildDangerClouds(regions, worldWidth, worldHeight, defaultDanger);
     cloudCache.set(regions, cached);
