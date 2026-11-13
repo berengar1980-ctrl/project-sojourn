@@ -82,6 +82,7 @@ export interface LocalShipView {
 }
 
 export interface LocalSpaceViewModel {
+  readonly selectedAsteroidClaimOwner?: string | null;
   readonly title: string;
   readonly backgroundSeed: number;
   readonly width: number;
