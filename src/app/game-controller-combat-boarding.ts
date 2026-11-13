@@ -113,7 +113,14 @@ export function startCombatBoarding(
               ? 'enemy_win'
               : 'draw',
       });
-      context.engagements.finishPlayerCombat();
+      if (result.outcome === 'player_win' || result.outcome === 'enemy_win') {
+        emitCampaignCombatEnded(context.campaignEvents, {
+          ...snapshot,
+          winner: result.outcome === 'player_win' ? 'attacker' : 'defender',
+          outcomeReason: 'boarding',
+        });
+      }
+      context.engagements.finishPlayerCombat(result.outcome);
       showCampaignCombatSummary(
         context.root,
         snapshot,

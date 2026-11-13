@@ -1,4 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
+import type { BoardingOutcome } from '../../core/boarding-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
 
@@ -50,7 +51,7 @@ export interface StarMapEngagementService {
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
   activePlayerEnemy(): SectorNpcState | null;
-  finishPlayerCombat(): void;
+  finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
 }
 
 export interface StarMapEngagementOptions {
@@ -445,12 +446,16 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   }
 }
 
-function finishPlayerCombat(runtime: EngagementRuntime): void {
+function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: BoardingOutcome): void {
   if (!runtime.playerCombat || !runtime.playerEnemy) return;
   const model = runtime.playerCombat.getSnapshot();
   runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
-  if (model.defender.hullHp <= 0 && model.attacker.hullHp > 0)
+  if (
+    (model.defender.hullHp <= 0 && model.attacker.hullHp > 0) ||
+    (model.boardingInitiator !== null && boardingOutcome === 'player_win')
+  ) {
     runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
+  }
   if (model.defender.hullHp <= 0) {
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
     runtime.options.log(
@@ -459,7 +464,9 @@ function finishPlayerCombat(runtime: EngagementRuntime): void {
         ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
     );
   } else {
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Nach Gefecht');
+    const reason =
+      boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
+    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, reason);
   }
   if (model.attacker.hullHp <= 0) {
     const recovery = runtime.options.navigation.recoverToNearestDock();
@@ -494,6 +501,6 @@ export function createStarMapEngagementService(
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
     activePlayerEnemy: () => runtime.playerEnemy,
-    finishPlayerCombat: () => finishPlayerCombat(runtime),
+    finishPlayerCombat: (boardingOutcome) => finishPlayerCombat(runtime, boardingOutcome),
   };
 }
