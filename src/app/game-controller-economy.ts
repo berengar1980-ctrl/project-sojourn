@@ -1,6 +1,5 @@
 import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-types';
 import { BlockadeService } from '../systems/operations/blockade-service';
-import { MiningConcessionService } from '../systems/operations/mining-concession-service';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { PatrolCareerService } from '../systems/operations/patrol-career-service';
 import { economyResources } from '../data/economy/economy-resources';
@@ -76,7 +75,6 @@ import {
 
 export interface ControllerEconomy {
   readonly blockades: BlockadeService;
-  readonly concessions: MiningConcessionService;
   readonly asteroidClaims: AsteroidClaimRegistry;
   readonly patrol: PatrolCareerService;
   protectsPirate(factionId?: string): boolean;
@@ -99,31 +97,12 @@ export interface ControllerEconomy {
   readonly sectorNpcs: NpcSectorService;
 }
 
-function npcOperationsPolicy(
-  blockades: BlockadeService,
-  concessions: MiningConcessionService
-): NpcEconomyServiceOptions {
+function npcOperationsPolicy(blockades: BlockadeService): NpcEconomyServiceOptions {
   return {
     isManaged: (npc) => blockades.assigned(npc.id),
     canTrade: (npc, locationId, resourceId) =>
       !blockades.blocksTrader(npc.id, locationId, resourceId),
-    miningAllowance: (npc, id, amount) => concessions.allowance(npc.id, npc.locationId, id, amount),
-    onMined: (npc, id, amount) => concessions.recordExtraction(npc.id, npc.locationId, id, amount),
   };
-}
-
-function createConcessionMining(
-  simulation: EconomySimulationService,
-  trade: PlayerTradeService,
-  concessions: MiningConcessionService
-) {
-  return createMiningEconomyService(simulation, trade, {
-    allowance: (id, amount, origin) =>
-      origin ? concessions.allowance('player', origin, id, amount) : amount,
-    onCollected: (id, amount, origin) => {
-      if (origin) concessions.recordExtraction('player', origin, id, amount);
-    },
-  });
 }
 
 function createOperationsEconomy(
@@ -134,7 +113,6 @@ function createOperationsEconomy(
   onSmugglingNotice: (message: string) => void
 ) {
   const npcStates = sectorNpcs.npcs;
-  const concessions = new MiningConcessionService(narrowsSector, trade.player, npcStates);
   const patrol = new PatrolCareerService(narrowsSector, npcStates, trade.player);
   const blockades = new BlockadeService({
     sector: sectorNpcs,
@@ -146,7 +124,7 @@ function createOperationsEconomy(
     },
     notice: onSmugglingNotice,
   });
-  return { concessions, patrol, blockades };
+  return { patrol, blockades };
 }
 
 export function createControllerEconomy(
@@ -181,7 +159,7 @@ export function createControllerEconomy(
     markets,
     population,
   });
-  const { concessions, patrol, blockades } = createOperationsEconomy(
+  const { patrol, blockades } = createOperationsEconomy(
     markets,
     sectorNpcs,
     trade,
@@ -191,7 +169,7 @@ export function createControllerEconomy(
   const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
 
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-    ...npcOperationsPolicy(blockades, concessions),
+    ...npcOperationsPolicy(blockades),
     onSale: (npc, resourceId, quantity, gross) => {
       npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross);
       population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
@@ -228,7 +206,6 @@ export function createControllerEconomy(
         (smuggling.state.protectionFaction === factionId || charters.protectsPirate(factionId))
       ),
     blockades,
-    concessions,
     asteroidClaims: new AsteroidClaimRegistry(),
     patrol,
     markets,
@@ -240,7 +217,7 @@ export function createControllerEconomy(
     population,
     npcSmuggling,
     simulation,
-    mining: createConcessionMining(simulation, trade, concessions),
+    mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
     components: createShipComponentInventoryService(trade.player),
     shipyardResearch,
