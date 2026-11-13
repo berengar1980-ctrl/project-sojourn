@@ -17,7 +17,6 @@ import {
   planRouteWithProfile,
   repointRouteEndpoints,
   type RoutePlan,
-  type RouteThreatContact,
 } from '../navigation/route-planner';
 
 import {
@@ -29,6 +28,7 @@ import {
   routeHeading,
   routePoint,
   routeProfile,
+  npcRouteThreats,
 } from './npc-sector-routing';
 
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
@@ -115,25 +115,13 @@ class SectorService implements NpcSectorService {
       : 'Teilreparatur · weitere Wartung nur gegen Credits';
     return true;
   };
-  /** NPC captains consider live pirate traffic and patrol cover using their existing risk policy. */
-  private routeThreats = (self: SectorNpcState): RouteThreatContact[] => {
-    if (self.pirate || self.job === 'patrol') return [];
-    return this.npcs
-      .filter((npc) => npc.id !== self.id && npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
-      .slice(0, 12)
-      .map((npc) => ({
-        position: this.livePosition(npc),
-        kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
-        strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
-      }));
-  };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
     const base = planRouteWithProfile(
       this.world,
       fromId,
       toId,
       routeProfile(npc),
-      this.routeThreats(npc)
+      npcRouteThreats(npc, this.npcs, this.livePosition)
     );
     return repointRouteEndpoints(
       base,
