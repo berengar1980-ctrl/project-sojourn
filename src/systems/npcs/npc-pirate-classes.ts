@@ -34,7 +34,10 @@ export function worldDangerAt(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3
   }
   // Location danger is authoritative near its real berth, even between region circles.
   for (const location of world.locations) {
-    if (Math.hypot(point.x - location.position.x, point.y - location.position.y) < Math.max(125, location.radius * 2.5)) {
+    if (
+      Math.hypot(point.x - location.position.x, point.y - location.position.y) <
+      Math.max(125, location.radius * 2.5)
+    ) {
       danger = Math.max(danger, location.dangerLevel);
     }
   }
@@ -51,7 +54,13 @@ export function pirateHuntAllowedAt(
 /** Stronger pirate hulls count more heavily in risk-aware course planning. */
 export function pirateThreatStrength(npc: SectorNpcState): number {
   const condition = Math.max(0.4, npc.hullHp / Math.max(1, npc.hullMaxHp));
-  const classWeight = npc.pirateClass === 'marauder' ? 1.85 :
-    npc.pirateClass === 'reaver' ? 1.35 : npc.pirateClass === 'raider' ? 0.8 : 1;
+  const classWeight =
+    npc.pirateClass === 'marauder'
+      ? 1.85
+      : npc.pirateClass === 'reaver'
+        ? 1.35
+        : npc.pirateClass === 'raider'
+          ? 0.8
+          : 1;
   return condition * classWeight;
 }
