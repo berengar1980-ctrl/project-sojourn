@@ -19,4 +19,8 @@ export interface LocalSpaceServiceOptions {
   readonly mining?: LocalSpaceMiningOptions;
   readonly systems?: LocalSpaceSystemsOptions;
   readonly onMiningChunkCollected?: MiningChunkCollector;
+  /** Actual assigned station skills, not a free ship-tier evasion bonus. */
+  readonly hazardCrew?: { readonly piloting: number; readonly sensors: number };
+  readonly avoidanceRandom?: () => number;
+  readonly onNavigationNotice?: (message: string) => void;
 }
