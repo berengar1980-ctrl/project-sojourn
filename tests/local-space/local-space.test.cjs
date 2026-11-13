@@ -58,6 +58,10 @@ const localScanning = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-scanning.ts'),
   'utf8'
 );
+const scanClock = fs.readFileSync(
+  path.join(root, 'src/systems/local-space/local-space-scan-clock.ts'),
+  'utf8'
+);
 const shipSystems = fs.readFileSync(
   path.join(root, 'src/systems/local-space/local-space-ship-systems.ts'),
   'utf8'
@@ -166,21 +170,21 @@ assert(
 assert(service.includes('cancelMining'), 'local-space service must expose mining cancellation');
 assert(service.includes('startLongRangeScan'), 'service must expose timed long-range scanning');
 assert(
-  service.includes('longRangeScanElapsed / 5'),
+  service.includes('this.scanClock.longProgress()') && scanClock.includes('this.longElapsed / 5'),
   'long-range scan must expose five-second progress'
 );
 assert(
-  service.includes('this.longRangeScanElapsed < 5'),
+  service.includes('this.scanClock.advanceLong(clamped)') && scanClock.includes('this.longElapsed < 5'),
   'long-range scan must not finish before five seconds'
 );
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
 assert(
   service.includes("this.miningPhase === 'scanning'") &&
-    service.includes('this.shortRangeScanElapsed / 5'),
+    scanClock.includes('this.shortElapsed / 5'),
   'close-range scan must expose a dedicated five-second scanning phase'
 );
 assert(
-  service.includes('this.shortRangeScanElapsed < 5'),
+  service.includes('this.scanClock.advanceShort(') && scanClock.includes('this.shortElapsed < 5'),
   'close-range scan must not reveal asteroid contents before five seconds'
 );
 assert(
