@@ -115,7 +115,17 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       state.panels.star?.update(controllerStarModel(context));
     },
     onDock: () => runSceneZoomTransition(context.root, () => mountControllerPort(context)),
-    startFuelTravel: () => startPlayerFuelTravel(context),
+    startFuelTravel: () => {
+      const before = context.navigation.getSnapshot();
+      const started = startPlayerFuelTravel(context);
+      if (started) {
+        reportLegalDeparture(
+          context, before.currentLocationId,
+          context.navigation.getSnapshot().destinationId
+        );
+      }
+      return started;
+    },
     onRouteSelectionChanged: () => context.fuelJourney.cancel(),
     eventById: (id) =>
       context.world.inForeignSystem()
@@ -430,9 +440,10 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
-  if (!navigationBefore.isTravelling && navigationSnapshot.isTravelling)
-    reportLegalDeparture(context, navigationBefore.currentLocationId, navigationSnapshot.destinationId);
   const atFuelStop = tickPlayerFuelJourney(context, navigationBefore, navigationSnapshot);
+  const afterFuel = context.navigation.getSnapshot();
+  if (!navigationBefore.isTravelling && afterFuel.isTravelling)
+    reportLegalDeparture(context, navigationBefore.currentLocationId, afterFuel.destinationId);
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
