@@ -166,6 +166,29 @@ export class SectorLegalRegistry {
     return [...this.sightings].reverse().find((s) => s.shipId === shipId) ?? null;
   }
 
+  exportState() {
+    return { version: 1 as const, sequence: this.sequence, ...this.snapshot() };
+  }
+
+  restoreState(saved: ReturnType<SectorLegalRegistry['exportState']>): boolean {
+    if (!saved || saved.version !== 1) return false;
+    this.registrations.clear();
+    this.charges.length = 0;
+    this.sightings.length = 0;
+    for (const registration of saved.registrations)
+      this.registrations.set(registration.shipId, { ...registration });
+    for (const charge of saved.charges)
+      this.charges.push({ ...charge });
+    for (const sighting of saved.sightings)
+      this.sightings.push({ ...sighting });
+    this.sequence = Math.max(
+      saved.sequence,
+      ...this.charges.map((charge) => Number(charge.id.replace(/^charge-/, '')) || 0),
+      0
+    );
+    return true;
+  }
+
   snapshot() {
     return {
       registrations: [...this.registrations.values()].map((r) => ({ ...r })),
