@@ -221,5 +221,10 @@ assert.match(
   fs.readFileSync(path.join(root, 'src/app/game-controller-campaign-events.ts'), 'utf8'),
   /type: 'game.initialized'/
 );
-assert.match(boarding, /type: 'boarding.ended'/);
+assert.match(boarding, /boardingAfterAction\(result, 'ship'\)/);
+assert.match(boarding, /campaignEvents\.emit\(aftermath\.event\)/);
+assert.match(
+  fs.readFileSync(path.join(root, 'src/systems/boarding/boarding-afteraction.ts'), 'utf8'),
+  /type: 'boarding.ended'/
+);
 console.log('PASS campaign event bus, isolated runtime, versioned snapshots and gameplay hooks');
