@@ -25,10 +25,7 @@ import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
 import { hasMineableDeposits } from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
-import {
-  selectedAsteroid,
-  selectedRouteOptions,
-} from './local-space-scanning';
+import { selectedAsteroid, selectedRouteOptions } from './local-space-scanning';
 import {
   createIdleStationKeepingState,
   resetIdleStationKeeping,
@@ -443,7 +440,14 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateShortRangeScan(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    if (this.scanClock.advanceShort(deltaSeconds, asteroid, this.idleStationKeeping, this.stationKeepingPosition)) {
+    if (
+      this.scanClock.advanceShort(
+        deltaSeconds,
+        asteroid,
+        this.idleStationKeeping,
+        this.stationKeepingPosition
+      )
+    ) {
       this.finishMining();
     }
   }

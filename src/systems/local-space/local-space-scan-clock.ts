@@ -1,13 +1,17 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { runLongRangeAsteroidScan } from './local-space-scanning';
-import { updateIdleStationKeeping, type IdleStationKeepingState } from './local-space-station-keeping';
+import {
+  updateIdleStationKeeping,
+  type IdleStationKeepingState,
+} from './local-space-station-keeping';
 
 /** Own the local long- and short-range sensor clocks independently from navigation. */
 export class LocalSpaceScanClock {
   private longElapsed = 0;
   private shortElapsed = 0;
-  private longParameters: { readonly sensorModifier: number; readonly crewSkill: number } | null = null;
+  private longParameters: { readonly sensorModifier: number; readonly crewSkill: number } | null =
+    null;
 
   constructor(private readonly instance: LocalSpaceInstance) {}
 
@@ -29,7 +33,11 @@ export class LocalSpaceScanClock {
     if (!this.longParameters) return;
     this.longElapsed += seconds;
     if (this.longElapsed < 5) return;
-    runLongRangeAsteroidScan(this.instance, this.longParameters.sensorModifier, this.longParameters.crewSkill);
+    runLongRangeAsteroidScan(
+      this.instance,
+      this.longParameters.sensorModifier,
+      this.longParameters.crewSkill
+    );
     this.longElapsed = 0;
     this.longParameters = null;
   }
