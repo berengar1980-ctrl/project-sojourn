@@ -431,13 +431,12 @@ function reviewLiveRoute(
   travel.distanceTravelled = 0;
 }
 
-export function createNavigationService(
+function initialNavigationRuntime(
   world: WorldMap,
   startLocationId: string,
   initialCruiseSpeed: number
-): NavigationService {
-  let currentWorld = world;
-  const state: NavigationRuntimeState = {
+): NavigationRuntimeState {
+  return {
     currentLocationId: startLocationId,
     pointDestination: null,
     selectedDestinationId: null,
@@ -457,6 +456,32 @@ export function createNavigationService(
     replanCooldown: 0,
     previewCache: null,
   };
+}
+
+function setNavigationThreatContacts(
+  state: NavigationRuntimeState,
+  contacts: readonly RouteThreatContact[]
+): void {
+  const signature = contacts.map((contact) =>
+    contact.kind + ':' +
+    Math.round(contact.position.x / 160) + ':' +
+    Math.round(contact.position.y / 160) + ':' +
+    Math.round((contact.strength ?? 1) * 2)
+  ).join('|');
+  if (signature === state.threatSignature) return;
+  state.threats = [...contacts];
+  state.threatSignature = signature;
+  state.threatRevision += 1;
+  state.previewCache = null;
+}
+
+export function createNavigationService(
+  world: WorldMap,
+  startLocationId: string,
+  initialCruiseSpeed: number
+): NavigationService {
+  let currentWorld = world;
+  const state = initialNavigationRuntime(world, startLocationId, initialCruiseSpeed);
   const snapshot = (): NavigationSnapshot => createSnapshot(currentWorld, state);
 
   const selectDestination = (locationId: string | null): NavigationSnapshot => {
@@ -533,23 +558,7 @@ export function createNavigationService(
       return snapshot();
     },
     setThreatContacts(contacts) {
-      const signature = contacts
-        .map(
-          (contact) =>
-            contact.kind +
-            ':' +
-            Math.round(contact.position.x / 160) +
-            ':' +
-            Math.round(contact.position.y / 160) +
-            ':' +
-            Math.round((contact.strength ?? 1) * 2)
-        )
-        .join('|');
-      if (signature === state.threatSignature) return;
-      state.threats = [...contacts];
-      state.threatSignature = signature;
-      state.threatRevision += 1;
-      state.previewCache = null;
+      setNavigationThreatContacts(state, contacts);
     },
     tick(deltaSeconds) {
       reviewLiveRoute(currentWorld, state, deltaSeconds);
