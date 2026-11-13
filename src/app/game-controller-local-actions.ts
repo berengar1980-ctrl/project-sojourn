@@ -137,9 +137,9 @@ export function createControllerLocalActions(
       const claim = context.economy.asteroidClaims.claim(space.instance.sourceLocationId, asteroid);
       if (!claim || claim.ownerId === 'player') return true;
       return window.confirm(
-        'FREMDKONZESSION – UNBEFUGTER ABBAU!\\n' +
-        'Asteroid: ' + asteroid.id + '\\n' +
-        'Eigentümer: ' + claim.ownerId + '\\n\\n' +
+        'FREMDKONZESSION – UNBEFUGTER ABBAU!\n' +
+        'Asteroid: ' + asteroid.id + '\n' +
+        'Eigentümer: ' + claim.ownerId + '\n\n' +
         'Raubbau kann Geldstrafen und eine Fahndung auslösen. Trotzdem abbauen?'
       );
     },
