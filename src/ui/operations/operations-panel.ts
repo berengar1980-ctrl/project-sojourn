@@ -68,7 +68,7 @@ function blockadeMarkup(m: OperationsModel): string {
     <label>Einsatzdauer<select data-blockade-duration><option>7</option><option selected>10</option><option>14</option></select> Tage</label>
     <fieldset><legend>Verfügbare Korsaren</legend>${m.pirates.map((p) => `<label><input type="checkbox" value="${p.id}" data-blockade-pirate> ${escape(p.name)}</label>`).join('') || 'Zurzeit keine einsatzbereiten Korsaren frei.'}</fieldset>
     <p data-blockade-quote>Wähle eine Einsatzgruppe.</p>${button('order', 'Blockade verbindlich beauftragen', '', !m.port)}
-    ${!m.port ? '<p>Aufträge können im Hafen erteilt werden.</p>' : ''}<ul>${rows || '<li>Keine Blockadeaufträge.</li>'}</ul>
+    <p data-blockade-reason class="operations-hint"></p><ul>${rows || '<li>Keine Blockadeaufträge.</li>'}</ul>
     <p>Handelshäuser · Alarm Veylan ${m.blockades.houseAlarm.veylan ?? 0}/100 · Mercator ${m.blockades.houseAlarm.mercator ?? 0}/100</p>`;
 }
 function miningMarkup(m: OperationsModel): string {
@@ -90,8 +90,9 @@ function miningMarkup(m: OperationsModel): string {
 }
 function patrolMarkup(m: OperationsModel): string {
   const p = m.patrol;
-  return `<h3>Sicherheitsmandat</h3><p>${p.mandate ? 'Im Dienst' : 'Kein Mandat'} · ${p.rank} · Ruf ${p.reputation} · ${p.completed} Einsätze abgeschlossen</p>
+  return `<h3>Patrouillendienst</h3><p>Für ein Sicherheitsmandat brauchst du ein Patrouillenschiff in einem zivilen Hafen.</p><p>${p.mandate ? 'Im Dienst' : 'Kein Mandat'} · ${p.rank} · Ruf ${p.reputation} · ${p.completed} Einsätze abgeschlossen</p>
     ${button(p.mandate ? 'resign' : 'enlist', p.mandate ? 'Dienst quittieren' : 'Sicherheitsmandat übernehmen', '', !m.port || !m.patrolShip)}
+    ${!m.port ? '<p class="operations-hint">Gesperrt: zuerst an einem zivilen Hafen andocken.</p>' : !m.patrolShip ? '<p class="operations-hint">Gesperrt: ein Patrouillenschiff als aktives Schiff wählen.</p>' : ''}
     <p>Mandat und Aufträge am zivilen Hafen mit einem Patrouillenschiff. Angriffe auf zivile Schiffe entziehen das Mandat. Handelswege gelten nach 12 Sekunden Aufenthalt ohne aktive Korsaren am Ziel als gesichert. Einsätze verfallen nach 14 Tagen; Auszahlung am Hafen.</p>
     ${p.assignments
       .slice(-6)
@@ -120,7 +121,8 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
   options.root.append(launch, dialog);
   let tab = 'blockades';
   let message = '';
-  const model = () => options.model();
+  let currentModel: OperationsModel | null = null;
+  const model = () => currentModel ?? (currentModel = options.model());
   const value = (selector: string) =>
     dialog.querySelector<HTMLSelectElement>(selector)?.value ?? '';
   const pirates = () =>
@@ -138,15 +140,26 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
   }
   function quote() {
     const cost = options.quote(pirates(), Number(value('[data-blockade-duration]')));
+    const m = model();
     const label = dialog.querySelector('[data-blockade-quote]');
     if (label)
       label.textContent =
         cost === null ? 'Wähle 1–3 verfügbare Korsaren.' : 'Gesamtpreis: ' + money(cost);
     const order = dialog.querySelector<HTMLButtonElement>('[data-op="order"]');
-    if (order) order.disabled = !model().port || cost === null || cost > model().credits;
+    if (order) order.disabled = !m.port || cost === null || cost > m.credits;
+    const reason = dialog.querySelector('[data-blockade-reason]');
+    if (reason)
+      reason.textContent = !m.port
+        ? 'Gesperrt: zuerst an einem zivilen Hafen andocken.'
+        : cost === null
+          ? 'Wähle 1–3 verfügbare Korsaren.'
+          : cost > m.credits
+            ? 'Gesperrt: nicht genügend Credits.'
+            : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
   }
   function render() {
-    const m = model();
+    currentModel = options.model();
+    const m = currentModel;
     dialog.innerHTML = `<header><h2>Aufträge & Konzessionen</h2><button type="button" data-close>Schließen</button></header><p>${money(m.credits)} · Tag ${m.blockades.day}</p>
       <nav>${[
         ['blockades', 'Blockaden'],
@@ -158,7 +171,7 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
             `<button type="button" data-tab="${id}" aria-pressed="${tab === id}">${label}</button>`
         )
         .join('')}</nav>
-      <p role="status">${escape(message)}</p><section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'mining' ? miningMarkup(m) : patrolMarkup(m)}</section>`;
+      ${message ? `<p role="status">${escape(message)}</p>` : ''}<section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'mining' ? miningMarkup(m) : patrolMarkup(m)}</section>`;
     resources();
     quote();
   }
