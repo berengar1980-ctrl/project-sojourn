@@ -59,9 +59,13 @@ assert.equal(bandAt(2240, 3220), 1, 'industrial route includes a green pocket');
 assert.equal(bandAt(820, 4550), 3, 'Outer Shards retain red danger');
 assert.equal(bandAt(3100, 2600), 3, 'Solis red crossing forces meaningful route choices');
 
-// Matching source and gameplay: both share one evaluator; no independent visual-only hazards.
+// Gameplay uses exact danger geometry; the nebula samples the same lobe and corridor
+// definitions with intentionally soft edges rather than drawing hard zone categories.
 assert(
-  readModuleSource(root, 'src/ui/map/star-map-danger-regions.ts').includes('fixedDangerAtPoint(')
+  readModuleSource(root, 'src/ui/map/star-map-danger-regions.ts').includes('sampleDangerFog(') &&
+    readModuleSource(root, 'src/ui/map/star-map-danger-fog-field.ts').includes(
+      'distanceToDangerCorridor('
+    )
 );
 assert(
   readModuleSource(root, 'src/systems/navigation/route-planner.ts').includes('fixedDangerAtPoint(')
