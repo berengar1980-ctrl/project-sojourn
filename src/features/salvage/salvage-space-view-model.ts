@@ -189,6 +189,10 @@ function salvageWreckKindLabel(
         : wreckKindLabel(wreck.kind);
 }
 
+function wreckBoardingAttempts(wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]): number {
+  return wreck.boardingAttempts ?? 0;
+}
+
 function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckView[] {
   return snapshot.field.wrecks.map((wreck): SalvageWreckView => {
     const componentDefinition =
@@ -214,7 +218,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       inspected: wreck.inspected,
       boardingCleared: wreck.boardingCleared === true,
       boardingHostilesRemaining: wreckDefenderCount(wreck),
-      boardingAttempts: wreck.boardingAttempts ?? 0,
+      boardingAttempts: wreckBoardingAttempts(wreck),
       boardable: wreckCanBoard(wreck),
       scanLevel: wreck.inspected ? 'analyzed' : (wreck.scanLevel ?? 'unscanned'),
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),
