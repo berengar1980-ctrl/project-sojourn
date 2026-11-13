@@ -9,7 +9,11 @@ import type { WorldPoint } from '../../core/world-types';
 import { distance } from './local-space-motion';
 import { calculateMiningImpact } from './mining-impact';
 
-export type MiningChunkCollector = (resourceId: string, amount: number) => number;
+export type MiningChunkCollector = (
+  resourceId: string,
+  amount: number,
+  sourceAsteroidId?: string
+) => number;
 
 export interface CollectedMiningSample {
   readonly sourceAsteroidId: string;
@@ -166,7 +170,7 @@ export function advanceMiningChunk(
 export function collectMiningChunk(chunk: MiningChunk, collector?: MiningChunkCollector): number {
   const accepted = Math.max(
     0,
-    Math.min(chunk.amount, Math.floor(collector?.(chunk.resourceId, chunk.amount) ?? chunk.amount))
+    Math.min(chunk.amount, Math.floor(collector?.(chunk.resourceId, chunk.amount, chunk.sourceAsteroidId) ?? chunk.amount))
   );
   chunk.amount -= accepted;
   return accepted;
