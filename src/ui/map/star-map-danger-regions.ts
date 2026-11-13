@@ -1,95 +1,99 @@
 import type { WorldRegion } from '../../core/world-types';
-import {
-  fixedDangerAtPoint,
-  pointInsideDangerRegion,
-} from '../../systems/navigation/fixed-danger-geography';
 import type { MapCamera } from './map-camera';
+import { sampleDangerFog } from './star-map-danger-fog-field';
 
 type DangerBand = 'green' | 'yellow' | 'red';
+
 interface CachedDangerClouds {
-  readonly width: number;
-  readonly height: number;
+  readonly worldWidth: number;
+  readonly worldHeight: number;
   readonly defaultDanger: number;
+  readonly originX: number;
+  readonly originY: number;
+  readonly extentWidth: number;
+  readonly extentHeight: number;
   readonly layers: Readonly<Record<DangerBand, HTMLCanvasElement>>;
 }
 
-// The cloud texture is baked once for the static world geometry, never on every map redraw.
 const cloudCache = new WeakMap<readonly WorldRegion[], CachedDangerClouds>();
-const palettes: Readonly<Record<DangerBand, readonly [number, number, number]>> = {
-  green: [50, 161, 106],
-  yellow: [207, 161, 55],
-  red: [191, 70, 68],
+
+const palettes: Readonly<Record<DangerBand, readonly [number, number, number, number]>> = {
+  green: [34, 143, 112, 147],
+  yellow: [184, 151, 67, 155],
+  red: [164, 65, 69, 86],
 };
 
-function createCloudLayer(width: number, height: number): HTMLCanvasElement {
+function newFogCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   return canvas;
 }
 
-function cloudDensity(x: number, y: number): number {
-  // Slow-frequency deterministic bands give a feathered nebula texture, not flat colored discs.
-  return Math.max(
-    0.4,
-    Math.min(
-      1.05,
-      0.77 +
-        Math.sin(x * 0.0047 + y * 0.0021) * 0.13 +
-        Math.sin(x * 0.0082 - y * 0.0036) * 0.09 +
-        Math.cos(x * 0.0027 + y * 0.0073) * 0.08
-    )
-  );
-}
-
+/**
+ * Unlike a world-sized rectangle, the green/yellow fog atlas extends far past
+ * both the navigable sector and the overview camera's fitted location bounds.
+ * Its outermost pixels are transparent, so panning/zooming never shows a seam.
+ */
 function buildDangerClouds(
   regions: readonly WorldRegion[],
   worldWidth: number,
   worldHeight: number,
   defaultDanger: 0 | 1 | 2 | 3
 ): CachedDangerClouds {
-  const pixelWidth = Math.max(2, Math.ceil(worldWidth / 26));
-  const pixelHeight = Math.max(2, Math.ceil(worldHeight / 26));
+  const paddingX = Math.max(1600, worldWidth * 0.56);
+  const paddingY = Math.max(1500, worldHeight * 0.56);
+  const originX = -paddingX;
+  const originY = -paddingY;
+  const extentWidth = worldWidth + paddingX * 2;
+  const extentHeight = worldHeight + paddingY * 2;
+  const pixelWidth = Math.max(2, Math.ceil(extentWidth / 16));
+  const pixelHeight = Math.max(2, Math.ceil(extentHeight / 16));
   const layers = {
-    green: createCloudLayer(pixelWidth, pixelHeight),
-    yellow: createCloudLayer(pixelWidth, pixelHeight),
-    red: createCloudLayer(pixelWidth, pixelHeight),
+    green: newFogCanvas(pixelWidth, pixelHeight),
+    yellow: newFogCanvas(pixelWidth, pixelHeight),
+    red: newFogCanvas(pixelWidth, pixelHeight),
   };
-  const images = (['green', 'yellow', 'red'] as const).map((band) => {
-    const ctx = layers[band].getContext('2d');
-    if (!ctx) throw new Error('Danger cloud canvas unavailable');
-    return { band, ctx, image: ctx.createImageData(pixelWidth, pixelHeight) };
+
+  const buffers = (['yellow', 'green', 'red'] as const).map((band) => {
+    const context = layers[band].getContext('2d');
+    if (!context) throw new Error('Danger fog canvas unavailable');
+    return { band, context, image: context.createImageData(pixelWidth, pixelHeight) };
   });
 
   for (let row = 0; row < pixelHeight; row += 1) {
-    const y = ((row + 0.5) * worldHeight) / pixelHeight;
+    const y = originY + ((row + 0.5) * extentHeight) / pixelHeight;
     for (let col = 0; col < pixelWidth; col += 1) {
-      const x = ((col + 0.5) * worldWidth) / pixelWidth;
-      const point = { x, y };
-      const danger = fixedDangerAtPoint(regions, point, defaultDanger);
-      const band: DangerBand = danger >= 3 ? 'red' : danger === 2 ? 'yellow' : 'green';
-      const highlightedPocket =
-        danger === 3 &&
-        regions.some(
-          (region) => region.dangerLevel === 3 && pointInsideDangerRegion(region, point)
-        );
-      const noise = cloudDensity(x, y);
-      const opacity = Math.round(
-        (band === 'red' ? (highlightedPocket ? 68 : 39) : band === 'yellow' ? 72 : 62) * noise
-      );
-      const { image } = images.find((entry) => entry.band === band)!;
+      const x = originX + ((col + 0.5) * extentWidth) / pixelWidth;
+      const fog = sampleDangerFog(regions, { x, y });
       const index = (row * pixelWidth + col) * 4;
-      image.data[index] = palettes[band][0];
-      image.data[index + 1] = palettes[band][1];
-      image.data[index + 2] = palettes[band][2];
-      image.data[index + 3] = opacity;
+      for (const buffer of buffers) {
+        // Narrows is already a red world. Red pirate territories carve gaps in
+        // the green/yellow clouds; no darker red circle is painted on the base.
+        const weight = buffer.band === 'red' && defaultDanger === 3 ? 0 : fog[buffer.band];
+        if (weight < 0.005) continue;
+        const [r, g, b, alpha] = palettes[buffer.band];
+        buffer.image.data[index] = r;
+        buffer.image.data[index + 1] = g;
+        buffer.image.data[index + 2] = b;
+        buffer.image.data[index + 3] = Math.round(alpha * weight);
+      }
     }
   }
-  for (const layer of images) layer.ctx.putImageData(layer.image, 0, 0);
-  return { width: worldWidth, height: worldHeight, defaultDanger, layers };
+  for (const buffer of buffers) buffer.context.putImageData(buffer.image, 0, 0);
+  return {
+    worldWidth,
+    worldHeight,
+    defaultDanger,
+    originX,
+    originY,
+    extentWidth,
+    extentHeight,
+    layers,
+  };
 }
 
-/** Identical fixed geometry drives route scoring, enemy danger and map colors. */
+/** Voidbound-style red background under overlapping, organically feathered fog. */
 export function drawStarMapDangerRegions(
   ctx: CanvasRenderingContext2D,
   camera: MapCamera,
@@ -103,27 +107,42 @@ export function drawStarMapDangerRegions(
   defaultDanger: 0 | 1 | 2 | 3 = 0
 ): void {
   if (!visible) return;
+  ctx.save();
+
+  // Screen-wide base, not clipped to world x=0..width or y=0..height.
+  // This is the ONLY red background in the Narrows, including pirate hotspots.
+  if (defaultDanger === 3 && bands.red) {
+    const ambient = ctx.createLinearGradient(0, 0, width, height);
+    ambient.addColorStop(0, 'rgba(133,52,62,0.095)');
+    ambient.addColorStop(0.5, 'rgba(143,57,64,0.115)');
+    ambient.addColorStop(1, 'rgba(122,49,60,0.085)');
+    ctx.fillStyle = ambient;
+    ctx.fillRect(0, 0, width, height);
+  }
+
   let cached = cloudCache.get(regions);
   if (
     !cached ||
-    cached.width !== worldWidth ||
-    cached.height !== worldHeight ||
+    cached.worldWidth !== worldWidth ||
+    cached.worldHeight !== worldHeight ||
     cached.defaultDanger !== defaultDanger
   ) {
     cached = buildDangerClouds(regions, worldWidth, worldHeight, defaultDanger);
     cloudCache.set(regions, cached);
   }
-  const topLeft = camera.worldToScreen({ x: 0, y: 0 }, width, height);
-  ctx.save();
+
+  const origin = camera.worldToScreen({ x: cached.originX, y: cached.originY }, width, height);
   ctx.imageSmoothingEnabled = true;
-  for (const band of ['red', 'yellow', 'green'] as const) {
+  // Yellow first, green second: both remain soft; red pockets interrupt without
+  // adding an opaque or darker red stamp over the ambient nebula.
+  for (const band of ['yellow', 'green', 'red'] as const) {
     if (!bands[band]) continue;
     ctx.drawImage(
       cached.layers[band],
-      topLeft.x,
-      topLeft.y,
-      camera.scale(worldWidth),
-      camera.scale(worldHeight)
+      origin.x,
+      origin.y,
+      camera.scale(cached.extentWidth),
+      camera.scale(cached.extentHeight)
     );
   }
   ctx.restore();
