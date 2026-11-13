@@ -58,6 +58,7 @@ import {
   createControllerLog,
   localSeed,
   syncControllerNavigationCrewPerformance,
+  updateSectorNavigationThreats,
 } from './game-controller-models';
 import type { GameControllerOptions, GameController } from './game-controller-types';
 import {
@@ -380,18 +381,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   tickControllerNpcOperations(economy, deltaSeconds);
-  // Current pirate raids and patrol cover affect navigation, not the permanent map zones.
-  context.navigation.setThreatContacts(
-    context.world.inForeignSystem()
-      ? []
-      : economy.sectorNpcs.npcs
-          .filter((npc) => npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
-          .map((npc) => ({
-            position: economy.sectorNpcs.livePosition(npc),
-            kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
-            strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
-          }))
-  );
+  updateSectorNavigationThreats(context);
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
