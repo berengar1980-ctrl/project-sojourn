@@ -3,7 +3,6 @@ import { observeControllerOperations, operationsCombatHooks } from './game-contr
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
 import {
-  createPlayerProfile,
   snapshotPlayerProfile,
   withPlayerShipName,
 } from '../core/player-profile';
@@ -13,13 +12,14 @@ import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary'
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { createCrewRosterService } from '../systems/crew';
 import { createStarMapEngagementService } from '../systems/combat';
-import { createShipLoadoutService, createShipOwnershipService } from '../systems/ships';
+import { createShipLoadoutService } from '../systems/ships';
 import { createShipOperatingService } from '../systems/ships/ship-operating-costs';
 import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
 import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
@@ -32,7 +32,6 @@ import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
 import type {
   ControllerRuntimeContext,
-  ControllerRuntimeState,
 } from './game-controller-runtime-types';
 import {
   tickEconomy,
@@ -420,28 +419,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     systemLog.write(message)
   );
   economy.smuggling.activateShip(options.ship.id);
-  const state: ControllerRuntimeState = {
-    activeShip: options.ship,
-    starterShipId: options.ship.id,
-    playerProfile: createPlayerProfile(options.playerProfile),
-    shipOwnership: createShipOwnershipService(options.ship.id, economy.trade),
-    mode: 'star-map',
-    panels: { star: null, local: null, port: null },
-    shipSwitcher: null,
-    localSpace: null,
-    localNpcMining: null,
-    salvageScene: null,
-    combatPanel: null,
-    boardingPanel: null,
-    embeddedCombat: null,
-    selectedNpcId: null,
-    localSpaceSeed: 0,
-    salvageSpaceSeed: 0,
-    salvageEventFields: new Map(),
-    visitCounter: 0,
-    previousLocationId: options.navigation.getSnapshot().currentLocationId,
-    displayedWorldId: '',
-  };
+  const state = createInitialControllerState(options, economy);
 
   const crew = createCrewRosterService(state.playerProfile);
   const loadouts = createShipLoadoutService();
