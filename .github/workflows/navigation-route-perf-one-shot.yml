@@ -1,0 +1,44 @@
+name: Navigation route one-shot format and economic smoke
+
+on:
+  push:
+    branches:
+      - feature/navigation-danger-crew-replanning
+    paths:
+      - .github/workflows/navigation-route-perf-one-shot.yml
+
+permissions:
+  contents: write
+
+jobs:
+  route-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/navigation-danger-crew-replanning
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format optimized route planner and its test
+        run: npx prettier --write src/systems/navigation/route-planner.ts tests/navigation/live-threat-routing.test.cjs
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet -- src/systems/navigation/route-planner.ts tests/navigation/live-threat-routing.test.cjs; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add src/systems/navigation/route-planner.ts tests/navigation/live-threat-routing.test.cjs
+            git commit -m "style(navigation): format optimized dynamic route planner"
+            git push origin HEAD:feature/navigation-danger-crew-replanning
+          fi
+      - name: Navigation regression tests
+        run: |
+          node tests/navigation/live-threat-routing.test.cjs
+          node tests/navigation/danger-routing.test.cjs
+      - name: Profile 90-day NPC economy with dynamic routing
+        run: |
+          time env SOJOURN_LONGRUN_DAYS=90 node tests/economy/npc-economy-longrun.test.cjs
