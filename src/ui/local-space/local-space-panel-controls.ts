@@ -21,6 +21,7 @@ export interface LocalSpacePanelOptions {
   readonly onNavigate: (target: WorldPoint) => Promise<'safe' | 'risk' | false>;
   readonly log: SystemLogService;
   readonly onStartMining: () => Promise<void>;
+  readonly onToggleAsteroidClaim: () => void;
   readonly onMiningResourceSelection: (resourceIds: readonly string[] | null) => void;
   readonly onLongRangeScan: () => void;
   readonly onShortRangeScan: () => Promise<void>;
@@ -49,6 +50,7 @@ interface LocalSpaceControls {
   readonly oreBar: HTMLElement;
   readonly resourceSelector: HTMLElement;
   readonly mineButton: HTMLButtonElement;
+  readonly claimButton: HTMLButtonElement;
   readonly shortScanButton: HTMLButtonElement;
   readonly attackButton: HTMLButtonElement;
   readonly longScanButton: HTMLButtonElement;
@@ -86,6 +88,7 @@ export function createLocalSpaceShell(options: LocalSpacePanelOptions): HTMLElem
     '<div class="mining-resource-selector" hidden></div>',
     '<button class="short-scan-button" type="button">NAHBEREICHSSCAN</button>',
     '<button class="mine-button" type="button">MINING</button>',
+    '<button class="asteroid-claim-button" type="button" hidden>KONZESSION REGISTRIEREN</button>',
     '<button class="local-attack-button" type="button" hidden>ANGREIFEN</button></div></div>',
   ].join('');
   options.root.replaceChildren(shell);
@@ -107,6 +110,7 @@ export function localSpaceControls(shell: HTMLElement): LocalSpaceControls {
     oreBar: query<HTMLElement>('.local-ore-bar > div'),
     resourceSelector: query<HTMLElement>('.mining-resource-selector'),
     mineButton: query<HTMLButtonElement>('.mine-button'),
+    claimButton: query<HTMLButtonElement>('.asteroid-claim-button'),
     shortScanButton: query<HTMLButtonElement>('.short-scan-button'),
     attackButton: query<HTMLButtonElement>('.local-attack-button'),
     longScanButton: query<HTMLButtonElement>('.long-scan-button'),
