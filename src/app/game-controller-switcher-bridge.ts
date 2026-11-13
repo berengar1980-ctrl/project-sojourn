@@ -1,3 +1,4 @@
+import { mountControllerOperations } from './game-controller-operations';
 import { withPlayerShipName } from '../core/player-profile';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 import { canSwitchSmugglingShip } from './game-controller-customs';
@@ -9,7 +10,7 @@ export function mountControllerShipSwitcher(
 ): void {
   const { state } = context;
   state.shipSwitcher?.destroy();
-  state.shipSwitcher = createControllerShipSwitcher(
+  const switcher = createControllerShipSwitcher(
     context.root,
     state.activeShip,
     context.navigation,
@@ -21,4 +22,12 @@ export function mountControllerShipSwitcher(
       onSceneRefresh(state.mode);
     }
   );
+  const operations = mountControllerOperations(context, () => onSceneRefresh(state.mode));
+  state.shipSwitcher = {
+    update: switcher.update,
+    destroy() {
+      switcher.destroy();
+      operations.destroy();
+    },
+  };
 }

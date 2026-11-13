@@ -72,6 +72,11 @@ function completeLoading(
     return;
   }
 
+  if (options.canTrade?.(npc, pending.destinationId, pending.resourceId) === false) {
+    delete autonomy.pendingTrade;
+    beginNpcAutonomyPhase(npc, 'thinking');
+    return;
+  }
   const capacity =
     npc.sideTradePlan && pending.reason === 'Nebenhandel'
       ? (npc.normalCargoCapacity ?? npc.cargoCapacity)
@@ -121,6 +126,11 @@ function completeUnloading(
     return;
   }
 
+  if (options.canTrade?.(npc, npc.locationId, resourceId) === false) {
+    delete autonomy.pendingSaleResourceId;
+    beginNpcAutonomyPhase(npc, 'thinking');
+    return;
+  }
   const requested =
     npc.sideTradePlan?.resourceId === resourceId
       ? npc.sideTradePlan.quantity
@@ -266,7 +276,8 @@ function advanceNpcActivity(
 function abstractWorkerDay(
   npc: NpcEconomyState,
   allocator: PhysicalResourceAllocator,
-  day: number
+  day: number,
+  options: NpcEconomyServiceOptions
 ): void {
   const autonomy = ensureNpcAutonomy(npc);
   if (autonomy.phase !== 'working') return;
@@ -275,7 +286,9 @@ function abstractWorkerDay(
   const candidates = npc.workResourceIds;
   if (candidates.length === 0) return;
   const resourceId = candidates[day % candidates.length]!;
-  const wanted = Math.min(cargoFree(npc), npc.role === 'miner' ? 8 : 5);
+  const base = Math.min(cargoFree(npc), npc.role === 'miner' ? 8 : 5);
+  const wanted =
+    npc.role === 'miner' ? (options.miningAllowance?.(npc, resourceId, base) ?? base) : base;
   if (wanted <= 0) {
     beginNpcAutonomyPhase(npc, 'thinking');
     return;
@@ -286,6 +299,7 @@ function abstractWorkerDay(
       : allocator.createMinedResource(resourceId, wanted);
   if (allocated > 0) {
     npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
+    if (npc.role === 'miner') options.onMined?.(npc, resourceId, allocated);
   }
   if (cargoFree(npc) <= 0) beginNpcAutonomyPhase(npc, 'thinking');
 }
@@ -333,7 +347,7 @@ export function createNpcEconomyService(
         if (options.travel?.isTravelling(npc)) continue;
         observeNpcMarket(npc, markets, npc.locationId, current);
         if (npc.role === 'miner' || npc.role === 'salvager') {
-          abstractWorkerDay(npc, allocator, current);
+          abstractWorkerDay(npc, allocator, current, options);
         }
       }
     }
@@ -344,10 +358,15 @@ export function createNpcEconomyService(
     npcs,
     mineLocal(npc, resourceId, requestedQuantity) {
       beginNpcAutonomyPhase(npc, 'working', 0);
-      const wanted = Math.min(quantity(requestedQuantity), cargoFree(npc));
+      const wanted = Math.min(
+        quantity(requestedQuantity),
+        cargoFree(npc),
+        options.miningAllowance?.(npc, resourceId, requestedQuantity) ?? requestedQuantity
+      );
       if (wanted <= 0) return 0;
       const allocated = allocator.createMinedResource(resourceId, wanted);
       if (allocated <= 0) return 0;
+      options.onMined?.(npc, resourceId, allocated);
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
       return allocated;
     },
@@ -370,6 +389,7 @@ export function createNpcEconomyService(
       const dt = Math.min(deltaSeconds, 0.25);
       for (const npc of npcs) {
         if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
+        if (options.isManaged?.(npc)) continue;
         advanceNpcActivity(npc, dt, markets, resources, positions, Math.max(0, lastDay), options);
       }
     },

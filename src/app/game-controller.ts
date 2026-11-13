@@ -1,3 +1,5 @@
+import { tickControllerNpcOperations } from './game-controller-npc-tick';
+import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
 import {
@@ -75,7 +77,7 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   });
 }
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
-  const { root, state } = context;
+  const { state } = context;
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
@@ -89,15 +91,15 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
   context.audio.clearPlayerRcs();
   state.panels.star = createControllerStarPanel({
     ...context,
-    root: context.root,
-    navigation: context.navigation,
     world: () => context.world.world(),
     exitLocationId: () => context.world.exitLocationId(),
     returnFromCampaignSystem: () => context.world.returnFromSystem(),
     log: context.systemLog,
     getModel: () => controllerStarModel(context),
-    onEnterLocalSpace: () => runSceneZoomTransition(root, () => mountControllerMining(context)),
-    onEnterSalvageSpace: () => runSceneZoomTransition(root, () => mountControllerSalvage(context)),
+    onEnterLocalSpace: () =>
+      runSceneZoomTransition(context.root, () => mountControllerMining(context)),
+    onEnterSalvageSpace: () =>
+      runSceneZoomTransition(context.root, () => mountControllerSalvage(context)),
     onSelectNpc: (id) => {
       state.selectedNpcId = id || null;
       if (id) context.navigation.selectDestination(null);
@@ -377,10 +379,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (tickCustoms(context)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
-  economy.sectorNpcs.tick(deltaSeconds);
-  economy.npcSmuggling.tick(deltaSeconds);
-  economy.npcSalvageEvents.tick();
-  economy.npcs.tick(deltaSeconds);
+  tickControllerNpcOperations(economy, deltaSeconds);
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
@@ -390,6 +389,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.engagements.tick(deltaSeconds);
   resolveControllerCombat(context);
   const currentLocationId = navigationSnapshot.currentLocationId;
+  observeControllerOperations(context, deltaSeconds);
   if (!navigationSnapshot.isTravelling && state.previousLocationId !== currentLocationId) {
     if (!atFuelStop) completeDistressTowOnArrival(context, currentLocationId);
   }
@@ -448,8 +448,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     isPlayerInCampaignSystem: () => foreignWorld(),
-    playerProtectedFromPirate: (npc) =>
-      Boolean(npc.pirate) && economy.protectsPirate(npc.factionId),
+    ...operationsCombatHooks(economy),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),

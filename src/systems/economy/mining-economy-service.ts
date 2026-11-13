@@ -34,19 +34,29 @@ export interface MiningEconomyService {
 
 export function createMiningEconomyService(
   allocator: PhysicalResourceAllocator,
-  cargo: PlayerCargoReceiver
+  cargo: PlayerCargoReceiver,
+  options: {
+    allowance?: (id: string, amount: number, origin?: string) => number;
+    onCollected?: (id: string, amount: number, origin?: string) => void;
+  } = {}
 ): MiningEconomyService {
   return {
     collect(resourceId, requestedQuantity, cargoCapacityTons, originId) {
       const requested = finiteInteger(requestedQuantity);
       const free = Math.max(0, finiteInteger(cargoCapacityTons) - cargoUsed(cargo.player));
-      const wanted = Math.min(requested, free);
+      const wanted = Math.min(
+        requested,
+        free,
+        options.allowance?.(resourceId, requested, originId) ?? requested
+      );
       if (wanted <= 0) return 0;
 
       const allocated = allocator.createMinedResource(resourceId, wanted);
       if (allocated <= 0) return 0;
 
-      return cargo.receiveCargo(resourceId, allocated, cargoCapacityTons, originId);
+      const collected = cargo.receiveCargo(resourceId, allocated, cargoCapacityTons, originId);
+      options.onCollected?.(resourceId, collected, originId);
+      return collected;
     },
   };
 }
