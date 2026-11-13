@@ -2,6 +2,7 @@ import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-ty
 import { BlockadeService } from '../systems/operations/blockade-service';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
+import { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { PatrolCareerService } from '../systems/operations/patrol-career-service';
 import { economyResources } from '../data/economy/economy-resources';
 import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
@@ -78,6 +79,7 @@ export interface ControllerEconomy {
   readonly blockades: BlockadeService;
   readonly asteroidClaims: AsteroidClaimRegistry;
   readonly legal: SectorLegalRegistry;
+  readonly securityDrones: Map<string, AsteroidSecurityDrone>;
   readonly patrol: PatrolCareerService;
   protectsPirate(factionId?: string): boolean;
   readonly markets: EconomyMarketService;
@@ -210,6 +212,7 @@ export function createControllerEconomy(
     blockades,
     asteroidClaims: new AsteroidClaimRegistry(),
     legal: new SectorLegalRegistry(),
+    securityDrones: new Map<string, AsteroidSecurityDrone>(),
     patrol,
     markets,
     situations,
