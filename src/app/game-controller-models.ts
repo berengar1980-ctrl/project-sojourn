@@ -160,7 +160,7 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
 }
 
 export function controllerLocalModel(context: ControllerRuntimeContext) {
-  return createControllerLocalModel(
+  const model = createControllerLocalModel(
     context.state.localSpace,
     context.state.activeShip,
     context.navigation,
@@ -169,5 +169,14 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     context.state.embeddedCombat === 'local-space'
       ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
       : null
-  );
+  ); 
+  const locationId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
+  const asteroidId = model.selectedAsteroid?.id;
+  const owner =
+    locationId && asteroidId
+      ? context.economy.asteroidClaims.snapshot().claims.find(
+          (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
+        )?.ownerId ?? null
+      : null;
+  return { ...model, selectedAsteroidClaimOwner: owner };
 }
