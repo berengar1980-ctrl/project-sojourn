@@ -148,9 +148,17 @@ function coneEncounter() {
   snapshot.units.find((unit) => unit.id === 'enemy').q = 5;
   snapshot.units.find((unit) => unit.id === 'enemy').r = 3;
   const tactical = combat.createBoardingTacticalService({
-    seed: 16, mapId: 'bulkhead-door', playerUnits: [], enemyUnits: [], restore: snapshot,
+    seed: 16,
+    mapId: 'bulkhead-door',
+    playerUnits: [],
+    enemyUnits: [],
+    restore: snapshot,
   });
-  assert.equal(tactical.fireCone('flame', { q: 5, r: 3 }), null, 'closed bulkhead protects corridor');
+  assert.equal(
+    tactical.fireCone('flame', { q: 5, r: 3 }),
+    null,
+    'closed bulkhead protects corridor'
+  );
   assert.equal(tactical.openDoor('flame', 'door-4-3'), true);
   const hits = tactical.fireCone('flame', { q: 5, r: 3 });
   assert(hits && hits.some((entry) => entry.targetId === 'enemy'));
@@ -158,14 +166,16 @@ function coneEncounter() {
 
 {
   const rifle = profiles.personalRangedProfile('lasgun');
-  const setup = () => combat.createBoardingTacticalService({
-    seed: 55, mapId: 'long-corridor',
-    playerUnits: [
-      combatTemplate('sentry', 'player', rifle),
-      combatTemplate('ally', 'player', rifle),
-    ],
-    enemyUnits: [combatTemplate('intruder', 'enemy', rifle)],
-  });
+  const setup = () =>
+    combat.createBoardingTacticalService({
+      seed: 55,
+      mapId: 'long-corridor',
+      playerUnits: [
+        combatTemplate('sentry', 'player', rifle),
+        combatTemplate('ally', 'player', rifle),
+      ],
+      enemyUnits: [combatTemplate('intruder', 'enemy', rifle)],
+    });
   const saved = structuredClone(setup().getSnapshot());
   saved.activeTeam = 'enemy';
   for (const unit of saved.units) {
@@ -178,8 +188,11 @@ function coneEncounter() {
     }
   }
   const blocked = combat.createBoardingTacticalService({
-    seed: 55, mapId: 'long-corridor',
-    playerUnits: [], enemyUnits: [], restore: saved,
+    seed: 55,
+    mapId: 'long-corridor',
+    playerUnits: [],
+    enemyUnits: [],
+    restore: saved,
   });
   assert(blocked.move('intruder', { q: 5, r: 1 }));
   assert.equal(
@@ -191,8 +204,11 @@ function coneEncounter() {
   suppressed.units.find((unit) => unit.id === 'ally').hp = 0;
   suppressed.units.find((unit) => unit.id === 'sentry').suppressed = true;
   const pinned = combat.createBoardingTacticalService({
-    seed: 55, mapId: 'long-corridor',
-    playerUnits: [], enemyUnits: [], restore: suppressed,
+    seed: 55,
+    mapId: 'long-corridor',
+    playerUnits: [],
+    enemyUnits: [],
+    restore: suppressed,
   });
   assert(pinned.move('intruder', { q: 5, r: 1 }));
   assert.equal(pinned.getSnapshot().units.find((unit) => unit.id === 'sentry').rangedActions, 0);
@@ -211,9 +227,7 @@ function coneEncounter() {
   const retreated = {
     ...snap,
     outcome: 'retreat',
-    units: snap.units.map((unit) =>
-      unit.id === 'raider-a' ? { ...unit, hp: 0 } : unit
-    ),
+    units: snap.units.map((unit) => (unit.id === 'raider-a' ? { ...unit, hp: 0 } : unit)),
   };
   const first = wreckRules.recordWreckBoardingOutcome(wreck, retreated);
   assert.deepEqual(first, { defeated: 1, remaining: 2, secured: false });
@@ -223,8 +237,9 @@ function coneEncounter() {
   const second = wreckRules.recordWreckBoardingOutcome(wreck, {
     ...retreated,
     outcome: 'player_win',
-    units: retreated.units.filter((unit) => unit.team === 'player' || unit.id !== 'raider-behind')
-      .map((unit) => unit.team === 'enemy' ? { ...unit, hp: 0 } : unit),
+    units: retreated.units
+      .filter((unit) => unit.team === 'player' || unit.id !== 'raider-behind')
+      .map((unit) => (unit.team === 'enemy' ? { ...unit, hp: 0 } : unit)),
   });
   assert.deepEqual(second, { defeated: 2, remaining: 0, secured: true });
   assert.equal(wreck.boardingAttempts, 2);
@@ -257,7 +272,10 @@ function coneEncounter() {
 }
 
 const app = fs.readFileSync(path.join(root, 'src/app/game-controller-events.ts'), 'utf8');
-const panel = fs.readFileSync(path.join(root, 'src/ui/boarding/boarding-tactical-panel.ts'), 'utf8');
+const panel = fs.readFileSync(
+  path.join(root, 'src/ui/boarding/boarding-tactical-panel.ts'),
+  'utf8'
+);
 assert(app.includes('recordWreckBoardingOutcome(wreck, snapshot)'));
 assert(app.includes('wreckDefenderCount(wreck)'));
 assert(panel.includes('this.tactical.fireCone'));

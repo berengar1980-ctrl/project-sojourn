@@ -127,7 +127,6 @@ export function boardingTargetHasCover(
   });
 }
 
-
 /** Axial hex coordinates projected into a regular flat 2-D plane. */
 export function boardingHexPlane(hex: BoardingHex): { x: number; y: number } {
   return { x: hex.q + hex.r * 0.5, y: hex.r * 0.8660254037844386 };
