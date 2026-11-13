@@ -68,6 +68,18 @@ assert(
   renderer.includes('ctx.fillRect(0, 0, width, height)'),
   'red ambient field must cover the full current viewport without square world edges'
 );
+const ambientStops = [
+  ...renderer.matchAll(/ambient\.addColorStop\([^\n]*rgba\(\d+,\s*\d+,\s*\d+,\s*(0\.\d+)\)/g),
+].map((match) => Number(match[1]));
+assert.equal(
+  ambientStops.length,
+  3,
+  'full-viewport red ambience needs three smooth gradient stops'
+);
+assert(
+  ambientStops.every((alpha) => alpha >= 0.19 && alpha <= 0.27),
+  'red danger must remain clearly perceptible without an opaque full-screen mask'
+);
 assert(
   renderer.includes('originX = -paddingX') && renderer.includes('originY = -paddingY'),
   'colored cloud atlas must extend past world boundaries'

@@ -7,7 +7,8 @@
   font-family: 'Courier New', ui-monospace, monospace;
 }
 .character-editor__shade {
-  position: absolute;
+  /* Pin the shade to the viewport while the editor scrolls within 100dvh. */
+  position: fixed;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(100deg, #03070bf7, #04080cdb 56%, #04080cad);

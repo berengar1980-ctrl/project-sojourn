@@ -113,9 +113,9 @@ export function drawStarMapDangerRegions(
   // This is the ONLY red background in the Narrows, including pirate hotspots.
   if (defaultDanger === 3 && bands.red) {
     const ambient = ctx.createLinearGradient(0, 0, width, height);
-    ambient.addColorStop(0, 'rgba(133,52,62,0.095)');
-    ambient.addColorStop(0.5, 'rgba(143,57,64,0.115)');
-    ambient.addColorStop(1, 'rgba(122,49,60,0.085)');
+    ambient.addColorStop(0, 'rgba(168,47,65,0.21)');
+    ambient.addColorStop(0.5, 'rgba(178,51,68,0.24)');
+    ambient.addColorStop(1, 'rgba(162,46,63,0.20)');
     ctx.fillStyle = ambient;
     ctx.fillRect(0, 0, width, height);
   }
