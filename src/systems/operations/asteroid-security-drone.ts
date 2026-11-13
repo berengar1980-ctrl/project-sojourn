@@ -34,7 +34,13 @@ export class AsteroidSecurityDrone {
     const points = [...rocks]
       .sort((a, b) => a.id.localeCompare(b.id))
       .filter((_, index) => index % Math.max(1, Math.ceil(rocks.length / 9)) === 0)
-      .map((asteroid) => ({ ...asteroid.position }));
+      .map((asteroid, index) => {
+        const angle = (index * Math.PI * 2) / Math.max(1, rocks.length);
+        return {
+          x: asteroid.position.x + Math.cos(angle) * (asteroid.radius + 95),
+          y: asteroid.position.y + Math.sin(angle) * (asteroid.radius + 95),
+        };
+      });
     this.patrol = points.length > 0
       ? points
       : [{ x: width * 0.25, y: height * 0.25 }, { x: width * 0.75, y: height * 0.75 }];
@@ -61,6 +67,18 @@ export class AsteroidSecurityDrone {
       x: this.position.x + (dx / distance) * move,
       y: this.position.y + (dy / distance) * move,
     };
+    for (const rock of asteroids) {
+      if (!rock.routeBlocking) continue;
+      const px = this.position.x - rock.position.x;
+      const py = this.position.y - rock.position.y;
+      const separation = Math.hypot(px, py);
+      const minimum = rock.radius + 25;
+      if (separation >= minimum) continue;
+      this.position = {
+        x: rock.position.x + (separation > 0 ? px / separation : 1) * minimum,
+        y: rock.position.y + (separation > 0 ? py / separation : 0) * minimum,
+      };
+    }
     if (distance <= move + 0.001) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
 
     const active = new Set(contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId])));
