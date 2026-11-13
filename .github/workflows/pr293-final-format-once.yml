@@ -1,0 +1,41 @@
+name: PR293 final class-weight formatting and smoke
+on:
+  push:
+    branches: [feature/region-pirates-route-safety]
+    paths: [.github/workflows/pr293-final-format-once.yml]
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/region-pirates-route-safety
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format last risk adjustments
+        run: npx prettier --write src/systems/npcs/npc-pirate-classes.ts src/systems/npcs/npc-sector-routing.ts src/app/game-controller-models.ts
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add -u
+            git commit -m "style(pirates): format risk strength and berth danger"
+            git push origin HEAD:feature/region-pirates-route-safety
+          fi
+      - name: Validate pirate classes and typed runtime
+        run: |
+          npm run typecheck
+          npm run deps:check
+          node tests/navigation/route-safety-progress.test.cjs
+          node tests/npcs/pirate-ship-classes.test.cjs
+          node tests/navigation/live-threat-routing.test.cjs
+      - name: Test 90-day NPC economic integrity
+        run: time env SOJOURN_LONGRUN_DAYS=90 node tests/economy/npc-economy-longrun.test.cjs
