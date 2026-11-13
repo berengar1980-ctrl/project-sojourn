@@ -88,7 +88,8 @@ export const boardingMaps = [
   },
 ] as const satisfies readonly BoardingMapDefinition[];
 
-/** Author each salvage interior as a compact, visibly distinct 9×7 deck plan.
+/**
+ * Author each salvage interior as a compact, visibly distinct 9×7 deck plan.
  * # = wall, D = closed bulkhead, . = traversable floor.
  */
 function wreckDeck(
