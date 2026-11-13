@@ -123,9 +123,9 @@ export function inspectPatrolTravel(context: ControllerRuntimeContext, deltaSeco
   if (context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.35)) {
     const debt = context.economy.legal.debt(shipId);
     const pay = context.economy.trade.player.credits >= debt && window.confirm(
-      'DIREKTORUM-PATROUILLE ' + patrol.npc.name + '\\n' +
-      'Schiff zur Fahndung ausgeschrieben.\\n' +
-      'Offene Forderungen: ' + debt + ' CR\\n\\n' +
+      'DIREKTORUM-PATROUILLE ' + patrol.npc.name + '\n' +
+      'Schiff zur Fahndung ausgeschrieben.\n' +
+      'Offene Forderungen: ' + debt + ' CR\n\n' +
       'Alle Forderungen zahlen? ABBRECHEN = Flucht/Widerstand.'
     );
     if (pay) {
