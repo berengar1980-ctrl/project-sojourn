@@ -149,7 +149,6 @@ export class AsteroidClaimRegistry {
     intruderId: string,
     choice: 'paid' | 'fight' | 'escaped'
   ): AsteroidClaimConflict | null {
-    const key = this.key(locationId, asteroidId);
     const disputeKey = this.disputeKey(locationId, asteroidId, intruderId);
     const dispute = this.disputes.get(disputeKey);
     if (!dispute || dispute.status !== 'detected' || dispute.intruderId !== intruderId) return null;
