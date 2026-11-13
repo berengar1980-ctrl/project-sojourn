@@ -178,5 +178,10 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
           (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
         )?.ownerId ?? null
       : null;
-  return { ...model, selectedAsteroidClaimOwner: owner };
+  const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
+  return {
+    ...model,
+    selectedAsteroidClaimOwner: owner,
+    securityDrone: drone?.snapshot() ?? null,
+  };
 }
