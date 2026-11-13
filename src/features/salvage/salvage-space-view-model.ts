@@ -1,7 +1,7 @@
 import type { DistressRammingState } from '../../systems/salvage/distress-ramming-physics';
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
-import { wreckCanBoard } from '../../systems/salvage/salvage-boarding-rules';
+import { wreckCanBoard, wreckDefenderCount } from '../../systems/salvage/salvage-boarding-rules';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { ShieldImpactEffect } from '../../core/shield-types';
 import type {
@@ -53,6 +53,8 @@ export interface SalvageWreckView {
   readonly qualityLabel: string;
   readonly inspected: boolean;
   readonly boardingCleared: boolean;
+  readonly boardingHostilesRemaining: number;
+  readonly boardingAttempts: number;
   readonly boardable: boolean;
   readonly scanLevel: 'unscanned' | 'surveyed' | 'analyzed';
   readonly depleted: boolean;
@@ -211,6 +213,8 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       qualityLabel: qualityLabel(wreck.quality),
       inspected: wreck.inspected,
       boardingCleared: wreck.boardingCleared === true,
+      boardingHostilesRemaining: wreckDefenderCount(wreck),
+      boardingAttempts: wreck.boardingAttempts ?? 0,
       boardable: wreckCanBoard(wreck),
       scanLevel: wreck.inspected ? 'analyzed' : (wreck.scanLevel ?? 'unscanned'),
       depleted: wreck.resources.every((entry) => entry.remainingAmount <= 0),

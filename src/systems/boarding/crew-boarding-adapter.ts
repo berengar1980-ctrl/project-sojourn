@@ -126,6 +126,7 @@ export function createCrewBoardingEncounter(options: {
     move: (unitId, target) => base.move(unitId, target),
     openDoor: (unitId, doorId) => base.openDoor(unitId, doorId),
     shoot: (attackerId, targetId) => base.shoot(attackerId, targetId),
+    fireCone: (attackerId, aim) => base.fireCone(attackerId, aim),
     melee: (attackerId, targetId) => base.melee(attackerId, targetId),
     suppress: (attackerId, targetId) => base.suppress(attackerId, targetId),
     suppressArea: (unitId, center) => base.suppressArea(unitId, center),
