@@ -10,6 +10,7 @@ import {
   crewBoardingUnits,
 } from '../systems/boarding/crew-boarding-adapter';
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
+import { boardingAfterAction } from '../systems/boarding/boarding-afteraction';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
@@ -87,12 +88,16 @@ export function startCombatBoarding(
   state.boardingPanel = createBoardingTacticalPanel({
     root: context.root,
     encounter,
+    missionTitle: 'Enterkampf · ' + enemyName,
+    missionBriefing: 'Schiffsenterung · Rückzug löst den Greifhaken und setzt das Raumgefecht fort.',
     onFinish: (result) => {
+      const aftermath = boardingAfterAction(result, 'ship');
+      context.systemLog.write(aftermath.report);
       if (result.outcome === 'retreat') {
         const combat = context.engagements.activePlayerCombat();
         if (combat?.resumeAfterBoarding()) {
           context.systemLog.write('BOARDING > RUECKZUG · RAUMKAMPF WIRD FORTGESETZT');
-          context.campaignEvents.emit({ type: 'boarding.ended', outcome: 'draw' });
+          context.campaignEvents.emit(aftermath.event);
           state.boardingPanel?.destroy();
           state.boardingPanel = null;
           state.mode = 'combat';
@@ -113,15 +118,7 @@ export function startCombatBoarding(
         context.systemLog.write('BOARDING > VERTEIDIGUNG VERLOREN · BERGUNG ZUR WERFT');
       }
       context.systemLog.write('BOARDING > ' + result.outcome.toUpperCase());
-      context.campaignEvents.emit({
-        type: 'boarding.ended',
-        outcome:
-          result.outcome === 'player_win'
-            ? 'player_win'
-            : result.outcome === 'enemy_win'
-              ? 'enemy_win'
-              : 'draw',
-      });
+      context.campaignEvents.emit(aftermath.event);
       if (result.outcome === 'player_win' || result.outcome === 'enemy_win') {
         emitCampaignCombatEnded(context.campaignEvents, {
           ...snapshot,
