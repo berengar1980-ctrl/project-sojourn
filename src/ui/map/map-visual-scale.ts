@@ -32,3 +32,13 @@ export function mapLocationVisualRadius(
             : Math.min(30, Math.max(8, location.radius * 0.55));
   return radius * mapSymbolScale(relativeZoom);
 }
+
+export function mapBackgroundSeed(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+  }
+
