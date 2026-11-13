@@ -190,6 +190,8 @@ function createSnapshot(world: WorldMap, state: NavigationRuntimeState): Navigat
     previewRoute: previewRoute(world, state),
     activeRoute: state.travel?.route ?? null,
     routeProfile: state.routeProfile,
+    threatRevision: state.threatRevision,
+    threatContacts: state.threats,
   };
 }
 
