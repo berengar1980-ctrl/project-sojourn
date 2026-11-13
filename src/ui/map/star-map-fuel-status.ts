@@ -30,8 +30,19 @@ export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLEl
     lines.push('ROUTE  ' + number(route.totalFuel) + ' E · ' + distance + ' u');
     lines.push('TANKSTOPPS  ' + (names.length ? names.join(' → ') : 'KEINE'));
     lines.push('UNTERWEGS TANKEN  ' + route.fuelCost.toLocaleString('de-DE') + ' CR');
+    lines.push('ANKUNFTSRESERVE  ' + number(route.arrivalFuel) + ' E');
+    if (fuel.estimatedSeconds !== undefined)
+      lines.push('REISEZEIT (CA.)  ' + number(fuel.estimatedSeconds / 60, 0) + ' MIN');
   } else if (fuel.unreachable) {
     lines.push('ROUTE NICHT ERREICHBAR · REICHWEITE ODER CREDITS');
+  }
+  if (fuel.personalRisk) {
+    const risk = fuel.personalRisk;
+    lines.push('REGIONSGEFAHR  ' + risk.worldDanger + '/3 (DAUERHAFT)');
+    lines.push(
+      'FÜR DEIN SCHIFF  ' + ({ low: 'NIEDRIG', medium: 'MITTEL', high: 'HOCH' } as const)[risk.tier]
+    );
+    lines.push('ERFASSTE PIRATEN  ' + risk.contactCount);
   }
   element.textContent = lines.join('\n');
 }

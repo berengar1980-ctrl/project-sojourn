@@ -3,22 +3,18 @@ import type {
   NpcCombatTargetKind,
   SectorNpcState,
 } from '../../core/npc-types';
-
 import type { WorldMap, WorldPoint } from '../../core/world-types';
-
 import { getShipDefinition } from '../ships';
-
 import { npcOperationalSpeed } from './npc-upgrade-service';
+import { replanNpcTravel } from './npc-sector-live-replan';
 import { npcRecoveryLocation } from './npc-sector-recovery-location';
 import { advanceNpcCombatMovement } from './npc-sector-combat-movement';
-
 import {
   planRouteFromPoint,
   planRouteWithProfile,
   repointRouteEndpoints,
   type RoutePlan,
 } from '../navigation/route-planner';
-
 import {
   hashId,
   nearestLocation,
@@ -30,7 +26,6 @@ import {
   routeProfile,
   npcRouteThreats,
 } from './npc-sector-routing';
-
 import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
 import {
   advanceNpcOrbit,
@@ -45,11 +40,8 @@ import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
-
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
-
 export type { NpcSectorServiceOptions } from './npc-sector-types';
-
 export type { NpcSectorService } from './npc-sector-types';
 
 const COMBAT_RECOVERY_MIN_SECONDS = 45;
@@ -278,6 +270,7 @@ class SectorService implements NpcSectorService {
       fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
+      threatContacts: npcRouteThreats(npc, this.npcs, this.livePosition),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: npc.credits,
@@ -406,6 +399,13 @@ class SectorService implements NpcSectorService {
       : npcOrbitHeading(this.world, npc);
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
+    if (npc.travel)
+      replanNpcTravel(
+        this.world,
+        npc,
+        () => npcRouteThreats(npc, this.npcs, this.livePosition),
+        dt
+      );
     const travel = npc.travel;
     if (!travel) {
       serviceIdleNpc(this.world, npc, this.options);
@@ -488,7 +488,6 @@ class SectorService implements NpcSectorService {
     }
   };
 }
-
 export function createNpcSectorService(
   world: WorldMap,
   npcs: readonly SectorNpcState[],

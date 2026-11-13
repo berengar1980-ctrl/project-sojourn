@@ -1,5 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
+import { pirateHuntAllowedAt, pirateThreatStrength } from './npc-pirate-classes';
 
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 
@@ -41,7 +42,7 @@ export function npcRouteThreats(
     .map((npc) => ({
       position: livePosition(npc),
       kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
-      strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
+      strength: pirateThreatStrength(npc),
     }));
 }
 
@@ -156,6 +157,7 @@ export function pirateHuntDestination(
       (location) =>
         location.id !== npc.locationId &&
         location.id !== homeId &&
+        pirateHuntAllowedAt(npc, location) &&
         (location.activities.trade || location.activities.mine || location.activities.salvage)
     )
     .map((location) => {

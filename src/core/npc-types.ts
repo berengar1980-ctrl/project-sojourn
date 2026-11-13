@@ -35,6 +35,9 @@ export interface NpcTravelState {
   readonly fuelRequired: number;
   readonly profile: NpcTravelProfile;
   readonly refuelStops: readonly string[];
+  /** Latest quantized pressure fingerprint and rate-limited live-route adjustment. */
+  dangerSignature?: string;
+  replanCooldown?: number;
 }
 
 export interface NpcCombatMovementState {
@@ -61,6 +64,8 @@ export interface SectorNpcState extends NpcEconomyState {
   factionId?: NpcFactionId;
   pirate?: boolean;
   pirateMark?: 'broken-spear' | 'black-tide';
+  /** Physical pirate archetype; not a virtual combat difficulty multiplier. */
+  pirateClass?: 'raider' | 'reaver' | 'marauder';
   pirateHuntZoneId?: string;
   pirateHuntCycles?: number;
   /** Risk traders use the same physical cargo and travel economy as other freighters. */

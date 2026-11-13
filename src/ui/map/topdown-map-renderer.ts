@@ -14,6 +14,7 @@ import { mapLocationVisualRadius, mapSymbolScale, mapBackgroundSeed } from './ma
 import { OrbitalMapSceneProjection } from './orbital-map-scene-projection';
 import { NavMapRenderer } from './nav-map-renderer';
 import { drawStarMapDangerRegions } from './star-map-danger-regions';
+import { drawSafeDestinationRings } from './star-map-safe-destination-rings';
 import { drawStarMapWreckMarker } from './star-map-wreck-marker';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
@@ -188,6 +189,8 @@ export class TopdownMapRenderer {
       width,
       height
     );
+    if (this.dangerOverlayVisible)
+      drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
     const playerPoint = this.orbitalProjection.playerPoint(
       this.model,

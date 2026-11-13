@@ -14,6 +14,8 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 
 import { createControllerStarModel } from './game-controller-star-map';
 import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
+import { assessRouteRisk } from '../systems/navigation/route-safety';
+import { pirateThreatStrength } from '../systems/npcs/npc-pirate-classes';
 import { visibleFuelJourneyRoute } from './fuel-journey-route-view';
 
 import type { ControllerRuntimeContext, SceneMode } from './game-controller-runtime-types';
@@ -83,7 +85,7 @@ export function updateSectorNavigationThreats(context: ControllerRuntimeContext)
           .map((npc) => ({
             position: economy.sectorNpcs.livePosition(npc),
             kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
-            strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
+            strength: pirateThreatStrength(npc),
           }))
   );
 }
@@ -132,6 +134,26 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
       capacity: tank.fuelCapacity,
       fuelPerHundred: fuelPerTravelUnit(context) * 100,
       planned,
+      ...(route
+        ? {
+            personalRisk: {
+              ...assessRouteRisk(route, nav.threatContacts, {
+                hull: runtime.hullMaxHp,
+                shield: runtime.shieldMaxHp,
+                piloting: runtime.stationSkills.piloting,
+                sensors: runtime.stationSkills.sensors,
+              }),
+              worldDanger: route.dangerLevel,
+            },
+            ...(planned
+              ? {
+                  estimatedSeconds:
+                    planned.totalDistance /
+                    Math.max(1, context.state.activeShip.navigation.cruiseSpeed),
+                }
+              : {}),
+          }
+        : {}),
       unreachable: Boolean(nav.previewRoute && worldTarget && !forecast),
     },
   };
