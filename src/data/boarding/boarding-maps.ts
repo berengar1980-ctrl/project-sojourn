@@ -117,49 +117,73 @@ const wreckLayouts = [
     id: 'wreck-corridors',
     name: 'Korridorlabyrinth',
     rows: '#########|..#..#...|..#..#...|..D..D...|..#..#...|.........|#########',
-    cover: [{ q: 3, r: 3, side: 3 }, { q: 6, r: 3, side: 3 }],
+    cover: [
+      { q: 3, r: 3, side: 3 },
+      { q: 6, r: 3, side: 3 },
+    ],
   },
   {
     id: 'wreck-double-deck',
     name: 'Doppeldeck-Verbindung',
     rows: '#########|.........|##.###.##|.........|##.###.##|.........|#########',
-    cover: [{ q: 3, r: 1, side: 3 }, { q: 5, r: 5, side: 0 }],
+    cover: [
+      { q: 3, r: 1, side: 3 },
+      { q: 5, r: 5, side: 0 },
+    ],
   },
   {
     id: 'wreck-engine',
     name: 'Maschinenraum',
     rows: '#########|...##....|...##....|.........|...##....|...##....|#########',
-    cover: [{ q: 2, r: 3, side: 0 }, { q: 6, r: 3, side: 3 }],
+    cover: [
+      { q: 2, r: 3, side: 0 },
+      { q: 6, r: 3, side: 3 },
+    ],
   },
   {
     id: 'wreck-cargo',
     name: 'Verstellter Frachtraum',
     rows: '#########|..##.....|......##.|.........|..##.....|.....##..|#########',
-    cover: [{ q: 4, r: 3, side: 3 }, { q: 5, r: 3, side: 0 }],
+    cover: [
+      { q: 4, r: 3, side: 3 },
+      { q: 5, r: 3, side: 0 },
+    ],
   },
   {
     id: 'wreck-quarters',
     name: 'Mannschaftsquartiere',
     rows: '#########|...#.#...|...D.D...|...#.#...|...D.D...|...#.#...|#########',
-    cover: [{ q: 4, r: 3, side: 3 }, { q: 6, r: 4, side: 0 }],
+    cover: [
+      { q: 4, r: 3, side: 3 },
+      { q: 6, r: 4, side: 0 },
+    ],
   },
   {
     id: 'wreck-bridge',
     name: 'Brückendeck',
     rows: '#########|....##...|...#.....|...D.....|...#.....|....##...|#########',
-    cover: [{ q: 5, r: 3, side: 3 }, { q: 6, r: 2, side: 0 }],
+    cover: [
+      { q: 5, r: 3, side: 3 },
+      { q: 6, r: 2, side: 0 },
+    ],
   },
   {
     id: 'wreck-reactor',
     name: 'Reaktorring',
     rows: '#########|...###...|...#.#...|...D.D...|...#.#...|...###...|#########',
-    cover: [{ q: 2, r: 3, side: 0 }, { q: 6, r: 3, side: 3 }],
+    cover: [
+      { q: 2, r: 3, side: 0 },
+      { q: 6, r: 3, side: 3 },
+    ],
   },
   {
     id: 'wreck-medbay',
     name: 'Isolationsstation',
     rows: '#########|..#...#..|..D...D..|..#...#..|..D...D..|..#...#..|#########',
-    cover: [{ q: 3, r: 3, side: 3 }, { q: 5, r: 3, side: 0 }],
+    cover: [
+      { q: 3, r: 3, side: 3 },
+      { q: 5, r: 3, side: 0 },
+    ],
   },
 ] as const;
 
