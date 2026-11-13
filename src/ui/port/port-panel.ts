@@ -44,6 +44,7 @@ interface PortPanelOptions {
   readonly onSellLooseComponent: (uid: string) => void;
   readonly onBuyShipyardVariant: (type: ShipComponentType, componentId: string) => void;
   readonly onBuyShip: (id: string) => void;
+  readonly onForgeTransponder?: () => void;
 }
 
 function credits(value: number): string {
@@ -462,6 +463,9 @@ export function createPortPanel(options: PortPanelOptions): PortPanel {
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-buy-ship-id]')) {
     button.addEventListener('click', () => options.onBuyShip(button.dataset.buyShipId ?? ''));
   }
+  shell.querySelector<HTMLButtonElement>('[data-forge-ship-id]')?.addEventListener(
+    'click', () => options.onForgeTransponder?.()
+  );
   const repairButton = shell.querySelector<HTMLButtonElement>('[data-repair-ship]');
   repairButton?.addEventListener('click', options.onRepairShip);
   for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-hire-crew-id]')) {
