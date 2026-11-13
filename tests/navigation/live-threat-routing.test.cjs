@@ -38,6 +38,18 @@ const world = {
 };
 const pirate = { kind: 'pirate', position: { x: 1000, y: 1100 }, strength: 1 };
 const patrol = { kind: 'patrol', position: { x: 1000, y: 1100 }, strength: 1 };
+const farPirate = { kind: 'pirate', position: { x: 1000, y: 2050 }, strength: 1 };
+const staticSafe = routes.planRouteWithProfile(world, 'a', 'b', 'safe');
+assert.strictEqual(
+  routes.planRouteWithProfile(world, 'a', 'b', 'safe', [farPirate]),
+  staticSafe,
+  'far-away contacts must reuse the stable route instead of invalidating the NPC route cache'
+);
+assert.deepEqual(
+  routes.planRouteFromPoint(world, { x: 100, y: 1100 }, 'b', 'safe', [farPirate]).points,
+  routes.planRouteFromPoint(world, { x: 100, y: 1100 }, 'b', 'safe').points,
+  'a distant pirate must not force a local deep-space detour'
+);
 const fast = routes.planRouteWithProfile(world, 'a', 'b', 'fast', [pirate]);
 const safe = routes.planRouteWithProfile(world, 'a', 'b', 'safe', [pirate]);
 assert.equal(fast.points.length, 2, 'fast mode must preserve the shortest direct route');
