@@ -5,12 +5,11 @@ import {
   repointRouteEndpoints,
   type RoutePlan,
   type RouteProfile,
-  type RouteThreatContact,
 } from './route-planner';
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
 import type { NavigationRuntimeState } from './navigation-runtime-types';
-import { reviewLiveRoute } from './navigation-threat-rerouting';
+import { reviewLiveRoute, setNavigationThreatContacts } from './navigation-threat-rerouting';
 
 const MAX_TURN_RATE = 0.9;
 
@@ -375,29 +374,6 @@ function initialNavigationRuntime(
     replanCooldown: 0,
     previewCache: null,
   };
-}
-
-function setNavigationThreatContacts(
-  state: NavigationRuntimeState,
-  contacts: readonly RouteThreatContact[]
-): void {
-  const signature = contacts
-    .map(
-      (contact) =>
-        contact.kind +
-        ':' +
-        Math.round(contact.position.x / 160) +
-        ':' +
-        Math.round(contact.position.y / 160) +
-        ':' +
-        Math.round((contact.strength ?? 1) * 2)
-    )
-    .join('|');
-  if (signature === state.threatSignature) return;
-  state.threats = [...contacts];
-  state.threatSignature = signature;
-  state.threatRevision += 1;
-  state.previewCache = null;
 }
 
 export function createNavigationService(
