@@ -28,7 +28,7 @@ assert(data.includes('salvage: true'), 'sector needs salvage locations');
 assert(data.includes("id: 'blackjaw-outpost'"), 'sector needs a pirate port');
 assert(data.includes("id: 'gallows-anchor'"), 'sector needs more than one pirate port');
 assert(
-  renderer.includes('drawDangerRegions(width, height)') &&
+  renderer.includes('drawStarMapDangerRegions(') &&
     renderer.includes('setDangerOverlay(visible: boolean)') &&
     renderer.includes('setDangerBand('),
   'the star map must expose fixed green/yellow/red danger overlays and toggles'
