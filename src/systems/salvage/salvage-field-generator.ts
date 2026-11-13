@@ -236,6 +236,7 @@ function addSalvageSections(
       quality,
       sectionVariant: variant,
       effectSeed: section.effectSeed,
+      boardingHostiles: 2 + (index % 3),
       position: section.position,
       radius: section.radius,
       rotation: section.rotation3d.z,

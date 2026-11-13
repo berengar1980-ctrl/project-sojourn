@@ -7,6 +7,7 @@ import {
   crewBoardingUnits,
 } from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
+import { wreckCanBoard, boardingMapForWreck } from '../systems/salvage/salvage-boarding-rules';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import type { ControllerPanels, ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -241,20 +242,9 @@ export function mountControllerWreckBoarding(
   returnToSalvage: (field: SalvageField) => void
 ): void {
   const { state } = context;
-  const event = context.economy.salvageEvents.event(
-    context.navigation.getSnapshot().currentLocationId
-  );
   const field = state.salvageScene?.getField();
   const wreck = field?.wrecks.find((entry) => entry.id === wreckId);
-  if (
-    event?.type !== 'special-wreck' ||
-    !field ||
-    !wreck ||
-    !wreck.inspected ||
-    wreck.boardingCleared ||
-    wreck.containerVariant ||
-    crewBoardingUnits(context.crew).length === 0
-  ) {
+  if (!field || !wreck || !wreckCanBoard(wreck) || crewBoardingUnits(context.crew).length === 0) {
     context.systemLog.write('BOARDING > WRACK NICHT ENTERBAR ODER KEIN EINSATZFÄHIGER TRUPP');
     return;
   }
@@ -267,12 +257,12 @@ export function mountControllerWreckBoarding(
   state.localNpcMining = null;
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
-  const seed = event.fieldSeed ^ wreck.id.length ^ 0x574245;
-  const enemyCount = 2 + (Math.abs(seed) % 2);
+  const seed = field.seed ^ (wreck.effectSeed ?? wreck.id.length) ^ 0x574245;
   const encounter = createCrewBoardingEncounter({
     roster: context.crew,
     seed,
-    enemyUnits: Array.from({ length: enemyCount }, (_, index) => ({
+    mapId: boardingMapForWreck(wreck),
+    enemyUnits: Array.from({ length: wreck.boardingHostiles ?? 2 }, (_, index) => ({
       id: 'wreck-guard-' + index,
       name: 'Wrackbesetzer ' + (index + 1),
       team: 'enemy' as const,
