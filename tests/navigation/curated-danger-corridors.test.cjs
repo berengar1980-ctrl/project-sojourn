@@ -34,7 +34,9 @@ const samples = { green: 0, yellow: 0, red: 0 };
 for (let y = bounds.minY + 32.5; y <= bounds.maxY; y += 65) {
   for (let x = bounds.minX + 32.5; x <= bounds.maxX; x += 65) {
     const level = geography.fixedDangerAtPoint(
-      narrowsSector.regions, { x, y }, narrowsSector.defaultDangerLevel
+      narrowsSector.regions,
+      { x, y },
+      narrowsSector.defaultDangerLevel
     );
     samples[level >= 3 ? 'red' : level === 2 ? 'yellow' : 'green'] += 1;
   }
