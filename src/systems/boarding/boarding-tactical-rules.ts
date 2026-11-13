@@ -136,7 +136,9 @@ export function attackChance(
     45 +
       Math.round((attacker.rangedSkill - 50) * 0.55) +
       attacker.weapon.hitBonus -
-      attacker.weapon.spread * Math.max(0, range - 1) -
+      (attacker.weapon.spreadMode === 'cone'
+        ? 0
+        : attacker.weapon.spread * Math.max(0, range - 1)) -
       coverPenalty -
       suppressionPenalty,
     5,
@@ -148,7 +150,8 @@ export function meleeChance(attacker: BoardingUnit): number {
   return clamp(
     58 +
       Math.round((attacker.meleeSkill - 50) * 0.5) +
-      attacker.meleeWeapon.hitBonus -
+      attacker.meleeWeapon.hitBonus +
+      (attacker.weapon.meleeBonus ?? 0) -
       (attacker.suppressed ? 10 : 0),
     10,
     95

@@ -331,6 +331,8 @@ export interface StrategicCombatService {
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
   surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
+  /** Release a coupled grapple after a tactical retreat without resetting hulls or arena. */
+  resumeAfterBoarding(): boolean;
 }
 
 export interface MutableCombatant {
@@ -445,11 +447,7 @@ export interface MutableMine {
   definition: ShipMineDefinition;
 }
 
-export interface ShieldSegmentHit {
-  readonly point: CombatPoint;
-  readonly surfaceAnchor: CombatPoint;
-  readonly t: number;
-}
+export type { ShieldSegmentHit } from './combat-shield-segment-types';
 
 export interface MutableThrownAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;

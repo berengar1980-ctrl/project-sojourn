@@ -6,6 +6,7 @@ import type {
 } from '../../core/salvage-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import { salvageYieldMultiplier } from '../crew/crew-skill-effects';
+import { wreckRequiresBoarding } from './salvage-boarding-rules';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 
 export interface SalvageResourceCollector {
@@ -55,6 +56,16 @@ export function salvageComponentRecoveryChance(
   );
 }
 
+function availableComponentChance(
+  wreck: SalvageWreck | null,
+  setup: ShipSalvageSetup,
+  crewSkill: number
+): number | null {
+  if (!wreck?.component || wreck.componentStatus !== 'available') return null;
+  if (wreckRequiresBoarding(wreck)) return null;
+  return salvageComponentRecoveryChance(setup, crewSkill, wreck.component.recoveryDifficulty);
+}
+
 export function createSalvageFieldService(options: {
   readonly field: SalvageField;
   readonly setup: ShipSalvageSetup;
@@ -79,9 +90,7 @@ export function createSalvageFieldService(options: {
     },
 
     componentChance(wreckId) {
-      const wreck = findWreck(wreckId);
-      if (!wreck?.component || wreck.componentStatus !== 'available') return null;
-      return salvageComponentRecoveryChance(setup, crewSkill, wreck.component.recoveryDifficulty);
+      return availableComponentChance(findWreck(wreckId), setup, crewSkill);
     },
 
     recoverComponent(wreckId) {
@@ -90,6 +99,7 @@ export function createSalvageFieldService(options: {
       if (!wreck?.inspected || !wreck.component || wreck.componentStatus !== 'available') {
         return null;
       }
+      if (wreckRequiresBoarding(wreck)) return null;
 
       const chancePercent = salvageComponentRecoveryChance(
         setup,
@@ -134,7 +144,7 @@ export function createSalvageFieldService(options: {
     recoverResource(wreckId, resourceId) {
       if (!setup.available) return null;
       const wreck = findWreck(wreckId);
-      if (!wreck?.inspected) return null;
+      if (!wreck?.inspected || wreckRequiresBoarding(wreck)) return null;
 
       const deposit =
         wreck.resources.find(

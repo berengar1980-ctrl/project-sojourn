@@ -169,12 +169,7 @@ function showSalvageWreck(
     showUninspectedWreck(model, ui, wreck);
     return;
   }
-  ui.boardButton.hidden =
-    !model.sectorEvent ||
-    model.sectorEvent.type !== 'special-wreck' ||
-    wreck.boardingCleared ||
-    !!wreck.containerVariant ||
-    !model.salvageAvailable;
+  ui.boardButton.hidden = !wreck.boardable || !model.salvageAvailable;
   ui.meta.textContent =
     wreck.kindLabel +
     ' · QUALITÄT ' +
@@ -307,13 +302,7 @@ function bindSalvagePanelActions(
   ui.boardButton.addEventListener('click', () => {
     const model = getModel();
     const wreck = model.selectedWreck;
-    if (
-      wreck?.inspected &&
-      !wreck.boardingCleared &&
-      model.sectorEvent?.type === 'special-wreck' &&
-      !wreck.containerVariant &&
-      model.salvageAvailable
-    ) {
+    if (wreck?.inspected && wreck.boardable && model.salvageAvailable) {
       options.onBoardWreck?.(wreck.id);
     }
   });
