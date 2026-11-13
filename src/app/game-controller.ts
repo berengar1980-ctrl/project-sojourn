@@ -73,8 +73,14 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     else mountControllerStarMap(context);
   });
 }
+function rememberMiningField(context: ControllerRuntimeContext): void {
+  const field = context.state.localSpace?.getSnapshot().instance;
+  if (field) context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
+}
+
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
+  rememberMiningField(context);
   destroyScenePanels(state.panels);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
@@ -120,6 +126,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
 }
 function mountControllerPort(context: ControllerRuntimeContext, announce = true): void {
   const { state, economy } = context;
+  rememberMiningField(context);
   const locationId = context.navigation.getSnapshot().currentLocationId;
   refuelAtPort(context);
   destroyControllerSalvage(context);
@@ -176,7 +183,10 @@ function mountControllerMining(
   const location = miningLocationById(context.navigation.getSnapshot().currentLocationId);
   if (!location) return mountControllerStarMap(context);
   if (!reuseSeed || state.localSpaceSeed === 0) {
-    state.localSpaceSeed = localSeed((state.visitCounter += 1));
+    rememberMiningField(context);
+    state.localSpaceSeed = context.economy.asteroidClaims.seedFor(location.id, () =>
+      localSeed((state.visitCounter += 1))
+    );
   }
   ensureMiningCombatWorld(context, location, preserveField);
   context.systemLog.write(
