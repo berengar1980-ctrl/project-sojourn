@@ -162,7 +162,8 @@ function mountControllerPort(context: ControllerRuntimeContext, announce = true)
     },
     context.shipOperations,
     economy.smuggling,
-    economy.charters
+    economy.charters,
+    economy.legal
   );
   if (!state.panels.port) return;
   state.mode = 'port';
