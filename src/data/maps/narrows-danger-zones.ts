@@ -3,7 +3,7 @@ import { mapY } from './narrows-coordinates';
 
 // Voidbound-style curated topology, calibrated on a 6200 x 5200 sector grid.
 // Small ellipsoid rooms overlap along actual corridors instead of six giant circles.
-// At overview scale the fixed green/yellow/red field covers roughly one third each.
+// At overview scale, the actual inhabited map viewport has roughly one third of each band.
 const point = (x: number, y: number) => ({ x, y: mapY(y) });
 const ellipse = (x: number, y: number, radiusX: number, radiusY: number) => ({
   center: point(x, y),
@@ -24,7 +24,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(2250, 2050),
     radius: 350,
     dangerLevel: 2,
-    scale: 1.2,
+    scale: 1.15,
     lobes: [
       ellipse(1850, 2100, 900, 750),
       ellipse(2850, 2150, 930, 700),
@@ -43,7 +43,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(1800, 4080),
     radius: 330,
     dangerLevel: 2,
-    scale: 1.2,
+    scale: 1.15,
     lobes: [
       ellipse(1000, 3450, 760, 720),
       ellipse(1840, 4080, 950, 750),
@@ -62,7 +62,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(4900, 2450),
     radius: 350,
     dangerLevel: 2,
-    scale: 1.2,
+    scale: 1.15,
     lobes: [
       ellipse(4500, 1300, 720, 700),
       ellipse(5200, 2250, 730, 800),
@@ -82,7 +82,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(3440, 4000),
     radius: 320,
     dangerLevel: 1,
-    scale: 0.9,
+    scale: 0.7,
     lobes: [
       ellipse(3440, 4000, 800, 700),
       ellipse(2240, 3220, 590, 530),
@@ -100,7 +100,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(1800, 950),
     radius: 260,
     dangerLevel: 1,
-    scale: 0.9,
+    scale: 0.7,
     lobes: [ellipse(1800, 950, 630, 580), ellipse(1456, 2000, 610, 520)],
     corridors: [corridor(1900, 650, 1650, 1250, 400), corridor(1650, 1250, 1420, 1980, 440)],
   },
@@ -110,7 +110,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(4900, 1600),
     radius: 270,
     dangerLevel: 1,
-    scale: 0.9,
+    scale: 0.7,
     lobes: [
       ellipse(4600, 750, 620, 560),
       ellipse(5500, 1740, 580, 600),
@@ -128,7 +128,7 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     center: point(3200, 2900),
     radius: 250,
     dangerLevel: 1,
-    scale: 0.9,
+    scale: 0.7,
     lobes: [ellipse(2090, 4300, 630, 550), ellipse(4150, 1850, 560, 530)],
     corridors: [
       corridor(2090, 4300, 2460, 3600, 400),
@@ -137,6 +137,24 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     ],
   },
   // RED: real pirate areas and special-value frontiers cut into the safer network.
+  {
+    id: 'solis-scar',
+    name: 'Solis-Scherzone',
+    center: point(3100, 2600),
+    radius: 280,
+    dangerLevel: 3,
+    lobes: [ellipse(3100, 2600, 640, 530), ellipse(3400, 2240, 350, 360)],
+    corridors: [corridor(2800, 2360, 3540, 2530, 200)],
+  },
+  {
+    id: 'leviathan-cut',
+    name: 'Leviathan-Engstelle',
+    center: point(5140, 3670),
+    radius: 260,
+    dangerLevel: 3,
+    lobes: [ellipse(5140, 3670, 400, 330), ellipse(5580, 4475, 330, 360)],
+    corridors: [corridor(5140, 3670, 5580, 4475, 190)],
+  },
   {
     id: 'blackjaw-reach',
     name: 'Blackjaw-Revier',
