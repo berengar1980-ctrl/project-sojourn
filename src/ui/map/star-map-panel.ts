@@ -425,8 +425,29 @@ function bindDangerAndRouteControls(
   };
   menu.mapPane.append(routeHelp, ...profileButtons);
   refreshProfileButtons();
-  const updateTicker = createStarMapTicker(shell, options.log);
   return refreshProfileButtons;
+}
+
+function bindStarMapActions(
+  controls: ReturnType<typeof createStarMapControls>,
+  renderer: TopdownMapRenderer,
+  options: StarMapPanelOptions,
+  getModel: () => StarMapViewModel
+): () => void {
+  const unbindInput = bindStarMapInput({
+    canvas: controls.canvas,
+    shell: controls.shell,
+    renderer,
+    onSelectLocation: options.onSelectLocation,
+    onSelectNpc: options.onSelectNpc,
+  });
+  controls.travelButton.addEventListener('click', options.onStartTravel);
+  controls.dockButton.addEventListener('click', options.onDock);
+  controls.attackButton.addEventListener('click', () => {
+    const selected = getModel().npcShips.find((npc) => npc.isSelected);
+    if (selected) options.onAttackNpc(selected.id);
+  });
+  return unbindInput;
 }
 
 export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
@@ -461,6 +482,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     options.onRouteProfileChange
   );
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
+  const updateTicker = createStarMapTicker(shell, options.log);
 
   const renderCargoScanner = bindCargoMarketScanner(
     () => model,
@@ -497,19 +519,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const observer = new ResizeObserver(() => renderer.resize());
   observer.observe(canvas);
 
-  const unbindInput = bindStarMapInput({
-    canvas,
-    shell,
-    renderer,
-    onSelectLocation: options.onSelectLocation,
-    onSelectNpc: options.onSelectNpc,
-  });
-  travelButton.addEventListener('click', options.onStartTravel);
-  dockButton.addEventListener('click', options.onDock);
-  attackButton.addEventListener('click', () => {
-    const selected = model.npcShips.find((npc) => npc.isSelected);
-    if (selected) options.onAttackNpc(selected.id);
-  });
+  const unbindInput = bindStarMapActions(controls, renderer, options, () => model);
 
   refreshMenuContent = createMenuContentRefresher(
     menu,
