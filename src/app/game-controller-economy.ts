@@ -103,7 +103,7 @@ export interface ControllerEconomy {
 
 function npcOperationsPolicy(blockades: BlockadeService): NpcEconomyServiceOptions {
   return {
-    isManaged: (npc) => blockades.assigned(npc.id),
+    isManaged: (npc) => npc.id.startsWith('security-drone:') || blockades.assigned(npc.id),
     canTrade: (npc, locationId, resourceId) =>
       !blockades.blocksTrader(npc.id, locationId, resourceId),
   };
@@ -194,6 +194,27 @@ export function createControllerEconomy(
   });
   npcEconomy.advanceDay(0);
   initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
+  // Drones have normal sector NPC combatants so the existing two-ship AI
+  // combat mode can be entered without creating a second combat engine.
+  // The local drone service remains the authority for field sensor movement.
+  const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
+  if (patrolTemplate) {
+    for (const location of narrowsSector.locations.filter((entry) => entry.activities.mine)) {
+      npcStates.push({
+        ...patrolTemplate,
+        id: 'security-drone:' + location.id,
+        name: 'SEC-' + location.id.toUpperCase(),
+        locationId: location.id,
+        homePortId: location.id,
+        cargo: {},
+        marketIntel: {},
+        workResourceIds: [],
+        credits: 0,
+        activityId: 'patrol',
+        activity: 'Lokale Konzessionsüberwachung',
+      });
+    }
+  }
   const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
   salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
   const npcSalvageEvents = createNpcSalvageEventService({
