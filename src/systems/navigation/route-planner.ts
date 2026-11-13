@@ -121,7 +121,16 @@ function regionNodes(world: WorldMap, region: WorldRegion): WorldPoint[] {
 }
 
 function candidateNodes(world: WorldMap, from: WorldPoint, to: WorldPoint, contacts: readonly RouteThreatContact[]): readonly WorldPoint[] {
-  const detours = contacts.filter((contact) => contact.kind === 'pirate').slice(0, 12).flatMap((contact) =>
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const lengthSquared = Math.max(1, dx * dx + dy * dy);
+  const detours = contacts.filter((contact) => {
+    if (contact.kind !== 'pirate') return false;
+    const projection = Math.max(0, Math.min(1,
+      ((contact.position.x - from.x) * dx + (contact.position.y - from.y) * dy) / lengthSquared
+    ));
+    return distanceBetween(contact.position, { x: from.x + projection * dx, y: from.y + projection * dy }) < 1100;
+  }).slice(0, 4).flatMap((contact) =>
     [0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle) => ({
       x: contact.position.x + 740 * Math.cos(angle),
       y: contact.position.y + 740 * Math.sin(angle),
@@ -170,6 +179,7 @@ function routePoints(
   profile: RouteProfile,
   contacts: readonly RouteThreatContact[] = []
 ): readonly WorldPoint[] {
+  if (profile === 'fast') return [from, to];
   const nodes = candidateNodes(world, from, to, contacts);
   const distances = nodes.map(() => Number.POSITIVE_INFINITY);
   const previous: (number | null)[] = nodes.map(() => null);
@@ -231,8 +241,12 @@ export function planRouteWithProfile(
   profile: RouteProfile,
   contacts: readonly RouteThreatContact[] = []
 ): RoutePlan {
-  const cacheKey = `${world.id}|${fromId}|${toId}|${profile}`;
-  const cached = contacts.length === 0 ? routeCache.get(cacheKey) : null;
+  const liveKey = contacts.map((contact) =>
+    contact.kind + ':' + Math.round(contact.position.x / 160) + ':' +
+    Math.round(contact.position.y / 160) + ':' + Math.round((contact.strength ?? 1) * 2)
+  ).join(',');
+  const cacheKey = `${world.id}|${fromId}|${toId}|${profile}|${liveKey}`;
+  const cached = routeCache.get(cacheKey);
   if (cached) return cached;
 
   const from = findLocation(world, fromId);
@@ -241,7 +255,8 @@ export function planRouteWithProfile(
     from.dangerLevel,
     to.dangerLevel,
   ], contacts);
-  if (contacts.length === 0) routeCache.set(cacheKey, plan);
+  if (routeCache.size > 900) routeCache.clear();
+  routeCache.set(cacheKey, plan);
   return plan;
 }
 
