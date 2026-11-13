@@ -66,6 +66,32 @@ function boardingStatusText(snapshot: BoardingEncounterSnapshot): string {
   return 'Einheit wählen · Aktion wählen · Ziel auf dem Hexfeld anklicken';
 }
 
+type BoardingAction = 'move' | 'shoot' | 'suppress' | 'overwatch';
+
+function boardingActionControls(snapshot: BoardingEncounterSnapshot, selected: BoardingUnit | null) {
+  const finished = snapshot.outcome !== 'active';
+  const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
+  const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
+  return {
+    canAct,
+    cannotShoot,
+    cannotSuppress: cannotShoot || !selected?.weapon.canSuppress,
+    cannotOverwatch: !selected || selected.ap < 2 || selected.combatUsed,
+    cannotHold: !canAct || cannotShoot,
+  };
+}
+
+function boardingActionButton(
+  action: BoardingAction,
+  selectedAction: BoardingAction,
+  name: string,
+  disabled: boolean
+): string {
+  const pressed = selectedAction === action ? 'aria-pressed="true"' : '';
+  const unavailable = disabled ? 'disabled' : '';
+  return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
+}
+
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   private readonly shell: HTMLElement;
   private readonly tactical: CrewBoardingEncounter['tactical'];
@@ -253,16 +279,10 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const selected = snapshot.units.find((unit) => unit.id === snapshot.selectedUnitId) ?? null;
     const reachable = selected ? this.tactical.reachable(selected.id) : {};
     const finished = snapshot.outcome !== 'active';
-    const canAct = !finished && snapshot.activeTeam === 'player' && !!selected;
-    const button = (action: typeof this.action, name: string, disabled = false): string => {
-      const pressed = this.action === action ? 'aria-pressed="true"' : '';
-      const unavailable = !canAct || disabled ? 'disabled' : '';
-      return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
-    };
-    const cannotShoot = !selected || selected.ap < 1 || selected.combatUsed;
-    const cannotSuppress = cannotShoot || !selected?.weapon.canSuppress;
-    const cannotOverwatch = !selected || selected.ap < 2 || selected.combatUsed;
-    const cannotHold = !canAct || cannotShoot;
+    const controls = boardingActionControls(snapshot, selected);
+    const button = (action: BoardingAction, name: string, disabled = false): string =>
+      boardingActionButton(action, this.action, name, !controls.canAct || disabled);
+    const { cannotShoot, cannotSuppress, cannotOverwatch, cannotHold } = controls;
     const statusLabel = this.checkpointMessage || boardingStatusText(snapshot);
     const details = boardingUnitDetails(selected);
     const log = snapshot.log

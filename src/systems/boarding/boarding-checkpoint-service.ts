@@ -1,4 +1,4 @@
-import type { BoardingEncounterSnapshot } from '../../core/boarding-types';
+import type { BoardingEncounterSnapshot, BoardingUnit } from '../../core/boarding-types';
 
 export const BOARDING_CHECKPOINT_KEY = 'sojourn.boarding.tactical.v1';
 
@@ -18,7 +18,7 @@ function validNumber(value: number, minimum: number, maximum: number): boolean {
 }
 
 /** The saved snapshot may change HP/AP, but never identities, weapons, topology or seed. */
-export function compatibleBoardingCheckpoint(
+function checkpointIdentity(
   current: BoardingEncounterSnapshot,
   candidate: BoardingEncounterSnapshot
 ): boolean {
@@ -27,41 +27,70 @@ export function compatibleBoardingCheckpoint(
   if (!Array.isArray(candidate.units) || candidate.units.length !== current.units.length) {
     return false;
   }
-  if (candidate.outcome !== 'active' || candidate.allowRetreat !== current.allowRetreat) {
-    return false;
-  }
+  return candidate.outcome === 'active' && candidate.allowRetreat === current.allowRetreat;
+}
+
+function checkpointTurn(candidate: BoardingEncounterSnapshot): boolean {
   if (candidate.activeTeam !== 'player' && candidate.activeTeam !== 'enemy') return false;
   if (!validNumber(candidate.round, 1, 10000) || !Number.isInteger(candidate.round)) return false;
-  if (!validNumber(candidate.randomCalls, 0, 100000)) return false;
-  if (!Number.isInteger(candidate.randomCalls)) return false;
+  return validNumber(candidate.randomCalls, 0, 100000) && Number.isInteger(candidate.randomCalls);
+}
+
+function checkpointBoard(current: BoardingEncounterSnapshot, candidate: BoardingEncounterSnapshot) {
   if (!candidate.doorStates || typeof candidate.doorStates !== 'object') return false;
   const expectedDoorIds = current.map.doors.map((door) => door.id);
   if (Object.keys(candidate.doorStates).length !== expectedDoorIds.length) return false;
   if (expectedDoorIds.some((id) => typeof candidate.doorStates[id] !== 'boolean')) return false;
   if (!Array.isArray(candidate.log) || candidate.log.length > 40) return false;
   if (candidate.log.some((entry) => !entry || typeof entry.text !== 'string')) return false;
-  if (!Array.isArray(candidate.suppressionZones) || candidate.suppressionZones.length > 25) {
-    return false;
+  if (candidate.selectedUnitId !== null) {
+    if (!candidate.units.some((unit) => unit.id === candidate.selectedUnitId)) return false;
   }
+  return true;
+}
+
+function compatibleCheckpointUnit(original: BoardingUnit | undefined, saved: BoardingUnit): boolean {
+  if (!original || original.team !== saved.team || original.maxHp !== saved.maxHp) return false;
+  if (original.weapon.id !== saved.weapon?.id) return false;
+  if (original.meleeWeapon.id !== saved.meleeWeapon?.id) return false;
+  if (!validNumber(saved.hp, 0, saved.maxHp) || !validNumber(saved.ap, 0, 3)) return false;
+  if (!Number.isInteger(saved.q) || !Number.isInteger(saved.r)) return false;
+  return saved.q < 0 || saved.r < 0 || (saved.q >= 0 && saved.r >= 0);
+}
+
+function checkpointUnits(current: BoardingEncounterSnapshot, candidate: BoardingEncounterSnapshot) {
   const usedPositions = new Set<string>();
   for (const entry of candidate.units) {
     const original = current.units.find((unit) => unit.id === entry?.id);
-    if (!original || original.team !== entry.team || original.maxHp !== entry.maxHp) return false;
-    if (original.weapon.id !== entry.weapon?.id) return false;
-    if (original.meleeWeapon.id !== entry.meleeWeapon?.id) return false;
-    if (!validNumber(entry.hp, 0, entry.maxHp) || !validNumber(entry.ap, 0, 3)) return false;
-    if (!Number.isInteger(entry.q) || !Number.isInteger(entry.r)) return false;
+    if (!compatibleCheckpointUnit(original, entry)) return false;
     if (entry.q < 0 || entry.r < 0) continue;
     if (entry.q >= current.map.columns || entry.r >= current.map.rows) return false;
     const cell = entry.q + ',' + entry.r;
     if (entry.hp > 0 && usedPositions.has(cell)) return false;
     if (entry.hp > 0) usedPositions.add(cell);
   }
-  if (candidate.selectedUnitId !== null) {
-    if (!candidate.units.some((unit) => unit.id === candidate.selectedUnitId)) return false;
+  return true;
+}
+
+function checkpointZones(candidate: BoardingEncounterSnapshot): boolean {
+  if (!Array.isArray(candidate.suppressionZones) || candidate.suppressionZones.length > 25) {
+    return false;
   }
   return candidate.suppressionZones.every((zone) =>
     candidate.units.some((unit) => unit.id === zone?.ownerId && unit.team === zone.team)
+  );
+}
+
+export function compatibleBoardingCheckpoint(
+  current: BoardingEncounterSnapshot,
+  candidate: BoardingEncounterSnapshot
+): boolean {
+  return (
+    checkpointIdentity(current, candidate) &&
+    checkpointTurn(candidate) &&
+    checkpointBoard(current, candidate) &&
+    checkpointUnits(current, candidate) &&
+    checkpointZones(candidate)
   );
 }
 

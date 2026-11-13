@@ -14,14 +14,7 @@ import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-pa
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
-export function startCombatBoarding(
-  context: ControllerRuntimeContext,
-  snapshot: StrategicCombatSnapshot,
-  returnToMap: (boardingOutcome?: string) => void
-): void {
-  if (!snapshot.boardingInitiator) return;
-  context.systemLog.write(combatResultMessage(snapshot));
-  const enemyName = snapshot.defender.name;
+function prepareShipBoardingScene(context: ControllerRuntimeContext): void {
   const { state } = context;
   state.panels.star?.destroy();
   state.panels.local?.destroy();
@@ -40,15 +33,11 @@ export function startCombatBoarding(
   state.embeddedCombat = null;
   state.mode = 'boarding';
   context.audio.clearPlayerRcs();
-  if (crewBoardingUnits(context.crew).length === 0) {
-    context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
-    context.engagements.finishPlayerCombat();
-    runSceneZoomTransition(context.root, returnToMap);
-    return;
-  }
+}
 
+function createShipBoarders(snapshot: StrategicCombatSnapshot) {
   const enemyCount = 2 + (Math.floor(snapshot.elapsedSeconds * 10) % 2);
-  const enemyUnits = Array.from({ length: enemyCount }, (_, index) => ({
+  return Array.from({ length: enemyCount }, (_, index) => ({
     id: 'ship-boarder-' + index,
     name: 'Entertrupp ' + (index + 1),
     team: 'enemy' as const,
@@ -63,6 +52,26 @@ export function startCombatBoarding(
         : { ...boardingRangedWeapons.sidearm, id: 'off_autopistol', name: 'Kompakte Autopistole' },
     meleeWeapon: boardingMeleeWeapons.baton,
   }));
+}
+
+export function startCombatBoarding(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot,
+  returnToMap: (boardingOutcome?: string) => void
+): void {
+  if (!snapshot.boardingInitiator) return;
+  context.systemLog.write(combatResultMessage(snapshot));
+  const enemyName = snapshot.defender.name;
+  prepareShipBoardingScene(context);
+  const { state } = context;
+  if (crewBoardingUnits(context.crew).length === 0) {
+    context.systemLog.write('BOARDING > KEIN EINSATZFÄHIGES ENTERTEAM');
+    context.engagements.finishPlayerCombat();
+    runSceneZoomTransition(context.root, returnToMap);
+    return;
+  }
+
+  const enemyUnits = createShipBoarders(snapshot);
   const encounter = createCrewBoardingEncounter({
     roster: context.crew,
     seed: Math.floor(snapshot.elapsedSeconds * 1000) ^ enemyName.length,

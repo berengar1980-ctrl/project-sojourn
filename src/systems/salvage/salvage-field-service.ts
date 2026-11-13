@@ -56,6 +56,16 @@ export function salvageComponentRecoveryChance(
   );
 }
 
+function availableComponentChance(
+  wreck: SalvageWreck | null,
+  setup: ShipSalvageSetup,
+  crewSkill: number
+): number | null {
+  if (!wreck?.component || wreck.componentStatus !== 'available') return null;
+  if (wreckRequiresBoarding(wreck)) return null;
+  return salvageComponentRecoveryChance(setup, crewSkill, wreck.component.recoveryDifficulty);
+}
+
 export function createSalvageFieldService(options: {
   readonly field: SalvageField;
   readonly setup: ShipSalvageSetup;
@@ -80,10 +90,7 @@ export function createSalvageFieldService(options: {
     },
 
     componentChance(wreckId) {
-      const wreck = findWreck(wreckId);
-      if (!wreck?.component || wreck.componentStatus !== 'available') return null;
-      if (wreckRequiresBoarding(wreck)) return null;
-      return salvageComponentRecoveryChance(setup, crewSkill, wreck.component.recoveryDifficulty);
+      return availableComponentChance(findWreck(wreckId), setup, crewSkill);
     },
 
     recoverComponent(wreckId) {
