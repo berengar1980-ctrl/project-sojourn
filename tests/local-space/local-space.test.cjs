@@ -174,7 +174,8 @@ assert(
   'long-range scan must expose five-second progress'
 );
 assert(
-  service.includes('this.scanClock.advanceLong(clamped)') && scanClock.includes('this.longElapsed < 5'),
+  service.includes('this.scanClock.advanceLong(clamped)') &&
+    scanClock.includes('this.longElapsed < 5'),
   'long-range scan must not finish before five seconds'
 );
 assert(service.includes('startShortRangeScan'), 'service must expose close asteroid analysis');
