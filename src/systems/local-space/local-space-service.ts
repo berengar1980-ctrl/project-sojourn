@@ -312,8 +312,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipLateralVelocity = 0;
     this.miningHoldOffset = null;
     this.approachRoute = route;
-    this.checkedHazards.clear();
-    this.hazardCheckSeconds = 0;
+    this.hazards.reset();
     this.approachIndex = this.approachRoute.length > 1 ? 1 : 0;
   }
 
