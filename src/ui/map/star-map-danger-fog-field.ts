@@ -31,8 +31,41 @@ function warpedPoint(point: WorldPoint): WorldPoint {
   return { x: x + driftX, y: y + driftY };
 }
 
+type FogBounds = readonly [number, number, number, number];
+const fogBounds = new WeakMap<WorldRegion, FogBounds>();
+
+function regionFogBounds(region: WorldRegion): FogBounds {
+  const cached = fogBounds.get(region);
+  if (cached) return cached;
+  const scale = region.scale ?? 1;
+  const feather = 1.45;
+  const warp = 170;
+  let minX = region.center.x - region.radius * feather;
+  let minY = region.center.y - region.radius * feather;
+  let maxX = region.center.x + region.radius * feather;
+  let maxY = region.center.y + region.radius * feather;
+  for (const lobe of region.lobes ?? []) {
+    minX = Math.min(minX, lobe.center.x - lobe.radiusX * scale * feather);
+    minY = Math.min(minY, lobe.center.y - lobe.radiusY * scale * feather);
+    maxX = Math.max(maxX, lobe.center.x + lobe.radiusX * scale * feather);
+    maxY = Math.max(maxY, lobe.center.y + lobe.radiusY * scale * feather);
+  }
+  for (const lane of region.corridors ?? []) {
+    const radius = lane.width * scale * feather;
+    minX = Math.min(minX, lane.from.x - radius, lane.to.x - radius);
+    minY = Math.min(minY, lane.from.y - radius, lane.to.y - radius);
+    maxX = Math.max(maxX, lane.from.x + radius, lane.to.x + radius);
+    maxY = Math.max(maxY, lane.from.y + radius, lane.to.y + radius);
+  }
+  const bounds: FogBounds = [minX - warp, minY - warp, maxX + warp, maxY + warp];
+  fogBounds.set(region, bounds);
+  return bounds;
+}
+
 /** Feathered elliptical lobe or thick shipping lane; never a hard bitmap category. */
 function regionFogInfluence(region: WorldRegion, point: WorldPoint): number {
+  const [minX, minY, maxX, maxY] = regionFogBounds(region);
+  if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) return 0;
   const scale = region.scale ?? 1;
   if (!region.lobes?.length && !region.corridors?.length) {
     const distance = Math.hypot(point.x - region.center.x, point.y - region.center.y);
