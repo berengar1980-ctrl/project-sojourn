@@ -1,5 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture, reportLegalOrbitalArrival, tickLegalDetention } from './game-controller-law-enforcement';
+import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture, reportLegalOrbitalArrival, advanceNpcPenalCustody, tickLegalDetention } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
@@ -502,7 +502,10 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
       () => mountControllerSalvage(context)
     );
   }
+  const dayBeforeEconomy = economy.situations.currentDay;
   tickEconomy(context, deltaSeconds);
+  if (economy.situations.currentDay !== dayBeforeEconomy)
+    advanceNpcPenalCustody(context);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
   tickControllerScene(context, deltaSeconds);
