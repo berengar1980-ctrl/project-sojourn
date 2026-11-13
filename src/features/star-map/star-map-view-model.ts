@@ -78,6 +78,8 @@ export interface StarMapFuelView {
   readonly fuelPerHundred: number;
   readonly planned: FuelRoutePlan | null;
   readonly unreachable: boolean;
+  readonly estimatedSeconds?: number;
+  readonly personalRisk?: { readonly tier: 'low' | 'medium' | 'high'; readonly score: number; readonly contactCount: number; readonly worldDanger: number };
 }
 
 export interface StarMapViewModel {
