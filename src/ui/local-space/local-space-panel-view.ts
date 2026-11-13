@@ -161,73 +161,15 @@ function showEmptyMiningSelection(
   mineButton.hidden = true;
 }
 
-export function updateLocalOverlay(context: LocalOverlayContext): void {
-  const {
-    model,
-    controls,
-    trackIntegrity,
-    trackScanCompletion,
-    miningEventPanel,
-    miningResourceSelector,
-  } = context;
-  const {
-    canvas,
-    card,
-    name,
-    meta,
-    oreBar,
-    mineButton,
-    claimButton,
-    shortScanButton,
-    attackButton,
-    longScanButton,
-    cancelButton,
-    backButton,
-    status,
-    cargoTotal,
-    cargoList,
-    combatTactics,
-  } = controls;
-
+function renderLocalSelection(
+  context: LocalOverlayContext,
+  eventActive: boolean,
+  miningActive: boolean
+): void {
+  const { model, controls, miningResourceSelector } = context;
+  const { card, name, meta, oreBar, mineButton, shortScanButton, attackButton } = controls;
   const selectedNpc = model.npcShips.find((npc) => npc.isSelected);
-  combatTactics.hidden = model.combat === null;
-  updateCombatGrappleButton(combatTactics, model.combat);
-  for (const button of combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
-    button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
-  }
   const selected = model.selectedAsteroid;
-  claimButton.hidden =
-    !selected ||
-    selected.scanLevel !== 'analyzed' ||
-    selected.totalRemaining === 0 ||
-    Boolean(model.selectedAsteroidClaimOwner && model.selectedAsteroidClaimOwner !== 'player');
-  claimButton.textContent =
-    model.selectedAsteroidClaimOwner === 'player'
-      ? 'KONZESSION AUFGEBEN'
-      : 'KONZESSION REGISTRIEREN · 2.500 CR';
-  const miningActive = model.miningPhase !== 'idle';
-  const eventActive = model.miningEvent !== null;
-  trackScanCompletion(model);
-  miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
-  canvas.classList.toggle('is-locked', eventActive);
-  card.hidden = false;
-  cancelButton.hidden = !miningActive;
-  cancelButton.disabled = eventActive;
-  updateLocalExitButton(backButton, model, eventActive);
-  renderCargo(model, cargoTotal, cargoList);
-  updateLongRangeScanButton(
-    longScanButton,
-    model.scanAvailable,
-    model.longRangeScanProgress,
-    eventActive
-  );
-
-  trackIntegrity(model);
-
-  const statusText = miningStatus(model);
-  status.hidden = statusText.length === 0;
-  status.textContent = statusText;
-
   if (selectedNpc) {
     const kind = card.querySelector<HTMLElement>('.local-selection-kind');
     if (kind) kind.textContent = 'SCHIFF';
@@ -273,4 +215,66 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
   shortScanButton.disabled =
     eventActive || !model.scanAvailable || miningActive || selected.scanLevel === 'analyzed';
   updateMiningButton(mineButton, model, miningActive);
+}
+
+export function updateLocalOverlay(context: LocalOverlayContext): void {
+  const {
+    model,
+    controls,
+    trackIntegrity,
+    trackScanCompletion,
+    miningEventPanel,
+  } = context;
+  const {
+    canvas,
+    card,
+    claimButton,
+    longScanButton,
+    cancelButton,
+    backButton,
+    status,
+    cargoTotal,
+    cargoList,
+    combatTactics,
+  } = controls;
+
+  combatTactics.hidden = model.combat === null;
+  updateCombatGrappleButton(combatTactics, model.combat);
+  for (const button of combatTactics.querySelectorAll<HTMLButtonElement>('[data-tactic]')) {
+    button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
+  }
+  const selected = model.selectedAsteroid;
+  claimButton.hidden =
+    !selected ||
+    selected.scanLevel !== 'analyzed' ||
+    selected.totalRemaining === 0 ||
+    Boolean(model.selectedAsteroidClaimOwner && model.selectedAsteroidClaimOwner !== 'player');
+  claimButton.textContent =
+    model.selectedAsteroidClaimOwner === 'player'
+      ? 'KONZESSION AUFGEBEN'
+      : 'KONZESSION REGISTRIEREN · 2.500 CR';
+  const miningActive = model.miningPhase !== 'idle';
+  const eventActive = model.miningEvent !== null;
+  trackScanCompletion(model);
+  miningEventPanel.update(model.miningEvent, model.miningRecoverySeconds);
+  canvas.classList.toggle('is-locked', eventActive);
+  card.hidden = false;
+  cancelButton.hidden = !miningActive;
+  cancelButton.disabled = eventActive;
+  updateLocalExitButton(backButton, model, eventActive);
+  renderCargo(model, cargoTotal, cargoList);
+  updateLongRangeScanButton(
+    longScanButton,
+    model.scanAvailable,
+    model.longRangeScanProgress,
+    eventActive
+  );
+
+  trackIntegrity(model);
+
+  const statusText = miningStatus(model);
+  status.hidden = statusText.length === 0;
+  status.textContent = statusText;
+
+  renderLocalSelection(context, eventActive, miningActive);
 }
