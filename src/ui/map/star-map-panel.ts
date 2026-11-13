@@ -1,5 +1,6 @@
 import type { CampaignJournalEntry } from '../../core/campaign-types';
 import { renderCampaignJournal } from './star-map-campaign-journal';
+import type { RouteProfile } from '../../systems/navigation/route-planner';
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
 import { bindCargoMarketScanner } from './star-map-cargo-scanner';
@@ -17,6 +18,8 @@ export interface StarMapPanel {
 
 let preferredDisplayMode: StarMapDisplayMode = 'nav';
 let preferredLabelsVisible = true;
+let preferredDangerVisible = true;
+const preferredDangerBands = { green: true, yellow: true, red: true };
 
 interface StarMapPanelOptions {
   readonly root: HTMLElement;
@@ -26,6 +29,7 @@ interface StarMapPanelOptions {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onStartTravel: () => void;
+  readonly onRouteProfileChange?: (profile: RouteProfile) => void;
   readonly onDock: () => void;
   readonly getCampaignJournal?: () => readonly CampaignJournalEntry[];
   readonly onCampaignChoice?: (campaignId: string, dialogueId: string, choiceId: string) => void;
@@ -240,6 +244,10 @@ function populateStarMapMenu(
     '<p class="star-map-menu__help">KARTENDARSTELLUNG</p>'
   );
   menu.mapPane.append(modeToggle, labelToggle);
+  const hazardHelp = document.createElement('p');
+  hazardHelp.className = 'star-map-menu__help';
+  hazardHelp.textContent = 'GEFAHRENREGIONEN // FESTE WELTZONEN';
+  menu.mapPane.append(hazardHelp);
   const resetButton = document.createElement('button');
   resetButton.type = 'button';
   resetButton.className = 'star-map-menu__action';
@@ -376,6 +384,58 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
   const menu = createStarMapMenu(shell, () => refreshMenuContent());
 
   const resetButton = populateStarMapMenu(menu, controls);
+  const hazardControls = document.createElement('div');
+  hazardControls.className = 'star-map-danger-controls';
+  const hazardMaster = document.createElement('button');
+  hazardMaster.type = 'button';
+  hazardMaster.textContent = preferredDangerVisible ? 'GEFAHREN // AN' : 'GEFAHREN // AUS';
+  const hazardButtons = (['green', 'yellow', 'red'] as const).map((band) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    const refresh = () => {
+      button.textContent = ({ green: 'GRÜN', yellow: 'GELB', red: 'ROT' })[band] +
+        (preferredDangerBands[band] ? ' ✓' : ' —');
+    };
+    refresh();
+    button.addEventListener('click', () => {
+      preferredDangerBands[band] = !preferredDangerBands[band];
+      renderer.setDangerBand(band, preferredDangerBands[band]);
+      refresh();
+    });
+    return button;
+  });
+  hazardMaster.addEventListener('click', () => {
+    preferredDangerVisible = !preferredDangerVisible;
+    renderer.setDangerOverlay(preferredDangerVisible);
+    hazardMaster.textContent = preferredDangerVisible ? 'GEFAHREN // AN' : 'GEFAHREN // AUS';
+  });
+  hazardControls.append(hazardMaster, ...hazardButtons);
+  menu.mapPane.append(hazardControls);
+  renderer.setDangerOverlay(preferredDangerVisible);
+  for (const band of ['green', 'yellow', 'red'] as const) {
+    renderer.setDangerBand(band, preferredDangerBands[band]);
+  }
+  const routeHelp = document.createElement('p');
+  routeHelp.className = 'star-map-menu__help';
+  routeHelp.textContent = 'ROUTENWAHL';
+  const profileButtons = (['fast', 'balanced', 'safe'] as const).map((profile) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.routeProfile = profile;
+    button.textContent = ({ fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' })[profile];
+    button.addEventListener('click', () => {
+      options.onRouteProfileChange?.(profile);
+      refreshProfileButtons();
+    });
+    return button;
+  });
+  const refreshProfileButtons = (): void => {
+    for (const button of profileButtons) {
+      button.classList.toggle('is-active', button.dataset.routeProfile === model.navigation.routeProfile);
+    }
+  };
+  menu.mapPane.append(routeHelp, ...profileButtons);
+  refreshProfileButtons();
   const updateTicker = createStarMapTicker(shell, options.log);
   const renderer = new TopdownMapRenderer(canvas, model);
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
@@ -444,6 +504,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
       model = nextModel;
       renderer.update(model);
       updateSelection();
+      refreshProfileButtons();
       const now = performance.now();
       if (now - lastAuxiliaryUpdate >= 650) {
         lastAuxiliaryUpdate = now;
