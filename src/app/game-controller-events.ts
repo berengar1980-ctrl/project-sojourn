@@ -7,7 +7,14 @@ import {
   crewBoardingUnits,
 } from '../systems/boarding/crew-boarding-adapter';
 import { resolveShipRuntimeSetup } from '../systems/ships';
-import { wreckCanBoard, boardingMapForWreck } from '../systems/salvage/salvage-boarding-rules';
+import {
+  wreckCanBoard,
+  boardingMapForWreck,
+  boardingBriefingForWreck,
+  wreckDefenderCount,
+  recordWreckBoardingOutcome,
+} from '../systems/salvage/salvage-boarding-rules';
+import { boardingAfterAction } from '../systems/boarding/boarding-afteraction';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import type { ControllerPanels, ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -224,20 +231,16 @@ export function mountControllerBoarding(
   state.boardingPanel = createBoardingTacticalPanel({
     root: context.root,
     encounter,
+    missionTitle: event.title,
+    missionBriefing: 'Notruf-Falle · feindliche Entertrupps am Havaristen.',
     onFinish: (snapshot) => {
+      const aftermath = boardingAfterAction(snapshot, 'distress');
+      context.systemLog.write(aftermath.report);
       const victory = snapshot.outcome === 'player_win';
       const result = economy.salvageEvents.resolveBoarding(eventId, victory);
       context.systemLog.write('BOARDING > ' + (result?.text ?? 'ENTERKAMPF BEENDET').toUpperCase());
       applyDistressOutcome(context, result);
-      context.campaignEvents.emit({
-        type: 'boarding.ended',
-        outcome:
-          snapshot.outcome === 'player_win'
-            ? 'player_win'
-            : snapshot.outcome === 'enemy_win'
-              ? 'enemy_win'
-              : 'draw',
-      });
+      context.campaignEvents.emit(aftermath.event);
       runSceneZoomTransition(context.root, actions.mountStarMap);
     },
   });
@@ -271,7 +274,7 @@ export function mountControllerWreckBoarding(
     roster: context.crew,
     seed,
     mapId: boardingMapForWreck(wreck),
-    enemyUnits: Array.from({ length: wreck.boardingHostiles ?? 2 }, (_, index) => ({
+    enemyUnits: Array.from({ length: wreckDefenderCount(wreck) }, (_, index) => ({
       id: 'wreck-guard-' + index,
       name: 'Wrackbesetzer ' + (index + 1),
       team: 'enemy' as const,
@@ -286,22 +289,27 @@ export function mountControllerWreckBoarding(
   state.boardingPanel = createBoardingTacticalPanel({
     root: context.root,
     encounter,
+    missionTitle: wreck.name,
+    missionBriefing: boardingBriefingForWreck(wreck),
     onFinish: (snapshot) => {
+      const aftermath = boardingAfterAction(snapshot, 'wreck', wreck.id);
+      const consequences = recordWreckBoardingOutcome(wreck, snapshot);
+      context.systemLog.write(aftermath.report);
+      context.systemLog.write(
+        'BOARDING > WRACK · ' +
+          consequences.defeated +
+          ' VERTEIDIGER AUSGESCHALTET · ' +
+          consequences.remaining +
+          ' VERBLEIBEN · VERSUCH ' +
+          wreck.boardingAttempts
+      );
       if (snapshot.outcome === 'player_win') {
         wreck.boardingCleared = true;
         context.systemLog.write('BOARDING > DECKS GESICHERT · BERGUNG FREIGEGEBEN');
       } else {
         context.systemLog.write('BOARDING > WRACKEINSATZ ' + snapshot.outcome.toUpperCase());
       }
-      context.campaignEvents.emit({
-        type: 'boarding.ended',
-        outcome:
-          snapshot.outcome === 'player_win'
-            ? 'player_win'
-            : snapshot.outcome === 'enemy_win'
-              ? 'enemy_win'
-              : 'draw',
-      });
+      context.campaignEvents.emit(aftermath.event);
       runSceneZoomTransition(context.root, () => returnToSalvage(field));
     },
   });

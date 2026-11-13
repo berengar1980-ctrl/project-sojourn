@@ -136,7 +136,7 @@ wreck.boardingCleared = true;
 assert(!wreckRules.wreckCanBoard(wreck));
 assert(salvage.recoverResource(wreck.id), 'loot is unlocked after boarding victory');
 const variant = { ...wreck, sectionVariant: 'reactor-hall' };
-assert.equal(wreckRules.boardingMapForWreck(variant), 'central-breach');
+assert.equal(wreckRules.boardingMapForWreck(variant), 'wreck-reactor');
 const eventField = eventGenerator.generateSectorSalvageEventField({
   id: 'test-boarding-signal',
   type: 'special-wreck',

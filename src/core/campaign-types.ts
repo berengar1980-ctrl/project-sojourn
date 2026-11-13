@@ -56,6 +56,11 @@ export type CampaignEvent =
   | {
       readonly type: 'boarding.ended';
       readonly outcome: 'player_win' | 'enemy_win' | 'draw';
+      readonly source?: 'ship' | 'wreck' | 'distress';
+      readonly crewIncapacitated?: number;
+      readonly crewWounded?: number;
+      readonly enemiesDefeated?: number;
+      readonly wreckId?: string;
     };
 
 /** An individual, validated game-domain operation; not an arbitrary state mutation. */

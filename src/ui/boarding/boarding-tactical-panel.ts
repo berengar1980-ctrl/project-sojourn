@@ -16,6 +16,8 @@ interface BoardingTacticalPanelOptions {
   readonly root: HTMLElement;
   readonly encounter: CrewBoardingEncounter;
   readonly onFinish: (snapshot: BoardingEncounterSnapshot) => void;
+  readonly missionTitle?: string;
+  readonly missionBriefing?: string;
 }
 
 function nearestPlayer(enemy: BoardingUnit, players: readonly BoardingUnit[]): BoardingUnit | null {
@@ -58,6 +60,7 @@ function boardingUnitDetails(selected: BoardingUnit | null): string {
     'RD ' + weapon.armorPenetration,
   ];
   if (weapon.piercing) attributes.push('Piercing +' + weapon.piercing.bonusDamage);
+  if (weapon.spreadMode === 'cone') attributes.push('FLAMMENKEGEL · FREUNDESFEUER');
   return attributes.join(' · ');
 }
 
@@ -93,6 +96,32 @@ function boardingActionButton(
   const pressed = selectedAction === action ? 'aria-pressed="true"' : '';
   const unavailable = disabled ? 'disabled' : '';
   return `<button type="button" data-boarding-action="${action}" ${pressed} ${unavailable}>${name}</button>`;
+}
+
+function escapeBoardingText(value: string): string {
+  return value.replace(/[&<>"']/g, (symbol) => {
+    const substitutions: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return substitutions[symbol] ?? symbol;
+  });
+}
+
+function boardingActionStatus(
+  snapshot: BoardingEncounterSnapshot,
+  selected: BoardingUnit | null,
+  action: BoardingAction,
+  checkpointMessage: string
+): string {
+  if (checkpointMessage) return checkpointMessage;
+  if (action === 'shoot' && selected?.weapon.spreadMode === 'cone') {
+    return 'FLAMMENKEGEL · Zielhex wählen · auch eigene Einheiten können getroffen werden';
+  }
+  return boardingStatusText(snapshot);
 }
 
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
@@ -214,6 +243,8 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
         if (this.tactical.overwatch(selected.id, hex)) this.action = 'move';
       } else if (this.action === 'suppress') {
         if (this.tactical.suppressArea(selected.id, hex)) this.action = 'move';
+      } else if (this.action === 'shoot' && selected.weapon.spreadMode === 'cone') {
+        if (this.tactical.fireCone(selected.id, hex) !== null) this.action = 'move';
       } else if (target?.team === 'enemy') this.attackSelected(selected, target);
       else if (this.action === 'move') this.tactical.move(selected.id, hex);
     }
@@ -286,16 +317,27 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const button = (action: BoardingAction, name: string, disabled = false): string =>
       boardingActionButton(action, this.action, name, !controls.canAct || disabled);
     const { cannotShoot, cannotSuppress, cannotOverwatch, cannotHold } = controls;
-    const statusLabel = this.checkpointMessage || boardingStatusText(snapshot);
+    const statusLabel = boardingActionStatus(
+      snapshot,
+      selected,
+      this.action,
+      this.checkpointMessage
+    );
     const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
       .map((entry) => `<div>R${entry.round} · ${entry.text}</div>`)
       .join('');
 
+    const missionTitle = this.options.missionTitle
+      ? escapeBoardingText(this.options.missionTitle)
+      : escapeBoardingText(snapshot.map.name);
+    const briefing = this.options.missionBriefing
+      ? escapeBoardingText(this.options.missionBriefing)
+      : '';
     this.shell.innerHTML = `
       <header class="boarding-header">
-        <div><span>ENTERKAMPF</span><strong>${snapshot.map.name}</strong><small>RUNDE ${snapshot.round} · ${snapshot.activeTeam === 'player' ? 'EIGENER ZUG' : 'FEINDLICHER ZUG'}</small></div>
+        <div><span>ENTERKAMPF</span><strong>${missionTitle}</strong><small>${escapeBoardingText(snapshot.map.name)} · RUNDE ${snapshot.round} · ${snapshot.activeTeam === 'player' ? 'EIGENER ZUG' : 'FEINDLICHER ZUG'}</small></div>
         <div class="boarding-actions">
           <button type="button" data-boarding-end ${finished || snapshot.activeTeam !== 'player' ? 'disabled' : ''}>ZUG BEENDEN</button>
           <button type="button" data-boarding-retreat ${finished || snapshot.activeTeam !== 'player' || !snapshot.allowRetreat ? 'disabled' : ''}>RÜCKZUG</button>
@@ -304,11 +346,16 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
           ${finished ? '<button type="button" data-boarding-finish>WEITER</button>' : ''}
         </div>
       </header>
+      ${briefing ? `<div class="boarding-status" role="note">${briefing}</div>` : ''}
       <div class="boarding-status">${statusLabel}</div>
       <div class="boarding-tactics">
         <div class="boarding-tactics-actions">
           ${button('move', 'BEWEGEN')}
-          ${button('shoot', 'SCHIESSEN · 1 AP', cannotShoot)}
+          ${button(
+            'shoot',
+            selected?.weapon.spreadMode === 'cone' ? 'FLAMMENKEGEL · 1 AP' : 'SCHIESSEN · 1 AP',
+            cannotShoot
+          )}
           ${button('suppress', 'UNTERDRÜCKEN · 1 AP', cannotSuppress)}
           ${button('overwatch', 'FEUERBEREITSCHAFT · 2 AP', cannotOverwatch)}
           <button type="button" data-boarding-hold ${cannotHold ? 'disabled' : ''}>DECKUNG HALTEN</button>
