@@ -1,0 +1,40 @@
+name: PR293 one-shot formatting and targeted smoke checks
+on:
+  push:
+    branches: [feature/region-pirates-route-safety]
+    paths: [.github/workflows/pr293-format-smoke-once.yml]
+permissions:
+  contents: write
+jobs:
+  format-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/region-pirates-route-safety
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format changed files with project Prettier rules
+        run: npx prettier --write docs/SOJOURN_FEATURE_PARITY.md src/app/game-controller-models.ts src/app/game-controller.ts src/core/npc-types.ts src/data/economy/sector-npc-economy.ts src/data/ships/pirate-class-ships.ts src/features/star-map/star-map-view-model.ts src/systems/combat/star-map-engagement-service.ts src/systems/navigation/route-safety.ts src/systems/npcs/npc-pirate-classes.ts src/systems/npcs/npc-sector-live-replan.ts src/systems/npcs/npc-sector-routing.ts src/systems/npcs/npc-sector-service.ts src/systems/npcs/npc-upgrade-service.ts src/systems/ships/ship-registry.ts src/ui/map/star-map-fuel-status.ts src/ui/map/star-map-panel.ts src/ui/map/star-map-safe-destination-rings.ts src/ui/map/topdown-map-renderer.ts tests/navigation/route-safety-progress.test.cjs tests/npcs/pirate-ship-classes.test.cjs
+      - name: Commit formatted files
+        run: |
+          if ! git diff --quiet; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add -u
+            git commit -m "style(region-safety): format PR293 implementation"
+            git push origin HEAD:feature/region-pirates-route-safety
+          fi
+      - name: Targeted integration and architecture checks
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run deps:check
+          node tests/navigation/route-safety-progress.test.cjs
+          node tests/npcs/pirate-ship-classes.test.cjs
+          node tests/navigation/live-threat-routing.test.cjs
