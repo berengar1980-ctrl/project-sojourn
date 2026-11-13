@@ -168,6 +168,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     meta,
     oreBar,
     mineButton,
+    claimButton,
     shortScanButton,
     attackButton,
     longScanButton,
@@ -186,6 +187,8 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     button.classList.toggle('is-active', button.dataset.tactic === model.combat?.attacker.tactic);
   }
   const selected = model.selectedAsteroid;
+  claimButton.hidden = !selected || selected.scanLevel !== 'analyzed' || selected.totalRemaining === 0 || model.selectedAsteroidClaimOwner !== null && model.selectedAsteroidClaimOwner !== 'player';
+  claimButton.textContent = model.selectedAsteroidClaimOwner === 'player' ? 'KONZESSION AUFGEBEN' : 'KONZESSION REGISTRIEREN · 2.500 CR';
   const miningActive = model.miningPhase !== 'idle';
   const eventActive = model.miningEvent !== null;
   trackScanCompletion(model);
@@ -240,7 +243,7 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
     selected.scanLevel === 'analyzed' && selected.deposits.length > 0
       ? 'ASTEROID · ' + selected.deposits.length + ' VORKOMMEN'
       : 'ASTEROID';
-  meta.textContent = asteroidStatus(model);
+  meta.textContent = asteroidStatus(model) + (model.selectedAsteroidClaimOwner ? ' · KONZESSION: ' + (model.selectedAsteroidClaimOwner === 'player' ? 'EIGEN' : 'FREMD') : '');
   const remaining =
     selected.totalCapacity && selected.totalRemaining != null
       ? (selected.totalRemaining / selected.totalCapacity) * 100
