@@ -111,6 +111,19 @@ function escapeBoardingText(value: string): string {
   });
 }
 
+function boardingActionStatus(
+  snapshot: BoardingEncounterSnapshot,
+  selected: BoardingUnit | null,
+  action: BoardingAction,
+  checkpointMessage: string
+): string {
+  if (checkpointMessage) return checkpointMessage;
+  if (action === 'shoot' && selected?.weapon.spreadMode === 'cone') {
+    return 'FLAMMENKEGEL · Zielhex wählen · auch eigene Einheiten können getroffen werden';
+  }
+  return boardingStatusText(snapshot);
+}
+
 class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
   private readonly shell: HTMLElement;
   private readonly tactical: CrewBoardingEncounter['tactical'];
@@ -304,11 +317,7 @@ class BoardingTacticalPanelRuntime implements BoardingTacticalPanel {
     const button = (action: BoardingAction, name: string, disabled = false): string =>
       boardingActionButton(action, this.action, name, !controls.canAct || disabled);
     const { cannotShoot, cannotSuppress, cannotOverwatch, cannotHold } = controls;
-    const statusLabel =
-      this.checkpointMessage ||
-      (this.action === 'shoot' && selected?.weapon.spreadMode === 'cone'
-        ? 'FLAMMENKEGEL · Zielhex wählen · auch eigene Einheiten können getroffen werden'
-        : boardingStatusText(snapshot));
+    const statusLabel = boardingActionStatus(snapshot, selected, this.action, this.checkpointMessage);
     const details = boardingUnitDetails(selected);
     const log = snapshot.log
       .slice(0, 8)
