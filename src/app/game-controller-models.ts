@@ -85,7 +85,6 @@ export function updateSectorNavigationThreats(context: ControllerRuntimeContext)
             strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
           }))
   );
-
 }
 
 export function syncControllerNavigationCrewPerformance(context: ControllerRuntimeContext): void {

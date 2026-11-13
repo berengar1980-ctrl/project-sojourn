@@ -40,5 +40,4 @@ export function mapBackgroundSeed(value: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-  }
-
+}

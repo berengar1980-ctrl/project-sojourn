@@ -73,4 +73,3 @@ export function bindDangerAndRouteControls(
   refreshProfileButtons();
   return refreshProfileButtons;
 }
-

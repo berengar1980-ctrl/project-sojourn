@@ -57,7 +57,10 @@ export class TopdownMapRenderer {
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.navRenderer = new NavMapRenderer(context);
-    this.backgroundRenderer = new SpaceBackgroundRenderer(context, mapBackgroundSeed(model.worldId));
+    this.backgroundRenderer = new SpaceBackgroundRenderer(
+      context,
+      mapBackgroundSeed(model.worldId)
+    );
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
     this.stations = new ProceduralStationRenderer(context);
@@ -177,7 +180,15 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
-    drawStarMapDangerRegions(this.context, this.camera, this.model.regions, this.dangerBands, this.dangerOverlayVisible, width, height);
+    drawStarMapDangerRegions(
+      this.context,
+      this.camera,
+      this.model.regions,
+      this.dangerBands,
+      this.dangerOverlayVisible,
+      width,
+      height
+    );
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
     const playerPoint = this.orbitalProjection.playerPoint(
       this.model,
@@ -487,6 +498,4 @@ export class TopdownMapRenderer {
     });
     if (location.ringStyle) this.planetRings.drawFront(location.ringStyle, point, radius);
   }
-
-
 }

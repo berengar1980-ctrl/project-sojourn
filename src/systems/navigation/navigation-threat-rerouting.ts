@@ -51,4 +51,3 @@ export function reviewLiveRoute(
   travel.route = alternative;
   travel.distanceTravelled = 0;
 }
-

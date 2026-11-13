@@ -34,4 +34,3 @@ export interface NavigationRuntimeState {
   replanCooldown: number;
   previewCache: { readonly key: string; readonly plan: RoutePlan } | null;
 }
-

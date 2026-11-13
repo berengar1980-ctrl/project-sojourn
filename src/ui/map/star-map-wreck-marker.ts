@@ -1,6 +1,10 @@
 import type { WorldPoint } from '../../core/world-types';
 
-export function drawStarMapWreckMarker(ctx: CanvasRenderingContext2D, point: WorldPoint, radius: number): void {
+export function drawStarMapWreckMarker(
+  ctx: CanvasRenderingContext2D,
+  point: WorldPoint,
+  radius: number
+): void {
   ctx.strokeStyle = '#a68d7d';
   ctx.lineWidth = 3;
   ctx.beginPath();
