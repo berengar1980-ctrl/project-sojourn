@@ -154,7 +154,6 @@ export class TopdownMapRenderer {
     const first = this.pickContacts(x, y)[0];
     return first ? { kind: first.kind, id: first.id } : null;
   }
-
   private draw(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
@@ -225,7 +224,6 @@ export class TopdownMapRenderer {
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height, playerPoint);
   }
-
   private contentBounds() {
     const points = [
       this.model.star.position,
@@ -243,7 +241,6 @@ export class TopdownMapRenderer {
       maxY: maxY + padding,
     };
   }
-
   private drawPlayerShip(width: number, height: number, point: ScreenPoint): void {
     if (this.displayMode === 'nav') {
       this.navRenderer.drawShip(
@@ -264,7 +261,6 @@ export class TopdownMapRenderer {
       { x: starPoint.x - point.x, y: starPoint.y - point.y }
     );
   }
-
   private drawStar(width: number, height: number): void {
     const point = this.camera.worldToScreen(this.model.star.position, width, height);
     if (this.displayMode === 'nav') {
@@ -318,7 +314,6 @@ export class TopdownMapRenderer {
       this.context.fillText(this.model.star.name.toUpperCase(), point.x, point.y + radius + 22);
     }
   }
-
   private drawOrbits(width: number, height: number): void {
     const star = this.camera.worldToScreen(this.model.star.position, width, height);
     const starOrbits = this.model.locations
@@ -344,7 +339,6 @@ export class TopdownMapRenderer {
     if (this.camera.getRelativeZoom() >= 1.35) this.drawChildOrbits(width, height);
     this.context.restore();
   }
-
   private drawChildOrbits(width: number, height: number): void {
     const drawn = new Set<string>();
     for (const location of this.model.locations) {
@@ -362,7 +356,6 @@ export class TopdownMapRenderer {
       this.context.stroke();
     }
   }
-
   private drawRoute(width: number, height: number, playerPoint: ScreenPoint): void {
     const route = this.model.route;
     if (!route || route.points.length < 2) return;
@@ -383,7 +376,6 @@ export class TopdownMapRenderer {
     this.context.stroke();
     this.context.restore();
   }
-
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius = mapLocationVisualRadius(location, this.camera.getRelativeZoom());
