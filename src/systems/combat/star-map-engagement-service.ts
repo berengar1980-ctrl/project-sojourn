@@ -24,6 +24,7 @@ import {
 } from './strategic-combat-service';
 
 import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
+import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
 const PLAYER_ID = 'player';
 
@@ -66,21 +67,6 @@ export interface StarMapEngagementOptions {
   readonly getPlayerShip: () => ShipDefinition;
   readonly getPlayerCombatant: () => StrategicCombatantSetup;
   readonly log: (message: string) => void;
-}
-
-function distance(
-  a: { readonly x: number; readonly y: number },
-  b: { readonly x: number; readonly y: number }
-): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
-function engagementRange(first: ShipDefinition, second: ShipDefinition): number {
-  return Math.max(48, (first.nominalLengthMeters + second.nominalLengthMeters) * 0.35);
-}
-
-function pairKey(firstId: string, secondId: string): string {
-  return [firstId, secondId].sort().join(':');
 }
 
 interface EngagementRuntime {
