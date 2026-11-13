@@ -17,6 +17,7 @@ import {
   planRouteWithProfile,
   repointRouteEndpoints,
   type RoutePlan,
+  type RouteThreatContact,
 } from '../navigation/route-planner';
 
 import {
@@ -114,8 +115,20 @@ class SectorService implements NpcSectorService {
       : 'Teilreparatur · weitere Wartung nur gegen Credits';
     return true;
   };
+  /** NPC captains consider live pirate traffic and patrol cover using their existing risk policy. */
+  private routeThreats = (self: SectorNpcState): RouteThreatContact[] => {
+    if (self.pirate || self.job === 'patrol') return [];
+    return this.npcs
+      .filter((npc) => npc.id !== self.id && npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
+      .slice(0, 12)
+      .map((npc) => ({
+        position: this.livePosition(npc),
+        kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
+        strength: Math.max(0.5, npc.hullHp / Math.max(1, npc.hullMaxHp)),
+      }));
+  };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    const base = planRouteWithProfile(this.world, fromId, toId, routeProfile(npc));
+    const base = planRouteWithProfile(this.world, fromId, toId, routeProfile(npc), this.routeThreats(npc));
     return repointRouteEndpoints(
       base,
       this.livePosition(npc),
@@ -153,7 +166,7 @@ class SectorService implements NpcSectorService {
     reason: string
   ): boolean => {
     const route = repointRouteEndpoints(
-      planRouteFromPoint(this.world, from, destinationId, routeProfile(npc)),
+      planRouteFromPoint(this.world, from, destinationId, routeProfile(npc), this.routeThreats(npc)),
       from,
       npcOrbitDestination(this.world, npc, destinationId)
     );
@@ -222,6 +235,7 @@ class SectorService implements NpcSectorService {
       fromPosition: this.livePosition(npc),
       destinationId,
       profile: routeProfile(npc),
+      threatContacts: this.routeThreats(npc),
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,
