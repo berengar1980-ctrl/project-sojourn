@@ -3,7 +3,7 @@ import type { BoardingOutcome } from '../../core/boarding-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldMap } from '../../core/world-types';
-import { canPirateOperateAt, worldDangerAt } from '../npcs/npc-pirate-classes';
+import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
 
 import type { NavigationService } from '../navigation';
@@ -162,7 +162,7 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
     .filter(
       (npc) =>
         npc.pirate &&
-        (!world || canPirateOperateAt(npc, worldDangerAt(world, navigation.currentPosition))) &&
+        pirateMayIntercept(world, npc, navigation.currentPosition) &&
         runtime.options.mayInitiateAttack?.(npc) !== false &&
         npcMayInitiateAttack(npc) &&
         !runtime.options.playerProtectedFromPirate?.(npc)
@@ -205,21 +205,10 @@ function npcAttackTarget(
         if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
           return false;
         if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
-        const cargoUnits = Object.values(candidate.cargo).reduce(
-          (total, units) => total + Math.max(0, Number(units) || 0),
-          0
-        );
-        // Port traffic is not an automatic raid. Hunt funded, actually loaded
-        // vessels in flight or at an active field operation.
-        const preyPosition = runtime.options.sectorNpcs.livePosition(candidate);
-        return (
-          (!world ||
-            (!protectedBySafeDestination(world, preyPosition) &&
-              canPirateOperateAt(attacker, worldDangerAt(world, preyPosition)))) &&
-          npcIsPiratePrey(candidate) &&
-          candidate.smugglingProtectionFaction !== attacker.factionId &&
-          cargoUnits > 0 &&
-          (Boolean(candidate.travel) || candidate.autonomy?.phase === 'working')
+        // Keep existing target filters, but use the same geographic policy as player interception.
+        if (!npcIsPiratePrey(candidate)) return false;
+        return canRaidCivilianCargo(
+          world, attacker, candidate, runtime.options.sectorNpcs.livePosition(candidate)
         );
       })
       .map((candidate) => ({
