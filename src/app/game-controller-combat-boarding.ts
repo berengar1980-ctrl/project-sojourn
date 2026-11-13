@@ -11,6 +11,7 @@ import {
 } from '../systems/boarding/crew-boarding-adapter';
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
+import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
 export function startCombatBoarding(
@@ -78,6 +79,22 @@ export function startCombatBoarding(
     root: context.root,
     encounter,
     onFinish: (result) => {
+      if (result.outcome === 'retreat') {
+        const combat = context.engagements.activePlayerCombat();
+        if (combat?.resumeAfterBoarding()) {
+          context.systemLog.write('BOARDING > RUECKZUG · RAUMKAMPF WIRD FORTGESETZT');
+          context.campaignEvents.emit({ type: 'boarding.ended', outcome: 'draw' });
+          state.boardingPanel?.destroy();
+          state.boardingPanel = null;
+          state.mode = 'combat';
+          state.combatPanel = createStrategicCombatPanel({
+            root: context.root,
+            combat,
+            onReturn: () => returnFromCombat(context, combat, () => returnToMap()),
+          });
+          return;
+        }
+      }
       if (result.outcome === 'player_win') {
         const captured = enemyUnits[0]!.weapon;
         context.crew.grantBoardingEquipment(captured.id);
