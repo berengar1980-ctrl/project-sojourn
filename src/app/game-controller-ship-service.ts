@@ -47,10 +47,14 @@ export function advancePlayerFuel(
   if (!before.isTravelling) return;
   const dx = after.currentPosition.x - before.currentPosition.x;
   const dy = after.currentPosition.y - before.currentPosition.y;
+  const sameRoute = before.activeRoute === after.activeRoute;
   const progress = after.activeRoute
     ? Math.max(0, after.progress - before.progress)
     : 1 - before.progress;
-  const distance = before.activeRoute ? before.activeRoute.distance * progress : Math.hypot(dx, dy);
+  // Replanning resets route progress; charge physical travel, not incomparable percentages.
+  const distance = before.activeRoute && (sameRoute || !after.activeRoute)
+    ? before.activeRoute.distance * progress
+    : Math.hypot(dx, dy);
   if (distance <= 0) return;
   const ship = context.state.activeShip;
   const fuel = liveFuelMultipliers(context);
