@@ -1,5 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
+import { pirateHuntAllowedAt } from './npc-pirate-classes';
 
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 
@@ -156,6 +157,7 @@ export function pirateHuntDestination(
       (location) =>
         location.id !== npc.locationId &&
         location.id !== homeId &&
+        pirateHuntAllowedAt(npc, location) &&
         (location.activities.trade || location.activities.mine || location.activities.salvage)
     )
     .map((location) => {
