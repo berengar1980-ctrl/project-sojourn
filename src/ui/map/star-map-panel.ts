@@ -360,31 +360,12 @@ function createMenuContentRefresher(
   return refresh;
 }
 
-export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
-  const controls = createStarMapControls(options);
-  const {
-    shell,
-    canvas,
-    card,
-    travelButton,
-    dockButton,
-    attackButton,
-    travelStatus,
-    fuelStatus,
-    modeToggle,
-    labelToggle,
-    cargoToggle,
-    cargoPanel,
-    cargoSelect,
-    cargoContent,
-  } = controls;
-
-  let model = options.model;
-  let refreshMenuContent: () => void = () => {};
-  const menu = createStarMapMenu(shell, () => refreshMenuContent());
-
-  const renderer = new TopdownMapRenderer(canvas, model);
-  const resetButton = populateStarMapMenu(menu, controls);
+function bindDangerAndRouteControls(
+  menu: StarMapMenu,
+  renderer: TopdownMapRenderer,
+  getModel: () => StarMapViewModel,
+  onRouteProfileChange?: (profile: RouteProfile) => void
+): () => void {
   const hazardControls = document.createElement('div');
   hazardControls.className = 'star-map-danger-controls';
   const hazardMaster = document.createElement('button');
@@ -425,19 +406,48 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
     button.dataset.routeProfile = profile;
     button.textContent = ({ fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' })[profile];
     button.addEventListener('click', () => {
-      options.onRouteProfileChange?.(profile);
+      onRouteProfileChange?.(profile);
       refreshProfileButtons();
     });
     return button;
   });
   const refreshProfileButtons = (): void => {
     for (const button of profileButtons) {
-      button.classList.toggle('is-active', button.dataset.routeProfile === model.navigation.routeProfile);
+      button.classList.toggle('is-active', button.dataset.routeProfile === getModel().navigation.routeProfile);
     }
   };
   menu.mapPane.append(routeHelp, ...profileButtons);
   refreshProfileButtons();
   const updateTicker = createStarMapTicker(shell, options.log);
+  return refreshProfileButtons;
+}
+
+export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
+  const controls = createStarMapControls(options);
+  const {
+    shell,
+    canvas,
+    card,
+    travelButton,
+    dockButton,
+    attackButton,
+    travelStatus,
+    fuelStatus,
+    modeToggle,
+    labelToggle,
+    cargoToggle,
+    cargoPanel,
+    cargoSelect,
+    cargoContent,
+  } = controls;
+
+  let model = options.model;
+  let refreshMenuContent: () => void = () => {};
+  const menu = createStarMapMenu(shell, () => refreshMenuContent());
+
+  const renderer = new TopdownMapRenderer(canvas, model);
+  const resetButton = populateStarMapMenu(menu, controls);
+  const refreshProfileButtons = bindDangerAndRouteControls(menu, renderer, () => model, options.onRouteProfileChange);
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
 
   const renderCargoScanner = bindCargoMarketScanner(
