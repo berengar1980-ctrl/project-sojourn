@@ -1,0 +1,39 @@
+name: PR297 one-shot red fog and character scroll UI validation
+on:
+  push:
+    branches: [fix/red-fog-contrast-character-shade-scroll]
+    paths: [.github/workflows/pr297-ui-fixes-once.yml]
+permissions:
+  contents: write
+jobs:
+  format-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/red-fog-contrast-character-shade-scroll
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Apply project formatting to touched files
+        run: npx prettier --write src/ui/start/character-editor.css src/ui/map/star-map-danger-regions.ts tests/ui/character-editor.test.cjs tests/map/organic-danger-fog.test.cjs docs/SOJOURN_FEATURE_PARITY.md
+      - name: Commit formatted changes
+        run: |
+          if ! git diff --quiet; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add -u
+            git commit -m "style(ui): apply project formatting to red fog and editor shade fixes"
+            git push origin HEAD:fix/red-fog-contrast-character-shade-scroll
+          fi
+      - name: Validate targeted map and editor tests
+        run: |
+          node tests/ui/character-editor.test.cjs
+          node tests/map/organic-danger-fog.test.cjs
+          node tests/ui/harrowdrift-start-menu.test.cjs
+          npm run typecheck
+          npm run deps:check
