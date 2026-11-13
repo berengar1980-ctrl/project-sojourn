@@ -5,7 +5,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { BlockadeService } = load('src/systems/operations/blockade-service.ts');
-const { MiningConcessionService } = load('src/systems/operations/mining-concession-service.ts');
+const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { PatrolCareerService } = load('src/systems/operations/patrol-career-service.ts');
 const { narrowsSector: world } = load('src/data/maps/narrows-sector.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
@@ -123,48 +123,34 @@ function failedAndNpcOrders() {
   assert(!b.assigned(pirate.id));
 }
 function miningTest() {
-  const f = fixture(),
-    { trade, simulation, ships } = f;
-  const claims = new MiningConcessionService(world, trade.player, ships);
-  const site = world.locations.find((l) => l.activities.mine && l.minedResourceIds?.length);
-  const original = trade.player.credits;
-  assert(claims.prospect('player', site.id));
-  assert.equal(trade.player.credits, original - 100);
-  const snapshot = claims.snapshot();
-  snapshot.discoveries[0].deposits[0].remaining = -100;
-  assert(claims.snapshot().discoveries[0].deposits[0].remaining > 0);
-  trade.player.credits = 0;
-  const unchanged = claims.snapshot();
-  assert.equal(claims.claim('player', site.id), false);
-  assert.deepEqual(claims.snapshot(), unchanged);
-  trade.player.credits = 10000;
-  assert(claims.claim('player', site.id));
-  assert.equal(claims.claim('player', site.id), false);
-  const resource = claims.snapshot().discoveries[0].deposits[0].resourceId;
-  const mining = createMiningEconomyService(simulation, trade, {
-    allowance: (id, amount, origin) => claims.allowance('player', origin, id, amount),
-    onCollected: (id, amount, origin) => claims.recordExtraction('player', origin, id, amount),
+  const claims = new AsteroidClaimRegistry();
+  const mkRock = (id) => ({
+    id, kind: 'resource', scanLevel: 'analyzed',
+    deposits: [{ resourceId: 'ferrite', oreRemaining: 75, oreCapacity: 100, identified: true }]
   });
-  const before = simulation.getResourceTotal(resource);
-  const collected = mining.collect(resource, 5, 100, site.id);
-  assert.equal(collected, 5);
-  assert.equal(simulation.getResourceTotal(resource), before, 'mining transfers circulation');
-  const miner = ships.find((n) => n.job === 'miner');
-  miner.credits = 1000;
-  const ownerBalance = trade.player.credits,
-    minerBalance = miner.credits;
-  const allowed = claims.allowance(miner.id, site.id, resource, 5);
-  assert.equal(allowed, 5);
-  claims.recordExtraction(miner.id, site.id, resource, 5);
-  assert(trade.player.credits > ownerBalance);
-  assert.equal(trade.player.credits + miner.credits, ownerBalance + minerBalance);
-  claims.depart(null);
-  assert.equal(claims.snapshot().discoveries.length, 1, 'registered claim survives travel');
-  claims.abandon('player', site.id);
-  assert.equal(claims.snapshot().discoveries.length, 0);
-  assert(claims.prospect('player', site.id));
-  claims.depart(null);
-  assert.equal(claims.snapshot().discoveries.length, 0, 'unregistered finding expires');
+  const asteroid = mkRock('asteroid-17-3');
+  assert.equal(claims.register('field-a', { ...asteroid, scanLevel: 'unscanned' }, 'player', 1, 10000).ok, false);
+  assert.equal(claims.register('field-a', asteroid, 'player', 1, 0).ok, false);
+  assert.deepEqual(claims.register('field-a', asteroid, 'player', 1, 10000), { ok: true, fee: 2500 });
+  assert.equal(claims.register('field-a', asteroid, 'competitor', 1, 10000).ok, false);
+  assert.equal(claims.claim('field-a', asteroid).ownerId, 'player');
+  const sameFieldSeed = claims.seedFor('field-a', () => 17);
+  assert.equal(claims.seedFor('field-a', () => 999), sameFieldSeed);
+  assert.equal(claims.seedFor('field-b', () => 23), 23);
+  claims.rememberField('field-a', [asteroid]);
+  const regenerated = mkRock('asteroid-17-3');
+  regenerated.deposits[0].oreRemaining = 100;
+  regenerated.scanLevel = 'unscanned';
+  claims.restoreField('field-a', [regenerated]);
+  assert.equal(regenerated.deposits[0].oreRemaining, 75);
+  assert.equal(regenerated.scanLevel, 'analyzed');
+  assert.equal(claims.recordTheft('field-a', asteroid.id, 'pirate', 5, false, 100), null);
+  const caught = claims.recordTheft('field-a', asteroid.id, 'pirate', 5, true, 100);
+  assert.equal(caught.compensation, 750);
+  assert.equal(claims.resolveConflict('field-a', asteroid.id, 'pirate', 'paid').status, 'paid');
+  assert.equal(claims.abandon('field-a', asteroid.id, 'pirate'), false);
+  assert.equal(claims.abandon('field-a', asteroid.id, 'player'), true);
+  assert.equal(claims.claim('field-a', asteroid), null);
 }
 function patrolTest() {
   const { ships, trade } = fixture();
@@ -201,5 +187,5 @@ failedAndNpcOrders();
 miningTest();
 patrolTest();
 console.log(
-  'PASS operations: physical deployment, exclusivity, losses, failed transactions, royalties, patrol completion and detached snapshots'
+  'PASS operations: physical deployment, exclusivity, losses, asteroid claims, patrol completion and detached snapshots'
 );
