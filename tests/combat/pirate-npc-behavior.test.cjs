@@ -26,12 +26,34 @@ assert(
     data.includes("pirates2: 'gallows-anchor'"),
   'pirate population must have two persistent gang homes'
 );
+const piratePopulation = loadStandaloneTypeScriptModule(
+  root,
+  'src/data/economy/sector-npc-economy.ts'
+).createSectorNpcEconomyStates().filter((npc) => npc.pirate);
+assert.equal(piratePopulation.length, 9, 'the sector retains nine persistent pirate captains');
+assert.equal(
+  piratePopulation.filter((npc) => npc.factionId === 'pirates').length,
+  5,
+  'the Broken Spear retains five captains'
+);
+assert.equal(
+  piratePopulation.filter((npc) => npc.factionId === 'pirates2').length,
+  4,
+  'the Black Tide retains four captains'
+);
+assert.deepEqual(
+  Object.fromEntries(
+    ['raider', 'reaver', 'marauder'].map((kind) => [
+      kind,
+      piratePopulation.filter((npc) => npc.pirateClass === kind).length,
+    ])
+  ),
+  { raider: 3, reaver: 3, marauder: 3 },
+  'all three physical pirate classes must spawn without player-level scaling'
+);
 assert(
-  data.includes("const factionId = index < 5 ? 'pirates' : 'pirates2'") &&
-    data.includes("job: 'pirate'") &&
-    data.includes('patrolVariantShips[index % patrolVariantShips.length]') &&
-    data.includes('aggression: 75 +'),
-  'nine high-aggression pirates must temporarily use patrol hulls with a 5/4 faction split'
+  piratePopulation.every((npc) => npc.job === 'pirate' && npc.aggression >= 50),
+  'pirates must retain hostile combat behavior while allowing class-specific aggression'
 );
 assert(
   data.includes("pirateMark: factionId === 'pirates' ? 'broken-spear' : 'black-tide'"),
