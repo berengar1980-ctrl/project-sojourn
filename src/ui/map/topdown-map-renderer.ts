@@ -226,12 +226,22 @@ export class TopdownMapRenderer {
       if (!this.dangerBands[band]) continue;
       const center = this.camera.worldToScreen(region.center, width, height);
       const perimeter = this.camera.worldToScreen(
-        { x: region.center.x + region.radius, y: region.center.y }, width, height
+        { x: region.center.x + region.radius, y: region.center.y },
+        width,
+        height
       );
       const radius = Math.hypot(perimeter.x - center.x, perimeter.y - center.y);
       if (radius < 1) continue;
-      const color = band === 'red' ? '205, 58, 65' : band === 'yellow' ? '205, 159, 51' : '40, 150, 100';
-      const haze = ctx.createRadialGradient(center.x, center.y, radius * 0.18, center.x, center.y, radius);
+      const color =
+        band === 'red' ? '205, 58, 65' : band === 'yellow' ? '205, 159, 51' : '40, 150, 100';
+      const haze = ctx.createRadialGradient(
+        center.x,
+        center.y,
+        radius * 0.18,
+        center.x,
+        center.y,
+        radius
+      );
       haze.addColorStop(0, 'rgba(' + color + ',0.19)');
       haze.addColorStop(0.55, 'rgba(' + color + ',0.13)');
       haze.addColorStop(1, 'rgba(' + color + ',0)');

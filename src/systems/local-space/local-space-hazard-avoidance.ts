@@ -28,20 +28,28 @@ export function findRouteAsteroidHazard(
   for (const asteroid of asteroids) {
     if (!asteroid.routeBlocking || asteroid.id === excludedId) continue;
     // Two predictive iterations track a rock crossing the line while our ship approaches.
-    let projection = Math.max(0, Math.min(1,
-      ((asteroid.position.x - ship.position.x) * dx +
-        (asteroid.position.y - ship.position.y) * dy) / length2
-    ));
-    let seconds = Math.min(4.5, segmentLength * projection / speed);
+    let projection = Math.max(
+      0,
+      Math.min(
+        1,
+        ((asteroid.position.x - ship.position.x) * dx +
+          (asteroid.position.y - ship.position.y) * dy) /
+          length2
+      )
+    );
+    let seconds = Math.min(4.5, (segmentLength * projection) / speed);
     let predicted: WorldPoint = {
       x: asteroid.position.x + asteroid.physics.velocity.x * seconds,
       y: asteroid.position.y + asteroid.physics.velocity.y * seconds,
     };
-    projection = Math.max(0, Math.min(1,
-      ((predicted.x - ship.position.x) * dx +
-        (predicted.y - ship.position.y) * dy) / length2
-    ));
-    seconds = Math.min(4.5, segmentLength * projection / speed);
+    projection = Math.max(
+      0,
+      Math.min(
+        1,
+        ((predicted.x - ship.position.x) * dx + (predicted.y - ship.position.y) * dy) / length2
+      )
+    );
+    seconds = Math.min(4.5, (segmentLength * projection) / speed);
     predicted = {
       x: asteroid.position.x + asteroid.physics.velocity.x * seconds,
       y: asteroid.position.y + asteroid.physics.velocity.y * seconds,
@@ -50,8 +58,10 @@ export function findRouteAsteroidHazard(
       x: ship.position.x + dx * projection,
       y: ship.position.y + dy * projection,
     };
-    const gap = Math.hypot(predicted.x - near.x, predicted.y - near.y) -
-      localAsteroidContactRadius(asteroid) - clearance;
+    const gap =
+      Math.hypot(predicted.x - near.x, predicted.y - near.y) -
+      localAsteroidContactRadius(asteroid) -
+      clearance;
     // The current overlap is handled by collision physics; do not teleport out of it.
     if (gap > 12 || projection < 0.025 || seconds > 4.5) continue;
     if (gap < bestGap) {

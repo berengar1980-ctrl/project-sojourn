@@ -157,12 +157,24 @@ function previewRoute(world: WorldMap, state: NavigationRuntimeState): RoutePlan
     world.locations.some((location) => location.id === state.currentLocationId);
   const route = currentIsStatic
     ? repointRouteEndpoints(
-        planRouteWithProfile(world, state.currentLocationId!, state.selectedDestinationId, state.routeProfile, state.threats),
+        planRouteWithProfile(
+          world,
+          state.currentLocationId!,
+          state.selectedDestinationId,
+          state.routeProfile,
+          state.threats
+        ),
         state.currentPosition,
         navigationOrbitalBerth(world, state.selectedDestinationId)
       )
     : repointRouteEndpoints(
-        planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId, state.routeProfile, state.threats),
+        planRouteFromPoint(
+          world,
+          state.currentPosition,
+          state.selectedDestinationId,
+          state.routeProfile,
+          state.threats
+        ),
         state.currentPosition,
         navigationOrbitalBerth(world, state.selectedDestinationId)
       );
@@ -372,7 +384,11 @@ function moveNavigationToWorld(
 }
 
 /** Keep only the untraveled portion for comparing a moving route with a fresh one. */
-function untraveledWaypoints(route: RoutePlan, travelled: number, current: WorldPoint): WorldPoint[] {
+function untraveledWaypoints(
+  route: RoutePlan,
+  travelled: number,
+  current: WorldPoint
+): WorldPoint[] {
   const points: WorldPoint[] = [{ ...current }];
   let covered = 0;
   for (let i = 1; i < route.points.length; i += 1) {
@@ -385,7 +401,11 @@ function untraveledWaypoints(route: RoutePlan, travelled: number, current: World
 }
 
 /** Only detour on changed traffic when it materially reduces exposure, preserving travel momentum. */
-function reviewLiveRoute(world: WorldMap, state: NavigationRuntimeState, deltaSeconds: number): void {
+function reviewLiveRoute(
+  world: WorldMap,
+  state: NavigationRuntimeState,
+  deltaSeconds: number
+): void {
   const travel = state.travel;
   if (!travel || travel.route.profile === 'fast') return;
   state.replanCooldown = Math.max(0, state.replanCooldown - deltaSeconds);
@@ -405,7 +425,8 @@ function reviewLiveRoute(world: WorldMap, state: NavigationRuntimeState, deltaSe
   );
   const alternativeExposure = routeThreatExposure(alternative.points, state.threats);
   const remaining = Math.max(1, travel.route.distance - travel.distanceTravelled);
-  if (alternativeExposure >= previousExposure * 0.72 || alternative.distance > remaining * 1.7) return;
+  if (alternativeExposure >= previousExposure * 0.72 || alternative.distance > remaining * 1.7)
+    return;
   travel.route = alternative;
   travel.distanceTravelled = 0;
 }
@@ -512,10 +533,18 @@ export function createNavigationService(
       return snapshot();
     },
     setThreatContacts(contacts) {
-      const signature = contacts.map((contact) =>
-        contact.kind + ':' + Math.round(contact.position.x / 160) + ':' +
-        Math.round(contact.position.y / 160) + ':' + Math.round((contact.strength ?? 1) * 2)
-      ).join('|');
+      const signature = contacts
+        .map(
+          (contact) =>
+            contact.kind +
+            ':' +
+            Math.round(contact.position.x / 160) +
+            ':' +
+            Math.round(contact.position.y / 160) +
+            ':' +
+            Math.round((contact.strength ?? 1) * 2)
+        )
+        .join('|');
       if (signature === state.threatSignature) return;
       state.threats = [...contacts];
       state.threatSignature = signature;

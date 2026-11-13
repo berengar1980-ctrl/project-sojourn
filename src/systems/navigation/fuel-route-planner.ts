@@ -86,7 +86,13 @@ function routingOrigin(request: FuelRouteRequest): string {
 function legBetween(request: FuelRouteRequest, fromId: string, toId: string): RoutePlan {
   const base =
     fromId === 'deep-space'
-      ? planRouteFromPoint(request.world, request.fromPosition, toId, request.profile, request.threatContacts)
+      ? planRouteFromPoint(
+          request.world,
+          request.fromPosition,
+          toId,
+          request.profile,
+          request.threatContacts
+        )
       : planRouteWithProfile(request.world, fromId, toId, request.profile, request.threatContacts);
   if (!request.locationPosition) return base;
   return repointRouteEndpoints(

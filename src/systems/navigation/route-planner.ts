@@ -22,7 +22,10 @@ function contactPressure(point: WorldPoint, contacts: readonly RouteThreatContac
 }
 
 /** Exposure is sampled along an actual route; safe and balanced profiles react differently. */
-export function routeThreatExposure(points: readonly WorldPoint[], contacts: readonly RouteThreatContact[]): number {
+export function routeThreatExposure(
+  points: readonly WorldPoint[],
+  contacts: readonly RouteThreatContact[]
+): number {
   if (contacts.length === 0 || points.length < 2) return 0;
   let exposure = 0;
   for (let i = 1; i < points.length; i += 1) {
@@ -32,7 +35,10 @@ export function routeThreatExposure(points: readonly WorldPoint[], contacts: rea
     const steps = Math.max(1, Math.ceil(length / 150));
     for (let step = 0; step < steps; step += 1) {
       const t = (step + 0.5) / steps;
-      exposure += contactPressure({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, contacts) * length / steps;
+      exposure +=
+        (contactPressure({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, contacts) *
+          length) /
+        steps;
     }
   }
   return exposure;
@@ -100,7 +106,10 @@ function segmentMetrics(
     };
     const danger = pointDanger(world, point);
     dangerLevel = Math.max(dangerLevel, danger) as 0 | 1 | 2 | 3;
-    cost += (distance / samples) * (weights[danger] + contactPressure(point, contacts) * ({ fast: 0, balanced: 2.5, safe: 7 }[profile]));
+    cost +=
+      (distance / samples) *
+      (weights[danger] +
+        contactPressure(point, contacts) * { fast: 0, balanced: 2.5, safe: 7 }[profile]);
   }
   return { distance, cost, dangerLevel };
 }
@@ -120,22 +129,42 @@ function regionNodes(world: WorldMap, region: WorldRegion): WorldPoint[] {
   return points;
 }
 
-function candidateNodes(world: WorldMap, from: WorldPoint, to: WorldPoint, contacts: readonly RouteThreatContact[]): readonly WorldPoint[] {
+function candidateNodes(
+  world: WorldMap,
+  from: WorldPoint,
+  to: WorldPoint,
+  contacts: readonly RouteThreatContact[]
+): readonly WorldPoint[] {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const lengthSquared = Math.max(1, dx * dx + dy * dy);
-  const detours = contacts.filter((contact) => {
-    if (contact.kind !== 'pirate') return false;
-    const projection = Math.max(0, Math.min(1,
-      ((contact.position.x - from.x) * dx + (contact.position.y - from.y) * dy) / lengthSquared
-    ));
-    return distanceBetween(contact.position, { x: from.x + projection * dx, y: from.y + projection * dy }) < 1100;
-  }).slice(0, 4).flatMap((contact) =>
-    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle) => ({
-      x: contact.position.x + 740 * Math.cos(angle),
-      y: contact.position.y + 740 * Math.sin(angle),
-    }))
-  ).filter((point) => point.x >= 0 && point.x <= world.width && point.y >= 0 && point.y <= world.height);
+  const detours = contacts
+    .filter((contact) => {
+      if (contact.kind !== 'pirate') return false;
+      const projection = Math.max(
+        0,
+        Math.min(
+          1,
+          ((contact.position.x - from.x) * dx + (contact.position.y - from.y) * dy) / lengthSquared
+        )
+      );
+      return (
+        distanceBetween(contact.position, {
+          x: from.x + projection * dx,
+          y: from.y + projection * dy,
+        }) < 1100
+      );
+    })
+    .slice(0, 4)
+    .flatMap((contact) =>
+      [0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle) => ({
+        x: contact.position.x + 740 * Math.cos(angle),
+        y: contact.position.y + 740 * Math.sin(angle),
+      }))
+    )
+    .filter(
+      (point) => point.x >= 0 && point.x <= world.width && point.y >= 0 && point.y <= world.height
+    );
   return [from, to, ...world.regions.flatMap((region) => regionNodes(world, region)), ...detours];
 }
 
@@ -241,20 +270,34 @@ export function planRouteWithProfile(
   profile: RouteProfile,
   contacts: readonly RouteThreatContact[] = []
 ): RoutePlan {
-  const liveKey = contacts.map((contact) =>
-    contact.kind + ':' + Math.round(contact.position.x / 160) + ':' +
-    Math.round(contact.position.y / 160) + ':' + Math.round((contact.strength ?? 1) * 2)
-  ).join(',');
+  const liveKey = contacts
+    .map(
+      (contact) =>
+        contact.kind +
+        ':' +
+        Math.round(contact.position.x / 160) +
+        ':' +
+        Math.round(contact.position.y / 160) +
+        ':' +
+        Math.round((contact.strength ?? 1) * 2)
+    )
+    .join(',');
   const cacheKey = `${world.id}|${fromId}|${toId}|${profile}|${liveKey}`;
   const cached = routeCache.get(cacheKey);
   if (cached) return cached;
 
   const from = findLocation(world, fromId);
   const to = findLocation(world, toId);
-  const plan = createPlan(world, fromId, toId, from.position, to.position, profile, [
-    from.dangerLevel,
-    to.dangerLevel,
-  ], contacts);
+  const plan = createPlan(
+    world,
+    fromId,
+    toId,
+    from.position,
+    to.position,
+    profile,
+    [from.dangerLevel, to.dangerLevel],
+    contacts
+  );
   if (routeCache.size > 900) routeCache.clear();
   routeCache.set(cacheKey, plan);
   return plan;
@@ -268,10 +311,16 @@ export function planRouteFromPoint(
   contacts: readonly RouteThreatContact[] = []
 ): RoutePlan {
   const to = findLocation(world, toId);
-  return createPlan(world, 'deep-space', toId, from, to.position, profile, [
-    pointDanger(world, from),
-    to.dangerLevel,
-  ], contacts);
+  return createPlan(
+    world,
+    'deep-space',
+    toId,
+    from,
+    to.position,
+    profile,
+    [pointDanger(world, from), to.dangerLevel],
+    contacts
+  );
 }
 
 /** Retain cached sector waypoints while using real orbital departure and arrival berths. */

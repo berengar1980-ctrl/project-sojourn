@@ -377,7 +377,8 @@ function bindDangerAndRouteControls(
     button.type = 'button';
     button.className = 'star-map-menu__action';
     const refresh = () => {
-      button.textContent = ({ green: 'GRÜN', yellow: 'GELB', red: 'ROT' })[band] +
+      button.textContent =
+        { green: 'GRÜN', yellow: 'GELB', red: 'ROT' }[band] +
         (preferredDangerBands[band] ? ' ✓' : ' —');
     };
     refresh();
@@ -407,7 +408,7 @@ function bindDangerAndRouteControls(
     button.type = 'button';
     button.className = 'star-map-menu__action';
     button.dataset.routeProfile = profile;
-    button.textContent = ({ fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' })[profile];
+    button.textContent = { fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' }[profile];
     button.addEventListener('click', () => {
       onRouteProfileChange?.(profile);
       refreshProfileButtons();
@@ -416,7 +417,10 @@ function bindDangerAndRouteControls(
   });
   const refreshProfileButtons = (): void => {
     for (const button of profileButtons) {
-      button.classList.toggle('is-active', button.dataset.routeProfile === getModel().navigation.routeProfile);
+      button.classList.toggle(
+        'is-active',
+        button.dataset.routeProfile === getModel().navigation.routeProfile
+      );
     }
   };
   menu.mapPane.append(routeHelp, ...profileButtons);
@@ -450,7 +454,12 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   const renderer = new TopdownMapRenderer(canvas, model);
   const resetButton = populateStarMapMenu(menu, controls);
-  const refreshProfileButtons = bindDangerAndRouteControls(menu, renderer, () => model, options.onRouteProfileChange);
+  const refreshProfileButtons = bindDangerAndRouteControls(
+    menu,
+    renderer,
+    () => model,
+    options.onRouteProfileChange
+  );
   bindMapDisplayOptions(shell, renderer, modeToggle, labelToggle, resetButton);
 
   const renderCargoScanner = bindCargoMarketScanner(

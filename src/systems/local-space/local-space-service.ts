@@ -39,7 +39,11 @@ import {
 import type { LocalSpaceService } from './local-space-api';
 import { createMiningEventController } from './mining-event-service';
 import { MiningResourceRuntime } from './mining-resource-runtime';
-import { planPointRoute, type PointRoutePlanningOptions, type RoutePlanningOptions } from './local-space-navigation';
+import {
+  planPointRoute,
+  type PointRoutePlanningOptions,
+  type RoutePlanningOptions,
+} from './local-space-navigation';
 import { crewAvoidsAsteroid, findRouteAsteroidHazard } from './local-space-hazard-avoidance';
 import type { LocalSpaceServiceOptions } from './local-space-options';
 import { createLocalSpaceShipSystems } from './local-space-ship-systems';
@@ -389,15 +393,23 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const excluded = approaching ? this.activeTargetId() : null;
     const clearance = Math.max(this.shield.radiusX, this.shield.radiusY) + 24;
     const hazard = findRouteAsteroidHazard(
-      this.instance.ship, next, this.instance.asteroids,
-      clearance, this.approachSpeed, excluded
+      this.instance.ship,
+      next,
+      this.instance.asteroids,
+      clearance,
+      this.approachSpeed,
+      excluded
     );
     if (!hazard || this.checkedHazards.has(hazard.asteroid.id)) return;
     this.checkedHazards.add(hazard.asteroid.id);
-    if (!crewAvoidsAsteroid(
-      this.hazardCrew.piloting, this.hazardCrew.sensors,
-      hazard.timeToCrossing, this.avoidanceRandom
-    )) {
+    if (
+      !crewAvoidsAsteroid(
+        this.hazardCrew.piloting,
+        this.hazardCrew.sensors,
+        hazard.timeToCrossing,
+        this.avoidanceRandom
+      )
+    ) {
       this.navigationNotice('NAV > ASTEROID IM KURS · AUSWEICHREAKTION NICHT RECHTZEITIG');
       return;
     }

@@ -6,10 +6,19 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const routes = loadStandaloneTypeScriptModule(root, 'src/systems/navigation/route-planner.ts');
-const navigation = loadStandaloneTypeScriptModule(root, 'src/systems/navigation/navigation-service.ts');
+const navigation = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/navigation/navigation-service.ts'
+);
 const location = (id, x) => ({
-  id, name: id, position: { x, y: 1100 }, kind: 'station',
-  radius: 10, description: '', dangerLevel: 0, activities: { dock: true },
+  id,
+  name: id,
+  position: { x, y: 1100 },
+  kind: 'station',
+  radius: 10,
+  description: '',
+  dangerLevel: 0,
+  activities: { dock: true },
 });
 const world = {
   id: 'dynamic-risk-test',
@@ -17,7 +26,13 @@ const world = {
   width: 2100,
   height: 2200,
   startLocationId: 'a',
-  star: { id: 'star', position: { x: 1050, y: 100 }, radius: 10, colorCore: '#fff', colorCorona: '#fff' },
+  star: {
+    id: 'star',
+    position: { x: 1050, y: 100 },
+    radius: 10,
+    colorCore: '#fff',
+    colorCorona: '#fff',
+  },
   locations: [location('a', 100), location('b', 1900)],
   regions: [],
 };
@@ -28,7 +43,10 @@ const safe = routes.planRouteWithProfile(world, 'a', 'b', 'safe', [pirate]);
 assert.equal(fast.points.length, 2, 'fast mode must preserve the shortest direct route');
 assert(safe.points.length > 2, 'safe route must detour around a real pirate contact');
 assert(safe.distance > fast.distance, 'safety has a geometric travel cost');
-assert(routes.routeThreatExposure(safe.points, [pirate]) < routes.routeThreatExposure(fast.points, [pirate]));
+assert(
+  routes.routeThreatExposure(safe.points, [pirate]) <
+    routes.routeThreatExposure(fast.points, [pirate])
+);
 assert(
   routes.routeThreatExposure(fast.points, [pirate, patrol]) <
     routes.routeThreatExposure(fast.points, [pirate]),
@@ -43,7 +61,11 @@ service.setThreatContacts([pirate]);
 service.selectDestination('b');
 assert(service.getSnapshot().previewRoute.points.length > 2, 'selected mode must apply to preview');
 service.setRouteProfile('fast');
-assert.equal(service.getSnapshot().previewRoute.points.length, 2, 'route mode must change the preview');
+assert.equal(
+  service.getSnapshot().previewRoute.points.length,
+  2,
+  'route mode must change the preview'
+);
 service.setRouteProfile('safe');
 service.setThreatContacts([]);
 assert.equal(service.getSnapshot().previewRoute.points.length, 2);

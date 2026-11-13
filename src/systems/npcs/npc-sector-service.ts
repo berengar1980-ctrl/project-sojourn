@@ -128,7 +128,13 @@ class SectorService implements NpcSectorService {
       }));
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    const base = planRouteWithProfile(this.world, fromId, toId, routeProfile(npc), this.routeThreats(npc));
+    const base = planRouteWithProfile(
+      this.world,
+      fromId,
+      toId,
+      routeProfile(npc),
+      this.routeThreats(npc)
+    );
     return repointRouteEndpoints(
       base,
       this.livePosition(npc),
@@ -166,7 +172,13 @@ class SectorService implements NpcSectorService {
     reason: string
   ): boolean => {
     const route = repointRouteEndpoints(
-      planRouteFromPoint(this.world, from, destinationId, routeProfile(npc), this.routeThreats(npc)),
+      planRouteFromPoint(
+        this.world,
+        from,
+        destinationId,
+        routeProfile(npc),
+        this.routeThreats(npc)
+      ),
       from,
       npcOrbitDestination(this.world, npc, destinationId)
     );
