@@ -1,5 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture } from './game-controller-law-enforcement';
+import { registerSectorShips, inspectLegalDockArrival, reportLegalDeparture, tickLegalDetention } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import type { SalvageField } from '../core/salvage-types';
@@ -419,7 +419,7 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   });
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
-  if (tickCustoms(context)) return;
+  if (tickLegalDetention(context, deltaSeconds) || tickCustoms(context)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   tickControllerNpcOperations(economy, deltaSeconds);
