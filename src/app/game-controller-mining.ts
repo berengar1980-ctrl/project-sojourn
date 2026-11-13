@@ -39,7 +39,7 @@ export function createMiningLocalSpace(
       piloting: runtime.stationSkills.piloting,
       sensors: runtime.stationSkills.sensors,
     },
-    onNavigationNotice,
+    ...(onNavigationNotice ? { onNavigationNotice } : {}),
     mining: {
       enabled: runtime.mining.available,
       cycleSeconds: runtime.mining.cycleSeconds * runtime.crewEffects.mining.workTimeMultiplier,
