@@ -2,6 +2,7 @@ import type { SectorNpcState } from '../core/npc-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { economyResources } from '../data/economy/economy-resources';
+import { miningResources } from '../data/resources/mining-resources';
 import {
   createOperationsPanel,
   type OperationsAction,
@@ -47,10 +48,12 @@ function operationsModel(c: ControllerRuntimeContext): OperationsModel {
     blockades: e.blockades.snapshot(),
     patrol: e.patrol.snapshot(),
     offers: e.patrol.offers(),
+    claims: e.asteroidClaims.snapshot().claims,
     names: Object.fromEntries(
       [
         ...narrowsSector.locations,
         ...economyResources,
+        ...miningResources,
         ...e.sectorNpcs.npcs,
         { id: 'player', name: 'Eigene Konzession' },
       ].map((x) => [x.id, x.name])
@@ -93,6 +96,17 @@ function act(c: ControllerRuntimeContext, action: OperationsAction, values: stri
   if (action === 'cancel') ok = e.blockades.cancel(id);
   if (['enlist', 'resign', 'accept', 'reward'].includes(action))
     ok = patrolAction(c, m, action, values);
+  if (action === 'claim-route') {
+    const [fieldId, asteroidId] = id.split('|');
+    const known = e.asteroidClaims.snapshot().claims.some(
+      (claim) => claim.locationId === fieldId && claim.asteroidId === asteroidId
+    );
+    if (known && fieldId && asteroidId) {
+      c.state.selectedClaimTarget = { locationId: fieldId, asteroidId };
+      c.navigation.selectDestination(fieldId);
+      ok = true;
+    }
+  }
   if (action === 'navigate') {
     c.navigation.selectDestination(id);
     ok = true;
