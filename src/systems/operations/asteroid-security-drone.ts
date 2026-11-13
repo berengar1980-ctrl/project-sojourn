@@ -77,6 +77,10 @@ export class AsteroidSecurityDrone {
     return newlyDetected;
   }
 
+  detect(point: WorldPoint, asteroids: readonly LocalAsteroid[]): boolean {
+    return this.operational && this.canSee(point, asteroids);
+  }
+
   private canSee(point: WorldPoint, asteroids: readonly LocalAsteroid[]): boolean {
     const dx = point.x - this.position.x;
     const dy = point.y - this.position.y;
