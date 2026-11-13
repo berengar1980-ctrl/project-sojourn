@@ -1,9 +1,12 @@
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import {
-  planRoute,
+  planRouteWithProfile,
+  routeThreatExposure,
   planRouteFromPoint,
   repointRouteEndpoints,
   type RoutePlan,
+  type RouteProfile,
+  type RouteThreatContact,
 } from './route-planner';
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
@@ -33,6 +36,13 @@ interface NavigationRuntimeState {
   pursuit: PursuitState | null;
   cruiseSpeed: number;
   turnRateMultiplier: number;
+  routeProfile: RouteProfile;
+  threats: readonly RouteThreatContact[];
+  threatSignature: string;
+  threatRevision: number;
+  lastReplanRevision: number;
+  replanCooldown: number;
+  previewCache: { readonly key: string; readonly plan: RoutePlan } | null;
 }
 
 const MAX_TURN_RATE = 0.9;
@@ -137,23 +147,27 @@ function previewRoute(world: WorldMap, state: NavigationRuntimeState): RoutePlan
       points: [{ ...state.currentPosition }, { ...pointDestination.position }],
       distance,
       dangerLevel: 0,
-      profile: 'balanced',
+      profile: state.routeProfile,
     };
   }
+  const key = `${world.id}|${state.currentLocationId}|${state.selectedDestinationId}|${state.routeProfile}|${state.threatRevision}|${state.currentPosition.x.toFixed(1)}|${state.currentPosition.y.toFixed(1)}`;
+  if (state.previewCache?.key === key) return state.previewCache.plan;
   const currentIsStatic =
     state.currentLocationId !== null &&
     world.locations.some((location) => location.id === state.currentLocationId);
-  return currentIsStatic
+  const route = currentIsStatic
     ? repointRouteEndpoints(
-        planRoute(world, state.currentLocationId!, state.selectedDestinationId),
+        planRouteWithProfile(world, state.currentLocationId!, state.selectedDestinationId, state.routeProfile, state.threats),
         state.currentPosition,
         navigationOrbitalBerth(world, state.selectedDestinationId)
       )
     : repointRouteEndpoints(
-        planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId),
+        planRouteFromPoint(world, state.currentPosition, state.selectedDestinationId, state.routeProfile, state.threats),
         state.currentPosition,
         navigationOrbitalBerth(world, state.selectedDestinationId)
       );
+  state.previewCache = { key, plan: route };
+  return route;
 }
 
 function createSnapshot(world: WorldMap, state: NavigationRuntimeState): NavigationSnapshot {
@@ -175,6 +189,7 @@ function createSnapshot(world: WorldMap, state: NavigationRuntimeState): Navigat
     speed: state.travel?.currentSpeed ?? state.pursuit?.currentSpeed ?? 0,
     previewRoute: previewRoute(world, state),
     activeRoute: state.travel?.route ?? null,
+    routeProfile: state.routeProfile,
   };
 }
 
@@ -268,6 +283,8 @@ function startSelectedTravel(world: WorldMap, state: NavigationRuntimeState): vo
     currentSpeed: 0,
   };
   state.currentLocationId = null;
+  state.lastReplanRevision = state.threatRevision;
+  state.replanCooldown = 0;
 }
 
 function startNavigationPursuit(
@@ -352,6 +369,45 @@ function moveNavigationToWorld(
   return true;
 }
 
+/** Keep only the untraveled portion for comparing a moving route with a fresh one. */
+function untraveledWaypoints(route: RoutePlan, travelled: number, current: WorldPoint): WorldPoint[] {
+  const points: WorldPoint[] = [{ ...current }];
+  let covered = 0;
+  for (let i = 1; i < route.points.length; i += 1) {
+    const before = route.points[i - 1]!;
+    const after = route.points[i]!;
+    covered += Math.hypot(after.x - before.x, after.y - before.y);
+    if (covered > travelled + 0.001) points.push(after);
+  }
+  return points;
+}
+
+/** Only detour on changed traffic when it materially reduces exposure, preserving travel momentum. */
+function reviewLiveRoute(world: WorldMap, state: NavigationRuntimeState, deltaSeconds: number): void {
+  const travel = state.travel;
+  if (!travel || travel.route.profile === 'fast') return;
+  state.replanCooldown = Math.max(0, state.replanCooldown - deltaSeconds);
+  if (state.replanCooldown > 0 || state.threatRevision === state.lastReplanRevision) return;
+  state.replanCooldown = 8;
+  state.lastReplanRevision = state.threatRevision;
+  if (!world.locations.some((location) => location.id === travel.destinationId)) return;
+
+  const current = state.currentPosition;
+  const oldPoints = untraveledWaypoints(travel.route, travel.distanceTravelled, current);
+  const previousExposure = routeThreatExposure(oldPoints, state.threats);
+  if (previousExposure < 8) return;
+  const alternative = repointRouteEndpoints(
+    planRouteFromPoint(world, current, travel.destinationId, state.routeProfile, state.threats),
+    current,
+    navigationOrbitalBerth(world, travel.destinationId)
+  );
+  const alternativeExposure = routeThreatExposure(alternative.points, state.threats);
+  const remaining = Math.max(1, travel.route.distance - travel.distanceTravelled);
+  if (alternativeExposure >= previousExposure * 0.72 || alternative.distance > remaining * 1.7) return;
+  travel.route = alternative;
+  travel.distanceTravelled = 0;
+}
+
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
@@ -370,6 +426,13 @@ export function createNavigationService(
     pursuit: null,
     cruiseSpeed: initialCruiseSpeed,
     turnRateMultiplier: 1,
+    routeProfile: 'balanced',
+    threats: [],
+    threatSignature: '',
+    threatRevision: 0,
+    lastReplanRevision: 0,
+    replanCooldown: 0,
+    previewCache: null,
   };
   const snapshot = (): NavigationSnapshot => createSnapshot(currentWorld, state);
 
@@ -381,12 +444,14 @@ export function createNavigationService(
       throw new Error('Unknown navigation destination: ' + locationId);
     }
     state.selectedDestinationId = locationId;
+    state.previewCache = null;
     state.pointDestination = null;
     return snapshot();
   };
 
   const selectPointDestination = (id: string, position: WorldPoint): NavigationSnapshot => {
     state.selectedDestinationId = id;
+    state.previewCache = null;
     state.pointDestination = { id, position: { ...position } };
     return snapshot();
   };
@@ -439,7 +504,24 @@ export function createNavigationService(
       return snapshot();
     },
     setCruiseSpeed,
+    setRouteProfile(profile) {
+      state.routeProfile = profile;
+      state.previewCache = null;
+      return snapshot();
+    },
+    setThreatContacts(contacts) {
+      const signature = contacts.map((contact) =>
+        contact.kind + ':' + Math.round(contact.position.x / 160) + ':' +
+        Math.round(contact.position.y / 160) + ':' + Math.round((contact.strength ?? 1) * 2)
+      ).join('|');
+      if (signature === state.threatSignature) return;
+      state.threats = [...contacts];
+      state.threatSignature = signature;
+      state.threatRevision += 1;
+      state.previewCache = null;
+    },
     tick(deltaSeconds) {
+      reviewLiveRoute(currentWorld, state, deltaSeconds);
       if (state.pursuit) advancePursuit(state, deltaSeconds);
       else advanceTravel(state, deltaSeconds);
       return snapshot();
