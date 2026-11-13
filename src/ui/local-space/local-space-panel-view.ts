@@ -218,13 +218,7 @@ function renderLocalSelection(
 }
 
 export function updateLocalOverlay(context: LocalOverlayContext): void {
-  const {
-    model,
-    controls,
-    trackIntegrity,
-    trackScanCompletion,
-    miningEventPanel,
-  } = context;
+  const { model, controls, trackIntegrity, trackScanCompletion, miningEventPanel } = context;
   const {
     canvas,
     card,
