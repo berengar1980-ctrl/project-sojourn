@@ -1,0 +1,48 @@
+name: PR295 one-shot corridor geometry and route quality audit
+on:
+  push:
+    branches: [feature/voidbound-corridor-danger-map]
+    paths: [.github/workflows/pr295-corridor-one-shot.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/voidbound-corridor-danger-map
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format new corridor layout with project Prettier
+        run: npx prettier --write src/core/world-types.ts src/data/maps/narrows-danger-zones.ts src/data/maps/narrows-sector.ts src/systems/navigation/fixed-danger-geography.ts src/systems/navigation/route-planner.ts src/systems/npcs/npc-pirate-classes.ts src/ui/map/star-map-danger-regions.ts src/ui/map/topdown-map-renderer.ts src/features/star-map/star-map-view-model.ts tests/navigation/curated-danger-corridors.test.cjs docs/SOJOURN_FEATURE_PARITY.md
+      - name: Commit project formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add -u
+            git commit -m "style(zones): apply Prettier to corridor map and regression tests"
+            git push origin HEAD:feature/voidbound-corridor-danger-map
+          fi
+      - name: Typecheck lint and dependency boundaries
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run deps:check
+      - name: Targeted map geometry and routing regressions
+        run: |
+          node tests/navigation/curated-danger-corridors.test.cjs
+          node tests/navigation/danger-routing.test.cjs
+          node tests/navigation/live-threat-routing.test.cjs
+          node tests/map/route-planner.test.cjs
+          node tests/map/tutorial-map.test.cjs
+      - name: Full quick regression suite
+        run: npm run test:quick
+      - name: 90-day NPC economy performance and stability
+        run: time env SOJOURN_LONGRUN_DAYS=90 node tests/economy/npc-economy-longrun.test.cjs
