@@ -29,7 +29,9 @@ assert(
 const piratePopulation = loadStandaloneTypeScriptModule(
   root,
   'src/data/economy/sector-npc-economy.ts'
-).createSectorNpcEconomyStates().filter((npc) => npc.pirate);
+)
+  .createSectorNpcEconomyStates()
+  .filter((npc) => npc.pirate);
 assert.equal(piratePopulation.length, 9, 'the sector retains nine persistent pirate captains');
 assert.equal(
   piratePopulation.filter((npc) => npc.factionId === 'pirates').length,
