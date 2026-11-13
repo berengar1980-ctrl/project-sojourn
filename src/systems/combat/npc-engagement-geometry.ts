@@ -14,4 +14,3 @@ export function engagementRange(first: ShipDefinition, second: ShipDefinition): 
 export function pairKey(firstId: string, secondId: string): string {
   return [firstId, secondId].sort().join(':');
 }
-

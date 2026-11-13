@@ -14,12 +14,7 @@ interface SavedCheckpoint {
 }
 
 function validNumber(value: number, minimum: number, maximum: number): boolean {
-  return (
-    typeof value === 'number' &&
-    Number.isFinite(value) &&
-    value >= minimum &&
-    value <= maximum
-  );
+  return Number.isFinite(value) && value >= minimum && value <= maximum;
 }
 
 /** The saved snapshot may change HP/AP, but never identities, weapons, topology or seed. */
