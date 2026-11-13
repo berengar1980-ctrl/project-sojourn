@@ -370,10 +370,12 @@ function bindDangerAndRouteControls(
   hazardControls.className = 'star-map-danger-controls';
   const hazardMaster = document.createElement('button');
   hazardMaster.type = 'button';
+  hazardMaster.className = 'star-map-menu__action';
   hazardMaster.textContent = preferredDangerVisible ? 'GEFAHREN // AN' : 'GEFAHREN // AUS';
   const hazardButtons = (['green', 'yellow', 'red'] as const).map((band) => {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'star-map-menu__action';
     const refresh = () => {
       button.textContent = ({ green: 'GRÜN', yellow: 'GELB', red: 'ROT' })[band] +
         (preferredDangerBands[band] ? ' ✓' : ' —');
@@ -403,6 +405,7 @@ function bindDangerAndRouteControls(
   const profileButtons = (['fast', 'balanced', 'safe'] as const).map((profile) => {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'star-map-menu__action';
     button.dataset.routeProfile = profile;
     button.textContent = ({ fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' })[profile];
     button.addEventListener('click', () => {
