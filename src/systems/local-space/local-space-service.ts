@@ -40,11 +40,10 @@ import type { LocalSpaceService } from './local-space-api';
 import { createMiningEventController } from './mining-event-service';
 import { MiningResourceRuntime } from './mining-resource-runtime';
 import {
-  planPointRoute,
   type PointRoutePlanningOptions,
   type RoutePlanningOptions,
 } from './local-space-navigation';
-import { crewAvoidsAsteroid, findRouteAsteroidHazard } from './local-space-hazard-avoidance';
+import { LocalSpaceAutopilotHazards } from './local-space-autopilot-hazards';
 import type { LocalSpaceServiceOptions } from './local-space-options';
 import { createLocalSpaceShipSystems } from './local-space-ship-systems';
 
@@ -60,11 +59,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly shipSystems: ReturnType<typeof createLocalSpaceShipSystems>;
   private readonly miningEvents: ReturnType<typeof createMiningEventController>;
   private readonly miningResources: MiningResourceRuntime;
-  private readonly hazardCrew: { readonly piloting: number; readonly sensors: number };
-  private readonly avoidanceRandom: () => number;
-  private readonly navigationNotice: (message: string) => void;
-  private hazardCheckSeconds = 0;
-  private readonly checkedHazards = new Set<string>();
+  private readonly hazards: LocalSpaceAutopilotHazards;
   private selectedAsteroidId: string | null = null;
   private miningTargetId: string | null = null;
   private scanTargetId: string | null = null;
@@ -91,9 +86,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.turnRateMultiplier = options.turnRateMultiplier ?? 1;
     this.hardpoints = options.hardpoints;
     this.nominalLengthMeters = options.nominalLengthMeters;
-    this.hazardCrew = options.hazardCrew ?? { piloting: 0, sensors: 0 };
-    this.avoidanceRandom = options.avoidanceRandom ?? Math.random;
-    this.navigationNotice = options.onNavigationNotice ?? (() => {});
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
     this.shipSystems = createLocalSpaceShipSystems(options.systems, options.hardpoints);
@@ -106,6 +98,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
       options.onMiningChunkCollected
     );
     this.shield = createShieldWorldGeometry(options.hardpoints, options.nominalLengthMeters);
+    this.hazards = new LocalSpaceAutopilotHazards(
+      this.instance, this.shield, this.approachSpeed,
+      options.hazardCrew ?? { piloting: 0, sensors: 0 },
+      options.avoidanceRandom ?? Math.random,
+      options.onNavigationNotice ?? (() => {})
+    );
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
       options.instance.seed,
@@ -190,8 +188,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.navigationTarget = { ...target };
     this.navigationRoute = route;
     this.navigationIndex = 1;
-    this.checkedHazards.clear();
-    this.hazardCheckSeconds = 0;
+    this.hazards.reset();
     resetAutopilotMotion(this.instance.ship);
     this.shipForwardVelocity = 0;
     this.shipLateralVelocity = 0;
@@ -381,69 +378,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.shipLateralVelocity *= 0.35;
   }
 
-  /** A single sensor + helm attempt per threatening rock; only the active leg is replanned. */
-  private reviewAsteroidCourse(deltaSeconds: number, approaching: boolean): void {
-    this.hazardCheckSeconds += deltaSeconds;
-    if (this.hazardCheckSeconds < 0.65) return;
-    this.hazardCheckSeconds = 0;
-    const route = approaching ? this.approachRoute : this.navigationRoute;
-    const index = approaching ? this.approachIndex : this.navigationIndex;
-    const next = route[index];
-    if (!next) return;
-    const excluded = approaching ? this.activeTargetId() : null;
-    const clearance = Math.max(this.shield.radiusX, this.shield.radiusY) + 24;
-    const hazard = findRouteAsteroidHazard(
-      this.instance.ship,
-      next,
-      this.instance.asteroids,
-      clearance,
-      this.approachSpeed,
-      excluded
-    );
-    if (!hazard || this.checkedHazards.has(hazard.asteroid.id)) return;
-    this.checkedHazards.add(hazard.asteroid.id);
-    if (
-      !crewAvoidsAsteroid(
-        this.hazardCrew.piloting,
-        this.hazardCrew.sensors,
-        hazard.timeToCrossing,
-        this.avoidanceRandom
-      )
-    ) {
-      this.navigationNotice('NAV > ASTEROID IM KURS · AUSWEICHREAKTION NICHT RECHTZEITIG');
-      return;
-    }
-    // Substitute the predicted position only while finding the detour; do not move the rock.
-    const projected = this.instance.asteroids.map((asteroid) =>
-      asteroid.id === hazard.asteroid.id
-        ? { ...asteroid, position: hazard.predictedPosition }
-        : asteroid
-    );
-    const detour = planPointRoute({
-      start: this.instance.ship.position,
-      target: next,
-      asteroids: projected,
-      clearance,
-      width: this.instance.width,
-      height: this.instance.height,
-    });
-    if (detour.compromised || detour.route.length <= 2) {
-      this.navigationNotice('NAV > GEFAHR ERKANNT · KEIN SICHERER AUSWEICHKURS');
-      return;
-    }
-    const revised = [...detour.route, ...route.slice(index + 1)];
-    if (approaching) {
-      this.approachRoute = revised;
-      this.approachIndex = 1;
-    } else {
-      this.navigationRoute = revised;
-      this.navigationIndex = 1;
-    }
-    this.navigationNotice('NAV > SENSORIK / STEUERMANN · AUSWEICHKURS BERECHNET');
-  }
-
   private updateManualNavigation(deltaSeconds: number): void {
-    this.reviewAsteroidCourse(deltaSeconds, false);
+    const reviewed = this.hazards.review(deltaSeconds, this.navigationRoute, this.navigationIndex);
+    this.navigationRoute = reviewed.route;
+    this.navigationIndex = reviewed.index;
     const result = advanceAutopilotRoute(
       this.instance.ship,
       this.navigationRoute,
@@ -470,7 +408,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateApproach(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    this.reviewAsteroidCourse(deltaSeconds, true);
+    const reviewed = this.hazards.review(deltaSeconds, this.approachRoute, this.approachIndex, this.activeTargetId());
+    this.approachRoute = reviewed.route;
+    this.approachIndex = reviewed.index;
     const result = advanceAutopilotRoute(
       this.instance.ship,
       this.approachRoute,
