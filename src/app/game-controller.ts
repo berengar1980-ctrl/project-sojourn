@@ -253,7 +253,10 @@ function mountControllerMining(
     onAttackNpc: (id) => {
       state.selectedNpcId = id;
       const local = state.localSpace?.getSnapshot();
-      const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id);
+      const target = state.localNpcMining?.ships.find((entry) => entry.npcId === id) ??
+        context.economy.localPirates.get(local?.instance.sourceLocationId ?? '')?.snapshot(
+          context.economy.sectorNpcs.npcs
+        ).find((entry) => entry.npcId === id);
       if (!local || !target) return;
       const arena = localMiningCombatArena(
         local.instance,
@@ -387,6 +390,15 @@ function synchronizeLocalDefender(context: ControllerRuntimeContext,
         );
       }
     }
+    return;
+  }
+  const localId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
+  if (localId && context.economy.localPirates.get(localId)?.snapshot(
+    context.economy.sectorNpcs.npcs
+  ).some((ship) => ship.npcId === defender.id)) {
+    context.economy.localPirates.get(localId)?.syncCombatPose(
+      defender.id, defender.position, defender.headingRadians
+    );
     return;
   }
   context.state.localNpcMining?.syncCombatPose(
