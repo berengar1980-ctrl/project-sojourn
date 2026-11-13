@@ -82,6 +82,7 @@ export interface ControllerEconomy {
   readonly legal: SectorLegalRegistry;
   readonly securityDrones: Map<string, AsteroidSecurityDrone>;
   readonly localPirates: Map<string, LocalPirateTraffic>;
+  readonly npcPrisoners: Set<string>;
   readonly patrol: PatrolCareerService;
   protectsPirate(factionId?: string): boolean;
   readonly markets: EconomyMarketService;
@@ -103,9 +104,9 @@ export interface ControllerEconomy {
   readonly sectorNpcs: NpcSectorService;
 }
 
-function npcOperationsPolicy(blockades: BlockadeService): NpcEconomyServiceOptions {
+function npcOperationsPolicy(blockades: BlockadeService, prisoners: ReadonlySet<string>): NpcEconomyServiceOptions {
   return {
-    isManaged: (npc) => npc.id.startsWith('security-drone:') ||
+    isManaged: (npc) => prisoners.has(npc.id) || npc.id.startsWith('security-drone:') ||
       (Boolean('pirate' in npc && npc.pirate) &&
         narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine) &&
         !('travel' in npc && npc.travel)) || blockades.assigned(npc.id),
@@ -177,8 +178,9 @@ export function createControllerEconomy(
   );
   const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
 
+  const npcPrisoners = new Set<string>();
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-    ...npcOperationsPolicy(blockades),
+    ...npcOperationsPolicy(blockades, npcPrisoners),
     onSale: (npc, resourceId, quantity, gross) => {
       npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross);
       population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
@@ -240,6 +242,7 @@ export function createControllerEconomy(
     legal: new SectorLegalRegistry(),
     securityDrones: new Map<string, AsteroidSecurityDrone>(),
     localPirates: new Map<string, LocalPirateTraffic>(),
+    npcPrisoners,
     patrol,
     markets,
     situations,
