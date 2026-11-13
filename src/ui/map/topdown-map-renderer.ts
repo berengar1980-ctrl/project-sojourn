@@ -10,9 +10,10 @@ import {
   type StarMapPick,
   type StarMapPickOption,
 } from './star-map-contact-picking';
-import { mapLocationVisualRadius, mapSymbolScale } from './map-visual-scale';
+import { mapLocationVisualRadius, mapSymbolScale, mapBackgroundSeed } from './map-visual-scale';
 import { OrbitalMapSceneProjection } from './orbital-map-scene-projection';
 import { NavMapRenderer } from './nav-map-renderer';
+import { drawStarMapDangerRegions } from './star-map-danger-regions';
 import { drawCargoMarketMarker } from './cargo-market-marker';
 import { drawSectorEventMarker } from './sector-event-marker';
 import { NpcShipMapRenderer } from './npc-ship-map-renderer';
@@ -55,7 +56,7 @@ export class TopdownMapRenderer {
     this.camera = new MapCamera(model.width, model.height);
     this.shipRenderer = new PlayerShipRenderer(() => this.draw());
     this.navRenderer = new NavMapRenderer(context);
-    this.backgroundRenderer = new SpaceBackgroundRenderer(context, this.hashSeed(model.worldId));
+    this.backgroundRenderer = new SpaceBackgroundRenderer(context, mapBackgroundSeed(model.worldId));
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.planetRings = new PlanetRingRenderer(context);
     this.stations = new ProceduralStationRenderer(context);
@@ -175,7 +176,7 @@ export class TopdownMapRenderer {
         timeSeconds,
       });
     }
-    this.drawDangerRegions(width, height);
+    drawStarMapDangerRegions(this.context, this.camera, this.model.regions, this.dangerBands, this.dangerOverlayVisible, width, height);
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
     const playerPoint = this.orbitalProjection.playerPoint(
       this.model,
@@ -211,45 +212,6 @@ export class TopdownMapRenderer {
       .map((hit) => ({ ...hit, kind: 'npc' as const }));
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height, playerPoint);
-  }
-
-  /** Static geographic risk fields: the actual color never changes with ship upgrades or traffic. */
-  private drawDangerRegions(width: number, height: number): void {
-    if (!this.dangerOverlayVisible) return;
-    const ctx = this.context;
-    if (this.dangerBands.green) {
-      ctx.fillStyle = 'rgba(35, 150, 91, 0.055)';
-      ctx.fillRect(0, 0, width, height);
-    }
-    for (const region of this.model.regions) {
-      const band = region.dangerLevel >= 3 ? 'red' : region.dangerLevel === 2 ? 'yellow' : 'green';
-      if (!this.dangerBands[band]) continue;
-      const center = this.camera.worldToScreen(region.center, width, height);
-      const perimeter = this.camera.worldToScreen(
-        { x: region.center.x + region.radius, y: region.center.y },
-        width,
-        height
-      );
-      const radius = Math.hypot(perimeter.x - center.x, perimeter.y - center.y);
-      if (radius < 1) continue;
-      const color =
-        band === 'red' ? '205, 58, 65' : band === 'yellow' ? '205, 159, 51' : '40, 150, 100';
-      const haze = ctx.createRadialGradient(
-        center.x,
-        center.y,
-        radius * 0.18,
-        center.x,
-        center.y,
-        radius
-      );
-      haze.addColorStop(0, 'rgba(' + color + ',0.19)');
-      haze.addColorStop(0.55, 'rgba(' + color + ',0.13)');
-      haze.addColorStop(1, 'rgba(' + color + ',0)');
-      ctx.fillStyle = haze;
-      ctx.beginPath();
-      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
   }
 
   private contentBounds() {
@@ -523,15 +485,6 @@ export class TopdownMapRenderer {
       light,
     });
     if (location.ringStyle) this.planetRings.drawFront(location.ringStyle, point, radius);
-  }
-
-  private hashSeed(value: string): number {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
   }
 
   private drawWreck(point: WorldPoint, radius: number): void {
