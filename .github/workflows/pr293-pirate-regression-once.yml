@@ -1,0 +1,39 @@
+name: PR293 pirate regression and formatting verification
+on:
+  push:
+    branches: [feature/region-pirates-route-safety]
+    paths: [.github/workflows/pr293-pirate-regression-once.yml]
+permissions:
+  contents: write
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/region-pirates-route-safety
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format updated historical pirate contract
+        run: npx prettier --write tests/combat/pirate-npc-behavior.test.cjs
+      - name: Commit formatting if necessary
+        run: |
+          if ! git diff --quiet; then
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add tests/combat/pirate-npc-behavior.test.cjs
+            git commit -m "style(test): format pirate population regression"
+            git push origin HEAD:feature/region-pirates-route-safety
+          fi
+      - name: Verify historical and new pirate contracts
+        run: |
+          node tests/combat/pirate-npc-behavior.test.cjs
+          node tests/npcs/pirate-ship-classes.test.cjs
+          node tests/navigation/route-safety-progress.test.cjs
+      - name: Verify full quick suite
+        run: npm run test:quick
