@@ -104,6 +104,11 @@ assert(miner);
   assert.equal(encounter.tactical.move('tiber_krane', { q: 5, r: 1 }), true);
   encounter.tactical.endTurn();
   encounter.tactical.endTurn();
+  assert.equal(
+    encounter.tactical.move('tiber_krane', { q: 6, r: 1 }),
+    true,
+    'Melter need to close within its explicit two-hex range'
+  );
 
   const shot = encounter.tactical.shoot('tiber_krane', 'hostile');
   assert(shot, 'real crew must be able to perform tactical attacks');
