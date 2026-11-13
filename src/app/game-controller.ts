@@ -454,6 +454,18 @@ function resolveControllerCombat(context: ControllerRuntimeContext): void {
   }
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
+  if (snapshot.defender.id.startsWith('security-drone:') && snapshot.defender.hullHp > 0) {
+    const securityNpc = context.economy.sectorNpcs.npcs.find(
+      (npc) => npc.id === snapshot.defender.id
+    );
+    if (securityNpc) {
+      securityNpc.locationId = snapshot.defender.id.slice('security-drone:'.length);
+      delete securityNpc.travel;
+      delete securityNpc.combatMovement;
+      securityNpc.activityId = 'patrol';
+      securityNpc.activity = 'Lokale Konzessionsüberwachung';
+    }
+  }
   state.embeddedCombat = null;
   showCampaignCombatSummary(context.root, snapshot, () => {
     if (snapshot.attacker.hullHp <= 0) mountControllerStarMap(context);
