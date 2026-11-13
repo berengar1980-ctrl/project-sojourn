@@ -9,6 +9,7 @@ import { freighterVariantShips } from '../../data/ships/freighter-variant-ships'
 import { careerMk4Ships } from '../../data/ships/career-mk4-ships';
 import { minerVariantShips } from '../../data/ships/miner-variant-ships';
 import { patrolVariantShips } from '../../data/ships/patrol-variant-ships';
+import { pirateClassShips } from '../../data/ships/pirate-class-ships';
 import { salvageVariantShips } from '../../data/ships/salvage-variant-ships';
 import { resolveShipGameplayStats } from './ship-stats';
 
@@ -47,6 +48,7 @@ function ensureUtilityHardpoints(definition: ShipDefinition): ShipDefinition {
 
 const definitions: readonly ShipDefinition[] = [
   ...patrolVariantShips,
+  ...pirateClassShips,
   ...minerVariantShips,
   ...salvageVariantShips,
   ...freighterVariantShips,
@@ -64,10 +66,10 @@ export function getShipGameplayStats(id: string): ResolvedShipGameplayStats | nu
 
 export function getShipsByRole(role: ShipRole): readonly ShipDefinition[] {
   return definitions.filter(
-    (definition) => definition.role === role && !definition.id.endsWith('-mk4')
+    (definition) => definition.role === role && !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-')
   );
 }
 
 export function getAllShipDefinitions(): readonly ShipDefinition[] {
-  return definitions.filter((definition) => !definition.id.endsWith('-mk4'));
+  return definitions.filter((definition) => !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-'));
 }
