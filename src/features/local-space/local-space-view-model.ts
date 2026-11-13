@@ -23,6 +23,7 @@ export interface LocalAsteroidDepositView {
 
 export interface LocalAsteroidView {
   readonly id: string;
+  readonly claimOwnerId?: string | null;
   readonly kind: LocalAsteroid['kind'];
   readonly routeBlocking: boolean;
   readonly position: WorldPoint;
