@@ -83,6 +83,11 @@ export interface LocalShipView {
 
 export interface LocalSpaceViewModel {
   readonly selectedAsteroidClaimOwner?: string | null;
+  readonly securityDrone?: {
+    readonly position: WorldPoint;
+    readonly scanRadius: number;
+    readonly operational: boolean;
+  } | null;
   readonly title: string;
   readonly backgroundSeed: number;
   readonly width: number;
