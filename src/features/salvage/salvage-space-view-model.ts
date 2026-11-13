@@ -189,7 +189,9 @@ function salvageWreckKindLabel(
         : wreckKindLabel(wreck.kind);
 }
 
-function wreckBoardingAttempts(wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]): number {
+function wreckBoardingAttempts(
+  wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]
+): number {
   return wreck.boardingAttempts ?? 0;
 }
 
