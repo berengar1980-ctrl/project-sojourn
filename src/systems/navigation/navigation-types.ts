@@ -18,6 +18,8 @@ export interface NavigationSnapshot {
   readonly previewRoute: RoutePlan | null;
   readonly activeRoute: RoutePlan | null;
   readonly routeProfile: RouteProfile;
+  readonly threatRevision: number;
+  readonly threatContacts: readonly RouteThreatContact[];
 }
 
 export interface NavigationService {
