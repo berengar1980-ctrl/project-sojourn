@@ -71,9 +71,9 @@ export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: nu
       const debt = legal.debt(shipId);
       const canPay = economy.trade.player.credits >= debt;
       const pay = canPay && window.confirm(
-        'SEC-01 / KONZESSIONSVERSTOSS\\n' +
-        'Ihre Schiffskennung wurde erfasst.\\n' +
-        'Offene Forderungen: ' + debt + ' CR.\\n\\n' +
+        'SEC-01 / KONZESSIONSVERSTOSS\n' +
+        'Ihre Schiffskennung wurde erfasst.\n' +
+        'Offene Forderungen: ' + debt + ' CR.\n\n' +
         'Jetzt bezahlen? ABBRECHEN bedeutet Zahlungsverweigerung und Fahndung.'
       );
       if (pay) {
