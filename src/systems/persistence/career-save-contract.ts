@@ -75,6 +75,11 @@ function copyJson(value: unknown, depth: number, budget: CloneBudget): CareerJso
   }
 }
 
+/** Detached JSON clone for a separately validated domain snapshot. */
+export function cloneCareerJson<T>(candidate: T): T {
+  return copyJson(candidate, 0, { nodes: 0, ancestors: new Set() }) as T;
+}
+
 /** Strict validation plus detached copy, before any live service is touched. */
 export function validateCareerSnapshot(candidate: unknown): CareerSnapshot {
   if (!record(candidate) || candidate.version !== 1 || !record(candidate.sections)) {
