@@ -52,6 +52,11 @@ export class AsteroidFieldWorld {
     return this.fields.get(locationId) ?? null;
   }
 
+  /** Read authoritative fields for checkpoint capture, including offscreen ore. */
+  forEachField(visit: (field: AsteroidFieldRuntime) => void): void {
+    for (const field of this.fields.values()) visit(field);
+  }
+
   /** Active maps use their frame delta; other fields advance in bounded steps. */
   tick(
     deltaSeconds: number,
