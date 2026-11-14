@@ -225,7 +225,7 @@ export function createMiningEventController(
         sessionCounter,
         session: session ? { ...session, rolls: [...session.rolls] } : null,
         pending: pending
-          ? { ...pending, choices: pending.choices.map((choice) => ({ ...choice })) }
+          ? { ...pending, choices: pending.choices.map((entry) => ({ ...entry })) }
           : null,
         cycleModifier,
         recoverySeconds,
@@ -239,7 +239,7 @@ export function createMiningEventController(
       sessionCounter = saved.sessionCounter;
       session = saved.session ? { ...saved.session, rolls: [...saved.session.rolls] } : null;
       pending = saved.pending
-        ? { ...saved.pending, choices: saved.pending.choices.map((choice) => ({ ...choice })) }
+        ? { ...saved.pending, choices: saved.pending.choices.map((entry) => ({ ...entry })) }
         : null;
       cycleModifier = saved.cycleModifier;
       recoverySeconds = saved.recoverySeconds;
