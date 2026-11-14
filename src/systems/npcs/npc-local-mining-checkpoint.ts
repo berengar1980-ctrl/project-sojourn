@@ -38,7 +38,9 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   if (!point(value.entryPoint, options.width, options.height)) return false;
   if (!point(value.exitPoint, options.width, options.height)) return false;
   if (!finite(value.headingRadians, -Infinity) || !finite(value.speed)) return false;
-  if (!['entering', 'approaching', 'scanning', 'mining', 'exiting'].includes(value.phase as string)) {
+  if (
+    !['entering', 'approaching', 'scanning', 'mining', 'exiting'].includes(value.phase as string)
+  ) {
     return false;
   }
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
@@ -58,8 +60,12 @@ function validCombatReturns(
   occupied: Set<string>
 ): boolean {
   for (const entry of entries) {
-    if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') return false;
-    if (!point(entry[1], options.width, options.height) || occupied.has(entry[0])) return false;
+    if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') {
+      return false;
+    }
+    if (!point(entry[1], options.width, options.height) || occupied.has(entry[0])) {
+      return false;
+    }
     const npc = options.miners.find((item) => item.id === entry[0]);
     if (!npc || (!npc.combatMovement && !npc.combatRecoverySeconds)) return false;
     occupied.add(entry[0]);
@@ -70,7 +76,9 @@ function validCombatReturns(
 function validEvents(entries: unknown[], options: NpcLocalMiningOptions): boolean {
   const seen = new Set<string>();
   for (const entry of entries) {
-    if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') return false;
+    if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') {
+      return false;
+    }
     if (seen.has(entry[0]) || !options.miners.some((npc) => npc.id === entry[0])) return false;
     stageMiningEventCheckpoint(entry[1], hashId(options.locationId + ':' + entry[0]));
     seen.add(entry[0]);
@@ -90,7 +98,9 @@ export function stageLocalMinerCheckpoint(
   if (value.seed !== (options.seed ?? 0) || value.width !== options.width) {
     throw new Error('Miner-Spielstand passt nicht zum Asteroidenfeld.');
   }
-  if (value.height !== options.height) throw new Error('Miner-Spielstand passt nicht zum Feld.');
+  if (value.height !== options.height) {
+    throw new Error('Miner-Spielstand passt nicht zum Feld.');
+  }
   if (!Array.isArray(value.ships) || !Array.isArray(value.combatReturns)) {
     throw new Error('Beschädigte lokale Miner-Liste.');
   }
@@ -107,6 +117,8 @@ export function stageLocalMinerCheckpoint(
   if (!validCombatReturns(value.combatReturns, options, occupied)) {
     throw new Error('Ungültige Miner-Kampfrückkehr.');
   }
-  if (!validEvents(value.events, options)) throw new Error('Ungültige Miner-Ereignisregister.');
+  if (!validEvents(value.events, options)) {
+    throw new Error('Ungültige Miner-Ereignisregister.');
+  }
   return value as unknown as LocalMinerCheckpoint;
 }
