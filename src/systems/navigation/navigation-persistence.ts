@@ -21,12 +21,12 @@ function point(value: unknown): value is WorldPoint {
   return object(value) && finite(value.x) && finite(value.y);
 }
 
-function route(value: unknown, world: WorldMap): value is RoutePlan {
+function route(value: unknown, world: WorldMap, pointId: string | null): value is RoutePlan {
   if (!object(value) || typeof value.fromId !== 'string' || typeof value.toId !== 'string') {
     return false;
   }
   if (
-    !world.locations.some((item) => item.id === value.toId) ||
+    !(world.locations.some((item) => item.id === value.toId) || value.toId === pointId) ||
     !['fast', 'balanced', 'safe'].includes(value.profile as string) ||
     ![0, 1, 2, 3].includes(value.dangerLevel as number) ||
     !Array.isArray(value.points) ||
@@ -84,7 +84,7 @@ function validate(candidate: unknown, world: WorldMap): NavigationRuntimeState {
     (travel !== null &&
       (!object(travel) ||
         typeof travel.destinationId !== 'string' ||
-        !route(travel.route, world) ||
+        !route(travel.route, world, object(p) && typeof p.id === 'string' ? p.id : null) ||
         travel.route.toId !== travel.destinationId ||
         !finite(travel.distanceTravelled, 0) ||
         travel.distanceTravelled > travel.route.distance ||
