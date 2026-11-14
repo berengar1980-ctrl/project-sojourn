@@ -93,6 +93,7 @@ function resolvePirateCollisions(
 
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
+  private readonly combatReturnPositions = new Map<string, WorldPoint>();
 
   constructor(
     private readonly width: number,
@@ -131,16 +132,26 @@ export class LocalPirateTraffic {
         )
         .map((npc) => npc.id)
     );
-    for (const id of this.ships.keys()) if (!active.has(id)) this.ships.delete(id);
+    for (const [id, ship] of this.ships) {
+      if (active.has(id)) continue;
+      const npc = pirates.find((candidate) => candidate.id === id);
+      if (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0) {
+        this.combatReturnPositions.set(id, { ...ship.position });
+      } else {
+        this.combatReturnPositions.delete(id);
+      }
+      this.ships.delete(id);
+    }
     for (const id of active) {
       if (this.ships.has(id)) continue;
       this.ships.set(id, {
         npcId: id,
-        position: edgePoint(id + ':' + this.seed, this.width, this.height),
+        position: this.combatReturnPositions.get(id) ?? edgePoint(id + ':' + this.seed, this.width, this.height),
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,
       });
+      this.combatReturnPositions.delete(id);
     }
   }
 
