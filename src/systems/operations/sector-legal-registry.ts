@@ -263,6 +263,11 @@ export class SectorLegalRegistry {
       this.registrations.set(registration.shipId, { ...registration });
     for (const charge of saved.charges) this.charges.push({ ...charge });
     for (const sighting of saved.sightings) this.sightings.push({ ...sighting });
+    // V1 serialized unpaid debts as implicit warrants. Preserve that old meaning.
+    if ((saved.version as number) === 1) {
+      for (const charge of this.charges)
+        if (charge.amount > charge.paid) this.warrants.add(charge.shipId);
+    }
     for (const shipId of saved.warrants ?? []) if (this.debt(shipId) > 0) this.warrants.add(shipId);
     for (const shipId of saved.custodies ?? []) if (this.isWanted(shipId)) this.custody.add(shipId);
     this.sequence = Math.max(
