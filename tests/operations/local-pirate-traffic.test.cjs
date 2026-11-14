@@ -77,5 +77,31 @@ function asteroidCollisionPrevention() {
     );
   }
 }
+function absentPlayerUsesRealMinerTarget() {
+  const traffic = new LocalPirateTraffic(1100, 900, 77);
+  const pirate = {
+    id: 'pirate-away', name: 'Away Raider', shipId: 'pirate-raider-60m',
+    pirate: true, locationId: 'greyrock-belt', hullHp: 100,
+  };
+  traffic.reconcile([pirate]);
+  const origin = traffic.snapshot([pirate])[0].position;
+  const miner = { npcId: 'miner-away', position: { x: origin.x + 120, y: origin.y } };
+  let target = null;
+  traffic.tick(0.25, [pirate], null, [miner], [], (_, id) => {
+    target = id;
+    return true;
+  });
+  assert.equal(target, 'miner-away', 'Distant pirate cannot attack an absent player');
+  traffic.reconcile([{ ...pirate, combatMovement: { mode: 'engaged' } }]);
+  assert.equal(traffic.snapshot([pirate]).length, 0);
+  traffic.reconcile([pirate]);
+  assert.deepEqual(
+    traffic.snapshot([pirate])[0].position,
+    origin,
+    'A returning pirate must not respawn at the edge after combat'
+  );
+}
+
 pirateArrivesOnlyAfterSectorArrival();
+absentPlayerUsesRealMinerTarget();
 asteroidCollisionPrevention();
