@@ -90,7 +90,6 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 | 2026-11-14 | Issue #300 / NPC-Sektor-Checkpoint | Keine Statusänderung der 241 Paritäts-IDs. Ein isolierter NPC-Snapshot sichert sektorweite NPC-Objekte mit Handelsladung, Routenfortschritt, Treibstoff und Kampfbeteiligung und validiert Verweise vor einer neuen Instanz. Markt, Population, lokale Minerschiffe, Piraten und Drohnen sind noch nicht atomar gekoppelt. Deshalb weiterhin keine vollständige Career-Persistenz. |
 
-
 | 2026-11-14 | Issue #300 / PR #305 – Navigations-Checkpoint | Keine Statusänderung der 241 Paritäts-IDs. Ein versionierter Navigations-Checkpoint erfasst laufende Spielerflüge, Routenfortschritt, Geschwindigkeit, Verfolgung und Kartenbindung und kann die Navigation in einer frischen Serviceinstanz vorbereiten. Die vollständige Karriere einschließlich NPCs, Wirtschaft, Kampf und UI wird weiterhin nicht gespeichert oder geladen; daher bleibt Save/Persistence offen. |
 
 | 2026-11-14 | Issue #300 / PR 3 – Career-Save-Fundament | Keine Statusänderung der 241 Paritäts-IDs. Eine versionierte, atomare und auf Vollständigkeit geprüfte Career-Save-Hülle verhindert die irrtümliche Speicherung nur einzelner Dienste. Der erste echte Adapter erfasst Rechts- und Konzessionsregister zusammen mit den Erzbeständen aller persistenten Asteroidenfelder und bereitet das Laden in neue Register vor. Noch **kein** benutzbarer vollständiger Spielstand und daher bewusst noch keine UI-Freischaltung; fehlende Pflichtadapter in `docs/CAREER_PERSISTENCE.md`. |
