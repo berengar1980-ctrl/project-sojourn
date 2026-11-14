@@ -1,0 +1,42 @@
+name: PR302 one-time format and focused legal checks
+on:
+  push:
+    branches:
+      - refactor/sector-legal-state-machine-300
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Format modified files
+        run: npm run format
+      - name: Format check
+        run: npm run format:check
+      - name: Types
+        run: npm run typecheck
+      - name: Focused legal behavior
+        shell: bash
+        run: |
+          for file in             tests/operations/sector-legal-registry.test.cjs             tests/operations/background-drone-security.test.cjs             tests/operations/legal-claims-settlement.test.cjs             tests/operations/legal-npc-custody.test.cjs             tests/operations/operations-behavior.test.cjs; do
+            echo "::group::TEST $file"
+            node "$file" || exit 1
+            echo "::endgroup::"
+          done
+      - name: Commit formatting and remove one-time helper
+        if: always()
+        shell: bash
+        run: |
+          rm -f .github/workflows/issue300-legal-format-once.yml
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "style: format legal case changes and remove one-time helper"
+          git push origin HEAD:refactor/sector-legal-state-machine-300
