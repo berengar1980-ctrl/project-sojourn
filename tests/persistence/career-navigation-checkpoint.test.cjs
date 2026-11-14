@@ -6,9 +6,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
-const { stageNavigationCheckpoint } = load(
-  'src/systems/navigation/navigation-persistence.ts'
-);
+const { stageNavigationCheckpoint } = load('src/systems/navigation/navigation-persistence.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const locations = narrowsSector.locations;
 assert(locations.length >= 2);
