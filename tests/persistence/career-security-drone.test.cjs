@@ -5,9 +5,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
-const { AsteroidSecurityDrone } = load(
-  'src/systems/operations/asteroid-security-drone.ts'
-);
+const { AsteroidSecurityDrone } = load('src/systems/operations/asteroid-security-drone.ts');
 const { stageSecurityDroneCheckpoint } = load(
   'src/systems/operations/asteroid-security-drone-checkpoint.ts'
 );
