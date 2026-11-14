@@ -147,7 +147,7 @@ export class LocalPirateTraffic {
   tick(
     deltaSeconds: number,
     npcs: readonly SectorNpcState[],
-    player: WorldPoint,
+    player: WorldPoint | null,
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint }>,
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean
@@ -164,7 +164,7 @@ export class LocalPirateTraffic {
             id: miner.npcId,
             position: miner.position,
           })),
-        { id: 'player', position: player },
+        ...(player ? [{ id: 'player', position: player }] : []),
       ];
       targets.sort(
         (a, b) =>
