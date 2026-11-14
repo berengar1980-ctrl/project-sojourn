@@ -22,7 +22,9 @@ export function offerLegalDemand(
   const panel = createLegalDemandPanel(
     context.root,
     title,
-    'Offene Forderung: ' + debt + ' CR.\n' +
+    'Offene Forderung: ' +
+      debt +
+      ' CR.\n' +
       'Bezahlung schließt die Forderung. Verweigerung kann zur Fahndung führen.',
     canPay,
     (decision) => {

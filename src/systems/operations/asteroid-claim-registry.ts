@@ -166,12 +166,13 @@ export class AsteroidClaimRegistry {
     unitValue: number
   ): void {
     const claim = this.claims.get(this.key(locationId, asteroidId));
-    if (!claim || claim.ownerId === intruderId || !Number.isFinite(tons) || tons <= 0)
-      return;
+    if (!claim || claim.ownerId === intruderId || !Number.isFinite(tons) || tons <= 0) return;
     const key = this.disputeKey(locationId, asteroidId, intruderId);
     const previous = this.extraction.get(key);
     this.extraction.set(key, {
-      locationId, asteroidId, intruderId,
+      locationId,
+      asteroidId,
+      intruderId,
       tons: (previous?.tons ?? 0) + tons,
       value: (previous?.value ?? 0) + tons * Math.max(0, unitValue),
       billedTons: previous?.billedTons ?? 0,
@@ -189,7 +190,13 @@ export class AsteroidClaimRegistry {
     return {
       tons: record.tons - record.billedTons,
       value: record.value - record.billedValue,
-      incidentId: JSON.stringify([locationId, asteroidId, intruderId, record.billedTons, record.tons]),
+      incidentId: JSON.stringify([
+        locationId,
+        asteroidId,
+        intruderId,
+        record.billedTons,
+        record.tons,
+      ]),
     };
   }
 
@@ -257,7 +264,10 @@ export class AsteroidClaimRegistry {
     for (const [key, level] of saved.surveyLevels) this.surveyLevels.set(key, level);
     for (const [key, seed] of saved.fieldSeeds) this.fieldSeeds.set(key, seed);
     for (const evidence of saved.extraction ?? [])
-      this.extraction.set(this.disputeKey(evidence.locationId, evidence.asteroidId, evidence.intruderId), { ...evidence });
+      this.extraction.set(
+        this.disputeKey(evidence.locationId, evidence.asteroidId, evidence.intruderId),
+        { ...evidence }
+      );
     return true;
   }
 

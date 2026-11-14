@@ -158,7 +158,9 @@ export class SectorLegalRegistry {
     readonly paid: number;
     readonly transfers: ReadonlyArray<{ creditorId: string; amount: number }>;
   } {
-    let remaining = Number.isFinite(availableCredits) ? Math.max(0, Math.floor(availableCredits)) : 0;
+    let remaining = Number.isFinite(availableCredits)
+      ? Math.max(0, Math.floor(availableCredits))
+      : 0;
     const transfers: { creditorId: string; amount: number }[] = [];
     for (const charge of this.charges) {
       if (charge.shipId !== shipId || remaining <= 0) continue;
@@ -168,7 +170,9 @@ export class SectorLegalRegistry {
       remaining -= paid;
       transfers.push({ creditorId: charge.creditorId, amount: paid });
     }
-    const paid = (Number.isFinite(availableCredits) ? Math.max(0, Math.floor(availableCredits)) : 0) - remaining;
+    const paid =
+      (Number.isFinite(availableCredits) ? Math.max(0, Math.floor(availableCredits)) : 0) -
+      remaining;
     if (this.debt(shipId) === 0) {
       this.warrants.delete(shipId);
       this.custody.delete(shipId);
@@ -236,10 +240,17 @@ export class SectorLegalRegistry {
       day: Math.floor(day),
       kind,
     };
-    if (this.sightings.some((entry) =>
-      entry.shipId === shipId && entry.locationId === locationId &&
-      entry.day === report.day && entry.kind === kind && entry.destinationId === destinationId
-    )) return null;
+    if (
+      this.sightings.some(
+        (entry) =>
+          entry.shipId === shipId &&
+          entry.locationId === locationId &&
+          entry.day === report.day &&
+          entry.kind === kind &&
+          entry.destinationId === destinationId
+      )
+    )
+      return null;
     this.sightings.push(report);
     return report;
   }

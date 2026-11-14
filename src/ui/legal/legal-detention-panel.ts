@@ -20,10 +20,16 @@ export function createDetentionPanel(root: HTMLElement): DetentionPanel {
     update(days, debt, laborCredits) {
       panel.textContent =
         'TERRANISCHES DIREKTORUM – STRAFLAGER\n' +
-        'Hafttag: ' + days +
-        '\nRestschuld: ' + debt.toLocaleString('de-DE') + ' CR' +
-        '\nArbeitsgutschrift: ' + laborCredits.toLocaleString('de-DE') +
-        ' CR (' + PENAL_LABOR_CREDITS_PER_DAY + ' CR / Tag)';
+        'Hafttag: ' +
+        days +
+        '\nRestschuld: ' +
+        debt.toLocaleString('de-DE') +
+        ' CR' +
+        '\nArbeitsgutschrift: ' +
+        laborCredits.toLocaleString('de-DE') +
+        ' CR (' +
+        PENAL_LABOR_CREDITS_PER_DAY +
+        ' CR / Tag)';
     },
     destroy() {
       panel.remove();

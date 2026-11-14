@@ -73,7 +73,13 @@ export function createMiningLocalSpace(
         const owner = rock ? claims.claim(location.id, rock) : null;
         if (owner && owner.ownerId !== 'player') {
           const unitValue = miningResourceById(resourceId)?.baseValue ?? 1;
-          claims.recordUnauthorizedExtraction(location.id, asteroidId, 'player', accepted, unitValue);
+          claims.recordUnauthorizedExtraction(
+            location.id,
+            asteroidId,
+            'player',
+            accepted,
+            unitValue
+          );
           const detected = isTheftDetected?.(owner.ownerId, asteroidId) ?? false;
           if (detected) {
             const conflict = claims.recordTheft(

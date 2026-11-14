@@ -9,8 +9,13 @@ const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-regist
 const { advanceNpcPenalCustody } = load('src/app/game-controller-law-enforcement.ts');
 
 const npc = {
-  id: 'miner-1', name: 'Miner 1', shipId: 'miner-hull',
-  locationId: 'haven', credits: 0, activityId: 'dock', activity: 'Wartet',
+  id: 'miner-1',
+  name: 'Miner 1',
+  shipId: 'miner-hull',
+  locationId: 'haven',
+  credits: 0,
+  activityId: 'dock',
+  activity: 'Wartet',
 };
 const legal = new SectorLegalRegistry();
 legal.registerShip('miner-hull:miner-1', npc.id);

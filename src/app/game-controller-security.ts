@@ -166,13 +166,19 @@ function handlePlayerDroneFine(
     const drone = context.economy.securityDrones.get(locationId);
     const space = context.state.localSpace;
     if (!defender || defender.hullHp <= 0 || !drone?.snapshot().operational || !space) return;
-    const arena = localMiningCombatArena(space.getSnapshot().instance, space.getShipWorldVelocity());
-    if (!context.engagements.engageNpcInArena(defender.id, {
-      ...arena,
-      defenderPosition: { ...drone.snapshot().position },
-      defenderHeadingRadians: 0,
-      defenderVelocity: { x: 0, y: 0 },
-    })) return;
+    const arena = localMiningCombatArena(
+      space.getSnapshot().instance,
+      space.getShipWorldVelocity()
+    );
+    if (
+      !context.engagements.engageNpcInArena(defender.id, {
+        ...arena,
+        defenderPosition: { ...drone.snapshot().position },
+        defenderHeadingRadians: 0,
+        defenderVelocity: { x: 0, y: 0 },
+      })
+    )
+      return;
     context.state.embeddedCombat = 'local-space';
     space.cancelMining();
     context.systemLog.write('SEC-01 > GEWALTSAME DURCHSETZUNG · KI-KAMPFMODUS AKTIV');
@@ -191,7 +197,9 @@ function handleNpcDroneFine(
   const legal = economy.legal;
   if (npc.credits >= legal.debt(shipId) && npc.aggression < 55) {
     const payment = settleLegalDebt(context, shipId, npc);
-    context.systemLog.write('SEC-01 > ' + npc.name.toUpperCase() + ' ZAHLT ' + payment.paid + ' CR');
+    context.systemLog.write(
+      'SEC-01 > ' + npc.name.toUpperCase() + ' ZAHLT ' + payment.paid + ' CR'
+    );
     return;
   }
   legal.declareWanted(shipId);
@@ -215,16 +223,21 @@ function processDroneContact(
   if (!claim) return;
   const day = economy.situations.currentDay;
   const legal = economy.legal;
-  const intruderId = shipId === context.state.activeShip.id
-    ? 'player'
-    : economy.sectorNpcs.npcs.find((npc) => npc.shipId + ':' + npc.id === shipId)?.id;
+  const intruderId =
+    shipId === context.state.activeShip.id
+      ? 'player'
+      : economy.sectorNpcs.npcs.find((npc) => npc.shipId + ':' + npc.id === shipId)?.id;
   if (!intruderId) return;
   const evidence = economy.asteroidClaims.unbilledExtraction(locationId, asteroidId, intruderId);
   if (!evidence) return;
   const previouslyWanted = legal.isWanted(shipId);
   const charge = legal.reportOffense(
-    shipId, claim.ownerId, 'Unbefugter Konzessionsabbau',
-    Math.ceil(evidence.value * 1.5), day, evidence.incidentId
+    shipId,
+    claim.ownerId,
+    'Unbefugter Konzessionsabbau',
+    Math.ceil(evidence.value * 1.5),
+    day,
+    evidence.incidentId
   );
   if (!charge) return;
   economy.asteroidClaims.markExtractionBilled(locationId, asteroidId, intruderId);

@@ -117,7 +117,10 @@ function legalStateMachineAndIdempotenceTest() {
   law.registerShip('miner-hull', 'miner');
   law.registerShip('rival-hull', 'rival');
   assert(law.reportOffense('miner-hull', 'player', 'Raubbau', 600, 1, 'field:rock:miner:1'));
-  assert.equal(law.reportOffense('miner-hull', 'player', 'Raubbau', 600, 1, 'field:rock:miner:1'), null);
+  assert.equal(
+    law.reportOffense('miner-hull', 'player', 'Raubbau', 600, 1, 'field:rock:miner:1'),
+    null
+  );
   assert.equal(law.debt('miner-hull'), 600);
   assert.equal(law.status('miner-hull'), 'demand');
   assert.equal(law.isWanted('miner-hull'), false);
