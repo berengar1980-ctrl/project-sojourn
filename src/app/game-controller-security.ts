@@ -23,7 +23,8 @@ export function tickFieldPirates(
 ): void {
   const { economy, state } = context;
   const locationId = field.locationId;
-  const space = state.localSpace?.getSnapshot().instance === field.instance ? state.localSpace : null;
+  const space =
+    state.localSpace?.getSnapshot().instance === field.instance ? state.localSpace : null;
   const traffic = field.pirates;
   const pirates = economy.sectorNpcs.npcs.filter(
     (npc) => npc.pirate && npc.locationId === locationId

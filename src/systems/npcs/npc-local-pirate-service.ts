@@ -146,7 +146,9 @@ export class LocalPirateTraffic {
       if (this.ships.has(id)) continue;
       this.ships.set(id, {
         npcId: id,
-        position: this.combatReturnPositions.get(id) ?? edgePoint(id + ':' + this.seed, this.width, this.height),
+        position:
+          this.combatReturnPositions.get(id) ??
+          edgePoint(id + ':' + this.seed, this.width, this.height),
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,

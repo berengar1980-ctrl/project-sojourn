@@ -15,7 +15,10 @@ export interface AsteroidFieldRuntime {
   readonly drone: AsteroidSecurityDrone;
 }
 
-type MinerFactory = (location: WorldLocation, instance: LocalSpaceInstance) => NpcLocalMiningService;
+type MinerFactory = (
+  location: WorldLocation,
+  instance: LocalSpaceInstance
+) => NpcLocalMiningService;
 
 /**
  * One authoritative local world per mining location. Scene mounts reference the

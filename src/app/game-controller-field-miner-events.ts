@@ -72,4 +72,3 @@ export function recordNpcAsteroidTheft(
       'MINING > FREMDER MINER BAUT DEINE KONZESSION UNBEFUGT AB: ' + npc.name
     );
 }
-

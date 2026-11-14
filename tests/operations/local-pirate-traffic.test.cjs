@@ -80,8 +80,12 @@ function asteroidCollisionPrevention() {
 function absentPlayerUsesRealMinerTarget() {
   const traffic = new LocalPirateTraffic(1100, 900, 77);
   const pirate = {
-    id: 'pirate-away', name: 'Away Raider', shipId: 'pirate-raider-60m',
-    pirate: true, locationId: 'greyrock-belt', hullHp: 100,
+    id: 'pirate-away',
+    name: 'Away Raider',
+    shipId: 'pirate-raider-60m',
+    pirate: true,
+    locationId: 'greyrock-belt',
+    hullHp: 100,
   };
   traffic.reconcile([pirate]);
   const origin = traffic.snapshot([pirate])[0].position;

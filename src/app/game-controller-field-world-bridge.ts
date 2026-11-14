@@ -2,7 +2,10 @@ import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import { AsteroidFieldWorld } from '../systems/operations/asteroid-field-world';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { registerNpcAsteroidClaim, recordNpcAsteroidTheft } from './game-controller-field-miner-events';
+import {
+  registerNpcAsteroidClaim,
+  recordNpcAsteroidTheft,
+} from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
@@ -54,7 +57,8 @@ export function advanceControllerFieldWorld(
   deltaSeconds: number
 ): void {
   const scene = context.state.localSpace?.getSnapshot();
-  const localId = context.state.mode === 'local-space' ? (scene?.instance.sourceLocationId ?? null) : null;
+  const localId =
+    context.state.mode === 'local-space' ? (scene?.instance.sourceLocationId ?? null) : null;
   const frozen = context.state.embeddedCombat === 'local-space' ? localId : null;
   fieldWorldFor(context).tick(deltaSeconds, frozen ? null : localId, (field, seconds) => {
     if (field.locationId === frozen) return;

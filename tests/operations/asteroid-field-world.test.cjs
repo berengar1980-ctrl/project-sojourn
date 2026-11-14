@@ -9,7 +9,11 @@ const { AsteroidFieldWorld } = load('src/systems/operations/asteroid-field-world
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { createNpcLocalMiningService } = load('src/systems/npcs/npc-local-mining-service.ts');
 
-const location = { id: 'background-test-field', activities: { mine: true }, minedResourceIds: ['ferrite'] };
+const location = {
+  id: 'background-test-field',
+  activities: { mine: true },
+  minedResourceIds: ['ferrite'],
+};
 const claims = new AsteroidClaimRegistry();
 const miner = {
   id: 'field-miner-1',
@@ -50,7 +54,9 @@ assert.equal(world.field('unknown'), null);
 assert.strictEqual(world.field(location.id), field, 'Returning to the field retains its owner');
 const rock = field.instance.asteroids.find((a) => a.kind === 'resource' && a.deposits.length);
 assert(rock, 'Generated field must contain mineable rocks');
-const initialOre = field.instance.asteroids.flatMap((a) => a.deposits).reduce((total, d) => total + d.oreRemaining, 0);
+const initialOre = field.instance.asteroids
+  .flatMap((a) => a.deposits)
+  .reduce((total, d) => total + d.oreRemaining, 0);
 let backgroundSteps = 0;
 for (let frame = 0; frame < 720; frame++) {
   world.tick(0.25, null, (entry, dt) => {
@@ -61,7 +67,9 @@ for (let frame = 0; frame < 720; frame++) {
 }
 assert.equal(backgroundSteps, 720 * 4, 'Distant fields use four bounded steps per quarter second');
 assert(extracted > 0, 'Miner must mine ore even when no player scene is mounted');
-const afterOre = field.instance.asteroids.flatMap((a) => a.deposits).reduce((total, d) => total + d.oreRemaining, 0);
+const afterOre = field.instance.asteroids
+  .flatMap((a) => a.deposits)
+  .reduce((total, d) => total + d.oreRemaining, 0);
 assert.equal(afterOre, initialOre - extracted, 'No ore may be fabricated or mined twice');
 
 const before = backgroundSteps;
@@ -71,5 +79,8 @@ world.tick(0.08, location.id, (entry, dt) => {
 });
 assert.equal(backgroundSteps, before + 1, 'Active field runs only once per frame');
 assert.strictEqual(world.field(location.id).instance.asteroids, field.instance.asteroids);
-assert.equal(claims.seedFor(location.id, () => 999), field.instance.seed);
+assert.equal(
+  claims.seedFor(location.id, () => 999),
+  field.instance.seed
+);
 console.log('PASS persistent asteroid world: distant mining, ore conservation, active handoff');

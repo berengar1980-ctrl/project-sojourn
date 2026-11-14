@@ -30,7 +30,8 @@ export function createMiningLocalSpace(
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
-  const instance = persistentField ?? generateMiningSpace(location.id, seed, location.minedResourceIds);
+  const instance =
+    persistentField ?? generateMiningSpace(location.id, seed, location.minedResourceIds);
   if (!persistentField) claims?.restoreField(location.id, instance.asteroids);
   return createLocalSpaceService({
     instance,
