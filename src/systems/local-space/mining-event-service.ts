@@ -5,6 +5,11 @@ import type {
   MiningEventState,
   MiningEventType,
 } from '../../core/local-space-types';
+import {
+  stageMiningEventCheckpoint,
+  type MiningEventCheckpoint,
+  type MiningEventSession,
+} from './mining-event-checkpoint';
 import { miningResourceById } from '../../data/resources/mining-resources';
 import { resolveMiningEventEffect, type MiningEventEffect } from './mining-event-outcomes';
 
@@ -14,17 +19,6 @@ export interface MiningEventDepositResult {
   readonly lostTons: number;
   readonly bonusTons: number;
   readonly bonusResourceName: string;
-}
-
-interface MiningEventSession {
-  readonly initialOre: number;
-  readonly triggerProgress: number;
-  readonly scheduled: boolean;
-  readonly primaryResourceId: string;
-  readonly type: MiningEventType;
-  readonly rolls: readonly number[];
-  readonly id: string;
-  triggered: boolean;
 }
 
 function createRandom(seed: number): () => number {
@@ -174,12 +168,44 @@ export function createMiningEventController(
   seed: number,
   random = createRandom(seed ^ 0x4d494e45)
 ) {
+  let draws = 0;
+  const nextRandom = (): number => {
+    draws += 1;
+    return random();
+  };
   let sessionCounter = 0;
   let session: MiningEventSession | null = null;
   let pending: MiningEventState | null = null;
   let cycleModifier = 1;
   let recoverySeconds = 0;
   return {
+    exportState(): MiningEventCheckpoint {
+      return {
+        version: 1,
+        seed,
+        draws,
+        sessionCounter,
+        session: session ? { ...session, rolls: [...session.rolls] } : null,
+        pending: pending
+          ? { ...pending, choices: pending.choices.map((choice) => ({ ...choice })) }
+          : null,
+        cycleModifier,
+        recoverySeconds,
+      };
+    },
+    restoreState(candidate: unknown): void {
+      const saved = stageMiningEventCheckpoint(candidate, seed);
+      // Replay the generator only in a fresh service, keeping future event rolls stable.
+      for (let i = 0; i < saved.draws; i += 1) random();
+      draws = saved.draws;
+      sessionCounter = saved.sessionCounter;
+      session = saved.session ? { ...saved.session, rolls: [...saved.session.rolls] } : null;
+      pending = saved.pending
+        ? { ...saved.pending, choices: saved.pending.choices.map((choice) => ({ ...choice })) }
+        : null;
+      cycleModifier = saved.cycleModifier;
+      recoverySeconds = saved.recoverySeconds;
+    },
     get pending(): MiningEventState | null {
       return pending;
     },
@@ -195,17 +221,17 @@ export function createMiningEventController(
     begin(asteroid: LocalAsteroid): void {
       sessionCounter += 1;
       const initialOre = totalOre(asteroid);
-      const type = eventType(random());
+      const type = eventType(nextRandom());
       cycleModifier = 1;
       recoverySeconds = 0;
       session = {
         initialOre,
-        triggerProgress: 0.22 + random() * 0.34,
-        scheduled: initialOre > 0 && random() < EVENT_RATE,
+        triggerProgress: 0.22 + nextRandom() * 0.34,
+        scheduled: initialOre > 0 && nextRandom() < EVENT_RATE,
         primaryResourceId: primaryResource(asteroid),
         type,
-        rolls: [random(), random(), random()],
-        id: `mineevt-${seed}-${sessionCounter}-${Math.floor(random() * 1e6)}`,
+        rolls: [nextRandom(), nextRandom(), nextRandom()],
+        id: `mineevt-${seed}-${sessionCounter}-${Math.floor(nextRandom() * 1e6)}`,
         triggered: false,
       };
       pending = null;
