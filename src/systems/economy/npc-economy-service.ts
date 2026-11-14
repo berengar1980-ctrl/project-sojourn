@@ -355,7 +355,7 @@ export function createNpcEconomyService(
         if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
         if (options.travel?.isTravelling(npc)) continue;
         observeNpcMarket(npc, markets, npc.locationId, current);
-        if (npc.role === 'miner' || npc.role === 'salvager') {
+        if ((npc.role === 'miner' || npc.role === 'salvager') && !options.isManaged?.(npc)) {
           abstractWorkerDay(npc, allocator, current, options);
         }
       }
