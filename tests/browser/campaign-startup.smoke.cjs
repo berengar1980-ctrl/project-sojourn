@@ -9,9 +9,10 @@ const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 
 const baseUrl = 'http://127.0.0.1:5187';
+// Spawn Vite directly: killing npm would leave a child server running and hang CI.
 const server = spawn(
-  process.platform === 'win32' ? 'npm.cmd' : 'npm',
-  ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '5187', '--strictPort'],
+  process.execPath,
+  ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '5187', '--strictPort'],
   { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'pipe'] }
 );
 let output = '';
@@ -74,6 +75,8 @@ async function awaitServer() {
   } finally {
     await browser?.close();
     server.kill('SIGTERM');
+    server.stdout.destroy();
+    server.stderr.destroy();
   }
 })().catch((error) => {
   console.error(error);
