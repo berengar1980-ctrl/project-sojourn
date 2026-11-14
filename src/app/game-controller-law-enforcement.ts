@@ -2,6 +2,7 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { advanceEconomyDay } from './game-controller-events';
 import { PENAL_LABOR_CREDITS_PER_DAY } from '../systems/operations/sector-legal-registry';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
+import { createDetentionPanel, type DetentionPanel } from '../ui/legal/legal-detention-panel';
 import { settleLegalDebt, transferCredit } from './game-controller-legal-ledger';
 export { transferCredit } from './game-controller-legal-ledger';
 
@@ -10,7 +11,7 @@ interface DetentionSession {
   days: number;
   laborCredits: number;
   accumulator: number;
-  panel: HTMLElement | null;
+  panel: DetentionPanel | null;
 }
 const detentions = new WeakMap<ControllerRuntimeContext, DetentionSession>();
 const LABOR_DAYS_PER_SECOND = 12;
@@ -230,18 +231,7 @@ export function tickLegalDetention(
 ): boolean {
   const session = detentions.get(context);
   if (!session) return false;
-  if (!session.panel) {
-    const panel = document.createElement('section');
-    panel.className = 'directorate-detention-panel';
-    panel.setAttribute('role', 'status');
-    panel.setAttribute('aria-live', 'polite');
-    panel.style.cssText =
-      'position:fixed;inset:0;z-index:10000;background:rgba(4,8,14,.96);' +
-      'color:#e6e9ec;display:grid;place-content:center;text-align:center;' +
-      'font:18px system-ui;padding:32px;pointer-events:all';
-    context.root.appendChild(panel);
-    session.panel = panel;
-  }
+  if (!session.panel) session.panel = createDetentionPanel(context.root);
   session.accumulator += Math.max(0, Math.min(deltaSeconds, 0.25)) * LABOR_DAYS_PER_SECOND;
   const days = Math.floor(session.accumulator);
   session.accumulator -= days;
@@ -255,24 +245,9 @@ export function tickLegalDetention(
       transferCredit(context, transfer.creditorId, transfer.amount);
   }
   const debt = context.economy.legal.debt(session.shipId);
-  if (session.panel) {
-    session.panel.textContent =
-      'TERRANISCHES DIREKTORUM – STRAFLAGER\n' +
-      'Hafttag: ' +
-      session.days +
-      '\n' +
-      'Restschuld: ' +
-      debt.toLocaleString('de-DE') +
-      ' CR\n' +
-      'Arbeitsgutschrift: ' +
-      session.laborCredits.toLocaleString('de-DE') +
-      ' CR (' +
-      PENAL_LABOR_CREDITS_PER_DAY +
-      ' CR / Tag)';
-    session.panel.style.whiteSpace = 'pre-line';
-  }
+  session.panel?.update(session.days, debt, session.laborCredits);
   if (debt > 0) return true;
-  session.panel?.remove();
+  session.panel?.destroy();
   detentions.delete(context);
   context.systemLog.write(
     'DIREKTORUM > NACH ' + session.days + ' HAFTTAGEN ENTLASSEN. SCHULDEN VOLLSTAENDIG BEGLICHEN'
