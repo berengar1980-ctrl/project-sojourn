@@ -90,11 +90,7 @@ function validPointDestination(value: unknown): boolean {
   );
 }
 
-function validTravel(
-  value: unknown,
-  world: WorldMap,
-  pointId: string | null
-): boolean {
+function validTravel(value: unknown, world: WorldMap, pointId: string | null): boolean {
   if (value === null) return true;
   return (
     object(value) &&
