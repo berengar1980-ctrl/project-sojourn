@@ -6,9 +6,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createNpcPopulationService } = load('src/systems/npcs/npc-population-service.ts');
-const { stageNpcPopulationCheckpoint } = load(
-  'src/systems/npcs/npc-population-checkpoint.ts'
-);
+const { stageNpcPopulationCheckpoint } = load('src/systems/npcs/npc-population-checkpoint.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 
 const markets = { snapshot: () => [], recalculate: () => {} };
