@@ -49,6 +49,17 @@ alone as a career save:** the rest of the game state would diverge. Embed it
 atomically with navigation, economy, cargo, crew and ship snapshots when the
 full-game persistence service is implemented.
 
+## Career-save foundation (Issue #300 / PR 3)
+
+The initial implementation of `CareerSaveStore` now provides a strict, versioned,
+single-key atomic JSON envelope with integrity checks, but **does not yet enable
+complete career save/load or its UI**. A complete save must include 14 mandatory
+sections, so isolated campaign receipts and half-restored domain states cannot
+be presented as a valid new session. Legal and asteroid claims can already be
+captured and prepared into fresh registries, including depleted ore from
+background fields. See `docs/CAREER_PERSISTENCE.md` for the remaining services
+that must be staged before a career session can be activated.
+
 ## Next slices
 
 1. Define authoritative full-career snapshot adapters and persistence migrations
