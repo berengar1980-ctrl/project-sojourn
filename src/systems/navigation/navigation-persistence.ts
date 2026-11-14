@@ -44,64 +44,103 @@ function route(value: unknown, world: WorldMap, pointId: string | null): value i
   return Math.abs(length - value.distance) <= Math.max(0.01, length * 0.000001);
 }
 
+function knownLocation(world: WorldMap, value: unknown): boolean {
+  return (
+    value === null ||
+    (typeof value === 'string' && world.locations.some((location) => location.id === value))
+  );
+}
+
+function validThreats(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length <= 2000 &&
+    value.every(
+      (item: unknown) =>
+        object(item) &&
+        point(item.position) &&
+        ['pirate', 'patrol'].includes(item.kind as string) &&
+        (item.strength === undefined || finite(item.strength, 0))
+    )
+  );
+}
+
+function validPositionAndSettings(state: Record<string, unknown>, world: WorldMap): boolean {
+  return (
+    knownLocation(world, state.currentLocationId) &&
+    point(state.currentPosition) &&
+    ['fast', 'balanced', 'safe'].includes(state.routeProfile as string) &&
+    finite(state.currentHeading) &&
+    finite(state.currentTurnRate) &&
+    finite(state.currentAngularThrust) &&
+    finite(state.cruiseSpeed, Number.EPSILON) &&
+    finite(state.turnRateMultiplier, Number.EPSILON) &&
+    finite(state.threatRevision, 0) &&
+    finite(state.lastReplanRevision, 0) &&
+    finite(state.replanCooldown, 0) &&
+    typeof state.threatSignature === 'string' &&
+    validThreats(state.threats)
+  );
+}
+
+function validPointDestination(value: unknown): boolean {
+  return (
+    value === null ||
+    (object(value) && typeof value.id === 'string' && value.id.length > 0 && point(value.position))
+  );
+}
+
+function validTravel(
+  value: unknown,
+  world: WorldMap,
+  pointId: string | null
+): boolean {
+  if (value === null) return true;
+  return (
+    object(value) &&
+    typeof value.destinationId === 'string' &&
+    route(value.route, world, pointId) &&
+    value.route.toId === value.destinationId &&
+    finite(value.distanceTravelled, 0) &&
+    value.distanceTravelled <= value.route.distance &&
+    finite(value.currentSpeed, 0)
+  );
+}
+
+function validPursuit(value: unknown): boolean {
+  return (
+    value === null ||
+    (object(value) &&
+      typeof value.targetId === 'string' &&
+      value.targetId.length > 0 &&
+      point(value.targetPosition) &&
+      finite(value.currentSpeed, 0))
+  );
+}
+
+function validDestinations(state: Record<string, unknown>, world: WorldMap): boolean {
+  const p = state.pointDestination;
+  const travel = state.travel;
+  const pursuit = state.pursuit;
+  const pointId = object(p) && typeof p.id === 'string' ? p.id : null;
+  if (!validPointDestination(p) || !validTravel(travel, world, pointId)) return false;
+  if (!validPursuit(pursuit) || (travel !== null && pursuit !== null)) return false;
+  if ((travel !== null || pursuit !== null) && state.currentLocationId !== null) return false;
+  if (!knownLocation(world, state.selectedDestinationId) && state.selectedDestinationId !== pointId) {
+    return false;
+  }
+  if (object(travel) && state.selectedDestinationId !== travel.destinationId) return false;
+  return true;
+}
+
 function validate(candidate: unknown, world: WorldMap): NavigationRuntimeState {
   if (!object(candidate) || candidate.version !== 1 || candidate.worldId !== world.id) {
     throw new Error('Unbekannter oder falscher Navigations-Spielstand.');
   }
   const state = candidate.state;
   if (!object(state)) throw new Error('Navigationszustand fehlt.');
-  const exists = (value: unknown) =>
-    value === null ||
-    (typeof value === 'string' && world.locations.some((location) => location.id === value));
-  const profile = ['fast', 'balanced', 'safe'].includes(state.routeProfile as string);
-  const p = state.pointDestination;
-  const travel = state.travel;
-  const pursuit = state.pursuit;
-  if (
-    !exists(state.currentLocationId) ||
-    !(exists(state.selectedDestinationId) || (object(p) && p.id === state.selectedDestinationId)) ||
-    !point(state.currentPosition) ||
-    !profile ||
-    !finite(state.currentHeading) ||
-    !finite(state.currentTurnRate) ||
-    !finite(state.currentAngularThrust) ||
-    !finite(state.cruiseSpeed, Number.EPSILON) ||
-    !finite(state.turnRateMultiplier, Number.EPSILON) ||
-    !finite(state.threatRevision, 0) ||
-    !finite(state.lastReplanRevision, 0) ||
-    !finite(state.replanCooldown, 0) ||
-    !Array.isArray(state.threats) ||
-    state.threats.length > 2000 ||
-    !state.threats.every(
-      (item: unknown) =>
-        object(item) &&
-        point(item.position) &&
-        ['pirate', 'patrol'].includes(item.kind as string) &&
-        (item.strength === undefined || finite(item.strength, 0))
-    ) ||
-    typeof state.threatSignature !== 'string' ||
-    (p !== null && (!object(p) || typeof p.id !== 'string' || !p.id || !point(p.position))) ||
-    (travel !== null &&
-      (!object(travel) ||
-        typeof travel.destinationId !== 'string' ||
-        !route(travel.route, world, object(p) && typeof p.id === 'string' ? p.id : null) ||
-        travel.route.toId !== travel.destinationId ||
-        !finite(travel.distanceTravelled, 0) ||
-        travel.distanceTravelled > travel.route.distance ||
-        !finite(travel.currentSpeed, 0))) ||
-    (pursuit !== null &&
-      (!object(pursuit) ||
-        typeof pursuit.targetId !== 'string' ||
-        !pursuit.targetId ||
-        !point(pursuit.targetPosition) ||
-        !finite(pursuit.currentSpeed, 0))) ||
-    (travel !== null && pursuit !== null) ||
-    ((travel !== null || pursuit !== null) && state.currentLocationId !== null)
-  ) {
+  if (!validPositionAndSettings(state, world) || !validDestinations(state, world)) {
     throw new Error('Beschädigter oder widersprüchlicher Navigationszustand.');
-  }
-  if (travel !== null && state.selectedDestinationId !== travel.destinationId) {
-    throw new Error('Flugziel und gespeicherte Route widersprechen sich.');
   }
   // Non-authoritative preview caches are intentionally rebuilt after loading.
   return {
