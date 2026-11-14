@@ -9,12 +9,16 @@ const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 
 const baseUrl = 'http://127.0.0.1:5187';
-const server = spawn(process.platform === 'win32' ? 'npm.cmd' : 'npm',
+const server = spawn(
+  process.platform === 'win32' ? 'npm.cmd' : 'npm',
   ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '5187', '--strictPort'],
-  { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'pipe'] });
+  { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'pipe'] }
+);
 let output = '';
 for (const pipe of [server.stdout, server.stderr]) {
-  pipe.on('data', (chunk) => { output += chunk.toString().slice(0, 10000); });
+  pipe.on('data', (chunk) => {
+    output += chunk.toString().slice(0, 10000);
+  });
 }
 
 async function awaitServer() {
@@ -59,7 +63,9 @@ async function awaitServer() {
     assert(ui.exists, 'A complete star map must mount after campaign initialization');
     assert(ui.canvasWidth > 0 && ui.canvasHeight > 0, 'The game must render into a sized canvas');
     assert.deepEqual(errors, [], 'No unhandled browser exceptions during campaign boot and ticks');
-    console.log('PASS browser: character editor, real campaign bootstrap, map canvas and running game loop');
+    console.log(
+      'PASS browser: character editor, real campaign bootstrap, map canvas and running game loop'
+    );
     await page.screenshot({ path: '/tmp/sojourn-campaign-startup.png', fullPage: true });
   } finally {
     await browser?.close();
