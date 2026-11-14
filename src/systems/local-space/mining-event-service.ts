@@ -164,6 +164,43 @@ function applyMiningEventResult(
   };
 }
 
+function newEventSession(
+  seed: number,
+  index: number,
+  asteroid: LocalAsteroid,
+  nextRandom: () => number
+): MiningEventSession {
+  const initialOre = totalOre(asteroid);
+  return {
+    initialOre,
+    triggerProgress: 0.22 + nextRandom() * 0.34,
+    scheduled: initialOre > 0 && nextRandom() < EVENT_RATE,
+    primaryResourceId: primaryResource(asteroid),
+    type: eventType(nextRandom()),
+    rolls: [nextRandom(), nextRandom(), nextRandom()],
+    id: `mineevt-${seed}-${index}-${Math.floor(nextRandom() * 1e6)}`,
+    triggered: false,
+  };
+}
+
+function triggerEvent(
+  session: MiningEventSession,
+  asteroid: LocalAsteroid
+): MiningEventState | null {
+  const progress =
+    session.initialOre <= 0 ? 0 : 1 - totalOre(asteroid) / Math.max(1, session.initialOre);
+  if (progress < session.triggerProgress) return null;
+  session.triggered = true;
+  return {
+    id: session.id,
+    type: session.type,
+    title: eventTitle(session.type),
+    description: eventDescription(session.type),
+    extractionProgress: Math.max(0, Math.min(1, progress)),
+    choices: eventChoices(session.type),
+  };
+}
+
 export function createMiningEventController(
   seed: number,
   random = createRandom(seed ^ 0x4d494e45)
@@ -220,37 +257,14 @@ export function createMiningEventController(
     },
     begin(asteroid: LocalAsteroid): void {
       sessionCounter += 1;
-      const initialOre = totalOre(asteroid);
-      const type = eventType(nextRandom());
       cycleModifier = 1;
       recoverySeconds = 0;
-      session = {
-        initialOre,
-        triggerProgress: 0.22 + nextRandom() * 0.34,
-        scheduled: initialOre > 0 && nextRandom() < EVENT_RATE,
-        primaryResourceId: primaryResource(asteroid),
-        type,
-        rolls: [nextRandom(), nextRandom(), nextRandom()],
-        id: `mineevt-${seed}-${sessionCounter}-${Math.floor(nextRandom() * 1e6)}`,
-        triggered: false,
-      };
+      session = newEventSession(seed, sessionCounter, asteroid, nextRandom);
       pending = null;
     },
     update(asteroid: LocalAsteroid): MiningEventState | null {
       if (!session || pending || session.triggered || !session.scheduled) return pending;
-      const progress =
-        session.initialOre <= 0 ? 0 : 1 - totalOre(asteroid) / Math.max(1, session.initialOre);
-      if (progress < session.triggerProgress) return null;
-
-      session.triggered = true;
-      pending = {
-        id: session.id,
-        type: session.type,
-        title: eventTitle(session.type),
-        description: eventDescription(session.type),
-        extractionProgress: Math.max(0, Math.min(1, progress)),
-        choices: eventChoices(session.type),
-      };
+      pending = triggerEvent(session, asteroid);
       return pending;
     },
     pauseExtraction(asteroid: LocalAsteroid, deltaSeconds: number): boolean {
