@@ -105,7 +105,7 @@ function verifySurveyLevels(entries: readonly unknown[]): void {
   for (const pair of entries) {
     if (!Array.isArray(pair) || pair.length !== 2 ||
       typeof pair[0] !== 'string' ||
-      !['unscanned', 'scanned', 'analyzed'].includes(pair[1] as string)) {
+      !['unscanned', 'surveyed', 'analyzed'].includes(pair[1] as string)) {
       throw new Error('Ungültiger gespeicherter Scanstand.');
     }
   }
