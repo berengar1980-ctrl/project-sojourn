@@ -60,6 +60,20 @@ Erlaubnis, nur zwei Register in ein laufendes Spiel hineinzuladen.
 - Ungültige Zahlungs-/Förderbelege verhindern Restore, ohne aktiven Zustand
   zu verändern
 
+## NPC-Sektor-Checkpoint (nächster Teil-PR)
+
+`captureCareerNpcs` erfasst die autoritativen NPC-Objekte inklusive Sektorrouten,
+Fracht, Treibstoff, Rumpfschäden und Kampfbewegung in einem unabhängigen Snapshot.
+`stageCareerNpcs` prüft die Kennungen, Zielorte, aktiven Reise- und Kampfzustände
+und kann daraus eine neue, vom Live-Spiel getrennte NPC-Liste vorbereiten.
+Ungültige oder doppelte NPC-IDs, unplausible Ladungen und gebrochene Kampfziele
+werden verworfen. Die Prüfung betrifft den NPC-Sektorzustand, **nicht** die
+komplette NPC-Wirtschaft oder das lokale Asteroidenfeld.
+
+Für vollständiges Save/Load fehlen weiter die zustandsführenden Nebenservices
+(Populationsfonds, Markt/Wirtschaft, lokale Miner/Piraten/Drohnen, Kampagnen- und
+Kampfautorität) und der atomare Aufbau der gesamten Karriere. Keine Save/Load-UI.
+
 ## Noch zu erledigen vor einer Freigabe
 
 1. Für Navigation, Player/Cargo, Economy/Markets, NPC-Routen, Crew/Loadouts,
