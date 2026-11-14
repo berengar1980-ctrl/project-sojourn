@@ -7,7 +7,7 @@ import {
 } from '../ui/customs/customs-inspection-panel';
 import { resolveShipRuntimeSetup } from '../systems/ships';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { transferCredit } from './game-controller-law-enforcement';
+import { offerLegalDemand, hasPendingLegalDemand } from './game-controller-legal-decisions';
 
 const patrolChecks = new WeakMap<
   ControllerRuntimeContext,
@@ -60,6 +60,7 @@ export function canSwitchSmugglingShip(
 
 /** An imposed customs inspection freezes sector movement while the modal is open. */
 export function tickCustoms(context: ControllerRuntimeContext): boolean {
+  if (hasPendingLegalDemand(context)) return true;
   if (!context.economy.smuggling.state.inspection) return false;
   return true;
 }
@@ -87,34 +88,12 @@ function handleWantedPatrol(
   patrol: { id: string; name: string }
 ): boolean {
   const shipId = context.state.activeShip.id;
-  if (context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.35)) {
-    const debt = context.economy.legal.debt(shipId);
-    const pay =
-      context.economy.trade.player.credits >= debt &&
-      window.confirm(
-        'DIREKTORUM-PATROUILLE ' +
-          patrol.name +
-          '\n' +
-          'Schiff zur Fahndung ausgeschrieben.\n' +
-          'Offene Forderungen: ' +
-          debt +
-          ' CR\n\n' +
-          'Alle Forderungen zahlen? ABBRECHEN = Flucht/Widerstand.'
-      );
-    if (pay) {
-      const payment = context.economy.legal.settle(shipId, context.economy.trade.player.credits);
-      context.economy.trade.player.credits -= payment.paid;
-      for (const transfer of payment.transfers)
-        transferCredit(context, transfer.creditorId, transfer.amount);
-      context.systemLog.write('PATROUILLE > ' + payment.paid + ' CR BEGLICHEN · FAHNDUNG BEENDET');
-    } else {
-      context.systemLog.write('PATROUILLE > ZAHLUNG VERWEIGERT · GEFECHT ODER FLUCHT');
-      context.engagements.engageNpcNow(patrol.id);
-    }
-    return true;
-  }
-
-  return false;
+  if (!context.economy.legal.isRecognizedWanted(shipId, Math.random() < 0.35)) return false;
+  offerLegalDemand(context, shipId, 'DIREKTORUM-PATROUILLE ' + patrol.name, () => {
+    context.systemLog.write('PATROUILLE > ZAHLUNG VERWEIGERT · GEFECHT ODER FLUCHT');
+    context.engagements.engageNpcNow(patrol.id);
+  });
+  return true;
 }
 
 /** A patrol must physically encounter the travelling player; no omniscient inspection. */
