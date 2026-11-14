@@ -14,7 +14,7 @@ verlorene Fortschritte erzeugen.
 
 - `CareerSnapshot.version = 1` mit **14 verpflichtenden Teilzuständen**:
   `navigation, player, ships, crew, economy, npcs, operations, fields, claims,
-  legal, custody, combat, campaigns, world`. Das Auslassen eines Teilzustands
+legal, custody, combat, campaigns, world`. Das Auslassen eines Teilzustands
   wird verworfen.
 - Der Datensatz enthält ausschließlich reines JSON. Laufzeitobjekte,
   Methoden, nicht-endliche Zahlen, zirkuläre Referenzen und unbekannte

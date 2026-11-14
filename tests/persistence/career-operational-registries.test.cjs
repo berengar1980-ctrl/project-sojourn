@@ -8,9 +8,9 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-registry.ts');
 const { AsteroidFieldWorld } = load('src/systems/operations/asteroid-field-world.ts');
-const {
-  captureCareerLegalAndClaims, stageCareerLegalAndClaims,
-} = load('src/systems/persistence/career-operational-registries.ts');
+const { captureCareerLegalAndClaims, stageCareerLegalAndClaims } = load(
+  'src/systems/persistence/career-operational-registries.ts'
+);
 const { createControllerEconomy } = load('src/app/game-controller-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 
@@ -59,13 +59,11 @@ assert.equal(restored.legal.debt(shipId), 700);
 assert.equal(restored.legal.status(shipId), 'custody');
 assert.equal(restored.legal.registration(shipId).transponder, 'FALSE-CALLSIGN');
 assert.equal(restored.legal.latestSighting(shipId).kind, 'distress');
-assert.equal(
-  restored.claims.unbilledExtraction(location.id, asteroid.id, 'miner-x').value,
-  540
-);
+assert.equal(restored.claims.unbilledExtraction(location.id, asteroid.id, 'miner-x').value, 540);
 assert.equal(
   restored.legal.reportOffense(shipId, 'player', 'Konzessionsraub', 810, 2, 'incident:1'),
-  null, 'Reload must not bill the same incident twice'
+  null,
+  'Reload must not bill the same incident twice'
 );
 assert.equal(restored.legal.settle(shipId, 700).paid, 700);
 assert.equal(restored.legal.settle(shipId, 700).paid, 0, 'No repeat creditor transfer');
@@ -81,5 +79,11 @@ assert.throws(() => stageCareerLegalAndClaims(corrupted), /Erzvorfall/);
 assert.equal(asteroid.deposits[0].oreRemaining, copy.deposits[0].oreRemaining);
 const nav = { getSnapshot: () => ({ currentPosition: narrowsSector.star.position }) };
 const economy = createControllerEconomy(nav, () => {}, stageCareerLegalAndClaims(saved));
-assert.equal(economy.legal.debt(shipId), 700, 'New game economy can stage legal record before initialization');
-console.log('PASS career operational registry staging: ore, claims, identity, wanted/custody and idempotent settlement');
+assert.equal(
+  economy.legal.debt(shipId),
+  700,
+  'New game economy can stage legal record before initialization'
+);
+console.log(
+  'PASS career operational registry staging: ore, claims, identity, wanted/custody and idempotent settlement'
+);

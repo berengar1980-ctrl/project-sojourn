@@ -20,9 +20,15 @@ export const CAREER_SAVE_SECTIONS = [
 ] as const;
 
 export type CareerSaveSection = (typeof CAREER_SAVE_SECTIONS)[number];
-export type CareerJson = null | boolean | string | number | CareerJson[] | {
-  readonly [key: string]: CareerJson;
-};
+export type CareerJson =
+  | null
+  | boolean
+  | string
+  | number
+  | CareerJson[]
+  | {
+      readonly [key: string]: CareerJson;
+    };
 
 export interface CareerSnapshot {
   readonly version: 1;

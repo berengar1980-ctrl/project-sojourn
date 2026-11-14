@@ -18,17 +18,30 @@ function validFinite(value: unknown, minimum = 0): value is number {
 
 function verifyClaims(value: unknown): void {
   if (!isRecord(value) || value.version !== 1) throw new Error('Unbekanntes Konzessionsformat.');
-  for (const key of ['claims', 'disputes', 'remainingOre', 'surveyLevels', 'fieldSeeds', 'extraction']) {
+  for (const key of [
+    'claims',
+    'disputes',
+    'remainingOre',
+    'surveyLevels',
+    'fieldSeeds',
+    'extraction',
+  ]) {
     if (!Array.isArray(value[key])) throw new Error('Beschädigte Konzessionsdaten: ' + key);
   }
   const seen = new Set<string>();
   for (const entry of value.extraction as unknown[]) {
-    if (!isRecord(entry) ||
-      !['locationId', 'asteroidId', 'intruderId'].every((key) =>
-        typeof entry[key] === 'string' && entry[key] !== '') ||
-      !validFinite(entry.tons) || !validFinite(entry.value) ||
-      !validFinite(entry.billedTons) || !validFinite(entry.billedValue) ||
-      entry.billedTons > entry.tons || entry.billedValue > entry.value) {
+    if (
+      !isRecord(entry) ||
+      !['locationId', 'asteroidId', 'intruderId'].every(
+        (key) => typeof entry[key] === 'string' && entry[key] !== ''
+      ) ||
+      !validFinite(entry.tons) ||
+      !validFinite(entry.value) ||
+      !validFinite(entry.billedTons) ||
+      !validFinite(entry.billedValue) ||
+      entry.billedTons > entry.tons ||
+      entry.billedValue > entry.value
+    ) {
       throw new Error('Ungültiger oder doppelt abgerechneter Erzvorfall.');
     }
     const id = JSON.stringify([entry.locationId, entry.asteroidId, entry.intruderId]);
@@ -36,43 +49,71 @@ function verifyClaims(value: unknown): void {
     seen.add(id);
   }
   for (const pair of value.fieldSeeds as unknown[]) {
-    if (!Array.isArray(pair) || pair.length !== 2 ||
-      typeof pair[0] !== 'string' || !validFinite(pair[1])) {
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      !validFinite(pair[1])
+    ) {
       throw new Error('Ungültiger Asteroidenfeld-Seed.');
     }
   }
   for (const pair of value.remainingOre as unknown[]) {
-    if (!Array.isArray(pair) || pair.length !== 2 ||
-      typeof pair[0] !== 'string' || !isRecord(pair[1]) ||
-      Object.values(pair[1]).some((quantity) => !validFinite(quantity))) {
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      !isRecord(pair[1]) ||
+      Object.values(pair[1]).some((quantity) => !validFinite(quantity))
+    ) {
       throw new Error('Ungültiger gespeicherter Erzbestand.');
     }
   }
 }
 
 function verifyLegal(value: unknown): void {
-  if (!isRecord(value) || ![1, 2].includes(value.version as number) ||
-    !Array.isArray(value.registrations) || !Array.isArray(value.charges) ||
-    !Array.isArray(value.sightings) || !Array.isArray(value.warrants) ||
-    !Array.isArray(value.custodies) || !validFinite(value.sequence)) {
+  if (
+    !isRecord(value) ||
+    ![1, 2].includes(value.version as number) ||
+    !Array.isArray(value.registrations) ||
+    !Array.isArray(value.charges) ||
+    !Array.isArray(value.sightings) ||
+    !Array.isArray(value.warrants) ||
+    !Array.isArray(value.custodies) ||
+    !validFinite(value.sequence)
+  ) {
     throw new Error('Ungültige gespeicherte Rechtsakte.');
   }
   const registrations = new Set<string>();
   for (const item of value.registrations as unknown[]) {
-    if (!isRecord(item) || typeof item.shipId !== 'string' || !item.shipId ||
-      typeof item.ownerId !== 'string' || !item.ownerId ||
-      typeof item.transponder !== 'string' || typeof item.originalTransponder !== 'string' ||
-      registrations.has(item.shipId)) throw new Error('Ungültige Schiffskennung.');
+    if (
+      !isRecord(item) ||
+      typeof item.shipId !== 'string' ||
+      !item.shipId ||
+      typeof item.ownerId !== 'string' ||
+      !item.ownerId ||
+      typeof item.transponder !== 'string' ||
+      typeof item.originalTransponder !== 'string' ||
+      registrations.has(item.shipId)
+    )
+      throw new Error('Ungültige Schiffskennung.');
     registrations.add(item.shipId);
   }
   const ids = new Set<string>();
   const incidents = new Set<string>();
   for (const item of value.charges as unknown[]) {
-    if (!isRecord(item) || typeof item.id !== 'string' || ids.has(item.id) ||
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      ids.has(item.id) ||
       !registrations.has(item.shipId as string) ||
-      typeof item.creditorId !== 'string' || !item.creditorId ||
-      !validFinite(item.amount, 1) || !validFinite(item.paid) ||
-      item.paid > item.amount || !validFinite(item.day)) {
+      typeof item.creditorId !== 'string' ||
+      !item.creditorId ||
+      !validFinite(item.amount, 1) ||
+      !validFinite(item.paid) ||
+      item.paid > item.amount ||
+      !validFinite(item.day)
+    ) {
       throw new Error('Ungültige Forderung oder Zahlung.');
     }
     ids.add(item.id);
@@ -117,8 +158,10 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
   verifyLegal(saved.legal);
   const claims = new AsteroidClaimRegistry();
   const legal = new SectorLegalRegistry();
-  if (!claims.restoreState(saved.claims as CareerLegalAndClaims['claims']) ||
-    !legal.restoreState(saved.legal as CareerLegalAndClaims['legal'])) {
+  if (
+    !claims.restoreState(saved.claims as CareerLegalAndClaims['claims']) ||
+    !legal.restoreState(saved.legal as CareerLegalAndClaims['legal'])
+  ) {
     throw new Error('Speicherdaten des Rechts- oder Konzessionssystems unvollständig.');
   }
   return { claims, legal };
