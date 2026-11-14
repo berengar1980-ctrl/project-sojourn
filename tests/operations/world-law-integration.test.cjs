@@ -8,6 +8,7 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 
 const { createControllerEconomy } = load('src/app/game-controller-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const { getShipDefinition } = load('src/systems/ships/index.ts');
 const { fieldWorldFor, advanceControllerFieldWorld } = load(
   'src/app/game-controller-field-world-bridge.ts'
 );
@@ -51,7 +52,7 @@ function createScenario() {
   const logs = [];
   const context = {
     economy,
-    state: { activeShip: { id: 'player-hull' }, mode: 'star-map', localSpace: null },
+    state: { activeShip: getShipDefinition(miner.shipId), mode: 'star-map', localSpace: null },
     world: { world: () => narrowsSector },
     systemLog: { write: (message) => logs.push(message) },
     engagements: {
