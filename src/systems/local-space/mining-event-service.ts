@@ -171,12 +171,13 @@ function newEventSession(
   nextRandom: () => number
 ): MiningEventSession {
   const initialOre = totalOre(asteroid);
+  const type = eventType(nextRandom());
   return {
     initialOre,
     triggerProgress: 0.22 + nextRandom() * 0.34,
     scheduled: initialOre > 0 && nextRandom() < EVENT_RATE,
     primaryResourceId: primaryResource(asteroid),
-    type: eventType(nextRandom()),
+    type,
     rolls: [nextRandom(), nextRandom(), nextRandom()],
     id: `mineevt-${seed}-${index}-${Math.floor(nextRandom() * 1e6)}`,
     triggered: false,
