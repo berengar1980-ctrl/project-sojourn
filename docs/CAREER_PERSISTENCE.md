@@ -76,3 +76,17 @@ Erlaubnis, nur zwei Register in ein laufendes Spiel hineinzuladen.
 
 **Nicht als vollständige Career-Persistenz oder abgeschlossene Issue #300
 kennzeichnen**, solange diese Punkte fehlen.
+
+## Navigation checkpoint (next slice)
+
+`NavigationService.exportState()` now captures the private runtime instead of the
+renderer snapshot: position, heading, current route with distance and momentum,
+point destinations, pursuit target, route profile and threat revision. A new
+`createNavigationService(..., checkpoint)` stages an isolated navigation runtime;
+invalid sector IDs, unknown route destinations and impossible progress are rejected
+before any live service can be modified. The route preview cache is rebuilt.
+
+This does **not** yet install a complete career session, restore external NPC
+pursuit targets, synchronize world/campaign selection, or enable save/load UI.
+It must be composed with the remaining career adapters and tested after a real
+browser restart before Issue #300 can be closed.
