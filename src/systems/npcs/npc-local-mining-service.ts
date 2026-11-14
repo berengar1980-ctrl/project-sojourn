@@ -324,10 +324,11 @@ function resolveMinerCollisions(runtime: MinerRuntime): void {
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
-  if (playerState && runtime.options.playerShip) {
+  const playerShip = runtime.options.getPlayerShip?.() ?? runtime.options.playerShip;
+  if (playerState && playerShip) {
     bodies.unshift({
       id: 'player',
-      ship: runtime.options.playerShip,
+      ship: playerShip,
       state: playerState,
       pushWeight: 2.4,
     });
