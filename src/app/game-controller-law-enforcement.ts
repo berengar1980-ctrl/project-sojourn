@@ -2,6 +2,8 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { advanceEconomyDay } from './game-controller-events';
 import { PENAL_LABOR_CREDITS_PER_DAY } from '../systems/operations/sector-legal-registry';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
+import { settleLegalDebt, transferCredit } from './game-controller-legal-ledger';
+export { transferCredit } from './game-controller-legal-ledger';
 
 interface DetentionSession {
   readonly shipId: string;
@@ -27,20 +29,6 @@ export function registerSectorShips(context: ControllerRuntimeContext): void {
   register.registerShip(context.state.activeShip.id, 'player');
   for (const npc of context.economy.sectorNpcs.npcs)
     register.registerShip(npc.shipId + ':' + npc.id, npc.id);
-}
-
-export function transferCredit(
-  context: ControllerRuntimeContext,
-  creditorId: string,
-  amount: number
-): void {
-  if (creditorId === 'player') {
-    context.economy.trade.player.credits += amount;
-    context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
-  } else {
-    const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === creditorId);
-    if (npc) npc.credits += amount;
-  }
 }
 
 export function dispatchPatrolToReport(
@@ -131,16 +119,14 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
     return;
   }
   context.systemLog.write('DIREKTORUM > FESTNAHME BEI DER ANDOCKKONTROLLE');
-  const immediate = legal.settle(shipId, context.economy.trade.player.credits);
-  context.economy.trade.player.credits -= immediate.paid;
-  for (const transfer of immediate.transfers)
-    transferCredit(context, transfer.creditorId, transfer.amount);
+  const immediate = settleLegalDebt(context, shipId, context.economy.trade.player);
   if (!legal.isWanted(shipId)) {
     context.systemLog.write(
       'DIREKTORUM > FORDERUNG VOLLSTAENDIG EINGEZOGEN: ' + immediate.paid + ' CR'
     );
     return;
   }
+  legal.beginCustody(shipId);
   detentions.set(context, {
     shipId,
     days: 0,
@@ -220,15 +206,13 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
     const fingerprint = day + npc.id.length * 17 + npc.name.length * 13;
     const deepCheck = fingerprint % 10 < 7;
     if (!legal.isRecognizedWanted(shipId, deepCheck)) continue;
-    const payment = legal.settle(shipId, npc.credits);
-    npc.credits -= payment.paid;
-    for (const transfer of payment.transfers)
-      transferCredit(context, transfer.creditorId, transfer.amount);
+    const payment = settleLegalDebt(context, shipId, npc);
     if (!legal.isWanted(shipId)) {
       context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT');
       continue;
     }
     economy.npcPrisoners.add(npc.id);
+    legal.beginCustody(shipId);
     npc.activityId = 'dock';
     npc.activity = 'Straflager · Schuld ' + legal.debt(shipId) + ' CR';
     context.systemLog.write(
@@ -263,6 +247,7 @@ export function tickLegalDetention(
   session.accumulator -= days;
   for (let i = 0; i < days && context.economy.legal.isWanted(session.shipId); i++) {
     advanceEconomyDay(context);
+    advanceNpcPenalCustody(context);
     session.days++;
     const payment = context.economy.legal.settle(session.shipId, PENAL_LABOR_CREDITS_PER_DAY);
     session.laborCredits += payment.paid;
