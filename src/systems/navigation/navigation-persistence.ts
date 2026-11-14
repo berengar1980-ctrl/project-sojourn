@@ -122,7 +122,10 @@ function validDestinations(state: Record<string, unknown>, world: WorldMap): boo
   if (!validPointDestination(p) || !validTravel(travel, world, pointId)) return false;
   if (!validPursuit(pursuit) || (travel !== null && pursuit !== null)) return false;
   if ((travel !== null || pursuit !== null) && state.currentLocationId !== null) return false;
-  if (!knownLocation(world, state.selectedDestinationId) && state.selectedDestinationId !== pointId) {
+  if (
+    !knownLocation(world, state.selectedDestinationId) &&
+    state.selectedDestinationId !== pointId
+  ) {
     return false;
   }
   if (object(travel) && state.selectedDestinationId !== travel.destinationId) return false;
