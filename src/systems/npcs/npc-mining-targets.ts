@@ -9,6 +9,7 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 
 import type { WorldPoint } from '../../core/world-types';
+import type { MiningEventCheckpoint } from '../local-space/mining-event-checkpoint';
 
 export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
@@ -28,7 +29,19 @@ export interface LocalNpcMinerState {
   miningAccumulator: number;
 }
 
+export interface LocalMinerCheckpoint {
+  readonly version: 1;
+  readonly locationId: string;
+  readonly seed: number;
+  readonly width: number;
+  readonly height: number;
+  readonly ships: readonly LocalNpcMinerState[];
+  readonly combatReturns: readonly (readonly [string, WorldPoint])[];
+  readonly events: readonly (readonly [string, MiningEventCheckpoint])[];
+}
+
 export interface NpcLocalMiningService {
+  exportState(): LocalMinerCheckpoint;
   readonly ships: readonly LocalNpcMinerState[];
   syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
   tick(deltaSeconds: number): void;

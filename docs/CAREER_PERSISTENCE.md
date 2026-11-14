@@ -110,6 +110,20 @@ Die Drohnenzustände sind damit als Adapter vorbereitet, aber noch nicht
 mit der vollständigen Career-Session, lokalen Minern, Wirtschafts- oder
 Kampfzuständen verbunden. Die Save/Load-Oberfläche bleibt deaktiviert.
 
+## Lokale Miner und Bergbauereignisse (PR #310)
+
+`NpcLocalMiningService.exportState()` erfasst Schiffspositionen, Zielasteroiden,
+Scanfortschritt, Förderzyklus, Rückkehrpositionen nach Kämpfen und die zugehörigen
+Bergbauereignis-Controller. Letztere sichern laufende Ereignisse, Pausen,
+Erholungszeit, Ereigniszähler und den deterministischen RNG-Fortschritt.
+`createNpcLocalMiningService(options, checkpoint)` validiert vor dem Aufbau
+und erstellt eine neue Instanz, ohne bestehende lokale Miner zu mutieren.
+
+Der Erzbestand verbleibt in den bereits persistenten Asteroidenfeld-/Claim-Daten,
+die Ladung im Sektor-NPC-Snapshot. Alle drei müssen beim späteren vollständigen
+Career-Restore **aus demselben Save** geladen werden, sonst kann doppelter
+Abbau auftreten. Noch kein atomarer Gesamtrestore und keine Save/Load-UI.
+
 ## Noch zu erledigen vor einer Freigabe
 
 1. Für Navigation, Player/Cargo, Economy/Markets, NPC-Routen, Crew/Loadouts,
