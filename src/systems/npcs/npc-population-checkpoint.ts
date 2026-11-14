@@ -19,9 +19,7 @@ export function stageNpcPopulationCheckpoint(candidate: unknown): NpcPopulationC
     record.version !== 1 ||
     !validCount(record.fundCredits) ||
     !validCount(record.replacementCount) ||
-    Object.keys(record).some(
-      (key) => !['version', 'fundCredits', 'replacementCount'].includes(key)
-    )
+    Object.keys(record).some((key) => !['version', 'fundCredits', 'replacementCount'].includes(key))
   ) {
     throw new Error('Beschädigter NPC-Populationsspielstand.');
   }
