@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
+
 | 2026-11-14 | Issue #300 – Sicherheitsdrohnen-Snapshot | Keine Statusänderung der 241 Paritäts-IDs. Drohnenposition, Patrouillen-Wegpunkt, Betriebszustand und bereits erkannte Kontakte können versioniert erfasst und in neue Drohneninstanzen übernommen werden. Noch kein vollständiger Karriererestore oder Save/Load-UI. |
 
 | 2026-11-14 | Issue #300 – lokale Piraten-Checkpoint-Instanzen | Keine Statusänderung der 241 Paritäts-IDs. Lokale Piratenpositionen, Geschwindigkeit, Kampfwartestatus und Rückkehrpositionen sind nun als gesonderter validierter Checkpoint für neue Instanzen vorbereitet. Noch keine Karriere-Gesamtspeicherung, lokalen Miner- oder Drohnen-Checkpoints und keine UI-Freischaltung. |
