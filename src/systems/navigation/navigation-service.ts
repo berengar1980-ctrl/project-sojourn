@@ -8,6 +8,11 @@ import {
 import { navigationOrbitalBerth } from './orbital-berth';
 import type { NavigationService, NavigationSnapshot } from './navigation-types';
 import type { NavigationRuntimeState } from './navigation-runtime-types';
+import {
+  captureNavigationCheckpoint,
+  stageNavigationCheckpoint,
+  type NavigationCheckpoint,
+} from './navigation-persistence';
 import { reviewLiveRoute, setNavigationThreatContacts } from './navigation-threat-rerouting';
 
 const MAX_TURN_RATE = 0.9;
@@ -378,10 +383,13 @@ function initialNavigationRuntime(
 export function createNavigationService(
   world: WorldMap,
   startLocationId: string,
-  initialCruiseSpeed: number
+  initialCruiseSpeed: number,
+  checkpoint?: NavigationCheckpoint
 ): NavigationService {
   let currentWorld = world;
-  const state = initialNavigationRuntime(world, startLocationId, initialCruiseSpeed);
+  const state = checkpoint
+    ? stageNavigationCheckpoint(world, checkpoint)
+    : initialNavigationRuntime(world, startLocationId, initialCruiseSpeed);
   const snapshot = (): NavigationSnapshot => createSnapshot(currentWorld, state);
 
   const selectDestination = (locationId: string | null): NavigationSnapshot => {
@@ -424,6 +432,7 @@ export function createNavigationService(
 
   return {
     getSnapshot: snapshot,
+    exportState: () => captureNavigationCheckpoint(currentWorld, state),
     replaceWorld(nextWorld) {
       currentWorld = nextWorld;
       pruneMissingDestinations(state, nextWorld);
