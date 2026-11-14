@@ -66,6 +66,51 @@ function verifyRemainingOre(entries: readonly unknown[]): void {
   }
 }
 
+function validIdentity(entry: Record<string, unknown>, keys: readonly string[]): boolean {
+  return keys.every((key) => typeof entry[key] === 'string' && entry[key] !== '');
+}
+
+function verifyRegisteredClaims(entries: readonly unknown[]): void {
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (!isRecord(entry) ||
+      !validIdentity(entry, ['locationId', 'asteroidId', 'ownerId']) ||
+      !validFinite(entry.registeredDay) ||
+      !isRecord(entry.oreAtRegistration) ||
+      Object.values(entry.oreAtRegistration).some((ore) => !validFinite(ore))) {
+      throw new Error('Ungültige gespeicherte Konzession.');
+    }
+    const id = JSON.stringify([entry.locationId, entry.asteroidId]);
+    if (seen.has(id)) throw new Error('Doppelt registrierte Konzession.');
+    seen.add(id);
+  }
+}
+
+function verifyConflicts(entries: readonly unknown[]): void {
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (!isRecord(entry) ||
+      !validIdentity(entry, ['locationId', 'asteroidId', 'rightfulOwnerId', 'intruderId']) ||
+      !validFinite(entry.stolenOre) || !validFinite(entry.compensation) ||
+      !['detected', 'paid', 'fight', 'escaped'].includes(entry.status as string)) {
+      throw new Error('Ungültiger Konzessionskonflikt.');
+    }
+    const id = JSON.stringify([entry.locationId, entry.asteroidId, entry.intruderId]);
+    if (seen.has(id)) throw new Error('Doppelter Konzessionskonflikt.');
+    seen.add(id);
+  }
+}
+
+function verifySurveyLevels(entries: readonly unknown[]): void {
+  for (const pair of entries) {
+    if (!Array.isArray(pair) || pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      !['unscanned', 'scanned', 'analyzed'].includes(pair[1] as string)) {
+      throw new Error('Ungültiger gespeicherter Scanstand.');
+    }
+  }
+}
+
 function verifyClaims(value: unknown): void {
   if (!isRecord(value) || value.version !== 1) throw new Error('Unbekanntes Konzessionsformat.');
   for (const key of ['claims', 'disputes', 'remainingOre', 'surveyLevels', 'fieldSeeds']) {
@@ -74,9 +119,12 @@ function verifyClaims(value: unknown): void {
   if (value.extraction !== undefined && !Array.isArray(value.extraction)) {
     throw new Error('Beschädigte Konzessionsdaten: extraction');
   }
+  verifyRegisteredClaims(value.claims as unknown[]);
+  verifyConflicts(value.disputes as unknown[]);
   verifyExtraction((value.extraction as unknown[] | undefined) ?? []);
   verifyFieldSeeds(value.fieldSeeds as unknown[]);
   verifyRemainingOre(value.remainingOre as unknown[]);
+  verifySurveyLevels(value.surveyLevels as unknown[]);
 }
 
 function verifyRegistrations(values: readonly unknown[]): Set<string> {
