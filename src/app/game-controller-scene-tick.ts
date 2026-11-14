@@ -1,4 +1,5 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import { tickFieldSecurity, tickFieldPirates } from './game-controller-security';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
 
 // The simulation still runs every animation frame. The full-resolution canvas
@@ -41,6 +42,8 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
       performance.now() / 1000
     );
     state.localNpcMining?.tick(deltaSeconds);
+    tickFieldPirates(context, deltaSeconds);
+    tickFieldSecurity(context, deltaSeconds);
   }
   state.panels.local?.update(controllerLocalModel(context));
 }

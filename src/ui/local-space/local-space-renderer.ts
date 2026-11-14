@@ -168,6 +168,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.hitAreas = hitAreas;
 
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
+    this.drawSecurityDrone(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
@@ -191,6 +192,42 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.hardpointDebug.draw(this.context, this.model.ship.hardpoints, geometry);
     }
   }
+  protected drawSecurityDrone(width: number, height: number, timeSeconds: number): void {
+    const drone = this.model.securityDrone;
+    if (!drone?.operational) return;
+    const point = this.camera.worldToScreen(drone.position, width, height);
+    const ctx = this.context;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(80, 185, 225, 0.17)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 10]);
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, this.camera.scale(drone.scanRadius), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.translate(point.x, point.y);
+    ctx.rotate(timeSeconds * 0.3);
+    ctx.fillStyle = '#455b66';
+    ctx.strokeStyle = '#74c8df';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let corner = 0; corner < 6; corner++) {
+      const angle = (corner * Math.PI) / 3;
+      const x = Math.cos(angle) * 13;
+      const y = Math.sin(angle) * 13;
+      if (corner === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#aeeaf9';
+    ctx.beginPath();
+    ctx.arc(0, 0, 3 + Math.sin(timeSeconds * 3) * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   protected ensureNpcImage(url: string): HTMLImageElement {
     const existing = this.npcImages.get(url);
     if (existing) return existing;
@@ -227,6 +264,19 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       kind: asteroid.kind,
       light: { x: -0.72, y: -0.56 },
     });
+
+    if (asteroid.claimOwnerId) {
+      const blink = 0.55 + 0.45 * Math.sin(performance.now() / 360);
+      this.context.save();
+      this.context.fillStyle =
+        asteroid.claimOwnerId === 'player'
+          ? 'rgba(118, 225, 168, ' + blink + ')'
+          : 'rgba(242, 195, 101, ' + blink + ')';
+      this.context.beginPath();
+      this.context.arc(point.x + radius + 6, point.y - radius - 6, 3.5, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.restore();
+    }
 
     if (asteroid.kind === 'resource') {
       this.drawScanMarker(asteroid, point, radius);

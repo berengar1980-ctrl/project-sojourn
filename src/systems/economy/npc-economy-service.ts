@@ -342,6 +342,15 @@ export function createNpcEconomyService(
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
         if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
+        // Directorate security drones are public infrastructure, not commercial
+        // vessels. Prisoners do not accrue normal ship operating expenses.
+        if (
+          npc.id.startsWith('security-drone:') ||
+          ('activity' in npc &&
+            typeof npc.activity === 'string' &&
+            npc.activity.startsWith('Straflager'))
+        )
+          continue;
         // Wages and insurance are due whether docked or travelling.
         if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
         if (options.travel?.isTravelling(npc)) continue;

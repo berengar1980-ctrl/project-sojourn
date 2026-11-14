@@ -4,8 +4,11 @@ import { economyResourceById } from '../data/economy/economy-resources';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
 import { createPortViewModel } from '../features/port/port-view-model';
+import { createPortRegistrationOptions } from './game-controller-port-registration';
+import type { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import { systemMarketRows } from './game-controller-port-market';
-import { repairCost, type ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
+import { portOperatingView } from './game-controller-port-operating';
 import type { EconomyMarketService } from '../systems/economy/market-service';
 import type { MarketIntelService } from '../systems/economy/market-intel-service';
 import type { PlayerTradeService } from '../systems/economy/player-trade-service';
@@ -70,25 +73,6 @@ interface ActivePortContext {
   readonly onReturnToStarMap: () => void;
   readonly onRefresh: () => void;
   readonly log: SystemLogService;
-}
-
-function portOperatingView(context: ActivePortContext) {
-  const { ship, runtime, port } = context;
-  const condition = context.shipOperations.snapshot(ship, runtime.hullMaxHp);
-  const engineering = runtime.crewEffects.engineering.repairCostMultiplier;
-  const estimate = context.shipOperations.repairEstimate(
-    ship,
-    runtime.hullMaxHp,
-    port.shipyard,
-    engineering
-  );
-  return {
-    ...condition,
-    repairPrice: repairCost(condition.hullMaxHp - condition.hullHp, port.shipyard, engineering),
-    repairPoints: estimate.points,
-    affordableRepairCost: estimate.cost,
-    shipyardDiscount: port.shipyard,
-  };
 }
 
 function createActivePortModel(context: ActivePortContext): PortPanelOptions['model'] {
@@ -178,7 +162,7 @@ function createActivePortModel(context: ActivePortContext): PortPanelOptions['mo
         maxComponentTier: resolveShipGameplayStats(offer).maxComponentTier,
       })),
     },
-    portOperatingView(context),
+    portOperatingView(ship, runtime, port, context.shipOperations),
     context.charters
   );
 }
@@ -385,6 +369,22 @@ function createCrewCallbacks(
   };
 }
 
+function repairShipAtPort(context: ActivePortContext): void {
+  const { shipOperations, ship, runtime, port, log, onRefresh } = context;
+  const result = shipOperations.repair(
+    ship,
+    runtime.hullMaxHp,
+    port.shipyard,
+    runtime.crewEffects.engineering.repairCostMultiplier
+  );
+  if (result.points > 0) {
+    log.write('WERFT > HÜLLE +' + result.points + ' HP · ' + result.cost + ' CR');
+  } else {
+    log.write('WARTUNG > REPARATUR NICHT NÖTIG ODER NICHT BEZAHLBAR');
+  }
+  onRefresh();
+}
+
 export function createActivePortPanel(
   root: HTMLElement,
   navigation: NavigationService,
@@ -404,7 +404,8 @@ export function createActivePortPanel(
   onChangeShip: (ship: ShipDefinition) => void,
   shipOperations: ShipOperatingService,
   smuggling: SmugglingService,
-  charters?: TradeCharterService
+  charters?: TradeCharterService,
+  legal?: SectorLegalRegistry
 ): PortPanel | null {
   const locationId = navigation.getSnapshot().currentLocationId;
   const location = narrowsSector.locations.find((entry) => entry.id === locationId);
@@ -461,23 +462,18 @@ export function createActivePortPanel(
   );
   return createPortPanel({
     root,
-    model: createActivePortModel(context),
+    ...createPortRegistrationOptions(
+      createActivePortModel(context),
+      ship,
+      location.stationType === 'pirate',
+      trade,
+      log,
+      onRefresh,
+      legal
+    ),
     ...underworldOptions,
     onReturnToStarMap,
-    onRepairShip: () => {
-      const result = shipOperations.repair(
-        ship,
-        runtime.hullMaxHp,
-        port.shipyard,
-        runtime.crewEffects.engineering.repairCostMultiplier
-      );
-      if (result.points > 0) {
-        log.write('WERFT > HÜLLE +' + result.points + ' HP · ' + result.cost + ' CR');
-      } else {
-        log.write('WARTUNG > REPARATUR NICHT NÖTIG ODER NICHT BEZAHLBAR');
-      }
-      onRefresh();
-    },
+    onRepairShip: () => repairShipAtPort(context),
     ...createTradeCallbacks(context),
     ...createCharterCallbacks(context),
     ...createShipyardCallbacks(context),

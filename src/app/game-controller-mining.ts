@@ -1,5 +1,7 @@
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
+import { miningResourceById } from '../data/resources/mining-resources';
+import type { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import type { MiningEconomyService } from '../systems/economy/mining-economy-service';
 import {
   createLocalSpaceService,
@@ -20,12 +22,16 @@ export function createMiningLocalSpace(
   location: WorldLocation,
   runtimeOptions: ShipRuntimeOptions = {},
   currentHullHp?: number,
-  onNavigationNotice?: (message: string) => void
+  onNavigationNotice?: (message: string) => void,
+  claims?: AsteroidClaimRegistry,
+  isTheftDetected?: (ownerId: string, asteroidId: string) => boolean
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
+  const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
+  claims?.restoreField(location.id, instance.asteroids);
   return createLocalSpaceService({
-    instance: generateMiningSpace(location.id, seed, location.minedResourceIds),
+    instance,
     approachSpeed: resolveShipLocalCruiseSpeed(
       ship,
       runtime.installed,
@@ -57,7 +63,31 @@ export function createMiningLocalSpace(
       reactorContinuousUsed: runtime.energy.baseUsed,
       shieldRegenMultiplier: runtime.crewEffects.engineering.shieldRegenMultiplier,
     },
-    onMiningChunkCollected: (resourceId, amount) =>
-      mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id),
+    onMiningChunkCollected: (resourceId, amount, asteroidId) => {
+      const accepted = mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id);
+      if (accepted > 0 && asteroidId && claims) {
+        const rock = instance.asteroids.find((candidate) => candidate.id === asteroidId);
+        const owner = rock ? claims.claim(location.id, rock) : null;
+        if (owner && owner.ownerId !== 'player') {
+          const detected = isTheftDetected?.(owner.ownerId, asteroidId) ?? false;
+          const unitValue = miningResourceById(resourceId)?.baseValue ?? 1;
+          if (detected) {
+            const conflict = claims.recordTheft(
+              location.id,
+              asteroidId,
+              'player',
+              accepted,
+              true,
+              unitValue
+            );
+            if (conflict)
+              onNavigationNotice?.(
+                'MINING > FREMDER KONZESSIONSINHABER HAT UNBEFUGTEN ABBAU ENTDECKT'
+              );
+          }
+        }
+      }
+      return accepted;
+    },
   });
 }

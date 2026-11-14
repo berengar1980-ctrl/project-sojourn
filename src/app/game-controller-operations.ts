@@ -2,14 +2,13 @@ import type { SectorNpcState } from '../core/npc-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { economyResources } from '../data/economy/economy-resources';
-import { resolveShipRuntimeSetup } from '../systems/ships';
+import { miningResources } from '../data/resources/mining-resources';
 import {
   createOperationsPanel,
   type OperationsAction,
   type OperationsModel,
 } from '../ui/operations/operations-panel';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { controllerShipRuntimeOptions } from './game-controller-models';
 
 function permissions(c: ControllerRuntimeContext) {
   const nav = c.navigation.getSnapshot();
@@ -28,14 +27,9 @@ function permissions(c: ControllerRuntimeContext) {
 function operationsModel(c: ControllerRuntimeContext): OperationsModel {
   const { economy: e, state } = c;
   const p = permissions(c);
-  const runtime = resolveShipRuntimeSetup(
-    state.activeShip,
-    controllerShipRuntimeOptions(c, state.activeShip)
-  );
   return {
     credits: e.trade.player.credits,
     port: p.port,
-    canProspect: p.field && state.activeShip.role === 'mining' && runtime.mining.available,
     patrolShip: state.activeShip.role === 'patrol',
     locationId: p.location?.id ?? null,
     locationName: p.location?.name ?? 'Unterwegs',
@@ -52,13 +46,14 @@ function operationsModel(c: ControllerRuntimeContext): OperationsModel {
       })),
     pirates: e.blockades.available().map((n) => ({ id: n.id, name: n.name })),
     blockades: e.blockades.snapshot(),
-    concessions: e.concessions.snapshot(),
     patrol: e.patrol.snapshot(),
     offers: e.patrol.offers(),
+    claims: e.asteroidClaims.snapshot().claims,
     names: Object.fromEntries(
       [
         ...narrowsSector.locations,
         ...economyResources,
+        ...miningResources,
         ...e.sectorNpcs.npcs,
         { id: 'player', name: 'Eigene Konzession' },
       ].map((x) => [x.id, x.name])
@@ -99,13 +94,19 @@ function act(c: ControllerRuntimeContext, action: OperationsAction, values: stri
   if (action === 'order' && m.port)
     ok = e.blockades.order('player', id, values[1] ?? '', values.slice(3), Number(values[2]));
   if (action === 'cancel') ok = e.blockades.cancel(id);
-  if (action === 'prospect' && m.canProspect && m.locationId)
-    ok = e.concessions.prospect('player', m.locationId);
-  if (action === 'claim' && m.canProspect && m.locationId === id)
-    ok = e.concessions.claim('player', id);
-  if (action === 'abandon') ok = e.concessions.abandon('player', id);
   if (['enlist', 'resign', 'accept', 'reward'].includes(action))
     ok = patrolAction(c, m, action, values);
+  if (action === 'claim-route') {
+    const [fieldId, asteroidId] = id.split('|');
+    const known = e.asteroidClaims
+      .snapshot()
+      .claims.some((claim) => claim.locationId === fieldId && claim.asteroidId === asteroidId);
+    if (known && fieldId && asteroidId) {
+      c.state.selectedClaimTarget = { locationId: fieldId, asteroidId };
+      c.navigation.selectDestination(fieldId);
+      ok = true;
+    }
+  }
   if (action === 'navigate') {
     c.navigation.selectDestination(id);
     ok = true;
@@ -141,6 +142,5 @@ export function operationsCombatHooks(economy: ControllerEconomy) {
 export function observeControllerOperations(c: ControllerRuntimeContext, seconds: number): void {
   const nav = c.navigation.getSnapshot();
   const location = !nav.isTravelling && !nav.isPursuing ? nav.currentLocationId : null;
-  c.economy.concessions.depart(location);
   if (c.state.activeShip.role === 'patrol') c.economy.patrol.observeArrival(location, seconds);
 }

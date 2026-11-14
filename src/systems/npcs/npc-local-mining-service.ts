@@ -133,7 +133,10 @@ function mine(
 
   const requested = Math.min(MINING_AMOUNT, deposit.oreRemaining);
   const accepted = runtime.options.mine(npc, deposit.resourceId, requested);
-  if (accepted > 0) deposit.oreRemaining = Math.max(0, deposit.oreRemaining - accepted);
+  if (accepted > 0) {
+    deposit.oreRemaining = Math.max(0, deposit.oreRemaining - accepted);
+    runtime.options.onAsteroidMined?.(npc, asteroid, deposit.resourceId, accepted);
+  }
   if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
     beginExit(runtime, ship);
   } else if (!asteroid.deposits.some((candidate) => candidate.oreRemaining > 0)) {
@@ -242,6 +245,7 @@ function advanceScanning(
     ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
     if (ship.scanProgress < 1) return;
     runtime.events.get(npc.id)?.begin(asteroid);
+    runtime.options.onAsteroidScanned?.(npc, asteroid);
     ship.phase = 'mining';
     ship.miningAccumulator = 0;
     ship.laserActive = true;

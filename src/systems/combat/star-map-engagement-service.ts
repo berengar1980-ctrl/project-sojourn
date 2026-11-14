@@ -1,3 +1,4 @@
+import { reactToPlayerAttack } from './player-attack-reaction';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 
@@ -51,6 +52,11 @@ export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
   engageNpcNow(npcId: string): boolean;
   engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
+  engageNpcsInArena(
+    attackerId: string,
+    defenderId: string,
+    arena: StrategicCombatArenaOptions
+  ): boolean;
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
@@ -86,28 +92,6 @@ interface EngagementRuntime {
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
   return runtime.options.sectorNpcs.npcs.find((npc) => npc.id === id) ?? null;
-}
-
-function reactToPlayerAttack(
-  runtime: EngagementRuntime,
-  defender: SectorNpcState,
-  attackerId: string
-): void {
-  const playerPosition = runtime.options.navigation.getSnapshot().currentPosition;
-  const reaction = npcDefenseReaction(defender);
-  if (reaction === 'fight') {
-    runtime.options.sectorNpcs.startPursuit(
-      defender,
-      'player',
-      attackerId,
-      playerPosition,
-      'Gegenangriff'
-    );
-    runtime.options.log('COMBAT > ' + defender.name.toUpperCase() + ' DREHT ZUM GEGENANGRIFF');
-    return;
-  }
-  runtime.options.sectorNpcs.startFlee(defender, 'player', attackerId, playerPosition, 'Flucht');
-  runtime.options.log('COMBAT > ' + defender.name.toUpperCase() + ' VERSUCHT ZU FLIEHEN');
 }
 
 function startNpcAttack(
@@ -313,7 +297,8 @@ function updatePlayerChase(runtime: EngagementRuntime): void {
 function beginBackgroundCombat(
   runtime: EngagementRuntime,
   attacker: SectorNpcState,
-  defender: SectorNpcState
+  defender: SectorNpcState,
+  arena?: StrategicCombatArenaOptions
 ): void {
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
@@ -324,7 +309,7 @@ function beginBackgroundCombat(
   runtime.backgroundCombats.set(key, {
     first: attacker,
     second: defender,
-    combat: createStrategicCombatService(attackerSetup, defenderSetup),
+    combat: createStrategicCombatService(attackerSetup, defenderSetup, undefined, arena),
   });
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
@@ -401,7 +386,7 @@ function attackNpc(runtime: EngagementRuntime, npcId: string): boolean {
     targetId: target.id,
     initialDistance: distance(playerPosition, targetPosition),
   };
-  reactToPlayerAttack(runtime, target, PLAYER_ID);
+  reactToPlayerAttack(runtime.options, target, PLAYER_ID);
   runtime.options.log('COMBAT > VERFOLGUNG ' + target.name.toUpperCase());
   return true;
 }
@@ -486,6 +471,23 @@ export function createStarMapEngagementService(
   return {
     engageNpcNow: (npcId) => engageNpc(runtime, npcId),
     engageNpcInArena: (npcId, arena) => engageNpc(runtime, npcId, arena),
+    engageNpcsInArena: (attackerId, defenderId, arena) => {
+      if (attackerId === defenderId) return false;
+      const attacker = engagementNpc(runtime, attackerId);
+      const defender = engagementNpc(runtime, defenderId);
+      if (
+        !attacker ||
+        !defender ||
+        attacker.hullHp <= 0 ||
+        defender.hullHp <= 0 ||
+        runtime.backgroundCombats.has(pairKey(attackerId, defenderId)) ||
+        runtime.options.sectorNpcs.isTravelling(attacker) ||
+        runtime.options.sectorNpcs.isTravelling(defender)
+      )
+        return false;
+      beginBackgroundCombat(runtime, attacker, defender, arena);
+      return true;
+    },
     attackNpc: (npcId) => attackNpc(runtime, npcId),
     syncPlayerPursuitTarget: () => syncPlayerPursuitTarget(runtime),
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),

@@ -5,6 +5,26 @@ export function shipPane(model: PortViewModel): string {
     <section class="port-pane port-pane--ship" data-port-pane="ship" hidden>
       <div class="port-ship-console">
         <div class="port-panel-heading"><span>SCHIFF // ${model.ship.name.toUpperCase()}</span><small>${model.ship.role.toUpperCase()} · ${model.ship.lengthMeters} m</small></div>
+        ${
+          model.shipRegistration
+            ? `<div class="port-info-box">
+          <strong>SCHIFFSREGISTRIERUNG</strong>
+          <p>TRANSPONDER: ${model.shipRegistration.transponder}</p>
+          <p>RECHTSSTATUS: ${model.shipRegistration.wanted ? 'GESETZLOS / ZUR FAHNDUNG' : 'REGISTRIERT'}
+          · OFFENE FORDERUNGEN: ${model.shipRegistration.debt.toLocaleString('de-DE')} CR</p>
+          <p>${
+            model.shipRegistration.forged
+              ? 'MANIPULIERTE KENNUNG – GRUENDLICHE SCANS KOENNEN DIE IDENTITAET OFFENLEGEN'
+              : 'ORIGINALREGISTRIERUNG AKTIV'
+          }</p>
+          ${
+            model.shipRegistration.pirateStation
+              ? '<button type="button" data-forge-ship-id>NEUE SCHIFFSKENNUNG · 18.000 CR</button>'
+              : ''
+          }
+        </div>`
+            : ''
+        }
         <div class="port-ship-visual">
           <img src="${model.ship.spriteUrl}" alt="${model.ship.name}">
           <div class="port-ship-stats">

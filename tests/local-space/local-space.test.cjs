@@ -241,7 +241,7 @@ assert(
   'targeted mining choices must persist per asteroid across UI focus changes'
 );
 assert(
-  miningChunks.includes('collector?.(chunk.resourceId, chunk.amount)') &&
+  miningChunks.includes('collector?.(chunk.resourceId, chunk.amount, chunk.sourceAsteroidId)') &&
     miningChunks.includes('advanceAndCollectMiningChunks') &&
     miningResourceRuntime.includes('advanceAndCollectMiningChunks(') &&
     miningResourceRuntime.includes('this.collectedResources.set('),

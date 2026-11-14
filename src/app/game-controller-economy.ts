@@ -1,6 +1,9 @@
 import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-types';
 import { BlockadeService } from '../systems/operations/blockade-service';
-import { MiningConcessionService } from '../systems/operations/mining-concession-service';
+import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
+import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
+import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import type { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { PatrolCareerService } from '../systems/operations/patrol-career-service';
 import { economyResources } from '../data/economy/economy-resources';
 import { createSectorNpcEconomyStates } from '../data/economy/sector-npc-economy';
@@ -75,7 +78,11 @@ import {
 
 export interface ControllerEconomy {
   readonly blockades: BlockadeService;
-  readonly concessions: MiningConcessionService;
+  readonly asteroidClaims: AsteroidClaimRegistry;
+  readonly legal: SectorLegalRegistry;
+  readonly securityDrones: Map<string, AsteroidSecurityDrone>;
+  readonly localPirates: Map<string, LocalPirateTraffic>;
+  readonly npcPrisoners: Set<string>;
   readonly patrol: PatrolCareerService;
   protectsPirate(factionId?: string): boolean;
   readonly markets: EconomyMarketService;
@@ -99,29 +106,21 @@ export interface ControllerEconomy {
 
 function npcOperationsPolicy(
   blockades: BlockadeService,
-  concessions: MiningConcessionService
+  prisoners: ReadonlySet<string>
 ): NpcEconomyServiceOptions {
   return {
-    isManaged: (npc) => blockades.assigned(npc.id),
+    isManaged: (npc) =>
+      prisoners.has(npc.id) ||
+      npc.id.startsWith('security-drone:') ||
+      (Boolean('pirate' in npc && npc.pirate) &&
+        narrowsSector.locations.some(
+          (entry) => entry.id === npc.locationId && entry.activities.mine
+        ) &&
+        !('travel' in npc && npc.travel)) ||
+      blockades.assigned(npc.id),
     canTrade: (npc, locationId, resourceId) =>
       !blockades.blocksTrader(npc.id, locationId, resourceId),
-    miningAllowance: (npc, id, amount) => concessions.allowance(npc.id, npc.locationId, id, amount),
-    onMined: (npc, id, amount) => concessions.recordExtraction(npc.id, npc.locationId, id, amount),
   };
-}
-
-function createConcessionMining(
-  simulation: EconomySimulationService,
-  trade: PlayerTradeService,
-  concessions: MiningConcessionService
-) {
-  return createMiningEconomyService(simulation, trade, {
-    allowance: (id, amount, origin) =>
-      origin ? concessions.allowance('player', origin, id, amount) : amount,
-    onCollected: (id, amount, origin) => {
-      if (origin) concessions.recordExtraction('player', origin, id, amount);
-    },
-  });
 }
 
 function createOperationsEconomy(
@@ -132,7 +131,6 @@ function createOperationsEconomy(
   onSmugglingNotice: (message: string) => void
 ) {
   const npcStates = sectorNpcs.npcs;
-  const concessions = new MiningConcessionService(narrowsSector, trade.player, npcStates);
   const patrol = new PatrolCareerService(narrowsSector, npcStates, trade.player);
   const blockades = new BlockadeService({
     sector: sectorNpcs,
@@ -144,7 +142,44 @@ function createOperationsEconomy(
     },
     notice: onSmugglingNotice,
   });
-  return { concessions, patrol, blockades };
+  return { patrol, blockades };
+}
+
+function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
+  // Drones have normal sector NPC combatants so the existing two-ship AI
+  // combat mode can be entered without creating a second combat engine.
+  // The local drone service remains the authority for field sensor movement.
+  const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
+  if (patrolTemplate) {
+    for (const location of narrowsSector.locations.filter((entry) => entry.activities.mine)) {
+      npcStates.push({
+        ...patrolTemplate,
+        id: 'security-drone:' + location.id,
+        name: 'SEC-' + location.id.toUpperCase(),
+        locationId: location.id,
+        homePortId: location.id,
+        cargo: {},
+        marketIntel: {},
+        workResourceIds: [],
+        credits: 0,
+        activityId: 'patrol',
+        activity: 'Lokale Konzessionsüberwachung',
+      });
+    }
+  }
+}
+
+function makeNpcSalvageEvents(
+  sector: ControllerEconomy['sectorNpcs'],
+  events: ControllerEconomy['salvageEvents'],
+  research: ControllerEconomy['shipyardResearch']
+) {
+  return createNpcSalvageEventService({
+    world: narrowsSector,
+    sector,
+    events,
+    research,
+  });
 }
 
 export function createControllerEconomy(
@@ -179,7 +214,7 @@ export function createControllerEconomy(
     markets,
     population,
   });
-  const { concessions, patrol, blockades } = createOperationsEconomy(
+  const { patrol, blockades } = createOperationsEconomy(
     markets,
     sectorNpcs,
     trade,
@@ -188,8 +223,9 @@ export function createControllerEconomy(
   );
   const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
 
+  const npcPrisoners = new Set<string>();
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
-    ...npcOperationsPolicy(blockades, concessions),
+    ...npcOperationsPolicy(blockades, npcPrisoners),
     onSale: (npc, resourceId, quantity, gross) => {
       npcSmuggling.recordSale(npc as SectorNpcState, resourceId, quantity, gross);
       population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
@@ -210,14 +246,10 @@ export function createControllerEconomy(
   });
   npcEconomy.advanceDay(0);
   initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
+  registerSecurityDroneCombatants(npcStates);
   const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
   salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
-  const npcSalvageEvents = createNpcSalvageEventService({
-    world: narrowsSector,
-    sector: sectorNpcs,
-    events: salvageEvents,
-    research: shipyardResearch,
-  });
+  const npcSalvageEvents = makeNpcSalvageEvents(sectorNpcs, salvageEvents, shipyardResearch);
 
   return {
     protectsPirate: (factionId) =>
@@ -226,7 +258,11 @@ export function createControllerEconomy(
         (smuggling.state.protectionFaction === factionId || charters.protectsPirate(factionId))
       ),
     blockades,
-    concessions,
+    asteroidClaims: new AsteroidClaimRegistry(),
+    legal: new SectorLegalRegistry(),
+    securityDrones: new Map<string, AsteroidSecurityDrone>(),
+    localPirates: new Map<string, LocalPirateTraffic>(),
+    npcPrisoners,
     patrol,
     markets,
     situations,
@@ -237,7 +273,7 @@ export function createControllerEconomy(
     population,
     npcSmuggling,
     simulation,
-    mining: createConcessionMining(simulation, trade, concessions),
+    mining: createMiningEconomyService(simulation, trade),
     salvage: createSalvageEconomyService(simulation, trade),
     components: createShipComponentInventoryService(trade.player),
     shipyardResearch,

@@ -29,19 +29,17 @@ const economy = createControllerEconomy({
 const e = economy;
 const miner = e.sectorNpcs.npcs.find((n) => n.job === 'miner');
 const site = world.locations.find((l) => l.id === miner.workLocationId);
-// The real controller composes both physical extraction paths with one claim owner.
+// The runtime now keeps asteroid ownership independent of market-level extraction.
 miner.locationId = site.id;
 delete miner.travel;
 delete miner.combatMovement;
 e.trade.player.credits = 200000;
-assert(e.concessions.prospect('player', site.id));
-assert(e.concessions.claim('player', site.id));
-const deposit = e.concessions.snapshot().discoveries[0].deposits[0];
+const resourceId = site.minedResourceIds[0];
 const before = e.trade.player.credits;
-assert.equal(e.npcs.mineLocal(miner, deposit.resourceId, 3), 3);
-assert(e.trade.player.credits > before, 'NPC extraction settles actual royalty');
-assert.equal(e.mining.collect(deposit.resourceId, 4, 10000, site.id), 4);
-assert.equal(e.concessions.snapshot().discoveries[0].deposits[0].remaining, deposit.remaining - 7);
+assert.equal(e.npcs.mineLocal(miner, resourceId, 3), 3);
+assert.equal(e.trade.player.credits, before, 'no fictitious area-wide royalties');
+assert.equal(e.mining.collect(resourceId, 4, 10000, site.id), 4);
+assert.equal(e.asteroidClaims.snapshot().claims.length, 0);
 const charter = e.charters.snapshot();
 charter.active = null;
 assert.equal(e.charters.active, 'independent');
@@ -61,7 +59,6 @@ for (let day = 1; day <= days; day++) {
   }
   e.situations.advanceNextDay();
   e.blockades.advanceDay(day);
-  e.concessions.advanceDay(day);
   e.patrol.advanceDay(day);
   e.simulation.advanceNextDay();
   e.npcs.advanceNextDay();
@@ -80,10 +77,10 @@ for (let day = 1; day <= days; day++) {
   }
 }
 assert.doesNotThrow(() =>
-  JSON.stringify([e.blockades.snapshot(), e.concessions.snapshot(), e.patrol.snapshot()])
+  JSON.stringify([e.blockades.snapshot(), e.asteroidClaims.snapshot(), e.patrol.snapshot()])
 );
 console.log(
-  'PASS composed controller: extraction, royalties, trade mandates, ' +
+  'PASS composed controller: extraction without area royalties, trade mandates, ' +
     days +
     '-day state and resource invariants'
 );

@@ -216,7 +216,11 @@ const boarding = fs.readFileSync(
 );
 assert.match(controller, /createControllerCampaignServices/);
 assert.match(controller, /campaignNavigation\.observe\(navigationSnapshot\)/);
-assert.match(controller, /emitCampaignCombatEnded\(/);
+assert.match(controller, /resolveControllerCombat\(context,/);
+assert.match(
+  fs.readFileSync(path.join(root, 'src/app/game-controller-combat-resolution.ts'), 'utf8'),
+  /emitCampaignCombatEnded\(/
+);
 assert.match(
   fs.readFileSync(path.join(root, 'src/app/game-controller-campaign-events.ts'), 'utf8'),
   /type: 'game.initialized'/

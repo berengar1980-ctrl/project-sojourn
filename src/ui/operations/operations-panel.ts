@@ -1,34 +1,24 @@
 import type { BlockadeService } from '../../systems/operations/blockade-service';
-import type { MiningConcessionService } from '../../systems/operations/mining-concession-service';
 import type { PatrolCareerService } from '../../systems/operations/patrol-career-service';
+import type { AsteroidClaimRegistry } from '../../systems/operations/asteroid-claim-registry';
 import './operations.css';
 
 export interface OperationsModel {
   credits: number;
   port: boolean;
-  canProspect: boolean;
   patrolShip: boolean;
   locationId: string | null;
   locationName: string;
   locations: { id: string; name: string; resources: { id: string; name: string }[] }[];
   pirates: { id: string; name: string }[];
   blockades: ReturnType<BlockadeService['snapshot']>;
-  concessions: ReturnType<MiningConcessionService['snapshot']>;
   patrol: ReturnType<PatrolCareerService['snapshot']>;
   offers: ReturnType<PatrolCareerService['offers']>;
+  claims: ReturnType<AsteroidClaimRegistry['snapshot']>['claims'];
   names: Record<string, string>;
 }
 export type OperationsAction =
-  | 'order'
-  | 'cancel'
-  | 'prospect'
-  | 'claim'
-  | 'abandon'
-  | 'enlist'
-  | 'resign'
-  | 'accept'
-  | 'reward'
-  | 'navigate';
+  'order' | 'cancel' | 'enlist' | 'resign' | 'accept' | 'reward' | 'navigate' | 'claim-route';
 interface Options {
   root: HTMLElement;
   onClose: () => void;
@@ -71,23 +61,6 @@ function blockadeMarkup(m: OperationsModel): string {
     ${!m.port ? '<p>Aufträge können im Hafen erteilt werden.</p>' : ''}<ul>${rows || '<li>Keine Blockadeaufträge.</li>'}</ul>
     <p>Handelshäuser · Alarm Veylan ${m.blockades.houseAlarm.veylan ?? 0}/100 · Mercator ${m.blockades.houseAlarm.mercator ?? 0}/100</p>`;
 }
-function miningMarkup(m: OperationsModel): string {
-  const rows = m.concessions.discoveries
-    .map(
-      (
-        d
-      ) => `<li><strong>${escape(m.names[d.locationId] ?? d.locationId)}</strong> · ${escape(m.names[d.ownerId] ?? d.ownerId)} · ${d.claimed ? 'Konzession' : 'Prospektiert'}
-    <p>${d.deposits.map((p) => `${escape(m.names[p.resourceId] ?? p.resourceId)}: Schätzung ${p.estimateLow}–${p.estimateHigh} t · Rest ${p.remaining} t`).join('<br>')}</p>
-    <p>Eingenommene Abbaugebühren: ${money(d.royalties)}</p>
-    ${button('navigate', 'Auf Sternkarte auswählen', d.locationId)}
-    ${d.ownerId === 'player' ? button(d.claimed ? 'abandon' : 'claim', d.claimed ? 'Konzession aufgeben' : 'Schürfrecht erwerben · 2.500 CR', d.locationId) : ''}</li>`
-    )
-    .join('');
-  return `<h3>Prospektion & Förderkonzessionen</h3><p>Aktueller Ort: ${escape(m.locationName)}. Prospektion mit einem ausgerüsteten Miner im Abbaugebiet: 100 CR. Registrierung: 2.500 CR. Nicht registrierte Funde verfallen bei Abreise.</p>
-    ${button('prospect', 'Gebiet prospektieren · 100 CR', '', !m.canProspect)}
-    <p>Vorkommen sind endlich. Beim Abbau einer fremden Konzession fließen automatisch 10 % des Rohstoff-Referenzwertes je Tonne an den Eigentümer. Auch NPC-Miner erwerben Rechte und zahlen Gebühren.</p>
-    <ul>${rows || '<li>Noch keine bekannten Vorkommen.</li>'}</ul>`;
-}
 function patrolMarkup(m: OperationsModel): string {
   const p = m.patrol;
   return `<h3>Sicherheitsmandat</h3><p>${p.mandate ? 'Im Dienst' : 'Kein Mandat'} · ${p.rank} · Ruf ${p.reputation} · ${p.completed} Einsätze abgeschlossen</p>
@@ -109,6 +82,29 @@ function patrolMarkup(m: OperationsModel): string {
       )
       .join('')}</select></label>
     ${button('accept', 'Einsatz annehmen', '', !m.port || !p.mandate || !m.patrolShip || p.assignments.some((a) => ['active', 'completed'].includes(a.status)))}`;
+}
+function concessionMarkup(m: OperationsModel): string {
+  const claims = [...m.claims].sort((a, b) => b.registeredDay - a.registeredDay);
+  const rows = claims
+    .map((claim) => {
+      const isOwn = claim.ownerId === 'player';
+      const resources = Object.entries(claim.oreAtRegistration)
+        .map(([id, amount]) => escape(m.names[id] ?? id) + ' ~' + Math.round(amount) + ' t')
+        .join(' · ');
+      return `<li>
+      <strong>${escape(m.names[claim.locationId] ?? claim.locationId)} / ${escape(claim.asteroidId)}</strong>
+      <p>${isOwn ? 'EIGENE KONZESSION' : 'FREMDE KONZESSION · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)}
+      · registriert Tag ${claim.registeredDay}</p>
+      <p>${resources || 'Keine gemeldeten Reserven'}</p>
+      <small>Mengen entsprechen dem Registereintrag und können veraltet sein.</small>
+      ${button('claim-route', 'Kurs zum Abbaugebiet setzen', claim.locationId + '|' + claim.asteroidId)}
+    </li>`;
+    })
+    .join('');
+  return `<h3>Öffentliches Konzessionsregister</h3>
+    <p>Registrierte Einzelasteroiden. Fremde Konzessionen können gezielt angeflogen
+    werden. Unbefugte Förderung kann zu Forderungen und Fahndungen führen.</p>
+    <ul>${rows || '<li>Noch keine registrierten Konzessionen.</li>'}</ul>`;
 }
 export function createOperationsPanel(options: Options): { destroy(): void } {
   const launch = document.createElement('button');
@@ -150,15 +146,15 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
     dialog.innerHTML = `<header><h2>Aufträge & Konzessionen</h2><button type="button" data-close>Schließen</button></header><p>${money(m.credits)} · Tag ${m.blockades.day}</p>
       <nav>${[
         ['blockades', 'Blockaden'],
-        ['mining', 'Bergbau'],
         ['patrol', 'Patrouille'],
+        ['claims', 'Konzessionsregister'],
       ]
         .map(
           ([id, label]) =>
             `<button type="button" data-tab="${id}" aria-pressed="${tab === id}">${label}</button>`
         )
         .join('')}</nav>
-      <p role="status">${escape(message)}</p><section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'mining' ? miningMarkup(m) : patrolMarkup(m)}</section>`;
+      <p role="status">${escape(message)}</p><section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'claims' ? concessionMarkup(m) : patrolMarkup(m)}</section>`;
     resources();
     quote();
   }

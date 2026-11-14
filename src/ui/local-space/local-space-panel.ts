@@ -147,6 +147,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     canvas,
     resourceSelector,
     mineButton,
+    claimButton,
     shortScanButton,
     attackButton,
     longScanButton,
@@ -192,6 +193,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const unbindInput = bindNavigationInput(canvas, renderer, options, systemLog, updateOverlay);
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
+  claimButton.addEventListener('click', options.onToggleAsteroidClaim);
   bindShortScanPlanning(shortScanButton, options, systemLog, updateOverlay);
   bindLongScanButton(longScanButton, () => model, options, systemLog, updateOverlay);
   bindScanDataToggle(scanLabelsButton, (visible) => renderer.setScanLabelsVisible(visible));

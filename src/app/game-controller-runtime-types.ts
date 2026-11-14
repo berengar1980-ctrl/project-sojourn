@@ -36,6 +36,7 @@ export interface ControllerPanels {
 
 export interface ControllerRuntimeState {
   activeShip: ShipDefinition;
+  selectedClaimTarget?: { readonly locationId: string; readonly asteroidId: string } | null;
   readonly starterShipId: string;
   readonly playerProfile: PlayerProfile;
   readonly shipOwnership: ShipOwnershipService;

@@ -23,6 +23,8 @@ export interface LocalAsteroidDepositView {
 
 export interface LocalAsteroidView {
   readonly id: string;
+  readonly claimOwnerId?: string | null;
+  readonly registeredOre?: readonly { resourceName: string; amount: number }[];
   readonly kind: LocalAsteroid['kind'];
   readonly routeBlocking: boolean;
   readonly position: WorldPoint;
@@ -82,6 +84,12 @@ export interface LocalShipView {
 }
 
 export interface LocalSpaceViewModel {
+  readonly selectedAsteroidClaimOwner?: string | null;
+  readonly securityDrone?: {
+    readonly position: WorldPoint;
+    readonly scanRadius: number;
+    readonly operational: boolean;
+  } | null;
   readonly title: string;
   readonly backgroundSeed: number;
   readonly width: number;
