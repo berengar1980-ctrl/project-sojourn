@@ -76,6 +76,11 @@ import {
   type SmugglingService,
 } from '../systems/economy/smuggling-service';
 
+interface RestoredOperationalRegistries {
+  readonly claims: AsteroidClaimRegistry;
+  readonly legal: SectorLegalRegistry;
+}
+
 export interface ControllerEconomy {
   readonly blockades: BlockadeService;
   readonly asteroidClaims: AsteroidClaimRegistry;
@@ -190,10 +195,7 @@ function makeNpcSalvageEvents(
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {},
-  restoredRegistries?: {
-    readonly claims: AsteroidClaimRegistry;
-    readonly legal: SectorLegalRegistry;
-  }
+  restoredRegistries?: RestoredOperationalRegistries
 ): ControllerEconomy {
   const situations = createMarketSituationService(sectorPorts, economyResources, 73);
   const markets = createEconomyMarketService(sectorPorts, economyResources, {
