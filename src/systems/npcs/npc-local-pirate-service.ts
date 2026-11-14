@@ -2,6 +2,10 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { edgePoint, hashId } from './npc-mining-targets';
+import {
+  stageLocalPirateCheckpoint,
+  type LocalPirateCheckpoint,
+} from './npc-local-pirate-checkpoint';
 
 export interface LocalPirateContact {
   readonly npcId: string;
@@ -100,6 +104,48 @@ export class LocalPirateTraffic {
     private readonly height: number,
     private readonly seed: number
   ) {}
+
+  /** Save authoritative local poses, pending engagements and combat return locations. */
+  exportState(): LocalPirateCheckpoint {
+    return {
+      version: 1,
+      width: this.width,
+      height: this.height,
+      seed: this.seed,
+      ships: [...this.ships.values()].map((ship) => ({
+        npcId: ship.npcId,
+        position: { ...ship.position },
+        headingRadians: ship.headingRadians,
+        speed: ship.speed,
+        awaitingCombat: ship.awaitingCombat,
+      })),
+      combatReturns: [...this.combatReturnPositions].map(
+        ([id, position]) => [id, { ...position }] as const
+      ),
+    };
+  }
+
+  /** Construct new traffic independently; never alter a live field during staging. */
+  static fromCheckpoint(
+    width: number,
+    height: number,
+    seed: number,
+    npcs: readonly SectorNpcState[],
+    checkpoint: unknown
+  ): LocalPirateTraffic {
+    const saved = stageLocalPirateCheckpoint(checkpoint, width, height, seed, npcs);
+    const instance = new LocalPirateTraffic(width, height, seed);
+    for (const ship of saved.ships) {
+      instance.ships.set(ship.npcId, {
+        ...ship,
+        position: { ...ship.position },
+      });
+    }
+    for (const [id, position] of saved.combatReturns) {
+      instance.combatReturnPositions.set(id, { ...position });
+    }
+    return instance;
+  }
 
   snapshot(npcs: readonly SectorNpcState[]): LocalPirateContact[] {
     const byId = new Map(npcs.map((npc) => [npc.id, npc]));

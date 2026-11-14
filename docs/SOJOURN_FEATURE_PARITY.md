@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-11-14 | Issue #300 – lokale Piraten-Checkpoint-Instanzen | Keine Statusänderung der 241 Paritäts-IDs. Lokale Piratenpositionen, Geschwindigkeit, Kampfwartestatus und Rückkehrpositionen sind nun als gesonderter validierter Checkpoint für neue Instanzen vorbereitet. Noch keine Karriere-Gesamtspeicherung, lokalen Miner- oder Drohnen-Checkpoints und keine UI-Freischaltung. |
+
 | 2026-11-14 | Issue #300 – NPC-Populationsfonds | Keine Statusänderung der 241 Paritäts-IDs. Der Versicherungsfonds und die Ersatzschiff-Zählung werden nun als eigenständige versionierte NPC-Nebenregister erfasst und in einem frischen Dienst vorbereitet. Ersatztermine bleiben am NPC-Sektorstatus; vollständige Wirtschafts-/Karrierespeicherung und UI fehlen weiter. |
 
 | 2026-11-14 | Issue #300 / NPC-Sektor-Checkpoint | Keine Statusänderung der 241 Paritäts-IDs. Ein isolierter NPC-Snapshot sichert sektorweite NPC-Objekte mit Handelsladung, Routenfortschritt, Treibstoff und Kampfbeteiligung und validiert Verweise vor einer neuen Instanz. Markt, Population, lokale Minerschiffe, Piraten und Drohnen sind noch nicht atomar gekoppelt. Deshalb weiterhin keine vollständige Career-Persistenz. |

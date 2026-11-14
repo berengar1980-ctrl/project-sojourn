@@ -85,6 +85,18 @@ unbekannte Versionen werden vor der Serviceerzeugung verworfen.
 Das ist nur ein weiterer Teiladapter; Marktbestände, lokale Schiffe,
 Wirtschaftskreisläufe und die atomare Zusammensetzung fehlen weiterhin.
 
+## Lokale Piratenpositionen und Kampf-Rückkehrzustand
+
+`LocalPirateTraffic.exportState()` erfasst Bewegungsposition, Kurs, Geschwindigkeit,
+ausstehende Kampfkontakte und gespeicherte Rückkehrpositionen. Die neue
+`LocalPirateTraffic.fromCheckpoint()` prüft Weltmaße, Seed, NPC-Referenzen,
+Duplikate und Koordinaten und erzeugt ausschließlich eine neue Instanz.
+So bleiben Bewegungszustände auch nach einem Kampf erhalten, sobald die
+gesamte Karriere diese Daten konsistent mit den Sektor-NPCs lädt.
+
+Noch offen sind lokale Miner, Sicherheitsdrohnen, Markt- und Kampfzustände,
+sowie die atomare Zusammensetzung der gesamten Karriere. Keine Save/Load-UI.
+
 ## Noch zu erledigen vor einer Freigabe
 
 1. Für Navigation, Player/Cargo, Economy/Markets, NPC-Routen, Crew/Loadouts,
