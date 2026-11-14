@@ -43,7 +43,9 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   }
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
   if (!finite(value.miningAccumulator) || typeof value.laserActive !== 'boolean') return false;
-  if (value.targetAsteroidId === null) return value.phase === 'entering' || value.phase === 'exiting';
+  if (value.targetAsteroidId === null) {
+    return ['entering', 'approaching', 'exiting'].includes(value.phase as string);
+  }
   return (
     typeof value.targetAsteroidId === 'string' &&
     options.getAsteroids().some((asteroid) => asteroid.id === value.targetAsteroidId)
