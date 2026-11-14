@@ -73,22 +73,33 @@ function orbit(value: unknown, world: WorldMap): boolean {
   );
 }
 
-function validNpc(
-  value: unknown,
+function validNpcIdentity(value: Record<string, unknown>, world: WorldMap): boolean {
+  if (!location(world, value.locationId)) return false;
+  if (!location(world, value.homePortId ?? value.locationId)) return false;
+  if (typeof value.id !== 'string' || !value.id || typeof value.shipId !== 'string') {
+    return false;
+  }
+  return ['freighter', 'miner', 'salvager', 'patrol', 'pirate'].includes(value.job as string);
+}
+
+function validNpcFinances(value: Record<string, unknown>): boolean {
+  return (
+    number(value.credits) &&
+    number(value.fuel) &&
+    number(value.fuelCapacity) &&
+    number(value.hullHp) &&
+    number(value.hullMaxHp) &&
+    cargo(value.cargo) &&
+    value.fuel <= value.fuelCapacity &&
+    value.hullHp <= value.hullMaxHp
+  );
+}
+
+function validNpcActivity(
+  value: Record<string, unknown>,
   world: WorldMap,
   ids: ReadonlySet<string>
-): value is SectorNpcState {
-  if (!record(value)) return false;
-  if (!location(world, value.locationId) || !location(world, value.homePortId ?? value.locationId)) {
-    return false;
-  }
-  if (typeof value.id !== 'string' || !value.id || typeof value.shipId !== 'string') return false;
-  if (!['freighter', 'miner', 'salvager', 'patrol', 'pirate'].includes(value.job as string)) {
-    return false;
-  }
-  if (!number(value.credits) || !number(value.fuel) || !number(value.fuelCapacity)) return false;
-  if (!number(value.hullHp) || !number(value.hullMaxHp) || !cargo(value.cargo)) return false;
-  if (value.fuel > value.fuelCapacity || value.hullHp > value.hullMaxHp) return false;
+): boolean {
   if (!travel(value.travel, world) || !movement(value.combatMovement, ids)) return false;
   if (value.travel !== undefined && value.combatMovement !== undefined) return false;
   if (!orbit(value.orbit, world)) return false;
@@ -97,6 +108,19 @@ function validNpc(
     return false;
   }
   return true;
+}
+
+function validNpc(
+  value: unknown,
+  world: WorldMap,
+  ids: ReadonlySet<string>
+): value is SectorNpcState {
+  return (
+    record(value) &&
+    validNpcIdentity(value, world) &&
+    validNpcFinances(value) &&
+    validNpcActivity(value, world, ids)
+  );
 }
 
 /** A detached snapshot of the authoritative sector NPC objects, not render projections. */
