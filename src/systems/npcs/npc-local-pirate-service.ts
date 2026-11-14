@@ -119,10 +119,9 @@ export class LocalPirateTraffic {
         speed: ship.speed,
         awaitingCombat: ship.awaitingCombat,
       })),
-      combatReturns: [...this.combatReturnPositions].map(([id, position]) => [
-        id,
-        { ...position },
-      ]),
+      combatReturns: [...this.combatReturnPositions].map(
+        ([id, position]) => [id, { ...position }] as const
+      ),
     };
   }
 
