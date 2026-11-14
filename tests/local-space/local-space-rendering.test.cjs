@@ -47,6 +47,8 @@ const scanEffects = fs.readFileSync(
   'utf8'
 );
 const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const fieldBridge = readModuleSource(root, 'src/app/game-controller-field-world-bridge.ts');
+const sceneTick = readModuleSource(root, 'src/app/game-controller-scene-tick.ts');
 const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const viewModel = fs.readFileSync(
   path.join(root, 'src/features/local-space/local-space-view-model.ts'),
@@ -392,9 +394,17 @@ assert(
   'app controller must wire mining cancellation'
 );
 assert(
-  controller.includes('createNpcLocalMiningService') &&
-    controller.includes('state.localNpcMining?.tick(deltaSeconds)'),
-  'active asteroid fields must advance NPC miner traffic every frame'
+  controller.includes('advanceControllerFieldWorld(context, deltaSeconds)') &&
+    fieldBridge.includes('field.miners.tick(seconds)') &&
+    fieldBridge.includes('tickFieldPirates(context, seconds, field)') &&
+    fieldBridge.includes('tickFieldSecurity(context, seconds, field)'),
+  'campaign clock must advance shared miners, pirates and security even without a local scene'
+);
+assert(
+  !sceneTick.includes('state.localNpcMining?.tick(') &&
+    !sceneTick.includes('tickFieldPirates(') &&
+    !sceneTick.includes('tickFieldSecurity('),
+  'scene rendering must not advance NPC traffic a second time'
 );
 
 console.log('PASS shared ship projection, engine, mining impact and local rendering contract');

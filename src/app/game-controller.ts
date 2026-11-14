@@ -1,4 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
+import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import {
   registerSectorShips,
   inspectLegalDockArrival,
@@ -361,6 +362,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
+  advanceControllerFieldWorld(context, deltaSeconds);
   resolveControllerCombat(context, {
     starMap: () => mountControllerStarMap(context),
     mining: (reuseSeed, preserveField) => mountControllerMining(context, reuseSeed, preserveField),
@@ -442,6 +444,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     state,
   };
   registerSectorShips(context);
+  fieldWorldFor(context);
   economy.salvageEvents.advanceDay(
     economy.situations.currentDay,
     options.navigation.getSnapshot().currentPosition,

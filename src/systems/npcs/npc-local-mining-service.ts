@@ -51,6 +51,7 @@ interface MinerRuntime {
   readonly ships: LocalNpcMinerState[];
   readonly byId: Map<string, SectorNpcState>;
   readonly events: Map<string, ReturnType<typeof createMiningEventController>>;
+  readonly combatReturnPositions: Map<string, WorldPoint>;
 }
 
 function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
@@ -74,11 +75,12 @@ function syncArrivals(runtime: MinerRuntime): void {
       runtime.options.height,
       runtime.options.seed ?? 0
     );
+    const resumePosition = runtime.combatReturnPositions.get(npc.id);
     runtime.ships.push({
       npcId: npc.id,
       name: npc.name,
       shipId: npc.shipId,
-      position: { ...entry },
+      position: resumePosition ? { ...resumePosition } : { ...entry },
       headingRadians: 0,
       speed: localCruiseSpeed(npc),
       phase: 'entering',
@@ -89,6 +91,7 @@ function syncArrivals(runtime: MinerRuntime): void {
       exitPoint: { ...entry },
       miningAccumulator: 0,
     });
+    runtime.combatReturnPositions.delete(npc.id);
   }
 }
 
@@ -324,10 +327,11 @@ function resolveMinerCollisions(runtime: MinerRuntime): void {
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
-  if (playerState && runtime.options.playerShip) {
+  const playerShip = runtime.options.getPlayerShip?.() ?? runtime.options.playerShip;
+  if (playerState && playerShip) {
     bodies.unshift({
       id: 'player',
-      ship: runtime.options.playerShip,
+      ship: playerShip,
       state: playerState,
       pushWeight: 2.4,
     });
@@ -356,6 +360,16 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
       (npc.combatRecoverySeconds ?? 0) > 0 ||
       npc.locationId !== runtime.options.locationId
     ) {
+      if (
+        npc &&
+        npc.hullHp > 0 &&
+        npc.locationId === runtime.options.locationId &&
+        (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0)
+      ) {
+        runtime.combatReturnPositions.set(npc.id, { ...ship.position });
+      } else {
+        runtime.combatReturnPositions.delete(ship.npcId);
+      }
       runtime.ships.splice(index, 1);
       continue;
     }
@@ -368,6 +382,7 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
   const runtime: MinerRuntime = {
     options,
     ships: [],
+    combatReturnPositions: new Map(),
     byId: new Map(options.miners.map((npc) => [npc.id, npc] as const)),
     events: new Map(
       options.miners.map((npc) => [

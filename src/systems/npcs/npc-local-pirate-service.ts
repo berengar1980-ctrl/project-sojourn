@@ -93,6 +93,7 @@ function resolvePirateCollisions(
 
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
+  private readonly combatReturnPositions = new Map<string, WorldPoint>();
 
   constructor(
     private readonly width: number,
@@ -131,23 +132,35 @@ export class LocalPirateTraffic {
         )
         .map((npc) => npc.id)
     );
-    for (const id of this.ships.keys()) if (!active.has(id)) this.ships.delete(id);
+    for (const [id, ship] of this.ships) {
+      if (active.has(id)) continue;
+      const npc = pirates.find((candidate) => candidate.id === id);
+      if (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0) {
+        this.combatReturnPositions.set(id, { ...ship.position });
+      } else {
+        this.combatReturnPositions.delete(id);
+      }
+      this.ships.delete(id);
+    }
     for (const id of active) {
       if (this.ships.has(id)) continue;
       this.ships.set(id, {
         npcId: id,
-        position: edgePoint(id + ':' + this.seed, this.width, this.height),
+        position:
+          this.combatReturnPositions.get(id) ??
+          edgePoint(id + ':' + this.seed, this.width, this.height),
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,
       });
+      this.combatReturnPositions.delete(id);
     }
   }
 
   tick(
     deltaSeconds: number,
     npcs: readonly SectorNpcState[],
-    player: WorldPoint,
+    player: WorldPoint | null,
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint }>,
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean
@@ -164,7 +177,7 @@ export class LocalPirateTraffic {
             id: miner.npcId,
             position: miner.position,
           })),
-        { id: 'player', position: player },
+        ...(player ? [{ id: 'player', position: player }] : []),
       ];
       targets.sort(
         (a, b) =>

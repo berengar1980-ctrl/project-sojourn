@@ -1,3 +1,4 @@
+import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
 import { miningResourceById } from '../data/resources/mining-resources';
@@ -24,12 +25,14 @@ export function createMiningLocalSpace(
   currentHullHp?: number,
   onNavigationNotice?: (message: string) => void,
   claims?: AsteroidClaimRegistry,
-  isTheftDetected?: (ownerId: string, asteroidId: string) => boolean
+  isTheftDetected?: (ownerId: string, asteroidId: string) => boolean,
+  persistentField?: LocalSpaceInstance
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
-  const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
-  claims?.restoreField(location.id, instance.asteroids);
+  const instance =
+    persistentField ?? generateMiningSpace(location.id, seed, location.minedResourceIds);
+  if (!persistentField) claims?.restoreField(location.id, instance.asteroids);
   return createLocalSpaceService({
     instance,
     approachSpeed: resolveShipLocalCruiseSpeed(

@@ -101,8 +101,11 @@ assert(
   'some generated asteroids must be empty'
 );
 assert(
-  generator.includes('depositCount') && generator.includes('usedResourceIds'),
-  'resource asteroids must support multiple unique ore deposits'
+  generator.includes('depositCount') &&
+    generator.includes('unusedIds') &&
+    generator.includes('Math.min(pool.length') &&
+    generator.includes('unusedIds.splice('),
+  'resource asteroids must support multiple unique deposits without exhausting the resource pool'
 );
 assert(
   (resources.match(/id: '/g) ?? []).length === 13,

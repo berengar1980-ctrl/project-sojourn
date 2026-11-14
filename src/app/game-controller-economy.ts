@@ -112,6 +112,11 @@ function npcOperationsPolicy(
     isManaged: (npc) =>
       prisoners.has(npc.id) ||
       npc.id.startsWith('security-drone:') ||
+      (npc.role === 'miner' &&
+        npc.autonomy?.phase === 'working' &&
+        narrowsSector.locations.some(
+          (entry) => entry.id === npc.locationId && entry.activities.mine
+        )) ||
       (Boolean('pirate' in npc && npc.pirate) &&
         narrowsSector.locations.some(
           (entry) => entry.id === npc.locationId && entry.activities.mine
