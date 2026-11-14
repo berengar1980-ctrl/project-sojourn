@@ -3,18 +3,8 @@ import type { DroneContact } from '../systems/operations/asteroid-security-drone
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 import { localMiningCombatArena } from './game-controller-combat';
-
-const UNAUTHORIZED_MINING_PENALTY = 1500;
-
-function creditOwner(context: ControllerRuntimeContext, ownerId: string, amount: number): void {
-  if (ownerId === 'player') {
-    context.economy.trade.player.credits += amount;
-    context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
-    return;
-  }
-  const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === ownerId);
-  if (npc) npc.credits += amount;
-}
+import { settleLegalDebt } from './game-controller-legal-ledger';
+import { offerLegalDemand } from './game-controller-legal-decisions';
 
 export function tickFieldPirates(
   context: ControllerRuntimeContext,
@@ -153,8 +143,10 @@ export function tickFieldSecurity(
     }
   }
 
-  for (const key of drone.tick(seconds, runtime.instance.asteroids, contacts)) {
-    processDroneContact(context, runtime, key);
+  drone.tick(seconds, runtime.instance.asteroids, contacts);
+  for (const contact of contacts) {
+    if (!drone.detect(contact.position, runtime.instance.asteroids)) continue;
+    processDroneContact(context, runtime, JSON.stringify([contact.shipId, contact.asteroidId]));
   }
 }
 
@@ -164,49 +156,27 @@ function handlePlayerDroneFine(
   shipId: string,
   day: number
 ): void {
-  const { economy, state } = context;
-  const legal = economy.legal;
-  const debt = legal.debt(shipId);
-  const pay =
-    economy.trade.player.credits >= debt &&
-    window.confirm(
-      'SEC-01 / KONZESSIONSVERSTOSS\\n' +
-        'Ihre Schiffskennung wurde erfasst.\\n' +
-        'Offene Forderungen: ' +
-        debt +
-        ' CR.\\n\\n' +
-        'Jetzt bezahlen? ABBRECHEN bedeutet Zahlungsverweigerung und Fahndung.'
+  offerLegalDemand(context, shipId, 'SEC-01 / KONZESSIONSVERSTOSS', () => {
+    context.systemLog.write('SEC-01 > NOTRUF ABGESETZT: SCHIFFSKENNUNG ZUR FAHNDUNG');
+    const report = context.economy.legal.reportSighting(shipId, locationId, day, 'distress');
+    if (report) dispatchPatrolToReport(context, locationId, null);
+    const defender = context.economy.sectorNpcs.npcs.find(
+      (candidate) => candidate.id === 'security-drone:' + locationId
     );
-  if (pay) {
-    const payment = legal.settle(shipId, economy.trade.player.credits);
-    economy.trade.player.credits -= payment.paid;
-    for (const transfer of payment.transfers)
-      creditOwner(context, transfer.creditorId, transfer.amount);
-    context.systemLog.write('SEC-01 > ZAHLUNG AKZEPTIERT: ' + payment.paid + ' CR');
-    return;
-  }
-  context.systemLog.write('SEC-01 > NOTRUF ABGESETZT: SCHIFFSKENNUNG ZUR FAHNDUNG AUSGESCHRIEBEN');
-  legal.reportSighting(shipId, locationId, day, 'distress');
-  dispatchPatrolToReport(context, locationId, null);
-  const defender = economy.sectorNpcs.npcs.find(
-    (candidate) => candidate.id === 'security-drone:' + locationId
-  );
-  const drone = economy.securityDrones.get(locationId);
-  const space = state.localSpace;
-  if (!defender || defender.hullHp <= 0 || !drone?.snapshot().operational || !space) return;
-  const arena = localMiningCombatArena(space.getSnapshot().instance, space.getShipWorldVelocity());
-  if (
-    !context.engagements.engageNpcInArena(defender.id, {
+    const drone = context.economy.securityDrones.get(locationId);
+    const space = context.state.localSpace;
+    if (!defender || defender.hullHp <= 0 || !drone?.snapshot().operational || !space) return;
+    const arena = localMiningCombatArena(space.getSnapshot().instance, space.getShipWorldVelocity());
+    if (!context.engagements.engageNpcInArena(defender.id, {
       ...arena,
       defenderPosition: { ...drone.snapshot().position },
       defenderHeadingRadians: 0,
       defenderVelocity: { x: 0, y: 0 },
-    })
-  )
-    return;
-  state.embeddedCombat = 'local-space';
-  space.cancelMining();
-  context.systemLog.write('SEC-01 > GEWALTSAME DURCHSETZUNG · KI-KAMPFMODUS AKTIV');
+    })) return;
+    context.state.embeddedCombat = 'local-space';
+    space.cancelMining();
+    context.systemLog.write('SEC-01 > GEWALTSAME DURCHSETZUNG · KI-KAMPFMODUS AKTIV');
+  });
 }
 
 function handleNpcDroneFine(
@@ -219,22 +189,17 @@ function handleNpcDroneFine(
   const npc = economy.sectorNpcs.npcs.find((entry) => entry.shipId + ':' + entry.id === shipId);
   if (!npc) return;
   const legal = economy.legal;
-  const debt = legal.debt(shipId);
-  if (npc.credits >= debt && npc.aggression < 55) {
-    const payment = legal.settle(shipId, npc.credits);
-    npc.credits -= payment.paid;
-    for (const transfer of payment.transfers)
-      creditOwner(context, transfer.creditorId, transfer.amount);
-    context.systemLog.write(
-      'SEC-01 > ' + npc.name.toUpperCase() + ' ZAHLT ' + payment.paid + ' CR'
-    );
+  if (npc.credits >= legal.debt(shipId) && npc.aggression < 55) {
+    const payment = settleLegalDebt(context, shipId, npc);
+    context.systemLog.write('SEC-01 > ' + npc.name.toUpperCase() + ' ZAHLT ' + payment.paid + ' CR');
     return;
   }
-  context.systemLog.write(
-    'SEC-01 > NOTRUF: ' + npc.name.toUpperCase() + ' IST ZUR FAHNDUNG AUSGESCHRIEBEN'
-  );
-  legal.reportSighting(shipId, locationId, day, 'distress');
-  dispatchPatrolToReport(context, locationId, null);
+  legal.declareWanted(shipId);
+  const report = legal.reportSighting(shipId, locationId, day, 'distress');
+  if (report) {
+    context.systemLog.write('SEC-01 > NOTRUF: ' + npc.name.toUpperCase() + ' ZUR FAHNDUNG');
+    dispatchPatrolToReport(context, locationId, null);
+  }
 }
 
 function processDroneContact(
@@ -250,20 +215,26 @@ function processDroneContact(
   if (!claim) return;
   const day = economy.situations.currentDay;
   const legal = economy.legal;
+  const intruderId = shipId === context.state.activeShip.id
+    ? 'player'
+    : economy.sectorNpcs.npcs.find((npc) => npc.shipId + ':' + npc.id === shipId)?.id;
+  if (!intruderId) return;
+  const evidence = economy.asteroidClaims.unbilledExtraction(locationId, asteroidId, intruderId);
+  if (!evidence) return;
+  const previouslyWanted = legal.isWanted(shipId);
   const charge = legal.reportOffense(
-    shipId,
-    claim.ownerId,
-    'Unbefugter Konzessionsabbau',
-    UNAUTHORIZED_MINING_PENALTY,
-    day
+    shipId, claim.ownerId, 'Unbefugter Konzessionsabbau',
+    Math.ceil(evidence.value * 1.5), day, evidence.incidentId
   );
   if (!charge) return;
+  economy.asteroidClaims.markExtractionBilled(locationId, asteroidId, intruderId);
   context.systemLog.write(
     'SEC-01 > ILLEGALER ABBAU ERKANNT: ' +
       (legal.registration(shipId)?.transponder ?? shipId) +
       ' / ASTEROID ' +
       asteroidId
   );
+  if (previouslyWanted) return;
   if (shipId === context.state.activeShip.id)
     handlePlayerDroneFine(context, locationId, shipId, day);
   else handleNpcDroneFine(context, locationId, shipId, day);
