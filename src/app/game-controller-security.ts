@@ -1,5 +1,6 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
+import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 import { localMiningCombatArena } from './game-controller-combat';
 
@@ -15,14 +16,15 @@ function creditOwner(context: ControllerRuntimeContext, ownerId: string, amount:
   if (npc) npc.credits += amount;
 }
 
-export function tickFieldPirates(context: ControllerRuntimeContext, seconds: number): void {
-  const space = context.state.localSpace;
-  const local = space?.getSnapshot();
-  if (!space || !local) return;
-  const locationId = local.instance.sourceLocationId;
+export function tickFieldPirates(
+  context: ControllerRuntimeContext,
+  seconds: number,
+  field: AsteroidFieldRuntime
+): void {
   const { economy, state } = context;
-  const traffic = economy.localPirates.get(locationId);
-  if (!traffic) return;
+  const locationId = field.locationId;
+  const space = state.localSpace?.getSnapshot().instance === field.instance ? state.localSpace : null;
+  const traffic = field.pirates;
   const pirates = economy.sectorNpcs.npcs.filter(
     (npc) => npc.pirate && npc.locationId === locationId
   );
@@ -30,17 +32,21 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
   traffic.tick(
     seconds,
     pirates,
-    local.instance.ship.position,
-    state.localNpcMining?.ships.map((ship) => ({
+    space?.getSnapshot().instance.ship.position ?? null,
+    field.miners.ships.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
-    })) ?? [],
-    local.instance.asteroids,
+    })),
+    field.instance.asteroids,
     (pirateId, targetId, piratePosition) => {
       const pirate = economy.sectorNpcs.npcs.find((npc) => npc.id === pirateId);
-      if (!pirate || context.engagements.activePlayerCombat()) return false;
-      const arena = localMiningCombatArena(local.instance, space.getShipWorldVelocity());
+      if (!pirate) return false;
+      const arena = localMiningCombatArena(
+        field.instance,
+        space?.getShipWorldVelocity() ?? { x: 0, y: 0 }
+      );
       if (targetId === 'player') {
+        if (!space || context.engagements.activePlayerCombat()) return false;
         const engaged = context.engagements.engageNpcInArena(pirateId, {
           ...arena,
           defenderPosition: piratePosition,
@@ -54,11 +60,11 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
         }
         return engaged;
       }
-      const miner = state.localNpcMining?.ships.find((ship) => ship.npcId === targetId);
+      const miner = field.miners.ships.find((ship) => ship.npcId === targetId);
       if (!miner) return false;
       const minerNpc = economy.sectorNpcs.npcs.find((npc) => npc.id === targetId);
       if (!minerNpc || minerNpc.hullHp <= 0) return false;
-      const drone = economy.securityDrones.get(locationId);
+      const drone = field.drone;
       const protector = economy.sectorNpcs.npcs.find(
         (npc) => npc.id === 'security-drone:' + locationId
       );
@@ -66,7 +72,7 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
         drone?.snapshot().operational &&
         protector &&
         protector.hullHp > 0 &&
-        drone.detect(piratePosition, local.instance.asteroids)
+        drone.detect(piratePosition, field.instance.asteroids)
       );
       const defenderId = protecting ? protector!.id : targetId;
       const defenderPosition = protecting ? drone!.snapshot().position : miner.position;
@@ -92,7 +98,7 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
       return started;
     }
   );
-  const drone = economy.securityDrones.get(locationId);
+  const drone = field.drone;
   const defender = economy.sectorNpcs.npcs.find((npc) => npc.id === 'security-drone:' + locationId);
   if (drone && defender && defender.hullHp <= 0 && drone.snapshot().operational) {
     drone.destroy();
@@ -108,29 +114,32 @@ export function tickFieldPirates(context: ControllerRuntimeContext, seconds: num
   }
 }
 
-export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: number): void {
-  const field = context.state.localSpace?.getSnapshot();
-  if (!field) return;
+export function tickFieldSecurity(
+  context: ControllerRuntimeContext,
+  seconds: number,
+  runtime: AsteroidFieldRuntime
+): void {
+  const scene = context.state.localSpace?.getSnapshot();
+  const active = scene?.instance === runtime.instance ? scene : null;
   const { economy } = context;
-  const locationId = field.instance.sourceLocationId;
-  const drone = economy.securityDrones.get(locationId);
-  if (!drone) return;
+  const locationId = runtime.locationId;
+  const drone = runtime.drone;
 
   const contacts: DroneContact[] = [];
-  if (field.laserActive && field.miningTargetId) {
-    const asteroid = field.instance.asteroids.find((entry) => entry.id === field.miningTargetId);
+  if (active?.laserActive && active.miningTargetId) {
+    const asteroid = runtime.instance.asteroids.find((entry) => entry.id === active.miningTargetId);
     const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
     if (claim && claim.ownerId !== 'player') {
       contacts.push({
         shipId: context.state.activeShip.id,
         asteroidId: asteroid!.id,
-        position: field.instance.ship.position,
+        position: active.instance.ship.position,
       });
     }
   }
-  for (const ship of context.state.localNpcMining?.ships ?? []) {
+  for (const ship of runtime.miners.ships) {
     if (!ship.laserActive || !ship.targetAsteroidId) continue;
-    const asteroid = field.instance.asteroids.find((entry) => entry.id === ship.targetAsteroidId);
+    const asteroid = runtime.instance.asteroids.find((entry) => entry.id === ship.targetAsteroidId);
     const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
     if (claim && claim.ownerId !== ship.npcId) {
       const npc = economy.sectorNpcs.npcs.find((entry) => entry.id === ship.npcId);
@@ -143,8 +152,8 @@ export function tickFieldSecurity(context: ControllerRuntimeContext, seconds: nu
     }
   }
 
-  for (const key of drone.tick(seconds, field.instance.asteroids, contacts)) {
-    processDroneContact(context, locationId, key);
+  for (const key of drone.tick(seconds, runtime.instance.asteroids, contacts)) {
+    processDroneContact(context, runtime, key);
   }
 }
 
@@ -229,13 +238,12 @@ function handleNpcDroneFine(
 
 function processDroneContact(
   context: ControllerRuntimeContext,
-  locationId: string,
+  runtime: AsteroidFieldRuntime,
   contact: string
 ): void {
-  const field = context.state.localSpace?.getSnapshot();
-  if (!field) return;
+  const locationId = runtime.locationId;
   const [shipId, asteroidId] = JSON.parse(contact) as [string, string];
-  const asteroid = field.instance.asteroids.find((entry) => entry.id === asteroidId);
+  const asteroid = runtime.instance.asteroids.find((entry) => entry.id === asteroidId);
   const { economy } = context;
   const claim = asteroid ? economy.asteroidClaims.claim(locationId, asteroid) : null;
   if (!claim) return;
