@@ -8,14 +8,12 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 
 const { createControllerEconomy } = load('src/app/game-controller-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
-const {
-  fieldWorldFor,
-  advanceControllerFieldWorld,
-} = load('src/app/game-controller-field-world-bridge.ts');
-const {
-  registerSectorShips,
-  advanceNpcPenalCustody,
-} = load('src/app/game-controller-law-enforcement.ts');
+const { fieldWorldFor, advanceControllerFieldWorld } = load(
+  'src/app/game-controller-field-world-bridge.ts'
+);
+const { registerSectorShips, advanceNpcPenalCustody } = load(
+  'src/app/game-controller-law-enforcement.ts'
+);
 
 function createScenario() {
   const economy = createControllerEconomy({
@@ -70,8 +68,9 @@ function createScenario() {
   const rock = field.instance.asteroids.find(
     (asteroid) =>
       asteroid.kind === 'resource' &&
-      asteroid.deposits.some((deposit) =>
-        deposit.oreRemaining >= 12 && miner.workResourceIds.includes(deposit.resourceId)
+      asteroid.deposits.some(
+        (deposit) =>
+          deposit.oreRemaining >= 12 && miner.workResourceIds.includes(deposit.resourceId)
       )
   );
   assert(rock, 'Generated asteroid field must supply mineable matching ore');
@@ -113,7 +112,11 @@ function remoteTheftAndPursuitTest() {
   const sighting = s.economy.legal.latestSighting(offenderShipId);
   assert.equal(sighting.kind, 'distress');
   assert.equal(sighting.locationId, s.location.id);
-  assert.equal(s.economy.legal.snapshot().charges.length, 1, 'No repeated invoice for a single sample');
+  assert.equal(
+    s.economy.legal.snapshot().charges.length,
+    1,
+    'No repeated invoice for a single sample'
+  );
   const dispatched = s.economy.sectorNpcs.npcs.find(
     (npc) =>
       npc.job === 'patrol' &&
@@ -141,21 +144,28 @@ function remoteTheftAndPursuitTest() {
   advanceControllerFieldWorld(s.context, 0.08);
   assert.strictEqual(fieldWorldFor(s.context).field(s.location.id).instance, priorInstance);
   assert.equal(
-    s.field.instance.asteroids.find((r) => r.id === s.rock.id).deposits
-      .reduce((total, d) => total + d.oreRemaining, 0),
+    s.field.instance.asteroids
+      .find((r) => r.id === s.rock.id)
+      .deposits.reduce((total, d) => total + d.oreRemaining, 0),
     remainingOre,
     'Re-entering a visited field must not replace or regenerate mined ore'
   );
   s.context.state.mode = 'star-map';
   s.context.state.localSpace = null;
-  assert.strictEqual(fieldWorldFor(s.context).field(s.location.id).miners.ships, s.field.miners.ships);
+  assert.strictEqual(
+    fieldWorldFor(s.context).field(s.location.id).miners.ships,
+    s.field.miners.ships
+  );
   // NPC arrest remains a real port event; it cannot occur at a distant field by magic.
   s.miner.locationId = 'haven';
   delete s.miner.travel;
   s.economy.npcPrisoners.clear();
   s.economy.situations.advanceNextDay();
   advanceNpcPenalCustody(s.context);
-  assert(s.economy.npcPrisoners.has(s.miner.id), 'Wanted NPC should be arrested at Directorate dock');
+  assert(
+    s.economy.npcPrisoners.has(s.miner.id),
+    'Wanted NPC should be arrested at Directorate dock'
+  );
   assert.equal(s.economy.legal.status(offenderShipId), 'custody');
   let days = 0;
   while (s.economy.npcPrisoners.has(s.miner.id) && days++ < 100) {
@@ -169,7 +179,7 @@ function remoteTheftAndPursuitTest() {
   assert.equal(ledger.charges[0].paid, ledger.charges[0].amount);
   console.log(
     'PASS integration: physical offscreen ore theft -> drone -> warrant -> travelling patrol ' +
-    '-> persistent field return -> Directorate NPC custody and debt settlement'
+      '-> persistent field return -> Directorate NPC custody and debt settlement'
   );
 }
 
