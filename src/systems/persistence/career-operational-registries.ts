@@ -73,11 +73,13 @@ function validIdentity(entry: Record<string, unknown>, keys: readonly string[]):
 function verifyRegisteredClaims(entries: readonly unknown[]): void {
   const seen = new Set<string>();
   for (const entry of entries) {
-    if (!isRecord(entry) ||
+    if (
+      !isRecord(entry) ||
       !validIdentity(entry, ['locationId', 'asteroidId', 'ownerId']) ||
       !validFinite(entry.registeredDay) ||
       !isRecord(entry.oreAtRegistration) ||
-      Object.values(entry.oreAtRegistration).some((ore) => !validFinite(ore))) {
+      Object.values(entry.oreAtRegistration).some((ore) => !validFinite(ore))
+    ) {
       throw new Error('Ungültige gespeicherte Konzession.');
     }
     const id = JSON.stringify([entry.locationId, entry.asteroidId]);
@@ -89,10 +91,13 @@ function verifyRegisteredClaims(entries: readonly unknown[]): void {
 function verifyConflicts(entries: readonly unknown[]): void {
   const seen = new Set<string>();
   for (const entry of entries) {
-    if (!isRecord(entry) ||
+    if (
+      !isRecord(entry) ||
       !validIdentity(entry, ['locationId', 'asteroidId', 'rightfulOwnerId', 'intruderId']) ||
-      !validFinite(entry.stolenOre) || !validFinite(entry.compensation) ||
-      !['detected', 'paid', 'fight', 'escaped'].includes(entry.status as string)) {
+      !validFinite(entry.stolenOre) ||
+      !validFinite(entry.compensation) ||
+      !['detected', 'paid', 'fight', 'escaped'].includes(entry.status as string)
+    ) {
       throw new Error('Ungültiger Konzessionskonflikt.');
     }
     const id = JSON.stringify([entry.locationId, entry.asteroidId, entry.intruderId]);
@@ -103,9 +108,12 @@ function verifyConflicts(entries: readonly unknown[]): void {
 
 function verifySurveyLevels(entries: readonly unknown[]): void {
   for (const pair of entries) {
-    if (!Array.isArray(pair) || pair.length !== 2 ||
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
       typeof pair[0] !== 'string' ||
-      !['unscanned', 'surveyed', 'analyzed'].includes(pair[1] as string)) {
+      !['unscanned', 'surveyed', 'analyzed'].includes(pair[1] as string)
+    ) {
       throw new Error('Ungültiger gespeicherter Scanstand.');
     }
   }
