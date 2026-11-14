@@ -5,7 +5,7 @@ import type {
   LocalAsteroid,
   LocalSpaceInstance,
 } from '../../core/local-space-types';
-import { pickMiningResource } from '../../data/resources/mining-resources';
+import { miningResources, pickMiningResource } from '../../data/resources/mining-resources';
 import type { AsteroidResourceDeposit } from '../../core/local-space-types';
 
 function createRandom(seed: number): () => number {
@@ -54,14 +54,20 @@ function createDeposits(
   if (random() >= 0.68) return [];
 
   const roll = random();
-  const depositCount = roll < 0.62 ? 1 : roll < 0.9 ? 2 : 3;
+  const allowed = resourceIds ? new Set(resourceIds) : null;
+  const permitted = allowed
+    ? miningResources.filter((resource) => allowed.has(resource.id))
+    : miningResources;
+  const pool = permitted.length > 0 ? permitted : miningResources;
+  const depositCount = Math.min(pool.length, roll < 0.62 ? 1 : roll < 0.9 ? 2 : 3);
   const deposits: AsteroidResourceDeposit[] = [];
-  const usedResourceIds = new Set<string>();
+  const unusedIds = pool.map((resource) => resource.id);
 
-  while (deposits.length < depositCount) {
-    const resource = pickMiningResource(random, resourceIds);
-    if (usedResourceIds.has(resource.id)) continue;
-    usedResourceIds.add(resource.id);
+  for (let index = 0; index < depositCount; index++) {
+    // Sample without replacement: a one-resource field cannot provide
+    // three distinct deposits, and retrying duplicates could loop forever.
+    const resource = pickMiningResource(random, unusedIds);
+    unusedIds.splice(unusedIds.indexOf(resource.id), 1);
 
     const rarityAmountFactor = Math.max(0.35, 1.15 - resource.rarity * 0.055);
     const oreCapacity = Math.round((55 + random() * 155) * rarityAmountFactor);
