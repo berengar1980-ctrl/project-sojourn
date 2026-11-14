@@ -24,7 +24,10 @@ for (const [allowed, seed] of [
   for (const deposits of resources) {
     assert.equal(new Set(deposits).size, deposits.length, 'No duplicated resource deposit');
     assert(deposits.length <= known.size, 'No deposit beyond the available resource pool');
-    assert(deposits.every((id) => known.has(id)), 'Only allowed resources are generated');
+    assert(
+      deposits.every((id) => known.has(id)),
+      'Only allowed resources are generated'
+    );
   }
 }
 console.log('PASS local mining generator supports one- and two-resource fields without loops');
