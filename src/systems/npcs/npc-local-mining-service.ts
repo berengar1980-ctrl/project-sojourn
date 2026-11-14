@@ -360,8 +360,12 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
       (npc.combatRecoverySeconds ?? 0) > 0 ||
       npc.locationId !== runtime.options.locationId
     ) {
-      if (npc && npc.hullHp > 0 && npc.locationId === runtime.options.locationId &&
-          (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0)) {
+      if (
+        npc &&
+        npc.hullHp > 0 &&
+        npc.locationId === runtime.options.locationId &&
+        (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0)
+      ) {
         runtime.combatReturnPositions.set(npc.id, { ...ship.position });
       } else {
         runtime.combatReturnPositions.delete(ship.npcId);

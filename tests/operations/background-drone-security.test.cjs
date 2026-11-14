@@ -29,12 +29,16 @@ const runtime = {
   locationId,
   instance: { asteroids: [asteroid] },
   drone: new AsteroidSecurityDrone(900, 600, [asteroid], 600),
-  miners: { ships: [{
-    npcId: npc.id,
-    laserActive: true,
-    targetAsteroidId: asteroid.id,
-    position: { x: 600, y: 160 },
-  }] },
+  miners: {
+    ships: [
+      {
+        npcId: npc.id,
+        laserActive: true,
+        targetAsteroidId: asteroid.id,
+        position: { x: 600, y: 160 },
+      },
+    ],
+  },
 };
 const logs = [];
 const context = {
