@@ -26,7 +26,11 @@ const saved = original.exportState();
 assert(saved.state.travel.distanceTravelled > 0);
 assert.notStrictEqual(saved.state.currentPosition, during.currentPosition);
 const restored = createNavigationService(narrowsSector, from, 130, saved);
-assert.deepEqual(restored.getSnapshot(), original.getSnapshot(), 'Mid-flight state survives restore');
+assert.deepEqual(
+  restored.getSnapshot(),
+  original.getSnapshot(),
+  'Mid-flight state survives restore'
+);
 for (let i = 0; i < 15; i++) {
   assert.deepEqual(restored.tick(0.1), original.tick(0.1), 'Flight continues deterministically');
 }
@@ -47,4 +51,6 @@ assert.deepEqual(chase.tick(0.1), pursuit.tick(0.1), 'Pursuit resumes without re
 const idle = fresh();
 const idleCopy = createNavigationService(narrowsSector, from, 130, idle.exportState());
 assert.deepEqual(idleCopy.getSnapshot(), idle.getSnapshot());
-console.log('PASS career navigation checkpoint: travel, pursuit, idle and invalid-state isolation');
+console.log(
+  'PASS career navigation checkpoint: travel, pursuit, idle and invalid-state isolation'
+);
