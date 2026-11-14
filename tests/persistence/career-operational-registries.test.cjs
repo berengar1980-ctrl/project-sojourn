@@ -76,6 +76,22 @@ assert.equal(legal.debt(shipId), 700, 'Failed staging must not change live legal
 corrupted.legal.charges[0].paid = 110;
 corrupted.claims.extraction[0].billedTons = 1000000;
 assert.throws(() => stageCareerLegalAndClaims(corrupted), /Erzvorfall/);
+const badClaim = JSON.parse(JSON.stringify(saved));
+badClaim.claims.claims[0].oreAtRegistration.ferrite = -5;
+assert.throws(() => stageCareerLegalAndClaims(badClaim), /Konzession/);
+const invalidScan = JSON.parse(JSON.stringify(saved));
+invalidScan.claims.surveyLevels[0][1] = 'invisible';
+assert.throws(() => stageCareerLegalAndClaims(invalidScan), /Scanstand/);
+const legacy = JSON.parse(JSON.stringify(saved));
+legacy.legal.version = 1;
+delete legacy.legal.warrants;
+delete legacy.legal.custodies;
+const migrated = stageCareerLegalAndClaims(legacy);
+assert.equal(
+  migrated.legal.status(shipId),
+  'wanted',
+  'Version-1 unsettled debts must migrate to old implicit warrant semantics'
+);
 assert.equal(asteroid.deposits[0].oreRemaining, copy.deposits[0].oreRemaining);
 const nav = { getSnapshot: () => ({ currentPosition: narrowsSector.star.position }) };
 const economy = createControllerEconomy(nav, () => {}, stageCareerLegalAndClaims(saved));
