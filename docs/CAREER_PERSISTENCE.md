@@ -74,6 +74,17 @@ Für vollständiges Save/Load fehlen weiter die zustandsführenden Nebenservices
 (Populationsfonds, Markt/Wirtschaft, lokale Miner/Piraten/Drohnen, Kampagnen- und
 Kampfautorität) und der atomare Aufbau der gesamten Karriere. Keine Save/Load-UI.
 
+## NPC-Populationsfonds: gesicherte Nebenregister
+
+Der `NpcPopulationService` kann nun den Versicherungsfonds und die Anzahl
+bereits finanzierter Ersatzschiffe als versionierten Snapshot exportieren und
+in einer **frischen** Serviceinstanz wiederherstellen. Offene Ersatztermine
+liegen weiterhin an den NPC-Objekten aus PR #306. Beschädigte Zahlen und
+unbekannte Versionen werden vor der Serviceerzeugung verworfen.
+
+Das ist nur ein weiterer Teiladapter; Marktbestände, lokale Schiffe,
+Wirtschaftskreisläufe und die atomare Zusammensetzung fehlen weiterhin.
+
 ## Noch zu erledigen vor einer Freigabe
 
 1. Für Navigation, Player/Cargo, Economy/Markets, NPC-Routen, Crew/Loadouts,
