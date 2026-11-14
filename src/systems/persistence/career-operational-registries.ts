@@ -19,12 +19,18 @@ function validFinite(value: unknown, minimum = 0): value is number {
 function verifyExtraction(entries: readonly unknown[]): void {
   const seen = new Set<string>();
   for (const entry of entries) {
-    if (!isRecord(entry) ||
-      !['locationId', 'asteroidId', 'intruderId'].every((key) =>
-        typeof entry[key] === 'string' && entry[key] !== '') ||
-      !validFinite(entry.tons) || !validFinite(entry.value) ||
-      !validFinite(entry.billedTons) || !validFinite(entry.billedValue) ||
-      entry.billedTons > entry.tons || entry.billedValue > entry.value) {
+    if (
+      !isRecord(entry) ||
+      !['locationId', 'asteroidId', 'intruderId'].every(
+        (key) => typeof entry[key] === 'string' && entry[key] !== ''
+      ) ||
+      !validFinite(entry.tons) ||
+      !validFinite(entry.value) ||
+      !validFinite(entry.billedTons) ||
+      !validFinite(entry.billedValue) ||
+      entry.billedTons > entry.tons ||
+      entry.billedValue > entry.value
+    ) {
       throw new Error('Ungültiger oder doppelt abgerechneter Erzvorfall.');
     }
     const id = JSON.stringify([entry.locationId, entry.asteroidId, entry.intruderId]);
@@ -35,8 +41,12 @@ function verifyExtraction(entries: readonly unknown[]): void {
 
 function verifyFieldSeeds(entries: readonly unknown[]): void {
   for (const pair of entries) {
-    if (!Array.isArray(pair) || pair.length !== 2 ||
-      typeof pair[0] !== 'string' || !validFinite(pair[1])) {
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      !validFinite(pair[1])
+    ) {
       throw new Error('Ungültiger Asteroidenfeld-Seed.');
     }
   }
@@ -44,9 +54,13 @@ function verifyFieldSeeds(entries: readonly unknown[]): void {
 
 function verifyRemainingOre(entries: readonly unknown[]): void {
   for (const pair of entries) {
-    if (!Array.isArray(pair) || pair.length !== 2 ||
-      typeof pair[0] !== 'string' || !isRecord(pair[1]) ||
-      Object.values(pair[1]).some((quantity) => !validFinite(quantity))) {
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      !isRecord(pair[1]) ||
+      Object.values(pair[1]).some((quantity) => !validFinite(quantity))
+    ) {
       throw new Error('Ungültiger gespeicherter Erzbestand.');
     }
   }
@@ -68,11 +82,16 @@ function verifyClaims(value: unknown): void {
 function verifyRegistrations(values: readonly unknown[]): Set<string> {
   const registrations = new Set<string>();
   for (const item of values) {
-    if (!isRecord(item) || typeof item.shipId !== 'string' || !item.shipId ||
-      typeof item.ownerId !== 'string' || !item.ownerId ||
+    if (
+      !isRecord(item) ||
+      typeof item.shipId !== 'string' ||
+      !item.shipId ||
+      typeof item.ownerId !== 'string' ||
+      !item.ownerId ||
       typeof item.transponder !== 'string' ||
       typeof item.originalTransponder !== 'string' ||
-      registrations.has(item.shipId)) {
+      registrations.has(item.shipId)
+    ) {
       throw new Error('Ungültige Schiffskennung.');
     }
     registrations.add(item.shipId);
@@ -84,11 +103,18 @@ function verifyCharges(values: readonly unknown[], registrations: ReadonlySet<st
   const ids = new Set<string>();
   const incidents = new Set<string>();
   for (const item of values) {
-    if (!isRecord(item) || typeof item.id !== 'string' || ids.has(item.id) ||
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      ids.has(item.id) ||
       !registrations.has(item.shipId as string) ||
-      typeof item.creditorId !== 'string' || !item.creditorId ||
-      !validFinite(item.amount, 1) || !validFinite(item.paid) ||
-      item.paid > item.amount || !validFinite(item.day)) {
+      typeof item.creditorId !== 'string' ||
+      !item.creditorId ||
+      !validFinite(item.amount, 1) ||
+      !validFinite(item.paid) ||
+      item.paid > item.amount ||
+      !validFinite(item.day)
+    ) {
       throw new Error('Ungültige Forderung oder Zahlung.');
     }
     ids.add(item.id);
@@ -119,16 +145,23 @@ function verifyWarrants(
 }
 
 function verifyLegal(value: unknown): void {
-  if (!isRecord(value) || ![1, 2].includes(value.version as number) ||
-    !Array.isArray(value.registrations) || !Array.isArray(value.charges) ||
-    !Array.isArray(value.sightings) || !validFinite(value.sequence)) {
+  if (
+    !isRecord(value) ||
+    ![1, 2].includes(value.version as number) ||
+    !Array.isArray(value.registrations) ||
+    !Array.isArray(value.charges) ||
+    !Array.isArray(value.sightings) ||
+    !validFinite(value.sequence)
+  ) {
     throw new Error('Ungültige gespeicherte Rechtsakte.');
   }
   // Legacy v1 debts were automatically wanted; restoreState handles migration.
   const oldFormat = value.version === 1;
-  if ((!oldFormat && (!Array.isArray(value.warrants) || !Array.isArray(value.custodies))) ||
+  if (
+    (!oldFormat && (!Array.isArray(value.warrants) || !Array.isArray(value.custodies))) ||
     (value.warrants !== undefined && !Array.isArray(value.warrants)) ||
-    (value.custodies !== undefined && !Array.isArray(value.custodies))) {
+    (value.custodies !== undefined && !Array.isArray(value.custodies))
+  ) {
     throw new Error('Ungültige Fahndungsakten.');
   }
   const registrations = verifyRegistrations(value.registrations);
