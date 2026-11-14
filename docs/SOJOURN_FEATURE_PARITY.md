@@ -1054,3 +1054,9 @@ Die hier angefragten Kernfunktionen sind integriert; zusätzliche Voidbound-Mech
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Die vorhandenen Sojourn-Funktionen für NPC-Mining, Konzessionen, lokale Piraten und Sicherheitsdrohnen werden auf eine gemeinsame Feldinstanz mit dauerhaftem NPC- und Erzstatus umgestellt. Die Kampagnenzeit treibt das Offscreen-Geschehen; das Betreten des Asteroidenfelds erzeugt keine zweite unabhängige NPC-Wirtschaft. Die abstrakte Arbeiter-Tagesförderung wird für physisch simulierte Miner unterdrückt. Detaillierte Architektur und bewusst offene Einschränkungen stehen in `docs/ASTEROID_WORLD_SIMULATION.md`.
 
 Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die Rechts-Zustandsmaschine, simultane Mehrparteiengefechte und der vollständige Career-Save/Load-Prozess bleiben in Issue #300 Folge-PRs.
+
+## Review-Log (2026-11-14): Issue #300 / PR 2 – Rechtsregister und Fahndung
+
+**Keine pauschale 1:1-Voidbound-Parität:** Der Rechtsstatus wird ausdrücklich von offenen Forderungen getrennt. Ein tatsächlicher, nicht autorisierter Erzabbau erzeugt wertabhängige Forderungen; erst Verweigerung bzw. bestätigter Notruf aktiviert eine Fahndung. Registrierung bleibt auf der echten Schiffs-ID, während Transponderfälschungen nur Sichtbarkeit erschweren. Das neue In-Game-Modal ersetzt blockierende Browserdialoge. Spieler und NPCs nutzen dasselbe Gläubiger-/Schuldnerbuch; bereits abgerechnete Förderung darf bei weiterer Sensorbeobachtung nicht doppelt berechnet werden. Straflager der NPCs werden während der Spielerhaft mitfortgeschrieben. Details, bekannte Grenzen und Abnahme in `docs/LEGAL_CASE_LIFECYCLE.md`.
+
+**Weiterhin offen:** Vollständiger Karriere-Save/Load, echter Browser-End-to-End-Durchlauf einschließlich Patrouillenreise und simultane Mehrparteienkämpfe.
