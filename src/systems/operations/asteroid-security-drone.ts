@@ -1,5 +1,9 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import {
+  stageSecurityDroneCheckpoint,
+  type SecurityDroneCheckpoint,
+} from './asteroid-security-drone-checkpoint';
 
 export interface DroneContact {
   readonly shipId: string;
@@ -49,6 +53,36 @@ export class AsteroidSecurityDrone {
             { x: width * 0.75, y: height * 0.75 },
           ];
     this.position = { ...this.patrol[0]! };
+  }
+
+  /** Preserve patrol progress and the idempotency set for active observations. */
+  exportState(): SecurityDroneCheckpoint {
+    return {
+      version: 1,
+      position: { ...this.position },
+      scanRadius: this.scanRadius,
+      operational: this.operational,
+      nextWaypoint: this.nextWaypoint,
+      patrolSize: this.patrol.length,
+      observed: [...this.observed].sort(),
+    };
+  }
+
+  /** Restore into a fresh drone after validating the same patrol geometry. */
+  static fromCheckpoint(
+    width: number,
+    height: number,
+    asteroids: readonly LocalAsteroid[],
+    checkpoint: unknown,
+    scanRadius = DRONE_SCAN_RADIUS
+  ): AsteroidSecurityDrone {
+    const instance = new AsteroidSecurityDrone(width, height, asteroids, scanRadius);
+    const data = stageSecurityDroneCheckpoint(checkpoint, scanRadius, instance.patrol.length);
+    instance.position = { ...data.position };
+    instance.operational = data.operational;
+    instance.nextWaypoint = data.nextWaypoint;
+    for (const key of data.observed) instance.observed.add(key);
+    return instance;
   }
 
   snapshot(): SecurityDroneSnapshot {

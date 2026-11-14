@@ -97,6 +97,19 @@ gesamte Karriere diese Daten konsistent mit den Sektor-NPCs lädt.
 Noch offen sind lokale Miner, Sicherheitsdrohnen, Markt- und Kampfzustände,
 sowie die atomare Zusammensetzung der gesamten Karriere. Keine Save/Load-UI.
 
+## Sicherheitsdrohnen-Checkpoint
+
+`AsteroidSecurityDrone.exportState()` sichert nun Position, aktuellen
+Patrouillen-Wegpunkt, Betriebszustand und bereits erkannte Verstöße.
+`AsteroidSecurityDrone.fromCheckpoint()` baut eine neue, unabhängige Drohne
+auf und prüft Version, Scanradius, Patrouillengröße, Koordinaten und doppelte
+Beobachtungskennungen. Der Beobachtungsbestand verhindert, dass derselbe
+aktive Kontakt beim Laden als neue Entdeckung erscheint.
+
+Die Drohnenzustände sind damit als Adapter vorbereitet, aber noch nicht
+mit der vollständigen Career-Session, lokalen Minern, Wirtschafts- oder
+Kampfzuständen verbunden. Die Save/Load-Oberfläche bleibt deaktiviert.
+
 ## Noch zu erledigen vor einer Freigabe
 
 1. Für Navigation, Player/Cargo, Economy/Markets, NPC-Routen, Crew/Loadouts,
