@@ -36,7 +36,7 @@ export function stageSecurityDroneCheckpoint(
   if (value.scanRadius !== scanRadius || value.patrolSize !== patrolSize) {
     throw new Error('Drohnen-Checkpoint passt nicht zur Asteroidenkarte.');
   }
-  if (!Number.isInteger(value.nextWaypoint) || !validNumber(value.nextWaypoint)) {
+  if (!validNumber(value.nextWaypoint) || !Number.isInteger(value.nextWaypoint)) {
     throw new Error('Ungültiger Drohnen-Wegpunkt.');
   }
   if ((value.nextWaypoint as number) >= patrolSize || typeof value.operational !== 'boolean') {
