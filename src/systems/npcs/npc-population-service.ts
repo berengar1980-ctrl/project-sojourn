@@ -1,3 +1,7 @@
+import {
+  stageNpcPopulationCheckpoint,
+  type NpcPopulationCheckpoint,
+} from './npc-population-checkpoint';
 import type { EconomyMarketService } from '../economy/market-service';
 import type { SectorNpcState } from '../../core/npc-types';
 import { getShipDefinition, resolveShipGameplayStats, shipPurchasePrice } from '../ships';
@@ -9,6 +13,7 @@ const REPLACEMENT_DELAY_DAYS = 5;
 const SEED_CAPITAL = 300000;
 
 export interface NpcPopulationService {
+  exportState(): NpcPopulationCheckpoint;
   readonly replacementCount: number;
   readonly outstanding: number;
   readonly fundCredits: number;
@@ -20,11 +25,13 @@ export interface NpcPopulationService {
 export function createNpcPopulationService(
   npcs: readonly SectorNpcState[],
   markets: EconomyMarketService,
-  recordLoss: (id: string, units: number) => void = () => {}
+  recordLoss: (id: string, units: number) => void = () => {},
+  checkpoint?: NpcPopulationCheckpoint
 ): NpcPopulationService {
   const templates = new Map(createSectorNpcEconomyStates().map((npc) => [npc.id, npc]));
-  let fund = INITIAL_FUND;
-  let replacementCount = 0;
+  const restored = checkpoint ? stageNpcPopulationCheckpoint(checkpoint) : null;
+  let fund = restored?.fundCredits ?? INITIAL_FUND;
+  let replacementCount = restored?.replacementCount ?? 0;
   const restore = (npc: SectorNpcState): boolean => {
     const original = templates.get(npc.id);
     if (!original || original.pirate || original.job === 'patrol') return false;
@@ -70,6 +77,7 @@ export function createNpcPopulationService(
     return true;
   };
   return {
+    exportState: () => ({ version: 1, fundCredits: fund, replacementCount }),
     get fundCredits() {
       return fund;
     },
