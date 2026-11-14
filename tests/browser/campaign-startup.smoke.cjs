@@ -39,7 +39,11 @@ async function awaitServer() {
   let browser;
   try {
     await awaitServer();
-    browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage'] });
+    browser = await chromium.launch({
+      headless: true,
+      ...(process.env.SOJOURN_CHROME_CHANNEL ? { channel: 'chrome' } : {}),
+      args: ['--disable-dev-shm-usage'],
+    });
     const page = await browser.newPage({ viewport: { width: 1365, height: 900 } });
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
