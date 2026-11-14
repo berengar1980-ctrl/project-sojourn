@@ -1,9 +1,6 @@
 import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
-import {
-  stageLocalMinerCheckpoint,
-  type LocalMinerCheckpoint,
-} from './npc-local-mining-checkpoint';
+import { stageLocalMinerCheckpoint } from './npc-local-mining-checkpoint';
 import type { LocalAsteroid } from '../../core/local-space-types';
 
 import type { SectorNpcState } from '../../core/npc-types';
@@ -23,6 +20,7 @@ import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 import {
   type NpcLocalMiningOptions,
+  type LocalMinerCheckpoint,
   type LocalNpcMinerState,
   eligibleMiner,
   FLIGHT_SPEED,
