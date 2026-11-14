@@ -28,16 +28,25 @@ function finite(value: unknown, min = -Infinity): value is number {
 }
 
 function validPosition(value: unknown, width: number, height: number): boolean {
-  return record(value) && finite(value.x, 0) && finite(value.y, 0) &&
-    value.x <= width && value.y <= height;
+  return (
+    record(value) &&
+    finite(value.x, 0) &&
+    finite(value.y, 0) &&
+    value.x <= width &&
+    value.y <= height
+  );
 }
 
 function validShip(value: unknown, width: number, height: number): boolean {
-  return record(value) &&
-    typeof value.npcId === 'string' && value.npcId.length > 0 &&
+  return (
+    record(value) &&
+    typeof value.npcId === 'string' &&
+    value.npcId.length > 0 &&
     validPosition(value.position, width, height) &&
-    finite(value.headingRadians) && finite(value.speed, 0) &&
-    typeof value.awaitingCombat === 'boolean';
+    finite(value.headingRadians) &&
+    finite(value.speed, 0) &&
+    typeof value.awaitingCombat === 'boolean'
+  );
 }
 
 function validEntries(
@@ -72,19 +81,31 @@ export function stageLocalPirateCheckpoint(
   npcs: readonly SectorNpcState[]
 ): LocalPirateCheckpoint {
   const value = cloneCareerJson(candidate);
-  if (!record(value) || value.version !== 1 ||
-    value.width !== width || value.height !== height || value.seed !== seed) {
+  if (
+    !record(value) ||
+    value.version !== 1 ||
+    value.width !== width ||
+    value.height !== height ||
+    value.seed !== seed
+  ) {
     throw new Error('Falsche Version oder Asteroidenkarte im Piraten-Spielstand.');
   }
   const ships = value.ships;
   const combatReturns = value.combatReturns;
-  if (!Array.isArray(ships) || !Array.isArray(combatReturns) ||
-    ships.length > 1000 || combatReturns.length > 1000 ||
+  if (
+    !Array.isArray(ships) ||
+    !Array.isArray(combatReturns) ||
+    ships.length > 1000 ||
+    combatReturns.length > 1000 ||
     !ships.every((ship) => validShip(ship, width, height)) ||
-    !combatReturns.every((entry) =>
-      Array.isArray(entry) && entry.length === 2 &&
-      typeof entry[0] === 'string' && validPosition(entry[1], width, height)
-    )) {
+    !combatReturns.every(
+      (entry) =>
+        Array.isArray(entry) &&
+        entry.length === 2 &&
+        typeof entry[0] === 'string' &&
+        validPosition(entry[1], width, height)
+    )
+  ) {
     throw new Error('Beschädigte lokale Piratenzustände.');
   }
   const snapshot = value as unknown as LocalPirateCheckpoint;
