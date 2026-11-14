@@ -61,9 +61,9 @@ async function awaitServer() {
     await page.locator('.star-map-canvas').waitFor({ timeout: 60000 });
     await page.waitForTimeout(2500);
     const ui = await page.evaluate(() => ({
-      exists: Boolean(document.querySelector('.star-map-shell')),
-      canvasWidth: document.querySelector('.star-map-canvas')?.width ?? 0,
-      canvasHeight: document.querySelector('.star-map-canvas')?.height ?? 0,
+      exists: Boolean(globalThis.document.querySelector('.star-map-shell')),
+      canvasWidth: globalThis.document.querySelector('.star-map-canvas')?.width ?? 0,
+      canvasHeight: globalThis.document.querySelector('.star-map-canvas')?.height ?? 0,
     }));
     assert(ui.exists, 'A complete star map must mount after campaign initialization');
     assert(ui.canvasWidth > 0 && ui.canvasHeight > 0, 'The game must render into a sized canvas');
