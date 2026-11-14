@@ -39,6 +39,10 @@ export function recordNpcAsteroidTheft(
   const { economy, state } = context;
   const claim = economy.asteroidClaims.claim(location.id, asteroid);
   if (!claim || claim.ownerId === npc.id) return;
+  economy.asteroidClaims.recordUnauthorizedExtraction(
+    location.id, asteroid.id, npc.id, amount,
+    miningResourceById(resourceId)?.baseValue ?? 1
+  );
   const player = state.localSpace?.getSnapshot().instance.ship;
   const observer = state.localNpcMining?.ships.find((ship) => ship.npcId === npc.id);
   const detected =
