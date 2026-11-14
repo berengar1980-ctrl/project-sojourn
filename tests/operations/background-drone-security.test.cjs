@@ -53,10 +53,17 @@ const context = {
   world: { world: () => ({ locations: [{ id: locationId, position: { x: 0, y: 0 } }] }) },
   systemLog: { write: (message) => logs.push(message) },
 };
+claims.recordUnauthorizedExtraction(locationId, asteroid.id, 'miner', 5, 100);
 tickFieldSecurity(context, 0.08, runtime);
-assert.equal(legal.debt('miner-hull:miner'), 1500, 'Offscreen drone detects the real miner');
+assert.equal(legal.debt('miner-hull:miner'), 750, 'Offscreen fine follows actual stolen ore value');
+assert.equal(legal.status('miner-hull:miner'), 'wanted');
 assert.equal(legal.latestSighting('miner-hull:miner').kind, 'distress');
 tickFieldSecurity(context, 0.08, runtime);
-assert.equal(legal.debt('miner-hull:miner'), 1500, 'Continuous extraction must not double-charge');
+assert.equal(legal.debt('miner-hull:miner'), 750, 'Continuous extraction must not double-charge');
 assert(logs.some((message) => message.includes('NOTRUF')));
+claims.recordUnauthorizedExtraction(locationId, asteroid.id, 'miner', 2, 100);
+tickFieldSecurity(context, 0.08, runtime);
+assert.equal(legal.debt('miner-hull:miner'), 1050, 'Repeated theft adds only the new stolen value');
+assert.equal(legal.snapshot().charges.length, 2);
+assert.equal(legal.snapshot().sightings.length, 1, 'Same-day alerts are idempotent');
 console.log('PASS offline security: sensor reports NPC claim theft without a player scene');
