@@ -207,7 +207,7 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
     const fingerprint = day + npc.id.length * 17 + npc.name.length * 13;
     const deepCheck = fingerprint % 10 < 7;
     if (!legal.isRecognizedWanted(shipId, deepCheck)) continue;
-    const payment = settleLegalDebt(context, shipId, npc);
+    settleLegalDebt(context, shipId, npc);
     if (!legal.isWanted(shipId)) {
       context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT');
       continue;
