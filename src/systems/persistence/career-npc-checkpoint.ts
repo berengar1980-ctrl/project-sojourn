@@ -124,7 +124,10 @@ function validNpc(
 }
 
 /** A detached snapshot of the authoritative sector NPC objects, not render projections. */
-export function captureCareerNpcs(world: WorldMap, npcs: readonly SectorNpcState[]): CareerNpcCheckpoint {
+export function captureCareerNpcs(
+  world: WorldMap,
+  npcs: readonly SectorNpcState[]
+): CareerNpcCheckpoint {
   const detached = cloneCareerJson({ version: 1 as const, worldId: world.id, npcs });
   stageCareerNpcs(world, detached);
   return detached;
