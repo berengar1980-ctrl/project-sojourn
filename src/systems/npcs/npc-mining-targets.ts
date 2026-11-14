@@ -51,7 +51,8 @@ export interface NpcLocalMiningOptions {
   ) => void;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly playerShip?: ShipDefinition;
-  readonly getPlayerShipState?: () => LocalShipState;
+  readonly getPlayerShipState?: () => LocalShipState | undefined;
+  readonly getPlayerShip?: () => ShipDefinition | undefined;
 }
 
 const ENTRY_MARGIN = 18;
