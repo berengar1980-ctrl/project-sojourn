@@ -41,10 +41,7 @@ function validShip(value: unknown, width: number, height: number): boolean {
   return typeof value.awaitingCombat === 'boolean';
 }
 
-function validEntries(
-  snapshot: LocalPirateCheckpoint,
-  npcs: readonly SectorNpcState[]
-): boolean {
+function validEntries(snapshot: LocalPirateCheckpoint, npcs: readonly SectorNpcState[]): boolean {
   const known = new Map(npcs.filter((npc) => npc.pirate).map((npc) => [npc.id, npc]));
   const seen = new Set<string>();
   for (const ship of snapshot.ships) {
