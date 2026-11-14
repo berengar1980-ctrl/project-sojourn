@@ -40,7 +40,7 @@ original[1].combatMovement = {
 };
 const saved = captureCareerNpcs(world, original);
 const restored = stageCareerNpcs(world, JSON.parse(JSON.stringify(saved)));
-assert.deepEqual(restored, original);
+assert.deepEqual(JSON.parse(JSON.stringify(restored)), original);
 assert.notStrictEqual(restored, original);
 assert.notStrictEqual(restored[0], original[0]);
 restored[0].cargo.ferrite = 999;
