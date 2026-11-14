@@ -37,8 +37,9 @@ function route(value: unknown, world: WorldMap, pointId: string | null): value i
   ) {
     return false;
   }
-  const length = value.points.slice(1).reduce((total: number, next: WorldPoint, i: number) => {
-    const previous = value.points[i] as WorldPoint;
+  const points = value.points as WorldPoint[];
+  const length = points.slice(1).reduce((total: number, next: WorldPoint, i: number) => {
+    const previous = points[i]!;
     return total + Math.hypot(next.x - previous.x, next.y - previous.y);
   }, 0);
   return Math.abs(length - value.distance) <= Math.max(0.01, length * 0.000001);
