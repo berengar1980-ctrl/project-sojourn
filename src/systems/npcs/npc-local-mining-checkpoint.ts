@@ -1,20 +1,7 @@
-import type { LocalNpcMinerState, NpcLocalMiningOptions } from './npc-mining-targets';
-import type { WorldPoint } from '../../core/world-types';
-import type { MiningEventCheckpoint } from '../local-space/mining-event-checkpoint';
+import type { LocalMinerCheckpoint, NpcLocalMiningOptions } from './npc-mining-targets';
 import { stageMiningEventCheckpoint } from '../local-space/mining-event-checkpoint';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 import { hashId } from './npc-mining-targets';
-
-export interface LocalMinerCheckpoint {
-  readonly version: 1;
-  readonly locationId: string;
-  readonly seed: number;
-  readonly width: number;
-  readonly height: number;
-  readonly ships: readonly LocalNpcMinerState[];
-  readonly combatReturns: readonly (readonly [string, WorldPoint])[];
-  readonly events: readonly (readonly [string, MiningEventCheckpoint])[];
-}
 
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
