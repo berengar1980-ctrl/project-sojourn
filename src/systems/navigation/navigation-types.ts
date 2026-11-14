@@ -1,3 +1,4 @@
+import type { NavigationCheckpoint } from './navigation-persistence';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import type { RoutePlan, RouteProfile, RouteThreatContact } from './route-planner';
 
@@ -23,6 +24,8 @@ export interface NavigationSnapshot {
 }
 
 export interface NavigationService {
+  /** Detached runtime checkpoint, including active flight and pursuit. */
+  exportState(): NavigationCheckpoint;
   getSnapshot(): NavigationSnapshot;
   /** Update mission overlays without disrupting travel to still-existing locations. */
   replaceWorld(world: WorldMap): void;
