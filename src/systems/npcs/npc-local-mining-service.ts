@@ -1,4 +1,9 @@
 import { seededLocalGate } from '../../core/local-space-exit';
+import { cloneCareerJson } from '../persistence/career-save-contract';
+import {
+  stageLocalMinerCheckpoint,
+  type LocalMinerCheckpoint,
+} from './npc-local-mining-checkpoint';
 import type { LocalAsteroid } from '../../core/local-space-types';
 
 import type { SectorNpcState } from '../../core/npc-types';
@@ -378,7 +383,10 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
   resolveMinerCollisions(runtime);
 }
 
-export function createNpcLocalMiningService(options: NpcLocalMiningOptions): NpcLocalMiningService {
+export function createNpcLocalMiningService(
+  options: NpcLocalMiningOptions,
+  checkpoint?: LocalMinerCheckpoint
+): NpcLocalMiningService {
   const runtime: MinerRuntime = {
     options,
     ships: [],
@@ -391,8 +399,29 @@ export function createNpcLocalMiningService(options: NpcLocalMiningOptions): Npc
       ])
     ),
   };
-  syncArrivals(runtime);
+  if (checkpoint) {
+    const saved = stageLocalMinerCheckpoint(checkpoint, options);
+    runtime.ships.push(...saved.ships.map((ship) => cloneCareerJson(ship)));
+    for (const [id, point] of saved.combatReturns) {
+      runtime.combatReturnPositions.set(id, { ...point });
+    }
+    for (const [id, event] of saved.events) runtime.events.get(id)!.restoreState(event);
+  } else {
+    syncArrivals(runtime);
+  }
   return {
+    exportState: () => ({
+      version: 1,
+      locationId: options.locationId,
+      seed: options.seed ?? 0,
+      width: options.width,
+      height: options.height,
+      ships: runtime.ships.map((ship) => cloneCareerJson(ship)),
+      combatReturns: [...runtime.combatReturnPositions].map(
+        ([id, position]) => [id, { ...position }] as const
+      ),
+      events: [...runtime.events].map(([id, event]) => [id, event.exportState()] as const),
+    }),
     ships: runtime.ships,
     syncCombatPose: (id, position, heading, speed) =>
       syncCombatPose(runtime, id, position, heading, speed),
