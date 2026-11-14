@@ -2,13 +2,16 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { advanceEconomyDay } from './game-controller-events';
 import { PENAL_LABOR_CREDITS_PER_DAY } from '../systems/operations/sector-legal-registry';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
+import { createDetentionPanel, type DetentionPanel } from '../ui/legal/legal-detention-panel';
+import { settleLegalDebt, transferCredit } from './game-controller-legal-ledger';
+export { transferCredit } from './game-controller-legal-ledger';
 
 interface DetentionSession {
   readonly shipId: string;
   days: number;
   laborCredits: number;
   accumulator: number;
-  panel: HTMLElement | null;
+  panel: DetentionPanel | null;
 }
 const detentions = new WeakMap<ControllerRuntimeContext, DetentionSession>();
 const LABOR_DAYS_PER_SECOND = 12;
@@ -27,20 +30,6 @@ export function registerSectorShips(context: ControllerRuntimeContext): void {
   register.registerShip(context.state.activeShip.id, 'player');
   for (const npc of context.economy.sectorNpcs.npcs)
     register.registerShip(npc.shipId + ':' + npc.id, npc.id);
-}
-
-export function transferCredit(
-  context: ControllerRuntimeContext,
-  creditorId: string,
-  amount: number
-): void {
-  if (creditorId === 'player') {
-    context.economy.trade.player.credits += amount;
-    context.systemLog.write('KONZESSION > ENTSCHAEDIGUNG EINGEGANGEN: +' + amount + ' CR');
-  } else {
-    const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === creditorId);
-    if (npc) npc.credits += amount;
-  }
 }
 
 export function dispatchPatrolToReport(
@@ -131,16 +120,14 @@ export function inspectLegalDockArrival(context: ControllerRuntimeContext): void
     return;
   }
   context.systemLog.write('DIREKTORUM > FESTNAHME BEI DER ANDOCKKONTROLLE');
-  const immediate = legal.settle(shipId, context.economy.trade.player.credits);
-  context.economy.trade.player.credits -= immediate.paid;
-  for (const transfer of immediate.transfers)
-    transferCredit(context, transfer.creditorId, transfer.amount);
+  const immediate = settleLegalDebt(context, shipId, context.economy.trade.player);
   if (!legal.isWanted(shipId)) {
     context.systemLog.write(
       'DIREKTORUM > FORDERUNG VOLLSTAENDIG EINGEZOGEN: ' + immediate.paid + ' CR'
     );
     return;
   }
+  legal.beginCustody(shipId);
   detentions.set(context, {
     shipId,
     days: 0,
@@ -220,15 +207,13 @@ export function advanceNpcPenalCustody(context: ControllerRuntimeContext): void 
     const fingerprint = day + npc.id.length * 17 + npc.name.length * 13;
     const deepCheck = fingerprint % 10 < 7;
     if (!legal.isRecognizedWanted(shipId, deepCheck)) continue;
-    const payment = legal.settle(shipId, npc.credits);
-    npc.credits -= payment.paid;
-    for (const transfer of payment.transfers)
-      transferCredit(context, transfer.creditorId, transfer.amount);
+    settleLegalDebt(context, shipId, npc);
     if (!legal.isWanted(shipId)) {
       context.systemLog.write('DIREKTORUM > ' + npc.name.toUpperCase() + ' HAT SCHULDEN BEZAHLT');
       continue;
     }
     economy.npcPrisoners.add(npc.id);
+    legal.beginCustody(shipId);
     npc.activityId = 'dock';
     npc.activity = 'Straflager · Schuld ' + legal.debt(shipId) + ' CR';
     context.systemLog.write(
@@ -246,23 +231,13 @@ export function tickLegalDetention(
 ): boolean {
   const session = detentions.get(context);
   if (!session) return false;
-  if (!session.panel) {
-    const panel = document.createElement('section');
-    panel.className = 'directorate-detention-panel';
-    panel.setAttribute('role', 'status');
-    panel.setAttribute('aria-live', 'polite');
-    panel.style.cssText =
-      'position:fixed;inset:0;z-index:10000;background:rgba(4,8,14,.96);' +
-      'color:#e6e9ec;display:grid;place-content:center;text-align:center;' +
-      'font:18px system-ui;padding:32px;pointer-events:all';
-    context.root.appendChild(panel);
-    session.panel = panel;
-  }
+  if (!session.panel) session.panel = createDetentionPanel(context.root);
   session.accumulator += Math.max(0, Math.min(deltaSeconds, 0.25)) * LABOR_DAYS_PER_SECOND;
   const days = Math.floor(session.accumulator);
   session.accumulator -= days;
   for (let i = 0; i < days && context.economy.legal.isWanted(session.shipId); i++) {
     advanceEconomyDay(context);
+    advanceNpcPenalCustody(context);
     session.days++;
     const payment = context.economy.legal.settle(session.shipId, PENAL_LABOR_CREDITS_PER_DAY);
     session.laborCredits += payment.paid;
@@ -270,24 +245,9 @@ export function tickLegalDetention(
       transferCredit(context, transfer.creditorId, transfer.amount);
   }
   const debt = context.economy.legal.debt(session.shipId);
-  if (session.panel) {
-    session.panel.textContent =
-      'TERRANISCHES DIREKTORUM – STRAFLAGER\n' +
-      'Hafttag: ' +
-      session.days +
-      '\n' +
-      'Restschuld: ' +
-      debt.toLocaleString('de-DE') +
-      ' CR\n' +
-      'Arbeitsgutschrift: ' +
-      session.laborCredits.toLocaleString('de-DE') +
-      ' CR (' +
-      PENAL_LABOR_CREDITS_PER_DAY +
-      ' CR / Tag)';
-    session.panel.style.whiteSpace = 'pre-line';
-  }
+  session.panel?.update(session.days, debt, session.laborCredits);
   if (debt > 0) return true;
-  session.panel?.remove();
+  session.panel?.destroy();
   detentions.delete(context);
   context.systemLog.write(
     'DIREKTORUM > NACH ' + session.days + ' HAFTTAGEN ENTLASSEN. SCHULDEN VOLLSTAENDIG BEGLICHEN'

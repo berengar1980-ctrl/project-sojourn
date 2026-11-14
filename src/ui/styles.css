@@ -4078,3 +4078,53 @@ body.app-has-system-bar #app > .harrow-duel {
     animation: none;
   }
 }
+
+/* Directorate legal demand: anchored in the game UI, not a browser alert. */
+.legal-demand-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgb(4 8 14 / 95%);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #dce6eb;
+}
+.legal-demand-content {
+  width: min(100%, 520px);
+  padding: 28px;
+  border: 1px solid #4d7484;
+  background: #101c25;
+  box-shadow: 0 0 45px rgb(0 0 0 / 60%);
+  font-family: ui-monospace, monospace;
+}
+.legal-demand-content h2 {
+  margin: 0 0 16px;
+  color: #8fd6ec;
+  font-size: 19px;
+}
+.legal-demand-content p {
+  white-space: pre-line;
+  line-height: 1.65;
+}
+.legal-demand-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.legal-demand-controls button {
+  background: #172f3c;
+  color: #dce6eb;
+  border: 1px solid #688a9a;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+.legal-demand-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.legal-demand-controls button:focus-visible {
+  outline: 2px solid #a9e6f0;
+  outline-offset: 2px;
+}

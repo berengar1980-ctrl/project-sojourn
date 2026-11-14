@@ -26,6 +26,8 @@ function detentionDaysAndCreditorsTest() {
   law.registerShip('ship-player', 'player');
   law.reportOffense('ship-player', 'miner-1', 'Konzessionsdiebstahl', 1200, 4);
   law.reportOffense('ship-player', 'directorate', 'Widerstand', 300, 4);
+  assert.equal(law.status('ship-player'), 'demand');
+  law.declareWanted('ship-player');
   let days = 0;
   const ledger = new Map();
   const result = law.detain(
@@ -65,8 +67,16 @@ function sightingsRequireOutstandingDebtTest() {
   law.registerShip('player-ship', 'player');
   assert.equal(law.reportSighting('player-ship', 'haven', 1, 'arrival'), null);
   law.reportOffense('player-ship', 'miner', 'Raubbau', 900, 2);
+  assert.equal(law.status('player-ship'), 'demand');
+  assert.equal(law.reportSighting('player-ship', 'haven', 2, 'distress'), null);
+  assert(law.declareWanted('player-ship'));
   const report = law.reportSighting('player-ship', 'meridian-exchange', 3, 'arrival');
   assert.equal(report.locationId, 'meridian-exchange');
+  assert.equal(
+    law.reportSighting('player-ship', 'meridian-exchange', 3, 'arrival'),
+    null,
+    'Duplicate report on the same day and location must be suppressed'
+  );
   assert.equal(report.destinationId, null);
   const departure = law.reportSighting(
     'player-ship',
@@ -86,6 +96,7 @@ function serializationTest() {
   const legal = new SectorLegalRegistry();
   legal.registerShip('ship-1', 'npc-1');
   legal.reportOffense('ship-1', 'player', 'Raubbau', 500, 7);
+  legal.declareWanted('ship-1');
   legal.settle('ship-1', 120);
   legal.reportSighting('ship-1', 'haven', 8, 'arrival');
   const saved = JSON.parse(JSON.stringify(legal.exportState()));
@@ -101,7 +112,42 @@ function serializationTest() {
     'Restored sequence must not collide with existing charges'
   );
 }
+function legalStateMachineAndIdempotenceTest() {
+  const law = new SectorLegalRegistry();
+  law.registerShip('miner-hull', 'miner');
+  law.registerShip('rival-hull', 'rival');
+  assert(law.reportOffense('miner-hull', 'player', 'Raubbau', 600, 1, 'field:rock:miner:1'));
+  assert.equal(
+    law.reportOffense('miner-hull', 'player', 'Raubbau', 600, 1, 'field:rock:miner:1'),
+    null
+  );
+  assert.equal(law.debt('miner-hull'), 600);
+  assert.equal(law.status('miner-hull'), 'demand');
+  assert.equal(law.isWanted('miner-hull'), false);
+  assert.equal(law.isRecognizedWanted('miner-hull', true), false);
+  assert.equal(law.reportSighting('miner-hull', 'haven', 1, 'distress'), null);
+  assert(law.declareWanted('miner-hull'));
+  assert.equal(law.declareWanted('miner-hull'), false);
+  assert.equal(law.status('miner-hull'), 'wanted');
+  assert(law.forgeTransponder('miner-hull', 'FAKE-001'));
+  assert(!law.isRecognizedWanted('miner-hull', false), 'Normal scans must trust the public alias');
+  assert(law.isRecognizedWanted('miner-hull', true), 'Deep scans may match original hull identity');
+  const first = law.settle('miner-hull', 100);
+  assert.equal(first.paid, 100);
+  assert.equal(first.transfers[0].amount, 100);
+  assert.equal(law.status('miner-hull'), 'wanted', 'Partial payment does not clear a warrant');
+  assert(law.beginCustody('miner-hull'));
+  assert.equal(law.status('miner-hull'), 'custody');
+  assert.equal(law.beginCustody('miner-hull'), false);
+  assert.equal(law.settle('miner-hull', 500).paid, 500);
+  assert.equal(law.status('miner-hull'), 'clear');
+  assert.equal(law.settle('miner-hull', 500).paid, 0, 'Settled principal cannot pay twice');
+  assert.equal(law.status('rival-hull'), 'clear');
+  assert.equal(law.declareWanted('rival-hull'), false);
+}
+
 registrationAndFraudTest();
+legalStateMachineAndIdempotenceTest();
 serializationTest();
 detentionDaysAndCreditorsTest();
 sightingsRequireOutstandingDebtTest();

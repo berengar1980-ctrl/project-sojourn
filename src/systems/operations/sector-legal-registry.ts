@@ -17,6 +17,8 @@ export interface LegalCharge {
   readonly amount: number;
   readonly day: number;
   paid: number;
+  /** Stable external event key prevents repeated billing of the same incident. */
+  readonly incidentId?: string;
 }
 export interface ShipSighting {
   readonly shipId: string;
@@ -35,6 +37,7 @@ export interface DetentionResult {
   readonly remainingDebt: number;
 }
 export const PENAL_LABOR_CREDITS_PER_DAY = 350;
+export type LegalCaseStatus = 'clear' | 'demand' | 'wanted' | 'custody';
 
 function shipCode(shipId: string): string {
   let hash = 2166136261;
@@ -49,6 +52,8 @@ export class SectorLegalRegistry {
   private readonly registrations = new Map<string, ShipRegistration>();
   private readonly charges: LegalCharge[] = [];
   private readonly sightings: ShipSighting[] = [];
+  private readonly warrants = new Set<string>();
+  private readonly custody = new Set<string>();
   private sequence = 0;
 
   registerShip(shipId: string, ownerId: string): ShipRegistration {
@@ -84,9 +89,14 @@ export class SectorLegalRegistry {
     creditorId: string,
     offense: string,
     amount: number,
-    day: number
+    day: number,
+    incidentId?: string
   ): LegalCharge | null {
     if (!this.registrations.has(shipId) || !Number.isFinite(amount) || amount <= 0) return null;
+    if (incidentId) {
+      const duplicate = this.charges.find((entry) => entry.incidentId === incidentId);
+      if (duplicate) return null;
+    }
     const charge: LegalCharge = {
       id: 'charge-' + ++this.sequence,
       shipId,
@@ -95,6 +105,7 @@ export class SectorLegalRegistry {
       amount: Math.ceil(amount),
       paid: 0,
       day: Math.floor(day),
+      ...(incidentId ? { incidentId } : {}),
     };
     this.charges.push(charge);
     return { ...charge };
@@ -106,8 +117,29 @@ export class SectorLegalRegistry {
       .reduce((sum, c) => sum + (c.amount - c.paid), 0);
   }
 
+  status(shipId: string): LegalCaseStatus {
+    if (this.debt(shipId) <= 0) return 'clear';
+    if (this.custody.has(shipId)) return 'custody';
+    return this.warrants.has(shipId) ? 'wanted' : 'demand';
+  }
+
+  /** Unpaid civil demands are not automatically criminal warrants. */
   isWanted(shipId: string): boolean {
-    return this.debt(shipId) > 0;
+    return this.status(shipId) === 'wanted' || this.status(shipId) === 'custody';
+  }
+
+  /** Refusing a demand or a confirmed distress call authorizes pursuit. */
+  declareWanted(shipId: string): boolean {
+    if (!this.registrations.has(shipId) || this.debt(shipId) <= 0) return false;
+    if (this.warrants.has(shipId)) return false;
+    this.warrants.add(shipId);
+    return true;
+  }
+
+  beginCustody(shipId: string): boolean {
+    if (!this.isWanted(shipId) || this.custody.has(shipId)) return false;
+    this.custody.add(shipId);
+    return true;
   }
 
   /** A forged transponder hides a warrant from ordinary scans. Only a
@@ -126,7 +158,9 @@ export class SectorLegalRegistry {
     readonly paid: number;
     readonly transfers: ReadonlyArray<{ creditorId: string; amount: number }>;
   } {
-    let remaining = Math.max(0, Math.floor(availableCredits));
+    let remaining = Number.isFinite(availableCredits)
+      ? Math.max(0, Math.floor(availableCredits))
+      : 0;
     const transfers: { creditorId: string; amount: number }[] = [];
     for (const charge of this.charges) {
       if (charge.shipId !== shipId || remaining <= 0) continue;
@@ -136,7 +170,14 @@ export class SectorLegalRegistry {
       remaining -= paid;
       transfers.push({ creditorId: charge.creditorId, amount: paid });
     }
-    return { paid: Math.max(0, Math.floor(availableCredits)) - remaining, transfers };
+    const paid =
+      (Number.isFinite(availableCredits) ? Math.max(0, Math.floor(availableCredits)) : 0) -
+      remaining;
+    if (this.debt(shipId) === 0) {
+      this.warrants.delete(shipId);
+      this.custody.delete(shipId);
+    }
+    return { paid, transfers };
   }
 
   /** Docking at a Directorate installation results in compulsory settlement. */
@@ -157,6 +198,7 @@ export class SectorLegalRegistry {
         remainingDebt: 0,
       };
     }
+    this.beginCustody(shipId);
     const first = this.settle(shipId, availableCredits);
     for (const transfer of first.transfers) onTransfer(transfer.creditorId, transfer.amount);
     let days = 0;
@@ -198,6 +240,17 @@ export class SectorLegalRegistry {
       day: Math.floor(day),
       kind,
     };
+    if (
+      this.sightings.some(
+        (entry) =>
+          entry.shipId === shipId &&
+          entry.locationId === locationId &&
+          entry.day === report.day &&
+          entry.kind === kind &&
+          entry.destinationId === destinationId
+      )
+    )
+      return null;
     this.sightings.push(report);
     return report;
   }
@@ -207,18 +260,27 @@ export class SectorLegalRegistry {
   }
 
   exportState() {
-    return { version: 1 as const, sequence: this.sequence, ...this.snapshot() };
+    return { version: 2 as const, sequence: this.sequence, ...this.snapshot() };
   }
 
   restoreState(saved: ReturnType<SectorLegalRegistry['exportState']>): boolean {
-    if (!saved || saved.version !== 1) return false;
+    if (!saved || (saved.version !== 2 && (saved.version as number) !== 1)) return false;
     this.registrations.clear();
     this.charges.length = 0;
     this.sightings.length = 0;
+    this.warrants.clear();
+    this.custody.clear();
     for (const registration of saved.registrations)
       this.registrations.set(registration.shipId, { ...registration });
     for (const charge of saved.charges) this.charges.push({ ...charge });
     for (const sighting of saved.sightings) this.sightings.push({ ...sighting });
+    // V1 serialized unpaid debts as implicit warrants. Preserve that old meaning.
+    if ((saved.version as number) === 1) {
+      for (const charge of this.charges)
+        if (charge.amount > charge.paid) this.warrants.add(charge.shipId);
+    }
+    for (const shipId of saved.warrants ?? []) if (this.debt(shipId) > 0) this.warrants.add(shipId);
+    for (const shipId of saved.custodies ?? []) if (this.isWanted(shipId)) this.custody.add(shipId);
     this.sequence = Math.max(
       saved.sequence,
       ...this.charges.map((charge) => Number(charge.id.replace(/^charge-/, '')) || 0),
@@ -232,6 +294,8 @@ export class SectorLegalRegistry {
       registrations: [...this.registrations.values()].map((r) => ({ ...r })),
       charges: this.charges.map((c) => ({ ...c })),
       sightings: this.sightings.map((s) => ({ ...s })),
+      warrants: [...this.warrants],
+      custodies: [...this.custody],
     };
   }
 }

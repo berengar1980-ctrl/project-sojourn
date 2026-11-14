@@ -20,6 +20,16 @@ export interface AsteroidClaimConflict {
   readonly compensation: number;
   readonly status: 'detected' | 'paid' | 'fight' | 'escaped';
 }
+export interface UnauthorizedExtraction {
+  readonly locationId: string;
+  readonly asteroidId: string;
+  readonly intruderId: string;
+  tons: number;
+  value: number;
+  billedTons: number;
+  billedValue: number;
+}
+
 export type ClaimResult =
   | { readonly ok: true; readonly fee: number }
   | { readonly ok: false; readonly reason: 'unscanned' | 'empty' | 'occupied' | 'unaffordable' };
@@ -27,6 +37,7 @@ export type ClaimResult =
 export class AsteroidClaimRegistry {
   private readonly claims = new Map<string, AsteroidClaim>();
   private readonly disputes = new Map<string, AsteroidClaimConflict>();
+  private readonly extraction = new Map<string, UnauthorizedExtraction>();
   private readonly remainingOre = new Map<string, Record<string, number>>();
   private readonly surveyLevels = new Map<string, LocalAsteroid['scanLevel']>();
   private readonly fieldSeeds = new Map<string, number>();
@@ -146,6 +157,56 @@ export class AsteroidClaimRegistry {
     return { ...conflict };
   }
 
+  /** Actual recovered tonnes, not merely a laser contact, are evidence of theft. */
+  recordUnauthorizedExtraction(
+    locationId: string,
+    asteroidId: string,
+    intruderId: string,
+    tons: number,
+    unitValue: number
+  ): void {
+    const claim = this.claims.get(this.key(locationId, asteroidId));
+    if (!claim || claim.ownerId === intruderId || !Number.isFinite(tons) || tons <= 0) return;
+    const key = this.disputeKey(locationId, asteroidId, intruderId);
+    const previous = this.extraction.get(key);
+    this.extraction.set(key, {
+      locationId,
+      asteroidId,
+      intruderId,
+      tons: (previous?.tons ?? 0) + tons,
+      value: (previous?.value ?? 0) + tons * Math.max(0, unitValue),
+      billedTons: previous?.billedTons ?? 0,
+      billedValue: previous?.billedValue ?? 0,
+    });
+  }
+
+  unbilledExtraction(
+    locationId: string,
+    asteroidId: string,
+    intruderId: string
+  ): { readonly tons: number; readonly value: number; readonly incidentId: string } | null {
+    const record = this.extraction.get(this.disputeKey(locationId, asteroidId, intruderId));
+    if (!record || record.tons <= record.billedTons) return null;
+    return {
+      tons: record.tons - record.billedTons,
+      value: record.value - record.billedValue,
+      incidentId: JSON.stringify([
+        locationId,
+        asteroidId,
+        intruderId,
+        record.billedTons,
+        record.tons,
+      ]),
+    };
+  }
+
+  markExtractionBilled(locationId: string, asteroidId: string, intruderId: string): void {
+    const record = this.extraction.get(this.disputeKey(locationId, asteroidId, intruderId));
+    if (!record) return;
+    record.billedTons = record.tons;
+    record.billedValue = record.value;
+  }
+
   resolveConflict(
     locationId: string,
     asteroidId: string,
@@ -175,6 +236,7 @@ export class AsteroidClaimRegistry {
       ),
       surveyLevels: [...this.surveyLevels.entries()],
       fieldSeeds: [...this.fieldSeeds.entries()],
+      extraction: [...this.extraction.values()].map((entry) => ({ ...entry })),
     };
   }
 
@@ -185,6 +247,7 @@ export class AsteroidClaimRegistry {
     this.remainingOre.clear();
     this.surveyLevels.clear();
     this.fieldSeeds.clear();
+    this.extraction.clear();
     for (const claim of saved.claims) {
       this.claims.set(this.key(claim.locationId, claim.asteroidId), {
         ...claim,
@@ -200,6 +263,11 @@ export class AsteroidClaimRegistry {
     for (const [key, ore] of saved.remainingOre) this.remainingOre.set(key, { ...ore });
     for (const [key, level] of saved.surveyLevels) this.surveyLevels.set(key, level);
     for (const [key, seed] of saved.fieldSeeds) this.fieldSeeds.set(key, seed);
+    for (const evidence of saved.extraction ?? [])
+      this.extraction.set(
+        this.disputeKey(evidence.locationId, evidence.asteroidId, evidence.intruderId),
+        { ...evidence }
+      );
     return true;
   }
 
