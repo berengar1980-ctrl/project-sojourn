@@ -169,3 +169,18 @@ Dies ist **nur** die Markt-Teilautorität. Wirtschaftsressourcen-Pools,
 Import-/Verlustzähler, Handelsereignisse, ausstehende Geschäfte,
 NPC-Handelsplanung und Markt-Intel müssen ebenfalls als konsistenter
 Gesamtzustand gesichert werden. Noch keine Career-Save-Freigabe oder UI.
+
+## Ressourcen-Pool-Checkpoint (Folgeschritt nach PR #311)
+
+`EconomySimulationService.exportState()` erfasst Ressourcenziele, physische
+Reserven, kumulierte Importe und dokumentierte Verluste zusammen mit dem
+letzten Simulationstag und dem Zähler physischer Ressourcenentnahmen.
+Ein versionierter Checkpoint wird vor dem Aufbau einer frischen
+`EconomySimulationService`-Instanz streng gegen Warenkatalog und Seed
+validiert. Wiederholtes `advanceDay` auf dem gespeicherten Tag darf die
+Ressourcen nicht erneut verbuchen.
+
+Dieser Adapter setzt voraus, dass Märkte, Player und NPC-Ladungen zum
+**gleichen** Career-Snapshot gehören. Das wird hier noch nicht übergreifend
+validiert; Handelsereignisse, offene Transaktionen und der gesamte
+Career-Session-Restore bleiben offen. Keine Save/Load-UI.
