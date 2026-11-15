@@ -7,12 +7,17 @@ export interface CareerPlayerCheckpoint {
   readonly credits: number;
   readonly reservedCargoTons: number;
   readonly smugglingNormalPenalty: number;
-  readonly cargo: Readonly<Record<string, {
-    readonly qty: number;
-    readonly totalCost: number;
-    readonly hiddenQty: number;
-    readonly lastOriginId?: string;
-  }>>;
+  readonly cargo: Readonly<
+    Record<
+      string,
+      {
+        readonly qty: number;
+        readonly totalCost: number;
+        readonly hiddenQty: number;
+        readonly lastOriginId?: string;
+      }
+    >
+  >;
 }
 
 const nonnegativeInteger = (value: unknown): value is number =>
@@ -26,10 +31,9 @@ function ownRecord(value: unknown): value is Record<string, unknown> {
 
 /** Capture detached player economy authority, including cargo cost basis and hidden tons. */
 export function captureCareerPlayer(player: PlayerEconomyState): CareerPlayerCheckpoint {
-  const cargo: Record<string, CareerPlayerCheckpoint['cargo'][string]> = Object.create(null) as Record<
-    string,
-    CareerPlayerCheckpoint['cargo'][string]
-  >;
+  const cargo: Record<string, CareerPlayerCheckpoint['cargo'][string]> = Object.create(
+    null
+  ) as Record<string, CareerPlayerCheckpoint['cargo'][string]>;
   for (const [id, lot] of Object.entries(player.cargo)) {
     cargo[id] = {
       qty: lot.qty,
@@ -61,7 +65,8 @@ export function stageCareerPlayer(
     !nonnegativeInteger(checkpoint.smugglingNormalPenalty) ||
     !ownRecord(checkpoint.cargo) ||
     Object.keys(checkpoint).some(
-      (key) => !['version', 'credits', 'reservedCargoTons', 'smugglingNormalPenalty', 'cargo'].includes(key)
+      (key) =>
+        !['version', 'credits', 'reservedCargoTons', 'smugglingNormalPenalty', 'cargo'].includes(key)
     )
   ) {
     throw new Error('Invalid career player checkpoint');
