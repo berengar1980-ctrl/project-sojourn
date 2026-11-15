@@ -1078,3 +1078,7 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Abnahme-Review (2026-11-14): Integrationsprüfung zu Issue #300 (PR #301 / #302)
 
 **Keine Statusänderung** der historischen Feature-Parität. Ein realer Simulationstest (`tests/operations/world-law-integration.test.cjs`) prüft die Integration der persistenten Asteroidenwelt mit der Rechtslogik: unbeobachteter NPC-Erzabbau, Abnahme aus realen Erzbeständen, Sensor-Notruf, konkrete Schuld, physische Patrouillenreise, Rückkehr zum gleichen Feldzustand und NPC-Straflager mit abschließender Zahlung. Ein zusätzlicher manueller Browsertest der vollständigen UI-Kampagne ist hiervon ausdrücklich **nicht** ersetzt.
+
+## Review-Log (2026-11-15): PR #313 – Player-Economy-Career-Checkpoint
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der PR ergänzt einen versionierten, abgekoppelten Checkpoint für den Spieler-Handelszustand (Credits, Warenmengen, Kostenbasis, versteckte Ladung, reservierte Kapazität und Schmuggelabzug). Die Wiederherstellung prüft Eingaben und erzeugt einen neuen PlayerTradeService, ohne den aktiven Zustand zu verändern. Regressionstests decken Roundtrip, Isolation und ungültige Daten ab. Es gibt weiterhin **kein vollständiges Career-Save/Load**, keine Save/Load-Oberfläche und keine Behauptung vollständiger Voidbound-Parität. Die übrigen Career-Abschnitte und ihre Integration bleiben offen.
