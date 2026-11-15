@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+| 2026-11-15 | Issue #300 / PR #311 – Markt-Checkpoint | Keine Statusänderung der 241 Voidbound-Paritäts-IDs. Der neue versionierte Teiladapter erfasst aktuelle Marktbestände, Nachfrage, Produktion und Preise und validiert sie vor der Wiederherstellung in einem frischen Marktdienst. Dies ist noch kein vollständiger Career-Save: Ressourcenkreislauf, Markt-Intel, Handelsereignisse und laufende Aufträge sowie der atomare Session-Restore fehlen weiterhin. Keine Save/Load-UI. |
+
+
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
 
 | 2026-11-14 | Issue #300 – Sicherheitsdrohnen-Snapshot | Keine Statusänderung der 241 Paritäts-IDs. Drohnenposition, Patrouillen-Wegpunkt, Betriebszustand und bereits erkannte Kontakte können versioniert erfasst und in neue Drohneninstanzen übernommen werden. Noch kein vollständiger Karriererestore oder Save/Load-UI. |
