@@ -82,7 +82,14 @@ function validTemplateResources(
   return template.resourceIds.filter((resourceId) => known.has(resourceId));
 }
 
+export interface MarketSituationCheckpoint {
+  readonly version: 1;
+  readonly currentDay: number;
+  readonly situations: readonly MarketSituation[];
+}
+
 export interface MarketSituationService {
+  exportState(): MarketSituationCheckpoint;
   readonly currentDay: number;
   active(): readonly MarketSituation[];
   modifier(locationId: string, resourceId: EconomyResourceId): number;
@@ -94,10 +101,52 @@ export interface MarketSituationService {
 export function createMarketSituationService(
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
-  seed = 1
+  seed = 1,
+  checkpoint?: MarketSituationCheckpoint
 ): MarketSituationService {
   const situations: MarketSituation[] = [];
   let currentDay = -1;
+
+  if (checkpoint) {
+    if (
+      checkpoint.version !== 1 ||
+      !Number.isSafeInteger(checkpoint.currentDay) ||
+      checkpoint.currentDay < -1 ||
+      !Array.isArray(checkpoint.situations) ||
+      checkpoint.situations.length > 5
+    ) throw new Error('Invalid market situation checkpoint');
+    const portIds = new Set(ports.map((port) => port.locationId));
+    const resourceIds = new Set(resources.map((resource) => resource.id));
+    const seen = new Set<string>();
+    for (const situation of checkpoint.situations) {
+      if (
+        !situation || typeof situation.id !== 'string' || !situation.id ||
+        seen.has(situation.id) || typeof situation.name !== 'string' ||
+        typeof situation.description !== 'string' ||
+        (situation.scope !== 'local' && situation.scope !== 'sector') ||
+        (situation.scope === 'local' && (!situation.locationId || !portIds.has(situation.locationId))) ||
+        (situation.scope === 'sector' && situation.locationId !== undefined) ||
+        !Number.isSafeInteger(situation.startDay) || situation.startDay < 0 ||
+        !Number.isSafeInteger(situation.endDay) || situation.endDay <= situation.startDay ||
+        situation.startDay > checkpoint.currentDay ||
+        situation.endDay <= checkpoint.currentDay ||
+        !situation.resourceModifiers || Array.isArray(situation.resourceModifiers) ||
+        typeof situation.resourceModifiers !== 'object'
+      ) throw new Error('Invalid saved market situation');
+      seen.add(situation.id);
+      for (const [resourceId, modifier] of Object.entries(situation.resourceModifiers)) {
+        if (!resourceIds.has(resourceId) || typeof modifier !== 'number' ||
+            !Number.isFinite(modifier) || modifier < -1 || modifier > 1) {
+          throw new Error('Invalid saved market situation resource');
+        }
+      }
+      situations.push({
+        ...situation,
+        resourceModifiers: { ...situation.resourceModifiers },
+      });
+    }
+    currentDay = checkpoint.currentDay;
+  }
 
   const expire = (): void => {
     for (let index = situations.length - 1; index >= 0; index -= 1) {
@@ -146,6 +195,16 @@ export function createMarketSituationService(
   };
 
   return {
+    exportState() {
+      return {
+        version: 1,
+        currentDay,
+        situations: situations.map((situation) => ({
+          ...situation,
+          resourceModifiers: { ...situation.resourceModifiers },
+        })),
+      };
+    },
     get currentDay() {
       return currentDay;
     },
