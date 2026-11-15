@@ -7,6 +7,11 @@ import type {
   PlayerEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import {
+  captureCareerResourcePools,
+  stageCareerResourcePools,
+  type CareerResourcePoolCheckpoint,
+} from './career-resource-pool-checkpoint';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -204,6 +209,7 @@ function driftDemand(
 }
 
 export interface EconomySimulationService {
+  exportState(): CareerResourcePoolCheckpoint;
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
@@ -217,12 +223,14 @@ export function createEconomySimulationService(
   player: PlayerEconomyState,
   resources: readonly EconomyResourceDefinition[],
   seed = 1,
-  npcs: readonly EconomyCargoHold[] = []
+  npcs: readonly EconomyCargoHold[] = [],
+  checkpoint?: CareerResourcePoolCheckpoint
 ): EconomySimulationService {
   const markets = marketsService.snapshot();
-  const pools = initialPools(resources, markets, player, npcs);
-  let lastDay = -1;
-  let physicalAllocationCounter = 0;
+  const staged = checkpoint ? stageCareerResourcePools(checkpoint, resources, seed) : null;
+  const pools = staged?.pools ?? initialPools(resources, markets, player, npcs);
+  let lastDay = staged?.lastDay ?? -1;
+  let physicalAllocationCounter = staged?.physicalAllocationCounter ?? 0;
 
   const allocatePhysicalResource = (resourceId: EconomyResourceId, amount: number): number => {
     const pool = pools[resourceId];
@@ -289,6 +297,9 @@ export function createEconomySimulationService(
 
   return {
     pools,
+    exportState() {
+      return captureCareerResourcePools(pools, seed, lastDay, physicalAllocationCounter);
+    },
     getResourceTotal(resourceId) {
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
