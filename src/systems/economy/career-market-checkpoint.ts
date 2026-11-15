@@ -1,6 +1,10 @@
 import type { EconomyResourceDefinition, EconomyResourceId } from '../../core/economy-types';
 import type { PortDefinition } from '../../core/port-types';
-import { createEconomyMarketService, type EconomyMarketService, type EconomyMarketServiceOptions } from './market-service';
+import {
+  createEconomyMarketService,
+  type EconomyMarketService,
+  type EconomyMarketServiceOptions,
+} from './market-service';
 
 export interface CareerMarketEntryCheckpoint {
   readonly resourceId: EconomyResourceId;
