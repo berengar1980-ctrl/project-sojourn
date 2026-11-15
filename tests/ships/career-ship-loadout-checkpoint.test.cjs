@@ -24,7 +24,11 @@ assert.throws(() =>
   stageCareerShipLoadouts({ [ship.id]: { nonsense: ['fake'] } }, [ship.id], getShipDefinition)
 );
 assert.throws(() =>
-  stageCareerShipLoadouts({ [ship.id]: { weapon: ['invalid-component'] } }, [ship.id], getShipDefinition)
+  stageCareerShipLoadouts(
+    { [ship.id]: { weapon: ['invalid-component'] } },
+    [ship.id],
+    getShipDefinition
+  )
 );
 assert.deepEqual(live.snapshot(), checkpoint, 'invalid restore must not mutate live loadouts');
 console.log('PASS career ship loadout checkpoint: restore and invalid slot rejection');
