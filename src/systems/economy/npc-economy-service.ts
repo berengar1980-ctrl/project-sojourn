@@ -18,6 +18,7 @@ import type {
   NpcEconomyServiceOptions,
   PhysicalResourceAllocator,
   NpcEconomyService,
+  NpcEconomyCheckpoint,
 } from './npc-economy-types';
 
 import {
@@ -309,12 +310,29 @@ export function createNpcEconomyService(
   allocator: PhysicalResourceAllocator,
   resources: readonly EconomyResourceDefinition[],
   npcs: readonly NpcEconomyState[],
-  options: NpcEconomyServiceOptions = {}
+  options: NpcEconomyServiceOptions = {},
+  checkpoint?: NpcEconomyCheckpoint
 ): NpcEconomyService {
-  let lastDay = -1;
+  if (checkpoint) {
+    if (
+      checkpoint.version !== 1 ||
+      !Number.isSafeInteger(checkpoint.lastDay) ||
+      checkpoint.lastDay < -1 ||
+      !Array.isArray(checkpoint.npcIds) ||
+      checkpoint.npcIds.length !== npcs.length
+    ) throw new Error('Invalid NPC economy checkpoint');
+    const known = new Set(npcs.map((npc) => npc.id));
+    if (known.size !== npcs.length ||
+        new Set(checkpoint.npcIds).size !== checkpoint.npcIds.length ||
+        checkpoint.npcIds.some((id) => !known.has(id))) {
+      throw new Error('NPC economy checkpoint identity mismatch');
+    }
+  }
+  let lastDay = checkpoint?.lastDay ?? -1;
   const positions = options.positions ?? {};
 
   for (const npc of npcs) {
+    if (checkpoint) continue;
     initializeNpcMarketIntel(npc, markets, positions, 0);
     if ('smuggler' in npc && npc.smuggler) {
       for (const locationId of [
@@ -364,6 +382,13 @@ export function createNpcEconomyService(
   };
 
   return {
+    exportState() {
+      return {
+        version: 1,
+        lastDay,
+        npcIds: npcs.map((npc) => npc.id),
+      };
+    },
     npcs,
     mineLocal(npc, resourceId, requestedQuantity) {
       beginNpcAutonomyPhase(npc, 'working', 0);
