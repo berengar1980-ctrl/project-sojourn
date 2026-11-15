@@ -62,20 +62,39 @@ original.allocatePhysicalResource('ore', 9);
 restored.allocatePhysicalResource('ore', 9);
 assert.deepEqual(restored.exportState(), original.exportState());
 assert.deepEqual(captureCareerMarkets(freshMarkets), captureCareerMarkets(originalMarkets));
-restored.pools.ore.reserve = 0;
+const savedReserve = saved.pools.ore.reserve;
+restored.pools.ore.reserve += 23;
 assert.notEqual(restored.pools.ore.reserve, original.pools.ore.reserve);
-assert.equal(saved.pools.ore.reserve, original.exportState().pools.ore.reserve - 0 + saved.pools.ore.reserve - saved.pools.ore.reserve + 0 || saved.pools.ore.reserve);
+assert.equal(saved.pools.ore.reserve, savedReserve);
 
 for (const change of [
-  (state) => { state.version = 3; },
-  (state) => { state.seed = 99; },
-  (state) => { state.lastDay = -2; },
-  (state) => { state.physicalAllocationCounter = -1; },
-  (state) => { state.pools.ore.reserve = -1; },
-  (state) => { state.pools.ore.externalImports = Infinity; },
-  (state) => { state.pools.ore.target = 1.5; },
-  (state) => { state.pools.extra = { ...state.pools.ore }; },
-  (state) => { delete state.pools.ore; },
+  (state) => {
+    state.version = 3;
+  },
+  (state) => {
+    state.seed = 99;
+  },
+  (state) => {
+    state.lastDay = -2;
+  },
+  (state) => {
+    state.physicalAllocationCounter = -1;
+  },
+  (state) => {
+    state.pools.ore.reserve = -1;
+  },
+  (state) => {
+    state.pools.ore.externalImports = Infinity;
+  },
+  (state) => {
+    state.pools.ore.target = 1.5;
+  },
+  (state) => {
+    state.pools.extra = { ...state.pools.ore };
+  },
+  (state) => {
+    delete state.pools.ore;
+  },
 ]) {
   const invalid = copy(saved);
   change(invalid);
