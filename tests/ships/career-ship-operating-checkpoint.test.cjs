@@ -12,7 +12,13 @@ const { createShipOperatingService, stageCareerShipOperating } = load(
 const ship = getAllShipDefinitions()[0];
 assert(ship);
 let debits = 0;
-const wallet = { player: { credits: 100000 }, takeCredits: (amount) => { debits += amount; return true; } };
+const wallet = {
+  player: { credits: 100000 },
+  takeCredits: (amount) => {
+    debits += amount;
+    return true;
+  },
+};
 const live = createShipOperatingService(wallet);
 const initial = live.snapshot(ship, 100);
 live.burn(ship, 100);
