@@ -23,9 +23,7 @@ export function captureCareerResourcePools(
     seed,
     lastDay,
     physicalAllocationCounter,
-    pools: Object.fromEntries(
-      Object.entries(pools).map(([id, pool]) => [id, { ...pool }])
-    ),
+    pools: Object.fromEntries(Object.entries(pools).map(([id, pool]) => [id, { ...pool }])),
   };
 }
 
@@ -34,7 +32,11 @@ export function stageCareerResourcePools(
   checkpoint: CareerResourcePoolCheckpoint,
   resources: readonly EconomyResourceDefinition[],
   seed: number
-): { readonly pools: Record<string, EconomyResourcePool>; readonly lastDay: number; readonly physicalAllocationCounter: number } {
+): {
+  readonly pools: Record<string, EconomyResourcePool>;
+  readonly lastDay: number;
+  readonly physicalAllocationCounter: number;
+} {
   if (
     !checkpoint ||
     checkpoint.version !== 1 ||
