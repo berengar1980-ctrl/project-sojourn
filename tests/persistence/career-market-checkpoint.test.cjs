@@ -90,6 +90,10 @@ for (const modify of [
   const invalid = copy(checkpoint);
   modify(invalid);
   assert.throws(() => stageCareerMarkets(invalid, ports, resources));
-  assert.equal(live.getEntry('a', 'ore').stock, 41, 'Invalid restore must not mutate live markets');
+  assert.equal(
+    live.getEntry('a', 'ore').stock,
+    41,
+    'Invalid restore must not mutate live markets'
+  );
 }
 console.log('PASS career market checkpoint: detached stock, price, and validation');
