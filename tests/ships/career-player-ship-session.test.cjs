@@ -15,13 +15,13 @@ const { createShipyardResearchService } = load('src/systems/ships/shipyard-resea
 const { createShipOperatingService } = load('src/systems/ships/ship-operating-costs.ts');
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { ECONOMY_RESOURCES } = load('src/data/economy/economy-resources.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { captureCareerPlayerShipSession, stageCareerPlayerShipSession } = load(
   'src/systems/ships/career-player-ship-session.ts'
 );
 const ship = getAllShipDefinitions()[0];
 assert(ship);
-const markets = createEconomyMarketService();
+const markets = createEconomyMarketService([], economyResources);
 const trade = createPlayerTradeService(markets);
 const owned = createShipOwnershipService(ship.id, trade);
 const loads = createShipLoadoutService();
@@ -39,7 +39,7 @@ const saved = captureCareerPlayerShipSession(
   research,
   operating
 );
-const staged = stageCareerPlayerShipSession(saved, ship.id, markets, ECONOMY_RESOURCES);
+const staged = stageCareerPlayerShipSession(saved, ship.id, markets, economyResources);
 assert.equal(staged.activeShipId, ship.id);
 assert.equal(staged.trade.player.credits, trade.player.credits);
 assert.equal(staged.operating.snapshot(ship, 100).hullHp, 70);
@@ -49,7 +49,7 @@ assert.throws(() =>
     { ...saved, operating: [{ shipId: 'unknown', fuel: 1, damage: 0 }] },
     ship.id,
     markets,
-    ECONOMY_RESOURCES
+    economyResources
   )
 );
 assert.equal(operating.snapshot(ship, 100).hullHp, 70);
