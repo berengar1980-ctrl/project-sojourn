@@ -1,4 +1,5 @@
 import type { ShipComponentType, ShipDefinition, ShipWeaponProfile } from '../../core/ship-types';
+import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import type { InstalledShipComponents } from './ship-component-service';
 import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
@@ -146,7 +147,9 @@ export function stageCareerShipLoadouts(
       throw new Error('Invalid ship loadout hull');
     }
     for (const [type, ids] of Object.entries(installed)) {
-      if (!Array.isArray(ids)) throw new Error('Invalid component slots');
+      if (!Object.hasOwn(SHIP_COMPONENT_CATALOG, type) || !Array.isArray(ids)) {
+        throw new Error('Invalid component slots');
+      }
       for (const [index, id] of ids.entries()) {
         if (typeof id !== 'string' || !service.setSlot(ship, type as ShipComponentType, index, id || null)) {
           throw new Error('Invalid installed ship component');
