@@ -88,14 +88,6 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
-### 2026-11-15 – Issue #300 / PR #311: Markt-Checkpoint
-
-Keine Statusänderung der 241 Voidbound-Paritäts-IDs. Der neue versionierte Teiladapter
-sichert Marktbestände, Nachfrage, Produktion und Preise. Die Wiederherstellung erfolgt
-nach Validierung in einem frischen Marktdienst. Ressourcenkreislauf, Markt-Intel,
-Handelsereignisse, laufende Aufträge und der atomare Session-Restore fehlen weiterhin.
-Daher noch keine vollständige Career-Speicherung und keine Save/Load-UI.
-
 
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
 
@@ -1087,3 +1079,7 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Abnahme-Review (2026-11-14): Integrationsprüfung zu Issue #300 (PR #301 / #302)
 
 **Keine Statusänderung** der historischen Feature-Parität. Ein realer Simulationstest (`tests/operations/world-law-integration.test.cjs`) prüft die Integration der persistenten Asteroidenwelt mit der Rechtslogik: unbeobachteter NPC-Erzabbau, Abnahme aus realen Erzbeständen, Sensor-Notruf, konkrete Schuld, physische Patrouillenreise, Rückkehr zum gleichen Feldzustand und NPC-Straflager mit abschließender Zahlung. Ein zusätzlicher manueller Browsertest der vollständigen UI-Kampagne ist hiervon ausdrücklich **nicht** ersetzt.
+
+## Review-Log (2026-11-15): Issue #300 / PR #311 – Markt-Checkpoint
+
+Keine Statusänderung der 241 Voidbound-Paritäts-IDs. Der neue versionierte Teiladapter sichert Marktbestände, Nachfrage, Produktion und Preise. Die Wiederherstellung erfolgt nach Validierung in einem frischen Marktdienst. Ressourcenkreislauf, Markt-Intel, Handelsereignisse, laufende Aufträge und der atomare Session-Restore fehlen weiterhin. Daher noch keine vollständige Career-Speicherung und keine Save/Load-UI.
