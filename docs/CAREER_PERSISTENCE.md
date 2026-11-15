@@ -184,3 +184,31 @@ Dieser Adapter setzt voraus, dass Märkte, Player und NPC-Ladungen zum
 **gleichen** Career-Snapshot gehören. Das wird hier noch nicht übergreifend
 validiert; Handelsereignisse, offene Transaktionen und der gesamte
 Career-Session-Restore bleiben offen. Keine Save/Load-UI.
+
+## Architekturregel ab PR #318: Pflichtprüfung bei Feature-Änderungen
+
+Jeder Branch mit Änderungen unter `src/` oder `resources/` muss in diesem Dokument
+seine Auswirkungen auf den Career-Save nachprüfbar festhalten. Das gilt auch,
+wenn keine zusätzlichen Save-Felder nötig sind: dann wird ausdrücklich
+`keine Speicheränderung` mit Begründung protokolliert. Neue Domainmodule
+unter `src/systems/` benötigen zusätzlich eine Zuordnung in
+`docs/CAREER_PERSISTENCE_OWNERS.json`:
+
+- `persisted`: autoritativer Zustand; Checkpoint-Adapter und Roundtrip-Test angeben.
+- `derived`: ausschließlich aus gespeicherten Autoritäten rekonstruierbar; Begründung angeben.
+- `transient`: bewusst nicht gespeicherter Zustand; Verlust beim Neustart begründen.
+
+`scripts/check-career-persistence.cjs` läuft im Quick-/Full-Check und im
+normalen Testlauf. Es verweigert neue unklassifizierte Domainmodule und
+Branches ohne Save-Impact-Review. Bestehende Module sind zunächst nicht
+vollständig im Registry inventarisiert; jede Änderung erfordert aber bereits
+den Review. Die Prüfung beweist nicht automatisch korrekte Integration in
+den Career-Snapshot: Für neue persistente Zustände bleiben Integrations- und
+Restore-Tests zwingend.
+
+### Persistence-Review (PR #318)
+
+Architektur-/Qualitätsänderung, keine neue Gameplay-Autorität. Der bestehende
+Career-Snapshot wird nicht verändert; **keine Speicheränderung**. Die neue
+Prüfung erzwingt bei Folgefeatures den Save-Impact-Review und die explizite
+Klassifikation neuer Domainmodule.
