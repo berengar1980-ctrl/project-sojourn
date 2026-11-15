@@ -19,9 +19,13 @@ export interface ShipyardResearchService {
   variants(type: ShipComponentType, maxTier: number): readonly ShipComponentDefinition[];
 }
 
-export function createShipyardResearchService(): ShipyardResearchService {
+export function createShipyardResearchService(
+  restored: Readonly<Record<string, ShipyardResearchTier>> = {}
+): ShipyardResearchService {
   // Keyed by actual component model (including tier and weapon family), not by global Mk tier.
-  const discovered = new Map<string, { efficiency: number; performance: number }>();
+  const discovered = new Map<string, { efficiency: number; performance: number }>(
+    Object.entries(restored).map(([key, tier]) => [key, { ...tier }])
+  );
 
   return {
     snapshot() {
@@ -56,4 +60,32 @@ export function createShipyardResearchService(): ShipyardResearchService {
       });
     },
   };
+}
+
+/** Restore research tiers without replaying salvage rewards or discoveries. */
+export function stageCareerShipyardResearch(
+  snapshot: Readonly<Record<string, ShipyardResearchTier>>
+): ShipyardResearchService {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    throw new Error('Invalid shipyard research checkpoint');
+  }
+  for (const [key, value] of Object.entries(snapshot)) {
+    const separator = key.indexOf(':');
+    const type = key.slice(0, separator) as ShipComponentType;
+    const baseId = key.slice(separator + 1);
+    if (
+      separator < 1 ||
+      !getShipComponent(type, baseId) ||
+      !value ||
+      !Number.isSafeInteger(value.efficiency) ||
+      !Number.isSafeInteger(value.performance) ||
+      value.efficiency < 0 ||
+      value.efficiency > 100 ||
+      value.performance < 0 ||
+      value.performance > 100
+    ) {
+      throw new Error('Invalid shipyard research tier');
+    }
+  }
+  return createShipyardResearchService(snapshot);
 }

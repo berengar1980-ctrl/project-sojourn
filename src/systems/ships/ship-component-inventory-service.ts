@@ -35,10 +35,11 @@ export interface ShipComponentInventoryService {
 }
 
 export function createShipComponentInventoryService(
-  player: PlayerEconomyState
+  player: PlayerEconomyState,
+  restored?: ShipComponentInventorySnapshot
 ): ShipComponentInventoryService {
-  const components: LooseShipComponent[] = [];
-  let serial = 0;
+  const components: LooseShipComponent[] = restored?.components.map((item) => ({ ...item })) ?? [];
+  let serial = restored?.serial ?? 0;
 
   return {
     snapshot() {
@@ -86,4 +87,48 @@ export function createShipComponentInventoryService(
       return recovered;
     },
   };
+}
+
+/** Stage loose cargo without calling store(), which would reserve its tonnage again. */
+export function stageCareerShipComponentInventory(
+  snapshot: ShipComponentInventorySnapshot,
+  player: PlayerEconomyState
+): ShipComponentInventoryService {
+  if (
+    !snapshot ||
+    !Number.isSafeInteger(snapshot.serial) ||
+    snapshot.serial < 0 ||
+    !Array.isArray(snapshot.components)
+  ) {
+    throw new Error('Invalid loose component checkpoint');
+  }
+  const uids = new Set<string>();
+  let cargoTons = 0;
+  for (const item of snapshot.components) {
+    if (!item || typeof item.uid !== 'string' || uids.has(item.uid)) {
+      throw new Error('Invalid loose component UID');
+    }
+    const definition = getShipComponent(item.type, item.componentId);
+    if (
+      !definition ||
+      item.name !== definition.name ||
+      item.tier !== definition.tier ||
+      item.cargoTons !== looseComponentCargoTons(definition.tier) ||
+      typeof item.sourceWreckId !== 'string' ||
+      (item.source !== undefined &&
+        !['salvage', 'removed', 'purchased', 'campaign'].includes(item.source))
+    ) {
+      throw new Error('Invalid loose component');
+    }
+    const match = /^loose-(\d+)-/.exec(item.uid);
+    if (!match || Number(match[1]) > snapshot.serial) {
+      throw new Error('Invalid loose component serial');
+    }
+    uids.add(item.uid);
+    cargoTons += item.cargoTons;
+  }
+  if (cargoTons > finiteTons(player.reservedCargoTons ?? 0)) {
+    throw new Error('Loose component reservation exceeds player cargo reservation');
+  }
+  return createShipComponentInventoryService(player, snapshot);
 }
