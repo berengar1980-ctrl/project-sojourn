@@ -38,8 +38,7 @@ export function createShipComponentInventoryService(
   player: PlayerEconomyState,
   restored?: ShipComponentInventorySnapshot
 ): ShipComponentInventoryService {
-  const components: LooseShipComponent[] =
-    restored?.components.map((item) => ({ ...item })) ?? [];
+  const components: LooseShipComponent[] = restored?.components.map((item) => ({ ...item })) ?? [];
   let serial = restored?.serial ?? 0;
 
   return {
