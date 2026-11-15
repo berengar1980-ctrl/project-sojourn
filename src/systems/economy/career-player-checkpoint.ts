@@ -54,12 +54,7 @@ export function captureCareerPlayer(player: PlayerEconomyState): CareerPlayerChe
   };
 }
 
-/** Validate all cargo before constructing a new player authority; never modify the active player. */
-export function stageCareerPlayer(
-  checkpoint: CareerPlayerCheckpoint,
-  markets: EconomyMarketService,
-  resources: readonly EconomyResourceDefinition[]
-): PlayerTradeService {
+function assertPlayerCheckpoint(checkpoint: CareerPlayerCheckpoint): void {
   if (
     !ownRecord(checkpoint) ||
     checkpoint.version !== 1 ||
@@ -71,28 +66,46 @@ export function stageCareerPlayer(
   ) {
     throw new Error('Invalid career player checkpoint');
   }
+}
+
+function assertPlayerCargo(
+  resourceId: string,
+  value: CareerPlayerCargoCheckpoint,
+  resourceIds: ReadonlySet<string>,
+  markets: EconomyMarketService
+): void {
+  if (
+    !resourceIds.has(resourceId) ||
+    !ownRecord(value) ||
+    !nonnegativeInteger(value.qty) ||
+    value.qty === 0 ||
+    !nonnegativeInteger(value.hiddenQty) ||
+    value.hiddenQty > value.qty ||
+    typeof value.totalCost !== 'number' ||
+    !Number.isFinite(value.totalCost) ||
+    value.totalCost < 0 ||
+    (value.lastOriginId !== undefined &&
+      (typeof value.lastOriginId !== 'string' || !markets.getMarket(value.lastOriginId))) ||
+    Object.keys(value).some(
+      (key) => !['qty', 'hiddenQty', 'totalCost', 'lastOriginId'].includes(key)
+    )
+  ) {
+    throw new Error('Invalid career player cargo');
+  }
+}
+
+/** Validate all cargo before constructing a new player authority; never modify the active player. */
+export function stageCareerPlayer(
+  checkpoint: CareerPlayerCheckpoint,
+  markets: EconomyMarketService,
+  resources: readonly EconomyResourceDefinition[]
+): PlayerTradeService {
+  assertPlayerCheckpoint(checkpoint);
   const resourceIds = new Set(resources.map((resource) => resource.id));
   if (resourceIds.size !== resources.length) throw new Error('Duplicate resource definitions');
   const cargo: PlayerEconomyState['cargo'] = Object.create(null) as PlayerEconomyState['cargo'];
   for (const [resourceId, value] of Object.entries(checkpoint.cargo)) {
-    if (
-      !resourceIds.has(resourceId) ||
-      !ownRecord(value) ||
-      !nonnegativeInteger(value.qty) ||
-      value.qty === 0 ||
-      !nonnegativeInteger(value.hiddenQty) ||
-      value.hiddenQty > value.qty ||
-      typeof value.totalCost !== 'number' ||
-      !Number.isFinite(value.totalCost) ||
-      value.totalCost < 0 ||
-      (value.lastOriginId !== undefined &&
-        (typeof value.lastOriginId !== 'string' || !markets.getMarket(value.lastOriginId))) ||
-      Object.keys(value).some(
-        (key) => !['qty', 'hiddenQty', 'totalCost', 'lastOriginId'].includes(key)
-      )
-    ) {
-      throw new Error('Invalid career player cargo');
-    }
+    assertPlayerCargo(resourceId, value, resourceIds, markets);
     cargo[resourceId] = {
       qty: value.qty,
       totalCost: value.totalCost,
