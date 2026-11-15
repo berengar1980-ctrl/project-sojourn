@@ -27,9 +27,10 @@ export function shipPurchasePrice(ship: ShipDefinition): number {
 /** One in-memory authority for purchased hulls. The developer ship switcher is separate. */
 export function createShipOwnershipService(
   starterShipId: string,
-  wallet: Pick<PlayerTradeService, 'takeCredits'>
+  wallet: Pick<PlayerTradeService, 'takeCredits'>,
+  restoredOwnedShipIds?: readonly string[]
 ): ShipOwnershipService {
-  const owned = new Set<string>([starterShipId]);
+  const owned = new Set<string>(restoredOwnedShipIds ?? [starterShipId]);
   return {
     owns(shipId) {
       return owned.has(shipId);
@@ -75,4 +76,29 @@ export function shipActivationBlock(
   }
   if (crew.list().length > crewCapacity(next)) return 'crew-overflow';
   return null;
+}
+
+/** Stage ownership without charging again for previously purchased hulls. */
+export function stageCareerShipOwnership(
+  checkpoint: ShipOwnershipSnapshot,
+  starterShipId: string,
+  wallet: Pick<PlayerTradeService, 'takeCredits'>
+): ShipOwnershipService {
+  if (
+    !checkpoint ||
+    !Array.isArray(checkpoint.ownedShipIds) ||
+    !getShipDefinition(starterShipId) ||
+    checkpoint.ownedShipIds.length === 0
+  ) {
+    throw new Error('Invalid career ship ownership checkpoint');
+  }
+  const ids = checkpoint.ownedShipIds;
+  if (
+    !ids.every((id) => typeof id === 'string' && !!getShipDefinition(id)) ||
+    new Set(ids).size !== ids.length ||
+    !ids.includes(starterShipId)
+  ) {
+    throw new Error('Invalid career owned hulls');
+  }
+  return createShipOwnershipService(starterShipId, wallet, [...ids]);
 }
