@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log
 
+<!-- PR #311 (2026-11-15): Keine Statusänderung der 241 Voidbound-Feature-IDs. Der Markt-Checkpoint deckt nur Bestände, Nachfrage, Produktion und Preise ab; vollständige Career-Persistenz bleibt offen. -->
+
 
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
 
@@ -1078,4 +1080,4 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 
 ## Abnahme-Review (2026-11-14): Integrationsprüfung zu Issue #300 (PR #301 / #302)
 
-**Keine Statusänderung** der historischen Feature-Parität. **Review 2026-11-15 / PR #311:** Auch der neue Markt-Checkpoint ändert keine der 241 Voidbound-Paritätsbewertungen. Er sichert Bestände, Nachfrage, Produktion und Preise in einem separat validierten Teiladapter; Wirtschafts-Pools, Handelsereignisse, offene Aufträge und der atomare Gesamt-Restore fehlen weiterhin. Ein realer Simulationstest (`tests/operations/world-law-integration.test.cjs`) prüft die Integration der persistenten Asteroidenwelt mit der Rechtslogik: unbeobachteter NPC-Erzabbau, Abnahme aus realen Erzbeständen, Sensor-Notruf, konkrete Schuld, physische Patrouillenreise, Rückkehr zum gleichen Feldzustand und NPC-Straflager mit abschließender Zahlung. Ein zusätzlicher manueller Browsertest der vollständigen UI-Kampagne ist hiervon ausdrücklich **nicht** ersetzt.
+**Keine Statusänderung** der historischen Feature-Parität. Ein realer Simulationstest (`tests/operations/world-law-integration.test.cjs`) prüft die Integration der persistenten Asteroidenwelt mit der Rechtslogik: unbeobachteter NPC-Erzabbau, Abnahme aus realen Erzbeständen, Sensor-Notruf, konkrete Schuld, physische Patrouillenreise, Rückkehr zum gleichen Feldzustand und NPC-Straflager mit abschließender Zahlung. Ein zusätzlicher manueller Browsertest der vollständigen UI-Kampagne ist hiervon ausdrücklich **nicht** ersetzt.
