@@ -11,7 +11,14 @@ const { captureCareerMarkets, stageCareerMarkets } = load(
 );
 
 const resources = [
-  { id: 'ore', name: 'Ore', categoryId: 'raw', category: 'Raw', basePrice: 20, legality: 'legal' },
+  {
+    id: 'ore',
+    name: 'Ore',
+    categoryId: 'raw',
+    category: 'Raw',
+    basePrice: 20,
+    legality: 'legal',
+  },
   {
     id: 'fuel',
     name: 'Fuel',
@@ -90,10 +97,6 @@ for (const modify of [
   const invalid = copy(checkpoint);
   modify(invalid);
   assert.throws(() => stageCareerMarkets(invalid, ports, resources));
-  assert.equal(
-    live.getEntry('a', 'ore').stock,
-    41,
-    'Invalid restore must not mutate live markets'
-  );
+  assert.equal(live.getEntry('a', 'ore').stock, 41);
 }
 console.log('PASS career market checkpoint: detached stock, price, and validation');
