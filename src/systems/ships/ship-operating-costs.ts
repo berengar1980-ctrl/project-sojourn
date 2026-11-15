@@ -224,5 +224,6 @@ export function stageCareerShipOperating(
     }
     seen.add(record.shipId);
   }
-  return createShipOperatingService(wallet, records.map((record) => ({ ...record })));
+  const restored = records.map((record) => ({ ...record }));
+  return createShipOperatingService(wallet, restored);
 }
