@@ -212,3 +212,13 @@ Architektur-/Qualitätsänderung, keine neue Gameplay-Autorität. Der bestehende
 Career-Snapshot wird nicht verändert; **keine Speicheränderung**. Die neue
 Prüfung erzwingt bei Folgefeatures den Save-Impact-Review und die explizite
 Klassifikation neuer Domainmodule.
+
+### Handelsereignisse und Marktmodifikatoren (Fortsetzung)
+
+`MarketSituationService.exportState()` erfasst den zuletzt verarbeiteten Tag
+und die noch aktiven Markt-Ereignisse mit Geltungsbereich und Warenmodifikatoren.
+Der optionale Checkpoint beim Erzeugen eines neuen Services validiert
+Häfen, Waren-IDs, eindeutige Ereignisse und Tagesgrenzen, ohne alte Tage
+neu abzuspielen. Tests prüfen den Restore, deterministische Folgetage,
+fehlende Aliase und ungültige Daten. Noch fehlt die wirtschaftsweite
+atomare Session-Komposition, insbesondere Handelsaufträge/Transaktionen.
