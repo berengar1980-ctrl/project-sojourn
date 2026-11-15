@@ -22,11 +22,12 @@
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
     "test:ships": "node tests/assets/ship-asset-standard.test.cjs",
-    "check:quick": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:quick",
-    "check:full": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run test:full && npm run build",
+    "check:quick": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run persistence:check && npm run test:quick",
+    "check:full": "npm run format:check && npm run lint && npm run typecheck && npm run deps:check && npm run persistence:check && npm run test:full && npm run build",
     "hardpoints:edit": "vite --open /tools/hardpoint-editor.html",
     "parity:check": "node scripts/check-feature-parity.cjs",
-    "audio:import-originals": "node scripts/import-original-audio.cjs"
+    "audio:import-originals": "node scripts/import-original-audio.cjs",
+    "persistence:check": "node scripts/check-career-persistence.cjs"
   },
   "engines": {
     "node": ">=20"
