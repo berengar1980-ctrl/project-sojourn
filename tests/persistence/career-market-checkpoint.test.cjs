@@ -12,11 +12,24 @@ const { captureCareerMarkets, stageCareerMarkets } = load(
 
 const resources = [
   { id: 'ore', name: 'Ore', categoryId: 'raw', category: 'Raw', basePrice: 20, legality: 'legal' },
-  { id: 'fuel', name: 'Fuel', categoryId: 'energy-chemistry', category: 'Energy', basePrice: 30, legality: 'legal' },
+  {
+    id: 'fuel',
+    name: 'Fuel',
+    categoryId: 'energy-chemistry',
+    category: 'Energy',
+    basePrice: 30,
+    legality: 'legal',
+  },
 ];
 const port = (locationId) => ({
-  locationId, subtitle: '', economy: '', population: '', security: 'low',
-  shipyard: false, producedCommodityIds: ['ore'], neededCommodityIds: ['fuel'],
+  locationId,
+  subtitle: '',
+  economy: '',
+  population: '',
+  security: 'low',
+  shipyard: false,
+  producedCommodityIds: ['ore'],
+  neededCommodityIds: ['fuel'],
   commodities: [
     { id: 'ore', stock: 100, demand: 0.2, production: 0.8 },
     { id: 'fuel', stock: 200, demand: 0.9, production: 0.1 },
@@ -40,17 +53,39 @@ assert.equal(live.getEntry('a', 'ore').stock, 41);
 assert.equal(checkpoint.markets[0].entries[0].stock, 41);
 
 for (const modify of [
-  (s) => { s.version = 2; },
-  (s) => { s.markets.pop(); },
-  (s) => { s.markets.push(s.markets[0]); },
-  (s) => { s.markets[0].locationId = 'unknown'; },
-  (s) => { s.markets[0].entries.pop(); },
-  (s) => { s.markets[0].entries[0].resourceId = 'missing'; },
-  (s) => { s.markets[0].entries[1] = s.markets[0].entries[0]; },
-  (s) => { s.markets[0].entries[0].stock = -1; },
-  (s) => { s.markets[0].entries[0].stock = Infinity; },
-  (s) => { s.markets[0].entries[0].demand = 1.1; },
-  (s) => { s.markets[0].entries[0].price = 0; },
+  (s) => {
+    s.version = 2;
+  },
+  (s) => {
+    s.markets.pop();
+  },
+  (s) => {
+    s.markets.push(s.markets[0]);
+  },
+  (s) => {
+    s.markets[0].locationId = 'unknown';
+  },
+  (s) => {
+    s.markets[0].entries.pop();
+  },
+  (s) => {
+    s.markets[0].entries[0].resourceId = 'missing';
+  },
+  (s) => {
+    s.markets[0].entries[1] = s.markets[0].entries[0];
+  },
+  (s) => {
+    s.markets[0].entries[0].stock = -1;
+  },
+  (s) => {
+    s.markets[0].entries[0].stock = Infinity;
+  },
+  (s) => {
+    s.markets[0].entries[0].demand = 1.1;
+  },
+  (s) => {
+    s.markets[0].entries[0].price = 0;
+  },
 ]) {
   const invalid = copy(checkpoint);
   modify(invalid);
