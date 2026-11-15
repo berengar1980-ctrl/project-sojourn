@@ -1,4 +1,5 @@
 import type { ShipComponentType, ShipDefinition, ShipWeaponProfile } from '../../core/ship-types';
+import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import type { InstalledShipComponents } from './ship-component-service';
 import { getShipComponent } from './ship-component-service';
 import { defaultInstalledShipComponents } from './ship-mining-capability';
@@ -127,4 +128,37 @@ export function createShipLoadoutService(): ShipLoadoutService {
       return true;
     },
   };
+}
+
+/** Stage installed components against the canonical hull and hardpoint rules. */
+export function stageCareerShipLoadouts(
+  checkpoint: ShipLoadoutSnapshot,
+  ownedShipIds: readonly string[],
+  resolveShip: (id: string) => ShipDefinition | null
+): ShipLoadoutService {
+  if (!checkpoint || typeof checkpoint !== 'object' || Array.isArray(checkpoint)) {
+    throw new Error('Invalid ship loadout checkpoint');
+  }
+  const service = createShipLoadoutService();
+  const owned = new Set(ownedShipIds);
+  for (const [shipId, installed] of Object.entries(checkpoint)) {
+    const ship = resolveShip(shipId);
+    if (!ship || !owned.has(shipId) || !installed || typeof installed !== 'object') {
+      throw new Error('Invalid ship loadout hull');
+    }
+    for (const [type, ids] of Object.entries(installed)) {
+      if (!Object.hasOwn(SHIP_COMPONENT_CATALOG, type) || !Array.isArray(ids)) {
+        throw new Error('Invalid component slots');
+      }
+      for (const [index, id] of ids.entries()) {
+        if (
+          typeof id !== 'string' ||
+          !service.setSlot(ship, type as ShipComponentType, index, id || null)
+        ) {
+          throw new Error('Invalid installed ship component');
+        }
+      }
+    }
+  }
+  return service;
 }

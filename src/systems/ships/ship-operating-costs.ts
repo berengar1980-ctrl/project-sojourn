@@ -2,6 +2,7 @@ import type { ShipDefinition } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
 import type { PlayerTradeService } from '../economy/player-trade-service';
 import { FUEL_DISTANCE_SCALE } from '../npcs/npc-sector-routing';
+import { getShipDefinition } from './ship-registry';
 
 export const FUEL_PRICE_PER_UNIT = 10;
 export const REPAIR_PRICE_PER_HULL_HP = 100;
@@ -109,9 +110,12 @@ export interface ShipOperatingService {
 }
 
 export function createShipOperatingService(
-  wallet: Pick<PlayerTradeService, 'player' | 'takeCredits'>
+  wallet: Pick<PlayerTradeService, 'player' | 'takeCredits'>,
+  restoredHulls: readonly ShipOperatingRecord[] = []
 ): ShipOperatingService {
-  const hulls = new Map<string, HullState>();
+  const hulls = new Map<string, HullState>(
+    restoredHulls.map((record) => [record.shipId, { fuel: record.fuel, damage: record.damage }])
+  );
   const ensure = (ship: ShipDefinition): HullState => {
     let state = hulls.get(ship.id);
     if (!state) {
@@ -189,4 +193,37 @@ export function createShipOperatingService(
       ensure(ship).damage = Math.max(0, hullMaxHp - Math.min(hullMaxHp, Math.max(0, hullHp)));
     },
   };
+}
+
+/** Validate a complete operating-state checkpoint before creating a new hull authority. */
+export function stageCareerShipOperating(
+  records: readonly ShipOperatingRecord[],
+  wallet: Pick<PlayerTradeService, 'player' | 'takeCredits'>,
+  ownedShipIds: readonly string[]
+): ShipOperatingService {
+  if (!Array.isArray(records)) throw new Error('Invalid ship operating checkpoint');
+  const owned = new Set(ownedShipIds);
+  const seen = new Set<string>();
+  for (const record of records) {
+    if (!record || typeof record.shipId !== 'string' || seen.has(record.shipId)) {
+      throw new Error('Invalid ship operating record');
+    }
+    const ship = getShipDefinition(record.shipId);
+    if (!ship || !owned.has(record.shipId)) throw new Error('Unknown or unowned ship');
+    const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+    if (
+      typeof record.fuel !== 'number' ||
+      !Number.isFinite(record.fuel) ||
+      record.fuel < 0 ||
+      record.fuel > capacity ||
+      typeof record.damage !== 'number' ||
+      !Number.isFinite(record.damage) ||
+      record.damage < 0
+    ) {
+      throw new Error('Invalid ship fuel or damage');
+    }
+    seen.add(record.shipId);
+  }
+  const restored = records.map((record) => ({ ...record }));
+  return createShipOperatingService(wallet, restored);
 }
