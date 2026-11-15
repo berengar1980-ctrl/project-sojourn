@@ -1090,3 +1090,7 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Review-Log (2026-11-15): Career-Restore loser Schiffskomponenten und Forschung
 
 **keine Statusänderung** der historischen Voidbound-Feature-IDs. Dieser PR ergänzt isolierte, validierte Wiederherstellung für lose Schiffskomponenten einschließlich Seriennummern sowie freigeschaltete Schiffswerft-Forschungsboni. Lose Komponenten werden nicht erneut in die reservierte Frachtkapazität gebucht; Forschung wird nicht durch erneutes Abspielen von Bergungsereignissen freigeschaltet. Die aktive Schiffsauswahl und globale Career-Sitzungsintegration bleiben offen; keine Save/Load-Oberfläche.
+
+## Review-Log (2026-11-15): Career-Ship-Progression-Komposition
+
+**keine Statusänderung** der historischen Voidbound-Feature-IDs. Die bestehenden Adapter für Eigentum, installierte Komponenten, lose Komponenten und Forschung werden erstmals zusammen mit der aktiven Schiffsauswahl als isolierter, validierter Restore vorbereitet. Die aktive Schiff-ID muss im Eigentumsbestand enthalten sein; beim Staging werden weder Credits erneut belastet noch lose Komponenten erneut reserviert. Betriebszustände (Treibstoff/Hüllenschäden) besitzen weiterhin einen separaten Adapter; globale Career-Sitzungsintegration, UI und vollständiges Save/Load sind noch offen.
