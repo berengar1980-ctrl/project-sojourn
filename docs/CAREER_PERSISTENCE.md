@@ -222,3 +222,13 @@ Häfen, Waren-IDs, eindeutige Ereignisse und Tagesgrenzen, ohne alte Tage
 neu abzuspielen. Tests prüfen den Restore, deterministische Folgetage,
 fehlende Aliase und ungültige Daten. Noch fehlt die wirtschaftsweite
 atomare Session-Komposition, insbesondere Handelsaufträge/Transaktionen.
+
+### Markt-Intel und historische Beobachtungen
+
+`MarketIntelService.exportState()` sichert sowohl beobachtete Marktpreise
+und -bestände als auch die begrenzte Historie, die für verzögerte Sensorberichte
+benötigt wird. Beim Aufbau eines neuen Services werden Hafen-/Waren-IDs,
+Tageswerte, Preise, Bestände und doppelte Referenzen vor Übernahme geprüft.
+Der gespeicherte Kenntnisstand wird **nicht** aus Live-Märkten erneuert;
+ansonsten würde Laden dem Spieler unverdiente Marktinformationen geben.
+Die zugrunde liegende globale Career-Komposition bleibt offen.
