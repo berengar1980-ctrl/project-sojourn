@@ -242,3 +242,14 @@ Der Restore startet weder die Marktkenntnis der NPCs neu noch berechnet er
 bereits abgerechnete Betriebskosten/Produktionszyklen ein zweites Mal.
 Die eigentlichen NPC-Handelspläne und Ladungen bleiben Teil der NPC-Zustände;
 die gemeinsame atomare Composition mit Märkten und Ressourcen steht noch aus.
+
+### Gemeinsame Wirtschaftsstaging-Gruppe
+
+`career-economy-session.ts` setzt Marktbestände, Ressourcen-Pools,
+Marktereignisse, Markt-Intel und NPC-Wirtschaftstag in einer isolierten
+Wirtschafts-Servicegruppe zusammen. Ein defekter Teilcheckpoint führt zu
+keiner Änderung an den bereits laufenden Wirtschaftsservices.
+Der Player und die NPC-Liste müssen zuvor aus demselben Career-Snapshot
+vorbereitet werden. Der Controller-Umschaltpunkt für eine vollständig
+vorbereitete Career-Session ist **weiterhin nicht umgesetzt**; diese
+Komposition allein ist daher noch kein nutzbarer Spielstand.
