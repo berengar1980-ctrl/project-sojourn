@@ -86,10 +86,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 7. **Mining Depth:** Claims, Prospecting-Seams, Deep Inclusions und Claim-Tactics.
 8. **Salvage Depth:** Distress-Rescue, Relics, Boarding-Wreck-Integration und Progression.
 
-## Review-Log
-
-<!-- PR #311 (2026-11-15): Keine Statusänderung der 241 Voidbound-Feature-IDs. Der Markt-Checkpoint deckt nur Bestände, Nachfrage, Produktion und Preise ab; vollständige Career-Persistenz bleibt offen. -->
-
+## Review-Log (PR #311: Markt-Checkpoint, keine Statusänderung)
 
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
 
