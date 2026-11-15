@@ -1107,3 +1107,10 @@ Save-Impact-Entscheidung. Markt-Ereignisse besitzen einen isolierten
 versionierten Checkpoint mit aktuellem Tag, aktiven Situationen und
 fortsetzbarer deterministischer Tagesgenerierung. Kein vollständiger
 Career-Restore und keine Save/Load-UI.
+
+## Review-Log (2026-11-15): Marktintel-Checkpoint
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Spieler-Marktbeobachtungen und Sensor-Historie sind als versionierte, isolierte
+Snapshots vorbereitet. Restore übernimmt keine geheimen aktuellen Marktpreise
+und überschreibt die aktive Simulation nicht. Globale Career-Komposition fehlt.
