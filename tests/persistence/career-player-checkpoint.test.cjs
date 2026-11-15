@@ -11,17 +11,39 @@ const { captureCareerPlayer, stageCareerPlayer } = load(
   'src/systems/economy/career-player-checkpoint.ts'
 );
 const resources = [
-  { id: 'ore', name: 'Ore', categoryId: 'raw', category: 'Raw', basePrice: 20, legality: 'legal' },
-  { id: 'fuel', name: 'Fuel', categoryId: 'raw', category: 'Raw', basePrice: 30, legality: 'legal' },
+  {
+    id: 'ore',
+    name: 'Ore',
+    categoryId: 'raw',
+    category: 'Raw',
+    basePrice: 20,
+    legality: 'legal',
+  },
+  {
+    id: 'fuel',
+    name: 'Fuel',
+    categoryId: 'raw',
+    category: 'Raw',
+    basePrice: 30,
+    legality: 'legal',
+  },
 ];
-const ports = [{
-  locationId: 'a', subtitle: '', economy: '', population: '', security: 'low',
-  shipyard: false, producedCommodityIds: ['ore'], neededCommodityIds: ['fuel'],
-  commodities: [
-    { id: 'ore', stock: 100, demand: 0.2, production: 0.8 },
-    { id: 'fuel', stock: 200, demand: 0.9, production: 0.1 },
-  ],
-}];
+const ports = [
+  {
+    locationId: 'a',
+    subtitle: '',
+    economy: '',
+    population: '',
+    security: 'low',
+    shipyard: false,
+    producedCommodityIds: ['ore'],
+    neededCommodityIds: ['fuel'],
+    commodities: [
+      { id: 'ore', stock: 100, demand: 0.2, production: 0.8 },
+      { id: 'fuel', stock: 200, demand: 0.9, production: 0.1 },
+    ],
+  },
+];
 const markets = createEconomyMarketService(ports, resources);
 const live = createPlayerTradeService(markets, 1000);
 assert.equal(live.buy('a', 'ore', 5, 20).quantity, 5);
@@ -39,17 +61,39 @@ assert.equal(snapshot.cargo.ore.qty, 5);
 assert.equal(staged.receiveCargo('fuel', 2, 20, 'a'), 2);
 assert.equal(live.player.cargo.fuel, undefined);
 for (const mutate of [
-  (s) => { s.version = 2; },
-  (s) => { s.credits = -1; },
-  (s) => { s.credits = Infinity; },
-  (s) => { s.reservedCargoTons = -1; },
-  (s) => { s.smugglingNormalPenalty = 1.5; },
-  (s) => { s.cargo.unknown = s.cargo.ore; },
-  (s) => { s.cargo.ore.qty = -1; },
-  (s) => { s.cargo.ore.hiddenQty = 6; },
-  (s) => { s.cargo.ore.totalCost = NaN; },
-  (s) => { s.cargo.ore.lastOriginId = 'missing'; },
-  (s) => { s.cargo.ore.extra = true; },
+  (s) => {
+    s.version = 2;
+  },
+  (s) => {
+    s.credits = -1;
+  },
+  (s) => {
+    s.credits = Infinity;
+  },
+  (s) => {
+    s.reservedCargoTons = -1;
+  },
+  (s) => {
+    s.smugglingNormalPenalty = 1.5;
+  },
+  (s) => {
+    s.cargo.unknown = s.cargo.ore;
+  },
+  (s) => {
+    s.cargo.ore.qty = -1;
+  },
+  (s) => {
+    s.cargo.ore.hiddenQty = 6;
+  },
+  (s) => {
+    s.cargo.ore.totalCost = NaN;
+  },
+  (s) => {
+    s.cargo.ore.lastOriginId = 'missing';
+  },
+  (s) => {
+    s.cargo.ore.extra = true;
+  },
 ]) {
   const invalid = copy(snapshot);
   mutate(invalid);
