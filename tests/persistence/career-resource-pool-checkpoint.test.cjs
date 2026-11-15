@@ -9,9 +9,7 @@ const { createEconomyMarketService } = load('src/systems/economy/market-service.
 const { createEconomySimulationService } = load(
   'src/systems/economy/economy-simulation-service.ts'
 );
-const { stageCareerResourcePools } = load(
-  'src/systems/economy/career-resource-pool-checkpoint.ts'
-);
+const { stageCareerResourcePools } = load('src/systems/economy/career-resource-pool-checkpoint.ts');
 const { captureCareerMarkets, stageCareerMarkets } = load(
   'src/systems/economy/career-market-checkpoint.ts'
 );
