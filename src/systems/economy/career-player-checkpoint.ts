@@ -2,23 +2,22 @@ import type { EconomyResourceDefinition, PlayerEconomyState } from '../../core/e
 import type { EconomyMarketService } from './market-service';
 import { createPlayerTradeService, type PlayerTradeService } from './player-trade-service';
 
+export interface CareerPlayerCargoCheckpoint {
+  readonly qty: number;
+  readonly totalCost: number;
+  readonly hiddenQty: number;
+  readonly lastOriginId?: string;
+}
+
 export interface CareerPlayerCheckpoint {
   readonly version: 1;
   readonly credits: number;
   readonly reservedCargoTons: number;
   readonly smugglingNormalPenalty: number;
-  readonly cargo: Readonly<
-    Record<
-      string,
-      {
-        readonly qty: number;
-        readonly totalCost: number;
-        readonly hiddenQty: number;
-        readonly lastOriginId?: string;
-      }
-    >
-  >;
+  readonly cargo: Readonly<Record<string, CareerPlayerCargoCheckpoint>>;
 }
+
+const PLAYER_KEYS = new Set(['version', 'credits', 'reservedCargoTons', 'smugglingNormalPenalty', 'cargo']);
 
 const nonnegativeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -31,9 +30,7 @@ function ownRecord(value: unknown): value is Record<string, unknown> {
 
 /** Capture detached player economy authority, including cargo cost basis and hidden tons. */
 export function captureCareerPlayer(player: PlayerEconomyState): CareerPlayerCheckpoint {
-  const cargo: Record<string, CareerPlayerCheckpoint['cargo'][string]> = Object.create(
-    null
-  ) as Record<string, CareerPlayerCheckpoint['cargo'][string]>;
+  const cargo: Record<string, CareerPlayerCargoCheckpoint> = Object.create(null);
   for (const [id, lot] of Object.entries(player.cargo)) {
     cargo[id] = {
       qty: lot.qty,
@@ -64,10 +61,7 @@ export function stageCareerPlayer(
     !nonnegativeInteger(checkpoint.reservedCargoTons) ||
     !nonnegativeInteger(checkpoint.smugglingNormalPenalty) ||
     !ownRecord(checkpoint.cargo) ||
-    Object.keys(checkpoint).some(
-      (key) =>
-        !['version', 'credits', 'reservedCargoTons', 'smugglingNormalPenalty', 'cargo'].includes(key)
-    )
+    Object.keys(checkpoint).some((key) => !PLAYER_KEYS.has(key))
   ) {
     throw new Error('Invalid career player checkpoint');
   }
