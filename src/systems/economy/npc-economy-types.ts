@@ -16,7 +16,14 @@ export interface TradeRoute {
   readonly score: number;
 }
 
+export interface NpcEconomyCheckpoint {
+  readonly version: 1;
+  readonly lastDay: number;
+  readonly npcIds: readonly string[];
+}
+
 export interface NpcEconomyService {
+  exportState(): NpcEconomyCheckpoint;
   readonly npcs: readonly NpcEconomyState[];
   mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
   salvageLocal(
