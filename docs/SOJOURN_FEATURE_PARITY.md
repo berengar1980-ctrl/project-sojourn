@@ -1114,3 +1114,11 @@ Career-Restore und keine Save/Load-UI.
 Spieler-Marktbeobachtungen und Sensor-Historie sind als versionierte, isolierte
 Snapshots vorbereitet. Restore übernimmt keine geheimen aktuellen Marktpreise
 und überschreibt die aktive Simulation nicht. Globale Career-Komposition fehlt.
+
+## Review-Log (2026-11-15): NPC-Wirtschaftstag fortsetzen
+
+**keine Statusänderung** der historischen Voidbound-Feature-IDs. Der
+NPC-Economy-Dienst erfasst den letzten verarbeiteten Tag sowie seine NPC-IDs,
+um laufende Tagesabrechnungen und vorhandene Marktkenntnis beim Staging nicht
+neu zu initialisieren. Alle übrigen NPC-Laufzeitdaten erfordern weiterhin den
+separaten NPC-Sektorcheckpoint und eine konsistente Career-Session-Komposition.
