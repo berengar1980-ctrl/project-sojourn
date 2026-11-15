@@ -24,7 +24,20 @@ interface HistoricalMarketEntry {
   readonly stock: number;
 }
 
+export interface CareerMarketIntelCheckpoint {
+  readonly version: 1;
+  readonly intel: readonly MarketIntelEntry[];
+  readonly history: readonly {
+    readonly day: number;
+    readonly locations: readonly {
+      readonly locationId: string;
+      readonly entries: readonly HistoricalMarketEntry[];
+    }[];
+  }[];
+}
+
 export interface MarketIntelService {
+  exportState(): CareerMarketIntelCheckpoint;
   recordHistory(day: number): void;
   observeAll(day: number): void;
   observeLocation(locationId: string, day: number): void;
@@ -43,9 +56,63 @@ function distance(first: WorldPoint, second: WorldPoint): number {
   return Math.hypot(second.x - first.x, second.y - first.y);
 }
 
-export function createMarketIntelService(markets: EconomyMarketService): MarketIntelService {
+export function createMarketIntelService(
+  markets: EconomyMarketService,
+  checkpoint?: CareerMarketIntelCheckpoint
+): MarketIntelService {
   const intel = new Map<string, MarketIntelEntry>();
   const history = new Map<number, Map<string, readonly HistoricalMarketEntry[]>>();
+
+  if (checkpoint) {
+    if (
+      checkpoint.version !== 1 ||
+      !Array.isArray(checkpoint.intel) ||
+      !Array.isArray(checkpoint.history) ||
+      checkpoint.history.length > MARKET_HISTORY_DAYS
+    ) throw new Error('Invalid market intel checkpoint');
+    const validLocations = new Set(markets.snapshot().map((market) => market.locationId));
+    const validResources = new Set(
+      markets.snapshot().flatMap((market) => Object.keys(market.entries))
+    );
+    const assertEntry = (entry: HistoricalMarketEntry): void => {
+      if (!entry || !validResources.has(entry.resourceId) ||
+          !Number.isSafeInteger(entry.price) || entry.price < 1 ||
+          !Number.isSafeInteger(entry.stock) || entry.stock < 0) {
+        throw new Error('Invalid market intel entry');
+      }
+    };
+    for (const entry of checkpoint.intel) {
+      if (!entry || !validLocations.has(entry.locationId) ||
+          !Number.isSafeInteger(entry.observedDay) || entry.observedDay < 0) {
+        throw new Error('Invalid market intel observation');
+      }
+      assertEntry(entry);
+      const key = entry.locationId + '|' + entry.resourceId;
+      if (intel.has(key)) throw new Error('Duplicate market intel observation');
+      intel.set(key, { ...entry });
+    }
+    for (const savedDay of checkpoint.history) {
+      if (!savedDay || !Number.isSafeInteger(savedDay.day) || savedDay.day < 0 ||
+          !Array.isArray(savedDay.locations) || history.has(savedDay.day)) {
+        throw new Error('Invalid market intel history day');
+      }
+      const locations = new Map<string, readonly HistoricalMarketEntry[]>();
+      for (const location of savedDay.locations) {
+        if (!location || !validLocations.has(location.locationId) ||
+            locations.has(location.locationId) || !Array.isArray(location.entries)) {
+          throw new Error('Invalid market intel history location');
+        }
+        const resourceIds = new Set<string>();
+        for (const entry of location.entries) {
+          assertEntry(entry);
+          if (resourceIds.has(entry.resourceId)) throw new Error('Duplicate historical resource');
+          resourceIds.add(entry.resourceId);
+        }
+        locations.set(location.locationId, location.entries.map((entry) => ({ ...entry })));
+      }
+      history.set(savedDay.day, locations);
+    }
+  }
 
   const writeEntries = (
     locationId: string,
@@ -108,6 +175,19 @@ export function createMarketIntelService(markets: EconomyMarketService): MarketI
   };
 
   return {
+    exportState() {
+      return {
+        version: 1,
+        intel: [...intel.values()].map((entry) => ({ ...entry })),
+        history: [...history].map(([day, locations]) => ({
+          day,
+          locations: [...locations].map(([locationId, entries]) => ({
+            locationId,
+            entries: entries.map((entry) => ({ ...entry })),
+          })),
+        })),
+      };
+    },
     recordHistory,
 
     observeAll(day) {
