@@ -1086,3 +1086,7 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Review-Log (2026-11-15): Career-Checkpoint für Schiffseigentum
 
 **keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein isolierter Restore-Pfad für die Liste gekaufter Schiffsrümpfe wird vorbereitet: Er validiert bekannte, eindeutige Schiffs-IDs und den Starterrumpf und belastet die Spieler-Credits beim Wiederherstellen nicht erneut. Die aktive Schiffsauswahl, lose Komponenten, Forschungsfreischaltungen und vollständige Career-Speicherung bleiben offen. Installierte Komponenten werden über validierte Schiffsslots in einem neuen Loadout-Service wiederhergestellt. Treibstoff und Hüllenschäden werden als eigene, validierte Betriebszustände wiederhergestellt, ohne erneute Reparatur- oder Tankkosten. Keine neue Save/Load-Oberfläche.
+
+## Review-Log (2026-11-15): Career-Restore loser Schiffskomponenten und Forschung
+
+**keine Statusänderung** der historischen Voidbound-Feature-IDs. Dieser PR ergänzt isolierte, validierte Wiederherstellung für lose Schiffskomponenten einschließlich Seriennummern sowie freigeschaltete Schiffswerft-Forschungsboni. Lose Komponenten werden nicht erneut in die reservierte Frachtkapazität gebucht; Forschung wird nicht durch erneutes Abspielen von Bergungsereignissen freigeschaltet. Die aktive Schiffsauswahl und globale Career-Sitzungsintegration bleiben offen; keine Save/Load-Oberfläche.
