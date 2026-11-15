@@ -128,3 +128,31 @@ export function createShipLoadoutService(): ShipLoadoutService {
     },
   };
 }
+
+/** Stage installed components against the canonical hull and hardpoint rules. */
+export function stageCareerShipLoadouts(
+  checkpoint: ShipLoadoutSnapshot,
+  ownedShipIds: readonly string[],
+  resolveShip: (id: string) => ShipDefinition | null
+): ShipLoadoutService {
+  if (!checkpoint || typeof checkpoint !== 'object' || Array.isArray(checkpoint)) {
+    throw new Error('Invalid ship loadout checkpoint');
+  }
+  const service = createShipLoadoutService();
+  const owned = new Set(ownedShipIds);
+  for (const [shipId, installed] of Object.entries(checkpoint)) {
+    const ship = resolveShip(shipId);
+    if (!ship || !owned.has(shipId) || !installed || typeof installed !== 'object') {
+      throw new Error('Invalid ship loadout hull');
+    }
+    for (const [type, ids] of Object.entries(installed)) {
+      if (!Array.isArray(ids)) throw new Error('Invalid component slots');
+      for (const [index, id] of ids.entries()) {
+        if (typeof id !== 'string' || !service.setSlot(ship, type as ShipComponentType, index, id || null)) {
+          throw new Error('Invalid installed ship component');
+        }
+      }
+    }
+  }
+  return service;
+}
