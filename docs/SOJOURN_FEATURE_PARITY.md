@@ -1122,3 +1122,11 @@ NPC-Economy-Dienst erfasst den letzten verarbeiteten Tag sowie seine NPC-IDs,
 um laufende Tagesabrechnungen und vorhandene Marktkenntnis beim Staging nicht
 neu zu initialisieren. Alle übrigen NPC-Laufzeitdaten erfordern weiterhin den
 separaten NPC-Sektorcheckpoint und eine konsistente Career-Session-Komposition.
+
+## Review-Log (2026-11-15): Gemeinsame Wirtschafts-Servicegruppe
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Die Teiladapter für Märkte, physische Ressourcen, Ereignisse, Markt-Intel
+und NPC-Wirtschaftstag sind als frische gemeinsame Session komponiert und
+werden durch einen übergreifenden Roundtrip-Test geprüft. Spieler und
+NPCs müssen weiterhin aus demselben Save stammen; kein globaler Career-Swap.
