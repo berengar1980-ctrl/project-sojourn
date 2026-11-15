@@ -9,8 +9,14 @@ import type { ShipComponentInventoryService } from './ship-component-inventory-s
 import type { ShipLoadoutService } from './ship-loadout-service';
 import type { ShipOwnershipService } from './ship-ownership-service';
 import type { ShipyardResearchService } from './shipyard-research-service';
-import { createShipProgressionSnapshot, stageCareerShipProgression } from './ship-progression-snapshot';
-import type { ShipProgressionSnapshot, StagedCareerShipProgression } from './ship-progression-snapshot';
+import {
+  createShipProgressionSnapshot,
+  stageCareerShipProgression,
+} from './ship-progression-snapshot';
+import type {
+  ShipProgressionSnapshot,
+  StagedCareerShipProgression,
+} from './ship-progression-snapshot';
 
 export interface CareerPlayerShipCheckpoint {
   readonly version: 1;
@@ -37,7 +43,13 @@ export function captureCareerPlayerShipSession(
   return {
     version: 1,
     player: captureCareerPlayer(player),
-    progression: createShipProgressionSnapshot(activeShipId, ownership, loadouts, inventory, research),
+    progression: createShipProgressionSnapshot(
+      activeShipId,
+      ownership,
+      loadouts,
+      inventory,
+      research
+    ),
     operating: operating.snapshotAll().hulls,
   };
 }
