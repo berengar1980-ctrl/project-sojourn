@@ -151,7 +151,10 @@ export function stageCareerShipLoadouts(
         throw new Error('Invalid component slots');
       }
       for (const [index, id] of ids.entries()) {
-        if (typeof id !== 'string' || !service.setSlot(ship, type as ShipComponentType, index, id || null)) {
+        if (
+          typeof id !== 'string' ||
+          !service.setSlot(ship, type as ShipComponentType, index, id || null)
+        ) {
           throw new Error('Invalid installed ship component');
         }
       }
