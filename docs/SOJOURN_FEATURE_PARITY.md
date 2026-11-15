@@ -1082,3 +1082,7 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Review-Log (2026-11-15): PR #313 – Player-Economy-Career-Checkpoint
 
 **keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der PR ergänzt einen versionierten, abgekoppelten Checkpoint für den Spieler-Handelszustand (Credits, Warenmengen, Kostenbasis, versteckte Ladung, reservierte Kapazität und Schmuggelabzug). Die Wiederherstellung prüft Eingaben und erzeugt einen neuen PlayerTradeService, ohne den aktiven Zustand zu verändern. Regressionstests decken Roundtrip, Isolation und ungültige Daten ab. Es gibt weiterhin **kein vollständiges Career-Save/Load**, keine Save/Load-Oberfläche und keine Behauptung vollständiger Voidbound-Parität. Die übrigen Career-Abschnitte und ihre Integration bleiben offen.
+
+## Review-Log (2026-11-15): Career-Checkpoint für Schiffseigentum
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein isolierter Restore-Pfad für die Liste gekaufter Schiffsrümpfe wird vorbereitet: Er validiert bekannte, eindeutige Schiffs-IDs und den Starterrumpf und belastet die Spieler-Credits beim Wiederherstellen nicht erneut. Die aktive Schiffsauswahl, Ausrüstung, Betriebszustände und vollständige Career-Speicherung bleiben offen. Keine neue Save/Load-Oberfläche.
