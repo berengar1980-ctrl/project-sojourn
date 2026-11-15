@@ -44,7 +44,7 @@ const player = () => ({ credits: 1000, cargo: {} });
 const originalMarkets = createEconomyMarketService(ports, resources);
 const original = createEconomySimulationService(originalMarkets, player(), resources, 41);
 original.advanceDay(5);
-original.allocatePhysicalResource('ore', 8);
+original.allocatePhysicalResource('ore', original.pools.ore.reserve + 8);
 original.pools.ore.recordedLosses += 2;
 const savedMarkets = captureCareerMarkets(originalMarkets);
 const saved = original.exportState();
