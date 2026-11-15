@@ -17,7 +17,13 @@ export interface CareerPlayerCheckpoint {
   readonly cargo: Readonly<Record<string, CareerPlayerCargoCheckpoint>>;
 }
 
-const PLAYER_KEYS = new Set(['version', 'credits', 'reservedCargoTons', 'smugglingNormalPenalty', 'cargo']);
+const PLAYER_KEYS = new Set([
+  'version',
+  'credits',
+  'reservedCargoTons',
+  'smugglingNormalPenalty',
+  'cargo',
+]);
 
 const nonnegativeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
