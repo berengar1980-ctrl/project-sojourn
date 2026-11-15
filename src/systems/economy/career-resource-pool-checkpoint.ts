@@ -27,16 +27,7 @@ export function captureCareerResourcePools(
   };
 }
 
-/** Prepare detached pool values before constructing any live simulation. */
-export function stageCareerResourcePools(
-  checkpoint: CareerResourcePoolCheckpoint,
-  resources: readonly EconomyResourceDefinition[],
-  seed: number
-): {
-  readonly pools: Record<string, EconomyResourcePool>;
-  readonly lastDay: number;
-  readonly physicalAllocationCounter: number;
-} {
+function validateHeader(checkpoint: CareerResourcePoolCheckpoint, seed: number): void {
   if (
     !checkpoint ||
     checkpoint.version !== 1 ||
@@ -50,32 +41,58 @@ export function stageCareerResourcePools(
   ) {
     throw new Error('Invalid resource pool checkpoint header');
   }
-  const resourceIds = resources.map((resource) => resource.id);
-  const savedIds = Object.keys(checkpoint.pools);
+}
+
+function validateCatalog(
+  pools: Readonly<Record<string, Readonly<EconomyResourcePool>>>,
+  resources: readonly EconomyResourceDefinition[]
+): readonly string[] {
+  const ids = resources.map((resource) => resource.id);
   if (
-    new Set(resourceIds).size !== resourceIds.length ||
-    savedIds.length !== resourceIds.length ||
-    resourceIds.some((id) => !Object.prototype.hasOwnProperty.call(checkpoint.pools, id))
+    new Set(ids).size !== ids.length ||
+    Object.keys(pools).length !== ids.length ||
+    ids.some((id) => !Object.prototype.hasOwnProperty.call(pools, id))
   ) {
     throw new Error('Resource pool catalog mismatch');
   }
-  const pools: Record<string, EconomyResourcePool> = {};
-  for (const id of resourceIds) {
-    const pool = checkpoint.pools[id];
-    if (
-      !pool ||
-      typeof pool !== 'object' ||
-      Array.isArray(pool) ||
-      Object.keys(pool).length !== 4 ||
-      !validCount(pool.target) ||
-      !validCount(pool.reserve) ||
-      !validCount(pool.externalImports) ||
-      !validCount(pool.recordedLosses)
-    ) {
-      throw new Error('Invalid resource pool values');
-    }
-    pools[id] = { ...pool };
+  return ids;
+}
+
+function copyValidatedPool(pool: Readonly<EconomyResourcePool> | undefined): EconomyResourcePool {
+  if (
+    !pool ||
+    typeof pool !== 'object' ||
+    Array.isArray(pool) ||
+    Object.keys(pool).length !== 4 ||
+    !validCount(pool.target) ||
+    !validCount(pool.reserve) ||
+    !validCount(pool.externalImports) ||
+    !validCount(pool.recordedLosses)
+  ) {
+    throw new Error('Invalid resource pool values');
   }
+  return {
+    target: pool.target,
+    reserve: pool.reserve,
+    externalImports: pool.externalImports,
+    recordedLosses: pool.recordedLosses,
+  };
+}
+
+/** Prepare detached pool values before constructing any live simulation. */
+export function stageCareerResourcePools(
+  checkpoint: CareerResourcePoolCheckpoint,
+  resources: readonly EconomyResourceDefinition[],
+  seed: number
+): {
+  readonly pools: Record<string, EconomyResourcePool>;
+  readonly lastDay: number;
+  readonly physicalAllocationCounter: number;
+} {
+  validateHeader(checkpoint, seed);
+  const ids = validateCatalog(checkpoint.pools, resources);
+  const pools: Record<string, EconomyResourcePool> = {};
+  for (const id of ids) pools[id] = copyValidatedPool(checkpoint.pools[id]);
   return {
     pools,
     lastDay: checkpoint.lastDay,
