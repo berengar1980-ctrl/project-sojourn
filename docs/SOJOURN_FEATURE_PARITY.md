@@ -1098,3 +1098,12 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Review-Log (2026-11-15): Gemeinsamer Spieler-/Schiff-Checkpoint
 
 **keine Statusänderung** der historischen Voidbound-Feature-IDs. Die Spielerökonomie, Schiffseigentum, aktive Schiffsauswahl, Loadouts, lose Komponenten, Forschungsboni und Betriebszustände werden in einem gemeinsamen Capture und einem frischen Staging-Pfad zusammengeführt. Ungültige Betriebszustände dürfen keine aktive Spieler- oder Schiffautorität verändern. Die Integration in die vollständige Career-Session, übrige Domänen und Save/Load-UI bleiben offen.
+
+## Review-Log (2026-11-15): Save-Impact-Gate und Wirtschaftsereignisse
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Neue
+Architekturprüfung verlangt bei Gameplay-Änderungen eine explizite
+Save-Impact-Entscheidung. Markt-Ereignisse besitzen einen isolierten
+versionierten Checkpoint mit aktuellem Tag, aktiven Situationen und
+fortsetzbarer deterministischer Tagesgenerierung. Kein vollständiger
+Career-Restore und keine Save/Load-UI.
