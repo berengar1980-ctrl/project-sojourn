@@ -232,3 +232,13 @@ Tageswerte, Preise, Bestände und doppelte Referenzen vor Übernahme geprüft.
 Der gespeicherte Kenntnisstand wird **nicht** aus Live-Märkten erneuert;
 ansonsten würde Laden dem Spieler unverdiente Marktinformationen geben.
 Die zugrunde liegende globale Career-Komposition bleibt offen.
+
+### NPC-Handelszyklus und Tagesabrechnung
+
+`NpcEconomyService.exportState()` hält den zuletzt verbuchten Wirtschaftstag
+und die IDs der zugrunde liegenden NPC-Instanzen fest. Beim Neuaufbau wird
+geprüft, dass alle NPCs aus dem passenden Sektorsnapshot stammen.
+Der Restore startet weder die Marktkenntnis der NPCs neu noch berechnet er
+bereits abgerechnete Betriebskosten/Produktionszyklen ein zweites Mal.
+Die eigentlichen NPC-Handelspläne und Ladungen bleiben Teil der NPC-Zustände;
+die gemeinsame atomare Composition mit Märkten und Ressourcen steht noch aus.
