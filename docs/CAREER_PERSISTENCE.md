@@ -154,3 +154,18 @@ This does **not** yet install a complete career session, restore external NPC
 pursuit targets, synchronize world/campaign selection, or enable save/load UI.
 It must be composed with the remaining career adapters and tested after a real
 browser restart before Issue #300 can be closed.
+
+## Markt-Checkpoint (nach PR #310)
+
+`captureCareerMarkets` erzeugt einen losgelösten Snapshot aller Marktbestände,
+Nachfrage-, Produktions- und Preiswerte. `stageCareerMarkets` validiert die
+vollständigen Markt-/Waren-IDs, die Struktur und die numerischen Werte, bevor
+eine **frische** `EconomyMarketService`-Instanz zurückgegeben wird. Die
+aktiven Marktobjekte werden bei Fehlern nicht verändert. Preise werden beim
+Restore nicht neu berechnet, damit der gespeicherte Handelspreis bis zum
+nächsten regulären Simulationsschritt erhalten bleibt.
+
+Dies ist **nur** die Markt-Teilautorität. Wirtschaftsressourcen-Pools,
+Import-/Verlustzähler, Handelsereignisse, ausstehende Geschäfte,
+NPC-Handelsplanung und Markt-Intel müssen ebenfalls als konsistenter
+Gesamtzustand gesichert werden. Noch keine Career-Save-Freigabe oder UI.
