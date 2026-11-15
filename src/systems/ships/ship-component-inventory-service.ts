@@ -38,7 +38,8 @@ export function createShipComponentInventoryService(
   player: PlayerEconomyState,
   restored?: ShipComponentInventorySnapshot
 ): ShipComponentInventoryService {
-  const components: LooseShipComponent[] = restored?.components.map((item) => ({ ...item })) ?? [];
+  const components: LooseShipComponent[] =
+    restored?.components.map((item) => ({ ...item })) ?? [];
   let serial = restored?.serial ?? 0;
 
   return {
@@ -115,11 +116,12 @@ export function stageCareerShipComponentInventory(
       item.tier !== definition.tier ||
       item.cargoTons !== looseComponentCargoTons(definition.tier) ||
       typeof item.sourceWreckId !== 'string' ||
-      (item.source !== undefined && !['salvage', 'removed', 'purchased', 'campaign'].includes(item.source))
+      (item.source !== undefined &&
+        !['salvage', 'removed', 'purchased', 'campaign'].includes(item.source))
     ) {
       throw new Error('Invalid loose component');
     }
-    const match = /^loose-(\\d+)-/.exec(item.uid);
+    const match = /^loose-(\d+)-/.exec(item.uid);
     if (!match || Number(match[1]) > snapshot.serial) {
       throw new Error('Invalid loose component serial');
     }
