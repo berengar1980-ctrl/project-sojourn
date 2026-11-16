@@ -224,6 +224,87 @@ assert.strictEqual(controllerEconomy.legal, preparedBrowser.session.fieldsLegal.
 assert.deepEqual(preparedBrowser.session.profile, profile);
 assert.deepEqual(controllerEconomy.trade.player, staged.commerce.commerce.trade.player);
 
+
+// Simulate a real game session: purchase goods, close the process by persisting
+// only localStorage JSON, construct fresh services and continue from that state.
+const beforeRestart = prepareControllerCareer(JSON.parse(JSON.stringify(snapshot)));
+const liveTrade = beforeRestart.session.commerce.commerce.trade;
+const liveMarkets = beforeRestart.session.commerce.commerce.economy.markets;
+const candidate = liveMarkets
+  .snapshot()
+  .flatMap((market) =>
+    Object.values(market.entries).map((entry) => ({ port: market.locationId, entry }))
+  )
+  .find(({ entry }) => entry.stock >= 4 && entry.price * 3 < liveTrade.player.credits);
+assert(candidate, 'a real market must support an affordable purchase');
+const { port, entry } = candidate;
+const beforeStock = liveMarkets.getEntry(port, entry.resourceId).stock;
+const beforeCredits = liveTrade.player.credits;
+const purchase = liveTrade.buy(port, entry.resourceId, 3, 1000);
+assert(purchase && purchase.quantity === 3, 'purchase must execute through the live wallet');
+assert.equal(liveTrade.player.credits, beforeCredits + purchase.creditsDelta);
+assert.equal(liveMarkets.getEntry(port, entry.resourceId).stock, beforeStock - 3);
+const postPurchase = captureCareerFullSession(beforeRestart.session, world);
+const restartedData = new Map();
+const restartedStore = createCareerSaveStore({
+  getItem: (key) => restartedData.get(key) ?? null,
+  setItem: (key, value) => restartedData.set(key, value),
+});
+restartedStore.save(postPurchase);
+const savedEnvelope = restartedData.get(CAREER_SAVE_STORAGE_KEY);
+assert.equal(typeof savedEnvelope, 'string');
+const restoredEnvelope = createCareerSaveStore({
+  getItem: (key) => restartedData.get(key) ?? null,
+  setItem: (key) => restartedData.set(key, value),
+}).read();
+assert(restoredEnvelope.ok, 'a freshly created store must open the persisted JSON');
+const resumed = prepareControllerCareer(restoredEnvelope.snapshot);
+const resumedTrade = resumed.session.commerce.commerce.trade;
+const resumedMarkets = resumed.session.commerce.commerce.economy.markets;
+assert.notStrictEqual(resumedTrade, liveTrade, 'restart must build fresh service instances');
+assert.notStrictEqual(resumedMarkets, liveMarkets);
+assert.equal(resumedTrade.player.credits, liveTrade.player.credits);
+assert.deepEqual(resumedTrade.player.cargo, liveTrade.player.cargo);
+assert.deepEqual(resumedMarkets.getEntry(port, entry.resourceId), liveMarkets.getEntry(port, entry.resourceId));
+assert.equal(resumed.session.controllerSecondsIntoDay, 94.5);
+assert.deepEqual(resumed.session.crew.exportState(), beforeRestart.session.crew.exportState());
+assert.deepEqual(resumed.session.commerce.ships.operating.exportState(),
+  beforeRestart.session.commerce.ships.operating.exportState());
+
+// Both timelines must produce the same single sale and next economic day,
+// proving that loading does not pay or consume the previous purchase twice.
+for (const timeline of [beforeRestart.session, resumed.session]) {
+  const sale = timeline.commerce.commerce.trade.sell(port, entry.resourceId, 2);
+  assert(sale && sale.quantity === 2);
+  timeline.commerce.commerce.economy.simulation.advanceNextDay();
+  timeline.commerce.commerce.economy.npcs.advanceNextDay();
+  timeline.commerce.commerce.economy.situations.advanceNextDay();
+}
+assert.equal(resumedTrade.player.credits, liveTrade.player.credits);
+assert.deepEqual(resumedTrade.player.cargo, liveTrade.player.cargo);
+assert.deepEqual(
+  resumed.session.commerce.commerce.economy.simulation.exportState(),
+  beforeRestart.session.commerce.commerce.economy.simulation.exportState(),
+  'economy day continues identically without double-production'
+);
+assert.deepEqual(
+  resumed.session.commerce.commerce.economy.markets.snapshot(),
+  beforeRestart.session.commerce.commerce.economy.markets.snapshot(),
+  'market inventory and prices continue identically'
+);
+
+// A tampered envelope must not alter the active game or the stored bytes.
+const tampered = JSON.parse(savedEnvelope);
+tampered.payload = tampered.payload.slice(0, -1) + 'x';
+restartedData.set(CAREER_SAVE_STORAGE_KEY, JSON.stringify(tampered));
+const compromised = restartedStore.read();
+assert.equal(compromised.ok, false);
+assert.equal(compromised.reason, 'corrupt');
+assert.equal(resumedTrade.player.credits, liveTrade.player.credits);
+assert.deepEqual(resumedTrade.player.cargo, liveTrade.player.cargo);
+resumed.session.campaigns.campaigns.destroy();
+beforeRestart.session.campaigns.campaigns.destroy();
+
 const damagedClock = JSON.parse(JSON.stringify(snapshot));
 damagedClock.sections.player.controllerSecondsIntoDay = 180;
 assert.throws(() => stageCareerFullSession(damagedClock, options), /economic day clock/);
