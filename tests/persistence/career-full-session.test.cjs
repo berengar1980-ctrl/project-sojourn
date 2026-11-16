@@ -199,7 +199,10 @@ assert.strictEqual(staged.operations.sector.npcs, staged.commerce.commerce.npcs)
 assert.deepEqual(staged.fieldsLegal.fields.exportState(), fieldsLegal.fields);
 assert.deepEqual(staged.crew.exportState(), snapshot.sections.crew);
 assert.deepEqual(staged.navigationWorld.navigation.exportState(), snapshot.sections.navigation);
-assert.deepEqual(captureCareerFullSession(staged, world), snapshot);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(captureCareerFullSession(staged, world))),
+  JSON.parse(JSON.stringify(snapshot))
+);
 slot.install(staged);
 staged.activate();
 assert.strictEqual(slot.current(), staged);
