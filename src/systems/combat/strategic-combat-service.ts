@@ -295,8 +295,7 @@ function createStrategicCombatRuntime(
 ): StrategicCombatRuntime {
   const escapeArena = buildCombatArena(attackerSetup, defenderSetup, seed, arenaOptions);
   const random = createRng(seed);
-  let runtime: StrategicCombatRuntime;
-  runtime = {
+  const runtime: StrategicCombatRuntime = {
     seed,
     randomCalls: 0,
     arena: escapeArena,
@@ -360,30 +359,12 @@ function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'def
     : 'GREIFHAKEN > WURF ABGEFEUERT';
   return true;
 }
-export function createStrategicCombatService(
+function initializeStrategicCombatLog(
+  runtime: StrategicCombatRuntime,
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
-  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
-  arenaOptions?: StrategicCombatArenaOptions,
-  checkpoint?: CareerStrategicCombatCheckpoint
-): StrategicCombatService {
-  const saved = checkpoint
-    ? stageCareerStrategicCombat(checkpoint, attackerSetup, defenderSetup)
-    : null;
-  const runtime = createStrategicCombatRuntime(
-    attackerSetup,
-    defenderSetup,
-    saved?.seed ?? seed,
-    arenaOptions
-  );
-  if (saved) {
-    for (let call = 0; call < saved.randomCalls; call += 1) runtime.random();
-    const { attacker: storedAttacker, defender: storedDefender, ...state } = saved.runtime;
-    Object.assign(runtime, state);
-    Object.assign(runtime.attacker, storedAttacker);
-    Object.assign(runtime.defender, storedDefender);
-  }
-  if (!saved) {
+  seed: number
+): void {
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
   recordCombatLog(
@@ -415,7 +396,32 @@ export function createStrategicCombatService(
           .join(', ')
     );
   }
+}
+
+export function createStrategicCombatService(
+  attackerSetup: StrategicCombatantSetup,
+  defenderSetup: StrategicCombatantSetup,
+  seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
+  arenaOptions?: StrategicCombatArenaOptions,
+  checkpoint?: CareerStrategicCombatCheckpoint
+): StrategicCombatService {
+  const saved = checkpoint
+    ? stageCareerStrategicCombat(checkpoint, attackerSetup, defenderSetup)
+    : null;
+  const runtime = createStrategicCombatRuntime(
+    attackerSetup,
+    defenderSetup,
+    saved?.seed ?? seed,
+    arenaOptions
+  );
+  if (saved) {
+    for (let call = 0; call < saved.randomCalls; call += 1) runtime.random();
+    const { attacker: storedAttacker, defender: storedDefender, ...state } = saved.runtime;
+    Object.assign(runtime, state);
+    Object.assign(runtime.attacker, storedAttacker);
+    Object.assign(runtime.defender, storedDefender);
   }
+  if (!saved) initializeStrategicCombatLog(runtime, attackerSetup, defenderSetup, seed);
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
     getSnapshot: () => runtimeSnapshot(runtime),
