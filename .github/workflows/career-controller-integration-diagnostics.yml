@@ -1,4 +1,4 @@
-name: Career controller integration quality diagnostics
+name: Career controller integration and browser startup diagnostics
 
 on:
   push:
