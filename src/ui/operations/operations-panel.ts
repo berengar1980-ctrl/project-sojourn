@@ -1,3 +1,5 @@
+import type { ShipRole } from '../../core/ship-types';
+import type { WreckClaim } from '../../systems/operations/wreck-claim-registry';
 import type { BlockadeService } from '../../systems/operations/blockade-service';
 import type { PatrolCareerService } from '../../systems/operations/patrol-career-service';
 import type { AsteroidClaimRegistry } from '../../systems/operations/asteroid-claim-registry';
@@ -5,6 +7,8 @@ import './operations.css';
 
 export interface OperationsModel {
   credits: number;
+  shipRole: ShipRole;
+  wreckClaims: readonly WreckClaim[];
   port: boolean;
   patrolShip: boolean;
   locationId: string | null;
@@ -84,7 +88,34 @@ function patrolMarkup(m: OperationsModel): string {
       .join('')}</select></label>
     ${button('accept', 'Einsatz annehmen', '', !m.port || !p.mandate || !m.patrolShip || p.assignments.some((a) => ['active', 'completed'].includes(a.status)))}`;
 }
+function activeOrdersMarkup(m: OperationsModel): string {
+  const blockades = m.blockades.orders.filter((order) =>
+    order.ownerId === 'player' && ['assembling', 'active'].includes(order.phase)
+  ).map((order) =>
+    `<li>Blockade · ${escape(m.names[order.locationId] ?? order.locationId)} · ${escape(phaseNames[order.phase])}</li>`
+  );
+  const patrols = m.patrol.assignments.filter((assignment) =>
+    ['active', 'completed'].includes(assignment.status)
+  ).map((assignment) =>
+    `<li>Patrouille · ${escape(m.names[assignment.targetId] ?? assignment.targetId)} · ${escape(assignment.status)}</li>`
+  );
+  return `<h3>Laufende Verpflichtungen</h3><p>Auch nach einem Schiffswechsel sichtbar.</p>
+    <ul>${[...blockades, ...patrols].join('') || '<li>Derzeit keine laufenden Aufträge.</li>'}</ul>`;
+}
+
 function concessionMarkup(m: OperationsModel): string {
+  if (m.shipRole === 'salvage') {
+    const rows = m.wreckClaims.map((claim) =>
+      `<li><strong>${escape(claim.fieldId)} / ${escape(claim.wreckId)}</strong>
+      <p>${claim.ownerId === 'player' ? 'EIGENER BERGUNGSANSPRUCH' :
+        'FREMDER BERGUNGSANSPRUCH · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)}
+      · gültig bis Tag ${claim.expiresDay}</p></li>`
+    ).join('');
+    return `<h3>Wrackregister</h3>
+      <p>Registrierung erfolgt direkt am analysierten Wrack in der Bergungskarte.
+      Ansprüche gelten 14 Tage und werden im Karriere-Spielstand gespeichert.</p>
+      <ul>${rows || '<li>Keine aktiven Wrackansprüche.</li>'}</ul>`;
+  }
   const claims = [...m.claims].sort((a, b) => b.registeredDay - a.registeredDay);
   const rows = claims
     .map((claim) => {
@@ -127,11 +158,11 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
   const launch = document.createElement('button');
   launch.type = 'button';
   launch.className = 'operations-launch';
-  launch.textContent = 'AUFTRÄGE & KONZESSIONEN';
+  launch.textContent = 'AUFTRÄGE';
   const dialog = document.createElement('dialog');
   dialog.className = 'operations-dialog';
   options.root.append(launch, dialog);
-  let tab = 'blockades';
+  let tab = 'active';
   let message = '';
   let currentModel: OperationsModel | null = null;
   const model = () => currentModel ?? (currentModel = options.model());
@@ -164,18 +195,23 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
   function render() {
     currentModel = options.model();
     const m = currentModel;
+    const tabs = [
+      ['active', 'Laufende Aufträge'],
+      ...(m.shipRole === 'freighter' ? [['blockades', 'Blockaden']] : []),
+      ...(m.shipRole === 'patrol' ? [['patrol', 'Patrouille']] : []),
+      ...(['mining', 'salvage'].includes(m.shipRole)
+        ? [['claims', m.shipRole === 'salvage' ? 'Wrackregister' : 'Konzessionsregister']]
+        : []),
+    ];
+    if (!tabs.some(([id]) => id === tab)) tab = tabs[1]?.[0] ?? 'active';
     dialog.innerHTML = `<header><h2>Aufträge & Konzessionen</h2><button type="button" data-close>Schließen</button></header><p>${money(m.credits)} · Tag ${m.blockades.day}</p>
-      <nav>${[
-        ['blockades', 'Blockaden'],
-        ['patrol', 'Patrouille'],
-        ['claims', 'Konzessionsregister'],
-      ]
+      <nav>${tabs
         .map(
           ([id, label]) =>
             `<button type="button" data-tab="${id}" aria-pressed="${tab === id}">${label}</button>`
         )
         .join('')}</nav>
-      ${message ? `<p role="status">${escape(message)}</p>` : ''}<section>${tab === 'blockades' ? blockadeMarkup(m) : tab === 'claims' ? concessionMarkup(m) : patrolMarkup(m)}</section>`;
+      ${message ? `<p role="status">${escape(message)}</p>` : ''}<section>${tab === 'active' ? activeOrdersMarkup(m) : tab === 'blockades' ? blockadeMarkup(m) : tab === 'claims' ? concessionMarkup(m) : patrolMarkup(m)}</section>`;
     resources();
     quote();
   }
