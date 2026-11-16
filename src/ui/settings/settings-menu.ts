@@ -243,7 +243,10 @@ export function createSettingsMenu(
   };
   const onLoad = (): void => {
     if (!onLoadCareer) return;
-    if (!window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')) return;
+    if (
+      !window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')
+    )
+      return;
     try {
       onLoadCareer();
     } catch (error) {
