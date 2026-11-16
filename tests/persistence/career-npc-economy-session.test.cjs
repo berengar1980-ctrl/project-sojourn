@@ -60,6 +60,49 @@ assert.strictEqual(staged.economy.npcs.npcs[0], staged.npcs[0]);
 staged.economy.npcs.advanceDay(2);
 assert.deepEqual(staged.economy.npcs.exportState(), saved.economy.npcEconomy);
 
+// A live NPC may be stationed at a real asteroid field without a trading market.
+const mineLocation = world.locations.find(
+  (location) => location.activities.mine && !validPorts.has(location.id)
+);
+assert(mineLocation, 'fixture needs a nonmarket mining location');
+const fieldSave = clone(saved);
+fieldSave.npcs.npcs[0].locationId = mineLocation.id;
+fieldSave.npcs.npcs[0].homePortId = mineLocation.id;
+if (fieldSave.npcs.npcs[0].autonomy) {
+  fieldSave.npcs.npcs[0].autonomy.lastLocationId = mineLocation.id;
+}
+delete fieldSave.npcs.npcs[0].orbit;
+const atField = stageCareerNpcEconomySession(
+  fieldSave,
+  world,
+  sectorPorts,
+  economyResources,
+  clone(player),
+  seed
+);
+assert.equal(atField.npcs[0].locationId, mineLocation.id);
+assert.strictEqual(atField.economy.npcs.npcs[0], atField.npcs[0]);
+const invalidIntel = clone(fieldSave);
+invalidIntel.npcs.npcs[0].marketIntel = {
+  [mineLocation.id]: {
+    locationId: mineLocation.id,
+    observedDay: 0,
+    entries: {},
+  },
+};
+assert.throws(
+  () =>
+    stageCareerNpcEconomySession(
+      invalidIntel,
+      world,
+      sectorPorts,
+      economyResources,
+      clone(player),
+      seed
+    ),
+  /market observation/
+);
+
 const badOrder = clone(saved);
 badOrder.npcs.npcs[0].autonomy.pendingTrade = {
   resourceId: 'not-a-resource',

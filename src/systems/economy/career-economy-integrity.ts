@@ -51,7 +51,8 @@ function validateNpcCargo(
 function validatePendingTrade(
   npc: NpcEconomyState,
   resources: ReadonlySet<string>,
-  locations: ReadonlySet<string>
+  locations: ReadonlySet<string>,
+  markets: ReadonlySet<string>
 ): void {
   const autonomy = npc.autonomy;
   if (!autonomy) return;
@@ -68,7 +69,7 @@ function validatePendingTrade(
   if (!pending) return;
   if (
     !resources.has(pending.resourceId) ||
-    !locations.has(pending.destinationId) ||
+    !markets.has(pending.destinationId) ||
     !validQuantity(pending.quantity) ||
     pending.quantity === 0 ||
     typeof pending.reason !== 'string'
@@ -80,14 +81,15 @@ function validatePendingTrade(
 function validateSideTrade(
   npc: NpcEconomyState,
   resources: ReadonlySet<string>,
-  locations: ReadonlySet<string>
+  locations: ReadonlySet<string>,
+  markets: ReadonlySet<string>
 ): void {
   const plan = npc.sideTradePlan;
   if (!plan) return;
   if (
     !resources.has(plan.resourceId) ||
-    !locations.has(plan.sourceLocationId) ||
-    !locations.has(plan.tradeLocationId) ||
+    !markets.has(plan.sourceLocationId) ||
+    !markets.has(plan.tradeLocationId) ||
     !locations.has(plan.workLocationId) ||
     !validQuantity(plan.quantity) ||
     !finiteNonnegative(plan.costBasis) ||
@@ -134,10 +136,12 @@ export function assertCareerEconomyIntegrity(
   markets: EconomyMarketService,
   resources: readonly EconomyResourceDefinition[],
   player: PlayerEconomyState,
-  npcs: readonly NpcEconomyState[]
+  npcs: readonly NpcEconomyState[],
+  worldLocations?: ReadonlySet<string>
 ): void {
   const resourceIds = new Set(resources.map((item) => item.id));
   const locationIds = new Set(markets.snapshot().map((item) => item.locationId));
+  const validNpcLocations = worldLocations ?? locationIds;
   if (resourceIds.size !== resources.length) {
     throw new Error('Duplicate resource definitions');
   }
@@ -148,9 +152,9 @@ export function assertCareerEconomyIntegrity(
       throw new Error('Duplicate saved NPC economy identity');
     }
     npcIds.add(npc.id);
-    validateNpcCargo(npc, resourceIds, locationIds);
-    validatePendingTrade(npc, resourceIds, locationIds);
-    validateSideTrade(npc, resourceIds, locationIds);
+    validateNpcCargo(npc, resourceIds, validNpcLocations);
+    validatePendingTrade(npc, resourceIds, validNpcLocations, locationIds);
+    validateSideTrade(npc, resourceIds, validNpcLocations, locationIds);
     validateNpcIntel(npc, resourceIds, locationIds);
   }
 }

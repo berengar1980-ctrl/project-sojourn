@@ -84,7 +84,8 @@ export function stageCareerEconomySession(
   player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   npcs: readonly NpcEconomyState[],
   seed: number,
-  options: CareerEconomyOptions = {}
+  options: CareerEconomyOptions = {},
+  worldLocationIds?: ReadonlySet<string>
 ): StagedCareerEconomySession {
   if (
     !checkpoint ||
@@ -102,7 +103,7 @@ export function stageCareerEconomySession(
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
   const restoredPlayer = typeof player === 'function' ? player(markets) : player;
-  assertCareerEconomyIntegrity(markets, resources, restoredPlayer, npcs);
+  assertCareerEconomyIntegrity(markets, resources, restoredPlayer, npcs, worldLocationIds);
   const simulation = createEconomySimulationService(
     markets,
     restoredPlayer,
