@@ -226,10 +226,7 @@ assert.deepEqual(controllerEconomy.trade.player, staged.commerce.commerce.trade.
 
 const damagedClock = JSON.parse(JSON.stringify(snapshot));
 damagedClock.sections.player.controllerSecondsIntoDay = 180;
-assert.throws(
-  () => stageCareerFullSession(damagedClock, options),
-  /economic day clock/
-);
+assert.throws(() => stageCareerFullSession(damagedClock, options), /economic day clock/);
 const damaged = JSON.parse(JSON.stringify(snapshot));
 damaged.sections.operations.population.fundCredits = -1;
 assert.throws(() => stageCareerFullSession(damaged, options));

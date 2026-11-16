@@ -54,4 +54,3 @@ export function rememberMiningField(context: ControllerRuntimeContext): void {
     context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
   }
 }
-
