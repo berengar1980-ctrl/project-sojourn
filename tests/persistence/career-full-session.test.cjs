@@ -21,6 +21,9 @@ const { createEconomySimulationService } = load(
 const { createMarketSituationService } = load('src/systems/economy/market-situation-service.ts');
 const { createMarketIntelService } = load('src/systems/economy/market-intel-service.ts');
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
+const { createSectorSalvageEventService } = load(
+  'src/systems/salvage/sector-salvage-event-service.ts'
+);
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
 const { createShipOwnershipService } = load('src/systems/ships/ship-ownership-service.ts');
 const { createShipLoadoutService } = load('src/systems/ships/ship-loadout-service.ts');
@@ -97,7 +100,10 @@ const blockades = new BlockadeService({
   notice: () => {},
 });
 const patrol = new PatrolCareerService(world, npcs, trade.player);
-const operations = captureCareerOperationsSession({ population, sector, blockades, patrol });
+const salvageEvents = createSectorSalvageEventService(world);
+const operations = captureCareerOperationsSession({
+  population, sector, blockades, patrol, salvageEvents,
+});
 const minerFactory = (location, instance, checkpoint) =>
   createNpcLocalMiningService({
     locationId: location.id,
