@@ -10,12 +10,22 @@ const checks = [
   ['Dependency architecture', 'npm', ['run', 'deps:check']],
   ['Persistence impact', 'npm', ['run', 'persistence:check']],
   ['Regression tests', 'npm', ['run', 'test:quick']],
+  ['Economy horizons', 'npm', ['run', 'test:economy-horizons']],
   ['Build', 'npm', ['run', 'build']],
 ];
 const results = [];
 for (const [name, command, args] of checks) {
   process.stdout.write('\n=== ' + name + ' ===\n');
-  const result = spawnSync(command, args, {
+  // The normal quality gate stops at the first failure. Run every remaining
+  // command independently and publish diagnostics for all domains.
+  const reportLabel = 'batch-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const result = spawnSync('node', [
+    'scripts/ci-run-and-report.cjs',
+    reportLabel,
+    '--',
+    command,
+    ...args,
+  ], {
     encoding: 'utf8',
     maxBuffer: 16 * 1024 * 1024,
     timeout: 15 * 60 * 1000,
