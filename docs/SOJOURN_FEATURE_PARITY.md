@@ -1181,3 +1181,11 @@ Ladeaktion. Der bestehende versionierte Save-Store und der atomare
 14-Bereiche-Restore werden genutzt; kein neues Wirtschaftssystem,
 keine Änderung am Save-Format und keine neue Parity-Einstufung.
 Visuelle Browser-End-to-End-Tests und mehrere Speicherplätze bleiben offen.
+
+## Review-Log (2026-11-16): NPC-Aufenthaltsorte bei Career-Restore
+
+**keine Statusänderung** der historischen 241 Voidbound-Feature-IDs.
+Validierung der NPC-Weltorte an Nichtmarkt-Standorten (insbesondere
+Sicherheitsdrohnen an Bergbaugebieten) korrigiert, ohne Wirtschaft,
+Speicherformat oder Feature-Parity zu ändern. Die strenge Validierung
+von Marktbeobachtungen bleibt erhalten.
