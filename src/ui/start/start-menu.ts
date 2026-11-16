@@ -25,7 +25,7 @@ export function createStartMenu(
   const nav = document.createElement('nav');
   nav.className = 'harrow-start__nav';
   nav.setAttribute('aria-label', 'Hauptmenü');
-  const entries: readonly { label: string; action?: StartMenuAction }[] = [
+  const entries: readonly { label: string; action?: StartMenuAction | undefined }[] = [
     { label: 'Neues Spiel', action: 'campaign' },
     { label: 'PvP-Modus', action: 'pvp' },
     { label: 'Kampagnen', action: 'campaigns' },
