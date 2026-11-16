@@ -13,7 +13,6 @@ import {
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
-import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
@@ -38,6 +37,7 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
+import { finishSalvageCombat } from './game-controller-salvage-combat-return';
 import { createWreckClaimActions } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
@@ -386,40 +386,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   refreshSalvageScene(context);
 }
 
-function finishSalvageCombat(
-  context: SalvageSceneRuntime,
-  snapshot: StrategicCombatSnapshot
-): void {
-  if (context.field.debris && snapshot.arena.asteroids) {
-    const remaining = new Map(snapshot.arena.asteroids.map((rock) => [rock.id, rock]));
-    // Once captured and thrown, the original fragment must not respawn in the field.
-    for (let index = context.field.debris.length - 1; index >= 0; index -= 1) {
-      const part = context.field.debris[index]!;
-      const live = remaining.get(part.id);
-      if (!live) {
-        context.field.debris.splice(index, 1);
-        continue;
-      }
-      part.position = { ...live.position };
-      part.driftVelocity = { ...live.velocity };
-      part.rotation3d = { ...part.rotation3d, z: live.rotation };
-    }
-    invalidateSalvagePhysics(context.field);
-  }
-  context.service.syncCombatPose(
-    snapshot.attacker.position,
-    snapshot.attacker.headingRadians,
-    snapshot.attacker.speed
-  );
-  context.npcSalvage.syncCombatPose(
-    snapshot.defender.id,
-    snapshot.defender.position,
-    snapshot.defender.headingRadians,
-    snapshot.defender.speed
-  );
-  refreshSalvageScene(context);
-}
-
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
   const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
   const field =
@@ -509,7 +475,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       refreshSalvageScene(context);
     },
     finishCombat(snapshot) {
-      finishSalvageCombat(context, snapshot);
+      finishSalvageCombat(context.field, context.service, context.npcSalvage, snapshot);
+      refreshSalvageScene(context);
     },
     tick(deltaSeconds) {
       tickSalvageScene(context, deltaSeconds);
