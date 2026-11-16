@@ -376,3 +376,14 @@ werden beim Wiederherstellen nicht mehr als ungültige Wirtschaftsidentität
 abgelehnt. Marktbeobachtungen werden weiterhin ausschließlich gegen
 existierende Handelsmärkte validiert. Vorhandene Save-JSON-Daten bleiben
 unverändert und werden nicht migriert.
+
+### Bestätigungsdialoge im Systemmenü (UI-only, PR #323)
+
+**Keine Speicheränderung:** Die bisherigen Browser-Bestätigungen für
+„Spielstand laden“ und „Zum Hauptmenü“ werden durch Bestätigungsansichten
+innerhalb des vorhandenen Systemmenüs ersetzt. Abbrechen führt weder den
+Restore noch einen Session-Wechsel aus. Bestätigen ruft weiterhin dieselben
+Controller-Callbacks auf; die atomare Staging-/Restore-Reihenfolge bleibt
+unverändert. Save-Format, Slot, Domainservices und Laufzeit-Speichergrenzen
+werden nicht verändert. Die Position und Bedienbarkeit der Auftragsoberfläche
+werden unabhängig von der Persistenz überarbeitet.
