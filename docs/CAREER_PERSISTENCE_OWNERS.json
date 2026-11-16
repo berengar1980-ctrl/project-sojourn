@@ -34,6 +34,22 @@
       "reason": "Versioned campaign progress staging preserves applied reward receipts and gates effects until session activation.",
       "checkpoint": "src/systems/persistence/career-campaign-session.ts",
       "test": "tests/persistence/career-campaign-session.test.cjs"
+    },
+    "src/systems/combat/career-strategic-combat-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Persists all authoritative combat runtime state including random sequence, projectiles and tactics.",
+      "checkpoint": "src/systems/combat/career-strategic-combat-checkpoint.ts",
+      "test": "tests/persistence/career-combat-runtime.test.cjs"
+    },
+    "src/systems/persistence/career-session-transaction.ts": {
+      "mode": "derived",
+      "reason": "Stateless transaction coordinator that stages all fourteen authorities before a single session pointer swap."
+    },
+    "src/systems/persistence/career-commerce-ship-session.ts": {
+      "mode": "persisted",
+      "reason": "Connects the persisted player ship progression to the shared restored commerce and NPC market authorities.",
+      "checkpoint": "src/systems/persistence/career-commerce-ship-session.ts",
+      "test": "tests/persistence/career-commerce-ship-session.test.cjs"
     }
   }
 }
