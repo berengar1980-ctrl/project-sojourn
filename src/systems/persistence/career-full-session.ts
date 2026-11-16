@@ -4,7 +4,7 @@ import type {
   CampaignSnapshot,
 } from '../../core/campaign-types';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
-import type { PlayerProfile } from '../../core/player-profile';
+import { createPlayerProfile, snapshotPlayerProfile, type PlayerProfile } from '../../core/player-profile';
 import type { PortDefinition } from '../../core/port-types';
 import type { WorldMap } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -76,11 +76,13 @@ export interface CareerCombatSetup {
 
 export interface CareerPlayerDomainCheckpoint {
   readonly version: 1;
+  readonly profile: PlayerProfile;
   readonly player: CareerPlayerCheckpoint;
   readonly society: CareerPlayerSocietyCheckpoint;
 }
 
 export interface StagedFullCareerSession {
+  readonly profile: PlayerProfile;
   readonly society: StagedCareerPlayerSociety;
   readonly navigationWorld: StagedCareerNavigationWorld;
   readonly commerce: StagedCareerCommerceShipSession;
@@ -143,6 +145,7 @@ export function captureCareerFullSession(
       navigation: session.navigationWorld.navigation.exportState(),
       player: {
         version: 1,
+        profile: snapshotPlayerProfile(session.profile),
         player: captureCareerPlayer(commerce.trade.player),
         society: captureCareerPlayerSociety(session.society),
       },
@@ -281,9 +284,10 @@ export function stageCareerFullSession(
 ): StagedFullCareerSession {
   const { sections } = validateCareerSnapshot(candidate);
   const savedPlayer = section<CareerPlayerDomainCheckpoint>(sections.player);
-  if (!savedPlayer || savedPlayer.version !== 1) {
+  if (!savedPlayer || savedPlayer.version !== 1 || !savedPlayer.profile) {
     throw new Error('Invalid career player domain');
   }
+  const profile = createPlayerProfile(savedPlayer.profile);
   const navigationWorld = stageCareerNavigationWorld(
     deps.baseWorld,
     section<NavigationCheckpoint>(sections.navigation),
@@ -305,7 +309,7 @@ export function stageCareerFullSession(
     commerce.ships.ownership.snapshot().ownedShipIds,
     deps.factionIds
   );
-  const crew = createCrewRosterService(deps.profile, section<CareerCrewCheckpoint>(sections.crew));
+  const crew = createCrewRosterService(profile, section<CareerCrewCheckpoint>(sections.crew));
   validateCrewShips(crew, commerce);
   const fieldsLegal = stageCareerFieldLegalSession(
     {
@@ -325,7 +329,7 @@ export function stageCareerFullSession(
     commerce.ships.activeShipId
   );
   for (const id of custody.prisoners) prisoners.add(id);
-  const prepared = { navigationWorld, commerce, society, crew, operations, fieldsLegal, custody };
+  const prepared = { profile, navigationWorld, commerce, society, crew, operations, fieldsLegal, custody };
   const campaigns = stageCareerCampaigns(
     section<CampaignSnapshot>(sections.campaigns),
     deps.campaignDefinitions,
