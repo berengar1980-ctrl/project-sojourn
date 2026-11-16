@@ -1130,3 +1130,30 @@ Die Teiladapter für Märkte, physische Ressourcen, Ereignisse, Markt-Intel
 und NPC-Wirtschaftstag sind als frische gemeinsame Session komponiert und
 werden durch einen übergreifenden Roundtrip-Test geprüft. Spieler und
 NPCs müssen weiterhin aus demselben Save stammen; kein globaler Career-Swap.
+
+## Review-Log (2026-11-16): Sektorhandel und NPC-Wirtschaft gemeinsam laden
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Neuer
+übergreifender Restore der Spieler-Wirtschaft, NPC-Sektorrouten und laufenden
+Handelspläne gegen dieselbe Marktinstanz. Beschädigte Waren-/Ortsreferenzen
+werden abgewiesen; der vollumfängliche Career-Session-Swap fehlt weiterhin.
+
+## Review-Log (2026-11-16): Career-Crew-Checkpoint
+
+**Keine Statusänderung** historischer Feature-IDs. Versionierter Roster-Snapshot
+für Fähigkeiten, Training, Verwundungen, persönliche und Boarding-Ausrüstung
+sowie schiffsbezogene Stationszuordnungen. Neue, isolierte Wiederherstellung;
+vollständiger Career-Swap bleibt offen.
+
+## Review-Log (2026-11-16): Kampagnenaktionsbelege
+
+**Keine Änderung** der historischen Feature-IDs. Kampagnenstände und bereits
+angewendete Belohnungsbelege werden isoliert wiederhergestellt; ein Gate
+verhindert neue Belohnungseffekte, bevor die gesamte neue Session aktiv ist.
+
+## 2026-11-16 – Career-Speicherintegration im Draft-PR #319
+
+Neue Checkpoints für laufende Kämpfe, lokale NPC-Felder, Bergungsereignisse,
+Kampagnenwelten, Crew, Recht/Haft, Handelsmandat, Schmuggel und Fraktionsruf.
+Bestehende Feature-Parity-Wertungen ändern sich nicht durch diese noch nicht
+vollständig am Live-Controller aktivierte Speicherung.

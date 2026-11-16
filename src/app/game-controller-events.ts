@@ -134,6 +134,25 @@ export function sectorEventLocation(
 const WORLD_DAY_SECONDS = 180;
 const controllerDayElapsed = new WeakMap<ControllerRuntimeContext, number>();
 
+/** Save the fractional economic day without replaying a daily market settlement. */
+export function captureControllerDayElapsed(context: ControllerRuntimeContext): number {
+  return controllerDayElapsed.get(context) ?? 0;
+}
+
+/** Only install a validated clock on a fresh controller, before the first tick. */
+export function restoreControllerDayElapsed(
+  context: ControllerRuntimeContext,
+  elapsed: number
+): void {
+  if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed >= WORLD_DAY_SECONDS) {
+    throw new Error('Invalid saved economic day clock');
+  }
+  if (controllerDayElapsed.has(context)) {
+    throw new Error('Economic day clock is already running');
+  }
+  controllerDayElapsed.set(context, elapsed);
+}
+
 export function tickEconomy(context: ControllerRuntimeContext, dt: number): void {
   const elapsed = (controllerDayElapsed.get(context) ?? 0) + Math.max(0, dt);
   const days = Math.floor(elapsed / WORLD_DAY_SECONDS);

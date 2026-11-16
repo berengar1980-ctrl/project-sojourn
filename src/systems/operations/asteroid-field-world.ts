@@ -1,4 +1,9 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { SectorNpcState } from '../../core/npc-types';
+import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
+import { cloneCareerJson } from '../persistence/career-save-contract';
+import type { LocalPirateCheckpoint } from '../npcs/npc-local-pirate-checkpoint';
+import type { SecurityDroneCheckpoint } from './asteroid-security-drone-checkpoint';
 import type { WorldLocation } from '../../core/world-types';
 import { generateMiningSpace } from '../local-space/local-space-generator';
 import type { NpcLocalMiningService } from '../npcs/npc-mining-targets';
@@ -15,10 +20,26 @@ export interface AsteroidFieldRuntime {
   readonly drone: AsteroidSecurityDrone;
 }
 
-type MinerFactory = (
+export type CareerMinerFactory = (
   location: WorldLocation,
-  instance: LocalSpaceInstance
+  instance: LocalSpaceInstance,
+  checkpoint?: LocalMinerCheckpoint
 ) => NpcLocalMiningService;
+
+export interface CareerAsteroidFieldCheckpoint {
+  readonly version: 1;
+  readonly backgroundAccumulator: number;
+  readonly fields: Readonly<
+    Record<
+      string,
+      {
+        readonly miners: LocalMinerCheckpoint;
+        readonly pirates: LocalPirateCheckpoint;
+        readonly drone: SecurityDroneCheckpoint;
+      }
+    >
+  >;
+}
 
 /**
  * One authoritative local world per mining location. Scene mounts reference the
@@ -31,21 +52,77 @@ export class AsteroidFieldWorld {
   constructor(
     locations: readonly WorldLocation[],
     claims: AsteroidClaimRegistry,
-    miners: MinerFactory
+    miners: CareerMinerFactory,
+    checkpoint?: CareerAsteroidFieldCheckpoint,
+    npcs: readonly SectorNpcState[] = []
   ) {
+    if (checkpoint) {
+      if (
+        checkpoint.version !== 1 ||
+        !Number.isFinite(checkpoint.backgroundAccumulator) ||
+        checkpoint.backgroundAccumulator < 0 ||
+        checkpoint.backgroundAccumulator >= 0.25 ||
+        !checkpoint.fields ||
+        typeof checkpoint.fields !== 'object' ||
+        Array.isArray(checkpoint.fields)
+      ) {
+        throw new Error('Invalid asteroid field checkpoint');
+      }
+      const ids = locations.filter((location) => location.activities.mine).map((item) => item.id);
+      if (
+        Object.keys(checkpoint.fields).length !== ids.length ||
+        ids.some((id) => !Object.hasOwn(checkpoint.fields, id))
+      ) {
+        throw new Error('Asteroid field checkpoint locations mismatch');
+      }
+      this.backgroundAccumulator = checkpoint.backgroundAccumulator;
+    }
     for (const location of locations) {
       if (!location.activities.mine) continue;
       const seed = claims.seedFor(location.id, () => hashId('sojourn-field:' + location.id));
       const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
       claims.restoreField(location.id, instance.asteroids);
+      const saved = checkpoint?.fields[location.id];
       this.fields.set(location.id, {
         locationId: location.id,
         instance,
-        miners: miners(location, instance),
-        pirates: new LocalPirateTraffic(instance.width, instance.height, seed),
-        drone: new AsteroidSecurityDrone(instance.width, instance.height, instance.asteroids),
+        miners: miners(location, instance, saved?.miners),
+        pirates: saved
+          ? LocalPirateTraffic.fromCheckpoint(
+              instance.width,
+              instance.height,
+              seed,
+              npcs,
+              saved.pirates
+            )
+          : new LocalPirateTraffic(instance.width, instance.height, seed),
+        drone: saved
+          ? AsteroidSecurityDrone.fromCheckpoint(
+              instance.width,
+              instance.height,
+              instance.asteroids,
+              saved.drone
+            )
+          : new AsteroidSecurityDrone(instance.width, instance.height, instance.asteroids),
       });
     }
+  }
+
+  /** Capture every field, not only the currently mounted scene. */
+  exportState(): CareerAsteroidFieldCheckpoint {
+    const fields: Record<string, CareerAsteroidFieldCheckpoint['fields'][string]> = {};
+    for (const [id, field] of this.fields) {
+      fields[id] = {
+        miners: field.miners.exportState(),
+        pirates: field.pirates.exportState(),
+        drone: field.drone.exportState(),
+      };
+    }
+    return cloneCareerJson({
+      version: 1 as const,
+      backgroundAccumulator: this.backgroundAccumulator,
+      fields,
+    });
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {

@@ -5,7 +5,18 @@ import type {
   SectorSalvageEvent,
 } from '../../core/salvage-types';
 import type { SectorNpcState } from '../../core/npc-types';
-import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
+import {
+  stageCareerSalvageEvents,
+  type CareerSalvageEventsCheckpoint,
+} from './career-salvage-events-checkpoint';
+import type { WorldMap, WorldPoint } from '../../core/world-types';
+import {
+  randomFrom,
+  eventPosition,
+  cloneEvent,
+  nearestTowFacility,
+  emptyResult,
+} from './sector-salvage-event-utils';
 import {
   distressTrapChance,
   pickDistressProfile,
@@ -17,67 +28,9 @@ import {
 export const MAX_ACTIVE_SALVAGE_EVENTS = 3;
 export const MAX_ACTIVE_DISTRESS_EVENTS = 1;
 const WRECK_KINDS: readonly SalvageWreckKind[] = ['freighter', 'salvager', 'miner', 'patrol'];
-function randomFrom(seed: number): () => number {
-  let state = seed >>> 0 || 1;
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 4294967296;
-  };
-}
-
-function clampPoint(world: WorldMap, point: WorldPoint): WorldPoint {
-  return {
-    x: Math.max(180, Math.min(world.width - 180, point.x)),
-    y: Math.max(180, Math.min(world.height - 180, point.y)),
-  };
-}
-
-function eventPosition(world: WorldMap, origin: WorldPoint, random: () => number): WorldPoint {
-  const angle = random() * Math.PI * 2;
-  const distance = 520 + random() * 980;
-  return clampPoint(world, {
-    x: origin.x + Math.cos(angle) * distance,
-    y: origin.y + Math.sin(angle) * distance,
-  });
-}
-
-function cloneEvent(event: SectorSalvageEvent): SectorSalvageEvent {
-  return { ...event, position: { ...event.position } };
-}
-
-function nearestTowFacility(world: WorldMap, event: SectorSalvageEvent): WorldLocation | null {
-  return (
-    world.locations
-      .filter(
-        (location) =>
-          location.activities.shipyard || location.activities.dock || location.activities.refuel
-      )
-      .map((location) => ({
-        location,
-        distance: Math.hypot(
-          location.position.x - event.position.x,
-          location.position.y - event.position.y
-        ),
-      }))
-      .sort((first, second) => first.distance - second.distance)[0]?.location ?? null
-  );
-}
-
-function emptyResult(text: string, success = false): DistressActionResult {
-  return {
-    success,
-    text,
-    boardingRequired: false,
-    salvageRights: false,
-    rewardCredits: 0,
-    towDestinationId: null,
-    workHours: 0,
-  };
-}
 
 export interface SectorSalvageEventService {
+  exportState(): CareerSalvageEventsCheckpoint;
   readonly active: readonly SectorSalvageEvent[];
   readonly playerVisible: readonly SectorSalvageEvent[];
   readonly currentDay: number;
@@ -101,6 +54,7 @@ export interface SectorSalvageEventService {
 class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private readonly events: SectorSalvageEvent[] = [];
   private readonly random: () => number;
+  private randomCalls = 0;
   private nextSpecialDay: number;
   private nextDistressDay: number;
   private serial = 0;
@@ -109,11 +63,42 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
   private playerSalvageEligible = false;
   constructor(
     private readonly world: WorldMap,
-    seed: number
+    private readonly seed: number,
+    checkpoint?: CareerSalvageEventsCheckpoint
   ) {
-    this.random = randomFrom(seed);
+    const rng = randomFrom(seed);
+    this.random = () => {
+      this.randomCalls += 1;
+      return rng();
+    };
     this.nextSpecialDay = 0;
     this.nextDistressDay = 0;
+    if (checkpoint) {
+      const saved = stageCareerSalvageEvents(checkpoint);
+      if (saved.seed !== seed) throw new Error('Salvage event world seed mismatch');
+      for (let draw = 0; draw < saved.randomCalls; draw += 1) this.random();
+      this.currentDay = saved.currentDay;
+      this.nextSpecialDay = saved.nextSpecialDay;
+      this.nextDistressDay = saved.nextDistressDay;
+      this.serial = saved.serial;
+      this.lastDistressDamage = saved.lastDistressDamage;
+      this.playerSalvageEligible = saved.playerSalvageEligible;
+      this.events.push(...saved.events.map(cloneEvent));
+    }
+  }
+  exportState(): CareerSalvageEventsCheckpoint {
+    return stageCareerSalvageEvents({
+      version: 1,
+      seed: this.seed,
+      randomCalls: this.randomCalls,
+      currentDay: this.currentDay,
+      nextSpecialDay: this.nextSpecialDay,
+      nextDistressDay: this.nextDistressDay,
+      serial: this.serial,
+      lastDistressDamage: this.lastDistressDamage,
+      playerSalvageEligible: this.playerSalvageEligible,
+      events: this.events.map(cloneEvent),
+    });
   }
   get active(): readonly SectorSalvageEvent[] {
     return this.live().map(cloneEvent);
@@ -491,7 +476,8 @@ class SectorSalvageEventRuntime implements SectorSalvageEventService {
 
 export function createSectorSalvageEventService(
   world: WorldMap,
-  seed = 0x50a7a9e
+  seed = 0x50a7a9e,
+  checkpoint?: CareerSalvageEventsCheckpoint
 ): SectorSalvageEventService {
-  return new SectorSalvageEventRuntime(world, seed);
+  return new SectorSalvageEventRuntime(world, seed, checkpoint);
 }

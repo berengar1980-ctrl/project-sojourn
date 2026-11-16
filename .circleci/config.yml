@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  quality_gate_enabled:
+    type: boolean
+    default: false
+
 jobs:
   quality-gate:
     docker:
@@ -54,8 +59,13 @@ jobs:
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
+      - run:
+          name: Career aggregate diagnostics after failed quality gate
+          when: on_fail
+          command: node scripts/ci-career-batch-diagnostics.cjs
 
 workflows:
   quality:
+    when: << pipeline.parameters.quality_gate_enabled >>
     jobs:
       - quality-gate

@@ -1,4 +1,9 @@
 import type { WorldLocation, WorldMap } from '../../core/world-types';
+import {
+  stageCareerCampaignWorldCheckpoint,
+  type CareerCampaignWorldCheckpoint,
+  type CampaignWorldSnapshot,
+} from './career-campaign-world-checkpoint';
 import type { NavigationService } from '../navigation/navigation-types';
 
 export interface CampaignSystem {
@@ -7,11 +12,7 @@ export interface CampaignSystem {
   readonly exitLocationId: string;
 }
 
-export interface CampaignWorldSnapshot {
-  readonly activeSystemId: string | null;
-  readonly locations: Readonly<Record<string, readonly WorldLocation[]>>;
-  readonly systems: Readonly<Record<string, readonly CampaignSystem[]>>;
-}
+export type { CampaignWorldSnapshot } from './career-campaign-world-checkpoint';
 
 /** Runtime-owned, transient campaign worlds. No savegame or persistent storage. */
 export interface CampaignWorldService {
@@ -24,6 +25,7 @@ export interface CampaignWorldService {
   exitLocationId(): string | null;
   releaseCampaign(campaignId: string): void;
   snapshot(): CampaignWorldSnapshot;
+  exportCareerState(): CareerCampaignWorldCheckpoint;
 }
 
 const ID = /^[a-z][a-z0-9_-]{0,79}$/u;
@@ -134,15 +136,82 @@ function snapshotCampaignWorld(
   });
 }
 
+interface RestoredCampaignWorld {
+  readonly active: { owner: string; id: string; returnLocationId: string } | null;
+  readonly revision: number;
+  readonly baseView: WorldMap;
+}
+
+function restoreCampaignWorldState(
+  checkpoint: CareerCampaignWorldCheckpoint,
+  baseWorld: WorldMap,
+  navigation: NavigationService,
+  locations: Map<string, Map<string, WorldLocation>>,
+  systems: Map<string, Map<string, CampaignSystem>>
+): RestoredCampaignWorld {
+  const restored = stageCareerCampaignWorldCheckpoint(checkpoint);
+  let observedRevisions = 0;
+  const existingId = (id: string): boolean =>
+    baseWorld.locations.some((location) => location.id === id) ||
+    [...locations.values()].some((entries) => entries.has(id));
+  for (const [owner, entries] of Object.entries(restored.snapshot.locations)) {
+    for (const location of entries) {
+      if (
+        !registerMissionLocation(owner, location, baseWorld, locations, existingId, () => {
+          observedRevisions += 1;
+        })
+      ) {
+        throw new Error('Invalid restored mission location');
+      }
+    }
+  }
+  for (const [owner, entries] of Object.entries(restored.snapshot.systems)) {
+    for (const system of entries) {
+      if (!registerMissionSystem(owner, system, baseWorld, systems)) {
+        throw new Error('Invalid restored campaign system');
+      }
+    }
+  }
+  if (restored.revision < observedRevisions) {
+    throw new Error('Invalid saved campaign world revision');
+  }
+  const revision = restored.revision;
+  const baseView = {
+    ...baseWorld,
+    ...(revision > 0 ? { id: baseWorld.id + '-campaign-' + revision } : {}),
+    locations: [
+      ...baseWorld.locations,
+      ...[...locations.values()].flatMap((entries) => [...entries.values()]),
+    ],
+  };
+  const active = restored.active ? { ...restored.active } : null;
+  if (active) {
+    const system = systems.get(active.owner)?.get(active.id);
+    if (!system || !baseView.locations.some((item) => item.id === active.returnLocationId)) {
+      throw new Error('Unknown restored campaign system or return point');
+    }
+    const currentId = navigation.getSnapshot().currentLocationId;
+    if (currentId && !system.map.locations.some((item) => item.id === currentId)) {
+      throw new Error('Saved navigation is outside the campaign system');
+    }
+  }
+  // Navigation already owns the staged map and route; never call replaceWorld here.
+  return { active, revision, baseView };
+}
+
 export function createCampaignWorldService(
   baseWorld: WorldMap,
-  navigation: NavigationService
+  navigation: NavigationService,
+  checkpoint?: CareerCampaignWorldCheckpoint
 ): CampaignWorldService {
   const locations = new Map<string, Map<string, WorldLocation>>();
   const systems = new Map<string, Map<string, CampaignSystem>>();
-  let active: { owner: string; id: string; returnLocationId: string } | null = null;
-  let revision = 0;
-  let baseView: WorldMap = baseWorld;
+  const restored = checkpoint
+    ? restoreCampaignWorldState(checkpoint, baseWorld, navigation, locations, systems)
+    : null;
+  let active = restored?.active ?? null;
+  let revision = restored?.revision ?? 0;
+  let baseView: WorldMap = restored?.baseView ?? baseWorld;
 
   function rebuildBase(): void {
     revision += 1;
@@ -222,5 +291,11 @@ export function createCampaignWorldService(
       rebuildBase();
     },
     snapshot: () => snapshotCampaignWorld(active?.id ?? null, locations, systems),
+    exportCareerState: () => ({
+      version: 1,
+      revision,
+      snapshot: snapshotCampaignWorld(active?.id ?? null, locations, systems),
+      active: active ? { ...active } : null,
+    }),
   };
 }

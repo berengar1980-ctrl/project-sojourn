@@ -253,3 +253,103 @@ Der Player und die NPC-Liste müssen zuvor aus demselben Career-Snapshot
 vorbereitet werden. Der Controller-Umschaltpunkt für eine vollständig
 vorbereitete Career-Session ist **weiterhin nicht umgesetzt**; diese
 Komposition allein ist daher noch kein nutzbarer Spielstand.
+
+## Sektorhandel als gemeinsame Restore-Gruppe (nach PR #318)
+
+`career-economy-integrity.ts` prüft vor dem Aufbau der Simulation die
+Waren-/Marktkennungen, NPC-Fracht, Spielerfracht, autonome Handelsziele,
+laufende Kauf-/Verkaufsaufträge, Nebenhandelspläne und NPC-Marktbeobachtungen.
+Unbekannte Ressourcen und Handelsorte werden abgewiesen statt beim Laden
+stillschweigend zurückgesetzt oder erneut ausgelöst zu werden.
+
+`career-npc-economy-session.ts` führt den Sektor-NPC-Checkpoint mit den
+Markt-, Pool-, Ereignis-, Intel- und NPC-Tagesabrechnungsständen zusammen.
+Alle NPCs werden als neue Objekte validiert; diese Instanzen werden dann
+auch im neuen Wirtschaftsdienst verwendet. Die ursprünglichen NPCs bleiben
+selbst bei fehlerhaften Handelsaufträgen unverändert.
+
+`career-commerce-session.ts` ergänzt die Spieler-Fracht und den Geldbeutel.
+Der Spieler-Handelsservice wird erst erzeugt, nachdem die neue Marktinstanz
+vorliegt. Ein anschließender Kauf verändert damit **denselben Markt**, den
+auch die wiederhergestellte Wirtschaft und die NPC-Services benutzen.
+Ein Regressionstest deckt den gemeinsamen Roundtrip, echte Kaufbuchung,
+kaputte Handelsziele und fehlerhafte Spieler-Credits ab.
+
+Dies ist noch **kein globaler Career-Swap**: Schiffsausrüstung, Crew, aktive
+Felder, Recht, Haft, Kampf, Kampagnen und Welt müssen ebenfalls aus demselben
+Snapshot aufbereitet und erst nach vollständiger Prüfung gemeinsam aktiviert
+werden. Save/Load-UI bleibt gesperrt.
+
+### Crew-Roster und Fortschritt (PR #319)
+
+Der `CrewRosterService` kann mit `exportState()` Mitglieder einschließlich
+Stations- und Kampffertigkeiten, Trainingsstunden, Verletzungen, Moral,
+persönlicher Ausrüstung, Boarding-Ausrüstung sowie schiffsspezifischer
+Stationsbesetzungen als versionierten Checkpoint erfassen.
+`createCrewRosterService(profile, checkpoint)` validiert Identitäten,
+Schiffs-/Stationskennungen, doppelte Zuordnungen und numerische Werte, bevor
+es eine **neue** Roster-Instanz erzeugt. Fehler im Crew-Checkpoint verändern
+nicht den bestehenden Roster. Dieser Adapter wird erst beim vollständigen
+Career-Session-Staging mit Spieler/Schiffen installiert.
+
+### Kampagnen-Receipts mit Aktivierungssperre (PR #319)
+
+`career-campaign-session.ts` verwendet die vorhandenen versionierten
+`CampaignSnapshot`- und `appliedActionIds`-Belege. Definitionen werden
+beim Wiederaufbau geprüft; inkompatible oder fehlende Pakete verhindern die
+Session-Vorbereitung. Vor dem globalen Session-Swap sperrt ein Action-Gate
+sämtliche neuen Belohnungen und Spielweltaktionen. Erst nach erfolgreicher
+Aktivierung dürfen neue Aktionen ausgeführt werden. Bereits quittierte
+Belohnungen werden beim Restore nicht erneut angewendet. Das ist eine
+vorbereitete Kampagnen-Teilautorität, noch keine Freigabe für einen
+unvollständigen Spielstand.
+
+## PR #319: Einheitliche 14-Domänen-Sitzung (Implementierungsstand)
+
+**Neu implementiert (noch in Draft, ungeprüft):** Gemeinsamer Capture- und
+Restore-Pfad (`career-full-session.ts`) für Navigation, Spieler (inklusive
+Schmuggel, Handelsmandat und Ruf), Schiffe, Crew, Wirtschaft, NPCs, laufende
+Blockaden/Patrouillen/Bergung, lokale Asteroidenfelder, Konzessionen, Recht,
+Haft, Kampf, Kampagnen und dynamische Welt. `career-session-manager.ts`
+verwendet den vorhandenen versionierten JSON-Store und installiert eine
+vorbereitete Session erst nach vollständigem Build. Erneutes Laden eines
+identischen Spielstands darf keine Buchungen oder Missionsbelohnungen
+wiederholen.
+
+**Wichtige Integrationsregeln:** Spielerhandel und Schiffe teilen denselben
+Wallet; NPCs/Operationen teilen dieselben NPC-Instanzen, Markt- und
+Ressourcenpool-Autoritäten. Erzbestände und Scanfortschritt werden vor den
+lokalen Mining-Diensten rekonstruiert. Blockade-Kosten, Patrouillenprämien,
+Notsignal-Belohnungen und Kampagnen-Aktionsbelege werden nicht erneut
+vergeben. Der laufende Kampf sichert RNG-Fortschritt und interne
+Physik-/Waffen-Zustände, nicht nur den Anzeige-Snapshot.
+
+**Live-Controller-Anbindung im Draft:** `bootstrap.ts` kann einen geprüften
+JSON-Spielstand vor dem Spielstart vollständig mit `prepareControllerCareer`
+stagen. `createGameController` übernimmt dann diese Autoritäten für
+Navigation, Markt, Spieler-Wallet, NPC-Sektor, Operations, Crew, Schiffe,
+Asteroidenfelder, Kampagnen und laufendes Spieler-Raumgefecht, statt
+jeweils neue Services zu erzeugen. Der Spielstand enthält das vollständige
+Kapitänsprofil und den Restzähler des 180-Sekunden-Wirtschaftstags.
+
+**Benutzeroberfläche im Draft:** Das Systemmenü bietet jetzt „Spielstand
+speichern“; das Hauptmenü „Karriere fortsetzen“ bei vorhandenem,
+struktur-validem Save. Im Spiel ist Speichern absichtlich auf den ruhenden
+Orbit oder Hafen beschränkt und bei Flug, Tankstopp, Gefecht, taktischem
+Boarding, Bergbau oder Wrackbergung gesperrt. Ungültige Spielstände verändern
+keine laufende Session; ein vollständiger Browser-Neustart wird noch nicht
+automatisiert getestet.
+
+**Vor dem Merge offen:** Die reguläre CircleCI muss am endgültigen
+Branch-Commit vollständig grün sein. Echte Browser-End-to-End-Tests müssen
+Speichern, Neuladen und fortgesetzten NPC-/Missionsbetrieb überprüfen.
+Insbesondere NPC-Schmuggel-Timer und lokale Randzustände sind noch auf
+explizite Save-Abdeckung zu prüfen. Die backendseitige Sitzungsverwaltung
+und der Browser-Neustart sind zwei unterschiedliche Integrationswege; die
+UI bietet noch kein unterbrechungsfreies Laden in eine bereits aktive
+Controller-Instanz.
+
+**Gemeinsame Abnahme:** Die CircleCI-Fail-Diagnose führt nach einem roten
+Qualitätsgate Formatierung, Lint, TypeScript, Dependency, Persistence-
+Architekturprüfung, Tests und Build in einem Durchlauf weiter aus, damit
+Fehler gesammelt statt schrittweise korrigiert werden können.

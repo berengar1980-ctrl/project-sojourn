@@ -25,12 +25,22 @@ import {
   type MarketSituationService,
 } from './market-situation-service';
 import type { EconomyMarketService } from './market-service';
+import { assertCareerEconomyIntegrity } from './career-economy-integrity';
 import { createNpcEconomyService } from './npc-economy-service';
 import type {
   NpcEconomyCheckpoint,
   NpcEconomyService,
   NpcEconomyServiceOptions,
 } from './npc-economy-types';
+
+export type CareerEconomyOptions =
+  | NpcEconomyServiceOptions
+  | ((services: {
+      readonly markets: EconomyMarketService;
+      readonly simulation: EconomySimulationService;
+      readonly player: PlayerEconomyState;
+      readonly npcs: readonly NpcEconomyState[];
+    }) => NpcEconomyServiceOptions);
 
 export interface CareerEconomySessionCheckpoint {
   readonly version: 1;
@@ -71,10 +81,10 @@ export function stageCareerEconomySession(
   checkpoint: CareerEconomySessionCheckpoint,
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
-  player: PlayerEconomyState,
+  player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   npcs: readonly NpcEconomyState[],
   seed: number,
-  options: NpcEconomyServiceOptions = {}
+  options: CareerEconomyOptions = {}
 ): StagedCareerEconomySession {
   if (
     !checkpoint ||
@@ -91,21 +101,27 @@ export function stageCareerEconomySession(
   const markets = stageCareerMarkets(checkpoint.markets, ports, resources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
+  const restoredPlayer = typeof player === 'function' ? player(markets) : player;
+  assertCareerEconomyIntegrity(markets, resources, restoredPlayer, npcs);
   const simulation = createEconomySimulationService(
     markets,
-    player,
+    restoredPlayer,
     resources,
     seed,
     npcs,
     checkpoint.pools
   );
   const intel = createMarketIntelService(markets, checkpoint.intel);
+  const npcOptions =
+    typeof options === 'function'
+      ? options({ markets, simulation, player: restoredPlayer, npcs })
+      : options;
   const npcService = createNpcEconomyService(
     markets,
     simulation,
     resources,
     npcs,
-    options,
+    npcOptions,
     checkpoint.npcEconomy
   );
   return { markets, simulation, situations, intel, npcs: npcService };

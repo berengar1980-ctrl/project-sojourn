@@ -14,6 +14,11 @@ import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
 import { getShipDefinition, resolveShipGameplayStats } from '../systems/ships';
 import { createGameController } from './game-controller';
+import {
+  prepareControllerCareer,
+  type PreparedControllerCareer,
+} from './game-controller-career-resume';
+import { createCareerSaveStore } from '../systems/persistence/career-save-store';
 import type { GameController } from './game-controller-types';
 
 export function bootstrap(root: HTMLElement | null): void {
@@ -24,9 +29,12 @@ export function bootstrap(root: HTMLElement | null): void {
 function launchCampaign(
   root: HTMLElement,
   profile: PlayerProfile,
-  selection: CampaignSelection
+  selection: CampaignSelection,
+  restored?: PreparedControllerCareer
 ): void {
-  const ship = getShipDefinition('salvage-100m-variant-01');
+  const ship = getShipDefinition(
+    restored?.session.commerce.ships.activeShipId ?? 'salvage-100m-variant-01'
+  );
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
   const loading = createCampaignLoadingScreen();
@@ -45,17 +53,27 @@ function launchCampaign(
   const start = (): void => {
     if (!running) return;
     try {
-      const navigation = createNavigationService(
-        narrowsSector,
-        narrowsSector.startLocationId,
-        ship.navigation.cruiseSpeed
-      );
+      const navigation =
+        restored?.session.navigationWorld.navigation ??
+        createNavigationService(
+          narrowsSector,
+          narrowsSector.startLocationId,
+          ship.navigation.cruiseSpeed
+        );
       game = createGameController({
         root,
-        ship: withPlayerShipName(ship, profile),
+        ship: restored
+          ? withPlayerShipName(ship, profile, 'salvage-100m-variant-01')
+          : withPlayerShipName(ship, profile),
         playerProfile: profile,
         navigation,
         campaignSelection: selection.snapshot(),
+        ...(restored
+          ? {
+              restoredSession: restored.session,
+              onCareerContextReady: restored.bindController,
+            }
+          : {}),
         onReturnToMainMenu: () => {
           if (!running) return;
           running = false;
@@ -80,6 +98,14 @@ function launchCampaign(
   requestAnimationFrame(() => requestAnimationFrame(start));
 }
 
+function canContinueCareer(): boolean {
+  try {
+    return createCareerSaveStore(window.localStorage).read().ok;
+  } catch {
+    return false;
+  }
+}
+
 function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
   document.querySelector('.settings-menu')?.remove();
   document.body.classList.remove('app-has-system-bar');
@@ -96,6 +122,20 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
         () => showMainMenu(root, selection),
         resolveShipGameplayStats(getShipDefinition('salvage-100m-variant-01')!).stations
       );
+    } else if (action === 'continue') {
+      try {
+        const saved = createCareerSaveStore(window.localStorage).read();
+        if (!saved.ok) throw new Error('Kein gültiger Karriere-Spielstand vorhanden.');
+        const staged = prepareControllerCareer(saved.snapshot);
+        launchCampaign(root, staged.session.profile, selection, staged);
+      } catch (error) {
+        showMainMenu(root, selection);
+        window.alert(
+          error instanceof Error
+            ? error.message
+            : 'Der Karriere-Spielstand kann nicht geladen werden.'
+        );
+      }
     } else if (action === 'campaigns') {
       current = createCampaignSelectionMenu(
         root,
@@ -118,7 +158,7 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
       root.append(button);
     }
   };
-  current = createStartMenu(root, navigate);
+  current = createStartMenu(root, navigate, canContinueCareer());
 }
 
 function showStartOptions(root: HTMLElement, back: () => void): void {

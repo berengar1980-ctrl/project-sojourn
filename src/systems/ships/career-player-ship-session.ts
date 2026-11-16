@@ -59,7 +59,8 @@ export function stageCareerPlayerShipSession(
   checkpoint: CareerPlayerShipCheckpoint,
   starterShipId: string,
   markets: EconomyMarketService,
-  resources: readonly EconomyResourceDefinition[]
+  resources: readonly EconomyResourceDefinition[],
+  sharedTrade?: PlayerTradeService
 ): StagedCareerPlayerShipSession {
   if (
     !checkpoint ||
@@ -70,7 +71,14 @@ export function stageCareerPlayerShipSession(
   ) {
     throw new Error('Invalid player and ship session checkpoint');
   }
-  const trade = stageCareerPlayer(checkpoint.player, markets, resources);
+  const trade = sharedTrade ?? stageCareerPlayer(checkpoint.player, markets, resources);
+  if (sharedTrade) {
+    const savedPlayer = JSON.stringify(checkpoint.player);
+    const stagedPlayer = JSON.stringify(captureCareerPlayer(sharedTrade.player));
+    if (savedPlayer !== stagedPlayer) {
+      throw new Error('Player wallet mismatch between ship and economy checkpoint');
+    }
+  }
   const progression = stageCareerShipProgression(
     checkpoint.progression,
     starterShipId,

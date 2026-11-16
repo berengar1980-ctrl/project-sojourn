@@ -6,6 +6,120 @@
       "reason": "Authoritative economic checkpoint composition for markets, resource pools, events, player intel and NPC economic time.",
       "checkpoint": "src/systems/economy/career-economy-session.ts",
       "test": "tests/economy/career-economy-session.test.cjs"
+    },
+    "src/systems/economy/career-economy-integrity.ts": {
+      "mode": "derived",
+      "reason": "Pure validation of cross-domain NPC trade links, market observations and player cargo; holds no mutable authority."
+    },
+    "src/systems/persistence/career-npc-economy-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes previously authoritative checkpoint domains into detached trade, economy and NPC session instances.",
+      "checkpoint": "src/systems/persistence/career-npc-economy-session.ts",
+      "test": "tests/persistence/career-npc-economy-session.test.cjs"
+    },
+    "src/systems/persistence/career-commerce-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes previously authoritative checkpoint domains into detached trade, economy and NPC session instances.",
+      "checkpoint": "src/systems/persistence/career-commerce-session.ts",
+      "test": "tests/persistence/career-npc-economy-session.test.cjs"
+    },
+    "src/systems/crew/career-crew-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Versioned authoritative crew state including training, equipment and ship station assignments.",
+      "checkpoint": "src/systems/crew/career-crew-checkpoint.ts",
+      "test": "tests/crew/career-crew-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-campaign-session.ts": {
+      "mode": "persisted",
+      "reason": "Versioned campaign progress staging preserves applied reward receipts and gates effects until session activation.",
+      "checkpoint": "src/systems/persistence/career-campaign-session.ts",
+      "test": "tests/persistence/career-campaign-session.test.cjs"
+    },
+    "src/systems/combat/career-strategic-combat-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Persists all authoritative combat runtime state including random sequence, projectiles and tactics.",
+      "checkpoint": "src/systems/combat/career-strategic-combat-checkpoint.ts",
+      "test": "tests/persistence/career-combat-runtime.test.cjs"
+    },
+    "src/systems/persistence/career-session-transaction.ts": {
+      "mode": "derived",
+      "reason": "Stateless transaction coordinator that stages all fourteen authorities before a single session pointer swap."
+    },
+    "src/systems/persistence/career-commerce-ship-session.ts": {
+      "mode": "persisted",
+      "reason": "Connects the persisted player ship progression to the shared restored commerce and NPC market authorities.",
+      "checkpoint": "src/systems/persistence/career-commerce-ship-session.ts",
+      "test": "tests/persistence/career-commerce-ship-session.test.cjs"
+    },
+    "src/systems/persistence/career-field-legal-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes authoritative offscreen asteroid field NPC services with depleted ore, claims, law and security patrols.",
+      "checkpoint": "src/systems/persistence/career-field-legal-session.ts",
+      "test": "tests/persistence/career-field-world-session.test.cjs"
+    },
+    "src/systems/salvage/career-salvage-events-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Preserves salvage mission reward receipts, spawn schedule, resolved events and deterministic random continuation.",
+      "checkpoint": "src/systems/salvage/career-salvage-events-checkpoint.ts",
+      "test": "tests/persistence/career-salvage-events.test.cjs"
+    },
+    "src/systems/persistence/career-navigation-world-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes saved navigation against the same campaign world overlay revision and remote system identity.",
+      "checkpoint": "src/systems/persistence/career-navigation-world-session.ts",
+      "test": "tests/persistence/career-campaign-world.test.cjs"
+    },
+    "src/systems/campaigns/career-campaign-world-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Validates versioned dynamic campaign world overlay, active foreign system and saved home return position.",
+      "checkpoint": "src/systems/campaigns/career-campaign-world-checkpoint.ts",
+      "test": "tests/persistence/career-campaign-world.test.cjs"
+    },
+    "src/systems/operations/career-operations-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Captures ongoing blockade and patrol contracts with idempotent costs and paid reward receipts.",
+      "checkpoint": "src/systems/operations/career-operations-checkpoint.ts",
+      "test": "tests/persistence/career-operations-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-operations-session.ts": {
+      "mode": "persisted",
+      "reason": "Stages NPC population, patrol, blockade and salvage authorities against shared NPCs and markets.",
+      "checkpoint": "src/systems/persistence/career-operations-session.ts",
+      "test": "tests/persistence/career-full-session.test.cjs"
+    },
+    "src/systems/persistence/career-custody-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Preserves prisoner identities and player labor/hauling credits against restored legal warrants.",
+      "checkpoint": "src/systems/persistence/career-custody-checkpoint.ts",
+      "test": "tests/persistence/career-custody-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-full-session.ts": {
+      "mode": "persisted",
+      "reason": "Captures and stages all fourteen canonical Career Save authorities and cross-domain references.",
+      "checkpoint": "src/systems/persistence/career-full-session.ts",
+      "test": "tests/persistence/career-full-session.test.cjs"
+    },
+    "src/systems/persistence/career-session-manager.ts": {
+      "mode": "derived",
+      "reason": "Stateless orchestration of versioned browser save storage and atomic session pointer replacement."
+    },
+    "src/systems/persistence/career-player-society.ts": {
+      "mode": "persisted",
+      "reason": "Captures player smuggling investigation, installed hidden holds, trade charter and faction reputation state without replaying costs.",
+      "checkpoint": "src/systems/persistence/career-player-society.ts",
+      "test": "tests/persistence/career-player-society.test.cjs"
+    },
+    "src/systems/combat/strategic-combat-checkpoint-types.ts": {
+      "mode": "derived",
+      "reason": "Static checkpoint and subsystem type declarations only; no mutable state or independently captured data."
+    },
+    "src/systems/salvage/sector-salvage-event-utils.ts": {
+      "mode": "derived",
+      "reason": "Pure deterministic salvage event placement, cloning, random-number generation and result creation; holds no mutable session authority."
+    },
+    "src/systems/combat/star-map-engagement-contract.ts": {
+      "mode": "derived",
+      "reason": "Type-only engagement service contract for wiring restored player combat; it holds no runtime authority."
     }
   }
 }

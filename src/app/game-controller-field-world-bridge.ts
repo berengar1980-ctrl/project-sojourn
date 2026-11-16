@@ -10,6 +10,21 @@ import { tickFieldPirates, tickFieldSecurity } from './game-controller-security'
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
+/** Install the already staged field authority instead of generating new ore/NPCs. */
+export function bindCareerFieldWorld(
+  context: ControllerRuntimeContext,
+  fields: AsteroidFieldWorld
+): void {
+  if (fieldWorlds.has(context)) throw new Error('Field world already installed');
+  fieldWorlds.set(context, fields);
+  for (const location of narrowsSector.locations) {
+    const field = fields.field(location.id);
+    if (!field) continue;
+    context.economy.securityDrones.set(location.id, field.drone);
+    context.economy.localPirates.set(location.id, field.pirates);
+  }
+}
+
 /** Create once per campaign; world state lives independently of mounted scenes. */
 export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldWorld {
   const previous = fieldWorlds.get(context);

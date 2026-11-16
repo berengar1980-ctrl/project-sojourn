@@ -1,13 +1,17 @@
 import { reactToPlayerAttack } from './player-attack-reaction';
+import type {
+  StarMapEngagementService,
+  StarMapEngagementOptions,
+} from './star-map-engagement-contract';
+export type {
+  StarMapEngagementService,
+  StarMapEngagementOptions,
+} from './star-map-engagement-contract';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 
-import type { ShipDefinition } from '../../core/ship-types';
-import type { WorldMap } from '../../core/world-types';
 import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
-
-import type { NavigationService } from '../navigation';
 
 import { getShipDefinition } from '../ships';
 
@@ -18,13 +22,10 @@ import {
   npcMayInitiateAttack,
 } from '../npcs/npc-combat-ai';
 
-import type { NpcSectorService } from '../npcs/npc-sector-service';
-
 import {
   createStrategicCombatService,
   type StrategicCombatArenaOptions,
   type StrategicCombatService,
-  type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
 import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
@@ -46,37 +47,6 @@ interface BackgroundCombat {
   readonly first: SectorNpcState;
   readonly second: SectorNpcState;
   readonly combat: StrategicCombatService;
-}
-
-export interface StarMapEngagementService {
-  attackNpc(npcId: string): boolean;
-  engageNpcNow(npcId: string): boolean;
-  engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
-  engageNpcsInArena(
-    attackerId: string,
-    defenderId: string,
-    arena: StrategicCombatArenaOptions
-  ): boolean;
-  syncPlayerPursuitTarget(): void;
-  tick(deltaSeconds: number): void;
-  activePlayerCombat(): StrategicCombatService | null;
-  activePlayerEnemy(): SectorNpcState | null;
-  finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
-}
-
-export interface StarMapEngagementOptions {
-  readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
-  readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
-  readonly onPlayerAttack?: (npc: SectorNpcState) => void;
-  readonly onPlayerVictory?: (id: string) => void;
-  readonly navigation: NavigationService;
-  readonly world?: () => WorldMap;
-  readonly isPlayerInCampaignSystem?: () => boolean;
-  readonly playerProtectedFromPirate?: (npc: SectorNpcState) => boolean;
-  readonly sectorNpcs: NpcSectorService;
-  readonly getPlayerShip: () => ShipDefinition;
-  readonly getPlayerCombatant: () => StrategicCombatantSetup;
-  readonly log: (message: string) => void;
 }
 
 interface EngagementRuntime {
@@ -493,6 +463,17 @@ export function createStarMapEngagementService(
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
     activePlayerEnemy: () => runtime.playerEnemy,
+    restorePlayerCareerCombat(combat, enemyId) {
+      if (runtime.playerCombat || runtime.playerEnemy) {
+        throw new Error('A player combat is already active');
+      }
+      const enemy = engagementNpc(runtime, enemyId);
+      if (!enemy || enemy.hullHp <= 0) throw new Error('Saved combat enemy unavailable');
+      const checkpoint = combat.exportCareerState();
+      if (checkpoint.defenderId !== enemyId) throw new Error('Career combat enemy mismatch');
+      runtime.playerCombat = combat;
+      runtime.playerEnemy = enemy;
+    },
     finishPlayerCombat: (boardingOutcome) => finishPlayerCombat(runtime, boardingOutcome),
   };
 }

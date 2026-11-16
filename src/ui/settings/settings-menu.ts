@@ -69,8 +69,13 @@ function createSettingsShell(): HTMLDivElement {
         </section>
 
         <section class="settings-menu__future">
-          <span>WEITERE EINSTELLUNGEN</span>
-          <small>Spielstand, Laden und Export werden hier später ergänzt.</small>
+          <span>KARRIERE</span>
+          <button class="settings-menu__main-menu" type="button" data-career-save>
+            SPIELSTAND SPEICHERN
+          </button>
+          <small role="status" data-career-status>
+            Speichern im ruhenden Orbit oder Hafen
+          </small>
         </section>
         <button class="settings-menu__main-menu" type="button">ZUM HAUPTMENÜ</button>
         <small class="settings-menu__main-menu-note">Der aktuelle Durchlauf wird beendet.</small>
@@ -152,7 +157,8 @@ function appendProfileIdentity(shell: HTMLDivElement, profile: PlayerProfile): v
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
-  profile?: PlayerProfile
+  profile?: PlayerProfile,
+  onSaveCareer?: () => void
 ): SettingsMenu {
   document.querySelector('.settings-menu')?.remove();
 
@@ -163,7 +169,12 @@ export function createSettingsMenu(
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
   const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
   const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
-  const mainMenu = shell.querySelector<HTMLButtonElement>('.settings-menu__main-menu')!;
+  const mainMenu = shell.querySelector<HTMLButtonElement>(
+    '.settings-menu__main-menu:not([data-career-save])'
+  )!;
+  const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
+  const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
+  save.disabled = !onSaveCareer;
   const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
   const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
   const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
@@ -215,6 +226,15 @@ export function createSettingsMenu(
     if (!window.confirm('Zum Hauptmenü zurückkehren? Der aktuelle Durchlauf wird beendet.')) return;
     onReturnToMainMenu();
   };
+  const onSave = (): void => {
+    try {
+      onSaveCareer?.();
+      saveStatus.textContent = 'Spielstand erfolgreich gespeichert.';
+    } catch (error) {
+      saveStatus.textContent =
+        error instanceof Error ? error.message : 'Spielstand konnte nicht gespeichert werden.';
+    }
+  };
   const onKeyDown = createSettingsKeyHandler(panel, setOpen);
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
@@ -222,6 +242,7 @@ export function createSettingsMenu(
   backdrop.addEventListener('click', onClose);
   close.addEventListener('click', onClose);
   mainMenu.addEventListener('click', onMainMenu);
+  save.addEventListener('click', onSave);
   window.addEventListener('keydown', onKeyDown, true);
 
   sync();
@@ -235,6 +256,7 @@ export function createSettingsMenu(
       backdrop.removeEventListener('click', onClose);
       close.removeEventListener('click', onClose);
       mainMenu.removeEventListener('click', onMainMenu);
+      save.removeEventListener('click', onSave);
       window.removeEventListener('keydown', onKeyDown, true);
       shell.remove();
       document.body.classList.remove('app-has-system-bar');

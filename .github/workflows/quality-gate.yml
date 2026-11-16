@@ -1,0 +1,45 @@
+name: Sojourn quality gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    if: ${{ true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout with main history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check Prettier
+        run: npm run format:check
+      - name: Check ESLint
+        run: npm run lint
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Check dependency architecture
+        run: npm run deps:check
+      - name: Check Career persistence architecture
+        run: npm run persistence:check
+      - name: Run all project tests
+        run: npm test
+      - name: Run economy horizons (90/180/365 days)
+        run: npm run test:economy-horizons
+      - name: Build production bundle
+        run: npm run build

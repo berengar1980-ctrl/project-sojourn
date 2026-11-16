@@ -1,7 +1,6 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
+import { advanceControllerFieldWorld } from './game-controller-field-world-bridge';
 import {
-  registerSectorShips,
   inspectLegalDockArrival,
   reportLegalDeparture,
   reportLegalOrbitalArrival,
@@ -25,11 +24,19 @@ import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { controllerEconomyFromCareer } from './game-controller-career-economy';
+import { captureControllerCareer } from './game-controller-career-capture';
+import {
+  installControllerCareer,
+  saveControllerCareer,
+  rememberMiningField,
+} from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
 import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
+import { createCampaignNavigationTracker } from './game-controller-campaign-events';
 import { tickControllerScene } from './game-controller-scene-tick';
 import { mountControllerShipSwitcher } from './game-controller-switcher-bridge';
 import { createControllerStarPanel } from './game-controller-star-map';
@@ -77,10 +84,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     else if (mode === 'port') mountControllerPort(context, false);
     else mountControllerStarMap(context);
   });
-}
-function rememberMiningField(context: ControllerRuntimeContext): void {
-  const field = context.state.localSpace?.getSnapshot().instance;
-  if (field) context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
 }
 
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
@@ -395,16 +398,24 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
+  const saved = options.restoredSession;
+  if (saved && saved.navigationWorld.navigation !== options.navigation) {
+    throw new Error('Career navigation must use the staged navigation authority');
+  }
+  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
+    throw new Error('Career ship must match the staged active ship');
+  }
   const systemLog = createControllerLog();
-  const economy = createControllerEconomy(options.navigation, (message) =>
-    systemLog.write(message)
-  );
-  economy.smuggling.activateShip(options.ship.id);
+  const economy = saved
+    ? controllerEconomyFromCareer(saved, (message) => systemLog.write(message))
+    : createControllerEconomy(options.navigation, (message) => systemLog.write(message));
+  if (!saved) economy.smuggling.activateShip(options.ship.id);
   const state = createInitialControllerState(options, economy);
 
-  const crew = createCrewRosterService(state.playerProfile);
-  const loadouts = createShipLoadoutService();
-  const shipOperations = createShipOperatingService(economy.trade);
+  const crew = saved?.crew ?? createCrewRosterService(state.playerProfile);
+  const loadouts = saved?.commerce.ships.loadouts ?? createShipLoadoutService();
+  const shipOperations =
+    saved?.commerce.ships.operating ?? createShipOperatingService(economy.trade);
   const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   let engagementWorld: () => WorldMap = () => narrowsSector;
@@ -419,14 +430,31 @@ export function createGameController(options: GameControllerOptions): GameContro
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
     log: (message) => systemLog.write(message),
   });
-  const campaignServices = createControllerCampaignServicesWithActions(
-    state,
-    economy,
-    crew,
-    loadouts,
-    engagements,
-    options
-  );
+  if (saved?.combat) {
+    engagements.restorePlayerCareerCombat(
+      saved.combat,
+      saved.combat.exportCareerState().defenderId
+    );
+  }
+  const campaignServices = saved
+    ? {
+        campaigns: saved.campaigns.campaigns,
+        campaignEvents: saved.campaigns.events,
+        campaignNavigation: createCampaignNavigationTracker(
+          saved.campaigns.events,
+          options.navigation.getSnapshot()
+        ),
+        reputation: saved.society.reputation,
+        world: saved.navigationWorld.world,
+      }
+    : createControllerCampaignServicesWithActions(
+        state,
+        economy,
+        crew,
+        loadouts,
+        engagements,
+        options
+      );
   foreignWorld = () => campaignServices.world.inForeignSystem();
   engagementWorld = () => campaignServices.world.world();
   const context: ControllerRuntimeContext = {
@@ -443,17 +471,17 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...campaignServices,
     state,
   };
-  registerSectorShips(context);
-  fieldWorldFor(context);
-  economy.salvageEvents.advanceDay(
-    economy.situations.currentDay,
-    options.navigation.getSnapshot().currentPosition,
-    state.activeShip.role === 'salvage'
+  installControllerCareer(context, options);
+  const menu = createSettingsMenu(
+    context.audio,
+    options.onReturnToMainMenu,
+    state.playerProfile,
+    () => saveControllerCareer(context)
   );
-  const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
+    careerSnapshot: () => captureControllerCareer(context),
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
     },
