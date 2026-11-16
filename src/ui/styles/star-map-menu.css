@@ -567,6 +567,10 @@
   color: #d8e9ed;
 }
 
+.star-map-menu__pane .campaign-journal__entry {
+  border-left: 4px solid #bca0e5;
+}
+
 .star-map-directory__item.star-map-event-row {
   border-left: 4px solid var(--event-accent);
   padding-left: 9px;
