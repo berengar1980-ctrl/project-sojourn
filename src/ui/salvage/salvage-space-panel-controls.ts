@@ -19,6 +19,7 @@ export interface SalvageSpacePanelOptions {
   readonly onCombatGrapple: () => void;
   readonly onNavigate: (target: WorldPoint) => void;
   readonly onInspect: (wreckId: string) => void;
+  readonly onClaimWreck: (wreckId: string) => void;
   readonly onBoardWreck?: (wreckId: string) => void;
   readonly onLongRangeScan: () => void;
   readonly onStrip: (wreckId: string, resourceId: string) => void;
@@ -40,6 +41,7 @@ export interface SalvageControls {
   readonly integrity: HTMLElement;
   readonly inspectButton: HTMLButtonElement;
   readonly boardButton: HTMLButtonElement;
+  readonly claimButton: HTMLButtonElement;
   readonly longScanButton: HTMLButtonElement;
   readonly scanLabelsButton: HTMLButtonElement;
   readonly workButton: HTMLButtonElement;
@@ -80,6 +82,7 @@ export function createShell(options: SalvageSpacePanelOptions): HTMLElement {
     '<div class="salvage-resource-list" hidden></div>',
     '<button class="salvage-work-button" type="button" hidden>BERGUNG STARTEN</button>',
     '<button class="salvage-inspect-button" type="button">NAHBEREICHSSCAN</button>',
+    '<button class="salvage-claim-button" type="button" hidden>WRACK BEANSPRUCHEN · 650 CR</button>',
     '<button class="salvage-board-button" type="button" hidden>WRACK ENTERN</button>',
     '<aside class="sector-salvage-event" hidden></aside>',
     '<button class="salvage-attack-button" type="button" hidden>ANGREIFEN</button>',
@@ -103,6 +106,7 @@ export function controls(shell: HTMLElement): SalvageControls {
     integrity: query<HTMLElement>('.salvage-integrity > div'),
     inspectButton: query<HTMLButtonElement>('.salvage-inspect-button'),
     boardButton: query<HTMLButtonElement>('.salvage-board-button'),
+    claimButton: query<HTMLButtonElement>('.salvage-claim-button'),
     longScanButton: query<HTMLButtonElement>('.long-scan-button'),
     scanLabelsButton: query<HTMLButtonElement>('.scan-label-toggle'),
     workButton: query<HTMLButtonElement>('.salvage-work-button'),
