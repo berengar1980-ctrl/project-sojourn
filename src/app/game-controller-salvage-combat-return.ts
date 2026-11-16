@@ -1,7 +1,7 @@
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { SalvageField } from '../core/salvage-types';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
-import { createSalvageLocalSpaceService } from '../systems/salvage';
+import type { createSalvageLocalSpaceService } from '../systems/salvage';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 
 /** Reconcile destructible salvage fragments and both combat ship positions. */
