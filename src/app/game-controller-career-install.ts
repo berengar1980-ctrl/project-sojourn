@@ -47,3 +47,11 @@ export function saveControllerCareer(context: ControllerRuntimeContext): void {
   systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
 }
 
+/** Remember player-visible mining mutations when returning to orbital scenes. */
+export function rememberMiningField(context: ControllerRuntimeContext): void {
+  const field = context.state.localSpace?.getSnapshot().instance;
+  if (field) {
+    context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
+  }
+}
+
