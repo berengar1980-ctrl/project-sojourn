@@ -120,6 +120,16 @@
     "src/systems/combat/star-map-engagement-contract.ts": {
       "mode": "derived",
       "reason": "Type-only engagement service contract for wiring restored player combat; it holds no runtime authority."
+    },
+    "src/systems/operations/ship-operation-permissions.ts": {
+      "mode": "derived",
+      "reason": "Pure ship-hull and NPC-job eligibility rules, computed from current ship definitions; no mutable state or checkpoint."
+    },
+    "src/systems/operations/wreck-claim-registry.ts": {
+      "mode": "persisted",
+      "reason": "Authoritative player and NPC wreck claims, expiry and salvage field depletion state persist inside the claims career section.",
+      "checkpoint": "src/systems/persistence/career-operational-registries.ts",
+      "test": "tests/operations/wreck-claim-registry.test.cjs"
     }
   }
 }
