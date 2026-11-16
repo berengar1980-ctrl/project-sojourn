@@ -22,6 +22,12 @@
       "reason": "Composes previously authoritative checkpoint domains into detached trade, economy and NPC session instances.",
       "checkpoint": "src/systems/persistence/career-commerce-session.ts",
       "test": "tests/persistence/career-npc-economy-session.test.cjs"
+    },
+    "src/systems/crew/career-crew-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Versioned authoritative crew state including training, equipment and ship station assignments.",
+      "checkpoint": "src/systems/crew/career-crew-checkpoint.ts",
+      "test": "tests/crew/career-crew-checkpoint.test.cjs"
     }
   }
 }
