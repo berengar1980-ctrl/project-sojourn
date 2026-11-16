@@ -56,86 +56,128 @@ function distance(first: WorldPoint, second: WorldPoint): number {
   return Math.hypot(second.x - first.x, second.y - first.y);
 }
 
+type MarketHistory = Map<number, Map<string, readonly HistoricalMarketEntry[]>>;
+
+function assertMarketEntry(
+  entry: HistoricalMarketEntry,
+  resourceIds: ReadonlySet<string>
+): void {
+  if (
+    !entry ||
+    !resourceIds.has(entry.resourceId) ||
+    !Number.isSafeInteger(entry.price) ||
+    entry.price < 1 ||
+    !Number.isSafeInteger(entry.stock) ||
+    entry.stock < 0
+  ) {
+    throw new Error('Invalid market intel entry');
+  }
+}
+
+function stageMarketObservations(
+  checkpoint: CareerMarketIntelCheckpoint,
+  locations: ReadonlySet<string>,
+  resourceIds: ReadonlySet<string>
+): Map<string, MarketIntelEntry> {
+  const observations = new Map<string, MarketIntelEntry>();
+  for (const entry of checkpoint.intel) {
+    if (
+      !entry ||
+      !locations.has(entry.locationId) ||
+      !Number.isSafeInteger(entry.observedDay) ||
+      entry.observedDay < 0
+    ) {
+      throw new Error('Invalid market intel observation');
+    }
+    assertMarketEntry(entry, resourceIds);
+    const key = entry.locationId + '|' + entry.resourceId;
+    if (observations.has(key)) throw new Error('Duplicate market intel observation');
+    observations.set(key, { ...entry });
+  }
+  return observations;
+}
+
+function stageHistoricalLocations(
+  saved: CareerMarketIntelCheckpoint['history'][number]['locations'],
+  locations: ReadonlySet<string>,
+  resourceIds: ReadonlySet<string>
+): Map<string, readonly HistoricalMarketEntry[]> {
+  const result = new Map<string, readonly HistoricalMarketEntry[]>();
+  for (const location of saved) {
+    if (
+      !location ||
+      !locations.has(location.locationId) ||
+      result.has(location.locationId) ||
+      !Array.isArray(location.entries)
+    ) {
+      throw new Error('Invalid market intel history location');
+    }
+    const seen = new Set<string>();
+    for (const entry of location.entries) {
+      assertMarketEntry(entry, resourceIds);
+      if (seen.has(entry.resourceId)) throw new Error('Duplicate historical resource');
+      seen.add(entry.resourceId);
+    }
+    result.set(
+      location.locationId,
+      location.entries.map((entry) => ({ ...entry }))
+    );
+  }
+  return result;
+}
+
+function stageMarketHistory(
+  checkpoint: CareerMarketIntelCheckpoint,
+  locations: ReadonlySet<string>,
+  resourceIds: ReadonlySet<string>
+): MarketHistory {
+  const history: MarketHistory = new Map();
+  for (const savedDay of checkpoint.history) {
+    if (
+      !savedDay ||
+      !Number.isSafeInteger(savedDay.day) ||
+      savedDay.day < 0 ||
+      !Array.isArray(savedDay.locations) ||
+      history.has(savedDay.day)
+    ) {
+      throw new Error('Invalid market intel history day');
+    }
+    history.set(
+      savedDay.day,
+      stageHistoricalLocations(savedDay.locations, locations, resourceIds)
+    );
+  }
+  return history;
+}
+
+function stageMarketIntel(
+  markets: EconomyMarketService,
+  checkpoint: CareerMarketIntelCheckpoint
+): { intel: Map<string, MarketIntelEntry>; history: MarketHistory } {
+  if (
+    checkpoint.version !== 1 ||
+    !Array.isArray(checkpoint.intel) ||
+    !Array.isArray(checkpoint.history) ||
+    checkpoint.history.length > MARKET_HISTORY_DAYS
+  ) {
+    throw new Error('Invalid market intel checkpoint');
+  }
+  const snapshot = markets.snapshot();
+  const locations = new Set(snapshot.map((market) => market.locationId));
+  const resourceIds = new Set(snapshot.flatMap((market) => Object.keys(market.entries)));
+  return {
+    intel: stageMarketObservations(checkpoint, locations, resourceIds),
+    history: stageMarketHistory(checkpoint, locations, resourceIds),
+  };
+}
+
 export function createMarketIntelService(
   markets: EconomyMarketService,
   checkpoint?: CareerMarketIntelCheckpoint
 ): MarketIntelService {
-  const intel = new Map<string, MarketIntelEntry>();
-  const history = new Map<number, Map<string, readonly HistoricalMarketEntry[]>>();
-
-  if (checkpoint) {
-    if (
-      checkpoint.version !== 1 ||
-      !Array.isArray(checkpoint.intel) ||
-      !Array.isArray(checkpoint.history) ||
-      checkpoint.history.length > MARKET_HISTORY_DAYS
-    ) {
-      throw new Error('Invalid market intel checkpoint');
-    }
-    const validLocations = new Set(markets.snapshot().map((market) => market.locationId));
-    const validResources = new Set(
-      markets.snapshot().flatMap((market) => Object.keys(market.entries))
-    );
-    const assertEntry = (entry: HistoricalMarketEntry): void => {
-      if (
-        !entry ||
-        !validResources.has(entry.resourceId) ||
-        !Number.isSafeInteger(entry.price) ||
-        entry.price < 1 ||
-        !Number.isSafeInteger(entry.stock) ||
-        entry.stock < 0
-      ) {
-        throw new Error('Invalid market intel entry');
-      }
-    };
-    for (const entry of checkpoint.intel) {
-      if (
-        !entry ||
-        !validLocations.has(entry.locationId) ||
-        !Number.isSafeInteger(entry.observedDay) ||
-        entry.observedDay < 0
-      ) {
-        throw new Error('Invalid market intel observation');
-      }
-      assertEntry(entry);
-      const key = entry.locationId + '|' + entry.resourceId;
-      if (intel.has(key)) throw new Error('Duplicate market intel observation');
-      intel.set(key, { ...entry });
-    }
-    for (const savedDay of checkpoint.history) {
-      if (
-        !savedDay ||
-        !Number.isSafeInteger(savedDay.day) ||
-        savedDay.day < 0 ||
-        !Array.isArray(savedDay.locations) ||
-        history.has(savedDay.day)
-      ) {
-        throw new Error('Invalid market intel history day');
-      }
-      const locations = new Map<string, readonly HistoricalMarketEntry[]>();
-      for (const location of savedDay.locations) {
-        if (
-          !location ||
-          !validLocations.has(location.locationId) ||
-          locations.has(location.locationId) ||
-          !Array.isArray(location.entries)
-        ) {
-          throw new Error('Invalid market intel history location');
-        }
-        const resourceIds = new Set<string>();
-        for (const entry of location.entries) {
-          assertEntry(entry);
-          if (resourceIds.has(entry.resourceId)) throw new Error('Duplicate historical resource');
-          resourceIds.add(entry.resourceId);
-        }
-        locations.set(
-          location.locationId,
-          location.entries.map((entry) => ({ ...entry }))
-        );
-      }
-      history.set(savedDay.day, locations);
-    }
-  }
+  const staged = checkpoint ? stageMarketIntel(markets, checkpoint) : null;
+  const intel = staged?.intel ?? new Map<string, MarketIntelEntry>();
+  const history: MarketHistory = staged?.history ?? new Map();
 
   const writeEntries = (
     locationId: string,
