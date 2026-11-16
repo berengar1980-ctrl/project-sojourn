@@ -6,6 +6,22 @@
       "reason": "Authoritative economic checkpoint composition for markets, resource pools, events, player intel and NPC economic time.",
       "checkpoint": "src/systems/economy/career-economy-session.ts",
       "test": "tests/economy/career-economy-session.test.cjs"
+    },
+    "src/systems/economy/career-economy-integrity.ts": {
+      "mode": "derived",
+      "reason": "Pure validation of cross-domain NPC trade links, market observations and player cargo; holds no mutable authority."
+    },
+    "src/systems/persistence/career-npc-economy-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes previously authoritative checkpoint domains into detached trade, economy and NPC session instances.",
+      "checkpoint": "src/systems/persistence/career-npc-economy-session.ts",
+      "test": "tests/persistence/career-npc-economy-session.test.cjs"
+    },
+    "src/systems/persistence/career-commerce-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes previously authoritative checkpoint domains into detached trade, economy and NPC session instances.",
+      "checkpoint": "src/systems/persistence/career-commerce-session.ts",
+      "test": "tests/persistence/career-npc-economy-session.test.cjs"
     }
   }
 }
