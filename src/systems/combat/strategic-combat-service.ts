@@ -1,4 +1,9 @@
 import { reviewShipContact } from './combat-contact-review';
+import {
+  captureCareerStrategicCombat,
+  stageCareerStrategicCombat,
+  type CareerStrategicCombatCheckpoint,
+} from './career-strategic-combat-checkpoint';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { advanceCombatPower } from './combat-power-service';
@@ -289,11 +294,18 @@ function createStrategicCombatRuntime(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatRuntime {
   const escapeArena = buildCombatArena(attackerSetup, defenderSetup, seed, arenaOptions);
-  return {
+  const random = createRng(seed);
+  let runtime: StrategicCombatRuntime;
+  runtime = {
+    seed,
+    randomCalls: 0,
     arena: escapeArena,
     attacker: createCombatant(attackerSetup, 'attacker', escapeArena),
     defender: createCombatant(defenderSetup, 'defender', escapeArena),
-    random: createRng(seed),
+    random: () => {
+      runtime.randomCalls += 1;
+      return random();
+    },
     projectiles: [],
     beams: [],
     mines: [],
@@ -316,6 +328,7 @@ function createStrategicCombatRuntime(
     lastImpact: null,
     recentImpacts: [],
   };
+  return runtime;
 }
 function tryFireGrapple(runtime: StrategicCombatRuntime, side: 'attacker' | 'defender'): boolean {
   if (runtime.winner || runtime.grapple || runtime.grappleUsed[side]) return false;
@@ -351,9 +364,26 @@ export function createStrategicCombatService(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
   seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
-  arenaOptions?: StrategicCombatArenaOptions
+  arenaOptions?: StrategicCombatArenaOptions,
+  checkpoint?: CareerStrategicCombatCheckpoint
 ): StrategicCombatService {
-  const runtime = createStrategicCombatRuntime(attackerSetup, defenderSetup, seed, arenaOptions);
+  const saved = checkpoint
+    ? stageCareerStrategicCombat(checkpoint, attackerSetup, defenderSetup)
+    : null;
+  const runtime = createStrategicCombatRuntime(
+    attackerSetup,
+    defenderSetup,
+    saved?.seed ?? seed,
+    arenaOptions
+  );
+  if (saved) {
+    for (let call = 0; call < saved.randomCalls; call += 1) runtime.random();
+    const { attacker: storedAttacker, defender: storedDefender, ...state } = saved.runtime;
+    Object.assign(runtime, state);
+    Object.assign(runtime.attacker, storedAttacker);
+    Object.assign(runtime.defender, storedDefender);
+  }
+  if (!saved) {
   runtime.attacker.nextStrategyReviewAt = runtime.firstPlanner === 'attacker' ? 0 : 4;
   runtime.defender.nextStrategyReviewAt = runtime.firstPlanner === 'defender' ? 0 : 4;
   recordCombatLog(
@@ -385,7 +415,9 @@ export function createStrategicCombatService(
           .join(', ')
     );
   }
+  }
   return {
+    exportCareerState: () => captureCareerStrategicCombat(runtime),
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
