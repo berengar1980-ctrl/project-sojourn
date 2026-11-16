@@ -1,5 +1,5 @@
 import type { CampaignActionPort } from '../core/campaign-types';
-import { withPlayerShipName } from '../core/player-profile';
+import { createPlayerProfile, withPlayerShipName } from '../core/player-profile';
 import { economyResources } from '../data/economy/economy-resources';
 import { campaignPackages } from '../data/campaigns/manifest';
 import { factionDefinitions } from '../data/factions/faction-manifest';
@@ -13,6 +13,7 @@ import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-se
 import {
   stageCareerFullSession,
   type CareerFullSessionDependencies,
+  type CareerPlayerDomainCheckpoint,
   type StagedFullCareerSession,
 } from '../systems/persistence/career-full-session';
 import type { CareerSnapshot } from '../systems/persistence/career-save-contract';
@@ -37,7 +38,9 @@ function careerDependencies(
     factionIds: factionDefinitions.map((faction) => faction.id),
     economySeed: 41,
     starterShipId: 'salvage-100m-variant-01',
-    profile: snapshot.sections.player as never,
+    profile: createPlayerProfile(
+      (snapshot.sections.player as unknown as CareerPlayerDomainCheckpoint).profile
+    ),
     initialCruiseSpeed: getShipDefinition('salvage-100m-variant-01')!.navigation.cruiseSpeed,
     campaignDefinitions: campaignPackages,
     makeMinerFactory: ({ commerce, operations }) => (location, instance, checkpoint) =>
