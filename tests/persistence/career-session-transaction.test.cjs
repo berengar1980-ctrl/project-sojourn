@@ -42,8 +42,8 @@ const damaged = JSON.parse(JSON.stringify(snapshot));
 damaged.sections.campaigns = { invalid: true };
 assert.throws(
   () =>
-    prepareCareerAuthorities(damaged, builders, (sections) => {
-      if (sections.campaigns.invalid) throw new Error('cross-domain validation failed');
+    prepareCareerAuthorities(damaged, builders, () => {
+      throw new Error('cross-domain validation failed');
     }),
   /cross-domain validation/
 );
