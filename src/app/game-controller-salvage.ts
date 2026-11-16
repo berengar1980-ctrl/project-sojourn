@@ -209,6 +209,33 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
+function returnToStarMapFromSalvage(
+  context: SalvageSceneRuntime,
+  refresh: () => void
+): void {
+  const { service, options, state } = context;
+  const snapshot = service.getSnapshot();
+  const { width, height } = snapshot.field;
+  if (!playerAtLocalExit(snapshot.ship.position, width, height, snapshot.field.seed)) {
+    options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
+    refresh();
+    return;
+  }
+  if (
+    state.activeSectorEvent?.distressStage === 'towing' &&
+    (!state.distressTow ||
+      !towShipAtExit(
+        snapshot.ship.position,
+        state.distressTow,
+        localSpaceExitPoint(width, height, snapshot.field.seed)
+      ))
+  ) {
+    options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
+    return;
+  }
+  options.onReturnToStarMap();
+}
+
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -294,26 +321,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onReturnToStarMap() {
-      const snapshot = service.getSnapshot();
-      const { width, height } = snapshot.field;
-      if (!playerAtLocalExit(snapshot.ship.position, width, height, snapshot.field.seed)) {
-        options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
-        refresh();
-        return;
-      }
-      if (
-        state.activeSectorEvent?.distressStage === 'towing' &&
-        (!state.distressTow ||
-          !towShipAtExit(
-            snapshot.ship.position,
-            state.distressTow,
-            localSpaceExitPoint(width, height, snapshot.field.seed)
-          ))
-      ) {
-        options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
-        return;
-      }
-      options.onReturnToStarMap();
+      returnToStarMapFromSalvage(context, refresh);
     },
   });
 }
