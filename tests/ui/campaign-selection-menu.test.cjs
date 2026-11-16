@@ -78,7 +78,16 @@ try {
   assert.equal(buttons[2].disabled, false, 'campaign manager must be enabled');
   buttons[2].dispatch('click');
   assert.deepEqual(actions, ['campaigns']);
+  assert.equal(buttons[3].textContent, 'Karriere fortsetzen');
+  assert.equal(buttons[3].disabled, true, 'without a valid Career save resume is disabled');
   menu.destroy();
+
+  const resumed = createStartMenu(host, (action) => actions.push(action), true);
+  const resumeButton = descendants(host, 'button')[3];
+  assert.equal(resumeButton.disabled, false, 'saved Career can be continued');
+  resumeButton.dispatch('click');
+  assert.deepEqual(actions, ['campaigns', 'continue']);
+  resumed.destroy();
 
   let backs = 0;
   let launches = 0;
