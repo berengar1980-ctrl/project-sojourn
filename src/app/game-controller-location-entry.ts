@@ -34,8 +34,6 @@ export function handleControllerLocationEntry(
     (currentLocationId?.startsWith('salvage-distress-') ||
       currentLocationId?.startsWith('salvage-special-'))
   ) {
-    context.systemLog.write(
-      'SIGNAL > KONTAKT ERLOSCHEN · NOTFALL BEHOBEN ODER BEREITS GEBORGEN'
-    );
+    context.systemLog.write('SIGNAL > KONTAKT ERLOSCHEN · NOTFALL BEHOBEN ODER BEREITS GEBORGEN');
   }
 }

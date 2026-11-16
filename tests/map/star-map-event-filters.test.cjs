@@ -70,10 +70,7 @@ assert.deepEqual(ids({ ...all, sort: 'danger' }), ['distress', 'salvage']);
 assert.deepEqual(ids({ ...all, sort: 'name' }), ['distress', 'salvage']);
 
 const fs = require('node:fs');
-const entry = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-location-entry.ts'),
-  'utf8'
-);
+const entry = fs.readFileSync(path.join(root, 'src/app/game-controller-location-entry.ts'), 'utf8');
 assert(entry.includes("currentLocationId?.startsWith('salvage-distress-')"));
 assert(entry.includes('SIGNAL > KONTAKT ERLOSCHEN'));
 assert(entry.includes('runSceneZoomTransition(context.root, mountSalvage)'));
