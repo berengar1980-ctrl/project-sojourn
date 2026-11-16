@@ -161,7 +161,7 @@ const snapshot = {
   version: 1,
   sections: {
     navigation: nav.exportState(),
-    player: { version: 1, profile, player: ships.player, society },
+    player: { version: 1, profile, controllerSecondsIntoDay: 94.5, player: ships.player, society },
     ships,
     crew: crew.exportState(),
     economy,
@@ -197,6 +197,7 @@ const slot = createCareerSessionSlot(original);
 const staged = stageCareerFullSession(snapshot, options);
 assert.strictEqual(slot.current(), original, 'staging must not activate new authority');
 assert.strictEqual(staged.commerce.ships.trade, staged.commerce.commerce.trade);
+assert.equal(staged.controllerSecondsIntoDay, 94.5, 'fractional economy day must survive restore');
 assert.strictEqual(staged.operations.sector.npcs, staged.commerce.commerce.npcs);
 assert.deepEqual(staged.fieldsLegal.fields.exportState(), fieldsLegal.fields);
 assert.deepEqual(staged.crew.exportState(), snapshot.sections.crew);
@@ -223,6 +224,12 @@ assert.strictEqual(controllerEconomy.legal, preparedBrowser.session.fieldsLegal.
 assert.deepEqual(preparedBrowser.session.profile, profile);
 assert.deepEqual(controllerEconomy.trade.player, staged.commerce.commerce.trade.player);
 
+const damagedClock = JSON.parse(JSON.stringify(snapshot));
+damagedClock.sections.player.controllerSecondsIntoDay = 180;
+assert.throws(
+  () => stageCareerFullSession(damagedClock, options),
+  /economic day clock/
+);
 const damaged = JSON.parse(JSON.stringify(snapshot));
 damaged.sections.operations.population.fundCredits = -1;
 assert.throws(() => stageCareerFullSession(damaged, options));
