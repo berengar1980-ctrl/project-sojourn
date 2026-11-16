@@ -1,4 +1,14 @@
-import type { CampaignWorldSnapshot } from './campaign-world-service';
+import type { WorldMap, WorldLocation } from '../../core/world-types';
+
+export interface CampaignWorldSnapshot {
+  readonly activeSystemId: string | null;
+  readonly locations: Readonly<Record<string, readonly WorldLocation[]>>;
+  readonly systems: Readonly<Record<string, readonly {
+    readonly map: WorldMap;
+    readonly entryLocationId: string;
+    readonly exitLocationId: string;
+  }[]>>;
+}
 import { cloneCareerJson } from '../persistence/career-save-contract';
 
 export interface CareerCampaignWorldCheckpoint {
