@@ -121,9 +121,12 @@ function reviewCurrentBranch(root = path.resolve(__dirname, '..')) {
   validateOwners(owners, root);
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], root);
   if (branch === 'main' || branch === 'master') return { checked: false, required: false };
-  const base = ['origin/main', 'main'].find((candidate) => git(['rev-parse', '--verify', candidate], root));
-  if (!base)
+  const base = ['origin/main', 'main'].find((candidate) =>
+    git(['rev-parse', '--verify', candidate], root)
+  );
+  if (!base) {
     throw new Error('Cannot verify persistence review: main ref unavailable on feature branch.');
+  }
   const changes = changedFiles(base, root);
   return { checked: true, base, ...enforcePersistenceReview(changes, owners) };
 }
@@ -141,7 +144,8 @@ if (require.main === module) {
   try {
     const result = reviewCurrentBranch();
     console.log(
-      'CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline')
+      'CAREER PERSISTENCE GATE OK · ' +
+        (result.checked ? 'review checked' : 'main baseline')
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
