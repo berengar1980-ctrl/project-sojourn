@@ -14,6 +14,7 @@ import {
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
+import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
@@ -62,6 +63,8 @@ interface SalvageSceneOptions {
   readonly economy: SalvageEconomyService;
   readonly npcEconomy: NpcEconomyService;
   readonly sectorNpcs: readonly SectorNpcState[];
+  readonly wreckClaims: WreckClaimRegistry;
+  readonly getCurrentDay: () => number;
   readonly player: PlayerEconomyState;
   readonly componentInventory: ShipComponentInventoryService;
   readonly runtimeOptions?: ShipRuntimeOptions;
@@ -126,7 +129,7 @@ interface SalvageSceneRuntime {
 
 function salvageSceneModel(context: SalvageSceneRuntime) {
   const { options, service, npcSalvage, state } = context;
-  return createSalvageSpaceViewModel(
+  const model = createSalvageSpaceViewModel(
     service.getSnapshot(),
     options.ship,
     options.player,
@@ -140,6 +143,17 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     state.distressRamming,
     state.distressRepairing
   );
+  return {
+    ...model,
+    wreckClaimOwners: Object.fromEntries(
+      context.field.wrecks.flatMap((wreck) => {
+        const claim = options.wreckClaims.claim(
+          context.field.id, wreck.id, options.getCurrentDay()
+        );
+        return claim ? [[wreck.id, claim.ownerId]] : [];
+      })
+    ),
+  };
 }
 
 function refreshSalvageScene(context: SalvageSceneRuntime): void {
@@ -236,17 +250,47 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onBoardWreck(wreckId) {
       options.onBoardWreck?.(wreckId);
     },
+    onClaimWreck(wreckId) {
+      const wreck = context.field.wrecks.find((entry) => entry.id === wreckId);
+      if (!wreck || options.ship.role !== 'salvage') return;
+      const existing = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
+      if (existing) {
+        options.log.write('BERGUNG > WRACK HAT BEREITS EINEN ANSPRUCH');
+        refresh();
+        return;
+      }
+      const result = options.wreckClaims.register(
+        field, wreck, 'player', options.getCurrentDay(), options.player.credits
+      );
+      if (result.ok) {
+        options.player.credits -= result.fee;
+        options.log.write('BERGUNG > WRACKANSPRUCH REGISTRIERT');
+      } else {
+        options.log.write('BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason);
+      }
+      refresh();
+    },
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
       refresh();
     },
     onStrip(wreckId, resourceId) {
+      const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
+      if (claim && claim.ownerId !== 'player') {
+        options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
+        return;
+      }
       service.startStrip(wreckId, resourceId);
       options.log.write('BERGUNG > MATERIALBERGUNG GESTARTET');
       refresh();
     },
     onRecoverComponent(wreckId) {
+      const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
+      if (claim && claim.ownerId !== 'player') {
+        options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
+        return;
+      }
       service.startComponentRecovery(wreckId);
       options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
@@ -396,6 +440,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   const field =
     options.field ??
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
+  options.wreckClaims.restoreField(field);
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
@@ -485,6 +530,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
+      options.wreckClaims.rememberField(field);
       context.state.panel?.destroy();
       context.state.panel = null;
     },
