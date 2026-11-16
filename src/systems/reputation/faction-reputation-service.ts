@@ -32,7 +32,7 @@ export function createFactionReputationService(
     }
     for (const id of scores.keys()) {
       const score = saved[id];
-      if (!Number.isSafeInteger(score) || score < -100 || score > 100) {
+      if (typeof score !== 'number' || !Number.isSafeInteger(score) || score < -100 || score > 100) {
         throw new Error('Invalid saved faction reputation score');
       }
       scores.set(id, score);
