@@ -68,7 +68,11 @@ assert(renderer.includes('quadraticCurveTo'));
 const registry = fs.readFileSync(path.join(root, 'src/systems/ships/ship-registry.ts'), 'utf8');
 assert(registry.includes('points.pivot.x - points.sourceWidth * 0.24'));
 assert(controller.includes('advanceDistressTow('));
-assert(controller.includes('towShipAtExit('));
+const salvageExit = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-salvage-exit.ts'),
+  'utf8'
+);
+assert(salvageExit.includes('towShipAtExit('));
 assert(controller.includes('beginDistressTow(event)'));
 const callbacks = fs.readFileSync(path.join(root, 'src/app/game-controller-events.ts'), 'utf8');
 assert(callbacks.includes('state.salvageScene?.beginDistressTow(event)'));
