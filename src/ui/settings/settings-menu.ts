@@ -277,7 +277,8 @@ function createSettingsConfirmation(shell: HTMLDivElement) {
     isOpen: () => !confirm.hidden,
     handleKeyDown,
     destroy: () => {
-      confirmation.destroy();
+      confirmCancel.removeEventListener('click', onConfirmCancel);
+      confirmAccept.removeEventListener('click', onConfirmAccept);
     },
   };
 }
@@ -400,8 +401,7 @@ export function createSettingsMenu(
       save.removeEventListener('click', onSave);
       load.removeEventListener('click', onLoad);
       window.removeEventListener('keydown', onKeyDown, true);
-      confirmCancel.removeEventListener('click', onConfirmCancel);
-      confirmAccept.removeEventListener('click', onConfirmAccept);
+      confirmation.destroy();
       shell.remove();
       document.body.classList.remove('app-has-system-bar');
     },
