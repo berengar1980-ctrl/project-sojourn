@@ -58,6 +58,7 @@ export interface NpcShipMapView {
 }
 
 export interface PlayerShipMapView {
+  readonly role?: ShipDefinition['role'];
   readonly name: string;
   readonly position: WorldPoint;
   readonly headingRadians: number;
@@ -128,6 +129,7 @@ export function createStarMapViewModel(
     route: navigation.activeRoute ?? navigation.previewRoute,
     navigation,
     playerShip: {
+      role: ship.role,
       name: ship.name,
       position: navigation.currentPosition,
       headingRadians: navigation.headingRadians,
