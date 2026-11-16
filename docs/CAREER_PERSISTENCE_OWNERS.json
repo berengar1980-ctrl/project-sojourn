@@ -102,6 +102,12 @@
     "src/systems/persistence/career-session-manager.ts": {
       "mode": "derived",
       "reason": "Stateless orchestration of versioned browser save storage and atomic session pointer replacement."
+    },
+    "src/systems/persistence/career-player-society.ts": {
+      "mode": "persisted",
+      "reason": "Captures player smuggling investigation, installed hidden holds, trade charter and faction reputation state without replaying costs.",
+      "checkpoint": "src/systems/persistence/career-player-society.ts",
+      "test": "tests/persistence/career-player-society.test.cjs"
     }
   }
 }
