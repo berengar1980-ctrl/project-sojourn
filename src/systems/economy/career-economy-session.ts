@@ -72,7 +72,7 @@ export function stageCareerEconomySession(
   checkpoint: CareerEconomySessionCheckpoint,
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
-  player: PlayerEconomyState,
+  player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   npcs: readonly NpcEconomyState[],
   seed: number,
   options: NpcEconomyServiceOptions = {}
@@ -92,10 +92,11 @@ export function stageCareerEconomySession(
   const markets = stageCareerMarkets(checkpoint.markets, ports, resources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
-  assertCareerEconomyIntegrity(markets, resources, player, npcs);
+  const restoredPlayer = typeof player === 'function' ? player(markets) : player;
+  assertCareerEconomyIntegrity(markets, resources, restoredPlayer, npcs);
   const simulation = createEconomySimulationService(
     markets,
-    player,
+    restoredPlayer,
     resources,
     seed,
     npcs,
