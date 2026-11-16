@@ -20,7 +20,7 @@ export interface AsteroidFieldRuntime {
   readonly drone: AsteroidSecurityDrone;
 }
 
-type MinerFactory = (
+export type CareerMinerFactory = (
   location: WorldLocation,
   instance: LocalSpaceInstance,
   checkpoint?: LocalMinerCheckpoint
@@ -47,7 +47,7 @@ export class AsteroidFieldWorld {
   constructor(
     locations: readonly WorldLocation[],
     claims: AsteroidClaimRegistry,
-    miners: MinerFactory,
+    miners: CareerMinerFactory,
     checkpoint?: CareerAsteroidFieldCheckpoint,
     npcs: readonly SectorNpcState[] = []
   ) {
