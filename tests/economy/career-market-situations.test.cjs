@@ -6,11 +6,13 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const { createMarketSituationService } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/economy/market-situation-service.ts'
+  root,
+  'src/systems/economy/market-situation-service.ts'
 );
 const { sectorPorts } = loadStandaloneTypeScriptModule(root, 'src/data/ports/sector-ports.ts');
 const { economyResources } = loadStandaloneTypeScriptModule(
-  root, 'src/data/economy/economy-resources.ts'
+  root,
+  'src/data/economy/economy-resources.ts'
 );
 
 const live = createMarketSituationService(sectorPorts, economyResources, 17);
@@ -23,13 +25,18 @@ restored.advanceDay(12);
 assert.deepEqual(restored.exportState(), checkpoint, 'replayed day must not regenerate events');
 live.advanceDay(20);
 restored.advanceDay(20);
-assert.deepEqual(restored.exportState(), live.exportState(), 'future market events remain deterministic');
+assert.deepEqual(
+  restored.exportState(),
+  live.exportState(),
+  'future market events remain deterministic'
+);
 if (checkpoint.situations.length) {
   const item = checkpoint.situations[0];
   assert(item);
-  const invalid = { ...checkpoint, situations: [
-    { ...item, resourceModifiers: { 'unknown-resource': 0.5 } },
-  ] };
+  const invalid = {
+    ...checkpoint,
+    situations: [{ ...item, resourceModifiers: { 'unknown-resource': 0.5 } }],
+  };
   assert.throws(() => createMarketSituationService(sectorPorts, economyResources, 17, invalid));
   const altered = createMarketSituationService(sectorPorts, economyResources, 17, checkpoint);
   const exported = altered.exportState();
@@ -39,9 +46,15 @@ if (checkpoint.situations.length) {
   }
 }
 assert.throws(() =>
-  createMarketSituationService(sectorPorts, economyResources, 17, { ...checkpoint, currentDay: -7 })
+  createMarketSituationService(sectorPorts, economyResources, 17, {
+    ...checkpoint,
+    currentDay: -7,
+  })
 );
 assert.throws(() =>
-  createMarketSituationService(sectorPorts, economyResources, 17, { ...checkpoint, situations: [null] })
+  createMarketSituationService(sectorPorts, economyResources, 17, {
+    ...checkpoint,
+    situations: [null],
+  })
 );
 console.log('PASS market situation checkpoint restores current events without replay or aliasing');
