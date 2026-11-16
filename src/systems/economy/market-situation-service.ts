@@ -114,29 +114,43 @@ export function createMarketSituationService(
       checkpoint.currentDay < -1 ||
       !Array.isArray(checkpoint.situations) ||
       checkpoint.situations.length > 5
-    ) throw new Error('Invalid market situation checkpoint');
+    )
+      throw new Error('Invalid market situation checkpoint');
     const portIds = new Set(ports.map((port) => port.locationId));
     const resourceIds = new Set(resources.map((resource) => resource.id));
     const seen = new Set<string>();
     for (const situation of checkpoint.situations) {
       if (
-        !situation || typeof situation.id !== 'string' || !situation.id ||
-        seen.has(situation.id) || typeof situation.name !== 'string' ||
+        !situation ||
+        typeof situation.id !== 'string' ||
+        !situation.id ||
+        seen.has(situation.id) ||
+        typeof situation.name !== 'string' ||
         typeof situation.description !== 'string' ||
         (situation.scope !== 'local' && situation.scope !== 'sector') ||
-        (situation.scope === 'local' && (!situation.locationId || !portIds.has(situation.locationId))) ||
+        (situation.scope === 'local' &&
+          (!situation.locationId || !portIds.has(situation.locationId))) ||
         (situation.scope === 'sector' && situation.locationId !== undefined) ||
-        !Number.isSafeInteger(situation.startDay) || situation.startDay < 0 ||
-        !Number.isSafeInteger(situation.endDay) || situation.endDay <= situation.startDay ||
+        !Number.isSafeInteger(situation.startDay) ||
+        situation.startDay < 0 ||
+        !Number.isSafeInteger(situation.endDay) ||
+        situation.endDay <= situation.startDay ||
         situation.startDay > checkpoint.currentDay ||
         situation.endDay <= checkpoint.currentDay ||
-        !situation.resourceModifiers || Array.isArray(situation.resourceModifiers) ||
+        !situation.resourceModifiers ||
+        Array.isArray(situation.resourceModifiers) ||
         typeof situation.resourceModifiers !== 'object'
-      ) throw new Error('Invalid saved market situation');
+      )
+        throw new Error('Invalid saved market situation');
       seen.add(situation.id);
       for (const [resourceId, modifier] of Object.entries(situation.resourceModifiers)) {
-        if (!resourceIds.has(resourceId) || typeof modifier !== 'number' ||
-            !Number.isFinite(modifier) || modifier < -1 || modifier > 1) {
+        if (
+          !resourceIds.has(resourceId) ||
+          typeof modifier !== 'number' ||
+          !Number.isFinite(modifier) ||
+          modifier < -1 ||
+          modifier > 1
+        ) {
           throw new Error('Invalid saved market situation resource');
         }
       }
