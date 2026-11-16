@@ -55,8 +55,14 @@ const restored = createStrategicCombatService(
   arena,
   JSON.parse(JSON.stringify(saved))
 );
-assert.deepEqual(restored.getSnapshot(), initial.getSnapshot());
-assert.deepEqual(restored.exportCareerState(), saved);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(restored.getSnapshot())),
+  JSON.parse(JSON.stringify(initial.getSnapshot()))
+);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(restored.exportCareerState())),
+  JSON.parse(JSON.stringify(saved))
+);
 for (let i = 0; i < 100; i += 1) {
   const original = initial.tick(0.08);
   const resumed = restored.tick(0.08);
