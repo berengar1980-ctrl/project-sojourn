@@ -112,6 +112,10 @@
     "src/systems/combat/strategic-combat-checkpoint-types.ts": {
       "mode": "derived",
       "reason": "Static checkpoint and subsystem type declarations only; no mutable state or independently captured data."
+    },
+    "src/systems/salvage/sector-salvage-event-utils.ts": {
+      "mode": "derived",
+      "reason": "Pure deterministic salvage event placement, cloning, random-number generation and result creation; holds no mutable session authority."
     }
   }
 }
