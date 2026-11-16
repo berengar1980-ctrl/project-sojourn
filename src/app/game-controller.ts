@@ -404,6 +404,45 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   }
 }
 
+function installControllerCareer(
+  context: ControllerRuntimeContext,
+  options: GameControllerOptions
+): void {
+  const saved = options.restoredSession;
+  registerSectorShips(context);
+  if (saved) {
+    bindCareerFieldWorld(context, saved.fieldsLegal.fields);
+    stageControllerCustody(
+      context,
+      captureCareerCustody(saved.custody.prisoners, saved.custody.player)
+    );
+    options.onCareerContextReady?.(context);
+    saved.activate();
+  }
+  fieldWorldFor(context);
+  if (!saved) {
+    context.economy.salvageEvents.advanceDay(
+      context.economy.situations.currentDay,
+      context.navigation.getSnapshot().currentPosition,
+      context.state.activeShip.role === 'salvage'
+    );
+  }
+}
+
+function saveControllerCareer(context: ControllerRuntimeContext): void {
+  const { state, navigation, engagements, fuelJourney, systemLog } = context;
+  if (
+    !['star-map', 'port'].includes(state.mode) ||
+    engagements.activePlayerCombat() ||
+    navigation.getSnapshot().isTravelling ||
+    fuelJourney.plan()
+  ) {
+    throw new Error('Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.');
+  }
+  createCareerSaveStore(window.localStorage).save(captureControllerCareer(context));
+  systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
+}
+
 export function createGameController(options: GameControllerOptions): GameController {
   const saved = options.restoredSession;
   if (saved && saved.navigationWorld.navigation !== options.navigation) {
@@ -478,40 +517,12 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...campaignServices,
     state,
   };
-  registerSectorShips(context);
-  if (saved) {
-    bindCareerFieldWorld(context, saved.fieldsLegal.fields);
-    stageControllerCustody(
-      context,
-      captureCareerCustody(saved.custody.prisoners, saved.custody.player)
-    );
-    options.onCareerContextReady?.(context);
-    saved.activate();
-  }
-  fieldWorldFor(context);
-  if (!saved)
-    economy.salvageEvents.advanceDay(
-      economy.situations.currentDay,
-      options.navigation.getSnapshot().currentPosition,
-      state.activeShip.role === 'salvage'
-    );
-  const saveCareer = (): void => {
-    if (
-      !['star-map', 'port'].includes(state.mode) ||
-      engagements.activePlayerCombat() ||
-      options.navigation.getSnapshot().isTravelling ||
-      fuelJourney.plan()
-    ) {
-      throw new Error('Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.');
-    }
-    createCareerSaveStore(window.localStorage).save(captureControllerCareer(context));
-    systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
-  };
+  installControllerCareer(context, options);
   const menu = createSettingsMenu(
     context.audio,
     options.onReturnToMainMenu,
     state.playerProfile,
-    saveCareer
+    () => saveControllerCareer(context)
   );
   mountControllerStarMap(context);
   return {
