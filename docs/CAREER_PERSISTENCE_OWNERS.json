@@ -108,6 +108,10 @@
       "reason": "Captures player smuggling investigation, installed hidden holds, trade charter and faction reputation state without replaying costs.",
       "checkpoint": "src/systems/persistence/career-player-society.ts",
       "test": "tests/persistence/career-player-society.test.cjs"
+    },
+    "src/systems/combat/strategic-combat-checkpoint-types.ts": {
+      "mode": "derived",
+      "reason": "Static checkpoint and subsystem type declarations only; no mutable state or independently captured data."
     }
   }
 }
