@@ -107,6 +107,22 @@ function concessionMarkup(m: OperationsModel): string {
     werden. Unbefugte Förderung kann zu Forderungen und Fahndungen führen.</p>
     <ul>${rows || '<li>Noch keine registrierten Konzessionen.</li>'}</ul>`;
 }
+function updateBlockadeReason(
+  dialog: HTMLDialogElement,
+  m: OperationsModel,
+  cost: number | null
+): void {
+  const reason = dialog.querySelector('[data-blockade-reason]');
+  if (reason)
+    reason.textContent = !m.port
+      ? 'Gesperrt: zuerst an einem zivilen Hafen andocken.'
+      : cost === null
+        ? 'Wähle 1–3 verfügbare Korsaren.'
+        : cost > m.credits
+          ? 'Gesperrt: nicht genügend Credits.'
+          : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
+}
+
 export function createOperationsPanel(options: Options): { destroy(): void } {
   const launch = document.createElement('button');
   launch.type = 'button';
@@ -143,15 +159,7 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
         cost === null ? 'Wähle 1–3 verfügbare Korsaren.' : 'Gesamtpreis: ' + money(cost);
     const order = dialog.querySelector<HTMLButtonElement>('[data-op="order"]');
     if (order) order.disabled = !m.port || cost === null || cost > m.credits;
-    const reason = dialog.querySelector('[data-blockade-reason]');
-    if (reason)
-      reason.textContent = !m.port
-        ? 'Gesperrt: zuerst an einem zivilen Hafen andocken.'
-        : cost === null
-          ? 'Wähle 1–3 verfügbare Korsaren.'
-          : cost > m.credits
-            ? 'Gesperrt: nicht genügend Credits.'
-            : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
+    updateBlockadeReason(dialog, m, cost);
   }
   function render() {
     currentModel = options.model();
