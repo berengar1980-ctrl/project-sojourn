@@ -2,25 +2,13 @@ import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { EconomyMarketService } from '../economy/market-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
+export type { BlockadeOrder } from './career-operations-checkpoint';
 import {
   stageCareerBlockades,
   type CareerBlockadeCheckpoint,
+  type BlockadeOrder,
 } from './career-operations-checkpoint';
 
-export interface BlockadeOrder {
-  id: string;
-  ownerId: string;
-  locationId: string;
-  resourceId: string;
-  pirateIds: string[];
-  duration: number;
-  fee: number;
-  orderedDay: number;
-  startedDay: number | null;
-  phase: 'assembling' | 'active' | 'completed' | 'defeated' | 'cancelled';
-  removedStock: number;
-  startPrice: number | null;
-}
 export interface BlockadeOptions {
   sector: NpcSectorService;
   markets: EconomyMarketService;
