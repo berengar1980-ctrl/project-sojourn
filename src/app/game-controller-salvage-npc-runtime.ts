@@ -1,3 +1,5 @@
+import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
+import { npcOperationalRoleAllowed } from '../systems/operations/ship-operation-permissions';
 import type { SalvageField } from '../core/salvage-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
@@ -14,6 +16,8 @@ interface SalvageNpcRuntimeOptions {
   readonly sectorNpcs: readonly SectorNpcState[];
   readonly npcEconomy: NpcEconomyService;
   readonly ship: ShipDefinition;
+  readonly wreckClaims: WreckClaimRegistry;
+  readonly getCurrentDay: () => number;
 }
 
 export function createNpcSalvageRuntime(
@@ -25,8 +29,22 @@ export function createNpcSalvageRuntime(
     locationId: options.location.id,
     field,
     salvagers: options.sectorNpcs.filter(
-      (npc) => npc.job === 'salvager' && npc.workLocationId === options.location.id
+      (npc) => npcOperationalRoleAllowed(npc, 'salvage') && npc.workLocationId === options.location.id
     ),
+    canWorkWreck: (npc, wreck) => {
+      const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
+      return !claim || claim.ownerId === npc.id;
+    },
+    registerWreck: (npc, wreck) => {
+      const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
+      if (claim) return claim.ownerId === npc.id;
+      const result = options.wreckClaims.register(
+        field, wreck, npc.id, options.getCurrentDay(), npc.credits
+      );
+      if (!result.ok) return false;
+      npc.credits -= result.fee;
+      return true;
+    },
     recover: (npc, resourceId, requested) =>
       options.npcEconomy.salvageLocal(npc, resourceId, requested),
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
