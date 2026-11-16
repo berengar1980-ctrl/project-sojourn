@@ -434,6 +434,12 @@ export function createGameController(options: GameControllerOptions): GameContro
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
     log: (message) => systemLog.write(message),
   });
+  if (saved?.combat) {
+    engagements.restorePlayerCareerCombat(
+      saved.combat,
+      saved.combat.exportCareerState().defenderId
+    );
+  }
   const campaignServices = saved
     ? {
         campaigns: saved.campaigns.campaigns,
