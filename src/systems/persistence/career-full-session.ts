@@ -9,6 +9,12 @@ import type { CareerCrewCheckpoint } from '../crew/career-crew-checkpoint';
 import type { CareerEconomySessionCheckpoint } from '../economy/career-economy-session';
 import type { CareerPlayerCheckpoint } from '../economy/career-player-checkpoint';
 import {
+  captureCareerPlayerSociety,
+  stageCareerPlayerSociety,
+  type CareerPlayerSocietyCheckpoint,
+  type StagedCareerPlayerSociety,
+} from './career-player-society';
+import {
   createStrategicCombatService,
   type StrategicCombatService,
 } from '../combat/strategic-combat-service';
@@ -69,7 +75,14 @@ export interface CareerCombatSetup {
   readonly arena?: StrategicCombatArenaOptions;
 }
 
+export interface CareerPlayerDomainCheckpoint {
+  readonly version: 1;
+  readonly player: CareerPlayerCheckpoint;
+  readonly society: CareerPlayerSocietyCheckpoint;
+}
+
 export interface StagedFullCareerSession {
+  readonly society: StagedCareerPlayerSociety;
   readonly navigationWorld: StagedCareerNavigationWorld;
   readonly commerce: StagedCareerCommerceShipSession;
   readonly crew: CrewRosterService;
@@ -86,6 +99,7 @@ export interface CareerFullSessionDependencies {
   readonly baseWorld: WorldMap;
   readonly ports: readonly PortDefinition[];
   readonly resources: readonly EconomyResourceDefinition[];
+  readonly factionIds: readonly string[];
   readonly economySeed: number;
   readonly starterShipId: string;
   readonly profile: PlayerProfile;
@@ -128,7 +142,11 @@ export function captureCareerFullSession(
     version: 1,
     sections: {
       navigation: session.navigationWorld.navigation.exportState(),
-      player: captureCareerPlayer(commerce.trade.player),
+      player: {
+        version: 1,
+        player: captureCareerPlayer(commerce.trade.player),
+        society: captureCareerPlayerSociety(session.society),
+      },
       ships: playerShips,
       crew: session.crew.exportState(),
       economy: captureCareerEconomySession(commerce.economy),
@@ -169,6 +187,10 @@ export function stageCareerFullSession(
   deps: CareerFullSessionDependencies
 ): StagedFullCareerSession {
   const { sections } = validateCareerSnapshot(candidate);
+  const savedPlayer = section<CareerPlayerDomainCheckpoint>(sections.player);
+  if (!savedPlayer || savedPlayer.version !== 1) {
+    throw new Error('Invalid career player domain');
+  }
   const navigationWorld = stageCareerNavigationWorld(
     deps.baseWorld,
     section<NavigationCheckpoint>(sections.navigation),
@@ -181,7 +203,7 @@ export function stageCareerFullSession(
       version: 1,
       commerce: {
         version: 1,
-        player: section<CareerPlayerCheckpoint>(sections.player),
+        player: savedPlayer.player,
         sector: {
           version: 1,
           npcs: section<CareerNpcCheckpoint>(sections.npcs),
@@ -227,6 +249,13 @@ export function stageCareerFullSession(
     }
   );
   if (!operations) throw new Error('Missing staged career operations');
+  const society = stageCareerPlayerSociety(
+    savedPlayer.society,
+    commerce.commerce.trade.player,
+    commerce.commerce.npcs,
+    commerce.ships.ownership.snapshot().ownedShipIds,
+    deps.factionIds
+  );
   const crew = createCrewRosterService(
     deps.profile,
     section<CareerCrewCheckpoint>(sections.crew)
@@ -249,7 +278,7 @@ export function stageCareerFullSession(
     commerce.commerce.npcs,
     commerce.ships.activeShipId
   );
-  const prepared = { navigationWorld, commerce, crew, operations, fieldsLegal, custody };
+  const prepared = { navigationWorld, commerce, society, crew, operations, fieldsLegal, custody };
   const campaigns = stageCareerCampaigns(
     section<CampaignSnapshot>(sections.campaigns),
     deps.campaignDefinitions,
