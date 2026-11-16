@@ -1,4 +1,5 @@
 import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
+import type { CareerStrategicCombatCheckpoint } from './career-strategic-combat-checkpoint';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -325,6 +326,7 @@ export interface StrategicCombatArenaOptions {
 }
 
 export interface StrategicCombatService {
+  exportCareerState(): CareerStrategicCombatCheckpoint;
   getSnapshot(): StrategicCombatSnapshot;
   getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
@@ -468,6 +470,8 @@ export interface MutableThrownAsteroid {
 }
 
 export interface StrategicCombatRuntime {
+  readonly seed: number;
+  randomCalls: number;
   readonly arena: StrategicCombatArenaOptions;
   readonly attacker: MutableCombatant;
   readonly defender: MutableCombatant;
