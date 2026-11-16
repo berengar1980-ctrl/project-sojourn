@@ -255,7 +255,7 @@ const savedEnvelope = restartedData.get(CAREER_SAVE_STORAGE_KEY);
 assert.equal(typeof savedEnvelope, 'string');
 const restoredEnvelope = createCareerSaveStore({
   getItem: (key) => restartedData.get(key) ?? null,
-  setItem: (key) => restartedData.set(key, value),
+  setItem: (key, value) => restartedData.set(key, value),
 }).read();
 assert(restoredEnvelope.ok, 'a freshly created store must open the persisted JSON');
 const resumed = prepareControllerCareer(restoredEnvelope.snapshot);
