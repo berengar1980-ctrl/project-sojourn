@@ -15,12 +15,8 @@ assert.match(operationsCss, /top: 18px;/);
 assert.match(operationsCss, /position: sticky;/);
 assert(operations.includes('data-blockade-reason'));
 assert(operations.includes('Gesperrt: nicht genügend Credits.'));
-assert(
-  operations.includes('Gesperrt: zuerst an einem zivilen Hafen andocken.')
-);
-assert(
-  operations.includes('Gesperrt: ein Patrouillenschiff als aktives Schiff wählen.')
-);
+assert(operations.includes('Gesperrt: zuerst an einem zivilen Hafen andocken.'));
+assert(operations.includes('Gesperrt: ein Patrouillenschiff als aktives Schiff wählen.'));
 assert(operations.includes('während des Einsatzes verbündet'));
 assert(operations.includes('concessionMarkup(m)'));
 // The existing concession register stays reachable.
