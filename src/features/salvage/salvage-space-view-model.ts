@@ -120,6 +120,7 @@ export interface SalvageSpaceViewModel {
   readonly debris: readonly SalvageDebris[];
   readonly sections: readonly SalvageSection[];
   readonly selectedWreck: SalvageWreckView | null;
+  readonly wreckClaimOwners: Readonly<Record<string, string>>;
   readonly navigationTarget: WorldPoint | null;
   readonly navigationRoute: readonly WorldPoint[];
   readonly phase: SalvageLocalSpaceSnapshot['phase'];
@@ -308,6 +309,7 @@ export function createSalvageSpaceViewModel(
   const wrecks = wreckViews(snapshot);
   const cargoResources = cargoView(player);
   return {
+    wreckClaimOwners: {},
     title,
     backgroundSeed: snapshot.field.seed,
     width: snapshot.field.width,
