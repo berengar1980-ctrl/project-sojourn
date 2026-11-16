@@ -1,7 +1,7 @@
 .operations-launch {
   position: absolute;
-  left: 18px;
-  bottom: 58px;
+  right: 18px;
+  top: 18px;
   z-index: 65;
   padding: 10px 14px;
   color: #a9e5ef;
@@ -10,8 +10,8 @@
   cursor: pointer;
 }
 .operations-dialog {
-  width: min(850px, 92vw);
-  max-height: 85vh;
+  width: min(940px, 94vw);
+  max-height: min(760px, 85vh);
   overflow: auto;
   color: #d0e3e8;
   background: #101c26;
@@ -70,4 +70,32 @@
 }
 .operations-dialog [role='status'] {
   color: #f3d29d;
+}
+
+/* Operations usability: controls remain visible while the content scrolls. */
+.operations-dialog nav {
+  position: sticky;
+  top: -24px;
+  z-index: 2;
+  background: #101c26;
+  padding: 10px 0;
+  border-bottom: 1px solid #304652;
+  flex-wrap: wrap;
+}
+.operations-dialog nav button { flex: 1 1 160px; margin: 0; text-align: center; }
+.operations-dialog .operations-hint {
+  padding: 8px 12px;
+  border-left: 3px solid #c99e5b;
+  background: #202b33;
+  color: #f4d9a8;
+}
+.operations-dialog fieldset { border: 1px solid #304652; padding: 10px 14px; }
+.operations-dialog fieldset label { display: inline-flex; align-items: center; min-width: 180px; margin: 4px 12px 4px 0; }
+.operations-dialog section { max-width: 100%; }
+.operations-dialog select { border: 1px solid #467c8c; }
+@media (max-width: 700px) {
+  .operations-launch { right: 12px; top: 12px; padding: 7px; font-size: 11px; }
+  .operations-dialog { padding: 14px; }
+  .operations-dialog nav { top: -14px; }
+  .operations-dialog fieldset label { min-width: 100%; }
 }
