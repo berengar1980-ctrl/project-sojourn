@@ -34,45 +34,57 @@ function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function validSmugglingValues(value: Record<string, unknown>): boolean {
+  return (
+    typeof value.hiddenHoldIntel === 'boolean' &&
+    typeof value.hiddenHoldIntelContacted === 'boolean' &&
+    typeof value.suspicion === 'number' &&
+    Number.isFinite(value.suspicion) &&
+    value.suspicion >= 0 &&
+    value.suspicion <= 100 &&
+    typeof value.totalProtectionFees === 'number' &&
+    Number.isFinite(value.totalProtectionFees) &&
+    value.totalProtectionFees >= 0 &&
+    (value.protectionFaction === undefined ||
+      ['pirates', 'pirates2'].includes(value.protectionFaction as string))
+  );
+}
+
+function validSmugglingHolds(
+  holds: Record<string, unknown>,
+  shipIds: ReadonlySet<string>
+): boolean {
+  return Object.entries(holds).every(
+    ([id, hold]) =>
+      shipIds.has(id) &&
+      record(hold) &&
+      hold.shipId === id &&
+      typeof hold.installedAt === 'string'
+  );
+}
+
+function validSmugglingInspection(value: unknown): boolean {
+  if (value === null) return true;
+  if (!record(value)) return false;
+  return (
+    ['harbor', 'patrol'].includes(value.source as string) &&
+    typeof value.locationId === 'string' &&
+    ['request', 'result'].includes(value.stage as string) &&
+    typeof value.papersTried === 'boolean' &&
+    typeof value.bribeTried === 'boolean' &&
+    typeof value.strength === 'number' &&
+    Number.isFinite(value.strength)
+  );
+}
+
 function validSmuggling(value: unknown, shipIds: ReadonlySet<string>): boolean {
-  if (!record(value) || !record(value.holds)) return false;
-  if (
-    typeof value.hiddenHoldIntel !== 'boolean' ||
-    typeof value.hiddenHoldIntelContacted !== 'boolean' ||
-    typeof value.suspicion !== 'number' ||
-    !Number.isFinite(value.suspicion) ||
-    value.suspicion < 0 ||
-    value.suspicion > 100 ||
-    typeof value.totalProtectionFees !== 'number' ||
-    !Number.isFinite(value.totalProtectionFees) ||
-    value.totalProtectionFees < 0
-  ) return false;
-  if (
-    value.protectionFaction !== undefined &&
-    !['pirates', 'pirates2'].includes(value.protectionFaction as string)
-  ) return false;
-  for (const [id, hold] of Object.entries(value.holds)) {
-    if (
-      !shipIds.has(id) ||
-      !record(hold) ||
-      hold.shipId !== id ||
-      typeof hold.installedAt !== 'string'
-    ) return false;
-  }
-  if (value.inspection !== null) {
-    const inspection = value.inspection;
-    if (
-      !record(inspection) ||
-      !['harbor', 'patrol'].includes(inspection.source as string) ||
-      typeof inspection.locationId !== 'string' ||
-      !['request', 'result'].includes(inspection.stage as string) ||
-      typeof inspection.papersTried !== 'boolean' ||
-      typeof inspection.bribeTried !== 'boolean' ||
-      typeof inspection.strength !== 'number' ||
-      !Number.isFinite(inspection.strength)
-    ) return false;
-  }
-  return true;
+  return (
+    record(value) &&
+    record(value.holds) &&
+    validSmugglingValues(value) &&
+    validSmugglingHolds(value.holds, shipIds) &&
+    validSmugglingInspection(value.inspection)
+  );
 }
 
 export function stageCareerPlayerSociety(
