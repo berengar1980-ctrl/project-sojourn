@@ -12,6 +12,8 @@ export interface GameControllerOptions {
   readonly playerProfile: PlayerProfile;
   readonly navigation: NavigationService;
   readonly onReturnToMainMenu: () => void;
+  /** Reload the single Career slot using an entirely fresh controller. */
+  readonly onLoadCareer?: () => void;
   readonly campaignSelection?: Readonly<Record<string, boolean>>;
   /** Fully validated, detached Save session; never a partially restored controller. */
   readonly restoredSession?: StagedFullCareerSession;
