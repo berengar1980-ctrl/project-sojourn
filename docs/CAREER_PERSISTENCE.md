@@ -291,3 +291,15 @@ Schiffs-/Stationskennungen, doppelte Zuordnungen und numerische Werte, bevor
 es eine **neue** Roster-Instanz erzeugt. Fehler im Crew-Checkpoint verändern
 nicht den bestehenden Roster. Dieser Adapter wird erst beim vollständigen
 Career-Session-Staging mit Spieler/Schiffen installiert.
+
+### Kampagnen-Receipts mit Aktivierungssperre (PR #319)
+
+`career-campaign-session.ts` verwendet die vorhandenen versionierten
+`CampaignSnapshot`- und `appliedActionIds`-Belege. Definitionen werden
+beim Wiederaufbau geprüft; inkompatible oder fehlende Pakete verhindern die
+Session-Vorbereitung. Vor dem globalen Session-Swap sperrt ein Action-Gate
+sämtliche neuen Belohnungen und Spielweltaktionen. Erst nach erfolgreicher
+Aktivierung dürfen neue Aktionen ausgeführt werden. Bereits quittierte
+Belohnungen werden beim Restore nicht erneut angewendet. Das ist eine
+vorbereitete Kampagnen-Teilautorität, noch keine Freigabe für einen
+unvollständigen Spielstand.
