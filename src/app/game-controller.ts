@@ -295,7 +295,9 @@ function mountControllerSalvage(
   state.salvageScene = createSalvageScene({
     root: context.root,
     ship: state.activeShip,
-    seed: sectorEvent?.fieldSeed ?? state.salvageSpaceSeed,
+    seed: economy.wreckClaims.seedFor(
+      location.id, sectorEvent?.fieldSeed ?? state.salvageSpaceSeed
+    ),
     location,
     ...(preservedField
       ? { field: preservedField, ...(sectorEvent ? { sectorEvent } : {}) }
@@ -314,6 +316,8 @@ function mountControllerSalvage(
     economy: economy.salvage,
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
+    wreckClaims: economy.wreckClaims,
+    getCurrentDay: () => economy.situations.currentDay,
     player: economy.trade.player,
     componentInventory: economy.components,
     runtimeOptions: controllerShipRuntimeOptions(context, state.activeShip),
