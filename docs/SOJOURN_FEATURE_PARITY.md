@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+| 2026-11-16 | PR #323 – Auftragsfenster und Bestätigungsdialoge | keine Statusänderung der 241 Voidbound-Feature-IDs. Ausschließlich UI: Auftragszugang oben rechts auf der Sternkarte, besser lesbare Blockade- und Patrouillenhinweise, optimierte Tabs und responsive Darstellung. Browser-Bestätigungen für Career-Laden und Rückkehr ins Hauptmenü werden durch die vorhandene Systemkonsole ersetzt. Unverändert bleiben Game-/Economy-Services, NPCs, Operationen, Career-Save-Format und Restore-Ablauf; Eventpositionierung und Filter werden separat geplant. |
+
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |
 
 | 2026-11-14 | Issue #300 – Sicherheitsdrohnen-Snapshot | Keine Statusänderung der 241 Paritäts-IDs. Drohnenposition, Patrouillen-Wegpunkt, Betriebszustand und bereits erkannte Kontakte können versioniert erfasst und in neue Drohneninstanzen übernommen werden. Noch kein vollständiger Karriererestore oder Save/Load-UI. |

@@ -88,4 +88,17 @@ const telemetry = read('src/ui/combat/combat-weapon-telemetry-panel.ts');
 assert(telemetry.includes('shieldDamageDealt') && telemetry.includes('hullDamageDealt'));
 assert(telemetry.includes('cooldownRemaining') && telemetry.includes('shotsFired'));
 
+const operations = read('src/ui/operations/operations-panel.ts');
+const operationsCss = read('src/ui/operations/operations.css');
+assert(operationsCss.includes('right: 18px;'));
+assert(operationsCss.includes('top: 18px;'));
+assert(operationsCss.includes('position: sticky;'));
+assert(operations.includes('data-blockade-reason'));
+assert(operations.includes('Gesperrt: nicht genügend Credits.'));
+assert(operations.includes('concessionMarkup(m)'));
+assert(settings.includes('role="alertdialog"'));
+assert(settings.includes('confirmation.request('));
+assert(settings.includes('confirmCancel.focus()'));
+assert(!settings.includes('window.confirm('));
+
 console.log('PASS Harrowdrift menu navigation and two-player duel setup contracts');

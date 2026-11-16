@@ -9,6 +9,33 @@ function percent(value: number): string {
   return Math.round(value * 100) + '%';
 }
 
+function appendConfirmationStyles(shell: HTMLDivElement): void {
+  const style = document.createElement('style');
+  style.textContent = `
+    .settings-menu__panel { position: relative; }
+    .settings-menu__confirm:not([hidden]) {
+      position: absolute; inset: 0; z-index: 10; padding: 28px;
+      display: flex; flex-direction: column; justify-content: center;
+      background: #07151c; border: 1px solid #467c8c; color: #d0e3e8;
+      box-sizing: border-box;
+    }
+    .settings-menu__confirm strong { color: #d0e3e8; letter-spacing: .07em; }
+    .settings-menu__confirm p { line-height: 1.6; color: #f4d9a8; }
+    .settings-menu__confirm-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+    .settings-menu__confirm-actions button {
+      flex: 1; min-width: 110px; padding: 12px;
+      border: 1px solid #477b8b; background: #172e3b; color: #e0f3f6; cursor: pointer;
+    }
+    .settings-menu__confirm-actions [data-confirm-accept] {
+      background: #28576a; border-color: #6bb6c2;
+    }
+    @media (max-width: 480px) {
+      .settings-menu__confirm:not([hidden]) { padding: 16px; }
+    }
+  `;
+  shell.append(style);
+}
+
 function createSettingsShell(): HTMLDivElement {
   const shell = document.createElement('div');
   shell.className = 'settings-menu';
@@ -48,6 +75,14 @@ function createSettingsShell(): HTMLDivElement {
         <button type="button" data-settings-tab="game" disabled>SPIEL</button>
       </nav>
 
+      <div class="settings-menu__confirm" role="alertdialog" aria-modal="true" aria-labelledby="settings-confirm-title" aria-describedby="settings-confirm-message" hidden>
+        <strong id="settings-confirm-title"></strong>
+        <p id="settings-confirm-message"></p>
+        <div class="settings-menu__confirm-actions">
+          <button type="button" data-confirm-cancel>ABBRECHEN</button>
+          <button type="button" data-confirm-accept>BESTÄTIGEN</button>
+        </div>
+      </div>
       <div class="settings-menu__content">
         <section class="settings-menu__section" data-settings-view="audio">
           <div class="settings-menu__section-title">
@@ -86,6 +121,7 @@ function createSettingsShell(): HTMLDivElement {
     </section>
   `;
 
+  appendConfirmationStyles(shell);
   document.body.append(shell);
   document.body.classList.add('app-has-system-bar');
 
@@ -169,14 +205,108 @@ function saveCareer(onSaveCareer: (() => void) | undefined, status: HTMLElement)
 
 function loadSavedCareer(onLoadCareer: (() => void) | undefined, status: HTMLElement): void {
   if (!onLoadCareer) return;
-  const warning = 'Ungespeicherter Fortschritt geht verloren.';
-  if (!window.confirm('Gespeicherten Spielstand laden? ' + warning)) return;
   try {
     onLoadCareer();
   } catch (error) {
     status.textContent =
       error instanceof Error ? error.message : 'Spielstand konnte nicht geladen werden.';
   }
+}
+
+function createSettingsConfirmation(shell: HTMLDivElement) {
+  const confirm = shell.querySelector<HTMLElement>('.settings-menu__confirm')!;
+  const confirmTitle = shell.querySelector<HTMLElement>('#settings-confirm-title')!;
+  const confirmMessage = shell.querySelector<HTMLElement>('#settings-confirm-message')!;
+  const confirmAccept = shell.querySelector<HTMLButtonElement>('[data-confirm-accept]')!;
+  const confirmCancel = shell.querySelector<HTMLButtonElement>('[data-confirm-cancel]')!;
+  let pendingAction: (() => void) | null = null;
+  let previousConfirmFocus: HTMLElement | null = null;
+  const hideConfirm = (restoreFocus = true): void => {
+    confirm.hidden = true;
+    pendingAction = null;
+    if (restoreFocus) previousConfirmFocus?.focus();
+    previousConfirmFocus = null;
+  };
+  const requestConfirm = (
+    title: string,
+    message: string,
+    actionLabel: string,
+    action: () => void
+  ): void => {
+    if (!confirm.hidden) return;
+    previousConfirmFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    pendingAction = action;
+    confirmTitle.textContent = title;
+    confirmMessage.textContent = message;
+    confirmAccept.textContent = actionLabel;
+    confirm.hidden = false;
+    confirmCancel.focus();
+  };
+  const onConfirmCancel = (): void => hideConfirm();
+  const onConfirmAccept = (): void => {
+    const action = pendingAction;
+    hideConfirm(false);
+    action?.();
+  };
+  confirmCancel.addEventListener('click', onConfirmCancel);
+  confirmAccept.addEventListener('click', onConfirmAccept);
+
+  const handleKeyDown = (event: KeyboardEvent): boolean => {
+    if (confirm.hidden) return false;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hideConfirm();
+    } else if (event.key === 'Tab') {
+      const first = confirmCancel;
+      const last = confirmAccept;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    return true;
+  };
+  return {
+    request: requestConfirm,
+    hide: hideConfirm,
+    isOpen: () => !confirm.hidden,
+    handleKeyDown,
+    destroy: () => {
+      confirmCancel.removeEventListener('click', onConfirmCancel);
+      confirmAccept.removeEventListener('click', onConfirmAccept);
+    },
+  };
+}
+
+function bindSettingsAudio(audio: GameAudioService, shell: HTMLDivElement): () => void {
+  const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
+  const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
+  const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
+  const rcsValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="rcs"]')!;
+  const onAmbience = (): void => {
+    audio.setAmbienceVolume(Number(ambience.value) / 100);
+    ambienceValue.value = percent(audio.getSettings().ambienceVolume);
+  };
+  const onRcs = (): void => {
+    audio.setRcsVolume(Number(rcs.value) / 100);
+    rcsValue.value = percent(audio.getSettings().rcsVolume);
+  };
+  const settings = audio.getSettings();
+  ambience.value = String(Math.round(settings.ambienceVolume * 100));
+  rcs.value = String(Math.round(settings.rcsVolume * 100));
+  ambienceValue.value = percent(settings.ambienceVolume);
+  rcsValue.value = percent(settings.rcsVolume);
+  ambience.addEventListener('input', onAmbience);
+  rcs.addEventListener('input', onRcs);
+  return () => {
+    ambience.removeEventListener('input', onAmbience);
+    rcs.removeEventListener('input', onRcs);
+  };
 }
 
 export function createSettingsMenu(
@@ -201,21 +331,10 @@ export function createSettingsMenu(
   const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
   const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
   const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
+  const confirmation = createSettingsConfirmation(shell);
   save.disabled = !onSaveCareer;
   load.disabled = !onLoadCareer;
-  const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
-  const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
-  const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
-  const rcsValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="rcs"]')!;
-
-  const sync = (): void => {
-    const settings = audio.getSettings();
-    ambience.value = String(Math.round(settings.ambienceVolume * 100));
-    rcs.value = String(Math.round(settings.rcsVolume * 100));
-    ambienceValue.value = percent(settings.ambienceVolume);
-    rcsValue.value = percent(settings.rcsVolume);
-  };
-
+  let detachAudio: (() => void) | null = null;
   let previouslyFocused: HTMLElement | null = null;
   const setOpen = (open: boolean): void => {
     const wasOpen = !panel.hidden;
@@ -228,8 +347,10 @@ export function createSettingsMenu(
     toggle.hidden = open;
     toggle.setAttribute('aria-expanded', String(open));
     shell.classList.toggle('is-open', open);
+    if (!open && confirmation.isOpen()) confirmation.hide(false);
     if (open) {
-      sync();
+      detachAudio?.();
+      detachAudio = bindSettingsAudio(audio, shell);
       close.focus();
     } else if (wasOpen) {
       const focusTarget = previouslyFocused?.isConnected ? previouslyFocused : toggle;
@@ -238,27 +359,29 @@ export function createSettingsMenu(
     }
   };
 
-  const onAmbience = (): void => {
-    audio.setAmbienceVolume(Number(ambience.value) / 100);
-    ambienceValue.value = percent(audio.getSettings().ambienceVolume);
-  };
-
-  const onRcs = (): void => {
-    audio.setRcsVolume(Number(rcs.value) / 100);
-    rcsValue.value = percent(audio.getSettings().rcsVolume);
-  };
-
   const onToggle = (): void => setOpen(panel.hidden);
   const onClose = (): void => setOpen(false);
-  const onMainMenu = (): void => {
-    if (!window.confirm('Zum Hauptmenü zurückkehren? Der aktuelle Durchlauf wird beendet.')) return;
-    onReturnToMainMenu();
-  };
+  const onMainMenu = (): void =>
+    confirmation.request(
+      'ZUM HAUPTMENÜ?',
+      'Der aktuelle Durchlauf wird beendet. Ungespeicherter Fortschritt geht verloren.',
+      'ZUM HAUPTMENÜ',
+      onReturnToMainMenu
+    );
   const onSave = (): void => saveCareer(onSaveCareer, saveStatus);
-  const onLoad = (): void => loadSavedCareer(onLoadCareer, saveStatus);
-  const onKeyDown = createSettingsKeyHandler(panel, setOpen);
-  ambience.addEventListener('input', onAmbience);
-  rcs.addEventListener('input', onRcs);
+  const onLoad = (): void => {
+    if (!onLoadCareer) return;
+    confirmation.request(
+      'SPIELSTAND LADEN?',
+      'Ungespeicherter Fortschritt geht verloren.',
+      'SPIELSTAND LADEN',
+      () => loadSavedCareer(onLoadCareer, saveStatus)
+    );
+  };
+  const baseKeyHandler = createSettingsKeyHandler(panel, setOpen);
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (!confirmation.handleKeyDown(event)) baseKeyHandler(event);
+  };
   toggle.addEventListener('click', onToggle);
   backdrop.addEventListener('click', onClose);
   close.addEventListener('click', onClose);
@@ -267,13 +390,11 @@ export function createSettingsMenu(
   load.addEventListener('click', onLoad);
   window.addEventListener('keydown', onKeyDown, true);
 
-  sync();
   setOpen(false);
 
   return {
     destroy() {
-      ambience.removeEventListener('input', onAmbience);
-      rcs.removeEventListener('input', onRcs);
+      detachAudio?.();
       toggle.removeEventListener('click', onToggle);
       backdrop.removeEventListener('click', onClose);
       close.removeEventListener('click', onClose);
@@ -281,6 +402,7 @@ export function createSettingsMenu(
       save.removeEventListener('click', onSave);
       load.removeEventListener('click', onLoad);
       window.removeEventListener('keydown', onKeyDown, true);
+      confirmation.destroy();
       shell.remove();
       document.body.classList.remove('app-has-system-bar');
     },
