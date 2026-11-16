@@ -163,10 +163,7 @@ const starPanel = fs.readFileSync(path.join(root, 'src/app/game-controller-star-
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 assert(manifest.includes('silentSignalCampaign'));
 assert(starPanel.includes("type: 'dialogue.choice'"));
-const missionPane = fs.readFileSync(
-  path.join(root, 'src/ui/map/star-map-mission-pane.ts'),
-  'utf8'
-);
+const missionPane = fs.readFileSync(path.join(root, 'src/ui/map/star-map-mission-pane.ts'), 'utf8');
 assert(mapPanel.includes('renderStarMapMissionPane('));
 assert(missionPane.includes('renderCampaignJournal('));
 console.log('PASS first campaign: playable decisions, rewards, journeys and cleanup');
