@@ -35,14 +35,8 @@ export function createStartMenu(
     { label: 'Neues Spiel', action: 'campaign' },
     { label: 'PvP-Modus', action: 'pvp' },
     { label: 'Kampagnen', action: 'campaigns' },
-    {
-      label: 'Karriere fortsetzen',
-      ...(hasCareerSave ? { action: 'continue' as const } : {}),
-    },
-    {
-      label: 'Spiel laden',
-      ...(hasCareerSave ? { action: 'load' as const } : {}),
-    },
+    { label: 'Karriere fortsetzen', action: hasCareerSave ? 'continue' : undefined },
+    { label: 'Spiel laden', action: hasCareerSave ? 'load' : undefined },
     { label: 'Optionen', action: 'options' },
     { label: 'Beenden', action: 'quit' },
   ];
