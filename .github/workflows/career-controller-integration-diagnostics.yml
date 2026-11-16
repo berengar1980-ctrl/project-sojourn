@@ -1,4 +1,4 @@
-name: Career controller integration and browser startup diagnostics
+name: Career browser resume and live controller diagnostics
 
 on:
   push:
