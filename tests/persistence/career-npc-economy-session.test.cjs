@@ -67,42 +67,65 @@ badOrder.npcs.npcs[0].autonomy.pendingTrade = {
   quantity: 7,
   reason: 'Handel',
 };
-assert.throws(() =>
-  stageCareerNpcEconomySession(
-    badOrder, world, sectorPorts, economyResources, clone(player), seed
-  ),
+assert.throws(
+  () =>
+    stageCareerNpcEconomySession(
+      badOrder,
+      world,
+      sectorPorts,
+      economyResources,
+      clone(player),
+      seed
+    ),
   /pending trade/
 );
 
 const badIdentity = clone(saved);
 badIdentity.economy.npcEconomy.npcIds[0] = 'missing';
-assert.throws(() =>
-  stageCareerNpcEconomySession(
-    badIdentity, world, sectorPorts, economyResources, clone(player), seed
-  ),
+assert.throws(
+  () =>
+    stageCareerNpcEconomySession(
+      badIdentity,
+      world,
+      sectorPorts,
+      economyResources,
+      clone(player),
+      seed
+    ),
   /identity mismatch/
 );
 assert.deepEqual(captureCareerNpcEconomySession(world, npcs, liveEconomy), saved);
 
 const commerce = captureCareerCommerceSession(player, world, npcs, liveEconomy);
-const rebuilt = stageCareerCommerceSession(clone(commerce), world, sectorPorts, economyResources, seed);
+const rebuilt = stageCareerCommerceSession(
+  clone(commerce),
+  world,
+  sectorPorts,
+  economyResources,
+  seed
+);
 assert.deepEqual(
   captureCareerCommerceSession(rebuilt.trade.player, world, rebuilt.npcs, rebuilt.economy),
   commerce
 );
 const entry = rebuilt.economy.markets
   .snapshot()
-  .flatMap((market) => Object.values(market.entries).map((item) => ({
-    locationId: market.locationId,
-    resourceId: item.resourceId,
-    stock: item.stock,
-  })))
+  .flatMap((market) =>
+    Object.values(market.entries).map((item) => ({
+      locationId: market.locationId,
+      resourceId: item.resourceId,
+      stock: item.stock,
+    }))
+  )
   .find((item) => item.stock > 0);
 assert(entry);
 const beforeStock = rebuilt.economy.markets.getEntry(entry.locationId, entry.resourceId).stock;
 const trade = rebuilt.trade.buy(entry.locationId, entry.resourceId, 1, 500);
 assert(trade, 'staged player must be able to trade on restored market');
-assert.equal(rebuilt.economy.markets.getEntry(entry.locationId, entry.resourceId).stock, beforeStock - 1);
+assert.equal(
+  rebuilt.economy.markets.getEntry(entry.locationId, entry.resourceId).stock,
+  beforeStock - 1
+);
 
 const invalidPlayer = clone(commerce);
 invalidPlayer.player.credits = -1;
