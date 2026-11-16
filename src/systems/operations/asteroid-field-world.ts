@@ -1,6 +1,7 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
+import { cloneCareerJson } from '../persistence/career-save-contract';
 import type { LocalPirateCheckpoint } from '../npcs/npc-local-pirate-checkpoint';
 import type { SecurityDroneCheckpoint } from './asteroid-security-drone-checkpoint';
 import type { WorldLocation } from '../../core/world-types';
@@ -105,7 +106,7 @@ export class AsteroidFieldWorld {
         drone: field.drone.exportState(),
       };
     }
-    return { version: 1, backgroundAccumulator: this.backgroundAccumulator, fields };
+    return cloneCareerJson({ version: 1 as const, backgroundAccumulator: this.backgroundAccumulator, fields });
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {
