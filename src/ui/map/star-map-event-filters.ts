@@ -72,8 +72,10 @@ export function filteredSignals(
       return kind !== null && filters[kind];
     })
     .sort((a, b) => {
-      if (filters.sort === 'distance') return distance(a) - distance(b) || a.name.localeCompare(b.name);
-      if (filters.sort === 'danger') return b.dangerLevel - a.dangerLevel || distance(a) - distance(b);
+      if (filters.sort === 'distance')
+        return distance(a) - distance(b) || a.name.localeCompare(b.name);
+      if (filters.sort === 'danger')
+        return b.dangerLevel - a.dangerLevel || distance(a) - distance(b);
       return a.name.localeCompare(b.name);
     });
 }
@@ -90,14 +92,21 @@ export function missionFilterControls(
 
   const presets = document.createElement('div');
   presets.className = 'star-map-event-filters__presets';
-  for (const [label, checked] of [['Alle', KINDS.every((kind) => filters[kind])],
-    ['Keine', KINDS.every((kind) => !filters[kind])]] as const) {
+  for (const [label, checked] of [
+    ['Alle', KINDS.every((kind) => filters[kind])],
+    ['Keine', KINDS.every((kind) => !filters[kind])],
+  ] as const) {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
     button.setAttribute('aria-pressed', String(checked));
     button.addEventListener('click', () =>
-      onChange({ ...filters, distress: label === 'Alle', salvage: label === 'Alle', campaign: label === 'Alle' })
+      onChange({
+        ...filters,
+        distress: label === 'Alle',
+        salvage: label === 'Alle',
+        campaign: label === 'Alle',
+      })
     );
     presets.append(button);
   }

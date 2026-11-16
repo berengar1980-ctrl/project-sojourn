@@ -553,7 +553,10 @@
   justify-content: space-between;
   gap: 8px;
   color: #96b5c0;
-  font: 10px 'Courier New', ui-monospace, monospace;
+  font:
+    10px 'Courier New',
+    ui-monospace,
+    monospace;
 }
 
 .star-map-event-filters__sort select {

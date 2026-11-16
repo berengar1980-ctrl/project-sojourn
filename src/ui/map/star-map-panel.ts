@@ -1,4 +1,10 @@
-import { loadMissionFilters, missionFilterControls, saveMissionFilters, signalKind, type SignalKind } from './star-map-event-filters';
+import {
+  loadMissionFilters,
+  missionFilterControls,
+  saveMissionFilters,
+  signalKind,
+  type SignalKind,
+} from './star-map-event-filters';
 import type { CampaignJournalEntry } from '../../core/campaign-types';
 import { renderCampaignJournal } from './star-map-campaign-journal';
 import type { RouteProfile } from '../../systems/navigation/route-planner';
@@ -362,8 +368,10 @@ function createMenuContentRefresher(
       const role = currentModel.playerShip.role ?? 'freighter';
       const filters = loadMissionFilters(role);
       const counts: Record<SignalKind | 'campaign', number> = {
-        distress: currentModel.locations.filter((location) => signalKind(location) === 'distress').length,
-        salvage: currentModel.locations.filter((location) => signalKind(location) === 'salvage').length,
+        distress: currentModel.locations.filter((location) => signalKind(location) === 'distress')
+          .length,
+        salvage: currentModel.locations.filter((location) => signalKind(location) === 'salvage')
+          .length,
         campaign: actions.getCampaignJournal?.().length ?? 0,
       };
       const filterControls = missionFilterControls(filters, counts, (next) => {

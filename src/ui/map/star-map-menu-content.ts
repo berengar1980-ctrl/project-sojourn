@@ -125,10 +125,13 @@ export function renderStarMapEvents(
   summary.textContent = 'BEKANNTE SIGNALE // ' + events.length + ' / ' + all.length;
   container.replaceChildren(summary);
   if (!events.length) {
-    container.append(emptyState(
-      all.length ? 'Keine Signale entsprechen den gewählten Filtern.' :
-        'Noch keine bekannten Bergungs- oder Notsignale.'
-    ));
+    container.append(
+      emptyState(
+        all.length
+          ? 'Keine Signale entsprechen den gewählten Filtern.'
+          : 'Noch keine bekannten Bergungs- oder Notsignale.'
+      )
+    );
     return;
   }
   for (const location of events.slice(0, 24)) {
