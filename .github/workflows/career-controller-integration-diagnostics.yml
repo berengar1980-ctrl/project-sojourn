@@ -1,0 +1,49 @@
+name: Career controller integration quality diagnostics
+
+on:
+  push:
+    branches:
+      - feat/career-economy-npc-trade-integrity
+    paths:
+      - .github/workflows/career-controller-integration-diagnostics.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/career-economy-npc-trade-integrity
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Apply project's exact formatter
+        run: |
+          npm run format
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "Format Career controller integration"
+            git push origin HEAD:feat/career-economy-npc-trade-integrity
+          fi
+      - name: Check independent requirements and capture all errors
+        shell: bash
+        run: |
+          failed=0
+          for command in "npm run format:check" "npm run lint" "npm run typecheck" "npm run deps:check" "npm run persistence:check" "node tests/run-tests.cjs career" "npm run build"; do
+            echo "::group::$command"
+            if timeout 120s bash -lc "$command"; then echo "PASS $command"
+            else echo "FAIL $command"; failed=$((failed + 1)); fi
+            echo "::endgroup::"
+          done
+          echo "Failures: $failed"
+          test "$failed" -eq 0
