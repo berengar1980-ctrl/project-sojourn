@@ -1,4 +1,8 @@
 import type { WorldLocation, WorldMap } from '../../core/world-types';
+import {
+  stageCareerCampaignWorldCheckpoint,
+  type CareerCampaignWorldCheckpoint,
+} from './career-campaign-world-checkpoint';
 import type { NavigationService } from '../navigation/navigation-types';
 
 export interface CampaignSystem {
@@ -24,6 +28,7 @@ export interface CampaignWorldService {
   exitLocationId(): string | null;
   releaseCampaign(campaignId: string): void;
   snapshot(): CampaignWorldSnapshot;
+  exportCareerState(): CareerCampaignWorldCheckpoint;
 }
 
 const ID = /^[a-z][a-z0-9_-]{0,79}$/u;
@@ -136,7 +141,8 @@ function snapshotCampaignWorld(
 
 export function createCampaignWorldService(
   baseWorld: WorldMap,
-  navigation: NavigationService
+  navigation: NavigationService,
+  checkpoint?: CareerCampaignWorldCheckpoint
 ): CampaignWorldService {
   const locations = new Map<string, Map<string, WorldLocation>>();
   const systems = new Map<string, Map<string, CampaignSystem>>();
@@ -160,6 +166,41 @@ export function createCampaignWorldService(
   function existingId(id: string): boolean {
     if (baseWorld.locations.some((location) => location.id === id)) return true;
     return [...locations.values()].some((entries) => entries.has(id));
+  }
+
+  if (checkpoint) {
+    const restored = stageCareerCampaignWorldCheckpoint(checkpoint);
+    for (const [owner, entries] of Object.entries(restored.snapshot.locations)) {
+      for (const location of entries) {
+        if (!registerMissionLocation(owner, location, baseWorld, locations, existingId, rebuildBase)) {
+          throw new Error('Invalid restored mission location');
+        }
+      }
+    }
+    for (const [owner, entries] of Object.entries(restored.snapshot.systems)) {
+      for (const system of entries) {
+        if (!registerMissionSystem(owner, system, baseWorld, systems)) {
+          throw new Error('Invalid restored campaign system');
+        }
+      }
+    }
+    const savedActive = restored.active;
+    if (savedActive) {
+      const system = systems.get(savedActive.owner)?.get(savedActive.id);
+      if (
+        !system ||
+        !baseView.locations.some((item) => item.id === savedActive.returnLocationId)
+      ) {
+        throw new Error('Unknown restored campaign system or return point');
+      }
+      active = { ...savedActive };
+      if (navigation.getSnapshot().currentLocationId &&
+          !system.map.locations.some(
+            (item) => item.id === navigation.getSnapshot().currentLocationId
+          )) {
+        throw new Error('Saved navigation is outside the campaign system');
+      }
+    }
   }
 
   function foreign(): CampaignSystem | null {
@@ -222,5 +263,10 @@ export function createCampaignWorldService(
       rebuildBase();
     },
     snapshot: () => snapshotCampaignWorld(active?.id ?? null, locations, systems),
+    exportCareerState: () => ({
+      version: 1,
+      snapshot: snapshotCampaignWorld(active?.id ?? null, locations, systems),
+      active: active ? { ...active } : null,
+    }),
   };
 }
