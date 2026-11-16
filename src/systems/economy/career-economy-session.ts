@@ -25,6 +25,7 @@ import {
   type MarketSituationService,
 } from './market-situation-service';
 import type { EconomyMarketService } from './market-service';
+import { assertCareerEconomyIntegrity } from './career-economy-integrity';
 import { createNpcEconomyService } from './npc-economy-service';
 import type {
   NpcEconomyCheckpoint,
@@ -91,6 +92,7 @@ export function stageCareerEconomySession(
   const markets = stageCareerMarkets(checkpoint.markets, ports, resources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
+  assertCareerEconomyIntegrity(markets, resources, player, npcs);
   const simulation = createEconomySimulationService(
     markets,
     player,
