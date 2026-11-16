@@ -3,6 +3,7 @@ import { cloneCareerJson } from '../persistence/career-save-contract';
 
 export interface CareerCampaignWorldCheckpoint {
   readonly version: 1;
+  readonly revision: number;
   readonly snapshot: CampaignWorldSnapshot;
   readonly active: {
     readonly owner: string;
@@ -23,6 +24,8 @@ export function stageCareerCampaignWorldCheckpoint(
   if (
     !record(saved) ||
     saved.version !== 1 ||
+    !Number.isSafeInteger(saved.revision) ||
+    (saved.revision as number) < 0 ||
     !record(saved.snapshot) ||
     !record(saved.snapshot.locations) ||
     !record(saved.snapshot.systems)
