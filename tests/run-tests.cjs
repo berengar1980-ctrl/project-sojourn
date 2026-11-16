@@ -19,10 +19,10 @@ function walk(dir) {
 }
 
 const tests = walk(__dirname)
-  .filter((file) =>
-    (full || !file.includes(`${path.sep}full${path.sep}`)) &&
-    (!career || path.basename(file).startsWith('career-'))
-  )
+  .filter((file) => {
+    if (!full && file.includes(`${path.sep}full${path.sep}`)) return false;
+    return !career || path.basename(file).startsWith('career-');
+  })
   .sort();
 
 let failed = 0;
