@@ -89,28 +89,36 @@ function patrolMarkup(m: OperationsModel): string {
     ${button('accept', 'Einsatz annehmen', '', !m.port || !p.mandate || !m.patrolShip || p.assignments.some((a) => ['active', 'completed'].includes(a.status)))}`;
 }
 function activeOrdersMarkup(m: OperationsModel): string {
-  const blockades = m.blockades.orders.filter((order) =>
-    order.ownerId === 'player' && ['assembling', 'active'].includes(order.phase)
-  ).map((order) =>
-    `<li>Blockade · ${escape(m.names[order.locationId] ?? order.locationId)} · ${escape(phaseNames[order.phase])}</li>`
-  );
-  const patrols = m.patrol.assignments.filter((assignment) =>
-    ['active', 'completed'].includes(assignment.status)
-  ).map((assignment) =>
-    `<li>Patrouille · ${escape(m.names[assignment.targetId] ?? assignment.targetId)} · ${escape(assignment.status)}</li>`
-  );
+  const blockades = m.blockades.orders
+    .filter((order) => order.ownerId === 'player' && ['assembling', 'active'].includes(order.phase))
+    .map(
+      (order) =>
+        `<li>Blockade · ${escape(m.names[order.locationId] ?? order.locationId)} · ${escape(phaseNames[order.phase])}</li>`
+    );
+  const patrols = m.patrol.assignments
+    .filter((assignment) => ['active', 'completed'].includes(assignment.status))
+    .map(
+      (assignment) =>
+        `<li>Patrouille · ${escape(m.names[assignment.targetId] ?? assignment.targetId)} · ${escape(assignment.status)}</li>`
+    );
   return `<h3>Laufende Verpflichtungen</h3><p>Auch nach einem Schiffswechsel sichtbar.</p>
     <ul>${[...blockades, ...patrols].join('') || '<li>Derzeit keine laufenden Aufträge.</li>'}</ul>`;
 }
 
 function concessionMarkup(m: OperationsModel): string {
   if (m.shipRole === 'salvage') {
-    const rows = m.wreckClaims.map((claim) =>
-      `<li><strong>${escape(claim.fieldId)} / ${escape(claim.wreckId)}</strong>
-      <p>${claim.ownerId === 'player' ? 'EIGENER BERGUNGSANSPRUCH' :
-        'FREMDER BERGUNGSANSPRUCH · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)}
+    const rows = m.wreckClaims
+      .map(
+        (claim) =>
+          `<li><strong>${escape(claim.fieldId)} / ${escape(claim.wreckId)}</strong>
+      <p>${
+        claim.ownerId === 'player'
+          ? 'EIGENER BERGUNGSANSPRUCH'
+          : 'FREMDER BERGUNGSANSPRUCH · ' + escape(m.names[claim.ownerId] ?? claim.ownerId)
+      }
       · gültig bis Tag ${claim.expiresDay}</p></li>`
-    ).join('');
+      )
+      .join('');
     return `<h3>Wrackregister</h3>
       <p>Registrierung erfolgt direkt am analysierten Wrack in der Bergungskarte.
       Ansprüche gelten 14 Tage und werden im Karriere-Spielstand gespeichert.</p>

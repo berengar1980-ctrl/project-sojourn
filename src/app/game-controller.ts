@@ -296,7 +296,8 @@ function mountControllerSalvage(
     root: context.root,
     ship: state.activeShip,
     seed: economy.wreckClaims.seedFor(
-      location.id, sectorEvent?.fieldSeed ?? state.salvageSpaceSeed
+      location.id,
+      sectorEvent?.fieldSeed ?? state.salvageSpaceSeed
     ),
     location,
     ...(preservedField

@@ -148,7 +148,9 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     wreckClaimOwners: Object.fromEntries(
       context.field.wrecks.flatMap((wreck) => {
         const claim = options.wreckClaims.claim(
-          context.field.id, wreck.id, options.getCurrentDay()
+          context.field.id,
+          wreck.id,
+          options.getCurrentDay()
         );
         return claim ? [[wreck.id, claim.ownerId]] : [];
       })
@@ -260,7 +262,11 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
         return;
       }
       const result = options.wreckClaims.register(
-        field, wreck, 'player', options.getCurrentDay(), options.player.credits
+        field,
+        wreck,
+        'player',
+        options.getCurrentDay(),
+        options.player.credits
       );
       if (result.ok) {
         options.player.credits -= result.fee;

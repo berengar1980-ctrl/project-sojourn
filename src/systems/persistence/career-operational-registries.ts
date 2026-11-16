@@ -123,32 +123,56 @@ function verifySurveyLevels(entries: readonly unknown[]): void {
 
 function verifyWreckClaims(value: unknown): void {
   if (value === undefined) return; // Saves created before wreck registration.
-  if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.claims) ||
-    !Array.isArray(value.fields)) throw new Error('Ungültiges Wrackregister.');
+  if (
+    !isRecord(value) ||
+    value.version !== 1 ||
+    !Array.isArray(value.claims) ||
+    !Array.isArray(value.fields)
+  )
+    throw new Error('Ungültiges Wrackregister.');
   const seen = new Set<string>();
   for (const entry of value.claims) {
-    if (!isRecord(entry) || !validIdentity(entry, ['fieldId', 'wreckId', 'ownerId']) ||
-      !validFinite(entry.registeredDay) || !validFinite(entry.expiresDay) ||
-      entry.expiresDay <= entry.registeredDay) throw new Error('Ungültiger Wrackanspruch.');
+    if (
+      !isRecord(entry) ||
+      !validIdentity(entry, ['fieldId', 'wreckId', 'ownerId']) ||
+      !validFinite(entry.registeredDay) ||
+      !validFinite(entry.expiresDay) ||
+      entry.expiresDay <= entry.registeredDay
+    )
+      throw new Error('Ungültiger Wrackanspruch.');
     const key = JSON.stringify([entry.fieldId, entry.wreckId]);
     if (seen.has(key)) throw new Error('Doppelter Wrackanspruch.');
     seen.add(key);
   }
   const fields = new Set<string>();
   for (const pair of value.fields) {
-    if (!Array.isArray(pair) || pair.length !== 2 || typeof pair[0] !== 'string' ||
-      fields.has(pair[0]) || !isRecord(pair[1]) ||
-      pair[1].locationId !== pair[0] || !validFinite(pair[1].seed) ||
-      !Array.isArray(pair[1].wrecks)) throw new Error('Ungültiges Wrackfeld.');
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== 'string' ||
+      fields.has(pair[0]) ||
+      !isRecord(pair[1]) ||
+      pair[1].locationId !== pair[0] ||
+      !validFinite(pair[1].seed) ||
+      !Array.isArray(pair[1].wrecks)
+    )
+      throw new Error('Ungültiges Wrackfeld.');
     fields.add(pair[0]);
     const ids = new Set<string>();
     for (const wreck of pair[1].wrecks) {
-      if (!isRecord(wreck) || typeof wreck.id !== 'string' || !wreck.id ||
-        ids.has(wreck.id) || !isRecord(wreck.resources) ||
+      if (
+        !isRecord(wreck) ||
+        typeof wreck.id !== 'string' ||
+        !wreck.id ||
+        ids.has(wreck.id) ||
+        !isRecord(wreck.resources) ||
         Object.values(wreck.resources).some((quantity) => !validFinite(quantity)) ||
-        !['none', 'available', 'recovered', 'destroyed'].includes(wreck.componentStatus as string) ||
+        !['none', 'available', 'recovered', 'destroyed'].includes(
+          wreck.componentStatus as string
+        ) ||
         typeof wreck.inspected !== 'boolean' ||
-        !['unscanned', 'surveyed', 'analyzed'].includes(wreck.scanLevel as string)) {
+        !['unscanned', 'surveyed', 'analyzed'].includes(wreck.scanLevel as string)
+      ) {
         throw new Error('Ungültiger Wrackzustand.');
       }
       ids.add(wreck.id);
@@ -301,6 +325,7 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
   ) {
     throw new Error('Speicherdaten des Rechts- oder Konzessionssystems unvollständig.');
   }
-  if (saved.wreckClaims) wreckClaims.restoreState(saved.wreckClaims as unknown as WreckClaimCheckpoint);
+  if (saved.wreckClaims)
+    wreckClaims.restoreState(saved.wreckClaims as unknown as WreckClaimCheckpoint);
   return { claims, legal, wreckClaims };
 }

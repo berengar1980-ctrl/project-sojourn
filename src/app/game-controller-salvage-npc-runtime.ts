@@ -29,7 +29,8 @@ export function createNpcSalvageRuntime(
     locationId: options.location.id,
     field,
     salvagers: options.sectorNpcs.filter(
-      (npc) => npcOperationalRoleAllowed(npc, 'salvage') && npc.workLocationId === options.location.id
+      (npc) =>
+        npcOperationalRoleAllowed(npc, 'salvage') && npc.workLocationId === options.location.id
     ),
     canWorkWreck: (npc, wreck) => {
       const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
@@ -39,7 +40,11 @@ export function createNpcSalvageRuntime(
       const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
       if (claim) return claim.ownerId === npc.id;
       const result = options.wreckClaims.register(
-        field, wreck, npc.id, options.getCurrentDay(), npc.credits
+        field,
+        wreck,
+        npc.id,
+        options.getCurrentDay(),
+        npc.credits
       );
       if (!result.ok) return false;
       npc.credits -= result.fee;

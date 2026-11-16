@@ -99,8 +99,11 @@ export class WreckClaimRegistry {
     if (!wreck.inspected && wreck.scanLevel !== 'analyzed') {
       return { ok: false, reason: 'unscanned' };
     }
-    if (!wreck.resources.some((resource) => resource.remainingAmount > 0) &&
-      wreck.componentStatus !== 'available') return { ok: false, reason: 'empty' };
+    if (
+      !wreck.resources.some((resource) => resource.remainingAmount > 0) &&
+      wreck.componentStatus !== 'available'
+    )
+      return { ok: false, reason: 'empty' };
     if (this.claim(field.id, wreck.id, day)) return { ok: false, reason: 'occupied' };
     if (credits < fee) return { ok: false, reason: 'unaffordable' };
     this.claims.set(this.key(field.id, wreck.id), {
@@ -132,9 +135,13 @@ export class WreckClaimRegistry {
       claims: [...this.claims.values()].map((claim) => ({ ...claim })),
       fields: [...this.fields.entries()].map(([id, field]) => [
         id,
-        { ...field, wrecks: field.wrecks.map((wreck) => ({
-          ...wreck, resources: { ...wreck.resources },
-        })) },
+        {
+          ...field,
+          wrecks: field.wrecks.map((wreck) => ({
+            ...wreck,
+            resources: { ...wreck.resources },
+          })),
+        },
       ]),
     };
   }
@@ -146,9 +153,13 @@ export class WreckClaimRegistry {
       this.claims.set(this.key(claim.fieldId, claim.wreckId), { ...claim });
     }
     for (const [id, field] of saved.fields) {
-      this.fields.set(id, { ...field, wrecks: field.wrecks.map((wreck) => ({
-        ...wreck, resources: { ...wreck.resources },
-      })) });
+      this.fields.set(id, {
+        ...field,
+        wrecks: field.wrecks.map((wreck) => ({
+          ...wreck,
+          resources: { ...wreck.resources },
+        })),
+      });
     }
   }
 }
