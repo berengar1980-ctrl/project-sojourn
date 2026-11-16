@@ -1,0 +1,36 @@
+name: Temporary PR 324 format and diagnostics
+on:
+  pull_request:
+    types: [synchronize]
+permissions:
+  contents: write
+jobs:
+  format-and-diagnose:
+    if: github.event.pull_request.number == 324 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format updated sources
+        run: |
+          npx prettier --write src/app/game-controller-economy.ts src/app/game-controller-salvage.ts src/systems/persistence/career-operational-registries.ts src/ui/operations/operations-panel.ts src/ui/salvage/salvage-space-panel.ts
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/app/game-controller-economy.ts src/app/game-controller-salvage.ts src/systems/persistence/career-operational-registries.ts src/ui/operations/operations-panel.ts src/ui/salvage/salvage-space-panel.ts
+            git commit -m "style: apply Prettier to refactored wreck UI"
+            git push origin HEAD:"${{ github.head_ref }}"
+          fi
+      - name: Diagnose lint and TypeScript
+        run: |
+          npm run lint || true
+          npm run typecheck || true
