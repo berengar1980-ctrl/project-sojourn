@@ -324,14 +324,30 @@ Notsignal-Belohnungen und Kampagnen-Aktionsbelege werden nicht erneut
 vergeben. Der laufende Kampf sichert RNG-Fortschritt und interne
 Physik-/Waffen-Zustände, nicht nur den Anzeige-Snapshot.
 
-**Offene Integration / Nicht behaupten, die Karriere sei benutzbar:** Der
-bisherige `createGameController` baut eigene Services auf und verwendet den
-neuen Session-Manager noch nicht als autoritative Controller-Instanz. Einige
-laufende Randzustände (z. B. NPC-Schmuggel-Timer, taktisches Boarding,
-Wirtschaftshilfsdienste) benötigen noch vollständige Integration. Browser-
-Neustart-/UI-End-to-End-Tests und eine grüne Gesamt-CI stehen aus. Der
-in-game Save/Load-Knopf darf erst nach behobenem Controller-Lifecycle und
-der finalen CI eingeführt werden.
+**Live-Controller-Anbindung im Draft:** `bootstrap.ts` kann einen geprüften
+JSON-Spielstand vor dem Spielstart vollständig mit `prepareControllerCareer`
+stagen. `createGameController` übernimmt dann diese Autoritäten für
+Navigation, Markt, Spieler-Wallet, NPC-Sektor, Operations, Crew, Schiffe,
+Asteroidenfelder, Kampagnen und laufendes Spieler-Raumgefecht, statt
+jeweils neue Services zu erzeugen. Der Spielstand enthält das vollständige
+Kapitänsprofil und den Restzähler des 180-Sekunden-Wirtschaftstags.
+
+**Benutzeroberfläche im Draft:** Das Systemmenü bietet jetzt „Spielstand
+speichern“; das Hauptmenü „Karriere fortsetzen“ bei vorhandenem,
+struktur-validem Save. Im Spiel ist Speichern absichtlich auf den ruhenden
+Orbit oder Hafen beschränkt und bei Flug, Tankstopp, Gefecht, taktischem
+Boarding, Bergbau oder Wrackbergung gesperrt. Ungültige Spielstände verändern
+keine laufende Session; ein vollständiger Browser-Neustart wird noch nicht
+automatisiert getestet.
+
+**Vor dem Merge offen:** Die reguläre CircleCI muss am endgültigen
+Branch-Commit vollständig grün sein. Echte Browser-End-to-End-Tests müssen
+Speichern, Neuladen und fortgesetzten NPC-/Missionsbetrieb überprüfen.
+Insbesondere NPC-Schmuggel-Timer und lokale Randzustände sind noch auf
+explizite Save-Abdeckung zu prüfen. Die backendseitige Sitzungsverwaltung
+und der Browser-Neustart sind zwei unterschiedliche Integrationswege; die
+UI bietet noch kein unterbrechungsfreies Laden in eine bereits aktive
+Controller-Instanz.
 
 **Gemeinsame Abnahme:** Die CircleCI-Fail-Diagnose führt nach einem roten
 Qualitätsgate Formatierung, Lint, TypeScript, Dependency, Persistence-
