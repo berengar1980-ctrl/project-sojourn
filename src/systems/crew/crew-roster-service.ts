@@ -4,6 +4,10 @@ import type { ShipDefinition, ShipStationSkill } from '../../core/ship-types';
 import type { ShipRuntimeOptions } from '../ships/ship-runtime';
 import { resolveShipGameplayStats } from '../ships/ship-stats';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
+import {
+  stageCareerCrewCheckpoint,
+  type CareerCrewCheckpoint,
+} from './career-crew-checkpoint';
 import type { ShipCrewMember, ShipStationAssignments } from '../ships/station-performance';
 import {
   combatRoundsNeeded,
@@ -16,6 +20,7 @@ import {
 } from './crew-performance';
 
 export interface CrewRosterService {
+  exportState(): CareerCrewCheckpoint;
   list(): readonly CrewMember[];
   boardingEquipment(): readonly string[];
   grantBoardingEquipment(itemId: string): void;
@@ -318,10 +323,25 @@ function createCaptainCrewMember(profile: PlayerProfile): CrewMember {
   };
 }
 
-export function createCrewRosterService(profile?: PlayerProfile): CrewRosterService {
-  const members: CrewMember[] = profile ? [createCaptainCrewMember(profile)] : [];
-  const boardingEquipment: string[] = [];
-  const assignmentsByShip = new Map<string, Record<string, string | undefined>>();
+export function createCrewRosterService(
+  profile?: PlayerProfile,
+  checkpoint?: CareerCrewCheckpoint
+): CrewRosterService {
+  const restored = checkpoint ? stageCareerCrewCheckpoint(checkpoint) : null;
+  const members: CrewMember[] = restored
+    ? restored.members.map(cloneMember)
+    : profile
+      ? [createCaptainCrewMember(profile)]
+      : [];
+  const boardingEquipment: string[] = restored ? [...restored.boardingEquipment] : [];
+  const assignmentsByShip = new Map<string, Record<string, string | undefined>>(
+    restored
+      ? Object.entries(restored.assignments).map(([shipId, assignments]) => [
+          shipId,
+          { ...assignments },
+        ])
+      : []
+  );
 
   function peekAssignmentRecord(ship: ShipDefinition): Record<string, string | undefined> {
     const existing = assignmentsByShip.get(ship.id);
@@ -354,6 +374,22 @@ export function createCrewRosterService(profile?: PlayerProfile): CrewRosterServ
     activeManningCount,
   };
   return {
+    exportState() {
+      const assignments: Record<string, Record<string, string>> = {};
+      for (const [shipId, stationRecords] of assignmentsByShip) {
+        assignments[shipId] = Object.fromEntries(
+          Object.entries(stationRecords).filter((entry): entry is [string, string] =>
+            typeof entry[1] === 'string'
+          )
+        );
+      }
+      return stageCareerCrewCheckpoint({
+        version: 1,
+        members: members.map(cloneMember),
+        boardingEquipment: [...boardingEquipment],
+        assignments,
+      });
+    },
     boardingEquipment: () => [...boardingEquipment],
     grantBoardingEquipment(itemId) {
       if (itemId) boardingEquipment.push(itemId);
