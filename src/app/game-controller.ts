@@ -46,6 +46,7 @@ import { createControllerStarPanel } from './game-controller-star-map';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   tickEconomy,
+  restoreControllerDayElapsed,
   completeDistressTowOnArrival,
   controllerSalvageEventCallbacks,
   controllerSalvageExitAction,
@@ -411,6 +412,7 @@ function installControllerCareer(
   const saved = options.restoredSession;
   registerSectorShips(context);
   if (saved) {
+    restoreControllerDayElapsed(context, saved.controllerSecondsIntoDay ?? 0);
     bindCareerFieldWorld(context, saved.fieldsLegal.fields);
     stageControllerCustody(
       context,
