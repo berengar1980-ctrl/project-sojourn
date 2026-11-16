@@ -279,3 +279,15 @@ Dies ist noch **kein globaler Career-Swap**: Schiffsausrüstung, Crew, aktive
 Felder, Recht, Haft, Kampf, Kampagnen und Welt müssen ebenfalls aus demselben
 Snapshot aufbereitet und erst nach vollständiger Prüfung gemeinsam aktiviert
 werden. Save/Load-UI bleibt gesperrt.
+
+### Crew-Roster und Fortschritt (PR #319)
+
+Der `CrewRosterService` kann mit `exportState()` Mitglieder einschließlich
+Stations- und Kampffertigkeiten, Trainingsstunden, Verletzungen, Moral,
+persönlicher Ausrüstung, Boarding-Ausrüstung sowie schiffsspezifischer
+Stationsbesetzungen als versionierten Checkpoint erfassen.
+`createCrewRosterService(profile, checkpoint)` validiert Identitäten,
+Schiffs-/Stationskennungen, doppelte Zuordnungen und numerische Werte, bevor
+es eine **neue** Roster-Instanz erzeugt. Fehler im Crew-Checkpoint verändern
+nicht den bestehenden Roster. Dieser Adapter wird erst beim vollständigen
+Career-Session-Staging mit Spieler/Schiffen installiert.
