@@ -1,7 +1,7 @@
 .operations-launch {
   position: absolute;
   right: 18px;
-  top: 18px;
+  top: 78px;
   z-index: 65;
   padding: 10px 14px;
   color: #a9e5ef;
@@ -112,7 +112,7 @@
 @media (max-width: 700px) {
   .operations-launch {
     right: 12px;
-    top: 12px;
+    top: 68px;
     padding: 7px;
     font-size: 11px;
   }
@@ -124,5 +124,26 @@
   }
   .operations-dialog fieldset label {
     min-width: 100%;
+  }
+}
+
+.operations-dialog section > label {
+  display: grid;
+  grid-template-columns: minmax(120px, 165px) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  max-width: 520px;
+}
+.operations-dialog section > label select {
+  width: 100%;
+  margin-left: 0;
+}
+.operations-dialog .operations-hint {
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .operations-dialog section > label {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }
