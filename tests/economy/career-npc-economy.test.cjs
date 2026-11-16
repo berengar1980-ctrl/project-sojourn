@@ -29,7 +29,14 @@ const saved = first.exportState();
 const credits = npc.credits;
 const intel = JSON.stringify(npc.marketIntel);
 const restoredNpc = JSON.parse(JSON.stringify(npc));
-const second = createNpcEconomyService(markets, allocator, economyResources, [restoredNpc], {}, saved);
+const second = createNpcEconomyService(
+  markets,
+  allocator,
+  economyResources,
+  [restoredNpc],
+  {},
+  saved
+);
 assert.deepEqual(second.exportState(), saved);
 assert.equal(JSON.stringify(restoredNpc.marketIntel), intel);
 second.advanceDay(3);
