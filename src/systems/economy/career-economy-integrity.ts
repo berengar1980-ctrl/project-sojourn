@@ -13,10 +13,7 @@ function validQuantity(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
-function validatePlayerCargo(
-  player: PlayerEconomyState,
-  resources: ReadonlySet<string>
-): void {
+function validatePlayerCargo(player: PlayerEconomyState, resources: ReadonlySet<string>): void {
   if (!validQuantity(player.credits)) throw new Error('Invalid saved player credits');
   for (const [id, lot] of Object.entries(player.cargo)) {
     if (
