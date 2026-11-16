@@ -1,6 +1,10 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap } from '../../core/world-types';
+import {
+  stageCareerPatrol,
+  type CareerPatrolCheckpoint,
+} from './career-operations-checkpoint';
 
 export interface PatrolAssignment {
   id: string;
@@ -23,8 +27,36 @@ export class PatrolCareerService {
   constructor(
     private readonly world: WorldMap,
     private readonly npcs: readonly SectorNpcState[],
-    private readonly player: PlayerEconomyState
-  ) {}
+    private readonly player: PlayerEconomyState,
+    checkpoint?: CareerPatrolCheckpoint
+  ) {
+    if (checkpoint) {
+      const saved = stageCareerPatrol(checkpoint, world, npcs);
+      this.sequence = saved.sequence;
+      this.day = saved.day;
+      this.completed = saved.completed;
+      this.mandate = saved.mandate;
+      this.reputation = saved.reputation;
+      this.assignments = saved.assignments.map((job) => ({
+        ...job,
+        visited: [...job.visited],
+      }));
+    }
+  }
+  exportState(): CareerPatrolCheckpoint {
+    return {
+      version: 1,
+      sequence: this.sequence,
+      mandate: this.mandate,
+      reputation: this.reputation,
+      completed: this.completed,
+      day: this.day,
+      assignments: this.assignments.map((job) => ({
+        ...job,
+        visited: [...job.visited],
+      })),
+    };
+  }
   snapshot() {
     return {
       sequence: this.sequence,
