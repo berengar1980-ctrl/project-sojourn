@@ -69,8 +69,9 @@ export function createMarketIntelService(
       !Array.isArray(checkpoint.intel) ||
       !Array.isArray(checkpoint.history) ||
       checkpoint.history.length > MARKET_HISTORY_DAYS
-    )
+    ) {
       throw new Error('Invalid market intel checkpoint');
+    }
     const validLocations = new Set(markets.snapshot().map((market) => market.locationId));
     const validResources = new Set(
       markets.snapshot().flatMap((market) => Object.keys(market.entries))
@@ -127,7 +128,10 @@ export function createMarketIntelService(
           if (resourceIds.has(entry.resourceId)) throw new Error('Duplicate historical resource');
           resourceIds.add(entry.resourceId);
         }
-        locations.set(location.locationId, location.entries.map((entry) => ({ ...entry })));
+        locations.set(
+          location.locationId,
+          location.entries.map((entry) => ({ ...entry }))
+        );
       }
       history.set(savedDay.day, locations);
     }
