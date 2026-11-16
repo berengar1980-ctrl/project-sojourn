@@ -92,8 +92,10 @@ assert(
 );
 
 assert(
-  settings.includes('Spielstand, Laden und Export werden hier später ergänzt.'),
-  'settings shell must remain extensible for future save, load and export controls'
+  settings.includes('data-career-save') &&
+    settings.includes('data-career-status') &&
+    settings.includes('settings-menu__main-menu:not([data-career-save])'),
+  'settings console must expose a separate Career save action without hijacking main menu'
 );
 
 console.log('PASS bundled ambience loop, RCS audio and settings menu wiring');
