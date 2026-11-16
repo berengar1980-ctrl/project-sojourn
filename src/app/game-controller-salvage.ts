@@ -285,9 +285,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onBoardWreck(wreckId) {
       options.onBoardWreck?.(wreckId);
     },
-    onClaimWreck(wreckId) {
-      claimPlayerWreck(context, wreckId);
-    },
+    onClaimWreck: (wreckId) => claimPlayerWreck(context, wreckId),
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
