@@ -6,6 +6,7 @@ import {
 } from '../systems/persistence/career-full-session';
 import { captureControllerCustody } from './game-controller-law-enforcement';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
+import { captureControllerDayElapsed } from './game-controller-events';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 /**
@@ -17,6 +18,7 @@ export function captureControllerCareer(context: ControllerRuntimeContext): Care
   const custody = captureControllerCustody(context);
   const session: StagedFullCareerSession = {
     profile: state.playerProfile,
+    controllerSecondsIntoDay: captureControllerDayElapsed(context),
     navigationWorld: { navigation: context.navigation, world: context.world },
     commerce: {
       commerce: {
