@@ -1,4 +1,9 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import {
+  captureCareerCustody,
+  stageCareerCustody,
+  type CareerCustodyCheckpoint,
+} from '../systems/persistence/career-custody-checkpoint';
 import { advanceEconomyDay } from './game-controller-events';
 import { PENAL_LABOR_CREDITS_PER_DAY } from '../systems/operations/sector-legal-registry';
 import { sectorPortByLocationId } from '../data/ports/sector-ports';
@@ -15,6 +20,42 @@ interface DetentionSession {
 }
 const detentions = new WeakMap<ControllerRuntimeContext, DetentionSession>();
 const LABOR_DAYS_PER_SECOND = 12;
+
+/** This is called only while creating a candidate session, never during rendering. */
+export function captureControllerCustody(context: ControllerRuntimeContext): CareerCustodyCheckpoint {
+  const detention = detentions.get(context);
+  return captureCareerCustody(
+    context.economy.npcPrisoners,
+    detention
+      ? {
+          shipId: detention.shipId,
+          days: detention.days,
+          laborCredits: detention.laborCredits,
+          accumulator: detention.accumulator,
+        }
+      : null
+  );
+}
+
+/** Install only into a freshly staged controller after legal records have been restored. */
+export function stageControllerCustody(
+  context: ControllerRuntimeContext,
+  checkpoint: CareerCustodyCheckpoint
+): void {
+  if (detentions.has(context) || context.economy.npcPrisoners.size !== 0) {
+    throw new Error('Custody can only be restored into a new controller');
+  }
+  const prepared = stageCareerCustody(
+    checkpoint,
+    context.economy.legal,
+    context.economy.sectorNpcs.npcs,
+    context.state.activeShip.id
+  );
+  for (const id of prepared.prisoners) context.economy.npcPrisoners.add(id);
+  if (prepared.player) {
+    detentions.set(context, { ...prepared.player, panel: null });
+  }
+}
 
 // Central Directorate institutions make arrests. Other lawful ports report
 // sightings but do not perform Directorate detention. Pirate docks do neither.
