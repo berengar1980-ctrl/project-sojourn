@@ -1,4 +1,4 @@
-name: Career integration focused test diagnostics (roundtrip recheck)
+name: Career integration focused test diagnostics (final roundtrip)
 
 on:
   push:
