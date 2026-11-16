@@ -4,10 +4,7 @@ import type { ShipDefinition, ShipStationSkill } from '../../core/ship-types';
 import type { ShipRuntimeOptions } from '../ships/ship-runtime';
 import { resolveShipGameplayStats } from '../ships/ship-stats';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
-import {
-  stageCareerCrewCheckpoint,
-  type CareerCrewCheckpoint,
-} from './career-crew-checkpoint';
+import { stageCareerCrewCheckpoint, type CareerCrewCheckpoint } from './career-crew-checkpoint';
 import type { ShipCrewMember, ShipStationAssignments } from '../ships/station-performance';
 import {
   combatRoundsNeeded,
@@ -378,8 +375,8 @@ export function createCrewRosterService(
       const assignments: Record<string, Record<string, string>> = {};
       for (const [shipId, stationRecords] of assignmentsByShip) {
         assignments[shipId] = Object.fromEntries(
-          Object.entries(stationRecords).filter((entry): entry is [string, string] =>
-            typeof entry[1] === 'string'
+          Object.entries(stationRecords).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string'
           )
         );
       }

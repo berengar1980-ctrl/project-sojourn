@@ -22,7 +22,9 @@ const detentions = new WeakMap<ControllerRuntimeContext, DetentionSession>();
 const LABOR_DAYS_PER_SECOND = 12;
 
 /** This is called only while creating a candidate session, never during rendering. */
-export function captureControllerCustody(context: ControllerRuntimeContext): CareerCustodyCheckpoint {
+export function captureControllerCustody(
+  context: ControllerRuntimeContext
+): CareerCustodyCheckpoint {
   const detention = detentions.get(context);
   return captureCareerCustody(
     context.economy.npcPrisoners,

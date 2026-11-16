@@ -44,4 +44,6 @@ assert.throws(
   () => stageCareerPlayerSociety(broken, player, [], ['test-ship'], ['directorate', 'pirates']),
   /reputation/
 );
-console.log('PASS player society: faction reputation, charter and smuggling resume without charges');
+console.log(
+  'PASS player society: faction reputation, charter and smuggling resume without charges'
+);

@@ -23,7 +23,6 @@ export interface CareerStrategicCombatCheckpoint {
   readonly runtime: Readonly<Record<string, CareerJson>>;
 }
 
-
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';

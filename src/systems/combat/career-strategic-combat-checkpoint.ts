@@ -66,11 +66,13 @@ export function captureCareerStrategicCombat(
   const { random: _random, attacker, defender, ...rest } = runtime;
   const { setup: _attackerSetup, ...attackerState } = attacker;
   const { setup: _defenderSetup, ...defenderState } = defender;
-  const serialized = JSON.parse(JSON.stringify({
-    ...rest,
-    attacker: attackerState,
-    defender: defenderState,
-  })) as Record<string, CareerJson>;
+  const serialized = JSON.parse(
+    JSON.stringify({
+      ...rest,
+      attacker: attackerState,
+      defender: defenderState,
+    })
+  ) as Record<string, CareerJson>;
   return {
     version: 1,
     seed: runtime.seed,

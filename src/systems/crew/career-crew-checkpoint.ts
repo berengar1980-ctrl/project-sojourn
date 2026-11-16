@@ -26,8 +26,7 @@ function validNumbers(value: unknown, keys: readonly string[], low: number, high
 function validEquipment(value: unknown): boolean {
   const slots = ['ranged', 'melee', 'armor', 'gear1', 'gear2'];
   return (
-    record(value) &&
-    slots.every((slot) => value[slot] === null || typeof value[slot] === 'string')
+    record(value) && slots.every((slot) => value[slot] === null || typeof value[slot] === 'string')
   );
 }
 
@@ -40,9 +39,7 @@ function validMemberIdentity(member: CrewMember): boolean {
     bounded(member.share, 0, 100) &&
     typeof member.elite === 'boolean' &&
     (member.portraitAssetUrl === null || typeof member.portraitAssetUrl === 'string') &&
-    ['healthy', 'light_wound', 'severe_wound', 'incapacitated', 'dead'].includes(
-      member.injuryState
-    )
+    ['healthy', 'light_wound', 'severe_wound', 'incapacitated', 'dead'].includes(member.injuryState)
   );
 }
 

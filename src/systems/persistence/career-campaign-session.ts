@@ -46,7 +46,13 @@ export function stageCareerCampaigns(
     if (campaigns.unavailableIds().length > 0) {
       throw new Error('Career campaign package unavailable or incompatible');
     }
-    return { events, campaigns, activate: () => { active = true; } };
+    return {
+      events,
+      campaigns,
+      activate: () => {
+        active = true;
+      },
+    };
   } catch (error) {
     campaigns.destroy();
     throw error;

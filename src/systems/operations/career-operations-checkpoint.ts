@@ -60,7 +60,10 @@ function count(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-function validBlockadeFields(value: Record<string, unknown>, options: BlockadeValidationOptions): boolean {
+function validBlockadeFields(
+  value: Record<string, unknown>,
+  options: BlockadeValidationOptions
+): boolean {
   return (
     typeof value.id === 'string' &&
     value.id.length > 0 &&
@@ -71,13 +74,18 @@ function validBlockadeFields(value: Record<string, unknown>, options: BlockadeVa
     count(value.fee) &&
     count(value.orderedDay) &&
     count(value.removedStock) &&
-    ['assembling', 'active', 'completed', 'defeated', 'cancelled'].includes(value.phase as string) &&
+    ['assembling', 'active', 'completed', 'defeated', 'cancelled'].includes(
+      value.phase as string
+    ) &&
     (value.startedDay === null || count(value.startedDay)) &&
     (value.startPrice === null || count(value.startPrice))
   );
 }
 
-function validBlockadePirates(value: Record<string, unknown>, options: BlockadeValidationOptions): boolean {
+function validBlockadePirates(
+  value: Record<string, unknown>,
+  options: BlockadeValidationOptions
+): boolean {
   if (!Array.isArray(value.pirateIds)) return false;
   const ids = value.pirateIds as string[];
   const pirates = options.sector.npcs.filter((npc) => ids.includes(npc.id));
@@ -87,13 +95,14 @@ function validBlockadePirates(value: Record<string, unknown>, options: BlockadeV
     new Set(ids).size === ids.length &&
     pirates.length === ids.length &&
     pirates.every((npc) => npc.pirate) &&
-    (value.ownerId === 'player' ||
-      options.sector.npcs.some((npc) => npc.id === value.ownerId))
+    (value.ownerId === 'player' || options.sector.npcs.some((npc) => npc.id === value.ownerId))
   );
 }
 
 function validBlockadeOrder(value: unknown, options: BlockadeValidationOptions): boolean {
-  return record(value) && validBlockadeFields(value, options) && validBlockadePirates(value, options);
+  return (
+    record(value) && validBlockadeFields(value, options) && validBlockadePirates(value, options)
+  );
 }
 
 /** Keep orders and recorded stock losses without charging owners or raiding again. */
@@ -124,7 +133,11 @@ export function stageCareerBlockades(
   return saved as unknown as CareerBlockadeCheckpoint;
 }
 
-function validPatrolAssignment(value: unknown, world: WorldMap, npcs: readonly SectorNpcState[]): boolean {
+function validPatrolAssignment(
+  value: unknown,
+  world: WorldMap,
+  npcs: readonly SectorNpcState[]
+): boolean {
   if (!record(value) || !Array.isArray(value.visited)) return false;
   if (
     typeof value.id !== 'string' ||

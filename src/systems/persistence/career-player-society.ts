@@ -56,10 +56,7 @@ function validSmugglingHolds(
 ): boolean {
   return Object.entries(holds).every(
     ([id, hold]) =>
-      shipIds.has(id) &&
-      record(hold) &&
-      hold.shipId === id &&
-      typeof hold.installedAt === 'string'
+      shipIds.has(id) && record(hold) && hold.shipId === id && typeof hold.installedAt === 'string'
   );
 }
 

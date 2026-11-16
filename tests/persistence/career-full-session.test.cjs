@@ -25,17 +25,13 @@ const { createSectorSalvageEventService } = load(
   'src/systems/salvage/sector-salvage-event-service.ts'
 );
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
-const { createTradeCharterService } = load(
-  'src/systems/economy/trade-charter-service.ts'
-);
+const { createTradeCharterService } = load('src/systems/economy/trade-charter-service.ts');
 const { createSmugglingService } = load('src/systems/economy/smuggling-service.ts');
 const { createFactionReputationService } = load(
   'src/systems/reputation/faction-reputation-service.ts'
 );
 const { factionDefinitions } = load('src/data/factions/faction-manifest.ts');
-const { captureCareerPlayerSociety } = load(
-  'src/systems/persistence/career-player-society.ts'
-);
+const { captureCareerPlayerSociety } = load('src/systems/persistence/career-player-society.ts');
 const { createShipOwnershipService } = load('src/systems/ships/ship-ownership-service.ts');
 const { createShipLoadoutService } = load('src/systems/ships/ship-loadout-service.ts');
 const { createShipComponentInventoryService } = load(
@@ -43,12 +39,8 @@ const { createShipComponentInventoryService } = load(
 );
 const { createShipyardResearchService } = load('src/systems/ships/shipyard-research-service.ts');
 const { createShipOperatingService } = load('src/systems/ships/ship-operating-costs.ts');
-const { captureCareerPlayerShipSession } = load(
-  'src/systems/ships/career-player-ship-session.ts'
-);
-const { captureCareerEconomySession } = load(
-  'src/systems/economy/career-economy-session.ts'
-);
+const { captureCareerPlayerShipSession } = load('src/systems/ships/career-player-ship-session.ts');
+const { captureCareerEconomySession } = load('src/systems/economy/career-economy-session.ts');
 const { captureCareerNpcs } = load('src/systems/persistence/career-npc-checkpoint.ts');
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-registry.ts');
@@ -68,15 +60,11 @@ const { captureCareerCustody } = load('src/systems/persistence/career-custody-ch
 const { stageCareerFullSession, captureCareerFullSession } = load(
   'src/systems/persistence/career-full-session.ts'
 );
-const { createCareerSessionManager } = load(
-  'src/systems/persistence/career-session-manager.ts'
-);
+const { createCareerSessionManager } = load('src/systems/persistence/career-session-manager.ts');
 const { createCareerSaveStore, CAREER_SAVE_STORAGE_KEY } = load(
   'src/systems/persistence/career-save-store.ts'
 );
-const { createCareerSessionSlot } = load(
-  'src/systems/persistence/career-session-transaction.ts'
-);
+const { createCareerSessionSlot } = load('src/systems/persistence/career-session-transaction.ts');
 
 const world = narrowsSector;
 const seed = 41;
@@ -104,16 +92,32 @@ const society = captureCareerPlayerSociety({
   reputation: createFactionReputationService(factionIds),
 });
 const ships = captureCareerPlayerShipSession(
-  trade.player, ship.id, ownership, loadouts, inventory, research, operating
+  trade.player,
+  ship.id,
+  ownership,
+  loadouts,
+  inventory,
+  research,
+  operating
 );
 const crew = createCrewRosterService(profile);
 const npcs = [];
 const situations = createMarketSituationService(sectorPorts, economyResources, seed);
-const simulation = createEconomySimulationService(markets, trade.player, economyResources, seed, npcs);
+const simulation = createEconomySimulationService(
+  markets,
+  trade.player,
+  economyResources,
+  seed,
+  npcs
+);
 const intel = createMarketIntelService(markets);
 const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcs);
 const economy = captureCareerEconomySession({
-  markets, simulation, situations, intel, npcs: npcEconomy,
+  markets,
+  simulation,
+  situations,
+  intel,
+  npcs: npcEconomy,
 });
 const population = createNpcPopulationService(npcs, markets);
 const sector = createNpcSectorService(world, npcs, { markets, population });
@@ -127,19 +131,26 @@ const blockades = new BlockadeService({
 const patrol = new PatrolCareerService(world, npcs, trade.player);
 const salvageEvents = createSectorSalvageEventService(world);
 const operations = captureCareerOperationsSession({
-  population, sector, blockades, patrol, salvageEvents,
+  population,
+  sector,
+  blockades,
+  patrol,
+  salvageEvents,
 });
 const minerFactory = (location, instance, checkpoint) =>
-  createNpcLocalMiningService({
-    locationId: location.id,
-    seed: instance.seed,
-    width: instance.width,
-    height: instance.height,
-    miners: [],
-    getAsteroids: () => instance.asteroids,
-    mine: () => 0,
-    depart: () => false,
-  }, checkpoint);
+  createNpcLocalMiningService(
+    {
+      locationId: location.id,
+      seed: instance.seed,
+      width: instance.width,
+      height: instance.height,
+      miners: [],
+      getAsteroids: () => instance.asteroids,
+      mine: () => 0,
+      depart: () => false,
+    },
+    checkpoint
+  );
 const legal = new SectorLegalRegistry();
 const claims = new AsteroidClaimRegistry();
 const fieldWorld = new AsteroidFieldWorld(world.locations, claims, minerFactory);
@@ -175,7 +186,9 @@ const options = {
   campaignDefinitions: [],
   makeMinerFactory: () => minerFactory,
   campaignActions: () => ({ apply: () => true }),
-  combatSetups: () => { throw new Error('Unexpected combat in this save'); },
+  combatSetups: () => {
+    throw new Error('Unexpected combat in this save');
+  },
 };
 const original = { old: true };
 const slot = createCareerSessionSlot(original);

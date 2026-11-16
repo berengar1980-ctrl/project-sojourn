@@ -16,9 +16,13 @@ const { PatrolCareerService } = load('src/systems/operations/patrol-career-servi
 
 const world = narrowsSector;
 const player = { credits: 35000, cargo: {} };
-const tradePort = world.locations.find((location) => location.activities.dock && location.stationType !== 'pirate');
+const tradePort = world.locations.find(
+  (location) => location.activities.dock && location.stationType !== 'pirate'
+);
 assert(tradePort);
-const target = world.locations.find((location) => location.activities.trade && location.id !== tradePort.id);
+const target = world.locations.find(
+  (location) => location.activities.trade && location.id !== tradePort.id
+);
 assert(target);
 const patrol = new PatrolCareerService(world, [], player);
 assert(patrol.enlist(tradePort.id));
@@ -33,7 +37,11 @@ const reward = staged.claimReward(tradePort.id);
 assert(reward > 0);
 assert.equal(staged.claimReward(tradePort.id), 0);
 const afterPayment = new PatrolCareerService(world, [], player, staged.exportState());
-assert.equal(afterPayment.claimReward(tradePort.id), 0, 'paid reward cannot be claimed after reload');
+assert.equal(
+  afterPayment.claimReward(tradePort.id),
+  0,
+  'paid reward cannot be claimed after reload'
+);
 assert.equal(player.credits, 35000 + reward);
 assert.deepEqual(patrol.exportState(), checkpoint);
 
@@ -49,7 +57,9 @@ const options = {
   sector: { npcs: [pirate] },
   markets,
   player,
-  recordLoss: (_resourceId, amount) => { losses += amount; },
+  recordLoss: (_resourceId, amount) => {
+    losses += amount;
+  },
   notice: () => {},
 };
 const order = {

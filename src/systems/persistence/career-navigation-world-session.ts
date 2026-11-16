@@ -16,10 +16,7 @@ export interface StagedCareerNavigationWorld {
   readonly world: CampaignWorldService;
 }
 
-function navigationWorld(
-  base: WorldMap,
-  saved: CareerCampaignWorldCheckpoint
-): WorldMap {
+function navigationWorld(base: WorldMap, saved: CareerCampaignWorldCheckpoint): WorldMap {
   if (saved.active) {
     const system = saved.snapshot.systems[saved.active.owner]?.find(
       (item) => item.map.id === saved.active?.id

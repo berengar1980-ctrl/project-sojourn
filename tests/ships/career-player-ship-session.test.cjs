@@ -45,13 +45,7 @@ assert.equal(staged.trade.player.credits, trade.player.credits);
 assert.equal(staged.operating.snapshot(ship, 100).hullHp, 70);
 assert.notStrictEqual(staged.trade.player, trade.player);
 const sharedTrade = createPlayerTradeService(markets, saved.player.credits);
-const shared = stageCareerPlayerShipSession(
-  saved,
-  ship.id,
-  markets,
-  economyResources,
-  sharedTrade
-);
+const shared = stageCareerPlayerShipSession(saved, ship.id, markets, economyResources, sharedTrade);
 assert.strictEqual(shared.trade, sharedTrade, 'ship and market must use the same staged wallet');
 assert.strictEqual(shared.ownership.snapshot().ownedShipIds.includes(ship.id), true);
 sharedTrade.player.credits += 1;

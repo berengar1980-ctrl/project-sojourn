@@ -16,7 +16,10 @@ export interface CareerSnapshotStorage {
 
 export type CareerLoadResult =
   | { readonly ok: true; readonly previous: StagedFullCareerSession }
-  | { readonly ok: false; readonly reason: 'missing' | 'invalid' | 'unsupported' | 'corrupt' | 'restore_failed' };
+  | {
+      readonly ok: false;
+      readonly reason: 'missing' | 'invalid' | 'unsupported' | 'corrupt' | 'restore_failed';
+    };
 
 export interface CareerSessionManager {
   current(): StagedFullCareerSession;

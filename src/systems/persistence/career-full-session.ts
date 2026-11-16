@@ -1,4 +1,8 @@
-import type { CampaignActionPort, CampaignDefinition, CampaignSnapshot } from '../../core/campaign-types';
+import type {
+  CampaignActionPort,
+  CampaignDefinition,
+  CampaignSnapshot,
+} from '../../core/campaign-types';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
 import type { PlayerProfile } from '../../core/player-profile';
 import type { PortDefinition } from '../../core/port-types';
@@ -23,10 +27,7 @@ import type {
   StrategicCombatArenaOptions,
 } from '../combat/strategic-combat-types';
 import type { CareerStrategicCombatCheckpoint } from '../combat/career-strategic-combat-checkpoint';
-import {
-  captureCareerNpcs,
-  type CareerNpcCheckpoint,
-} from './career-npc-checkpoint';
+import { captureCareerNpcs, type CareerNpcCheckpoint } from './career-npc-checkpoint';
 import { captureCareerPlayer } from '../economy/career-player-checkpoint';
 import { captureCareerEconomySession } from '../economy/career-economy-session';
 import { captureCareerPlayerShipSession } from '../ships/career-player-ship-session';
@@ -35,11 +36,15 @@ import { captureCareerFieldLegalSession } from './career-field-legal-session';
 import { captureCareerCustody } from './career-custody-checkpoint';
 import { captureCareerCampaigns } from './career-campaign-session';
 import type { CareerPlayerShipCheckpoint } from '../ships/career-player-ship-session';
-import type { CareerOperationsCheckpoint, StagedCareerOperationsSession } from './career-operations-session';
-import {
-  stageCareerOperationsSession,
+import type {
+  CareerOperationsCheckpoint,
+  StagedCareerOperationsSession,
 } from './career-operations-session';
-import type { CareerAsteroidFieldCheckpoint, CareerMinerFactory } from '../operations/asteroid-field-world';
+import { stageCareerOperationsSession } from './career-operations-session';
+import type {
+  CareerAsteroidFieldCheckpoint,
+  CareerMinerFactory,
+} from '../operations/asteroid-field-world';
 import type { CareerCampaignWorldCheckpoint } from '../campaigns/career-campaign-world-checkpoint';
 import type { NavigationCheckpoint } from '../navigation/navigation-persistence';
 import {
@@ -54,15 +59,9 @@ import {
   stageCareerFieldLegalSession,
   type StagedCareerFieldLegalSession,
 } from './career-field-legal-session';
-import {
-  stageCareerCustody,
-  type StagedCareerCustody,
-} from './career-custody-checkpoint';
+import { stageCareerCustody, type StagedCareerCustody } from './career-custody-checkpoint';
 import type { CareerCustodyCheckpoint } from './career-custody-checkpoint';
-import {
-  stageCareerCampaigns,
-  type StagedCareerCampaignSession,
-} from './career-campaign-session';
+import { stageCareerCampaigns, type StagedCareerCampaignSession } from './career-campaign-session';
 import {
   validateCareerSnapshot,
   type CareerJson,
@@ -242,7 +241,11 @@ function stageCareerCommerceOperations(
         ),
         travel: {
           requestTravel: (npc, destinationId, reason) =>
-            pendingOperations.current!.sector.requestTravel(npc as SectorNpcState, destinationId, reason),
+            pendingOperations.current!.sector.requestTravel(
+              npc as SectorNpcState,
+              destinationId,
+              reason
+            ),
           requestPatrol: (npc) =>
             pendingOperations.current!.sector.requestPatrol(npc as SectorNpcState),
           isTravelling: (npc) =>
@@ -250,10 +253,16 @@ function stageCareerCommerceOperations(
           quoteTravel: (npc, destinationId, credits) =>
             pendingOperations.current!.blockades.blocksTrader(npc.id, destinationId)
               ? null
-              : pendingOperations.current!.sector.quoteTravel(npc as SectorNpcState, destinationId, credits),
+              : pendingOperations.current!.sector.quoteTravel(
+                  npc as SectorNpcState,
+                  destinationId,
+                  credits
+                ),
         },
         onSale: (_npc: NpcEconomyState, _resourceId: string, _quantity: number, gross: number) =>
-          pendingOperations.current!.population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94))),
+          pendingOperations.current!.population.collectTradeCommission(
+            Math.max(0, Math.round((gross * 0.06) / 0.94))
+          ),
       };
     }
   );
@@ -283,7 +292,11 @@ export function stageCareerFullSession(
   );
   const prisoners = new Set<string>();
   const { commerce, operations } = stageCareerCommerceOperations(
-    sections, savedPlayer, deps, navigationWorld, prisoners
+    sections,
+    savedPlayer,
+    deps,
+    navigationWorld,
+    prisoners
   );
   const society = stageCareerPlayerSociety(
     savedPlayer.society,
@@ -292,10 +305,7 @@ export function stageCareerFullSession(
     commerce.ships.ownership.snapshot().ownedShipIds,
     deps.factionIds
   );
-  const crew = createCrewRosterService(
-    deps.profile,
-    section<CareerCrewCheckpoint>(sections.crew)
-  );
+  const crew = createCrewRosterService(deps.profile, section<CareerCrewCheckpoint>(sections.crew));
   validateCrewShips(crew, commerce);
   const fieldsLegal = stageCareerFieldLegalSession(
     {
@@ -323,19 +333,20 @@ export function stageCareerFullSession(
   );
   try {
     const savedCombat = sections.combat;
-    const combat = savedCombat === null
-      ? null
-      : (() => {
-          const setups = deps.combatSetups(prepared);
-          const saved = section<CareerStrategicCombatCheckpoint>(savedCombat);
-          return createStrategicCombatService(
-            setups.attacker,
-            setups.defender,
-            saved.seed,
-            setups.arena,
-            saved
-          );
-        })();
+    const combat =
+      savedCombat === null
+        ? null
+        : (() => {
+            const setups = deps.combatSetups(prepared);
+            const saved = section<CareerStrategicCombatCheckpoint>(savedCombat);
+            return createStrategicCombatService(
+              setups.attacker,
+              setups.defender,
+              saved.seed,
+              setups.arena,
+              saved
+            );
+          })();
     return {
       ...prepared,
       campaigns,

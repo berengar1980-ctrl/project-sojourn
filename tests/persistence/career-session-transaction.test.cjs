@@ -47,15 +47,16 @@ assert.throws(
     }),
   /cross-domain validation/
 );
-assert.strictEqual(slot.current(), before, 'failed cross-domain check must not alter active session');
+assert.strictEqual(
+  slot.current(),
+  before,
+  'failed cross-domain check must not alter active session'
+);
 const cleanup = events.filter((event) => event.startsWith('discard:'));
 assert.equal(cleanup.length, 14);
 assert.equal(cleanup[0], 'discard:world');
 assert.equal(cleanup.at(-1), 'discard:navigation');
-assert.throws(
-  () => prepareCareerAuthorities(snapshot, builders.slice(1), () => {}),
-  /Incomplete/
-);
+assert.throws(() => prepareCareerAuthorities(snapshot, builders.slice(1), () => {}), /Incomplete/);
 assert.throws(
   () => prepareCareerAuthorities(snapshot, [...builders, builders[0]], () => {}),
   /duplicated/

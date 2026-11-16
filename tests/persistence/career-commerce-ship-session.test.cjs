@@ -25,9 +25,7 @@ const { createShipComponentInventoryService } = load(
 );
 const { createShipyardResearchService } = load('src/systems/ships/shipyard-research-service.ts');
 const { createShipOperatingService } = load('src/systems/ships/ship-operating-costs.ts');
-const { captureCareerPlayerShipSession } = load(
-  'src/systems/ships/career-player-ship-session.ts'
-);
+const { captureCareerPlayerShipSession } = load('src/systems/ships/career-player-ship-session.ts');
 const { captureCareerCommerceSession } = load('src/systems/persistence/career-commerce-session.ts');
 const { stageCareerCommerceShipSession } = load(
   'src/systems/persistence/career-commerce-ship-session.ts'
@@ -87,9 +85,15 @@ assert.equal(staged.ships.operating.snapshot(ship, 100).hullHp, 72);
 const corrupted = JSON.parse(JSON.stringify(checkpoint));
 corrupted.ships.player.credits += 1;
 assert.throws(
-  () => stageCareerCommerceShipSession(
-    corrupted, narrowsSector, sectorPorts, economyResources, seed, ship.id
-  ),
+  () =>
+    stageCareerCommerceShipSession(
+      corrupted,
+      narrowsSector,
+      sectorPorts,
+      economyResources,
+      seed,
+      ship.id
+    ),
   /wallet mismatch/
 );
 assert.equal(operating.snapshot(ship, 100).hullHp, 72);

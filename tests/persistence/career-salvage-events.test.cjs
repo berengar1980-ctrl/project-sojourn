@@ -18,9 +18,7 @@ for (let day = 0; day <= 5; day += 1) live.advanceDay(day, position, true);
 const event = live.active[0];
 if (event) live.resolve(event.id);
 const saved = live.exportState();
-const restored = createSectorSalvageEventService(
-  world, seed, JSON.parse(JSON.stringify(saved))
-);
+const restored = createSectorSalvageEventService(world, seed, JSON.parse(JSON.stringify(saved)));
 assert.deepEqual(restored.exportState(), saved);
 assert.notStrictEqual(restored, live);
 if (event) assert.equal(restored.event(event.id), null, 'resolved wreck cannot respawn at load');

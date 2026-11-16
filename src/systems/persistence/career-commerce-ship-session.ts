@@ -37,12 +37,7 @@ export function stageCareerCommerceShipSession(
   starterShipId: string,
   options: CareerEconomyOptions = {}
 ): StagedCareerCommerceShipSession {
-  if (
-    !checkpoint ||
-    checkpoint.version !== 1 ||
-    !checkpoint.commerce ||
-    !checkpoint.ships
-  ) {
+  if (!checkpoint || checkpoint.version !== 1 || !checkpoint.commerce || !checkpoint.ships) {
     throw new Error('Invalid combined commerce and ship checkpoint');
   }
   const commerce = stageCareerCommerceSession(

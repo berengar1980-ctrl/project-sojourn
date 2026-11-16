@@ -136,7 +136,6 @@ function snapshotCampaignWorld(
   });
 }
 
-
 interface RestoredCampaignWorld {
   readonly active: { owner: string; id: string; returnLocationId: string } | null;
   readonly revision: number;
@@ -158,10 +157,9 @@ function restoreCampaignWorldState(
   for (const [owner, entries] of Object.entries(restored.snapshot.locations)) {
     for (const location of entries) {
       if (
-        !registerMissionLocation(
-          owner, location, baseWorld, locations, existingId,
-          () => { observedRevisions += 1; }
-        )
+        !registerMissionLocation(owner, location, baseWorld, locations, existingId, () => {
+          observedRevisions += 1;
+        })
       ) {
         throw new Error('Invalid restored mission location');
       }
@@ -189,10 +187,7 @@ function restoreCampaignWorldState(
   const active = restored.active ? { ...restored.active } : null;
   if (active) {
     const system = systems.get(active.owner)?.get(active.id);
-    if (
-      !system ||
-      !baseView.locations.some((item) => item.id === active.returnLocationId)
-    ) {
+    if (!system || !baseView.locations.some((item) => item.id === active.returnLocationId)) {
       throw new Error('Unknown restored campaign system or return point');
     }
     const currentId = navigation.getSnapshot().currentLocationId;
@@ -235,7 +230,6 @@ export function createCampaignWorldService(
     if (baseWorld.locations.some((location) => location.id === id)) return true;
     return [...locations.values()].some((entries) => entries.has(id));
   }
-
 
   function foreign(): CampaignSystem | null {
     return active ? (systems.get(active.owner)?.get(active.id) ?? null) : null;

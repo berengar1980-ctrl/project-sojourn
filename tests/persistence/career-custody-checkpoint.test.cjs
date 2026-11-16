@@ -13,7 +13,10 @@ const { captureCareerCustody, stageCareerCustody } = load(
 const legal = new SectorLegalRegistry();
 const npc = { id: 'criminal', shipId: 'raider-1' };
 const npcShipId = npc.shipId + ':' + npc.id;
-for (const [shipId, owner] of [['player-ship', 'player'], [npcShipId, npc.id]]) {
+for (const [shipId, owner] of [
+  ['player-ship', 'player'],
+  [npcShipId, npc.id],
+]) {
   legal.registerShip(shipId, owner);
   assert(legal.reportOffense(shipId, 'directorate', 'unpaid fine', 3500, 4, shipId + '-incident'));
   assert(legal.declareWanted(shipId));
@@ -25,12 +28,7 @@ const saved = captureCareerCustody(new Set([npc.id]), {
   laborCredits: 700,
   accumulator: 0.5,
 });
-const restored = stageCareerCustody(
-  JSON.parse(JSON.stringify(saved)),
-  legal,
-  [npc],
-  'player-ship'
-);
+const restored = stageCareerCustody(JSON.parse(JSON.stringify(saved)), legal, [npc], 'player-ship');
 assert.deepEqual([...restored.prisoners], ['criminal']);
 assert.equal(restored.player.days, 2);
 assert.equal(restored.player.laborCredits, 700);

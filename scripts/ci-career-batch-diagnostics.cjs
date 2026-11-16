@@ -19,17 +19,15 @@ for (const [name, command, args] of checks) {
   // The normal quality gate stops at the first failure. Run every remaining
   // command independently and publish diagnostics for all domains.
   const reportLabel = 'batch-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const result = spawnSync('node', [
-    'scripts/ci-run-and-report.cjs',
-    reportLabel,
-    '--',
-    command,
-    ...args,
-  ], {
-    encoding: 'utf8',
-    maxBuffer: 16 * 1024 * 1024,
-    timeout: 15 * 60 * 1000,
-  });
+  const result = spawnSync(
+    'node',
+    ['scripts/ci-run-and-report.cjs', reportLabel, '--', command, ...args],
+    {
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 15 * 60 * 1000,
+    }
+  );
   const output = [result.stdout ?? '', result.stderr ?? ''].join('\n');
   if (output.length > 24000) {
     process.stdout.write(output.slice(0, 10000) + '\n... output truncated ...\n');

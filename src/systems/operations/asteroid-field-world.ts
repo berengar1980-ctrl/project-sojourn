@@ -29,11 +29,16 @@ export type CareerMinerFactory = (
 export interface CareerAsteroidFieldCheckpoint {
   readonly version: 1;
   readonly backgroundAccumulator: number;
-  readonly fields: Readonly<Record<string, {
-    readonly miners: LocalMinerCheckpoint;
-    readonly pirates: LocalPirateCheckpoint;
-    readonly drone: SecurityDroneCheckpoint;
-  }>>;
+  readonly fields: Readonly<
+    Record<
+      string,
+      {
+        readonly miners: LocalMinerCheckpoint;
+        readonly pirates: LocalPirateCheckpoint;
+        readonly drone: SecurityDroneCheckpoint;
+      }
+    >
+  >;
 }
 
 /**
@@ -84,12 +89,19 @@ export class AsteroidFieldWorld {
         miners: miners(location, instance, saved?.miners),
         pirates: saved
           ? LocalPirateTraffic.fromCheckpoint(
-              instance.width, instance.height, seed, npcs, saved.pirates
+              instance.width,
+              instance.height,
+              seed,
+              npcs,
+              saved.pirates
             )
           : new LocalPirateTraffic(instance.width, instance.height, seed),
         drone: saved
           ? AsteroidSecurityDrone.fromCheckpoint(
-              instance.width, instance.height, instance.asteroids, saved.drone
+              instance.width,
+              instance.height,
+              instance.asteroids,
+              saved.drone
             )
           : new AsteroidSecurityDrone(instance.width, instance.height, instance.asteroids),
       });
@@ -106,7 +118,11 @@ export class AsteroidFieldWorld {
         drone: field.drone.exportState(),
       };
     }
-    return cloneCareerJson({ version: 1 as const, backgroundAccumulator: this.backgroundAccumulator, fields });
+    return cloneCareerJson({
+      version: 1 as const,
+      backgroundAccumulator: this.backgroundAccumulator,
+      fields,
+    });
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {

@@ -79,9 +79,9 @@ assert.deepEqual(
   captureCareerFieldLegalSession(fullRestore.fields, fullRestore.claims, fullRestore.legal),
   complete
 );
-const restoredRock = fullRestore.fields.field(fieldId).instance.asteroids.find(
-  (item) => item.id === rock.id
-);
+const restoredRock = fullRestore.fields
+  .field(fieldId)
+  .instance.asteroids.find((item) => item.id === rock.id);
 assert.equal(
   restoredRock.deposits.find((item) => item.resourceId === deposit.resourceId).oreRemaining,
   deposit.oreRemaining,

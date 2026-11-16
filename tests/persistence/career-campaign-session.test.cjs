@@ -24,7 +24,10 @@ const port = {
 const original = createCampaignRuntime(createCampaignEventBus(), undefined, undefined, port);
 original.register(quest);
 assert(original.start('save_quest'));
-assert.equal(original.applyAction('save_quest', 'reward_one', { type: 'credits.grant', amount: 42 }), 'applied');
+assert.equal(
+  original.applyAction('save_quest', 'reward_one', { type: 'credits.grant', amount: 42 }),
+  'applied'
+);
 assert.equal(grants, 42);
 const saved = captureCareerCampaigns(original);
 const staged = stageCareerCampaigns(JSON.parse(JSON.stringify(saved)), [quest], port);

@@ -3,11 +3,16 @@ import type { WorldMap, WorldLocation } from '../../core/world-types';
 export interface CampaignWorldSnapshot {
   readonly activeSystemId: string | null;
   readonly locations: Readonly<Record<string, readonly WorldLocation[]>>;
-  readonly systems: Readonly<Record<string, readonly {
-    readonly map: WorldMap;
-    readonly entryLocationId: string;
-    readonly exitLocationId: string;
-  }[]>>;
+  readonly systems: Readonly<
+    Record<
+      string,
+      readonly {
+        readonly map: WorldMap;
+        readonly entryLocationId: string;
+        readonly exitLocationId: string;
+      }[]
+    >
+  >;
 }
 import { cloneCareerJson } from '../persistence/career-save-contract';
 
@@ -44,8 +49,12 @@ export function stageCareerCampaignWorldCheckpoint(
   }
   const snapshot = saved.snapshot;
   if (
-    Object.values(snapshot.locations as Record<string, unknown>).some((entries) => !Array.isArray(entries)) ||
-    Object.values(snapshot.systems as Record<string, unknown>).some((entries) => !Array.isArray(entries))
+    Object.values(snapshot.locations as Record<string, unknown>).some(
+      (entries) => !Array.isArray(entries)
+    ) ||
+    Object.values(snapshot.systems as Record<string, unknown>).some(
+      (entries) => !Array.isArray(entries)
+    )
   ) {
     throw new Error('Invalid saved campaign world additions');
   }

@@ -6,9 +6,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
-const { createStrategicCombatService } = load(
-  'src/systems/combat/strategic-combat-service.ts'
-);
+const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
 
 const weapon = {
   id: 'career-test-laser',
@@ -51,14 +49,22 @@ for (let i = 0; i < 30; i += 1) initial.tick(0.08);
 const saved = initial.exportCareerState();
 assert(saved.randomCalls >= 0);
 const restored = createStrategicCombatService(
-  attacker, defender, 431, arena, JSON.parse(JSON.stringify(saved))
+  attacker,
+  defender,
+  431,
+  arena,
+  JSON.parse(JSON.stringify(saved))
 );
 assert.deepEqual(restored.getSnapshot(), initial.getSnapshot());
 assert.deepEqual(restored.exportCareerState(), saved);
 for (let i = 0; i < 100; i += 1) {
   const original = initial.tick(0.08);
   const resumed = restored.tick(0.08);
-  assert.deepEqual(resumed, original, 'saved runtime must resume identical physics and random outcomes');
+  assert.deepEqual(
+    resumed,
+    original,
+    'saved runtime must resume identical physics and random outcomes'
+  );
   if (original.winner) break;
 }
 const damaged = JSON.parse(JSON.stringify(saved));

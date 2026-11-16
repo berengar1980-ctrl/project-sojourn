@@ -63,11 +63,7 @@ const combined = stageCareerNavigationWorld(home, navSaved, saved, 100);
 assert.deepEqual(combined.navigation.exportState(), navSaved);
 assert.deepEqual(combined.world.exportCareerState(), saved);
 const freshNavigation = createNavigationService(far, 'entry', 100);
-const second = createCampaignWorldService(
-  home,
-  freshNavigation,
-  JSON.parse(JSON.stringify(saved))
-);
+const second = createCampaignWorldService(home, freshNavigation, JSON.parse(JSON.stringify(saved)));
 assert.deepEqual(second.exportCareerState(), saved);
 assert.equal(second.world().id, far.id);
 assert.equal(second.exitLocationId(), 'exit');
