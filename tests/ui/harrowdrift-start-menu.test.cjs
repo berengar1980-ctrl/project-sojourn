@@ -97,7 +97,7 @@ assert(operations.includes('data-blockade-reason'));
 assert(operations.includes('Gesperrt: nicht genügend Credits.'));
 assert(operations.includes('concessionMarkup(m)'));
 assert(settings.includes('role="alertdialog"'));
-assert(settings.includes('requestConfirm('));
+assert(settings.includes('confirmation.request('));
 assert(settings.includes('confirmCancel.focus()'));
 assert(!settings.includes('window.confirm('));
 
