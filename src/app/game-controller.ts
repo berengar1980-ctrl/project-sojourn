@@ -11,6 +11,7 @@ import {
   reportLegalOrbitalArrival,
   advanceNpcPenalCustody,
   tickLegalDetention,
+  stageControllerCustody,
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
@@ -31,6 +32,8 @@ import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
+import { captureCareerCustody } from '../systems/persistence/career-custody-checkpoint';
+import { createCareerSaveStore } from '../systems/persistence/career-save-store';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
@@ -476,7 +479,15 @@ export function createGameController(options: GameControllerOptions): GameContro
     state,
   };
   registerSectorShips(context);
-  if (saved) bindCareerFieldWorld(context, saved.fieldsLegal.fields);
+  if (saved) {
+    bindCareerFieldWorld(context, saved.fieldsLegal.fields);
+    stageControllerCustody(
+      context,
+      captureCareerCustody(saved.custody.prisoners, saved.custody.player)
+    );
+    options.onCareerContextReady?.(context);
+    saved.activate();
+  }
   fieldWorldFor(context);
   if (!saved)
     economy.salvageEvents.advanceDay(
@@ -484,7 +495,24 @@ export function createGameController(options: GameControllerOptions): GameContro
       options.navigation.getSnapshot().currentPosition,
       state.activeShip.role === 'salvage'
     );
-  const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
+  const saveCareer = (): void => {
+    if (
+      !['star-map', 'port'].includes(state.mode) ||
+      engagements.activePlayerCombat() ||
+      options.navigation.getSnapshot().isTravelling ||
+      fuelJourney.plan()
+    ) {
+      throw new Error('Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.');
+    }
+    createCareerSaveStore(window.localStorage).save(captureControllerCareer(context));
+    systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
+  };
+  const menu = createSettingsMenu(
+    context.audio,
+    options.onReturnToMainMenu,
+    state.playerProfile,
+    saveCareer
+  );
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
