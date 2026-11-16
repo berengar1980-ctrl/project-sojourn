@@ -31,13 +31,8 @@ function validEquipment(value: unknown): boolean {
   );
 }
 
-function validMember(member: CrewMember): boolean {
-  const skillKeys = [...STATION_SKILLS];
-  const combatKeys = ['ranged', 'melee'];
-  const socialKeys = ['loyalty', 'order', 'duty', 'risk', 'empathy', 'faith', 'cunning', 'trust'];
-  const moraleKeys = ['motivation', 'loyalty', 'momentum', 'loyaltyMomentum'];
+function validMemberIdentity(member: CrewMember): boolean {
   return (
-    !!member &&
     typeof member.id === 'string' &&
     member.id.length > 0 &&
     typeof member.name === 'string' &&
@@ -47,7 +42,16 @@ function validMember(member: CrewMember): boolean {
     (member.portraitAssetUrl === null || typeof member.portraitAssetUrl === 'string') &&
     ['healthy', 'light_wound', 'severe_wound', 'incapacitated', 'dead'].includes(
       member.injuryState
-    ) &&
+    )
+  );
+}
+
+function validMemberProgress(member: CrewMember): boolean {
+  const skillKeys = [...STATION_SKILLS];
+  const combatKeys = ['ranged', 'melee'];
+  const socialKeys = ['loyalty', 'order', 'duty', 'risk', 'empathy', 'faith', 'cunning', 'trust'];
+  const moraleKeys = ['motivation', 'loyalty', 'momentum', 'loyaltyMomentum'];
+  return (
     validNumbers(member.skills, skillKeys, 0, 100) &&
     validNumbers(member.skillTrainingHours, skillKeys, 0, Number.MAX_SAFE_INTEGER) &&
     validNumbers(member.combatSkills, combatKeys, 0, 100) &&
@@ -56,6 +60,10 @@ function validMember(member: CrewMember): boolean {
     validNumbers(member.morale, moraleKeys, -1000, 1000) &&
     validEquipment(member.personalEquipment)
   );
+}
+
+function validMember(member: CrewMember): boolean {
+  return !!member && validMemberIdentity(member) && validMemberProgress(member);
 }
 
 function validateAssignments(
