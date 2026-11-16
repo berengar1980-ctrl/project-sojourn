@@ -162,6 +162,17 @@ function updateBlockadeReason(
           : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
 }
 
+function operationsTabs(m: OperationsModel): string[][] {
+  return [
+      ['active', 'Laufende Aufträge'],
+      ...(m.shipRole === 'freighter' ? [['blockades', 'Blockaden']] : []),
+      ...(m.shipRole === 'patrol' ? [['patrol', 'Patrouille']] : []),
+      ...(['mining', 'salvage'].includes(m.shipRole)
+        ? [['claims', m.shipRole === 'salvage' ? 'Wrackregister' : 'Konzessionsregister']]
+        : []),
+  ];
+}
+
 export function createOperationsPanel(options: Options): { destroy(): void } {
   const launch = document.createElement('button');
   launch.type = 'button';
@@ -203,14 +214,7 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
   function render() {
     currentModel = options.model();
     const m = currentModel;
-    const tabs = [
-      ['active', 'Laufende Aufträge'],
-      ...(m.shipRole === 'freighter' ? [['blockades', 'Blockaden']] : []),
-      ...(m.shipRole === 'patrol' ? [['patrol', 'Patrouille']] : []),
-      ...(['mining', 'salvage'].includes(m.shipRole)
-        ? [['claims', m.shipRole === 'salvage' ? 'Wrackregister' : 'Konzessionsregister']]
-        : []),
-    ];
+    const tabs = operationsTabs(m);
     if (!tabs.some(([id]) => id === tab)) tab = tabs[1]?.[0] ?? 'active';
     dialog.innerHTML = `<header><h2>Aufträge & Konzessionen</h2><button type="button" data-close>Schließen</button></header><p>${money(m.credits)} · Tag ${m.blockades.day}</p>
       <nav>${tabs
