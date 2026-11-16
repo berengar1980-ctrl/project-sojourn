@@ -19,7 +19,7 @@ When troubleshooting this private repository, use authorized repository integrat
 
 ## Mutable game state and future persistence (mandatory)
 
-Project Sojourn does **not** support savegame persistence yet. Do not introduce save/load UI, browser storage, file saves, old-save compatibility, or migrations unless explicitly requested.
+Project Sojourn is implementing a **versioned Career Save/Load** system. Continue the existing implementation in `docs/CAREER_PERSISTENCE.md`; do not add a competing save schema or independent save storage. The in-game Save/Load UI must wait until atomic full-session restore is validated.
 
 1. Every new persistent-in-principle gameplay value (ownership, equipment, cargo, discoveries, credits, NPC equipment, or progression) must have one clearly identified domain owner. Avoid mutating it through HTML, DOM datasets, or view models.
 2. When adding or changing such state, update its service's detached, JSON-compatible `snapshot()` or document why the data is transient. Keep snapshots observational: never expose the original mutable arrays, sets, or maps.
@@ -27,6 +27,36 @@ Project Sojourn does **not** support savegame persistence yet. Do not introduce 
 4. Player and NPC equipment, salvaging, and shipyard market rules must use the same canonical component definitions and shared research state; preserve real Mk tiers and distinct model IDs.
 5. The ship test switcher is a development tool; **do not** restrict it based on ship ownership.
 6. Run the existing `npm run check:quick` and `npm run build` gates. If a changed state owner has no snapshot or a new state field is absent from the relevant snapshot, treat the implementation as incomplete even when the build is green.
-7. Keep the snapshot APIs separate from any future versioned savegame schema. Their existence does not imply backwards compatibility.
+7. Keep domain snapshot APIs separate from the versioned Career Save contract. Integrate new authoritative state through a tested, staged restore path; snapshot presence alone does not imply a fully restorable Career Save.
 
 Reference: `docs/SHIP_STATE_BOUNDARIES.md`. Update the document and tests when new state owners are introduced.
+
+## Mandatory pre-push formatting and CI preflight
+
+These rules apply to **every** coding agent and every feature branch.
+
+1. Read `.prettierrc.json` and `package.json` before editing. Prettier is the
+   only source of truth for line wrapping, and ESLint decides complexity limits.
+   A 100-character line is **not** proof that Prettier will accept its layout.
+2. In a working checkout with dependencies installed, run
+   `npm run format`, then `npm run format:check`. Prettier must produce zero
+   changes on a second pass. Do not hand-format or swap line breaks repeatedly.
+3. Run `npm run lint`, `npm run typecheck`, `npm run deps:check`,
+   `npm run persistence:check`, `npm run test:quick`, and `npm run build`
+   **before pushing**. Fix all failures in the same working tree; repeat the
+   checks after any fix affecting source or tests.
+4. If Prettier or another required tool is unavailable, explicitly label the
+   changes **unverified**. Do not claim a preflight passed. Prefer one batch
+   of verified CI diagnostics, including the exact Prettier diff, over a chain
+   of guessed one-line commits.
+5. Avoid adding nested conditions to long service factories. Extract
+   validators, checkpoint staging, and transaction logic into testable helpers
+   before hitting the repository's ESLint complexity/length restrictions.
+6. For new or changed gameplay state, update
+   `docs/CAREER_PERSISTENCE.md` with its save impact. Classify newly added
+   domain modules in `docs/CAREER_PERSISTENCE_OWNERS.json`.
+7. Merge only after the required checks on the **latest PR head** have passed.
+   Never weaken lint, format, or test rules to make a PR green.
+
+Quick human-readable preflight:
+`npm run format && npm run check:quick && npm run build`.
