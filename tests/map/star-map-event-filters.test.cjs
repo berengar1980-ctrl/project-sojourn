@@ -12,9 +12,9 @@ const { defaultMissionFilters, signalKind, filteredSignals } = load(
 const distress = {
   id: 'distress',
   name: 'Notruf',
-  kind: 'planet',
+  kind: 'wreck',
   position: { x: 200, y: 0 },
-  activities: { missions: true, dock: false, trade: false },
+  activities: { missions: true, salvage: true },
   dangerLevel: 3,
 };
 const salvage = {
@@ -37,6 +37,10 @@ const port = {
 assert.equal(signalKind(distress), 'distress');
 assert.equal(signalKind(salvage), 'salvage');
 assert.equal(signalKind(port), null);
+assert.equal(signalKind({ ...distress, kind: 'planet' }), null);
+assert.equal(signalKind({ ...distress, kind: 'moon' }), null);
+assert.equal(signalKind({ ...distress, kind: 'station' }), null);
+assert.equal(signalKind({ ...salvage, kind: 'planet' }), null);
 assert.equal(defaultMissionFilters('salvage').salvage, true);
 assert.equal(defaultMissionFilters('freighter').salvage, false);
 assert.equal(defaultMissionFilters('mining').campaign, true);
