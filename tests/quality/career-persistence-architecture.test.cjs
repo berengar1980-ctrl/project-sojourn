@@ -68,4 +68,6 @@ assert.equal(
   false
 );
 assert.doesNotThrow(() => reviewCurrentBranch(root));
-console.log('PASS career persistence gate: missing reviews and new unclassified state owners rejected');
+console.log(
+  'PASS career persistence gate: missing reviews and new unclassified state owners rejected'
+);
