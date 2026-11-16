@@ -118,10 +118,7 @@ function stageHistoricalLocations(
       if (seen.has(entry.resourceId)) throw new Error('Duplicate historical resource');
       seen.add(entry.resourceId);
     }
-    result.set(
-      location.locationId,
-      location.entries.map((entry) => ({ ...entry }))
-    );
+    result.set(location.locationId, location.entries.map((entry) => ({ ...entry })));
   }
   return result;
 }
@@ -176,25 +173,24 @@ function recordMarketHistory(
   markets: EconomyMarketService,
   day: number
 ): void {
-    const resolvedDay = Math.max(0, Math.floor(day));
-    if (history.has(resolvedDay)) return;
-    const snapshot = new Map<string, readonly HistoricalMarketEntry[]>();
-    for (const market of markets.snapshot()) {
-      snapshot.set(
-        market.locationId,
-        Object.values(market.entries).map((entry) => ({
-          resourceId: entry.resourceId,
-          price: entry.price,
-          stock: entry.stock,
-        }))
-      );
-    }
-    history.set(resolvedDay, snapshot);
-    for (const historyDay of [...history.keys()]) {
-      if (historyDay < resolvedDay - MARKET_HISTORY_DAYS + 1) history.delete(historyDay);
-    }
-  };
-
+  const resolvedDay = Math.max(0, Math.floor(day));
+  if (history.has(resolvedDay)) return;
+  const snapshot = new Map<string, readonly HistoricalMarketEntry[]>();
+  for (const market of markets.snapshot()) {
+    snapshot.set(
+      market.locationId,
+      Object.values(market.entries).map((entry) => ({
+        resourceId: entry.resourceId,
+        price: entry.price,
+        stock: entry.stock,
+      }))
+    );
+  }
+  history.set(resolvedDay, snapshot);
+  for (const historyDay of [...history.keys()]) {
+    if (historyDay < resolvedDay - MARKET_HISTORY_DAYS + 1) history.delete(historyDay);
+  }
+}
 
 export function createMarketIntelService(
   markets: EconomyMarketService,
