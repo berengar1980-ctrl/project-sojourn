@@ -157,6 +157,20 @@ function appendProfileIdentity(shell: HTMLDivElement, profile: PlayerProfile): v
   shell.querySelector('.settings-menu__toggle')?.before(identity);
 }
 
+function loadSavedCareer(onLoadCareer: (() => void) | undefined, status: HTMLElement): void {
+  if (!onLoadCareer) return;
+  if (
+    !window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')
+  )
+    return;
+  try {
+    onLoadCareer();
+  } catch (error) {
+    status.textContent =
+      error instanceof Error ? error.message : 'Spielstand konnte nicht geladen werden.';
+  }
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
@@ -241,19 +255,7 @@ export function createSettingsMenu(
         error instanceof Error ? error.message : 'Spielstand konnte nicht gespeichert werden.';
     }
   };
-  const onLoad = (): void => {
-    if (!onLoadCareer) return;
-    if (
-      !window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')
-    )
-      return;
-    try {
-      onLoadCareer();
-    } catch (error) {
-      saveStatus.textContent =
-        error instanceof Error ? error.message : 'Spielstand konnte nicht geladen werden.';
-    }
-  };
+  const onLoad = (): void => loadSavedCareer(onLoadCareer, saveStatus);
   const onKeyDown = createSettingsKeyHandler(panel, setOpen);
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
