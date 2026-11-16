@@ -91,7 +91,7 @@ assert(telemetry.includes('cooldownRemaining') && telemetry.includes('shotsFired
 const operations = read('src/ui/operations/operations-panel.ts');
 const operationsCss = read('src/ui/operations/operations.css');
 assert(operationsCss.includes('right: 18px;'));
-assert(operationsCss.includes('top: 18px;'));
+assert(operationsCss.includes('top: 78px;'));
 assert(operationsCss.includes('position: sticky;'));
 assert(operations.includes('data-blockade-reason'));
 assert(operations.includes('Gesperrt: nicht genügend Credits.'));
