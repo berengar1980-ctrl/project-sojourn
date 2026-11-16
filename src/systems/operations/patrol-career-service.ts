@@ -1,22 +1,13 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap } from '../../core/world-types';
+export type { PatrolAssignment } from './career-operations-checkpoint';
 import {
   stageCareerPatrol,
   type CareerPatrolCheckpoint,
+  type PatrolAssignment,
 } from './career-operations-checkpoint';
 
-export interface PatrolAssignment {
-  id: string;
-  kind: 'route' | 'bounty';
-  targetId: string;
-  reward: number;
-  acceptedDay: number;
-  deadline: number;
-  status: 'active' | 'completed' | 'failed' | 'paid';
-  visited: string[];
-  clearSeconds: number;
-}
 export class PatrolCareerService {
   private mandate = false;
   private reputation = 0;
