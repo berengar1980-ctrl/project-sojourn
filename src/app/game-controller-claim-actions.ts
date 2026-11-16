@@ -3,6 +3,10 @@ import { controllerLocalModel } from './game-controller-models';
 
 export function toggleControllerAsteroidClaim(context: ControllerRuntimeContext): void {
   const { state, economy } = context;
+  if (state.activeShip.role !== 'mining') {
+    context.systemLog.write('MINING > KONZESSION NUR MIT MINENSCHIFF');
+    return;
+  }
   const field = state.localSpace?.getSnapshot().instance;
   const selectedId = state.localSpace?.getSnapshot().selectedAsteroidId;
   const asteroid = field?.asteroids.find((entry) => entry.id === selectedId);

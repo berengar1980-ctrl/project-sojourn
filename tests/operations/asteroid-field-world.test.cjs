@@ -8,6 +8,9 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { AsteroidFieldWorld } = load('src/systems/operations/asteroid-field-world.ts');
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { createNpcLocalMiningService } = load('src/systems/npcs/npc-local-mining-service.ts');
+const { getAllShipDefinitions } = load('src/systems/ships/index.ts');
+const actualMinerShip = getAllShipDefinitions().find((ship) => ship.role === 'mining');
+assert(actualMinerShip, 'test must use an actual mining hull');
 
 const location = {
   id: 'background-test-field',
@@ -20,7 +23,7 @@ const miner = {
   name: 'Miner eins',
   role: 'miner',
   job: 'miner',
-  shipId: 'unknown-ship',
+  shipId: actualMinerShip.id,
   locationId: location.id,
   workLocationId: location.id,
   autonomy: { phase: 'working' },

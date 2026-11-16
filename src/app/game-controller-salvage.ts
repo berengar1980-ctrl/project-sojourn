@@ -3,24 +3,21 @@ import {
   createDistressRammingState,
   type DistressRammingState,
 } from '../systems/salvage/distress-ramming-physics';
-import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
   createDistressTowState,
   distressTowWithinRange,
-  towShipAtExit,
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
-import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
+import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { GameAudioService } from '../systems/audio/game-audio-service';
 import type { WorldLocation } from '../core/world-types';
-import { playerAtLocalExit } from '../ui/map/local-space-exit-gate';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
@@ -37,6 +34,9 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
+import { finishSalvageCombat } from './game-controller-salvage-combat-return';
+import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
+import { createWreckClaimActions } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
@@ -62,6 +62,8 @@ interface SalvageSceneOptions {
   readonly economy: SalvageEconomyService;
   readonly npcEconomy: NpcEconomyService;
   readonly sectorNpcs: readonly SectorNpcState[];
+  readonly wreckClaims: WreckClaimRegistry;
+  readonly getCurrentDay: () => number;
   readonly player: PlayerEconomyState;
   readonly componentInventory: ShipComponentInventoryService;
   readonly runtimeOptions?: ShipRuntimeOptions;
@@ -126,7 +128,7 @@ interface SalvageSceneRuntime {
 
 function salvageSceneModel(context: SalvageSceneRuntime) {
   const { options, service, npcSalvage, state } = context;
-  return createSalvageSpaceViewModel(
+  const model = createSalvageSpaceViewModel(
     service.getSnapshot(),
     options.ship,
     options.player,
@@ -140,6 +142,19 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     state.distressRamming,
     state.distressRepairing
   );
+  return {
+    ...model,
+    wreckClaimOwners: Object.fromEntries(
+      context.field.wrecks.flatMap((wreck) => {
+        const claim = options.wreckClaims.claim(
+          context.field.id,
+          wreck.id,
+          options.getCurrentDay()
+        );
+        return claim ? [[wreck.id, claim.ownerId]] : [];
+      })
+    ),
+  };
 }
 
 function refreshSalvageScene(context: SalvageSceneRuntime): void {
@@ -195,6 +210,15 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
+  const claims = createWreckClaimActions({
+    field: context.field,
+    role: options.ship.role,
+    player: options.player,
+    wreckClaims: options.wreckClaims,
+    getCurrentDay: options.getCurrentDay,
+    log: options.log,
+    refresh,
+  });
   return createSalvageSpacePanel({
     root: options.root,
     model: salvageSceneModel(context),
@@ -236,17 +260,20 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onBoardWreck(wreckId) {
       options.onBoardWreck?.(wreckId);
     },
+    onClaimWreck: claims.claim,
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
       refresh();
     },
     onStrip(wreckId, resourceId) {
+      if (!claims.canWork(wreckId)) return;
       service.startStrip(wreckId, resourceId);
       options.log.write('BERGUNG > MATERIALBERGUNG GESTARTET');
       refresh();
     },
     onRecoverComponent(wreckId) {
+      if (!claims.canWork(wreckId)) return;
       service.startComponentRecovery(wreckId);
       options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
@@ -265,26 +292,14 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onReturnToStarMap() {
-      const snapshot = service.getSnapshot();
-      const { width, height } = snapshot.field;
-      if (!playerAtLocalExit(snapshot.ship.position, width, height, snapshot.field.seed)) {
-        options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
-        refresh();
-        return;
-      }
-      if (
-        state.activeSectorEvent?.distressStage === 'towing' &&
-        (!state.distressTow ||
-          !towShipAtExit(
-            snapshot.ship.position,
-            state.distressTow,
-            localSpaceExitPoint(width, height, snapshot.field.seed)
-          ))
-      ) {
-        options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
-        return;
-      }
-      options.onReturnToStarMap();
+      returnToStarMapFromSalvage({
+        service,
+        activeSectorEvent: state.activeSectorEvent,
+        distressTow: state.distressTow,
+        log: options.log,
+        onReturn: options.onReturnToStarMap,
+        refresh,
+      });
     },
   });
 }
@@ -357,45 +372,12 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   refreshSalvageScene(context);
 }
 
-function finishSalvageCombat(
-  context: SalvageSceneRuntime,
-  snapshot: StrategicCombatSnapshot
-): void {
-  if (context.field.debris && snapshot.arena.asteroids) {
-    const remaining = new Map(snapshot.arena.asteroids.map((rock) => [rock.id, rock]));
-    // Once captured and thrown, the original fragment must not respawn in the field.
-    for (let index = context.field.debris.length - 1; index >= 0; index -= 1) {
-      const part = context.field.debris[index]!;
-      const live = remaining.get(part.id);
-      if (!live) {
-        context.field.debris.splice(index, 1);
-        continue;
-      }
-      part.position = { ...live.position };
-      part.driftVelocity = { ...live.velocity };
-      part.rotation3d = { ...part.rotation3d, z: live.rotation };
-    }
-    invalidateSalvagePhysics(context.field);
-  }
-  context.service.syncCombatPose(
-    snapshot.attacker.position,
-    snapshot.attacker.headingRadians,
-    snapshot.attacker.speed
-  );
-  context.npcSalvage.syncCombatPose(
-    snapshot.defender.id,
-    snapshot.defender.position,
-    snapshot.defender.headingRadians,
-    snapshot.defender.speed
-  );
-  refreshSalvageScene(context);
-}
-
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
   const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
   const field =
     options.field ??
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
+  options.wreckClaims.restoreField(field);
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
@@ -479,12 +461,14 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       refreshSalvageScene(context);
     },
     finishCombat(snapshot) {
-      finishSalvageCombat(context, snapshot);
+      finishSalvageCombat(context.field, context.service, context.npcSalvage, snapshot);
+      refreshSalvageScene(context);
     },
     tick(deltaSeconds) {
       tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
+      options.wreckClaims.rememberField(field);
       context.state.panel?.destroy();
       context.state.panel = null;
     },

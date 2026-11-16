@@ -1,0 +1,165 @@
+import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+
+export interface WreckClaim {
+  readonly fieldId: string;
+  readonly wreckId: string;
+  readonly ownerId: string;
+  readonly registeredDay: number;
+  readonly expiresDay: number;
+}
+
+interface StoredWreck {
+  readonly id: string;
+  readonly resources: Record<string, number>;
+  readonly componentStatus: SalvageWreck['componentStatus'];
+  readonly inspected: boolean;
+  readonly scanLevel: NonNullable<SalvageWreck['scanLevel']>;
+}
+
+interface StoredField {
+  readonly locationId: string;
+  readonly seed: number;
+  readonly wrecks: readonly StoredWreck[];
+}
+
+export interface WreckClaimCheckpoint {
+  readonly version: 1;
+  readonly claims: readonly WreckClaim[];
+  readonly fields: readonly (readonly [string, StoredField])[];
+}
+
+export type WreckClaimResult =
+  | { readonly ok: true; readonly fee: number }
+  | { readonly ok: false; readonly reason: 'unscanned' | 'empty' | 'occupied' | 'unaffordable' };
+
+const CLAIM_DURATION_DAYS = 14;
+const CLAIM_FEE = 650;
+
+export class WreckClaimRegistry {
+  private readonly claims = new Map<string, WreckClaim>();
+  private readonly fields = new Map<string, StoredField>();
+
+  private key(fieldId: string, wreckId: string): string {
+    return JSON.stringify([fieldId, wreckId]);
+  }
+
+  /** Persist the same wreck map and the depletion/scan status across visits. */
+  seedFor(locationId: string, preferredSeed: number): number {
+    return this.fields.get(locationId)?.seed ?? preferredSeed;
+  }
+
+  rememberField(field: SalvageField): void {
+    this.fields.set(field.sourceLocationId, {
+      locationId: field.sourceLocationId,
+      seed: field.seed,
+      wrecks: field.wrecks.map((wreck) => ({
+        id: wreck.id,
+        resources: Object.fromEntries(
+          wreck.resources.map((resource) => [resource.resourceId, resource.remainingAmount])
+        ),
+        componentStatus: wreck.componentStatus,
+        inspected: wreck.inspected,
+        scanLevel: wreck.scanLevel ?? 'unscanned',
+      })),
+    });
+  }
+
+  restoreField(field: SalvageField): void {
+    const saved = this.fields.get(field.sourceLocationId);
+    if (!saved || saved.seed !== field.seed) return;
+    const wrecks = new Map(saved.wrecks.map((wreck) => [wreck.id, wreck]));
+    for (const wreck of field.wrecks) {
+      const previous = wrecks.get(wreck.id);
+      if (!previous) continue;
+      for (const resource of wreck.resources) {
+        const amount = previous.resources[resource.resourceId];
+        if (amount !== undefined) {
+          resource.remainingAmount = Math.min(resource.initialAmount, Math.max(0, amount));
+        }
+      }
+      wreck.componentStatus = previous.componentStatus;
+      wreck.inspected = previous.inspected;
+      wreck.scanLevel = previous.scanLevel;
+    }
+  }
+
+  claim(fieldId: string, wreckId: string, day: number): WreckClaim | null {
+    const claim = this.claims.get(this.key(fieldId, wreckId));
+    return claim && claim.expiresDay > day ? { ...claim } : null;
+  }
+
+  register(
+    field: SalvageField,
+    wreck: SalvageWreck,
+    ownerId: string,
+    day: number,
+    credits: number,
+    fee = CLAIM_FEE
+  ): WreckClaimResult {
+    if (!wreck.inspected && wreck.scanLevel !== 'analyzed') {
+      return { ok: false, reason: 'unscanned' };
+    }
+    if (
+      !wreck.resources.some((resource) => resource.remainingAmount > 0) &&
+      wreck.componentStatus !== 'available'
+    )
+      return { ok: false, reason: 'empty' };
+    if (this.claim(field.id, wreck.id, day)) return { ok: false, reason: 'occupied' };
+    if (credits < fee) return { ok: false, reason: 'unaffordable' };
+    this.claims.set(this.key(field.id, wreck.id), {
+      fieldId: field.id,
+      wreckId: wreck.id,
+      ownerId,
+      registeredDay: day,
+      expiresDay: day + CLAIM_DURATION_DAYS,
+    });
+    this.rememberField(field);
+    return { ok: true, fee };
+  }
+
+  abandon(fieldId: string, wreckId: string, ownerId: string): boolean {
+    const key = this.key(fieldId, wreckId);
+    if (this.claims.get(key)?.ownerId !== ownerId) return false;
+    return this.claims.delete(key);
+  }
+
+  snapshot(day: number): readonly WreckClaim[] {
+    return [...this.claims.values()]
+      .filter((claim) => claim.expiresDay > day)
+      .map((claim) => ({ ...claim }));
+  }
+
+  exportState(): WreckClaimCheckpoint {
+    return {
+      version: 1,
+      claims: [...this.claims.values()].map((claim) => ({ ...claim })),
+      fields: [...this.fields.entries()].map(([id, field]) => [
+        id,
+        {
+          ...field,
+          wrecks: field.wrecks.map((wreck) => ({
+            ...wreck,
+            resources: { ...wreck.resources },
+          })),
+        },
+      ]),
+    };
+  }
+
+  restoreState(saved: WreckClaimCheckpoint): void {
+    this.claims.clear();
+    this.fields.clear();
+    for (const claim of saved.claims) {
+      this.claims.set(this.key(claim.fieldId, claim.wreckId), { ...claim });
+    }
+    for (const [id, field] of saved.fields) {
+      this.fields.set(id, {
+        ...field,
+        wrecks: field.wrecks.map((wreck) => ({
+          ...wreck,
+          resources: { ...wreck.resources },
+        })),
+      });
+    }
+  }
+}

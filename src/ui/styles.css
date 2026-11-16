@@ -4128,3 +4128,13 @@ body.app-has-system-bar #app > .harrow-duel {
   outline: 2px solid #a9e6f0;
   outline-offset: 2px;
 }
+
+/* Keep metadata distinct from the fuel panel on star maps. */
+.star-map-shell .map-fuel-status {
+  top: 138px;
+}
+@media (max-width: 600px) {
+  .star-map-shell .map-fuel-status {
+    top: 128px;
+  }
+}

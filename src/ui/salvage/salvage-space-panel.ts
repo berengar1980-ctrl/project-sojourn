@@ -143,6 +143,11 @@ function showUninspectedWreck(
   ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
 }
 
+function wreckClaimOwnerLabel(owner: string | undefined): string {
+  if (!owner) return '';
+  return ' · ANSPRUCH: ' + (owner === 'player' ? 'EIGEN' : 'FREMD');
+}
+
 function showSalvageWreck(
   model: SalvageSpaceViewModel,
   ui: SalvageControls,
@@ -170,6 +175,10 @@ function showSalvageWreck(
     return;
   }
   ui.boardButton.hidden = !wreck.boardable || !model.salvageAvailable;
+  const owner = model.wreckClaimOwners[wreck.id];
+  ui.claimButton.hidden = !model.salvageAvailable || owner === 'player';
+  ui.claimButton.disabled = Boolean(owner) || !wreck.inspected;
+  ui.claimButton.textContent = owner ? 'WRACK BEREITS BEANSPRUCHT' : 'WRACK BEANSPRUCHEN · 650 CR';
   ui.meta.textContent =
     wreck.kindLabel +
     ' · QUALITÄT ' +
@@ -178,6 +187,7 @@ function showSalvageWreck(
     wreck.integrity +
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '') +
+    wreckClaimOwnerLabel(owner) +
     (wreck.boardingCleared
       ? ' · DECKS GESICHERT'
       : wreck.boardable
@@ -195,6 +205,7 @@ function renderSelection(model: SalvageSpaceViewModel, ui: SalvageControls): voi
   ui.attackButton.hidden = true;
   ui.inspectButton.hidden = true;
   ui.boardButton.hidden = true;
+  ui.claimButton.hidden = true;
   if (npc) {
     showSalvageNpc(model, ui, npc);
   } else if (wreck) {
@@ -305,6 +316,10 @@ function bindSalvagePanelActions(
   ui.inspectButton.addEventListener('click', () => {
     const wreck = getModel().selectedWreck;
     if (wreck) options.onInspect(wreck.id);
+  });
+  ui.claimButton.addEventListener('click', () => {
+    const selected = getModel().selectedWreck;
+    if (selected?.inspected) options.onClaimWreck(selected.id);
   });
   ui.boardButton.addEventListener('click', () => {
     const model = getModel();

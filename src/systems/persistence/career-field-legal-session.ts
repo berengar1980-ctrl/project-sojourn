@@ -1,3 +1,4 @@
+import { WreckClaimRegistry } from '../operations/wreck-claim-registry';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation } from '../../core/world-types';
 import {
@@ -22,15 +23,17 @@ export interface StagedCareerFieldLegalSession {
   readonly fields: AsteroidFieldWorld;
   readonly claims: ReturnType<typeof stageCareerLegalAndClaims>['claims'];
   readonly legal: ReturnType<typeof stageCareerLegalAndClaims>['legal'];
+  readonly wreckClaims: WreckClaimRegistry;
 }
 
 /** Commit off-screen remaining ore before taking a unified physical field checkpoint. */
 export function captureCareerFieldLegalSession(
   fields: AsteroidFieldWorld,
   claims: StagedCareerFieldLegalSession['claims'],
-  legal: StagedCareerFieldLegalSession['legal']
+  legal: StagedCareerFieldLegalSession['legal'],
+  wreckClaims: WreckClaimRegistry = new WreckClaimRegistry()
 ): CareerFieldLegalCheckpoint {
-  const registries = captureCareerLegalAndClaims(claims, legal, fields);
+  const registries = captureCareerLegalAndClaims(claims, legal, fields, wreckClaims);
   return {
     version: 1,
     fields: fields.exportState(),

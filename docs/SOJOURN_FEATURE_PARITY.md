@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+| 2026-11-16 | Schiffsrollen und Wrackansprüche (Folge-PR nach #323) | **Neue Sojourn-Funktion; keine Statusänderung** der 241 Voidbound-IDs. Auftragsbereiche hängen von der aktiven Schiffshülle ab; NPC-Miner, NPC-Bergung und NPC-Patrouillen berücksichtigen die tatsächliche Schiffsklasse. Beanspruchte Wracks erhalten einen Eigentümer und eine Ablaufzeit; Registrierungen und Feldzustände werden als optionale Erweiterung der Career-Claims gespeichert, ohne einen neuen Slot anzulegen. Die Sternkarten-HUDs und Formularspalten wurden getrennt angeordnet. |
+
 | 2026-11-16 | PR #323 – Auftragsfenster und Bestätigungsdialoge | keine Statusänderung der 241 Voidbound-Feature-IDs. Ausschließlich UI: Auftragszugang oben rechts auf der Sternkarte, besser lesbare Blockade- und Patrouillenhinweise, optimierte Tabs und responsive Darstellung. Browser-Bestätigungen für Career-Laden und Rückkehr ins Hauptmenü werden durch die vorhandene Systemkonsole ersetzt. Unverändert bleiben Game-/Economy-Services, NPCs, Operationen, Career-Save-Format und Restore-Ablauf; Eventpositionierung und Filter werden separat geplant. |
 
 | 2026-11-14 | Issue #300 / PR #310 – lokale Miner-Checkpoints | Keine Statusänderung der 241 Paritäts-IDs. Lokale Minerschiffe können Scan-/Abbauphasen und Ereigniscontroller inklusive deterministischer Zufallsfolge in neue Dienste übernehmen. Erzreserven und Fracht bleiben ihren bisherigen Autoritäten zugeordnet; alle drei sind noch nicht atomar mit dem vollständigen Career-Save verbunden. Keine Save/Load-UI. |

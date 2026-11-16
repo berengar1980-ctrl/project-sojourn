@@ -1,3 +1,4 @@
+import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -46,7 +47,7 @@ export function cargoUsed(npc: SectorNpcState): number {
 
 export function eligible(npc: SectorNpcState, locationId: string): boolean {
   return (
-    npc.job === 'salvager' &&
+    npcOperationalRoleAllowed(npc, 'salvage') &&
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
     !npc.travel &&

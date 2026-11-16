@@ -59,6 +59,8 @@ export interface NpcLocalSalvageOptions {
   readonly salvagers: readonly SectorNpcState[];
   readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
+  readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
+  readonly registerWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
   readonly playerShip?: ShipDefinition;
   readonly getPlayerShipState?: () => LocalShipState;
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
@@ -125,6 +127,11 @@ class LocalSalvageService implements NpcLocalSalvageService {
         .filter((candidate) => candidate.npcId !== ship.npcId && candidate.targetWreckId)
         .map((candidate) => candidate.targetWreckId as string)
     );
+    for (const wreck of this.options.field.wrecks) {
+      if (this.options.canWorkWreck && !this.options.canWorkWreck(npc, wreck)) {
+        occupied.add(wreck.id);
+      }
+    }
     const wreck = chooseWreck(npc, this.options.field, occupied);
     if (!wreck) {
       this.beginExit(ship);
@@ -269,6 +276,12 @@ class LocalSalvageService implements NpcLocalSalvageService {
     ship.speed = 0;
     ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
     if (ship.scanProgress < 1) return;
+    wreck.inspected = true;
+    wreck.scanLevel = 'analyzed';
+    if (this.options.registerWreck && !this.options.registerWreck(npc, wreck)) {
+      this.assignTarget(ship, npc);
+      return;
+    }
     this.resolveEvent(ship, npc, wreck);
     ship.phase = 'salvaging';
     ship.salvageActive = true;

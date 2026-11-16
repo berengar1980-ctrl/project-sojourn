@@ -387,3 +387,14 @@ Controller-Callbacks auf; die atomare Staging-/Restore-Reihenfolge bleibt
 unverändert. Save-Format, Slot, Domainservices und Laufzeit-Speichergrenzen
 werden nicht verändert. Die Position und Bedienbarkeit der Auftragsoberfläche
 werden unabhängig von der Persistenz überarbeitet.
+
+### Wrackansprüche und wiederholte Bergung (PR nach #323)
+
+Die vorhandenen 14 Career-Sektionen bleiben unverändert. Innerhalb der
+Sektion `claims` wird optional der versionierte Datensatz `wreckClaims`
+gespeichert. Er enthält Spieler- und NPC-Ansprüche mit Eigentümer und Ablauf,
+sowie stabile Seeds, verbliebene Ressourcen, Scanstände und geborgene
+Komponenten von Wrackfeldern. Ältere Saves ohne diesen Datensatz werden als
+leeres Wrackregister eingelesen. Restore validiert die Registrierungen und
+den Feldzustand vor dem atomaren Sitzungswechsel. Das System vergibt beim
+Laden keine neuen Ansprüche oder Gebühren.

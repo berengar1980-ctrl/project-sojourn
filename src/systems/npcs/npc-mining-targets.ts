@@ -1,3 +1,4 @@
+import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type {
   LocalAsteroid,
   LocalShipState,
@@ -178,7 +179,7 @@ export function approachPoint(npcId: string, asteroid: LocalAsteroid): WorldPoin
 
 export function eligibleMiner(npc: SectorNpcState, locationId: string): boolean {
   return (
-    npc.job === 'miner' &&
+    npcOperationalRoleAllowed(npc, 'mining') &&
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
     !npc.travel &&

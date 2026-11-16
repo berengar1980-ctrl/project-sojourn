@@ -34,6 +34,7 @@ export function controllerEconomyFromCareer(
       ),
     blockades,
     asteroidClaims: fieldsLegal.claims,
+    wreckClaims: fieldsLegal.wreckClaims,
     legal: fieldsLegal.legal,
     securityDrones: new Map(),
     localPirates: new Map(),

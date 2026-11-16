@@ -47,6 +47,23 @@ assert.equal(legal.settle(shipId, 110).paid, 110);
 assert(legal.beginCustody(shipId));
 
 const saved = captureCareerLegalAndClaims(claims, legal, world);
+assert(saved.claims.wreckClaims, 'full Career claims section includes wreck registrations');
+const previousSave = JSON.parse(JSON.stringify(saved));
+delete previousSave.claims.wreckClaims;
+assert.equal(
+  stageCareerLegalAndClaims(previousSave).wreckClaims.snapshot(10).length,
+  0,
+  'legacy Career saves without wreck claims must still load'
+);
+const invalidWreckSave = JSON.parse(JSON.stringify(saved));
+invalidWreckSave.claims.wreckClaims.claims.push({
+  fieldId: 'x',
+  wreckId: 'w',
+  ownerId: 'npc',
+  registeredDay: 5,
+  expiresDay: 4,
+});
+assert.throws(() => stageCareerLegalAndClaims(invalidWreckSave), /Wrackanspruch/);
 assert.notStrictEqual(saved.claims, claims.exportState());
 const restored = stageCareerLegalAndClaims(JSON.parse(JSON.stringify(saved)));
 const newWorld = new AsteroidFieldWorld([location], restored.claims, mineStub);

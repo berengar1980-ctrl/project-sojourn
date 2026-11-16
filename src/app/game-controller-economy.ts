@@ -1,5 +1,6 @@
 import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-types';
 import { BlockadeService } from '../systems/operations/blockade-service';
+import { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
@@ -78,12 +79,14 @@ import {
 
 interface RestoredOperationalRegistries {
   readonly claims: AsteroidClaimRegistry;
+  readonly wreckClaims: WreckClaimRegistry;
   readonly legal: SectorLegalRegistry;
 }
 
 export interface ControllerEconomy {
   readonly blockades: BlockadeService;
   readonly asteroidClaims: AsteroidClaimRegistry;
+  readonly wreckClaims: WreckClaimRegistry;
   readonly legal: SectorLegalRegistry;
   readonly securityDrones: Map<string, AsteroidSecurityDrone>;
   readonly localPirates: Map<string, LocalPirateTraffic>;
@@ -192,6 +195,12 @@ function makeNpcSalvageEvents(
   });
 }
 
+function initializeSalvageEvents(navigation: NavigationService): SectorSalvageEventService {
+  const events = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
+  events.advanceDay(0, navigation.getSnapshot().currentPosition, false);
+  return events;
+}
+
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {},
@@ -258,8 +267,7 @@ export function createControllerEconomy(
   npcEconomy.advanceDay(0);
   initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
   registerSecurityDroneCombatants(npcStates);
-  const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
-  salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
+  const salvageEvents = initializeSalvageEvents(navigation);
   const npcSalvageEvents = makeNpcSalvageEvents(sectorNpcs, salvageEvents, shipyardResearch);
 
   return {
@@ -270,6 +278,7 @@ export function createControllerEconomy(
       ),
     blockades,
     asteroidClaims: restoredRegistries?.claims ?? new AsteroidClaimRegistry(),
+    wreckClaims: restoredRegistries?.wreckClaims ?? new WreckClaimRegistry(),
     legal: restoredRegistries?.legal ?? new SectorLegalRegistry(),
     securityDrones: new Map<string, AsteroidSecurityDrone>(),
     localPirates: new Map<string, LocalPirateTraffic>(),

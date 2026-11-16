@@ -1,3 +1,4 @@
+import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { SectorSalvageEvent } from '../../core/salvage-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
@@ -147,7 +148,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
 
   tick(): void {
     for (const npc of this.options.sector.npcs) {
-      if (npc.job === 'salvager') this.tickSalvager(npc);
+      if (npcOperationalRoleAllowed(npc, 'salvage')) this.tickSalvager(npc);
     }
     this.applySharedShipyardResearch();
   }
