@@ -38,6 +38,7 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
+import { createWreckClaimActions } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
@@ -208,42 +209,18 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
-function claimPlayerWreck(context: SalvageSceneRuntime, wreckId: string): void {
-  const { field, options } = context;
-  const wreck = field.wrecks.find((entry) => entry.id === wreckId);
-  if (!wreck || options.ship.role !== 'salvage') return;
-  if (options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay())) {
-    options.log.write('BERGUNG > WRACK HAT BEREITS EINEN ANSPRUCH');
-    refreshSalvageScene(context);
-    return;
-  }
-  const result = options.wreckClaims.register(
-    field,
-    wreck,
-    'player',
-    options.getCurrentDay(),
-    options.player.credits
-  );
-  if (result.ok) {
-    options.player.credits -= result.fee;
-    options.log.write('BERGUNG > WRACKANSPRUCH REGISTRIERT');
-  } else {
-    options.log.write('BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason);
-  }
-  refreshSalvageScene(context);
-}
-
-function playerWreckIsAvailable(context: SalvageSceneRuntime, wreckId: string): boolean {
-  const { options, field } = context;
-  const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
-  if (!claim || claim.ownerId === 'player') return true;
-  options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
-  return false;
-}
-
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
+  const claims = createWreckClaimActions({
+    field: context.field,
+    role: options.ship.role,
+    player: options.player,
+    wreckClaims: options.wreckClaims,
+    getCurrentDay: options.getCurrentDay,
+    log: options.log,
+    refresh,
+  });
   return createSalvageSpacePanel({
     root: options.root,
     model: salvageSceneModel(context),
@@ -285,20 +262,20 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     onBoardWreck(wreckId) {
       options.onBoardWreck?.(wreckId);
     },
-    onClaimWreck: (wreckId) => claimPlayerWreck(context, wreckId),
+    onClaimWreck: claims.claim,
     onInspect(wreckId) {
       service.startInspect(wreckId);
       options.log.write('BERGUNG > ANFLUG UND WRACKANALYSE');
       refresh();
     },
     onStrip(wreckId, resourceId) {
-      if (!playerWreckIsAvailable(context, wreckId)) return;
+      if (!claims.canWork(wreckId)) return;
       service.startStrip(wreckId, resourceId);
       options.log.write('BERGUNG > MATERIALBERGUNG GESTARTET');
       refresh();
     },
     onRecoverComponent(wreckId) {
-      if (!playerWreckIsAvailable(context, wreckId)) return;
+      if (!claims.canWork(wreckId)) return;
       service.startComponentRecovery(wreckId);
       options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
