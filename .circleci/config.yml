@@ -26,13 +26,6 @@ jobs:
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
-          name: Diagnose Career Prettier diffs on failure
-          when: on_fail
-          command: |
-            for file in src/systems/economy/career-economy-integrity.ts tests/persistence/career-npc-economy-session.test.cjs; do
-              npx prettier "$file" | diff -u "$file" - || true
-            done
-      - run:
           name: Lint
           command: |
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
@@ -61,6 +54,10 @@ jobs:
       - run:
           name: Production bundle
           command: node scripts/ci-run-and-report.cjs build -- npx vite build
+      - run:
+          name: Career aggregate diagnostics after failed quality gate
+          when: on_fail
+          command: node scripts/ci-career-batch-diagnostics.cjs
 
 workflows:
   quality:
