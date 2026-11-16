@@ -43,6 +43,10 @@ assert(
   'saved campaign actions must bind after staging'
 );
 assert(menu.includes('button.disabled = !entry.action'), 'unimplemented features remain disabled');
+const settings = read('src/ui/settings/settings-menu.ts');
+assert(settings.includes('.settings-menu__main-menu:not([data-career-save])'));
+assert(settings.includes("save.addEventListener('click', onSave)"));
+assert(settings.includes("mainMenu.addEventListener('click', onMainMenu)"));
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
 const weaponCards = read('src/ui/start/duel-weapon-cards.ts');
