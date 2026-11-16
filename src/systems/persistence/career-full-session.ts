@@ -237,13 +237,13 @@ export function stageCareerFullSession(
           requestTravel: (npc, destinationId, reason) =>
             pendingOperations.current!.sector.requestTravel(npc as SectorNpcState, destinationId, reason),
           requestPatrol: (npc) =>
-            operations!.sector.requestPatrol(npc as SectorNpcState),
+            pendingOperations.current!.sector.requestPatrol(npc as SectorNpcState),
           isTravelling: (npc) =>
-            operations!.sector.isTravelling(npc as SectorNpcState),
+            pendingOperations.current!.sector.isTravelling(npc as SectorNpcState),
           quoteTravel: (npc, destinationId, credits) =>
             pendingOperations.current!.blockades.blocksTrader(npc.id, destinationId)
               ? null
-              : operations!.sector.quoteTravel(npc as SectorNpcState, destinationId, credits),
+              : pendingOperations.current!.sector.quoteTravel(npc as SectorNpcState, destinationId, credits),
         },
         onSale: (_npc: NpcEconomyState, _resourceId: string, _quantity: number, gross: number) =>
           pendingOperations.current!.population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94))),
