@@ -62,14 +62,18 @@ function validateOwners(owners, root) {
         !decision.checkpoint.startsWith('src/') ||
         !fs.existsSync(path.join(root, decision.checkpoint))
       ) {
-        throw new Error('Persisted domain module must name an existing checkpoint adapter: ' + file);
+        throw new Error(
+          'Persisted domain module must name an existing checkpoint adapter: ' + file
+        );
       }
       if (
         typeof decision.test !== 'string' ||
         !decision.test.startsWith('tests/') ||
         !fs.existsSync(path.join(root, decision.test))
       ) {
-        throw new Error('Persisted domain module must name an existing checkpoint regression test: ' + file);
+        throw new Error(
+          'Persisted domain module must name an existing checkpoint regression test: ' + file
+        );
       }
     }
   }
@@ -88,7 +92,9 @@ function enforcePersistenceReview(changes, owners) {
   const addedModules = features
     .filter(
       (entry) =>
-        entry.status === 'A' && entry.path.startsWith('src/systems/') && entry.path.endsWith('.ts')
+        entry.status === 'A' &&
+        entry.path.startsWith('src/systems/') &&
+        entry.path.endsWith('.ts')
     )
     .map((entry) => entry.path);
   for (const file of addedModules) {
@@ -124,9 +130,8 @@ function reviewCurrentBranch(root = path.resolve(__dirname, '..')) {
   const base = ['origin/main', 'main'].find((candidate) =>
     git(['rev-parse', '--verify', candidate], root)
   );
-  if (!base) {
+  if (!base)
     throw new Error('Cannot verify persistence review: main ref unavailable on feature branch.');
-  }
   const changes = changedFiles(base, root);
   return { checked: true, base, ...enforcePersistenceReview(changes, owners) };
 }
@@ -144,8 +149,7 @@ if (require.main === module) {
   try {
     const result = reviewCurrentBranch();
     console.log(
-      'CAREER PERSISTENCE GATE OK · ' +
-        (result.checked ? 'review checked' : 'main baseline')
+      'CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline')
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
