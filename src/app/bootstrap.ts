@@ -66,8 +66,12 @@ function launchCampaign(
         playerProfile: profile,
         navigation,
         campaignSelection: selection.snapshot(),
-        restoredSession: restored?.session,
-        onCareerContextReady: restored?.bindController,
+        ...(restored
+          ? {
+              restoredSession: restored.session,
+              onCareerContextReady: restored.bindController,
+            }
+          : {}),
         onReturnToMainMenu: () => {
           if (!running) return;
           running = false;
