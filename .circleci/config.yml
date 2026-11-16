@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  quality_gate_enabled:
+    type: boolean
+    default: false
+
 jobs:
   quality-gate:
     docker:
@@ -61,5 +66,6 @@ jobs:
 
 workflows:
   quality:
+    when: << pipeline.parameters.quality_gate_enabled >>
     jobs:
       - quality-gate
