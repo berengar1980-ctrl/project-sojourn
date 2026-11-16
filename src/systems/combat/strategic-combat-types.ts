@@ -6,9 +6,7 @@ import type {
   SalvageContainerVariant,
 } from '../../core/salvage-types';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
-
 import type { ShieldImpactEffect } from '../../core/shield-types';
-
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { CombatPowerBudget } from './combat-power-types';
 import type { RamApproachState } from './combat-ram-approach-types';
@@ -23,9 +21,7 @@ export type {
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
-
 export type CombatTargetSubsystem = 'hull' | 'engine' | 'tractor';
-
 export type CombatDoctrine =
   | 'shield_breaker'
   | 'hull_breaker'
@@ -35,7 +31,6 @@ export type CombatDoctrine =
   | 'minefield'
   | 'tractor_intercept'
   | 'escape';
-
 export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup';
 
 export interface CombatLogEntry {
