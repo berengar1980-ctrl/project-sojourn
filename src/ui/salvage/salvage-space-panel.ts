@@ -143,6 +143,11 @@ function showUninspectedWreck(
   ui.inspectButton.title = model.scanAvailable ? '' : 'Kein einsatzfähiges Scansystem';
 }
 
+function wreckClaimOwnerLabel(owner: string | undefined): string {
+  if (!owner) return '';
+  return ' · ANSPRUCH: ' + (owner === 'player' ? 'EIGEN' : 'FREMD');
+}
+
 function showSalvageWreck(
   model: SalvageSpaceViewModel,
   ui: SalvageControls,
@@ -182,7 +187,7 @@ function showSalvageWreck(
     wreck.integrity +
     '%' +
     (wreck.componentSignal ? ' · KOMPONENTENSIGNATUR' : '') +
-    (owner ? ' · ANSPRUCH: ' + (owner === 'player' ? 'EIGEN' : 'FREMD') : '') +
+    wreckClaimOwnerLabel(owner) +
     (wreck.boardingCleared
       ? ' · DECKS GESICHERT'
       : wreck.boardable
