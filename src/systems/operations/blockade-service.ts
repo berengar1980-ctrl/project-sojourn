@@ -2,6 +2,10 @@ import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { EconomyMarketService } from '../economy/market-service';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
+import {
+  stageCareerBlockades,
+  type CareerBlockadeCheckpoint,
+} from './career-operations-checkpoint';
 
 export interface BlockadeOrder {
   id: string;
@@ -37,7 +41,33 @@ export class BlockadeService {
   private day = 0;
   private sequence = 0;
   private houseAlarm: Record<string, number> = { veylan: 0, mercator: 0 };
-  constructor(private readonly options: BlockadeOptions) {}
+  constructor(
+    private readonly options: BlockadeOptions,
+    checkpoint?: CareerBlockadeCheckpoint
+  ) {
+    if (checkpoint) {
+      const saved = stageCareerBlockades(checkpoint, options);
+      this.sequence = saved.sequence;
+      this.day = saved.day;
+      this.orders = saved.orders.map((order) => ({
+        ...order,
+        pirateIds: [...order.pirateIds],
+      }));
+      this.houseAlarm = { ...saved.houseAlarm };
+    }
+  }
+  exportState(): CareerBlockadeCheckpoint {
+    return {
+      version: 1,
+      sequence: this.sequence,
+      day: this.day,
+      orders: this.orders.map((order) => ({
+        ...order,
+        pirateIds: [...order.pirateIds],
+      })),
+      houseAlarm: { ...this.houseAlarm },
+    };
+  }
   snapshot() {
     return {
       sequence: this.sequence,
