@@ -17,7 +17,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier src/ui/start/start-menu.ts | base64 -w0 && echo && prettier --check .",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
