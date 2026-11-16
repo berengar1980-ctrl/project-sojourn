@@ -224,7 +224,6 @@ assert.strictEqual(controllerEconomy.legal, preparedBrowser.session.fieldsLegal.
 assert.deepEqual(preparedBrowser.session.profile, profile);
 assert.deepEqual(controllerEconomy.trade.player, staged.commerce.commerce.trade.player);
 
-
 // Simulate a real game session: purchase goods, close the process by persisting
 // only localStorage JSON, construct fresh services and continue from that state.
 const beforeRestart = prepareControllerCareer(JSON.parse(JSON.stringify(snapshot)));
@@ -265,11 +264,16 @@ assert.notStrictEqual(resumedTrade, liveTrade, 'restart must build fresh service
 assert.notStrictEqual(resumedMarkets, liveMarkets);
 assert.equal(resumedTrade.player.credits, liveTrade.player.credits);
 assert.deepEqual(resumedTrade.player.cargo, liveTrade.player.cargo);
-assert.deepEqual(resumedMarkets.getEntry(port, entry.resourceId), liveMarkets.getEntry(port, entry.resourceId));
+assert.deepEqual(
+  resumedMarkets.getEntry(port, entry.resourceId),
+  liveMarkets.getEntry(port, entry.resourceId)
+);
 assert.equal(resumed.session.controllerSecondsIntoDay, 94.5);
 assert.deepEqual(resumed.session.crew.exportState(), beforeRestart.session.crew.exportState());
-assert.deepEqual(resumed.session.commerce.ships.operating.exportState(),
-  beforeRestart.session.commerce.ships.operating.exportState());
+assert.deepEqual(
+  resumed.session.commerce.ships.operating.exportState(),
+  beforeRestart.session.commerce.ships.operating.exportState()
+);
 
 // Both timelines must produce the same single sale and next economic day,
 // proving that loading does not pay or consume the previous purchase twice.
