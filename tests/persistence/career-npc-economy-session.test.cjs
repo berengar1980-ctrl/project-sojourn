@@ -20,6 +20,9 @@ const { createNpcEconomyService } = load('src/systems/economy/npc-economy-servic
 const { captureCareerNpcEconomySession, stageCareerNpcEconomySession } = load(
   'src/systems/persistence/career-npc-economy-session.ts'
 );
+const { captureCareerCommerceSession, stageCareerCommerceSession } = load(
+  'src/systems/persistence/career-commerce-session.ts'
+);
 
 const seed = 17;
 const world = narrowsSector;
@@ -78,6 +81,33 @@ assert.throws(() =>
     badIdentity, world, sectorPorts, economyResources, clone(player), seed
   ),
   /identity mismatch/
+);
+assert.deepEqual(captureCareerNpcEconomySession(world, npcs, liveEconomy), saved);
+
+const commerce = captureCareerCommerceSession(player, world, npcs, liveEconomy);
+const rebuilt = stageCareerCommerceSession(clone(commerce), world, sectorPorts, economyResources, seed);
+assert.deepEqual(
+  captureCareerCommerceSession(rebuilt.trade.player, world, rebuilt.npcs, rebuilt.economy),
+  commerce
+);
+const entry = rebuilt.economy.markets
+  .snapshot()
+  .flatMap((market) => Object.values(market.entries).map((item) => ({
+    locationId: market.locationId,
+    resourceId: item.resourceId,
+    stock: item.stock,
+  })))
+  .find((item) => item.stock > 0);
+assert(entry);
+const beforeStock = rebuilt.economy.markets.getEntry(entry.locationId, entry.resourceId).stock;
+const trade = rebuilt.trade.buy(entry.locationId, entry.resourceId, 1, 500);
+assert(trade, 'staged player must be able to trade on restored market');
+assert.equal(rebuilt.economy.markets.getEntry(entry.locationId, entry.resourceId).stock, beforeStock - 1);
+
+const invalidPlayer = clone(commerce);
+invalidPlayer.player.credits = -1;
+assert.throws(() =>
+  stageCareerCommerceSession(invalidPlayer, world, sectorPorts, economyResources, seed)
 );
 assert.deepEqual(captureCareerNpcEconomySession(world, npcs, liveEconomy), saved);
 console.log('PASS career NPC economy session: detached roundtrip and trade reference validation');
