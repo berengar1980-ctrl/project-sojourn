@@ -1,0 +1,39 @@
+name: One-time Career Prettier normalization
+
+on:
+  push:
+    branches:
+      - feat/career-economy-npc-trade-integrity
+    paths:
+      - .github/workflows/career-prettier-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format-career-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: feat/career-economy-npc-trade-integrity
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install exact locked tools
+        run: npm ci
+      - name: Format project with its configured Prettier
+        run: npm run format
+      - name: Commit formatted files once
+        run: |
+          if git diff --quiet; then
+            echo "No formatting differences"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u
+          git commit -m "Apply repository Prettier formatting to Career integration"
+          git push origin HEAD:feat/career-economy-npc-trade-integrity
