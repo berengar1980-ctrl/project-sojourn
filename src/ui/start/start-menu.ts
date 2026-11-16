@@ -1,4 +1,4 @@
-export type StartMenuAction = 'campaign' | 'continue' | 'campaigns' | 'pvp' | 'options' | 'quit';
+export type StartMenuAction = 'campaign' | 'continue' | 'load' | 'campaigns' | 'pvp' | 'options' | 'quit';
 
 export interface StartMenu {
   destroy(): void;
@@ -25,10 +25,11 @@ export function createStartMenu(
   nav.className = 'harrow-start__nav';
   nav.setAttribute('aria-label', 'Hauptmenü');
   const entries: readonly { label: string; action?: StartMenuAction }[] = [
-    { label: 'Kampagnenspiel', action: 'campaign' },
+    { label: 'Neues Spiel', action: 'campaign' },
     { label: 'PvP-Modus', action: 'pvp' },
     { label: 'Kampagnen', action: 'campaigns' },
     { label: 'Karriere fortsetzen', ...(hasCareerSave ? { action: 'continue' as const } : {}) },
+    { label: 'Spiel laden', ...(hasCareerSave ? { action: 'load' as const } : {}) },
     { label: 'Optionen', action: 'options' },
     { label: 'Beenden', action: 'quit' },
   ];
