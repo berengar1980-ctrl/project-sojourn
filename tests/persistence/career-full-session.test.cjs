@@ -60,6 +60,12 @@ const { captureCareerCustody } = load('src/systems/persistence/career-custody-ch
 const { stageCareerFullSession, captureCareerFullSession } = load(
   'src/systems/persistence/career-full-session.ts'
 );
+const { prepareControllerCareer } = load(
+  'src/app/game-controller-career-resume.ts'
+);
+const { controllerEconomyFromCareer } = load(
+  'src/app/game-controller-career-economy.ts'
+);
 const { createCareerSessionManager } = load('src/systems/persistence/career-session-manager.ts');
 const { createCareerSaveStore, CAREER_SAVE_STORAGE_KEY } = load(
   'src/systems/persistence/career-save-store.ts'
@@ -206,6 +212,18 @@ assert.deepEqual(
 slot.install(staged);
 staged.activate();
 assert.strictEqual(slot.current(), staged);
+
+const preparedBrowser = prepareControllerCareer(JSON.parse(JSON.stringify(snapshot)));
+const controllerEconomy = controllerEconomyFromCareer(preparedBrowser.session, () => {});
+assert.strictEqual(controllerEconomy.trade, preparedBrowser.session.commerce.commerce.trade);
+assert.strictEqual(controllerEconomy.markets, preparedBrowser.session.commerce.commerce.economy.markets);
+assert.strictEqual(controllerEconomy.npcs, preparedBrowser.session.commerce.commerce.economy.npcs);
+assert.strictEqual(controllerEconomy.sectorNpcs, preparedBrowser.session.operations.sector);
+assert.strictEqual(controllerEconomy.asteroidClaims, preparedBrowser.session.fieldsLegal.claims);
+assert.strictEqual(controllerEconomy.legal, preparedBrowser.session.fieldsLegal.legal);
+assert.deepEqual(preparedBrowser.session.profile, profile);
+assert.deepEqual(controllerEconomy.trade.player, staged.commerce.commerce.trade.player);
+
 const damaged = JSON.parse(JSON.stringify(snapshot));
 damaged.sections.operations.population.fundCredits = -1;
 assert.throws(() => stageCareerFullSession(damaged, options));
