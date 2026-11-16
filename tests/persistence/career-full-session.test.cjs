@@ -271,8 +271,8 @@ assert.deepEqual(
 assert.equal(resumed.session.controllerSecondsIntoDay, 94.5);
 assert.deepEqual(resumed.session.crew.exportState(), beforeRestart.session.crew.exportState());
 assert.deepEqual(
-  resumed.session.commerce.ships.operating.exportState(),
-  beforeRestart.session.commerce.ships.operating.exportState()
+  resumed.session.commerce.ships.operating.snapshotAll(),
+  beforeRestart.session.commerce.ships.operating.snapshotAll()
 );
 
 // Both timelines must produce the same single sale and next economic day,
