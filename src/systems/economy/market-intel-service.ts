@@ -139,7 +139,10 @@ function stageMarketHistory(
     ) {
       throw new Error('Invalid market intel history day');
     }
-    history.set(savedDay.day, stageHistoricalLocations(savedDay.locations, locations, resourceIds));
+    history.set(
+      savedDay.day,
+      stageHistoricalLocations(savedDay.locations, locations, resourceIds)
+    );
   }
   return history;
 }
