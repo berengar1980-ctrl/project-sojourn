@@ -184,3 +184,72 @@ Dieser Adapter setzt voraus, dass Märkte, Player und NPC-Ladungen zum
 **gleichen** Career-Snapshot gehören. Das wird hier noch nicht übergreifend
 validiert; Handelsereignisse, offene Transaktionen und der gesamte
 Career-Session-Restore bleiben offen. Keine Save/Load-UI.
+
+## Architekturregel ab PR #318: Pflichtprüfung bei Feature-Änderungen
+
+Jeder Branch mit Änderungen unter `src/` oder `resources/` muss in diesem Dokument
+seine Auswirkungen auf den Career-Save nachprüfbar festhalten. Das gilt auch,
+wenn keine zusätzlichen Save-Felder nötig sind: dann wird ausdrücklich
+`keine Speicheränderung` mit Begründung protokolliert. Neue Domainmodule
+unter `src/systems/` benötigen zusätzlich eine Zuordnung in
+`docs/CAREER_PERSISTENCE_OWNERS.json`:
+
+- `persisted`: autoritativer Zustand; Checkpoint-Adapter und Roundtrip-Test angeben.
+- `derived`: ausschließlich aus gespeicherten Autoritäten rekonstruierbar; Begründung angeben.
+- `transient`: bewusst nicht gespeicherter Zustand; Verlust beim Neustart begründen.
+
+`scripts/check-career-persistence.cjs` läuft im Quick-/Full-Check und im
+normalen Testlauf. Es verweigert neue unklassifizierte Domainmodule und
+Branches ohne Save-Impact-Review. Bestehende Module sind zunächst nicht
+vollständig im Registry inventarisiert; jede Änderung erfordert aber bereits
+den Review. Die Prüfung beweist nicht automatisch korrekte Integration in
+den Career-Snapshot: Für neue persistente Zustände bleiben Integrations- und
+Restore-Tests zwingend.
+
+### Persistence-Review (PR #318)
+
+Architektur-/Qualitätsänderung, keine neue Gameplay-Autorität. Der bestehende
+Career-Snapshot wird nicht verändert; **keine Speicheränderung**. Die neue
+Prüfung erzwingt bei Folgefeatures den Save-Impact-Review und die explizite
+Klassifikation neuer Domainmodule.
+
+### Handelsereignisse und Marktmodifikatoren (Fortsetzung)
+
+`MarketSituationService.exportState()` erfasst den zuletzt verarbeiteten Tag
+und die noch aktiven Markt-Ereignisse mit Geltungsbereich und Warenmodifikatoren.
+Der optionale Checkpoint beim Erzeugen eines neuen Services validiert
+Häfen, Waren-IDs, eindeutige Ereignisse und Tagesgrenzen, ohne alte Tage
+neu abzuspielen. Tests prüfen den Restore, deterministische Folgetage,
+fehlende Aliase und ungültige Daten. Noch fehlt die wirtschaftsweite
+atomare Session-Komposition, insbesondere Handelsaufträge/Transaktionen.
+
+### Markt-Intel und historische Beobachtungen
+
+`MarketIntelService.exportState()` sichert sowohl beobachtete Marktpreise
+und -bestände als auch die begrenzte Historie, die für verzögerte Sensorberichte
+benötigt wird. Beim Aufbau eines neuen Services werden Hafen-/Waren-IDs,
+Tageswerte, Preise, Bestände und doppelte Referenzen vor Übernahme geprüft.
+Der gespeicherte Kenntnisstand wird **nicht** aus Live-Märkten erneuert;
+ansonsten würde Laden dem Spieler unverdiente Marktinformationen geben.
+Die zugrunde liegende globale Career-Komposition bleibt offen.
+
+### NPC-Handelszyklus und Tagesabrechnung
+
+`NpcEconomyService.exportState()` hält den zuletzt verbuchten Wirtschaftstag
+und die IDs der zugrunde liegenden NPC-Instanzen fest. Beim Neuaufbau wird
+geprüft, dass alle NPCs aus dem passenden Sektorsnapshot stammen.
+Der Restore startet weder die Marktkenntnis der NPCs neu noch berechnet er
+bereits abgerechnete Betriebskosten/Produktionszyklen ein zweites Mal.
+Die eigentlichen NPC-Handelspläne und Ladungen bleiben Teil der NPC-Zustände;
+die gemeinsame atomare Composition mit Märkten und Ressourcen steht noch aus.
+
+### Gemeinsame Wirtschaftsstaging-Gruppe
+
+`career-economy-session.ts` setzt Marktbestände, Ressourcen-Pools,
+Marktereignisse, Markt-Intel und NPC-Wirtschaftstag in einer isolierten
+Wirtschafts-Servicegruppe zusammen. Ein defekter Teilcheckpoint führt zu
+keiner Änderung an den bereits laufenden Wirtschaftsservices.
+Der Player und die NPC-Liste müssen zuvor aus demselben Career-Snapshot
+vorbereitet werden. Der Controller-Umschaltpunkt für eine vollständig
+vorbereitete Career-Session ist **weiterhin nicht umgesetzt**; diese
+Komposition allein ist daher noch kein nutzbarer Spielstand.

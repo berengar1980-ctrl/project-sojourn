@@ -1098,3 +1098,35 @@ Noch **keine** vollständige Voidbound-Parität oder Spielstand-Persistenz: Die 
 ## Review-Log (2026-11-15): Gemeinsamer Spieler-/Schiff-Checkpoint
 
 **keine Statusänderung** der historischen Voidbound-Feature-IDs. Die Spielerökonomie, Schiffseigentum, aktive Schiffsauswahl, Loadouts, lose Komponenten, Forschungsboni und Betriebszustände werden in einem gemeinsamen Capture und einem frischen Staging-Pfad zusammengeführt. Ungültige Betriebszustände dürfen keine aktive Spieler- oder Schiffautorität verändern. Die Integration in die vollständige Career-Session, übrige Domänen und Save/Load-UI bleiben offen.
+
+## Review-Log (2026-11-15): Save-Impact-Gate und Wirtschaftsereignisse
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Neue
+Architekturprüfung verlangt bei Gameplay-Änderungen eine explizite
+Save-Impact-Entscheidung. Markt-Ereignisse besitzen einen isolierten
+versionierten Checkpoint mit aktuellem Tag, aktiven Situationen und
+fortsetzbarer deterministischer Tagesgenerierung. Kein vollständiger
+Career-Restore und keine Save/Load-UI.
+
+## Review-Log (2026-11-15): Marktintel-Checkpoint
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Spieler-Marktbeobachtungen und Sensor-Historie sind als versionierte, isolierte
+Snapshots vorbereitet. Restore übernimmt keine geheimen aktuellen Marktpreise
+und überschreibt die aktive Simulation nicht. Globale Career-Komposition fehlt.
+
+## Review-Log (2026-11-15): NPC-Wirtschaftstag fortsetzen
+
+**keine Statusänderung** der historischen Voidbound-Feature-IDs. Der
+NPC-Economy-Dienst erfasst den letzten verarbeiteten Tag sowie seine NPC-IDs,
+um laufende Tagesabrechnungen und vorhandene Marktkenntnis beim Staging nicht
+neu zu initialisieren. Alle übrigen NPC-Laufzeitdaten erfordern weiterhin den
+separaten NPC-Sektorcheckpoint und eine konsistente Career-Session-Komposition.
+
+## Review-Log (2026-11-15): Gemeinsame Wirtschafts-Servicegruppe
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Die Teiladapter für Märkte, physische Ressourcen, Ereignisse, Markt-Intel
+und NPC-Wirtschaftstag sind als frische gemeinsame Session komponiert und
+werden durch einen übergreifenden Roundtrip-Test geprüft. Spieler und
+NPCs müssen weiterhin aus demselben Save stammen; kein globaler Career-Swap.

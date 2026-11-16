@@ -18,6 +18,7 @@ import type {
   NpcEconomyServiceOptions,
   PhysicalResourceAllocator,
   NpcEconomyService,
+  NpcEconomyCheckpoint,
 } from './npc-economy-types';
 
 import {
@@ -304,16 +305,34 @@ function abstractWorkerDay(
   if (cargoFree(npc) <= 0) beginNpcAutonomyPhase(npc, 'thinking');
 }
 
-export function createNpcEconomyService(
-  markets: EconomyMarketService,
-  allocator: PhysicalResourceAllocator,
-  resources: readonly EconomyResourceDefinition[],
-  npcs: readonly NpcEconomyState[],
-  options: NpcEconomyServiceOptions = {}
-): NpcEconomyService {
-  let lastDay = -1;
-  const positions = options.positions ?? {};
+function validateNpcEconomyCheckpoint(
+  checkpoint: NpcEconomyCheckpoint,
+  npcs: readonly NpcEconomyState[]
+): void {
+  if (
+    checkpoint.version !== 1 ||
+    !Number.isSafeInteger(checkpoint.lastDay) ||
+    checkpoint.lastDay < -1 ||
+    !Array.isArray(checkpoint.npcIds) ||
+    checkpoint.npcIds.length !== npcs.length
+  ) {
+    throw new Error('Invalid NPC economy checkpoint');
+  }
+  const known = new Set(npcs.map((npc) => npc.id));
+  if (
+    known.size !== npcs.length ||
+    new Set(checkpoint.npcIds).size !== checkpoint.npcIds.length ||
+    checkpoint.npcIds.some((id) => !known.has(id))
+  ) {
+    throw new Error('NPC economy checkpoint identity mismatch');
+  }
+}
 
+function initializeNpcEconomy(
+  npcs: readonly NpcEconomyState[],
+  markets: EconomyMarketService,
+  positions: Readonly<Record<string, EconomyPoint>>
+): void {
   for (const npc of npcs) {
     initializeNpcMarketIntel(npc, markets, positions, 0);
     if ('smuggler' in npc && npc.smuggler) {
@@ -334,6 +353,43 @@ export function createNpcEconomyService(
       sectorNpc.workRiskPreference = personality.riskTolerance >= 0.55 ? 'risky' : 'safe';
     }
   }
+}
+
+function processNpcEconomyDay(
+  npc: NpcEconomyState,
+  current: number,
+  markets: EconomyMarketService,
+  allocator: PhysicalResourceAllocator,
+  options: NpcEconomyServiceOptions
+): void {
+  if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) return;
+  // Security drones and prisoners do not accrue regular ship operating expenses.
+  if (
+    npc.id.startsWith('security-drone:') ||
+    ('activity' in npc && typeof npc.activity === 'string' && npc.activity.startsWith('Straflager'))
+  ) {
+    return;
+  }
+  if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
+  if (options.travel?.isTravelling(npc)) return;
+  observeNpcMarket(npc, markets, npc.locationId, current);
+  if ((npc.role === 'miner' || npc.role === 'salvager') && !options.isManaged?.(npc)) {
+    abstractWorkerDay(npc, allocator, current, options);
+  }
+}
+
+export function createNpcEconomyService(
+  markets: EconomyMarketService,
+  allocator: PhysicalResourceAllocator,
+  resources: readonly EconomyResourceDefinition[],
+  npcs: readonly NpcEconomyState[],
+  options: NpcEconomyServiceOptions = {},
+  checkpoint?: NpcEconomyCheckpoint
+): NpcEconomyService {
+  if (checkpoint) validateNpcEconomyCheckpoint(checkpoint, npcs);
+  let lastDay = checkpoint?.lastDay ?? -1;
+  const positions = options.positions ?? {};
+  if (!checkpoint) initializeNpcEconomy(npcs, markets, positions);
 
   const advanceDay = (day: number): void => {
     const target = Math.max(0, Math.floor(day));
@@ -341,29 +397,20 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
-        if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
-        // Directorate security drones are public infrastructure, not commercial
-        // vessels. Prisoners do not accrue normal ship operating expenses.
-        if (
-          npc.id.startsWith('security-drone:') ||
-          ('activity' in npc &&
-            typeof npc.activity === 'string' &&
-            npc.activity.startsWith('Straflager'))
-        )
-          continue;
-        // Wages and insurance are due whether docked or travelling.
-        if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
-        if (options.travel?.isTravelling(npc)) continue;
-        observeNpcMarket(npc, markets, npc.locationId, current);
-        if ((npc.role === 'miner' || npc.role === 'salvager') && !options.isManaged?.(npc)) {
-          abstractWorkerDay(npc, allocator, current, options);
-        }
+        processNpcEconomyDay(npc, current, markets, allocator, options);
       }
     }
     lastDay = target;
   };
 
   return {
+    exportState() {
+      return {
+        version: 1,
+        lastDay,
+        npcIds: npcs.map((npc) => npc.id),
+      };
+    },
     npcs,
     mineLocal(npc, resourceId, requestedQuantity) {
       beginNpcAutonomyPhase(npc, 'working', 0);

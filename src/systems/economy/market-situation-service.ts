@@ -82,7 +82,14 @@ function validTemplateResources(
   return template.resourceIds.filter((resourceId) => known.has(resourceId));
 }
 
+export interface MarketSituationCheckpoint {
+  readonly version: 1;
+  readonly currentDay: number;
+  readonly situations: readonly MarketSituation[];
+}
+
 export interface MarketSituationService {
+  exportState(): MarketSituationCheckpoint;
   readonly currentDay: number;
   active(): readonly MarketSituation[];
   modifier(locationId: string, resourceId: EconomyResourceId): number;
@@ -91,13 +98,100 @@ export interface MarketSituationService {
   advanceNextDay(): void;
 }
 
+function validSituationIdentity(
+  situation: MarketSituation,
+  ports: ReadonlySet<string>,
+  seen: ReadonlySet<string>
+): boolean {
+  return (
+    typeof situation.id === 'string' &&
+    situation.id.length > 0 &&
+    !seen.has(situation.id) &&
+    typeof situation.name === 'string' &&
+    typeof situation.description === 'string' &&
+    (situation.scope === 'local' || situation.scope === 'sector') &&
+    (situation.scope !== 'local' ||
+      (typeof situation.locationId === 'string' && ports.has(situation.locationId))) &&
+    (situation.scope !== 'sector' || situation.locationId === undefined)
+  );
+}
+
+function validSituationPeriod(situation: MarketSituation, currentDay: number): boolean {
+  return (
+    Number.isSafeInteger(situation.startDay) &&
+    situation.startDay >= 0 &&
+    Number.isSafeInteger(situation.endDay) &&
+    situation.endDay > situation.startDay &&
+    situation.startDay <= currentDay &&
+    situation.endDay > currentDay
+  );
+}
+
+function validSituationModifiers(
+  situation: MarketSituation,
+  resourceIds: ReadonlySet<string>
+): boolean {
+  if (
+    !situation.resourceModifiers ||
+    Array.isArray(situation.resourceModifiers) ||
+    typeof situation.resourceModifiers !== 'object'
+  ) {
+    return false;
+  }
+  return Object.entries(situation.resourceModifiers).every(
+    ([resourceId, modifier]) =>
+      resourceIds.has(resourceId) &&
+      typeof modifier === 'number' &&
+      Number.isFinite(modifier) &&
+      modifier >= -1 &&
+      modifier <= 1
+  );
+}
+
+function stageMarketSituations(
+  checkpoint: MarketSituationCheckpoint,
+  ports: readonly PortDefinition[],
+  resources: readonly EconomyResourceDefinition[]
+): MarketSituation[] {
+  if (
+    checkpoint.version !== 1 ||
+    !Number.isSafeInteger(checkpoint.currentDay) ||
+    checkpoint.currentDay < -1 ||
+    !Array.isArray(checkpoint.situations) ||
+    checkpoint.situations.length > 5
+  ) {
+    throw new Error('Invalid market situation checkpoint');
+  }
+  const portIds = new Set(ports.map((port) => port.locationId));
+  const resourceIds = new Set(resources.map((resource) => resource.id));
+  const seen = new Set<string>();
+  return checkpoint.situations.map((situation) => {
+    if (
+      !situation ||
+      !validSituationIdentity(situation, portIds, seen) ||
+      !validSituationPeriod(situation, checkpoint.currentDay) ||
+      !validSituationModifiers(situation, resourceIds)
+    ) {
+      throw new Error('Invalid saved market situation');
+    }
+    seen.add(situation.id);
+    return { ...situation, resourceModifiers: { ...situation.resourceModifiers } };
+  });
+}
+
 export function createMarketSituationService(
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
-  seed = 1
+  seed = 1,
+  checkpoint?: MarketSituationCheckpoint
 ): MarketSituationService {
   const situations: MarketSituation[] = [];
   let currentDay = -1;
+
+  if (checkpoint) {
+    situations.push(...stageMarketSituations(checkpoint, ports, resources));
+    currentDay = checkpoint.currentDay;
+  }
 
   const expire = (): void => {
     for (let index = situations.length - 1; index >= 0; index -= 1) {
@@ -146,6 +240,16 @@ export function createMarketSituationService(
   };
 
   return {
+    exportState() {
+      return {
+        version: 1,
+        currentDay,
+        situations: situations.map((situation) => ({
+          ...situation,
+          resourceModifiers: { ...situation.resourceModifiers },
+        })),
+      };
+    },
     get currentDay() {
       return currentDay;
     },
