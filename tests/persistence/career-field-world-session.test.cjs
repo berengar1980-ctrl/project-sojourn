@@ -10,6 +10,10 @@ const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { AsteroidFieldWorld } = load('src/systems/operations/asteroid-field-world.ts');
 const { createNpcLocalMiningService } = load('src/systems/npcs/npc-local-mining-service.ts');
+const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-registry.ts');
+const { captureCareerFieldLegalSession, stageCareerFieldLegalSession } = load(
+  'src/systems/persistence/career-field-legal-session.ts'
+);
 
 const factory = (location, instance, checkpoint) =>
   createNpcLocalMiningService(
@@ -56,4 +60,31 @@ assert.throws(
   /locations mismatch/
 );
 assert.deepEqual(first.exportState(), saved, 'failed staging must not mutate previous world');
+
+const originalField = first.field(fieldId);
+const rock = originalField.instance.asteroids.find((item) => item.kind === 'resource');
+assert(rock);
+const deposit = rock.deposits.find((item) => item.oreRemaining > 1);
+assert(deposit);
+deposit.oreRemaining -= 1;
+const legal = new SectorLegalRegistry();
+const complete = captureCareerFieldLegalSession(first, firstClaims, legal);
+const fullRestore = stageCareerFieldLegalSession(
+  JSON.parse(JSON.stringify(complete)),
+  narrowsSector.locations,
+  factory,
+  []
+);
+assert.deepEqual(
+  captureCareerFieldLegalSession(fullRestore.fields, fullRestore.claims, fullRestore.legal),
+  complete
+);
+const restoredRock = fullRestore.fields.field(fieldId).instance.asteroids.find(
+  (item) => item.id === rock.id
+);
+assert.equal(
+  restoredRock.deposits.find((item) => item.resourceId === deposit.resourceId).oreRemaining,
+  deposit.oreRemaining,
+  'mined ore must not reappear after restore'
+);
 console.log('PASS local field session: all fields staged, miner/drone/pirate state isolated');
