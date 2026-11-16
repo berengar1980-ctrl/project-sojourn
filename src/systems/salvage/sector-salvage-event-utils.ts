@@ -1,7 +1,4 @@
-import type {
-  DistressActionResult,
-  SectorSalvageEvent,
-} from '../../core/salvage-types';
+import type { DistressActionResult, SectorSalvageEvent } from '../../core/salvage-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
 
 export function randomFrom(seed: number): () => number {
@@ -21,7 +18,11 @@ export function clampPoint(world: WorldMap, point: WorldPoint): WorldPoint {
   };
 }
 
-export function eventPosition(world: WorldMap, origin: WorldPoint, random: () => number): WorldPoint {
+export function eventPosition(
+  world: WorldMap,
+  origin: WorldPoint,
+  random: () => number
+): WorldPoint {
   const angle = random() * Math.PI * 2;
   const distance = 520 + random() * 980;
   return clampPoint(world, {
@@ -34,7 +35,10 @@ export function cloneEvent(event: SectorSalvageEvent): SectorSalvageEvent {
   return { ...event, position: { ...event.position } };
 }
 
-export function nearestTowFacility(world: WorldMap, event: SectorSalvageEvent): WorldLocation | null {
+export function nearestTowFacility(
+  world: WorldMap,
+  event: SectorSalvageEvent
+): WorldLocation | null {
   return (
     world.locations
       .filter(
@@ -63,4 +67,3 @@ export function emptyResult(text: string, success = false): DistressActionResult
     workHours: 0,
   };
 }
-
