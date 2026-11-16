@@ -1,6 +1,7 @@
 import type { EconomyResourceDefinition, PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { PortDefinition } from '../../core/port-types';
+import type { EconomyMarketService } from '../economy/market-service';
 import type { WorldMap } from '../../core/world-types';
 import {
   captureCareerEconomySession,
@@ -56,7 +57,7 @@ export function stageCareerNpcEconomySession(
   world: WorldMap,
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
-  player: PlayerEconomyState,
+  player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   seed: number,
   options: NpcEconomyServiceOptions = {}
 ): StagedCareerNpcEconomySession {
