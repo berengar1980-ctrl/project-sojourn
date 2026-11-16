@@ -30,6 +30,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
+import { captureControllerCareer } from './game-controller-career-capture';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
@@ -405,13 +406,15 @@ export function createGameController(options: GameControllerOptions): GameContro
   if (saved && saved.navigationWorld.navigation !== options.navigation) {
     throw new Error('Career navigation must use the staged navigation authority');
   }
+  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
+    throw new Error('Career ship must match the staged active ship');
+  }
   const systemLog = createControllerLog();
   const economy = saved
     ? controllerEconomyFromCareer(saved, (message) => systemLog.write(message))
     : createControllerEconomy(options.navigation, (message) => systemLog.write(message));
   if (!saved) economy.smuggling.activateShip(options.ship.id);
   const state = createInitialControllerState(options, economy);
-  if (saved) state.shipOwnership = saved.commerce.ships.ownership;
 
   const crew = saved?.crew ?? createCrewRosterService(state.playerProfile);
   const loadouts = saved?.commerce.ships.loadouts ?? createShipLoadoutService();
@@ -478,6 +481,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
+    careerSnapshot: () => captureControllerCareer(context),
     tick(deltaSeconds) {
       tickController(context, deltaSeconds);
     },
