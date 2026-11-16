@@ -4,7 +4,11 @@ import type {
   CampaignSnapshot,
 } from '../../core/campaign-types';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
-import { createPlayerProfile, snapshotPlayerProfile, type PlayerProfile } from '../../core/player-profile';
+import {
+  createPlayerProfile,
+  snapshotPlayerProfile,
+  type PlayerProfile,
+} from '../../core/player-profile';
 import type { PortDefinition } from '../../core/port-types';
 import type { WorldMap } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -329,7 +333,16 @@ export function stageCareerFullSession(
     commerce.ships.activeShipId
   );
   for (const id of custody.prisoners) prisoners.add(id);
-  const prepared = { profile, navigationWorld, commerce, society, crew, operations, fieldsLegal, custody };
+  const prepared = {
+    profile,
+    navigationWorld,
+    commerce,
+    society,
+    crew,
+    operations,
+    fieldsLegal,
+    custody,
+  };
   const campaigns = stageCareerCampaigns(
     section<CampaignSnapshot>(sections.campaigns),
     deps.campaignDefinitions,

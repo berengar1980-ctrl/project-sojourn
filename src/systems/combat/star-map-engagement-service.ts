@@ -56,7 +56,6 @@ interface BackgroundCombat {
   readonly combat: StrategicCombatService;
 }
 
-
 interface EngagementRuntime {
   readonly options: StarMapEngagementOptions;
   playerChase: ChaseRecord | null;

@@ -418,8 +418,8 @@ export function createGameController(options: GameControllerOptions): GameContro
 
   const crew = saved?.crew ?? createCrewRosterService(state.playerProfile);
   const loadouts = saved?.commerce.ships.loadouts ?? createShipLoadoutService();
-  const shipOperations = saved?.commerce.ships.operating ??
-    createShipOperatingService(economy.trade);
+  const shipOperations =
+    saved?.commerce.ships.operating ?? createShipOperatingService(economy.trade);
   const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   let engagementWorld: () => WorldMap = () => narrowsSector;
@@ -478,11 +478,12 @@ export function createGameController(options: GameControllerOptions): GameContro
   registerSectorShips(context);
   if (saved) bindCareerFieldWorld(context, saved.fieldsLegal.fields);
   fieldWorldFor(context);
-  if (!saved) economy.salvageEvents.advanceDay(
-    economy.situations.currentDay,
-    options.navigation.getSnapshot().currentPosition,
-    state.activeShip.role === 'salvage'
-  );
+  if (!saved)
+    economy.salvageEvents.advanceDay(
+      economy.situations.currentDay,
+      options.navigation.getSnapshot().currentPosition,
+      state.activeShip.role === 'salvage'
+    );
   const menu = createSettingsMenu(context.audio, options.onReturnToMainMenu, state.playerProfile);
   mountControllerStarMap(context);
   return {
