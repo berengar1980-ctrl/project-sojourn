@@ -1,4 +1,4 @@
-name: Career browser resume and live controller diagnostics
+name: Career browser resume controller integration diagnostics (second pass)
 
 on:
   push:
