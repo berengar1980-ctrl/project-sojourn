@@ -1,7 +1,7 @@
 import type { EconomyResourceDefinition } from '../../core/economy-types';
 import type { PortDefinition } from '../../core/port-types';
 import type { WorldMap } from '../../core/world-types';
-import type { NpcEconomyServiceOptions } from '../economy/npc-economy-types';
+import type { CareerEconomyOptions } from '../economy/career-economy-session';
 import {
   stageCareerPlayerShipSession,
   type CareerPlayerShipCheckpoint,
@@ -35,7 +35,7 @@ export function stageCareerCommerceShipSession(
   resources: readonly EconomyResourceDefinition[],
   seed: number,
   starterShipId: string,
-  options: NpcEconomyServiceOptions = {}
+  options: CareerEconomyOptions = {}
 ): StagedCareerCommerceShipSession {
   if (
     !checkpoint ||
