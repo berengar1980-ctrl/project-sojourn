@@ -34,8 +34,14 @@ for (const title of [
   assert(menu.includes(title), 'missing menu entry: ' + title);
 assert(menu.includes("action: 'campaigns'"), 'campaign manager must be available');
 assert(menu.includes("action: hasCareerSave ? 'continue' : undefined"));
-assert(bootstrap.includes('prepareControllerCareer'), 'saved game must stage before controller launch');
-assert(bootstrap.includes('onCareerContextReady'), 'saved campaign actions must bind after staging');
+assert(
+  bootstrap.includes('prepareControllerCareer'),
+  'saved game must stage before controller launch'
+);
+assert(
+  bootstrap.includes('onCareerContextReady'),
+  'saved campaign actions must bind after staging'
+);
 assert(menu.includes('button.disabled = !entry.action'), 'unimplemented features remain disabled');
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
 assert(duel.includes('getAllShipDefinitions'), 'both players can select real ships');
