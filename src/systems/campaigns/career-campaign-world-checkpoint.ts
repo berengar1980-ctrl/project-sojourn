@@ -34,8 +34,8 @@ export function stageCareerCampaignWorldCheckpoint(
   }
   const snapshot = saved.snapshot;
   if (
-    Object.values(snapshot.locations).some((entries) => !Array.isArray(entries)) ||
-    Object.values(snapshot.systems).some((entries) => !Array.isArray(entries))
+    Object.values(snapshot.locations as Record<string, unknown>).some((entries) => !Array.isArray(entries)) ||
+    Object.values(snapshot.systems as Record<string, unknown>).some((entries) => !Array.isArray(entries))
   ) {
     throw new Error('Invalid saved campaign world additions');
   }
