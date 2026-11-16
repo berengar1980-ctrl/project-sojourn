@@ -72,7 +72,8 @@ export function stageCareerNpcEconomySession(
     player,
     npcs,
     seed,
-    options
+    options,
+    new Set(world.locations.map((location) => location.id))
   );
   return { npcs, economy };
 }
