@@ -178,26 +178,16 @@ function validateCrewShips(
   }
 }
 
-/**
- * Restore the 14 canonical save sections against one isolated dependency
- * graph. It cannot update or replace a live game until the caller commits it.
- */
-export function stageCareerFullSession(
-  candidate: CareerSnapshot,
-  deps: CareerFullSessionDependencies
-): StagedFullCareerSession {
-  const { sections } = validateCareerSnapshot(candidate);
-  const savedPlayer = section<CareerPlayerDomainCheckpoint>(sections.player);
-  if (!savedPlayer || savedPlayer.version !== 1) {
-    throw new Error('Invalid career player domain');
-  }
-  const navigationWorld = stageCareerNavigationWorld(
-    deps.baseWorld,
-    section<NavigationCheckpoint>(sections.navigation),
-    section<CareerCampaignWorldCheckpoint>(sections.world),
-    deps.initialCruiseSpeed
-  );
-  const prisoners = new Set<string>();
+function stageCareerCommerceOperations(
+  sections: CareerSnapshot['sections'],
+  savedPlayer: CareerPlayerDomainCheckpoint,
+  deps: CareerFullSessionDependencies,
+  navigationWorld: StagedCareerNavigationWorld,
+  prisoners: ReadonlySet<string>
+): {
+  readonly commerce: StagedCareerCommerceShipSession;
+  readonly operations: StagedCareerOperationsSession;
+} {
   const pendingOperations: { current: StagedCareerOperationsSession | null } = {
     current: null,
   };
@@ -269,6 +259,32 @@ export function stageCareerFullSession(
   );
   const operations = pendingOperations.current;
   if (!operations) throw new Error('Missing staged career operations');
+  return { commerce, operations };
+}
+
+/**
+ * Restore the 14 canonical save sections against one isolated dependency
+ * graph. It cannot update or replace a live game until the caller commits it.
+ */
+export function stageCareerFullSession(
+  candidate: CareerSnapshot,
+  deps: CareerFullSessionDependencies
+): StagedFullCareerSession {
+  const { sections } = validateCareerSnapshot(candidate);
+  const savedPlayer = section<CareerPlayerDomainCheckpoint>(sections.player);
+  if (!savedPlayer || savedPlayer.version !== 1) {
+    throw new Error('Invalid career player domain');
+  }
+  const navigationWorld = stageCareerNavigationWorld(
+    deps.baseWorld,
+    section<NavigationCheckpoint>(sections.navigation),
+    section<CareerCampaignWorldCheckpoint>(sections.world),
+    deps.initialCruiseSpeed
+  );
+  const prisoners = new Set<string>();
+  const { commerce, operations } = stageCareerCommerceOperations(
+    sections, savedPlayer, deps, navigationWorld, prisoners
+  );
   const society = stageCareerPlayerSociety(
     savedPlayer.society,
     commerce.commerce.trade.player,
