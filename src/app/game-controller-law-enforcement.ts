@@ -44,7 +44,7 @@ export function stageControllerCustody(
   context: ControllerRuntimeContext,
   checkpoint: CareerCustodyCheckpoint
 ): void {
-  if (detentions.has(context) || context.economy.npcPrisoners.size !== 0) {
+  if (detentions.has(context)) {
     throw new Error('Custody can only be restored into a new controller');
   }
   const prepared = stageCareerCustody(
@@ -53,6 +53,13 @@ export function stageControllerCustody(
     context.economy.sectorNpcs.npcs,
     context.state.activeShip.id
   );
+  if (
+    context.economy.npcPrisoners.size !== 0 &&
+    (context.economy.npcPrisoners.size !== prepared.prisoners.size ||
+      [...context.economy.npcPrisoners].some((id) => !prepared.prisoners.has(id)))
+  ) {
+    throw new Error('Restored NPC custody identity mismatch');
+  }
   for (const id of prepared.prisoners) context.economy.npcPrisoners.add(id);
   if (prepared.player) {
     detentions.set(context, { ...prepared.player, panel: null });
