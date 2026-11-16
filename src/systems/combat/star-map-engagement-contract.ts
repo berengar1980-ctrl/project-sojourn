@@ -1,0 +1,43 @@
+import type { SectorNpcState } from '../../core/npc-types';
+import type { BoardingOutcome } from '../../core/boarding-types';
+import type { ShipDefinition } from '../../core/ship-types';
+import type { WorldMap } from '../../core/world-types';
+import type { NavigationService } from '../navigation';
+import type { NpcSectorService } from '../npcs/npc-sector-service';
+import type {
+  StrategicCombatService,
+  StrategicCombatantSetup,
+  StrategicCombatArenaOptions,
+} from './strategic-combat-service';
+
+export interface StarMapEngagementService {
+  attackNpc(npcId: string): boolean;
+  engageNpcNow(npcId: string): boolean;
+  engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
+  engageNpcsInArena(
+    attackerId: string,
+    defenderId: string,
+    arena: StrategicCombatArenaOptions
+  ): boolean;
+  syncPlayerPursuitTarget(): void;
+  tick(deltaSeconds: number): void;
+  activePlayerCombat(): StrategicCombatService | null;
+  activePlayerEnemy(): SectorNpcState | null;
+  finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
+  restorePlayerCareerCombat(combat: StrategicCombatService, enemyId: string): void;
+}
+
+export interface StarMapEngagementOptions {
+  readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
+  readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
+  readonly onPlayerAttack?: (npc: SectorNpcState) => void;
+  readonly onPlayerVictory?: (id: string) => void;
+  readonly navigation: NavigationService;
+  readonly world?: () => WorldMap;
+  readonly isPlayerInCampaignSystem?: () => boolean;
+  readonly playerProtectedFromPirate?: (npc: SectorNpcState) => boolean;
+  readonly sectorNpcs: NpcSectorService;
+  readonly getPlayerShip: () => ShipDefinition;
+  readonly getPlayerCombatant: () => StrategicCombatantSetup;
+  readonly log: (message: string) => void;
+}
