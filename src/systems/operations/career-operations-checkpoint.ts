@@ -30,34 +30,40 @@ function count(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-function validBlockadeOrder(value: unknown, options: BlockadeOptions): boolean {
-  if (!record(value) || !Array.isArray(value.pirateIds)) return false;
-  const pirates = options.sector.npcs.filter((npc) => value.pirateIds.includes(npc.id));
-  if (
-    typeof value.id !== 'string' ||
-    !value.id ||
-    typeof value.ownerId !== 'string' ||
-    !value.ownerId ||
-    !options.markets.getEntry(value.locationId as string, value.resourceId as string) ||
-    !count(value.duration) ||
-    !count(value.fee) ||
-    !count(value.orderedDay) ||
-    !count(value.removedStock) ||
-    !['assembling', 'active', 'completed', 'defeated', 'cancelled'].includes(value.phase as string)
-  ) {
-    return false;
-  }
-  if (value.startedDay !== null && !count(value.startedDay)) return false;
-  if (value.startPrice !== null && !count(value.startPrice)) return false;
+function validBlockadeFields(value: Record<string, unknown>, options: BlockadeOptions): boolean {
   return (
-    value.pirateIds.length > 0 &&
-    value.pirateIds.length <= 3 &&
-    new Set(value.pirateIds).size === value.pirateIds.length &&
-    pirates.length === value.pirateIds.length &&
+    typeof value.id === 'string' &&
+    value.id.length > 0 &&
+    typeof value.ownerId === 'string' &&
+    value.ownerId.length > 0 &&
+    !!options.markets.getEntry(value.locationId as string, value.resourceId as string) &&
+    count(value.duration) &&
+    count(value.fee) &&
+    count(value.orderedDay) &&
+    count(value.removedStock) &&
+    ['assembling', 'active', 'completed', 'defeated', 'cancelled'].includes(value.phase as string) &&
+    (value.startedDay === null || count(value.startedDay)) &&
+    (value.startPrice === null || count(value.startPrice))
+  );
+}
+
+function validBlockadePirates(value: Record<string, unknown>, options: BlockadeOptions): boolean {
+  if (!Array.isArray(value.pirateIds)) return false;
+  const ids = value.pirateIds as string[];
+  const pirates = options.sector.npcs.filter((npc) => ids.includes(npc.id));
+  return (
+    ids.length > 0 &&
+    ids.length <= 3 &&
+    new Set(ids).size === ids.length &&
+    pirates.length === ids.length &&
     pirates.every((npc) => npc.pirate) &&
     (value.ownerId === 'player' ||
       options.sector.npcs.some((npc) => npc.id === value.ownerId))
   );
+}
+
+function validBlockadeOrder(value: unknown, options: BlockadeOptions): boolean {
+  return record(value) && validBlockadeFields(value, options) && validBlockadePirates(value, options);
 }
 
 /** Keep orders and recorded stock losses without charging owners or raiding again. */
