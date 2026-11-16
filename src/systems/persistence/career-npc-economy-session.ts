@@ -9,7 +9,7 @@ import {
   type CareerEconomySessionCheckpoint,
   type StagedCareerEconomySession,
 } from '../economy/career-economy-session';
-import type { NpcEconomyServiceOptions } from '../economy/npc-economy-types';
+import type { CareerEconomyOptions } from '../economy/career-economy-session';
 import {
   captureCareerNpcs,
   stageCareerNpcs,
@@ -59,7 +59,7 @@ export function stageCareerNpcEconomySession(
   resources: readonly EconomyResourceDefinition[],
   player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   seed: number,
-  options: NpcEconomyServiceOptions = {}
+  options: CareerEconomyOptions = {}
 ): StagedCareerNpcEconomySession {
   if (!checkpoint || checkpoint.version !== 1 || !checkpoint.npcs || !checkpoint.economy) {
     throw new Error('Invalid combined NPC economy checkpoint');
