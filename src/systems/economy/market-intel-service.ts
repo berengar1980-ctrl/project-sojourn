@@ -58,10 +58,7 @@ function distance(first: WorldPoint, second: WorldPoint): number {
 
 type MarketHistory = Map<number, Map<string, readonly HistoricalMarketEntry[]>>;
 
-function assertMarketEntry(
-  entry: HistoricalMarketEntry,
-  resourceIds: ReadonlySet<string>
-): void {
+function assertMarketEntry(entry: HistoricalMarketEntry, resourceIds: ReadonlySet<string>): void {
   if (
     !entry ||
     !resourceIds.has(entry.resourceId) ||
@@ -118,7 +115,10 @@ function stageHistoricalLocations(
       if (seen.has(entry.resourceId)) throw new Error('Duplicate historical resource');
       seen.add(entry.resourceId);
     }
-    result.set(location.locationId, location.entries.map((entry) => ({ ...entry })));
+    result.set(
+      location.locationId,
+      location.entries.map((entry) => ({ ...entry }))
+    );
   }
   return result;
 }
