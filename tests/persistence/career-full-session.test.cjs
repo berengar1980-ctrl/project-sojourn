@@ -25,6 +25,17 @@ const { createSectorSalvageEventService } = load(
   'src/systems/salvage/sector-salvage-event-service.ts'
 );
 const { createPlayerTradeService } = load('src/systems/economy/player-trade-service.ts');
+const { createTradeCharterService } = load(
+  'src/systems/economy/trade-charter-service.ts'
+);
+const { createSmugglingService } = load('src/systems/economy/smuggling-service.ts');
+const { createFactionReputationService } = load(
+  'src/systems/reputation/faction-reputation-service.ts'
+);
+const { factionDefinitions } = load('src/data/factions/faction-manifest.ts');
+const { captureCareerPlayerSociety } = load(
+  'src/systems/persistence/career-player-society.ts'
+);
 const { createShipOwnershipService } = load('src/systems/ships/ship-ownership-service.ts');
 const { createShipLoadoutService } = load('src/systems/ships/ship-loadout-service.ts');
 const { createShipComponentInventoryService } = load(
@@ -86,6 +97,12 @@ loadouts.get(ship);
 const inventory = createShipComponentInventoryService(trade.player);
 const research = createShipyardResearchService();
 const operating = createShipOperatingService(trade);
+const factionIds = factionDefinitions.map((definition) => definition.id);
+const society = captureCareerPlayerSociety({
+  charter: createTradeCharterService(trade.player),
+  smuggling: createSmugglingService(trade.player, []),
+  reputation: createFactionReputationService(factionIds),
+});
 const ships = captureCareerPlayerShipSession(
   trade.player, ship.id, ownership, loadouts, inventory, research, operating
 );
@@ -131,7 +148,7 @@ const snapshot = {
   version: 1,
   sections: {
     navigation: nav.exportState(),
-    player: ships.player,
+    player: { version: 1, player: ships.player, society },
     ships,
     crew: crew.exportState(),
     economy,
@@ -150,6 +167,7 @@ const options = {
   baseWorld: world,
   ports: sectorPorts,
   resources: economyResources,
+  factionIds,
   economySeed: seed,
   starterShipId: ship.id,
   profile,
