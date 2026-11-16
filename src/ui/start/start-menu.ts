@@ -39,7 +39,10 @@ export function createStartMenu(
       label: 'Karriere fortsetzen',
       ...(hasCareerSave ? { action: 'continue' as const } : {}),
     },
-    { label: 'Spiel laden', ...(hasCareerSave ? { action: 'load' as const } : {}) },
+    {
+      label: 'Spiel laden',
+      ...(hasCareerSave ? { action: 'load' as const } : {}),
+    },
     { label: 'Optionen', action: 'options' },
     { label: 'Beenden', action: 'quit' },
   ];
