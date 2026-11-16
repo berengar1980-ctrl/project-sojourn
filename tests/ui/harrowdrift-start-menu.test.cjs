@@ -33,7 +33,7 @@ for (const title of [
 ])
   assert(menu.includes(title), 'missing menu entry: ' + title);
 assert(menu.includes("action: 'campaigns'"), 'campaign manager must be available');
-assert(menu.includes("action: hasCareerSave ? 'continue' : undefined"));
+assert(menu.includes("hasCareerSave ? { action: 'continue' as const } : {}"));
 assert(
   bootstrap.includes('prepareControllerCareer'),
   'saved game must stage before controller launch'
