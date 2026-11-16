@@ -24,5 +24,18 @@ export function handleControllerLocationEntry(
       economy.salvageEvents.acceptForPlayer(currentLocationId!);
     }
     runSceneZoomTransition(context.root, mountSalvage);
+    return;
+  }
+  // A live distress/salvage event may expire or be resolved by an NPC en route.
+  // Arriving at its former coordinates must never fail without feedback.
+  if (
+    state.mode === 'star-map' &&
+    state.previousLocationId !== currentLocationId &&
+    (currentLocationId?.startsWith('salvage-distress-') ||
+      currentLocationId?.startsWith('salvage-special-'))
+  ) {
+    context.systemLog.write(
+      'SIGNAL > KONTAKT ERLOSCHEN · NOTFALL BEHOBEN ODER BEREITS GEBORGEN'
+    );
   }
 }
