@@ -56,6 +56,52 @@
       "reason": "Composes authoritative offscreen asteroid field NPC services with depleted ore, claims, law and security patrols.",
       "checkpoint": "src/systems/persistence/career-field-legal-session.ts",
       "test": "tests/persistence/career-field-world-session.test.cjs"
+    },
+    "src/systems/salvage/career-salvage-events-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Preserves salvage mission reward receipts, spawn schedule, resolved events and deterministic random continuation.",
+      "checkpoint": "src/systems/salvage/career-salvage-events-checkpoint.ts",
+      "test": "tests/persistence/career-salvage-events.test.cjs"
+    },
+    "src/systems/persistence/career-navigation-world-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes saved navigation against the same campaign world overlay revision and remote system identity.",
+      "checkpoint": "src/systems/persistence/career-navigation-world-session.ts",
+      "test": "tests/persistence/career-campaign-world.test.cjs"
+    },
+    "src/systems/campaigns/career-campaign-world-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Validates versioned dynamic campaign world overlay, active foreign system and saved home return position.",
+      "checkpoint": "src/systems/campaigns/career-campaign-world-checkpoint.ts",
+      "test": "tests/persistence/career-campaign-world.test.cjs"
+    },
+    "src/systems/operations/career-operations-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Captures ongoing blockade and patrol contracts with idempotent costs and paid reward receipts.",
+      "checkpoint": "src/systems/operations/career-operations-checkpoint.ts",
+      "test": "tests/persistence/career-operations-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-operations-session.ts": {
+      "mode": "persisted",
+      "reason": "Stages NPC population, patrol, blockade and salvage authorities against shared NPCs and markets.",
+      "checkpoint": "src/systems/persistence/career-operations-session.ts",
+      "test": "tests/persistence/career-full-session.test.cjs"
+    },
+    "src/systems/persistence/career-custody-checkpoint.ts": {
+      "mode": "persisted",
+      "reason": "Preserves prisoner identities and player labor/hauling credits against restored legal warrants.",
+      "checkpoint": "src/systems/persistence/career-custody-checkpoint.ts",
+      "test": "tests/persistence/career-custody-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-full-session.ts": {
+      "mode": "persisted",
+      "reason": "Captures and stages all fourteen canonical Career Save authorities and cross-domain references.",
+      "checkpoint": "src/systems/persistence/career-full-session.ts",
+      "test": "tests/persistence/career-full-session.test.cjs"
+    },
+    "src/systems/persistence/career-session-manager.ts": {
+      "mode": "derived",
+      "reason": "Stateless orchestration of versioned browser save storage and atomic session pointer replacement."
     }
   }
 }
