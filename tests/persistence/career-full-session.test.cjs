@@ -57,6 +57,12 @@ const { captureCareerCustody } = load('src/systems/persistence/career-custody-ch
 const { stageCareerFullSession, captureCareerFullSession } = load(
   'src/systems/persistence/career-full-session.ts'
 );
+const { createCareerSessionManager } = load(
+  'src/systems/persistence/career-session-manager.ts'
+);
+const { createCareerSaveStore, CAREER_SAVE_STORAGE_KEY } = load(
+  'src/systems/persistence/career-save-store.ts'
+);
 const { createCareerSessionSlot } = load(
   'src/systems/persistence/career-session-transaction.ts'
 );
@@ -170,5 +176,23 @@ const damaged = JSON.parse(JSON.stringify(snapshot));
 damaged.sections.operations.population.fundCredits = -1;
 assert.throws(() => stageCareerFullSession(damaged, options));
 assert.strictEqual(slot.current(), staged, 'failed restore cannot partially replace career');
+const browserData = new Map();
+const store = createCareerSaveStore({
+  getItem: (key) => browserData.get(key) ?? null,
+  setItem: (key, value) => browserData.set(key, value),
+});
+const manager = createCareerSessionManager(staged, world, options, store);
+manager.save();
+const beforeLoad = manager.current();
+const loaded = manager.load();
+assert.equal(loaded.ok, true);
+assert.strictEqual(loaded.previous, beforeLoad);
+assert.notStrictEqual(manager.current(), beforeLoad);
+const afterLoad = manager.current();
+browserData.set(CAREER_SAVE_STORAGE_KEY, '{invalid');
+const invalidRead = manager.load();
+assert.equal(invalidRead.ok, false);
+assert.strictEqual(manager.current(), afterLoad);
+afterLoad.campaigns.campaigns.destroy();
 staged.campaigns.campaigns.destroy();
 console.log('PASS full Career Save: all 14 domains staged on shared authorities, atomic install');
