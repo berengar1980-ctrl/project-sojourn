@@ -98,6 +98,56 @@ export interface MarketSituationService {
   advanceNextDay(): void;
 }
 
+function validSituationIdentity(
+  situation: MarketSituation,
+  ports: ReadonlySet<string>,
+  seen: ReadonlySet<string>
+): boolean {
+  return (
+    typeof situation.id === 'string' &&
+    situation.id.length > 0 &&
+    !seen.has(situation.id) &&
+    typeof situation.name === 'string' &&
+    typeof situation.description === 'string' &&
+    (situation.scope === 'local' || situation.scope === 'sector') &&
+    (situation.scope !== 'local' ||
+      (typeof situation.locationId === 'string' && ports.has(situation.locationId))) &&
+    (situation.scope !== 'sector' || situation.locationId === undefined)
+  );
+}
+
+function validSituationPeriod(situation: MarketSituation, currentDay: number): boolean {
+  return (
+    Number.isSafeInteger(situation.startDay) &&
+    situation.startDay >= 0 &&
+    Number.isSafeInteger(situation.endDay) &&
+    situation.endDay > situation.startDay &&
+    situation.startDay <= currentDay &&
+    situation.endDay > currentDay
+  );
+}
+
+function validSituationModifiers(
+  situation: MarketSituation,
+  resourceIds: ReadonlySet<string>
+): boolean {
+  if (
+    !situation.resourceModifiers ||
+    Array.isArray(situation.resourceModifiers) ||
+    typeof situation.resourceModifiers !== 'object'
+  ) {
+    return false;
+  }
+  return Object.entries(situation.resourceModifiers).every(
+    ([resourceId, modifier]) =>
+      resourceIds.has(resourceId) &&
+      typeof modifier === 'number' &&
+      Number.isFinite(modifier) &&
+      modifier >= -1 &&
+      modifier <= 1
+  );
+}
+
 function stageMarketSituations(
   checkpoint: MarketSituationCheckpoint,
   ports: readonly PortDefinition[],
@@ -118,39 +168,13 @@ function stageMarketSituations(
   return checkpoint.situations.map((situation) => {
     if (
       !situation ||
-      typeof situation.id !== 'string' ||
-      !situation.id ||
-      seen.has(situation.id) ||
-      typeof situation.name !== 'string' ||
-      typeof situation.description !== 'string' ||
-      (situation.scope !== 'local' && situation.scope !== 'sector') ||
-      (situation.scope === 'local' &&
-        (!situation.locationId || !portIds.has(situation.locationId))) ||
-      (situation.scope === 'sector' && situation.locationId !== undefined) ||
-      !Number.isSafeInteger(situation.startDay) ||
-      situation.startDay < 0 ||
-      !Number.isSafeInteger(situation.endDay) ||
-      situation.endDay <= situation.startDay ||
-      situation.startDay > checkpoint.currentDay ||
-      situation.endDay <= checkpoint.currentDay ||
-      !situation.resourceModifiers ||
-      Array.isArray(situation.resourceModifiers) ||
-      typeof situation.resourceModifiers !== 'object'
+      !validSituationIdentity(situation, portIds, seen) ||
+      !validSituationPeriod(situation, checkpoint.currentDay) ||
+      !validSituationModifiers(situation, resourceIds)
     ) {
       throw new Error('Invalid saved market situation');
     }
     seen.add(situation.id);
-    for (const [resourceId, modifier] of Object.entries(situation.resourceModifiers)) {
-      if (
-        !resourceIds.has(resourceId) ||
-        typeof modifier !== 'number' ||
-        !Number.isFinite(modifier) ||
-        modifier < -1 ||
-        modifier > 1
-      ) {
-        throw new Error('Invalid saved market situation resource');
-      }
-    }
     return { ...situation, resourceModifiers: { ...situation.resourceModifiers } };
   });
 }
