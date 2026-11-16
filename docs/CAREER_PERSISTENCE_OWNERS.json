@@ -50,6 +50,12 @@
       "reason": "Connects the persisted player ship progression to the shared restored commerce and NPC market authorities.",
       "checkpoint": "src/systems/persistence/career-commerce-ship-session.ts",
       "test": "tests/persistence/career-commerce-ship-session.test.cjs"
+    },
+    "src/systems/persistence/career-field-legal-session.ts": {
+      "mode": "persisted",
+      "reason": "Composes authoritative offscreen asteroid field NPC services with depleted ore, claims, law and security patrols.",
+      "checkpoint": "src/systems/persistence/career-field-legal-session.ts",
+      "test": "tests/persistence/career-field-world-session.test.cjs"
     }
   }
 }
