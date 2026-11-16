@@ -1,18 +1,11 @@
 import type {
   StrategicCombatRuntime,
   StrategicCombatantSetup,
+  CareerStrategicCombatCheckpoint,
 } from './strategic-combat-types';
 import { cloneCareerJson, type CareerJson } from '../persistence/career-save-contract';
 
-export interface CareerStrategicCombatCheckpoint {
-  readonly version: 1;
-  readonly seed: number;
-  readonly randomCalls: number;
-  readonly attackerId: string;
-  readonly defenderId: string;
-  /** Authoritative physics and cooldowns, not the renderer's visual snapshot. */
-  readonly runtime: Readonly<Record<string, CareerJson>>;
-}
+export type { CareerStrategicCombatCheckpoint } from './strategic-combat-types';
 
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
