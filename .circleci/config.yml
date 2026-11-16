@@ -26,11 +26,6 @@ jobs:
             fi
             node scripts/ci-run-and-report.cjs format -- npx prettier --check .
       - run:
-          name: Diagnose NPC Prettier diff on failure
-          when: on_fail
-          command: |
-            npx prettier src/systems/economy/npc-economy-service.ts | diff -u src/systems/economy/npc-economy-service.ts - || true
-      - run:
           name: Lint
           command: |
             if [ "$CIRCLE_BRANCH" = "fix/main-quality-gate-after-pr230" ]; then
