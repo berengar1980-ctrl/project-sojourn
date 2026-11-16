@@ -41,6 +41,21 @@ assert.equal(signalKind({ ...distress, kind: 'planet' }), null);
 assert.equal(signalKind({ ...distress, kind: 'moon' }), null);
 assert.equal(signalKind({ ...distress, kind: 'station' }), null);
 assert.equal(signalKind({ ...salvage, kind: 'planet' }), null);
+
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const staticFalseAlarms = narrowsSector.locations.filter(
+  (location) => location.kind !== 'wreck' && location.activities.missions
+);
+assert(staticFalseAlarms.length > 10, 'regression fixture must include mission-capable worlds');
+assert(
+  staticFalseAlarms.every((location) => signalKind(location) === null),
+  'mission-capable planets, moons and stations are not active distress calls'
+);
+assert(
+  narrowsSector.locations.some((location) => location.kind === 'wreck' && signalKind(location)),
+  'real salvage sites must remain visible'
+);
+
 assert.equal(defaultMissionFilters('salvage').salvage, true);
 assert.equal(defaultMissionFilters('freighter').salvage, false);
 assert.equal(defaultMissionFilters('mining').campaign, true);
