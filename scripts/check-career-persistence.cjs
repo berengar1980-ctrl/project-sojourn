@@ -140,7 +140,9 @@ module.exports = {
 if (require.main === module) {
   try {
     const result = reviewCurrentBranch();
-    console.log('CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline'))
+    console.log(
+      'CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline')
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
