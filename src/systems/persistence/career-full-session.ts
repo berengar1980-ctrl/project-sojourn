@@ -197,7 +197,9 @@ export function stageCareerFullSession(
     section<CareerCampaignWorldCheckpoint>(sections.world),
     deps.initialCruiseSpeed
   );
-  let operations: StagedCareerOperationsSession | null = null;
+  const pendingOperations: { current: StagedCareerOperationsSession | null } = {
+    current: null,
+  };
   const commerce = stageCareerCommerceShipSession(
     {
       version: 1,
@@ -218,7 +220,7 @@ export function stageCareerFullSession(
     deps.economySeed,
     deps.starterShipId,
     ({ markets, simulation, player, npcs }) => {
-      operations = stageCareerOperationsSession(
+      pendingOperations.current = stageCareerOperationsSession(
         section<CareerOperationsCheckpoint>(sections.operations),
         deps.baseWorld,
         npcs as readonly SectorNpcState[],
@@ -233,21 +235,22 @@ export function stageCareerFullSession(
         ),
         travel: {
           requestTravel: (npc, destinationId, reason) =>
-            operations!.sector.requestTravel(npc as SectorNpcState, destinationId, reason),
+            pendingOperations.current!.sector.requestTravel(npc as SectorNpcState, destinationId, reason),
           requestPatrol: (npc) =>
             operations!.sector.requestPatrol(npc as SectorNpcState),
           isTravelling: (npc) =>
             operations!.sector.isTravelling(npc as SectorNpcState),
           quoteTravel: (npc, destinationId, credits) =>
-            operations!.blockades.blocksTrader(npc.id, destinationId)
+            pendingOperations.current!.blockades.blocksTrader(npc.id, destinationId)
               ? null
               : operations!.sector.quoteTravel(npc as SectorNpcState, destinationId, credits),
         },
         onSale: (_npc: NpcEconomyState, _resourceId: string, _quantity: number, gross: number) =>
-          operations!.population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94))),
+          pendingOperations.current!.population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94))),
       };
     }
   );
+  const operations = pendingOperations.current;
   if (!operations) throw new Error('Missing staged career operations');
   const society = stageCareerPlayerSociety(
     savedPlayer.society,
