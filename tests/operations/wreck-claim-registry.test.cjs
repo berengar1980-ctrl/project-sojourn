@@ -13,13 +13,15 @@ const field = {
   id: 'field-41',
   sourceLocationId: 'belt-41',
   seed: 41,
-  wrecks: [{
-    id: 'wreck-1',
-    inspected: true,
-    scanLevel: 'analyzed',
-    resources: [{ resourceId: 'steel', initialAmount: 20, remainingAmount: 20 }],
-    componentStatus: 'available',
-  }],
+  wrecks: [
+    {
+      id: 'wreck-1',
+      inspected: true,
+      scanLevel: 'analyzed',
+      resources: [{ resourceId: 'steel', initialAmount: 20, remainingAmount: 20 }],
+      componentStatus: 'available',
+    },
+  ],
 };
 const registry = new WreckClaimRegistry();
 const wreck = field.wrecks[0];
@@ -40,13 +42,15 @@ assert.equal(restored.seedFor('belt-41', 99), 41);
 assert.equal(restored.claim(field.id, wreck.id, 17).ownerId, 'npc-1');
 const regenerated = {
   ...field,
-  wrecks: [{
-    ...wreck,
-    resources: [{ resourceId: 'steel', initialAmount: 20, remainingAmount: 20 }],
-    componentStatus: 'available',
-    inspected: false,
-    scanLevel: 'unscanned',
-  }],
+  wrecks: [
+    {
+      ...wreck,
+      resources: [{ resourceId: 'steel', initialAmount: 20, remainingAmount: 20 }],
+      componentStatus: 'available',
+      inspected: false,
+      scanLevel: 'unscanned',
+    },
+  ],
 };
 restored.restoreField(regenerated);
 assert.equal(regenerated.wrecks[0].resources[0].remainingAmount, 7);
