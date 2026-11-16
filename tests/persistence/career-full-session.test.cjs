@@ -159,7 +159,7 @@ const snapshot = {
   version: 1,
   sections: {
     navigation: nav.exportState(),
-    player: { version: 1, player: ships.player, society },
+    player: { version: 1, profile, player: ships.player, society },
     ships,
     crew: crew.exportState(),
     economy,
