@@ -11,7 +11,7 @@ export function createInitialControllerState(
 ): ControllerRuntimeState {
   return {
     activeShip: options.ship,
-    starterShipId: options.ship.id,
+    starterShipId: options.restoredSession ? 'salvage-100m-variant-01' : options.ship.id,
     playerProfile: createPlayerProfile(options.playerProfile),
     shipOwnership:
       options.restoredSession?.commerce.ships.ownership ??
