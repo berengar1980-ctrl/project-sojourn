@@ -87,23 +87,11 @@ export function stageCareerEconomySession(
   ) {
     throw new Error('Incomplete career economy session checkpoint');
   }
-  const situations = createMarketSituationService(
-    ports,
-    resources,
-    seed,
-    checkpoint.situations
-  );
+  const situations = createMarketSituationService(ports, resources, seed, checkpoint.situations);
   const markets = stageCareerMarkets(checkpoint.markets, ports, resources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
-  const simulation = createEconomySimulationService(
-    markets,
-    player,
-    resources,
-    seed,
-    npcs,
-    checkpoint.pools
-  );
+  const simulation = createEconomySimulationService(markets, player, resources, seed, npcs, checkpoint.pools);
   const intel = createMarketIntelService(markets, checkpoint.intel);
   const npcService = createNpcEconomyService(
     markets,
