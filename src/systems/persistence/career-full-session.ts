@@ -197,6 +197,7 @@ export function stageCareerFullSession(
     section<CareerCampaignWorldCheckpoint>(sections.world),
     deps.initialCruiseSpeed
   );
+  const prisoners = new Set<string>();
   const pendingOperations: { current: StagedCareerOperationsSession | null } = {
     current: null,
   };
@@ -230,6 +231,22 @@ export function stageCareerFullSession(
         () => navigationWorld.navigation.getSnapshot().currentPosition
       );
       return {
+        isManaged: (npc) =>
+          prisoners.has(npc.id) ||
+          npc.id.startsWith('security-drone:') ||
+          (npc.role === 'miner' &&
+            npc.autonomy?.phase === 'working' &&
+            deps.baseWorld.locations.some(
+              (location) => location.id === npc.locationId && location.activities.mine
+            )) ||
+          (Boolean('pirate' in npc && npc.pirate) &&
+            deps.baseWorld.locations.some(
+              (location) => location.id === npc.locationId && location.activities.mine
+            ) &&
+            !('travel' in npc && npc.travel)) ||
+          pendingOperations.current!.blockades.assigned(npc.id),
+        canTrade: (npc, locationId, resourceId) =>
+          !pendingOperations.current!.blockades.blocksTrader(npc.id, locationId, resourceId),
         positions: Object.fromEntries(
           deps.baseWorld.locations.map((location) => [location.id, location.position])
         ),
@@ -281,6 +298,7 @@ export function stageCareerFullSession(
     commerce.commerce.npcs,
     commerce.ships.activeShipId
   );
+  for (const id of custody.prisoners) prisoners.add(id);
   const prepared = { navigationWorld, commerce, society, crew, operations, fieldsLegal, custody };
   const campaigns = stageCareerCampaigns(
     section<CampaignSnapshot>(sections.campaigns),
