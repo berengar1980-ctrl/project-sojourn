@@ -354,7 +354,6 @@ Qualitätsgate Formatierung, Lint, TypeScript, Dependency, Persistence-
 Architekturprüfung, Tests und Build in einem Durchlauf weiter aus, damit
 Fehler gesammelt statt schrittweise korrigiert werden können.
 
-
 ### Save/Load-Menü (PR nach #320)
 
 **Keine Speicheränderung:** Die UI nutzt ausschließlich den vorhandenen lokalen
@@ -365,4 +364,5 @@ Im Esc-Menü steht neben Speichern auch Laden. Das neue Spiel wird vollständig
 validiert und vorbereitet, bevor die laufende Sitzung beendet wird. Vor Verlust
 ungespeicherten Fortschritts wird ausdrücklich bestätigt. Mehrere Slots, ein
 Datei-Import/Export und vollständige visuelle Browser-Neustarttests sind damit
-**noch nicht** implementiert. Speichern bleibt auf ruhenden Orbit/Hafen beschränkt.
+**noch nicht** implementiert. Speichern bleibt auf ruhenden Orbit/Hafen
+beschränkt.
