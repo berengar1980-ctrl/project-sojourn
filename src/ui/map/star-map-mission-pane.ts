@@ -41,9 +41,14 @@ export function renderStarMapMissionPane(options: MissionPaneOptions): void {
     });
   }
   const signalsPane = document.createElement('div');
-  renderStarMapEvents(model, signalsPane, {
-    onSelectNpc: () => {},
-    onSelectLocation: options.onSelectLocation,
-  }, filters);
+  renderStarMapEvents(
+    model,
+    signalsPane,
+    {
+      onSelectNpc: () => {},
+      onSelectLocation: options.onSelectLocation,
+    },
+    filters
+  );
   options.container.replaceChildren(controls, journalPane, signalsPane);
 }
