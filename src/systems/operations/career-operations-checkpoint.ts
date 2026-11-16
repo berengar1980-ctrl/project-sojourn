@@ -1,7 +1,37 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap } from '../../core/world-types';
-import type { BlockadeOptions, BlockadeOrder } from './blockade-service';
-import type { PatrolAssignment } from './patrol-career-service';
+import type { EconomyMarketService } from '../economy/market-service';
+
+export interface BlockadeOrder {
+  id: string;
+  ownerId: string;
+  locationId: string;
+  resourceId: string;
+  pirateIds: string[];
+  duration: number;
+  fee: number;
+  orderedDay: number;
+  startedDay: number | null;
+  phase: 'assembling' | 'active' | 'completed' | 'defeated' | 'cancelled';
+  removedStock: number;
+  startPrice: number | null;
+}
+export interface PatrolAssignment {
+  id: string;
+  kind: 'route' | 'bounty';
+  targetId: string;
+  reward: number;
+  acceptedDay: number;
+  deadline: number;
+  status: 'active' | 'completed' | 'failed' | 'paid';
+  visited: string[];
+  clearSeconds: number;
+}
+
+interface BlockadeValidationOptions {
+  readonly sector: { readonly npcs: readonly SectorNpcState[] };
+  readonly markets: Pick<EconomyMarketService, 'getEntry'>;
+}
 import { cloneCareerJson } from '../persistence/career-save-contract';
 
 export interface CareerBlockadeCheckpoint {
@@ -30,7 +60,7 @@ function count(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-function validBlockadeFields(value: Record<string, unknown>, options: BlockadeOptions): boolean {
+function validBlockadeFields(value: Record<string, unknown>, options: BlockadeValidationOptions): boolean {
   return (
     typeof value.id === 'string' &&
     value.id.length > 0 &&
@@ -47,7 +77,7 @@ function validBlockadeFields(value: Record<string, unknown>, options: BlockadeOp
   );
 }
 
-function validBlockadePirates(value: Record<string, unknown>, options: BlockadeOptions): boolean {
+function validBlockadePirates(value: Record<string, unknown>, options: BlockadeValidationOptions): boolean {
   if (!Array.isArray(value.pirateIds)) return false;
   const ids = value.pirateIds as string[];
   const pirates = options.sector.npcs.filter((npc) => ids.includes(npc.id));
@@ -62,14 +92,14 @@ function validBlockadePirates(value: Record<string, unknown>, options: BlockadeO
   );
 }
 
-function validBlockadeOrder(value: unknown, options: BlockadeOptions): boolean {
+function validBlockadeOrder(value: unknown, options: BlockadeValidationOptions): boolean {
   return record(value) && validBlockadeFields(value, options) && validBlockadePirates(value, options);
 }
 
 /** Keep orders and recorded stock losses without charging owners or raiding again. */
 export function stageCareerBlockades(
   candidate: unknown,
-  options: BlockadeOptions
+  options: BlockadeValidationOptions
 ): CareerBlockadeCheckpoint {
   const saved = cloneCareerJson(candidate);
   if (
