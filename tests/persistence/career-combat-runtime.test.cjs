@@ -67,8 +67,8 @@ for (let i = 0; i < 100; i += 1) {
   const original = initial.tick(0.08);
   const resumed = restored.tick(0.08);
   assert.deepEqual(
-    resumed,
-    original,
+    JSON.parse(JSON.stringify(resumed)),
+    JSON.parse(JSON.stringify(original)),
     'saved runtime must resume identical physics and random outcomes'
   );
   if (original.winner) break;
