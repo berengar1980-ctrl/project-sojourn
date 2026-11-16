@@ -10,6 +10,7 @@ import { cloneCareerJson } from './career-save-contract';
 export interface StagedCareerCampaignSession {
   readonly events: CampaignEventBus;
   readonly campaigns: CampaignRuntime;
+  activate(): void;
 }
 
 /** Capture applied action receipts and mission progress as detached JSON. */
@@ -27,13 +28,25 @@ export function stageCareerCampaigns(
   actions: CampaignActionPort
 ): StagedCareerCampaignSession {
   const events = createCampaignEventBus();
-  const campaigns = createCampaignRuntime(events, cloneCareerJson(checkpoint), undefined, actions);
+  let active = false;
+  const gatedActions: CampaignActionPort = {
+    apply: (action, id) => active && actions.apply(action, id),
+    releaseCampaign: (id) => {
+      if (active) actions.releaseCampaign?.(id);
+    },
+  };
+  const campaigns = createCampaignRuntime(
+    events,
+    cloneCareerJson(checkpoint),
+    undefined,
+    gatedActions
+  );
   try {
     for (const definition of definitions) campaigns.register(definition);
     if (campaigns.unavailableIds().length > 0) {
       throw new Error('Career campaign package unavailable or incompatible');
     }
-    return { events, campaigns };
+    return { events, campaigns, activate: () => { active = true; } };
   } catch (error) {
     campaigns.destroy();
     throw error;
