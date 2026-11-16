@@ -283,6 +283,16 @@ function stageCareerCommerceOperations(
   return { commerce, operations };
 }
 
+function validateCareerDayClock(player: CareerPlayerDomainCheckpoint): void {
+  const seconds = player.controllerSecondsIntoDay;
+  if (
+    seconds !== undefined &&
+    (!Number.isFinite(seconds) || seconds < 0 || seconds >= 180)
+  ) {
+    throw new Error('Invalid saved economic day clock');
+  }
+}
+
 /**
  * Restore the 14 canonical save sections against one isolated dependency
  * graph. It cannot update or replace a live game until the caller commits it.
@@ -297,14 +307,7 @@ export function stageCareerFullSession(
     throw new Error('Invalid career player domain');
   }
   const profile = createPlayerProfile(savedPlayer.profile);
-  if (
-    savedPlayer.controllerSecondsIntoDay !== undefined &&
-    (!Number.isFinite(savedPlayer.controllerSecondsIntoDay) ||
-      savedPlayer.controllerSecondsIntoDay < 0 ||
-      savedPlayer.controllerSecondsIntoDay >= 180)
-  ) {
-    throw new Error('Invalid saved economic day clock');
-  }
+  validateCareerDayClock(savedPlayer);
   const navigationWorld = stageCareerNavigationWorld(
     deps.baseWorld,
     section<NavigationCheckpoint>(sections.navigation),
