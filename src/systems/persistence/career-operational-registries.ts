@@ -292,7 +292,7 @@ export function captureCareerLegalAndClaims(
   claims: AsteroidClaimRegistry,
   legal: SectorLegalRegistry,
   fields: AsteroidFieldWorld,
-  wreckClaims: WreckClaimRegistry
+  wreckClaims: WreckClaimRegistry = new WreckClaimRegistry()
 ): CareerLegalAndClaims {
   fields.forEachField((field) => claims.rememberField(field.locationId, field.instance.asteroids));
   return cloneCareerJson({
