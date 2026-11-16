@@ -1,5 +1,5 @@
+import { renderStarMapMissionPane } from './star-map-mission-pane';
 import type { CampaignJournalEntry } from '../../core/campaign-types';
-import { renderCampaignJournal } from './star-map-campaign-journal';
 import type { RouteProfile } from '../../systems/navigation/route-planner';
 import type { StarMapViewModel } from '../../features/star-map/star-map-view-model';
 import type { SystemLogService } from '../../core/system-log-types';
@@ -7,7 +7,7 @@ import { bindCargoMarketScanner } from './star-map-cargo-scanner';
 import { bindStarMapInput } from './star-map-input';
 import { TopdownMapRenderer, type StarMapDisplayMode } from './topdown-map-renderer';
 import { createSystemLogPanel } from '../system-log/system-log-panel';
-import { renderStarMapContacts, renderStarMapEvents } from './star-map-menu-content';
+import { renderStarMapContacts } from './star-map-menu-content';
 import { createStarMapMenu, type StarMapMenu } from './star-map-menu';
 import { bindDangerAndRouteControls } from './star-map-navigation-controls';
 import { updateStarMapFuelStatus } from './star-map-fuel-status';
@@ -347,18 +347,15 @@ function createMenuContentRefresher(
     else if (section === 'contacts') {
       renderStarMapContacts(getModel(), menu.contactsPane, directoryActions);
     } else if (section === 'missions') {
-      const journalPane = document.createElement('div');
-      const signalsPane = document.createElement('div');
-      const currentLocationId = getModel().navigation.currentLocationId;
-      renderCampaignJournal(journalPane, actions.getCampaignJournal?.() ?? [], currentLocationId, {
-        selectLocation: (id) => directoryActions.onSelectLocation(id),
-        choose: (id, dialogueId, choiceId) => {
-          actions.onCampaignChoice?.(id, dialogueId, choiceId);
-          refreshMissionView();
-        },
+      renderStarMapMissionPane({
+        container: menu.missionsPane,
+        model: getModel(),
+        journal: actions.getCampaignJournal?.() ?? [],
+        onSelectLocation: directoryActions.onSelectLocation,
+        onChoice: (id, dialogueId, choiceId) =>
+          actions.onCampaignChoice?.(id, dialogueId, choiceId),
+        refresh: refreshMissionView,
       });
-      renderStarMapEvents(getModel(), signalsPane, directoryActions);
-      menu.missionsPane.replaceChildren(journalPane, signalsPane);
     } else if (section === 'system') systemLog.update();
   };
   return refresh;

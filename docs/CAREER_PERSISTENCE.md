@@ -398,3 +398,13 @@ Komponenten von Wrackfeldern. Ältere Saves ohne diesen Datensatz werden als
 leeres Wrackregister eingelesen. Restore validiert die Registrierungen und
 den Feldzustand vor dem atomaren Sitzungswechsel. Das System vergibt beim
 Laden keine neuen Ansprüche oder Gebühren.
+
+### Sternkarten-Eventfilter (UI-only, PR #325)
+
+Die Kategorien Notsignal, Bergung und das Kampagnenjournal werden ausschließlich
+in der Sternkartenoberfläche ein- oder ausgeblendet. Die Schiffsklasse bestimmt
+lediglich die anfängliche Vorauswahl. Individuell gewählte Filter und Sortierung
+werden als lokale UI-Präferenzen gespeichert und sind **kein Teil des Career-Snapshots**.
+Die eigentlichen Ereignisse, Aufträge, Positionen, Weltzustände, NPCs und
+Career-Restore-Abläufe bleiben unverändert. Ein nicht sichtbarer Listeneintrag
+wird nicht aus der Simulation oder dem gespeicherten Spielstand entfernt.
