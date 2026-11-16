@@ -1,4 +1,4 @@
-name: Career integration focused test diagnostics (final roundtrip)
+name: Career integration full checkpoint diagnostics
 
 on:
   push:
@@ -24,33 +24,7 @@ jobs:
         run: npm ci
       - name: Validate format and TypeScript
         run: npm run format:check && npm run typecheck
-      - name: Focused Career roundtrip, references and simulations
-        shell: bash
-        run: |
-          failed=0
-          for file in \
-            tests/crew/career-crew-checkpoint.test.cjs \
-            tests/persistence/career-campaign-session.test.cjs \
-            tests/persistence/career-campaign-world.test.cjs \
-            tests/persistence/career-combat-runtime.test.cjs \
-            tests/persistence/career-commerce-ship-session.test.cjs \
-            tests/persistence/career-custody-checkpoint.test.cjs \
-            tests/persistence/career-field-world-session.test.cjs \
-            tests/persistence/career-full-session.test.cjs \
-            tests/persistence/career-npc-economy-session.test.cjs \
-            tests/persistence/career-operations-checkpoint.test.cjs \
-            tests/persistence/career-player-society.test.cjs \
-            tests/persistence/career-salvage-events.test.cjs \
-            tests/persistence/career-session-transaction.test.cjs \
-            tests/ships/career-player-ship-session.test.cjs; do
-            echo "::group::$file"
-            if timeout 55s node "$file"; then
-              echo "PASS $file"
-            else
-              echo "FAIL $file"
-              failed=$((failed + 1))
-            fi
-            echo "::endgroup::"
-          done
-          echo "Focused Career failures: $failed"
-          test "$failed" -eq 0
+      - name: All bounded Career checkpoint tests
+        run: node tests/run-tests.cjs career
+      - name: Production build
+        run: npm run build
