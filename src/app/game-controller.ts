@@ -1,10 +1,6 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
+import { advanceControllerFieldWorld } from './game-controller-field-world-bridge';
 import {
-  advanceControllerFieldWorld,
-  fieldWorldFor,
-} from './game-controller-field-world-bridge';
-import {
-  registerSectorShips,
   inspectLegalDockArrival,
   reportLegalDeparture,
   reportLegalOrbitalArrival,
@@ -30,7 +26,11 @@ import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
-import { installControllerCareer, saveControllerCareer } from './game-controller-career-install';
+import {
+  installControllerCareer,
+  saveControllerCareer,
+  rememberMiningField,
+} from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
@@ -84,10 +84,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     else if (mode === 'port') mountControllerPort(context, false);
     else mountControllerStarMap(context);
   });
-}
-function rememberMiningField(context: ControllerRuntimeContext): void {
-  const field = context.state.localSpace?.getSnapshot().instance;
-  if (field) context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
 }
 
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
