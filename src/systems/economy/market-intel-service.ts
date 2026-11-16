@@ -69,21 +69,31 @@ export function createMarketIntelService(
       !Array.isArray(checkpoint.intel) ||
       !Array.isArray(checkpoint.history) ||
       checkpoint.history.length > MARKET_HISTORY_DAYS
-    ) throw new Error('Invalid market intel checkpoint');
+    )
+      throw new Error('Invalid market intel checkpoint');
     const validLocations = new Set(markets.snapshot().map((market) => market.locationId));
     const validResources = new Set(
       markets.snapshot().flatMap((market) => Object.keys(market.entries))
     );
     const assertEntry = (entry: HistoricalMarketEntry): void => {
-      if (!entry || !validResources.has(entry.resourceId) ||
-          !Number.isSafeInteger(entry.price) || entry.price < 1 ||
-          !Number.isSafeInteger(entry.stock) || entry.stock < 0) {
+      if (
+        !entry ||
+        !validResources.has(entry.resourceId) ||
+        !Number.isSafeInteger(entry.price) ||
+        entry.price < 1 ||
+        !Number.isSafeInteger(entry.stock) ||
+        entry.stock < 0
+      ) {
         throw new Error('Invalid market intel entry');
       }
     };
     for (const entry of checkpoint.intel) {
-      if (!entry || !validLocations.has(entry.locationId) ||
-          !Number.isSafeInteger(entry.observedDay) || entry.observedDay < 0) {
+      if (
+        !entry ||
+        !validLocations.has(entry.locationId) ||
+        !Number.isSafeInteger(entry.observedDay) ||
+        entry.observedDay < 0
+      ) {
         throw new Error('Invalid market intel observation');
       }
       assertEntry(entry);
@@ -92,14 +102,23 @@ export function createMarketIntelService(
       intel.set(key, { ...entry });
     }
     for (const savedDay of checkpoint.history) {
-      if (!savedDay || !Number.isSafeInteger(savedDay.day) || savedDay.day < 0 ||
-          !Array.isArray(savedDay.locations) || history.has(savedDay.day)) {
+      if (
+        !savedDay ||
+        !Number.isSafeInteger(savedDay.day) ||
+        savedDay.day < 0 ||
+        !Array.isArray(savedDay.locations) ||
+        history.has(savedDay.day)
+      ) {
         throw new Error('Invalid market intel history day');
       }
       const locations = new Map<string, readonly HistoricalMarketEntry[]>();
       for (const location of savedDay.locations) {
-        if (!location || !validLocations.has(location.locationId) ||
-            locations.has(location.locationId) || !Array.isArray(location.entries)) {
+        if (
+          !location ||
+          !validLocations.has(location.locationId) ||
+          locations.has(location.locationId) ||
+          !Array.isArray(location.entries)
+        ) {
           throw new Error('Invalid market intel history location');
         }
         const resourceIds = new Set<string>();
