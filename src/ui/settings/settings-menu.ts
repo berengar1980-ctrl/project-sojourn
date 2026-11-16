@@ -159,10 +159,8 @@ function appendProfileIdentity(shell: HTMLDivElement, profile: PlayerProfile): v
 
 function loadSavedCareer(onLoadCareer: (() => void) | undefined, status: HTMLElement): void {
   if (!onLoadCareer) return;
-  if (
-    !window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')
-  )
-    return;
+  const warning = 'Ungespeicherter Fortschritt geht verloren.';
+  if (!window.confirm('Gespeicherten Spielstand laden? ' + warning)) return;
   try {
     onLoadCareer();
   } catch (error) {
