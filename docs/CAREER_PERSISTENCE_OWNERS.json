@@ -116,6 +116,10 @@
     "src/systems/salvage/sector-salvage-event-utils.ts": {
       "mode": "derived",
       "reason": "Pure deterministic salvage event placement, cloning, random-number generation and result creation; holds no mutable session authority."
+    },
+    "src/systems/combat/star-map-engagement-contract.ts": {
+      "mode": "derived",
+      "reason": "Type-only engagement service contract for wiring restored player combat; it holds no runtime authority."
     }
   }
 }
