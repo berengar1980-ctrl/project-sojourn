@@ -33,17 +33,34 @@ restored.observeLocation(first.locationId, 1);
 assert.equal(restored.entry(first.locationId, first.resourceId).price, marketEntry.price);
 assert.equal(original.entry(first.locationId, first.resourceId).price, first.price);
 
-assert.throws(() => createMarketIntelService(markets, {
-  ...saved,
-  intel: [...saved.intel, saved.intel[0]],
-}), /Duplicate/);
-assert.throws(() => createMarketIntelService(markets, {
-  ...saved,
-  intel: [{ ...first, locationId: 'unknown-port' }],
-}));
-assert.throws(() => createMarketIntelService(markets, {
-  ...saved,
-  history: [{ day: 0, locations: [{ locationId: port.locationId,
-    entries: [{ resourceId: first.resourceId, price: -1, stock: 0 }] }] }],
-}));
+assert.throws(
+  () =>
+    createMarketIntelService(markets, {
+      ...saved,
+      intel: [...saved.intel, saved.intel[0]],
+    }),
+  /Duplicate/
+);
+assert.throws(() =>
+  createMarketIntelService(markets, {
+    ...saved,
+    intel: [{ ...first, locationId: 'unknown-port' }],
+  })
+);
+assert.throws(() =>
+  createMarketIntelService(markets, {
+    ...saved,
+    history: [
+      {
+        day: 0,
+        locations: [
+          {
+            locationId: port.locationId,
+            entries: [{ resourceId: first.resourceId, price: -1, stock: 0 }],
+          },
+        ],
+      },
+    ],
+  })
+);
 console.log('PASS player market intel/history restore retains knowledge and rejects corrupt data');
