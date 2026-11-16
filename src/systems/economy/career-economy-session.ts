@@ -91,7 +91,14 @@ export function stageCareerEconomySession(
   const markets = stageCareerMarkets(checkpoint.markets, ports, resources, {
     situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
   });
-  const simulation = createEconomySimulationService(markets, player, resources, seed, npcs, checkpoint.pools);
+  const simulation = createEconomySimulationService(
+    markets,
+    player,
+    resources,
+    seed,
+    npcs,
+    checkpoint.pools
+  );
   const intel = createMarketIntelService(markets, checkpoint.intel);
   const npcService = createNpcEconomyService(
     markets,
