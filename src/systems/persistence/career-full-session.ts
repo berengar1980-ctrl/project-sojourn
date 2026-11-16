@@ -81,12 +81,14 @@ export interface CareerCombatSetup {
 export interface CareerPlayerDomainCheckpoint {
   readonly version: 1;
   readonly profile: PlayerProfile;
+  readonly controllerSecondsIntoDay?: number;
   readonly player: CareerPlayerCheckpoint;
   readonly society: CareerPlayerSocietyCheckpoint;
 }
 
 export interface StagedFullCareerSession {
   readonly profile: PlayerProfile;
+  readonly controllerSecondsIntoDay?: number;
   readonly society: StagedCareerPlayerSociety;
   readonly navigationWorld: StagedCareerNavigationWorld;
   readonly commerce: StagedCareerCommerceShipSession;
@@ -150,6 +152,9 @@ export function captureCareerFullSession(
       player: {
         version: 1,
         profile: snapshotPlayerProfile(session.profile),
+        ...(session.controllerSecondsIntoDay === undefined
+          ? {}
+          : { controllerSecondsIntoDay: session.controllerSecondsIntoDay }),
         player: captureCareerPlayer(commerce.trade.player),
         society: captureCareerPlayerSociety(session.society),
       },
@@ -292,6 +297,14 @@ export function stageCareerFullSession(
     throw new Error('Invalid career player domain');
   }
   const profile = createPlayerProfile(savedPlayer.profile);
+  if (
+    savedPlayer.controllerSecondsIntoDay !== undefined &&
+    (!Number.isFinite(savedPlayer.controllerSecondsIntoDay) ||
+      savedPlayer.controllerSecondsIntoDay < 0 ||
+      savedPlayer.controllerSecondsIntoDay >= 180)
+  ) {
+    throw new Error('Invalid saved economic day clock');
+  }
   const navigationWorld = stageCareerNavigationWorld(
     deps.baseWorld,
     section<NavigationCheckpoint>(sections.navigation),
@@ -335,6 +348,9 @@ export function stageCareerFullSession(
   for (const id of custody.prisoners) prisoners.add(id);
   const prepared = {
     profile,
+    ...(savedPlayer.controllerSecondsIntoDay === undefined
+      ? {}
+      : { controllerSecondsIntoDay: savedPlayer.controllerSecondsIntoDay }),
     navigationWorld,
     commerce,
     society,
