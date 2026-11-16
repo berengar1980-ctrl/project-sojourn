@@ -1,5 +1,6 @@
 import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-types';
 import { BlockadeService } from '../systems/operations/blockade-service';
+import { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
@@ -78,12 +79,14 @@ import {
 
 interface RestoredOperationalRegistries {
   readonly claims: AsteroidClaimRegistry;
+  readonly wreckClaims: WreckClaimRegistry;
   readonly legal: SectorLegalRegistry;
 }
 
 export interface ControllerEconomy {
   readonly blockades: BlockadeService;
   readonly asteroidClaims: AsteroidClaimRegistry;
+  readonly wreckClaims: WreckClaimRegistry;
   readonly legal: SectorLegalRegistry;
   readonly securityDrones: Map<string, AsteroidSecurityDrone>;
   readonly localPirates: Map<string, LocalPirateTraffic>;
@@ -270,6 +273,7 @@ export function createControllerEconomy(
       ),
     blockades,
     asteroidClaims: restoredRegistries?.claims ?? new AsteroidClaimRegistry(),
+    wreckClaims: restoredRegistries?.wreckClaims ?? new WreckClaimRegistry(),
     legal: restoredRegistries?.legal ?? new SectorLegalRegistry(),
     securityDrones: new Map<string, AsteroidSecurityDrone>(),
     localPirates: new Map<string, LocalPirateTraffic>(),
