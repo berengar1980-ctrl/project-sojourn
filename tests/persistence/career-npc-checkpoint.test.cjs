@@ -10,6 +10,7 @@ const { captureCareerNpcs, stageCareerNpcs } = load(
 );
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
 const world = narrowsSector;
 const original = createSectorNpcEconomyStates().slice(0, 3);
 assert(original.length >= 2);
@@ -63,4 +64,25 @@ assert.throws(
   /falsches Sternsystem/
 );
 assert.equal(original[0].travel.distanceTravelled, distance / 3);
+
+// Independently restart a sector with a freighter already a third of the way
+// through its route and an NPC pursuing another ship. Both timelines must
+// advance from the SAME saved progress rather than returning to the first leg.
+const timelineA = stageCareerNpcs(world, JSON.parse(JSON.stringify(saved)));
+const timelineB = stageCareerNpcs(world, JSON.parse(JSON.stringify(saved)));
+const sectorA = createNpcSectorService(world, timelineA);
+const sectorB = createNpcSectorService(world, timelineB);
+assert.equal(timelineA[0].travel.distanceTravelled, distance / 3);
+for (const dt of [0.5, 1, 1.5]) {
+  sectorA.tick(dt);
+  sectorB.tick(dt);
+}
+assert.deepEqual(timelineA, timelineB, 'restored NPC fleet continues deterministically');
+assert.equal(timelineA[0].cargo.ferrite, 17, 'cargo cannot be unloaded twice on restart');
+assert(
+  !timelineA[0].travel || timelineA[0].travel.distanceTravelled > distance / 3,
+  'travel progress must continue, not reset'
+);
+assert.equal(timelineA[1].combatMovement?.targetId, original[0].id);
+
 console.log('PASS career NPC checkpoint: detached travel, cargo, combat and validation');

@@ -1158,6 +1158,20 @@ Kampagnenwelten, Crew, Recht/Haft, Handelsmandat, Schmuggel und Fraktionsruf.
 Bestehende Feature-Parity-Wertungen ändern sich nicht durch diese noch nicht
 vollständig am Live-Controller aktivierte Speicherung.
 
+## Review-Log (2026-11-16): Career Save/Load-Neustarttests PR #320
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Dieser
+PR erweitert ausschließlich die bestehenden Career-Regressionstests: ein
+Spieler kauft im laufenden Markt Ware, speichert den JSON-Spielstand, startet
+mit neu erzeugten Services, verkauft Ware und simuliert einen weiteren
+Wirtschaftstag. Fracht, Credits, Marktpreise und physische Ressourcen müssen
+mit einer nicht unterbrochenen Vergleichssimulation übereinstimmen. Zusätzlich
+wird ein bereits reisender NPC-Frachter mit Fracht und eine laufende
+NPC-Verfolgung fortgesetzt. Ein manipulierter Spielstand wird abgewiesen,
+ohne die aktive Session zu verändern. Die Tests ersetzen keinen vollständigen
+Browser-Neustart und keine manuellen UI-Prüfungen; sie ändern keine
+Gameplay-Mechanik und begründen keine neue Paritätswertung.
+
 ## Review-Log (2026-11-16): Career Save/Load-Menüs (PR #321)
 
 **keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
