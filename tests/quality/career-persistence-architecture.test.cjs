@@ -24,26 +24,48 @@ assert.throws(
   /impact review required/
 );
 assert.deepEqual(
-  enforcePersistenceReview([
-    { status: 'M', path: 'src/systems/trade.ts' },
-    { status: 'M', path: REVIEW_PATH },
-  ], owners).addedModules,
+  enforcePersistenceReview(
+    [
+      { status: 'M', path: 'src/systems/trade.ts' },
+      { status: 'M', path: REVIEW_PATH },
+    ],
+    owners
+  ).addedModules,
   []
 );
 assert.throws(
-  () => enforcePersistenceReview([
-    { status: 'A', path: 'src/systems/new-feature.ts' },
-    { status: 'M', path: REVIEW_PATH },
-  ], owners),
+  () =>
+    enforcePersistenceReview(
+      [
+        { status: 'A', path: 'src/systems/new-feature.ts' },
+        { status: 'M', path: REVIEW_PATH },
+      ],
+      owners
+    ),
   /missing persistence classification/
 );
 assert.throws(
-  () => enforcePersistenceReview([
-    { status: 'A', path: 'src/systems/new-feature.ts' },
-    { status: 'M', path: REVIEW_PATH },
-  ], { version: 1, modules: { 'src/systems/new-feature.ts': { mode: 'derived', reason: 'Computed entirely from persisted owner state.' } } }),
+  () =>
+    enforcePersistenceReview(
+      [
+        { status: 'A', path: 'src/systems/new-feature.ts' },
+        { status: 'M', path: REVIEW_PATH },
+      ],
+      {
+        version: 1,
+        modules: {
+          'src/systems/new-feature.ts': {
+            mode: 'derived',
+            reason: 'Computed entirely from persisted owner state.',
+          },
+        },
+      }
+    ),
   /updated/
 );
-assert.equal(enforcePersistenceReview([{ status: 'M', path: 'docs/README.md' }], owners).required, false);
+assert.equal(
+  enforcePersistenceReview([{ status: 'M', path: 'docs/README.md' }], owners).required,
+  false
+);
 assert.doesNotThrow(() => reviewCurrentBranch(root));
 console.log('PASS career persistence gate: missing reviews and new unclassified state owners rejected');
