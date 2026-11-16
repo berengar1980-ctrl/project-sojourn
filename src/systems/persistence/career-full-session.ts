@@ -17,7 +17,17 @@ import type {
   StrategicCombatArenaOptions,
 } from '../combat/strategic-combat-types';
 import type { CareerStrategicCombatCheckpoint } from '../combat/career-strategic-combat-checkpoint';
-import type { CareerNpcCheckpoint } from './career-npc-checkpoint';
+import {
+  captureCareerNpcs,
+  type CareerNpcCheckpoint,
+} from './career-npc-checkpoint';
+import { captureCareerPlayer } from '../economy/career-player-checkpoint';
+import { captureCareerEconomySession } from '../economy/career-economy-session';
+import { captureCareerPlayerShipSession } from '../ships/career-player-ship-session';
+import { captureCareerOperationsSession } from './career-operations-session';
+import { captureCareerFieldLegalSession } from './career-field-legal-session';
+import { captureCareerCustody } from './career-custody-checkpoint';
+import { captureCareerCampaigns } from './career-campaign-session';
 import type { CareerPlayerShipCheckpoint } from '../ships/career-player-ship-session';
 import type { CareerOperationsCheckpoint, StagedCareerOperationsSession } from './career-operations-session';
 import {
@@ -91,6 +101,48 @@ export interface CareerFullSessionDependencies {
   readonly combatSetups: (
     prepared: Omit<StagedFullCareerSession, 'campaigns' | 'combat' | 'activate'>
   ) => CareerCombatSetup;
+}
+
+/** Capture only authoritative live services, with all interdependent sections in one tick. */
+export function captureCareerFullSession(
+  session: StagedFullCareerSession,
+  baseWorld: WorldMap
+): CareerSnapshot {
+  const commerce = session.commerce.commerce;
+  const ships = session.commerce.ships;
+  const fieldsLegal = captureCareerFieldLegalSession(
+    session.fieldsLegal.fields,
+    session.fieldsLegal.claims,
+    session.fieldsLegal.legal
+  );
+  const playerShips = captureCareerPlayerShipSession(
+    commerce.trade.player,
+    ships.activeShipId,
+    ships.ownership,
+    ships.loadouts,
+    ships.inventory,
+    ships.research,
+    ships.operating
+  );
+  return validateCareerSnapshot({
+    version: 1,
+    sections: {
+      navigation: session.navigationWorld.navigation.exportState(),
+      player: captureCareerPlayer(commerce.trade.player),
+      ships: playerShips,
+      crew: session.crew.exportState(),
+      economy: captureCareerEconomySession(commerce.economy),
+      npcs: captureCareerNpcs(baseWorld, commerce.npcs),
+      operations: captureCareerOperationsSession(session.operations),
+      fields: fieldsLegal.fields,
+      claims: fieldsLegal.claims,
+      legal: fieldsLegal.legal,
+      custody: captureCareerCustody(session.custody.prisoners, session.custody.player),
+      combat: session.combat?.exportCareerState() ?? null,
+      campaigns: captureCareerCampaigns(session.campaigns.campaigns),
+      world: session.navigationWorld.world.exportCareerState(),
+    },
+  });
 }
 
 function section<T>(value: CareerJson): T {
