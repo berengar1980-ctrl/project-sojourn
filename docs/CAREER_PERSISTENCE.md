@@ -303,3 +303,37 @@ Aktivierung dürfen neue Aktionen ausgeführt werden. Bereits quittierte
 Belohnungen werden beim Restore nicht erneut angewendet. Das ist eine
 vorbereitete Kampagnen-Teilautorität, noch keine Freigabe für einen
 unvollständigen Spielstand.
+
+## PR #319: Einheitliche 14-Domänen-Sitzung (Implementierungsstand)
+
+**Neu implementiert (noch in Draft, ungeprüft):** Gemeinsamer Capture- und
+Restore-Pfad (`career-full-session.ts`) für Navigation, Spieler (inklusive
+Schmuggel, Handelsmandat und Ruf), Schiffe, Crew, Wirtschaft, NPCs, laufende
+Blockaden/Patrouillen/Bergung, lokale Asteroidenfelder, Konzessionen, Recht,
+Haft, Kampf, Kampagnen und dynamische Welt. `career-session-manager.ts`
+verwendet den vorhandenen versionierten JSON-Store und installiert eine
+vorbereitete Session erst nach vollständigem Build. Erneutes Laden eines
+identischen Spielstands darf keine Buchungen oder Missionsbelohnungen
+wiederholen.
+
+**Wichtige Integrationsregeln:** Spielerhandel und Schiffe teilen denselben
+Wallet; NPCs/Operationen teilen dieselben NPC-Instanzen, Markt- und
+Ressourcenpool-Autoritäten. Erzbestände und Scanfortschritt werden vor den
+lokalen Mining-Diensten rekonstruiert. Blockade-Kosten, Patrouillenprämien,
+Notsignal-Belohnungen und Kampagnen-Aktionsbelege werden nicht erneut
+vergeben. Der laufende Kampf sichert RNG-Fortschritt und interne
+Physik-/Waffen-Zustände, nicht nur den Anzeige-Snapshot.
+
+**Offene Integration / Nicht behaupten, die Karriere sei benutzbar:** Der
+bisherige `createGameController` baut eigene Services auf und verwendet den
+neuen Session-Manager noch nicht als autoritative Controller-Instanz. Einige
+laufende Randzustände (z. B. NPC-Schmuggel-Timer, taktisches Boarding,
+Wirtschaftshilfsdienste) benötigen noch vollständige Integration. Browser-
+Neustart-/UI-End-to-End-Tests und eine grüne Gesamt-CI stehen aus. Der
+in-game Save/Load-Knopf darf erst nach behobenem Controller-Lifecycle und
+der finalen CI eingeführt werden.
+
+**Gemeinsame Abnahme:** Die CircleCI-Fail-Diagnose führt nach einem roten
+Qualitätsgate Formatierung, Lint, TypeScript, Dependency, Persistence-
+Architekturprüfung, Tests und Build in einem Durchlauf weiter aus, damit
+Fehler gesammelt statt schrittweise korrigiert werden können.
