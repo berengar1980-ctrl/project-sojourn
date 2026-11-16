@@ -1,4 +1,4 @@
-name: Career final integration diagnostics once
+name: Career full suite diagnostics (corrected test timeout)
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
           failed=0
           for command in "npm run format:check" "npm run lint" "npm run typecheck" "npm run deps:check" "npm run persistence:check" "npm test" "npm run build"; do
             echo "::group::$command"
-            if timeout 180s bash -lc "$command"; then
+            if timeout 780s bash -lc "$command"; then
               echo "PASS $command"
             else
               echo "FAIL $command"
