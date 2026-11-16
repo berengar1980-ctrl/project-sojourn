@@ -1,4 +1,4 @@
-import type { WreckClaimRegistry } from '../operations/wreck-claim-registry';
+import { WreckClaimRegistry } from '../operations/wreck-claim-registry';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation } from '../../core/world-types';
 import {
@@ -31,7 +31,7 @@ export function captureCareerFieldLegalSession(
   fields: AsteroidFieldWorld,
   claims: StagedCareerFieldLegalSession['claims'],
   legal: StagedCareerFieldLegalSession['legal'],
-  wreckClaims: WreckClaimRegistry
+  wreckClaims: WreckClaimRegistry = new WreckClaimRegistry()
 ): CareerFieldLegalCheckpoint {
   const registries = captureCareerLegalAndClaims(claims, legal, fields, wreckClaims);
   return {
