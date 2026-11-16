@@ -20,9 +20,8 @@ function record(value: unknown): value is Record<string, unknown> {
 function count(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
-function validEvent(value: unknown, day: number): boolean {
+function validEventIdentity(value: Record<string, unknown>): boolean {
   return (
-    record(value) &&
     typeof value.id === 'string' &&
     value.id.length > 0 &&
     ['special-wreck', 'distress-rescue'].includes(value.type as string) &&
@@ -31,17 +30,36 @@ function validEvent(value: unknown, day: number): boolean {
     Number.isFinite(value.position.x) &&
     typeof value.position.y === 'number' &&
     Number.isFinite(value.position.y) &&
-    count(value.fieldSeed) &&
+    count(value.fieldSeed)
+  );
+}
+
+function validEventTiming(value: Record<string, unknown>, day: number): boolean {
+  return (
     count(value.createdDay) &&
     value.createdDay <= day &&
     count(value.expiresDay) &&
     value.expiresDay >= value.createdDay &&
     count(value.playerDeadlineDay) &&
     typeof value.playerAccepted === 'boolean' &&
-    typeof value.resolved === 'boolean' &&
+    typeof value.resolved === 'boolean'
+  );
+}
+
+function validEventResolution(value: Record<string, unknown>): boolean {
+  return (
     (value.claimedByNpcId === null || typeof value.claimedByNpcId === 'string') &&
     typeof value.distressTrap === 'boolean' &&
     count(value.distressPendingRewardCredits)
+  );
+}
+
+function validEvent(value: unknown, day: number): boolean {
+  return (
+    record(value) &&
+    validEventIdentity(value) &&
+    validEventTiming(value, day) &&
+    validEventResolution(value)
   );
 }
 
