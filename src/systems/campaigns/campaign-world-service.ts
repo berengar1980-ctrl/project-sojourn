@@ -2,6 +2,7 @@ import type { WorldLocation, WorldMap } from '../../core/world-types';
 import {
   stageCareerCampaignWorldCheckpoint,
   type CareerCampaignWorldCheckpoint,
+  type CampaignWorldSnapshot,
 } from './career-campaign-world-checkpoint';
 import type { NavigationService } from '../navigation/navigation-types';
 
@@ -11,11 +12,7 @@ export interface CampaignSystem {
   readonly exitLocationId: string;
 }
 
-export interface CampaignWorldSnapshot {
-  readonly activeSystemId: string | null;
-  readonly locations: Readonly<Record<string, readonly WorldLocation[]>>;
-  readonly systems: Readonly<Record<string, readonly CampaignSystem[]>>;
-}
+export type { CampaignWorldSnapshot } from './career-campaign-world-checkpoint';
 
 /** Runtime-owned, transient campaign worlds. No savegame or persistent storage. */
 export interface CampaignWorldService {
