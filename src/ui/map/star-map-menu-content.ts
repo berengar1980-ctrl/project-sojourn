@@ -1,3 +1,4 @@
+import { filteredSignals, signalKind, type MissionFilters } from './star-map-event-filters';
 import type { NpcShipMapView, StarMapViewModel } from '../../features/star-map/star-map-view-model';
 
 interface DirectoryActions {
@@ -114,34 +115,35 @@ export function renderStarMapContacts(
 export function renderStarMapEvents(
   model: StarMapViewModel,
   container: HTMLElement,
-  actions: DirectoryActions
+  actions: DirectoryActions,
+  filters: MissionFilters
 ): void {
-  const events = model.locations.filter((location) => {
-    if (location.kind === 'wreck')
-      return Boolean(location.activities.salvage || location.activities.missions);
-    return (
-      location.activities.missions === true &&
-      !location.activities.dock &&
-      !location.activities.trade
-    );
-  });
+  const all = model.locations.filter((location) => signalKind(location) !== null);
+  const events = filteredSignals(model.locations, filters, model.playerShip.position);
   const summary = document.createElement('p');
   summary.className = 'star-map-directory__summary';
-  summary.textContent = 'BEKANNTE SIGNALE // ' + events.length;
+  summary.textContent = 'BEKANNTE SIGNALE // ' + events.length + ' / ' + all.length;
   container.replaceChildren(summary);
   if (!events.length) {
-    container.append(emptyState('Noch keine bekannten Bergungs- oder Notsignale.'));
+    container.append(emptyState(
+      all.length ? 'Keine Signale entsprechen den gewählten Filtern.' :
+        'Noch keine bekannten Bergungs- oder Notsignale.'
+    ));
     return;
   }
   for (const location of events.slice(0, 24)) {
-    const activity = location.activities.missions ? 'NOTSIGNAL' : 'BERGUNG';
-    container.append(
-      createRow(
-        location.name,
-        activity + ' · GEFAHR ' + location.dangerLevel + '/3',
-        location.isSelected,
-        () => actions.onSelectLocation(location.id)
-      )
+    const kind = signalKind(location);
+    const activity = kind === 'distress' ? 'NOTSIGNAL' : 'BERGUNG';
+    const row = createRow(
+      location.name,
+      activity + ' · GEFAHR ' + location.dangerLevel + '/3',
+      location.isSelected,
+      () => actions.onSelectLocation(location.id)
     );
+    row.classList.add('star-map-event-row', 'star-map-event-row--' + kind);
+    container.append(row);
+  }
+  if (events.length > 24) {
+    container.append(emptyState('WEITERE ' + (events.length - 24) + ' SIGNALE'));
   }
 }
