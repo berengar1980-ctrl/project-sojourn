@@ -9,6 +9,33 @@ function percent(value: number): string {
   return Math.round(value * 100) + '%';
 }
 
+function appendConfirmationStyles(shell: HTMLDivElement): void {
+  const style = document.createElement('style');
+  style.textContent = `
+    .settings-menu__panel { position: relative; }
+    .settings-menu__confirm:not([hidden]) {
+      position: absolute; inset: 0; z-index: 10; padding: 28px;
+      display: flex; flex-direction: column; justify-content: center;
+      background: #07151c; border: 1px solid #467c8c; color: #d0e3e8;
+      box-sizing: border-box;
+    }
+    .settings-menu__confirm strong { color: #d0e3e8; letter-spacing: .07em; }
+    .settings-menu__confirm p { line-height: 1.6; color: #f4d9a8; }
+    .settings-menu__confirm-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+    .settings-menu__confirm-actions button {
+      flex: 1; min-width: 110px; padding: 12px;
+      border: 1px solid #477b8b; background: #172e3b; color: #e0f3f6; cursor: pointer;
+    }
+    .settings-menu__confirm-actions [data-confirm-accept] {
+      background: #28576a; border-color: #6bb6c2;
+    }
+    @media (max-width: 480px) {
+      .settings-menu__confirm:not([hidden]) { padding: 16px; }
+    }
+  `;
+  shell.append(style);
+}
+
 function createSettingsShell(): HTMLDivElement {
   const shell = document.createElement('div');
   shell.className = 'settings-menu';
@@ -94,30 +121,7 @@ function createSettingsShell(): HTMLDivElement {
     </section>
   `;
 
-  const style = document.createElement('style');
-  style.textContent = `
-    .settings-menu__panel { position: relative; }
-    .settings-menu__confirm:not([hidden]) {
-      position: absolute; inset: 0; z-index: 10; padding: 28px;
-      display: flex; flex-direction: column; justify-content: center;
-      background: #07151c; border: 1px solid #467c8c; color: #d0e3e8;
-      box-sizing: border-box;
-    }
-    .settings-menu__confirm strong { color: #d0e3e8; letter-spacing: .07em; }
-    .settings-menu__confirm p { line-height: 1.6; color: #f4d9a8; }
-    .settings-menu__confirm-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
-    .settings-menu__confirm-actions button {
-      flex: 1; min-width: 110px; padding: 12px;
-      border: 1px solid #477b8b; background: #172e3b; color: #e0f3f6; cursor: pointer;
-    }
-    .settings-menu__confirm-actions [data-confirm-accept] {
-      background: #28576a; border-color: #6bb6c2;
-    }
-    @media (max-width: 480px) {
-      .settings-menu__confirm:not([hidden]) { padding: 16px; }
-    }
-  `;
-  shell.append(style);
+  appendConfirmationStyles(shell);
   document.body.append(shell);
   document.body.classList.add('app-has-system-bar');
 
@@ -209,28 +213,7 @@ function loadSavedCareer(onLoadCareer: (() => void) | undefined, status: HTMLEle
   }
 }
 
-export function createSettingsMenu(
-  audio: GameAudioService,
-  onReturnToMainMenu: () => void,
-  profile?: PlayerProfile,
-  onSaveCareer?: () => void,
-  onLoadCareer?: () => void
-): SettingsMenu {
-  document.querySelector('.settings-menu')?.remove();
-
-  const shell = createSettingsShell();
-  if (profile) appendProfileIdentity(shell, profile);
-
-  const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
-  const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
-  const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
-  const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
-  const mainMenu = shell.querySelector<HTMLButtonElement>(
-    '.settings-menu__main-menu:not([data-career-save]):not([data-career-load])'
-  )!;
-  const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
-  const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
-  const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
+function createSettingsConfirmation(shell: HTMLDivElement) {
   const confirm = shell.querySelector<HTMLElement>('.settings-menu__confirm')!;
   const confirmTitle = shell.querySelector<HTMLElement>('#settings-confirm-title')!;
   const confirmMessage = shell.querySelector<HTMLElement>('#settings-confirm-message')!;
@@ -268,6 +251,60 @@ export function createSettingsMenu(
   };
   confirmCancel.addEventListener('click', onConfirmCancel);
   confirmAccept.addEventListener('click', onConfirmAccept);
+
+  const handleKeyDown = (event: KeyboardEvent): boolean => {
+    if (confirm.hidden) return false;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hideConfirm();
+    } else if (event.key === 'Tab') {
+      const first = confirmCancel;
+      const last = confirmAccept;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    return true;
+  };
+  return {
+    request: requestConfirm,
+    hide: hideConfirm,
+    isOpen: () => !confirm.hidden,
+    handleKeyDown,
+    destroy: () => {
+      confirmation.destroy();
+    },
+  };
+}
+
+export function createSettingsMenu(
+  audio: GameAudioService,
+  onReturnToMainMenu: () => void,
+  profile?: PlayerProfile,
+  onSaveCareer?: () => void,
+  onLoadCareer?: () => void
+): SettingsMenu {
+  document.querySelector('.settings-menu')?.remove();
+
+  const shell = createSettingsShell();
+  if (profile) appendProfileIdentity(shell, profile);
+
+  const toggle = shell.querySelector<HTMLButtonElement>('.settings-menu__toggle')!;
+  const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
+  const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
+  const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
+  const mainMenu = shell.querySelector<HTMLButtonElement>(
+    '.settings-menu__main-menu:not([data-career-save]):not([data-career-load])'
+  )!;
+  const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
+  const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
+  const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
+  const confirmation = createSettingsConfirmation(shell);
   save.disabled = !onSaveCareer;
   load.disabled = !onLoadCareer;
   const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
@@ -295,7 +332,7 @@ export function createSettingsMenu(
     toggle.hidden = open;
     toggle.setAttribute('aria-expanded', String(open));
     shell.classList.toggle('is-open', open);
-    if (!open && !confirm.hidden) hideConfirm(false);
+    if (!open && confirmation.isOpen()) confirmation.hide(false);
     if (open) {
       sync();
       close.focus();
@@ -319,7 +356,7 @@ export function createSettingsMenu(
   const onToggle = (): void => setOpen(panel.hidden);
   const onClose = (): void => setOpen(false);
   const onMainMenu = (): void =>
-    requestConfirm(
+    confirmation.request(
       'ZUM HAUPTMENÜ?',
       'Der aktuelle Durchlauf wird beendet. Ungespeicherter Fortschritt geht verloren.',
       'ZUM HAUPTMENÜ',
@@ -328,7 +365,7 @@ export function createSettingsMenu(
   const onSave = (): void => saveCareer(onSaveCareer, saveStatus);
   const onLoad = (): void => {
     if (!onLoadCareer) return;
-    requestConfirm(
+    confirmation.request(
       'SPIELSTAND LADEN?',
       'Ungespeicherter Fortschritt geht verloren.',
       'SPIELSTAND LADEN',
@@ -337,25 +374,7 @@ export function createSettingsMenu(
   };
   const baseKeyHandler = createSettingsKeyHandler(panel, setOpen);
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (!confirm.hidden) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        hideConfirm();
-      } else if (event.key === 'Tab') {
-        const first = confirmCancel;
-        const last = confirmAccept;
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-      return;
-    }
-    baseKeyHandler(event);
+    if (!confirmation.handleKeyDown(event)) baseKeyHandler(event);
   };
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
