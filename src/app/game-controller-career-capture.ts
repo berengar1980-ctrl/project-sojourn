@@ -16,6 +16,7 @@ export function captureControllerCareer(context: ControllerRuntimeContext): Care
   const { economy, state } = context;
   const custody = captureControllerCustody(context);
   const session: StagedFullCareerSession = {
+    profile: state.playerProfile,
     navigationWorld: { navigation: context.navigation, world: context.world },
     commerce: {
       commerce: {
