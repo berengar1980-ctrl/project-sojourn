@@ -26,7 +26,7 @@ for (let seed = 1; seed <= 100; seed += 1) {
 
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 assert(read('src/app/game-controller-local-actions.ts').includes('playerAtLocalExit('));
-assert(read('src/app/game-controller-salvage.ts').includes('playerAtLocalExit('));
+assert(read('src/app/game-controller-salvage-exit.ts').includes('playerAtLocalExit('));
 assert(read('src/app/game-controller-events.ts').includes('controllerSalvageExitAction'));
 assert(
   !read('src/app/game-controller-events.ts').includes(
