@@ -62,7 +62,9 @@ function launchCampaign(
         );
       game = createGameController({
         root,
-        ship: withPlayerShipName(ship, profile, 'salvage-100m-variant-01'),
+        ship: restored
+          ? withPlayerShipName(ship, profile, 'salvage-100m-variant-01')
+          : withPlayerShipName(ship, profile),
         playerProfile: profile,
         navigation,
         campaignSelection: selection.snapshot(),
