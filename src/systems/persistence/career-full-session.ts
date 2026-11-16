@@ -285,10 +285,7 @@ function stageCareerCommerceOperations(
 
 function validateCareerDayClock(player: CareerPlayerDomainCheckpoint): void {
   const seconds = player.controllerSecondsIntoDay;
-  if (
-    seconds !== undefined &&
-    (!Number.isFinite(seconds) || seconds < 0 || seconds >= 180)
-  ) {
+  if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 0 || seconds >= 180)) {
     throw new Error('Invalid saved economic day clock');
   }
 }
