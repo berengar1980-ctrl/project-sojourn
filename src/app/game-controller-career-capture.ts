@@ -58,6 +58,7 @@ export function captureControllerCareer(context: ControllerRuntimeContext): Care
     fieldsLegal: {
       fields: fieldWorldFor(context),
       claims: economy.asteroidClaims,
+      wreckClaims: economy.wreckClaims,
       legal: economy.legal,
     },
     custody: { prisoners: new Set(custody.prisoners), player: custody.player },
