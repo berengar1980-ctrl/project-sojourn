@@ -8,7 +8,7 @@ import {
   type CareerPlayerCheckpoint,
 } from '../economy/career-player-checkpoint';
 import type { PlayerTradeService } from '../economy/player-trade-service';
-import type { NpcEconomyServiceOptions } from '../economy/npc-economy-types';
+import type { CareerEconomyOptions } from '../economy/career-economy-session';
 import {
   captureCareerNpcEconomySession,
   stageCareerNpcEconomySession,
@@ -47,7 +47,7 @@ export function stageCareerCommerceSession(
   ports: readonly PortDefinition[],
   resources: readonly EconomyResourceDefinition[],
   seed: number,
-  options: NpcEconomyServiceOptions = {}
+  options: CareerEconomyOptions = {}
 ): StagedCareerCommerceSession {
   if (!checkpoint || checkpoint.version !== 1 || !checkpoint.player || !checkpoint.sector) {
     throw new Error('Invalid combined career commerce checkpoint');
