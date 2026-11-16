@@ -4,14 +4,12 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
 const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const markets = createEconomyMarketService(sectorPorts, economyResources);
-
 const allocator = {
   createMinedResource: () => 0,
   allocatePhysicalResource: () => 0,
