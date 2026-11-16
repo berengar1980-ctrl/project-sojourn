@@ -1130,3 +1130,10 @@ Die Teiladapter für Märkte, physische Ressourcen, Ereignisse, Markt-Intel
 und NPC-Wirtschaftstag sind als frische gemeinsame Session komponiert und
 werden durch einen übergreifenden Roundtrip-Test geprüft. Spieler und
 NPCs müssen weiterhin aus demselben Save stammen; kein globaler Career-Swap.
+
+## Review-Log (2026-11-16): Sektorhandel und NPC-Wirtschaft gemeinsam laden
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Neuer
+übergreifender Restore der Spieler-Wirtschaft, NPC-Sektorrouten und laufenden
+Handelspläne gegen dieselbe Marktinstanz. Beschädigte Waren-/Ortsreferenzen
+werden abgewiesen; der vollumfängliche Career-Session-Swap fehlt weiterhin.
