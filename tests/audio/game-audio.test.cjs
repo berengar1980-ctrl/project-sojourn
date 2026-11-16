@@ -79,7 +79,7 @@ assert(
     settings.includes("event.key !== 'Tab'") &&
     settings.includes("backdrop.addEventListener('click', onClose)") &&
     settings.includes('confirmation.request(') &&
-    settings.includes('onReturnToMainMenu')
+    settings.includes('onReturnToMainMenu'),
   'general settings menu must expose audio controls and a main-menu return action'
 );
 
