@@ -3,12 +3,10 @@ import {
   createDistressRammingState,
   type DistressRammingState,
 } from '../systems/salvage/distress-ramming-physics';
-import { localSpaceExitPoint } from '../ui/map/local-space-exit-gate';
 import {
   advanceDistressTow,
   createDistressTowState,
   distressTowWithinRange,
-  towShipAtExit,
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
@@ -20,7 +18,6 @@ import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
 import type { GameAudioService } from '../systems/audio/game-audio-service';
 import type { WorldLocation } from '../core/world-types';
-import { playerAtLocalExit } from '../ui/map/local-space-exit-gate';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
@@ -38,6 +35,7 @@ import {
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
 import { finishSalvageCombat } from './game-controller-salvage-combat-return';
+import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
@@ -209,33 +207,6 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
-function returnToStarMapFromSalvage(
-  context: SalvageSceneRuntime,
-  refresh: () => void
-): void {
-  const { service, options, state } = context;
-  const snapshot = service.getSnapshot();
-  const { width, height } = snapshot.field;
-  if (!playerAtLocalExit(snapshot.ship.position, width, height, snapshot.field.seed)) {
-    options.log.write('NAV > BITTE ZUERST DEN MARKIERTEN AUSGANG ANFLIEGEN');
-    refresh();
-    return;
-  }
-  if (
-    state.activeSectorEvent?.distressStage === 'towing' &&
-    (!state.distressTow ||
-      !towShipAtExit(
-        snapshot.ship.position,
-        state.distressTow,
-        localSpaceExitPoint(width, height, snapshot.field.seed)
-      ))
-  ) {
-    options.log.write('SCHLEPPEN > HAVARIST MUSS MIT ZUM AUSGANG');
-    return;
-  }
-  options.onReturnToStarMap();
-}
-
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -321,7 +292,14 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onReturnToStarMap() {
-      returnToStarMapFromSalvage(context, refresh);
+      returnToStarMapFromSalvage({
+        service,
+        activeSectorEvent: state.activeSectorEvent,
+        distressTow: state.distressTow,
+        log: options.log,
+        onReturn: options.onReturnToStarMap,
+        refresh,
+      });
     },
   });
 }
