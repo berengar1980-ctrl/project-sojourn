@@ -283,6 +283,32 @@ function createSettingsConfirmation(shell: HTMLDivElement) {
   };
 }
 
+function bindSettingsAudio(audio: GameAudioService, shell: HTMLDivElement): () => void {
+  const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
+  const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
+  const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
+  const rcsValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="rcs"]')!;
+  const onAmbience = (): void => {
+    audio.setAmbienceVolume(Number(ambience.value) / 100);
+    ambienceValue.value = percent(audio.getSettings().ambienceVolume);
+  };
+  const onRcs = (): void => {
+    audio.setRcsVolume(Number(rcs.value) / 100);
+    rcsValue.value = percent(audio.getSettings().rcsVolume);
+  };
+  const settings = audio.getSettings();
+  ambience.value = String(Math.round(settings.ambienceVolume * 100));
+  rcs.value = String(Math.round(settings.rcsVolume * 100));
+  ambienceValue.value = percent(settings.ambienceVolume);
+  rcsValue.value = percent(settings.rcsVolume);
+  ambience.addEventListener('input', onAmbience);
+  rcs.addEventListener('input', onRcs);
+  return () => {
+    ambience.removeEventListener('input', onAmbience);
+    rcs.removeEventListener('input', onRcs);
+  };
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
@@ -308,19 +334,7 @@ export function createSettingsMenu(
   const confirmation = createSettingsConfirmation(shell);
   save.disabled = !onSaveCareer;
   load.disabled = !onLoadCareer;
-  const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
-  const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
-  const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
-  const rcsValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="rcs"]')!;
-
-  const sync = (): void => {
-    const settings = audio.getSettings();
-    ambience.value = String(Math.round(settings.ambienceVolume * 100));
-    rcs.value = String(Math.round(settings.rcsVolume * 100));
-    ambienceValue.value = percent(settings.ambienceVolume);
-    rcsValue.value = percent(settings.rcsVolume);
-  };
-
+  let detachAudio: (() => void) | null = null;
   let previouslyFocused: HTMLElement | null = null;
   const setOpen = (open: boolean): void => {
     const wasOpen = !panel.hidden;
@@ -335,23 +349,14 @@ export function createSettingsMenu(
     shell.classList.toggle('is-open', open);
     if (!open && confirmation.isOpen()) confirmation.hide(false);
     if (open) {
-      sync();
+      detachAudio?.();
+      detachAudio = bindSettingsAudio(audio, shell);
       close.focus();
     } else if (wasOpen) {
       const focusTarget = previouslyFocused?.isConnected ? previouslyFocused : toggle;
       previouslyFocused = null;
       focusTarget.focus();
     }
-  };
-
-  const onAmbience = (): void => {
-    audio.setAmbienceVolume(Number(ambience.value) / 100);
-    ambienceValue.value = percent(audio.getSettings().ambienceVolume);
-  };
-
-  const onRcs = (): void => {
-    audio.setRcsVolume(Number(rcs.value) / 100);
-    rcsValue.value = percent(audio.getSettings().rcsVolume);
   };
 
   const onToggle = (): void => setOpen(panel.hidden);
@@ -377,8 +382,6 @@ export function createSettingsMenu(
   const onKeyDown = (event: KeyboardEvent): void => {
     if (!confirmation.handleKeyDown(event)) baseKeyHandler(event);
   };
-  ambience.addEventListener('input', onAmbience);
-  rcs.addEventListener('input', onRcs);
   toggle.addEventListener('click', onToggle);
   backdrop.addEventListener('click', onClose);
   close.addEventListener('click', onClose);
@@ -387,13 +390,11 @@ export function createSettingsMenu(
   load.addEventListener('click', onLoad);
   window.addEventListener('keydown', onKeyDown, true);
 
-  sync();
   setOpen(false);
 
   return {
     destroy() {
-      ambience.removeEventListener('input', onAmbience);
-      rcs.removeEventListener('input', onRcs);
+      detachAudio?.();
       toggle.removeEventListener('click', onToggle);
       backdrop.removeEventListener('click', onClose);
       close.removeEventListener('click', onClose);
