@@ -1,4 +1,4 @@
-name: Career browser resume controller integration diagnostics (roundtrip validation)
+name: Career live controller full regression gate
 
 on:
   push:
@@ -39,9 +39,9 @@ jobs:
         shell: bash
         run: |
           failed=0
-          for command in "npm run format:check" "npm run lint" "npm run typecheck" "npm run deps:check" "npm run persistence:check" "node tests/run-tests.cjs career" "npm run build"; do
+          for command in "npm run format:check" "npm run lint" "npm run typecheck" "npm run deps:check" "npm run persistence:check" "npm test" "npm run build"; do
             echo "::group::$command"
-            if timeout 120s bash -lc "$command"; then echo "PASS $command"
+            if timeout 780s bash -lc "$command"; then echo "PASS $command"
             else echo "FAIL $command"; failed=$((failed + 1)); fi
             echo "::endgroup::"
           done
