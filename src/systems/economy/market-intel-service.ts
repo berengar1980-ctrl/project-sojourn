@@ -171,6 +171,31 @@ function stageMarketIntel(
   };
 }
 
+function recordMarketHistory(
+  history: MarketHistory,
+  markets: EconomyMarketService,
+  day: number
+): void {
+    const resolvedDay = Math.max(0, Math.floor(day));
+    if (history.has(resolvedDay)) return;
+    const snapshot = new Map<string, readonly HistoricalMarketEntry[]>();
+    for (const market of markets.snapshot()) {
+      snapshot.set(
+        market.locationId,
+        Object.values(market.entries).map((entry) => ({
+          resourceId: entry.resourceId,
+          price: entry.price,
+          stock: entry.stock,
+        }))
+      );
+    }
+    history.set(resolvedDay, snapshot);
+    for (const historyDay of [...history.keys()]) {
+      if (historyDay < resolvedDay - MARKET_HISTORY_DAYS + 1) history.delete(historyDay);
+    }
+  };
+
+
 export function createMarketIntelService(
   markets: EconomyMarketService,
   checkpoint?: CareerMarketIntelCheckpoint
@@ -208,25 +233,7 @@ export function createMarketIntelService(
     }));
   };
 
-  const recordHistory = (day: number): void => {
-    const resolvedDay = Math.max(0, Math.floor(day));
-    if (history.has(resolvedDay)) return;
-    const snapshot = new Map<string, readonly HistoricalMarketEntry[]>();
-    for (const market of markets.snapshot()) {
-      snapshot.set(
-        market.locationId,
-        Object.values(market.entries).map((entry) => ({
-          resourceId: entry.resourceId,
-          price: entry.price,
-          stock: entry.stock,
-        }))
-      );
-    }
-    history.set(resolvedDay, snapshot);
-    for (const historyDay of [...history.keys()]) {
-      if (historyDay < resolvedDay - MARKET_HISTORY_DAYS + 1) history.delete(historyDay);
-    }
-  };
+  const recordHistory = (day: number): void => recordMarketHistory(history, markets, day);
 
   const observeLocation = (locationId: string, day: number): void => {
     const observedDay = Math.max(0, Math.floor(day));
