@@ -74,6 +74,16 @@ function launchCampaign(
               onCareerContextReady: restored.bindController,
             }
           : {}),
+        onLoadCareer: () => {
+          // Prepare and validate the replacement before touching the running session.
+          const result = createCareerSaveStore(window.localStorage).read();
+          if (!result.ok) throw new Error('Kein gültiger Karriere-Spielstand vorhanden.');
+          const staged = prepareControllerCareer(result.snapshot);
+          running = false;
+          loading.destroy();
+          game?.destroy();
+          launchCampaign(root, staged.session.profile, selection, staged);
+        },
         onReturnToMainMenu: () => {
           if (!running) return;
           running = false;
@@ -122,7 +132,7 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
         () => showMainMenu(root, selection),
         resolveShipGameplayStats(getShipDefinition('salvage-100m-variant-01')!).stations
       );
-    } else if (action === 'continue') {
+    } else if (action === 'continue' || action === 'load') {
       try {
         const saved = createCareerSaveStore(window.localStorage).read();
         if (!saved.ok) throw new Error('Kein gültiger Karriere-Spielstand vorhanden.');

@@ -476,7 +476,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     context.audio,
     options.onReturnToMainMenu,
     state.playerProfile,
-    () => saveControllerCareer(context)
+    () => saveControllerCareer(context),
+    options.onLoadCareer
   );
   mountControllerStarMap(context);
   return {

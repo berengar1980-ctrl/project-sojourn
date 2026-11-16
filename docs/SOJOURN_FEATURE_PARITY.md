@@ -1171,3 +1171,13 @@ NPC-Verfolgung fortgesetzt. Ein manipulierter Spielstand wird abgewiesen,
 ohne die aktive Session zu verändern. Die Tests ersetzen keinen vollständigen
 Browser-Neustart und keine manuellen UI-Prüfungen; sie ändern keine
 Gameplay-Mechanik und begründen keine neue Paritätswertung.
+
+## Review-Log (2026-11-16): Career Save/Load-Menüs (PR #321)
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Im Hauptmenü ist der vorhandene lokale Career-Slot über „Spiel laden“ und
+„Karriere fortsetzen“ erreichbar; das Esc-Menü ergänzt eine bestätigte
+Ladeaktion. Der bestehende versionierte Save-Store und der atomare
+14-Bereiche-Restore werden genutzt; kein neues Wirtschaftssystem,
+keine Änderung am Save-Format und keine neue Parity-Einstufung.
+Visuelle Browser-End-to-End-Tests und mehrere Speicherplätze bleiben offen.

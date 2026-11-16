@@ -64,7 +64,7 @@ export function createCampaignSelectionMenu(
   heading.textContent = 'KAMPAGNEN';
   const explanation = document.createElement('p');
   explanation.textContent =
-    'Wähle die Kampagnen für deinen nächsten Spieldurchlauf. Die Auswahl gilt bis zum Schließen des Spiels; Spielstände sind noch nicht implementiert.';
+    'Wähle die Kampagnen für deinen nächsten Spieldurchlauf. Die Auswahl gilt für neue Spiele. Karriere-Spielstände werden separat im Hauptmenü geladen.';
   const counter = document.createElement('p');
   counter.className = 'harrow-campaigns__counter';
   const updateCounter = (): void => {
