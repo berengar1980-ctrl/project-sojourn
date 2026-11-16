@@ -30,6 +30,39 @@ function isFeatureFile(file) {
   return FEATURE_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
+function validateOwner(file, decision, root) {
+  if (
+    !file.startsWith('src/systems/') ||
+    !file.endsWith('.ts') ||
+    !fs.existsSync(path.join(root, file))
+  ) {
+    throw new Error('Invalid or missing domain module in owner registry: ' + file);
+  }
+  if (
+    !decision ||
+    !VALID_MODES.has(decision.mode) ||
+    typeof decision.reason !== 'string' ||
+    decision.reason.trim().length < 15
+  ) {
+    throw new Error('Missing persistence decision/reason for ' + file);
+  }
+  if (decision.mode !== 'persisted') return;
+  if (
+    typeof decision.checkpoint !== 'string' ||
+    !decision.checkpoint.startsWith('src/') ||
+    !fs.existsSync(path.join(root, decision.checkpoint))
+  ) {
+    throw new Error(`Missing checkpoint adapter for ${file}`);
+  }
+  if (
+    typeof decision.test !== 'string' ||
+    !decision.test.startsWith('tests/') ||
+    !fs.existsSync(path.join(root, decision.test))
+  ) {
+    throw new Error(`Missing checkpoint regression test for ${file}`);
+  }
+}
+
 function validateOwners(owners, root) {
   if (
     !owners ||
@@ -41,37 +74,7 @@ function validateOwners(owners, root) {
     throw new Error('Invalid career persistence owner registry');
   }
   for (const [file, decision] of Object.entries(owners.modules)) {
-    if (
-      !file.startsWith('src/systems/') ||
-      !file.endsWith('.ts') ||
-      !fs.existsSync(path.join(root, file))
-    ) {
-      throw new Error('Invalid or missing domain module in owner registry: ' + file);
-    }
-    if (
-      !decision ||
-      !VALID_MODES.has(decision.mode) ||
-      typeof decision.reason !== 'string' ||
-      decision.reason.trim().length < 15
-    ) {
-      throw new Error('Missing persistence decision/reason for ' + file);
-    }
-    if (decision.mode === 'persisted') {
-      if (
-        typeof decision.checkpoint !== 'string' ||
-        !decision.checkpoint.startsWith('src/') ||
-        !fs.existsSync(path.join(root, decision.checkpoint))
-      ) {
-        throw new Error(`Missing checkpoint adapter for ${file}`);
-      }
-      if (
-        typeof decision.test !== 'string' ||
-        !decision.test.startsWith('tests/') ||
-        !fs.existsSync(path.join(root, decision.test))
-      ) {
-        throw new Error(`Missing checkpoint regression test for ${file}`);
-      }
-    }
+    validateOwner(file, decision, root);
   }
 }
 
