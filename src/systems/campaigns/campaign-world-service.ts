@@ -149,6 +149,7 @@ export function createCampaignWorldService(
   let active: { owner: string; id: string; returnLocationId: string } | null = null;
   let revision = 0;
   let baseView: WorldMap = baseWorld;
+  let restoring = checkpoint !== undefined;
 
   function rebuildBase(): void {
     revision += 1;
@@ -160,7 +161,7 @@ export function createCampaignWorldService(
         ...[...locations.values()].flatMap((entries) => [...entries.values()]),
       ],
     };
-    if (!active) navigation.replaceWorld(baseView);
+    if (!active && !restoring) navigation.replaceWorld(baseView);
   }
 
   function existingId(id: string): boolean {
@@ -201,6 +202,8 @@ export function createCampaignWorldService(
         throw new Error('Saved navigation is outside the campaign system');
       }
     }
+    restoring = false;
+    if (!active) navigation.replaceWorld(baseView);
   }
 
   function foreign(): CampaignSystem | null {
