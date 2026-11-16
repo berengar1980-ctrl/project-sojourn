@@ -195,6 +195,12 @@ function makeNpcSalvageEvents(
   });
 }
 
+function initializeSalvageEvents(navigation: NavigationService): SectorSalvageEventService {
+  const events = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
+  events.advanceDay(0, navigation.getSnapshot().currentPosition, false);
+  return events;
+}
+
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {},
@@ -261,8 +267,7 @@ export function createControllerEconomy(
   npcEconomy.advanceDay(0);
   initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
   registerSecurityDroneCombatants(npcStates);
-  const salvageEvents = createSectorSalvageEventService(narrowsSector, 0x50a7a9e);
-  salvageEvents.advanceDay(0, navigation.getSnapshot().currentPosition, false);
+  const salvageEvents = initializeSalvageEvents(navigation);
   const npcSalvageEvents = makeNpcSalvageEvents(sectorNpcs, salvageEvents, shipyardResearch);
 
   return {
