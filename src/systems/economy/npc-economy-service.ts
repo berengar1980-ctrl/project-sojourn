@@ -366,9 +366,7 @@ function processNpcEconomyDay(
   // Security drones and prisoners do not accrue regular ship operating expenses.
   if (
     npc.id.startsWith('security-drone:') ||
-    ('activity' in npc &&
-      typeof npc.activity === 'string' &&
-      npc.activity.startsWith('Straflager'))
+    ('activity' in npc && typeof npc.activity === 'string' && npc.activity.startsWith('Straflager'))
   ) {
     return;
   }
