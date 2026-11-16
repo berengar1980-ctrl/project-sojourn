@@ -253,3 +253,29 @@ Der Player und die NPC-Liste müssen zuvor aus demselben Career-Snapshot
 vorbereitet werden. Der Controller-Umschaltpunkt für eine vollständig
 vorbereitete Career-Session ist **weiterhin nicht umgesetzt**; diese
 Komposition allein ist daher noch kein nutzbarer Spielstand.
+
+## Sektorhandel als gemeinsame Restore-Gruppe (nach PR #318)
+
+`career-economy-integrity.ts` prüft vor dem Aufbau der Simulation die
+Waren-/Marktkennungen, NPC-Fracht, Spielerfracht, autonome Handelsziele,
+laufende Kauf-/Verkaufsaufträge, Nebenhandelspläne und NPC-Marktbeobachtungen.
+Unbekannte Ressourcen und Handelsorte werden abgewiesen statt beim Laden
+stillschweigend zurückgesetzt oder erneut ausgelöst zu werden.
+
+`career-npc-economy-session.ts` führt den Sektor-NPC-Checkpoint mit den
+Markt-, Pool-, Ereignis-, Intel- und NPC-Tagesabrechnungsständen zusammen.
+Alle NPCs werden als neue Objekte validiert; diese Instanzen werden dann
+auch im neuen Wirtschaftsdienst verwendet. Die ursprünglichen NPCs bleiben
+selbst bei fehlerhaften Handelsaufträgen unverändert.
+
+`career-commerce-session.ts` ergänzt die Spieler-Fracht und den Geldbeutel.
+Der Spieler-Handelsservice wird erst erzeugt, nachdem die neue Marktinstanz
+vorliegt. Ein anschließender Kauf verändert damit **denselben Markt**, den
+auch die wiederhergestellte Wirtschaft und die NPC-Services benutzen.
+Ein Regressionstest deckt den gemeinsamen Roundtrip, echte Kaufbuchung,
+kaputte Handelsziele und fehlerhafte Spieler-Credits ab.
+
+Dies ist noch **kein globaler Career-Swap**: Schiffsausrüstung, Crew, aktive
+Felder, Recht, Haft, Kampf, Kampagnen und Welt müssen ebenfalls aus demselben
+Snapshot aufbereitet und erst nach vollständiger Prüfung gemeinsam aktiviert
+werden. Save/Load-UI bleibt gesperrt.
