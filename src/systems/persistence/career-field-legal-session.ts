@@ -17,7 +17,6 @@ export interface CareerFieldLegalCheckpoint {
   readonly fields: CareerAsteroidFieldCheckpoint;
   readonly claims: CareerLegalAndClaims['claims'];
   readonly legal: CareerLegalAndClaims['legal'];
-  readonly wreckClaims?: CareerLegalAndClaims['wreckClaims'];
 }
 
 export interface StagedCareerFieldLegalSession {
@@ -40,7 +39,6 @@ export function captureCareerFieldLegalSession(
     fields: fields.exportState(),
     claims: registries.claims,
     legal: registries.legal,
-    wreckClaims: registries.wreckClaims,
   };
 }
 
@@ -66,7 +64,6 @@ export function stageCareerFieldLegalSession(
   const registries = stageCareerLegalAndClaims({
     claims: checkpoint.claims,
     legal: checkpoint.legal,
-    wreckClaims: checkpoint.wreckClaims,
   });
   const fields = new AsteroidFieldWorld(
     locations,
