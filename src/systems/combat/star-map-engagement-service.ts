@@ -10,12 +10,9 @@ export type {
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 
-import type { ShipDefinition } from '../../core/ship-types';
-import type { WorldMap } from '../../core/world-types';
 import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
 
-import type { NavigationService } from '../navigation';
 
 import { getShipDefinition } from '../ships';
 
@@ -26,13 +23,11 @@ import {
   npcMayInitiateAttack,
 } from '../npcs/npc-combat-ai';
 
-import type { NpcSectorService } from '../npcs/npc-sector-service';
 
 import {
   createStrategicCombatService,
   type StrategicCombatArenaOptions,
   type StrategicCombatService,
-  type StrategicCombatantSetup,
 } from './strategic-combat-service';
 
 import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
