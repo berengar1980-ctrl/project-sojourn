@@ -1,4 +1,11 @@
-export type StartMenuAction = 'campaign' | 'continue' | 'load' | 'campaigns' | 'pvp' | 'options' | 'quit';
+export type StartMenuAction =
+  | 'campaign'
+  | 'continue'
+  | 'load'
+  | 'campaigns'
+  | 'pvp'
+  | 'options'
+  | 'quit';
 
 export interface StartMenu {
   destroy(): void;
