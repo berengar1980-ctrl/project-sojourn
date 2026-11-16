@@ -185,6 +185,18 @@ export function createCampaignWorldService(
         }
       }
     }
+    if (restored.revision < revision) {
+      throw new Error('Invalid saved campaign world revision');
+    }
+    revision = restored.revision;
+    baseView = {
+      ...baseWorld,
+      ...(revision > 0 ? { id: baseWorld.id + '-campaign-' + revision } : {}),
+      locations: [
+        ...baseWorld.locations,
+        ...[...locations.values()].flatMap((entries) => [...entries.values()]),
+      ],
+    };
     const savedActive = restored.active;
     if (savedActive) {
       const system = systems.get(savedActive.owner)?.get(savedActive.id);
@@ -268,6 +280,7 @@ export function createCampaignWorldService(
     snapshot: () => snapshotCampaignWorld(active?.id ?? null, locations, systems),
     exportCareerState: () => ({
       version: 1,
+      revision,
       snapshot: snapshotCampaignWorld(active?.id ?? null, locations, systems),
       active: active ? { ...active } : null,
     }),
