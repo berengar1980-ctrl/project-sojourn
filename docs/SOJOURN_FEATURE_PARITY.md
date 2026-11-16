@@ -1157,3 +1157,13 @@ Neue Checkpoints für laufende Kämpfe, lokale NPC-Felder, Bergungsereignisse,
 Kampagnenwelten, Crew, Recht/Haft, Handelsmandat, Schmuggel und Fraktionsruf.
 Bestehende Feature-Parity-Wertungen ändern sich nicht durch diese noch nicht
 vollständig am Live-Controller aktivierte Speicherung.
+
+## Review-Log (2026-11-16): Career Save/Load-Menüs (PR #321)
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Im Hauptmenü ist der vorhandene lokale Career-Slot über „Spiel laden“ und
+„Karriere fortsetzen“ erreichbar; das Esc-Menü ergänzt eine bestätigte
+Ladeaktion. Der bestehende versionierte Save-Store und der atomare
+14-Bereiche-Restore werden genutzt; kein neues Wirtschaftssystem,
+keine Änderung am Save-Format und keine neue Parity-Einstufung.
+Visuelle Browser-End-to-End-Tests und mehrere Speicherplätze bleiben offen.
