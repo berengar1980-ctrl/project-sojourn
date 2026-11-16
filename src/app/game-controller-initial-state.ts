@@ -13,7 +13,9 @@ export function createInitialControllerState(
     activeShip: options.ship,
     starterShipId: options.ship.id,
     playerProfile: createPlayerProfile(options.playerProfile),
-    shipOwnership: createShipOwnershipService(options.ship.id, economy.trade),
+    shipOwnership:
+      options.restoredSession?.commerce.ships.ownership ??
+      createShipOwnershipService(options.ship.id, economy.trade),
     mode: 'star-map',
     panels: { star: null, local: null, port: null },
     shipSwitcher: null,
