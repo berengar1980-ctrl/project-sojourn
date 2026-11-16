@@ -218,7 +218,11 @@ function claimPlayerWreck(context: SalvageSceneRuntime, wreckId: string): void {
     return;
   }
   const result = options.wreckClaims.register(
-    field, wreck, 'player', options.getCurrentDay(), options.player.credits
+    field,
+    wreck,
+    'player',
+    options.getCurrentDay(),
+    options.player.credits
   );
   if (result.ok) {
     options.player.credits -= result.fee;

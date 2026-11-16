@@ -164,12 +164,12 @@ function updateBlockadeReason(
 
 function operationsTabs(m: OperationsModel): string[][] {
   return [
-      ['active', 'Laufende Aufträge'],
-      ...(m.shipRole === 'freighter' ? [['blockades', 'Blockaden']] : []),
-      ...(m.shipRole === 'patrol' ? [['patrol', 'Patrouille']] : []),
-      ...(['mining', 'salvage'].includes(m.shipRole)
-        ? [['claims', m.shipRole === 'salvage' ? 'Wrackregister' : 'Konzessionsregister']]
-        : []),
+    ['active', 'Laufende Aufträge'],
+    ...(m.shipRole === 'freighter' ? [['blockades', 'Blockaden']] : []),
+    ...(m.shipRole === 'patrol' ? [['patrol', 'Patrouille']] : []),
+    ...(['mining', 'salvage'].includes(m.shipRole)
+      ? [['claims', m.shipRole === 'salvage' ? 'Wrackregister' : 'Konzessionsregister']]
+      : []),
   ];
 }
 
