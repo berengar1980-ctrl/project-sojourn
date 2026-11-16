@@ -5,9 +5,10 @@ import type { AsteroidFieldWorld } from '../operations/asteroid-field-world';
 import { cloneCareerJson } from './career-save-contract';
 
 export interface CareerLegalAndClaims {
-  readonly claims: ReturnType<AsteroidClaimRegistry['exportState']>;
+  readonly claims: ReturnType<AsteroidClaimRegistry['exportState']> & {
+    readonly wreckClaims?: WreckClaimCheckpoint;
+  };
   readonly legal: ReturnType<SectorLegalRegistry['exportState']>;
-  readonly wreckClaims?: WreckClaimCheckpoint;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -296,9 +297,8 @@ export function captureCareerLegalAndClaims(
 ): CareerLegalAndClaims {
   fields.forEachField((field) => claims.rememberField(field.locationId, field.instance.asteroids));
   return cloneCareerJson({
-    claims: claims.exportState(),
+    claims: { ...claims.exportState(), wreckClaims: wreckClaims.exportState() },
     legal: legal.exportState(),
-    wreckClaims: wreckClaims.exportState(),
   });
 }
 
@@ -315,7 +315,7 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
   if (!isRecord(saved)) throw new Error('Fehlende Konzessions- und Rechtsdaten.');
   verifyClaims(saved.claims);
   verifyLegal(saved.legal);
-  verifyWreckClaims(saved.wreckClaims);
+  // Wreck state lives inside the existing claims section of the 14-part save.
   const claims = new AsteroidClaimRegistry();
   const legal = new SectorLegalRegistry();
   const wreckClaims = new WreckClaimRegistry();
@@ -325,7 +325,7 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
   ) {
     throw new Error('Speicherdaten des Rechts- oder Konzessionssystems unvollständig.');
   }
-  if (saved.wreckClaims)
-    wreckClaims.restoreState(saved.wreckClaims as unknown as WreckClaimCheckpoint);
+  const savedClaims = saved.claims as CareerLegalAndClaims['claims'];
+  if (savedClaims.wreckClaims) wreckClaims.restoreState(savedClaims.wreckClaims);
   return { claims, legal, wreckClaims };
 }
