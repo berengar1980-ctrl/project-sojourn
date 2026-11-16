@@ -3,6 +3,7 @@ import type { PlayerProfile } from '../core/player-profile';
 
 import type { NavigationService } from '../systems/navigation';
 import type { StagedFullCareerSession } from '../systems/persistence/career-full-session';
+import type { CareerSnapshot } from '../systems/persistence/career-save-contract';
 
 export interface GameControllerOptions {
   readonly root: HTMLElement;
@@ -18,5 +19,6 @@ export interface GameControllerOptions {
 export interface GameController {
   tick(deltaSeconds: number): void;
   profileSnapshot(): PlayerProfile;
+  careerSnapshot(): CareerSnapshot;
   destroy(): void;
 }
