@@ -244,9 +244,15 @@ export function createSettingsMenu(
     if (restoreFocus) previousConfirmFocus?.focus();
     previousConfirmFocus = null;
   };
-  const requestConfirm = (title: string, message: string, actionLabel: string, action: () => void): void => {
+  const requestConfirm = (
+    title: string,
+    message: string,
+    actionLabel: string,
+    action: () => void
+  ): void => {
     if (!confirm.hidden) return;
-    previousConfirmFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousConfirmFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pendingAction = action;
     confirmTitle.textContent = title;
     confirmMessage.textContent = message;
@@ -312,17 +318,22 @@ export function createSettingsMenu(
 
   const onToggle = (): void => setOpen(panel.hidden);
   const onClose = (): void => setOpen(false);
-  const onMainMenu = (): void => requestConfirm(
-    'ZUM HAUPTMENÜ?',
-    'Der aktuelle Durchlauf wird beendet. Ungespeicherter Fortschritt geht verloren.',
-    'ZUM HAUPTMENÜ',
-    onReturnToMainMenu
-  );
+  const onMainMenu = (): void =>
+    requestConfirm(
+      'ZUM HAUPTMENÜ?',
+      'Der aktuelle Durchlauf wird beendet. Ungespeicherter Fortschritt geht verloren.',
+      'ZUM HAUPTMENÜ',
+      onReturnToMainMenu
+    );
   const onSave = (): void => saveCareer(onSaveCareer, saveStatus);
   const onLoad = (): void => {
     if (!onLoadCareer) return;
-    requestConfirm('SPIELSTAND LADEN?', 'Ungespeicherter Fortschritt geht verloren.', 'SPIELSTAND LADEN',
-      () => loadSavedCareer(onLoadCareer, saveStatus));
+    requestConfirm(
+      'SPIELSTAND LADEN?',
+      'Ungespeicherter Fortschritt geht verloren.',
+      'SPIELSTAND LADEN',
+      () => loadSavedCareer(onLoadCareer, saveStatus)
+    );
   };
   const baseKeyHandler = createSettingsKeyHandler(panel, setOpen);
   const onKeyDown = (event: KeyboardEvent): void => {
@@ -335,9 +346,11 @@ export function createSettingsMenu(
         const first = confirmCancel;
         const last = confirmAccept;
         if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault(); last.focus();
+          event.preventDefault();
+          last.focus();
         } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault(); first.focus();
+          event.preventDefault();
+          first.focus();
         }
       }
       return;
