@@ -6,6 +6,7 @@ const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
 const full = process.argv[2] === 'full';
+const career = process.argv[2] === 'career';
 
 function walk(dir) {
   const out = [];
@@ -18,7 +19,10 @@ function walk(dir) {
 }
 
 const tests = walk(__dirname)
-  .filter((file) => full || !file.includes(`${path.sep}full${path.sep}`))
+  .filter((file) =>
+    (full || !file.includes(`${path.sep}full${path.sep}`)) &&
+    (!career || path.basename(file).startsWith('career-'))
+  )
   .sort();
 
 let failed = 0;
@@ -28,6 +32,7 @@ for (const file of tests) {
     cwd: root,
     encoding: 'utf8',
     stdio: 'pipe',
+    ...(career ? { timeout: 60_000 } : {}),
   });
 
   if (result.status === 0) {
