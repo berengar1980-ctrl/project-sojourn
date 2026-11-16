@@ -169,7 +169,7 @@ export function createSettingsMenu(
   const panel = shell.querySelector<HTMLElement>('.settings-menu__panel')!;
   const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
   const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
-  const mainMenu = shell.querySelector<HTMLButtonElement>('.settings-menu__main-menu')!;
+  const mainMenu = shell.querySelector<HTMLButtonElement>('.settings-menu__main-menu:not([data-career-save])')!;
   const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
   const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
   save.disabled = !onSaveCareer;
