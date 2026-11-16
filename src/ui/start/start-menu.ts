@@ -1,4 +1,4 @@
-export type StartMenuAction = 'campaign' | 'campaigns' | 'pvp' | 'options' | 'quit';
+export type StartMenuAction = 'campaign' | 'continue' | 'campaigns' | 'pvp' | 'options' | 'quit';
 
 export interface StartMenu {
   destroy(): void;
@@ -6,7 +6,8 @@ export interface StartMenu {
 
 export function createStartMenu(
   root: HTMLElement,
-  onAction: (action: StartMenuAction) => void
+  onAction: (action: StartMenuAction) => void,
+  hasCareerSave = false
 ): StartMenu {
   const shell = document.createElement('section');
   shell.className = 'harrow-start';
@@ -27,7 +28,7 @@ export function createStartMenu(
     { label: 'Kampagnenspiel', action: 'campaign' },
     { label: 'PvP-Modus', action: 'pvp' },
     { label: 'Kampagnen', action: 'campaigns' },
-    { label: 'Speichern / Laden' },
+    { label: 'Karriere fortsetzen', action: hasCareerSave ? 'continue' : undefined },
     { label: 'Optionen', action: 'options' },
     { label: 'Beenden', action: 'quit' },
   ];
@@ -37,7 +38,7 @@ export function createStartMenu(
     button.textContent = entry.label;
     button.disabled = !entry.action;
     if (!entry.action) {
-      button.title = 'Spielstände sind noch nicht implementiert';
+      button.title = 'Noch kein gültiger Karriere-Spielstand vorhanden';
     } else {
       button.dataset.action = entry.action;
       button.addEventListener('click', () => onAction(entry.action!));
