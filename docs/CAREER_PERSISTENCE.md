@@ -366,3 +366,13 @@ ungespeicherten Fortschritts wird ausdrücklich bestätigt. Mehrere Slots, ein
 Datei-Import/Export und vollständige visuelle Browser-Neustarttests sind damit
 **noch nicht** implementiert. Speichern bleibt auf ruhenden Orbit/Hafen
 beschränkt.
+
+### NPC-Orte außerhalb von Handelsmärkten (Save/Load-Bugfix)
+
+**Keine Speicheränderung:** Die Economy-Integritätsprüfung unterscheidet
+Weltorte für NPC-Positionen und Reiseziele von Standorten mit echten
+Handelsmärkten. Sicherheitsdrohnen und andere NPCs an Asteroidenfeldern
+werden beim Wiederherstellen nicht mehr als ungültige Wirtschaftsidentität
+abgelehnt. Marktbeobachtungen werden weiterhin ausschließlich gegen
+existierende Handelsmärkte validiert. Vorhandene Save-JSON-Daten bleiben
+unverändert und werden nicht migriert.
