@@ -144,11 +144,14 @@ export function createOperationsPanel(options: Options): { destroy(): void } {
     const order = dialog.querySelector<HTMLButtonElement>('[data-op="order"]');
     if (order) order.disabled = !m.port || cost === null || cost > m.credits;
     const reason = dialog.querySelector('[data-blockade-reason]');
-    if (reason) reason.textContent = !m.port
-      ? 'Gesperrt: zuerst an einem zivilen Hafen andocken.'
-      : cost === null ? 'Wähle 1–3 verfügbare Korsaren.'
-      : cost > m.credits ? 'Gesperrt: nicht genügend Credits.'
-      : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
+    if (reason)
+      reason.textContent = !m.port
+        ? 'Gesperrt: zuerst an einem zivilen Hafen andocken.'
+        : cost === null
+          ? 'Wähle 1–3 verfügbare Korsaren.'
+          : cost > m.credits
+            ? 'Gesperrt: nicht genügend Credits.'
+            : 'Bereit. Beauftragte Korsaren sind dir gegenüber während des Einsatzes verbündet.';
   }
   function render() {
     currentModel = options.model();
