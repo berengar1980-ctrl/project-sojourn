@@ -28,6 +28,12 @@
       "reason": "Versioned authoritative crew state including training, equipment and ship station assignments.",
       "checkpoint": "src/systems/crew/career-crew-checkpoint.ts",
       "test": "tests/crew/career-crew-checkpoint.test.cjs"
+    },
+    "src/systems/persistence/career-campaign-session.ts": {
+      "mode": "persisted",
+      "reason": "Versioned campaign progress staging preserves applied reward receipts and gates effects until session activation.",
+      "checkpoint": "src/systems/persistence/career-campaign-session.ts",
+      "test": "tests/persistence/career-campaign-session.test.cjs"
     }
   }
 }
