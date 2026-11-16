@@ -24,16 +24,27 @@ assert(main.includes("import './ui/start/start-menu.css'"), 'menu CSS loaded');
 assert(html.includes('<title>HARROWDRIFT</title>'));
 assert(menu.includes("title.textContent = 'HARROWDRIFT'"));
 for (const title of [
-  'Kampagnenspiel',
+  'Neues Spiel',
   'PvP-Modus',
   'Kampagnen',
   'Karriere fortsetzen',
+  'Spiel laden',
   'Optionen',
   'Beenden',
 ])
   assert(menu.includes(title), 'missing menu entry: ' + title);
 assert(menu.includes("action: 'campaigns'"), 'campaign manager must be available');
 assert(menu.includes("hasCareerSave ? { action: 'continue' as const } : {}"));
+assert(menu.includes("hasCareerSave ? { action: 'load' as const } : {}"));
+assert(bootstrap.includes("action === 'continue' || action === 'load'"));
+assert(bootstrap.includes('onLoadCareer: () => {'));
+assert(bootstrap.includes('const staged = prepareControllerCareer(result.snapshot)'));
+assert(bootstrap.indexOf('const staged = prepareControllerCareer(result.snapshot)') < bootstrap.indexOf('game?.destroy();'));
+assert(settingsMarker());
+function settingsMarker() {
+  const source = read('src/ui/settings/settings-menu.ts');
+  return source.includes('SPIELSTAND LADEN') && source.includes("load.addEventListener('click', onLoad)") && source.includes('onLoadCareer();');
+}
 assert(
   bootstrap.includes('prepareControllerCareer'),
   'saved game must stage before controller launch'
@@ -44,7 +55,7 @@ assert(
 );
 assert(menu.includes('button.disabled = !entry.action'), 'unimplemented features remain disabled');
 const settings = read('src/ui/settings/settings-menu.ts');
-assert(settings.includes('.settings-menu__main-menu:not([data-career-save])'));
+assert(settings.includes('.settings-menu__main-menu:not([data-career-save]):not([data-career-load])'));
 assert(settings.includes("save.addEventListener('click', onSave)"));
 assert(settings.includes("mainMenu.addEventListener('click', onMainMenu)"));
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
