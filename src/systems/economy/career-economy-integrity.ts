@@ -134,10 +134,12 @@ export function assertCareerEconomyIntegrity(
   markets: EconomyMarketService,
   resources: readonly EconomyResourceDefinition[],
   player: PlayerEconomyState,
-  npcs: readonly NpcEconomyState[]
+  npcs: readonly NpcEconomyState[],
+  worldLocations?: ReadonlySet<string>
 ): void {
   const resourceIds = new Set(resources.map((item) => item.id));
   const locationIds = new Set(markets.snapshot().map((item) => item.locationId));
+  const validNpcLocations = worldLocations ?? locationIds;
   if (resourceIds.size !== resources.length) {
     throw new Error('Duplicate resource definitions');
   }
@@ -148,9 +150,9 @@ export function assertCareerEconomyIntegrity(
       throw new Error('Duplicate saved NPC economy identity');
     }
     npcIds.add(npc.id);
-    validateNpcCargo(npc, resourceIds, locationIds);
-    validatePendingTrade(npc, resourceIds, locationIds);
-    validateSideTrade(npc, resourceIds, locationIds);
+    validateNpcCargo(npc, resourceIds, validNpcLocations);
+    validatePendingTrade(npc, resourceIds, validNpcLocations);
+    validateSideTrade(npc, resourceIds, validNpcLocations);
     validateNpcIntel(npc, resourceIds, locationIds);
   }
 }
