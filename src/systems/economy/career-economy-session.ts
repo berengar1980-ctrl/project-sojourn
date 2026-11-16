@@ -33,6 +33,15 @@ import type {
   NpcEconomyServiceOptions,
 } from './npc-economy-types';
 
+export type CareerEconomyOptions = NpcEconomyServiceOptions | ((
+  services: {
+    readonly markets: EconomyMarketService;
+    readonly simulation: EconomySimulationService;
+    readonly player: PlayerEconomyState;
+    readonly npcs: readonly NpcEconomyState[];
+  }
+) => NpcEconomyServiceOptions);
+
 export interface CareerEconomySessionCheckpoint {
   readonly version: 1;
   readonly markets: CareerMarketCheckpoint;
@@ -75,7 +84,7 @@ export function stageCareerEconomySession(
   player: PlayerEconomyState | ((markets: EconomyMarketService) => PlayerEconomyState),
   npcs: readonly NpcEconomyState[],
   seed: number,
-  options: NpcEconomyServiceOptions = {}
+  options: CareerEconomyOptions = {}
 ): StagedCareerEconomySession {
   if (
     !checkpoint ||
@@ -103,12 +112,15 @@ export function stageCareerEconomySession(
     checkpoint.pools
   );
   const intel = createMarketIntelService(markets, checkpoint.intel);
+  const npcOptions = typeof options === 'function'
+    ? options({ markets, simulation, player: restoredPlayer, npcs })
+    : options;
   const npcService = createNpcEconomyService(
     markets,
     simulation,
     resources,
     npcs,
-    options,
+    npcOptions,
     checkpoint.npcEconomy
   );
   return { markets, simulation, situations, intel, npcs: npcService };
