@@ -208,6 +208,35 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   });
 }
 
+function claimPlayerWreck(context: SalvageSceneRuntime, wreckId: string): void {
+  const { field, options } = context;
+  const wreck = field.wrecks.find((entry) => entry.id === wreckId);
+  if (!wreck || options.ship.role !== 'salvage') return;
+  if (options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay())) {
+    options.log.write('BERGUNG > WRACK HAT BEREITS EINEN ANSPRUCH');
+    refreshSalvageScene(context);
+    return;
+  }
+  const result = options.wreckClaims.register(
+    field, wreck, 'player', options.getCurrentDay(), options.player.credits
+  );
+  if (result.ok) {
+    options.player.credits -= result.fee;
+    options.log.write('BERGUNG > WRACKANSPRUCH REGISTRIERT');
+  } else {
+    options.log.write('BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason);
+  }
+  refreshSalvageScene(context);
+}
+
+function playerWreckIsAvailable(context: SalvageSceneRuntime, wreckId: string): boolean {
+  const { options, field } = context;
+  const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
+  if (!claim || claim.ownerId === 'player') return true;
+  options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
+  return false;
+}
+
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -253,28 +282,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       options.onBoardWreck?.(wreckId);
     },
     onClaimWreck(wreckId) {
-      const wreck = context.field.wrecks.find((entry) => entry.id === wreckId);
-      if (!wreck || options.ship.role !== 'salvage') return;
-      const existing = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
-      if (existing) {
-        options.log.write('BERGUNG > WRACK HAT BEREITS EINEN ANSPRUCH');
-        refresh();
-        return;
-      }
-      const result = options.wreckClaims.register(
-        field,
-        wreck,
-        'player',
-        options.getCurrentDay(),
-        options.player.credits
-      );
-      if (result.ok) {
-        options.player.credits -= result.fee;
-        options.log.write('BERGUNG > WRACKANSPRUCH REGISTRIERT');
-      } else {
-        options.log.write('BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason);
-      }
-      refresh();
+      claimPlayerWreck(context, wreckId);
     },
     onInspect(wreckId) {
       service.startInspect(wreckId);
@@ -282,21 +290,13 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onStrip(wreckId, resourceId) {
-      const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
-      if (claim && claim.ownerId !== 'player') {
-        options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
-        return;
-      }
+      if (!playerWreckIsAvailable(context, wreckId)) return;
       service.startStrip(wreckId, resourceId);
       options.log.write('BERGUNG > MATERIALBERGUNG GESTARTET');
       refresh();
     },
     onRecoverComponent(wreckId) {
-      const claim = options.wreckClaims.claim(field.id, wreckId, options.getCurrentDay());
-      if (claim && claim.ownerId !== 'player') {
-        options.log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
-        return;
-      }
+      if (!playerWreckIsAvailable(context, wreckId)) return;
       service.startComponentRecovery(wreckId);
       options.log.write('BERGUNG > KOMPONENTENEXTRAKTION GESTARTET');
       refresh();
