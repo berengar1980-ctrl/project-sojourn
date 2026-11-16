@@ -1,4 +1,4 @@
-name: Career restart simulation focused diagnostic
+name: Career restart simulation focused diagnostic (correct ship API)
 
 on:
   push:
