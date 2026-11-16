@@ -2,7 +2,6 @@ import { tickControllerNpcOperations } from './game-controller-npc-tick';
 import {
   advanceControllerFieldWorld,
   fieldWorldFor,
-  bindCareerFieldWorld,
 } from './game-controller-field-world-bridge';
 import {
   registerSectorShips,
@@ -11,7 +10,6 @@ import {
   reportLegalOrbitalArrival,
   advanceNpcPenalCustody,
   tickLegalDetention,
-  stageControllerCustody,
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
@@ -32,8 +30,7 @@ import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
-import { captureCareerCustody } from '../systems/persistence/career-custody-checkpoint';
-import { createCareerSaveStore } from '../systems/persistence/career-save-store';
+import { installControllerCareer, saveControllerCareer } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
@@ -46,7 +43,6 @@ import { createControllerStarPanel } from './game-controller-star-map';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   tickEconomy,
-  restoreControllerDayElapsed,
   completeDistressTowOnArrival,
   controllerSalvageEventCallbacks,
   controllerSalvageExitAction,
@@ -403,46 +399,6 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (state.mode === 'star-map' && state.displayedWorldId !== context.world.world().id) {
     mountControllerStarMap(context);
   }
-}
-
-function installControllerCareer(
-  context: ControllerRuntimeContext,
-  options: GameControllerOptions
-): void {
-  const saved = options.restoredSession;
-  registerSectorShips(context);
-  if (saved) {
-    restoreControllerDayElapsed(context, saved.controllerSecondsIntoDay ?? 0);
-    bindCareerFieldWorld(context, saved.fieldsLegal.fields);
-    stageControllerCustody(
-      context,
-      captureCareerCustody(saved.custody.prisoners, saved.custody.player)
-    );
-    options.onCareerContextReady?.(context);
-    saved.activate();
-  }
-  fieldWorldFor(context);
-  if (!saved) {
-    context.economy.salvageEvents.advanceDay(
-      context.economy.situations.currentDay,
-      context.navigation.getSnapshot().currentPosition,
-      context.state.activeShip.role === 'salvage'
-    );
-  }
-}
-
-function saveControllerCareer(context: ControllerRuntimeContext): void {
-  const { state, navigation, engagements, fuelJourney, systemLog } = context;
-  if (
-    !['star-map', 'port'].includes(state.mode) ||
-    engagements.activePlayerCombat() ||
-    navigation.getSnapshot().isTravelling ||
-    fuelJourney.plan()
-  ) {
-    throw new Error('Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.');
-  }
-  createCareerSaveStore(window.localStorage).save(captureControllerCareer(context));
-  systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
 }
 
 export function createGameController(options: GameControllerOptions): GameController {
