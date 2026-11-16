@@ -54,7 +54,9 @@ const { captureCareerFieldLegalSession } = load(
   'src/systems/persistence/career-field-legal-session.ts'
 );
 const { captureCareerCustody } = load('src/systems/persistence/career-custody-checkpoint.ts');
-const { stageCareerFullSession } = load('src/systems/persistence/career-full-session.ts');
+const { stageCareerFullSession, captureCareerFullSession } = load(
+  'src/systems/persistence/career-full-session.ts'
+);
 const { createCareerSessionSlot } = load(
   'src/systems/persistence/career-session-transaction.ts'
 );
@@ -160,6 +162,7 @@ assert.strictEqual(staged.operations.sector.npcs, staged.commerce.commerce.npcs)
 assert.deepEqual(staged.fieldsLegal.fields.exportState(), fieldsLegal.fields);
 assert.deepEqual(staged.crew.exportState(), snapshot.sections.crew);
 assert.deepEqual(staged.navigationWorld.navigation.exportState(), snapshot.sections.navigation);
+assert.deepEqual(captureCareerFullSession(staged, world), snapshot);
 slot.install(staged);
 staged.activate();
 assert.strictEqual(slot.current(), staged);
