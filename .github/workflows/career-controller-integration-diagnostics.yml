@@ -1,4 +1,4 @@
-name: Career live controller full regression gate
+name: Career live controller complete regression gate after UI fixes
 
 on:
   push:
