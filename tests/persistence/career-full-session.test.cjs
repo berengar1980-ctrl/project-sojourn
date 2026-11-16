@@ -10,7 +10,7 @@ const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { createPlayerProfile } = load('src/core/player-profile.ts');
-const { getAllShipDefinitions } = load('src/systems/ships/ship-registry.ts');
+const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
 const { createCampaignWorldService } = load('src/systems/campaigns/campaign-world-service.ts');
 const { createCrewRosterService } = load('src/systems/crew/crew-roster-service.ts');
@@ -70,7 +70,7 @@ const { createCareerSessionSlot } = load('src/systems/persistence/career-session
 
 const world = narrowsSector;
 const seed = 41;
-const ship = getAllShipDefinitions()[0];
+const ship = getShipDefinition('salvage-100m-variant-01');
 assert(ship);
 const profile = createPlayerProfile({
   portraitId: 1,
