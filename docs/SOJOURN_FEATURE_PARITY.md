@@ -1150,3 +1150,10 @@ vollständiger Career-Swap bleibt offen.
 **Keine Änderung** der historischen Feature-IDs. Kampagnenstände und bereits
 angewendete Belohnungsbelege werden isoliert wiederhergestellt; ein Gate
 verhindert neue Belohnungseffekte, bevor die gesamte neue Session aktiv ist.
+
+## 2026-11-16 – Career-Speicherintegration im Draft-PR #319
+
+Neue Checkpoints für laufende Kämpfe, lokale NPC-Felder, Bergungsereignisse,
+Kampagnenwelten, Crew, Recht/Haft, Handelsmandat, Schmuggel und Fraktionsruf.
+Bestehende Feature-Parity-Wertungen ändern sich nicht durch diese noch nicht
+vollständig am Live-Controller aktivierte Speicherung.
