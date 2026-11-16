@@ -29,14 +29,7 @@ const saved = first.exportState();
 const credits = npc.credits;
 const intel = JSON.stringify(npc.marketIntel);
 const restoredNpc = JSON.parse(JSON.stringify(npc));
-const second = createNpcEconomyService(
-  markets,
-  allocator,
-  economyResources,
-  [restoredNpc],
-  {},
-  saved
-);
+const second = createNpcEconomyService(markets, allocator, economyResources, [restoredNpc], {}, saved);
 assert.deepEqual(second.exportState(), saved);
 assert.equal(JSON.stringify(restoredNpc.marketIntel), intel);
 second.advanceDay(3);
@@ -44,18 +37,10 @@ assert.equal(restoredNpc.credits, credits, 'restore must not charge already proc
 second.advanceDay(4);
 assert(restoredNpc.credits <= credits);
 assert.equal(second.exportState().lastDay, 4);
-assert.throws(
-  () =>
-    createNpcEconomyService(markets, allocator, economyResources, [restoredNpc], {}, {
-      ...saved,
-      npcIds: ['unknown'],
-    }),
-  /identity mismatch/
-);
-assert.throws(() =>
-  createNpcEconomyService(markets, allocator, economyResources, [restoredNpc], {}, {
-    ...saved,
-    lastDay: -8,
-  })
-);
-console.log('PASS NPC economy checkpoint keeps daily settlements and market intel idempotent');
+const invalidIds = { ...saved, npcIds: ['unknown'] };
+const invalidDay = { ...saved, lastDay: -8 };
+const stage = (checkpoint) =>
+  createNpcEconomyService(markets, allocator, economyResources, [restoredNpc], {}, checkpoint);
+assert.throws(() => stage(invalidIds), /identity mismatch/);
+assert.throws(() => stage(invalidDay));
+console.log('PASS NPC economy checkpoint preserves daily settlements and market intel');
