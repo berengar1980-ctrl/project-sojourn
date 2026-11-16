@@ -1137,3 +1137,10 @@ NPCs müssen weiterhin aus demselben Save stammen; kein globaler Career-Swap.
 übergreifender Restore der Spieler-Wirtschaft, NPC-Sektorrouten und laufenden
 Handelspläne gegen dieselbe Marktinstanz. Beschädigte Waren-/Ortsreferenzen
 werden abgewiesen; der vollumfängliche Career-Session-Swap fehlt weiterhin.
+
+## Review-Log (2026-11-16): Career-Crew-Checkpoint
+
+**Keine Statusänderung** historischer Feature-IDs. Versionierter Roster-Snapshot
+für Fähigkeiten, Training, Verwundungen, persönliche und Boarding-Ausrüstung
+sowie schiffsbezogene Stationszuordnungen. Neue, isolierte Wiederherstellung;
+vollständiger Career-Swap bleibt offen.
