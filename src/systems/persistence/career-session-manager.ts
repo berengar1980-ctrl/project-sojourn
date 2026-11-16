@@ -50,8 +50,16 @@ export function createCareerSessionManager(
       } catch {
         return { ok: false, reason: 'restore_failed' };
       }
+      // Activation is deliberately separate from staging. If it ever fails,
+      // restore the exact previous session pointer and discard the candidate.
       const previous = slot.install(staged);
-      staged.activate();
+      try {
+        staged.activate();
+      } catch {
+        slot.install(previous);
+        staged.campaigns.campaigns.destroy();
+        return { ok: false, reason: 'restore_failed' };
+      }
       return { ok: true, previous };
     },
   };
