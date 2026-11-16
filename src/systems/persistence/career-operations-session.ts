@@ -1,4 +1,9 @@
 import type { PlayerEconomyState } from '../../core/economy-types';
+import {
+  createSectorSalvageEventService,
+  type SectorSalvageEventService,
+} from '../salvage/sector-salvage-event-service';
+import type { CareerSalvageEventsCheckpoint } from '../salvage/career-salvage-events-checkpoint';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import type { EconomyMarketService } from '../economy/market-service';
@@ -21,6 +26,7 @@ export interface CareerOperationsCheckpoint {
   readonly population: NpcPopulationCheckpoint;
   readonly blockades: CareerBlockadeCheckpoint;
   readonly patrol: CareerPatrolCheckpoint;
+  readonly salvageEvents: CareerSalvageEventsCheckpoint;
 }
 
 export interface StagedCareerOperationsSession {
@@ -28,6 +34,7 @@ export interface StagedCareerOperationsSession {
   readonly sector: NpcSectorService;
   readonly blockades: BlockadeService;
   readonly patrol: PatrolCareerService;
+  readonly salvageEvents: SectorSalvageEventService;
 }
 
 function recordLoss(simulation: EconomySimulationService, id: string, amount: number): void {
@@ -53,7 +60,8 @@ export function stageCareerOperationsSession(
     checkpoint.version !== 1 ||
     !checkpoint.population ||
     !checkpoint.blockades ||
-    !checkpoint.patrol
+    !checkpoint.patrol ||
+    !checkpoint.salvageEvents
   ) {
     throw new Error('Invalid career operations session checkpoint');
   }
@@ -79,7 +87,12 @@ export function stageCareerOperationsSession(
     checkpoint.blockades
   );
   const patrol = new PatrolCareerService(world, npcs, player, checkpoint.patrol);
-  return { population, sector, blockades, patrol };
+  const salvageEvents = createSectorSalvageEventService(
+    world,
+    checkpoint.salvageEvents.seed,
+    checkpoint.salvageEvents
+  );
+  return { population, sector, blockades, patrol, salvageEvents };
 }
 
 export function captureCareerOperationsSession(
@@ -90,5 +103,6 @@ export function captureCareerOperationsSession(
     population: session.population.exportState(),
     blockades: session.blockades.exportState(),
     patrol: session.patrol.exportState(),
+    salvageEvents: session.salvageEvents.exportState(),
   };
 }
