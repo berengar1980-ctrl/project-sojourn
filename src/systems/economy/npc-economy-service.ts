@@ -320,11 +320,14 @@ export function createNpcEconomyService(
       checkpoint.lastDay < -1 ||
       !Array.isArray(checkpoint.npcIds) ||
       checkpoint.npcIds.length !== npcs.length
-    ) throw new Error('Invalid NPC economy checkpoint');
+    )
+      throw new Error('Invalid NPC economy checkpoint');
     const known = new Set(npcs.map((npc) => npc.id));
-    if (known.size !== npcs.length ||
-        new Set(checkpoint.npcIds).size !== checkpoint.npcIds.length ||
-        checkpoint.npcIds.some((id) => !known.has(id))) {
+    if (
+      known.size !== npcs.length ||
+      new Set(checkpoint.npcIds).size !== checkpoint.npcIds.length ||
+      checkpoint.npcIds.some((id) => !known.has(id))
+    ) {
       throw new Error('NPC economy checkpoint identity mismatch');
     }
   }
