@@ -39,11 +39,18 @@ assert(menu.includes("hasCareerSave ? { action: 'load' as const } : {}"));
 assert(bootstrap.includes("action === 'continue' || action === 'load'"));
 assert(bootstrap.includes('onLoadCareer: () => {'));
 assert(bootstrap.includes('const staged = prepareControllerCareer(result.snapshot)'));
-assert(bootstrap.indexOf('const staged = prepareControllerCareer(result.snapshot)') < bootstrap.indexOf('game?.destroy();'));
+assert(
+  bootstrap.indexOf('const staged = prepareControllerCareer(result.snapshot)') <
+    bootstrap.indexOf('game?.destroy();')
+);
 assert(settingsMarker());
 function settingsMarker() {
   const source = read('src/ui/settings/settings-menu.ts');
-  return source.includes('SPIELSTAND LADEN') && source.includes("load.addEventListener('click', onLoad)") && source.includes('onLoadCareer();');
+  return (
+    source.includes('SPIELSTAND LADEN') &&
+    source.includes("load.addEventListener('click', onLoad)") &&
+    source.includes('onLoadCareer();')
+  );
 }
 assert(
   bootstrap.includes('prepareControllerCareer'),
@@ -55,7 +62,9 @@ assert(
 );
 assert(menu.includes('button.disabled = !entry.action'), 'unimplemented features remain disabled');
 const settings = read('src/ui/settings/settings-menu.ts');
-assert(settings.includes('.settings-menu__main-menu:not([data-career-save]):not([data-career-load])'));
+assert(
+  settings.includes('.settings-menu__main-menu:not([data-career-save]):not([data-career-load])')
+);
 assert(settings.includes("save.addEventListener('click', onSave)"));
 assert(settings.includes("mainMenu.addEventListener('click', onMainMenu)"));
 assert(css.includes("url('/startscreen-background.webp')"), 'use the original background as CSS');
