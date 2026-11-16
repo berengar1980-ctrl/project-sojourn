@@ -1,5 +1,4 @@
 import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
-import type { CareerJson } from '../persistence/career-save-contract';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
@@ -13,27 +12,19 @@ import type { ShieldImpactEffect } from '../../core/shield-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { CombatPowerBudget } from './combat-power-types';
 import type { RamApproachState } from './combat-ram-approach-types';
-export interface CareerStrategicCombatCheckpoint {
-  readonly version: 1;
-  readonly seed: number;
-  readonly randomCalls: number;
-  readonly attackerId: string;
-  readonly defenderId: string;
-  /** Authoritative physics and cooldowns, not the renderer's visual snapshot. */
-  readonly runtime: Readonly<Record<string, CareerJson>>;
-}
-
+import type {
+  CareerStrategicCombatCheckpoint,
+  CombatSubsystemHealth,
+} from './strategic-combat-checkpoint-types';
+export type {
+  CareerStrategicCombatCheckpoint,
+  CombatSubsystemHealth,
+} from './strategic-combat-checkpoint-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
 
 export type CombatTargetSubsystem = 'hull' | 'engine' | 'tractor';
-
-export interface CombatSubsystemHealth {
-  readonly engine: number;
-  readonly tractor: number;
-  readonly maximum: number;
-}
 
 export type CombatDoctrine =
   | 'shield_breaker'
