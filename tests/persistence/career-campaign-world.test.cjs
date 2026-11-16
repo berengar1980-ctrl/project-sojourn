@@ -8,6 +8,9 @@ const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
 const { createCampaignWorldService } = load('src/systems/campaigns/campaign-world-service.ts');
+const { stageCareerNavigationWorld } = load(
+  'src/systems/persistence/career-navigation-world-session.ts'
+);
 
 function location(id, x, y) {
   return {
@@ -54,7 +57,11 @@ assert(
 );
 assert(first.enterSystem('story', 'foreign-system'));
 const saved = first.exportCareerState();
+const navSaved = nav.exportState();
 assert.equal(saved.active.returnLocationId, 'home');
+const combined = stageCareerNavigationWorld(home, navSaved, saved, 100);
+assert.deepEqual(combined.navigation.exportState(), navSaved);
+assert.deepEqual(combined.world.exportCareerState(), saved);
 const freshNavigation = createNavigationService(far, 'entry', 100);
 const second = createCampaignWorldService(
   home,
