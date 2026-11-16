@@ -1144,3 +1144,9 @@ werden abgewiesen; der vollumfängliche Career-Session-Swap fehlt weiterhin.
 für Fähigkeiten, Training, Verwundungen, persönliche und Boarding-Ausrüstung
 sowie schiffsbezogene Stationszuordnungen. Neue, isolierte Wiederherstellung;
 vollständiger Career-Swap bleibt offen.
+
+## Review-Log (2026-11-16): Kampagnenaktionsbelege
+
+**Keine Änderung** der historischen Feature-IDs. Kampagnenstände und bereits
+angewendete Belohnungsbelege werden isoliert wiederhergestellt; ein Gate
+verhindert neue Belohnungseffekte, bevor die gesamte neue Session aktiv ist.
