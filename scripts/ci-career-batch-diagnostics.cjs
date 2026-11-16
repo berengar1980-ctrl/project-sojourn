@@ -9,7 +9,7 @@ const checks = [
   ['TypeScript', 'npm', ['run', 'typecheck']],
   ['Dependency architecture', 'npm', ['run', 'deps:check']],
   ['Persistence impact', 'npm', ['run', 'persistence:check']],
-  ['Regression tests', 'npm', ['run', 'test:quick']],
+  ['Career regression tests', 'node', ['tests/run-tests.cjs', 'career']],
   ['Economy horizons', 'npm', ['run', 'test:economy-horizons']],
   ['Build', 'npm', ['run', 'build']],
 ];
