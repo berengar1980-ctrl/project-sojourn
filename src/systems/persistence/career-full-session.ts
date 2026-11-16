@@ -134,7 +134,8 @@ export function captureCareerFullSession(
   const fieldsLegal = captureCareerFieldLegalSession(
     session.fieldsLegal.fields,
     session.fieldsLegal.claims,
-    session.fieldsLegal.legal
+    session.fieldsLegal.legal,
+    session.fieldsLegal.wreckClaims
   );
   const playerShips = captureCareerPlayerShipSession(
     commerce.trade.player,
