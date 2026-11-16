@@ -73,6 +73,9 @@ function createSettingsShell(): HTMLDivElement {
           <button class="settings-menu__main-menu" type="button" data-career-save>
             SPIELSTAND SPEICHERN
           </button>
+          <button class="settings-menu__main-menu" type="button" data-career-load>
+            SPIELSTAND LADEN
+          </button>
           <small role="status" data-career-status>
             Speichern im ruhenden Orbit oder Hafen
           </small>
@@ -158,7 +161,8 @@ export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
   profile?: PlayerProfile,
-  onSaveCareer?: () => void
+  onSaveCareer?: () => void,
+  onLoadCareer?: () => void
 ): SettingsMenu {
   document.querySelector('.settings-menu')?.remove();
 
@@ -170,11 +174,13 @@ export function createSettingsMenu(
   const backdrop = shell.querySelector<HTMLElement>('.settings-menu__backdrop')!;
   const close = shell.querySelector<HTMLButtonElement>('.settings-menu__close')!;
   const mainMenu = shell.querySelector<HTMLButtonElement>(
-    '.settings-menu__main-menu:not([data-career-save])'
+    '.settings-menu__main-menu:not([data-career-save]):not([data-career-load])'
   )!;
   const save = shell.querySelector<HTMLButtonElement>('[data-career-save]')!;
+  const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
   const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
   save.disabled = !onSaveCareer;
+  load.disabled = !onLoadCareer;
   const ambience = shell.querySelector<HTMLInputElement>('[data-audio-volume="ambience"]')!;
   const rcs = shell.querySelector<HTMLInputElement>('[data-audio-volume="rcs"]')!;
   const ambienceValue = shell.querySelector<HTMLOutputElement>('[data-audio-value="ambience"]')!;
@@ -235,6 +241,16 @@ export function createSettingsMenu(
         error instanceof Error ? error.message : 'Spielstand konnte nicht gespeichert werden.';
     }
   };
+  const onLoad = (): void => {
+    if (!onLoadCareer) return;
+    if (!window.confirm('Gespeicherten Spielstand laden? Ungespeicherter Fortschritt geht verloren.')) return;
+    try {
+      onLoadCareer();
+    } catch (error) {
+      saveStatus.textContent =
+        error instanceof Error ? error.message : 'Spielstand konnte nicht geladen werden.';
+    }
+  };
   const onKeyDown = createSettingsKeyHandler(panel, setOpen);
   ambience.addEventListener('input', onAmbience);
   rcs.addEventListener('input', onRcs);
@@ -243,6 +259,7 @@ export function createSettingsMenu(
   close.addEventListener('click', onClose);
   mainMenu.addEventListener('click', onMainMenu);
   save.addEventListener('click', onSave);
+  load.addEventListener('click', onLoad);
   window.addEventListener('keydown', onKeyDown, true);
 
   sync();
@@ -257,6 +274,7 @@ export function createSettingsMenu(
       close.removeEventListener('click', onClose);
       mainMenu.removeEventListener('click', onMainMenu);
       save.removeEventListener('click', onSave);
+      load.removeEventListener('click', onLoad);
       window.removeEventListener('keydown', onKeyDown, true);
       shell.remove();
       document.body.classList.remove('app-has-system-bar');
