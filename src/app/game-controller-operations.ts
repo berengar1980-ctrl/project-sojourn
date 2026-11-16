@@ -1,3 +1,4 @@
+import { operationalRoleAllowed } from '../systems/operations/ship-operation-permissions';
 import type { SectorNpcState } from '../core/npc-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -29,6 +30,8 @@ function operationsModel(c: ControllerRuntimeContext): OperationsModel {
   const p = permissions(c);
   return {
     credits: e.trade.player.credits,
+    shipRole: state.activeShip.role,
+    wreckClaims: e.wreckClaims.snapshot(e.situations.currentDay),
     port: p.port,
     patrolShip: state.activeShip.role === 'patrol',
     locationId: p.location?.id ?? null,
@@ -91,12 +94,12 @@ function act(c: ControllerRuntimeContext, action: OperationsAction, values: stri
     e = c.economy,
     id = values[0] ?? '';
   let ok = false;
-  if (action === 'order' && m.port)
+  if (action === 'order' && m.port && operationalRoleAllowed(m.shipRole, 'blockade'))
     ok = e.blockades.order('player', id, values[1] ?? '', values.slice(3), Number(values[2]));
   if (action === 'cancel') ok = e.blockades.cancel(id);
   if (['enlist', 'resign', 'accept', 'reward'].includes(action))
     ok = patrolAction(c, m, action, values);
-  if (action === 'claim-route') {
+  if (action === 'claim-route' && m.shipRole === 'mining') {
     const [fieldId, asteroidId] = id.split('|');
     const known = e.asteroidClaims
       .snapshot()
