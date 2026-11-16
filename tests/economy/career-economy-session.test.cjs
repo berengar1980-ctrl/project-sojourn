@@ -9,7 +9,9 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createEconomySimulationService } = load(
+  'src/systems/economy/economy-simulation-service.ts'
+);
 const { createMarketSituationService } = load('src/systems/economy/market-situation-service.ts');
 const { createMarketIntelService } = load('src/systems/economy/market-intel-service.ts');
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
@@ -44,7 +46,12 @@ const checkpoint = captureCareerEconomySession({ markets, simulation, situations
 const savedNpc = JSON.parse(JSON.stringify(npc));
 const savedPlayer = JSON.parse(JSON.stringify(player));
 const staged = stageCareerEconomySession(
-  checkpoint, sectorPorts, economyResources, savedPlayer, [savedNpc], seed
+  checkpoint,
+  sectorPorts,
+  economyResources,
+  savedPlayer,
+  [savedNpc],
+  seed
 );
 assert.deepEqual(captureCareerEconomySession(staged), checkpoint);
 assert.notStrictEqual(staged.markets, markets);
@@ -60,6 +67,9 @@ const bad = {
 assert.throws(() =>
   stageCareerEconomySession(bad, sectorPorts, economyResources, savedPlayer, [savedNpc], seed)
 );
-assert.deepEqual(captureCareerEconomySession({ markets, simulation, situations, intel, npcs }),
-  checkpoint, 'bad staging must not mutate the original economy');
+assert.deepEqual(
+  captureCareerEconomySession({ markets, simulation, situations, intel, npcs }),
+  checkpoint,
+  'bad staging must not mutate the original economy'
+);
 console.log('PASS economic service group roundtrip keeps NPC day, market prices and resources');
