@@ -122,6 +122,10 @@ export function stageCareerCrewCheckpoint(candidate: unknown): CareerCrewCheckpo
       .filter((member) => ['incapacitated', 'dead'].includes(member.injuryState))
       .map((member) => member.id)
   );
-  validateAssignments(saved.assignments, new Set(ids), unavailable);
+  validateAssignments(
+    saved.assignments as CareerCrewCheckpoint['assignments'],
+    new Set(ids),
+    unavailable
+  );
   return saved as unknown as CareerCrewCheckpoint;
 }
