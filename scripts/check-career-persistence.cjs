@@ -19,7 +19,10 @@ function changedFiles(base, root = path.resolve(__dirname, '..')) {
     .filter(Boolean)
     .map((line) => {
       const columns = line.split('\t');
-      return { status: columns[0][0], path: columns[columns.length - 1].replaceAll('\\', '/') };
+      return {
+        status: columns[0][0],
+        path: columns[columns.length - 1].replaceAll('\\', '/'),
+      };
     });
 }
 
@@ -28,21 +31,44 @@ function isFeatureFile(file) {
 }
 
 function validateOwners(owners, root) {
-  if (!owners || owners.version !== 1 || !owners.modules || Array.isArray(owners.modules) || typeof owners.modules !== 'object') {
+  if (
+    !owners ||
+    owners.version !== 1 ||
+    !owners.modules ||
+    Array.isArray(owners.modules) ||
+    typeof owners.modules !== 'object'
+  ) {
     throw new Error('Invalid career persistence owner registry');
   }
   for (const [file, decision] of Object.entries(owners.modules)) {
-    if (!file.startsWith('src/systems/') || !file.endsWith('.ts') || !fs.existsSync(path.join(root, file))) {
+    if (
+      !file.startsWith('src/systems/') ||
+      !file.endsWith('.ts') ||
+      !fs.existsSync(path.join(root, file))
+    ) {
       throw new Error('Invalid or missing domain module in owner registry: ' + file);
     }
-    if (!decision || !VALID_MODES.has(decision.mode) || typeof decision.reason !== 'string' || decision.reason.trim().length < 15) {
+    if (
+      !decision ||
+      !VALID_MODES.has(decision.mode) ||
+      typeof decision.reason !== 'string' ||
+      decision.reason.trim().length < 15
+    ) {
       throw new Error('Missing persistence decision/reason for ' + file);
     }
     if (decision.mode === 'persisted') {
-      if (typeof decision.checkpoint !== 'string' || !decision.checkpoint.startsWith('src/') || !fs.existsSync(path.join(root, decision.checkpoint))) {
+      if (
+        typeof decision.checkpoint !== 'string' ||
+        !decision.checkpoint.startsWith('src/') ||
+        !fs.existsSync(path.join(root, decision.checkpoint))
+      ) {
         throw new Error('Persisted domain module must name an existing checkpoint adapter: ' + file);
       }
-      if (typeof decision.test !== 'string' || !decision.test.startsWith('tests/') || !fs.existsSync(path.join(root, decision.test))) {
+      if (
+        typeof decision.test !== 'string' ||
+        !decision.test.startsWith('tests/') ||
+        !fs.existsSync(path.join(root, decision.test))
+      ) {
         throw new Error('Persisted domain module must name an existing checkpoint regression test: ' + file);
       }
     }
@@ -53,14 +79,23 @@ function enforcePersistenceReview(changes, owners) {
   const features = changes.filter((entry) => isFeatureFile(entry.path));
   if (!features.length) return { required: false, addedModules: [] };
   if (!changes.some((entry) => entry.path === REVIEW_PATH)) {
-    throw new Error('Career persistence impact review required: update ' + REVIEW_PATH + ' for source/resource changes.');
+    throw new Error(
+      'Career persistence impact review required: update ' +
+        REVIEW_PATH +
+        ' for source/resource changes.'
+    );
   }
   const addedModules = features
-    .filter((entry) => entry.status === 'A' && entry.path.startsWith('src/systems/') && entry.path.endsWith('.ts'))
+    .filter(
+      (entry) =>
+        entry.status === 'A' && entry.path.startsWith('src/systems/') && entry.path.endsWith('.ts')
+    )
     .map((entry) => entry.path);
   for (const file of addedModules) {
     if (!Object.hasOwn(owners.modules, file)) {
-      throw new Error('New domain module missing persistence classification in ' + OWNERS_PATH + ': ' + file);
+      throw new Error(
+        'New domain module missing persistence classification in ' + OWNERS_PATH + ': ' + file
+      );
     }
   }
   if (addedModules.length && !changes.some((entry) => entry.path === OWNERS_PATH)) {
@@ -71,7 +106,11 @@ function enforcePersistenceReview(changes, owners) {
 
 function git(args, root) {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return '';
   }
@@ -83,17 +122,25 @@ function reviewCurrentBranch(root = path.resolve(__dirname, '..')) {
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], root);
   if (branch === 'main' || branch === 'master') return { checked: false, required: false };
   const base = ['origin/main', 'main'].find((candidate) => git(['rev-parse', '--verify', candidate], root));
-  if (!base) throw new Error('Cannot verify persistence review: main ref unavailable on feature branch.');
+  if (!base)
+    throw new Error('Cannot verify persistence review: main ref unavailable on feature branch.');
   const changes = changedFiles(base, root);
   return { checked: true, base, ...enforcePersistenceReview(changes, owners) };
 }
 
-module.exports = { REVIEW_PATH, OWNERS_PATH, isFeatureFile, validateOwners, enforcePersistenceReview, reviewCurrentBranch };
+module.exports = {
+  REVIEW_PATH,
+  OWNERS_PATH,
+  isFeatureFile,
+  validateOwners,
+  enforcePersistenceReview,
+  reviewCurrentBranch,
+};
 
 if (require.main === module) {
   try {
     const result = reviewCurrentBranch();
-    console.log('CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline'));
+    console.log('CAREER PERSISTENCE GATE OK · ' + (result.checked ? 'review checked' : 'main baseline'))
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
