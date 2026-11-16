@@ -13,7 +13,6 @@ import type { BoardingOutcome } from '../../core/boarding-types';
 import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
 
-
 import { getShipDefinition } from '../ships';
 
 import {
@@ -22,7 +21,6 @@ import {
   npcLooksHostileToPatrol,
   npcMayInitiateAttack,
 } from '../npcs/npc-combat-ai';
-
 
 import {
   createStrategicCombatService,

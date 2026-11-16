@@ -125,7 +125,9 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
       } catch (error) {
         showMainMenu(root, selection);
         window.alert(
-          error instanceof Error ? error.message : 'Der Karriere-Spielstand kann nicht geladen werden.'
+          error instanceof Error
+            ? error.message
+            : 'Der Karriere-Spielstand kann nicht geladen werden.'
         );
       }
     } else if (action === 'campaigns') {

@@ -19,7 +19,10 @@ import {
 import type { CareerSnapshot } from '../systems/persistence/career-save-contract';
 import { getShipDefinition } from '../systems/ships/ship-registry';
 import { servicedPlayerCombatant } from './game-controller-ship-service';
-import { registerNpcAsteroidClaim, recordNpcAsteroidTheft } from './game-controller-field-miner-events';
+import {
+  registerNpcAsteroidClaim,
+  recordNpcAsteroidTheft,
+} from './game-controller-field-miner-events';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 export interface PreparedControllerCareer {
@@ -43,43 +46,46 @@ function careerDependencies(
     ),
     initialCruiseSpeed: getShipDefinition('salvage-100m-variant-01')!.navigation.cruiseSpeed,
     campaignDefinitions: campaignPackages,
-    makeMinerFactory: ({ commerce, operations }) => (location, instance, checkpoint) =>
-      createNpcLocalMiningService(
-        {
-          locationId: location.id,
-          seed: instance.seed,
-          width: instance.width,
-          height: instance.height,
-          miners: operations.sector.npcs.filter(
-            (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-          ),
-          getAsteroids: () => instance.asteroids,
-          mine: (npc, id, amount) => commerce.commerce.economy.npcs.mineLocal(npc, id, amount),
-          onAsteroidScanned: (npc, asteroid) => {
-            if (binding.context) {
-              registerNpcAsteroidClaim(binding.context, location, npc, asteroid);
-            }
+    makeMinerFactory:
+      ({ commerce, operations }) =>
+      (location, instance, checkpoint) =>
+        createNpcLocalMiningService(
+          {
+            locationId: location.id,
+            seed: instance.seed,
+            width: instance.width,
+            height: instance.height,
+            miners: operations.sector.npcs.filter(
+              (npc) => npc.job === 'miner' && npc.workLocationId === location.id
+            ),
+            getAsteroids: () => instance.asteroids,
+            mine: (npc, id, amount) => commerce.commerce.economy.npcs.mineLocal(npc, id, amount),
+            onAsteroidScanned: (npc, asteroid) => {
+              if (binding.context) {
+                registerNpcAsteroidClaim(binding.context, location, npc, asteroid);
+              }
+            },
+            onAsteroidMined: (npc, asteroid, id, amount) => {
+              if (binding.context) {
+                recordNpcAsteroidTheft(binding.context, location, npc, asteroid, id, amount);
+              }
+            },
+            depart: (npc) => commerce.commerce.economy.npcs.dispatchLoadedWorker(npc),
+            getPlayerShip: () => binding.context?.state.activeShip,
+            getPlayerShipState: () =>
+              binding.context?.state.localSpace?.getSnapshot().instance.ship,
           },
-          onAsteroidMined: (npc, asteroid, id, amount) => {
-            if (binding.context) {
-              recordNpcAsteroidTheft(binding.context, location, npc, asteroid, id, amount);
-            }
-          },
-          depart: (npc) => commerce.commerce.economy.npcs.dispatchLoadedWorker(npc),
-          getPlayerShip: () => binding.context?.state.activeShip,
-          getPlayerShipState: () =>
-            binding.context?.state.localSpace?.getSnapshot().instance.ship,
-        },
-        checkpoint
-      ),
+          checkpoint
+        ),
     campaignActions: () => ({
       apply: (action, id) => binding.actions?.apply(action, id) ?? false,
       releaseCampaign: (id) => binding.actions?.releaseCampaign?.(id),
     }),
     combatSetups: (prepared) => {
-      const saved = snapshot.sections.combat as
-        | { defenderId: string; runtime?: { arena?: { width?: number; height?: number } } }
-        | null;
+      const saved = snapshot.sections.combat as {
+        defenderId: string;
+        runtime?: { arena?: { width?: number; height?: number } };
+      } | null;
       if (!saved) throw new Error('Missing Career combat checkpoint');
       const active = getShipDefinition(prepared.commerce.ships.activeShipId);
       const enemy = prepared.operations.sector.npcs.find((npc) => npc.id === saved.defenderId);
@@ -105,10 +111,11 @@ function careerDependencies(
 
 /** Construct a detached Career before creating any browser/controller UI. */
 export function prepareControllerCareer(snapshot: CareerSnapshot): PreparedControllerCareer {
-  const binding: { context: ControllerRuntimeContext | null; actions: CampaignActionPort | null } = {
-    context: null,
-    actions: null,
-  };
+  const binding: { context: ControllerRuntimeContext | null; actions: CampaignActionPort | null } =
+    {
+      context: null,
+      actions: null,
+    };
   const session = stageCareerFullSession(snapshot, careerDependencies(snapshot, binding));
   return {
     session,
