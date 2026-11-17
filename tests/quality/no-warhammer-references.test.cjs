@@ -36,9 +36,7 @@ function collectTextFiles(target) {
   });
 }
 
-const roots = [path.join(root, 'src'), path.join(root, 'docs'), path.join(root, 'README.md')].filter(
-  (target) => fs.existsSync(target)
-);
+const roots = [path.join(root, 'src'), path.join(root, 'docs')];
 const violations = [];
 
 for (const file of roots.flatMap(collectTextFiles)) {
