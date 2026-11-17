@@ -28,7 +28,11 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
       - name: Check Prettier
-        run: npm run format:check
+        run: |
+          npx prettier --write scripts/browser-career-restart.cjs
+          git diff -- scripts/browser-career-restart.cjs
+          npm run format:check
+          exit 1 # one-time formatting diagnostic
       - name: Check ESLint
         run: npm run lint
       - name: Check TypeScript
