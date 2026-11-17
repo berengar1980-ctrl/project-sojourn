@@ -98,6 +98,7 @@ export function dispatchPatrolToReport(
       (npc) =>
         npc.job === 'patrol' &&
         !npc.pirate &&
+        !npc.id.startsWith('security-drone:') &&
         npc.hullHp > 0 &&
         !context.economy.sectorNpcs.isTravelling(npc)
     )
