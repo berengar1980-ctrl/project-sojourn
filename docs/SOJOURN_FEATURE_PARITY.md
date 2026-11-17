@@ -1256,3 +1256,7 @@ wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
 ## Review-Log (2026-11-17): Lizenzungeklärte Medien entfernen, optionale Fallbacks (PR #336)
 
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Entfernt wurden alle derzeit in diesem Branch enthaltenen Audio- und Bilddateien mit noch ungeklärten Publikationsrechten. Laufzeit: fehlende Audiodateien ergeben Stille, der Porträteditor zeigt Platzhalter, Schiffssprites haben weiterhin geometrische Fallbacks, CSS-Hintergründe behalten ihre Grundfarbe. Schiffsdefinitionen, Hardpoints, Gameplay und Save-Schema werden nicht entfernt. Wieder hinzukommende Medien werden an denselben Pfaden bzw. unter `public/audio/` erkannt und geprüft. Details: `docs/OPTIONAL_MEDIA.md`. Die Dateien bleiben trotz Löschung aus dem aktuellen Stand in alten Git-Commits potentiell abrufbar; diese Änderung ist kein History-Rewrite.
+
+## Review-Log (2026-11-17): Sicherheitsdrohnen-Startzustand beim Save (PR #336)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Neue lokale Sicherheitsdrohnen übernehmen weiterhin Kampfwerte des Patrouillenschiffs, aber keine fremden Reise-, Verfolgungs- oder Orbitdaten. Dies verhindert die Ablehnung gültiger Karriere-Speichervorgänge in unbeobachteten Asteroidenfeldern. Ein eigener Regressionstest sichert den Zustand ab.
