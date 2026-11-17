@@ -83,10 +83,16 @@ export class TopdownMapRenderer {
 
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
-    this.canvas.width = Math.round(rect.width * ratio);
-    this.canvas.height = Math.round(rect.height * ratio);
-    this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    // Match the local-space renderer's pixel budget on high-DPI displays.
+    const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    const pixelWidth = Math.round(rect.width * ratio);
+    const pixelHeight = Math.round(rect.height * ratio);
+    const changed = this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight;
+    if (changed) {
+      this.canvas.width = pixelWidth;
+      this.canvas.height = pixelHeight;
+      this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
     if (rect.width >= 200 && rect.height >= 200) {
       if (!this.hasFitted) {
         this.camera.fit(rect.width, rect.height, this.contentBounds());
