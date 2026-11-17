@@ -469,3 +469,22 @@ nicht an die Weltort-basierte Routenberechnung übergeben werden. In diesem Fall
 bleibt die bereits begonnene NPC-Reise unverändert; eine Ausnahme während des
 Simulations-Ticks wird vermieden. Save/Load-Format, NPC-Reisecheckpoint,
 Treibstoffverbrauch und reguläre Piraten-Ausweichrouten bleiben unverändert.
+
+### Career-Browser-Neustarttest (17. November 2026)
+
+Ein separater Chromium-Test `scripts/browser-career-restart.cjs` prüft jetzt den
+benutzerseitigen Weg über Charaktereditor, Spielstart, Systemmenü und den
+bestehenden lokalen Career-Slot: im ruhenden Orbit speichern, das Dokument
+vollständig neu laden, im Hauptmenü „Karriere fortsetzen“ wählen und die
+neu gebildete Session erneut sichern. Version und alle 14 Pflichtsektionen,
+Kapitän/Schiffsname, Wallet und Cargo, Schiffe, Rechtsakten, Ansprüche sowie
+stabile NPC-Identitäten werden verglichen. Ein absichtlich beschädigter
+localStorage-Eintrag muss beide Ladeaktionen im Hauptmenü deaktivieren.
+Der Browser-Workflow `.github/workflows/career-browser-restart.yml` führt den
+Test mit echtem Chromium bei relevanten Änderungen und manuell aus; bei
+Fehlern wird ein Screenshot als CI-Artefakt angeboten.
+
+Dieser Browser-Smoke ersetzt keine mehrtägige interaktive Spielsession und
+prüft nicht automatisch sämtliche Einzelaktionen vor/nach jedem rechtlichen
+Zustandsübergang. Mehrere Slots sowie Datei-Import/Export bleiben außerhalb
+dieser Änderung. Das Save-Schema und der atomare Restore werden nicht geändert.
