@@ -52,6 +52,9 @@ export function replanNpcTravel(
 ): boolean {
   const travel = npc.travel;
   if (!travel || travel.profile === 'fast') return false;
+  // Temporary distress/salvage targets have map coordinates but no WorldLocation.
+  // They cannot be passed to planRouteFromPoint, which resolves world location IDs.
+  if (!world.locations.some((location) => location.id === travel.targetLocationId)) return false;
   travel.replanCooldown = Math.max(0, (travel.replanCooldown ?? 9) - seconds);
   if (travel.replanCooldown > 0) return false;
   travel.replanCooldown = 9;

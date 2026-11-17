@@ -1212,3 +1212,12 @@ Navigation, Zielauswahl, Kartenrendering, lokale Szenen, Kampf und Bergung.
 Die Dauerwerte werden nur in der Browser-Konsole und im Arbeitsspeicher
 bereitgestellt; ohne Opt-in entstehen keine Zeitmessungen. Keine Gameplay-,
 Save/Load- oder Simulationsänderung.
+
+## Review-Log (2026-11-17): NPC-Reise-Neuplanung bei Bergungszielen (PR #331)
+
+**keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Eine vorhandene NPC-Reise zu temporären Bergungs- oder Notsignal-Ziel-IDs darf
+bei aktiver Piratengefahr nicht als Weltort neu geplant werden. Die bereits
+berechnete Route läuft stattdessen weiter; reguläre Weltort-Routen werden
+weiterhin dynamisch überprüft. Regressionsprüfung ergänzt, ohne neue Gameplay-
+oder Persistenzstruktur.
