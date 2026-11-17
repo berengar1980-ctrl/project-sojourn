@@ -102,6 +102,33 @@ export function filteredSignals(
     });
 }
 
+function createSortControl(
+  filters: MissionFilters,
+  submit: (sort: SignalSort) => void
+): HTMLElement {
+  const sortLabel = document.createElement('label');
+  sortLabel.className = 'star-map-event-filters__sort';
+  sortLabel.textContent = 'SORTIEREN';
+  const select = document.createElement('select');
+  select.setAttribute('aria-label', 'Signale sortieren');
+  for (const [value, label] of [
+    ['distance', 'Entfernung'],
+    ['danger', 'Gefahr (hoch zuerst)'],
+    ['name', 'Name A–Z'],
+  ] as const) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    select.append(option);
+  }
+  select.value = filters.sort;
+  select.addEventListener('change', () =>
+    submit(select.value as SignalSort)
+  );
+  sortLabel.append(select);
+  return sortLabel;
+}
+
 export function missionFilterControls(
   filters: MissionFilters,
   counts: Readonly<Record<EventFilterKind, number>>,
@@ -187,26 +214,6 @@ export function missionFilterControls(
   relevant.append(relevantInput, document.createTextNode('Zum Schiff passende zuerst'));
   container.append(relevant);
 
-  const sortLabel = document.createElement('label');
-  sortLabel.className = 'star-map-event-filters__sort';
-  sortLabel.textContent = 'SORTIEREN';
-  const select = document.createElement('select');
-  select.setAttribute('aria-label', 'Signale sortieren');
-  for (const [value, label] of [
-    ['distance', 'Entfernung'],
-    ['danger', 'Gefahr (hoch zuerst)'],
-    ['name', 'Name A–Z'],
-  ] as const) {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = label;
-    select.append(option);
-  }
-  select.value = filters.sort;
-  select.addEventListener('change', () =>
-    submit({ ...currentFilters, sort: select.value as SignalSort })
-  );
-  sortLabel.append(select);
-  container.append(sortLabel);
+  container.append(createSortControl(filters, (sort) => submit({ ...currentFilters, sort })));
   return container;
 }
