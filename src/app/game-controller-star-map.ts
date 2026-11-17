@@ -1,4 +1,5 @@
 import { controllerWorldEvents } from './game-controller-world-events';
+import { createTimedMapReportCache } from './game-controller-star-map-report-cache';
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
@@ -122,6 +123,10 @@ export function createControllerStarPanel(options: {
   return panel;
 }
 
+// Expensive report aggregation runs at a slower cadence than ship animation.
+const readCargoReport = createTimedMapReportCache<ReturnType<typeof scanCargoMarkets>>(800);
+const readWorldEventReport = createTimedMapReportCache<ReturnType<typeof controllerWorldEvents>>(800);
+
 export function createControllerStarModel(
   navigation: NavigationService,
   ship: ShipDefinition,
@@ -134,18 +139,6 @@ export function createControllerStarModel(
   saleFeeRate = 0.25
 ) {
   const navigationSnapshot = navigation.getSnapshot();
-  if (!foreignSystem)
-    economy.marketIntel.observeFromSensors(
-      world.locations.map((location) => ({
-        locationId: location.id,
-        position: location.position,
-      })),
-      navigationSnapshot.currentPosition,
-      economy.situations.currentDay,
-      sensorCrewSkill,
-      sensorModifier
-    );
-
   const npcShips = foreignSystem
     ? []
     : economy.sectorNpcs.npcs.flatMap((npc) => {
@@ -196,16 +189,42 @@ export function createControllerStarModel(
         event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
     })
   );
+  const reportKey = [
+    world.id,
+    economy.situations.currentDay,
+    ship.id,
+    economy.trade.player.credits,
+    sensorCrewSkill,
+    sensorModifier,
+    saleFeeRate,
+  ].join('|');
   const cargoScanner = foreignSystem
     ? null
-    : scanCargoMarkets({
-        player: economy.trade.player,
-        intel: economy.marketIntel,
-        locations: world.locations,
-        origin: navigationSnapshot.currentPosition,
-        currentDay: economy.situations.currentDay,
-        saleFeeRate,
+    : readCargoReport(economy, reportKey, () => {
+        economy.marketIntel.observeFromSensors(
+          world.locations.map((location) => ({
+            locationId: location.id,
+            position: location.position,
+          })),
+          navigationSnapshot.currentPosition,
+          economy.situations.currentDay,
+          sensorCrewSkill,
+          sensorModifier
+        );
+        return scanCargoMarkets({
+          player: economy.trade.player,
+          intel: economy.marketIntel,
+          locations: world.locations,
+          origin: navigationSnapshot.currentPosition,
+          currentDay: economy.situations.currentDay,
+          saleFeeRate,
+        });
       });
+  const worldEvents = foreignSystem
+    ? []
+    : readWorldEventReport(economy, world.id + '|' + economy.situations.currentDay, () =>
+        controllerWorldEvents(economy, world, npcShips)
+      );
   return {
     ...createStarMapViewModel(
       world,
@@ -216,6 +235,6 @@ export function createControllerStarModel(
       eventLocations
     ),
     ...(cargoScanner ? { cargoScanner } : {}),
-    worldEvents: foreignSystem ? [] : controllerWorldEvents(economy, world, npcShips),
+    worldEvents,
   };
 }
