@@ -1,4 +1,3 @@
-import type { ShipRole } from '../../core/ship-types';
 import type { WorldMap } from '../../core/world-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import type { NpcShipMapView, StarMapWorldEvent } from '../features/star-map/star-map-view-model';
@@ -11,8 +10,7 @@ function locationName(world: WorldMap, id: string): string {
 export function controllerWorldEvents(
   economy: ControllerEconomy,
   world: WorldMap,
-  visibleNpcs: readonly NpcShipMapView[],
-  role: ShipRole
+  visibleNpcs: readonly NpcShipMapView[]
 ): StarMapWorldEvent[] {
   const events: StarMapWorldEvent[] = [];
   const visible = new Set(visibleNpcs.map((npc) => npc.id));
