@@ -459,3 +459,13 @@ Eine Long-Task-Beobachtung wird nur in unterstützten Browsern aktiviert.
 Ohne URL-Parameter ist die Instrumentierung deaktiviert. Es werden keine
 Messungen übertragen oder im Career-Spielstand gespeichert. Save/Load-Schema,
 Simulationsfrequenzen und Gameplay bleiben unverändert.
+
+### NPC-Neuplanung zu temporären Bergungszielen (17. November 2026)
+
+Die NPC-Routen-Neuplanung prüft jetzt, ob das Reiseziel als regulärer
+`WorldLocation` existiert. Temporäre Bergungs- oder Notsignal-IDs besitzen
+zwar eigene Koordinaten, gehören aber nicht zu `world.locations` und dürfen
+nicht an die Weltort-basierte Routenberechnung übergeben werden. In diesem Fall
+bleibt die bereits begonnene NPC-Reise unverändert; eine Ausnahme während des
+Simulations-Ticks wird vermieden. Save/Load-Format, NPC-Reisecheckpoint,
+Treibstoffverbrauch und reguläre Piraten-Ausweichrouten bleiben unverändert.
