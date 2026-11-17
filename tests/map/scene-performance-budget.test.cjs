@@ -49,7 +49,11 @@ const { resizeMapCanvasBackingStore } = loadStandaloneTypeScriptModule(
 );
 const fakeCanvas = { width: 0, height: 0 };
 let bufferResets = 0;
-const fakeContext = { setTransform: () => { bufferResets += 1; } };
+const fakeContext = {
+  setTransform: () => {
+    bufferResets += 1;
+  },
+};
 resizeMapCanvasBackingStore(fakeCanvas, fakeContext, 100, 90, 2);
 resizeMapCanvasBackingStore(fakeCanvas, fakeContext, 100, 90, 2);
 assert.equal(bufferResets, 1, 'unchanged canvas dimensions must not reallocate');
