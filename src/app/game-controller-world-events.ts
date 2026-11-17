@@ -45,11 +45,15 @@ export function controllerWorldEvents(
     events.push({
       id: 'patrol:' + assignment.id,
       kind: 'patrol',
-      title: 'Patrouillenauftrag · ' +
-        (targetLocation?.name ?? visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ??
-        'Korsarenkontakt'),
-      detail: assignment.status === 'completed' ? 'Erledigt · Belohnung abholen' :
-        'Laufender Auftrag · Frist Tag ' + assignment.deadline,
+      title:
+        'Patrouillenauftrag · ' +
+        (targetLocation?.name ??
+          visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ??
+          'Korsarenkontakt'),
+      detail:
+        assignment.status === 'completed'
+          ? 'Erledigt · Belohnung abholen'
+          : 'Laufender Auftrag · Frist Tag ' + assignment.deadline,
       locationId: targetLocation?.id ?? null,
       dangerLevel: targetLocation?.dangerLevel ?? 2,
     });

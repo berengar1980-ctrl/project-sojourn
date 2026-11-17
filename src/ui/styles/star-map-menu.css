@@ -559,7 +559,6 @@
   cursor: default;
 }
 
-
 .star-map-event-filter:has(input:not(:checked)) {
   opacity: 0.55;
 }

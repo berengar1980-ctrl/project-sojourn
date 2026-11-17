@@ -18,8 +18,12 @@ export interface MissionFilters {
 
 const STORAGE_PREFIX = 'sojourn:star-map-signals:v1:';
 export const EVENT_KINDS = [
-  ['distress', 'Notsignal'], ['salvage', 'Bergung'], ['trade', 'Handel'],
-  ['mining', 'Bergbau'], ['patrol', 'Patrouille'], ['blockade', 'Blockade'],
+  ['distress', 'Notsignal'],
+  ['salvage', 'Bergung'],
+  ['trade', 'Handel'],
+  ['mining', 'Bergbau'],
+  ['patrol', 'Patrouille'],
+  ['blockade', 'Blockade'],
   ['campaign', 'Kampagne'],
 ] as const;
 
@@ -174,9 +178,12 @@ export function missionFilterControls(
   const relevantInput = document.createElement('input');
   relevantInput.type = 'checkbox';
   relevantInput.checked = filters.relevantFirst;
-  relevantInput.addEventListener('change', () => submit({
-    ...currentFilters, relevantFirst: relevantInput.checked,
-  }));
+  relevantInput.addEventListener('change', () =>
+    submit({
+      ...currentFilters,
+      relevantFirst: relevantInput.checked,
+    })
+  );
   relevant.append(relevantInput, document.createTextNode('Zum Schiff passende zuerst'));
   container.append(relevant);
 

@@ -18,31 +18,62 @@ const world = {
   ],
 };
 const economy = {
-  situations: { currentDay: 6, active: () => [
-    { id: 'shortage', name: 'Engpass', description: 'Knappheit',
-      scope: 'local', locationId: 'dock' },
-  ] },
-  blockades: { snapshot: () => ({ orders: [
-    { id: 'visible', locationId: 'dock', ownerId: 'npc', pirateIds: ['pirate-1'],
-      phase: 'active' },
-    { id: 'secret', locationId: 'dock', ownerId: 'npc', pirateIds: ['pirate-2'],
-      phase: 'active' },
-  ] }) },
-  patrol: { snapshot: () => ({ assignments: [
-    { id: 'assignment', targetId: 'dock', status: 'active', deadline: 8 },
-  ] }) },
-  asteroidClaims: { snapshot: () => ({ claims: [
-    { locationId: 'field', asteroidId: 'a1' }, { locationId: 'field', asteroidId: 'a2' },
-  ] }) },
-  wreckClaims: { snapshot: () => [
-    { fieldId: 'field', wreckId: 'w1', expiresDay: 9 },
-  ] },
+  situations: {
+    currentDay: 6,
+    active: () => [
+      {
+        id: 'shortage',
+        name: 'Engpass',
+        description: 'Knappheit',
+        scope: 'local',
+        locationId: 'dock',
+      },
+    ],
+  },
+  blockades: {
+    snapshot: () => ({
+      orders: [
+        {
+          id: 'visible',
+          locationId: 'dock',
+          ownerId: 'npc',
+          pirateIds: ['pirate-1'],
+          phase: 'active',
+        },
+        {
+          id: 'secret',
+          locationId: 'dock',
+          ownerId: 'npc',
+          pirateIds: ['pirate-2'],
+          phase: 'active',
+        },
+      ],
+    }),
+  },
+  patrol: {
+    snapshot: () => ({
+      assignments: [{ id: 'assignment', targetId: 'dock', status: 'active', deadline: 8 }],
+    }),
+  },
+  asteroidClaims: {
+    snapshot: () => ({
+      claims: [
+        { locationId: 'field', asteroidId: 'a1' },
+        { locationId: 'field', asteroidId: 'a2' },
+      ],
+    }),
+  },
+  wreckClaims: { snapshot: () => [{ fieldId: 'field', wreckId: 'w1', expiresDay: 9 }] },
 };
 const known = [
-  { id: 'pirate-1', job: 'pirate', name: 'Korsar', activity: 'Blockade',
-    combatMode: null },
-  { id: 'patrol-1', job: 'patrol', name: 'Sicherheit', activity: 'Patrouilliert',
-    combatMode: null },
+  { id: 'pirate-1', job: 'pirate', name: 'Korsar', activity: 'Blockade', combatMode: null },
+  {
+    id: 'patrol-1',
+    job: 'patrol',
+    name: 'Sicherheit',
+    activity: 'Patrouilliert',
+    combatMode: null,
+  },
 ];
 const entries = controllerWorldEvents(economy, world, known);
 assert.equal(entries.filter((event) => event.kind === 'blockade').length, 1);

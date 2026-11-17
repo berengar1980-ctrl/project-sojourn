@@ -37,7 +37,12 @@ const panes = new WeakMap<HTMLElement, MissionPaneState>();
 
 function eventCounts(options: MissionPaneOptions): Record<EventFilterKind, number> {
   const counts: Record<EventFilterKind, number> = {
-    distress: 0, salvage: 0, trade: 0, mining: 0, patrol: 0, blockade: 0,
+    distress: 0,
+    salvage: 0,
+    trade: 0,
+    mining: 0,
+    patrol: 0,
+    blockade: 0,
     campaign: options.journal.length,
   };
   for (const location of options.model.locations) {
@@ -52,7 +57,9 @@ function eventCounts(options: MissionPaneOptions): Record<EventFilterKind, numbe
 function createMissionPaneState(options: MissionPaneOptions, role: ShipRole): MissionPaneState {
   const filters = loadMissionFilters(role);
   const state: MissionPaneState = {
-    role, filters, options,
+    role,
+    filters,
+    options,
     controls: document.createElement('div'),
     journal: document.createElement('div'),
     signals: document.createElement('div'),
@@ -85,10 +92,15 @@ function updateMissionContents(state: MissionPaneState): void {
   } else {
     state.journal.replaceChildren();
   }
-  renderStarMapEvents(model, state.signals, {
-    onSelectNpc: () => {},
-    onSelectLocation,
-  }, state.filters);
+  renderStarMapEvents(
+    model,
+    state.signals,
+    {
+      onSelectNpc: () => {},
+      onSelectLocation,
+    },
+    state.filters
+  );
   renderStarMapWorldEvents(model, state.world, state.filters, onSelectLocation);
 }
 
