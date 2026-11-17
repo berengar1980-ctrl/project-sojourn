@@ -3,7 +3,7 @@ import { createTimedMapReportCache } from './game-controller-star-map-report-cac
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
-import type { WorldMap } from '../core/world-types';
+import type { WorldMap, WorldPoint } from '../core/world-types';
 import type { CampaignRuntime } from '../systems/campaigns/campaign-runtime';
 import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import { createStarMapViewModel } from '../features/star-map/star-map-view-model';
@@ -128,6 +128,46 @@ const readCargoReport = createTimedMapReportCache<ReturnType<typeof scanCargoMar
 const readWorldEventReport =
   createTimedMapReportCache<ReturnType<typeof controllerWorldEvents>>(800);
 
+function cachedCargoMarketReport(
+  economy: ControllerEconomy,
+  world: WorldMap,
+  shipId: string,
+  origin: WorldPoint,
+  sensorCrewSkill: number,
+  sensorModifier: number,
+  saleFeeRate: number
+): ReturnType<typeof scanCargoMarkets> {
+  const key = [
+    world.id,
+    economy.situations.currentDay,
+    shipId,
+    economy.trade.player.credits,
+    sensorCrewSkill,
+    sensorModifier,
+    saleFeeRate,
+  ].join('|');
+  return readCargoReport(economy, key, () => {
+    economy.marketIntel.observeFromSensors(
+      world.locations.map((location) => ({
+        locationId: location.id,
+        position: location.position,
+      })),
+      origin,
+      economy.situations.currentDay,
+      sensorCrewSkill,
+      sensorModifier
+    );
+    return scanCargoMarkets({
+      player: economy.trade.player,
+      intel: economy.marketIntel,
+      locations: world.locations,
+      origin,
+      currentDay: economy.situations.currentDay,
+      saleFeeRate,
+    });
+  });
+}
+
 export function createControllerStarModel(
   navigation: NavigationService,
   ship: ShipDefinition,
@@ -190,37 +230,17 @@ export function createControllerStarModel(
         event.type === 'distress-rescue' && event.distressTrap ? (2 as const) : (1 as const),
     })
   );
-  const reportKey = [
-    world.id,
-    economy.situations.currentDay,
-    ship.id,
-    economy.trade.player.credits,
-    sensorCrewSkill,
-    sensorModifier,
-    saleFeeRate,
-  ].join('|');
   const cargoScanner = foreignSystem
     ? null
-    : readCargoReport(economy, reportKey, () => {
-        economy.marketIntel.observeFromSensors(
-          world.locations.map((location) => ({
-            locationId: location.id,
-            position: location.position,
-          })),
-          navigationSnapshot.currentPosition,
-          economy.situations.currentDay,
-          sensorCrewSkill,
-          sensorModifier
-        );
-        return scanCargoMarkets({
-          player: economy.trade.player,
-          intel: economy.marketIntel,
-          locations: world.locations,
-          origin: navigationSnapshot.currentPosition,
-          currentDay: economy.situations.currentDay,
-          saleFeeRate,
-        });
-      });
+    : cachedCargoMarketReport(
+        economy,
+        world,
+        ship.id,
+        navigationSnapshot.currentPosition,
+        sensorCrewSkill,
+        sensorModifier,
+        saleFeeRate
+      );
   const worldEvents = foreignSystem
     ? []
     : readWorldEventReport(economy, world.id + '|' + economy.situations.currentDay, () =>
