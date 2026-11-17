@@ -35,7 +35,7 @@ assert(scene.includes('state.salvageScene?.tick(deltaSeconds)'));
 const models = file('src/app/game-controller-models.ts');
 assert(models.includes('journey || nav.isTravelling ? null : forecastPlayerFuelRoute(context)'));
 const map = file('src/app/game-controller-star-map.ts');
-assert(map.includes('readCargoReport(economy, reportKey'));
+assert(map.includes('return readCargoReport(economy, key'));
 assert(map.includes('readWorldEventReport(economy,'));
 const operations = file('src/ui/operations/operations.css');
 assert(operations.includes('body:has(.star-map-shell) .operations-launch'));
