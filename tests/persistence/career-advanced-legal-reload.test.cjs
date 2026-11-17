@@ -41,7 +41,10 @@ function reload(prisoners = new Set(), detention = null) {
     playerHull
   );
   assert.deepEqual(normalize(restored.legal.exportState()), normalize(savedLegal.legal));
-  assert.deepEqual(normalize(captureCareerCustody(custody.prisoners, custody.player)), normalize(savedCustody));
+  assert.deepEqual(
+    normalize(captureCareerCustody(custody.prisoners, custody.player)),
+    normalize(savedCustody)
+  );
   legal = restored.legal;
   return custody;
 }
