@@ -24,14 +24,10 @@ const npc = {
   },
 };
 const initial = JSON.stringify(npc.travel);
-const replanned = replanNpcTravel(
-  world,
-  npc,
-  () => {
-    throw new Error('A temporary destination must not query NPC route threats');
-  },
-  1
-);
+const getContacts = () => {
+  throw new Error('A temporary destination must not query NPC route threats');
+};
+const replanned = replanNpcTravel(world, npc, getContacts, 1);
 assert.equal(replanned, false);
 assert.equal(JSON.stringify(npc.travel), initial, 'temporary target route must remain unchanged');
 
