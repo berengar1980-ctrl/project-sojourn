@@ -513,3 +513,9 @@ lässt diese Kennung nun ausschließlich für den Bergungs-NPC mit übereinstimm
 `salvageEventId` zu; sie bleibt bei fremden/unverbundenen IDs strikt. Dies
 gilt auch für die kurze Ankunftsphase am Ereignisort. Vorhandene atomare
 Career-Sektionen, Treibstoffstände und geplante Routen werden nicht verändert.
+
+### Initiale Sicherheitsdrohnen und Save-Validierung (17. November 2026)
+
+Bei einem echten Chromium-Lauf ohne optionalen Medienbestand schlug das Speichern durch einen bereits vorhandenen Zustandsfehler fehl: Ein neu erzeugter Konzessions-Sicherheitsdrohnen-NPC erbte mit der kopierten Patrouillenvorlage deren Reise-, Kampf- und Orbitdaten. Die eigentliche lokale Drohne hat jedoch einen anderen Einsatzort, wodurch der NPC-Checkpoint die Aktivität zu Recht ablehnte. `registerSecurityDroneCombatants` entfernt nun diese geerbten temporären Bewegungszustände vor dem Einfügen der lokalen Drohne; die reguläre Validierung bleibt aktiv. Ein Regressionstest deckt den Fall ab, und der Browser-Neustarttest gibt bei einem Speicherfehler den sichtbaren Fehlertext aus.
+
+Die aus der Patrouillenvorlage erzeugte lokale Konzessionsdrohne wird außerdem bei Fahndungs-Dispatches ausdrücklich ausgeschlossen: Für Meldungen dürfen nur echte Sektorpatrouillen zu anderen Orten fliegen, während die Drohne ihrem Feld zugeordnet bleibt. Der bestehende Offscreen-Rechtsintegrations-Test überprüft diese Trennung.

@@ -165,7 +165,7 @@ function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
   const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
   if (patrolTemplate) {
     for (const location of narrowsSector.locations.filter((entry) => entry.activities.mine)) {
-      npcStates.push({
+      const drone: SectorNpcState = {
         ...patrolTemplate,
         id: 'security-drone:' + location.id,
         name: 'SEC-' + location.id.toUpperCase(),
@@ -177,7 +177,13 @@ function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
         credits: 0,
         activityId: 'patrol',
         activity: 'Lokale Konzessionsüberwachung',
-      });
+      };
+      // Combatant templates can already be travelling or orbiting elsewhere.
+      // The new local defender must not inherit those foreign movement states.
+      delete drone.travel;
+      delete drone.combatMovement;
+      delete drone.orbit;
+      npcStates.push(drone);
     }
   }
 }

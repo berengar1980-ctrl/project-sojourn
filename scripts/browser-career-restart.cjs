@@ -40,7 +40,12 @@ async function readSavedCareer(page) {
 async function saveFromSystemMenu(page) {
   await page.locator('.settings-menu__toggle').click();
   await page.locator('[data-career-save]').click();
-  await page.getByText('Spielstand erfolgreich gespeichert.').waitFor();
+  try {
+    await page.getByText('Spielstand erfolgreich gespeichert.').waitFor({ timeout: 10000 });
+  } catch {
+    const messages = await page.locator('[data-career-status]').allTextContents();
+    throw new Error('Career save did not succeed: ' + messages.join(' | '));
+  }
   const saved = await readSavedCareer(page);
   assert(saved, 'Save button must write a career record in real browser localStorage');
   assert.equal(saved.envelope.format, 'sojourn-career');
