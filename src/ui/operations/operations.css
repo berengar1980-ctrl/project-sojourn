@@ -147,3 +147,13 @@
     gap: 4px;
   }
 }
+
+/* Global commission window is only actionable from the strategic star map.
+   Local salvage, mining and combat scenes must not inherit the floating trigger. */
+.operations-launch {
+  display: none;
+}
+
+body:has(.star-map-shell) .operations-launch {
+  display: block;
+}
