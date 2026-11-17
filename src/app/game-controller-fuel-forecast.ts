@@ -28,7 +28,8 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   const world = context.world.world();
   const to = navigation.selectedDestinationId;
   if (!to || !world.locations.some((location) => location.id === to)) return null;
-  if (!navigation.previewRoute) return null;
+  const preview = navigation.previewRoute;
+  if (!preview) return null;
   const ship = context.state.activeShip;
   const tank = context.shipOperations.snapshot(ship, 1);
   const fuelPerDistance = fuelPerTravelUnit(context);
@@ -40,7 +41,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     navigation.currentPosition.x,
     navigation.currentPosition.y,
     to,
-    navigation.previewRoute.profile,
+    preview.profile,
     navigation.threatRevision,
     ship.id,
     tank.fuel,
@@ -56,7 +57,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
       fromId: navigation.currentLocationId,
       fromPosition: navigation.currentPosition,
       destinationId: to,
-      profile: navigation.previewRoute.profile,
+      profile: preview.profile,
       threatContacts: navigation.threatContacts,
       fuel: tank.fuel,
       capacity: tank.fuelCapacity,
