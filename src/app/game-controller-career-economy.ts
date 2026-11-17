@@ -19,7 +19,13 @@ export function controllerEconomyFromCareer(
   const { operations, fieldsLegal, society } = session;
   const { population, sector, blockades, patrol, salvageEvents } = operations;
   const research = session.commerce.ships.research;
-  const npcSmuggling = createNpcSmugglingService(sector.npcs, sector, notice);
+  const npcSmuggling = createNpcSmugglingService(
+    sector.npcs,
+    sector,
+    notice,
+    Math.random,
+    economy.situations.currentDay
+  );
   const npcSalvageEvents = createNpcSalvageEventService({
     world: narrowsSector,
     sector,
