@@ -1231,3 +1231,12 @@ Identität, Spielerinventar, Schiffe, Recht, Ansprüche und NPC-IDs. Absichtlich
 korrupte Saves dürfen nach einem Neustart keine Ladeaktion freischalten.
 Weder Spielmechanik noch Speicherformat werden geändert; fortgeschrittene
 Welt-/Kampf- und Rechts-Reload-Szenarien bleiben gesondert zu prüfen.
+
+## Review-Log (2026-11-17): NPC-Schmuggelzeitgeber beim Karriere-Restore (PR #333)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Patrouillenintervall, letzte Hafenankunft und laufende Zoll-Abklingzeit
+sind jetzt an den betroffenen Sektor-NPCs gespeichert und überdauern den
+atomaren Career-Restore. Die Verdachtsreduktion beginnt nach einem Reload
+am gespeicherten Wirtschaftstag. Ein Regressionstest prüft identische
+Fortsetzung beider Simulationsverläufe und die Ablehnung negativer Timer.
