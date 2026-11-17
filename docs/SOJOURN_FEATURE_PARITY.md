@@ -1260,3 +1260,7 @@ wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
 ## Review-Log (2026-11-17): Sicherheitsdrohnen-Startzustand beim Save (PR #336)
 
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Neue lokale Sicherheitsdrohnen übernehmen weiterhin Kampfwerte des Patrouillenschiffs, aber keine fremden Reise-, Verfolgungs- oder Orbitdaten. Dies verhindert die Ablehnung gültiger Karriere-Speichervorgänge in unbeobachteten Asteroidenfeldern. Ein eigener Regressionstest sichert den Zustand ab.
+
+## Review-Log (2026-11-17): Erweiterte Rechtsakten-Save/Reload-Prüfung (PR #337)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein neuer persistenter Regressionstest deckt wiederholte Wiederherstellung von offenen Forderungen und Teilzahlungen, Fahndung, Transponder-Tarnung, NPC- und Spielerhaft, Einmal-Abrechnung und Entlassung ab. Keine Gameplay- oder Save-Schema-Änderung. Die weitergehenden Browser- und Langzeitsimulations-Abnahmen aus Issue #300 bleiben offen.
