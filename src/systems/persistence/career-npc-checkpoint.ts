@@ -154,6 +154,18 @@ function validNpc(
   );
 }
 
+function describeInvalidNpc(value: unknown, world: WorldMap): string {
+  if (!record(value)) return 'record';
+  const reason = !validNpcIdentity(value, world)
+    ? 'identity'
+    : !validNpcFinances(value)
+      ? 'finances'
+      : 'activity';
+  const id = typeof value.id === 'string' ? value.id : '?';
+  const destination = record(value.travel) ? String(value.travel.targetLocationId ?? '') : '';
+  return id + ': ' + reason + (destination ? ' → ' + destination : '');
+}
+
 /** A detached snapshot of the authoritative sector NPC objects, not render projections. */
 export function captureCareerNpcs(
   world: WorldMap,
@@ -182,25 +194,7 @@ export function stageCareerNpcs(world: WorldMap, candidate: unknown): SectorNpcS
   }
   const invalid = snapshot.npcs.find((npc) => !validNpc(npc, world, ids));
   if (invalid) {
-    const issue = !record(invalid)
-      ? 'record'
-      : !validNpcIdentity(invalid, world)
-        ? 'identity'
-        : !validNpcFinances(invalid)
-          ? 'finances'
-          : 'activity';
-    const id = record(invalid) && typeof invalid.id === 'string' ? invalid.id : '?';
-    const destination =
-      record(invalid) && record(invalid.travel)
-        ? String(invalid.travel.targetLocationId ?? '')
-        : '';
-    throw new Error(
-      'Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' +
-        id +
-        ': ' +
-        issue +
-        (destination ? ' → ' + destination : '')
-    );
+    throw new Error('Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' + describeInvalidNpc(invalid, world));
   }
   return snapshot.npcs as SectorNpcState[];
 }
