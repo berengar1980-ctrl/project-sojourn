@@ -1248,3 +1248,7 @@ Validiert wird nun auch der reguläre NPC-Bergungsflug zu temporären
 Ereigniskoordinaten und die kurze Ankunftsphase; andere ungültige Weltorte
 bleiben verboten. Regressionstest verhindert, dass globale Career-Saves
 wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
+
+## Review-Log (2026-11-17): Repository-Auffindbarkeit reduzieren (PR #335)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. README und allgemeine npm-Paketbeschreibung wurden auf ausdrücklichen Wunsch entfernt. Der bestehende Qualitätstest für markenfremde Begriffe überspringt eine fehlende README-Datei; Quellcode, Spielmechanik, Persistenz und CI-Prüfumfang bleiben unverändert. COPYRIGHT.md sowie technische Projektunterlagen bleiben erhalten.
