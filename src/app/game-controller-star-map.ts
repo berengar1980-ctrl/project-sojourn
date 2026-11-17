@@ -1,3 +1,4 @@
+import { controllerWorldEvents } from './game-controller-world-events';
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
 import type { ShipDefinition } from '../core/ship-types';
 import type { SystemLogService } from '../core/system-log-types';
@@ -215,5 +216,6 @@ export function createControllerStarModel(
       eventLocations
     ),
     ...(cargoScanner ? { cargoScanner } : {}),
+    worldEvents: foreignSystem ? [] : controllerWorldEvents(economy, world, npcShips),
   };
 }

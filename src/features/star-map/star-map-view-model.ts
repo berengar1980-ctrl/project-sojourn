@@ -88,7 +88,19 @@ export interface StarMapFuelView {
   };
 }
 
+export type WorldEventKind = 'trade' | 'mining' | 'salvage' | 'patrol' | 'blockade';
+
+export interface StarMapWorldEvent {
+  readonly id: string;
+  readonly kind: WorldEventKind;
+  readonly title: string;
+  readonly detail: string;
+  readonly locationId: string | null;
+  readonly dangerLevel: 0 | 1 | 2 | 3;
+}
+
 export interface StarMapViewModel {
+  readonly worldEvents?: readonly StarMapWorldEvent[];
   readonly fuelStatus?: StarMapFuelView;
   readonly worldId: string;
   readonly title: string;

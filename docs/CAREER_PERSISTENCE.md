@@ -414,3 +414,15 @@ wird nicht aus der Simulation oder dem gespeicherten Spielstand entfernt.
 Die Korrektur unterscheidet reine `missions: true`-Aktivitätsmetadaten einer Welt von tatsächlich vorhandenen Notfall- und Bergungsereignissen. Die Ereignisliste zeigt nur reale Wrack- und Notfallkontakte. Sie verändert weder den gespeicherten Weltzustand noch Event-Spawns, den Ankunftstrigger, Career-Slots oder den Restore-Ablauf. Vorhandene Spielstände bleiben unverändert lesbar.
 
 Wenn ein wirkliches dynamisches Sektorsignal während des Anflugs abläuft oder durch NPCs erledigt wird, meldet die Ankunft nun ausdrücklich den erloschenen Kontakt. Diese Meldung ändert keine gespeicherten Event-IDs oder Statuswerte.
+
+### Erweiterte Sternkarten-Ereignisfilter (UI-only)
+
+Die Sternkarte liest bereits existierende, unveränderte Laufzeitzustände aus
+Handelslagen, Konzessionsregistern, Patrouillenmandaten und Korsarenblockaden.
+Ein Ereignisbericht startet keine zusätzliche Simulation und erstellt keinen
+neuen Auftrag. Die Checkboxen, Sortierung und schiffsabhängigen Präferenzen
+werden pro Schiffsklasse in der lokalen Browser-Speicherung gehalten, nicht
+im Career-Snapshot. Ein erneutes Öffnen, ein Tick-Refresh oder ein Laden der
+Webseite verändert die Auswahl nicht, soweit lokaler Speicher verfügbar ist.
+Daher bleiben die 14 Career-Sektionen, Schema, Restore und NPC-Zustände
+unverändert.
