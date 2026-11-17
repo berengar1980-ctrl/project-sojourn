@@ -24,7 +24,12 @@ const enabled =
 
 export function recordPerformance(name: string, durationMs: number): void {
   if (!enabled || !Number.isFinite(durationMs) || durationMs < 0) return;
-  const entry = samples.get(name) ?? { count: 0, totalMs: 0, maximumMs: 0, over50ms: 0 };
+  const entry = samples.get(name) ?? {
+    count: 0,
+    totalMs: 0,
+    maximumMs: 0,
+    over50ms: 0,
+  };
   entry.count += 1;
   entry.totalMs += durationMs;
   entry.maximumMs = Math.max(entry.maximumMs, durationMs);
