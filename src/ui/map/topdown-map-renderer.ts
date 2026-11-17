@@ -104,43 +104,35 @@ export class TopdownMapRenderer {
     this.camera.fit(rect.width, rect.height, this.contentBounds());
     this.draw();
   }
-
   toggleHardpointDebug(): void {
     this.shipRenderer.toggleHardpointDebug();
   }
-
   setDisplayMode(mode: StarMapDisplayMode): void {
     if (this.displayMode === mode) return;
     this.displayMode = mode;
     this.draw();
   }
-
   setLabelsVisible(visible: boolean): void {
     if (this.labelsVisible === visible) return;
     this.labelsVisible = visible;
     this.draw();
   }
-
   setDangerOverlay(visible: boolean): void {
     this.dangerOverlayVisible = visible;
     this.draw();
   }
-
   setDangerBand(band: 'green' | 'yellow' | 'red', visible: boolean): void {
     this.dangerBands[band] = visible;
     this.draw();
   }
-
   setCargoOverlay(markers: ReadonlyMap<string, 'best' | 'good' | 'low'>): void {
     this.cargoOverlay = markers;
     this.draw();
   }
-
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
   }
-
   zoomAt(deltaY: number, x: number, y: number): void {
     const rect = this.canvas.getBoundingClientRect();
     const factor = Math.exp(-deltaY * 0.0015);
