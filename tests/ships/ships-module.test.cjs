@@ -53,7 +53,16 @@ for (const spec of roles) {
     const base = spec.key + '-' + spec.length + 'm-variant-' + suffix;
     const asset = path.join(root, 'resources/ships', spec.folder, base + '.png');
     const hardpointFile = path.join(root, 'src/data/ships', base + '.hardpoints.json');
-    assert(fs.existsSync(asset), base + ' sprite must exist');
+    // Images are optional until redistribution rights have been cleared.
+    // Ship metadata and hardpoint JSON remain mandatory for every slot.
+    if (fs.existsSync(asset)) {
+      const signature = fs.readFileSync(asset).subarray(0, 8);
+      assert(
+        signature.equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+        base + ' replacement sprite must be a PNG'
+      );
+    }
+    assert(source.includes(base + '.png'), base + ' optional sprite path must be preserved');
     assert(fs.existsSync(hardpointFile), base + ' hardpoint JSON must exist');
     assert(source.includes("id: '" + base + "'"), base + ' must be registered');
 
