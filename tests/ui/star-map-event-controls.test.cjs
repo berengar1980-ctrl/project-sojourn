@@ -17,22 +17,34 @@ class Element {
     this.value = '';
     this.textContent = '';
   }
-  append(...children) { this.children.push(...children); }
-  setAttribute(name, value) { this.attributes[name] = value; }
-  addEventListener(name, listener) { this.listeners[name] = listener; }
-  fire(name) { this.listeners[name]?.(); }
+  append(...children) {
+    this.children.push(...children);
+  }
+  setAttribute(name, value) {
+    this.attributes[name] = value;
+  }
+  addEventListener(name, listener) {
+    this.listeners[name] = listener;
+  }
+  fire(name) {
+    this.listeners[name]?.();
+  }
   querySelector(selector) {
     const kind = selector.match(/star-map-event-filter--([a-z]+)/)?.[1];
     if (!kind) return null;
-    const choices = this.children.find((child) =>
-      child.className === 'star-map-event-filters__choices');
-    return choices?.children.find((child) =>
-      child.className.endsWith('--' + kind))?.children[0] ?? null;
+    const choices = this.children.find(
+      (child) => child.className === 'star-map-event-filters__choices'
+    );
+    return (
+      choices?.children.find((child) => child.className.endsWith('--' + kind))?.children[0] ?? null
+    );
   }
   querySelectorAll(selector) {
     if (selector !== '.star-map-event-filters__presets button') return [];
-    return this.children.find((child) =>
-      child.className === 'star-map-event-filters__presets')?.children ?? [];
+    return (
+      this.children.find((child) => child.className === 'star-map-event-filters__presets')
+        ?.children ?? []
+    );
   }
 }
 
@@ -41,12 +53,20 @@ global.document = {
   createTextNode: (text) => ({ textContent: text }),
 };
 const { defaultMissionFilters, missionFilterControls } = loadStandaloneTypeScriptModule(
-  root, 'src/ui/map/star-map-event-filters.ts'
+  root,
+  'src/ui/map/star-map-event-filters.ts'
 );
 let updated = defaultMissionFilters('salvage');
 let notifications = 0;
-const counts = { distress: 2, salvage: 5, trade: 1, mining: 0,
-  patrol: 1, blockade: 0, campaign: 2 };
+const counts = {
+  distress: 2,
+  salvage: 5,
+  trade: 1,
+  mining: 0,
+  patrol: 1,
+  blockade: 0,
+  campaign: 2,
+};
 const controls = missionFilterControls(updated, counts, (next) => {
   notifications += 1;
   updated = next;
@@ -65,8 +85,9 @@ buttons.find((button) => button.textContent === 'Alle').fire('click');
 assert.equal(updated.distress, true);
 assert.equal(choice('distress').checked, true, 'presets must synchronize checkbox visuals');
 assert.equal(choice('mining').checked, true);
-const sortLabel = controls.children.find((child) =>
-  child.className === 'star-map-event-filters__sort');
+const sortLabel = controls.children.find(
+  (child) => child.className === 'star-map-event-filters__sort'
+);
 const select = sortLabel.children.at(-1);
 select.value = 'danger';
 select.fire('change');
