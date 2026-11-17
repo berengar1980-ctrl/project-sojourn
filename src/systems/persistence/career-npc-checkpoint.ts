@@ -180,8 +180,27 @@ export function stageCareerNpcs(world: WorldMap, candidate: unknown): SectorNpcS
     }
     ids.add(npc.id);
   }
-  if (!snapshot.npcs.every((npc) => validNpc(npc, world, ids))) {
-    throw new Error('Beschädigte NPC-Route, Ladung oder Kampfzuordnung.');
+  const invalid = snapshot.npcs.find((npc) => !validNpc(npc, world, ids));
+  if (invalid) {
+    const issue = !record(invalid)
+      ? 'record'
+      : !validNpcIdentity(invalid, world)
+        ? 'identity'
+        : !validNpcFinances(invalid)
+          ? 'finances'
+          : 'activity';
+    const id = record(invalid) && typeof invalid.id === 'string' ? invalid.id : '?';
+    const destination =
+      record(invalid) && record(invalid.travel)
+        ? String(invalid.travel.targetLocationId ?? '')
+        : '';
+    throw new Error(
+      'Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' +
+        id +
+        ': ' +
+        issue +
+        (destination ? ' → ' + destination : '')
+    );
   }
   return snapshot.npcs as SectorNpcState[];
 }
