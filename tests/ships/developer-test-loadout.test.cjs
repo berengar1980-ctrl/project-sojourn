@@ -9,12 +9,17 @@ const load = (name) => loadStandaloneTypeScriptModule(root, name);
 const { getAllShipDefinitions } = load('src/systems/ships/ship-registry.ts');
 const { createShipLoadoutService } = load('src/systems/ships/ship-loadout-service.ts');
 const { equipDeveloperTestShip } = load('src/systems/ships/ship-developer-test-loadout.ts');
-const { getShipComponent, calculateShipEnergy } = load('src/systems/ships/ship-component-service.ts');
+const { getShipComponent, calculateShipEnergy } = load(
+  'src/systems/ships/ship-component-service.ts'
+);
 const { isShipCombatWeaponSlotActive } = load('src/systems/ships/ship-combat-role-policy.ts');
 
 const service = createShipLoadoutService();
 const nonReactor = ['engine', 'shield', 'hull', 'armor', 'sensor', 'cargo'];
-const expectedOptional = { mining: ['mining', 'tractor'], salvage: ['salvage', 'tractor'] };
+const expectedOptional = {
+  mining: ['mining', 'tractor'],
+  salvage: ['salvage', 'tractor'],
+};
 for (const ship of getAllShipDefinitions()) {
   assert.equal(getShipComponent('engine', service.get(ship).engine[0]).tier, 1);
   equipDeveloperTestShip(ship, service);
@@ -44,4 +49,6 @@ for (const ship of getAllShipDefinitions()) {
 const normal = createShipLoadoutService();
 const starter = getAllShipDefinitions()[0];
 assert.equal(getShipComponent('engine', normal.get(starter).engine[0]).tier, 1);
-console.log('PASS developer switcher equips 28 hulls with valid Mk II test suites and Mk III railgun');
+console.log(
+  'PASS developer switcher equips 28 hulls with valid Mk II test suites and Mk III railgun'
+);
