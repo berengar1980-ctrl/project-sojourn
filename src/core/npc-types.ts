@@ -79,6 +79,10 @@ export interface SectorNpcState extends NpcEconomyState {
   smugglingUnpaidFines?: number;
   smugglingEscapes?: number;
   smugglingProtectionFees?: number;
+  /** Timers live on the NPC so Career Save captures them with the sector fleet. */
+  smugglingPatrolElapsedSeconds?: number;
+  smugglingLastArrivalId?: string;
+  smugglingInspectionCooldownSeconds?: number;
   pirateLootRevenue?: number;
   pirateLootUnitsSold?: number;
   pirateOperatingExpenses?: number;
