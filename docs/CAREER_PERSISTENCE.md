@@ -519,3 +519,15 @@ Career-Sektionen, Treibstoffstände und geplante Routen werden nicht verändert.
 Bei einem echten Chromium-Lauf ohne optionalen Medienbestand schlug das Speichern durch einen bereits vorhandenen Zustandsfehler fehl: Ein neu erzeugter Konzessions-Sicherheitsdrohnen-NPC erbte mit der kopierten Patrouillenvorlage deren Reise-, Kampf- und Orbitdaten. Die eigentliche lokale Drohne hat jedoch einen anderen Einsatzort, wodurch der NPC-Checkpoint die Aktivität zu Recht ablehnte. `registerSecurityDroneCombatants` entfernt nun diese geerbten temporären Bewegungszustände vor dem Einfügen der lokalen Drohne; die reguläre Validierung bleibt aktiv. Ein Regressionstest deckt den Fall ab, und der Browser-Neustarttest gibt bei einem Speicherfehler den sichtbaren Fehlertext aus.
 
 Die aus der Patrouillenvorlage erzeugte lokale Konzessionsdrohne wird außerdem bei Fahndungs-Dispatches ausdrücklich ausgeschlossen: Für Meldungen dürfen nur echte Sektorpatrouillen zu anderen Orten fliegen, während die Drohne ihrem Feld zugeordnet bleibt. Der bestehende Offscreen-Rechtsintegrations-Test überprüft diese Trennung.
+
+### Test-Schiffwechsler mit Mk-II-Ausstattung (18. November 2026)
+
+Der ausdrücklich als Entwickler-Testfunktion gekennzeichnete Schiffwechsler
+bestückt das ausgewählte Modell mit kompatiblen Mk-II-Komponenten, einer
+Mk-III-Railgun am Bug und einem bedarfsgerechten Generator. Die Berechnung
+hat keinen eigenen Laufzeitstatus: Die eingebauten Komponenten werden im
+vorhandenen autoritativen `ShipLoadoutService` gespeichert. Dieser ist bereits
+Teil der Career-Schiffssektion. Es entstehen weder neue Save-Felder noch
+Versionsänderungen oder zusätzliche Belohnungen; reguläre Karriere- und
+NPC-Startausrüstung bleiben unberührt. Der Mehrschiff-Regressionstest prüft
+Hardpoint-Kompatibilität und ausreichende Energieversorgung.
