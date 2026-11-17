@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
 import type {
   LocalAsteroidView,
@@ -140,6 +141,10 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.shipImage.src = url;
   }
   protected draw(): void {
+    measurePerformance('canvas.local.draw', () => this.drawFrame());
+  }
+
+  private drawFrame(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;

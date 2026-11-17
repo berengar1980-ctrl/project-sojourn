@@ -1203,3 +1203,12 @@ Validierung der NPC-Weltorte an Nichtmarkt-Standorten (insbesondere
 Sicherheitsdrohnen an Bergbaugebieten) korrigiert, ohne Wirtschaft,
 Speicherformat oder Feature-Parity zu ändern. Die strenge Validierung
 von Marktbeobachtungen bleibt erhalten.
+
+## Review-Log (2026-11-17): Opt-in Browser-Performance-Diagnose (PR #330)
+
+**keine Statusänderung** der historischen 241 Voidbound-Feature-IDs.
+Die Browser-Diagnose ist mit `?perf=1` explizit zu aktivieren und misst
+Navigation, Zielauswahl, Kartenrendering, lokale Szenen, Kampf und Bergung.
+Die Dauerwerte werden nur in der Browser-Konsole und im Arbeitsspeicher
+bereitgestellt; ohne Opt-in entstehen keine Zeitmessungen. Keine Gameplay-,
+Save/Load- oder Simulationsänderung.

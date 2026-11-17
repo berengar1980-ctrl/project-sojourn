@@ -1,3 +1,4 @@
+import { measurePerformance } from '../core/performance-diagnostics';
 import {
   advanceDistressRamming,
   createDistressRammingState,
@@ -380,7 +381,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     SALVAGE_PRESENTATION_INTERVAL_MS
   ) {
     lastSalvagePresentation.set(context, now);
-    refreshSalvageScene(context);
+    measurePerformance('scene.salvage.presentation', () => refreshSalvageScene(context));
   }
 }
 

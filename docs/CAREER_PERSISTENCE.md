@@ -447,3 +447,15 @@ nicht verfügbar, wird die Teilstrecke übersprungen. Die endgültige Planung
 verwendet weiterhin die bisherigen Gefahrzonenrouten und Sicherheitsreserven.
 Die Optimierung verändert weder das Career-Snapshot-Schema noch gespeicherte
 Navigation, Treibstoffmengen, Reisefortschritt oder Restore-Semantik.
+
+### Opt-in Browser-Performance-Diagnose (17. November 2026)
+
+Mit `?perf=1` an der Spiel-URL werden ausschließlich im Arbeitsspeicher der
+Browser-Sitzung Messwerte für Kartenrendering, Navigation, Treibstoffplanung,
+Bergung und Kampf gesammelt. Das Diagnoseobjekt
+`window.sojournPerf.report()` liefert aggregierte Dauerwerte, `.print()`
+zeigt sie als Tabelle in der Browser-Konsole und `.reset()` setzt sie zurück.
+Eine Long-Task-Beobachtung wird nur in unterstützten Browsern aktiviert.
+Ohne URL-Parameter ist die Instrumentierung deaktiviert. Es werden keine
+Messungen übertragen oder im Career-Spielstand gespeichert. Save/Load-Schema,
+Simulationsfrequenzen und Gameplay bleiben unverändert.

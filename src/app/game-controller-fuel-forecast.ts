@@ -1,3 +1,4 @@
+import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { getShipRoleProfile } from '../data/ships/ship-role-profiles';
 import { resolveShipRuntimeSetup } from '../systems/ships';
@@ -27,7 +28,8 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   const world = context.world.world();
   const to = navigation.selectedDestinationId;
   if (!to || !world.locations.some((location) => location.id === to)) return null;
-  if (!navigation.previewRoute) return null;
+  const preview = navigation.previewRoute;
+  if (!preview) return null;
   const ship = context.state.activeShip;
   const tank = context.shipOperations.snapshot(ship, 1);
   const fuelPerDistance = fuelPerTravelUnit(context);
@@ -39,7 +41,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     navigation.currentPosition.x,
     navigation.currentPosition.y,
     to,
-    navigation.previewRoute.profile,
+    preview.profile,
     navigation.threatRevision,
     ship.id,
     tank.fuel,
@@ -49,19 +51,21 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   ].join('|');
   const cached = forecastCache.get(context);
   if (cached?.key === key) return cached.plan;
-  const plan = planFuelRoute({
-    world,
-    fromId: navigation.currentLocationId,
-    fromPosition: navigation.currentPosition,
-    destinationId: to,
-    profile: navigation.previewRoute.profile,
-    threatContacts: navigation.threatContacts,
-    fuel: tank.fuel,
-    capacity: tank.fuelCapacity,
-    credits,
-    fuelPerDistance,
-    locationPosition: (id) => navigationOrbitalBerth(world, id),
-  });
+  const plan = measurePerformance('navigation.fuel-route-plan', () =>
+    planFuelRoute({
+      world,
+      fromId: navigation.currentLocationId,
+      fromPosition: navigation.currentPosition,
+      destinationId: to,
+      profile: preview.profile,
+      threatContacts: navigation.threatContacts,
+      fuel: tank.fuel,
+      capacity: tank.fuelCapacity,
+      credits,
+      fuelPerDistance,
+      locationPosition: (id) => navigationOrbitalBerth(world, id),
+    })
+  );
   forecastCache.set(context, { key, plan });
   return plan;
 }

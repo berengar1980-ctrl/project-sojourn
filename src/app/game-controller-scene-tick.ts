@@ -1,3 +1,4 @@
+import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
 
@@ -26,16 +27,19 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
   const { state } = context;
   if (state.mode === 'combat') {
     if (shouldUpdate(lastCombatUpdate, context, COMBAT_MAP_MIN_FRAME_MS))
-      state.combatPanel?.update();
+      measurePerformance('scene.combat.update', () => state.combatPanel?.update());
     return;
   }
   if (state.mode === 'star-map') {
     if (shouldUpdate(lastStarMapUpdate, context, STAR_MAP_MIN_FRAME_MS))
-      state.panels.star?.update(controllerStarModel(context));
+      measurePerformance('scene.star.update', () => {
+        const model = measurePerformance('scene.star.model', () => controllerStarModel(context));
+        state.panels.star?.update(model);
+      });
     return;
   }
   if (state.mode === 'salvage-space') {
-    state.salvageScene?.tick(deltaSeconds);
+    measurePerformance('scene.salvage.tick', () => state.salvageScene?.tick(deltaSeconds));
     return;
   }
   if (state.mode !== 'local-space' || !state.localSpace) return;
@@ -54,5 +58,8 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     );
   }
   if (shouldUpdate(lastLocalUpdate, context, LOCAL_MAP_MIN_FRAME_MS))
-    state.panels.local?.update(controllerLocalModel(context));
+    measurePerformance('scene.local.update', () => {
+      const model = measurePerformance('scene.local.model', () => controllerLocalModel(context));
+      state.panels.local?.update(model);
+    });
 }
