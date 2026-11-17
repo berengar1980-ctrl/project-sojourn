@@ -17,7 +17,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/systems/persistence/career-npc-checkpoint.ts tests/persistence/career-npc-smuggling-timers.test.cjs && git diff -- src/systems/persistence/career-npc-checkpoint.ts tests/persistence/career-npc-smuggling-timers.test.cjs && exit 1",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
