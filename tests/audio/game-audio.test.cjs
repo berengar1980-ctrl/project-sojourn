@@ -25,7 +25,8 @@ if (fs.existsSync(rcsPath)) {
 }
 
 assert(
-  audio.includes('AMBIENCE_CHUNK_URLS') &&
+  audio.includes('AMBIENCE_URL') &&
+    audio.includes('loadOptionalOgg') &&
     audio.includes('ambience.loop = true') &&
     audio.includes("window.addEventListener('pointerdown', unlock") &&
     audio.includes("window.addEventListener('keydown', unlock"),
