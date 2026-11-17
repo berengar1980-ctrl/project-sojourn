@@ -6,98 +6,116 @@ function locationName(world: WorldMap, id: string): string {
   return world.locations.find((entry) => entry.id === id)?.name ?? id;
 }
 
-/** Reports real operational state; does not generate missions or reveal hidden NPCs. */
+function tradeReports(economy: ControllerEconomy): StarMapWorldEvent[] {
+  return economy.situations.active().map((situation) => ({
+    id: 'trade:' + situation.id,
+    kind: 'trade' as const,
+    title: situation.name,
+    detail: situation.description,
+    locationId: situation.locationId ?? null,
+    dangerLevel: 0,
+  }));
+}
+
+function blockadeReports(
+  economy: ControllerEconomy,
+  world: WorldMap,
+  visible: ReadonlySet<string>
+): StarMapWorldEvent[] {
+  return economy.blockades.snapshot().orders
+    .filter((order) => ['assembling', 'active'].includes(order.phase))
+    .filter((order) => order.ownerId === 'player' ||
+      order.pirateIds.some((id) => visible.has(id)))
+    .map((order) => ({
+      id: 'blockade:' + order.id,
+      kind: 'blockade' as const,
+      title: 'Blockade · ' + locationName(world, order.locationId),
+      detail: order.phase === 'active' ? 'Handelsblockade aktiv' : 'Korsaren im Anflug',
+      locationId: order.locationId,
+      dangerLevel: 2,
+    }));
+}
+
+function patrolReports(
+  economy: ControllerEconomy,
+  world: WorldMap,
+  visibleNpcs: readonly NpcShipMapView[]
+): StarMapWorldEvent[] {
+  return economy.patrol.snapshot().assignments
+    .filter((assignment) => ['active', 'completed'].includes(assignment.status))
+    .map((assignment) => {
+      const location = world.locations.find((entry) => entry.id === assignment.targetId);
+      const name = location?.name ??
+        visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ?? 'Korsarenkontakt';
+      return {
+        id: 'patrol:' + assignment.id,
+        kind: 'patrol' as const,
+        title: 'Patrouillenauftrag · ' + name,
+        detail: assignment.status === 'completed' ? 'Erledigt · Belohnung abholen' :
+          'Laufender Auftrag · Frist Tag ' + assignment.deadline,
+        locationId: location?.id ?? null,
+        dangerLevel: location?.dangerLevel ?? 2,
+      };
+    });
+}
+
+function miningReports(economy: ControllerEconomy, world: WorldMap): StarMapWorldEvent[] {
+  const counts = new Map<string, number>();
+  for (const claim of economy.asteroidClaims.snapshot().claims) {
+    counts.set(claim.locationId, (counts.get(claim.locationId) ?? 0) + 1);
+  }
+  return [...counts].map(([locationId, count]) => ({
+    id: 'mining:' + locationId,
+    kind: 'mining' as const,
+    title: 'Bergbaukonzession · ' + locationName(world, locationId),
+    detail: count + ' registrierte Abbaurechte',
+    locationId,
+    dangerLevel: world.locations.find((location) => location.id === locationId)?.dangerLevel ?? 1,
+  }));
+}
+
+function wreckReports(economy: ControllerEconomy, world: WorldMap): StarMapWorldEvent[] {
+  const counts = new Map<string, number>();
+  for (const claim of economy.wreckClaims.snapshot(economy.situations.currentDay)) {
+    counts.set(claim.fieldId, (counts.get(claim.fieldId) ?? 0) + 1);
+  }
+  return [...counts].map(([locationId, count]) => {
+    const location = world.locations.find((entry) => entry.id === locationId);
+    return {
+      id: 'salvage-claim:' + locationId,
+      kind: 'salvage' as const,
+      title: 'Registrierte Wrackansprüche',
+      detail: count + ' Ansprüche · ' + (location?.name ?? 'Wrackfeld'),
+      locationId: location?.id ?? null,
+      dangerLevel: location?.dangerLevel ?? 1,
+    };
+  });
+}
+
+function visiblePatrolReports(visibleNpcs: readonly NpcShipMapView[]): StarMapWorldEvent[] {
+  return visibleNpcs.filter((npc) => npc.job === 'patrol' && !npc.combatMode).map((npc) => ({
+    id: 'patrol-contact:' + npc.id,
+    kind: 'patrol' as const,
+    title: 'Patrouillenaktivität · ' + npc.name,
+    detail: npc.activity,
+    locationId: null,
+    dangerLevel: 1,
+  }));
+}
+
+/** Only real persisted operational states and visible NPCs, not generated placeholder missions. */
 export function controllerWorldEvents(
   economy: ControllerEconomy,
   world: WorldMap,
   visibleNpcs: readonly NpcShipMapView[]
 ): StarMapWorldEvent[] {
-  const events: StarMapWorldEvent[] = [];
   const visible = new Set(visibleNpcs.map((npc) => npc.id));
-  const day = economy.situations.currentDay;
-  for (const situation of economy.situations.active()) {
-    const target = situation.locationId;
-    events.push({
-      id: 'trade:' + situation.id,
-      kind: 'trade',
-      title: situation.name,
-      detail: situation.description,
-      locationId: target ?? null,
-      dangerLevel: 0,
-    });
-  }
-  for (const blockade of economy.blockades.snapshot().orders) {
-    if (!['assembling', 'active'].includes(blockade.phase)) continue;
-    if (blockade.ownerId !== 'player' && !blockade.pirateIds.some((id) => visible.has(id)))
-      continue;
-    events.push({
-      id: 'blockade:' + blockade.id,
-      kind: 'blockade',
-      title: 'Blockade · ' + locationName(world, blockade.locationId),
-      detail: blockade.phase === 'active' ? 'Handelsblockade aktiv' : 'Korsaren im Anflug',
-      locationId: blockade.locationId,
-      dangerLevel: 2,
-    });
-  }
-  for (const assignment of economy.patrol.snapshot().assignments) {
-    if (!['active', 'completed'].includes(assignment.status)) continue;
-    const targetLocation = world.locations.find((location) => location.id === assignment.targetId);
-    events.push({
-      id: 'patrol:' + assignment.id,
-      kind: 'patrol',
-      title:
-        'Patrouillenauftrag · ' +
-        (targetLocation?.name ??
-          visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ??
-          'Korsarenkontakt'),
-      detail:
-        assignment.status === 'completed'
-          ? 'Erledigt · Belohnung abholen'
-          : 'Laufender Auftrag · Frist Tag ' + assignment.deadline,
-      locationId: targetLocation?.id ?? null,
-      dangerLevel: targetLocation?.dangerLevel ?? 2,
-    });
-  }
-  const grouped = new Map<string, number>();
-  for (const claim of economy.asteroidClaims.snapshot().claims) {
-    grouped.set(claim.locationId, (grouped.get(claim.locationId) ?? 0) + 1);
-  }
-  for (const [locationId, count] of grouped) {
-    events.push({
-      id: 'mining:' + locationId,
-      kind: 'mining',
-      title: 'Bergbaukonzession · ' + locationName(world, locationId),
-      detail: count + ' registrierte Abbaurechte',
-      locationId,
-      dangerLevel: world.locations.find((location) => location.id === locationId)?.dangerLevel ?? 1,
-    });
-  }
-  const wreckFields = new Map<string, number>();
-  for (const claim of economy.wreckClaims.snapshot(day)) {
-    wreckFields.set(claim.fieldId, (wreckFields.get(claim.fieldId) ?? 0) + 1);
-  }
-  for (const [locationId, count] of wreckFields) {
-    const location = world.locations.find((entry) => entry.id === locationId);
-    events.push({
-      id: 'salvage-claim:' + locationId,
-      kind: 'salvage',
-      title: 'Registrierte Wrackansprüche',
-      detail: count + ' Ansprüche · ' + (location?.name ?? 'Wrackfeld'),
-      locationId: location?.id ?? null,
-      dangerLevel: location?.dangerLevel ?? 1,
-    });
-  }
-  // Visible NPC patrols can be followed via the contacts pane. No false mission is issued.
-  for (const npc of visibleNpcs) {
-    if (npc.job !== 'patrol' || npc.combatMode) continue;
-    events.push({
-      id: 'patrol-contact:' + npc.id,
-      kind: 'patrol',
-      title: 'Patrouillenaktivität · ' + npc.name,
-      detail: npc.activity,
-      locationId: null,
-      dangerLevel: 1,
-    });
-  }
-  return events;
+  return [
+    ...tradeReports(economy),
+    ...blockadeReports(economy, world, visible),
+    ...patrolReports(economy, world, visibleNpcs),
+    ...miningReports(economy, world),
+    ...wreckReports(economy, world),
+    ...visiblePatrolReports(visibleNpcs),
+  ];
 }
