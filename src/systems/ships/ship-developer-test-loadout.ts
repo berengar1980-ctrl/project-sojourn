@@ -1,6 +1,10 @@
 import type { ShipComponentType, ShipDefinition } from '../../core/ship-types';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
-import { calculateShipEnergy, createShipyardVariantId, getShipComponent } from './ship-component-service';
+import {
+  calculateShipEnergy,
+  createShipyardVariantId,
+  getShipComponent,
+} from './ship-component-service';
 import { isShipCombatWeaponSlotActive } from './ship-combat-role-policy';
 import type { ShipLoadoutService } from './ship-loadout-service';
 import { resolveShipGameplayStats } from './ship-stats';
