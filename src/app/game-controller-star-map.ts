@@ -76,51 +76,51 @@ export function createControllerStarPanel(options: {
     },
     onSelectLocation: (id) =>
       measurePerformance('input.select-location', () => {
-      options.onRouteSelectionChanged?.();
-      options.onSelectNpc('');
-      const snapshot = options.navigation.getSnapshot();
-      if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
-        if (options.exitLocationId() === id) {
-          if (options.returnFromCampaignSystem()) panel?.update(options.getModel());
-          return;
+        options.onRouteSelectionChanged?.();
+        options.onSelectNpc('');
+        const snapshot = options.navigation.getSnapshot();
+        if (snapshot.currentLocationId === id && !snapshot.isTravelling) {
+          if (options.exitLocationId() === id) {
+            if (options.returnFromCampaignSystem()) panel?.update(options.getModel());
+            return;
+          }
+          if (locationHasActivity(options.world(), id, 'mine')) {
+            options.onEnterLocalSpace();
+            return;
+          }
+          if (locationHasActivity(options.world(), id, 'salvage') || options.eventById?.(id)) {
+            options.onEnterSalvageSpace();
+            return;
+          }
         }
-        if (locationHasActivity(options.world(), id, 'mine')) {
-          options.onEnterLocalSpace();
-          return;
-        }
-        if (locationHasActivity(options.world(), id, 'salvage') || options.eventById?.(id)) {
-          options.onEnterSalvageSpace();
-          return;
-        }
-      }
-      const event = options.eventById?.(id);
-      if (event) {
-        options.onAcceptEvent?.(id);
-        options.navigation.selectPointDestination(id, event.position);
-      } else options.navigation.selectDestination(id);
-      panel?.update(options.getModel());
+        const event = options.eventById?.(id);
+        if (event) {
+          options.onAcceptEvent?.(id);
+          options.navigation.selectPointDestination(id, event.position);
+        } else options.navigation.selectDestination(id);
+        panel?.update(options.getModel());
       }),
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
     onRouteProfileChange: (profile) =>
       measurePerformance('input.route-profile', () => {
-      options.onRouteSelectionChanged?.();
-      options.navigation.setRouteProfile(profile);
-      options.log.write(
-        'NAV > ROUTENMODUS ' + { fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' }[profile]
-      );
-      panel?.update(options.getModel());
+        options.onRouteSelectionChanged?.();
+        options.navigation.setRouteProfile(profile);
+        options.log.write(
+          'NAV > ROUTENMODUS ' + { fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' }[profile]
+        );
+        panel?.update(options.getModel());
       }),
     onStartTravel: () =>
       measurePerformance('input.start-travel', () => {
-      if (options.startFuelTravel) {
-        if (!options.startFuelTravel()) return;
-      } else {
-        if (options.canStartTravel?.() === false) return;
-        options.navigation.startTravel();
-      }
-      options.log.write('NAV > FLUG GESTARTET');
-      panel?.update(options.getModel());
+        if (options.startFuelTravel) {
+          if (!options.startFuelTravel()) return;
+        } else {
+          if (options.canStartTravel?.() === false) return;
+          options.navigation.startTravel();
+        }
+        options.log.write('NAV > FLUG GESTARTET');
+        panel?.update(options.getModel());
       }),
     onDock: options.onDock,
   });
@@ -248,7 +248,9 @@ export function createControllerStarModel(
   const worldEvents = foreignSystem
     ? []
     : readWorldEventReport(economy, world.id + '|' + economy.situations.currentDay, () =>
-        measurePerformance('model.world-events', () => controllerWorldEvents(economy, world, npcShips))
+        measurePerformance('model.world-events', () =>
+          controllerWorldEvents(economy, world, npcShips)
+        )
       );
   return {
     ...createStarMapViewModel(
