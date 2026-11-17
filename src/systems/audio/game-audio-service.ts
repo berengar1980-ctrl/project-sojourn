@@ -108,6 +108,13 @@ function attachOptionalAudio(
   });
 }
 
+function tryPlayAmbience(ambience: HTMLAudioElement, enabled: boolean): void {
+  if (!enabled || !ambience.src || !ambience.paused) return;
+  void ambience.play().catch(() => {
+    // Browsers may reject autoplay until the next user gesture.
+  });
+}
+
 export function createGameAudioService(): GameAudioService {
   let settings = loadStoredSettings();
   const ambience = createAudio('', settings.ambienceVolume);
@@ -122,12 +129,7 @@ export function createGameAudioService(): GameAudioService {
   let unlocked = false;
   let destroyed = false;
 
-  const playAmbience = (): void => {
-    if (destroyed || !unlocked || !ambience.src || !ambience.paused) return;
-    void ambience.play().catch(() => {
-      // Browsers may reject autoplay until the next user gesture.
-    });
-  };
+  const playAmbience = (): void => tryPlayAmbience(ambience, unlocked && !destroyed);
 
   attachOptionalAudio(
     AMBIENCE_URL,
