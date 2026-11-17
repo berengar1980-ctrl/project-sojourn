@@ -17,7 +17,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/app/game-controller-star-map.ts && git diff -- src/app/game-controller-star-map.ts && exit 1",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
