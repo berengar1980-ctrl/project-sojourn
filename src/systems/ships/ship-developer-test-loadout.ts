@@ -1,10 +1,6 @@
 import type { ShipComponentType, ShipDefinition } from '../../core/ship-types';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
-import {
-  calculateShipEnergy,
-  createShipyardVariantId,
-  getShipComponent,
-} from './ship-component-service';
+import { calculateShipEnergy, createShipyardVariantId, getShipComponent } from './ship-component-service';
 import { isShipCombatWeaponSlotActive } from './ship-combat-role-policy';
 import type { ShipLoadoutService } from './ship-loadout-service';
 import { resolveShipGameplayStats } from './ship-stats';
@@ -59,13 +55,16 @@ export function equipDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoado
       bowArmed = true;
       continue;
     }
-    const preferred = ['pulse_laser', 'front_repeater', 'plasma_battery', 'autocannon', 'guided_missile'];
+    const preferred = [
+      'pulse_laser',
+      'front_repeater',
+      'plasma_battery',
+      'autocannon',
+      'guided_missile',
+    ];
     const compatible = weapons
       .filter((component) => loadouts.canSetSlot(ship, 'weapon', index, component.id))
-      .sort(
-        (a, b) =>
-          preferred.indexOf(a.weapon!.family) - preferred.indexOf(b.weapon!.family)
-      )[0];
+      .sort((a, b) => preferred.indexOf(a.weapon!.family) - preferred.indexOf(b.weapon!.family))[0];
     if (compatible) loadouts.setSlot(ship, 'weapon', index, compatible.id);
   }
 
