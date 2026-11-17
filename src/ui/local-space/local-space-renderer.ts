@@ -1,3 +1,4 @@
+import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
 import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
@@ -82,13 +83,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-    const pixelWidth = Math.round(rect.width * ratio);
-    const pixelHeight = Math.round(rect.height * ratio);
-    if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
-      this.canvas.width = pixelWidth;
-      this.canvas.height = pixelHeight;
-      this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
+    resizeMapCanvasBackingStore(this.canvas, this.context, rect.width, rect.height, ratio);
 
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
