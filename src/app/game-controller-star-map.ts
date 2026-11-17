@@ -23,6 +23,7 @@ function locationHasActivity(
   return Boolean(location?.activities[activity]);
 }
 
+// eslint-disable-next-line max-lines-per-function -- timing wrappers preserve the existing controller callbacks.
 export function createControllerStarPanel(options: {
   readonly root: HTMLElement;
   readonly world: () => WorldMap;
