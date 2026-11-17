@@ -14,13 +14,11 @@ const STORAGE_PREFIX = 'sojourn:star-map-signals:v1:';
 const KINDS = ['distress', 'salvage', 'campaign'] as const;
 
 export function signalKind(location: StarMapLocationView): SignalKind | null {
-  if (location.kind === 'wreck') {
-    if (location.activities.missions) return 'distress';
-    return location.activities.salvage ? 'salvage' : null;
-  }
-  return location.activities.missions && !location.activities.dock && !location.activities.trade
-    ? 'distress'
-    : null;
+  // A static "missions" capability is not an active distress incident.
+  // Actual distress events enter the map as wreck contacts with missions=true.
+  if (location.kind !== 'wreck') return null;
+  if (location.activities.missions) return 'distress';
+  return location.activities.salvage ? 'salvage' : null;
 }
 
 export function defaultMissionFilters(role: ShipRole): MissionFilters {

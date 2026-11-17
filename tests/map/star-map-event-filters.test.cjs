@@ -12,9 +12,9 @@ const { defaultMissionFilters, signalKind, filteredSignals } = load(
 const distress = {
   id: 'distress',
   name: 'Notruf',
-  kind: 'planet',
+  kind: 'wreck',
   position: { x: 200, y: 0 },
-  activities: { missions: true, dock: false, trade: false },
+  activities: { missions: true, salvage: true },
   dangerLevel: 3,
 };
 const salvage = {
@@ -37,6 +37,25 @@ const port = {
 assert.equal(signalKind(distress), 'distress');
 assert.equal(signalKind(salvage), 'salvage');
 assert.equal(signalKind(port), null);
+assert.equal(signalKind({ ...distress, kind: 'planet' }), null);
+assert.equal(signalKind({ ...distress, kind: 'moon' }), null);
+assert.equal(signalKind({ ...distress, kind: 'station' }), null);
+assert.equal(signalKind({ ...salvage, kind: 'planet' }), null);
+
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const staticFalseAlarms = narrowsSector.locations.filter(
+  (location) => location.kind !== 'wreck' && location.activities.missions
+);
+assert(staticFalseAlarms.length > 10, 'regression fixture must include mission-capable worlds');
+assert(
+  staticFalseAlarms.every((location) => signalKind(location) === null),
+  'mission-capable planets, moons and stations are not active distress calls'
+);
+assert(
+  narrowsSector.locations.some((location) => location.kind === 'wreck' && signalKind(location)),
+  'real salvage sites must remain visible'
+);
+
 assert.equal(defaultMissionFilters('salvage').salvage, true);
 assert.equal(defaultMissionFilters('freighter').salvage, false);
 assert.equal(defaultMissionFilters('mining').campaign, true);
@@ -49,5 +68,11 @@ assert.deepEqual(ids({ ...all, salvage: false }), ['distress']);
 assert.deepEqual(ids({ ...all, distress: false, salvage: false }), []);
 assert.deepEqual(ids({ ...all, sort: 'danger' }), ['distress', 'salvage']);
 assert.deepEqual(ids({ ...all, sort: 'name' }), ['distress', 'salvage']);
+
+const fs = require('node:fs');
+const entry = fs.readFileSync(path.join(root, 'src/app/game-controller-location-entry.ts'), 'utf8');
+assert(entry.includes("currentLocationId?.startsWith('salvage-distress-')"));
+assert(entry.includes('SIGNAL > KONTAKT ERLOSCHEN'));
+assert(entry.includes('runSceneZoomTransition(context.root, mountSalvage)'));
 
 console.log('PASS star map event kind filters, role defaults and sorting');
