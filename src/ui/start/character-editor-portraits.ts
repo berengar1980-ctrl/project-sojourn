@@ -16,6 +16,16 @@ function portraitElement(portraitId: PortraitId): HTMLElement {
   image.src = url;
   image.alt = 'Porträt ' + portraitId;
   image.draggable = false;
+  image.addEventListener(
+    'error',
+    () => {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'character-editor__placeholder';
+      placeholder.textContent = String(portraitId).padStart(2, '0');
+      image.replaceWith(placeholder);
+    },
+    { once: true }
+  );
   return image;
 }
 
