@@ -1,4 +1,4 @@
-import { measurePerformance } from './game-performance-diagnostics';
+import { measurePerformance } from '../core/performance-diagnostics';
 import {
   advanceDistressRamming,
   createDistressRammingState,
