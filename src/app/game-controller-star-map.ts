@@ -245,12 +245,14 @@ export function createControllerStarModel(
         sensorModifier,
         saleFeeRate
       );
+  const buildWorldEvents = () =>
+    measurePerformance('model.world-events', () => controllerWorldEvents(economy, world, npcShips));
   const worldEvents = foreignSystem
     ? []
-    : readWorldEventReport(economy, world.id + '|' + economy.situations.currentDay, () =>
-        measurePerformance('model.world-events', () =>
-          controllerWorldEvents(economy, world, npcShips)
-        )
+    : readWorldEventReport(
+        economy,
+        world.id + '|' + economy.situations.currentDay,
+        buildWorldEvents
       );
   return {
     ...createStarMapViewModel(
