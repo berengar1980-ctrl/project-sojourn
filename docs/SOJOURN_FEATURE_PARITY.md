@@ -1240,3 +1240,11 @@ sind jetzt an den betroffenen Sektor-NPCs gespeichert und überdauern den
 atomaren Career-Restore. Die Verdachtsreduktion beginnt nach einem Reload
 am gespeicherten Wirtschaftstag. Ein Regressionstest prüft identische
 Fortsetzung beider Simulationsverläufe und die Ablehnung negativer Timer.
+
+## Review-Log (2026-11-17): Speichern während laufender NPC-Bergung (PR #333)
+
+**Keine Statusänderung** der historischen 241 Voidbound-Feature-IDs.
+Validiert wird nun auch der reguläre NPC-Bergungsflug zu temporären
+Ereigniskoordinaten und die kurze Ankunftsphase; andere ungültige Weltorte
+bleiben verboten. Regressionstest verhindert, dass globale Career-Saves
+wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
