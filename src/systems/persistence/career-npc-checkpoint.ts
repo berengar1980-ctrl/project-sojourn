@@ -29,7 +29,7 @@ function salvageEventTarget(npc: Record<string, unknown>, id: unknown): boolean 
     npc.job === 'salvager' &&
     typeof id === 'string' &&
     id === npc.salvageEventId &&
-    /^salvage-(?:special|distress)-\\d+-\\d+$/.test(id)
+    /^salvage-(?:special|distress)-[0-9]+-[0-9]+$/.test(id)
   );
 }
 
