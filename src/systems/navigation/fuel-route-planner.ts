@@ -260,7 +260,9 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   const direct = directFuelPlan(request, origin, routeLeg);
   if (direct) return direct;
   const candidates = fuelingCandidates(request, origin);
-  const locations = new Map(request.world.locations.map((location) => [location.id, location.position]));
+  const locations = new Map(
+    request.world.locations.map((location) => [location.id, location.position])
+  );
   const berthPositions = new Map<string, WorldPoint>();
   const berth = (id: string): WorldPoint => {
     if (id === 'deep-space') return request.fromPosition;
