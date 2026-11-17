@@ -104,6 +104,11 @@ export function missionFilterControls(
   onChange: (next: MissionFilters) => void
 ): HTMLElement {
   const container = document.createElement('div');
+  let currentFilters = filters;
+  const submit = (next: MissionFilters): void => {
+    currentFilters = next;
+    onChange(next);
+  };
   container.className = 'star-map-event-filters';
   container.setAttribute('role', 'group');
   container.setAttribute('aria-label', 'Ereignistypen ein- oder ausblenden');
@@ -119,8 +124,8 @@ export function missionFilterControls(
     button.textContent = label;
     button.setAttribute('aria-pressed', String(checked));
     button.addEventListener('click', () =>
-      onChange({
-        ...filters,
+      submit({
+        ...currentFilters,
         distress: label === 'Alle',
         salvage: label === 'Alle',
         campaign: label === 'Alle',
@@ -143,7 +148,7 @@ export function missionFilterControls(
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = filters[kind];
-    input.addEventListener('change', () => onChange({ ...filters, [kind]: input.checked }));
+    input.addEventListener('change', () => submit({ ...currentFilters, [kind]: input.checked }));
     const caption = document.createElement('span');
     caption.className = 'star-map-event-filter__count';
     caption.textContent = label + ' (' + counts[kind] + ')';
@@ -156,8 +161,8 @@ export function missionFilterControls(
   const relevantInput = document.createElement('input');
   relevantInput.type = 'checkbox';
   relevantInput.checked = filters.relevantFirst;
-  relevantInput.addEventListener('change', () => onChange({
-    ...filters, relevantFirst: relevantInput.checked,
+  relevantInput.addEventListener('change', () => submit({
+    ...currentFilters, relevantFirst: relevantInput.checked,
   }));
   relevant.append(relevantInput, document.createTextNode('Zum Schiff passende zuerst'));
   container.append(relevant);
@@ -179,7 +184,7 @@ export function missionFilterControls(
   }
   select.value = filters.sort;
   select.addEventListener('change', () =>
-    onChange({ ...filters, sort: select.value as SignalSort })
+    submit({ ...currentFilters, sort: select.value as SignalSort })
   );
   sortLabel.append(select);
   container.append(sortLabel);
