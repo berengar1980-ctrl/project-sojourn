@@ -69,6 +69,7 @@ if (enabled) {
     sojournPerf: {
       report: () => performanceReport(),
       reset: () => resetPerformanceReport(),
+      // eslint-disable-next-line no-console -- explicitly requested opt-in browser diagnostics.
       print: () => console.table(performanceReport()),
     },
   });
@@ -84,5 +85,6 @@ if (enabled) {
       // The browser may not support Long Tasks; timing probes still work.
     }
   }
+  // eslint-disable-next-line no-console -- only emitted with ?perf=1.
   console.info('[Sojourn Perf] Active: window.sojournPerf.print()');
 }
