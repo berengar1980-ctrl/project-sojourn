@@ -77,9 +77,9 @@ const controller = read('src/app/game-controller.ts');
 const editor = read('src/ui/start/character-editor.ts');
 const portraitSource = read('src/ui/start/character-editor-portraits.ts');
 assert(
-  portraitSource.includes("image.addEventListener(") &&
+  portraitSource.includes('image.addEventListener(') &&
     portraitSource.includes("'error'") &&
-    portraitSource.includes("image.replaceWith(placeholder)"),
+    portraitSource.includes('image.replaceWith(placeholder)'),
   'unavailable portrait assets must render placeholders instead of broken images'
 );
 const editorStyles = read('src/ui/start/character-editor.css');
