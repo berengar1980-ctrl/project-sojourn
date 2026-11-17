@@ -35,3 +35,13 @@ npm run check
 ```
 
 This checks formatting, linting, strict TypeScript, architecture dependencies, tests, and the production build.
+
+## Copyright and reuse
+
+Copyright © 2026 berengar1980-ctrl. All rights reserved for original Project Sojourn materials.
+Source visibility alone does **not** grant an open-source license. See [COPYRIGHT.md](COPYRIGHT.md).
+Third-party audio, images and other assets must be cleared under their respective licenses before public distribution.
+
+## Continuous integration
+
+GitHub Actions runs the active quality gate. CircleCI's quality workflow is disabled by default; the CircleCI account integration must also be disconnected separately to end that service permanently.
