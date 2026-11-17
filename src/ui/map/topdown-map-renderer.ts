@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../app/game-performance-diagnostics';
 import { resizeMapCanvasBackingStore } from './map-canvas-backing-store';
 import type { WorldPoint } from '../../core/world-types';
 import type {
@@ -156,6 +157,10 @@ export class TopdownMapRenderer {
     return first ? { kind: first.kind, id: first.id } : null;
   }
   private draw(): void {
+    measurePerformance('canvas.star.draw', () => this.drawFrame());
+  }
+
+  private drawFrame(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
