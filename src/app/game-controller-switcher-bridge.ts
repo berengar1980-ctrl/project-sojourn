@@ -1,4 +1,5 @@
 import { mountControllerOperations } from './game-controller-operations';
+import { equipDeveloperTestShip } from '../systems/ships/ship-developer-test-loadout';
 import { withPlayerShipName } from '../core/player-profile';
 import { createControllerShipSwitcher } from './game-controller-ship-switcher';
 import { canSwitchSmugglingShip } from './game-controller-customs';
@@ -16,6 +17,7 @@ export function mountControllerShipSwitcher(
     context.navigation,
     (nextShip) => {
       if (!canSwitchSmugglingShip(context, nextShip)) return;
+      equipDeveloperTestShip(nextShip, context.loadouts);
       state.activeShip = withPlayerShipName(nextShip, state.playerProfile, state.starterShipId);
       context.economy.salvageEvents.setPlayerSalvageEligible(nextShip.role === 'salvage');
       context.systemLog.write('TEST > SCHIFF ' + nextShip.name.toUpperCase());
