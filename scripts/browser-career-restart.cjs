@@ -38,7 +38,9 @@ async function readSavedCareer(page) {
 }
 
 async function saveFromSystemMenu(page) {
-  await page.locator('.settings-menu__toggle').click();
+  if ((await page.locator('.settings-menu__toggle').getAttribute('aria-expanded')) !== 'true') {
+    await page.locator('.settings-menu__toggle').click();
+  }
   await page.locator('[data-career-save]').click();
   try {
     await page.getByText('Spielstand erfolgreich gespeichert.').waitFor({ timeout: 10000 });
@@ -52,6 +54,7 @@ async function saveFromSystemMenu(page) {
   assert.equal(saved.envelope.formatVersion, 1);
   assert.equal(saved.snapshot.version, 1);
   assert.deepEqual(Object.keys(saved.snapshot.sections).sort(), [...required].sort());
+  await page.locator('.settings-menu__close').click();
   return saved;
 }
 
