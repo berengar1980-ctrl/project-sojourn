@@ -523,6 +523,43 @@
   --event-accent: #bca0e5;
 }
 
+.star-map-event-filter--trade,
+.star-map-event-row--trade {
+  --event-accent: #65b99c;
+}
+
+.star-map-event-filter--mining,
+.star-map-event-row--mining {
+  --event-accent: #d4b75d;
+}
+
+.star-map-event-filter--patrol,
+.star-map-event-row--patrol {
+  --event-accent: #7da8e4;
+}
+
+.star-map-event-filter--blockade,
+.star-map-event-row--blockade {
+  --event-accent: #da7976;
+}
+
+.star-map-event-filters__relevant {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #b7d2db;
+  font-size: 10px;
+}
+
+.star-map-event-filters__relevant input {
+  accent-color: #89c6b5;
+}
+
+.star-map-event-row--information {
+  cursor: default;
+}
+
+
 .star-map-event-filter:has(input:not(:checked)) {
   opacity: 0.55;
 }
