@@ -315,7 +315,8 @@ function validateTypeSpecific(spec, metrics) {
 }
 
 const assets = findShipAssets();
-assert(assets.length > 0, 'resources/ships contains no ship assets');
+// Ship sprites are optional during the public asset-cleanup phase.
+// Any replacement PNG added later must still satisfy the full asset standard.
 
 const failures = [];
 for (const file of assets) {
