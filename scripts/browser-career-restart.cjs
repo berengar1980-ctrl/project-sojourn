@@ -137,7 +137,6 @@ async function verifyExtendedCareer(page, errors, after) {
   const advancedAfter = await saveFromSystemMenu(page);
   verifyAdvancedSnapshot(advancedAfter, fieldIds);
   assert.deepEqual(errors, [], 'Extended browser session must not throw page errors');
-
 }
 
 async function run() {
