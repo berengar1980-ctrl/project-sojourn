@@ -22,12 +22,13 @@ assert.throws(
 );
 
 const source = (name) => fs.readFileSync(path.join(root, name), 'utf8');
-assert(source('src/app/game-controller-star-map.ts').includes("input.select-location"));
-assert(source('src/app/game-controller-star-map.ts').includes("input.start-travel"));
-assert(source('src/app/game-controller-fuel-forecast.ts').includes("navigation.fuel-route-plan"));
-assert(source('src/app/game-controller-scene-tick.ts').includes("scene.combat.update"));
-assert(source('src/app/game-controller-scene-tick.ts').includes("scene.local.model"));
-assert(source('src/app/game-controller-salvage.ts').includes("scene.salvage.presentation"));
-assert(source('src/ui/map/topdown-map-renderer.ts').includes("canvas.star.draw"));
-assert(source('src/ui/local-space/local-space-renderer.ts').includes("canvas.local.draw"));
+const has = (file, fragment) => source(file).includes(fragment);
+assert(has('src/app/game-controller-star-map.ts', 'input.select-location'));
+assert(has('src/app/game-controller-star-map.ts', 'input.start-travel'));
+assert(has('src/app/game-controller-fuel-forecast.ts', 'navigation.fuel-route-plan'));
+assert(has('src/app/game-controller-scene-tick.ts', 'scene.combat.update'));
+assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.model'));
+assert(has('src/app/game-controller-salvage.ts', 'scene.salvage.presentation'));
+assert(has('src/ui/map/topdown-map-renderer.ts', 'canvas.star.draw'));
+assert(has('src/ui/local-space/local-space-renderer.ts', 'canvas.local.draw'));
 console.log('PASS opt-in browser performance diagnostics');
