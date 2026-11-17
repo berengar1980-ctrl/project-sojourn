@@ -20,7 +20,6 @@ if (!ambience && !rcs) {
   const output = path.resolve(__dirname, '../public/audio');
   fs.mkdirSync(output, { recursive: true });
   if (ambience && ambience !== '-') importOgg(ambience, path.join(output, 'deep-space.ogg'));
-  if (rcs && rcs !== '-')
-    importOgg(rcs, path.join(output, 'spacecraft-rcs-thruster-burst.ogg'));
+  if (rcs && rcs !== '-') importOgg(rcs, path.join(output, 'spacecraft-rcs-thruster-burst.ogg'));
   console.log('Optional audio installed in public/audio/. Verify redistribution rights.');
 }
