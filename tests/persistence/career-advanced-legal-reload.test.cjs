@@ -57,10 +57,7 @@ assert.deepEqual(legal.settle(playerHull, 200), {
 reload();
 assert.equal(legal.debt(playerHull), 750);
 assert.equal(legal.status(playerHull), 'demand');
-assert.equal(
-  legal.reportOffense(playerHull, 'claim-owner', 'ore theft', 950, 8, 'ore:8'),
-  null
-);
+assert.equal(legal.reportOffense(playerHull, 'claim-owner', 'ore theft', 950, 8, 'ore:8'), null);
 
 // Warrant, disguised identity and sighting must survive repeated restarts.
 assert(legal.declareWanted(playerHull));
@@ -98,7 +95,12 @@ assert.deepEqual(legal.settle(npcHull, 350).transfers, []);
 // A released NPC cannot remain a prisoner in a corrupt checkpoint.
 assert.throws(
   () =>
-    stageCareerCustody(captureCareerCustody(new Set([npc.id]), detention), legal, [npc], playerHull),
+    stageCareerCustody(
+      captureCareerCustody(new Set([npc.id]), detention),
+      legal,
+      [npc],
+      playerHull
+    ),
   /custody/
 );
 assert.equal(legal.settle(playerHull, 750).paid, 750);
@@ -106,8 +108,5 @@ assert.equal(legal.status(playerHull), 'clear');
 reload();
 assert.equal(legal.debt(playerHull), 0);
 assert.equal(legal.debt(npcHull), 0);
-assert.equal(
-  legal.reportOffense(npcHull, 'directorate', 'piracy', 700, 9, 'raid:9'),
-  null
-);
+assert.equal(legal.reportOffense(npcHull, 'directorate', 'piracy', 700, 9, 'raid:9'), null);
 console.log('PASS advanced legal reload: demand, partial receipts, warrant, custody, release');
