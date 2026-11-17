@@ -1,4 +1,4 @@
-import { measurePerformance } from './game-performance-diagnostics';
+import { measurePerformance } from '../core/performance-diagnostics';
 import { controllerWorldEvents } from './game-controller-world-events';
 import { createTimedMapReportCache } from './game-controller-star-map-report-cache';
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
