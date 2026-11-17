@@ -194,7 +194,10 @@ export function stageCareerNpcs(world: WorldMap, candidate: unknown): SectorNpcS
   }
   const invalid = snapshot.npcs.find((npc) => !validNpc(npc, world, ids));
   if (invalid) {
-    throw new Error('Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' + describeInvalidNpc(invalid, world));
+    throw new Error(
+      'Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' +
+        describeInvalidNpc(invalid, world)
+    );
   }
   return snapshot.npcs as SectorNpcState[];
 }
