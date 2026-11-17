@@ -24,6 +24,19 @@ function location(world: WorldMap, id: unknown): boolean {
   return typeof id === 'string' && world.locations.some((item) => item.id === id);
 }
 
+function salvageEventTarget(npc: Record<string, unknown>, id: unknown): boolean {
+  return (
+    npc.job === 'salvager' &&
+    typeof id === 'string' &&
+    id === npc.salvageEventId &&
+    /^salvage-(?:special|distress)-[0-9]+-[0-9]+$/.test(id)
+  );
+}
+
+function npcLocation(world: WorldMap, npc: Record<string, unknown>, id: unknown): boolean {
+  return location(world, id) || salvageEventTarget(npc, id);
+}
+
 function cargo(value: unknown): boolean {
   return (
     record(value) &&
@@ -31,10 +44,12 @@ function cargo(value: unknown): boolean {
   );
 }
 
-function travel(value: unknown, world: WorldMap): boolean {
+function travel(value: unknown, world: WorldMap, npc: Record<string, unknown>): boolean {
   if (value === undefined) return true;
-  if (!record(value) || !location(world, value.finalTargetId)) return false;
-  if (!location(world, value.targetLocationId) || !Array.isArray(value.routePoints)) return false;
+  if (!record(value) || !npcLocation(world, npc, value.finalTargetId)) return false;
+  if (!npcLocation(world, npc, value.targetLocationId) || !Array.isArray(value.routePoints)) {
+    return false;
+  }
   if (value.routePoints.length < 2 || value.routePoints.length > 128) return false;
   if (!value.routePoints.every(position)) return false;
   if (!number(value.routeDistance) || !number(value.distanceTravelled)) return false;
@@ -62,11 +77,11 @@ function movement(value: unknown, ids: ReadonlySet<string>): boolean {
   );
 }
 
-function orbit(value: unknown, world: WorldMap): boolean {
+function orbit(value: unknown, world: WorldMap, npc: Record<string, unknown>): boolean {
   if (value === undefined) return true;
   return (
     record(value) &&
-    location(world, value.locationId) &&
+    npcLocation(world, npc, value.locationId) &&
     position(value.center) &&
     number(value.radius) &&
     number(value.angleRadians, -Infinity)
@@ -74,7 +89,7 @@ function orbit(value: unknown, world: WorldMap): boolean {
 }
 
 function validNpcIdentity(value: Record<string, unknown>, world: WorldMap): boolean {
-  if (!location(world, value.locationId)) return false;
+  if (!npcLocation(world, value, value.locationId)) return false;
   if (!location(world, value.homePortId ?? value.locationId)) return false;
   if (typeof value.id !== 'string' || !value.id || typeof value.shipId !== 'string') {
     return false;
@@ -100,13 +115,29 @@ function validNpcActivity(
   world: WorldMap,
   ids: ReadonlySet<string>
 ): boolean {
-  if (!travel(value.travel, world) || !movement(value.combatMovement, ids)) return false;
+  if (!travel(value.travel, world, value) || !movement(value.combatMovement, ids)) return false;
   if (value.travel !== undefined && value.combatMovement !== undefined) return false;
-  if (!orbit(value.orbit, world)) return false;
+  if (!orbit(value.orbit, world, value)) return false;
   if (record(value.orbit) && value.orbit.locationId !== value.locationId) return false;
   if (value.combatRecoverySeconds !== undefined && !number(value.combatRecoverySeconds)) {
     return false;
   }
+  if (
+    value.smugglingPatrolElapsedSeconds !== undefined &&
+    !number(value.smugglingPatrolElapsedSeconds)
+  )
+    return false;
+  if (
+    value.smugglingInspectionCooldownSeconds !== undefined &&
+    !number(value.smugglingInspectionCooldownSeconds)
+  )
+    return false;
+  if (
+    value.smugglingLastArrivalId !== undefined &&
+    value.smugglingLastArrivalId !== '' &&
+    !location(world, value.smugglingLastArrivalId)
+  )
+    return false;
   return true;
 }
 

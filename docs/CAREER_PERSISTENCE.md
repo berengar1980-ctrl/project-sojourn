@@ -488,3 +488,28 @@ Dieser Browser-Smoke ersetzt keine mehrtägige interaktive Spielsession und
 prüft nicht automatisch sämtliche Einzelaktionen vor/nach jedem rechtlichen
 Zustandsübergang. Mehrere Slots sowie Datei-Import/Export bleiben außerhalb
 dieser Änderung. Das Save-Schema und der atomare Restore werden nicht geändert.
+
+### NPC-Schmuggelzeitgeber im Career-Save (17. November 2026)
+
+Die Zoll-/Schmuggelüberwachung verwendet nun optionale Zustandsfelder direkt
+an den bestehenden Sektor-NPCs für die noch laufende Patrouillenprüfung, die
+letzte tatsächlich erreichte Hafenposition und die verbleibende
+Zoll-Abklingzeit. Da der Career-Save die autoritativen NPCs bereits gemeinsam
+mit ihrem Inventar und Routenstatus speichert, werden diese Zeitgeber beim
+Neustart nicht mehr zurückgesetzt. Beim Erzeugen des wiederhergestellten
+Schmuggeldienstes wird außerdem der gespeicherte Wirtschaftstag als
+Startwert verwendet, damit ein Laden nicht die bereits erfolgte tägliche
+Verdachtsreduktion wiederholt. Ein Save ohne diese optionalen Felder bleibt
+weiterhin lesbar. Die neuen Werte werden beim Stage auf Gültigkeit geprüft;
+das bestehende versionierte 14-Sektionen-Schema bleibt unverändert.
+
+### Laufende NPC-Bergung zu temporären Ereignis-IDs (17. November 2026)
+
+Ein Browser-Neustarttest hat einen bestehenden Save-Abbruch während laufender
+NPC-Bergung sichtbar gemacht. Ein Bergungsschiff kann zu einer temporären
+`salvage-special-<Tag>-<ID>`- oder `salvage-distress-<Tag>-<ID>`-Position
+reisen, die nicht in der regulären Weltort-Liste liegt. Die Career-NPC-Prüfung
+lässt diese Kennung nun ausschließlich für den Bergungs-NPC mit übereinstimmender
+`salvageEventId` zu; sie bleibt bei fremden/unverbundenen IDs strikt. Dies
+gilt auch für die kurze Ankunftsphase am Ereignisort. Vorhandene atomare
+Career-Sektionen, Treibstoffstände und geplante Routen werden nicht verändert.
