@@ -35,7 +35,7 @@ assert(panel.includes('const updateTicker = createStarMapTicker('));
 assert(panel.includes('menu.destroy()'));
 
 assert(lists.includes('model.npcShips.map('));
-assert(filters.includes("if (location.kind === 'wreck')"));
+assert(filters.includes("if (location.kind !== 'wreck') return null"));
 assert(filters.includes('location.activities.missions'));
 assert(lists.includes('filteredSignals('));
 assert(filters.includes("location.kind !== 'wreck'"));
