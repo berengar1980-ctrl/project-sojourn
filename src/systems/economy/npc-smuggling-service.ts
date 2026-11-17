@@ -29,10 +29,6 @@ interface Runtime {
   readonly log: (message: string) => void;
   readonly random: () => number;
   readonly stats: NpcSmugglingStats;
-  readonly elapsed: Map<string, number>;
-  readonly lastArrival: Map<string, string>;
-  readonly inspectionCooldown: Map<string, number>;
-  seconds: number;
   day: number;
 }
 
@@ -52,7 +48,7 @@ function inspect(
   const beforeSeized = target.smugglingConfiscated ?? 0;
   const beforeFines = target.smugglingFinesPaid ?? 0;
   const result = resolveNpcSmugglingInspection(target, patrol, strength, ctx.random);
-  ctx.inspectionCooldown.set(target.id, ctx.seconds + (result === 'clear' ? 12 : 24));
+  target.smugglingInspectionCooldownSeconds = result === 'clear' ? 12 : 24;
   ctx.stats.inspections++;
   ctx.stats.confiscatedUnits += (target.smugglingConfiscated ?? 0) - beforeSeized;
   ctx.stats.finesPaid += (target.smugglingFinesPaid ?? 0) - beforeFines;
@@ -71,13 +67,13 @@ function harborStrength(id: string): number {
 
 function checkHarborArrival(ctx: Runtime, target: SectorNpcState): void {
   const at = target.travel || target.combatMovement ? '' : target.locationId;
-  const previous = ctx.lastArrival.get(target.id);
+  const previous = target.smugglingLastArrivalId;
   if (!at) {
-    ctx.lastArrival.set(target.id, '');
+    target.smugglingLastArrivalId = '';
     return;
   }
   if (previous === at) return;
-  ctx.lastArrival.set(target.id, at);
+  target.smugglingLastArrivalId = at;
   const strength = harborStrength(at);
   const chance = 0.05 + strength * 0.38 + (target.smugglingSuspicion ?? 0) * 0.0035;
   if (strength > 0 && ctx.random() < chance) inspect(ctx, target, null, strength);
@@ -110,12 +106,12 @@ function checkPatrol(
   dt: number
 ): void {
   if (!target.travel || target.combatMovement) return;
-  const elapsed = (ctx.elapsed.get(target.id) ?? 0) + dt;
+  const elapsed = (target.smugglingPatrolElapsedSeconds ?? 0) + dt;
   if (elapsed < 4) {
-    ctx.elapsed.set(target.id, elapsed);
+    target.smugglingPatrolElapsedSeconds = elapsed;
     return;
   }
-  ctx.elapsed.set(target.id, 0);
+  target.smugglingPatrolElapsedSeconds = 0;
   const patrol = nearestPatrol(ctx, target, patrols);
   const inspectionChance = 0.07 + (target.smugglingSuspicion ?? 0) * 0.003;
   if (patrol && ctx.random() < inspectionChance) {
@@ -125,13 +121,16 @@ function checkPatrol(
 
 function tickSmuggling(ctx: Runtime, dt: number): void {
   if (!Number.isFinite(dt) || dt <= 0) return;
-  ctx.seconds += dt;
   const patrols = ctx.npcs.filter(
     (npc) => npc.job === 'patrol' && !npc.combatMovement && npc.hullHp > 0
   );
   for (const target of ctx.npcs) {
     if (!target.smuggler || target.pirate || target.hullHp <= 0) continue;
-    if ((ctx.inspectionCooldown.get(target.id) ?? 0) > ctx.seconds) continue;
+    target.smugglingInspectionCooldownSeconds = Math.max(
+      0,
+      (target.smugglingInspectionCooldownSeconds ?? 0) - dt
+    );
+    if (target.smugglingInspectionCooldownSeconds > 0) continue;
     checkHarborArrival(ctx, target);
     checkPatrol(ctx, target, patrols, dt);
   }
@@ -158,7 +157,8 @@ export function createNpcSmugglingService(
   npcs: readonly SectorNpcState[],
   sector: Pick<NpcSectorService, 'livePosition'>,
   log: (message: string) => void = () => {},
-  random: () => number = Math.random
+  random: () => number = Math.random,
+  initialDay = 0
 ): NpcSmugglingService {
   const ctx: Runtime = {
     npcs,
@@ -175,11 +175,7 @@ export function createNpcSmugglingService(
       illegalUnitsSold: 0,
       protectionFees: 0,
     },
-    elapsed: new Map(),
-    lastArrival: new Map(),
-    inspectionCooldown: new Map(),
-    seconds: 0,
-    day: 0,
+    day: Math.max(0, Math.floor(initialDay)),
   };
   return {
     stats: ctx.stats,
