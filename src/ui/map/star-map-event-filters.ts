@@ -2,16 +2,26 @@ import type { ShipRole } from '../../core/ship-types';
 import type { StarMapLocationView } from '../../features/star-map/star-map-view-model';
 
 export type SignalKind = 'distress' | 'salvage';
+export type EventFilterKind = SignalKind | 'trade' | 'mining' | 'patrol' | 'blockade' | 'campaign';
 export type SignalSort = 'distance' | 'danger' | 'name';
 export interface MissionFilters {
   readonly distress: boolean;
   readonly salvage: boolean;
   readonly campaign: boolean;
+  readonly trade: boolean;
+  readonly mining: boolean;
+  readonly patrol: boolean;
+  readonly blockade: boolean;
+  readonly relevantFirst: boolean;
   readonly sort: SignalSort;
 }
 
 const STORAGE_PREFIX = 'sojourn:star-map-signals:v1:';
-const KINDS = ['distress', 'salvage', 'campaign'] as const;
+export const EVENT_KINDS = [
+  ['distress', 'Notsignal'], ['salvage', 'Bergung'], ['trade', 'Handel'],
+  ['mining', 'Bergbau'], ['patrol', 'Patrouille'], ['blockade', 'Blockade'],
+  ['campaign', 'Kampagne'],
+] as const;
 
 export function signalKind(location: StarMapLocationView): SignalKind | null {
   // A static "missions" capability is not an active distress incident.
@@ -26,6 +36,11 @@ export function defaultMissionFilters(role: ShipRole): MissionFilters {
     distress: true,
     salvage: role === 'salvage',
     campaign: true,
+    trade: role === 'freighter',
+    mining: role === 'mining',
+    patrol: role === 'patrol',
+    blockade: role === 'freighter',
+    relevantFirst: true,
     sort: 'distance',
   };
 }
@@ -40,6 +55,11 @@ export function loadMissionFilters(role: ShipRole): MissionFilters {
       distress: typeof values.distress === 'boolean' ? values.distress : defaults.distress,
       salvage: typeof values.salvage === 'boolean' ? values.salvage : defaults.salvage,
       campaign: typeof values.campaign === 'boolean' ? values.campaign : defaults.campaign,
+      trade: typeof values.trade === 'boolean' ? values.trade : defaults.trade,
+      mining: typeof values.mining === 'boolean' ? values.mining : defaults.mining,
+      patrol: typeof values.patrol === 'boolean' ? values.patrol : defaults.patrol,
+      blockade: typeof values.blockade === 'boolean' ? values.blockade : defaults.blockade,
+      relevantFirst: typeof values.relevantFirst === 'boolean' ? values.relevantFirst : true,
       sort: ['distance', 'danger', 'name'].includes(String(values.sort))
         ? (values.sort as SignalSort)
         : defaults.sort,
@@ -80,7 +100,7 @@ export function filteredSignals(
 
 export function missionFilterControls(
   filters: MissionFilters,
-  counts: Readonly<Record<SignalKind | 'campaign', number>>,
+  counts: Readonly<Record<EventFilterKind, number>>,
   onChange: (next: MissionFilters) => void
 ): HTMLElement {
   const container = document.createElement('div');
@@ -91,8 +111,8 @@ export function missionFilterControls(
   const presets = document.createElement('div');
   presets.className = 'star-map-event-filters__presets';
   for (const [label, checked] of [
-    ['Alle', KINDS.every((kind) => filters[kind])],
-    ['Keine', KINDS.every((kind) => !filters[kind])],
+    ['Alle', EVENT_KINDS.every(([kind]) => filters[kind])],
+    ['Keine', EVENT_KINDS.every(([kind]) => !filters[kind])],
   ] as const) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -104,6 +124,10 @@ export function missionFilterControls(
         distress: label === 'Alle',
         salvage: label === 'Alle',
         campaign: label === 'Alle',
+        trade: label === 'Alle',
+        mining: label === 'Alle',
+        patrol: label === 'Alle',
+        blockade: label === 'Alle',
       })
     );
     presets.append(button);
@@ -112,23 +136,31 @@ export function missionFilterControls(
 
   const choices = document.createElement('div');
   choices.className = 'star-map-event-filters__choices';
-  for (const [kind, label] of [
-    ['distress', 'Notsignal'],
-    ['salvage', 'Bergung'],
-    ['campaign', 'Kampagne'],
-  ] as const) {
+  for (const [kind, label] of EVENT_KINDS) {
     const choice = document.createElement('label');
     choice.className = 'star-map-event-filter star-map-event-filter--' + kind;
+    choice.dataset.kind = kind;
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = filters[kind];
     input.addEventListener('change', () => onChange({ ...filters, [kind]: input.checked }));
     const caption = document.createElement('span');
+    caption.className = 'star-map-event-filter__count';
     caption.textContent = label + ' (' + counts[kind] + ')';
     choice.append(input, caption);
     choices.append(choice);
   }
   container.append(choices);
+  const relevant = document.createElement('label');
+  relevant.className = 'star-map-event-filters__relevant';
+  const relevantInput = document.createElement('input');
+  relevantInput.type = 'checkbox';
+  relevantInput.checked = filters.relevantFirst;
+  relevantInput.addEventListener('change', () => onChange({
+    ...filters, relevantFirst: relevantInput.checked,
+  }));
+  relevant.append(relevantInput, document.createTextNode('Zum Schiff passende zuerst'));
+  container.append(relevant);
 
   const sortLabel = document.createElement('label');
   sortLabel.className = 'star-map-event-filters__sort';
