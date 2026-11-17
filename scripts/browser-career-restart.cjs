@@ -117,8 +117,11 @@ async function run() {
     await page.evaluate((key) => localStorage.setItem(key, '{corrupt'), storageKey);
     await page.reload();
     await page.locator('[data-action="campaign"]').waitFor();
-    assert.equal(await page.locator('[data-action="continue"]').isEnabled(), false);
-    assert.equal(await page.locator('[data-action="load"]').isEnabled(), false);
+    assert.equal(
+      await page.getByRole('button', { name: 'Karriere fortsetzen' }).isEnabled(),
+      false
+    );
+    assert.equal(await page.getByRole('button', { name: 'Spiel laden' }).isEnabled(), false);
     assert.deepEqual(errors, [], 'Browser must not throw uncaught game errors');
     console.log('PASS real Chromium Career Save / full reload / resume / corruption');
   } catch (error) {
