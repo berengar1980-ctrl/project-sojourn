@@ -66,5 +66,7 @@ assert(salvage.includes('npcSalvage.tick(deltaSeconds)'));
 assert(salvage.includes('lastSalvagePresentation.set(context, now)'));
 const planner = file('src/systems/navigation/fuel-route-planner.ts');
 assert(planner.includes('const legCache = new Map<string, RoutePlan>()'));
-assert(planner.includes('const state = nextState(request, current, id, routeLeg)'));
+assert(planner.includes('const state = nextState(request, current, id, routeLeg, minimumDistance)'));
+assert(planner.includes('if (minimumFuel * FUEL_RESERVE > current.fuel + 1e-6) return null;'));
+assert(planner.indexOf('if (minimumFuel * FUEL_RESERVE > current.fuel + 1e-6) return null;') < planner.indexOf('const segment = routeLeg(current.at, next);'));
 console.log('PASS map reporting cache, scene frame budgets, routed travel, operations visibility');
