@@ -6,10 +6,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const diagnostics = loadStandaloneTypeScriptModule(
-  root,
-  'src/app/game-performance-diagnostics.ts'
-);
+const diagnostics = loadStandaloneTypeScriptModule(root, 'src/app/game-performance-diagnostics.ts');
 const value = diagnostics.measurePerformance('test.operation', () => 42);
 assert.equal(value, 42);
 assert.deepEqual(diagnostics.performanceReport(), []);
