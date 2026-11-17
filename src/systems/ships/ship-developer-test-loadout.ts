@@ -30,6 +30,21 @@ function preferredTierTwo(type: ShipComponentType): string | null {
   return preferred?.id ?? null;
 }
 
+/** The generator is exempt from Mk II because a populated battery needs more power. */
+function powerDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoadoutService): void {
+  const reactorTier = resolveShipGameplayStats(ship).maxComponentTier;
+  const reactor = (SHIP_COMPONENT_CATALOG.reactor ?? [])
+    .filter((component) => component.tier <= reactorTier)
+    .at(-1);
+  if (!reactor || !loadouts.setSlot(ship, 'reactor', 0, reactor.id)) return;
+  const required = calculateShipEnergy(loadouts.get(ship)).combatUsed;
+  if ((reactor.output ?? 0) >= required) return;
+  const enhanced = createShipyardVariantId('reactor', reactor.id, 'performance', 100);
+  if (enhanced && loadouts.canSetSlot(ship, 'reactor', 0, enhanced)) {
+    loadouts.setSlot(ship, 'reactor', 0, enhanced);
+  }
+}
+
 /** Configure only the explicit developer ship switcher; ordinary career hull defaults stay Mk I. */
 export function equipDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoadoutService): void {
   for (const type of TEST_COMPONENT_TYPES) {
@@ -72,17 +87,5 @@ export function equipDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoado
     if (compatible) loadouts.setSlot(ship, 'weapon', index, compatible.id);
   }
 
-  // Generator is the one component exempt from Mk II: a full test battery may
-  // otherwise lose power before the Mk III railgun can fire.
-  const reactorTier = resolveShipGameplayStats(ship).maxComponentTier;
-  const reactor = (SHIP_COMPONENT_CATALOG.reactor ?? [])
-    .filter((component) => component.tier <= reactorTier)
-    .at(-1);
-  if (!reactor || !loadouts.setSlot(ship, 'reactor', 0, reactor.id)) return;
-  const required = calculateShipEnergy(loadouts.get(ship)).combatUsed;
-  if ((reactor.output ?? 0) >= required) return;
-  const enhanced = createShipyardVariantId('reactor', reactor.id, 'performance', 100);
-  if (enhanced && loadouts.canSetSlot(ship, 'reactor', 0, enhanced)) {
-    loadouts.setSlot(ship, 'reactor', 0, enhanced);
-  }
+  powerDeveloperTestShip(ship, loadouts);
 }
