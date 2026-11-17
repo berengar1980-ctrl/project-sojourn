@@ -1,3 +1,4 @@
+import { measurePerformance } from './game-performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { getShipRoleProfile } from '../data/ships/ship-role-profiles';
 import { resolveShipRuntimeSetup } from '../systems/ships';
@@ -49,7 +50,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   ].join('|');
   const cached = forecastCache.get(context);
   if (cached?.key === key) return cached.plan;
-  const plan = planFuelRoute({
+  const plan = measurePerformance('navigation.fuel-route-plan', () => planFuelRoute({
     world,
     fromId: navigation.currentLocationId,
     fromPosition: navigation.currentPosition,
@@ -61,7 +62,7 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     credits,
     fuelPerDistance,
     locationPosition: (id) => navigationOrbitalBerth(world, id),
-  });
+  }));
   forecastCache.set(context, { key, plan });
   return plan;
 }
