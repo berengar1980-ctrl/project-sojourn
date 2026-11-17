@@ -30,7 +30,7 @@ for (const [relative, constant] of expected) {
 assert(audio.includes('async function loadOptionalOgg('));
 assert(audio.includes('if (!response.ok) return null'));
 assert(audio.includes("String.fromCharCode(...header) !== 'OggS'"));
-assert(audio.includes('if (!url) return;'));
+assert(audio.includes('if (!objectUrl) return;'));
 assert(audio.includes('!rcsObjectUrl'));
 assert(audio.includes('ambience.loop = true'));
 assert(audio.includes('activeManeuverThrusterBursts'));
