@@ -437,3 +437,13 @@ die einzelne Anfrage gültigen Teilstreckencache; eine laufende Reise startet
 keine erneute Treibstoffprognose. Weder der persistierte Career-Snapshot noch
 die Reiserouten, Ressourcen, NPC-Takte oder Kampfdaten werden in ihrem Schema
 geändert. Auftragsbedienung bleibt auf Sternenkarte und Hafen begrenzt.
+
+### Treibstoff-Routenoptimierung (17. November 2026, PR #329)
+
+Vor der aufwendigen Berechnung einer möglichen Tankstopp-Teilstrecke prüft
+`planFuelRoute` die minimale Luftlinienentfernung zwischen den tatsächlichen
+An- und Abflugpositionen. Ist bereits dieser optimistische Treibstoffbedarf
+nicht verfügbar, wird die Teilstrecke übersprungen. Die endgültige Planung
+verwendet weiterhin die bisherigen Gefahrzonenrouten und Sicherheitsreserven.
+Die Optimierung verändert weder das Career-Snapshot-Schema noch gespeicherte
+Navigation, Treibstoffmengen, Reisefortschritt oder Restore-Semantik.
