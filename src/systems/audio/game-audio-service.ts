@@ -98,9 +98,7 @@ export function createGameAudioService(): GameAudioService {
   const ambience = createAudio('', settings.ambienceVolume);
   ambience.loop = true;
 
-  const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () =>
-    createAudio('', settings.rcsVolume)
-  );
+  const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () => createAudio('', settings.rcsVolume));
   let ambienceObjectUrl: string | null = null;
   let rcsObjectUrl: string | null = null;
   let rcsPoolIndex = 0;
