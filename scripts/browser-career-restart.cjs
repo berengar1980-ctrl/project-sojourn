@@ -58,7 +58,6 @@ async function saveFromSystemMenu(page) {
   return saved;
 }
 
-
 // Measure responsiveness during a real running campaign, not on the title screen.
 // Performance figures are diagnostic: CI machine load must not define gameplay budgets.
 async function sampleFrameTimes(page, seconds = 12) {
@@ -99,9 +98,7 @@ function verifyAdvancedSnapshot(saved, fieldIds) {
   assert.equal(new Set(ids).size, ids.length, 'Career must not duplicate NPC identities');
   const chargeIds = sections.legal.charges.map((charge) => charge.id);
   assert.equal(new Set(chargeIds).size, chargeIds.length, 'Legal charges must remain unique');
-  const incidents = sections.legal.charges
-    .map((charge) => charge.incidentId)
-    .filter(Boolean);
+  const incidents = sections.legal.charges.map((charge) => charge.incidentId).filter(Boolean);
   assert.equal(new Set(incidents).size, incidents.length, 'An offense must not be billed twice');
 }
 
@@ -167,7 +164,6 @@ async function run() {
       before.snapshot.sections.npcs.npcs.map((npc) => npc.id),
       'NPC identities must not duplicate or disappear on reload'
     );
-
 
     // Long-running, real Chromium campaign: continue ticking without any local map.
     // Keep the browser alive across two separate save/restart boundaries.
