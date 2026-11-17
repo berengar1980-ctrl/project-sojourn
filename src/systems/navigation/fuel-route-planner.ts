@@ -155,9 +155,15 @@ function nextState(
   request: FuelRouteRequest,
   current: SearchState,
   next: string,
-  routeLeg: RouteLegLookup
+  routeLeg: RouteLegLookup,
+  minimumDistance: (fromId: string, toId: string) => number
 ): SearchState | null {
   if (next === current.at || current.visited.includes(next)) return null;
+  // Any route is at least as long as the straight line between its actual
+  // departure and arrival berths. Reject impossible fuel legs before invoking
+  // the expensive hazard-aware pathfinder.
+  const minimumFuel = Math.max(0.1, minimumDistance(current.at, next) * request.fuelPerDistance);
+  if (minimumFuel * FUEL_RESERVE > current.fuel + 1e-6) return null;
   const segment = routeLeg(current.at, next);
   const required = Math.max(0.1, segment.distance * request.fuelPerDistance);
   if (required * FUEL_RESERVE > current.fuel + 1e-6) return null;
@@ -254,6 +260,22 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   const direct = directFuelPlan(request, origin, routeLeg);
   if (direct) return direct;
   const candidates = fuelingCandidates(request, origin);
+  const locations = new Map(request.world.locations.map((location) => [location.id, location.position]));
+  const berthPositions = new Map<string, WorldPoint>();
+  const berth = (id: string): WorldPoint => {
+    if (id === 'deep-space') return request.fromPosition;
+    const existing = berthPositions.get(id);
+    if (existing) return existing;
+    const position = request.locationPosition?.(id) ?? locations.get(id);
+    if (!position) throw new Error('Unknown fuel route location: ' + id);
+    berthPositions.set(id, position);
+    return position;
+  };
+  const minimumDistance = (fromId: string, toId: string): number => {
+    const from = berth(fromId);
+    const to = berth(toId);
+    return Math.hypot(to.x - from.x, to.y - from.y);
+  };
   const queue: SearchState[] = [
     {
       at: origin,
@@ -274,7 +296,7 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     if (current.at === request.destinationId) return assemblePlan(request, current, routeLeg);
     if (current.legs.length > MAX_STOPS) continue;
     for (const id of candidates) {
-      const state = nextState(request, current, id, routeLeg);
+      const state = nextState(request, current, id, routeLeg, minimumDistance);
       if (state) acceptState(state, queue, best);
     }
   }
