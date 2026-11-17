@@ -1221,3 +1221,13 @@ bei aktiver Piratengefahr nicht als Weltort neu geplant werden. Die bereits
 berechnete Route läuft stattdessen weiter; reguläre Weltort-Routen werden
 weiterhin dynamisch überprüft. Regressionsprüfung ergänzt, ohne neue Gameplay-
 oder Persistenzstruktur.
+
+## Review-Log (2026-11-17): Career-Browser-Neustarttest (PR #332)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein
+Chromium-End-to-End-Test durchläuft die echten Start-/Save-/Continue-Menüs mit
+vollständigem Browser-Reload und prüft den vorhandenen 14-Sektionen-Career-Save,
+Identität, Spielerinventar, Schiffe, Recht, Ansprüche und NPC-IDs. Absichtlich
+korrupte Saves dürfen nach einem Neustart keine Ladeaktion freischalten.
+Weder Spielmechanik noch Speicherformat werden geändert; fortgeschrittene
+Welt-/Kampf- und Rechts-Reload-Szenarien bleiben gesondert zu prüfen.
