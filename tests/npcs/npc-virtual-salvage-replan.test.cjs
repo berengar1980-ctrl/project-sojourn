@@ -24,12 +24,15 @@ const npc = {
   },
 };
 const initial = JSON.stringify(npc.travel);
-assert.equal(
-  replanNpcTravel(world, npc, () => {
+const replanned = replanNpcTravel(
+  world,
+  npc,
+  () => {
     throw new Error('A temporary destination must not query NPC route threats');
-  }, 1),
-  false
+  },
+  1
 );
+assert.equal(replanned, false);
 assert.equal(JSON.stringify(npc.travel), initial, 'temporary target route must remain unchanged');
 
 console.log('PASS NPC route replan skips temporary salvage destinations');
