@@ -1272,3 +1272,15 @@ wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
 ## Review-Log (2026-11-17): Reale Chromium-Langzeitsitzung (PR #339)
 
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der vorhandene Browser-Neustarttest prüft zusätzlich eine laufende Karriere über längere reale Renderzeit und zwei vollständige Dokument-Neustarts. Er kontrolliert den Erhalt aller Asteroidenfelder und Claims, unveränderte NPC-Identitäten, eindeutige Rechtsvorfälle sowie das Ausbleiben ungefangener Browserfehler. Frame-Zeitwerte werden als Diagnose protokolliert, nicht als hardwareunabhängige Leistungsgarantie bewertet. Simulierte Piratenangriffe und vollständige Fahndungs-/Blockade-Spielabläufe bleiben zur gesonderten Abnahme aus Issue #300 offen.
+
+## Review-Log (2026-11-18): Test-Schiffwechsler mit Mk-II-Ausstattung (PR #343)
+
+**Keine Statusänderung** der historischen 241 Voidbound-Feature-IDs. Ausschließlich
+bei expliziter Nutzung des bestehenden Entwickler-Schiffwechslers erhält das
+gewählte Schiffsmodell passende Mk-II-Komponenten auf allen aktiven Slots
+und eine hüllenschadensstarke Mk-III-Railgun am primären Bug-Hardpoint.
+Ein ausreichend dimensionierter Generator bleibt von der Mk-II-Vorgabe
+ausgenommen. Reguläre Startschiffe und NPC-Loadouts bleiben unverändert.
+Alle Schiffsmodelle werden auf gültige Einbauplätze, Waffenstufen und
+Energieversorgung getestet. Der vorhandene Career-Schiffscheckpoint speichert
+auch diese eingebauten Komponenten unverändert; kein neues Save-Schema.
