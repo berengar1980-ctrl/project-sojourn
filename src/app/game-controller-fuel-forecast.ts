@@ -50,19 +50,21 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
   ].join('|');
   const cached = forecastCache.get(context);
   if (cached?.key === key) return cached.plan;
-  const plan = measurePerformance('navigation.fuel-route-plan', () => planFuelRoute({
-    world,
-    fromId: navigation.currentLocationId,
-    fromPosition: navigation.currentPosition,
-    destinationId: to,
-    profile: navigation.previewRoute.profile,
-    threatContacts: navigation.threatContacts,
-    fuel: tank.fuel,
-    capacity: tank.fuelCapacity,
-    credits,
-    fuelPerDistance,
-    locationPosition: (id) => navigationOrbitalBerth(world, id),
-  }));
+  const plan = measurePerformance('navigation.fuel-route-plan', () =>
+    planFuelRoute({
+      world,
+      fromId: navigation.currentLocationId,
+      fromPosition: navigation.currentPosition,
+      destinationId: to,
+      profile: navigation.previewRoute.profile,
+      threatContacts: navigation.threatContacts,
+      fuel: tank.fuel,
+      capacity: tank.fuelCapacity,
+      credits,
+      fuelPerDistance,
+      locationPosition: (id) => navigationOrbitalBerth(world, id),
+    })
+  );
   forecastCache.set(context, { key, plan });
   return plan;
 }
