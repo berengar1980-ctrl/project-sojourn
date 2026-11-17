@@ -1,4 +1,4 @@
-import { measurePerformance } from './game-performance-diagnostics';
+import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
 
