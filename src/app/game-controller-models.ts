@@ -119,10 +119,12 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     runtime.crewEffects.logistics.saleFeeRate
   );
   const tank = context.shipOperations.snapshot(context.state.activeShip, runtime.hullMaxHp);
-  const forecast = forecastPlayerFuelRoute(context);
-  const journey = context.fuelJourney.plan();
-  const planned = journey ?? forecast;
   const nav = context.navigation.getSnapshot();
+  const journey = context.fuelJourney.plan();
+  // Forecasting a new fuel-feasible itinerary is unnecessary once the ship
+  // follows a committed route. Keep the immutable plan during the flight.
+  const forecast = journey || nav.isTravelling ? null : forecastPlayerFuelRoute(context);
+  const planned = journey ?? forecast;
   const route = journey
     ? visibleFuelJourneyRoute(journey, context.fuelJourney.snapshot().remainingIds, nav)
     : forecast?.route;

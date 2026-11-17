@@ -102,7 +102,13 @@ function legBetween(request: FuelRouteRequest, fromId: string, toId: string): Ro
   );
 }
 
-function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRoutePlan {
+type RouteLegLookup = (fromId: string, toId: string) => RoutePlan;
+
+function assemblePlan(
+  request: FuelRouteRequest,
+  state: SearchState,
+  routeLeg: RouteLegLookup
+): FuelRoutePlan {
   const legs = state.legs;
   const points = legs.flatMap((leg, index) =>
     index === 0 ? leg.route.points : leg.route.points.slice(1)
@@ -124,8 +130,7 @@ function assemblePlan(request: FuelRouteRequest, state: SearchState): FuelRouteP
     fuelCost: state.spent,
     arrivalFuel: state.fuel,
     directFuel:
-      legBetween(request, routingOrigin(request), request.destinationId).distance *
-      request.fuelPerDistance,
+      routeLeg(routingOrigin(request), request.destinationId).distance * request.fuelPerDistance,
     route,
   };
 }
@@ -149,10 +154,11 @@ function fuelingCandidates(request: FuelRouteRequest, origin: string): string[] 
 function nextState(
   request: FuelRouteRequest,
   current: SearchState,
-  next: string
+  next: string,
+  routeLeg: RouteLegLookup
 ): SearchState | null {
   if (next === current.at || current.visited.includes(next)) return null;
-  const segment = legBetween(request, current.at, next);
+  const segment = routeLeg(current.at, next);
   const required = Math.max(0.1, segment.distance * request.fuelPerDistance);
   if (required * FUEL_RESERVE > current.fuel + 1e-6) return null;
   const remaining = Math.max(0, current.fuel - required);
@@ -198,8 +204,12 @@ function acceptState(
   queue.push(state);
 }
 
-function directFuelPlan(request: FuelRouteRequest, origin: string): FuelRoutePlan | null {
-  const route = legBetween(request, origin, request.destinationId);
+function directFuelPlan(
+  request: FuelRouteRequest,
+  origin: string,
+  routeLeg: RouteLegLookup
+): FuelRoutePlan | null {
+  const route = routeLeg(origin, request.destinationId);
   const required = Math.max(0.1, route.distance * request.fuelPerDistance);
   const fuel = Math.max(0, Math.min(request.fuel, request.capacity));
   if (required * FUEL_RESERVE > fuel + 1e-6) return null;
@@ -221,7 +231,7 @@ function directFuelPlan(request: FuelRouteRequest, origin: string): FuelRoutePla
       },
     ],
   };
-  return assemblePlan(request, next);
+  return assemblePlan(request, next, routeLeg);
 }
 
 /** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
@@ -229,7 +239,19 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   if (!validRequest(request)) return null;
   const origin = routingOrigin(request);
   if (origin === request.destinationId) return null;
-  const direct = directFuelPlan(request, origin);
+
+  // One search evaluates many fuel/credit states for the same location pair.
+  // Route geometry, hazards and profile are immutable for this request.
+  const legCache = new Map<string, RoutePlan>();
+  const routeLeg: RouteLegLookup = (fromId, toId) => {
+    const key = JSON.stringify([fromId, toId]);
+    const existing = legCache.get(key);
+    if (existing) return existing;
+    const route = legBetween(request, fromId, toId);
+    legCache.set(key, route);
+    return route;
+  };
+  const direct = directFuelPlan(request, origin, routeLeg);
   if (direct) return direct;
   const candidates = fuelingCandidates(request, origin);
   const queue: SearchState[] = [
@@ -249,10 +271,10 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   while (queue.length && explored++ < MAX_SEARCH_STATES) {
     queue.sort((a, b) => a.distance - b.distance);
     const current = queue.shift()!;
-    if (current.at === request.destinationId) return assemblePlan(request, current);
+    if (current.at === request.destinationId) return assemblePlan(request, current, routeLeg);
     if (current.legs.length > MAX_STOPS) continue;
     for (const id of candidates) {
-      const state = nextState(request, current, id);
+      const state = nextState(request, current, id, routeLeg);
       if (state) acceptState(state, queue, best);
     }
   }

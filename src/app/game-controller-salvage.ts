@@ -324,6 +324,11 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   options.onSectorEventResolved?.(state.activeSectorEvent.id);
 }
 
+// Keep NPC/ship movement and rescue timers at full simulation frequency, but
+// do not rebuild the complete wreck model and DOM on every animation frame.
+const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
+const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
+
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   if (!options.isCombatActive?.()) {
@@ -369,7 +374,14 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     npcSalvage.tick(deltaSeconds);
     resolveCompletedSectorEvent(context);
   }
-  refreshSalvageScene(context);
+  const now = performance.now();
+  if (
+    now - (lastSalvagePresentation.get(context) ?? -Infinity) >=
+    SALVAGE_PRESENTATION_INTERVAL_MS
+  ) {
+    lastSalvagePresentation.set(context, now);
+    refreshSalvageScene(context);
+  }
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {

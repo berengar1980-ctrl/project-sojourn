@@ -426,3 +426,14 @@ im Career-Snapshot. Ein erneutes Öffnen, ein Tick-Refresh oder ein Laden der
 Webseite verändert die Auswahl nicht, soweit lokaler Speicher verfügbar ist.
 Daher bleiben die 14 Career-Sektionen, Schema, Restore und NPC-Zustände
 unverändert.
+
+### Karten-Performance ohne Simulationsänderung (17. November 2026)
+
+Die Sternkarte begrenzt aufwendige Markt- und Weltereignisberichte auf eine
+Präsentationsfrequenz. Die Aktualisierungsraten der Canvas-Modelle für
+Sternkarte, lokales Mining, Bergung und Kampf sind von den Simulationstakten
+getrennt. Die Berechnung von Treibstoff-Zwischenstopps verwendet einen nur für
+die einzelne Anfrage gültigen Teilstreckencache; eine laufende Reise startet
+keine erneute Treibstoffprognose. Weder der persistierte Career-Snapshot noch
+die Reiserouten, Ressourcen, NPC-Takte oder Kampfdaten werden in ihrem Schema
+geändert. Auftragsbedienung bleibt auf Sternenkarte und Hafen begrenzt.

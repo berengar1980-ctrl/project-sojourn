@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+| 2026-11-17 | Karteninteraktion und Render-Performance | **Keine Statusänderung** der Voidbound-Feature-IDs. Schiff-/NPC-Simulation bleibt voll getaktet; Stern-/Mining-/Bergungs-/Kampf-Darstellungen werden begrenzt, statische Berichte zwischengespeichert und wiederholte Treibstoff-Teilrouten innerhalb einer Suche wiederverwendet. Auftragsschaltfläche erscheint nur in strategischer Sternkarte und Hafen, nicht in lokalen Arbeits- oder Kampfgebieten. Keine Save-Schema-Änderung. |
+
 | 2026-11-17 | Echte Weltereignisse, Schiffsrelevanz, persistente Filter | **Keine Statusänderung** der 241 Voidbound-IDs. Darstellung bereits erzeugter Handelslagen, Konzessionen, Patrouillenaktivitäten und Blockaden, ohne Fake-Aufträge oder Informationsleck zu nicht sichtbaren Korsaren. Schiffsrollen-basierte Vorauswahl und Relevanzsortierung, Checkboxen und Dropdown bleiben während der UI-Ticks stabil. Keine Änderung an Wirtschaftslogik, Einsatzregeln oder Save-Schema. |
 
 | 2026-11-16 | Korrektur vermeintlicher Notsignale | **Keine Statusänderung** an den 241 Voidbound-Features. Missionsfähige normale Planeten, Monde und Stationen werden nicht länger als aktive Notsignale gelistet. Nur echte dynamische Notfälle (Wrackkontakt mit Missionsereignis) erscheinen als Notsignal; bestehende Wrackfelder weiterhin als Bergung. Keine Änderung an Auftrags- oder Simulationslogik. |
