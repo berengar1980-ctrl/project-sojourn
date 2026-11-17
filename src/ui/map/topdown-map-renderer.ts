@@ -1,4 +1,4 @@
-import { measurePerformance } from '../../app/game-performance-diagnostics';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from './map-canvas-backing-store';
 import type { WorldPoint } from '../../core/world-types';
 import type {
