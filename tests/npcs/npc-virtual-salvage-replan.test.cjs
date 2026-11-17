@@ -16,7 +16,10 @@ const npc = {
   travel: {
     targetLocationId: 'salvage-special-2-3',
     profile: 'safe',
-    routePoints: [{ x: 0, y: 0 }, { x: 100, y: 20 }],
+    routePoints: [
+      { x: 0, y: 0 },
+      { x: 100, y: 20 },
+    ],
     routeDistance: 102,
     distanceTravelled: 30,
     fuelRequired: 5,
