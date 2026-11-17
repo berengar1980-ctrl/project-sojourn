@@ -37,7 +37,13 @@ smuggler.smugglingPatrolElapsedSeconds = 2.5;
 smuggler.smugglingInspectionCooldownSeconds = 13;
 smuggler.smugglingLastArrivalId = smuggler.locationId;
 const sector = { livePosition: () => ({ x: 100, y: 100 }) };
-const before = createNpcSmugglingService(npcs, sector, () => {}, () => 0, 6);
+const before = createNpcSmugglingService(
+  npcs,
+  sector,
+  () => {},
+  () => 0,
+  6
+);
 before.tick(1);
 assert.equal(smuggler.smugglingInspectionCooldownSeconds, 12);
 assert.equal(smuggler.smugglingPatrolElapsedSeconds, 2.5);
@@ -49,16 +55,28 @@ assert(resumed);
 assert.equal(resumed.smugglingInspectionCooldownSeconds, 12);
 assert.equal(resumed.smugglingPatrolElapsedSeconds, 2.5);
 assert.equal(resumed.smugglingLastArrivalId, smuggler.locationId);
-const after = createNpcSmugglingService(restoredNpcs, sector, () => {}, () => 0, 6);
+const after = createNpcSmugglingService(
+  restoredNpcs,
+  sector,
+  () => {},
+  () => 0,
+  6
+);
 after.advanceDay(6);
 assert.equal(resumed.smugglingSuspicion, 40, 'restart cannot repeat six days of decay');
 after.tick(1);
 before.tick(1);
-assert.equal(resumed.smugglingInspectionCooldownSeconds, smuggler.smugglingInspectionCooldownSeconds);
+assert.equal(
+  resumed.smugglingInspectionCooldownSeconds,
+  smuggler.smugglingInspectionCooldownSeconds
+);
 assert.equal(resumed.smugglingPatrolElapsedSeconds, smuggler.smugglingPatrolElapsedSeconds);
 after.tick(11);
 before.tick(11);
-assert.equal(resumed.smugglingInspectionCooldownSeconds, smuggler.smugglingInspectionCooldownSeconds);
+assert.equal(
+  resumed.smugglingInspectionCooldownSeconds,
+  smuggler.smugglingInspectionCooldownSeconds
+);
 assert.equal(after.stats.inspections, before.stats.inspections);
 assert.deepEqual(resumed.cargo, smuggler.cargo);
 assert.equal(resumed.smugglingSuspicion, smuggler.smugglingSuspicion);
