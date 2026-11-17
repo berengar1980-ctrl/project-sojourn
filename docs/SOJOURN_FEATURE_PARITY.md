@@ -1264,3 +1264,7 @@ wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
 ## Review-Log (2026-11-17): Erweiterte Rechtsakten-Save/Reload-Prüfung (PR #337)
 
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein neuer persistenter Regressionstest deckt wiederholte Wiederherstellung von offenen Forderungen und Teilzahlungen, Fahndung, Transponder-Tarnung, NPC- und Spielerhaft, Einmal-Abrechnung und Entlassung ab. Keine Gameplay- oder Save-Schema-Änderung. Die weitergehenden Browser- und Langzeitsimulations-Abnahmen aus Issue #300 bleiben offen.
+
+## Review-Log (2026-11-17): Mehrfeld-Hintergrundsimulation und Reload (PR #338)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein reproduzierbarer Integrationstest prüft zwei voneinander getrennte Asteroidenfelder mit NPC-Bergbau außerhalb der Spieleransicht, Erz- und Frachterbestände, vollständige Feld-Checkpoints einschließlich Piraten- und Drohnenzustand sowie den Übergang zwischen aktiver und Hintergrundsimulation nach Save/Reload. Keine Änderungen an Gameplay- oder Save-Schema. Die längere reale Browser- und Performance-Abnahme aus Issue #300 bleibt separat offen.
