@@ -148,12 +148,13 @@
   }
 }
 
-/* Global commission window is only actionable from the strategic star map.
-   Local salvage, mining and combat scenes must not inherit the floating trigger. */
+/* Global orders stay available on the star map and at ports (blockade contracts
+   require a dock), but not in salvage, mining or combat scenes. */
 .operations-launch {
   display: none;
 }
 
-body:has(.star-map-shell) .operations-launch {
+body:has(.star-map-shell) .operations-launch,
+body:has(.port-shell) .operations-launch {
   display: block;
 }
