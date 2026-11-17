@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+| 2026-11-17 | PR #329: Treibstoff-Routenplanung – unerreichbare Tankstopps | **Keine Statusänderung** der 241 Voidbound-Feature-IDs. Eine Luftlinien-Untergrenze zwischen tatsächlichen Orbitalpositionen verwirft sicher unerreichbare Teilstrecken, bevor der Gefahrzonen-Pathfinder aufgerufen wird. Erreichbare Routen, Tankreserven und Spielregeln bleiben unverändert; keine Save/Load-Schema-Änderung. |
+
 | 2026-11-17 | Karteninteraktion und Render-Performance | **Keine Statusänderung** der Voidbound-Feature-IDs. Schiff-/NPC-Simulation bleibt voll getaktet; Stern-/Mining-/Bergungs-/Kampf-Darstellungen werden begrenzt, statische Berichte zwischengespeichert und wiederholte Treibstoff-Teilrouten innerhalb einer Suche wiederverwendet. Auftragsschaltfläche erscheint nur in strategischer Sternkarte und Hafen, nicht in lokalen Arbeits- oder Kampfgebieten. Keine Save-Schema-Änderung. |
 
 | 2026-11-17 | Echte Weltereignisse, Schiffsrelevanz, persistente Filter | **Keine Statusänderung** der 241 Voidbound-IDs. Darstellung bereits erzeugter Handelslagen, Konzessionen, Patrouillenaktivitäten und Blockaden, ohne Fake-Aufträge oder Informationsleck zu nicht sichtbaren Korsaren. Schiffsrollen-basierte Vorauswahl und Relevanzsortierung, Checkboxen und Dropdown bleiben während der UI-Ticks stabil. Keine Änderung an Wirtschaftslogik, Einsatzregeln oder Save-Schema. |
