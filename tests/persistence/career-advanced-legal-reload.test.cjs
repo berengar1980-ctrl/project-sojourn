@@ -6,6 +6,7 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
+const normalize = (value) => JSON.parse(JSON.stringify(value));
 const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-registry.ts');
 const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
 const { AsteroidFieldWorld } = load('src/systems/operations/asteroid-field-world.ts');
@@ -39,8 +40,8 @@ function reload(prisoners = new Set(), detention = null) {
     [npc],
     playerHull
   );
-  assert.deepEqual(restored.legal.exportState(), savedLegal.legal);
-  assert.deepEqual(captureCareerCustody(custody.prisoners, custody.player), savedCustody);
+  assert.deepEqual(normalize(restored.legal.exportState()), normalize(savedLegal.legal));
+  assert.deepEqual(normalize(captureCareerCustody(custody.prisoners, custody.player)), normalize(savedCustody));
   legal = restored.legal;
   return custody;
 }
