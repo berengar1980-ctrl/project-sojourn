@@ -1268,3 +1268,7 @@ wegen einer laufenden, unbeobachteten NPC-Bergungsmission scheitern.
 ## Review-Log (2026-11-17): Mehrfeld-Hintergrundsimulation und Reload (PR #338)
 
 **Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Ein reproduzierbarer Integrationstest prüft zwei voneinander getrennte Asteroidenfelder mit NPC-Bergbau außerhalb der Spieleransicht, Erz- und Frachterbestände, vollständige Feld-Checkpoints einschließlich Piraten- und Drohnenzustand sowie den Übergang zwischen aktiver und Hintergrundsimulation nach Save/Reload. Keine Änderungen an Gameplay- oder Save-Schema. Die längere reale Browser- und Performance-Abnahme aus Issue #300 bleibt separat offen.
+
+## Review-Log (2026-11-17): Reale Chromium-Langzeitsitzung (PR #339)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der vorhandene Browser-Neustarttest prüft zusätzlich eine laufende Karriere über längere reale Renderzeit und zwei vollständige Dokument-Neustarts. Er kontrolliert den Erhalt aller Asteroidenfelder und Claims, unveränderte NPC-Identitäten, eindeutige Rechtsvorfälle sowie das Ausbleiben ungefangener Browserfehler. Frame-Zeitwerte werden als Diagnose protokolliert, nicht als hardwareunabhängige Leistungsgarantie bewertet. Simulierte Piratenangriffe und vollständige Fahndungs-/Blockade-Spielabläufe bleiben zur gesonderten Abnahme aus Issue #300 offen.
