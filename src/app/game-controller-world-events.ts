@@ -22,10 +22,10 @@ function blockadeReports(
   world: WorldMap,
   visible: ReadonlySet<string>
 ): StarMapWorldEvent[] {
-  return economy.blockades.snapshot().orders
-    .filter((order) => ['assembling', 'active'].includes(order.phase))
-    .filter((order) => order.ownerId === 'player' ||
-      order.pirateIds.some((id) => visible.has(id)))
+  return economy.blockades
+    .snapshot()
+    .orders.filter((order) => ['assembling', 'active'].includes(order.phase))
+    .filter((order) => order.ownerId === 'player' || order.pirateIds.some((id) => visible.has(id)))
     .map((order) => ({
       id: 'blockade:' + order.id,
       kind: 'blockade' as const,
@@ -41,18 +41,23 @@ function patrolReports(
   world: WorldMap,
   visibleNpcs: readonly NpcShipMapView[]
 ): StarMapWorldEvent[] {
-  return economy.patrol.snapshot().assignments
-    .filter((assignment) => ['active', 'completed'].includes(assignment.status))
+  return economy.patrol
+    .snapshot()
+    .assignments.filter((assignment) => ['active', 'completed'].includes(assignment.status))
     .map((assignment) => {
       const location = world.locations.find((entry) => entry.id === assignment.targetId);
-      const name = location?.name ??
-        visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ?? 'Korsarenkontakt';
+      const name =
+        location?.name ??
+        visibleNpcs.find((npc) => npc.id === assignment.targetId)?.name ??
+        'Korsarenkontakt';
       return {
         id: 'patrol:' + assignment.id,
         kind: 'patrol' as const,
         title: 'Patrouillenauftrag · ' + name,
-        detail: assignment.status === 'completed' ? 'Erledigt · Belohnung abholen' :
-          'Laufender Auftrag · Frist Tag ' + assignment.deadline,
+        detail:
+          assignment.status === 'completed'
+            ? 'Erledigt · Belohnung abholen'
+            : 'Laufender Auftrag · Frist Tag ' + assignment.deadline,
         locationId: location?.id ?? null,
         dangerLevel: location?.dangerLevel ?? 2,
       };
@@ -93,14 +98,16 @@ function wreckReports(economy: ControllerEconomy, world: WorldMap): StarMapWorld
 }
 
 function visiblePatrolReports(visibleNpcs: readonly NpcShipMapView[]): StarMapWorldEvent[] {
-  return visibleNpcs.filter((npc) => npc.job === 'patrol' && !npc.combatMode).map((npc) => ({
-    id: 'patrol-contact:' + npc.id,
-    kind: 'patrol' as const,
-    title: 'Patrouillenaktivität · ' + npc.name,
-    detail: npc.activity,
-    locationId: null,
-    dangerLevel: 1,
-  }));
+  return visibleNpcs
+    .filter((npc) => npc.job === 'patrol' && !npc.combatMode)
+    .map((npc) => ({
+      id: 'patrol-contact:' + npc.id,
+      kind: 'patrol' as const,
+      title: 'Patrouillenaktivität · ' + npc.name,
+      detail: npc.activity,
+      locationId: null,
+      dangerLevel: 1,
+    }));
 }
 
 /** Only real persisted operational states and visible NPCs, not generated placeholder missions. */

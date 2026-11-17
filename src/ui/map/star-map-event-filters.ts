@@ -122,9 +122,7 @@ function createSortControl(
     select.append(option);
   }
   select.value = filters.sort;
-  select.addEventListener('change', () =>
-    submit(select.value as SignalSort)
-  );
+  select.addEventListener('change', () => submit(select.value as SignalSort));
   sortLabel.append(select);
   return sortLabel;
 }
