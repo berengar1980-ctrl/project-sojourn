@@ -1,3 +1,4 @@
+import { measurePerformance } from './game-performance-diagnostics';
 import { controllerWorldEvents } from './game-controller-world-events';
 import { createTimedMapReportCache } from './game-controller-star-map-report-cache';
 import { scanCargoMarkets } from '../systems/economy/cargo-market-scanner';
@@ -73,7 +74,8 @@ export function createControllerStarPanel(options: {
       });
       panel?.update(options.getModel());
     },
-    onSelectLocation: (id) => {
+    onSelectLocation: (id) =>
+      measurePerformance('input.select-location', () => {
       options.onRouteSelectionChanged?.();
       options.onSelectNpc('');
       const snapshot = options.navigation.getSnapshot();
@@ -97,18 +99,20 @@ export function createControllerStarPanel(options: {
         options.navigation.selectPointDestination(id, event.position);
       } else options.navigation.selectDestination(id);
       panel?.update(options.getModel());
-    },
+      }),
     onSelectNpc: options.onSelectNpc,
     onAttackNpc: options.onAttackNpc,
-    onRouteProfileChange: (profile) => {
+    onRouteProfileChange: (profile) =>
+      measurePerformance('input.route-profile', () => {
       options.onRouteSelectionChanged?.();
       options.navigation.setRouteProfile(profile);
       options.log.write(
         'NAV > ROUTENMODUS ' + { fast: 'SCHNELL', balanced: 'AUSGEWOGEN', safe: 'SICHER' }[profile]
       );
       panel?.update(options.getModel());
-    },
-    onStartTravel: () => {
+      }),
+    onStartTravel: () =>
+      measurePerformance('input.start-travel', () => {
       if (options.startFuelTravel) {
         if (!options.startFuelTravel()) return;
       } else {
@@ -117,7 +121,7 @@ export function createControllerStarPanel(options: {
       }
       options.log.write('NAV > FLUG GESTARTET');
       panel?.update(options.getModel());
-    },
+      }),
     onDock: options.onDock,
   });
   return panel;
@@ -244,7 +248,7 @@ export function createControllerStarModel(
   const worldEvents = foreignSystem
     ? []
     : readWorldEventReport(economy, world.id + '|' + economy.situations.currentDay, () =>
-        controllerWorldEvents(economy, world, npcShips)
+        measurePerformance('model.world-events', () => controllerWorldEvents(economy, world, npcShips))
       );
   return {
     ...createStarMapViewModel(
