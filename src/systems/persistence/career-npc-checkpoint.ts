@@ -154,18 +154,6 @@ function validNpc(
   );
 }
 
-function describeInvalidNpc(value: unknown, world: WorldMap): string {
-  if (!record(value)) return 'record';
-  const reason = !validNpcIdentity(value, world)
-    ? 'identity'
-    : !validNpcFinances(value)
-      ? 'finances'
-      : 'activity';
-  const id = typeof value.id === 'string' ? value.id : '?';
-  const destination = record(value.travel) ? String(value.travel.targetLocationId ?? '') : '';
-  return id + ': ' + reason + (destination ? ' → ' + destination : '');
-}
-
 /** A detached snapshot of the authoritative sector NPC objects, not render projections. */
 export function captureCareerNpcs(
   world: WorldMap,
@@ -192,12 +180,8 @@ export function stageCareerNpcs(world: WorldMap, candidate: unknown): SectorNpcS
     }
     ids.add(npc.id);
   }
-  const invalid = snapshot.npcs.find((npc) => !validNpc(npc, world, ids));
-  if (invalid) {
-    throw new Error(
-      'Beschädigte NPC-Route, Ladung oder Kampfzuordnung. NPC ' +
-        describeInvalidNpc(invalid, world)
-    );
+  if (!snapshot.npcs.every((npc) => validNpc(npc, world, ids))) {
+    throw new Error('Beschädigte NPC-Route, Ladung oder Kampfzuordnung.');
   }
   return snapshot.npcs as SectorNpcState[];
 }
