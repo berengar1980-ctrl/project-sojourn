@@ -18,9 +18,8 @@ interface MutableSample {
   over50ms: number;
 }
 const samples = new Map<string, MutableSample>();
-const enabled =
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).get('perf') === '1';
+const query = typeof window === 'undefined' ? '' : window.location.search;
+const enabled = new URLSearchParams(query).get('perf') === '1';
 
 export function recordPerformance(name: string, durationMs: number): void {
   if (!enabled || !Number.isFinite(durationMs) || durationMs < 0) return;
@@ -85,7 +84,5 @@ if (enabled) {
       // The browser may not support Long Tasks; timing probes still work.
     }
   }
-  console.info(
-    '[Sojourn Perf] Diagnostics active. Use window.sojournPerf.print(), .report(), or .reset().'
-  );
+  console.info('[Sojourn Perf] Active: window.sojournPerf.print()');
 }
