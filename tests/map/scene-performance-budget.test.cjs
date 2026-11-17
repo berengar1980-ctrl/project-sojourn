@@ -42,7 +42,20 @@ assert(operations.includes('body:has(.star-map-shell) .operations-launch'));
 assert(operations.includes('body:has(.port-shell) .operations-launch'));
 const renderer = file('src/ui/map/topdown-map-renderer.ts');
 assert(renderer.includes('Math.min(2, Math.max(1, window.devicePixelRatio || 1))'));
-assert(renderer.includes('const changed = this.canvas.width !== pixelWidth'));
+assert(renderer.includes('resizeMapCanvasBackingStore(this.canvas, this.context'));
+const { resizeMapCanvasBackingStore } = loadStandaloneTypeScriptModule(
+  root,
+  'src/ui/map/map-canvas-backing-store.ts'
+);
+const fakeCanvas = { width: 0, height: 0 };
+let bufferResets = 0;
+const fakeContext = { setTransform: () => { bufferResets += 1; } };
+resizeMapCanvasBackingStore(fakeCanvas, fakeContext, 100, 90, 2);
+resizeMapCanvasBackingStore(fakeCanvas, fakeContext, 100, 90, 2);
+assert.equal(bufferResets, 1, 'unchanged canvas dimensions must not reallocate');
+assert.deepEqual([fakeCanvas.width, fakeCanvas.height], [200, 180]);
+resizeMapCanvasBackingStore(fakeCanvas, fakeContext, 120, 90, 2);
+assert.equal(bufferResets, 2);
 const salvage = file('src/app/game-controller-salvage.ts');
 assert(salvage.includes('SALVAGE_PRESENTATION_INTERVAL_MS'));
 assert(salvage.includes('npcSalvage.tick(deltaSeconds)'));
