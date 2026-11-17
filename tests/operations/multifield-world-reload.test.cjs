@@ -16,7 +16,9 @@ const { captureCareerFieldLegalSession, stageCareerFieldLegalSession } = load(
   'src/systems/persistence/career-field-legal-session.ts'
 );
 
-const locations = narrowsSector.locations.filter((location) => location.activities.mine).slice(0, 2);
+const locations = narrowsSector.locations
+  .filter((location) => location.activities.mine)
+  .slice(0, 2);
 assert.equal(locations.length, 2, 'The real sector must contain at least two mineable fields');
 const minerShip = getAllShipDefinitions().find((ship) => ship.role === 'mining');
 assert(minerShip);
@@ -82,7 +84,8 @@ function prepareMining(world) {
     const ship = field.miners.ships[0];
     assert(ship, 'Each remote field needs its own real NPC miner');
     const rock = field.instance.asteroids.find(
-      (entry) => entry.kind === 'resource' && entry.deposits.some((deposit) => deposit.oreRemaining > 5)
+      (entry) =>
+        entry.kind === 'resource' && entry.deposits.some((deposit) => deposit.oreRemaining > 5)
     );
     assert(rock);
     ship.position = { x: rock.position.x + rock.radius + 100, y: rock.position.y };
