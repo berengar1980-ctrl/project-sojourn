@@ -110,16 +110,19 @@ function validNpcActivity(
   if (
     value.smugglingPatrolElapsedSeconds !== undefined &&
     !number(value.smugglingPatrolElapsedSeconds)
-  ) return false;
+  )
+    return false;
   if (
     value.smugglingInspectionCooldownSeconds !== undefined &&
     !number(value.smugglingInspectionCooldownSeconds)
-  ) return false;
+  )
+    return false;
   if (
     value.smugglingLastArrivalId !== undefined &&
     value.smugglingLastArrivalId !== '' &&
     !location(world, value.smugglingLastArrivalId)
-  ) return false;
+  )
+    return false;
   return true;
 }
 
