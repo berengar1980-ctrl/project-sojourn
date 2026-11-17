@@ -6,18 +6,10 @@ import {
   type ManeuverDemand,
 } from '../ships/ship-maneuver-thrusters';
 
-const AMBIENCE_CHUNK_URLS = [
-  new URL('../../../resources/audio/ambience/deep-space-00.b64', import.meta.url).href,
-  new URL('../../../resources/audio/ambience/deep-space-01.b64', import.meta.url).href,
-  new URL('../../../resources/audio/ambience/deep-space-02.b64', import.meta.url).href,
-  new URL('../../../resources/audio/ambience/deep-space-03.b64', import.meta.url).href,
-  new URL('../../../resources/audio/ambience/deep-space-04.b64', import.meta.url).href,
-] as const;
-
-const RCS_BURST_URL = new URL(
-  '../../../resources/audio/spacecraft-rcs-thruster-burst.ogg',
-  import.meta.url
-).href;
+// Optional files can be installed later without rebuilding the audio system.
+// Missing or invalid assets leave the respective channel silent.
+const AMBIENCE_URL = '/audio/deep-space.ogg';
+const RCS_BURST_URL = '/audio/spacecraft-rcs-thruster-burst.ogg';
 
 const DEFAULT_AMBIENCE_VOLUME = 0.22;
 const DEFAULT_RCS_VOLUME = 0.46;
@@ -87,29 +79,18 @@ function createAudio(url: string, volume: number): HTMLAudioElement {
   return audio;
 }
 
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = window.atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
+async function loadOptionalOgg(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.arrayBuffer();
+    const header = new Uint8Array(data, 0, Math.min(data.byteLength, 4));
+    // Vite may return index.html for a missing public file: reject non-Ogg data.
+    if (header.length < 4 || String.fromCharCode(...header) !== 'OggS') return null;
+    return URL.createObjectURL(new Blob([data], { type: 'audio/ogg' }));
+  } catch {
+    return null;
   }
-  return bytes;
-}
-
-async function loadChunkedAmbience(): Promise<string> {
-  const chunks = await Promise.all(
-    AMBIENCE_CHUNK_URLS.map(async (url) => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Unable to load deep-space ambience data: ' + response.status);
-      }
-      return (await response.text()).trim();
-    })
-  );
-  const bytes = base64ToBytes(chunks.join(''));
-  const buffer = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buffer).set(bytes);
-  return URL.createObjectURL(new Blob([buffer], { type: 'audio/ogg' }));
 }
 
 export function createGameAudioService(): GameAudioService {
@@ -118,9 +99,10 @@ export function createGameAudioService(): GameAudioService {
   ambience.loop = true;
 
   const rcsPool = Array.from({ length: RCS_POOL_SIZE }, () =>
-    createAudio(RCS_BURST_URL, settings.rcsVolume)
+    createAudio('', settings.rcsVolume)
   );
   let ambienceObjectUrl: string | null = null;
+  let rcsObjectUrl: string | null = null;
   let rcsPoolIndex = 0;
   let activeThrusters = new Set<string>();
   let lastRcsPlaySeconds = Number.NEGATIVE_INFINITY;
@@ -134,19 +116,26 @@ export function createGameAudioService(): GameAudioService {
     });
   };
 
-  void loadChunkedAmbience()
-    .then((url) => {
-      if (destroyed) {
-        URL.revokeObjectURL(url);
-        return;
-      }
-      ambienceObjectUrl = url;
-      ambience.src = url;
-      playAmbience();
-    })
-    .catch(() => {
-      // RCS audio remains available even if the ambience asset cannot be loaded.
-    });
+  void loadOptionalOgg(AMBIENCE_URL).then((url) => {
+    if (!url) return;
+    if (destroyed) {
+      URL.revokeObjectURL(url);
+      return;
+    }
+    ambienceObjectUrl = url;
+    ambience.src = url;
+    playAmbience();
+  });
+
+  void loadOptionalOgg(RCS_BURST_URL).then((url) => {
+    if (!url) return;
+    if (destroyed) {
+      URL.revokeObjectURL(url);
+      return;
+    }
+    rcsObjectUrl = url;
+    for (const audio of rcsPool) audio.src = url;
+  });
 
   const unlock = (): void => {
     if (destroyed) return;
@@ -155,7 +144,9 @@ export function createGameAudioService(): GameAudioService {
   };
 
   const playRcsBurst = (intensity: number, timeSeconds: number): void => {
-    if (!unlocked || timeSeconds - lastRcsPlaySeconds < RCS_RETRIGGER_SECONDS) return;
+    if (!unlocked || !rcsObjectUrl || timeSeconds - lastRcsPlaySeconds < RCS_RETRIGGER_SECONDS) {
+      return;
+    }
     lastRcsPlaySeconds = timeSeconds;
 
     const audio = rcsPool[rcsPoolIndex]!;
@@ -217,7 +208,11 @@ export function createGameAudioService(): GameAudioService {
       ambience.pause();
       ambience.removeAttribute('src');
       if (ambienceObjectUrl) URL.revokeObjectURL(ambienceObjectUrl);
-      for (const audio of rcsPool) audio.pause();
+      for (const audio of rcsPool) {
+        audio.pause();
+        audio.removeAttribute('src');
+      }
+      if (rcsObjectUrl) URL.revokeObjectURL(rcsObjectUrl);
       activeThrusters.clear();
     },
   };
