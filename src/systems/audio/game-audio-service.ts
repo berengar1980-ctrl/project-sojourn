@@ -93,6 +93,21 @@ async function loadOptionalOgg(url: string): Promise<string | null> {
   }
 }
 
+function attachOptionalAudio(
+  path: string,
+  onLoaded: (objectUrl: string) => void,
+  isDestroyed: () => boolean
+): void {
+  void loadOptionalOgg(path).then((objectUrl) => {
+    if (!objectUrl) return;
+    if (isDestroyed()) {
+      URL.revokeObjectURL(objectUrl);
+      return;
+    }
+    onLoaded(objectUrl);
+  });
+}
+
 export function createGameAudioService(): GameAudioService {
   let settings = loadStoredSettings();
   const ambience = createAudio('', settings.ambienceVolume);
@@ -114,26 +129,23 @@ export function createGameAudioService(): GameAudioService {
     });
   };
 
-  void loadOptionalOgg(AMBIENCE_URL).then((url) => {
-    if (!url) return;
-    if (destroyed) {
-      URL.revokeObjectURL(url);
-      return;
-    }
-    ambienceObjectUrl = url;
-    ambience.src = url;
-    playAmbience();
-  });
-
-  void loadOptionalOgg(RCS_BURST_URL).then((url) => {
-    if (!url) return;
-    if (destroyed) {
-      URL.revokeObjectURL(url);
-      return;
-    }
-    rcsObjectUrl = url;
-    for (const audio of rcsPool) audio.src = url;
-  });
+  attachOptionalAudio(
+    AMBIENCE_URL,
+    (url) => {
+      ambienceObjectUrl = url;
+      ambience.src = url;
+      playAmbience();
+    },
+    () => destroyed
+  );
+  attachOptionalAudio(
+    RCS_BURST_URL,
+    (url) => {
+      rcsObjectUrl = url;
+      for (const audio of rcsPool) audio.src = url;
+    },
+    () => destroyed
+  );
 
   const unlock = (): void => {
     if (destroyed) return;
