@@ -107,6 +107,19 @@ function validNpcActivity(
   if (value.combatRecoverySeconds !== undefined && !number(value.combatRecoverySeconds)) {
     return false;
   }
+  if (
+    value.smugglingPatrolElapsedSeconds !== undefined &&
+    !number(value.smugglingPatrolElapsedSeconds)
+  ) return false;
+  if (
+    value.smugglingInspectionCooldownSeconds !== undefined &&
+    !number(value.smugglingInspectionCooldownSeconds)
+  ) return false;
+  if (
+    value.smugglingLastArrivalId !== undefined &&
+    value.smugglingLastArrivalId !== '' &&
+    !location(world, value.smugglingLastArrivalId)
+  ) return false;
   return true;
 }
 
