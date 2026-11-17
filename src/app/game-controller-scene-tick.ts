@@ -3,23 +3,36 @@ import { controllerLocalModel, controllerStarModel } from './game-controller-mod
 
 // The simulation still runs every animation frame. The full-resolution canvas
 // and sensor/market view-model need not be rebuilt 60+ times per second.
-const STAR_MAP_MIN_FRAME_MS = 1000 / 24;
+const STAR_MAP_MIN_FRAME_MS = 1000 / 20;
+const LOCAL_MAP_MIN_FRAME_MS = 1000 / 24;
+const COMBAT_MAP_MIN_FRAME_MS = 1000 / 30;
 const lastStarMapUpdate = new WeakMap<ControllerRuntimeContext, number>();
+const lastLocalUpdate = new WeakMap<ControllerRuntimeContext, number>();
+const lastCombatUpdate = new WeakMap<ControllerRuntimeContext, number>();
+
+function shouldUpdate(
+  previous: WeakMap<ControllerRuntimeContext, number>,
+  context: ControllerRuntimeContext,
+  interval: number
+): boolean {
+  const now = performance.now();
+  if (now - (previous.get(context) ?? -Infinity) < interval) return false;
+  previous.set(context, now);
+  return true;
+}
+
 
 /** Presentation tick: the campaign engine never owns or mutates these scene services. */
 export function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state } = context;
   if (state.mode === 'combat') {
-    state.combatPanel?.update();
+    if (shouldUpdate(lastCombatUpdate, context, COMBAT_MAP_MIN_FRAME_MS))
+      state.combatPanel?.update();
     return;
   }
   if (state.mode === 'star-map') {
-    const now = performance.now();
-    const previous = lastStarMapUpdate.get(context) ?? -Infinity;
-    if (now - previous >= STAR_MAP_MIN_FRAME_MS) {
-      lastStarMapUpdate.set(context, now);
+    if (shouldUpdate(lastStarMapUpdate, context, STAR_MAP_MIN_FRAME_MS))
       state.panels.star?.update(controllerStarModel(context));
-    }
     return;
   }
   if (state.mode === 'salvage-space') {
@@ -41,5 +54,6 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
       performance.now() / 1000
     );
   }
-  state.panels.local?.update(controllerLocalModel(context));
+  if (shouldUpdate(lastLocalUpdate, context, LOCAL_MAP_MIN_FRAME_MS))
+    state.panels.local?.update(controllerLocalModel(context));
 }
