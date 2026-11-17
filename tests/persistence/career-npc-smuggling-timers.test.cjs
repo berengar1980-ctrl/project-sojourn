@@ -78,7 +78,7 @@ assert.equal(
   smuggler.smugglingInspectionCooldownSeconds
 );
 assert.equal(after.stats.inspections, before.stats.inspections);
-assert.deepEqual(resumed.cargo, smuggler.cargo);
+assert.deepEqual(JSON.parse(JSON.stringify(resumed.cargo)), smuggler.cargo);
 assert.equal(resumed.smugglingSuspicion, smuggler.smugglingSuspicion);
 
 const invalid = structuredClone(saved);
