@@ -107,6 +107,19 @@ export function missionFilterControls(
   let currentFilters = filters;
   const submit = (next: MissionFilters): void => {
     currentFilters = next;
+    for (const [kind] of EVENT_KINDS) {
+      const input = container.querySelector<HTMLInputElement>(
+        '.star-map-event-filter--' + kind + ' input'
+      );
+      if (input) input.checked = next[kind];
+    }
+    for (const button of container.querySelectorAll<HTMLButtonElement>(
+      '.star-map-event-filters__presets button'
+    )) {
+      const all = EVENT_KINDS.every(([kind]) => next[kind]);
+      const none = EVENT_KINDS.every(([kind]) => !next[kind]);
+      button.setAttribute('aria-pressed', String(button.textContent === 'Alle' ? all : none));
+    }
     onChange(next);
   };
   container.className = 'star-map-event-filters';
