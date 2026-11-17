@@ -75,6 +75,13 @@ assert.strictEqual(unchanged, ship, 'other hulls retain their name');
 const bootstrap = read('src/app/bootstrap.ts');
 const controller = read('src/app/game-controller.ts');
 const editor = read('src/ui/start/character-editor.ts');
+const portraitSource = read('src/ui/start/character-editor-portraits.ts');
+assert(
+  portraitSource.includes("image.addEventListener(") &&
+    portraitSource.includes("'error'") &&
+    portraitSource.includes("image.replaceWith(placeholder)"),
+  'unavailable portrait assets must render placeholders instead of broken images'
+);
 const editorStyles = read('src/ui/start/character-editor.css');
 const allocator = read('src/ui/start/character-editor-skills.ts');
 const bar = read('src/ui/settings/settings-menu.ts');
