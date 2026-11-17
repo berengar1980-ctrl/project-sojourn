@@ -1,4 +1,4 @@
-import type { WorldMap } from '../../core/world-types';
+import type { WorldMap } from '../core/world-types';
 import type { ControllerEconomy } from './game-controller-economy';
 import type { NpcShipMapView, StarMapWorldEvent } from '../features/star-map/star-map-view-model';
 
