@@ -375,7 +375,10 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     resolveCompletedSectorEvent(context);
   }
   const now = performance.now();
-  if (now - (lastSalvagePresentation.get(context) ?? -Infinity) >= SALVAGE_PRESENTATION_INTERVAL_MS) {
+  if (
+    now - (lastSalvagePresentation.get(context) ?? -Infinity) >=
+    SALVAGE_PRESENTATION_INTERVAL_MS
+  ) {
     lastSalvagePresentation.set(context, now);
     refreshSalvageScene(context);
   }

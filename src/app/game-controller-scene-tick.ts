@@ -21,7 +21,6 @@ function shouldUpdate(
   return true;
 }
 
-
 /** Presentation tick: the campaign engine never owns or mutates these scene services. */
 export function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state } = context;

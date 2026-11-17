@@ -125,7 +125,8 @@ export function createControllerStarPanel(options: {
 
 // Expensive report aggregation runs at a slower cadence than ship animation.
 const readCargoReport = createTimedMapReportCache<ReturnType<typeof scanCargoMarkets>>(800);
-const readWorldEventReport = createTimedMapReportCache<ReturnType<typeof controllerWorldEvents>>(800);
+const readWorldEventReport =
+  createTimedMapReportCache<ReturnType<typeof controllerWorldEvents>>(800);
 
 export function createControllerStarModel(
   navigation: NavigationService,

@@ -130,8 +130,7 @@ function assemblePlan(
     fuelCost: state.spent,
     arrivalFuel: state.fuel,
     directFuel:
-      routeLeg(routingOrigin(request), request.destinationId).distance *
-      request.fuelPerDistance,
+      routeLeg(routingOrigin(request), request.destinationId).distance * request.fuelPerDistance,
     route,
   };
 }
