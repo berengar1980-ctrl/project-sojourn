@@ -47,7 +47,9 @@ function cargo(value: unknown): boolean {
 function travel(value: unknown, world: WorldMap, npc: Record<string, unknown>): boolean {
   if (value === undefined) return true;
   if (!record(value) || !npcLocation(world, npc, value.finalTargetId)) return false;
-  if (!npcLocation(world, npc, value.targetLocationId) || !Array.isArray(value.routePoints)) return false;
+  if (!npcLocation(world, npc, value.targetLocationId) || !Array.isArray(value.routePoints)) {
+    return false;
+  }
   if (value.routePoints.length < 2 || value.routePoints.length > 128) return false;
   if (!value.routePoints.every(position)) return false;
   if (!number(value.routeDistance) || !number(value.distanceTravelled)) return false;
