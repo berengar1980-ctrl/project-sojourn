@@ -8,8 +8,20 @@ const { chromium } = require('playwright');
 const url = process.env.SOJOURN_BASE_URL || 'http://127.0.0.1:5173/';
 const storageKey = 'sojourn.career.v1';
 const required = [
-  'navigation', 'player', 'ships', 'crew', 'economy', 'npcs', 'operations',
-  'fields', 'claims', 'legal', 'custody', 'combat', 'campaigns', 'world',
+  'navigation',
+  'player',
+  'ships',
+  'crew',
+  'economy',
+  'npcs',
+  'operations',
+  'fields',
+  'claims',
+  'legal',
+  'custody',
+  'combat',
+  'campaigns',
+  'world',
 ];
 
 async function readSavedCareer(page) {
@@ -56,7 +68,11 @@ async function run() {
     const before = await saveFromSystemMenu(page);
     assert.equal(before.snapshot.sections.player.profile.captainName, 'Reload Browser Tester');
     assert.equal(before.snapshot.sections.player.profile.shipName, 'Persistent Voyager');
-    assert.equal(before.snapshot.sections.combat, null, 'Orbit save must not contain active combat');
+    assert.equal(
+      before.snapshot.sections.combat,
+      null,
+      'Orbit save must not contain active combat'
+    );
 
     // A genuine document reload destroys every JS module, controller, and service.
     await page.reload();
