@@ -27,8 +27,6 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Diagnostic CSS format diff
-        run: npx prettier src/ui/styles.css | diff -u src/ui/styles.css - || true
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
