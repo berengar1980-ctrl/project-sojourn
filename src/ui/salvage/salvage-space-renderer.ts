@@ -1,3 +1,4 @@
+import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
@@ -24,6 +25,7 @@ import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
+  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
   protected readonly camera: MapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -68,6 +70,17 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
     }
     this.model = model;
+    if (model.combat) {
+      if (!this.sharedCombatRenderer) {
+        this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+      } else {
+        this.sharedCombatRenderer.update(model.combat);
+      }
+      // The campaign now draws combat through the very same PvP renderer.
+      // Noncombat NPCs and mining/salvage effects are not painted on top.
+      return;
+    }
+    this.sharedCombatRenderer = null;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     const now = performance.now();
@@ -97,13 +110,22 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    this.draw();
+    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    else this.draw();
   }
   pan(dx: number, dy: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.pan(dx, dy);
+      return;
+    }
     this.camera.pan(dx, dy);
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     this.camera.zoomAt(Math.exp(-deltaY * 0.00135), { x, y }, rect.width, rect.height);
     this.draw();
@@ -125,6 +147,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.shipImage.src = url;
   }
   protected draw(): void {
+    if (this.sharedCombatRenderer) return;
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
