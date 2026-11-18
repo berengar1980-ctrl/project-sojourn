@@ -13,7 +13,7 @@ import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distre
 import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
-import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
+import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -422,15 +422,20 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   protected drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
-    const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 100));
-    const maneuverDemand = {
-      turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
-      angularThrust: this.model.ship.angularThrust,
-      lateralThrust: this.model.ship.lateralThrust,
-      longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
-    };
-    this.engineEffects.drawExhaust(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.drawExhaust(this.context, source, geometry, maneuverDemand, timeSeconds);
+    const drawThrusters = (layer: 'below' | 'above'): void =>
+      drawFieldPlayerThrusters(
+        this.context,
+        source,
+        geometry,
+        this.model.ship,
+        this.model.combat?.attacker ?? null,
+        timeSeconds,
+        layer,
+        this.engineEffects,
+        this.maneuverEffects,
+        'salvage'
+      );
+    drawThrusters('below');
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
@@ -448,8 +453,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       });
     }
     this.context.restore();
-    this.engineEffects.drawGlow(this.context, source, geometry, engineIntensity, timeSeconds);
-    this.maneuverEffects.drawGlow(this.context, source, geometry, maneuverDemand, timeSeconds);
+    drawThrusters('above');
     this.shieldImpacts.draw(
       this.context,
       [...this.model.shieldImpacts, ...(this.model.combat?.attacker.shieldImpacts ?? [])],
