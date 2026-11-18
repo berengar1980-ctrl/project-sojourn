@@ -173,7 +173,7 @@ export abstract class LocalSpaceSceneLayers {
     return hits;
   }
   protected drawNpcMinerScan(
-    shipPoint: ScreenPoint,
+    _shipPoint: ScreenPoint,
     targetWorld: { readonly x: number; readonly y: number },
     width: number,
     height: number,
