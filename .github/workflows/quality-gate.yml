@@ -27,6 +27,10 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Diagnostic test formatter diff
+        run: |
+          npx prettier tests/combat/combat-weapon-fx-visuals.test.cjs | diff -u tests/combat/combat-weapon-fx-visuals.test.cjs - || true
+          npx prettier tests/combat/combat-weapon-vision-integration.test.cjs | diff -u tests/combat/combat-weapon-vision-integration.test.cjs - || true
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
