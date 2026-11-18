@@ -653,3 +653,14 @@ diese transienten Flags neu initialisiert. Die lokale Mining-/Bergungskarte
 zeigt beim Gefecht dieselben Schild-, Hüllen-, Subsystem- und Waffenwerte
 wie die eigenständige Raumkampfoberfläche. Keine Änderung am Save-Schema,
 der 1vs1-Trefferberechnung, den Waffen oder der Arena-Persistenz.
+
+### Lokale Piratenkontakte bei Hintergrundgefechten (2026-11-18)
+
+**Keine Änderung des Save-Schemas:** Ein im Asteroidenfeld vorhandener Pirat
+bleibt bei NPC-gegen-NPC-Kämpfen und während seiner Erholungsphase als
+lokales Schiff erhalten. Der bisherige version-1-Checkpoint kann die
+bestehende Schiffsposition auch im strategischen Kampfzustand sichern.
+Ein separates Rückkehr-Spawn an der Kartenkante entfällt für diese Fälle.
+Die lokale NPC-Verwaltung verändert während eines fremdverwalteten Kampfs
+nicht die Kampfposition. Piraten werden im lokalen Renderer als KORSAR
+markiert. Kein Eingriff in die 1vs1-Physik oder den Save-Vertrag.
