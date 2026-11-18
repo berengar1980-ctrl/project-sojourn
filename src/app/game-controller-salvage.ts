@@ -36,7 +36,10 @@ import {
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips } from './game-controller-salvage-npc-view';
-import { finishSalvageCombat } from './game-controller-salvage-combat-return';
+import {
+  finishSalvageCombat,
+  syncSalvageCombatField,
+} from './game-controller-salvage-combat-return';
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
@@ -309,7 +312,18 @@ const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
-  if (!options.isCombatActive?.()) {
+  const combat = options.isCombatActive?.() ? (options.getCombat?.() ?? null) : null;
+  if (combat) {
+    // The existing duel owns its two combatants and all moving wreck bodies.
+    // Reconcile those positions into the visible local scene every frame.
+    syncSalvageCombatField(context.field, combat);
+    service.syncCombatPose(
+      combat.attacker.position,
+      combat.attacker.headingRadians,
+      combat.attacker.speed
+    );
+    npcSalvage.tick(deltaSeconds, combat.defender.id, true);
+  } else {
     tickDistressDiagnosis(context, deltaSeconds);
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();

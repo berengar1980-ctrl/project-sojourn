@@ -612,3 +612,23 @@ stattdessen werden sichere Startpositionen in der generierten Umgebung gesucht.
 Auch Bergungskämpfe der Kampagne verwenden diesen Adapter für das tatsächlich
 sichtbare Feld. Kampfphysik, Waffen und das bestehende taktische Kampf-HUD
 bleiben dieselben. Spielstände und Persistenz-Schema ändern sich nicht.
+
+### Eingebettete Mining-/Bergungskämpfe: Welt-Tick (PR #353)
+
+**Keine Speicherformatänderung:** Die existierenden 14 Career-Sektionen,
+Checkpoint-Versionen und Feld-IDs bleiben unverändert. Während des lokalen
+1vs1 synchronisieren die Mining- und Bergungskarten die vom Kampfsystem
+berechneten Positionen und Geschwindigkeiten ihrer physischen Objekte in die
+bereits vorhandenen lokalen Feldzustände. Nicht am Duell beteiligte NPCs
+laufen weiter; die beiden Duellschiffe werden dabei von der normalen
+NPC-Bewegung ausgenommen. Kampfschaden, RNG und Duellzustand bleiben
+weiterhin unter der bisherigen Combat-Autorität. Ein zusätzlicher
+persistenter Koordinator oder ein neues Save-Feld wird nicht eingeführt.
+
+**Restore-Risiko und Abnahme:** Die bereits bestehenden Feld-/NPC-Checkpoints
+müssen die fortgeschriebenen Positionen und verbliebenen Wrackteile erfassen;
+die bisherige Speicherung von aktiven Kämpfen und das Rückkehr-Synchronisieren
+bleiben unverändert. Speicherung während einer aktiven lokalen Operation
+bleibt entsprechend den vorhandenen Save-Gates gesperrt. Tests müssen
+insbesondere zerstörte Feldobjekte, Duell-Rückkehrpositionen und eine erneute
+Aufnahme der gewöhnlichen NPC-Arbeit nach Kampfende abdecken.

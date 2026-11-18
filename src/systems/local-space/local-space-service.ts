@@ -265,6 +265,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
+  /** Advance non-flight systems while combat owns both ship and asteroid physics. */
+  tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot {
+    const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
+    this.shipSystems.advance(clamped);
+    this.scanClock.advanceLong(clamped);
+    this.miningResources.advanceChunks(this.instance.ship, clamped);
+    return this.getSnapshot();
+  }
+
   tick(deltaSeconds: number): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);

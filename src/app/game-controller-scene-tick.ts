@@ -43,7 +43,10 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     return;
   }
   if (state.mode !== 'local-space' || !state.localSpace) return;
-  if (state.embeddedCombat !== 'local-space') {
+  if (state.embeddedCombat === 'local-space') {
+    // Keep non-navigation local systems alive; the duel owns ship and asteroid motion.
+    state.localSpace.tickCombatEnvironment(deltaSeconds);
+  } else {
     state.localSpace.tick(deltaSeconds);
     const localSnapshot = state.localSpace.getSnapshot();
     context.shipOperations.recordHull(

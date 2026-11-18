@@ -51,6 +51,8 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
         depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
         getPlayerShip: () => state.activeShip,
         getPlayerShipState: () => {
+          // The duel owns the player pose and collisions during embedded combat.
+          if (state.embeddedCombat === 'local-space') return undefined;
           const scene = state.localSpace?.getSnapshot().instance;
           return scene?.sourceLocationId === location.id ? scene.ship : undefined;
         },
@@ -74,11 +76,54 @@ export function advanceControllerFieldWorld(
   const scene = context.state.localSpace?.getSnapshot();
   const localId =
     context.state.mode === 'local-space' ? (scene?.instance.sourceLocationId ?? null) : null;
-  const frozen = context.state.embeddedCombat === 'local-space' ? localId : null;
-  fieldWorldFor(context).tick(deltaSeconds, frozen ? null : localId, (field, seconds) => {
-    if (field.locationId === frozen) return;
-    field.miners.tick(seconds);
-    tickFieldPirates(context, seconds, field);
-    tickFieldSecurity(context, seconds, field);
+  const combat =
+    context.state.embeddedCombat === 'local-space'
+      ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
+      : null;
+  fieldWorldFor(context).tick(deltaSeconds, localId, (field, seconds) => {
+    const activeCombat = field.locationId === localId ? combat : null;
+    if (activeCombat) {
+      // The duel advances physical asteroids; copy their authoritative poses
+      // instead of integrating the same bodies a second time.
+      const combatAsteroids = activeCombat.arena.asteroids ?? [];
+      const bodies = new Map(combatAsteroids.map((body) => [body.id, body]));
+      for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
+        const asteroid = field.instance.asteroids[index]!;
+        const body = bodies.get(asteroid.id);
+        if (!body) {
+          // Thrown or destroyed bodies must not remain as ghost obstacles.
+          field.instance.asteroids.splice(index, 1);
+          continue;
+        }
+        asteroid.position = { ...body.position };
+        asteroid.rotation = body.rotation;
+        asteroid.physics.velocity = { ...body.velocity };
+        asteroid.physics.angularVelocity = body.angularVelocity;
+      }
+      context.state.localSpace?.syncCombatPose(
+        activeCombat.attacker.position,
+        activeCombat.attacker.headingRadians,
+        activeCombat.attacker.speed
+      );
+    }
+    field.miners.tick(seconds, activeCombat?.defender.id);
+    if (activeCombat?.defender.id.startsWith('security-drone:')) {
+      field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
+    }
+    const defenderId = activeCombat?.defender.id;
+    const isPirateDefender = field.pirates
+      .snapshot(context.economy.sectorNpcs.npcs)
+      .some((pirate) => pirate.npcId === defenderId);
+    if (activeCombat && isPirateDefender) {
+      field.pirates.syncCombatPose(
+        activeCombat.defender.id,
+        activeCombat.defender.position,
+        activeCombat.defender.headingRadians
+      );
+    }
+    tickFieldPirates(context, seconds, field, activeCombat?.defender.id);
+    if (!activeCombat?.defender.id.startsWith('security-drone:')) {
+      tickFieldSecurity(context, seconds, field);
+    }
   });
 }

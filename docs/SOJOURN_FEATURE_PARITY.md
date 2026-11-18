@@ -1351,3 +1351,15 @@ Vollständige Objektdaten einschließlich IDs, Position, Physik, Kollisionsradiu
 und 3D-Wrackmodellen gelangen über einen gemeinsamen Adapter in die bereits
 geteilte Kampfsimulation. Kampagnen-Standardeinstellungen, Schiffsausrüstung,
 KI, Savegames und bestehende Kampf-Grafik bleiben unverändert.
+
+## Review-Log (2026-11-18): Lokale Kampf-Welt läuft im 1vs1 weiter
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Beim eingebetteten Duell in Mining- und Bergungskarten bleiben unbeteiligte
+lokale NPCs aktiv. Die Kampf-Engine führt weiterhin nur die beiden
+Duellschiffe und die physischen Kampfobjekte; deren Positionen werden in die
+sichtbare lokale Welt übertragen, ohne die Flugphysik ein zweites Mal
+anzuwenden. Die bestehende reine 1vs1-Kampflogik, ihre Waffen und
+Trefferberechnung bleiben unangetastet. Save-Schema, Fraktionslogik und
+Karten-Generatoren bleiben unverändert. Vor Merge sind CI sowie echte
+Kampfwechsel- und Rückkehrtests in beiden Karten erforderlich.

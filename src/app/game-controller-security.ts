@@ -9,7 +9,8 @@ import { offerLegalDemand } from './game-controller-legal-decisions';
 export function tickFieldPirates(
   context: ControllerRuntimeContext,
   seconds: number,
-  field: AsteroidFieldRuntime
+  field: AsteroidFieldRuntime,
+  combatantId?: string
 ): void {
   const { economy, state } = context;
   const locationId = field.locationId;
@@ -87,7 +88,8 @@ export function tickFieldPirates(
         );
       }
       return started;
-    }
+    },
+    combatantId
   );
   const drone = field.drone;
   const defender = economy.sectorNpcs.npcs.find((npc) => npc.id === 'security-drone:' + locationId);

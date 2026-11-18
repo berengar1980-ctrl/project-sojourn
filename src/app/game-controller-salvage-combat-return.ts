@@ -4,11 +4,9 @@ import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-s
 import type { createSalvageLocalSpaceService } from '../systems/salvage';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 
-/** Reconcile destructible salvage fragments and both combat ship positions. */
-export function finishSalvageCombat(
+/** Apply the duel's moving wreck/debris poses while the local scene is still visible. */
+export function syncSalvageCombatField(
   field: SalvageField,
-  service: ReturnType<typeof createSalvageLocalSpaceService>,
-  npcSalvage: NpcLocalSalvageService,
   snapshot: StrategicCombatSnapshot
 ): void {
   if (snapshot.arena.asteroids && snapshot.arena.backdropSeed === field.seed) {
@@ -50,6 +48,16 @@ export function finishSalvageCombat(
     }
     invalidateSalvagePhysics(field);
   }
+}
+
+/** Reconcile destructible salvage fragments and both combat ship positions. */
+export function finishSalvageCombat(
+  field: SalvageField,
+  service: ReturnType<typeof createSalvageLocalSpaceService>,
+  npcSalvage: NpcLocalSalvageService,
+  snapshot: StrategicCombatSnapshot
+): void {
+  syncSalvageCombatField(field, snapshot);
   service.syncCombatPose(
     snapshot.attacker.position,
     snapshot.attacker.headingRadians,
