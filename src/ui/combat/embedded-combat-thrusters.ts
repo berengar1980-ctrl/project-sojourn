@@ -102,7 +102,10 @@ export function drawFieldNpcThrusters(
     return;
   }
   if (speed <= 1) return;
-  const intensity = Math.max(kind === 'mining' ? 0.35 : 0.32, Math.min(1, speed / (kind === 'mining' ? 110 : 100)));
+  const intensity = Math.max(
+    kind === 'mining' ? 0.35 : 0.32,
+    Math.min(1, speed / (kind === 'mining' ? 110 : 100))
+  );
   if (kind === 'mining') {
     engineRenderer.draw(context, source, geometry, intensity, timeSeconds, layer);
   } else if (layer === 'below') {
