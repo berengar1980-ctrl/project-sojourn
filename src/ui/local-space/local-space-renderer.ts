@@ -7,7 +7,8 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -59,7 +60,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
     this.context = context;
     this.model = model;
-    this.camera = new MapCamera(model.width, model.height);
+    this.camera = new PvPMapCamera(model.width, model.height);
     this.miningEffects = new MiningEffectsRenderer(context, this.camera);
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.asteroidBackdrop = new AsteroidBackdropRenderer(
@@ -100,9 +101,9 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     resizeMapCanvasBackingStore(this.canvas, this.context, rect.width, rect.height, ratio);
 
+    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
-      this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
       this.hasFitted = true;
     }
 
