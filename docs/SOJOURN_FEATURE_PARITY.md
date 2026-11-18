@@ -1406,7 +1406,7 @@ Frachterhüllen. Das ist keine fehlerhafte Piratenmarkierung. Für den lokalen
 Korsarenverkehr ersetzt ein über mehrere Simulationsschritte beibehaltener
 Asteroiden-Flankenwegpunkt die frühere opportunistische Richtungswahl.
 Im gemeinsamen 1vs1-Kampfkern hat die Kollisionsausweichroute Vorrang vor
-taktischer Deckung und Waffenorientierung; die Anfluggeschwindigkeit wird
-bei Hindernisnähe reduziert. Mining und Bergung zeigen nun dieselben
+taktischer Deckung, wenn ein unmittelbar naher Asteroid die Flugroute
+blockiert. Die bestehende Schubregelung für Angriffspassagen bleibt erhalten. Mining und Bergung zeigen nun dieselben
 Manövertexte und Burst-Schubmeter wie der eigenständige Duell-Renderer.
 Dies ändert weder Save-Schema noch Handels- und Wirtschaftsmechaniken.
