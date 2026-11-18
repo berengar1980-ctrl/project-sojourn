@@ -165,16 +165,16 @@ export class LocalPirateTraffic {
     });
   }
 
-  reconcile(pirates: readonly SectorNpcState[]): void {
+  reconcile(pirates: readonly SectorNpcState[], combatantId?: string): void {
     const active = new Set(
       pirates
         .filter(
           (npc) =>
             npc.pirate &&
             !npc.travel &&
-            !npc.combatMovement &&
+            (!npc.combatMovement || npc.id === combatantId) &&
             npc.hullHp > 0 &&
-            !npc.combatRecoverySeconds
+            (!npc.combatRecoverySeconds || npc.id === combatantId)
         )
         .map((npc) => npc.id)
     );
