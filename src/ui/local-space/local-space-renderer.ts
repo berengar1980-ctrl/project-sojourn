@@ -43,8 +43,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly shipImage = new Image();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: LocalSpaceViewModel;
-  protected combatImpactSerial = -1;
-  protected combatImpactAge = 1;
   protected hitAreas: readonly AsteroidHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
@@ -74,13 +72,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.resize();
   }
   update(model: LocalSpaceViewModel): void {
-    const impact = model.combat?.lastImpact;
-    if (impact && impact.serial !== this.combatImpactSerial) {
-      this.combatImpactSerial = impact.serial;
-      this.combatImpactAge = 0;
-    } else {
-      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
-    }
     this.model = model;
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
@@ -206,7 +197,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.drawNpcShips(width, height, timeSeconds)
     );
     this.drawSecurityDrone(width, height, timeSeconds);
-    this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     drawLocalSpaceExitGate(
