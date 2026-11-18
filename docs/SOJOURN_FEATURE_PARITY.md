@@ -1292,3 +1292,12 @@ Git-Historie wurden die 28 ursprünglich für Sojourn erstellten Schiffssprites
 (Frachter, Miner, Patrouille und Bergung, jeweils Varianten 01–07) bytegleich
 zurückgeholt. Bestehende Asset-Tests prüfen die Dateistandards. Schiffsdefinitionen,
 Hardpoints, Spielmechanik, Wirtschaft und Audio bleiben unverändert.
+
+## Review-Log (2026-11-18): Mk-III-Hülle und -Schild im Entwickler-Schiffwechsler
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Nur die
+explizite Test-Schiffauswahl verwendet zusätzlich zu Mk-III-Reaktor und
+Bug-Railgun nun auch Mk-III-Hülle und Mk-III-Schild. Alle übrigen regulären
+Komponenten bleiben Mk II. Die normale Karriere, NPC-Loadouts, Hardpoints
+und Speicherstruktur sind unverändert; ein Regressionstest prüft alle 28
+Schiffstypen einschließlich Energieversorgung und wiederholter Auswahl.

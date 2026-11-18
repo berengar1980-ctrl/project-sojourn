@@ -539,3 +539,13 @@ als statische Medien unter ihren bisherigen Dateipfaden wieder bereitgestellt.
 Es gibt keine Änderungen an der Schiffsauswahl, an Laufzeit- oder
 Persistenzzuständen, Komponenten, Hardpoints, Datenmodellen oder
 Career-Save-Schema. Der bestehende Fallback für fehlende Sprites bleibt erhalten.
+
+### Developer-Testauswahl mit Hülle und Schild Mk III (18. November 2026)
+
+Die ausschließlich im Entwickler-Schiffwechsler verwendete Komponentenbestückung
+rüstet nun Hülle und Schild auf Mk III statt Mk II auf. Weitere Systeme bleiben
+bei Mk II, der Bug erhält weiterhin die Mk-III-Railgun und der Generator
+bleibt Mk III beziehungsweise ausreichend leistungsoptimiert. Dies ändert
+weder die reguläre Starterausrüstung noch die NPC-Schiffe oder das Save-Schema.
+Die bereits persistierte Komponentenbelegung bleibt autoritativ; ein erneuter
+Test-Schiffswechsel ist reproduzierbar und wird für alle 28 Schiffe geprüft.
