@@ -52,8 +52,7 @@ export class MiningEffectsRenderer {
       );
       const interference = fractional(Math.abs(interferenceSeed) * 43758.5453);
       const interferenceStrength = interference < 0.055 ? 0.08 : interference < 0.13 ? 0.42 : 1;
-      const width =
-        baseWidth * (0.72 + pulse * 0.55) * (interferenceStrength < 1 ? 0.72 : 1);
+      const width = baseWidth * (0.72 + pulse * 0.55) * (interferenceStrength < 1 ? 0.72 : 1);
       drawMiningLaserBeam(this.context, start, target, width, interferenceStrength, pulse);
 
       if (interferenceStrength < 0.5) {
