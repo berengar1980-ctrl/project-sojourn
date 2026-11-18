@@ -1455,3 +1455,15 @@ Frachtergrafik. NPC-Bergbaustrahl und Traktor-Tether sind optisch unterscheidbar
 Der gemeinsame PvP-/Kampagnen-Kampfkern stoppt auch verfehlte Laserstrahlen
 an physisch festen Asteroiden. Zusätzliche Kampagnen-NPCs und Mining-/Bergungs-
 aktivitäten bleiben außerhalb des eigentlichen Gefechts bestehen.
+
+## Review-Log (2026-11-18): NPC-Sichtbarkeit und Mining-Strahlen
+
+**Keine Änderung der historischen Featurestatus.** Beim eingebetteten
+PvP-Kampf zeichnet der native PvP-Renderer weiterhin ausschließlich die beiden
+Kampfteilnehmer. Ein zusätzlicher, vom Kampfkern entkoppelter Szenenlayer
+erhält zivile Miner und Bergungsschiffe sichtbar; der Layer lässt die bereits
+vom PvP-Renderer gezeichneten Kämpfer aus. Miner bleiben im lokalen Feld
+während Kampf/Erholung als dieselbe Schiffsinstanz erhalten. Der Scan
+verwendet keinen irreführenden cyan gestrichelten Verbindungsstrahl mehr;
+aktive NPC-Miner verwenden dieselben roten Schneidlaser- und grünen
+Traktorstrahl-Zeichenfunktionen wie der Spieler.
