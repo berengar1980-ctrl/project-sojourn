@@ -7,6 +7,7 @@ import { bindScanDataToggle } from '../local-operations/local-operations-hud';
 import { bindLocalSpaceInput } from './local-space-input';
 
 import { LocalSpaceRenderer } from './local-space-renderer';
+import { createEmbeddedCombatHud } from '../combat/embedded-combat-hud';
 
 import type { SystemLogService } from '../../core/system-log-types';
 
@@ -142,6 +143,7 @@ function bindLongScanButton(
 
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
+  const combatHud = createEmbeddedCombatHud(shell);
   const controls = localSpaceControls(shell);
   const {
     canvas,
@@ -179,7 +181,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     options.onMiningResourceSelection
   );
 
-  const updateOverlay = (): void =>
+  const updateOverlay = (): void => {
+    combatHud.update(model.combat);
     updateLocalOverlay({
       model,
       controls,
@@ -188,9 +191,25 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       miningEventPanel,
       miningResourceSelector,
     });
+  };
 
   const observer = observeCanvas(canvas, renderer);
-  const unbindInput = bindNavigationInput(canvas, renderer, options, systemLog, updateOverlay);
+  const unbindInput = bindNavigationInput(
+    canvas,
+    renderer,
+    {
+      ...options,
+      onSelectAsteroid: (id) => {
+        if (!model.combat) options.onSelectAsteroid(id);
+      },
+      onSelectNpc: (id) => {
+        if (!model.combat) options.onSelectNpc(id);
+      },
+      onNavigate: (target) => (model.combat ? Promise.resolve(false) : options.onNavigate(target)),
+    },
+    systemLog,
+    updateOverlay
+  );
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
   claimButton.addEventListener('click', options.onToggleAsteroidClaim);
@@ -221,6 +240,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
+      if (model.combat) combatHud.update(model.combat);
       const now = performance.now();
       if (now - lastOverlayUpdate >= 100) {
         lastOverlayUpdate = now;
