@@ -260,11 +260,9 @@ const miningVisuals = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-beam-visuals.ts'),
   'utf8'
 );
-assert(
-  effects.includes('drawMiningTractorBeam(') &&
-    miningVisuals.includes('rgba(54, 229, 117'),
-  'tractor field must use the shared green pulse rendering'
-);
+const tractorShared = effects.includes('drawMiningTractorBeam(');
+const tractorGreen = miningVisuals.includes('rgba(54, 229, 117');
+assert(tractorShared && tractorGreen, 'tractor field must use the shared green pulse rendering');
 assert(operationsHud.includes('VORGANG ABBRECHEN'), 'active mining must provide a cancel action');
 assert(operationsHud.includes('FERNBEREICHSSCAN'), 'local UI must expose long-range scanning');
 assert(
