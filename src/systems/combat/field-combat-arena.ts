@@ -1,10 +1,6 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
-import type {
-  SalvageDebris,
-  SalvageField,
-  SalvageWreck,
-  SalvageSection,
-} from '../../core/salvage-types';
+import type { SalvageDebris, SalvageField } from '../../core/salvage-types';
+import type { SalvageWreck, SalvageSection } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { combatVisibleContactRadius } from './combat-visible-collider';
 import type { CombatVisualAsteroid, StrategicCombatArenaOptions } from './strategic-combat-types';
@@ -120,8 +116,9 @@ function sectionCombatBody(section: SalvageSection): CombatVisualAsteroid {
 /** One physical scene for campaign salvage combat and PvP; no synthetic PvP debris. */
 export function salvageFieldCombatArena(field: SalvageField): StrategicCombatArenaOptions {
   const knownIds = new Set(field.wrecks.map((wreck) => wreck.id));
+  const unknownDebris = (field.debris ?? []).filter((debris) => !knownIds.has(debris.id));
   const asteroids = [
-    ...(field.debris ?? []).filter((debris) => !knownIds.has(debris.id)).map(debrisCombatBody),
+    ...unknownDebris.map(debrisCombatBody),
     ...field.wrecks.map(wreckCombatBody),
     ...(field.sections ?? [])
       .filter((section) => !knownIds.has(section.id))
