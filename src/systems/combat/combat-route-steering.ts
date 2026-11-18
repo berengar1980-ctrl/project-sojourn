@@ -207,7 +207,7 @@ export function steerCombatRoute(
   if (waypoint && obstacle) {
     // Slow the approach before the collision shell: merely steering sideways
     // while carrying full forward inertia still rammed dense asteroid fields.
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.52);
+    targetSpeedFactor = Math.min(targetSpeedFactor, 0.8);
   }
 
   // Close contact with a blocking ship needs a committed *sideways* pass,
