@@ -209,11 +209,12 @@ export class LocalPirateTraffic {
     player: WorldPoint | null,
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint }>,
     asteroids: readonly LocalAsteroid[],
-    onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean
+    onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean,
+    combatantId?: string
   ): void {
     const dt = Math.max(0, Math.min(0.25, deltaSeconds));
     for (const pirate of this.ships.values()) {
-      if (pirate.awaitingCombat) continue;
+      if (pirate.awaitingCombat || pirate.npcId === combatantId) continue;
       const npc = npcs.find((entry) => entry.id === pirate.npcId);
       if (!npc || npc.hullHp <= 0) continue;
       const targets = [
