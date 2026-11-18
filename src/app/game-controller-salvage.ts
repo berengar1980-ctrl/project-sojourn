@@ -182,7 +182,7 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
       x: Math.cos(playerShip.headingRadians) * playerShip.speed,
       y: Math.sin(playerShip.headingRadians) * playerShip.speed,
     },
-   });
+  });
 }
 
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {

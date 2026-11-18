@@ -1,96 +1,120 @@
 'use strict';
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
-const { DUEL_MAPS, createDuelArena } = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/combat/duel-arena-presets.ts'
-);
-assert.deepEqual(
-  DUEL_MAPS.map((entry) => entry.id),
-  ['empty', 'scattered', 'asteroid_field', 'scrap_scattered', 'scrap_field']
-);
+const load = (p) => loadStandaloneTypeScriptModule(root, p);
+
+const { DUEL_MAPS, createDuelArena } = load('src/systems/combat/duel-arena-presets.ts');
+const { generateMiningSpace } = load('src/systems/local-space/local-space-generator.ts');
+const { generateSalvageField } = load('src/systems/salvage/salvage-field-generator.ts');
+
+assert.deepEqual(DUEL_MAPS.map((entry) => entry.id), [
+  'empty', 'scattered', 'asteroid_field', 'scrap_scattered', 'scrap_field',
+]);
 const empty = createDuelArena('empty', 1001);
-const sparse = createDuelArena('scattered', 1001);
-const dense = createDuelArena('asteroid_field', 1001);
-const scrapModerate = createDuelArena('scrap_scattered', 1001);
-const scrapDense = createDuelArena('scrap_field', 1001);
-assert(
-  scrapModerate.asteroids.length >= 25 && scrapModerate.asteroids.length < 65,
-  'moderate scrap map offers a manageable number of drifting 3D parts'
+assert.deepEqual(empty.asteroids, []);
+assert.deepEqual(empty.obstacles, []);
+assert.equal(
+  fs.existsSync(path.join(root, 'src/systems/combat/duel-scrap-presets.ts')),
+  false,
+  'standalone PvP map generator has been removed'
 );
-assert(
-  scrapDense.asteroids.length > scrapModerate.asteroids.length * 2,
-  'dense scrap map has at least twice the moderate number of parts'
-);
-assert(
-  scrapDense.asteroids.some((part) => part.sectionVariant),
-  'dense scrap field includes full-size modular 3D ship wrecks'
-);
-assert(
-  scrapModerate.asteroids.some((part) => part.debrisVariant),
-  'moderate scrap field includes 3D tractor-throwable fragments'
-);
-assert(
-  scrapDense.asteroids.filter((part) => part.kind === 'resource').length >= 5,
-  'dense map provides several heavy large-section obstacles'
-);
-assert.deepEqual(
-  createDuelArena('scrap_field', 1001),
-  scrapDense,
-  'PvP wreck field must be deterministic per seed'
-);
-assert.equal(empty.obstacles.length, 0, 'empty map stays clear');
-assert.equal(empty.asteroids.length, 0, 'empty map contains no drawn asteroids');
-assert(
-  dense.asteroids.some((rock) => rock.kind === 'debris'),
-  'dense field includes native debris'
-);
-assert(
-  dense.asteroids.some((rock) => rock.kind === 'resource'),
-  'dense field includes native mining rocks'
-);
-assert(dense.asteroids.length > dense.obstacles.length, 'small debris is visual only');
-assert(sparse.obstacles.length > 5, 'scattered map contains obstacles');
-assert(
-  dense.obstacles.length > sparse.obstacles.length * 3,
-  'dense map contains substantially more native rocks'
-);
-assert(
-  dense.width * dense.height < sparse.width * sparse.height * 0.6,
-  'dense preset packs native asteroids into a smaller playable region'
-);
-const middleRocks = dense.obstacles.filter(
-  (rock) => rock.position.x > dense.width * 0.4 && rock.position.x < dense.width * 0.6
-);
-assert(middleRocks.length >= 10, 'dense asteroid field must fill the central corridor');
-assert.deepEqual(createDuelArena('asteroid_field', 1001), dense, 'seed makes layouts reproducible');
-for (const map of [sparse, dense]) {
-  for (const asteroid of map.obstacles) {
-    assert(asteroid.radius > 0);
-    assert(asteroid.position.x > asteroid.radius);
-    assert(asteroid.position.y > asteroid.radius);
-    for (const spawn of [0.35, 0.65]) {
+
+function verifySpawns(arena) {
+  assert(arena.attackerPosition && arena.defenderPosition);
+  const distance = Math.hypot(
+    arena.attackerPosition.x - arena.defenderPosition.x,
+    arena.attackerPosition.y - arena.defenderPosition.y
+  );
+  assert(distance >= 900, 'starting combatants must be separated');
+  for (const point of [arena.attackerPosition, arena.defenderPosition]) {
+    for (const rock of arena.asteroids) {
       assert(
-        Math.hypot(asteroid.position.x - map.width * spawn, asteroid.position.y - map.height / 2) >
-          asteroid.radius + (map === dense ? 145 : 340),
-        'ship spawns have clearance'
+        Math.hypot(point.x - rock.position.x, point.y - rock.position.y) >=
+          rock.radius + (rock.kind === 'resource' ? 145 : 65),
+        'spawn clearance must not change the existing map'
       );
     }
   }
 }
-const arenaSource = fs.readFileSync(
-  path.join(root, 'src/systems/combat/duel-arena-presets.ts'),
-  'utf8'
+
+function verifyMining(kind, seed, density) {
+  const field = generateMiningSpace('duel', seed, undefined, density);
+  const arena = createDuelArena(kind, seed);
+  assert.equal(arena.width, field.width);
+  assert.equal(arena.height, field.height);
+  assert.equal(arena.backdropSeed, field.seed);
+  assert.equal(arena.asteroids.length, field.asteroids.length);
+  for (const [i, rock] of field.asteroids.entries()) {
+    const visual = arena.asteroids[i];
+    assert.equal(visual.id, rock.id);
+    assert.deepEqual(visual.position, rock.position);
+    assert.equal(visual.radius, rock.radius);
+    assert.equal(visual.rotation, rock.rotation);
+    assert.deepEqual(visual.velocity, rock.physics.velocity);
+    assert.equal(visual.collisionRadius, rock.collisionRadius);
+  }
+  assert.deepEqual(
+    arena.obstacles.map((obstacle) => obstacle.id),
+    field.asteroids.filter((rock) => rock.routeBlocking).map((rock) => rock.id)
+  );
+  verifySpawns(arena);
+  assert.deepEqual(createDuelArena(kind, seed), arena);
+  return arena;
+}
+
+function verifySalvage(kind, seed, density) {
+  const field = generateSalvageField('duel', seed, 2, density);
+  const arena = createDuelArena(kind, seed);
+  assert.equal(arena.width, field.width);
+  assert.equal(arena.height, field.height);
+  assert.equal(arena.backdropSeed, field.seed);
+  assert.equal(arena.asteroids.length, field.wrecks.length + field.debris.length);
+  const byId = new Map(arena.asteroids.map((rock) => [rock.id, rock]));
+  assert.equal(byId.size, arena.asteroids.length);
+  for (const part of [...field.wrecks, ...field.debris]) {
+    const visual = byId.get(part.id);
+    assert(visual, 'missing native map object ' + part.id);
+    assert.deepEqual(visual.position, part.position);
+    assert.equal(visual.radius, part.radius);
+    assert.deepEqual(visual.velocity, part.driftVelocity);
+    assert.equal(visual.rotation, part.rotation3d.z);
+    assert.equal(visual.debrisVariant, part.debrisVariant ?? part.variant);
+    assert.equal(visual.sectionVariant, part.sectionVariant);
+    assert.equal(visual.containerVariant, part.containerVariant);
+    assert.equal(visual.effectSeed, part.effectSeed);
+    assert(visual.collisionRadius > 0);
+  }
+  assert(
+    arena.obstacles.every((obstacle) => byId.get(obstacle.id)?.sectionVariant),
+    'only large structural hulls obstruct routes'
+  );
+  verifySpawns(arena);
+  assert.deepEqual(createDuelArena(kind, seed), arena);
+  return arena;
+}
+
+for (const seed of [1, 53, 415, 1001, 4242, 9001]) {
+  const scattered = verifyMining('scattered', seed, 'sparse');
+  const dense = verifyMining('asteroid_field', seed, 'standard');
+  assert(dense.asteroids.length > scattered.asteroids.length * 3);
+  const moderate = verifySalvage('scrap_scattered', seed, 'moderate');
+  const wrecks = verifySalvage('scrap_field', seed, 'standard');
+  assert(wrecks.asteroids.length > moderate.asteroids.length * 2);
+  assert(moderate.asteroids.some((rock) => rock.debrisVariant));
+  assert(wrecks.asteroids.some((rock) => rock.sectionVariant));
+}
+assert.deepEqual(
+  generateMiningSpace('duel', 1001),
+  generateMiningSpace('duel', 1001, undefined, 'standard')
 );
-const asteroidRenderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/combat-asteroid-renderer.ts'),
-  'utf8'
+assert.deepEqual(
+  generateSalvageField('duel', 1001, 2),
+  generateSalvageField('duel', 1001, 2, 'standard')
 );
-assert(arenaSource.includes('generateMiningSpace'), 'reuse mining field generator');
-assert(asteroidRenderer.includes('ProceduralSpaceBodyRenderer'), 'reuse real asteroid renderer');
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/duel-lobby.ts'), 'utf8');
-assert(lobby.includes('mapSelect.value as DuelMapKind'), 'selected map reaches simulation');
-console.log('PASS five deterministic PvP combat maps including moderate and dense 3D scrap');
+assert(lobby.includes('mapSelect.value as DuelMapKind'));
+console.log('PASS native campaign mining and salvage maps in all five duel presets');
