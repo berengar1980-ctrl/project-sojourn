@@ -5,7 +5,11 @@ import type { LocalSpaceViewModel } from '../../features/local-space/local-space
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import { projectHardpoint, spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import {
+  projectHardpoint,
+  spriteDrawOffset,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
 import { type ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 export interface AsteroidHitArea {
   readonly id: string;
@@ -158,7 +162,15 @@ export abstract class LocalSpaceSceneLayers {
             timeSeconds
           );
         } else if (target && npc.laserActive) {
-          this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds, geometry, npc.hardpoints);
+          this.drawNpcMiningBeam(
+            point,
+            target.position,
+            width,
+            height,
+            timeSeconds,
+            geometry,
+            npc.hardpoints
+          );
         }
       }
 
