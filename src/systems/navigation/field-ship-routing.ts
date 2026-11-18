@@ -33,7 +33,10 @@ function blocked(
   if (lengthSq < 1) return null;
   const t = Math.max(
     0,
-    Math.min(1, ((obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy) / lengthSq)
+    Math.min(
+      1,
+      ((obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy) / lengthSq
+    )
   );
   const x = start.x + dx * t - obstacle.position.x;
   const y = start.y + dy * t - obstacle.position.y;
@@ -98,10 +101,8 @@ export function fieldRouteTarget(
       ship.position.x - previous.waypoint.x,
       ship.position.y - previous.waypoint.y
     ) < Math.max(18, clearance * 0.45);
-    const changed = Math.hypot(
-      target.x - previous.target.x,
-      target.y - previous.target.y
-    ) > 130;
+    const changed =
+      Math.hypot(target.x - previous.target.x, target.y - previous.target.y) > 130;
     if (!reached && !changed && obstacles.some((rock) => rock.id === previous.obstacleId)) {
       return previous.waypoint;
     }
@@ -131,10 +132,10 @@ export function moveFieldShip(
   if (distance <= Math.max(2, step)) {
     ship.position = { ...waypoint };
     ship.speed = 0;
-    return waypoint === target || Math.hypot(
-      target.x - waypoint.x,
-      target.y - waypoint.y
-    ) < 2;
+    return (
+      waypoint === target ||
+      Math.hypot(target.x - waypoint.x, target.y - waypoint.y) < 2
+    );
   }
   ship.position = {
     x: ship.position.x + (dx / distance) * step,
