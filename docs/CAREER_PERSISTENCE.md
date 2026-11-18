@@ -632,3 +632,12 @@ bleiben unverändert. Speicherung während einer aktiven lokalen Operation
 bleibt entsprechend den vorhandenen Save-Gates gesperrt. Tests müssen
 insbesondere zerstörte Feldobjekte, Duell-Rückkehrpositionen und eine erneute
 Aufnahme der gewöhnlichen NPC-Arbeit nach Kampfende abdecken.
+
+### Lokaler Pirat bleibt während eines Duells sichtbar (PR nach #353)
+
+**Keine Speicheränderung:** Die lokale Piratenliste behält den aktiven
+Duellgegner während des strategischen combatMovement-Zustands bei.
+Die bisherige Kampf- und Rückkehrposition wird weiterhin mit den bestehenden
+Checkpoint-Feldern erfasst; inaktive Kampfschiffe werden wie zuvor aus dem
+Feld entfernt. Es gibt kein neues Save-Feld und keine neue Autorität.
+Ein Regressionstest prüft die Sichtbarkeit und verhindert doppelte Bewegung.

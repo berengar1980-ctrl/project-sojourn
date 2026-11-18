@@ -20,7 +20,9 @@ export function tickFieldPirates(
   const pirates = economy.sectorNpcs.npcs.filter(
     (npc) => npc.pirate && npc.locationId === locationId
   );
-  traffic.reconcile(pirates);
+  // Keep the active duel defender rendered, even when strategic combat marks
+  // it as combatMovement. Other combatants still use normal sector transitions.
+  traffic.reconcile(pirates, combatantId);
   traffic.tick(
     seconds,
     pirates,
