@@ -141,6 +141,9 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   protected draw(): void {
     if (this.sharedCombatRenderer) return;
+    this.drawLocalScene();
+  }
+  private drawLocalScene(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
