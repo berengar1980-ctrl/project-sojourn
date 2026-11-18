@@ -179,7 +179,7 @@ export class LocalPirateTraffic {
     });
   }
 
-  reconcile(pirates: readonly SectorNpcState[], combatantId?: string): void {
+  reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set(
       pirates
         .filter(
@@ -201,7 +201,16 @@ export class LocalPirateTraffic {
       this.ships.delete(id);
     }
     for (const id of active) {
-      if (this.ships.has(id)) continue;
+      const existing = this.ships.get(id);
+      if (existing) {
+        const npc = pirates.find((candidate) => candidate.id === id);
+        // A local battle no longer deletes its ship. Release the interception
+        // latch once the NPC has actually recovered from that engagement.
+        if (npc && !npc.combatMovement && !npc.combatRecoverySeconds) {
+          existing.awaitingCombat = false;
+        }
+        continue;
+      }
       this.ships.set(id, {
         npcId: id,
         position:
