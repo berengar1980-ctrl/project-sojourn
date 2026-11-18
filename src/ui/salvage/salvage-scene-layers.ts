@@ -1,3 +1,4 @@
+import { drawEmbeddedCombatThrusters } from '../combat/embedded-combat-thrusters';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
@@ -67,8 +68,19 @@ export abstract class SalvageSceneLayers {
       };
       const image = this.ensureNpcImage(npc.spriteUrl);
       const engineIntensity = npc.speed > 1 ? Math.max(0.32, Math.min(1, npc.speed / 100)) : 0;
+      const combatDefender =
+        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
 
-      if (engineIntensity > 0) {
+      if (combatDefender) {
+        drawEmbeddedCombatThrusters(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          combatDefender,
+          timeSeconds,
+          'below'
+        );
+      } else if (engineIntensity > 0) {
         this.engineEffects.drawExhaust(
           this.context,
           npc.hardpoints,
@@ -99,7 +111,16 @@ export abstract class SalvageSceneLayers {
       }
       this.context.restore();
 
-      if (engineIntensity > 0) {
+      if (combatDefender) {
+        drawEmbeddedCombatThrusters(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          combatDefender,
+          timeSeconds,
+          'above'
+        );
+      } else if (engineIntensity > 0) {
         this.engineEffects.drawGlow(
           this.context,
           npc.hardpoints,
@@ -108,8 +129,7 @@ export abstract class SalvageSceneLayers {
           timeSeconds
         );
       }
-      const combatDefender =
-        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
+
       if (combatDefender) {
         this.shieldImpacts.draw(
           this.context,
