@@ -252,7 +252,16 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.assignTarget(ship, npc);
       return;
     }
-    if (moveFieldShip(ship, workPoint(npc.id, wreck), localCruiseSpeed(npc), dt, this.options.field.wrecks.filter((entry) => entry.sectionVariant), 65)) {
+    if (
+      moveFieldShip(
+        ship,
+        workPoint(npc.id, wreck),
+        localCruiseSpeed(npc),
+        dt,
+        this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+        65
+      )
+    ) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -353,7 +362,16 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
 
       ship.salvageActive = false;
-      if (moveFieldShip(ship, ship.exitPoint, localCruiseSpeed(npc), dt, this.options.field.wrecks.filter((entry) => entry.sectionVariant), 65)) {
+      if (
+        moveFieldShip(
+          ship,
+          ship.exitPoint,
+          localCruiseSpeed(npc),
+          dt,
+          this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          65
+        )
+      ) {
         this.ships.splice(index, 1);
         this.options.depart(npc);
       }
