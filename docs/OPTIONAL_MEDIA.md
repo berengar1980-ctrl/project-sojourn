@@ -1,6 +1,6 @@
 # Optionale Medien nach Veröffentlichung
 
-Aus urheberrechtlicher Vorsicht sind alle bisher eingecheckten Sound- und Bilddateien aus dem aktuellen Stand entfernt. Spielregeln, Schiffsdefinitionen und Hardpoints bleiben erhalten. Ohne Medien spielt Sojourn mit stummem Audio, Platzhalterporträts, CSS-Hintergrundfarbe und den bereits vorhandenen geometrischen Schiffsdarstellungen.
+Die ehemals enthaltenen Audio- und Bilddateien wurden aus urheberrechtlicher Vorsicht zunächst entfernt. Die drei für Sojourn eigens generierten und vom Projektinhaber freigegebenen Charakterporträts (1, 4 und 5) sind aus der Git-Historie unverändert wiederhergestellt. Die übrigen Medien bleiben bis zur Rechteprüfung entfernt. Ohne solche optionalen Medien spielt Sojourn mit stummem Audio, Platzhalterporträts für nicht belegte Slots, dunklem CSS-Hintergrund und den vorhandenen geometrischen Schiffsdarstellungen. Spielregeln, Schiffsdefinitionen und Hardpoints bleiben erhalten.
 
 ## Neue, rechtlich freigegebene Audiodateien einbauen
 
@@ -15,7 +15,7 @@ Bei fehlenden Dateien sind die jeweiligen Kanäle stumm. Lautstärkeeinstellunge
 
 ## Porträts, Hintergrund und Schiffe
 
-- Porträts: `public/portraits/portrait-1.webp`, `portrait-4.webp`, `portrait-5.webp`; die Steckplätze 2 und 3 sind schon als Platzhalter vorgesehen
+- Wiederhergestellte Porträts: `public/portraits/portrait-1.webp`, `portrait-4.webp`, `portrait-5.webp`; die Steckplätze 2 und 3 bleiben Platzhalter
 - Menü-Hintergrund: `public/startscreen-background.webp`; ohne Datei bleibt die definierte dunkle Hintergrundfarbe
 - Schiffsgrafiken: `resources/ships/{freighter,mining,patrol,salvage}/` unter den unveränderten Dateinamen `*-variant-01.png` bis `*-variant-07.png`
 
