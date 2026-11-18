@@ -101,7 +101,8 @@ function keepPirateApart(ship: PirateRuntime, other: WorldPoint): void {
   const distance = Math.hypot(dx, dy);
   const minimum = 95;
   if (distance >= minimum) return;
-  const direction = distance > 0 ? Math.atan2(dy, dx) : (hashId(ship.npcId) % 360) * (Math.PI / 180);
+  const direction =
+    distance > 0 ? Math.atan2(dy, dx) : (hashId(ship.npcId) % 360) * (Math.PI / 180);
   ship.position = {
     x: other.x + Math.cos(direction) * minimum,
     y: other.y + Math.sin(direction) * minimum,
