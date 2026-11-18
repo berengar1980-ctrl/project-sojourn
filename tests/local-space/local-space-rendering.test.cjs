@@ -256,7 +256,15 @@ assert(
   effects.includes("(hardpoint.layer ?? 'below') === layer"),
   'mining and tractor effects must support above/below ship layers'
 );
-assert(effects.includes('rgba(54, 229, 117'), 'tractor field must use green pulse rendering');
+const miningVisuals = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/mining-beam-visuals.ts'),
+  'utf8'
+);
+assert(
+  effects.includes('drawMiningTractorBeam(') &&
+    miningVisuals.includes('rgba(54, 229, 117'),
+  'tractor field must use the shared green pulse rendering'
+);
 assert(operationsHud.includes('VORGANG ABBRECHEN'), 'active mining must provide a cancel action');
 assert(operationsHud.includes('FERNBEREICHSSCAN'), 'local UI must expose long-range scanning');
 assert(
