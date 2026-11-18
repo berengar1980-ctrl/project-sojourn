@@ -35,14 +35,21 @@ for (const seed of [1, 53, 415, 9001]) {
     const physical = nativeCombatAsteroids(map);
     assert.equal(physical.length, map.asteroids.length);
     assert(physical.some((rock) => rock.kind === 'debris' && !rock.routeBlocking));
-    assert(physical.every((rock) =>
-      rock.kind === 'resource' ? rock.routeBlocking : !rock.routeBlocking
-    ));
-    assert(map.obstacles.every((obstacle) => map.asteroids.some((rock) =>
-      rock.id === obstacle.id &&
-      rock.kind === 'resource' &&
-      (rock.collisionRadius ?? rock.radius) === obstacle.radius
-    )));
+    assert(
+      physical.every((rock) =>
+        rock.kind === 'resource' ? rock.routeBlocking : !rock.routeBlocking
+      )
+    );
+    assert(
+      map.obstacles.every((obstacle) =>
+        map.asteroids.some(
+          (rock) =>
+            rock.id === obstacle.id &&
+            rock.kind === 'resource' &&
+            (rock.collisionRadius ?? rock.radius) === obstacle.radius
+        )
+      )
+    );
   }
 }
 
@@ -52,7 +59,7 @@ const throwable = arena.asteroids.find(
 );
 assert(throwable, 'native salvage field must supply throwable debris');
 const actor = {
-  // The player has flown toward a real fragment instead of using synthetic PvP practice objects.
+  // Approach a real fragment; the duel generator must not add practice objects.
   position: { x: throwable.position.x - 180, y: throwable.position.y },
   velocity: { x: 0, y: 0 },
   shieldHp: 0,

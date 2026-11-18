@@ -11,9 +11,10 @@ const { DUEL_MAPS, createDuelArena } = load('src/systems/combat/duel-arena-prese
 const { generateMiningSpace } = load('src/systems/local-space/local-space-generator.ts');
 const { generateSalvageField } = load('src/systems/salvage/salvage-field-generator.ts');
 
-assert.deepEqual(DUEL_MAPS.map((entry) => entry.id), [
-  'empty', 'scattered', 'asteroid_field', 'scrap_scattered', 'scrap_field',
-]);
+assert.deepEqual(
+  DUEL_MAPS.map((entry) => entry.id),
+  ['empty', 'scattered', 'asteroid_field', 'scrap_scattered', 'scrap_field']
+);
 const empty = createDuelArena('empty', 1001);
 assert.deepEqual(empty.asteroids, []);
 assert.deepEqual(empty.obstacles, []);

@@ -91,7 +91,8 @@ function createResourceAsteroids(
   resourceIds?: readonly string[],
   density: 'sparse' | 'standard' = 'standard'
 ): LocalAsteroid[] {
-  const count = density === 'sparse' ? 15 + Math.floor(random() * 6) : 64 + Math.floor(random() * 17);
+  const count =
+    density === 'sparse' ? 15 + Math.floor(random() * 6) : 64 + Math.floor(random() * 17);
   const asteroids: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {

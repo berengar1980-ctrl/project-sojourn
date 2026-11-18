@@ -9,17 +9,30 @@ const load = (p) => loadStandaloneTypeScriptModule(root, p);
 const { createDuelArena } = load('src/systems/combat/duel-arena-presets.ts');
 const { createStrategicCombatService } = load('src/systems/combat/strategic-combat-service.ts');
 const setup = (id) => ({
-  id, name: id, shipId: 'patrol-v1', shieldHp: 119, hullHp: 96,
-  weapons: [], mines: [], hitChance: 0.68, dodgeChance: 0,
-  damageMultiplier: 1, criticalChance: 0, cycleTimeMultiplier: 1,
-  tractorRangeMeters: 400, preferredTactic: 'fight',
+  id,
+  name: id,
+  shipId: 'patrol-v1',
+  shieldHp: 119,
+  hullHp: 96,
+  weapons: [],
+  mines: [],
+  hitChance: 0.68,
+  dodgeChance: 0,
+  damageMultiplier: 1,
+  criticalChance: 0,
+  cycleTimeMultiplier: 1,
+  tractorRangeMeters: 400,
+  preferredTactic: 'fight',
 });
 
 for (const seed of [11, 106, 173, 1001, 4242]) {
   for (const kind of ['asteroid_field', 'scattered', 'scrap_field', 'scrap_scattered']) {
     const arena = createDuelArena(kind, seed);
     const snapshot = createStrategicCombatService(
-      setup('A'), setup('B'), seed, arena
+      setup('A'),
+      setup('B'),
+      seed,
+      arena
     ).getSnapshot();
     for (const side of ['attacker', 'defender']) {
       assert.equal(snapshot[side].shieldHp, 119);
@@ -36,7 +49,10 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
       arena.obstacles.map((obstacle) => obstacle.id),
       cover.map((body) => body.id)
     );
-    assert.equal(new Set(arena.asteroids.map((rock) => rock.id)).size, arena.asteroids.length);
+    assert.equal(
+      new Set(arena.asteroids.map((rock) => rock.id)).size,
+      arena.asteroids.length
+    );
   }
 }
 const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');
