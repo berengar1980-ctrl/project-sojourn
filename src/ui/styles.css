@@ -4147,7 +4147,9 @@ body.app-has-system-bar #app > .harrow-duel {
   max-height: min(78vh, 750px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 220ms ease, visibility 220ms ease;
+  transition:
+    opacity 220ms ease,
+    visibility 220ms ease;
 }
 .local-space-shell.is-embedded-combat .embedded-combat-hud {
   opacity: 1;
@@ -4160,7 +4162,9 @@ body.app-has-system-bar #app > .harrow-duel {
 .local-space-shell .system-log,
 .local-space-shell .local-mining-event,
 .local-space-shell .salvage-event {
-  transition: opacity 220ms ease, visibility 220ms ease;
+  transition:
+    opacity 220ms ease,
+    visibility 220ms ease;
 }
 .local-space-shell.is-embedded-combat .local-space-title,
 .local-space-shell.is-embedded-combat .local-operations-toolbar,
