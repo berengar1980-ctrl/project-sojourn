@@ -45,7 +45,7 @@ export interface NpcLocalMiningService {
   exportState(): LocalMinerCheckpoint;
   readonly ships: readonly LocalNpcMinerState[];
   syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
-  tick(deltaSeconds: number): void;
+  tick(deltaSeconds: number, combatantId?: string): void;
 }
 
 export interface NpcLocalMiningOptions {
