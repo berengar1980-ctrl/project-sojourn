@@ -31,7 +31,7 @@ assert(
   'only player interceptions are delayed; NPC-on-NPC fights stay live'
 );
 assert(
-  security.includes('state.combatReengageSeconds > 0') &&
+  security.includes('context.state.combatReengageSeconds <= 0') &&
     security.includes('context.engagements.activePlayerCombat()'),
   'local pirates must not rush the player while their duel is running or recovering'
 );
