@@ -5,12 +5,12 @@ import {
   reportLegalDeparture,
   reportLegalOrbitalArrival,
   advanceNpcPenalCustody,
-  tickLegalDetention,
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { localMiningCombatArena } from './game-controller-combat';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
+import { skipControllerTickForCombatResult } from './game-controller-combat-result-guard';
 import type { SalvageField } from '../core/salvage-types';
 import { snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
@@ -34,7 +34,7 @@ import {
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
-import { inspectDockArrival, tickCustoms, inspectPatrolTravel } from './game-controller-customs';
+import { inspectDockArrival, inspectPatrolTravel } from './game-controller-customs';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { createCampaignNavigationTracker } from './game-controller-campaign-events';
 import { tickControllerScene } from './game-controller-scene-tick';
@@ -354,15 +354,7 @@ function mountControllerSalvage(
   mountControllerSwitcher(context);
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
-  // Acknowledging the combat outcome is a modal transaction: do not advance
-  // campaigns, AI attacks or scene transitions behind the result dialog.
-  if (context.state.combatResultPending) return;
-  context.state.combatReengageSeconds = Math.max(
-    0,
-    context.state.combatReengageSeconds - Math.max(0, deltaSeconds)
-  );
-  if (tickLegalDetention(context, deltaSeconds)) return;
-  if (tickCustoms(context)) return;
+  if (skipControllerTickForCombatResult(context, deltaSeconds)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
   tickControllerNpcOperations(economy, deltaSeconds);
