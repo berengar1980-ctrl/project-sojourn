@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Diagnostic pirate-test formatter diff
+        run: npx prettier tests/local-space/local-pirate-background-continuity.test.cjs | diff -u tests/local-space/local-pirate-background-continuity.test.cjs - || true
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
