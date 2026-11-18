@@ -1,3 +1,4 @@
+import { drawEmbeddedCombatThrusters } from '../combat/embedded-combat-thrusters';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
@@ -78,8 +79,19 @@ export abstract class LocalSpaceSceneLayers {
       };
       const image = this.ensureNpcImage(npc.spriteUrl);
       const engineIntensity = npc.speed > 1 ? Math.max(0.35, Math.min(1, npc.speed / 110)) : 0;
+      const combatDefender =
+        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
 
-      if (engineIntensity > 0) {
+      if (combatDefender) {
+        drawEmbeddedCombatThrusters(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          combatDefender,
+          timeSeconds,
+          'below'
+        );
+      } else if (engineIntensity > 0) {
         this.engineEffects.draw(
           this.context,
           npc.hardpoints,
@@ -111,7 +123,16 @@ export abstract class LocalSpaceSceneLayers {
       }
       this.context.restore();
 
-      if (engineIntensity > 0) {
+      if (combatDefender) {
+        drawEmbeddedCombatThrusters(
+          this.context,
+          npc.hardpoints,
+          geometry,
+          combatDefender,
+          timeSeconds,
+          'above'
+        );
+      } else if (engineIntensity > 0) {
         this.engineEffects.draw(
           this.context,
           npc.hardpoints,
@@ -121,8 +142,7 @@ export abstract class LocalSpaceSceneLayers {
           'above'
         );
       }
-      const combatDefender =
-        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
+
       if (combatDefender) {
         this.shieldImpacts.draw(
           this.context,
