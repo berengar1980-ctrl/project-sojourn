@@ -147,8 +147,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
   private drawFrame(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const { width, height } = rect;
     const timeSeconds = performance.now() / 1000;
     const geometry = this.shipGeometry(width, height);
 
