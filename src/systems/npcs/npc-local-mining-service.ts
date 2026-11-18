@@ -30,7 +30,6 @@ import {
   cargoUsed,
   chooseEventChoice,
   approachPoint,
-  moveToward,
   SCAN_SECONDS,
   MINING_CYCLE_SECONDS,
   type NpcLocalMiningService,
