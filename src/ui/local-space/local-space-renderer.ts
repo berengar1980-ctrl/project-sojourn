@@ -5,7 +5,7 @@ import type {
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
-import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
+import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -392,16 +392,20 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   }
   protected drawShip(geometry: ShipScreenGeometry, timeSeconds: number): void {
     const source = this.model.ship.hardpoints;
-    const engineIntensity = Math.max(0, Math.min(1, this.model.ship.speed / 240));
-    const maneuverDemand = {
-      turnRateRadiansPerSecond: this.model.ship.turnRateRadiansPerSecond,
-      angularThrust: this.model.ship.angularThrust,
-      lateralThrust: this.model.ship.lateralThrust,
-      longitudinalThrust: longitudinalManeuverDemand(this.model.ship.speed),
-    };
-
-    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds, 'below');
-    this.maneuverEffects.draw(this.context, source, geometry, maneuverDemand, timeSeconds, 'below');
+    const drawThrusters = (layer: 'below' | 'above'): void =>
+      drawFieldPlayerThrusters(
+        this.context,
+        source,
+        geometry,
+        this.model.ship,
+        this.model.combat?.attacker ?? null,
+        timeSeconds,
+        layer,
+        this.engineEffects,
+        this.maneuverEffects,
+        'mining'
+      );
+    drawThrusters('below');
 
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
@@ -423,8 +427,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
     this.context.restore();
 
-    this.engineEffects.draw(this.context, source, geometry, engineIntensity, timeSeconds, 'above');
-    this.maneuverEffects.draw(this.context, source, geometry, maneuverDemand, timeSeconds, 'above');
+    drawThrusters('above');
 
     this.shieldImpacts.draw(
       this.context,
