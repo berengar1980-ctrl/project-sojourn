@@ -26,10 +26,6 @@ export function createEmbeddedCombatHud(shell: HTMLElement): {
         shell.classList.toggle('is-embedded-combat', active);
         player.setAttribute('aria-hidden', String(!active));
         enemy.setAttribute('aria-hidden', String(!active));
-        if (!active) {
-          player.replaceChildren();
-          enemy.replaceChildren();
-        }
       }
       if (!snapshot) return;
       player.innerHTML = combatantHud(snapshot.attacker, snapshot.elapsedSeconds);
