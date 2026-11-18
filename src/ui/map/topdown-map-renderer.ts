@@ -70,8 +70,7 @@ export class TopdownMapRenderer {
     this.npcShips = new NpcShipMapRenderer(context, () => this.draw());
     this.resize();
   }
-
-  update(model: StarMapViewModel): void {
+update(model: StarMapViewModel): void {
     if (model.worldId !== this.model.worldId) {
       this.camera = new MapCamera(model.width, model.height);
       this.orbitalProjection.reset();
@@ -82,8 +81,7 @@ export class TopdownMapRenderer {
     if (!this.hasFitted) this.resize();
     else this.draw();
   }
-
-  resize(): void {
+resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     // Match the local-space renderer's pixel budget on high-DPI displays.
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
@@ -98,8 +96,7 @@ export class TopdownMapRenderer {
     }
     this.draw();
   }
-
-  resetCamera(): void {
+resetCamera(): void {
     const rect = this.canvas.getBoundingClientRect();
     this.camera.fit(rect.width, rect.height, this.contentBounds());
     this.draw();
@@ -139,12 +136,10 @@ export class TopdownMapRenderer {
     this.camera.zoomAt(factor, { x, y }, rect.width, rect.height);
     this.draw();
   }
-
-  pickContacts(x: number, y: number): StarMapPickOption[] {
+pickContacts(x: number, y: number): StarMapPickOption[] {
     return collectStarMapPickOptions(this.hitAreas, this.model, x, y);
   }
-
-  pickContact(x: number, y: number): StarMapPick | null {
+pickContact(x: number, y: number): StarMapPick | null {
     const first = this.pickContacts(x, y)[0];
     return first ? { kind: first.kind, id: first.id } : null;
   }
