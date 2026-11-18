@@ -664,3 +664,13 @@ Ein separates Rückkehr-Spawn an der Kartenkante entfällt für diese Fälle.
 Die lokale NPC-Verwaltung verändert während eines fremdverwalteten Kampfs
 nicht die Kampfposition. Piraten werden im lokalen Renderer als KORSAR
 markiert. Kein Eingriff in die 1vs1-Physik oder den Save-Vertrag.
+
+### Korsaren-Navigation und Kampfanzeige (2026-11-18)
+
+**Save-Schema unverändert:** Lokale Korsaren behalten ihre Positionen und
+Kampfzustände im bestehenden Checkpoint. Der neue flankierende Wegpunkt ist
+bewusst nur flüchtiger Flugzustand: Er wird nach dem Laden aus den vorhandenen
+Asteroiden und dem aktiven Ziel neu berechnet. Dadurch bleiben alte Spielstände
+kompatibel. Die Kampagnenkarten zeichnen Strategie-/Manövertext und Burst-
+Schubleiste mit denselben Funktionen wie der eigenständige PvP-/Duellmodus.
+Die Kampfschaden- und Schildsimulation erhält keine separaten Implementierungen.
