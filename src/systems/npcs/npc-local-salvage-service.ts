@@ -50,7 +50,7 @@ export interface LocalNpcSalvagerState {
 export interface NpcLocalSalvageService {
   readonly ships: readonly LocalNpcSalvagerState[];
   syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
-  tick(deltaSeconds: number): void;
+  tick(deltaSeconds: number, combatantId?: string, skipPlayer?: boolean): void;
 }
 
 export interface NpcLocalSalvageOptions {
@@ -313,7 +313,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     }
     return;
   };
-  tick = (deltaSeconds: number): void => {
+  tick = (deltaSeconds: number, combatantId?: string, skipPlayer = false): void => {
     const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
     if (dt <= 0) return;
     this.syncArrivals();
@@ -321,6 +321,8 @@ class LocalSalvageService implements NpcLocalSalvageService {
     for (let index = this.ships.length - 1; index >= 0; index -= 1) {
       const ship = this.ships[index]!;
       const npc = this.byId.get(ship.npcId);
+      // Keep the combatant under duel authority; do not remove or move it.
+      if (ship.npcId === combatantId) continue;
       if (
         !npc ||
         npc.hullHp <= 0 ||
@@ -357,11 +359,12 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
     }
 
-    this.resolveLocalCollisions();
+    this.resolveLocalCollisions(combatantId, skipPlayer);
   };
-  private resolveLocalCollisions = (): void => {
-    const playerState = this.options.getPlayerShipState?.();
+  private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {
+    const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
+      if (local.npcId === combatantId) return [];
       const definition = getShipDefinition(local.shipId);
       return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
     });
