@@ -23,9 +23,9 @@ const DRONE_SCAN_RADIUS = 460;
  * A ship is reported only while it is actively mining a protected asteroid.
  */
 export class AsteroidSecurityDrone {
-  private position: WorldPoint;
-  private headingRadians = 0;
-  private speed = 0;
+  position: WorldPoint;
+  headingRadians = 0;
+  speed = 0;
   private readonly patrol: readonly WorldPoint[];
   private nextWaypoint = 0;
   private readonly observed = new Set<string>();
