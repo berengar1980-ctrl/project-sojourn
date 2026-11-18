@@ -134,6 +134,14 @@
     "src/systems/ships/ship-developer-test-loadout.ts": {
       "mode": "derived",
       "reason": "Stateless developer-only preset that updates the existing authoritative ShipLoadoutService; loadouts are already persisted by the Career ships checkpoint."
+    },
+    "src/systems/combat/field-combat-arena.ts": {
+      "mode": "derived",
+      "reason": "Pure conversion of already generated mining and salvage field bodies to combat snapshots; holds no independent mutable career authority."
+    },
+    "src/systems/combat/combat-field-spawns.ts": {
+      "mode": "derived",
+      "reason": "Pure deterministic selection of safe initial PvP positions among existing bodies; no persistent gameplay state."
     }
   }
 }

@@ -1339,3 +1339,15 @@ weit entfernte Regionen werden je Pixel ausgelassen, wenn sie mathematisch
 keinen Einfluss haben können. Die neuen Performance-Zähler helfen, die
 verbleibenden lokalen Draw-Ausreißer aus `?perf=1` zuzuordnen.
 Spielsysteme, Savegames und Schiffs-Assetstandards bleiben unangetastet.
+
+## Review-Log (2026-11-18): PvP verwendet native Kampagnenfelder
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Die
+PvP-Kampfkarten werden ohne nachträgliche Neuverteilung, Größenanpassung,
+zweite Schrottfeld-Ebene oder erfundene Trainings-Fragmente direkt aus dem
+Mining- und Bergungsgenerator der Kampagne übernommen. Dichtevarianten
+entstehen ausschließlich durch optionale Parameter der Generatoren.
+Vollständige Objektdaten einschließlich IDs, Position, Physik, Kollisionsradius
+und 3D-Wrackmodellen gelangen über einen gemeinsamen Adapter in die bereits
+geteilte Kampfsimulation. Kampagnen-Standardeinstellungen, Schiffsausrüstung,
+KI, Savegames und bestehende Kampf-Grafik bleiben unverändert.

@@ -11,6 +11,7 @@ import {
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
+import { salvageFieldCombatArena } from '../systems/combat/field-combat-arena';
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
@@ -168,8 +169,7 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
   if (!target) return;
   const playerShip = service.getSnapshot().ship;
   options.onAttackNpc?.(id, {
-    width: field.width,
-    height: field.height,
+    ...salvageFieldCombatArena(field),
     attackerPosition: { ...playerShip.position },
     defenderPosition: { ...target.position },
     attackerHeadingRadians: playerShip.headingRadians,
@@ -182,29 +182,6 @@ function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
       x: Math.cos(playerShip.headingRadians) * playerShip.speed,
       y: Math.sin(playerShip.headingRadians) * playerShip.speed,
     },
-    // The tractor weapon already captures CombatVisualAsteroid objects. Supplying
-    // small wreck parts here enables exactly the existing five-phase throw.
-    asteroids: (field.debris ?? []).map((part) => ({
-      id: part.id,
-      position: { ...part.position },
-      velocity: { ...part.driftVelocity },
-      angularVelocity: part.spin3d.z,
-      rotation: part.rotation3d.z,
-      radius: part.radius,
-      kind: 'debris' as const,
-    })),
-    obstacles: [
-      ...field.wrecks.map((wreck) => ({
-        id: wreck.id,
-        position: { ...wreck.position },
-        radius: wreck.radius,
-      })),
-      ...(field.sections ?? []).map((section) => ({
-        id: section.id,
-        position: { ...section.position },
-        radius: section.radius,
-      })),
-    ],
   });
 }
 

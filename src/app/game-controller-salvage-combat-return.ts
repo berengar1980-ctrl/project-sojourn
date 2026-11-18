@@ -11,19 +11,42 @@ export function finishSalvageCombat(
   npcSalvage: NpcLocalSalvageService,
   snapshot: StrategicCombatSnapshot
 ): void {
-  if (field.debris && snapshot.arena.asteroids) {
+  if (snapshot.arena.asteroids && snapshot.arena.backdropSeed === field.seed) {
     const remaining = new Map(snapshot.arena.asteroids.map((rock) => [rock.id, rock]));
-    // Once captured and thrown, the original fragment must not respawn in the field.
-    for (let index = field.debris.length - 1; index >= 0; index -= 1) {
-      const part = field.debris[index]!;
+    // Reconcile ALL native parts; a thrown container must not respawn as loot.
+    for (let index = field.wrecks.length - 1; index >= 0; index -= 1) {
+      const wreck = field.wrecks[index]!;
+      const live = remaining.get(wreck.id);
+      if (!live) {
+        field.wrecks.splice(index, 1);
+        continue;
+      }
+      wreck.position = { ...live.position };
+      wreck.rotation = live.rotation;
+      wreck.driftVelocity = { ...live.velocity };
+      if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: live.rotation };
+    }
+    for (let index = (field.debris?.length ?? 0) - 1; index >= 0; index -= 1) {
+      const part = field.debris![index]!;
       const live = remaining.get(part.id);
       if (!live) {
-        field.debris.splice(index, 1);
+        field.debris!.splice(index, 1);
         continue;
       }
       part.position = { ...live.position };
       part.driftVelocity = { ...live.velocity };
       part.rotation3d = { ...part.rotation3d, z: live.rotation };
+    }
+    for (let index = (field.sections?.length ?? 0) - 1; index >= 0; index -= 1) {
+      const section = field.sections![index]!;
+      const live = remaining.get(section.id);
+      if (!live) {
+        field.sections!.splice(index, 1);
+        continue;
+      }
+      section.position = { ...live.position };
+      section.driftVelocity = { ...live.velocity };
+      section.rotation3d = { ...section.rotation3d, z: live.rotation };
     }
     invalidateSalvagePhysics(field);
   }

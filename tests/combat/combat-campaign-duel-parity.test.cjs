@@ -55,7 +55,8 @@ assert.equal(first.speed, Math.hypot(-23, 41));
 const defaults = geometry.createCombatant(attacker, 'attacker', prepared);
 assert.deepEqual(defaults.position, options.attackerPosition);
 const campaign = read('src/app/game-controller.ts');
-const campaignArena = read('src/app/game-controller-combat.ts');
+const campaignArena = read('src/systems/combat/field-combat-arena.ts');
+const campaignEntry = read('src/app/game-controller-combat.ts');
 assert(
   /localMiningCombatArena\s*\(\s*local\.instance\s*,\s*state\.localSpace!\.getShipWorldVelocity\(\)\s*\)/.test(
     campaign
@@ -63,7 +64,8 @@ assert(
   'campaign delegates arena setup using full local inertial velocity'
 );
 assert(
-  campaignArena.includes('asteroids: instance.asteroids.map('),
+  campaignArena.includes('asteroids: instance.asteroids.map(') &&
+    campaignEntry.includes('miningFieldCombatArena as localMiningCombatArena'),
   'mining arena preserves moving asteroid bodies'
 );
 assert(

@@ -111,6 +111,7 @@ try {
 const combat = read('src/ui/combat/strategic-combat-renderer.ts');
 const background = read('src/ui/combat/combat-asteroid-backdrop.ts');
 const controller = read('src/app/game-controller-combat.ts');
+const fieldAdapter = read('src/systems/combat/field-combat-arena.ts');
 const service = read('src/systems/combat/strategic-combat-service.ts');
 const arena = read('src/systems/combat/strategic-combat-arena.ts');
 const pvp = read('src/systems/combat/duel-arena-presets.ts');
@@ -125,10 +126,16 @@ assert.ok(
   'both campaign and PvP combat cap high-DPI canvas resolution'
 );
 assert.ok(background.includes('cameraZoomY: zoomY'), 'account for combat X/Y camera scaling');
-assert.ok(controller.includes('backdropSeed: instance.seed'), 'mining combat keeps field seed');
+assert.ok(
+  controller.includes('field-combat-arena') && fieldAdapter.includes('backdropSeed: instance.seed'),
+  'mining combat keeps the native field seed through the shared adapter'
+);
 assert.ok(service.includes('runtime.arena.backdropSeed'), 'snapshot carries field seed');
 assert.ok(arena.includes('arenaOptions.backdropSeed'), 'arena preserves field seed');
-assert.ok(pvp.includes('backdropSeed: seed'), 'PvP asteroid arenas retain their setup seed');
+assert.ok(
+  pvp.includes('generateMiningSpace') && pvp.includes('miningFieldCombatArena(field'),
+  'PvP must pass the campaign field and its original seed to the same adapter'
+);
 assert.ok(
   rockPainter.includes('const viewportWidth = context?.canvas.clientWidth') &&
     rockPainter.indexOf('center.x < -radius * 2') < rockPainter.indexOf('renderer.drawAsteroid('),
