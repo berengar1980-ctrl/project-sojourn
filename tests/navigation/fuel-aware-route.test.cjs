@@ -64,10 +64,7 @@ Object.defineProperty(unreachableWorld, 'regions', {
   },
 });
 assert.equal(planFuelRoute({ ...input, world: unreachableWorld, credits: 0 }), null);
-assert.equal(
-  planFuelRoute({ ...input, world: unreachableWorld, fuel: 1, credits: 100000 }),
-  null
-);
+assert.equal(planFuelRoute({ ...input, world: unreachableWorld, fuel: 1, credits: 100000 }), null);
 const direct = planFuelRoute({ ...input, destinationId: 'refuel-a', credits: 0 });
 assert(direct);
 assert.deepEqual(direct.stopIds, []);
