@@ -26,7 +26,7 @@ for (const field of [mining, salvage]) {
   assert(field.includes('this.camera.worldToScreen(beam.origin, width, height)'));
   assert(field.includes('this.camera.worldToScreen(beam.end, width, height)'));
   assert(!field.includes('beam.weaponIndex % weaponHardpoints.length'));
-  assert(field.includes('drawEmbeddedCombatThrusters('));
+  assert(field.includes('drawFieldNpcThrusters('));
   assert(field.includes('combatDefender'));
 }
 assert(
