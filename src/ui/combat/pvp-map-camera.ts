@@ -1,6 +1,6 @@
 import type { WorldPoint } from '../../core/world-types';
 import { MapCamera, type MapBounds, type ScreenPoint } from '../map/map-camera';
-import { CombatCamera } from './combat-camera';
+import { CombatCamera, type CombatCameraPose } from './combat-camera';
 
 /**
  * MapCamera-compatible adapter backed by the SAME CombatCamera as standalone PvP.
@@ -15,6 +15,15 @@ export class PvPMapCamera extends MapCamera {
     private readonly arenaHeight: number
   ) {
     super(arenaWidth, arenaHeight);
+  }
+
+  pose(): CombatCameraPose {
+    return this.combat.pose();
+  }
+
+  restorePose(pose: CombatCameraPose): void {
+    this.combat.restorePose(pose);
+    this.setViewport(this.viewWidth, this.viewHeight);
   }
 
   override fit(_viewWidth: number, _viewHeight: number, _bounds?: MapBounds): void {
