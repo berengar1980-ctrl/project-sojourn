@@ -1,7 +1,10 @@
 import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visuals';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
-import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
+import type {
+  LocalNpcShipView,
+  LocalSpaceViewModel,
+} from '../../features/local-space/local-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -147,32 +150,7 @@ export abstract class LocalSpaceSceneLayers {
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
       if (npc.isPirate) this.drawPirateMarker(point, geometry);
 
-      // A ship in battle cannot continue painting its former mining beam.
-      if (npc.targetAsteroidId && !combatDefender) {
-        const target = this.model.asteroids.find(
-          (asteroid) => asteroid.id === npc.targetAsteroidId
-        );
-        if (target && npc.phase === 'scanning') {
-          this.drawNpcMinerScan(
-            point,
-            target.position,
-            width,
-            height,
-            npc.scanProgress ?? 0,
-            timeSeconds
-          );
-        } else if (target && npc.laserActive) {
-          this.drawNpcMiningBeam(
-            point,
-            target.position,
-            width,
-            height,
-            timeSeconds,
-            geometry,
-            npc.hardpoints
-          );
-        }
-      }
+      this.drawNpcWorkEffects(npc, point, geometry, width, height, timeSeconds);
 
       const zoom = this.camera.getRelativeZoom();
       if (zoom >= 1.55) {
@@ -183,6 +161,39 @@ export abstract class LocalSpaceSceneLayers {
       }
     }
     return hits;
+  }
+  private drawNpcWorkEffects(
+    npc: LocalNpcShipView,
+    point: ScreenPoint,
+    geometry: ShipScreenGeometry,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    // Combatants never retain a mining beam during PvP.
+    if (!npc.targetAsteroidId || this.model.combat?.defender.id === npc.id) return;
+    const target = this.model.asteroids.find((rock) => rock.id === npc.targetAsteroidId);
+    if (!target) return;
+    if (npc.phase === 'scanning') {
+      this.drawNpcMinerScan(
+        point,
+        target.position,
+        width,
+        height,
+        npc.scanProgress ?? 0,
+        timeSeconds
+      );
+    } else if (npc.laserActive) {
+      this.drawNpcMiningBeam(
+        point,
+        target.position,
+        width,
+        height,
+        timeSeconds,
+        geometry,
+        npc.hardpoints
+      );
+    }
   }
   protected drawNpcMinerScan(
     _shipPoint: ScreenPoint,
