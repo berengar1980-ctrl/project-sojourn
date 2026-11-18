@@ -191,8 +191,8 @@ export function steerCombatRoute(
     posture.destination
   );
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
-  // The route around solid rock takes priority over a tactical cover maneuver.
-  // Cover and gun orientation may resume once the clearance leg is completed.
+  // A committed clearance route takes priority over optional tactical cover.
+  // Weapon aim is tracked independently from the RCS travel vector.
   direction = applyMineAvoidance(waypoint ?? cover ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
   // Never override a committed asteroid clearance waypoint with radial repulsion.
