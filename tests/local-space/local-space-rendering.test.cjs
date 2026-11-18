@@ -395,8 +395,8 @@ assert(
 );
 assert(
   controller.includes('advanceControllerFieldWorld(context, deltaSeconds)') &&
-    fieldBridge.includes('field.miners.tick(seconds)') &&
-    fieldBridge.includes('tickFieldPirates(context, seconds, field)') &&
+    fieldBridge.includes('field.miners.tick(seconds, activeCombat?.defender.id)') &&
+    fieldBridge.includes('tickFieldPirates(context, seconds, field, activeCombat?.defender.id)') &&
     fieldBridge.includes('tickFieldSecurity(context, seconds, field)'),
   'campaign clock must advance shared miners, pirates and security even without a local scene'
 );
