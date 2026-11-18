@@ -70,7 +70,8 @@ export class TopdownMapRenderer {
     this.npcShips = new NpcShipMapRenderer(context, () => this.draw());
     this.resize();
   }
-update(model: StarMapViewModel): void {
+
+  update(model: StarMapViewModel): void {
     if (model.worldId !== this.model.worldId) {
       this.camera = new MapCamera(model.width, model.height);
       this.orbitalProjection.reset();
@@ -81,7 +82,8 @@ update(model: StarMapViewModel): void {
     if (!this.hasFitted) this.resize();
     else this.draw();
   }
-resize(): void {
+
+  resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     // Match the local-space renderer's pixel budget on high-DPI displays.
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
@@ -96,7 +98,8 @@ resize(): void {
     }
     this.draw();
   }
-resetCamera(): void {
+
+  resetCamera(): void {
     const rect = this.canvas.getBoundingClientRect();
     this.camera.fit(rect.width, rect.height, this.contentBounds());
     this.draw();
@@ -136,10 +139,12 @@ resetCamera(): void {
     this.camera.zoomAt(factor, { x, y }, rect.width, rect.height);
     this.draw();
   }
-pickContacts(x: number, y: number): StarMapPickOption[] {
+
+  pickContacts(x: number, y: number): StarMapPickOption[] {
     return collectStarMapPickOptions(this.hitAreas, this.model, x, y);
   }
-pickContact(x: number, y: number): StarMapPick | null {
+
+  pickContact(x: number, y: number): StarMapPick | null {
     const first = this.pickContacts(x, y)[0];
     return first ? { kind: first.kind, id: first.id } : null;
   }
@@ -152,7 +157,6 @@ pickContact(x: number, y: number): StarMapPick | null {
     const width = rect.width;
     const height = rect.height;
     this.context.clearRect(0, 0, width, height);
-
     const timeSeconds = performance.now() / 1000;
     measurePerformance('canvas.star.background', () => {
       if (this.displayMode === 'nav') {
@@ -328,7 +332,6 @@ pickContact(x: number, y: number): StarMapPick | null {
       }))
       .filter((orbit): orbit is { radius: number; emphasized: boolean } => orbit.radius != null)
       .sort((a, b) => a.radius - b.radius);
-
     this.context.save();
     for (const orbit of starOrbits) {
       this.context.strokeStyle = orbit.emphasized
@@ -363,7 +366,6 @@ pickContact(x: number, y: number): StarMapPick | null {
   private drawRoute(width: number, height: number, playerPoint: ScreenPoint): void {
     const route = this.model.route;
     if (!route || route.points.length < 2) return;
-
     const routePoints = [...route.points];
     if (this.model.navigation.isTravelling) routePoints[0] = this.model.playerShip.position;
 
@@ -383,7 +385,6 @@ pickContact(x: number, y: number): StarMapPick | null {
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius = mapLocationVisualRadius(location, this.camera.getRelativeZoom());
-
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
 
@@ -405,7 +406,6 @@ pickContact(x: number, y: number): StarMapPick | null {
     drawSectorEventMarker(this.context, location.id, point, radius);
     const cargoRating = this.cargoOverlay.get(location.id);
     if (cargoRating) drawCargoMarketMarker(this.context, point, radius, cargoRating);
-
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
       this.context.lineWidth = 2;
