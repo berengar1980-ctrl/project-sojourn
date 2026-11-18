@@ -54,6 +54,20 @@ assert.equal(canFuelAt(locations[1]), true);
 assert.equal(canFuelAt({ ...locations[1], kind: 'asteroid-field' }), false);
 assert.equal(planFuelRoute({ ...input, credits: 0 }), null);
 assert.equal(planFuelRoute({ ...input, credits: 400 }), null);
+
+// A depleted tank must fail before building expensive hazard-aware routes.
+// Both the total fuel/credit bound and the first-hop bound are conservative.
+const unreachableWorld = { ...world, id: 'unreachable-fast-rejection' };
+Object.defineProperty(unreachableWorld, 'regions', {
+  get() {
+    throw new Error('Unreachable route must not run the hazard pathfinder');
+  },
+});
+assert.equal(planFuelRoute({ ...input, world: unreachableWorld, credits: 0 }), null);
+assert.equal(
+  planFuelRoute({ ...input, world: unreachableWorld, fuel: 1, credits: 100000 }),
+  null
+);
 const direct = planFuelRoute({ ...input, destinationId: 'refuel-a', credits: 0 });
 assert(direct);
 assert.deepEqual(direct.stopIds, []);

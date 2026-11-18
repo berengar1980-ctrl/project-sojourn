@@ -213,8 +213,14 @@ function acceptState(
 function directFuelPlan(
   request: FuelRouteRequest,
   origin: string,
-  routeLeg: RouteLegLookup
+  routeLeg: RouteLegLookup,
+  minimumDistance: (fromId: string, toId: string) => number
 ): FuelRoutePlan | null {
+  const straightFuel = Math.max(
+    0.1,
+    minimumDistance(origin, request.destinationId) * request.fuelPerDistance
+  );
+  if (straightFuel * FUEL_RESERVE > Math.min(request.fuel, request.capacity) + 1e-6) return null;
   const route = routeLeg(origin, request.destinationId);
   const required = Math.max(0.1, route.distance * request.fuelPerDistance);
   const fuel = Math.max(0, Math.min(request.fuel, request.capacity));
@@ -240,6 +246,31 @@ function directFuelPlan(
   return assemblePlan(request, next, routeLeg);
 }
 
+/** A free full tank at every reachable port is an optimistic upper bound.
+ * If even that graph cannot reach the destination, expensive routing cannot help. */
+function hasOptimisticFuelPath(
+  request: FuelRouteRequest,
+  origin: string,
+  candidates: readonly string[],
+  minimumDistance: (fromId: string, toId: string) => number
+): boolean {
+  const queue = [{ at: origin, fuel: Math.min(request.fuel, request.capacity) }];
+  const visited = new Set<string>([origin]);
+  for (let index = 0; index < queue.length; index++) {
+    const current = queue[index]!;
+    for (const next of candidates) {
+      if (visited.has(next)) continue;
+      const needed = Math.max(0.1, minimumDistance(current.at, next) * request.fuelPerDistance);
+      if (needed * FUEL_RESERVE > current.fuel + 1e-6) continue;
+      if (next === request.destinationId) return true;
+      visited.add(next);
+      // Intentionally ignores price and route detours: never reject a feasible trip.
+      queue.push({ at: next, fuel: request.capacity });
+    }
+  }
+  return false;
+}
+
 /** Shortest fuel-feasible itinerary. Every stop must be affordable with the remaining wallet. */
 export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   if (!validRequest(request)) return null;
@@ -257,8 +288,6 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     legCache.set(key, route);
     return route;
   };
-  const direct = directFuelPlan(request, origin, routeLeg);
-  if (direct) return direct;
   const candidates = fuelingCandidates(request, origin);
   const locations = new Map(
     request.world.locations.map((location) => [location.id, location.position])
@@ -278,6 +307,13 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     const to = berth(toId);
     return Math.hypot(to.x - from.x, to.y - from.y);
   };
+  const available = Math.min(request.fuel, request.capacity) + request.credits / FUEL_PRICE;
+  const needed = minimumDistance(origin, request.destinationId) * request.fuelPerDistance;
+  // Total paid fuel cannot overcome an insufficient straight-line budget.
+  if (needed * FUEL_RESERVE > available + 1e-6) return null;
+  if (!hasOptimisticFuelPath(request, origin, candidates, minimumDistance)) return null;
+  const direct = directFuelPlan(request, origin, routeLeg, minimumDistance);
+  if (direct) return direct;
   const queue: SearchState[] = [
     {
       at: origin,
@@ -292,11 +328,21 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
   ];
   const best = new Map<string, SearchState[]>();
   let explored = 0;
+  const optimisticRemaining = (state: SearchState): number =>
+    minimumDistance(state.at, request.destinationId);
   while (queue.length && explored++ < MAX_SEARCH_STATES) {
-    queue.sort((a, b) => a.distance - b.distance);
+    // A*: straight-line distance is an admissible lower bound on routed distance.
+    queue.sort(
+      (a, b) =>
+        a.distance + optimisticRemaining(a) - b.distance - optimisticRemaining(b) ||
+        a.distance - b.distance
+    );
     const current = queue.shift()!;
     if (current.at === request.destinationId) return assemblePlan(request, current, routeLeg);
     if (current.legs.length > MAX_STOPS) continue;
+    const remainingFuel = current.fuel + current.credits / FUEL_PRICE;
+    if (optimisticRemaining(current) * request.fuelPerDistance * FUEL_RESERVE > remainingFuel + 1e-6)
+      continue;
     for (const id of candidates) {
       const state = nextState(request, current, id, routeLeg, minimumDistance);
       if (state) acceptState(state, queue, best);
