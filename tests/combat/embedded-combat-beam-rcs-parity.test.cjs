@@ -13,6 +13,7 @@ const thrust = read('src/ui/combat/embedded-combat-thrusters.ts');
 const mining = read('src/ui/local-space/local-space-scene-layers.ts');
 const salvage = read('src/ui/salvage/salvage-scene-layers.ts');
 const miningPlayer = read('src/ui/local-space/local-space-renderer.ts');
+const miningEffects = read('src/ui/local-space/mining-effects-renderer.ts');
 const salvagePlayer = read('src/ui/salvage/salvage-space-renderer.ts');
 const service = read('src/systems/combat/strategic-combat-service.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
@@ -32,6 +33,8 @@ assert(
   mining.includes('npc.targetAsteroidId && !combatDefender'),
   'a mining beam must stop for an NPC that is now in a duel'
 );
+assert(miningEffects.includes('model.combat || !model.laserActive'));
+assert(miningEffects.includes('if (model.combat) return;'));
 assert(thrust.includes('combatant.lateralThrust ?? 0'));
 assert(thrust.includes('combatant.angularThrust'));
 assert(thrust.includes('combatant.longitudinalThrust ?? 0'));
