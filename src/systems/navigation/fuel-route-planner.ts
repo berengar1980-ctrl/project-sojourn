@@ -341,7 +341,10 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     if (current.at === request.destinationId) return assemblePlan(request, current, routeLeg);
     if (current.legs.length > MAX_STOPS) continue;
     const remainingFuel = current.fuel + current.credits / FUEL_PRICE;
-    if (optimisticRemaining(current) * request.fuelPerDistance * FUEL_RESERVE > remainingFuel + 1e-6)
+    if (
+      optimisticRemaining(current) * request.fuelPerDistance * FUEL_RESERVE >
+      remainingFuel + 1e-6
+    )
       continue;
     for (const id of candidates) {
       const state = nextState(request, current, id, routeLeg, minimumDistance);
