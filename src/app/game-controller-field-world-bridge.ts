@@ -51,6 +51,8 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
         depart: (npc) => economy.npcs.dispatchLoadedWorker(npc),
         getPlayerShip: () => state.activeShip,
         getPlayerShipState: () => {
+          // The duel owns the player pose and collisions during embedded combat.
+          if (state.embeddedCombat === 'local-space') return undefined;
           const scene = state.localSpace?.getSnapshot().instance;
           return scene?.sourceLocationId === location.id ? scene.ship : undefined;
         },
