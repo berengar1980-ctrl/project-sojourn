@@ -1410,3 +1410,16 @@ taktischer Deckung, wenn ein unmittelbar naher Asteroid die Flugroute
 blockiert. Die bestehende Schubregelung für Angriffspassagen bleibt erhalten. Mining und Bergung zeigen nun dieselben
 Manövertexte und Burst-Schubmeter wie der eigenständige Duell-Renderer.
 Dies ändert weder Save-Schema noch Handels- und Wirtschaftsmechaniken.
+
+## Review-Log (2026-11-18): Combat-Rendering-Parität und lokale Laser
+
+**Keine historischen Feature-IDs geändert.** Der 1vs1-Kampfkern ist
+bereits gemeinsam, die Renderer waren es aber nicht: Die lokale Karte
+zeichnete schiffsgebundene, durchgehende Lichtstrahlen statt der kurzen
+waffenspezifischen Duelleffekte mit fixiertem Abschusspunkt. Jetzt nutzen
+Standalone, Mining und Bergung dieselbe Waffen-Strahl-Darstellung. In
+Mining/Bergung lesen beide Duellschiffe die vorhandenen RCS-, Angular-,
+Lateral- und Burst-Schubwerte aus dem Kampf-Snapshot; normale Flug- und
+Bergbau-Effekte bleiben außerhalb des Kampfs unverändert. Die sichtbaren
+blauen NPC-Abbaulaser sind Arbeitsstrahlen und keine Traktorstrahlen;
+beim Beginn des jeweiligen Duells verschwinden sie für den kämpfenden NPC.
