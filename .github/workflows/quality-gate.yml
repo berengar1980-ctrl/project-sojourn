@@ -27,6 +27,11 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Diagnostic effect formatter diff
+        run: |
+          npx prettier src/ui/combat/embedded-combat-thrusters.ts | diff -u src/ui/combat/embedded-combat-thrusters.ts - || true
+          npx prettier src/ui/local-space/local-space-scene-layers.ts | diff -u src/ui/local-space/local-space-scene-layers.ts - || true
+          npx prettier src/ui/salvage/salvage-scene-layers.ts | diff -u src/ui/salvage/salvage-scene-layers.ts - || true
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
