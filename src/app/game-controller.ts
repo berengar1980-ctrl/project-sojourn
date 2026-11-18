@@ -437,10 +437,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
-    mayInitiateAttack: (npc) =>
-      !state.combatResultPending &&
-      state.combatReengageSeconds <= 0 &&
-      economy.blockades.mayAttack(npc.id),
+    mayInterceptPlayer: () =>
+      !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
