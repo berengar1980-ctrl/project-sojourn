@@ -35,7 +35,11 @@ assert.equal(ships[0].npcId, pirate.id, 'active duel defender must remain render
 traffic.syncCombatPose(pirate.id, { x: 750, y: 610 }, 0.7);
 traffic.tick(1 / 60, [pirate], { x: 500, y: 500 }, [], [], () => false, pirate.id);
 const combatShip = traffic.snapshot([pirate])[0];
-assert.deepEqual(combatShip.position, { x: 750, y: 610 }, 'normal pirate AI must not move duel defender');
+assert.deepEqual(
+  combatShip.position,
+  { x: 750, y: 610 },
+  'normal pirate AI must not move duel defender'
+);
 assert.equal(combatShip.headingRadians, 0.7);
 
 pirate.combatMovement = null;
