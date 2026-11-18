@@ -252,6 +252,7 @@ assert(
   'navigation must use asteroid collision bodies'
 );
 const physicsSource = readModuleSource(root, 'src/systems/salvage/salvage-container-motion.ts');
+const fieldCombat = readModuleSource(root, 'src/systems/combat/field-combat-arena.ts');
 assert(
   physicsSource.includes('...(field.debris ?? [])') &&
     physicsSource.includes('routeBlocking:') &&
@@ -267,8 +268,10 @@ assert(
   'salvage map must render contact FX outside of combat'
 );
 assert(
-  controller.includes('asteroids: (field.debris ?? []).map'),
-  'scrap must be fed into the existing tractor-throw mechanic'
+  controller.includes('salvageFieldCombatArena(field)') &&
+    fieldCombat.includes('debrisCombatBody') &&
+    fieldCombat.includes('asteroids,'),
+  'real salvage fragments must reach the shared tractor-throw combat arena'
 );
 assert(
   controller.includes('invalidateSalvagePhysics'),
@@ -296,7 +299,11 @@ assert(
     localService.includes('this.options.sensorCrewSkill'),
   'sensor scan must use equipped scanner and crew statistics'
 );
-assert(controller.includes('field.debris ?? []'), 'space combat must use fragment obstacles');
+assert(
+  fieldCombat.includes('field.debris ?? []') &&
+    controller.includes('salvageFieldCombatArena(field)'),
+  'space combat must use the actual field fragments and their contact geometry'
+);
 assert(renderer.includes('pickWreck'), 'containers must remain clickable');
 
 console.log(

@@ -141,11 +141,11 @@ assert(
 );
 assert(generator.includes('createDebris'), 'local-space generator must create small debris');
 assert(
-  generator.includes('const count = 64 + Math.floor(random() * 17)'),
+  generator.includes('64 + Math.floor(random() * 17)'),
   'resource asteroid count must be reduced by about one third'
 );
 assert(
-  generator.includes('const count = 127 + Math.floor(random() * 34)'),
+  generator.includes('127 + Math.floor(random() * 34)'),
   'small debris count must be reduced by about one third'
 );
 assert(
