@@ -49,10 +49,7 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
       arena.obstacles.map((obstacle) => obstacle.id),
       cover.map((body) => body.id)
     );
-    assert.equal(
-      new Set(arena.asteroids.map((rock) => rock.id)).size,
-      arena.asteroids.length
-    );
+    assert.equal(new Set(arena.asteroids.map((rock) => rock.id)).size, arena.asteroids.length);
   }
 }
 const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');

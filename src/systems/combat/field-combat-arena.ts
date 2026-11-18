@@ -121,9 +121,7 @@ function sectionCombatBody(section: SalvageSection): CombatVisualAsteroid {
 export function salvageFieldCombatArena(field: SalvageField): StrategicCombatArenaOptions {
   const knownIds = new Set(field.wrecks.map((wreck) => wreck.id));
   const asteroids = [
-    ...(field.debris ?? [])
-      .filter((debris) => !knownIds.has(debris.id))
-      .map(debrisCombatBody),
+    ...(field.debris ?? []).filter((debris) => !knownIds.has(debris.id)).map(debrisCombatBody),
     ...field.wrecks.map(wreckCombatBody),
     ...(field.sections ?? [])
       .filter((section) => !knownIds.has(section.id))
