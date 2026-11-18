@@ -1,10 +1,11 @@
+import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visuals';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import { projectHardpoint, spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { type ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 export interface AsteroidHitArea {
   readonly id: string;
@@ -157,7 +158,7 @@ export abstract class LocalSpaceSceneLayers {
             timeSeconds
           );
         } else if (target && npc.laserActive) {
-          this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds);
+          this.drawNpcMiningBeam(point, target.position, width, height, timeSeconds, geometry, npc.hardpoints);
         }
       }
 
@@ -187,10 +188,9 @@ export abstract class LocalSpaceSceneLayers {
     this.context.beginPath();
     this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
     this.context.stroke();
-    this.context.setLineDash([4, 5]);
+    // A scan is an expanding pulse at the rock, not a permanent blue tow line.
     this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
+    this.context.arc(target.x, target.y, radius * 0.48, 0, Math.PI * 2);
     this.context.stroke();
     this.context.restore();
   }
@@ -199,43 +199,27 @@ export abstract class LocalSpaceSceneLayers {
     targetWorld: { readonly x: number; readonly y: number },
     width: number,
     height: number,
-    timeSeconds: number
+    timeSeconds: number,
+    geometry: ShipScreenGeometry,
+    hardpoints: LocalSpaceViewModel['npcShips'][number]['hardpoints']
   ): void {
     const target = this.camera.worldToScreen(targetWorld, width, height);
-    const ctx = this.context;
-    ctx.save();
+    const tractor = hardpoints.tractorBeams?.[0];
+    const towOrigin = tractor ? projectHardpoint(tractor, hardpoints, geometry) : shipPoint;
+    const towPulse = 0.58 + Math.sin(timeSeconds * 8.5) * 0.28;
+    // Ore flows from the deposit toward the tractor port, as on the player ship.
+    drawMiningTractorBeam(this.context, target, towOrigin, towPulse);
 
-    // The tractor is a restrained cyan dashed tether, not a solid mining laser.
-    const tractorPulse = 0.34 + Math.sin(timeSeconds * 7) * 0.09;
-    ctx.strokeStyle = `rgba(76, 196, 225, ${tractorPulse})`;
-    ctx.lineWidth = 2.2;
-    ctx.setLineDash([6, 10]);
-    ctx.lineDashOffset = -timeSeconds * 18;
-    ctx.beginPath();
-    ctx.moveTo(shipPoint.x, shipPoint.y);
-    ctx.lineTo(target.x, target.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // A distinct amber cutting laser fires in short, visible pulses.
-    // No permanent solid blue ray during NPC mining.
-    const firing = Math.sin(timeSeconds * 16) > -0.25;
-    if (firing) {
-      ctx.strokeStyle = 'rgba(255, 125, 45, .92)';
-      ctx.lineWidth = 1.7;
-      ctx.shadowColor = 'rgba(255, 91, 27, .9)';
-      ctx.shadowBlur = 9;
-      ctx.beginPath();
-      ctx.moveTo(shipPoint.x, shipPoint.y);
-      ctx.lineTo(target.x, target.y);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(255, 204, 110, .85)';
-      ctx.beginPath();
-      ctx.arc(target.x, target.y, 3.5 + Math.sin(timeSeconds * 34) * 1.2, 0, Math.PI * 2);
-      ctx.fill();
+    const laserPoints = hardpoints.miningLasers;
+    const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
+    for (const laser of laserPoints) {
+      const start = projectHardpoint(laser, hardpoints, geometry);
+      const beamWidth = Math.max(
+        1.1,
+        (laser.width / hardpoints.sourceWidth) * geometry.width * 0.72
+      );
+      drawMiningLaserBeam(this.context, start, target, beamWidth, 1, pulse);
     }
-    ctx.restore();
   }
   protected drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {
