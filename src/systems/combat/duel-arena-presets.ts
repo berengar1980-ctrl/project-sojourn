@@ -1,3 +1,4 @@
+import { COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT } from '../../core/combat-map-dimensions';
 import { generateMiningSpace } from '../local-space/local-space-generator';
 import { generateSalvageField } from '../salvage/salvage-field-generator';
 import { miningFieldCombatArena, salvageFieldCombatArena } from './field-combat-arena';
@@ -16,7 +17,7 @@ export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
 
 /** Match actual career map geometry. Only the shared generators own density. */
 export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
-  if (kind === 'empty') return { width: 4400, height: 2570, obstacles: [], asteroids: [] };
+  if (kind === 'empty') return { width: COMBAT_MAP_WIDTH, height: COMBAT_MAP_HEIGHT, obstacles: [], asteroids: [] };
   if (kind === 'scrap_scattered' || kind === 'scrap_field') {
     const density = kind === 'scrap_scattered' ? 'moderate' : 'standard';
     return withClearCombatSpawns(
