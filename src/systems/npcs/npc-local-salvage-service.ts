@@ -20,7 +20,6 @@ import {
   SCAN_SECONDS,
   BASE_CYCLE_SECONDS,
   hashId,
-  moveToward,
   cargoUsed,
   eligible,
   wreckRemaining,
