@@ -8,10 +8,7 @@ import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { type ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 export interface WreckHitArea {
   readonly id: string;
