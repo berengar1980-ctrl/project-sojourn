@@ -1,6 +1,6 @@
 # Optionale Medien nach Veröffentlichung
 
-Die ehemals enthaltenen Audio- und Bilddateien wurden aus urheberrechtlicher Vorsicht zunächst entfernt. Die drei für Sojourn eigens generierten und vom Projektinhaber freigegebenen Charakterporträts (1, 4 und 5) sind aus der Git-Historie unverändert wiederhergestellt. Die übrigen Medien bleiben bis zur Rechteprüfung entfernt. Ohne solche optionalen Medien spielt Sojourn mit stummem Audio, Platzhalterporträts für nicht belegte Slots, dunklem CSS-Hintergrund und den vorhandenen geometrischen Schiffsdarstellungen. Spielregeln, Schiffsdefinitionen und Hardpoints bleiben erhalten.
+Die ehemals enthaltenen Audio- und Bilddateien wurden aus urheberrechtlicher Vorsicht zunächst entfernt. Die drei für Sojourn eigens generierten und vom Projektinhaber freigegebenen Charakterporträts (1, 4 und 5) sind aus der Git-Historie unverändert wiederhergestellt. Auch die 28 für Sojourn erstellten Schiffssprites (je sieben Frachter-, Miner-, Patrouillen- und Bergungsvarianten) wurden aus der Git-Historie bytegleich wiederhergestellt. Die übrigen Medien, insbesondere die früheren Audioaufnahmen und das Menü-Hintergrundbild, bleiben bis zur Rechteprüfung entfernt. Ohne solche optionalen Medien spielt Sojourn mit stummem Audio, Platzhalterporträts für nicht belegte Slots, dunklem CSS-Hintergrund und geometrischen Schiffsdarstellungen, wo kein Sprite verfügbar ist. Spielregeln, Schiffsdefinitionen und Hardpoints bleiben erhalten.
 
 ## Neue, rechtlich freigegebene Audiodateien einbauen
 
@@ -17,9 +17,9 @@ Bei fehlenden Dateien sind die jeweiligen Kanäle stumm. Lautstärkeeinstellunge
 
 - Wiederhergestellte Porträts: `public/portraits/portrait-1.webp`, `portrait-4.webp`, `portrait-5.webp`; die Steckplätze 2 und 3 bleiben Platzhalter
 - Menü-Hintergrund: `public/startscreen-background.webp`; ohne Datei bleibt die definierte dunkle Hintergrundfarbe
-- Schiffsgrafiken: `resources/ships/{freighter,mining,patrol,salvage}/` unter den unveränderten Dateinamen `*-variant-01.png` bis `*-variant-07.png`
+- Wiederhergestellte Schiffsgrafiken: alle 28 PNGs in `resources/ships/{freighter,mining,patrol,salvage}/`, unter den unveränderten Dateinamen `*-variant-01.png` bis `*-variant-07.png`. Die Originalblobs wurden ohne Bildbearbeitung übernommen.
 
-Neue Schiffssprites müssen die vorhandenen Dimensionen und den Asset-Standard (Bug rechts, transparenter Rand, 4 px/m, kompatible Hardpoints) erfüllen; der Test `tests/assets/ship-asset-standard.test.cjs` validiert künftig wieder jede hinzugefügte Datei. Das Rendering benutzt ohne Sprite die geometrischen Fallbacks.
+Zukünftig hinzugefügte Schiffssprites müssen die vorhandenen Dimensionen und den Asset-Standard (Bug rechts, transparenter Rand, 4 px/m, kompatible Hardpoints) erfüllen; der Test `tests/assets/ship-asset-standard.test.cjs` validiert künftig wieder jede hinzugefügte Datei. Das Rendering benutzt ohne Sprite die geometrischen Fallbacks.
 
 ## Git-Historie und Rechte
 
