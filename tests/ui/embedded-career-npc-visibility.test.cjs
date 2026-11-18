@@ -33,4 +33,4 @@ assert(miningLayers.includes('drawMiningLaserBeam('));
 assert(playerEffects.includes('drawMiningTractorBeam('));
 assert(playerEffects.includes('drawMiningLaserBeam('));
 
-console.log('PASS native PvP fighting ships plus persistent career bystanders and shared mining FX');
+console.log('PASS career NPC visibility and shared mining FX');
