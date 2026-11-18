@@ -1,3 +1,4 @@
+import { COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT } from '../../core/combat-map-dimensions';
 import type {
   SalvageField,
   SalvageResourceDeposit,
@@ -79,8 +80,8 @@ export function generateSalvageField(
   dangerLevel = 1,
   density: 'moderate' | 'standard' = 'standard'
 ): SalvageField {
-  const width = 4400;
-  const height = 2570;
+  const width = COMBAT_MAP_WIDTH;
+  const height = COMBAT_MAP_HEIGHT;
   const random = createRandom(seed);
   const count = 5 + Math.floor(random() * 4);
   const wrecks: SalvageWreck[] = [];
