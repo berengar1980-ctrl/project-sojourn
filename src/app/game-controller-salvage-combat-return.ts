@@ -11,7 +11,7 @@ export function finishSalvageCombat(
   npcSalvage: NpcLocalSalvageService,
   snapshot: StrategicCombatSnapshot
 ): void {
-  if (snapshot.arena.asteroids) {
+  if (snapshot.arena.asteroids && snapshot.arena.backdropSeed === field.seed) {
     const remaining = new Map(snapshot.arena.asteroids.map((rock) => [rock.id, rock]));
     // Reconcile ALL native parts; a thrown container must not respawn as loot.
     for (let index = field.wrecks.length - 1; index >= 0; index -= 1) {
