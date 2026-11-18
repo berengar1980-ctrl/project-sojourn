@@ -52,6 +52,21 @@ export abstract class SalvageSceneLayers {
       this.model.backgroundSeed
     );
   }
+  protected drawNpcSelection(point: ScreenPoint, geometry: ShipScreenGeometry): void {
+    this.context.save();
+    this.context.strokeStyle = 'rgba(235, 91, 76, 0.95)';
+    this.context.lineWidth = 2;
+    this.context.beginPath();
+    this.context.arc(
+      point.x,
+      point.y,
+      Math.max(geometry.width, geometry.height) * 0.65 + 7,
+      0,
+      Math.PI * 2
+    );
+    this.context.stroke();
+    this.context.restore();
+  }
   protected drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
     const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
@@ -122,21 +137,7 @@ export abstract class SalvageSceneLayers {
         point,
         radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
       });
-      if (npc.isSelected) {
-        this.context.save();
-        this.context.strokeStyle = 'rgba(235, 91, 76, 0.95)';
-        this.context.lineWidth = 2;
-        this.context.beginPath();
-        this.context.arc(
-          point.x,
-          point.y,
-          Math.max(geometry.width, geometry.height) * 0.65 + 7,
-          0,
-          Math.PI * 2
-        );
-        this.context.stroke();
-        this.context.restore();
-      }
+      if (npc.isSelected) this.drawNpcSelection(point, geometry);
 
       const wreck = npc.targetWreckId
         ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
