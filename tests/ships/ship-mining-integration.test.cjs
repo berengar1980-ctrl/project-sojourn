@@ -143,10 +143,16 @@ const miningEffects = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-effects-renderer.ts'),
   'utf8'
 );
+const miningVisuals = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/mining-beam-visuals.ts'),
+  'utf8'
+);
 assert(
   miningEffects.includes('interferenceStrength') &&
     miningEffects.includes('Math.floor(timeSeconds * 9') &&
-    miningEffects.includes('lineTo(target.x, target.y)'),
+    miningEffects.includes('drawMiningLaserBeam(') &&
+    miningVisuals.includes('context.lineTo(end.x, end.y)') &&
+    miningVisuals.includes('context.globalAlpha = strength'),
   'mining laser interference must remain a visual intensity dropout on a straight beam'
 );
 
