@@ -1301,3 +1301,12 @@ Bug-Railgun nun auch Mk-III-Hülle und Mk-III-Schild. Alle übrigen regulären
 Komponenten bleiben Mk II. Die normale Karriere, NPC-Loadouts, Hardpoints
 und Speicherstruktur sind unverändert; ein Regressionstest prüft alle 28
 Schiffstypen einschließlich Energieversorgung und wiederholter Auswahl.
+
+## Review-Log (2026-11-18): Langsame Treibstoff-Routensuche (F12-Profiling)
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Die
+Treibstoffroutenplanung verwirft bereits anhand notwendiger Untergrenzen
+unerreichbare Ziele, bevor teure Gefahrenrouten berechnet werden. Die
+verbleibende Suche nutzt eine zulässige A*-Luftlinienheuristik bei weiterhin
+identischen Tank-/Kreditregeln und derselben optimalen Weglänge.
+Karriere-Persistenz, NPC-Wirtschaft, Karte und Save-Schema bleiben unverändert.

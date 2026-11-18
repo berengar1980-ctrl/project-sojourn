@@ -549,3 +549,15 @@ bleibt Mk III beziehungsweise ausreichend leistungsoptimiert. Dies ändert
 weder die reguläre Starterausrüstung noch die NPC-Schiffe oder das Save-Schema.
 Die bereits persistierte Komponentenbelegung bleibt autoritativ; ein erneuter
 Test-Schiffswechsel ist reproduzierbar und wird für alle 28 Schiffe geprüft.
+
+### Reisezielauswahl ohne langes Blockieren bei unmöglichen Tankrouten (18. November 2026)
+
+Der Treibstoff-Routenplaner filtert offensichtlich unmögliche Reisen anhand
+notwendiger geometrischer Treibstoff-/Geld-Untergrenzen sowie einer optimistischen
+Tankstellen-Erreichbarkeitsprüfung, bevor er Gefahrzonenrouten berechnet.
+Die verbleibende Suche priorisiert mittels zulässiger Luftlinienheuristik
+(A*) erfolgversprechende Zwischenstopps. Kosten, tatsächliche Flugrouten,
+Treibstoffverbrauch, Tarif und gespeicherte Navigationszustände bleiben
+unverändert; die Filter dürfen eine tatsächlich erreichbare Reise nicht
+ablehnen. Regressionstests prüfen insbesondere die Nichtausführung der
+teuren Routenberechnung bei leeren Tanks.
