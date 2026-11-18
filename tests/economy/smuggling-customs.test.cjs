@@ -118,12 +118,14 @@ assert.equal(customs.startInspection('patrol', 'port', 0.6, 'patrol-01'), true);
 assert.equal(customs.decide('fight', 'ship-x', 40).outcome, 'resisted');
 
 const controller = readModuleSource(root, 'src/app/game-controller.ts');
+const combatResultGuard = readModuleSource(root, 'src/app/game-controller-combat-result-guard.ts');
 const space = readModuleSource(root, 'src/app/game-controller-customs.ts');
 const port = readModuleSource(root, 'src/app/game-controller-port.ts');
 const ui = readModuleSource(root, 'src/ui/customs/customs-inspection-panel.ts');
 assert(controller.includes('inspectPatrolTravel(context, deltaSeconds)'));
 assert(controller.includes('inspectDockArrival(context)'));
-assert(controller.includes('if (tickCustoms(context)) return'));
+assert(controller.includes('skipControllerTickForCombatResult(context, deltaSeconds)'));
+assert(combatResultGuard.includes('tickCustoms(context)'));
 assert(space.includes("npc.job === 'patrol'"));
 assert(space.includes('context.economy.sectorNpcs.livePosition(npc)'));
 assert(port.includes('createSmugglingPortOptions('));
