@@ -4,6 +4,7 @@ import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
+import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
@@ -146,8 +147,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
   private drawFrame(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const { width, height } = rect;
     const timeSeconds = performance.now() / 1000;
     const geometry = this.shipGeometry(width, height);
 
@@ -432,6 +432,9 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       source,
       geometry
     );
+    if (this.model.combat) {
+      drawEmbeddedCombatShipTelemetry(this.context, this.model.combat.attacker, geometry);
+    }
   }
   protected drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.shortRangeScanProgress;

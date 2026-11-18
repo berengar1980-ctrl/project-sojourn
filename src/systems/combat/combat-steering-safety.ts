@@ -25,8 +25,9 @@ export function evaluateSteeringSafety(
       !cover &&
       !collision &&
       !detour,
-    // Nearby rock clearance should not suppress all front gun alignment if
-    // an established waypoint already owns the safe lateral route.
+    // The ship can track forward guns while RCS follows its established
+    // asteroid waypoint. Disabling this uncoupling directs initial thrust
+    // into the rock while the bow is still turning.
     canAim: !mines && !boundary && !collision && !detour && (!obstacle || waypoint),
   };
 }

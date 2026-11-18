@@ -1,6 +1,10 @@
 {
   "version": 1,
   "modules": {
+    "src/systems/npcs/npc-local-pirate-routing.ts": {
+      "mode": "transient",
+      "reason": "Pure waypoint routing helper; the currently chosen detour is session-only and recalculated from saved NPC and asteroid positions after loading."
+    },
     "src/systems/economy/career-economy-session.ts": {
       "mode": "persisted",
       "reason": "Authoritative economic checkpoint composition for markets, resource pools, events, player intel and NPC economic time.",

@@ -1,3 +1,4 @@
+import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -130,6 +131,7 @@ export abstract class LocalSpaceSceneLayers {
           geometry
         );
       }
+      if (combatDefender) drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry);
 
       hits.push({
         id: npc.id,

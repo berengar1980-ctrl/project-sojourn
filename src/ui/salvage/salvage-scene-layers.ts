@@ -1,3 +1,4 @@
+import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import { drawTractorThrows } from '../combat/combat-tractor-throw-renderer';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
@@ -117,6 +118,7 @@ export abstract class SalvageSceneLayers {
           geometry
         );
       }
+      if (combatDefender) drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry);
 
       hits.push({
         id: npc.id,

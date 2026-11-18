@@ -191,8 +191,12 @@ export function steerCombatRoute(
     posture.destination
   );
   const waypoint = combatRouteHeading(combatant, destination, arena, deltaSeconds);
-  direction = applyMineAvoidance(cover ?? waypoint ?? direction, mineAvoidance);
   const obstacle = obstacleAvoidance(combatant, arena);
+  // Only a nearby collision hazard overrides tactical cover.
+  direction = applyMineAvoidance(
+    obstacle && waypoint ? waypoint : (cover ?? waypoint ?? direction),
+    mineAvoidance
+  );
   // Never override a committed asteroid clearance waypoint with radial repulsion.
   if (obstacle && !waypoint) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
