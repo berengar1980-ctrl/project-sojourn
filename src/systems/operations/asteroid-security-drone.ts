@@ -1,4 +1,4 @@
-import { moveFieldShip } from '../navigation/field-ship-routing';
+import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -26,6 +26,7 @@ export class AsteroidSecurityDrone {
   position: WorldPoint;
   headingRadians = 0;
   speed = 0;
+  routeState?: FieldRouteState;
   private readonly patrol: readonly WorldPoint[];
   private nextWaypoint = 0;
   private readonly observed = new Set<string>();
@@ -63,6 +64,7 @@ export class AsteroidSecurityDrone {
     return {
       version: 1,
       position: { ...this.position },
+      ...(this.routeState ? { routeState: structuredClone(this.routeState) } : {}),
       scanRadius: this.scanRadius,
       operational: this.operational,
       nextWaypoint: this.nextWaypoint,
@@ -82,6 +84,7 @@ export class AsteroidSecurityDrone {
     const instance = new AsteroidSecurityDrone(width, height, asteroids, scanRadius);
     const data = stageSecurityDroneCheckpoint(checkpoint, scanRadius, instance.patrol.length);
     instance.position = { ...data.position };
+    if (data.routeState) instance.routeState = structuredClone(data.routeState);
     instance.operational = data.operational;
     instance.nextWaypoint = data.nextWaypoint;
     for (const key of data.observed) instance.observed.add(key);
@@ -100,6 +103,7 @@ export class AsteroidSecurityDrone {
   }
   restore(position: WorldPoint, operational: boolean): void {
     this.position = { ...position };
+    delete this.routeState;
     this.operational = operational;
   }
 
