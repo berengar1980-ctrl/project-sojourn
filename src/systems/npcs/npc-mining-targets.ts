@@ -1,3 +1,4 @@
+import type { FieldRouteState } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type {
   LocalAsteroid,
@@ -21,6 +22,7 @@ export interface LocalNpcMinerState {
   position: WorldPoint;
   headingRadians: number;
   speed: number;
+  routeState?: FieldRouteState;
   phase: LocalNpcMiningPhase;
   targetAsteroidId: string | null;
   laserActive: boolean;

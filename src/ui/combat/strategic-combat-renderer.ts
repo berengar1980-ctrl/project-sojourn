@@ -12,7 +12,7 @@ import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
 import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
-import { CombatCamera } from './combat-camera';
+import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
 import {
@@ -131,6 +131,13 @@ export class StrategicCombatRenderer {
     image.src = definition.sprite.assetUrl;
     this.images.set(shipId, image);
     return image;
+  }
+  cameraPose(): CombatCameraPose {
+    return this.camera.pose();
+  }
+  restoreCameraPose(pose: CombatCameraPose): void {
+    this.camera.restorePose(pose);
+    this.draw();
   }
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);

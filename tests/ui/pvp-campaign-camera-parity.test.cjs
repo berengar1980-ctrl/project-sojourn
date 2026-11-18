@@ -30,6 +30,15 @@ native.zoomAt(2, 700, 420, 1600, 900);
 campaign.zoomAt(2, { x: 700, y: 420 }, 1600, 900);
 native.pan(42, -35);
 campaign.pan(42, -35);
+const cameraPose = campaign.pose();
+const reentered = new PvPMapCamera(width, height);
+reentered.setViewDimensions(1600, 900);
+reentered.restorePose(cameraPose);
+assert.deepEqual(reentered.pose(), cameraPose);
+assert.deepEqual(
+  reentered.worldToScreen(point, 1600, 900),
+  campaign.worldToScreen(point, 1600, 900)
+);
 const screen = campaign.worldToScreen(point, 1600, 900);
 assert.deepEqual(screen, native.project(point, 1600, 900, width, height));
 const expectedScale = native.scale(1600, 900, width, height);

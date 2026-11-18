@@ -3,10 +3,26 @@ export interface CombatViewportPoint {
   readonly y: number;
 }
 
+export interface CombatCameraPose {
+  readonly zoom: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
 export class CombatCamera {
   zoom = 1;
   offsetX = 0;
   offsetY = 0;
+
+  pose(): CombatCameraPose {
+    return { zoom: this.zoom, offsetX: this.offsetX, offsetY: this.offsetY };
+  }
+
+  restorePose(pose: CombatCameraPose): void {
+    this.zoom = pose.zoom;
+    this.offsetX = pose.offsetX;
+    this.offsetY = pose.offsetY;
+  }
 
   scale(width: number, height: number, worldWidth: number, worldHeight: number): number {
     return (

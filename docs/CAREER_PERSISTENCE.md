@@ -702,3 +702,14 @@ des Duells bleiben Mining-/Bergungsoperationen, NPC-Simulation und die
 bestehende Karriere-Persistenz unverändert. Eine PvP-kompatible Kamera
 projiziert die normalen lokalen Operationsebenen; weder Kamera-Pan noch
 Zoom werden in einem neuen Save-Feld gespeichert.
+
+### Lokale NPC-/Drohnenrouten und PvP-Hindernisdeckung (2026-11-18)
+
+**Kein neues Save-Feld:** Lokale Miner, Bergungsschiffe und Sicherheitsdrohnen
+benutzen für Hindernisumfahrung eine gemeinsame, flüchtige Wegpunktlogik.
+Gewählte Umwege werden in einer WeakMap an das jeweilige aktive Schiffsobjekt
+gebunden und nach einem Laden aus der aktuellen Position, Zielposition und
+den vorhandenen Feldhindernissen erneut berechnet. Die Checkpoint-Strukturen
+für NPCs und Drohnen bleiben unverändert. Die neue Piratengrafikauswahl
+verwendet weiterhin die drei bestehenden Klassen-IDs und deren Datenfelder.
+Kampfstrahlen bleiben unter der bisherigen zentralen PvP-Kampfautorität.

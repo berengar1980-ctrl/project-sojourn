@@ -1,3 +1,4 @@
+import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -19,7 +20,6 @@ import {
   SCAN_SECONDS,
   BASE_CYCLE_SECONDS,
   hashId,
-  moveToward,
   cargoUsed,
   eligible,
   wreckRemaining,
@@ -39,6 +39,7 @@ export interface LocalNpcSalvagerState {
   position: WorldPoint;
   headingRadians: number;
   speed: number;
+  routeState?: FieldRouteState;
   phase: LocalNpcSalvagePhase;
   targetWreckId: string | null;
   salvageActive: boolean;
@@ -252,7 +253,16 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.assignTarget(ship, npc);
       return;
     }
-    if (moveToward(ship, workPoint(npc.id, wreck), localCruiseSpeed(npc), dt)) {
+    if (
+      moveFieldShip(
+        ship,
+        workPoint(npc.id, wreck),
+        localCruiseSpeed(npc),
+        dt,
+        this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+        65
+      )
+    ) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -353,7 +363,16 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
 
       ship.salvageActive = false;
-      if (moveToward(ship, ship.exitPoint, localCruiseSpeed(npc), dt)) {
+      if (
+        moveFieldShip(
+          ship,
+          ship.exitPoint,
+          localCruiseSpeed(npc),
+          dt,
+          this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          65
+        )
+      ) {
         this.ships.splice(index, 1);
         this.options.depart(npc);
       }

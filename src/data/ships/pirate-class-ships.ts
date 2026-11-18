@@ -1,11 +1,9 @@
 import type { ShipDefinition } from '../../core/ship-types';
-import { freighterVariantShips } from './freighter-variant-ships';
-import { minerVariantShips } from './miner-variant-ships';
 import { patrolVariantShips } from './patrol-variant-ships';
 
 /**
- * Salvaged and weaponized hulls: real 60/80/120 m sprites and hardpoint geometry.
- * Cosmetic purpose-built pirate artwork can replace these assets independently.
+ * Every pirate class uses a patrol-hull silhouette and its matching hardpoints.
+ * Higher classes are physically enlarged patrol hulls until dedicated pirate art exists.
  */
 export const pirateClassShips: readonly ShipDefinition[] = [
   {
@@ -17,7 +15,8 @@ export const pirateClassShips: readonly ShipDefinition[] = [
     gameplayOverrides: { hullPoints: 83, shieldModifier: 0.9, maxComponentTier: 2 },
   },
   {
-    ...minerVariantShips[2]!,
+    ...patrolVariantShips[2]!,
+    nominalLengthMeters: 80,
     id: 'pirate-reaver-80m',
     name: 'Korsaren-Reaver (80 m)',
     role: 'patrol',
@@ -26,7 +25,8 @@ export const pirateClassShips: readonly ShipDefinition[] = [
     gameplayOverrides: { hullPoints: 135, shieldModifier: 1.38, maxComponentTier: 3 },
   },
   {
-    ...freighterVariantShips[3]!,
+    ...patrolVariantShips[3]!,
+    nominalLengthMeters: 120,
     id: 'pirate-marauder-120m',
     name: 'Korsaren-Marauder (120 m)',
     role: 'patrol',

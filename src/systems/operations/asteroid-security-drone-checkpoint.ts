@@ -1,9 +1,11 @@
+import type { FieldRouteState } from '../navigation/field-ship-routing';
 import type { WorldPoint } from '../../core/world-types';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 
 export interface SecurityDroneCheckpoint {
   readonly version: 1;
   readonly position: WorldPoint;
+  readonly routeState?: FieldRouteState;
   readonly scanRadius: number;
   readonly operational: boolean;
   readonly nextWaypoint: number;
@@ -19,6 +21,19 @@ function validNumber(value: unknown, minimum = 0): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= minimum;
 }
 
+function validRouteState(candidate: unknown): boolean {
+  if (!record(candidate) || !record(candidate.target)) return false;
+  if (!validNumber(candidate.target.x, -Infinity)) return false;
+  if (!validNumber(candidate.target.y, -Infinity)) return false;
+  if (!Array.isArray(candidate.points) || candidate.points.length === 0) return false;
+  if (!validNumber(candidate.index) || !Number.isInteger(candidate.index)) return false;
+  if (candidate.index >= candidate.points.length) return false;
+  return candidate.points.every((point: unknown) => {
+    if (!record(point)) return false;
+    return validNumber(point.x, -Infinity) && validNumber(point.y, -Infinity);
+  });
+}
+
 /** All checks run before applying a saved state to a newly constructed drone. */
 export function stageSecurityDroneCheckpoint(
   candidate: unknown,
@@ -32,6 +47,9 @@ export function stageSecurityDroneCheckpoint(
   const point = value.position;
   if (!record(point) || !validNumber(point.x, -Infinity) || !validNumber(point.y, -Infinity)) {
     throw new Error('Ungültige Drohnenposition.');
+  }
+  if (value.routeState !== undefined && !validRouteState(value.routeState)) {
+    throw new Error('Ungültige gespeicherte Drohnenroute.');
   }
   if (value.scanRadius !== scanRadius || value.patrolSize !== patrolSize) {
     throw new Error('Drohnen-Checkpoint passt nicht zur Asteroidenkarte.');

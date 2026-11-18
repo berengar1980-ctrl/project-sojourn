@@ -196,24 +196,40 @@ export abstract class LocalSpaceSceneLayers {
     timeSeconds: number
   ): void {
     const target = this.camera.worldToScreen(targetWorld, width, height);
-    const pulse = 0.68 + Math.sin(timeSeconds * 13) * 0.18;
-    this.context.save();
-    this.context.strokeStyle = `rgba(121, 214, 235, ${pulse})`;
-    this.context.lineWidth = 1.4;
-    this.context.shadowColor = 'rgba(86, 205, 235, .7)';
-    this.context.shadowBlur = 7;
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
+    const ctx = this.context;
+    ctx.save();
 
-    this.context.strokeStyle = `rgba(160, 228, 241, ${pulse * 0.35})`;
-    this.context.lineWidth = 8;
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
+    // The tractor is a restrained cyan dashed tether, not a solid mining laser.
+    const tractorPulse = 0.34 + Math.sin(timeSeconds * 7) * 0.09;
+    ctx.strokeStyle = `rgba(76, 196, 225, ${tractorPulse})`;
+    ctx.lineWidth = 2.2;
+    ctx.setLineDash([6, 10]);
+    ctx.lineDashOffset = -timeSeconds * 18;
+    ctx.beginPath();
+    ctx.moveTo(shipPoint.x, shipPoint.y);
+    ctx.lineTo(target.x, target.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // A distinct amber cutting laser fires in short, visible pulses.
+    // No permanent solid blue ray during NPC mining.
+    const firing = Math.sin(timeSeconds * 16) > -0.25;
+    if (firing) {
+      ctx.strokeStyle = 'rgba(255, 125, 45, .92)';
+      ctx.lineWidth = 1.7;
+      ctx.shadowColor = 'rgba(255, 91, 27, .9)';
+      ctx.shadowBlur = 9;
+      ctx.beginPath();
+      ctx.moveTo(shipPoint.x, shipPoint.y);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 204, 110, .85)';
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 3.5 + Math.sin(timeSeconds * 34) * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
   protected drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {

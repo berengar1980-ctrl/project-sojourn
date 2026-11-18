@@ -65,6 +65,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
         this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+        this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
       } else {
         this.sharedCombatRenderer.update(model.combat);
       }
@@ -72,6 +73,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       // Noncombat NPCs and mining/salvage effects are not painted on top.
       return;
     }
+    if (this.sharedCombatRenderer)
+      (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
     this.sharedCombatRenderer = null;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
