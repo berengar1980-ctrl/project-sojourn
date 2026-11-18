@@ -1,3 +1,5 @@
+import { drawLocalNavigationRoute } from './local-space-navigation-route';
+import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
 import type {
@@ -6,7 +8,8 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -26,6 +29,7 @@ import { MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
+  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
   protected readonly camera: MapCamera;
   protected readonly miningEffects: MiningEffectsRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -39,8 +43,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly shipImage = new Image();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: LocalSpaceViewModel;
-  protected combatImpactSerial = -1;
-  protected combatImpactAge = 1;
   protected hitAreas: readonly AsteroidHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
@@ -57,7 +59,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
     this.context = context;
     this.model = model;
-    this.camera = new MapCamera(model.width, model.height);
+    this.camera = new PvPMapCamera(model.width, model.height);
     this.miningEffects = new MiningEffectsRenderer(context, this.camera);
     this.backgroundRenderer = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.asteroidBackdrop = new AsteroidBackdropRenderer(
@@ -70,14 +72,18 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.resize();
   }
   update(model: LocalSpaceViewModel): void {
-    const impact = model.combat?.lastImpact;
-    if (impact && impact.serial !== this.combatImpactSerial) {
-      this.combatImpactSerial = impact.serial;
-      this.combatImpactAge = 0;
-    } else {
-      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
-    }
     this.model = model;
+    if (model.combat) {
+      if (!this.sharedCombatRenderer) {
+        this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+      } else {
+        this.sharedCombatRenderer.update(model.combat);
+      }
+      // The campaign now draws combat through the very same PvP renderer.
+      // Noncombat NPCs and mining/salvage effects are not painted on top.
+      return;
+    }
+    this.sharedCombatRenderer = null;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
@@ -87,21 +93,30 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     resizeMapCanvasBackingStore(this.canvas, this.context, rect.width, rect.height, ratio);
 
+    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
-      this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
       this.hasFitted = true;
     }
 
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    this.draw();
+    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    else this.draw();
   }
   pan(dx: number, dy: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.pan(dx, dy);
+      return;
+    }
     this.camera.pan(dx, dy);
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     const factor = Math.exp(-deltaY * 0.00135);
     this.camera.zoomAt(factor, { x, y }, rect.width, rect.height);
@@ -142,6 +157,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.shipImage.src = url;
   }
   protected draw(): void {
+    if (this.sharedCombatRenderer) return;
     measurePerformance('canvas.local.draw', () => this.drawFrame());
   }
 
@@ -181,7 +197,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.drawNpcShips(width, height, timeSeconds)
     );
     this.drawSecurityDrone(width, height, timeSeconds);
-    this.drawCombat(width, height);
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     drawLocalSpaceExitGate(
@@ -462,38 +477,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     );
   }
   protected drawNavigationRoute(width: number, height: number): void {
-    const route = this.model.navigationRoute;
-    const target = this.model.navigationTarget;
-    if (!target || route.length === 0) return;
-
-    this.context.save();
-    this.context.strokeStyle = 'rgba(104, 213, 239, .7)';
-    this.context.lineWidth = 1.25;
-    this.context.setLineDash([6, 6]);
-    this.context.beginPath();
-
-    route.forEach((point, index) => {
-      const screen = this.camera.worldToScreen(point, width, height);
-      if (index === 0) this.context.moveTo(screen.x, screen.y);
-      else this.context.lineTo(screen.x, screen.y);
-    });
-    this.context.stroke();
-    this.context.setLineDash([]);
-
-    const point = this.camera.worldToScreen(target, width, height);
-    const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.12;
-    const radius = 8 * pulse;
-    this.context.strokeStyle = 'rgba(119, 226, 248, .9)';
-    this.context.lineWidth = 1.5;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius - 5, point.y);
-    this.context.lineTo(point.x + radius + 5, point.y);
-    this.context.moveTo(point.x, point.y - radius - 5);
-    this.context.lineTo(point.x, point.y + radius + 5);
-    this.context.stroke();
-    this.context.restore();
+    drawLocalNavigationRoute(this.context, this.camera, this.model, width, height);
   }
 }

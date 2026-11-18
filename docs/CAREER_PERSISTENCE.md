@@ -685,3 +685,20 @@ den beim Abschuss gespeicherten Ursprung und die gleichen Effektdauern und
 Waffenfamilien-Renderer wie das eigenständige Duell. Ein Miner im aktiven
 Kampf zeichnet keinen zuvor laufenden Abbaulaser weiter. Außerhalb von
 Kämpfen bleiben Bergbau-Laser und Traktoroperationen unverändert.
+
+### PvP-Kartengröße und gemeinsame Kampfszene (2026-11-18)
+
+**Kein neues Save-Feld oder Versionswechsel:** Neue PvP-, Mining- und
+Bergungsfelder verwenden den zentralen PvP-Weltmaßstab 4200 × 2600.
+Die Feldbreite und -höhe bereits gespeicherter lokaler Welten sind weiterhin
+Teil ihrer existierenden Checkpoints und werden beim Laden nicht stillschweigend
+überschrieben oder umskaliert. Solche älteren Felder können deshalb ihre
+bisherigen Maße 4400 × 2570 behalten, bis eine neue Feldinstanz erzeugt wird.
+
+Bei aktiven 1vs1-Kämpfen verwenden beide Karriere-Lokalansichten nun denselben
+`StrategicCombatRenderer` wie der eigenständige PvP-Modus, mit demselben
+Combat-Snapshot und ohne zusätzliche Nicht-Kampf-NPC-Zeichenebenen. Außerhalb
+des Duells bleiben Mining-/Bergungsoperationen, NPC-Simulation und die
+bestehende Karriere-Persistenz unverändert. Eine PvP-kompatible Kamera
+projiziert die normalen lokalen Operationsebenen; weder Kamera-Pan noch
+Zoom werden in einem neuen Save-Feld gespeichert.

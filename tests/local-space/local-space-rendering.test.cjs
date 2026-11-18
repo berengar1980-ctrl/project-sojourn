@@ -102,8 +102,8 @@ assert(
   'arriving and departing NPC miners must show engine thrust instead of popping in place'
 );
 assert(
-  renderer.includes('this.camera.zoomAt(3'),
-  'larger local space must preserve the previous initial visual scale'
+  renderer.includes('new PvPMapCamera(model.width, model.height)'),
+  'local map must use the same PvP camera'
 );
 assert(
   renderer.includes('SpaceBackgroundRenderer'),

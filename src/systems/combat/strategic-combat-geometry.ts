@@ -1,3 +1,4 @@
+import { COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT } from '../../core/combat-map-dimensions';
 import { createWeaponTelemetry } from './combat-weapon-telemetry';
 import { weaponCycleSeconds } from './combat-weapon-fire-control';
 import { weaponUiOrder, weaponHardpointName } from '../../core/weapon-hardpoint-labels';
@@ -15,9 +16,9 @@ import type {
   CombatBeamKind,
 } from './strategic-combat-types';
 
-export const DEFAULT_ARENA_WIDTH = 4200;
+export const DEFAULT_ARENA_WIDTH = COMBAT_MAP_WIDTH;
 
-export const DEFAULT_ARENA_HEIGHT = 2600;
+export const DEFAULT_ARENA_HEIGHT = COMBAT_MAP_HEIGHT;
 
 export const EDGE_PADDING = 160;
 

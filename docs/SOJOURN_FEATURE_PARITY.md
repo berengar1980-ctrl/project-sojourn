@@ -1423,3 +1423,23 @@ Lateral- und Burst-Schubwerte aus dem Kampf-Snapshot; normale Flug- und
 Bergbau-Effekte bleiben außerhalb des Kampfs unverändert. Die sichtbaren
 blauen NPC-Abbaulaser sind Arbeitsstrahlen und keine Traktorstrahlen;
 beim Beginn des jeweiligen Duells verschwinden sie für den kämpfenden NPC.
+
+## Review-Log (2026-11-18): PvP-Szenenrenderer und Kamera als Referenz
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Alle neuen lokalen Mining-, Bergungs- und PvP-Karten erhalten dieselben
+PvP-Arenamaße (4200 × 2600) aus einer gemeinsamen Konstantendatei. Die
+gewöhnlichen Karriereoperationen nutzen die native PvP-Kameraprojektion
+über einen Adapter, die Kampagne verwendet während eines 1vs1 dagegen
+direkt den `StrategicCombatRenderer` des eigenständigen PvP-Modus.
+Deshalb kommen Schiffe, Asteroiden, Waffen, RCS und Trefferdarstellung
+aus demselben aktiven Kampf-Snapshot und exakt demselben Zeichenpfad.
+Unbeteiligte Karriere-NPCs werden während der Kampfdarstellung nicht
+über den PvP-Canvas gelegt; sie bleiben in der Kampagnensimulation erhalten.
+
+Mining-/Bergungstätigkeit, lokale Scanner, Aufträge und NPC-Wirtschaft
+laufen außerhalb des Gefechts weiter über ihre bestehenden Systeme.
+Der ursprüngliche Kampfkern und gespeicherte Bestandsfelder bleiben
+unverändert; vorhandene Checkpoints dürfen die alten Kartengrößen
+behalten. Bei der Bergung richtet sich die anfängliche PvP-Kamera
+weiterhin auf das Spielerschiff, damit seine Scan-Kontakte sichtbar sind.

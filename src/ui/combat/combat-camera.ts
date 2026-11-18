@@ -22,11 +22,10 @@ export class CombatCamera {
     worldWidth: number,
     worldHeight: number
   ): CombatViewportPoint {
-    const baseX = 70 + (point.x / worldWidth) * (width - 140);
-    const baseY = 70 + (point.y / worldHeight) * (height - 140);
+    const worldScale = this.scale(width, height, worldWidth, worldHeight);
     return {
-      x: width / 2 + (baseX - width / 2) * this.zoom + this.offsetX,
-      y: height / 2 + (baseY - height / 2) * this.zoom + this.offsetY,
+      x: width / 2 + (point.x - worldWidth / 2) * worldScale + this.offsetX,
+      y: height / 2 + (point.y - worldHeight / 2) * worldScale + this.offsetY,
     };
   }
 

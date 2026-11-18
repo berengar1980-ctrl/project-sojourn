@@ -1,3 +1,4 @@
+import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
@@ -14,7 +15,8 @@ import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
@@ -24,6 +26,7 @@ import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
+  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
   protected readonly camera: MapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -34,8 +37,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly distressParticles = new DistressDamageParticles();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: SalvageSpaceViewModel;
-  protected combatImpactSerial = -1;
-  protected combatImpactAge = 1;
   protected hitAreas: readonly WreckHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
@@ -55,19 +56,23 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (!context) throw new Error('Salvage-space canvas context unavailable.');
     this.context = context;
     this.model = model;
-    this.camera = new MapCamera(model.width, model.height);
+    this.camera = new PvPMapCamera(model.width, model.height);
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.resize();
   }
   update(model: SalvageSpaceViewModel): void {
-    const impact = model.combat?.lastImpact;
-    if (impact && impact.serial !== this.combatImpactSerial) {
-      this.combatImpactSerial = impact.serial;
-      this.combatImpactAge = 0;
-    } else {
-      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
-    }
     this.model = model;
+    if (model.combat) {
+      if (!this.sharedCombatRenderer) {
+        this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+      } else {
+        this.sharedCombatRenderer.update(model.combat);
+      }
+      // The campaign now draws combat through the very same PvP renderer.
+      // Noncombat NPCs and mining/salvage effects are not painted on top.
+      return;
+    }
+    this.sharedCombatRenderer = null;
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     const now = performance.now();
@@ -82,11 +87,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
-      this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
-      // The sensor pulse is centered on the ship, not the world midpoint.
-      // Center the initial camera there so newly scanned contacts are visible.
+      // The PvP camera still starts centered on the player's salvage scan.
       const shipPoint = this.camera.worldToScreen(
         this.model.ship.position,
         rect.width,
@@ -97,13 +101,22 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    this.draw();
+    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    else this.draw();
   }
   pan(dx: number, dy: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.pan(dx, dy);
+      return;
+    }
     this.camera.pan(dx, dy);
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
+    if (this.sharedCombatRenderer) {
+      this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     this.camera.zoomAt(Math.exp(-deltaY * 0.00135), { x, y }, rect.width, rect.height);
     this.draw();
@@ -125,6 +138,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.shipImage.src = url;
   }
   protected draw(): void {
+    if (this.sharedCombatRenderer) return;
+    this.drawLocalScene();
+  }
+  private drawLocalScene(): void {
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -181,7 +198,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
-    this.drawCombat(width, height);
     this.distressParticles.drawScene(
       timeSeconds,
       this.model,

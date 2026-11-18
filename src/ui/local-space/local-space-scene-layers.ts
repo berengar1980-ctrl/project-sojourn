@@ -1,5 +1,4 @@
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
-import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
@@ -34,7 +33,6 @@ export abstract class LocalSpaceSceneLayers {
   protected abstract shipLighting: ShipLightingRenderer;
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
-  protected abstract combatImpactAge: number;
   protected drawNpcSelection(point: ScreenPoint, geometry: ShipScreenGeometry): void {
     this.context.save();
     this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
@@ -166,92 +164,6 @@ export abstract class LocalSpaceSceneLayers {
       }
     }
     return hits;
-  }
-  protected drawCombatBeams(width: number, height: number): void {
-    const combat = this.model.combat;
-    if (!combat) return;
-    for (const beam of combat.beams) {
-      // Capture the muzzle at fire time, as the standalone renderer does.
-      // A moving ship must not drag a retired shot across the screen.
-      drawCombatBeamVisual(
-        this.context,
-        beam,
-        this.camera.worldToScreen(beam.origin, width, height),
-        this.camera.worldToScreen(beam.end, width, height)
-      );
-    }
-  }
-  protected drawCombat(width: number, height: number): void {
-    const combat = this.model.combat;
-    if (!combat) return;
-
-    for (const mine of combat.mines) {
-      if (mine.detection === 'hidden') continue;
-      const point = this.camera.worldToScreen(mine.position, width, height);
-      this.context.save();
-      this.context.strokeStyle = mine.armed
-        ? 'rgba(226, 108, 82, .82)'
-        : 'rgba(166, 175, 177, .55)';
-      this.context.fillStyle = 'rgba(42, 47, 50, .92)';
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, 6, 0, Math.PI * 2);
-      this.context.fill();
-      this.context.stroke();
-      this.context.restore();
-    }
-
-    this.drawCombatBeams(width, height);
-
-    for (const projectile of combat.projectiles) {
-      const point = this.camera.worldToScreen(projectile.position, width, height);
-      const target = this.camera.worldToScreen(projectile.target, width, height);
-      const angle = Math.atan2(target.y - point.y, target.x - point.x);
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(angle);
-      if (projectile.kind === 'missile') {
-        this.context.fillStyle = '#e7d7b0';
-        this.context.fillRect(-7, -2, 12, 4);
-        this.context.strokeStyle = 'rgba(230, 133, 73, .72)';
-        this.context.lineWidth = 3;
-        this.context.beginPath();
-        this.context.moveTo(-8, 0);
-        this.context.lineTo(-22, 0);
-        this.context.stroke();
-      } else if (projectile.kind === 'plasma') {
-        this.context.fillStyle = 'rgba(118, 225, 255, .95)';
-        this.context.shadowColor = 'rgba(81, 194, 255, .95)';
-        this.context.shadowBlur = 10;
-        this.context.beginPath();
-        this.context.arc(0, 0, 5, 0, Math.PI * 2);
-        this.context.fill();
-      } else {
-        this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-        this.context.fillRect(-2, -1, 5, 2);
-      }
-      this.context.restore();
-    }
-
-    const impact = combat.lastImpact;
-    if (
-      !impact ||
-      (impact.layer !== 'hull' && impact.layer !== 'obstacle') ||
-      this.combatImpactAge >= 1
-    ) {
-      return;
-    }
-    const point = this.camera.worldToScreen(impact.position, width, height);
-    const alpha = 1 - this.combatImpactAge;
-    const radius = 10 + this.combatImpactAge * 34;
-    this.context.save();
-    this.context.fillStyle =
-      impact.layer === 'obstacle'
-        ? `rgba(196, 185, 160, ${alpha * 0.6})`
-        : `rgba(255, 139, 68, ${alpha * 0.8})`;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, Math.max(5, radius * 0.45), 0, Math.PI * 2);
-    this.context.fill();
-    this.context.restore();
   }
   protected drawNpcMinerScan(
     shipPoint: ScreenPoint,

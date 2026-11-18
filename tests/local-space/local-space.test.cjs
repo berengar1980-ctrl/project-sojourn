@@ -128,11 +128,11 @@ assert(
   'long-range scanner radius must be ready for sensors and crew skill'
 );
 assert(
-  generator.includes('const width = 4400'),
+  generator.includes('const width = COMBAT_MAP_WIDTH'),
   'mining field width must use the compact density-preserving size'
 );
 assert(
-  generator.includes('const height = 2570'),
+  generator.includes('const height = COMBAT_MAP_HEIGHT'),
   'mining field height must use the compact density-preserving size'
 );
 assert(

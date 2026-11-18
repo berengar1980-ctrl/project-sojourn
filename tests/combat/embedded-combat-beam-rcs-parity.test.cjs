@@ -22,9 +22,9 @@ assert(native.includes('drawCombatBeamVisual(this.context, beam, start, end)'));
 assert(beam.includes("beam.family === 'pulse_laser'"));
 assert(beam.includes("beam.family === 'railgun'"));
 for (const field of [mining, salvage]) {
-  assert(field.includes('drawCombatBeamVisual('));
-  assert(field.includes('this.camera.worldToScreen(beam.origin, width, height)'));
-  assert(field.includes('this.camera.worldToScreen(beam.end, width, height)'));
+  assert(!field.includes('drawCombatBeamVisual('));
+  assert(!field.includes('this.camera.worldToScreen(beam.origin, width, height)'));
+  assert(!field.includes('this.camera.worldToScreen(beam.end, width, height)'));
   assert(!field.includes('beam.weaponIndex % weaponHardpoints.length'));
   assert(field.includes('drawFieldNpcThrusters('));
   assert(field.includes('combatDefender'));
@@ -42,9 +42,10 @@ assert(thrust.includes('combatant.boostActive'));
 assert(thrust.includes('engines.drawExhaust('));
 assert(thrust.includes('maneuver.drawExhaust('));
 for (const field of [miningPlayer, salvagePlayer]) {
+  assert(field.includes('new StrategicCombatRenderer(this.canvas, model.combat)'));
   assert(field.includes('drawFieldPlayerThrusters('));
   assert(field.includes('this.model.combat?.attacker ?? null'));
 }
 assert(service.includes('moveCombatant('));
 assert(bridge.includes('context.engagements.activePlayerCombat()?.getSnapshot()'));
-console.log('PASS embedded beam origins, shared weapon effects, combat RCS and boost telemetry');
+console.log('PASS native PvP combat beam renderer, RCS and boost used in both career maps');
