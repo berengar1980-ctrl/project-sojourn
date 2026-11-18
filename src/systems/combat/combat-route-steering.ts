@@ -201,11 +201,6 @@ export function steerCombatRoute(
   if (obstacle && !waypoint) {
     direction = normalize(direction.x + obstacle.x * 2.4, direction.y + obstacle.y * 2.4);
   }
-  if (waypoint && obstacle) {
-    // Slow the approach before the collision shell: merely steering sideways
-    // while carrying full forward inertia still rammed dense asteroid fields.
-    targetSpeedFactor = Math.min(targetSpeedFactor, 0.8);
-  }
 
   // Close contact with a blocking ship needs a committed *sideways* pass,
   // not another forward push into the collision shell.
