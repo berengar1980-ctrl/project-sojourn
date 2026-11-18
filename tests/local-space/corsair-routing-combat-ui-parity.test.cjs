@@ -56,6 +56,6 @@ assert(combat.includes('drawCombatShipStatus(') && combat.includes('drawCombatBo
 
 const safety = read('src/systems/combat/combat-steering-safety.ts');
 const steering = read('src/systems/combat/combat-route-steering.ts');
-assert(safety.includes('!obstacle && !waypoint'));
+assert(safety.includes('(!obstacle || waypoint)'));
 assert(steering.includes('waypoint ?? cover ?? direction'));
 console.log('PASS corsair obstacle detours and campaign/standalone combat overlay parity');
