@@ -23,14 +23,15 @@ export function tickFieldPirates(
   // Keep the active duel defender rendered, even when strategic combat marks
   // it as combatMovement. Other combatants still use normal sector transitions.
   traffic.reconcile(pirates, combatantId);
+  const canTargetPlayer =
+    !state.combatResultPending &&
+    state.combatReengageSeconds <= 0 &&
+    !context.engagements.activePlayerCombat();
+  const playerPosition = space?.getSnapshot().instance.ship.position ?? null;
   traffic.tick(
     seconds,
     pirates,
-    state.combatResultPending ||
-    state.combatReengageSeconds > 0 ||
-    context.engagements.activePlayerCombat()
-      ? null
-      : (space?.getSnapshot().instance.ship.position ?? null),
+    canTargetPlayer ? playerPosition : null,
     field.miners.ships.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
