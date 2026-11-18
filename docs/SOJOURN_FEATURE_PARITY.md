@@ -1363,3 +1363,13 @@ anzuwenden. Die bestehende reine 1vs1-Kampflogik, ihre Waffen und
 Trefferberechnung bleiben unangetastet. Save-Schema, Fraktionslogik und
 Karten-Generatoren bleiben unverändert. Vor Merge sind CI sowie echte
 Kampfwechsel- und Rückkehrtests in beiden Karten erforderlich.
+
+## Review-Log (2026-11-18): Sichtbarer Piratengegner beim lokalen 1vs1
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Die laufende Piratenfeldverwaltung entfernt den aktiven Kampfgegner nicht mehr,
+wenn der strategische Kampf sein Sektor-NPC-Flag auf combatMovement setzt.
+Damit bleibt sein vorhandenes Schiff im Mining-Renderer, während seine Pose
+weiterhin ausschließlich aus der 1vs1-Simulation kommt. Unbeteiligte
+Kampfschiffe und die normale Feldverwaltung bleiben unverändert; keine
+Änderung an Waffen, KI, Save-Schema oder Karte.
