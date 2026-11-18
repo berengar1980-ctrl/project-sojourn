@@ -29,6 +29,8 @@ export interface StarMapEngagementService {
 
 export interface StarMapEngagementOptions {
   readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
+  /** Restricts attacks on the player only; NPC battles remain independent. */
+  readonly mayInterceptPlayer?: (npc: SectorNpcState) => boolean;
   readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
   readonly onPlayerAttack?: (npc: SectorNpcState) => void;
   readonly onPlayerVictory?: (id: string) => void;
