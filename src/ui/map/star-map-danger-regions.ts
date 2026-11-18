@@ -68,9 +68,7 @@ function buildDangerClouds(
   const eligible: WorldRegion[] = [];
   for (let row = 0; row < pixelHeight; row += 1) {
     const y = originY + ((row + 0.5) * extentHeight) / pixelHeight;
-    const possibleRow = candidates.filter(
-      ({ bounds }) => y >= bounds[1] && y <= bounds[3]
-    );
+    const possibleRow = candidates.filter(({ bounds }) => y >= bounds[1] && y <= bounds[3]);
     if (possibleRow.length === 0) continue;
     for (let col = 0; col < pixelWidth; col += 1) {
       const x = originX + ((col + 0.5) * extentWidth) / pixelWidth;
