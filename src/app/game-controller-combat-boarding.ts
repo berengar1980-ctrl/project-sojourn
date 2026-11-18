@@ -127,11 +127,14 @@ export function startCombatBoarding(
         });
       }
       context.engagements.finishPlayerCombat(result.outcome);
+      state.combatResultPending = true;
       showCampaignCombatSummary(
         context.root,
         snapshot,
         () => {
+          state.combatReengageSeconds = 8;
           runSceneZoomTransition(context.root, () => returnToMap(result.outcome));
+          state.combatResultPending = false;
         },
         result.outcome
       );
@@ -153,7 +156,10 @@ export function returnFromCombat(
   }
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
+  context.state.combatResultPending = true;
   showCampaignCombatSummary(context.root, snapshot, () => {
+    context.state.combatReengageSeconds = 8;
     runSceneZoomTransition(context.root, returnToMap);
+    context.state.combatResultPending = false;
   });
 }
