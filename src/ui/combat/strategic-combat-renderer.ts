@@ -21,10 +21,7 @@ import {
   drawCombatShipCaption,
 } from './combat-ship-detail-renderer';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
-import {
-  drawVisionAutocannon,
-  drawVisionProjectile,
-} from './combat-weapon-vision-renderer';
+import { drawVisionAutocannon, drawVisionProjectile } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
