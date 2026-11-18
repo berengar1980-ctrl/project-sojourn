@@ -1,4 +1,4 @@
-import { moveFieldShip } from '../navigation/field-ship-routing';
+import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -39,6 +39,7 @@ export interface LocalNpcSalvagerState {
   position: WorldPoint;
   headingRadians: number;
   speed: number;
+  routeState?: FieldRouteState;
   phase: LocalNpcSalvagePhase;
   targetWreckId: string | null;
   salvageActive: boolean;
