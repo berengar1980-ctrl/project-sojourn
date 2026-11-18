@@ -1,3 +1,4 @@
+import { moveFieldShip } from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -23,6 +24,8 @@ const DRONE_SCAN_RADIUS = 460;
  */
 export class AsteroidSecurityDrone {
   private position: WorldPoint;
+  private headingRadians = 0;
+  private speed = 0;
   private readonly patrol: readonly WorldPoint[];
   private nextWaypoint = 0;
   private readonly observed = new Set<string>();
@@ -107,28 +110,15 @@ export class AsteroidSecurityDrone {
   ): string[] {
     if (!this.operational) return [];
     const destination = this.patrol[this.nextWaypoint]!;
-    const dx = destination.x - this.position.x;
-    const dy = destination.y - this.position.y;
-    const distance = Math.hypot(dx, dy);
-    const move = Math.min(distance, DRONE_CRUISE * Math.max(0, Math.min(dt, 0.25)));
-    if (distance > 0)
-      this.position = {
-        x: this.position.x + (dx / distance) * move,
-        y: this.position.y + (dy / distance) * move,
-      };
-    for (const rock of asteroids) {
-      if (!rock.routeBlocking) continue;
-      const px = this.position.x - rock.position.x;
-      const py = this.position.y - rock.position.y;
-      const separation = Math.hypot(px, py);
-      const minimum = rock.radius + 25;
-      if (separation >= minimum) continue;
-      this.position = {
-        x: rock.position.x + (separation > 0 ? px / separation : 1) * minimum,
-        y: rock.position.y + (separation > 0 ? py / separation : 0) * minimum,
-      };
-    }
-    if (distance <= move + 0.001) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+    const arrived = moveFieldShip(
+      this,
+      destination,
+      DRONE_CRUISE,
+      Math.max(0, Math.min(dt, 0.25)),
+      asteroids.filter((rock) => rock.routeBlocking),
+      40
+    );
+    if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
 
     const active = new Set(
       contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
