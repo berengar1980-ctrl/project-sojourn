@@ -12,6 +12,7 @@ import type {
 import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
 import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
+import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { longitudinalManeuverDemand } from '../../systems/ships/ship-maneuver-thrusters';
 import { MapCamera, type ScreenPoint } from '../map/map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -462,5 +463,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.canvas.clientWidth,
       this.canvas.clientHeight
     );
+    if (this.model.combat) {
+      drawEmbeddedCombatShipTelemetry(this.context, this.model.combat.attacker, geometry);
+    }
   }
 }
