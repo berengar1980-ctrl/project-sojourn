@@ -25,6 +25,8 @@ export function createInitialControllerState(
     combatPanel: null,
     boardingPanel: null,
     embeddedCombat: null,
+    combatResultPending: false,
+    combatReengageSeconds: 0,
     selectedNpcId: null,
     localSpaceSeed: 0,
     salvageSpaceSeed: 0,

@@ -6,6 +6,14 @@ import { localMiningCombatArena } from './game-controller-combat';
 import { settleLegalDebt } from './game-controller-legal-ledger';
 import { offerLegalDemand } from './game-controller-legal-decisions';
 
+function canLocalPiratesTargetPlayer(context: ControllerRuntimeContext): boolean {
+  return (
+    !context.state.combatResultPending &&
+    context.state.combatReengageSeconds <= 0 &&
+    !context.engagements.activePlayerCombat()
+  );
+}
+
 export function tickFieldPirates(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -26,7 +34,9 @@ export function tickFieldPirates(
   traffic.tick(
     seconds,
     pirates,
-    space?.getSnapshot().instance.ship.position ?? null,
+    canLocalPiratesTargetPlayer(context)
+      ? (space?.getSnapshot().instance.ship.position ?? null)
+      : null,
     field.miners.ships.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,

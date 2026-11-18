@@ -23,7 +23,7 @@ function percent(current: number, maximum: number): number {
   return maximum <= 0 ? 0 : Math.max(0, Math.min(100, (current / maximum) * 100));
 }
 
-function combatantHud(
+export function combatantHud(
   combatant: StrategicCombatSnapshot['attacker'],
   elapsedSeconds: number
 ): string {

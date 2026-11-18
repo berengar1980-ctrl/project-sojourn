@@ -49,6 +49,8 @@ export interface ControllerRuntimeState {
   combatPanel: StrategicCombatPanel | null;
   boardingPanel: BoardingTacticalPanel | null;
   embeddedCombat: 'local-space' | 'salvage-space' | null;
+  combatResultPending: boolean;
+  combatReengageSeconds: number;
   selectedNpcId: string | null;
   localSpaceSeed: number;
   salvageSpaceSeed: number;

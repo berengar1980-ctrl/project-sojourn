@@ -128,7 +128,11 @@ export function resolveControllerCombat(
     }
   }
   state.embeddedCombat = null;
+  state.combatResultPending = true;
   showCampaignCombatSummary(context.root, snapshot, () => {
+    // Resolve the previous encounter before any further simulation frame.
+    state.combatReengageSeconds = 8;
     if (snapshot.attacker.hullHp <= 0) scenes.starMap();
+    state.combatResultPending = false;
   });
 }
