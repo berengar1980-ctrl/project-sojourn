@@ -15,26 +15,21 @@ import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
-import { drawLegacyCombatBeam } from './combat-legacy-beam-renderer';
 import {
   drawCombatMineMarker,
   drawCombatShipBody,
   drawCombatShipCaption,
 } from './combat-ship-detail-renderer';
-import { drawIonCannonArc, drawRailgunLance } from './combat-weapon-fx-renderer';
-import { drawFluxProjectorPulse } from './combat-flux-projector-fx';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import {
   drawVisionAutocannon,
-  drawVisionIonLaser,
   drawVisionProjectile,
-  drawVisionPulseLaser,
-  drawVisionFrontRepeater,
 } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
+import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
@@ -264,32 +259,7 @@ export class StrategicCombatRenderer {
     // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
-    const ageSeconds = Math.max(0, beam.maxTtlSeconds - beam.ttlSeconds);
-    if (beam.family === 'flux_projector') {
-      drawFluxProjectorPulse(this.context, start, end, ageSeconds);
-      return;
-    }
-    if (beam.family === 'front_repeater') {
-      drawVisionFrontRepeater(this.context, start, end, ageSeconds);
-      return;
-    }
-    if (beam.family === 'pulse_laser') {
-      drawVisionPulseLaser(this.context, start, end, ageSeconds);
-      return;
-    }
-    if (beam.family === 'ion_laser') {
-      drawVisionIonLaser(this.context, start, end, ageSeconds, beam.id);
-      return;
-    }
-    if (beam.family === 'ion_cannon') {
-      drawIonCannonArc(this.context, start, end, ageSeconds, beam.id);
-      return;
-    }
-    if (beam.family === 'railgun') {
-      drawRailgunLance(this.context, start, end, ageSeconds);
-      return;
-    }
-    drawLegacyCombatBeam(this.context, beam, start, end);
+    drawCombatBeamVisual(this.context, beam, start, end);
   }
   private drawProjectiles(width: number, height: number, above: boolean): void {
     for (const projectile of this.model.projectiles) {
