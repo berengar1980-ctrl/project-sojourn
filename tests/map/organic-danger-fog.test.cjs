@@ -40,9 +40,9 @@ assert.equal(bounds.length, bands.length);
 let excluded = 0;
 for (let y = -900; y <= 1800; y += 120) {
   for (let x = -900; x <= 2100; x += 120) {
-    const inside = bounds.some(([minX, minY, maxX, maxY]) =>
-      x >= minX && x <= maxX && y >= minY && y <= maxY
-    );
+    const inside = bounds.some(([minX, minY, maxX, maxY]) => {
+      return x >= minX && x <= maxX && y >= minY && y <= maxY;
+    });
     if (!inside) {
       assert.deepEqual(fog.sampleDangerFog(bands, { x, y }), { green: 0, yellow: 0, red: 0 });
       excluded += 1;
