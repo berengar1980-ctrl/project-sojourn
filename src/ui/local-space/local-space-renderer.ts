@@ -406,11 +406,9 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
         'mining'
       );
     drawThrusters('below');
-
     this.context.save();
     this.context.translate(geometry.center.x, geometry.center.y);
     this.context.rotate(geometry.angle);
-
     if (this.shipImage.complete && this.shipImage.naturalWidth > 0) {
       const offset = spriteDrawOffset(source, geometry);
       this.shipLighting.draw(this.context, {
@@ -426,7 +424,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     }
 
     this.context.restore();
-
     drawThrusters('above');
 
     this.shieldImpacts.draw(
