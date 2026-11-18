@@ -8,6 +8,7 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
 const renderer = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
+const fieldThrust = readModuleSource(root, 'src/ui/combat/embedded-combat-thrusters.ts');
 const effects = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-effects-renderer.ts'),
   'utf8'
@@ -95,7 +96,9 @@ assert(
   'working NPC miners must visibly fire a mining beam at their target asteroid'
 );
 assert(
-  renderer.includes('npc.speed > 1') && renderer.includes('engineEffects.draw('),
+  renderer.includes('drawFieldNpcThrusters(') &&
+    fieldThrust.includes('if (speed <= 1) return;') &&
+    fieldThrust.includes('engineRenderer.draw('),
   'arriving and departing NPC miners must show engine thrust instead of popping in place'
 );
 assert(
@@ -209,13 +212,17 @@ assert(
   'thruster light must use additive glow'
 );
 assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
-assert(renderer.includes('engineEffects.draw('), 'engine exhaust must render behind the ship');
+const sharedThrustBehind = renderer.includes("drawThrusters('below')");
+const sharedThrustAbove = renderer.includes("drawThrusters('above')");
+const operationalEngine = fieldThrust.includes('engineRenderer.draw(');
+const operationalRcs = fieldThrust.includes('maneuverRenderer.draw(');
+assert(sharedThrustBehind && operationalEngine, 'engine exhaust must render behind the ship');
 assert(
-  renderer.includes("engineIntensity, timeSeconds, 'above'") && engines.includes('this.drawGlow('),
+  sharedThrustAbove && operationalEngine && engines.includes('this.drawGlow('),
   'engine glow must render after the ship sprite'
 );
 assert(
-  renderer.includes("maneuverDemand, timeSeconds, 'above'") && maneuvers.includes('this.drawGlow('),
+  sharedThrustAbove && operationalRcs && maneuvers.includes('this.drawGlow('),
   'RCS glow must render after the ship sprite'
 );
 assert(engines.includes('engineFlicker'), 'engine thrust must use shared visible flicker');

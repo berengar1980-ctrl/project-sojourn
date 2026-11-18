@@ -26,7 +26,7 @@ export class MiningEffectsRenderer {
     timeSeconds: number,
     layer: ShipEffectLayer
   ): void {
-    if (!model.laserActive || !model.miningImpact) return;
+    if (model.combat || !model.laserActive || !model.miningImpact) return;
 
     const target = this.camera.worldToScreen(
       model.miningImpact.point,
@@ -89,6 +89,8 @@ export class MiningEffectsRenderer {
     timeSeconds: number,
     layer: ShipEffectLayer
   ): void {
+    // Mining tractor work must not masquerade as a combat weapon tether.
+    if (model.combat) return;
     const hardpoints = (model.ship.hardpoints.tractorBeams ?? []).filter(
       (hardpoint) => (hardpoint.layer ?? 'below') === layer
     );

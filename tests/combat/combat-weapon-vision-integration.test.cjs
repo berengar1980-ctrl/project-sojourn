@@ -178,6 +178,7 @@ const types = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-types.ts'),
   'utf8'
 );
+const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-visual.ts'), 'utf8');
 assert(
   types.includes('readonly weaponFamily?: ShipWeaponFamily'),
   'weapon identity is retained on the existing impact event'
@@ -188,12 +189,14 @@ assert(
   'instant beams and travelling projectiles both attribute impacts to the correct weapon'
 );
 assert(
-  renderer.includes('drawIonCannonArc(') && renderer.includes('drawRailgunLance('),
+  renderer.includes('drawCombatBeamVisual(') &&
+    nativeBeam.includes('drawIonCannonArc(') &&
+    nativeBeam.includes('drawRailgunLance('),
   'existing ion cannon and railgun flight effects remain in use'
 );
 assert(
-  renderer.includes('drawVisionIonLaser(') &&
-    renderer.includes('drawVisionPulseLaser(') &&
+  nativeBeam.includes('drawVisionIonLaser(') &&
+    nativeBeam.includes('drawVisionPulseLaser(') &&
     renderer.includes('drawVisionAutocannon(') &&
     renderer.includes('drawCombatImpactBatch(') &&
     impactBatch.includes('drawVisionWeaponImpact('),

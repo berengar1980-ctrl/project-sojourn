@@ -674,3 +674,14 @@ Asteroiden und dem aktiven Ziel neu berechnet. Dadurch bleiben alte Spielstände
 kompatibel. Die Kampagnenkarten zeichnen Strategie-/Manövertext und Burst-
 Schubleiste mit denselben Funktionen wie der eigenständige PvP-/Duellmodus.
 Die Kampfschaden- und Schildsimulation erhält keine separaten Implementierungen.
+
+### Gemeinsame Duell-Effekte in den lokalen Karten (2026-11-18)
+
+**Kein neues Save-Feld:** Eigenständiges Duell, Mining- und Bergungsduell
+verwenden weiterhin denselben strategischen Kampfzustand. Der Renderer in
+den lokalen Karten liest für RCS, Antrieb und Burst-Schub unmittelbar die
+vorhandenen transienten Combat-Snapshot-Felder. Die Kampfstrahlen benutzen
+den beim Abschuss gespeicherten Ursprung und die gleichen Effektdauern und
+Waffenfamilien-Renderer wie das eigenständige Duell. Ein Miner im aktiven
+Kampf zeichnet keinen zuvor laufenden Abbaulaser weiter. Außerhalb von
+Kämpfen bleiben Bergbau-Laser und Traktoroperationen unverändert.
