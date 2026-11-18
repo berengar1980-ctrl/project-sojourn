@@ -85,9 +85,7 @@ export function advanceControllerFieldWorld(
     if (activeCombat) {
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
-      const bodies = new Map(
-        (activeCombat.arena.asteroids ?? []).map((body) => [body.id, body])
-      );
+      const bodies = new Map((activeCombat.arena.asteroids ?? []).map((body) => [body.id, body]));
       for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
         const asteroid = field.instance.asteroids[index]!;
         const body = bodies.get(asteroid.id);
