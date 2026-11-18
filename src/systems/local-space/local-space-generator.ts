@@ -1,3 +1,4 @@
+import { COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT } from '../../core/combat-map-dimensions';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { asteroidContactBound } from '../../core/asteroid-contact-profile';
 import type {
@@ -164,8 +165,8 @@ export function generateMiningSpace(
   resourceIds?: readonly string[],
   density: 'sparse' | 'standard' = 'standard'
 ): LocalSpaceInstance {
-  const width = 4400;
-  const height = 2570;
+  const width = COMBAT_MAP_WIDTH;
+  const height = COMBAT_MAP_HEIGHT;
   const random = createRandom(seed);
 
   return {
