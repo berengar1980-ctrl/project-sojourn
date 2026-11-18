@@ -114,8 +114,14 @@ const nativeBeam = fs.readFileSync(
 );
 assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual weapon muzzles');
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
-assert(renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawIonCannonArc('), 'game renderer dispatches ion cannon lightning');
-assert(renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawRailgunLance('), 'game renderer dispatches railgun lance');
+assert(
+  renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawIonCannonArc('),
+  'game renderer dispatches ion cannon lightning'
+);
+assert(
+  renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawRailgunLance('),
+  'game renderer dispatches railgun lance'
+);
 assert(
   renderer.includes('drawVisionAutocannon('),
   'game renderer dispatches upgraded seven-round autocannon salvo'
