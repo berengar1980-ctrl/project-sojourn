@@ -75,6 +75,12 @@ assert(
 );
 assert(safe.distance >= 1000, 'detours must never under-report geometric route distance');
 
+// A* pruning must preserve the shortest direct result in safe, obstruction-free space.
+const clearWorld = { ...world, id: 'danger-test-clear', regions: [] };
+const clear = routes.planRouteWithProfile(clearWorld, 'a', 'b', 'safe');
+assert.equal(clear.points.length, 2, 'clear sectors should avoid needless waypoints');
+assert.equal(clear.distance, 1000, 'optimized geometric path retains exact distance');
+
 const service = navigation.createNavigationService(world, 'a', 240);
 service.selectDestination('b');
 const preview = service.getSnapshot().previewRoute;

@@ -234,22 +234,34 @@ function routePoints(
   const distances = nodes.map(() => Number.POSITIVE_INFINITY);
   const previous: (number | null)[] = nodes.map(() => null);
   const visited = new Set<number>();
+  // Every segment costs at least its straight-line length at the cheapest zone weight.
+  const lowerBound = (a: WorldPoint, b: WorldPoint): number =>
+    distanceBetween(a, b) * PROFILE_WEIGHTS[profile][0];
   distances[0] = 0;
+  // A valid direct path provides an initial upper bound for the optimal cost.
+  distances[1] = segmentMetrics(world, from, to, profile, contacts).cost;
+  previous[1] = 0;
 
   while (visited.size < nodes.length) {
     let current = -1;
-    let best = Number.POSITIVE_INFINITY;
-    for (let index = 0; index < nodes.length; index += 1) {
-      if (!visited.has(index) && distances[index]! < best) {
+    let bestEstimate = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < nodes.length; index++) {
+      if (visited.has(index)) continue;
+      const estimate = distances[index]! + lowerBound(nodes[index]!, to);
+      if (estimate < bestEstimate) {
         current = index;
-        best = distances[index]!;
+        bestEstimate = estimate;
       }
     }
-    if (current < 0 || current === 1) break;
+    // A* cannot improve the best route once all remaining lower bounds reach its cost.
+    if (current < 0 || current === 1 || bestEstimate >= distances[1]!) break;
     visited.add(current);
 
-    for (let next = 0; next < nodes.length; next += 1) {
+    for (let next = 0; next < nodes.length; next++) {
       if (next === current || visited.has(next)) continue;
+      const minimumScore = distances[current]! + lowerBound(nodes[current]!, nodes[next]!);
+      if (minimumScore >= distances[next]!) continue;
+      if (minimumScore + lowerBound(nodes[next]!, to) >= distances[1]!) continue;
       const metrics = segmentMetrics(world, nodes[current]!, nodes[next]!, profile, contacts);
       const score = distances[current]! + metrics.cost;
       if (score < distances[next]!) {
@@ -259,7 +271,6 @@ function routePoints(
     }
   }
 
-  if (!Number.isFinite(distances[1]!)) return [from, to];
   const chosen = reconstruct(nodes, previous, 1);
   // A safe course may cut through a red frontier; it must not circle half the sector.
   return pathDistance(chosen) > distanceBetween(from, to) * MAX_DETOUR[profile]

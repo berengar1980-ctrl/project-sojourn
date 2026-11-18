@@ -561,3 +561,16 @@ Treibstoffverbrauch, Tarif und gespeicherte Navigationszustände bleiben
 unverändert; die Filter dürfen eine tatsächlich erreichbare Reise nicht
 ablehnen. Regressionstests prüfen insbesondere die Nichtausführung der
 teuren Routenberechnung bei leeren Tanks.
+
+### Sternkarten-Routenplanung und NPC-Bedrohungsaktualisierung (18. November 2026)
+
+Die Gefahrzonenroutenplanung verwendet nun eine zulässige A*-Luftlinien-Untergrenze
+und einen bereits gültigen Direktkurs als Kostengrenze. Kandidaten, die die
+beste Route nicht mehr verbessern können, werden nicht mehr teuer auf
+Gefahrenzonen abgetastet. Die Pfadkostenfunktion und die Tankstopp- und
+Gefahrenregeln bleiben unverändert. Die Sternkarten-Treibstoffvorschau darf
+bei ausschließlich beweglichen Bedrohungskontakten für maximal vier Sekunden
+wiederverwendet werden. Beim tatsächlichen Flugstart wird eine neue Planung
+mit dem aktuellen Bedrohungsstand erzwungen; Schiffswechsel, Tankstand,
+Credits, Routenprofil oder Zielwechsel bleiben sofort cache-invalidierend.
+Diese Maßnahmen ändern weder persistierte Routen noch das Savegame-Schema.
