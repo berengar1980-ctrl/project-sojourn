@@ -20,11 +20,7 @@ const height = 900;
 campaign.setViewDimensions(width, height);
 campaign.fit(width, height);
 
-for (const point of [
-  { x: 0, y: 0 },
-  { x: 2100, y: 1300 },
-  { x: 4100, y: 2550 },
-]) {
+for (const point of [{ x: 0, y: 0 }, { x: 2100, y: 1300 }, { x: 4100, y: 2550 }]) {
   const expected = native.project(point, width, height, COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT);
   const actual = campaign.worldToScreen(point, width, height);
   assert.deepEqual(actual, expected, 'both modes use the same PvP projection');
