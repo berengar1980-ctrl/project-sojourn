@@ -713,3 +713,14 @@ den vorhandenen Feldhindernissen erneut berechnet. Die Checkpoint-Strukturen
 für NPCs und Drohnen bleiben unverändert. Die neue Piratengrafikauswahl
 verwendet weiterhin die drei bestehenden Klassen-IDs und deren Datenfelder.
 Kampfstrahlen bleiben unter der bisherigen zentralen PvP-Kampfautorität.
+
+### NPC-Miner bei wiederholten Kämpfen (2026-11-18)
+
+**Keine neue Save-Version und keine neuen Felder.** Minerschiffe werden während
+eines NPC-Gefechts und der anschließenden Erholungsphase nicht mehr aus der
+persistierten lokalen Feldliste entfernt. Die vorhandene Instanz bleibt erhalten;
+Arbeit und Arbeitsstrahlen sind bis zur Freigabe pausiert. Kampfteilnehmer werden
+unverändert vom PvP-Kampfkern bewegt und beim Ende in die lokale Pose
+zurückgeführt. Zusätzliche zivile Schiffe werden während des Kampfs nur als
+Darstellungsebene über dem nativen PvP-Renderer gezeigt, ohne eine eigene
+Simulation zu starten. Alte Minerschiff-Checkpoints bleiben weiterhin lesbar.

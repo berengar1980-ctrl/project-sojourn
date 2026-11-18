@@ -286,8 +286,10 @@ assert(
   renderer.includes("['???']") && renderer.includes('resource.remaining'),
   'long range scan shows ? while detail scan shows actual contents'
 );
+const salvageCamera = readModuleSource(root, 'src/ui/salvage/salvage-camera-centering.ts');
 assert(
-  renderer.includes('this.camera.pan(rect.width / 2 - shipPoint.x'),
+  renderer.includes('centerSalvageCamera(this.camera, this.model.ship.position') &&
+    salvageCamera.includes('camera.pan(width / 2 - point.x'),
   'initial camera must show player-centered long-range scan contacts'
 );
 assert(

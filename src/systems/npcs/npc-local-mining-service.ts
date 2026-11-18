@@ -362,7 +362,9 @@ function advanceMiner(
 function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): void {
   const playerState = runtime.options.getPlayerShipState?.();
   const bodies: LocalShieldShipBody[] = runtime.ships.flatMap((local) => {
-    if (local.npcId === combatantId) return [];
+    const npc = runtime.byId.get(local.npcId);
+    const inCombat = local.npcId === combatantId || Boolean(npc?.combatMovement);
+    if (inCombat || (npc?.combatRecoverySeconds ?? 0) > 0) return [];
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
@@ -395,23 +397,20 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     const npc = runtime.byId.get(ship.npcId);
     // The duel owns this NPC's movement until its final pose is reconciled.
     if (ship.npcId === combatantId) continue;
-    if (
-      !npc ||
-      npc.hullHp <= 0 ||
-      (npc.combatRecoverySeconds ?? 0) > 0 ||
-      npc.locationId !== runtime.options.locationId
-    ) {
-      if (
-        npc &&
-        npc.hullHp > 0 &&
-        npc.locationId === runtime.options.locationId &&
-        (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0)
-      ) {
-        runtime.combatReturnPositions.set(npc.id, { ...ship.position });
-      } else {
-        runtime.combatReturnPositions.delete(ship.npcId);
-      }
+    if (!npc || npc.hullHp <= 0 || npc.locationId !== runtime.options.locationId) {
+      runtime.combatReturnPositions.delete(ship.npcId);
       runtime.ships.splice(index, 1);
+      continue;
+    }
+    // NPC-versus-NPC battles and their recovery never despawn a miner from
+    // its local field. Suspend work until the same physical ship may resume.
+    if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+      ship.speed = 0;
+      ship.laserActive = false;
+      ship.scanProgress = 0;
+      ship.targetAsteroidId = null;
+      ship.phase = 'approaching';
+      delete ship.routeState;
       continue;
     }
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);

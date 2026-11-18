@@ -1,3 +1,4 @@
+import { centerSalvageCamera } from './salvage-camera-centering';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
@@ -62,15 +63,25 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   update(model: SalvageSpaceViewModel): void {
     this.model = model;
+    for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+        this.sharedCombatRenderer = new StrategicCombatRenderer(
+          this.canvas,
+          model.combat,
+          (pose, width, height, timeSeconds) => {
+            (this.camera as PvPMapCamera).restorePose(pose);
+            const battle = this.model.combat;
+            if (!battle) return;
+            const active = new Set([battle.attacker.id, battle.defender.id]);
+            this.drawNpcShips(width, height, timeSeconds, active);
+          }
+        );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
       } else {
         this.sharedCombatRenderer.update(model.combat);
       }
-      // The campaign now draws combat through the very same PvP renderer.
-      // Noncombat NPCs and mining/salvage effects are not painted on top.
+      // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
     if (this.sharedCombatRenderer)
@@ -92,14 +103,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
-      this.camera.fit(rect.width, rect.height);
-      // The PvP camera still starts centered on the player's salvage scan.
-      const shipPoint = this.camera.worldToScreen(
-        this.model.ship.position,
-        rect.width,
-        rect.height
-      );
-      this.camera.pan(rect.width / 2 - shipPoint.x, rect.height / 2 - shipPoint.y);
+      centerSalvageCamera(this.camera, this.model.ship.position, rect.width, rect.height);
       this.hasFitted = true;
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
