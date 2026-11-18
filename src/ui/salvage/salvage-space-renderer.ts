@@ -99,6 +99,13 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
+      // The PvP camera still starts centered on the player's salvage scan.
+      const shipPoint = this.camera.worldToScreen(
+        this.model.ship.position,
+        rect.width,
+        rect.height
+      );
+      this.camera.pan(rect.width / 2 - shipPoint.x, rect.height / 2 - shipPoint.y);
       this.hasFitted = true;
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
