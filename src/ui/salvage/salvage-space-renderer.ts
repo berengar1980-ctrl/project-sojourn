@@ -62,15 +62,25 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   }
   update(model: SalvageSpaceViewModel): void {
     this.model = model;
+    for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(this.canvas, model.combat);
+        this.sharedCombatRenderer = new StrategicCombatRenderer(
+          this.canvas,
+          model.combat,
+          (pose, width, height, timeSeconds) => {
+            (this.camera as PvPMapCamera).restorePose(pose);
+            const battle = this.model.combat;
+            if (!battle) return;
+            const active = new Set([battle.attacker.id, battle.defender.id]);
+            this.drawNpcShips(width, height, timeSeconds, active);
+          }
+        );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
       } else {
         this.sharedCombatRenderer.update(model.combat);
       }
-      // The campaign now draws combat through the very same PvP renderer.
-      // Noncombat NPCs and mining/salvage effects are not painted on top.
+      // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
     if (this.sharedCombatRenderer)
