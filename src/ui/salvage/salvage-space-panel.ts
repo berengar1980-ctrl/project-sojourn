@@ -17,6 +17,7 @@ import { renderSectorEvent } from './salvage-sector-event';
 import { bindSalvageSpaceInput } from './salvage-space-input';
 
 import { SalvageSpaceRenderer } from './salvage-space-renderer';
+import { createEmbeddedCombatHud } from '../combat/embedded-combat-hud';
 
 import {
   type SalvageControls,
@@ -281,9 +282,15 @@ function bindSalvagePanelActions(
   const unbindInput = bindSalvageSpaceInput({
     canvas: ui.canvas,
     renderer,
-    onSelectWreck: options.onSelectWreck,
-    onSelectNpc: options.onSelectNpc,
-    onNavigate: (x, y) => options.onNavigate({ x, y }),
+    onSelectWreck: (id) => {
+      if (!getModel().combat) options.onSelectWreck(id);
+    },
+    onSelectNpc: (id) => {
+      if (!getModel().combat) options.onSelectNpc(id);
+    },
+    onNavigate: (x, y) => {
+      if (!getModel().combat) options.onNavigate({ x, y });
+    },
   });
   ui.sectorEventContainer.addEventListener('pointerdown', (event) => {
     const target = event.target;
@@ -352,6 +359,7 @@ function bindSalvagePanelActions(
 
 export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
   const shell = createShell(options);
+  const combatHud = createEmbeddedCombatHud(shell);
   const ui = controls(shell);
   let model = options.model;
   const renderer = new SalvageSpaceRenderer(ui.canvas, model);
@@ -381,6 +389,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
   const update = (next: SalvageSpaceViewModel): void => {
     model = next;
     renderer.update(model);
+    combatHud.update(model.combat);
     const now = performance.now();
     if (now - lastHudUpdate < 100) return;
     lastHudUpdate = now;
