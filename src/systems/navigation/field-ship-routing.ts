@@ -31,13 +31,8 @@ function blocked(
   const dy = target.y - start.y;
   const lengthSq = dx * dx + dy * dy;
   if (lengthSq < 1) return null;
-  const t = Math.max(
-    0,
-    Math.min(
-      1,
-      ((obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy) / lengthSq
-    )
-  );
+  const dot = (obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy;
+  const t = Math.max(0, Math.min(1, dot / lengthSq));
   const x = start.x + dx * t - obstacle.position.x;
   const y = start.y + dy * t - obstacle.position.y;
   return x * x + y * y < (obstacle.radius + clearance) ** 2 ? t : null;
@@ -97,12 +92,10 @@ export function fieldRouteTarget(
 ): WorldPoint {
   const previous = detours.get(ship);
   if (previous) {
-    const reached = Math.hypot(
-      ship.position.x - previous.waypoint.x,
-      ship.position.y - previous.waypoint.y
-    ) < Math.max(18, clearance * 0.45);
-    const changed =
-      Math.hypot(target.x - previous.target.x, target.y - previous.target.y) > 130;
+    const waypointDx = ship.position.x - previous.waypoint.x;
+    const waypointDy = ship.position.y - previous.waypoint.y;
+    const reached = Math.hypot(waypointDx, waypointDy) < Math.max(18, clearance * 0.45);
+    const changed = Math.hypot(target.x - previous.target.x, target.y - previous.target.y) > 130;
     if (!reached && !changed && obstacles.some((rock) => rock.id === previous.obstacleId)) {
       return previous.waypoint;
     }
@@ -132,10 +125,7 @@ export function moveFieldShip(
   if (distance <= Math.max(2, step)) {
     ship.position = { ...waypoint };
     ship.speed = 0;
-    return (
-      waypoint === target ||
-      Math.hypot(target.x - waypoint.x, target.y - waypoint.y) < 2
-    );
+    return waypoint === target || Math.hypot(target.x - waypoint.x, target.y - waypoint.y) < 2;
   }
   ship.position = {
     x: ship.position.x + (dx / distance) * step,
