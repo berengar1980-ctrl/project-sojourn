@@ -31,4 +31,7 @@ for (const section of ['background', 'danger-fog', 'locations', 'npc-ships']) {
   assert(has('src/ui/map/topdown-map-renderer.ts', 'canvas.star.' + section));
 }
 assert(has('src/ui/local-space/local-space-renderer.ts', 'canvas.local.draw'));
+for (const section of ['background', 'backdrop', 'asteroids', 'npc-ships', 'player-ship']) {
+  assert(has('src/ui/local-space/local-space-renderer.ts', 'canvas.local.' + section));
+}
 console.log('PASS opt-in browser performance diagnostics');

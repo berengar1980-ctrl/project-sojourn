@@ -151,27 +151,35 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     const timeSeconds = performance.now() / 1000;
     const geometry = this.shipGeometry(width, height);
 
-    this.backgroundRenderer.draw({
-      width,
-      height,
-      cameraCenter: this.camera.getCenter(),
-      cameraZoom: this.camera.getZoom(),
-      timeSeconds,
+    measurePerformance('canvas.local.background', () =>
+      this.backgroundRenderer.draw({
+        width,
+        height,
+        cameraCenter: this.camera.getCenter(),
+        cameraZoom: this.camera.getZoom(),
+        timeSeconds,
+      })
+    );
+    measurePerformance('canvas.local.backdrop', () =>
+      this.asteroidBackdrop.draw({
+        width,
+        height,
+        cameraCenter: this.camera.getCenter(),
+        cameraZoom: this.camera.getZoom(),
+      })
+    );
+    this.hitAreas = measurePerformance('canvas.local.asteroids', () => {
+      const areas: AsteroidHitArea[] = [];
+      for (const asteroid of this.model.asteroids) {
+        const hit = this.drawAsteroid(asteroid, width, height);
+        if (hit && asteroid.kind === 'resource') areas.push(hit);
+      }
+      return areas;
     });
-    this.asteroidBackdrop.draw({
-      width,
-      height,
-      cameraCenter: this.camera.getCenter(),
-      cameraZoom: this.camera.getZoom(),
-    });
-    const hitAreas: AsteroidHitArea[] = [];
-    for (const asteroid of this.model.asteroids) {
-      const hitArea = this.drawAsteroid(asteroid, width, height);
-      if (hitArea && asteroid.kind === 'resource') hitAreas.push(hitArea);
-    }
-    this.hitAreas = hitAreas;
 
-    this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
+    this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
+      this.drawNpcShips(width, height, timeSeconds)
+    );
     this.drawSecurityDrone(width, height, timeSeconds);
     this.drawCombat(width, height);
     this.drawChunks(width, height);
@@ -189,7 +197,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.drawShortRangeScan(width, height, timeSeconds);
     this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'below');
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'below');
-    this.drawShip(geometry, timeSeconds);
+    measurePerformance('canvas.local.player-ship', () => this.drawShip(geometry, timeSeconds));
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'above');
     this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'above');
     if (this.debugHardpoints) {

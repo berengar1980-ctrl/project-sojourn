@@ -64,14 +64,21 @@ function buildDangerClouds(
   // Only compute warped organic fog inside a conservative influence region.
   // Most of the extended atlas lies beyond all clouds and must remain transparent.
   const possibleFog = potentialDangerFogBounds(regions);
+  const candidates = regions.map((region, index) => ({ region, bounds: possibleFog[index]! }));
+  const eligible: WorldRegion[] = [];
   for (let row = 0; row < pixelHeight; row += 1) {
     const y = originY + ((row + 0.5) * extentHeight) / pixelHeight;
-    const possibleRow = possibleFog.filter((bounds) => y >= bounds[1] && y <= bounds[3]);
+    const possibleRow = candidates.filter(
+      ({ bounds }) => y >= bounds[1] && y <= bounds[3]
+    );
     if (possibleRow.length === 0) continue;
     for (let col = 0; col < pixelWidth; col += 1) {
       const x = originX + ((col + 0.5) * extentWidth) / pixelWidth;
-      if (!possibleRow.some((bounds) => x >= bounds[0] && x <= bounds[2])) continue;
-      const fog = sampleDangerFog(regions, { x, y });
+      eligible.length = 0;
+      for (const { region, bounds } of possibleRow)
+        if (x >= bounds[0] && x <= bounds[2]) eligible.push(region);
+      if (eligible.length === 0) continue;
+      const fog = sampleDangerFog(eligible, { x, y });
       const index = (row * pixelWidth + col) * 4;
       for (const buffer of buffers) {
         // Narrows is already a red world. Red pirate territories carve gaps in

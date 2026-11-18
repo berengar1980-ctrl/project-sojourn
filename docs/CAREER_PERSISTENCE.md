@@ -586,3 +586,15 @@ Lebensdauer bleiben wie bisher gecacht. Opt-in-Messungen mit `?perf=1`
 erfassen zusätzlich die Dauer der Abschnitte Hintergrund, Gefahrennebel,
 Ortsymbole und NPC-Schiffe. Es entstehen keine Laufzeit-/Save-Felder,
 keine Persistenzänderungen und keine Änderungen der Spielsimulation.
+
+### Performance-Messung lokaler Karten und Gefahrennebel-Regionen (18. November 2026)
+
+Beim Aufbau des bisherigen Gefahrennebel-Atlas werden nur die Regionen
+auf organische Farbstärke geprüft, deren konservative unverworfene
+Einflussgrenzen den Pixel tatsächlich enthalten. Das Raster und die
+exakten Farbsamples bleiben unverändert; der vorhandene Objektpuffer wird
+wiederverwendet, um unnötige Allokationen je Pixel zu vermeiden.
+Die opt-in-Performance-Messung gliedert lokale Karten in Hintergrund,
+Asteroiden-Hintergrundebene, echte Asteroiden, NPC-Schiffe und Spielerschiff.
+Dies ändert weder die Regeln für Gefahrzonen noch die Simulation oder das
+Persistenzformat.
