@@ -33,6 +33,7 @@ export class PvPMapCamera extends MapCamera {
 
   override zoomAt(factor: number, point: ScreenPoint, width: number, height: number): void {
     this.combat.zoomAt(factor, point.x, point.y, width, height);
+    this.setViewDimensions(width, height);
   }
 
   override worldToScreen(point: WorldPoint, width: number, height: number): ScreenPoint {
