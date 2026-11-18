@@ -27,7 +27,7 @@ for (const ship of getAllShipDefinitions()) {
   for (const type of [...nonReactor, ...(expectedOptional[ship.role] ?? [])]) {
     const part = getShipComponent(type, installed[type][0]);
     const expectedTier = type === 'shield' || type === 'hull' ? 3 : 2;
-    assert.equal(part?.tier, expectedTier, ship.id + ': expected Mk ' + expectedTier + ' ' + type);
+    assert.equal(part?.tier, expectedTier, ship.id + ': Mk ' + expectedTier + ' ' + type);
   }
   assert.equal(installed.hull[0], 'hull3', ship.id + ': Mk III hull');
   assert.equal(installed.shield[0], 'shield3', ship.id + ': Mk III shield');
@@ -46,7 +46,7 @@ for (const ship of getAllShipDefinitions()) {
     assert(service.canSetSlot(ship, 'weapon', index, id), ship.id + ': compatible mount');
   }
   equipDeveloperTestShip(ship, service);
-  assert.deepEqual(service.get(ship), installed, ship.id + ': repeated test selection is idempotent');
+  assert.deepEqual(service.get(ship), installed, ship.id + ': idempotent test loadout');
 }
 
 const normal = createShipLoadoutService();
