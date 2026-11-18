@@ -97,7 +97,6 @@ export abstract class SalvageSceneLayers {
         this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
       }
       this.context.restore();
-
       drawFieldNpcThrusters(
         this.context,
         npc.hardpoints,
@@ -118,7 +117,6 @@ export abstract class SalvageSceneLayers {
         );
       }
       if (combatDefender) drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry);
-
       hits.push({
         id: npc.id,
         point,
