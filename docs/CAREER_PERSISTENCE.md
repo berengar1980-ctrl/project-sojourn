@@ -641,3 +641,15 @@ Die bisherige Kampf- und Rückkehrposition wird weiterhin mit den bestehenden
 Checkpoint-Feldern erfasst; inaktive Kampfschiffe werden wie zuvor aus dem
 Feld entfernt. Es gibt kein neues Save-Feld und keine neue Autorität.
 Ein Regressionstest prüft die Sichtbarkeit und verhindert doppelte Bewegung.
+
+### Kampfabschluss und lokale Gefechtsanzeigen (2026-11-18)
+
+**Keine neuen Save-Felder:** Die Anzeige des Kampfergebnisses pausiert die laufende
+Kampagnensimulation, bis der Spieler bestätigt. Eine kurze Begegnungssperre
+nach dem Ergebnis verhindert unmittelbar neue Überfälle. Beide Flags sind
+flüchtiger UI-/Sitzungszustand; abgeschlossene Gefechte bleiben wie bisher
+über die bestehenden Schiffs- und NPC-Zustände gespeichert. Beim Laden werden
+diese transienten Flags neu initialisiert. Die lokale Mining-/Bergungskarte
+zeigt beim Gefecht dieselben Schild-, Hüllen-, Subsystem- und Waffenwerte
+wie die eigenständige Raumkampfoberfläche. Keine Änderung am Save-Schema,
+der 1vs1-Trefferberechnung, den Waffen oder der Arena-Persistenz.
