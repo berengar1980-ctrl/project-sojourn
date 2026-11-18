@@ -212,20 +212,17 @@ assert(
   'thruster light must use additive glow'
 );
 assert(thrusterGlow.includes('options.flicker'), 'thruster glow must respond to flicker');
+const sharedThrustBehind = renderer.includes("drawThrusters('below')");
+const sharedThrustAbove = renderer.includes("drawThrusters('above')");
+const operationalEngine = fieldThrust.includes('engineRenderer.draw(');
+const operationalRcs = fieldThrust.includes('maneuverRenderer.draw(');
+assert(sharedThrustBehind && operationalEngine, 'engine exhaust must render behind the ship');
 assert(
-  renderer.includes("drawThrusters('below')") && fieldThrust.includes('engineRenderer.draw('),
-  'engine exhaust must render behind the ship'
-);
-assert(
-  renderer.includes("drawThrusters('above')") &&
-    fieldThrust.includes("engineRenderer.draw(context, source, geometry, intensity, timeSeconds, layer)") &&
-    engines.includes('this.drawGlow('),
+  sharedThrustAbove && operationalEngine && engines.includes('this.drawGlow('),
   'engine glow must render after the ship sprite'
 );
 assert(
-  renderer.includes("drawThrusters('above')") &&
-    fieldThrust.includes("maneuverRenderer.draw(context, source, geometry, demand, timeSeconds, layer)") &&
-    maneuvers.includes('this.drawGlow('),
+  sharedThrustAbove && operationalRcs && maneuvers.includes('this.drawGlow('),
   'RCS glow must render after the ship sprite'
 );
 assert(engines.includes('engineFlicker'), 'engine thrust must use shared visible flicker');
