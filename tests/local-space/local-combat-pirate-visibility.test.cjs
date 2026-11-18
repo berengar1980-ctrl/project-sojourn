@@ -45,4 +45,16 @@ assert.equal(combatShip.headingRadians, 0.7);
 pirate.combatMovement = null;
 traffic.reconcile([pirate]);
 assert.equal(traffic.snapshot([pirate]).length, 1, 'duel ship persists after combat ends');
-console.log('PASS local pirate remains visible during strategic combat and is not double-moved');
+const separated = new LocalPirateTraffic(4000, 2600, 456);
+const otherPirate = { ...pirate, id: 'pirate-second' };
+separated.reconcile([pirate, otherPirate]);
+separated.syncCombatPose(pirate.id, { x: 1500, y: 1300 }, 0);
+separated.syncCombatPose(otherPirate.id, { x: 1500, y: 1300 }, 0);
+separated.tick(1 / 60, [pirate, otherPirate], { x: 2800, y: 1300 }, [], [], () => false);
+const [one, two] = separated.snapshot([pirate, otherPirate]);
+assert(
+  Math.hypot(one.position.x - two.position.x, one.position.y - two.position.y) >= 90,
+  'unengaged pirates must avoid overlapping each other'
+);
+
+console.log('PASS local pirate combat visibility, single authority and traffic separation');
