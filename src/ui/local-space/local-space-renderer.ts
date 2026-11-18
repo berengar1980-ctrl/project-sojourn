@@ -1,3 +1,4 @@
+import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
@@ -486,38 +487,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     );
   }
   protected drawNavigationRoute(width: number, height: number): void {
-    const route = this.model.navigationRoute;
-    const target = this.model.navigationTarget;
-    if (!target || route.length === 0) return;
-
-    this.context.save();
-    this.context.strokeStyle = 'rgba(104, 213, 239, .7)';
-    this.context.lineWidth = 1.25;
-    this.context.setLineDash([6, 6]);
-    this.context.beginPath();
-
-    route.forEach((point, index) => {
-      const screen = this.camera.worldToScreen(point, width, height);
-      if (index === 0) this.context.moveTo(screen.x, screen.y);
-      else this.context.lineTo(screen.x, screen.y);
-    });
-    this.context.stroke();
-    this.context.setLineDash([]);
-
-    const point = this.camera.worldToScreen(target, width, height);
-    const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.12;
-    const radius = 8 * pulse;
-    this.context.strokeStyle = 'rgba(119, 226, 248, .9)';
-    this.context.lineWidth = 1.5;
-    this.context.beginPath();
-    this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.beginPath();
-    this.context.moveTo(point.x - radius - 5, point.y);
-    this.context.lineTo(point.x + radius + 5, point.y);
-    this.context.moveTo(point.x, point.y - radius - 5);
-    this.context.lineTo(point.x, point.y + radius + 5);
-    this.context.stroke();
-    this.context.restore();
+    drawLocalNavigationRoute(this.context, this.camera, this.model, width, height);
   }
 }
