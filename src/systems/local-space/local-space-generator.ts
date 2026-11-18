@@ -88,9 +88,10 @@ function createResourceAsteroids(
   random: () => number,
   width: number,
   height: number,
-  resourceIds?: readonly string[]
+  resourceIds?: readonly string[],
+  density: 'sparse' | 'standard' = 'standard'
 ): LocalAsteroid[] {
-  const count = 64 + Math.floor(random() * 17);
+  const count = density === 'sparse' ? 15 + Math.floor(random() * 6) : 64 + Math.floor(random() * 17);
   const asteroids: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -124,9 +125,11 @@ function createDebris(
   seed: number,
   random: () => number,
   width: number,
-  height: number
+  height: number,
+  density: 'sparse' | 'standard' = 'standard'
 ): LocalAsteroid[] {
-  const count = 127 + Math.floor(random() * 34);
+  const count =
+    density === 'sparse' ? 26 + Math.floor(random() * 8) : 127 + Math.floor(random() * 34);
   const debris: LocalAsteroid[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -157,7 +160,8 @@ function createDebris(
 export function generateMiningSpace(
   sourceLocationId: string,
   seed: number,
-  resourceIds?: readonly string[]
+  resourceIds?: readonly string[],
+  density: 'sparse' | 'standard' = 'standard'
 ): LocalSpaceInstance {
   const width = 4400;
   const height = 2570;
@@ -170,8 +174,8 @@ export function generateMiningSpace(
     width,
     height,
     asteroids: [
-      ...createResourceAsteroids(seed, random, width, height, resourceIds),
-      ...createDebris(seed, random, width, height),
+      ...createResourceAsteroids(seed, random, width, height, resourceIds, density),
+      ...createDebris(seed, random, width, height, density),
     ],
     chunks: [],
     ship: {

@@ -76,7 +76,8 @@ function createResources(
 export function generateSalvageField(
   sourceLocationId: string,
   seed: number,
-  dangerLevel = 1
+  dangerLevel = 1,
+  density: 'moderate' | 'standard' = 'standard'
 ): SalvageField {
   const width = 4400;
   const height = 2570;
@@ -128,8 +129,8 @@ export function generateSalvageField(
     });
   }
 
-  addSalvageSections(random, seed, dangerLevel, width, height, wrecks);
-  const debris = generateSalvageDebris(random, seed, dangerLevel, width, height, wrecks);
+  addSalvageSections(random, seed, dangerLevel, width, height, wrecks, density);
+  const debris = generateSalvageDebris(random, seed, dangerLevel, width, height, wrecks, density);
 
   return {
     debris,
@@ -163,7 +164,8 @@ function addSalvageSections(
   dangerLevel: number,
   width: number,
   height: number,
-  wrecks: SalvageWreck[]
+  wrecks: SalvageWreck[],
+  density: 'moderate' | 'standard'
 ): void {
   const gate = seededLocalGate(width, height, seed);
   const sectionVariants: readonly SalvageSectionVariant[] = [
@@ -178,7 +180,8 @@ function addSalvageSections(
   ];
   const sections: SalvageSection[] = [];
   // One of each large, open, multi-room 3D section is guaranteed per map.
-  const sectionCount = 8 + Math.floor(random() * 4);
+  const sectionCount =
+    density === 'moderate' ? 3 + Math.floor(random() * 2) : 8 + Math.floor(random() * 4);
   for (let index = 0; index < sectionCount; index += 1) {
     const variant = sectionVariants[index] ?? sectionVariants[Math.floor(random() * 8)]!;
     // Keep the established large-section scale, with a per-section ±25% variation.
@@ -259,7 +262,8 @@ function generateSalvageDebris(
   dangerLevel: number,
   width: number,
   height: number,
-  wrecks: SalvageWreck[]
+  wrecks: SalvageWreck[],
+  density: 'moderate' | 'standard'
 ): SalvageDebris[] {
   const gate = seededLocalGate(width, height, seed);
   // Keep all eight small-fragment silhouettes. Some are salvageable, while the
@@ -276,7 +280,8 @@ function generateSalvageDebris(
   ];
   const debris: SalvageDebris[] = [];
   // Roughly 20-25% fewer small fragments, counterbalanced by more varied sizes.
-  const debrisCount = 140 + Math.floor(random() * 25);
+  const debrisCount =
+    density === 'moderate' ? 48 + Math.floor(random() * 12) : 140 + Math.floor(random() * 25);
   for (let index = 0; index < debrisCount; index += 1) {
     const variant = variants[index] ?? variants[Math.floor(random() * variants.length)]!;
     // Each small fragment can grow to twice its previous individual size.

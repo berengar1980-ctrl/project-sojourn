@@ -17,9 +17,9 @@ const { nativeCombatAsteroids } = loadStandaloneTypeScriptModule(
   root,
   'src/systems/combat/combat-asteroid-motion.ts'
 );
-const scrapPresetSource = readModuleSource(root, 'src/systems/combat/duel-scrap-presets.ts');
+const scrapPresetSource = readModuleSource(root, 'src/systems/combat/field-combat-arena.ts');
 assert(
-  scrapPresetSource.includes("piece.kind === 'resource'"),
+  scrapPresetSource.includes("asteroid.kind === 'resource'"),
   'PvP obstacle and weapon-cover classification must match the asteroid map resource rule'
 );
 

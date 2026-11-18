@@ -598,3 +598,17 @@ Die opt-in-Performance-Messung gliedert lokale Karten in Hintergrund,
 Asteroiden-Hintergrundebene, echte Asteroiden, NPC-Schiffe und Spielerschiff.
 Dies ändert weder die Regeln für Gefahrzonen noch die Simulation oder das
 Persistenzformat.
+
+### Gemeinsame Mining- und Bergungskarten für PvP (18. November 2026)
+
+Die fünf bestehenden Duell-Kartenauswahlen nutzen denselben autoritativen
+Mining- beziehungsweise Bergungsfeld-Generator wie die Kampagne. Nur die
+optionalen Dichteparameter steuern die Anzahl generierter Objekte; für alle
+regulären Karriereaufrufe bleibt das Standardverhalten exakt erhalten.
+Eine gemeinsame Kampfarenen-Transformation übernimmt Position, Rotation,
+Größe, Kollisionsradius, ID, Bewegungszustand und bei Wracks die 3D-Variante.
+Die PvP-Auswahl verteilt oder skaliert nach dem Generieren keinerlei Objekte;
+stattdessen werden sichere Startpositionen in der generierten Umgebung gesucht.
+Auch Bergungskämpfe der Kampagne verwenden diesen Adapter für das tatsächlich
+sichtbare Feld. Kampfphysik, Waffen und das bestehende taktische Kampf-HUD
+bleiben dieselben. Spielstände und Persistenz-Schema ändern sich nicht.

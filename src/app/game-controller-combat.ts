@@ -1,5 +1,3 @@
-import type { LocalSpaceInstance } from '../core/local-space-types';
-import type { WorldPoint } from '../core/world-types';
 import { combatEquippedWeapons, combatWeaponMounts } from '../systems/combat/combat-loadout-mounts';
 import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
@@ -63,34 +61,5 @@ export function createPlayerCombatant(
   };
 }
 
-/** The live mining field is the combat arena: preserve rocks, inertia and geometry. */
-export function localMiningCombatArena(instance: LocalSpaceInstance, velocity: WorldPoint) {
-  return {
-    width: instance.width,
-    height: instance.height,
-    backdropSeed: instance.seed,
-    attackerPosition: { ...instance.ship.position },
-    attackerHeadingRadians: instance.ship.headingRadians,
-    attackerVelocity: velocity,
-    asteroids: instance.asteroids.map((asteroid) => ({
-      id: asteroid.id,
-      kind: asteroid.kind,
-      position: { ...asteroid.position },
-      velocity: { ...asteroid.physics.velocity },
-      angularVelocity: asteroid.physics.angularVelocity,
-      physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
-      radius: asteroid.radius,
-      ...(asteroid.collisionRadius !== undefined
-        ? { collisionRadius: asteroid.collisionRadius }
-        : {}),
-      rotation: asteroid.rotation,
-    })),
-    obstacles: instance.asteroids
-      .filter((asteroid) => asteroid.kind === 'resource')
-      .map((asteroid) => ({
-        id: asteroid.id,
-        position: { ...asteroid.position },
-        radius: asteroid.collisionRadius ?? asteroid.radius,
-      })),
-  };
-}
+// Mining-to-combat conversion is shared by the campaign and standalone duels.
+export { miningFieldCombatArena as localMiningCombatArena } from '../systems/combat/field-combat-arena';
