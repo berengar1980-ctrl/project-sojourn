@@ -51,6 +51,19 @@ export abstract class LocalSpaceSceneLayers {
     this.context.stroke();
     this.context.restore();
   }
+  protected drawPirateMarker(point: ScreenPoint, geometry: ShipScreenGeometry): void {
+    // Always identify corsairs, even below the regular NPC-name zoom threshold.
+    this.context.save();
+    this.context.fillStyle = '#e6a36a';
+    this.context.font = 'bold 10px ui-monospace, monospace';
+    this.context.textAlign = 'center';
+    this.context.fillText(
+      'KORSAR',
+      point.x,
+      point.y - Math.max(geometry.width, geometry.height) * 0.5 - 10
+    );
+    this.context.restore();
+  }
   protected drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
     const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
@@ -124,20 +137,7 @@ export abstract class LocalSpaceSceneLayers {
         radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
       });
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
-      if (npc.isPirate) {
-        // Visible independently of zoom: ship silhouette is not a reliable
-        // indicator of faction or hostility in the shared local renderer.
-        this.context.save();
-        this.context.fillStyle = '#e6a36a';
-        this.context.font = 'bold 10px ui-monospace, monospace';
-        this.context.textAlign = 'center';
-        this.context.fillText(
-          'KORSAR',
-          point.x,
-          point.y - Math.max(geometry.width, geometry.height) * 0.5 - 10
-        );
-        this.context.restore();
-      }
+      if (npc.isPirate) this.drawPirateMarker(point, geometry);
 
       if (npc.targetAsteroidId) {
         const target = this.model.asteroids.find(
