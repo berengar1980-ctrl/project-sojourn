@@ -12,6 +12,7 @@ const salvage = read('src/ui/salvage/salvage-space-renderer.ts');
 const miningLayers = read('src/ui/local-space/local-space-scene-layers.ts');
 const salvageLayers = read('src/ui/salvage/salvage-scene-layers.ts');
 const playerEffects = read('src/ui/local-space/mining-effects-renderer.ts');
+const navigationRoute = read('src/ui/local-space/local-space-navigation-route.ts');
 
 assert(renderer.includes('this.drawCareerActors?.('));
 for (const scene of [mining, salvage]) {
@@ -32,5 +33,6 @@ assert(miningLayers.includes('drawMiningTractorBeam('));
 assert(miningLayers.includes('drawMiningLaserBeam('));
 assert(playerEffects.includes('drawMiningTractorBeam('));
 assert(playerEffects.includes('drawMiningLaserBeam('));
+assert(navigationRoute.includes("model.miningPhase === 'extracting'"));
 
 console.log('PASS career NPC visibility and shared mining FX');
