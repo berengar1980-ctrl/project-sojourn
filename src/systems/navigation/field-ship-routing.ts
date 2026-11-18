@@ -38,10 +38,11 @@ function blocked(
   if (lengthSq < 1) return false;
   const dot = (obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy;
   const t = Math.max(0, Math.min(1, dot / lengthSq));
-  return Math.hypot(
+  const gap = Math.hypot(
     start.x + dx * t - obstacle.position.x,
     start.y + dy * t - obstacle.position.y
-  ) < obstacle.radius + clearance;
+  );
+  return gap < obstacle.radius + clearance;
 }
 
 function makeRoute(
@@ -72,10 +73,11 @@ function makeRoute(
   });
   // Never accept the planner's straight-line fallback through a solid body.
   if (planned.compromised) {
-    const safe = planned.route.every(
-      (point, index) =>
-        index === 0 || !obstacles.some((rock) => blocked(planned.route[index - 1]!, point, rock, 0))
-    );
+    const safe = planned.route.every((point, index) => {
+      if (index === 0) return true;
+      const before = planned.route[index - 1]!;
+      return !obstacles.some((rock) => blocked(before, point, rock, 0));
+    });
     if (!safe) return [];
   }
   return planned.route.slice(1);
