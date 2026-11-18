@@ -67,8 +67,15 @@ export abstract class SalvageSceneLayers {
       const combatDefender =
         this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
       drawFieldNpcThrusters(
-        this.context, npc.hardpoints, geometry, npc.speed, combatDefender,
-        timeSeconds, 'below', this.engineEffects, 'salvage'
+        this.context,
+        npc.hardpoints,
+        geometry,
+        npc.speed,
+        combatDefender,
+        timeSeconds,
+        'below',
+        this.engineEffects,
+        'salvage'
       );
       this.context.save();
       this.context.translate(point.x, point.y);
@@ -92,8 +99,15 @@ export abstract class SalvageSceneLayers {
       this.context.restore();
 
       drawFieldNpcThrusters(
-        this.context, npc.hardpoints, geometry, npc.speed, combatDefender,
-        timeSeconds, 'above', this.engineEffects, 'salvage'
+        this.context,
+        npc.hardpoints,
+        geometry,
+        npc.speed,
+        combatDefender,
+        timeSeconds,
+        'above',
+        this.engineEffects,
+        'salvage'
       );
       if (combatDefender) {
         this.shieldImpacts.draw(
