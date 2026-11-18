@@ -4138,3 +4138,47 @@ body.app-has-system-bar #app > .harrow-duel {
     top: 128px;
   }
 }
+
+/* Campaign field combat: the same shield/weapon telemetry as a standalone duel.
+   Keep the local canvas active; crossfade only the operational controls. */
+.local-space-shell .embedded-combat-hud {
+  z-index: 16;
+  top: 20px;
+  max-height: min(78vh, 750px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+.local-space-shell.is-embedded-combat .embedded-combat-hud {
+  opacity: 1;
+  visibility: visible;
+}
+.local-space-shell .local-space-title,
+.local-space-shell .local-operations-toolbar,
+.local-space-shell .local-operations-feedback,
+.local-space-shell .local-operations-dock,
+.local-space-shell .system-log,
+.local-space-shell .local-mining-event,
+.local-space-shell .salvage-event {
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+.local-space-shell.is-embedded-combat .local-space-title,
+.local-space-shell.is-embedded-combat .local-operations-toolbar,
+.local-space-shell.is-embedded-combat .local-operations-feedback,
+.local-space-shell.is-embedded-combat .local-operations-dock,
+.local-space-shell.is-embedded-combat .system-log,
+.local-space-shell.is-embedded-combat .local-mining-event,
+.local-space-shell.is-embedded-combat .salvage-event {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.local-space-shell.is-embedded-combat .combat-tactics {
+  z-index: 17;
+}
+@media (max-width: 650px) {
+  .local-space-shell .embedded-combat-hud {
+    top: 8px;
+    max-height: 52vh;
+  }
+}
