@@ -68,6 +68,7 @@ export interface LocalNpcShipView {
   readonly spriteAspectRatio: number;
   readonly hardpoints: ShipHardpoints;
   readonly isSelected?: boolean;
+  readonly isPirate?: boolean;
 }
 
 export interface LocalShipView {
