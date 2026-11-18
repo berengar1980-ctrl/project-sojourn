@@ -33,12 +33,13 @@ export function drawMiningLaserBeam(
   start: ScreenPoint,
   end: ScreenPoint,
   width: number,
-  strength: number
+  strength: number,
+  pulse: number
 ): void {
   context.save();
   context.shadowColor = 'rgba(255, 54, 30, .85)';
-  context.shadowBlur = 7;
-  context.strokeStyle = 'rgba(238, 62, 40, .9)';
+  context.shadowBlur = 5 + pulse * 6;
+  context.strokeStyle = 'rgba(238, 62, 40, ' + (0.62 + pulse * 0.3) + ')';
   context.globalAlpha = strength;
   context.lineWidth = width;
   context.beginPath();
