@@ -1,3 +1,4 @@
+import { planMiningApproachRoute } from '../local-space/local-space-navigation';
 import { moveFieldShip } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -117,6 +118,22 @@ function assignTarget(
   ship.phase = 'approaching';
   ship.laserActive = false;
   ship.scanProgress = 0;
+  // Pick an actually reachable approach position, not an arbitrary fixed angle
+  // that can be trapped behind solid asteroids.
+  const route = planMiningApproachRoute({
+    start: ship.position,
+    target: asteroid,
+    asteroids: runtime.options.getAsteroids(),
+    clearance: 65,
+    width: runtime.options.width,
+    height: runtime.options.height,
+  });
+  const endpoint = route[route.length - 1] ?? approachPoint(npc.id, asteroid);
+  ship.routeState = {
+    target: { ...endpoint },
+    points: route.slice(1).map((point) => ({ ...point })),
+    index: 0,
+  };
   return true;
 }
 
@@ -218,7 +235,7 @@ function advanceApproaching(
       assignTarget(runtime, ship, npc);
       return;
     }
-    const point = approachPoint(npc.id, asteroid);
+    const point = ship.routeState?.target ?? approachPoint(npc.id, asteroid);
     if (
       moveFieldShip(
         ship,
