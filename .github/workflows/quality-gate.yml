@@ -27,10 +27,6 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Diagnostic formatter diff
-        run: |
-          npx prettier src/systems/npcs/npc-local-pirate-routing.ts | diff -u src/systems/npcs/npc-local-pirate-routing.ts - || true
-          npx prettier tests/local-space/corsair-routing-combat-ui-parity.test.cjs | diff -u tests/local-space/corsair-routing-combat-ui-parity.test.cjs - || true
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
