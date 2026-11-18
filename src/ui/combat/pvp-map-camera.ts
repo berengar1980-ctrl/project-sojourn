@@ -40,14 +40,10 @@ export class PvPMapCamera extends MapCamera {
   }
 
   override screenToWorld(point: ScreenPoint, width: number, height: number): WorldPoint {
-    const zoom = this.combat.zoom;
+    const worldScale = this.combat.scale(width, height, this.arenaWidth, this.arenaHeight);
     return {
-      x:
-        ((point.x - width / 2 - this.combat.offsetX) / zoom + width / 2 - 70) *
-        (this.arenaWidth / Math.max(1, width - 140)),
-      y:
-        ((point.y - height / 2 - this.combat.offsetY) / zoom + height / 2 - 70) *
-        (this.arenaHeight / Math.max(1, height - 140)),
+      x: (point.x - width / 2 - this.combat.offsetX) / worldScale + this.arenaWidth / 2,
+      y: (point.y - height / 2 - this.combat.offsetY) / worldScale + this.arenaHeight / 2,
     };
   }
 
