@@ -116,6 +116,7 @@ function scanForPiratePlayerAttack(runtime: EngagementRuntime): void {
     .filter(
       (npc) =>
         npc.pirate &&
+        runtime.options.mayInterceptPlayer?.(npc) !== false &&
         pirateMayIntercept(world, npc, navigation.currentPosition) &&
         runtime.options.mayInitiateAttack?.(npc) !== false &&
         npcMayInitiateAttack(npc) &&
