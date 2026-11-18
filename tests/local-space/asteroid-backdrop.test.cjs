@@ -123,7 +123,7 @@ assert.ok(
   localSpaceSource.indexOf('this.backgroundRenderer.draw(') <
     localSpaceSource.indexOf('this.asteroidBackdrop.draw(') &&
     localSpaceSource.indexOf('this.asteroidBackdrop.draw(') <
-      localSpaceSource.indexOf('const hitAreas: AsteroidHitArea[]'),
+      localSpaceSource.indexOf("this.hitAreas = measurePerformance('canvas.local.asteroids'"),
   'draw backdrop after stars and before simulated asteroids'
 );
 assert.ok(
