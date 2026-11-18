@@ -43,6 +43,15 @@ for (let y = -900; y <= 1800; y += 120) {
     const inside = bounds.some(([minX, minY, maxX, maxY]) => {
       return x >= minX && x <= maxX && y >= minY && y <= maxY;
     });
+    const eligible = bands.filter((_, index) => {
+      const [minX, minY, maxX, maxY] = bounds[index];
+      return x >= minX && x <= maxX && y >= minY && y <= maxY;
+    });
+    assert.deepEqual(
+      fog.sampleDangerFog(eligible, { x, y }),
+      fog.sampleDangerFog(bands, { x, y }),
+      'region pruning must preserve every fog color'
+    );
     if (!inside) {
       assert.deepEqual(fog.sampleDangerFog(bands, { x, y }), { green: 0, yellow: 0, red: 0 });
       excluded += 1;

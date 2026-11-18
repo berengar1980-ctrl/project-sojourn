@@ -1330,3 +1330,12 @@ gezeichnet; außerhalb konservativer Einflussgrenzen werden unnötige
 Berechnungen übersprungen. Ergänzende `?perf=1`-Messwerte erlauben die
 separate Untersuchung von Sternkarten-Hintergrund, Nebel, Positionen und
 NPC-Schiffen. Keine Änderung an Routen, NPCs, Weltsimulation oder Savegame.
+
+## Review-Log (2026-11-18): Gefahrenatlas-Sampling und lokale Zeichnungsabschnitte
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der
+Gefahrennebel sampelt weiterhin dieselben organischen Zonen und Farben;
+weit entfernte Regionen werden je Pixel ausgelassen, wenn sie mathematisch
+keinen Einfluss haben können. Die neuen Performance-Zähler helfen, die
+verbleibenden lokalen Draw-Ausreißer aus `?perf=1` zuzuordnen.
+Spielsysteme, Savegames und Schiffs-Assetstandards bleiben unangetastet.
