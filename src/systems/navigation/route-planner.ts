@@ -262,8 +262,8 @@ function routePoints(
       const minimumScore = distances[current]! + lowerBound(nodes[current]!, nodes[next]!);
       if (minimumScore >= distances[next]!) continue;
       if (minimumScore + lowerBound(nodes[next]!, to) >= distances[1]!) continue;
-      const score =
-        distances[current]! + segmentMetrics(world, nodes[current]!, nodes[next]!, profile, contacts).cost;
+      const metrics = segmentMetrics(world, nodes[current]!, nodes[next]!, profile, contacts);
+      const score = distances[current]! + metrics.cost;
       if (score < distances[next]!) {
         distances[next] = score;
         previous[next] = current;
