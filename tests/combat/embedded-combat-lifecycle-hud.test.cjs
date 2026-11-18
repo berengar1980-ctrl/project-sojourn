@@ -12,6 +12,7 @@ const state = read('src/app/game-controller-initial-state.ts');
 const resolution = read('src/app/game-controller-combat-resolution.ts');
 const boarding = read('src/app/game-controller-combat-boarding.ts');
 const security = read('src/app/game-controller-security.ts');
+const engagement = read('src/systems/combat/star-map-engagement-service.ts');
 const miningPanel = read('src/ui/local-space/local-space-panel.ts');
 const salvagePanel = read('src/ui/salvage/salvage-space-panel.ts');
 const sharedHud = read('src/ui/combat/embedded-combat-hud.ts');
@@ -25,8 +26,9 @@ assert(
   'a combat result dialog must pause campaign ticks and encounter scheduling'
 );
 assert(
-  controller.includes('state.combatReengageSeconds <= 0'),
-  'sector pirate engagement scans must obey return cooldown'
+  controller.includes('mayInterceptPlayer:') &&
+    engagement.includes('runtime.options.mayInterceptPlayer?.(npc) !== false'),
+  'only player interceptions are delayed; NPC-on-NPC fights stay live'
 );
 assert(
   security.includes('state.combatReengageSeconds > 0') &&
