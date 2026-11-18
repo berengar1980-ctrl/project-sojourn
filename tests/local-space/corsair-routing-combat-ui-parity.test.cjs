@@ -27,14 +27,7 @@ assert(
     rock.radius + 100,
   'route clearance must account for the size of the corsair'
 );
-const again = pirateRouteDestination(
-  { x: 150, y: 510 },
-  target,
-  first.detour,
-  [rock],
-  1200,
-  1000
-);
+const again = pirateRouteDestination({ x: 150, y: 510 }, target, first.detour, [rock], 1200, 1000);
 assert.deepEqual(again.destination, first.destination, 'flank must not switch every tick');
 const clear = pirateRouteDestination(
   { x: 1050, y: 810 },
