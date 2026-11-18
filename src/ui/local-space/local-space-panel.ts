@@ -141,6 +141,22 @@ function bindLongScanButton(
   });
 }
 
+function combatAwareLocalOptions(
+  options: LocalSpacePanelOptions,
+  isCombat: () => boolean
+): LocalSpacePanelOptions {
+  return {
+    ...options,
+    onSelectAsteroid: (id) => {
+      if (!isCombat()) options.onSelectAsteroid(id);
+    },
+    onSelectNpc: (id) => {
+      if (!isCombat()) options.onSelectNpc(id);
+    },
+    onNavigate: (target) => (isCombat() ? Promise.resolve(false) : options.onNavigate(target)),
+  };
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const combatHud = createEmbeddedCombatHud(shell);
@@ -197,16 +213,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const unbindInput = bindNavigationInput(
     canvas,
     renderer,
-    {
-      ...options,
-      onSelectAsteroid: (id) => {
-        if (!model.combat) options.onSelectAsteroid(id);
-      },
-      onSelectNpc: (id) => {
-        if (!model.combat) options.onSelectNpc(id);
-      },
-      onNavigate: (target) => (model.combat ? Promise.resolve(false) : options.onNavigate(target)),
-    },
+    combatAwareLocalOptions(options, () => model.combat !== null),
     systemLog,
     updateOverlay
   );
