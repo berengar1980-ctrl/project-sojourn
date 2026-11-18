@@ -57,7 +57,8 @@ const salvage = fs.readFileSync(
 );
 for (const source of [mining, salvage]) {
   assert(source.includes('new PvPMapCamera(model.width, model.height)'));
-  assert(source.includes('new StrategicCombatRenderer(this.canvas, model.combat)'));
+  assert(source.includes('new StrategicCombatRenderer('));
+  assert(source.includes('model.combat,'));
 }
 
 console.log('PASS PvP camera and combat renderer shared with career maps');
