@@ -74,10 +74,33 @@ export function advanceControllerFieldWorld(
   const scene = context.state.localSpace?.getSnapshot();
   const localId =
     context.state.mode === 'local-space' ? (scene?.instance.sourceLocationId ?? null) : null;
-  const frozen = context.state.embeddedCombat === 'local-space' ? localId : null;
-  fieldWorldFor(context).tick(deltaSeconds, frozen ? null : localId, (field, seconds) => {
-    if (field.locationId === frozen) return;
-    field.miners.tick(seconds);
+  const combat =
+    context.state.embeddedCombat === 'local-space'
+      ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
+      : null;
+  fieldWorldFor(context).tick(deltaSeconds, localId, (field, seconds) => {
+    const activeCombat = field.locationId === localId ? combat : null;
+    if (activeCombat) {
+      // The duel advances physical asteroids; copy their authoritative poses
+      // instead of integrating the same bodies a second time.
+      const bodies = new Map(
+        (activeCombat.arena.asteroids ?? []).map((body) => [body.id, body])
+      );
+      for (const asteroid of field.instance.asteroids) {
+        const body = bodies.get(asteroid.id);
+        if (!body) continue;
+        asteroid.position = { ...body.position };
+        asteroid.rotation = body.rotation;
+        asteroid.physics.velocity = { ...body.velocity };
+        asteroid.physics.angularVelocity = body.angularVelocity ?? asteroid.physics.angularVelocity;
+      }
+      context.state.localSpace?.syncCombatPose(
+        activeCombat.attacker.position,
+        activeCombat.attacker.headingRadians,
+        activeCombat.attacker.speed
+      );
+    }
+    field.miners.tick(seconds, activeCombat?.defender.id);
     tickFieldPirates(context, seconds, field);
     tickFieldSecurity(context, seconds, field);
   });
