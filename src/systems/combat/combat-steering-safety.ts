@@ -25,9 +25,9 @@ export function evaluateSteeringSafety(
       !cover &&
       !collision &&
       !detour,
-    // Steering around rock must own the bow as well as lateral RCS.
-    // Aiming the fixed weapons at the enemy during a clearance leg
-    // previously overrode the chosen route and drove ships into obstacles.
-    canAim: !mines && !boundary && !collision && !detour && !obstacle && !waypoint,
+    // The ship can track forward guns while RCS follows its established
+    // asteroid waypoint. Disabling this uncoupling directs initial thrust
+    // into the rock while the bow is still turning.
+    canAim: !mines && !boundary && !collision && !detour && (!obstacle || waypoint),
   };
 }
