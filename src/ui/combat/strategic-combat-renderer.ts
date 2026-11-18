@@ -61,7 +61,13 @@ export class StrategicCombatRenderer {
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: StrategicCombatSnapshot
+    model: StrategicCombatSnapshot,
+    private readonly drawCareerActors?: (
+      pose: CombatCameraPose,
+      width: number,
+      height: number,
+      timeSeconds: number
+    ) => void
   ) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
@@ -250,6 +256,9 @@ export class StrategicCombatRenderer {
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
+    // Career-only ships are a scene layer, not a competing combat renderer.
+    // Native PvP leaves this callback unset.
+    this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
