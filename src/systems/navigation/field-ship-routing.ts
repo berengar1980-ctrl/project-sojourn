@@ -99,7 +99,8 @@ export function fieldRouteTarget(
     }
     ship.routeState = { target: { ...target }, points, index: 0 };
   }
-  return ship.routeState.points[ship.routeState.index] ?? null;
+  const route = ship.routeState;
+  return route?.points[route.index] ?? null;
 }
 
 export function moveFieldShip(
