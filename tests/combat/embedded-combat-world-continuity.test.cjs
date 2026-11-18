@@ -15,14 +15,38 @@ const fieldBridge = read('src/app/game-controller-field-world-bridge.ts');
 const miningService = read('src/systems/npcs/npc-local-mining-service.ts');
 const salvageScene = read('src/app/game-controller-salvage.ts');
 const salvageNpc = read('src/systems/npcs/npc-local-salvage-service.ts');
-assert(controller.includes('tickCombatEnvironment(deltaSeconds)'), 'embedded mining advances background systems');
-assert(fieldBridge.includes('fieldWorldFor(context).tick(deltaSeconds, localId'), 'mining field stays active in duel');
-assert(fieldBridge.includes('activeCombat.arena.asteroids'), 'mining uses authoritative combat rocks');
-assert(fieldBridge.includes('field.miners.tick(seconds, activeCombat?.defender.id)'), 'non-engaged miners continue');
-assert(miningService.includes('if (ship.npcId === combatantId) continue'), 'duel miner is never moved twice');
-assert(salvageScene.includes('npcSalvage.tick(deltaSeconds, combat.defender.id, true)'), 'non-engaged salvagers continue');
-assert(salvageNpc.includes('if (ship.npcId === combatantId) continue'), 'duel salvager is never moved twice');
-assert(salvageScene.includes('syncSalvageCombatField(context.field, combat)'), 'visible wrecks follow combat');
+assert(
+  controller.includes('tickCombatEnvironment(deltaSeconds)'),
+  'embedded mining advances background systems'
+);
+assert(
+  fieldBridge.includes('fieldWorldFor(context).tick(deltaSeconds, localId'),
+  'mining field stays active in duel'
+);
+assert(
+  fieldBridge.includes('activeCombat.arena.asteroids'),
+  'mining uses authoritative combat rocks'
+);
+assert(
+  fieldBridge.includes('field.miners.tick(seconds, activeCombat?.defender.id)'),
+  'non-engaged miners continue'
+);
+assert(
+  miningService.includes('if (ship.npcId === combatantId) continue'),
+  'duel miner is never moved twice'
+);
+assert(
+  salvageScene.includes('npcSalvage.tick(deltaSeconds, combat.defender.id, true)'),
+  'non-engaged salvagers continue'
+);
+assert(
+  salvageNpc.includes('if (ship.npcId === combatantId) continue'),
+  'duel salvager is never moved twice'
+);
+assert(
+  salvageScene.includes('syncSalvageCombatField(context.field, combat)'),
+  'visible wrecks follow combat'
+);
 
 // Runtime check: native wreck objects follow combat motion, including fragments
 // that were removed by the grapple/tractor mechanics.
