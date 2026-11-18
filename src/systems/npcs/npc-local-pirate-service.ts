@@ -181,14 +181,7 @@ export class LocalPirateTraffic {
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set(
-      pirates
-        .filter(
-          (npc) =>
-            npc.pirate &&
-            !npc.travel &&
-            npc.hullHp > 0
-        )
-        .map((npc) => npc.id)
+      pirates.filter((npc) => npc.pirate && !npc.travel && npc.hullHp > 0).map((npc) => npc.id)
     );
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
