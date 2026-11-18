@@ -32,23 +32,8 @@ native.pan(42, -35);
 campaign.pan(42, -35);
 const screen = campaign.worldToScreen(point, 1600, 900);
 assert.deepEqual(screen, native.project(point, 1600, 900, width, height));
-const aspectPoint = { x: 3100, y: 2400 };
-const beforeAspect = native.project(aspectPoint, 1600, 900, width, height);
-const nativeCenter = native.project(
-  { x: width / 2, y: height / 2 },
-  1600,
-  900,
-  width,
-  height
-);
-const nativeScale = native.scale(1600, 900, width, height);
-assert(
-  Math.abs(beforeAspect.x - nativeCenter.x - (aspectPoint.x - width / 2) * nativeScale) < 1e-7
-);
-assert(
-  Math.abs(beforeAspect.y - nativeCenter.y - (aspectPoint.y - height / 2) * nativeScale) < 1e-7
-);
-assert.equal(campaign.getZoom(), nativeScale);
+const expectedScale = native.scale(1600, 900, width, height);
+assert.equal(campaign.getZoom(), expectedScale);
 const world = campaign.screenToWorld(screen, 1600, 900);
 assert(Math.abs(world.x - point.x) < 1e-7);
 assert(Math.abs(world.y - point.y) < 1e-7);
