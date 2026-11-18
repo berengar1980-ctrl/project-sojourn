@@ -219,7 +219,16 @@ function advanceApproaching(
       return;
     }
     const point = approachPoint(npc.id, asteroid);
-    if (moveFieldShip(ship, point, localCruiseSpeed(npc), dt, runtime.options.getAsteroids().filter((rock) => rock.routeBlocking), 65)) {
+    if (
+      moveFieldShip(
+        ship,
+        point,
+        localCruiseSpeed(npc),
+        dt,
+        runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+        65
+      )
+    ) {
       ship.phase = 'scanning';
       ship.speed = 0;
       ship.scanProgress = 0;
@@ -317,7 +326,16 @@ function advanceMiner(
     return false;
   }
   ship.laserActive = false;
-  if (moveFieldShip(ship, ship.exitPoint, localCruiseSpeed(npc), dt, runtime.options.getAsteroids().filter((rock) => rock.routeBlocking), 65)) {
+  if (
+    moveFieldShip(
+      ship,
+      ship.exitPoint,
+      localCruiseSpeed(npc),
+      dt,
+      runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+      65
+    )
+  ) {
     runtime.options.depart(npc);
     return true;
   }
