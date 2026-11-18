@@ -25,8 +25,9 @@ export function evaluateSteeringSafety(
       !cover &&
       !collision &&
       !detour,
-    // Nearby rock clearance should not suppress all front gun alignment if
-    // an established waypoint already owns the safe lateral route.
-    canAim: !mines && !boundary && !collision && !detour && (!obstacle || waypoint),
+    // Steering around rock must own the bow as well as lateral RCS.
+    // Aiming the fixed weapons at the enemy during a clearance leg
+    // previously overrode the chosen route and drove ships into obstacles.
+    canAim: !mines && !boundary && !collision && !detour && !obstacle && !waypoint,
   };
 }
