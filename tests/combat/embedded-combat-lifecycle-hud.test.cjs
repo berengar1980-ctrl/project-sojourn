@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const controller = read('src/app/game-controller.ts');
+const combatGuard = read('src/app/game-controller-combat-result-guard.ts');
 const state = read('src/app/game-controller-initial-state.ts');
 const resolution = read('src/app/game-controller-combat-resolution.ts');
 const boarding = read('src/app/game-controller-combat-boarding.ts');
@@ -22,7 +23,8 @@ const styles = read('src/ui/styles.css');
 assert(state.includes('combatResultPending: false'));
 assert(state.includes('combatReengageSeconds: 0'));
 assert(
-  controller.includes('if (context.state.combatResultPending) return;'),
+  controller.includes('skipControllerTickForCombatResult(context, deltaSeconds)') &&
+    combatGuard.includes('if (state.combatResultPending) return true;'),
   'a combat result dialog must pause campaign ticks and encounter scheduling'
 );
 assert(
