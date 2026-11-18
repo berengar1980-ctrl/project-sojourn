@@ -179,18 +179,20 @@ export class TopdownMapRenderer {
         });
       }
     });
-    measurePerformance('canvas.star.danger-fog', () => drawStarMapDangerRegions(
-      this.context,
-      this.camera,
-      this.model.regions,
-      this.dangerBands,
-      this.dangerOverlayVisible,
-      width,
-      height,
-      this.model.width,
-      this.model.height,
-      this.model.defaultDangerLevel ?? 0
-    ));
+    measurePerformance('canvas.star.danger-fog', () =>
+      drawStarMapDangerRegions(
+        this.context,
+        this.camera,
+        this.model.regions,
+        this.dangerBands,
+        this.dangerOverlayVisible,
+        width,
+        height,
+        this.model.width,
+        this.model.height,
+        this.model.defaultDangerLevel ?? 0
+      )
+    );
     if (this.dangerOverlayVisible)
       drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
