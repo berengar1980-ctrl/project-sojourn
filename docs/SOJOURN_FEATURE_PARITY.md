@@ -1284,3 +1284,11 @@ ausgenommen. Reguläre Startschiffe und NPC-Loadouts bleiben unverändert.
 Alle Schiffsmodelle werden auf gültige Einbauplätze, Waffenstufen und
 Energieversorgung getestet. Der vorhandene Career-Schiffscheckpoint speichert
 auch diese eingebauten Komponenten unverändert; kein neues Save-Schema.
+
+## Review-Log (2026-11-18): Projektspezifische Schiffsgrafiken wiederherstellen
+
+**Keine Statusänderung** der historischen 241 Voidbound-Feature-IDs. Aus der
+Git-Historie wurden die 28 ursprünglich für Sojourn erstellten Schiffssprites
+(Frachter, Miner, Patrouille und Bergung, jeweils Varianten 01–07) bytegleich
+zurückgeholt. Bestehende Asset-Tests prüfen die Dateistandards. Schiffsdefinitionen,
+Hardpoints, Spielmechanik, Wirtschaft und Audio bleiben unverändert.

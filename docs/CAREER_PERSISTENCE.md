@@ -531,3 +531,11 @@ Teil der Career-Schiffssektion. Es entstehen weder neue Save-Felder noch
 Versionsänderungen oder zusätzliche Belohnungen; reguläre Karriere- und
 NPC-Startausrüstung bleiben unberührt. Der Mehrschiff-Regressionstest prüft
 Hardpoint-Kompatibilität und ausreichende Energieversorgung.
+
+### Wiederherstellung generierter Schiffssprites (18. November 2026)
+
+Die 28 ursprünglich für Sojourn erstellten PNG-Sprites werden unverändert
+als statische Medien unter ihren bisherigen Dateipfaden wieder bereitgestellt.
+Es gibt keine Änderungen an der Schiffsauswahl, an Laufzeit- oder
+Persistenzzuständen, Komponenten, Hardpoints, Datenmodellen oder
+Career-Save-Schema. Der bestehende Fallback für fehlende Sprites bleibt erhalten.
