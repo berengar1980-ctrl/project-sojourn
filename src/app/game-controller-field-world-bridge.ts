@@ -103,7 +103,21 @@ export function advanceControllerFieldWorld(
       );
     }
     field.miners.tick(seconds, activeCombat?.defender.id);
-    tickFieldPirates(context, seconds, field);
-    tickFieldSecurity(context, seconds, field);
+    if (activeCombat?.defender.id.startsWith('security-drone:')) {
+      field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
+    }
+    if (activeCombat && field.pirates.snapshot(context.economy.sectorNpcs.npcs).some(
+      (pirate) => pirate.npcId === activeCombat.defender.id
+    )) {
+      field.pirates.syncCombatPose(
+        activeCombat.defender.id,
+        activeCombat.defender.position,
+        activeCombat.defender.headingRadians
+      );
+    }
+    tickFieldPirates(context, seconds, field, activeCombat?.defender.id);
+    if (!activeCombat?.defender.id.startsWith('security-drone:')) {
+      tickFieldSecurity(context, seconds, field);
+    }
   });
 }
