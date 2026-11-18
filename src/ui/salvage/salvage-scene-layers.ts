@@ -1,3 +1,4 @@
+import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import { drawTractorThrows } from '../combat/combat-tractor-throw-renderer';
@@ -7,7 +8,6 @@ import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import {
-  projectHardpoint,
   spriteDrawOffset,
   type ShipScreenGeometry,
 } from '../ships/ship-hardpoint-projector';
@@ -163,66 +163,14 @@ export abstract class SalvageSceneLayers {
     const combat = this.model.combat;
     if (!combat) return;
     for (const beam of combat.beams) {
-      const source =
-        beam.owner === 'attacker'
-          ? {
-              hardpoints: this.model.ship.hardpoints,
-              geometry: this.shipGeometry(width, height),
-            }
-          : (() => {
-              const npc = this.model.npcShips.find((entry) => entry.id === combat.defender.id);
-              if (!npc) return null;
-              const center = this.camera.worldToScreen(npc.position, width, height);
-              const shipWidth = this.camera.scale(npc.nominalLengthMeters);
-              return {
-                hardpoints: npc.hardpoints,
-                geometry: {
-                  center,
-                  width: shipWidth,
-                  height: shipWidth / npc.spriteAspectRatio,
-                  angle: npc.headingRadians,
-                } satisfies ShipScreenGeometry,
-              };
-            })();
-      if (!source) continue;
-      const weaponHardpoints = source.hardpoints.weaponLasers ?? [];
-      const hardpoint =
-        weaponHardpoints.length > 0
-          ? weaponHardpoints[beam.weaponIndex % weaponHardpoints.length]
-          : null;
-      const from = hardpoint
-        ? projectHardpoint(hardpoint, source.hardpoints, source.geometry)
-        : source.geometry.center;
-      const to = this.camera.worldToScreen(beam.end, width, height);
-      const alpha = Math.max(0, Math.min(1, beam.ttlSeconds / Math.max(0.001, beam.maxTtlSeconds)));
-      this.context.save();
-      this.context.lineCap = 'round';
-      if (beam.kind === 'laser') {
-        this.context.shadowColor = 'rgba(67, 185, 255, 0.95)';
-        this.context.shadowBlur = 10;
-        this.context.strokeStyle = `rgba(108, 214, 255, ${0.45 + alpha * 0.5})`;
-        this.context.lineWidth = 4.5;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-        this.context.shadowBlur = 3;
-        this.context.strokeStyle = `rgba(232, 251, 255, ${0.75 + alpha * 0.25})`;
-        this.context.lineWidth = 1.15;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      } else {
-        this.context.strokeStyle = `rgba(250, 229, 190, ${0.55 + alpha * 0.4})`;
-        this.context.lineWidth = 1.3;
-        this.context.setLineDash([18, 5]);
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.stroke();
-      }
-      this.context.restore();
+      // Capture the muzzle at fire time, as the standalone renderer does.
+      // A moving ship must not drag a retired shot across the screen.
+      drawCombatBeamVisual(
+        this.context,
+        beam,
+        this.camera.worldToScreen(beam.origin, width, height),
+        this.camera.worldToScreen(beam.end, width, height)
+      );
     }
   }
   protected drawCombat(width: number, height: number): void {
