@@ -363,11 +363,8 @@ function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): vo
   const playerState = runtime.options.getPlayerShipState?.();
   const bodies: LocalShieldShipBody[] = runtime.ships.flatMap((local) => {
     const npc = runtime.byId.get(local.npcId);
-    if (
-      local.npcId === combatantId ||
-      npc?.combatMovement ||
-      (npc?.combatRecoverySeconds ?? 0) > 0
-    ) return [];
+    const inCombat = local.npcId === combatantId || Boolean(npc?.combatMovement);
+    if (inCombat || (npc?.combatRecoverySeconds ?? 0) > 0) return [];
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
