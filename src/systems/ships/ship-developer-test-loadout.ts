@@ -22,10 +22,11 @@ const TEST_COMPONENT_TYPES = [
   'salvage',
 ] as const satisfies readonly ShipComponentType[];
 
-function preferredTierTwo(type: ShipComponentType): string | null {
+function preferredTestComponent(type: ShipComponentType): string | null {
   const components = SHIP_COMPONENT_CATALOG[type] ?? [];
+  const tier = type === 'hull' || type === 'shield' ? 3 : 2;
   const preferred = components.find(
-    (component) => component.tier === 2 && (type !== 'armor' || component.id === 'armor-all-2')
+    (component) => component.tier === tier && (type !== 'armor' || component.id === 'armor-all-2')
   );
   return preferred?.id ?? null;
 }
@@ -45,10 +46,10 @@ function powerDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoadoutServi
   }
 }
 
-/** Configure only the explicit developer ship switcher; ordinary career hull defaults stay Mk I. */
+/** Developer-only Mk III hull/shields, Mk II other systems; career defaults remain Mk I. */
 export function equipDeveloperTestShip(ship: ShipDefinition, loadouts: ShipLoadoutService): void {
   for (const type of TEST_COMPONENT_TYPES) {
-    const id = preferredTierTwo(type);
+    const id = preferredTestComponent(type);
     if (id && loadouts.canSetSlot(ship, type, 0, id)) {
       loadouts.setSlot(ship, type, 0, id);
     }

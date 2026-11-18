@@ -26,8 +26,11 @@ for (const ship of getAllShipDefinitions()) {
   const installed = service.get(ship);
   for (const type of [...nonReactor, ...(expectedOptional[ship.role] ?? [])]) {
     const part = getShipComponent(type, installed[type][0]);
-    assert.equal(part?.tier, 2, ship.id + ': expected Mk II ' + type);
+    const expectedTier = type === 'shield' || type === 'hull' ? 3 : 2;
+    assert.equal(part?.tier, expectedTier, ship.id + ': expected Mk ' + expectedTier + ' ' + type);
   }
+  assert.equal(installed.hull[0], 'hull3', ship.id + ': Mk III hull');
+  assert.equal(installed.shield[0], 'shield3', ship.id + ': Mk III shield');
   const reactor = getShipComponent('reactor', installed.reactor[0]);
   assert.equal(reactor?.tier, 3, ship.id + ': test generator must have independent tier');
   assert(
@@ -43,12 +46,12 @@ for (const ship of getAllShipDefinitions()) {
     assert(service.canSetSlot(ship, 'weapon', index, id), ship.id + ': compatible mount');
   }
   equipDeveloperTestShip(ship, service);
-  assert.equal(service.get(ship).weapon[0], 'weapon-railgun-3', 'repeat selection is idempotent');
+  assert.deepEqual(service.get(ship), installed, ship.id + ': repeated test selection is idempotent');
 }
 
 const normal = createShipLoadoutService();
 const starter = getAllShipDefinitions()[0];
 assert.equal(getShipComponent('engine', normal.get(starter).engine[0]).tier, 1);
 console.log(
-  'PASS developer switcher equips 28 hulls with valid Mk II test suites and Mk III railgun'
+  'PASS developer switcher equips 28 hulls with Mk III hull/shields/reactor and bow railgun'
 );
