@@ -324,9 +324,10 @@ function advanceMiner(
   return false;
 }
 
-function resolveMinerCollisions(runtime: MinerRuntime): void {
+function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): void {
   const playerState = runtime.options.getPlayerShipState?.();
   const bodies: LocalShieldShipBody[] = runtime.ships.flatMap((local) => {
+    if (local.npcId === combatantId) return [];
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
@@ -350,13 +351,15 @@ function resolveMinerCollisions(runtime: MinerRuntime): void {
   );
 }
 
-function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
+function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatantId?: string): void {
   const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
   if (dt <= 0) return;
   syncArrivals(runtime);
   for (let index = runtime.ships.length - 1; index >= 0; index -= 1) {
     const ship = runtime.ships[index]!;
     const npc = runtime.byId.get(ship.npcId);
+    // The duel owns this NPC's movement until its final pose is reconciled.
+    if (ship.npcId === combatantId) continue;
     if (
       !npc ||
       npc.hullHp <= 0 ||
@@ -378,7 +381,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number): void {
     }
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);
   }
-  resolveMinerCollisions(runtime);
+  resolveMinerCollisions(runtime, combatantId);
 }
 
 export function createNpcLocalMiningService(
@@ -423,6 +426,6 @@ export function createNpcLocalMiningService(
     ships: runtime.ships,
     syncCombatPose: (id, position, heading, speed) =>
       syncCombatPose(runtime, id, position, heading, speed),
-    tick: (dt) => tickMinerRuntime(runtime, dt),
+    tick: (dt, combatantId) => tickMinerRuntime(runtime, dt, combatantId),
   };
 }
