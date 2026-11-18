@@ -63,9 +63,15 @@ export abstract class SalvageSceneLayers {
     this.context.stroke();
     this.context.restore();
   }
-  protected drawNpcShips(width: number, height: number, timeSeconds: number): NpcHitArea[] {
+  protected drawNpcShips(
+    width: number,
+    height: number,
+    timeSeconds: number,
+    excludedIds: ReadonlySet<string> = new Set()
+  ): NpcHitArea[] {
     const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
+      if (excludedIds.has(npc.id)) continue;
       const point = this.camera.worldToScreen(npc.position, width, height);
       const shipWidth = this.camera.scale(npc.nominalLengthMeters);
       const geometry: ShipScreenGeometry = {
