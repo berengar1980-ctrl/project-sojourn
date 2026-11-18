@@ -36,7 +36,11 @@ field.reconcile([pirate]);
 field.tick(0.1, [pirate], { x: 1700, y: 1300 }, [], [], () => false);
 const engaged = field.snapshot([pirate])[0];
 assert(engaged, 'background combat must not make a local pirate invisible');
-assert.deepEqual(engaged.position, original.position, 'duelling pirate is not AI-moved');
+assert.deepEqual(
+  engaged.position,
+  original.position,
+  'duelling pirate is not AI-moved'
+);
 assert.doesNotThrow(() =>
   stageLocalPirateCheckpoint(field.exportState(), 4000, 2600, 932, [pirate])
 );
