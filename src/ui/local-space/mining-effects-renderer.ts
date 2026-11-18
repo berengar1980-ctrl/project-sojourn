@@ -1,3 +1,4 @@
+import { drawMiningTractorBeam } from './mining-beam-visuals';
 import type { ShipEffectLayer } from '../../core/ship-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
@@ -105,22 +106,7 @@ export class MiningEffectsRenderer {
 
       for (const hardpoint of hardpoints) {
         const ship = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
-        this.context.shadowColor = 'rgba(74, 255, 140, .82)';
-        this.context.shadowBlur = 7 + pulse * 8;
-        this.context.strokeStyle = 'rgba(54, 229, 117, ' + (0.12 + pulse * 0.2) + ')';
-        this.context.lineWidth = 4 + pulse * 3;
-        this.context.beginPath();
-        this.context.moveTo(point.x, point.y);
-        this.context.lineTo(ship.x, ship.y);
-        this.context.stroke();
-
-        this.context.shadowBlur = 2 + pulse * 2;
-        this.context.strokeStyle = 'rgba(166, 255, 195, ' + (0.42 + pulse * 0.42) + ')';
-        this.context.lineWidth = 0.9 + pulse * 1.4;
-        this.context.beginPath();
-        this.context.moveTo(point.x, point.y);
-        this.context.lineTo(ship.x, ship.y);
-        this.context.stroke();
+        drawMiningTractorBeam(this.context, point, ship, pulse);
       }
     });
 
