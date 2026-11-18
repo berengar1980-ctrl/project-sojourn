@@ -95,6 +95,19 @@ function resolvePirateCollisions(
   return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
 }
 
+function keepPirateApart(ship: PirateRuntime, other: WorldPoint): void {
+  const dx = ship.position.x - other.x;
+  const dy = ship.position.y - other.y;
+  const distance = Math.hypot(dx, dy);
+  const minimum = 95;
+  if (distance >= minimum) return;
+  const direction = distance > 0 ? Math.atan2(dy, dx) : (hashId(ship.npcId) % 360) * (Math.PI / 180);
+  ship.position = {
+    x: other.x + Math.cos(direction) * minimum,
+    y: other.y + Math.sin(direction) * minimum,
+  };
+}
+
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
@@ -257,6 +270,15 @@ export class LocalPirateTraffic {
         this.width,
         this.height
       );
+      // Keep non-duelling ships separated without touching the duel's physics.
+      for (const other of this.ships.values()) {
+        if (other.npcId !== pirate.npcId) keepPirateApart(pirate, other.position);
+      }
+      for (const miner of miners) keepPirateApart(pirate, miner.position);
+      pirate.position = {
+        x: Math.max(0, Math.min(this.width, pirate.position.x)),
+        y: Math.max(0, Math.min(this.height, pirate.position.y)),
+      };
       pirate.speed = speed;
     }
   }
