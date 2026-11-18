@@ -30,7 +30,7 @@ for (const field of [mining, salvage]) {
   assert(field.includes('combatDefender'));
 }
 assert(
-  mining.includes('npc.targetAsteroidId && !combatDefender'),
+  mining.includes('!npc.targetAsteroidId || this.model.combat?.defender.id === npc.id'),
   'a mining beam must stop for an NPC that is now in a duel'
 );
 assert(miningEffects.includes('model.combat || !model.laserActive'));
@@ -42,7 +42,7 @@ assert(thrust.includes('combatant.boostActive'));
 assert(thrust.includes('engines.drawExhaust('));
 assert(thrust.includes('maneuver.drawExhaust('));
 for (const field of [miningPlayer, salvagePlayer]) {
-  assert(field.includes('new StrategicCombatRenderer(this.canvas, model.combat)'));
+  assert(field.includes('new StrategicCombatRenderer(') && field.includes('model.combat,'));
   assert(field.includes('drawFieldPlayerThrusters('));
   assert(field.includes('this.model.combat?.attacker ?? null'));
 }
