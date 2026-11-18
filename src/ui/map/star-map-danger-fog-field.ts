@@ -68,9 +68,7 @@ function regionFogBounds(region: WorldRegion): FogBounds {
  * by at most 137 world units. A pixel outside these bounds is guaranteed
  * transparent; skipping it never changes the resulting fog colors.
  */
-export function potentialDangerFogBounds(
-  regions: readonly WorldRegion[]
-): readonly FogBounds[] {
+export function potentialDangerFogBounds(regions: readonly WorldRegion[]): readonly FogBounds[] {
   return regions.map((region) => {
     const [minX, minY, maxX, maxY] = regionFogBounds(region);
     return [minX - 154, minY - 137, maxX + 154, maxY + 137] as const;
