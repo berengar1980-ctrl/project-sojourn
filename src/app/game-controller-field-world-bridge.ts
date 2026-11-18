@@ -88,13 +88,19 @@ export function advanceControllerFieldWorld(
       const bodies = new Map(
         (activeCombat.arena.asteroids ?? []).map((body) => [body.id, body])
       );
-      for (const asteroid of field.instance.asteroids) {
+      for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
+        const asteroid = field.instance.asteroids[index]!;
         const body = bodies.get(asteroid.id);
-        if (!body) continue;
+        if (!body) {
+          // Thrown or destroyed bodies must not remain as ghost obstacles.
+          field.instance.asteroids.splice(index, 1);
+          continue;
+        }
         asteroid.position = { ...body.position };
         asteroid.rotation = body.rotation;
         asteroid.physics.velocity = { ...body.velocity };
-        asteroid.physics.angularVelocity = body.angularVelocity ?? asteroid.physics.angularVelocity;
+        asteroid.physics.angularVelocity =
+          body.angularVelocity ?? asteroid.physics.angularVelocity;
       }
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
@@ -106,9 +112,12 @@ export function advanceControllerFieldWorld(
     if (activeCombat?.defender.id.startsWith('security-drone:')) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
     }
-    if (activeCombat && field.pirates.snapshot(context.economy.sectorNpcs.npcs).some(
-      (pirate) => pirate.npcId === activeCombat.defender.id
-    )) {
+    if (
+      activeCombat &&
+      field.pirates
+        .snapshot(context.economy.sectorNpcs.npcs)
+        .some((pirate) => pirate.npcId === activeCombat.defender.id)
+    ) {
       field.pirates.syncCombatPose(
         activeCombat.defender.id,
         activeCombat.defender.position,
