@@ -26,7 +26,9 @@ export function tickFieldPirates(
   traffic.tick(
     seconds,
     pirates,
-    space?.getSnapshot().instance.ship.position ?? null,
+    state.combatResultPending || state.combatReengageSeconds > 0
+      ? null
+      : (space?.getSnapshot().instance.ship.position ?? null),
     field.miners.ships.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
