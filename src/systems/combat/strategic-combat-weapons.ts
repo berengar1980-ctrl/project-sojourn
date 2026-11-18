@@ -65,9 +65,15 @@ function fireRuntimeInstantWeapon(
   const targetPoint = hit ? aimCenter : missedShotEnd(muzzle, aimCenter);
   const shieldHit = hit ? segmentShieldHit(muzzle, targetPoint, target) : null;
   const beamEnd = shieldHit?.point ?? targetPoint;
-  const obstacle = hit
-    ? firstObstacleHit(muzzle, beamEnd, runtime.arena.obstacles ?? [], runtime.arena.asteroids)
-    : null;
+  // Even a missed shot must terminate on the first solid asteroid.
+  // Previously only successful hit rolls checked cover, so visible misses
+  // could draw straight through an asteroid on both PvP and campaign maps.
+  const obstacle = firstObstacleHit(
+    muzzle,
+    beamEnd,
+    runtime.arena.obstacles ?? [],
+    runtime.arena.asteroids
+  );
   const targetSide: StrategicCombatSide = side === 'attacker' ? 'defender' : 'attacker';
 
   if (obstacle) {
