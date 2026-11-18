@@ -23,10 +23,7 @@ function segmentClear(
     if (!rock.routeBlocking || rock.id === exclude) return false;
     const t = Math.max(
       0,
-      Math.min(
-        1,
-        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / length2
-      )
+      Math.min(1, ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / length2)
     );
     const x = start.x + dx * t - rock.position.x;
     const y = start.y + dy * t - rock.position.y;
@@ -48,10 +45,7 @@ function firstBlocker(
     if (!rock.routeBlocking) continue;
     const t = Math.max(
       0,
-      Math.min(
-        1,
-        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / length2
-      )
+      Math.min(1, ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / length2)
     );
     const x = start.x + t * dx - rock.position.x;
     const y = start.y + t * dy - rock.position.y;
@@ -96,7 +90,8 @@ export function pirateRouteDestination(
   height: number
 ): { destination: WorldPoint; detour: PirateDetour | null } {
   const closeToFlank =
-    previous && Math.hypot(position.x - previous.point.x, position.y - previous.point.y) < REACHED_METERS;
+    previous &&
+    Math.hypot(position.x - previous.point.x, position.y - previous.point.y) < REACHED_METERS;
   // A committed detour survives moving targets and avoids frame-to-frame flank reversal.
   if (previous && !closeToFlank) {
     const rock = asteroids.find((entry) => entry.id === previous.obstacleId);
