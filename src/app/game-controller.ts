@@ -354,6 +354,13 @@ function mountControllerSalvage(
   mountControllerSwitcher(context);
 }
 function tickController(context: ControllerRuntimeContext, deltaSeconds: number): void {
+  // Acknowledging the combat outcome is a modal transaction: do not advance
+  // campaigns, AI attacks or scene transitions behind the result dialog.
+  if (context.state.combatResultPending) return;
+  context.state.combatReengageSeconds = Math.max(
+    0,
+    context.state.combatReengageSeconds - Math.max(0, deltaSeconds)
+  );
   if (tickLegalDetention(context, deltaSeconds)) return;
   if (tickCustoms(context)) return;
   const { state, economy } = context;
@@ -430,6 +437,10 @@ export function createGameController(options: GameControllerOptions): GameContro
     world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
+    mayInitiateAttack: (npc) =>
+      !state.combatResultPending &&
+      state.combatReengageSeconds <= 0 &&
+      economy.blockades.mayAttack(npc.id),
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
