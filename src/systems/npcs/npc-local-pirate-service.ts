@@ -186,9 +186,7 @@ export class LocalPirateTraffic {
           (npc) =>
             npc.pirate &&
             !npc.travel &&
-            (!npc.combatMovement || npc.id === combatantId) &&
-            npc.hullHp > 0 &&
-            (!npc.combatRecoverySeconds || npc.id === combatantId)
+            npc.hullHp > 0
         )
         .map((npc) => npc.id)
     );
@@ -230,7 +228,9 @@ export class LocalPirateTraffic {
     for (const pirate of this.ships.values()) {
       if (pirate.awaitingCombat || pirate.npcId === combatantId) continue;
       const npc = npcs.find((entry) => entry.id === pirate.npcId);
-      if (!npc || npc.hullHp <= 0) continue;
+      // NPC-versus-NPC combat and recovery retain their field contact; normal
+      // pirate traffic must not move or re-engage the active combatant.
+      if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
       const targets = [
         ...miners
           .filter((miner) => miner.npcId !== pirate.npcId)
