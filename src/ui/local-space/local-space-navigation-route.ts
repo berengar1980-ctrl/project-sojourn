@@ -8,6 +8,9 @@ export function drawLocalNavigationRoute(
   width: number,
   height: number
 ): void {
+  // The cyan dotted line is a flight route, never a mining/tractor beam.
+  // Once extraction starts, do not keep drawing the stale approach course.
+  if (model.miningPhase === 'extracting' || model.laserActive) return;
   const route = model.navigationRoute;
   const target = model.navigationTarget;
   if (!target || route.length === 0) return;
