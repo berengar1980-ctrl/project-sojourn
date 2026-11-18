@@ -161,7 +161,8 @@ export abstract class LocalSpaceSceneLayers {
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
       if (npc.isPirate) this.drawPirateMarker(point, geometry);
 
-      if (npc.targetAsteroidId) {
+      // A ship in battle cannot continue painting its former mining beam.
+      if (npc.targetAsteroidId && !combatDefender) {
         const target = this.model.asteroids.find(
           (asteroid) => asteroid.id === npc.targetAsteroidId
         );
