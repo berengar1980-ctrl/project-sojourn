@@ -574,3 +574,15 @@ wiederverwendet werden. Beim tatsächlichen Flugstart wird eine neue Planung
 mit dem aktuellen Bedrohungsstand erzwungen; Schiffswechsel, Tankstand,
 Credits, Routenprofil oder Zielwechsel bleiben sofort cache-invalidierend.
 Diese Maßnahmen ändern weder persistierte Routen noch das Savegame-Schema.
+
+### Gefahrennebel-Atlas und Sternkarten-Diagnose (18. November 2026)
+
+Die erste Sternkartenzeichnung darf beim Erzeugen des Gefahrennebel-Atlas
+Pixel außerhalb der konservativen organischen Einflussgrenzen auslassen.
+Dort ist der Farbwert mathematisch null: Die Berechnung der Wellendistortion,
+Gefahrengradienten und Farbgewichte entfällt, während bestehende Nebelformen,
+Farben und weiche Übergänge unverändert bleiben. Der Atlas und seine
+Lebensdauer bleiben wie bisher gecacht. Opt-in-Messungen mit `?perf=1`
+erfassen zusätzlich die Dauer der Abschnitte Hintergrund, Gefahrennebel,
+Ortsymbole und NPC-Schiffe. Es entstehen keine Laufzeit-/Save-Felder,
+keine Persistenzänderungen und keine Änderungen der Spielsimulation.

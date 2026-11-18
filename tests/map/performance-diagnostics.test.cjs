@@ -27,5 +27,8 @@ assert(has('src/app/game-controller-scene-tick.ts', 'scene.combat.update'));
 assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.model'));
 assert(has('src/app/game-controller-salvage.ts', 'scene.salvage.presentation'));
 assert(has('src/ui/map/topdown-map-renderer.ts', 'canvas.star.draw'));
+for (const section of ['background', 'danger-fog', 'locations', 'npc-ships']) {
+  assert(has('src/ui/map/topdown-map-renderer.ts', 'canvas.star.' + section));
+}
 assert(has('src/ui/local-space/local-space-renderer.ts', 'canvas.local.draw'));
 console.log('PASS opt-in browser performance diagnostics');

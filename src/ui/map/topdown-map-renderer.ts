@@ -159,25 +159,27 @@ export class TopdownMapRenderer {
     this.context.clearRect(0, 0, width, height);
 
     const timeSeconds = performance.now() / 1000;
-    if (this.displayMode === 'nav') {
-      const origin = this.camera.worldToScreen(this.model.star.position, width, height);
-      this.navRenderer.drawBackground(
-        width,
-        height,
-        timeSeconds,
-        origin,
-        this.camera.getRelativeZoom()
-      );
-    } else {
-      this.backgroundRenderer.draw({
-        width,
-        height,
-        cameraCenter: this.camera.getCenter(),
-        cameraZoom: this.camera.getZoom(),
-        timeSeconds,
-      });
-    }
-    drawStarMapDangerRegions(
+    measurePerformance('canvas.star.background', () => {
+      if (this.displayMode === 'nav') {
+        const origin = this.camera.worldToScreen(this.model.star.position, width, height);
+        this.navRenderer.drawBackground(
+          width,
+          height,
+          timeSeconds,
+          origin,
+          this.camera.getRelativeZoom()
+        );
+      } else {
+        this.backgroundRenderer.draw({
+          width,
+          height,
+          cameraCenter: this.camera.getCenter(),
+          cameraZoom: this.camera.getZoom(),
+          timeSeconds,
+        });
+      }
+    });
+    measurePerformance('canvas.star.danger-fog', () => drawStarMapDangerRegions(
       this.context,
       this.camera,
       this.model.regions,
@@ -188,7 +190,7 @@ export class TopdownMapRenderer {
       this.model.width,
       this.model.height,
       this.model.defaultDangerLevel ?? 0
-    );
+    ));
     if (this.dangerOverlayVisible)
       drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
     const orbitalAngles = this.orbitalProjection.angles(this.model, this.camera);
@@ -210,20 +212,22 @@ export class TopdownMapRenderer {
       playerPoint,
       orbitalAngles
     );
-    const locationHits = this.model.locations.map((location) =>
-      this.drawLocation(location, width, height)
+    const locationHits = measurePerformance('canvas.star.locations', () =>
+      this.model.locations.map((location) => this.drawLocation(location, width, height))
     );
-    const npcHits = this.npcShips
-      .draw(
-        this.model,
-        this.camera,
-        width,
-        height,
-        this.labelsVisible,
-        this.displayMode === 'nav',
-        orbitalAngles
-      )
-      .map((hit) => ({ ...hit, kind: 'npc' as const }));
+    const npcHits = measurePerformance('canvas.star.npc-ships', () =>
+      this.npcShips
+        .draw(
+          this.model,
+          this.camera,
+          width,
+          height,
+          this.labelsVisible,
+          this.displayMode === 'nav',
+          orbitalAngles
+        )
+        .map((hit) => ({ ...hit, kind: 'npc' as const }))
+    );
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height, playerPoint);
   }

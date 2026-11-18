@@ -33,6 +33,24 @@ const red = {
   lobes: [{ center, radiusX: 185, radiusY: 180 }],
 };
 
+// The atlas can skip pixels outside conservative fog bounds without changing a single color.
+const bands = [green, yellow, red];
+const bounds = fog.potentialDangerFogBounds(bands);
+assert.equal(bounds.length, bands.length);
+let excluded = 0;
+for (let y = -900; y <= 1800; y += 120) {
+  for (let x = -900; x <= 2100; x += 120) {
+    const inside = bounds.some(([minX, minY, maxX, maxY]) =>
+      x >= minX && x <= maxX && y >= minY && y <= maxY
+    );
+    if (!inside) {
+      assert.deepEqual(fog.sampleDangerFog(bands, { x, y }), { green: 0, yellow: 0, red: 0 });
+      excluded += 1;
+    }
+  }
+}
+assert(excluded > 10, 'outside-cloud samples can be skipped safely');
+
 const empty = fog.sampleDangerFog([], center);
 assert.deepEqual(empty, { green: 0, yellow: 0, red: 0 });
 
