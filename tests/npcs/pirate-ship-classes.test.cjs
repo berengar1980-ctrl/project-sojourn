@@ -25,6 +25,10 @@ const stats = ['raider', 'reaver', 'marauder'].map((cls) => {
   const npc = npcs.find((entry) => entry.pirateClass === cls);
   const ship = ships.getShipDefinition(npc.shipId);
   assert(ship, 'all pirate hulls must be registered');
+  assert(
+    ship.sprite.assetUrl.includes('/ships/patrol/'),
+    'every pirate tier must use patrol-hull artwork, never a miner or freighter'
+  );
   const equipment = upgrade.ensureNpcInstalledComponents(npc);
   const setup = combat.npcCombatant(npc);
   assert(setup && setup.weapons.length > 0, 'pirates must actually enter combat armed');
