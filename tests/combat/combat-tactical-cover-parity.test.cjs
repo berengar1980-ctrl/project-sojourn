@@ -21,7 +21,7 @@ assert(
 assert(cover.includes('rock.radius + 105'), 'defensive waypoint clears rock collision radius');
 assert(movement.includes('steerCombatRoute('));
 assert(steering.includes('asteroidCoverHeading(combatant, enemy, arena)'));
-assert(steering.includes('waypoint ?? cover ?? direction'));
+assert(steering.includes('cover ?? waypoint ?? direction'));
 assert(planner.includes('broadsideFacing'), 'AI uses side-specific weapon geometry');
 assert(planner.includes("enemy.tactic === 'flee'"), 'AI tracks escaping opponents');
 assert(planner.includes('targetSubsystemChoice'), 'AI selects an enemy subsystem');
