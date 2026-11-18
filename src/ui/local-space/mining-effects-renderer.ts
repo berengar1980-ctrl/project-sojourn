@@ -1,4 +1,4 @@
-import { drawMiningTractorBeam } from './mining-beam-visuals';
+import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visuals';
 import type { ShipEffectLayer } from '../../core/ship-types';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
@@ -41,10 +41,6 @@ export class MiningEffectsRenderer {
     );
 
     this.context.save();
-    this.context.shadowColor = 'rgba(255, 54, 30, .85)';
-    this.context.shadowBlur = 5 + pulse * 6;
-    this.context.strokeStyle = 'rgba(238, 62, 40, ' + (0.62 + pulse * 0.3) + ')';
-
     for (const [index, hardpoint] of hardpoints.entries()) {
       const start = projectHardpoint(hardpoint, model.ship.hardpoints, geometry);
       const baseWidth = Math.max(
@@ -56,13 +52,16 @@ export class MiningEffectsRenderer {
       );
       const interference = fractional(Math.abs(interferenceSeed) * 43758.5453);
       const interferenceStrength = interference < 0.055 ? 0.08 : interference < 0.13 ? 0.42 : 1;
-      this.context.globalAlpha = interferenceStrength;
-      this.context.lineWidth =
+      const width =
         baseWidth * (0.72 + pulse * 0.55) * (interferenceStrength < 1 ? 0.72 : 1);
-      this.context.beginPath();
-      this.context.moveTo(start.x, start.y);
-      this.context.lineTo(target.x, target.y);
-      this.context.stroke();
+      drawMiningLaserBeam(
+        this.context,
+        start,
+        target,
+        width,
+        interferenceStrength,
+        pulse
+      );
 
       if (interferenceStrength < 0.5) {
         const phase = 0.28 + fractional(timeSeconds * 3.1 + index * 0.23) * 0.44;
