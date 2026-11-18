@@ -1373,3 +1373,16 @@ Damit bleibt sein vorhandenes Schiff im Mining-Renderer, während seine Pose
 weiterhin ausschließlich aus der 1vs1-Simulation kommt. Unbeteiligte
 Kampfschiffe und die normale Feldverwaltung bleiben unverändert; keine
 Änderung an Waffen, KI, Save-Schema oder Karte.
+
+## Review-Log (2026-11-18): Kampfabschluss absichern und Duell-HUD einbetten
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs.
+Die Kampfzusammenfassung ist jetzt modal für die gesamte Kampagnenuhr.
+Neue automatische Spielerüberfälle werden während des Kampfs und unmittelbar
+nach dem Abschluss nicht gestartet. Lokale Mining- und Bergungsgefechte
+nutzen weiterhin die ursprünglichen Karten und dieselbe 1vs1-Kampfautorität
+wie der eigenständige Duellmodus. Die lokal eingeblendeten Schild-, Hüllen-,
+Antriebs-, Traktor- und Waffen-Telemetriedaten stammen aus exakt demselben
+Duell-HUD-Renderer. Nicht benötigte lokale Bedienfelder verschwinden mit
+Übergang; nach Kampfende werden sie wieder sichtbar. Keine Änderung an
+Kampfformeln, Handel, Savegames oder Feature-IDs.
