@@ -1443,3 +1443,15 @@ Der ursprüngliche Kampfkern und gespeicherte Bestandsfelder bleiben
 unverändert; vorhandene Checkpoints dürfen die alten Kartengrößen
 behalten. Bei der Bergung richtet sich die anfängliche PvP-Kamera
 weiterhin auf das Spielerschiff, damit seine Scan-Kontakte sichtbar sind.
+
+## Review-Log (2026-11-18): NPC-Wegfindung, Piratenhüllen und Asteroidendeckung
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Für Miner,
+Bergungsschiffe und die Sicherheitsdrohne ersetzt eine gemeinsame
+hindernisbewusste Feldroute die bisherige Geradeausbewegung mit nachträglichem
+Wegschieben an Asteroiden. Alle drei Piratenklassen verwenden nun
+Patrouillenschiffgrafiken mit zugehörigen Hardpoints, keine Miner- oder
+Frachtergrafik. NPC-Bergbaustrahl und Traktor-Tether sind optisch unterscheidbar.
+Der gemeinsame PvP-/Kampagnen-Kampfkern stoppt auch verfehlte Laserstrahlen
+an physisch festen Asteroiden. Zusätzliche Kampagnen-NPCs und Mining-/Bergungs-
+aktivitäten bleiben außerhalb des eigentlichen Gefechts bestehen.
