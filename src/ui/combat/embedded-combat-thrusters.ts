@@ -84,3 +84,30 @@ export function drawFieldPlayerThrusters(
     maneuverRenderer.drawGlow(context, source, geometry, demand, timeSeconds);
   }
 }
+
+/** NPCs share combat thrust visuals, but retain their job-specific glow while working. */
+export function drawFieldNpcThrusters(
+  context: CanvasRenderingContext2D,
+  source: ShipHardpoints,
+  geometry: ShipScreenGeometry,
+  speed: number,
+  combat: StrategicCombatantSnapshot | null,
+  timeSeconds: number,
+  layer: ShipEffectLayer,
+  engineRenderer: ShipEngineEffectsRenderer,
+  kind: 'mining' | 'salvage'
+): void {
+  if (combat) {
+    drawEmbeddedCombatThrusters(context, source, geometry, combat, timeSeconds, layer);
+    return;
+  }
+  if (speed <= 1) return;
+  const intensity = Math.max(kind === 'mining' ? 0.35 : 0.32, Math.min(1, speed / (kind === 'mining' ? 110 : 100)));
+  if (kind === 'mining') {
+    engineRenderer.draw(context, source, geometry, intensity, timeSeconds, layer);
+  } else if (layer === 'below') {
+    engineRenderer.drawExhaust(context, source, geometry, intensity, timeSeconds);
+  } else {
+    engineRenderer.drawGlow(context, source, geometry, intensity, timeSeconds);
+  }
+}
