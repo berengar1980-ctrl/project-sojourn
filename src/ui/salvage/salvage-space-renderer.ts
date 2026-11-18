@@ -37,8 +37,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly distressParticles = new DistressDamageParticles();
   protected readonly npcImages = new Map<string, HTMLImageElement>();
   protected model: SalvageSpaceViewModel;
-  protected combatImpactSerial = -1;
-  protected combatImpactAge = 1;
   protected hitAreas: readonly WreckHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
   protected loadedShipUrl = '';
@@ -63,13 +61,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.resize();
   }
   update(model: SalvageSpaceViewModel): void {
-    const impact = model.combat?.lastImpact;
-    if (impact && impact.serial !== this.combatImpactSerial) {
-      this.combatImpactSerial = impact.serial;
-      this.combatImpactAge = 0;
-    } else {
-      this.combatImpactAge = Math.min(1, this.combatImpactAge + 0.07);
-    }
     this.model = model;
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
@@ -207,7 +198,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
-    this.drawCombat(width, height);
     this.distressParticles.drawScene(
       timeSeconds,
       this.model,
