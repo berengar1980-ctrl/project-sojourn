@@ -179,18 +179,9 @@ export class LocalPirateTraffic {
     });
   }
 
-  reconcile(pirates: readonly SectorNpcState[], combatantId?: string): void {
+  reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set(
-      pirates
-        .filter(
-          (npc) =>
-            npc.pirate &&
-            !npc.travel &&
-            (!npc.combatMovement || npc.id === combatantId) &&
-            npc.hullHp > 0 &&
-            (!npc.combatRecoverySeconds || npc.id === combatantId)
-        )
-        .map((npc) => npc.id)
+      pirates.filter((npc) => npc.pirate && !npc.travel && npc.hullHp > 0).map((npc) => npc.id)
     );
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
@@ -203,7 +194,16 @@ export class LocalPirateTraffic {
       this.ships.delete(id);
     }
     for (const id of active) {
-      if (this.ships.has(id)) continue;
+      const existing = this.ships.get(id);
+      if (existing) {
+        const npc = pirates.find((candidate) => candidate.id === id);
+        // A local battle no longer deletes its ship. Release the interception
+        // latch once the NPC has actually recovered from that engagement.
+        if (npc && !npc.combatMovement && !npc.combatRecoverySeconds) {
+          existing.awaitingCombat = false;
+        }
+        continue;
+      }
       this.ships.set(id, {
         npcId: id,
         position:
@@ -230,7 +230,9 @@ export class LocalPirateTraffic {
     for (const pirate of this.ships.values()) {
       if (pirate.awaitingCombat || pirate.npcId === combatantId) continue;
       const npc = npcs.find((entry) => entry.id === pirate.npcId);
-      if (!npc || npc.hullHp <= 0) continue;
+      // NPC-versus-NPC combat and recovery retain their field contact; normal
+      // pirate traffic must not move or re-engage the active combatant.
+      if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
       const targets = [
         ...miners
           .filter((miner) => miner.npcId !== pirate.npcId)

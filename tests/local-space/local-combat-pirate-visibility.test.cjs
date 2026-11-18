@@ -29,8 +29,15 @@ pirate.combatMovement = { targetId: 'player' };
 backgroundPirate.combatMovement = { targetId: 'miner' };
 traffic.reconcile([pirate, backgroundPirate], pirate.id);
 const ships = traffic.snapshot([pirate, backgroundPirate]);
-assert.equal(ships.length, 1, 'only the active duel defender stays in the local field');
-assert.equal(ships[0].npcId, pirate.id, 'active duel defender must remain renderable');
+assert.equal(ships.length, 2, 'both active and background duel ships remain in the local field');
+assert(
+  ships.some((ship) => ship.npcId === pirate.id),
+  'active duel defender must remain renderable'
+);
+assert(
+  ships.some((ship) => ship.npcId === backgroundPirate.id),
+  'background duel pirate must also remain renderable'
+);
 
 traffic.syncCombatPose(pirate.id, { x: 750, y: 610 }, 0.7);
 traffic.tick(1 / 60, [pirate], { x: 500, y: 500 }, [], [], () => false, pirate.id);

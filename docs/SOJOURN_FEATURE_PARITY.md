@@ -1386,3 +1386,14 @@ Antriebs-, Traktor- und Waffen-Telemetriedaten stammen aus exakt demselben
 Duell-HUD-Renderer. Nicht benötigte lokale Bedienfelder verschwinden mit
 Übergang; nach Kampfende werden sie wieder sichtbar. Keine Änderung an
 Kampfformeln, Handel, Savegames oder Feature-IDs.
+
+## Review-Log (2026-11-18): Piratenkontakte und sichtbare Fraktionsmarkierung
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Die Mining-Karte entfernt vorhandene Piratenschiffe nicht mehr kurzzeitig,
+wenn diese in einen strategischen NPC-gegen-NPC-Kampf wechseln. Während
+des Kampfes und einer Erholungsphase bleibt der lokale Kontakt erhalten;
+eine doppelte Integration durch die Piraten-KI wird vermieden. Ein PIRAT
+wird in der Mining-Map durch die sichtbare KORSAR-Kennzeichnung vom Miner
+und der regulären Patrouille unterscheidbar. Die bestehenden Checkpoint-
+Felder, der Kampfablauf, Wirtschaftslogik und Feature-IDs bleiben gleich.

@@ -46,7 +46,7 @@ function validEntries(snapshot: LocalPirateCheckpoint, npcs: readonly SectorNpcS
   const seen = new Set<string>();
   for (const ship of snapshot.ships) {
     const npc = known.get(ship.npcId);
-    if (!npc || npc.hullHp <= 0 || npc.travel || npc.combatMovement || seen.has(ship.npcId)) {
+    if (!npc || npc.hullHp <= 0 || npc.travel || seen.has(ship.npcId)) {
       return false;
     }
     seen.add(ship.npcId);

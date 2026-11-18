@@ -46,7 +46,11 @@ function pirateArrivesOnlyAfterSectorArrival() {
     throw new Error('Same fight must not launch twice');
   });
   traffic.reconcile([{ ...pirate, combatMovement: { mode: 'engaged' } }]);
-  assert.equal(traffic.snapshot([pirate]).length, 0);
+  assert.equal(
+    traffic.snapshot([pirate]).length,
+    1,
+    'Player duel defender must remain visible in its local field'
+  );
 }
 
 function asteroidCollisionPrevention() {
@@ -97,7 +101,7 @@ function absentPlayerUsesRealMinerTarget() {
   });
   assert.equal(target, 'miner-away', 'Distant pirate cannot attack an absent player');
   traffic.reconcile([{ ...pirate, combatMovement: { mode: 'engaged' } }]);
-  assert.equal(traffic.snapshot([pirate]).length, 0);
+  assert.equal(traffic.snapshot([pirate]).length, 1, 'background fights retain local contacts');
   traffic.reconcile([pirate]);
   assert.deepEqual(
     traffic.snapshot([pirate])[0].position,

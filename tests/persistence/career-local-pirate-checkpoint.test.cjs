@@ -34,7 +34,10 @@ first.combatMovement = {
 };
 original.reconcile(pirates);
 const inCombat = original.exportState();
-assert(inCombat.combatReturns.some(([id]) => id === first.id));
+assert(
+  inCombat.ships.some((ship) => ship.npcId === first.id),
+  'active combat pirates retain their local ship in the checkpoint'
+);
 const loaded = LocalPirateTraffic.fromCheckpoint(3000, 3000, 42, pirates, inCombat);
 delete first.combatMovement;
 loaded.reconcile(pirates);
