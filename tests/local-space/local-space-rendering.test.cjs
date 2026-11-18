@@ -8,6 +8,7 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '../..');
 const renderer = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
+const fieldThrust = readModuleSource(root, 'src/ui/combat/embedded-combat-thrusters.ts');
 const effects = fs.readFileSync(
   path.join(root, 'src/ui/local-space/mining-effects-renderer.ts'),
   'utf8'
@@ -95,7 +96,9 @@ assert(
   'working NPC miners must visibly fire a mining beam at their target asteroid'
 );
 assert(
-  renderer.includes('npc.speed > 1') && renderer.includes('engineEffects.draw('),
+  renderer.includes('drawFieldNpcThrusters(') &&
+    fieldThrust.includes('if (speed <= 1) return;') &&
+    fieldThrust.includes('engineRenderer.draw('),
   'arriving and departing NPC miners must show engine thrust instead of popping in place'
 );
 assert(
