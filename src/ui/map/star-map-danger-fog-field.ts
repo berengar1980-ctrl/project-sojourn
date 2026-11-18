@@ -62,6 +62,19 @@ function regionFogBounds(region: WorldRegion): FogBounds {
   return bounds;
 }
 
+/**
+ * Conservatively bounds the *unwarped* sample positions that can influence
+ * each danger region. The underlying warp displaces x by at most 154 and y
+ * by at most 137 world units. A pixel outside these bounds is guaranteed
+ * transparent; skipping it never changes the resulting fog colors.
+ */
+export function potentialDangerFogBounds(regions: readonly WorldRegion[]): readonly FogBounds[] {
+  return regions.map((region) => {
+    const [minX, minY, maxX, maxY] = regionFogBounds(region);
+    return [minX - 154, minY - 137, maxX + 154, maxY + 137] as const;
+  });
+}
+
 /** Feathered elliptical lobe or thick shipping lane; never a hard bitmap category. */
 function regionFogInfluence(region: WorldRegion, point: WorldPoint): number {
   const [minX, minY, maxX, maxY] = regionFogBounds(region);

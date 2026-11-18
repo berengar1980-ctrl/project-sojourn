@@ -1321,3 +1321,12 @@ und prüft unmittelbar vor dem Abflug stets die aktuelle Gefahrensituation.
 Reguläre Treibstoff-/Tankstoppkosten, NPC-Routing und Karriere-Persistenz
 bleiben unverändert. Regressionstests decken Vorschau-Cache-Invalidierung,
 Flugstart-Aktualität und direkte sowie gefährliche Routenkorridore ab.
+
+## Review-Log (2026-11-18): Gefahrennebel-Atlas effizienter berechnen
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Die
+weichen, organischen Gefahrenwolken werden mit identischen Sample-Farben
+gezeichnet; außerhalb konservativer Einflussgrenzen werden unnötige
+Berechnungen übersprungen. Ergänzende `?perf=1`-Messwerte erlauben die
+separate Untersuchung von Sternkarten-Hintergrund, Nebel, Positionen und
+NPC-Schiffen. Keine Änderung an Routen, NPCs, Weltsimulation oder Savegame.

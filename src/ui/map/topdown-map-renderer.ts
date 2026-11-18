@@ -157,37 +157,40 @@ export class TopdownMapRenderer {
     const width = rect.width;
     const height = rect.height;
     this.context.clearRect(0, 0, width, height);
-
     const timeSeconds = performance.now() / 1000;
-    if (this.displayMode === 'nav') {
-      const origin = this.camera.worldToScreen(this.model.star.position, width, height);
-      this.navRenderer.drawBackground(
+    measurePerformance('canvas.star.background', () => {
+      if (this.displayMode === 'nav') {
+        const origin = this.camera.worldToScreen(this.model.star.position, width, height);
+        this.navRenderer.drawBackground(
+          width,
+          height,
+          timeSeconds,
+          origin,
+          this.camera.getRelativeZoom()
+        );
+      } else {
+        this.backgroundRenderer.draw({
+          width,
+          height,
+          cameraCenter: this.camera.getCenter(),
+          cameraZoom: this.camera.getZoom(),
+          timeSeconds,
+        });
+      }
+    });
+    measurePerformance('canvas.star.danger-fog', () =>
+      drawStarMapDangerRegions(
+        this.context,
+        this.camera,
+        this.model.regions,
+        this.dangerBands,
+        this.dangerOverlayVisible,
         width,
         height,
-        timeSeconds,
-        origin,
-        this.camera.getRelativeZoom()
-      );
-    } else {
-      this.backgroundRenderer.draw({
-        width,
-        height,
-        cameraCenter: this.camera.getCenter(),
-        cameraZoom: this.camera.getZoom(),
-        timeSeconds,
-      });
-    }
-    drawStarMapDangerRegions(
-      this.context,
-      this.camera,
-      this.model.regions,
-      this.dangerBands,
-      this.dangerOverlayVisible,
-      width,
-      height,
-      this.model.width,
-      this.model.height,
-      this.model.defaultDangerLevel ?? 0
+        this.model.width,
+        this.model.height,
+        this.model.defaultDangerLevel ?? 0
+      )
     );
     if (this.dangerOverlayVisible)
       drawSafeDestinationRings(this.context, this.camera, this.model.locations, width, height);
@@ -210,20 +213,22 @@ export class TopdownMapRenderer {
       playerPoint,
       orbitalAngles
     );
-    const locationHits = this.model.locations.map((location) =>
-      this.drawLocation(location, width, height)
+    const locationHits = measurePerformance('canvas.star.locations', () =>
+      this.model.locations.map((location) => this.drawLocation(location, width, height))
     );
-    const npcHits = this.npcShips
-      .draw(
-        this.model,
-        this.camera,
-        width,
-        height,
-        this.labelsVisible,
-        this.displayMode === 'nav',
-        orbitalAngles
-      )
-      .map((hit) => ({ ...hit, kind: 'npc' as const }));
+    const npcHits = measurePerformance('canvas.star.npc-ships', () =>
+      this.npcShips
+        .draw(
+          this.model,
+          this.camera,
+          width,
+          height,
+          this.labelsVisible,
+          this.displayMode === 'nav',
+          orbitalAngles
+        )
+        .map((hit) => ({ ...hit, kind: 'npc' as const }))
+    );
     this.hitAreas = [...npcHits, ...locationHits];
     this.drawPlayerShip(width, height, playerPoint);
   }
@@ -327,7 +332,6 @@ export class TopdownMapRenderer {
       }))
       .filter((orbit): orbit is { radius: number; emphasized: boolean } => orbit.radius != null)
       .sort((a, b) => a.radius - b.radius);
-
     this.context.save();
     for (const orbit of starOrbits) {
       this.context.strokeStyle = orbit.emphasized
@@ -362,7 +366,6 @@ export class TopdownMapRenderer {
   private drawRoute(width: number, height: number, playerPoint: ScreenPoint): void {
     const route = this.model.route;
     if (!route || route.points.length < 2) return;
-
     const routePoints = [...route.points];
     if (this.model.navigation.isTravelling) routePoints[0] = this.model.playerShip.position;
 
@@ -382,7 +385,6 @@ export class TopdownMapRenderer {
   private drawLocation(location: StarMapLocationView, width: number, height: number): HitArea {
     const point = this.camera.worldToScreen(location.position, width, height);
     const radius = mapLocationVisualRadius(location, this.camera.getRelativeZoom());
-
     const starPoint = this.camera.worldToScreen(this.model.star.position, width, height);
     const light = { x: starPoint.x - point.x, y: starPoint.y - point.y };
 
@@ -404,7 +406,6 @@ export class TopdownMapRenderer {
     drawSectorEventMarker(this.context, location.id, point, radius);
     const cargoRating = this.cargoOverlay.get(location.id);
     if (cargoRating) drawCargoMarketMarker(this.context, point, radius, cargoRating);
-
     if (location.isSelected || location.isCurrent) {
       this.context.strokeStyle = location.isCurrent ? '#91e5ff' : '#e4c77d';
       this.context.lineWidth = 2;

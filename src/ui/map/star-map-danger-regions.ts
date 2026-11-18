@@ -1,6 +1,6 @@
 import type { WorldRegion } from '../../core/world-types';
 import type { MapCamera } from './map-camera';
-import { sampleDangerFog } from './star-map-danger-fog-field';
+import { potentialDangerFogBounds, sampleDangerFog } from './star-map-danger-fog-field';
 
 type DangerBand = 'green' | 'yellow' | 'red';
 
@@ -61,10 +61,16 @@ function buildDangerClouds(
     return { band, context, image: context.createImageData(pixelWidth, pixelHeight) };
   });
 
+  // Only compute warped organic fog inside a conservative influence region.
+  // Most of the extended atlas lies beyond all clouds and must remain transparent.
+  const possibleFog = potentialDangerFogBounds(regions);
   for (let row = 0; row < pixelHeight; row += 1) {
     const y = originY + ((row + 0.5) * extentHeight) / pixelHeight;
+    const possibleRow = possibleFog.filter((bounds) => y >= bounds[1] && y <= bounds[3]);
+    if (possibleRow.length === 0) continue;
     for (let col = 0; col < pixelWidth; col += 1) {
       const x = originX + ((col + 0.5) * extentWidth) / pixelWidth;
+      if (!possibleRow.some((bounds) => x >= bounds[0] && x <= bounds[2])) continue;
       const fog = sampleDangerFog(regions, { x, y });
       const index = (row * pixelWidth + col) * 4;
       for (const buffer of buffers) {
