@@ -6,8 +6,27 @@ import { fuelForDistance } from '../systems/ships/ship-operating-costs';
 import { planFuelRoute, type FuelRoutePlan } from '../systems/navigation/fuel-route-planner';
 import { navigationOrbitalBerth } from '../systems/navigation/orbital-berth';
 
-type ForecastCacheEntry = { key: string; plan: FuelRoutePlan | null };
+type ForecastCacheEntry = {
+  key: string;
+  plan: FuelRoutePlan | null;
+  threatRevision: number;
+  computedAtMs: number;
+};
 const forecastCache = new WeakMap<ControllerRuntimeContext, ForecastCacheEntry>();
+const THREAT_PREVIEW_REFRESH_MS = 4000;
+
+/** Reuse previews briefly when only moving NPC contacts have changed. */
+export function canReuseFuelForecast(
+  cached: ForecastCacheEntry | undefined,
+  key: string,
+  threatRevision: number,
+  nowMs: number,
+  requireCurrentThreats: boolean
+): boolean {
+  if (!cached || cached.key !== key) return false;
+  if (cached.threatRevision === threatRevision) return true;
+  return !requireCurrentThreats && nowMs - cached.computedAtMs < THREAT_PREVIEW_REFRESH_MS;
+}
 
 export function fuelPerTravelUnit(context: ControllerRuntimeContext): number {
   const ship = context.state.activeShip;
@@ -23,7 +42,10 @@ export function fuelPerTravelUnit(context: ControllerRuntimeContext): number {
   );
 }
 
-export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
+export function forecastPlayerFuelRoute(
+  context: ControllerRuntimeContext,
+  requireCurrentThreats = false
+) {
   const navigation = context.navigation.getSnapshot();
   const world = context.world.world();
   const to = navigation.selectedDestinationId;
@@ -42,7 +64,6 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     navigation.currentPosition.y,
     to,
     preview.profile,
-    navigation.threatRevision,
     ship.id,
     tank.fuel,
     tank.fuelCapacity,
@@ -50,7 +71,16 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
     fuelPerDistance,
   ].join('|');
   const cached = forecastCache.get(context);
-  if (cached?.key === key) return cached.plan;
+  if (
+    canReuseFuelForecast(
+      cached,
+      key,
+      navigation.threatRevision,
+      performance.now(),
+      requireCurrentThreats
+    )
+  )
+    return cached!.plan;
   const plan = measurePerformance('navigation.fuel-route-plan', () =>
     planFuelRoute({
       world,
@@ -66,6 +96,11 @@ export function forecastPlayerFuelRoute(context: ControllerRuntimeContext) {
       locationPosition: (id) => navigationOrbitalBerth(world, id),
     })
   );
-  forecastCache.set(context, { key, plan });
+  forecastCache.set(context, {
+    key,
+    plan,
+    threatRevision: navigation.threatRevision,
+    computedAtMs: performance.now(),
+  });
   return plan;
 }

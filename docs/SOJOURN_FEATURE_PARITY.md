@@ -1310,3 +1310,14 @@ unerreichbare Ziele, bevor teure Gefahrenrouten berechnet werden. Die
 verbleibende Suche nutzt eine zulässige A*-Luftlinienheuristik bei weiterhin
 identischen Tank-/Kreditregeln und derselben optimalen Weglänge.
 Karriere-Persistenz, NPC-Wirtschaft, Karte und Save-Schema bleiben unverändert.
+
+## Review-Log (2026-11-18): A*-Routenbegrenzung und Vorschau-Drosselung
+
+**Keine Statusänderung** der 241 historischen Voidbound-Feature-IDs. Der
+Pfadfinder kürzt nicht verbesserbare Gefahrenroutenkandidaten über zulässige
+Luftlinien-Untergrenzen ab. Die Sternkarten-Treibstoffvorschau aktualisiert
+sich bei ausschließlich beweglichen Bedrohungen spätestens alle vier Sekunden
+und prüft unmittelbar vor dem Abflug stets die aktuelle Gefahrensituation.
+Reguläre Treibstoff-/Tankstoppkosten, NPC-Routing und Karriere-Persistenz
+bleiben unverändert. Regressionstests decken Vorschau-Cache-Invalidierung,
+Flugstart-Aktualität und direkte sowie gefährliche Routenkorridore ab.

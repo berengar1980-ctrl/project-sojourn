@@ -115,7 +115,8 @@ export function startPlayerFuelTravel(context: ControllerRuntimeContext): boolea
     navigation.startTravel();
     return true;
   }
-  const plan = forecastPlayerFuelRoute(context);
+  // Departure always validates with the latest moving contacts, not a throttled preview.
+  const plan = forecastPlayerFuelRoute(context, true);
   if (!plan) {
     context.systemLog.write('TREIBSTOFF > ROUTE NICHT ERREICHBAR · REICHWEITE ODER CREDITS');
     return false;
