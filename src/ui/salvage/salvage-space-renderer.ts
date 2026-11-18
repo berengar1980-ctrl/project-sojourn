@@ -15,7 +15,8 @@ import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
@@ -57,7 +58,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (!context) throw new Error('Salvage-space canvas context unavailable.');
     this.context = context;
     this.model = model;
-    this.camera = new MapCamera(model.width, model.height);
+    this.camera = new PvPMapCamera(model.width, model.height);
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.resize();
   }
@@ -95,17 +96,9 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
-      this.camera.zoomAt(3, { x: rect.width / 2, y: rect.height / 2 }, rect.width, rect.height);
-      // The sensor pulse is centered on the ship, not the world midpoint.
-      // Center the initial camera there so newly scanned contacts are visible.
-      const shipPoint = this.camera.worldToScreen(
-        this.model.ship.position,
-        rect.width,
-        rect.height
-      );
-      this.camera.pan(rect.width / 2 - shipPoint.x, rect.height / 2 - shipPoint.y);
       this.hasFitted = true;
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
