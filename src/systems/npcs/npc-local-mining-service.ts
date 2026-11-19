@@ -157,6 +157,13 @@ function mine(
   const requested = Math.min(MINING_AMOUNT, deposit.oreRemaining);
   const accepted = runtime.options.mine(npc, deposit.resourceId, requested);
   if (accepted > 0) {
+    // A real successful mining cycle spawns one collecting ore fragment.
+    // The existing player chunk/tractor visualizer renders its travel.
+    ship.oreCollection = {
+      resourceId: deposit.resourceId,
+      remainingSeconds: MINING_CYCLE_SECONDS,
+      durationSeconds: MINING_CYCLE_SECONDS,
+    };
     deposit.oreRemaining = Math.max(0, deposit.oreRemaining - accepted);
     runtime.options.onAsteroidMined?.(npc, asteroid, deposit.resourceId, accepted);
   }
@@ -395,6 +402,10 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
   syncArrivals(runtime);
   for (let index = runtime.ships.length - 1; index >= 0; index -= 1) {
     const ship = runtime.ships[index]!;
+    if (ship.oreCollection) {
+      ship.oreCollection.remainingSeconds = Math.max(0, ship.oreCollection.remainingSeconds - dt);
+      if (ship.oreCollection.remainingSeconds <= 0) delete ship.oreCollection;
+    }
     const npc = runtime.byId.get(ship.npcId);
     // The duel owns this NPC's movement until its final pose is reconciled.
     if (ship.npcId === combatantId) continue;
@@ -408,6 +419,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
       ship.speed = 0;
       ship.laserActive = false;
+      delete ship.oreCollection;
       ship.scanProgress = 0;
       ship.targetAsteroidId = null;
       ship.phase = 'approaching';

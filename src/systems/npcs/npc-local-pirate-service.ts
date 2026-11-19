@@ -2,7 +2,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { edgePoint, hashId } from './npc-mining-targets';
-import { pirateRouteDestination, type PirateDetour } from './npc-local-pirate-routing';
+import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -22,7 +22,7 @@ interface PirateRuntime {
   headingRadians: number;
   speed: number;
   awaitingCombat: boolean;
-  detour?: PirateDetour | null;
+  routeState?: FieldRouteState;
 }
 
 /**
@@ -54,18 +54,27 @@ function resolvePirateCollisions(
   return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
 }
 
-function keepPirateApart(ship: PirateRuntime, other: WorldPoint): void {
-  const dx = ship.position.x - other.x;
-  const dy = ship.position.y - other.y;
-  const distance = Math.hypot(dx, dy);
-  const minimum = 95;
-  if (distance >= minimum) return;
-  const direction =
-    distance > 0 ? Math.atan2(dy, dx) : (hashId(ship.npcId) % 360) * (Math.PI / 180);
-  ship.position = {
-    x: other.x + Math.cos(direction) * minimum,
-    y: other.y + Math.sin(direction) * minimum,
-  };
+/** Resolve only exact overlapping spawn poses. Ordinary traffic separation
+ * remains with the shared route planner; this is never run on duel ships.
+ */
+function separateCoincidentSpawn(
+  pirate: PirateRuntime,
+  others: ReadonlyMap<string, PirateRuntime>
+): void {
+  for (const other of others.values()) {
+    if (other.npcId === pirate.npcId || other.awaitingCombat) continue;
+    const gap = Math.hypot(
+      pirate.position.x - other.position.x,
+      pirate.position.y - other.position.y
+    );
+    if (gap > 1) continue;
+    const heading = (hashId(pirate.npcId + ':' + other.npcId) % 6283) / 1000;
+    pirate.position = {
+      x: other.position.x + Math.cos(heading) * 100,
+      y: other.position.y + Math.sin(heading) * 100,
+    };
+    delete pirate.routeState;
+  }
 }
 
 export class LocalPirateTraffic {
@@ -91,6 +100,7 @@ export class LocalPirateTraffic {
         headingRadians: ship.headingRadians,
         speed: ship.speed,
         awaitingCombat: ship.awaitingCombat,
+        ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
       })),
       combatReturns: [...this.combatReturnPositions].map(
         ([id, position]) => [id, { ...position }] as const
@@ -112,6 +122,7 @@ export class LocalPirateTraffic {
       instance.ships.set(ship.npcId, {
         ...ship,
         position: { ...ship.position },
+        ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
       });
     }
     for (const [id, position] of saved.combatReturns) {
@@ -139,9 +150,12 @@ export class LocalPirateTraffic {
   }
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
-    const active = new Set(
-      pirates.filter((npc) => npc.pirate && !npc.travel && npc.hullHp > 0).map((npc) => npc.id)
-    );
+    const active = new Set<string>();
+    for (const npc of pirates) {
+      if (npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
+        active.add(npc.id);
+      }
+    }
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
       const npc = pirates.find((candidate) => candidate.id === id);
@@ -180,7 +194,7 @@ export class LocalPirateTraffic {
     deltaSeconds: number,
     npcs: readonly SectorNpcState[],
     player: WorldPoint | null,
-    miners: ReadonlyArray<{ npcId: string; position: WorldPoint }>,
+    miners: ReadonlyArray<{ npcId: string; position: WorldPoint; inCombat?: boolean }>,
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean,
     combatantId?: string
@@ -192,9 +206,10 @@ export class LocalPirateTraffic {
       // NPC-versus-NPC combat and recovery retain their field contact; normal
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
+      separateCoincidentSpawn(pirate, this.ships);
       const targets = [
         ...miners
-          .filter((miner) => miner.npcId !== pirate.npcId)
+          .filter((miner) => miner.npcId !== pirate.npcId && !miner.inCombat)
           .map((miner) => ({
             id: miner.npcId,
             position: miner.position,
@@ -208,44 +223,52 @@ export class LocalPirateTraffic {
       );
       const target = targets[0];
       if (!target) continue;
-      const route = pirateRouteDestination(
-        pirate.position,
-        target.position,
-        pirate.detour ?? null,
-        asteroids,
-        this.width,
-        this.height
+      const distance = Math.hypot(
+        target.position.x - pirate.position.x,
+        target.position.y - pirate.position.y
       );
-      pirate.detour = route.detour;
-      const destination = route.destination;
-      const dx = destination.x - pirate.position.x;
-      const dy = destination.y - pirate.position.y;
-      const distance = Math.hypot(dx, dy);
-      pirate.headingRadians = Math.atan2(dy, dx);
       if (distance < 210) {
         pirate.speed = 0;
         pirate.awaitingCombat = onIntercept(pirate.npcId, target.id, pirate.position);
         continue;
       }
       const speed = 128 + (hashId(pirate.npcId) % 24);
-      const step = Math.min(distance, speed * dt);
-      if (distance > 0) {
-        pirate.position = {
-          x: pirate.position.x + (dx / distance) * step,
-          y: pirate.position.y + (dy / distance) * step,
-        };
+      // Moving traffic is also treated as solid route geometry. Never push
+      // the pirate to an arbitrary position after A* has chosen a safe course:
+      // that caused rapid back-and-forth jitter near working miners.
+      const traffic = [
+        ...[...this.ships.values()]
+          .filter((other) => other.npcId !== pirate.npcId)
+          .map((other) => ({
+            id: other.npcId,
+            position: other.position,
+            radius: 40,
+          })),
+        ...miners
+          .filter((miner) => miner.npcId !== target.id)
+          .map((miner) => ({
+            id: miner.npcId,
+            position: miner.position,
+            radius: 45,
+          })),
+      ];
+      let destination = target.position;
+      const previousTarget = pirate.routeState?.target;
+      if (previousTarget) {
+        const movement = Math.hypot(
+          previousTarget.x - target.position.x,
+          previousTarget.y - target.position.y
+        );
+        if (movement < 70) destination = previousTarget;
       }
-      pirate.position = resolvePirateCollisions(
-        pirate.position,
-        asteroids,
-        this.width,
-        this.height
+      moveFieldShip(
+        pirate,
+        destination,
+        speed,
+        dt,
+        [...asteroids.filter((rock) => rock.routeBlocking), ...traffic],
+        65
       );
-      // Keep non-duelling ships separated without touching the duel's physics.
-      for (const other of this.ships.values()) {
-        if (other.npcId !== pirate.npcId) keepPirateApart(pirate, other.position);
-      }
-      for (const miner of miners) keepPirateApart(pirate, miner.position);
       pirate.position = resolvePirateCollisions(
         pirate.position,
         asteroids,
@@ -256,7 +279,6 @@ export class LocalPirateTraffic {
         x: Math.max(0, Math.min(this.width, pirate.position.x)),
         y: Math.max(0, Math.min(this.height, pirate.position.y)),
       };
-      pirate.speed = speed;
     }
   }
 
@@ -266,6 +288,7 @@ export class LocalPirateTraffic {
     ship.position = { ...position };
     ship.headingRadians = headingRadians;
     ship.speed = 0;
-    ship.awaitingCombat = false;
+    delete ship.routeState;
+    // Keep the interception latch until the engagement has recovered.
   }
 }

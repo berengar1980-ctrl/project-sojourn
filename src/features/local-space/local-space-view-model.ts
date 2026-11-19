@@ -62,6 +62,11 @@ export interface LocalNpcShipView {
   readonly phase: 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
   readonly targetAsteroidId: string | null;
   readonly laserActive: boolean;
+  readonly oreCollection?: {
+    readonly resourceId: string;
+    readonly remainingSeconds: number;
+    readonly durationSeconds: number;
+  };
   readonly scanProgress?: number;
   readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
@@ -121,6 +126,7 @@ export interface LocalSpaceViewModel {
   readonly collectedOre: number;
   readonly cargoResources: readonly LocalCargoResourceView[];
   readonly combat: StrategicCombatSnapshot | null;
+  readonly npcCombats?: readonly StrategicCombatSnapshot[];
 }
 
 function estimateResourceAmount(amount: number): number {

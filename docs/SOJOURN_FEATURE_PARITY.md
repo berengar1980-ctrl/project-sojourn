@@ -1480,3 +1480,15 @@ zivile Schiffe als physische Hindernisse. Korsarenklassen nutzen weiterhin ihre
 Patrouillen-Sprites, jetzt mit der unveränderten 60-m-Quellrumpfgröße statt
 künstlich vergrößerten 80-/120-m-Grafiken. Keine Änderung historischer
 Feature-IDs/-Status.
+
+## Parallele NPC-Gefechte und Korsaren-Routing (2026-11-19)
+
+Korsaren verwenden vor Gefechtsbeginn denselben `field-ship-routing.ts`-
+A*-Planer wie Miner, Bergung und Sicherheitsdrohne. Die frühere separate
+Piraten-Flankenheuristik ist entfernt. Andere zivile Schiffe sind Hindernisse
+für die Reiseplanung statt Ziele harter Positionssprünge. NPC-Kämpfe bleiben
+bei laufendem Spieler-Mining im gemeinsamen PvP-Kampfkern; Waffenstrahlen,
+Projektile und Treffer verwenden dieselben PvP-FX-Primitiven auch in der
+Mining-Szene. Tatsächliche NPC-Abbauzyklen erzeugen maximal einen sichtbaren
+Sammelbrocken, der vom bestehenden Spieler-Traktorrenderer aufgenommen wird;
+die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
