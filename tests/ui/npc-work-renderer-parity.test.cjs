@@ -24,7 +24,7 @@ assert(mining.includes('drawMiningChunkVisual(this.context, point, chunk.id)'));
 assert(salvage.includes('drawSalvageWorkEffect('));
 assert(!salvage.includes('drawNpcSalvageTether('));
 assert(salvageEffect.includes('drawSalvageWorkEffect('));
-assert(bridge.includes('activeNpcCombatSnapshots()'));
+assert(bridge.includes('activeNpcCombatSnapshots?.()'));
 assert(bridge.includes('setBystanders(bystanders)'));
 assert(combat.includes('resolveCombatBystanderContacts('));
 assert(!pirate.includes('nominalLengthMeters: 120'));
