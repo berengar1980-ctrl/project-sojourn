@@ -121,6 +121,7 @@ export interface LocalSpaceViewModel {
   readonly collectedOre: number;
   readonly cargoResources: readonly LocalCargoResourceView[];
   readonly combat: StrategicCombatSnapshot | null;
+  readonly npcCombats?: readonly StrategicCombatSnapshot[];
 }
 
 function estimateResourceAmount(amount: number): number {
