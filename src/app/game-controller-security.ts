@@ -37,10 +37,14 @@ export function tickFieldPirates(
     canLocalPiratesTargetPlayer(context)
       ? (space?.getSnapshot().instance.ship.position ?? null)
       : null,
-    field.miners.ships.map((ship) => ({
-      npcId: ship.npcId,
-      position: ship.position,
-    })),
+    field.miners.ships.map((ship) => {
+      const miner = economy.sectorNpcs.npcs.find((npc) => npc.id === ship.npcId);
+      return {
+        npcId: ship.npcId,
+        position: ship.position,
+        inCombat: Boolean(miner?.combatMovement || miner?.combatRecoverySeconds),
+      };
+    }),
     field.instance.asteroids,
     (pirateId, targetId, piratePosition) => {
       const pirate = economy.sectorNpcs.npcs.find((npc) => npc.id === pirateId);
