@@ -5,6 +5,7 @@ import {
 } from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { resolveSecurityDroneDebrisContacts } from './security-drone-debris-contact';
 import {
   stageSecurityDroneCheckpoint,
   type SecurityDroneCheckpoint,
@@ -19,6 +20,7 @@ export interface SecurityDroneSnapshot {
   readonly position: WorldPoint;
   readonly scanRadius: number;
   readonly operational: boolean;
+  readonly shieldContactSeconds: number;
 }
 const DRONE_CRUISE = 115;
 const DRONE_SCAN_RADIUS = 460;
@@ -36,6 +38,7 @@ export class AsteroidSecurityDrone {
   private readonly observed = new Set<string>();
   private operational = true;
   private retryAfterSeconds = 0;
+  private shieldContactSeconds = 0;
 
   constructor(
     width: number,
@@ -101,6 +104,7 @@ export class AsteroidSecurityDrone {
       position: { ...this.position },
       scanRadius: this.scanRadius,
       operational: this.operational,
+      shieldContactSeconds: this.shieldContactSeconds,
     };
   }
   destroy(): void {
@@ -121,6 +125,13 @@ export class AsteroidSecurityDrone {
   ): string[] {
     if (!this.operational) return [];
     this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
+    this.shieldContactSeconds = Math.max(0, this.shieldContactSeconds - Math.max(0, dt));
+    const velocity = {
+      x: Math.cos(this.headingRadians) * this.speed,
+      y: Math.sin(this.headingRadians) * this.speed,
+    };
+    if (resolveSecurityDroneDebrisContacts(this.position, velocity, asteroids) > 0)
+      this.shieldContactSeconds = 0.4;
 
     const active = new Set(
       contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
