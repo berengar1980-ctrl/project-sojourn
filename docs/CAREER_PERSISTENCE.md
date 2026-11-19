@@ -858,3 +858,14 @@ Die sichtbare Schildkontakt-Animation (`shieldContactSeconds`) wird nur
 zur Laufzeit berechnet und nicht gespeichert. Die Drohnenrotation dauert
 acht Sekunden und ist ebenfalls rein visuell. Die Hintergrundkampf-
 Trefferhistorie ist ein temporärer Renderer-Cache, kein Spielstandzustand.
+
+## Security drone visual timing and combat effect cleanup (2026-11-19)
+
+The security drone now renders at 18 screen pixels at normal zoom, retaining
+camera-relative scaling; its rotation period is 16 seconds. Shield-hit arcs
+are generated solely from the current authoritative strategic-combat
+`shieldImpacts` entries and naturally expire at the combat effect lifetime.
+No extra visual or checkpoint state is persisted. Finished NPC/player duels
+no longer paint frozen beam/projectile/tractor-tether snapshots, since their
+simulation clock stops at the winner transition. The existing career
+checkpoint format and movement/weapon authorities are unchanged.

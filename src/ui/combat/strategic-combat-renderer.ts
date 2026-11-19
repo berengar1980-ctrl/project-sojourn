@@ -3,6 +3,7 @@ import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
   drawDroneShield,
+  drawDroneShieldHits,
 } from '../local-space/local-security-drone-visual';
 import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
@@ -185,14 +186,13 @@ export class StrategicCombatRenderer {
       this.model.arena.height
     );
     const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
-    const aspect =
-      combatant.shipId === '24m-security-drone'
-        ? 1
-        : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-          ? image.naturalWidth / image.naturalHeight
-          : definition
-            ? definition.sprite.widthPx / definition.sprite.heightPx
-            : 2.2;
+    const aspect = isDrone
+      ? 1
+      : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        ? image.naturalWidth / image.naturalHeight
+        : definition
+          ? definition.sprite.widthPx / definition.sprite.heightPx
+          : 2.2;
     return {
       center: this.screen(combatant.position, width, height),
       width: shipWidth,
@@ -228,7 +228,7 @@ export class StrategicCombatRenderer {
     );
     drawTractorThrows(
       this.context,
-      this.model.thrownAsteroids,
+      this.model.winner === null ? this.model.thrownAsteroids : [],
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
       (context, rock, radius) =>
@@ -271,7 +271,9 @@ export class StrategicCombatRenderer {
     this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
+    if (this.model.winner !== null) return;
     for (const beam of this.model.beams) {
+      if (beam.ttlSeconds <= 0) continue;
       if (Boolean(beam.missed && missedShotAbove(beam.id)) !== above) continue;
       this.drawBeam(beam, width, height);
     }
@@ -284,6 +286,7 @@ export class StrategicCombatRenderer {
     drawCombatBeamVisual(this.context, beam, start, end);
   }
   private drawProjectiles(width: number, height: number, above: boolean): void {
+    if (this.model.winner !== null) return;
     for (const projectile of this.model.projectiles) {
       if (projectile.kind === 'autocannon') continue;
       if (Boolean(projectile.missed && missedShotAbove(projectile.id)) !== above) continue;
@@ -293,6 +296,7 @@ export class StrategicCombatRenderer {
     }
   }
   private drawAutocannonBursts(width: number, height: number): void {
+    if (this.model.winner !== null) return;
     for (const burst of this.autocannonBursts.values()) {
       drawVisionAutocannon(
         this.context,
@@ -439,6 +443,13 @@ export class StrategicCombatRenderer {
         geometry.width * 0.62,
         combatant.shieldHp / Math.max(1, combatant.shieldMaxHp),
         combatant.shieldImpacts.length > 0 ? 0.85 : 0
+      );
+      drawDroneShieldHits(
+        this.context,
+        geometry.center.x,
+        geometry.center.y,
+        geometry.width * 0.62,
+        combatant.shieldImpacts
       );
     }
     if (combatant.pirateMark) {

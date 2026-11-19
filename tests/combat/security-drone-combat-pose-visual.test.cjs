@@ -34,7 +34,7 @@ assert(
   'salvage player combat updates the drone pose without a duplicate bystander collider'
 );
 assert(
-  pvp.includes("shipId === '24m-security-drone'") &&
+  pvp.includes("combatant.id.startsWith('security-drone:')") &&
     pvp.includes("'/drones/security-drone-gc87r8.webp'") &&
     pvp.includes('DRONE_DIAMETER_PX * this.camera.zoom') &&
     pvp.includes('DRONE_ROTATION_PERIOD_SECONDS'),

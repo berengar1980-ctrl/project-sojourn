@@ -117,6 +117,7 @@ export interface SalvageSpaceViewModel {
   readonly ship: SalvageShipView;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
+  readonly npcCombats?: readonly StrategicCombatSnapshot[];
   readonly securityDrone?: SecurityDroneSnapshot;
   readonly wrecks: readonly SalvageWreckView[];
   readonly debris: readonly SalvageDebris[];

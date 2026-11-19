@@ -161,6 +161,11 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
   return {
     ...model,
     securityDrone: context.drone.snapshot(),
+    npcCombats: (options.getNpcCombats?.() ?? []).filter(
+      (duel) =>
+        duel.attacker.id === 'security-drone:' + context.field.sourceLocationId ||
+        duel.defender.id === 'security-drone:' + context.field.sourceLocationId
+    ),
     wreckClaimOwners: wreckClaimOwners(context.field, options.wreckClaims, options.getCurrentDay()),
   };
 }

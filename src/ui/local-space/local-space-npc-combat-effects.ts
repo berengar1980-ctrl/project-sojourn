@@ -23,7 +23,11 @@ export function drawLocalNpcCombatEffects(
     camera.worldToScreen(position, width, height);
   impactTimeline.retain(combats);
   for (const duel of combats) {
+    // The simulation clock freezes after a winner; any last-frame beam or
+    // tractor tether would otherwise remain permanently visible in the world.
+    if (duel.winner !== null) continue;
     for (const beam of duel.beams) {
+      if (beam.ttlSeconds <= 0) continue;
       drawCombatBeamVisual(context, beam, screen(beam.origin), screen(beam.end));
     }
     for (const projectile of duel.projectiles) {

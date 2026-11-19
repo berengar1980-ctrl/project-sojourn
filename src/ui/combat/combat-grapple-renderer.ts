@@ -11,7 +11,7 @@ export function drawCombatGrapple(
   sourceAnchor: (side: 'attacker' | 'defender') => Point
 ): void {
   const grapple = model.grapple;
-  if (!grapple) return;
+  if (!grapple || model.winner !== null) return;
   const origin = sourceAnchor(grapple.owner);
   const targetSide = grapple.owner === 'attacker' ? 'defender' : 'attacker';
   const destination = sourceAnchor(targetSide);
