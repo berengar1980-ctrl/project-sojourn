@@ -8,8 +8,6 @@ import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-secur
 import {
   createSalvageSecurityDrone,
   salvageDroneBystanders,
-  salvageDroneShipObstacles,
-  tickSalvageSecurityDrone,
   salvageDroneCanSee,
 } from './game-controller-salvage-drone';
 import {
