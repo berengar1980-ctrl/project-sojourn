@@ -59,6 +59,7 @@ import { miningLocationById, salvageLocationById } from './game-controller-local
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene } from './game-controller-salvage';
+import { careerSalvageDrone } from './game-controller-salvage-drone-world';
 import { generateSectorSalvageEventField } from '../systems/salvage';
 import {
   controllerLocalModel,
@@ -318,6 +319,7 @@ function mountControllerSalvage(
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
     wreckClaims: economy.wreckClaims,
+    resolveDrone: (field) => careerSalvageDrone(context, field),
     getCurrentDay: () => economy.situations.currentDay,
     player: economy.trade.player,
     componentInventory: economy.components,
