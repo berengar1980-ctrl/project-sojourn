@@ -155,6 +155,17 @@ function securityDroneObstacleShips(
   return ships;
 }
 
+function reportVisibleDroneContacts(
+  context: ControllerRuntimeContext,
+  runtime: AsteroidFieldRuntime,
+  contacts: readonly DroneContact[]
+): void {
+  for (const contact of contacts) {
+    if (!runtime.drone.detect(contact.position, runtime.instance.asteroids)) continue;
+    processDroneContact(context, runtime, JSON.stringify([contact.shipId, contact.asteroidId]));
+  }
+}
+
 export function tickFieldSecurity(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -199,10 +210,7 @@ export function tickFieldSecurity(
     active?.instance.ship.position ?? null
   );
   drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
-  for (const contact of contacts) {
-    if (!drone.detect(contact.position, runtime.instance.asteroids)) continue;
-    processDroneContact(context, runtime, JSON.stringify([contact.shipId, contact.asteroidId]));
-  }
+  reportVisibleDroneContacts(context, runtime, contacts);
 }
 
 function handlePlayerDroneFine(
