@@ -54,6 +54,29 @@ function resolvePirateCollisions(
   return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
 }
 
+/** Resolve only exact overlapping spawn poses. Ordinary traffic separation
+ * remains with the shared route planner; this is never run on duel ships.
+ */
+function separateCoincidentSpawn(
+  pirate: PirateRuntime,
+  others: ReadonlyMap<string, PirateRuntime>
+): void {
+  for (const other of others.values()) {
+    if (other.npcId === pirate.npcId || other.awaitingCombat) continue;
+    const gap = Math.hypot(
+      pirate.position.x - other.position.x,
+      pirate.position.y - other.position.y
+    );
+    if (gap > 1) continue;
+    const heading = (hashId(pirate.npcId + ':' + other.npcId) % 6283) / 1000;
+    pirate.position = {
+      x: other.position.x + Math.cos(heading) * 100,
+      y: other.position.y + Math.sin(heading) * 100,
+    };
+    delete pirate.routeState;
+  }
+}
+
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
@@ -183,6 +206,7 @@ export class LocalPirateTraffic {
       // NPC-versus-NPC combat and recovery retain their field contact; normal
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
+      separateCoincidentSpawn(pirate, this.ships);
       const targets = [
         ...miners
           .filter((miner) => miner.npcId !== pirate.npcId && !miner.inCombat)
