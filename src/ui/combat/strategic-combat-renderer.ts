@@ -1,5 +1,8 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
-import { DRONE_DIAMETER_PX, DRONE_ROTATION_PERIOD_SECONDS } from '../local-space/local-security-drone-visual';
+import {
+  DRONE_DIAMETER_PX,
+  DRONE_ROTATION_PERIOD_SECONDS,
+} from '../local-space/local-security-drone-visual';
 import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
   Point,
@@ -189,10 +192,10 @@ export class StrategicCombatRenderer {
       combatant.shipId === '24m-security-drone'
         ? 1
         : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-        ? image.naturalWidth / image.naturalHeight
-        : definition
-          ? definition.sprite.widthPx / definition.sprite.heightPx
-          : 2.2;
+          ? image.naturalWidth / image.naturalHeight
+          : definition
+            ? definition.sprite.widthPx / definition.sprite.heightPx
+            : 2.2;
     return {
       center: this.screen(combatant.position, width, height),
       width: shipWidth,
@@ -391,9 +394,7 @@ export class StrategicCombatRenderer {
     const isDrone = combatant.shipId === '24m-security-drone';
     const geometry = {
       ...this.shipGeometry(combatant, width, height),
-      ...(isDrone
-        ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS }
-        : {}),
+      ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
     };
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     // Rotating drone hull has no ship-style directional exhaust hardpoints.
