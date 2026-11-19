@@ -55,5 +55,9 @@ assert.equal(
   null
 );
 assert.equal(intact.wrecks.length, 0);
-assert.equal(new Set(Array.from({ length: 60 }, (_, i) => combatWreckVariantFor(450, 'ship-' + i, 12))).size, 3, 'all three variants must be selectable');
+assert.equal(
+  new Set(Array.from({ length: 60 }, (_, i) => combatWreckVariantFor(450, 'ship-' + i, 12))).size,
+  3,
+  'all three variants must be selectable'
+);
 console.log('PASS destroyed ship creates one random recoverable physical wreck');
