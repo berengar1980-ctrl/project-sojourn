@@ -14,10 +14,7 @@ function canLocalPiratesTargetPlayer(context: ControllerRuntimeContext): boolean
   );
 }
 
-function pirateMiningContacts(
-  context: ControllerRuntimeContext,
-  field: AsteroidFieldRuntime
-) {
+function pirateMiningContacts(context: ControllerRuntimeContext, field: AsteroidFieldRuntime) {
   const npcs = context.economy.sectorNpcs.npcs;
   return field.miners.ships.map((ship) => {
     const npc = npcs.find((entry) => entry.id === ship.npcId);
