@@ -124,6 +124,15 @@ export function advanceControllerFieldWorld(
           position: ship.position,
           headingRadians: ship.headingRadians,
         })),
+        ...context.economy.sectorNpcs.npcs
+          .filter((npc) => npc.id === 'security-drone:' + field.locationId)
+          .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
+          .map((npc) => ({
+            id: npc.id,
+            shipId: npc.shipId,
+            position: field.drone.snapshot().position,
+            headingRadians: field.drone.headingRadians,
+          })),
       ].filter((ship) => !fighters.has(ship.id));
       context.engagements.activePlayerCombat()?.setBystanders(bystanders);
       // The duel advances physical asteroids; copy their authoritative poses
