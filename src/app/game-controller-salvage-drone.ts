@@ -67,6 +67,15 @@ export function tickSalvageSecurityDrone(
   drone.tick(seconds, wreckObstacles(field), [], ships);
 }
 
+/** The same solid wrecks that constrain routing also occlude a drone scan. */
+export function salvageDroneCanSee(
+  drone: AsteroidSecurityDrone,
+  field: SalvageField,
+  position: WorldPoint
+): boolean {
+  return drone.detect(position, wreckObstacles(field));
+}
+
 export function salvageDroneShipObstacles(
   ships: readonly { readonly id: string; readonly position: WorldPoint; readonly radius: number }[],
   playerPosition: WorldPoint,
