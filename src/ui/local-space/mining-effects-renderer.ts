@@ -73,20 +73,23 @@ export class MiningEffectsRenderer {
       x: npc.position.x + (relative.x * cos - relative.y * sin) * npc.nominalLengthMeters,
       y: npc.position.y + (relative.x * sin + relative.y * cos) * npc.nominalLengthMeters,
     };
-    // Exactly one ore fragment is collected at a time, rather than four
-    // permanent tractor rays. Use the player's actual chunk/tractor painter.
-    const cycle = Math.floor(timeSeconds * 0.55 + (hashId(npc.id) % 31) / 31);
-    const phase = fractional(timeSeconds * 0.55 + (hashId(npc.id) % 31) / 31);
-    const travel = Math.max(0, (phase - 0.2) / 0.7);
-    const chunks = phase < 0.2 || phase > 0.9 ? [] : [{
-      id: npc.id + ':ore:' + cycle,
-      amount: 1,
-      position: {
-        x: impact.point.x + (destination.x - impact.point.x) * travel,
-        y: impact.point.y + (destination.y - impact.point.y) * travel,
-      },
-      tractorActive: true,
-    }];
+    // The NPC's actual successful extraction event owns the collection,
+    // rather than a perpetual loop of imaginary tractor targets.
+    const extraction = npc.oreCollection;
+    const travel = extraction
+      ? Math.max(0, Math.min(1, 1 - extraction.remainingSeconds / extraction.durationSeconds))
+      : 0;
+    const chunks = extraction
+      ? [{
+          id: npc.id + ':ore:' + extraction.resourceId,
+          amount: 1,
+          position: {
+            x: impact.point.x + (destination.x - impact.point.x) * travel,
+            y: impact.point.y + (destination.y - impact.point.y) * travel,
+          },
+          tractorActive: true,
+        }]
+      : [];
     const workModel: LocalSpaceViewModel = {
       ...model,
       combat: null,
