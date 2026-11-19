@@ -98,7 +98,9 @@ export function advanceControllerFieldWorld(
           position: ship.position,
           headingRadians: ship.headingRadians,
         })),
-      ].filter((ship) => ship.id !== activeCombat.attacker.id && ship.id !== activeCombat.defender.id);
+      ].filter(
+        (ship) => ship.id !== activeCombat.attacker.id && ship.id !== activeCombat.defender.id
+      );
       context.engagements.activePlayerCombat()?.setBystanders(bystanders);
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
