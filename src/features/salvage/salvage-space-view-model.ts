@@ -48,7 +48,7 @@ export interface SalvageWreckView {
   readonly containerVariant?: SalvageContainerVariant;
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
-  readonly combatWreckVariant?: CombatWreckVariant;
+  readonly combatWreckVariant?: CombatWreckVariant | undefined;
   readonly effectSeed?: number;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
