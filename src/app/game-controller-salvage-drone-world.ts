@@ -2,6 +2,7 @@ import type { SalvageField } from '../core/salvage-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { generateSalvageField } from '../systems/salvage';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   createSalvageSecurityDrone,
@@ -85,4 +86,16 @@ export function advanceCareerSalvageDrones(
       tickSalvageSecurityDrone(world.drone, world.field, 0.2, []);
     context.economy.wreckClaims.rememberDrone(locationId, world.drone.exportState());
   }
+}
+
+/** One traffic authority per wreck location across scene switches. */
+export function careerSalvagePirates(
+  context: ControllerRuntimeContext,
+  field: SalvageField
+): LocalPirateTraffic {
+  const traffic = context.economy.localPirates.get(field.sourceLocationId);
+  if (traffic) return traffic;
+  const created = new LocalPirateTraffic(field.width, field.height, field.seed);
+  context.economy.localPirates.set(field.sourceLocationId, created);
+  return created;
 }
