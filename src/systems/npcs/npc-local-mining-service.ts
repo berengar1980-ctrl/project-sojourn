@@ -403,10 +403,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
   for (let index = runtime.ships.length - 1; index >= 0; index -= 1) {
     const ship = runtime.ships[index]!;
     if (ship.oreCollection) {
-      ship.oreCollection.remainingSeconds = Math.max(
-        0,
-        ship.oreCollection.remainingSeconds - dt
-      );
+      ship.oreCollection.remainingSeconds = Math.max(0, ship.oreCollection.remainingSeconds - dt);
       if (ship.oreCollection.remainingSeconds <= 0) delete ship.oreCollection;
     }
     const npc = runtime.byId.get(ship.npcId);
