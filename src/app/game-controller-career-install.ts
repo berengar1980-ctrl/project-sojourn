@@ -15,8 +15,8 @@ export function installControllerCareer(
 ): void {
   const saved = options.restoredSession;
   // Older Career saves contain mining drones but no salvage drone defender.
-  if (saved)
-    registerSecurityDroneCombatants(context.economy.sectorNpcs.npcs as SectorNpcState[]);
+  const activeNpcs = context.economy.sectorNpcs.npcs as SectorNpcState[];
+  if (saved) registerSecurityDroneCombatants(activeNpcs);
   registerSectorShips(context);
   if (saved) {
     restoreControllerDayElapsed(context, saved.controllerSecondsIntoDay ?? 0);
