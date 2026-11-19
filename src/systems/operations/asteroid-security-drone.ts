@@ -120,6 +120,30 @@ export class AsteroidSecurityDrone {
     pursuitTarget?: WorldPoint
   ): string[] {
     if (!this.operational) return [];
+    this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
+
+    const active = new Set(
+      contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
+    );
+    for (const key of this.observed) if (!active.has(key)) this.observed.delete(key);
+
+    const newlyDetected: string[] = [];
+    for (const contact of contacts) {
+      const key = JSON.stringify([contact.shipId, contact.asteroidId]);
+      if (this.observed.has(key)) continue;
+      if (!this.canSee(contact.position, asteroids)) continue;
+      this.observed.add(key);
+      newlyDetected.push(key);
+    }
+    return newlyDetected;
+  }
+
+  private advancePatrolMovement(
+    dt: number,
+    asteroids: readonly LocalAsteroid[],
+    nearbyShips: readonly FieldRouteObstacle[],
+    pursuitTarget?: WorldPoint
+  ): void {
     const previousTarget = this.routeState?.target;
     const keepPursuitRoute = Boolean(
       pursuitTarget &&
@@ -164,20 +188,6 @@ export class AsteroidSecurityDrone {
       }
     }
 
-    const active = new Set(
-      contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
-    );
-    for (const key of this.observed) if (!active.has(key)) this.observed.delete(key);
-
-    const newlyDetected: string[] = [];
-    for (const contact of contacts) {
-      const key = JSON.stringify([contact.shipId, contact.asteroidId]);
-      if (this.observed.has(key)) continue;
-      if (!this.canSee(contact.position, asteroids)) continue;
-      this.observed.add(key);
-      newlyDetected.push(key);
-    }
-    return newlyDetected;
   }
 
   private routeBlocked(waypoint: WorldPoint, obstacles: readonly FieldRouteObstacle[]): boolean {
