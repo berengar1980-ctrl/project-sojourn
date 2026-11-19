@@ -69,7 +69,7 @@ export function planFieldPatrolRoute(
     .slice(0, 12);
   const nodes: WorldPoint[] = [start, destination];
   for (const obstacle of nearby) {
-    const radius = obstacle.radius + clearance + 22;
+    const radius = (obstacle.radius + clearance) * 1.2 + 16;
     for (let index = 0; index < 8; index += 1) {
       const angle = (index * Math.PI) / 4;
       const point = {
@@ -105,12 +105,18 @@ export function planFieldPatrolRoute(
         route.push(nodes[cursor]!);
         cursor = parents[cursor]!;
       }
-      return route.reverse();
+      const result = route.reverse();
+      let previous = start;
+      for (const point of result) {
+        if (!clearPath(previous, point, obstacles, clearance)) return [];
+        previous = point;
+      }
+      return result;
     }
     visited.add(current);
     for (let index = 1; index < nodes.length; index += 1) {
       if (visited.has(index)) continue;
-      if (!clearPath(nodes[current]!, nodes[index]!, obstacles, clearance)) continue;
+      if (!clearPath(nodes[current]!, nodes[index]!, nearby, clearance)) continue;
       const length = Math.hypot(
         nodes[current]!.x - nodes[index]!.x,
         nodes[current]!.y - nodes[index]!.y
