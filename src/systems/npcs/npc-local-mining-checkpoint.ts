@@ -16,6 +16,15 @@ function point(value: unknown, width: number, height: number): boolean {
   return value.x <= width && value.y <= height;
 }
 
+function validOreCollection(value: unknown): boolean {
+  if (!record(value)) return false;
+  if (typeof value.resourceId !== 'string' || !value.resourceId) return false;
+  const duration = value.durationSeconds;
+  const remaining = value.remainingSeconds;
+  if (!finite(duration, 0.01) || duration > 10) return false;
+  return finite(remaining) && remaining <= duration;
+}
+
 function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   if (!record(value) || typeof value.npcId !== 'string') return false;
   const npc = options.miners.find((item) => item.id === value.npcId);
@@ -32,15 +41,7 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   }
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
   if (!finite(value.miningAccumulator) || typeof value.laserActive !== 'boolean') return false;
-  if (value.oreCollection !== undefined) {
-    if (!record(value.oreCollection)) return false;
-    const collection = value.oreCollection;
-    if (typeof collection.resourceId !== 'string' || !collection.resourceId) return false;
-    const duration = collection.durationSeconds;
-    const remaining = collection.remainingSeconds;
-    if (!finite(duration, 0.01) || duration > 10) return false;
-    if (!finite(remaining) || remaining > duration) return false;
-  }
+  if (value.oreCollection !== undefined && !validOreCollection(value.oreCollection)) return false;
   if (value.targetAsteroidId === null) {
     return ['entering', 'approaching', 'exiting'].includes(value.phase as string);
   }
