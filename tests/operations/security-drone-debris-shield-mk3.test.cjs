@@ -9,8 +9,13 @@ const { resolveSecurityDroneDebrisContacts, DRONE_SHIELD_RADIUS_METERS } = load(
 );
 const { AsteroidSecurityDrone } = load('src/systems/operations/asteroid-security-drone.ts');
 const { equipSecurityDroneMk3 } = load('src/app/game-controller-security-drone-loadout.ts');
-const { getShipDefinition, getShipComponent, fitsWeaponHardpoint, isShipCombatWeaponSlotActive } =
-  load('src/systems/ships/index.ts');
+const {
+  getShipDefinition,
+  getShipComponent,
+  fitsWeaponHardpoint,
+  isShipCombatWeaponSlotActive,
+  calculateShipModeEnergy,
+} = load('src/systems/ships/index.ts');
 const rock = {
   id: 'small-debris',
   kind: 'debris',
