@@ -235,6 +235,11 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     ...model,
     selectedAsteroidClaimOwner: owner,
     npcShips: [...model.npcShips, ...pirateShips],
+    npcCombats: (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter((duel) => {
+      const first = context.economy.sectorNpcs.npcs.find((npc) => npc.id === duel.attacker.id);
+      const second = context.economy.sectorNpcs.npcs.find((npc) => npc.id === duel.defender.id);
+      return first?.locationId === locationId && second?.locationId === locationId;
+    }),
     asteroids,
     selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
     miningTarget: asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null,
