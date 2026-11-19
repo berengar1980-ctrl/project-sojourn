@@ -127,11 +127,12 @@ export class LocalPirateTraffic {
   }
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
-    const active = new Set(
-      pirates
-        .filter((npc) => npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement))
-        .map((npc) => npc.id)
-    );
+    const active = new Set<string>();
+    for (const npc of pirates) {
+      if (npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
+        active.add(npc.id);
+      }
+    }
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
       const npc = pirates.find((candidate) => candidate.id === id);
@@ -227,14 +228,15 @@ export class LocalPirateTraffic {
             radius: 45,
           })),
       ];
+      let destination = target.position;
       const previousTarget = pirate.routeState?.target;
-      const destination =
-        previousTarget && Math.hypot(
+      if (previousTarget) {
+        const movement = Math.hypot(
           previousTarget.x - target.position.x,
           previousTarget.y - target.position.y
-        ) < 70
-          ? previousTarget
-          : target.position;
+        );
+        if (movement < 70) destination = previousTarget;
+      }
       moveFieldShip(
         pirate,
         destination,
