@@ -87,6 +87,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
             this.drawNpcShips(width, height, timeSeconds, active);
+            drawLocalSecurityDrone(
+              this.context,
+              this.camera,
+              this.model.securityDrone,
+              width,
+              height,
+              timeSeconds
+            );
             drawLocalNpcCombatEffects(
               this.context,
               this.camera,
